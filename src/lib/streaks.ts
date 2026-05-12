@@ -49,3 +49,27 @@ export function streaksUncheckedToday(
   );
   return streaks.filter((s) => !checkedIds.has(s.id));
 }
+
+export type StreakWithCount = { streak: Streak; count: number };
+
+export function uncheckedTodayWithCounts(
+  streaks: Streak[],
+  logs: StreakLog[],
+): StreakWithCount[] {
+  const today = todayStr();
+  const grouped = logsByStreak(logs);
+  return streaks
+    .filter((s) => !logs.some((l) => l.streak_id === s.id && l.log_date === today))
+    .map((s) => {
+      // Walk back from yesterday — that's the run today's check-in would extend.
+      const dates = new Set((grouped.get(s.id) ?? []).map((l) => l.log_date));
+      let count = 0;
+      let cursor = subDays(new Date(), 1);
+      while (dates.has(format(cursor, "yyyy-MM-dd"))) {
+        count++;
+        cursor = subDays(cursor, 1);
+      }
+      return { streak: s, count };
+    })
+    .sort((a, b) => b.count - a.count);
+}
