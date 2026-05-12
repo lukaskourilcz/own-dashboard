@@ -27,8 +27,16 @@ const empty: FormState = {
   description: "",
 };
 
-export function CalendarPanel({ compact = false }: { compact?: boolean }) {
-  const [form, setForm] = useState<FormState>(empty);
+export function CalendarPanel({
+  compact = false,
+  initialTitle,
+}: {
+  compact?: boolean;
+  initialTitle?: string;
+}) {
+  const [form, setForm] = useState<FormState>(() =>
+    initialTitle ? { ...empty, title: initialTitle } : empty,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ link?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);

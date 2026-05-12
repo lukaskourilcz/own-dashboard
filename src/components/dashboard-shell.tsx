@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   CalendarPlus,
   CreditCard,
@@ -14,12 +14,16 @@ import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
 import { StreaksPanel } from "@/components/panels/streaks-panel";
+import { KpiCards } from "@/components/overview/kpi-cards";
+import { QuickAdd } from "@/components/overview/quick-add";
+import { TodayHero } from "@/components/overview/today-hero";
 import type {
   Streak,
   StreakLog,
   Subscription,
   Todo,
 } from "@/lib/types";
+import type { TodayEventsResult } from "@/lib/calendar";
 
 type Props = {
   user: { email: string; name: string | null; avatar_url: string | null };
@@ -27,6 +31,7 @@ type Props = {
   initialTodos: Todo[];
   initialStreaks: Streak[];
   initialStreakLogs: StreakLog[];
+  todayCalendar: TodayEventsResult;
 };
 
 export function DashboardShell({
@@ -35,8 +40,23 @@ export function DashboardShell({
   initialTodos,
   initialStreaks,
   initialStreakLogs,
+  todayCalendar,
 }: Props) {
   const [tab, setTab] = useState("overview");
+  const [subscriptions, setSubscriptions] =
+    useState<Subscription[]>(initialSubscriptions);
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+  const [streaks, setStreaks] = useState<Streak[]>(initialStreaks);
+  const [streakLogs, setStreakLogs] = useState<StreakLog[]>(initialStreakLogs);
+  const [calendarPrefill, setCalendarPrefill] = useState<{
+    title: string;
+    nonce: number;
+  } | null>(null);
+
+  const handleCalendarTitle = useCallback((title: string) => {
+    setCalendarPrefill({ title, nonce: Date.now() });
+    setTab("calendar");
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -91,30 +111,67 @@ export function DashboardShell({
           </TabsList>
 
           <TabsContent value="overview">
-            <div className="grid gap-4 md:grid-cols-2">
-              <SubscriptionsPanel initial={initialSubscriptions} compact />
-              <TodosPanel initial={initialTodos} compact />
-              <StreaksPanel
-                initialStreaks={initialStreaks}
-                initialLogs={initialStreakLogs}
-                compact
+            <div className="space-y-4">
+              <QuickAdd
+                setTodos={setTodos}
+                streaks={streaks}
+                streakLogs={streakLogs}
+                setStreakLogs={setStreakLogs}
+                onCalendarTitle={handleCalendarTitle}
               />
-              <CalendarPanel compact />
+              <TodayHero
+                userName={user.name}
+                userEmail={user.email}
+                calendar={todayCalendar}
+                todos={todos}
+                streaks={streaks}
+                streakLogs={streakLogs}
+              />
+              <KpiCards
+                subscriptions={subscriptions}
+                todos={todos}
+                streaks={streaks}
+                streakLogs={streakLogs}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <SubscriptionsPanel
+                  subs={subscriptions}
+                  setSubs={setSubscriptions}
+                  compact
+                />
+                <TodosPanel todos={todos} setTodos={setTodos} compact />
+                <StreaksPanel
+                  streaks={streaks}
+                  setStreaks={setStreaks}
+                  logs={streakLogs}
+                  setLogs={setStreakLogs}
+                  compact
+                />
+                <CalendarPanel compact />
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="calendar">
-            <CalendarPanel />
+            <CalendarPanel
+              key={calendarPrefill?.nonce ?? "idle"}
+              initialTitle={calendarPrefill?.title}
+            />
           </TabsContent>
           <TabsContent value="subscriptions">
-            <SubscriptionsPanel initial={initialSubscriptions} />
+            <SubscriptionsPanel
+              subs={subscriptions}
+              setSubs={setSubscriptions}
+            />
           </TabsContent>
           <TabsContent value="todos">
-            <TodosPanel initial={initialTodos} />
+            <TodosPanel todos={todos} setTodos={setTodos} />
           </TabsContent>
           <TabsContent value="streaks">
             <StreaksPanel
-              initialStreaks={initialStreaks}
-              initialLogs={initialStreakLogs}
+              streaks={streaks}
+              setStreaks={setStreaks}
+              logs={streakLogs}
+              setLogs={setStreakLogs}
             />
           </TabsContent>
         </Tabs>

@@ -9,15 +9,18 @@ import { createClient } from "@/lib/supabase/client";
 import type { Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+type Updater<T> = (next: T | ((prev: T) => T)) => void;
+
 export function TodosPanel({
-  initial,
+  todos,
+  setTodos,
   compact = false,
 }: {
-  initial: Todo[];
+  todos: Todo[];
+  setTodos: Updater<Todo[]>;
   compact?: boolean;
 }) {
   const supabase = createClient();
-  const [todos, setTodos] = useState<Todo[]>(initial);
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);

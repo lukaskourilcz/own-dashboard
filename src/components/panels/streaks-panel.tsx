@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import type { Streak, StreakLog } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { computeStreak, logsByStreak as groupLogs, todayStr } from "@/lib/streaks";
+
+type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
 const DEFAULT_COLORS = [
   "#10b981",
@@ -20,45 +23,25 @@ const DEFAULT_COLORS = [
   "#ef4444",
 ];
 
-function today(): string {
-  return format(new Date(), "yyyy-MM-dd");
-}
-
-function computeStreak(logs: StreakLog[]): number {
-  const set = new Set(logs.map((l) => l.log_date));
-  let count = 0;
-  let cursor = new Date();
-  while (set.has(format(cursor, "yyyy-MM-dd"))) {
-    count++;
-    cursor = subDays(cursor, 1);
-  }
-  return count;
-}
-
 export function StreaksPanel({
-  initialStreaks,
-  initialLogs,
+  streaks,
+  setStreaks,
+  logs,
+  setLogs,
   compact = false,
 }: {
-  initialStreaks: Streak[];
-  initialLogs: StreakLog[];
+  streaks: Streak[];
+  setStreaks: Updater<Streak[]>;
+  logs: StreakLog[];
+  setLogs: Updater<StreakLog[]>;
   compact?: boolean;
 }) {
   const supabase = createClient();
-  const [streaks, setStreaks] = useState<Streak[]>(initialStreaks);
-  const [logs, setLogs] = useState<StreakLog[]>(initialLogs);
   const [name, setName] = useState("");
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
   const [saving, setSaving] = useState(false);
 
-  const logsByStreak = useMemo(() => {
-    const map = new Map<string, StreakLog[]>();
-    for (const log of logs) {
-      if (!map.has(log.streak_id)) map.set(log.streak_id, []);
-      map.get(log.streak_id)!.push(log);
-    }
-    return map;
-  }, [logs]);
+  const logsByStreak = useMemo(() => groupLogs(logs), [logs]);
 
   async function addStreak(e: React.FormEvent) {
     e.preventDefault();
@@ -91,7 +74,7 @@ export function StreaksPanel({
   }
 
   async function toggleToday(streak: Streak) {
-    const date = today();
+    const date = todayStr();
     const existing = (logsByStreak.get(streak.id) ?? []).find(
       (l) => l.log_date === date,
     );
@@ -174,7 +157,7 @@ export function StreaksPanel({
               const sLogs = logsByStreak.get(s.id) ?? [];
               const dates = new Set(sLogs.map((l) => l.log_date));
               const streakCount = computeStreak(sLogs);
-              const checkedToday = dates.has(today());
+              const checkedToday = dates.has(todayStr());
               return (
                 <li
                   key={s.id}

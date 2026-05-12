@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { cn, formatCurrency } from "@/lib/utils";
+import { toMonthly } from "@/lib/subscriptions";
 import type { Subscription } from "@/lib/types";
+
+type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
 const COLORS = [
   "#6366f1",
@@ -24,12 +27,6 @@ const COLORS = [
   "#f97316",
   "#84cc16",
 ];
-
-function toMonthly(sub: Subscription): number {
-  if (sub.billing_cycle === "yearly") return sub.amount / 12;
-  if (sub.billing_cycle === "weekly") return (sub.amount * 52) / 12;
-  return sub.amount;
-}
 
 type FormState = {
   id?: string;
@@ -51,14 +48,15 @@ const emptyForm: FormState = {
 };
 
 export function SubscriptionsPanel({
-  initial,
+  subs,
+  setSubs,
   compact = false,
 }: {
-  initial: Subscription[];
+  subs: Subscription[];
+  setSubs: Updater<Subscription[]>;
   compact?: boolean;
 }) {
   const supabase = createClient();
-  const [subs, setSubs] = useState<Subscription[]>(initial);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
