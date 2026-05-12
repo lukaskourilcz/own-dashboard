@@ -98,6 +98,14 @@ export function DashboardShell({
     setTab("calendar");
   }, []);
 
+  const partnerName =
+    coupleCtx.partnerProfile?.display_name ??
+    coupleCtx.partnerProfile?.email ??
+    "Partner";
+  const partnerTodos = (partnerData?.todos ?? []) as Todo[];
+  const partnerStreaks = (partnerData?.streaks ?? []) as Streak[];
+  const partnerStreakLogs = (partnerData?.streakLogs ?? []) as StreakLog[];
+
   // g+<letter> jumps tabs (gmail/vim-style); n focuses the overview quick-add.
   // The chord times out after 1.5s.
   const lastG = useRef(0);
@@ -253,13 +261,22 @@ export function DashboardShell({
                   displayCurrency={displayCurrency}
                   compact
                 />
-                <TodosPanel todos={todos} setTodos={setTodos} compact />
+                <TodosPanel
+                  todos={todos}
+                  setTodos={setTodos}
+                  compact
+                  partnerTodos={partnerTodos}
+                  partnerName={partnerName}
+                />
                 <StreaksPanel
                   streaks={streaks}
                   setStreaks={setStreaks}
                   logs={streakLogs}
                   setLogs={setStreakLogs}
                   compact
+                  partnerStreaks={partnerStreaks}
+                  partnerLogs={partnerStreakLogs}
+                  partnerName={partnerName}
                 />
                 <CalendarPanel compact />
               </div>
@@ -283,7 +300,12 @@ export function DashboardShell({
             />
           </TabsContent>
           <TabsContent value="todos">
-            <TodosPanel todos={todos} setTodos={setTodos} />
+            <TodosPanel
+              todos={todos}
+              setTodos={setTodos}
+              partnerTodos={partnerTodos}
+              partnerName={partnerName}
+            />
           </TabsContent>
           <TabsContent value="streaks">
             <StreaksPanel
@@ -291,6 +313,9 @@ export function DashboardShell({
               setStreaks={setStreaks}
               logs={streakLogs}
               setLogs={setStreakLogs}
+              partnerStreaks={partnerStreaks}
+              partnerLogs={partnerStreakLogs}
+              partnerName={partnerName}
             />
           </TabsContent>
           <TabsContent value="finances">

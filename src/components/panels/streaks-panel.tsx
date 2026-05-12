@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { format, subDays } from "date-fns";
-import { Bell, Flame, Trash2 } from "lucide-react";
+import { Bell, Flame, Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,12 +37,18 @@ export function StreaksPanel({
   logs,
   setLogs,
   compact = false,
+  partnerStreaks,
+  partnerLogs,
+  partnerName,
 }: {
   streaks: Streak[];
   setStreaks: Updater<Streak[]>;
   logs: StreakLog[];
   setLogs: Updater<StreakLog[]>;
   compact?: boolean;
+  partnerStreaks?: Streak[];
+  partnerLogs?: StreakLog[];
+  partnerName?: string;
 }) {
   const supabase = createClient();
   const [name, setName] = useState("");
@@ -287,6 +293,77 @@ export function StreaksPanel({
               );
             })}
           </ul>
+        )}
+
+        {partnerStreaks && partnerStreaks.length > 0 && (
+          <div className="mt-6">
+            <p className="text-xs font-medium text-zinc-500 mb-2 inline-flex items-center gap-1.5">
+              <Heart className="h-3 w-3" />
+              {partnerName ?? "Partner"}&apos;s streaks
+            </p>
+            <ul className="space-y-3">
+              {partnerStreaks.map((s) => {
+                const sLogs = (partnerLogs ?? []).filter(
+                  (l) => l.streak_id === s.id,
+                );
+                const dates = new Set(sLogs.map((l) => l.log_date));
+                const current = computeStreak(sLogs);
+                const best = bestStreak(sLogs);
+                const checkedToday = dates.has(todayStr());
+                return (
+                  <li
+                    key={s.id}
+                    className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 opacity-90"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="h-3 w-3 rounded-full shrink-0"
+                        style={{ background: s.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{s.name}</p>
+                        <p className="text-xs text-zinc-500">
+                          {current} current · {best} best
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded",
+                          checkedToday
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+                        )}
+                      >
+                        {checkedToday ? "done today" : "not yet"}
+                      </span>
+                    </div>
+                    {compact ? (
+                      <div className="mt-3 flex gap-1">
+                        {stripDays.map((d) => {
+                          const hit = dates.has(d);
+                          return (
+                            <div
+                              key={d}
+                              title={d}
+                              className={cn(
+                                "h-5 flex-1 rounded-sm",
+                                hit ? "opacity-100" : "opacity-20",
+                              )}
+                              style={{ background: hit ? s.color : "#a1a1aa" }}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-3 overflow-x-auto">
+                        <StreakHeatmap color={s.color} dates={dates} />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
       </CardContent>
     </Card>
