@@ -8,21 +8,25 @@ import {
   ListTodo,
   LayoutDashboard,
   LogOut,
+  Wallet,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
 import { StreaksPanel } from "@/components/panels/streaks-panel";
+import { FinancesPanel } from "@/components/panels/finances-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
 import { WeekView } from "@/components/calendar/week-view";
 import type {
+  Account,
   Streak,
   StreakLog,
   Subscription,
   Todo,
+  Transaction,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
 
@@ -32,6 +36,8 @@ type Props = {
   initialTodos: Todo[];
   initialStreaks: Streak[];
   initialStreakLogs: StreakLog[];
+  initialAccounts: Account[];
+  initialTransactions: Transaction[];
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
 };
@@ -42,6 +48,8 @@ export function DashboardShell({
   initialTodos,
   initialStreaks,
   initialStreakLogs,
+  initialAccounts,
+  initialTransactions,
   todayCalendar,
   weekCalendar,
 }: Props) {
@@ -51,6 +59,9 @@ export function DashboardShell({
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [streaks, setStreaks] = useState<Streak[]>(initialStreaks);
   const [streakLogs, setStreakLogs] = useState<StreakLog[]>(initialStreakLogs);
+  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
+  const [transactions, setTransactions] =
+    useState<Transaction[]>(initialTransactions);
   const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
   const [calendarPrefill, setCalendarPrefill] = useState<{
     title: string;
@@ -111,6 +122,10 @@ export function DashboardShell({
             <TabsTrigger value="streaks">
               <Flame className="h-4 w-4 mr-1.5" />
               Streaks
+            </TabsTrigger>
+            <TabsTrigger value="finances">
+              <Wallet className="h-4 w-4 mr-1.5" />
+              Finances
             </TabsTrigger>
           </TabsList>
 
@@ -183,6 +198,16 @@ export function DashboardShell({
               setStreaks={setStreaks}
               logs={streakLogs}
               setLogs={setStreakLogs}
+            />
+          </TabsContent>
+          <TabsContent value="finances">
+            <FinancesPanel
+              accounts={accounts}
+              setAccounts={setAccounts}
+              transactions={transactions}
+              setTransactions={setTransactions}
+              subscriptions={subscriptions}
+              displayCurrency={displayCurrency}
             />
           </TabsContent>
         </Tabs>

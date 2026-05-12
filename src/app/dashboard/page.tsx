@@ -13,15 +13,29 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [subsRes, todosRes, streaksRes, logsRes, todayCalendar, weekCalendar] =
-    await Promise.all([
-      supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
-      supabase.from("todos").select("*").order("created_at", { ascending: false }),
-      supabase.from("streaks").select("*").order("created_at", { ascending: true }),
-      supabase.from("streak_logs").select("*"),
-      fetchTodayWindowEvents(),
-      fetchUpcomingWeekEvents(),
-    ]);
+  const [
+    subsRes,
+    todosRes,
+    streaksRes,
+    logsRes,
+    accountsRes,
+    transactionsRes,
+    todayCalendar,
+    weekCalendar,
+  ] = await Promise.all([
+    supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
+    supabase.from("todos").select("*").order("created_at", { ascending: false }),
+    supabase.from("streaks").select("*").order("created_at", { ascending: true }),
+    supabase.from("streak_logs").select("*"),
+    supabase.from("accounts").select("*").order("created_at", { ascending: true }),
+    supabase
+      .from("transactions")
+      .select("*")
+      .order("occurred_on", { ascending: false })
+      .limit(500),
+    fetchTodayWindowEvents(),
+    fetchUpcomingWeekEvents(),
+  ]);
 
   return (
     <DashboardShell
@@ -34,6 +48,8 @@ export default async function DashboardPage() {
       initialTodos={todosRes.data ?? []}
       initialStreaks={streaksRes.data ?? []}
       initialStreakLogs={logsRes.data ?? []}
+      initialAccounts={accountsRes.data ?? []}
+      initialTransactions={transactionsRes.data ?? []}
       todayCalendar={todayCalendar}
       weekCalendar={weekCalendar}
     />
