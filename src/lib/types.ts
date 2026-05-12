@@ -7,6 +7,7 @@ export type Subscription = {
   billing_cycle: "monthly" | "yearly" | "weekly";
   category: string | null;
   next_billing_date: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 };

@@ -13,9 +13,14 @@ create table if not exists public.subscriptions (
   billing_cycle text not null default 'monthly' check (billing_cycle in ('monthly', 'yearly', 'weekly')),
   category text,
   next_billing_date date,
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Section 6 migration: existing installs need the column too.
+alter table public.subscriptions
+  add column if not exists is_active boolean not null default true;
 
 alter table public.subscriptions enable row level security;
 

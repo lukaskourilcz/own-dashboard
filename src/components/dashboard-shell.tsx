@@ -48,6 +48,7 @@ export function DashboardShell({
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [streaks, setStreaks] = useState<Streak[]>(initialStreaks);
   const [streakLogs, setStreakLogs] = useState<StreakLog[]>(initialStreakLogs);
+  const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
   const [calendarPrefill, setCalendarPrefill] = useState<{
     title: string;
     nonce: number;
@@ -132,11 +133,13 @@ export function DashboardShell({
                 todos={todos}
                 streaks={streaks}
                 streakLogs={streakLogs}
+                displayCurrency={displayCurrency}
               />
               <div className="grid gap-4 md:grid-cols-2">
                 <SubscriptionsPanel
                   subs={subscriptions}
                   setSubs={setSubscriptions}
+                  displayCurrency={displayCurrency}
                   compact
                 />
                 <TodosPanel todos={todos} setTodos={setTodos} compact />
@@ -161,6 +164,8 @@ export function DashboardShell({
             <SubscriptionsPanel
               subs={subscriptions}
               setSubs={setSubscriptions}
+              displayCurrency={displayCurrency}
+              setDisplayCurrency={setDisplayCurrency}
             />
           </TabsContent>
           <TabsContent value="todos">

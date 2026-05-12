@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, PauseCircle, Pencil, PlayCircle, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { cn, formatCurrency } from "@/lib/utils";
-import { toMonthly } from "@/lib/subscriptions";
+import {
+  isActive,
+  toMonthlyIn,
+  totalMonthlyIn,
+  upcomingRenewals,
+} from "@/lib/subscriptions";
+import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import type { Subscription } from "@/lib/types";
 
 type Updater<T> = (next: T | ((prev: T) => T)) => void;
@@ -50,10 +56,14 @@ const emptyForm: FormState = {
 export function SubscriptionsPanel({
   subs,
   setSubs,
+  displayCurrency,
+  setDisplayCurrency,
   compact = false,
 }: {
   subs: Subscription[];
   setSubs: Updater<Subscription[]>;
+  displayCurrency: string;
+  setDisplayCurrency?: (next: string) => void;
   compact?: boolean;
 }) {
   const supabase = createClient();
@@ -63,15 +73,19 @@ export function SubscriptionsPanel({
 
   const chartData = useMemo(
     () =>
-      subs.map((s) => ({
-        name: s.name,
-        value: Number(toMonthly(s).toFixed(2)),
-        currency: s.currency,
-      })),
-    [subs],
+      subs
+        .filter(isActive)
+        .map((s) => ({
+          name: s.name,
+          value: Number(toMonthlyIn(s, displayCurrency).toFixed(2)),
+          rawCurrency: s.currency,
+        })),
+    [subs, displayCurrency],
   );
-  const monthlyTotal = chartData.reduce((acc, d) => acc + d.value, 0);
+  const monthlyTotal = totalMonthlyIn(subs, displayCurrency);
   const yearlyTotal = monthlyTotal * 12;
+  const renewals = useMemo(() => upcomingRenewals(subs, 30), [subs]);
+  const activeCount = subs.filter(isActive).length;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -123,6 +137,23 @@ export function SubscriptionsPanel({
     if (!error) setSubs((prev) => prev.filter((s) => s.id !== id));
   }
 
+  async function toggleActive(sub: Subscription) {
+    const next = !isActive(sub);
+    // Optimistic: flip the row, roll back on error.
+    setSubs((prev) =>
+      prev.map((s) => (s.id === sub.id ? { ...s, is_active: next } : s)),
+    );
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ is_active: next, updated_at: new Date().toISOString() })
+      .eq("id", sub.id);
+    if (error) {
+      setSubs((prev) =>
+        prev.map((s) => (s.id === sub.id ? { ...s, is_active: !next } : s)),
+      );
+    }
+  }
+
   function startEdit(sub: Subscription) {
     setForm({
       id: sub.id,
@@ -147,11 +178,12 @@ export function SubscriptionsPanel({
           ) : (
             <>
               <p className="text-2xl font-semibold">
-                {formatCurrency(monthlyTotal)}
+                {formatCurrency(monthlyTotal, displayCurrency)}
                 <span className="text-sm font-normal text-zinc-500 ml-1">/mo</span>
               </p>
               <p className="text-xs text-zinc-500">
-                {formatCurrency(yearlyTotal)} per year · {subs.length} active
+                {formatCurrency(yearlyTotal, displayCurrency)} per year ·{" "}
+                {activeCount} active
               </p>
               <div className="mt-3 h-40">
                 <ResponsiveContainer width="100%" height="100%">
@@ -168,7 +200,9 @@ export function SubscriptionsPanel({
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value) => formatCurrency(Number(value))}
+                      formatter={(value) =>
+                        formatCurrency(Number(value), displayCurrency)
+                      }
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -282,13 +316,34 @@ export function SubscriptionsPanel({
       </Card>
 
       <Card className="md:col-span-2">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Spending overview</CardTitle>
+          {setDisplayCurrency && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="display-currency" className="text-xs text-zinc-500">
+                Show totals in
+              </Label>
+              <Select
+                id="display-currency"
+                value={displayCurrency}
+                onChange={(e) => setDisplayCurrency(e.target.value)}
+                className="h-8 w-20"
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
-          {subs.length === 0 ? (
+          {chartData.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              Add your first subscription to see the breakdown.
+              {subs.length === 0
+                ? "Add your first subscription to see the breakdown."
+                : "All subscriptions are cancelled."}
             </p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 items-center">
@@ -308,18 +363,20 @@ export function SubscriptionsPanel({
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value) => formatCurrency(Number(value))}
+                      formatter={(value) =>
+                        formatCurrency(Number(value), displayCurrency)
+                      }
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               <div>
                 <p className="text-3xl font-bold">
-                  {formatCurrency(monthlyTotal)}
+                  {formatCurrency(monthlyTotal, displayCurrency)}
                 </p>
                 <p className="text-sm text-zinc-500">per month</p>
                 <p className="text-xs text-zinc-400 mt-1">
-                  ≈ {formatCurrency(yearlyTotal)} per year
+                  ≈ {formatCurrency(yearlyTotal, displayCurrency)} per year
                 </p>
                 <ul className="mt-3 space-y-1.5 text-sm">
                   {chartData.map((d, i) => (
@@ -330,13 +387,57 @@ export function SubscriptionsPanel({
                       />
                       <span className="flex-1 truncate">{d.name}</span>
                       <span className="text-zinc-500">
-                        {formatCurrency(d.value)}/mo
+                        {formatCurrency(d.value, displayCurrency)}/mo
                       </span>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-3">
+        <CardHeader>
+          <CardTitle>
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarClock className="h-4 w-4" /> Renewals in the next 30 days
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renewals.length === 0 ? (
+            <p className="text-sm text-zinc-500">
+              Nothing billing in the next 30 days.
+            </p>
+          ) : (
+            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {renewals.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between py-2 gap-3"
+                >
+                  <div className="min-w-0 flex items-center gap-3">
+                    <span className="font-mono text-xs text-zinc-500 w-20 shrink-0">
+                      {s.next_billing_date}
+                    </span>
+                    <span className="font-medium truncate">{s.name}</span>
+                  </div>
+                  <div className="text-sm text-zinc-600 dark:text-zinc-300 shrink-0">
+                    {formatCurrency(s.amount, s.currency)}
+                    {s.currency !== displayCurrency && (
+                      <span className="text-xs text-zinc-400 ml-1">
+                        ≈ {formatCurrency(
+                          convert(s.amount, s.currency, displayCurrency),
+                          displayCurrency,
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
@@ -350,45 +451,76 @@ export function SubscriptionsPanel({
             <p className="text-sm text-zinc-500">Nothing here yet.</p>
           ) : (
             <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {subs.map((s) => (
-                <li
-                  key={s.id}
-                  className={cn(
-                    "flex items-center justify-between py-2.5 gap-3",
-                    form.id === s.id && "bg-zinc-50 dark:bg-zinc-900",
-                  )}
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{s.name}</p>
-                    <p className="text-xs text-zinc-500">
-                      {formatCurrency(s.amount, s.currency)} ·{" "}
-                      {s.billing_cycle}
-                      {s.category ? ` · ${s.category}` : ""}
-                      {s.next_billing_date
-                        ? ` · next ${s.next_billing_date}`
-                        : ""}
-                    </p>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => startEdit(s)}
-                      aria-label="Edit"
+              {[...subs]
+                .sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
+                .map((s) => {
+                  const active = isActive(s);
+                  return (
+                    <li
+                      key={s.id}
+                      className={cn(
+                        "flex items-center justify-between py-2.5 gap-3",
+                        form.id === s.id && "bg-zinc-50 dark:bg-zinc-900",
+                        !active && "opacity-60",
+                      )}
                     >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(s.id)}
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
+                      <div className="min-w-0">
+                        <p
+                          className={cn(
+                            "font-medium truncate",
+                            !active && "line-through",
+                          )}
+                        >
+                          {s.name}
+                          {!active && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-zinc-400 no-underline">
+                              cancelled
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {formatCurrency(s.amount, s.currency)} ·{" "}
+                          {s.billing_cycle}
+                          {s.category ? ` · ${s.category}` : ""}
+                          {s.next_billing_date
+                            ? ` · next ${s.next_billing_date}`
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => startEdit(s)}
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => toggleActive(s)}
+                          aria-label={active ? "Cancel subscription" : "Reactivate subscription"}
+                          title={active ? "Cancel — keep in list, exclude from totals" : "Reactivate"}
+                        >
+                          {active ? (
+                            <PauseCircle className="h-4 w-4 text-amber-500" />
+                          ) : (
+                            <PlayCircle className="h-4 w-4 text-emerald-500" />
+                          )}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleDelete(s.id)}
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
             </ul>
           )}
         </CardContent>
