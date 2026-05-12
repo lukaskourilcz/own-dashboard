@@ -18,7 +18,8 @@ import {
   uncheckedTodayWithCounts,
 } from "@/lib/streaks";
 import { useNow } from "@/lib/use-now";
-import type { Streak, StreakLog, Todo } from "@/lib/types";
+import { nextUpcoming } from "@/lib/important-dates";
+import type { ImportantDate, Streak, StreakLog, Todo } from "@/lib/types";
 import type { EventsResult, GcalEvent } from "@/lib/calendar";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 
@@ -29,6 +30,7 @@ type Props = {
   todos: Todo[];
   streaks: Streak[];
   streakLogs: StreakLog[];
+  importantDates: ImportantDate[];
 };
 
 function greetingFor(date: Date): { text: string; Icon: typeof Sun } {
@@ -77,6 +79,7 @@ export function TodayHero({
   todos,
   streaks,
   streakLogs,
+  importantDates,
 }: Props) {
   const now = useNow();
   const display = now ?? new Date(0);
@@ -133,6 +136,11 @@ export function TodayHero({
     );
   }, [streaks, streakLogs, atRisk]);
 
+  const upcoming = useMemo(
+    () => (now ? nextUpcoming(importantDates, now) : null),
+    [importantDates, now],
+  );
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -178,6 +186,28 @@ export function TodayHero({
             </span>
           )}
         </div>
+
+        {upcoming && upcoming.daysUntil <= 60 && (
+          <p className="mt-2 text-xs text-zinc-500 inline-flex items-center gap-1.5">
+            <span className="text-base leading-none">
+              {upcoming.date.emoji ?? "📌"}
+            </span>
+            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+              {upcoming.date.title}
+            </span>
+            <span>
+              {upcoming.daysUntil === 0
+                ? "is today"
+                : upcoming.daysUntil === 1
+                  ? "tomorrow"
+                  : `in ${upcoming.daysUntil} days`}
+              {upcoming.yearsCompleted !== null &&
+              upcoming.yearsCompleted > 0
+                ? ` · year ${upcoming.yearsCompleted + 1}`
+                : ""}
+            </span>
+          </p>
+        )}
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <section>

@@ -591,3 +591,63 @@ create policy "daily_pulse update own" on public.daily_pulse
 drop policy if exists "daily_pulse delete own" on public.daily_pulse;
 create policy "daily_pulse delete own" on public.daily_pulse
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Important dates (anniversaries, birthdays, deadlines)
+-- =============================================================
+create table if not exists public.important_dates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  couple_id uuid references public.couples(id) on delete set null,
+  title text not null,
+  the_date date not null,
+  is_recurring boolean not null default false,
+  recurrence_unit text check (recurrence_unit in ('yearly', 'monthly')),
+  emoji text,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists important_dates_user_idx
+  on public.important_dates (user_id);
+create index if not exists important_dates_couple_idx
+  on public.important_dates (couple_id);
+
+alter table public.important_dates enable row level security;
+
+drop policy if exists "important_dates select" on public.important_dates;
+create policy "important_dates select" on public.important_dates
+  for select using (
+    auth.uid() = user_id
+    or (
+      couple_id is not null
+      and exists (
+        select 1 from public.couples c
+        where c.id = important_dates.couple_id
+          and auth.uid() in (c.user_a_id, c.user_b_id)
+      )
+    )
+  );
+
+drop policy if exists "important_dates insert own" on public.important_dates;
+create policy "important_dates insert own" on public.important_dates
+  for insert with check (auth.uid() = user_id);
+
+-- Either partner can edit a couple-scoped date (e.g. fix the anniversary).
+drop policy if exists "important_dates update" on public.important_dates;
+create policy "important_dates update" on public.important_dates
+  for update using (
+    auth.uid() = user_id
+    or (
+      couple_id is not null
+      and exists (
+        select 1 from public.couples c
+        where c.id = important_dates.couple_id
+          and auth.uid() in (c.user_a_id, c.user_b_id)
+      )
+    )
+  );
+
+drop policy if exists "important_dates delete own" on public.important_dates;
+create policy "important_dates delete own" on public.important_dates
+  for delete using (auth.uid() = user_id);

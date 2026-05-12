@@ -7,6 +7,7 @@ import {
   CalendarPlus,
   CreditCard,
   Flame,
+  Gift,
   Heart,
   ListTodo,
   LayoutDashboard,
@@ -24,6 +25,7 @@ import { PlansPanel } from "@/components/panels/plans-panel";
 import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
 import { PulsePanel } from "@/components/panels/pulse-panel";
+import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
@@ -35,6 +37,7 @@ import type {
   Book,
   BookPage,
   DailyPulse,
+  ImportantDate,
   Plan,
   Streak,
   StreakLog,
@@ -57,6 +60,7 @@ type Props = {
   initialBooks: Book[];
   initialBookPages: BookPage[];
   initialPulses: DailyPulse[];
+  initialImportantDates: ImportantDate[];
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
   coupleCtx: CoupleContext;
@@ -75,6 +79,7 @@ export function DashboardShell({
   initialBooks,
   initialBookPages,
   initialPulses,
+  initialImportantDates,
   todayCalendar,
   weekCalendar,
   coupleCtx,
@@ -93,6 +98,8 @@ export function DashboardShell({
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [bookPages, setBookPages] = useState<BookPage[]>(initialBookPages);
   const [pulses, setPulses] = useState<DailyPulse[]>(initialPulses);
+  const [importantDates, setImportantDates] =
+    useState<ImportantDate[]>(initialImportantDates);
   const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
   const [calendarPrefill, setCalendarPrefill] = useState<{
     title: string;
@@ -126,6 +133,7 @@ export function DashboardShell({
       u: "couple",
       b: "books",
       m: "pulse",
+      d: "dates",
     };
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -239,6 +247,10 @@ export function DashboardShell({
               <Activity className="h-4 w-4 mr-1.5" />
               Pulse
             </TabsTrigger>
+            <TabsTrigger value="dates">
+              <Gift className="h-4 w-4 mr-1.5" />
+              Dates
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -259,6 +271,7 @@ export function DashboardShell({
                 todos={todos}
                 streaks={streaks}
                 streakLogs={streakLogs}
+                importantDates={importantDates}
               />
               <KpiCards
                 subscriptions={subscriptions}
@@ -377,6 +390,14 @@ export function DashboardShell({
               userId={user.id}
               userName={user.name ?? user.email.split("@")[0]}
               partnerProfile={coupleCtx.partnerProfile}
+            />
+          </TabsContent>
+          <TabsContent value="dates">
+            <ImportantDatesPanel
+              dates={importantDates}
+              setDates={setImportantDates}
+              userId={user.id}
+              ctx={coupleCtx}
             />
           </TabsContent>
         </Tabs>

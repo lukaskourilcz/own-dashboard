@@ -152,3 +152,18 @@ export type DailyPulse = {
   note: string | null;
   created_at: string;
 };
+
+export type RecurrenceUnit = "yearly" | "monthly";
+
+export type ImportantDate = {
+  id: string;
+  user_id: string;
+  couple_id: string | null;
+  title: string;
+  the_date: string;
+  is_recurring: boolean;
+  recurrence_unit: RecurrenceUnit | null;
+  emoji: string | null;
+  notes: string | null;
+  created_at: string;
+};
