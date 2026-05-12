@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CalendarPlus,
   CreditCard,
@@ -22,6 +22,8 @@ import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
 import { WeekView } from "@/components/calendar/week-view";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { ToastProvider } from "@/components/ui/toast";
 import type {
   Account,
   Plan,
@@ -79,7 +81,54 @@ export function DashboardShell({
     setTab("calendar");
   }, []);
 
+  // g+<letter> jumps tabs (gmail/vim-style); n focuses the overview quick-add.
+  // The chord times out after 1.5s.
+  const lastG = useRef(0);
+  useEffect(() => {
+    const TAB_FOR: Record<string, string> = {
+      o: "overview",
+      c: "calendar",
+      s: "streaks",
+      t: "todos",
+      f: "finances",
+      p: "plans",
+    };
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "g") {
+        lastG.current = Date.now();
+        return;
+      }
+      if (Date.now() - lastG.current < 1500 && TAB_FOR[e.key]) {
+        lastG.current = 0;
+        setTab(TAB_FOR[e.key]);
+        e.preventDefault();
+        return;
+      }
+      if (e.key === "n") {
+        setTab("overview");
+        e.preventDefault();
+        requestAnimationFrame(() => {
+          document.getElementById("quick-add-input")?.focus();
+        });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
@@ -94,15 +143,18 @@ export function DashboardShell({
               </p>
             </div>
           </div>
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <form action="/auth/signout" method="post">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
@@ -226,5 +278,6 @@ export function DashboardShell({
         </Tabs>
       </main>
     </div>
+    </ToastProvider>
   );
 }

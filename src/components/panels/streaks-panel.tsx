@@ -20,6 +20,8 @@ import { StreakHeatmap } from "@/components/panels/streak-heatmap";
 
 type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
+let tentativeLogCounter = 0;
+
 const DEFAULT_COLORS = [
   "#10b981",
   "#6366f1",
@@ -96,18 +98,36 @@ export function StreaksPanel({
     if (!userId) return;
 
     if (existing) {
+      // Optimistic remove.
+      setLogs((prev) => prev.filter((l) => l.id !== existing.id));
       const { error } = await supabase
         .from("streak_logs")
         .delete()
         .eq("id", existing.id);
-      if (!error) setLogs((prev) => prev.filter((l) => l.id !== existing.id));
+      if (error) setLogs((prev) => [...prev, existing]);
     } else {
+      // Optimistic add with a tentative id; replace it once the server confirms.
+      const tentativeId = `tmp-${++tentativeLogCounter}`;
+      const tentative: StreakLog = {
+        id: tentativeId,
+        streak_id: streak.id,
+        user_id: userId,
+        log_date: date,
+        created_at: "",
+      };
+      setLogs((prev) => [...prev, tentative]);
       const { data, error } = await supabase
         .from("streak_logs")
         .insert({ streak_id: streak.id, user_id: userId, log_date: date })
         .select()
         .single();
-      if (!error && data) setLogs((prev) => [...prev, data]);
+      if (error || !data) {
+        setLogs((prev) => prev.filter((l) => l.id !== tentativeId));
+      } else {
+        setLogs((prev) =>
+          prev.map((l) => (l.id === tentativeId ? data : l)),
+        );
+      }
     }
   }
 

@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description: "Personal dashboard for subscriptions, todos, streaks, and calendar.",
 };
 
+// Runs before React hydration to avoid a flash of incorrect theme.
+const themeBootstrap = `(function(){try{var s=localStorage.getItem("theme");var d=s==="dark"||(s==null&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +29,11 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
