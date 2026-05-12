@@ -191,3 +191,36 @@ create policy "transactions update own" on public.transactions
 drop policy if exists "transactions delete own" on public.transactions;
 create policy "transactions delete own" on public.transactions
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Section 3: Plans (long-horizon goals)
+-- =============================================================
+create table if not exists public.plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  target_date date,
+  status text not null default 'idea' check (status in ('idea', 'active', 'done', 'dropped')),
+  notes text,
+  linked_calendar_event_id text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.plans enable row level security;
+
+drop policy if exists "plans select own" on public.plans;
+create policy "plans select own" on public.plans
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "plans insert own" on public.plans;
+create policy "plans insert own" on public.plans
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "plans update own" on public.plans;
+create policy "plans update own" on public.plans
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "plans delete own" on public.plans;
+create policy "plans delete own" on public.plans
+  for delete using (auth.uid() = user_id);

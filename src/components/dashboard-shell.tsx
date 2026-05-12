@@ -8,6 +8,7 @@ import {
   ListTodo,
   LayoutDashboard,
   LogOut,
+  Target,
   Wallet,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,12 +17,14 @@ import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
 import { StreaksPanel } from "@/components/panels/streaks-panel";
 import { FinancesPanel } from "@/components/panels/finances-panel";
+import { PlansPanel } from "@/components/panels/plans-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
 import { WeekView } from "@/components/calendar/week-view";
 import type {
   Account,
+  Plan,
   Streak,
   StreakLog,
   Subscription,
@@ -38,6 +41,7 @@ type Props = {
   initialStreakLogs: StreakLog[];
   initialAccounts: Account[];
   initialTransactions: Transaction[];
+  initialPlans: Plan[];
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
 };
@@ -50,6 +54,7 @@ export function DashboardShell({
   initialStreakLogs,
   initialAccounts,
   initialTransactions,
+  initialPlans,
   todayCalendar,
   weekCalendar,
 }: Props) {
@@ -62,6 +67,7 @@ export function DashboardShell({
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transactions, setTransactions] =
     useState<Transaction[]>(initialTransactions);
+  const [plans, setPlans] = useState<Plan[]>(initialPlans);
   const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
   const [calendarPrefill, setCalendarPrefill] = useState<{
     title: string;
@@ -126,6 +132,10 @@ export function DashboardShell({
             <TabsTrigger value="finances">
               <Wallet className="h-4 w-4 mr-1.5" />
               Finances
+            </TabsTrigger>
+            <TabsTrigger value="plans">
+              <Target className="h-4 w-4 mr-1.5" />
+              Plans
             </TabsTrigger>
           </TabsList>
 
@@ -209,6 +219,9 @@ export function DashboardShell({
               subscriptions={subscriptions}
               displayCurrency={displayCurrency}
             />
+          </TabsContent>
+          <TabsContent value="plans">
+            <PlansPanel plans={plans} setPlans={setPlans} />
           </TabsContent>
         </Tabs>
       </main>

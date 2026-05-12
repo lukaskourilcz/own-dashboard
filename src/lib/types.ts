@@ -60,3 +60,17 @@ export type Transaction = {
   occurred_on: string;
   created_at: string;
 };
+
+export type PlanStatus = "idea" | "active" | "done" | "dropped";
+
+export type Plan = {
+  id: string;
+  user_id: string;
+  title: string;
+  target_date: string | null;
+  status: PlanStatus;
+  notes: string | null;
+  linked_calendar_event_id: string | null;
+  created_at: string;
+  updated_at: string;
+};

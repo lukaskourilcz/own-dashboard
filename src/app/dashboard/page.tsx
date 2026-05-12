@@ -20,6 +20,7 @@ export default async function DashboardPage() {
     logsRes,
     accountsRes,
     transactionsRes,
+    plansRes,
     todayCalendar,
     weekCalendar,
   ] = await Promise.all([
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
       .select("*")
       .order("occurred_on", { ascending: false })
       .limit(500),
+    supabase.from("plans").select("*").order("created_at", { ascending: false }),
     fetchTodayWindowEvents(),
     fetchUpcomingWeekEvents(),
   ]);
@@ -50,6 +52,7 @@ export default async function DashboardPage() {
       initialStreakLogs={logsRes.data ?? []}
       initialAccounts={accountsRes.data ?? []}
       initialTransactions={transactionsRes.data ?? []}
+      initialPlans={plansRes.data ?? []}
       todayCalendar={todayCalendar}
       weekCalendar={weekCalendar}
     />
