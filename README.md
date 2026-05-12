@@ -1,6 +1,8 @@
 # Own Dashboard
 
-A personal dashboard for tracking subscriptions, todos, daily streaks, and pushing events straight into Google Calendar. Built with Next.js, Supabase, Tailwind + shadcn-style UI, and recharts.
+A personal-or-couple dashboard. Subscriptions, todos, streaks, finances, plans, books, mood check-ins, anniversaries, and a Google Calendar tie-in — all in one place. Built with Next.js 16, Supabase, Tailwind v4, and Recharts.
+
+📖 **For the full feature list, architecture, and database model see [DOCS.md](./DOCS.md).**
 
 ## Features
 
