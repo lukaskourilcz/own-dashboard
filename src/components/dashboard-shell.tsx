@@ -5,6 +5,7 @@ import {
   CalendarPlus,
   CreditCard,
   Flame,
+  Heart,
   ListTodo,
   LayoutDashboard,
   LogOut,
@@ -18,6 +19,7 @@ import { TodosPanel } from "@/components/panels/todos-panel";
 import { StreaksPanel } from "@/components/panels/streaks-panel";
 import { FinancesPanel } from "@/components/panels/finances-panel";
 import { PlansPanel } from "@/components/panels/plans-panel";
+import { CouplePanel } from "@/components/panels/couple-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
@@ -97,6 +99,7 @@ export function DashboardShell({
       t: "todos",
       f: "finances",
       p: "plans",
+      u: "couple",
     };
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -194,6 +197,14 @@ export function DashboardShell({
               <Target className="h-4 w-4 mr-1.5" />
               Plans
             </TabsTrigger>
+            <TabsTrigger value="couple">
+              <Heart className="h-4 w-4 mr-1.5" />
+              {coupleCtx.couple
+                ? "Couple"
+                : coupleCtx.incomingInvites.length > 0
+                  ? `Couple (${coupleCtx.incomingInvites.length})`
+                  : "Couple"}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -279,6 +290,13 @@ export function DashboardShell({
           </TabsContent>
           <TabsContent value="plans">
             <PlansPanel plans={plans} setPlans={setPlans} />
+          </TabsContent>
+          <TabsContent value="couple">
+            <CouplePanel
+              ctx={coupleCtx}
+              userId={user.id}
+              userEmail={user.email}
+            />
           </TabsContent>
         </Tabs>
       </main>
