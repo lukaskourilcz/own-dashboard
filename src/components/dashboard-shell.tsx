@@ -17,13 +17,14 @@ import { StreaksPanel } from "@/components/panels/streaks-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
+import { WeekView } from "@/components/calendar/week-view";
 import type {
   Streak,
   StreakLog,
   Subscription,
   Todo,
 } from "@/lib/types";
-import type { TodayEventsResult } from "@/lib/calendar";
+import type { EventsResult } from "@/lib/calendar";
 
 type Props = {
   user: { email: string; name: string | null; avatar_url: string | null };
@@ -31,7 +32,8 @@ type Props = {
   initialTodos: Todo[];
   initialStreaks: Streak[];
   initialStreakLogs: StreakLog[];
-  todayCalendar: TodayEventsResult;
+  todayCalendar: EventsResult;
+  weekCalendar: EventsResult;
 };
 
 export function DashboardShell({
@@ -41,6 +43,7 @@ export function DashboardShell({
   initialStreaks,
   initialStreakLogs,
   todayCalendar,
+  weekCalendar,
 }: Props) {
   const [tab, setTab] = useState("overview");
   const [subscriptions, setSubscriptions] =
@@ -155,10 +158,13 @@ export function DashboardShell({
             </div>
           </TabsContent>
           <TabsContent value="calendar">
-            <CalendarPanel
-              key={calendarPrefill?.nonce ?? "idle"}
-              initialTitle={calendarPrefill?.title}
-            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <CalendarPanel
+                key={calendarPrefill?.nonce ?? "idle"}
+                initialTitle={calendarPrefill?.title}
+              />
+              <WeekView calendar={weekCalendar} />
+            </div>
           </TabsContent>
           <TabsContent value="subscriptions">
             <SubscriptionsPanel

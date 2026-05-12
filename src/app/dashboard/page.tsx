@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { fetchTodayWindowEvents } from "@/lib/calendar";
+import {
+  fetchTodayWindowEvents,
+  fetchUpcomingWeekEvents,
+} from "@/lib/calendar";
 import { DashboardShell } from "@/components/dashboard-shell";
 
 export default async function DashboardPage() {
@@ -10,13 +13,14 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [subsRes, todosRes, streaksRes, logsRes, todayCalendar] =
+  const [subsRes, todosRes, streaksRes, logsRes, todayCalendar, weekCalendar] =
     await Promise.all([
       supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
       supabase.from("todos").select("*").order("created_at", { ascending: false }),
       supabase.from("streaks").select("*").order("created_at", { ascending: true }),
       supabase.from("streak_logs").select("*"),
       fetchTodayWindowEvents(),
+      fetchUpcomingWeekEvents(),
     ]);
 
   return (
@@ -31,6 +35,7 @@ export default async function DashboardPage() {
       initialStreaks={streaksRes.data ?? []}
       initialStreakLogs={logsRes.data ?? []}
       todayCalendar={todayCalendar}
+      weekCalendar={weekCalendar}
     />
   );
 }

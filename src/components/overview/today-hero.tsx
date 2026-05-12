@@ -19,12 +19,13 @@ import {
 } from "@/lib/streaks";
 import { useNow } from "@/lib/use-now";
 import type { Streak, StreakLog, Todo } from "@/lib/types";
-import type { GcalEvent, TodayEventsResult } from "@/lib/calendar";
+import type { EventsResult, GcalEvent } from "@/lib/calendar";
+import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 
 type Props = {
   userName: string | null;
   userEmail: string;
-  calendar: TodayEventsResult;
+  calendar: EventsResult;
   todos: Todo[];
   streaks: Streak[];
   streakLogs: StreakLog[];
@@ -184,11 +185,23 @@ export function TodayHero({
               <CalendarDays className="h-3.5 w-3.5" /> Today&apos;s events
             </h3>
             {!calendar.ok ? (
-              <p className="text-xs text-zinc-400">
-                {calendar.reason === "no-token" || calendar.reason === "unauthorized"
-                  ? "Sign out and back in to read Google Calendar."
-                  : "Couldn't load events."}
-              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-zinc-400">
+                  {calendar.reason === "unauthorized"
+                    ? "Google rejected the calendar token."
+                    : calendar.reason === "no-token"
+                      ? "Grant Calendar access to see today's events."
+                      : "Couldn't load events."}
+                </p>
+                {(calendar.reason === "unauthorized" ||
+                  calendar.reason === "no-token") && (
+                  <RelinkGoogleButton
+                    reason={
+                      calendar.reason === "unauthorized" ? "expired" : "calendar-access"
+                    }
+                  />
+                )}
+              </div>
             ) : todayEvents.length === 0 ? (
               <p className="text-xs text-zinc-400">Nothing scheduled.</p>
             ) : (

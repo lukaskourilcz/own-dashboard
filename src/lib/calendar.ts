@@ -13,35 +13,36 @@ export type GcalEvent = {
   end: GcalEventTime;
   htmlLink?: string;
   location?: string;
+  recurrence?: string[];
+  recurringEventId?: string;
 };
 
-export type TodayEventsResult =
+export type EventsResult =
   | { ok: true; events: GcalEvent[] }
   | { ok: false; reason: "no-token" | "unauthorized" | "error"; message?: string };
 
-export async function fetchTodayWindowEvents(): Promise<TodayEventsResult> {
+// Kept as a re-export so callers that imported the original name still compile.
+export type TodayEventsResult = EventsResult;
+
+async function fetchWindow(
+  timeMin: Date,
+  timeMax: Date,
+  maxResults: number,
+): Promise<EventsResult> {
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session?.provider_token) {
-    return { ok: false, reason: "no-token" };
-  }
-
-  // Server timezone may not match the user's, so fetch a 72h window centered on
-  // server-local today and let the client filter to its own "today".
-  const now = new Date();
-  const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  const endLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  if (!session?.provider_token) return { ok: false, reason: "no-token" };
 
   const url = new URL(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
   );
-  url.searchParams.set("timeMin", startLocal.toISOString());
-  url.searchParams.set("timeMax", endLocal.toISOString());
+  url.searchParams.set("timeMin", timeMin.toISOString());
+  url.searchParams.set("timeMax", timeMax.toISOString());
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
-  url.searchParams.set("maxResults", "50");
+  url.searchParams.set("maxResults", String(maxResults));
 
   try {
     const res = await fetch(url.toString(), {
@@ -57,4 +58,20 @@ export async function fetchTodayWindowEvents(): Promise<TodayEventsResult> {
   } catch (err) {
     return { ok: false, reason: "error", message: (err as Error).message };
   }
+}
+
+export async function fetchTodayWindowEvents(): Promise<EventsResult> {
+  // Server timezone may not match the user's, so fetch a 72h window centered on
+  // server-local today and let the client filter to its own "today".
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  return fetchWindow(start, end, 50);
+}
+
+export async function fetchUpcomingWeekEvents(): Promise<EventsResult> {
+  const now = new Date();
+  const end = new Date(now);
+  end.setDate(end.getDate() + 7);
+  return fetchWindow(now, end, 100);
 }

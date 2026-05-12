@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
+
+type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
 type FormState = {
   title: string;
@@ -15,6 +19,8 @@ type FormState = {
   startTime: string;
   endTime: string;
   description: string;
+  allDay: boolean;
+  recurrence: Recurrence;
 };
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
@@ -25,7 +31,14 @@ const empty: FormState = {
   startTime: "09:00",
   endTime: "10:00",
   description: "",
+  allDay: false,
+  recurrence: "none",
 };
+
+type Submission =
+  | { kind: "ok"; link?: string }
+  | { kind: "expired" }
+  | { kind: "error"; message: string };
 
 export function CalendarPanel({
   compact = false,
@@ -38,15 +51,17 @@ export function CalendarPanel({
     initialTitle ? { ...empty, title: initialTitle } : empty,
   );
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ link?: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<Submission | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    if (!form.title.trim() || !form.date || !form.startTime || !form.endTime) {
-      setError("Title, date, and time are required.");
+    setResult(null);
+    if (!form.title.trim() || !form.date) {
+      setResult({ kind: "error", message: "Title and date are required." });
+      return;
+    }
+    if (!form.allDay && (!form.startTime || !form.endTime)) {
+      setResult({ kind: "error", message: "Start and end time are required." });
       return;
     }
     setSubmitting(true);
@@ -57,20 +72,29 @@ export function CalendarPanel({
         body: JSON.stringify({
           title: form.title.trim(),
           date: form.date,
-          startTime: form.startTime,
-          endTime: form.endTime,
+          startTime: form.allDay ? undefined : form.startTime,
+          endTime: form.allDay ? undefined : form.endTime,
           description: form.description.trim(),
+          allDay: form.allDay,
+          recurrence: form.recurrence,
         }),
       });
       const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "Could not create event.");
-      } else {
-        setSuccess({ link: json.htmlLink });
-        setForm({ ...empty, date: form.date });
+      if (res.status === 401 && json.reason) {
+        setResult({ kind: "expired" });
+        return;
       }
+      if (!res.ok) {
+        setResult({
+          kind: "error",
+          message: json.error ?? "Could not create event.",
+        });
+        return;
+      }
+      setResult({ kind: "ok", link: json.htmlLink });
+      setForm({ ...empty, date: form.date });
     } catch (err) {
-      setError((err as Error).message);
+      setResult({ kind: "error", message: (err as Error).message });
     } finally {
       setSubmitting(false);
     }
@@ -98,7 +122,12 @@ export function CalendarPanel({
             />
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-1 col-span-3 sm:col-span-1">
+            <div
+              className={
+                "space-y-1 col-span-3 " +
+                (form.allDay ? "sm:col-span-3" : "sm:col-span-1")
+              }
+            >
               <Label htmlFor="cal-date">Date</Label>
               <Input
                 id="cal-date"
@@ -107,23 +136,65 @@ export function CalendarPanel({
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
               />
             </div>
-            <div className="space-y-1 col-span-3 sm:col-span-1">
-              <Label htmlFor="cal-start">Start</Label>
-              <Input
-                id="cal-start"
-                type="time"
-                value={form.startTime}
-                onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+            {!form.allDay && (
+              <>
+                <div className="space-y-1 col-span-3 sm:col-span-1">
+                  <Label htmlFor="cal-start">Start</Label>
+                  <Input
+                    id="cal-start"
+                    type="time"
+                    value={form.startTime}
+                    onChange={(e) =>
+                      setForm({ ...form, startTime: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1 col-span-3 sm:col-span-1">
+                  <Label htmlFor="cal-end">End</Label>
+                  <Input
+                    id="cal-end"
+                    type="time"
+                    value={form.endTime}
+                    onChange={(e) =>
+                      setForm({ ...form, endTime: e.target.value })
+                    }
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-4 items-end">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-zinc-300"
+                checked={form.allDay}
+                onChange={(e) =>
+                  setForm({ ...form, allDay: e.target.checked })
+                }
               />
-            </div>
-            <div className="space-y-1 col-span-3 sm:col-span-1">
-              <Label htmlFor="cal-end">End</Label>
-              <Input
-                id="cal-end"
-                type="time"
-                value={form.endTime}
-                onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-              />
+              All day
+            </label>
+            <div className="space-y-1">
+              <Label htmlFor="cal-recurrence" className="text-xs">
+                Repeats
+              </Label>
+              <Select
+                id="cal-recurrence"
+                value={form.recurrence}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    recurrence: e.target.value as Recurrence,
+                  })
+                }
+                className="h-8 w-32"
+              >
+                <option value="none">Doesn&apos;t repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </Select>
             </div>
           </div>
           {!compact && (
@@ -139,14 +210,24 @@ export function CalendarPanel({
               />
             </div>
           )}
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {success && (
+          {result?.kind === "error" && (
+            <p className="text-sm text-red-600">{result.message}</p>
+          )}
+          {result?.kind === "expired" && (
+            <div className="space-y-2 rounded-md border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 p-3">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                Google rejected the calendar token. Re-link to refresh access.
+              </p>
+              <RelinkGoogleButton reason="expired" />
+            </div>
+          )}
+          {result?.kind === "ok" && (
             <p className="text-sm text-emerald-600 inline-flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4" />
               Event added to your Google Calendar.
-              {success.link && (
+              {result.link && (
                 <a
-                  href={success.link}
+                  href={result.link}
                   target="_blank"
                   rel="noreferrer"
                   className="underline ml-1"
