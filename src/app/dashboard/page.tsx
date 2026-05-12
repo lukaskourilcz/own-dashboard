@@ -77,7 +77,8 @@ export default async function DashboardPage() {
 
   // Books are loaded after couple context so RLS lets shared books through.
   // RLS scopes returned rows to "own", "couple member", or "books-shared by partner".
-  const [booksRes, bookPagesRes] = await Promise.all([
+  // daily_pulse RLS lets partners read each other's check-ins when paired.
+  const [booksRes, bookPagesRes, pulsesRes] = await Promise.all([
     supabase
       .from("books")
       .select("*")
@@ -87,6 +88,11 @@ export default async function DashboardPage() {
       .select("*")
       .order("log_date", { ascending: false })
       .limit(1000),
+    supabase
+      .from("daily_pulse")
+      .select("*")
+      .order("log_date", { ascending: false })
+      .limit(180),
   ]);
 
   const partnerData = coupleCtx.partnerId
@@ -114,6 +120,7 @@ export default async function DashboardPage() {
       initialPlans={plansRes.data ?? []}
       initialBooks={booksRes.data ?? []}
       initialBookPages={bookPagesRes.data ?? []}
+      initialPulses={pulsesRes.data ?? []}
       todayCalendar={todayCalendar}
       weekCalendar={weekCalendar}
       coupleCtx={coupleCtx}

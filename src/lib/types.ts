@@ -141,3 +141,14 @@ export type BookPage = {
   note: string | null;
   created_at: string;
 };
+
+export type PulseMood = 1 | 2 | 3 | 4 | 5;
+
+export type DailyPulse = {
+  id: string;
+  user_id: string;
+  log_date: string;
+  mood: PulseMood;
+  note: string | null;
+  created_at: string;
+};

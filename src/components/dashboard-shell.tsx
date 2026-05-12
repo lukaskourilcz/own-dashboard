@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Activity,
   BookOpen,
   CalendarPlus,
   CreditCard,
@@ -22,6 +23,7 @@ import { FinancesPanel } from "@/components/panels/finances-panel";
 import { PlansPanel } from "@/components/panels/plans-panel";
 import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
+import { PulsePanel } from "@/components/panels/pulse-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
@@ -32,6 +34,7 @@ import type {
   Account,
   Book,
   BookPage,
+  DailyPulse,
   Plan,
   Streak,
   StreakLog,
@@ -53,6 +56,7 @@ type Props = {
   initialPlans: Plan[];
   initialBooks: Book[];
   initialBookPages: BookPage[];
+  initialPulses: DailyPulse[];
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
   coupleCtx: CoupleContext;
@@ -70,6 +74,7 @@ export function DashboardShell({
   initialPlans,
   initialBooks,
   initialBookPages,
+  initialPulses,
   todayCalendar,
   weekCalendar,
   coupleCtx,
@@ -87,6 +92,7 @@ export function DashboardShell({
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [bookPages, setBookPages] = useState<BookPage[]>(initialBookPages);
+  const [pulses, setPulses] = useState<DailyPulse[]>(initialPulses);
   const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
   const [calendarPrefill, setCalendarPrefill] = useState<{
     title: string;
@@ -119,6 +125,7 @@ export function DashboardShell({
       p: "plans",
       u: "couple",
       b: "books",
+      m: "pulse",
     };
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -228,6 +235,10 @@ export function DashboardShell({
               <BookOpen className="h-4 w-4 mr-1.5" />
               Books
             </TabsTrigger>
+            <TabsTrigger value="pulse">
+              <Activity className="h-4 w-4 mr-1.5" />
+              Pulse
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -237,6 +248,8 @@ export function DashboardShell({
                 streaks={streaks}
                 streakLogs={streakLogs}
                 setStreakLogs={setStreakLogs}
+                pulses={pulses}
+                setPulses={setPulses}
                 onCalendarTitle={handleCalendarTitle}
               />
               <TodayHero
@@ -255,6 +268,14 @@ export function DashboardShell({
                 displayCurrency={displayCurrency}
               />
               <div className="grid gap-4 md:grid-cols-2">
+                <PulsePanel
+                  pulses={pulses}
+                  setPulses={setPulses}
+                  userId={user.id}
+                  userName={user.name ?? user.email.split("@")[0]}
+                  partnerProfile={coupleCtx.partnerProfile}
+                  compact
+                />
                 <SubscriptionsPanel
                   subs={subscriptions}
                   setSubs={setSubscriptions}
@@ -347,6 +368,15 @@ export function DashboardShell({
               userId={user.id}
               userName={user.name ?? user.email.split("@")[0]}
               ctx={coupleCtx}
+            />
+          </TabsContent>
+          <TabsContent value="pulse">
+            <PulsePanel
+              pulses={pulses}
+              setPulses={setPulses}
+              userId={user.id}
+              userName={user.name ?? user.email.split("@")[0]}
+              partnerProfile={coupleCtx.partnerProfile}
             />
           </TabsContent>
         </Tabs>

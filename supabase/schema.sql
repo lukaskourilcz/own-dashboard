@@ -547,3 +547,47 @@ create policy "book_pages update own" on public.book_pages
 drop policy if exists "book_pages delete own" on public.book_pages;
 create policy "book_pages delete own" on public.book_pages
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Pulse: daily mood + one-line check-in
+-- =============================================================
+create table if not exists public.daily_pulse (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  log_date date not null default current_date,
+  mood smallint not null check (mood between 1 and 5),
+  note text,
+  created_at timestamptz not null default now(),
+  unique (user_id, log_date)
+);
+
+create index if not exists daily_pulse_user_date_idx
+  on public.daily_pulse (user_id, log_date desc);
+
+alter table public.daily_pulse enable row level security;
+
+-- Pulse is intentionally always-shared with the paired partner: the whole
+-- point of the feature is to surface how each other is doing today, and
+-- gating it behind another toggle would just create one more place to forget.
+drop policy if exists "daily_pulse select" on public.daily_pulse;
+create policy "daily_pulse select" on public.daily_pulse
+  for select using (
+    auth.uid() = user_id
+    or exists (
+      select 1 from public.couples c
+      where (c.user_a_id = auth.uid() and c.user_b_id = daily_pulse.user_id)
+         or (c.user_b_id = auth.uid() and c.user_a_id = daily_pulse.user_id)
+    )
+  );
+
+drop policy if exists "daily_pulse insert own" on public.daily_pulse;
+create policy "daily_pulse insert own" on public.daily_pulse
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "daily_pulse update own" on public.daily_pulse;
+create policy "daily_pulse update own" on public.daily_pulse
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "daily_pulse delete own" on public.daily_pulse;
+create policy "daily_pulse delete own" on public.daily_pulse
+  for delete using (auth.uid() = user_id);
