@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { format, subDays } from "date-fns";
-import { Flame, Trash2 } from "lucide-react";
+import { Bell, Flame, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,13 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import type { Streak, StreakLog } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { computeStreak, logsByStreak as groupLogs, todayStr } from "@/lib/streaks";
+import {
+  bestStreak,
+  computeStreak,
+  logsByStreak as groupLogs,
+  todayStr,
+} from "@/lib/streaks";
+import { StreakHeatmap } from "@/components/panels/streak-heatmap";
 
 type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
@@ -39,6 +45,7 @@ export function StreaksPanel({
   const supabase = createClient();
   const [name, setName] = useState("");
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
+  const [reminder, setReminder] = useState("");
   const [saving, setSaving] = useState(false);
 
   const logsByStreak = useMemo(() => groupLogs(logs), [logs]);
@@ -55,12 +62,18 @@ export function StreaksPanel({
     }
     const { data, error } = await supabase
       .from("streaks")
-      .insert({ name: name.trim(), color, user_id: userId })
+      .insert({
+        name: name.trim(),
+        color,
+        reminder_time: reminder || null,
+        user_id: userId,
+      })
       .select()
       .single();
     if (!error && data) {
       setStreaks((prev) => [...prev, data]);
       setName("");
+      setReminder("");
     }
     setSaving(false);
   }
@@ -98,9 +111,11 @@ export function StreaksPanel({
     }
   }
 
-  const days = Array.from({ length: compact ? 7 : 14 }, (_, i) =>
-    format(subDays(new Date(), (compact ? 6 : 13) - i), "yyyy-MM-dd"),
-  );
+  const stripDays = compact
+    ? Array.from({ length: 7 }, (_, i) =>
+        format(subDays(new Date(), 6 - i), "yyyy-MM-dd"),
+      )
+    : [];
 
   return (
     <Card>
@@ -141,6 +156,18 @@ export function StreaksPanel({
                 ))}
               </div>
             </div>
+            <div className="space-y-1">
+              <Label htmlFor="streak-reminder" className="flex items-center gap-1">
+                <Bell className="h-3 w-3" /> Reminder
+              </Label>
+              <Input
+                id="streak-reminder"
+                type="time"
+                value={reminder}
+                onChange={(e) => setReminder(e.target.value)}
+                className="w-32"
+              />
+            </div>
             <Button type="submit" disabled={saving}>
               Add streak
             </Button>
@@ -157,6 +184,7 @@ export function StreaksPanel({
               const sLogs = logsByStreak.get(s.id) ?? [];
               const dates = new Set(sLogs.map((l) => l.log_date));
               const streakCount = computeStreak(sLogs);
+              const best = bestStreak(sLogs);
               const checkedToday = dates.has(todayStr());
               return (
                 <li
@@ -170,8 +198,29 @@ export function StreaksPanel({
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{s.name}</p>
-                      <p className="text-xs text-zinc-500">
-                        {streakCount} day{streakCount === 1 ? "" : "s"} in a row
+                      <p className="text-xs text-zinc-500 flex flex-wrap items-center gap-x-2">
+                        <span>
+                          <span className="text-zinc-700 dark:text-zinc-200 font-medium">
+                            {streakCount}
+                          </span>{" "}
+                          current
+                        </span>
+                        <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                        <span>
+                          <span className="text-zinc-700 dark:text-zinc-200 font-medium">
+                            {best}
+                          </span>{" "}
+                          best
+                        </span>
+                        {s.reminder_time && (
+                          <>
+                            <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <Bell className="h-3 w-3" />
+                              {s.reminder_time.slice(0, 5)}
+                            </span>
+                          </>
+                        )}
                       </p>
                     </div>
                     <Button
@@ -192,22 +241,28 @@ export function StreaksPanel({
                       </Button>
                     )}
                   </div>
-                  <div className="mt-3 flex gap-1">
-                    {days.map((d) => {
-                      const hit = dates.has(d);
-                      return (
-                        <div
-                          key={d}
-                          title={d}
-                          className={cn(
-                            "h-5 flex-1 rounded-sm",
-                            hit ? "opacity-100" : "opacity-20",
-                          )}
-                          style={{ background: hit ? s.color : "#a1a1aa" }}
-                        />
-                      );
-                    })}
-                  </div>
+                  {compact ? (
+                    <div className="mt-3 flex gap-1">
+                      {stripDays.map((d) => {
+                        const hit = dates.has(d);
+                        return (
+                          <div
+                            key={d}
+                            title={d}
+                            className={cn(
+                              "h-5 flex-1 rounded-sm",
+                              hit ? "opacity-100" : "opacity-20",
+                            )}
+                            style={{ background: hit ? s.color : "#a1a1aa" }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="mt-3 overflow-x-auto">
+                      <StreakHeatmap color={s.color} dates={dates} />
+                    </div>
+                  )}
                 </li>
               );
             })}

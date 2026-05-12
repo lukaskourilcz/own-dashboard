@@ -26,6 +26,7 @@ export type Streak = {
   user_id: string;
   name: string;
   color: string;
+  reminder_time: string | null;
   created_at: string;
 };
 

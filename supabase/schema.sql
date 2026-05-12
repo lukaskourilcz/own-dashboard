@@ -78,8 +78,13 @@ create table if not exists public.streaks (
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   color text not null default '#10b981',
+  reminder_time time,
   created_at timestamptz not null default now()
 );
+
+-- Section 5 migration: existing installs need the reminder_time column.
+alter table public.streaks
+  add column if not exists reminder_time time;
 
 alter table public.streaks enable row level security;
 

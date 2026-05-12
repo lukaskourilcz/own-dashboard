@@ -16,6 +16,26 @@ export function computeStreak(logs: StreakLog[]): number {
   return count;
 }
 
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+export function bestStreak(logs: StreakLog[]): number {
+  if (logs.length === 0) return 0;
+  const sorted = [...new Set(logs.map((l) => l.log_date))].sort();
+  let best = 1;
+  let run = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1]);
+    const cur = new Date(sorted[i]);
+    if (Math.round((cur.getTime() - prev.getTime()) / DAY_MS) === 1) {
+      run++;
+      if (run > best) best = run;
+    } else {
+      run = 1;
+    }
+  }
+  return best;
+}
+
 export function logsByStreak(logs: StreakLog[]): Map<string, StreakLog[]> {
   const map = new Map<string, StreakLog[]>();
   for (const log of logs) {
