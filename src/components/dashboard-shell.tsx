@@ -34,9 +34,10 @@ import type {
   Transaction,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
+import type { CoupleContext, PartnerData } from "@/lib/couple";
 
 type Props = {
-  user: { email: string; name: string | null; avatar_url: string | null };
+  user: { id: string; email: string; name: string | null; avatar_url: string | null };
   initialSubscriptions: Subscription[];
   initialTodos: Todo[];
   initialStreaks: Streak[];
@@ -46,6 +47,8 @@ type Props = {
   initialPlans: Plan[];
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
+  coupleCtx: CoupleContext;
+  partnerData: PartnerData | null;
 };
 
 export function DashboardShell({
@@ -59,6 +62,8 @@ export function DashboardShell({
   initialPlans,
   todayCalendar,
   weekCalendar,
+  coupleCtx,
+  partnerData,
 }: Props) {
   const [tab, setTab] = useState("overview");
   const [subscriptions, setSubscriptions] =

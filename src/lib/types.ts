@@ -74,3 +74,47 @@ export type Plan = {
   created_at: string;
   updated_at: string;
 };
+
+export type Profile = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  updated_at: string;
+};
+
+export type Couple = {
+  id: string;
+  user_a_id: string;
+  user_b_id: string;
+  created_at: string;
+};
+
+export type InviteStatus = "pending" | "accepted" | "declined";
+
+export type CoupleInvite = {
+  id: string;
+  inviter_id: string;
+  invitee_email: string;
+  status: InviteStatus;
+  created_at: string;
+};
+
+export type SharingCategory =
+  | "subscriptions"
+  | "todos"
+  | "streaks"
+  | "finances"
+  | "plans"
+  | "books";
+
+export type SharingPrefs = {
+  user_id: string;
+  share_subscriptions: boolean;
+  share_todos: boolean;
+  share_streaks: boolean;
+  share_finances: boolean;
+  share_plans: boolean;
+  share_books: boolean;
+  updated_at: string;
+};
