@@ -118,3 +118,26 @@ export type SharingPrefs = {
   share_books: boolean;
   updated_at: string;
 };
+
+export type BookStatus = "active" | "done" | "paused";
+
+export type Book = {
+  id: string;
+  couple_id: string | null;
+  user_id: string;
+  title: string;
+  target_pages: number | null;
+  status: BookStatus;
+  started_on: string | null;
+  created_at: string;
+};
+
+export type BookPage = {
+  id: string;
+  book_id: string;
+  user_id: string;
+  log_date: string;
+  pages: number;
+  note: string | null;
+  created_at: string;
+};

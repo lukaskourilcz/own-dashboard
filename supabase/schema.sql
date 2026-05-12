@@ -439,3 +439,111 @@ create policy "plans select own or shared" on public.plans
     auth.uid() = user_id
     or public.is_shared_with_me(user_id, 'plans')
   );
+
+-- =============================================================
+-- Books (co-authored progress tracking for couples)
+-- =============================================================
+
+create table if not exists public.books (
+  id uuid primary key default gen_random_uuid(),
+  couple_id uuid references public.couples(id) on delete set null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  target_pages integer check (target_pages is null or target_pages > 0),
+  status text not null default 'active' check (status in ('active', 'done', 'paused')),
+  started_on date,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists books_couple_idx on public.books (couple_id);
+create index if not exists books_user_idx on public.books (user_id);
+
+alter table public.books enable row level security;
+
+-- Visible to the owner, anyone in the linked couple, or anyone the owner shares books with.
+drop policy if exists "books select" on public.books;
+create policy "books select" on public.books
+  for select using (
+    auth.uid() = user_id
+    or (
+      couple_id is not null
+      and exists (
+        select 1 from public.couples c
+        where c.id = books.couple_id
+          and auth.uid() in (c.user_a_id, c.user_b_id)
+      )
+    )
+    or public.is_shared_with_me(user_id, 'books')
+  );
+
+drop policy if exists "books insert own" on public.books;
+create policy "books insert own" on public.books
+  for insert with check (auth.uid() = user_id);
+
+-- Both partners can edit a shared book (e.g. mark it done, raise the target).
+drop policy if exists "books update" on public.books;
+create policy "books update" on public.books
+  for update using (
+    auth.uid() = user_id
+    or (
+      couple_id is not null
+      and exists (
+        select 1 from public.couples c
+        where c.id = books.couple_id
+          and auth.uid() in (c.user_a_id, c.user_b_id)
+      )
+    )
+  );
+
+drop policy if exists "books delete own" on public.books;
+create policy "books delete own" on public.books
+  for delete using (auth.uid() = user_id);
+
+create table if not exists public.book_pages (
+  id uuid primary key default gen_random_uuid(),
+  book_id uuid not null references public.books(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  log_date date not null default current_date,
+  pages integer not null check (pages >= 0),
+  note text,
+  created_at timestamptz not null default now(),
+  unique (book_id, user_id, log_date)
+);
+
+create index if not exists book_pages_book_idx on public.book_pages (book_id);
+
+alter table public.book_pages enable row level security;
+
+drop policy if exists "book_pages select" on public.book_pages;
+create policy "book_pages select" on public.book_pages
+  for select using (
+    auth.uid() = user_id
+    or exists (
+      select 1 from public.books b
+      where b.id = book_pages.book_id
+        and (
+          b.user_id = auth.uid()
+          or (
+            b.couple_id is not null
+            and exists (
+              select 1 from public.couples c
+              where c.id = b.couple_id
+                and auth.uid() in (c.user_a_id, c.user_b_id)
+            )
+          )
+          or public.is_shared_with_me(b.user_id, 'books')
+        )
+    )
+  );
+
+drop policy if exists "book_pages insert own" on public.book_pages;
+create policy "book_pages insert own" on public.book_pages
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "book_pages update own" on public.book_pages;
+create policy "book_pages update own" on public.book_pages
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "book_pages delete own" on public.book_pages;
+create policy "book_pages delete own" on public.book_pages
+  for delete using (auth.uid() = user_id);
