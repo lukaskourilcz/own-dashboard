@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { differenceInMinutes, format } from "date-fns";
 import {
-  ArrowRight,
   CalendarDays,
   ExternalLink,
   Flame,
@@ -231,13 +230,20 @@ export function TodayHero({
                     >
                       {eventTimeLabel(ev)}
                     </span>
-                    <span
-                      className={cn(
-                        "flex-1 truncate",
-                        isOngoing && "font-medium text-foreground",
+                    <span className="flex-1 min-w-0">
+                      <span
+                        className={cn(
+                          "block truncate",
+                          isOngoing && "font-medium text-foreground",
+                        )}
+                      >
+                        {ev.summary ?? "(no title)"}
+                      </span>
+                      {ev.description && (
+                        <span className="block truncate text-[10px] text-foreground-subtle">
+                          {ev.description.replace(/<[^>]*>/g, "").slice(0, 80)}
+                        </span>
                       )}
-                    >
-                      {ev.summary ?? "(no title)"}
                     </span>
                     {ev.htmlLink && (
                       <a

@@ -104,6 +104,11 @@ export function WeekView({ calendar }: { calendar: EventsResult }) {
                           <span className="block truncate text-foreground">
                             {ev.summary ?? "(no title)"}
                           </span>
+                          {ev.description && (
+                            <span className="block truncate text-[11px] text-foreground-subtle mt-0.5">
+                              {ev.description.replace(/<[^>]*>/g, "").slice(0, 120)}
+                            </span>
+                          )}
                           {(ev.location || ev.recurringEventId) && (
                             <span className="flex items-center gap-2 text-[11px] text-foreground-subtle mt-0.5">
                               {ev.recurringEventId && (

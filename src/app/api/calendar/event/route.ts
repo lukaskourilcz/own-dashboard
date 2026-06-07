@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { fetchWithGoogleAuth } from "@/lib/google-token";
+import { rejectCrossOrigin } from "@/lib/csrf";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
@@ -38,6 +40,9 @@ function addDays(iso: string, n: number): string {
 }
 
 export async function POST(request: Request) {
+  const csrf = rejectCrossOrigin(request);
+  if (csrf) return csrf;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -119,16 +124,74 @@ export async function POST(request: Request) {
   }
 
   if (!res.ok) {
+    // Log the upstream detail server-side, return only a generic message to
+    // the client to avoid leaking internal endpoints / quota messages.
     const errText = await res.text();
+    Sentry.captureMessage("calendar.event.POST upstream rejected", {
+      level: "error",
+      extra: { status: res.status, detail: errText },
+    });
     return NextResponse.json(
-      {
-        error: "Google Calendar API rejected the event.",
-        details: errText,
-      },
+      { error: "Google Calendar API rejected the event." },
       { status: res.status },
     );
   }
 
   const created = await res.json();
   return NextResponse.json({ id: created.id, htmlLink: created.htmlLink });
+}
+
+/**
+ * Delete an event from the user's primary calendar. Body: { id: string }.
+ * Used to keep linked_calendar_event_id in sync when a plan is deleted.
+ */
+export async function DELETE(request: Request) {
+  const csrf = rejectCrossOrigin(request);
+  if (csrf) return csrf;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  const body = (await request.json().catch(() => ({}))) as { id?: string };
+  if (!body.id) {
+    return NextResponse.json({ error: "id is required." }, { status: 400 });
+  }
+
+  const res = await fetchWithGoogleAuth(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(body.id)}?sendUpdates=none`,
+    { method: "DELETE" },
+  );
+
+  // 404 / 410 — event already gone. Treat as success so plan deletion proceeds.
+  if (res.status === 404 || res.status === 410 || res.ok) {
+    return NextResponse.json({ ok: true });
+  }
+
+  if (res.status === 401 && res.statusText === "no-token") {
+    return NextResponse.json(
+      { error: "Google Calendar access has lapsed.", reason: "no-token" },
+      { status: 401 },
+    );
+  }
+  if (res.status === 401) {
+    return NextResponse.json(
+      { error: "Google rejected the calendar token.", reason: "expired" },
+      { status: 401 },
+    );
+  }
+
+  const errText = await res.text();
+  Sentry.captureMessage("calendar.event.DELETE upstream rejected", {
+    level: "error",
+    extra: { status: res.status, detail: errText },
+  });
+  return NextResponse.json(
+    { error: "Could not delete event." },
+    { status: res.status },
+  );
 }

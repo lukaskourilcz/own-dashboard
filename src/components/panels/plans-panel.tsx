@@ -168,8 +168,21 @@ export function PlansPanel({
   }
 
   async function removePlan(id: string) {
+    const plan = plans.find((p) => p.id === id);
     const { error } = await supabase.from("plans").delete().eq("id", id);
-    if (!error) setPlans((prev) => prev.filter((p) => p.id !== id));
+    if (error) return;
+    setPlans((prev) => prev.filter((p) => p.id !== id));
+    // Best-effort: delete the linked Google Calendar event so it doesn't
+    // orphan. Server treats 404/410 as success; failures here are silent.
+    if (plan?.linked_calendar_event_id) {
+      fetch("/api/calendar/event", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: plan.linked_calendar_event_id }),
+      }).catch(() => {
+        /* network blip — event will be left as is in GCal */
+      });
+    }
   }
 
   const grouped = useMemo(() => {

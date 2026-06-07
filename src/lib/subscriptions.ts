@@ -31,6 +31,19 @@ export function totalMonthlyIn(
   );
 }
 
+/**
+ * Days until the next billing date, or null if the subscription has none.
+ * Negative for overdue, 0 for "today", positive for future. Floor()-ed at
+ * the day boundary so "tomorrow at 23:00" still reads as 1 day, not 0.
+ */
+export function daysUntilRenewal(sub: Subscription): number | null {
+  if (!sub.next_billing_date) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = parseDateOnly(sub.next_billing_date);
+  return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
 export function upcomingRenewals(
   subs: Subscription[],
   withinDays = 30,

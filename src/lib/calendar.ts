@@ -9,6 +9,7 @@ export type GcalEventTime = {
 export type GcalEvent = {
   id: string;
   summary?: string;
+  description?: string;
   start: GcalEventTime;
   end: GcalEventTime;
   htmlLink?: string;

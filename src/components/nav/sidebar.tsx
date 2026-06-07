@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -13,10 +14,12 @@ import {
   ListTodo,
   LogOut,
   Target,
+  Unlink,
   Wallet,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 export type NavTab =
@@ -46,9 +49,33 @@ export function Sidebar({
 }: {
   tab: NavTab;
   setTab: (t: NavTab) => void;
-  user: { name: string | null; email: string };
+  user: { name: string | null; email: string; avatar_url?: string | null };
   incomingInvites: number;
 }) {
+  const toast = useToast();
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  async function disconnectGoogle() {
+    const ok = window.confirm(
+      "Disconnect Google? Calendar features will need a re-link.",
+    );
+    if (!ok) return;
+    setDisconnecting(true);
+    try {
+      const res = await fetch("/api/google/disconnect", { method: "POST" });
+      if (res.ok) {
+        toast.ok("Google disconnected.");
+        // Soft reload so server components re-render with the no-token state.
+        window.location.reload();
+      } else {
+        toast.err("Could not disconnect Google.");
+      }
+    } catch {
+      toast.err("Network error.");
+    } finally {
+      setDisconnecting(false);
+    }
+  }
   const items: Item[] = [
     { value: "overview", label: "Overview", icon: LayoutDashboard },
     { value: "calendar", label: "Calendar", icon: CalendarDays },
@@ -115,9 +142,19 @@ export function Sidebar({
       {/* user footer */}
       <div className="border-t border-border p-2">
         <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
-          <div className="h-7 w-7 rounded-full bg-surface-muted text-foreground-muted flex items-center justify-center text-[11px] font-medium">
-            {initials}
-          </div>
+          {user.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatar_url}
+              alt=""
+              referrerPolicy="no-referrer"
+              className="h-7 w-7 rounded-full object-cover bg-surface-muted"
+            />
+          ) : (
+            <div className="h-7 w-7 rounded-full bg-surface-muted text-foreground-muted flex items-center justify-center text-[11px] font-medium">
+              {initials}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium truncate">
               {user.name ?? user.email.split("@")[0]}
@@ -128,6 +165,17 @@ export function Sidebar({
           </div>
           <Tooltip content="Theme">
             <span><ThemeToggle /></span>
+          </Tooltip>
+          <Tooltip content="Disconnect Google">
+            <button
+              type="button"
+              onClick={disconnectGoogle}
+              disabled={disconnecting}
+              aria-label="Disconnect Google"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring disabled:opacity-50"
+            >
+              <Unlink className="h-3.5 w-3.5" />
+            </button>
           </Tooltip>
           <Tooltip content="Sign out">
             <form action="/auth/signout" method="post">

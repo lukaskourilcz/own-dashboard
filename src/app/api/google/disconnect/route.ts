@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { revokeGoogleAccess } from "@/lib/google-token";
+import { rejectCrossOrigin } from "@/lib/csrf";
 
 /**
  * Revoke the user's Google grant without ending their dashboard session.
- * Powers a "Disconnect Google" button in settings — afterwards calendar
+ * Powers the "Disconnect Google" button in the sidebar — afterwards calendar
  * features will surface a re-link CTA but the user stays logged in.
  */
-export async function POST() {
+export async function POST(request: Request) {
+  const csrf = rejectCrossOrigin(request);
+  if (csrf) return csrf;
+
   const supabase = await createClient();
   const {
     data: { user },

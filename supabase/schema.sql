@@ -702,3 +702,37 @@ create trigger google_oauth_touch
 -- to keep the surface tight.
 revoke execute on function public.is_shared_with_me(uuid, text) from public;
 revoke execute on function public.is_shared_with_me(uuid, text) from anon;
+
+-- ----------------------------------------------------------------------------
+-- Atomic per-user "refresh or get cached token" with a Postgres advisory lock.
+-- Prevents two concurrent server requests from racing Google's /token refresh
+-- and overwriting a rotated refresh_token with a stale one.
+-- ----------------------------------------------------------------------------
+create or replace function public.google_oauth_acquire_refresh_lock(p_user_id uuid)
+returns table (
+  user_id uuid,
+  refresh_token text,
+  access_token text,
+  expires_at timestamptz,
+  scopes text[]
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform pg_advisory_xact_lock(
+    (hashtextextended(p_user_id::text, 0))::bigint
+  );
+  return query
+    select g.user_id, g.refresh_token, g.access_token, g.expires_at, g.scopes
+    from public.google_oauth g
+    where g.user_id = p_user_id
+    for update;
+end;
+$$;
+
+revoke all on function public.google_oauth_acquire_refresh_lock(uuid) from public;
+revoke all on function public.google_oauth_acquire_refresh_lock(uuid) from anon;
+revoke all on function public.google_oauth_acquire_refresh_lock(uuid) from authenticated;
+grant execute on function public.google_oauth_acquire_refresh_lock(uuid) to service_role;

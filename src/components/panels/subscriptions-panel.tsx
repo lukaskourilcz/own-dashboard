@@ -22,6 +22,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
+  daysUntilRenewal,
   isActive,
   toMonthlyIn,
   totalMonthlyIn,
@@ -451,7 +452,10 @@ export function SubscriptionsPanel({
               </p>
             ) : (
               <ul className="-mx-2">
-                {renewals.map((s) => (
+                {renewals.map((s) => {
+                  const days = daysUntilRenewal(s);
+                  const soon = days !== null && days <= 3;
+                  return (
                   <li
                     key={s.id}
                     className="flex items-center justify-between rounded-md px-2 py-2 row-hover"
@@ -463,6 +467,18 @@ export function SubscriptionsPanel({
                       <span className="font-medium text-sm truncate">
                         {s.name}
                       </span>
+                      {soon && days !== null && (
+                        <span
+                          className={cn(
+                            "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded shrink-0",
+                            days <= 0
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-warning/10 text-warning",
+                          )}
+                        >
+                          {days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days}d`}
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-foreground-muted shrink-0 tabular">
                       {formatCurrency(s.amount, s.currency)}
@@ -476,7 +492,8 @@ export function SubscriptionsPanel({
                       )}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </CardContent>

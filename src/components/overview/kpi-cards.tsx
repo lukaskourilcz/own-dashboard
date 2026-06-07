@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, Flame, ListTodo, Sigma } from "lucide-react";
+import { Flame, ListTodo, Sigma } from "lucide-react";
 import { longestActiveStreak } from "@/lib/streaks";
 import { totalMonthlyIn } from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";

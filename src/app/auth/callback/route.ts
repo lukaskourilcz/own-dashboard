@@ -2,10 +2,26 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { storeGoogleTokens } from "@/lib/google-token";
 
+/**
+ * Restrict `next=` to internal relative paths. Without this an attacker can
+ * craft `/auth/callback?next=https://evil.com` and use our auth flow as a
+ * redirector — the user signs in successfully and lands on the attacker's
+ * page with a freshly minted Supabase session in their cookie jar.
+ */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  // Must start with single slash, must NOT start with // (protocol-relative)
+  // or with /\ (Windows-style protocol-relative bypass).
+  if (!raw.startsWith("/")) return "/dashboard";
+  if (raw.startsWith("//")) return "/dashboard";
+  if (raw.startsWith("/\\")) return "/dashboard";
+  return raw;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? "/dashboard";
+  const next = safeNext(url.searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

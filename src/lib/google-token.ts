@@ -105,25 +105,17 @@ async function refreshUnderLock(
 ): Promise<string | null> {
   const admin = createAdminClient();
 
-  // Advisory lock keyed off the user uuid (hashed to two int4 slots). Cleared
-  // on transaction end; since we acquire+release in distinct RPC calls, do
-  // it transactional via pg_advisory_xact_lock inside an RPC instead. Simpler
-  // here: serialize by SELECT ... FOR UPDATE inside a transaction. We don't
-  // have a transaction primitive over the JS client, so we use a small RPC.
-  //
-  // Pragmatic alternative without an RPC: just attempt the refresh, and if
-  // the rotated refresh_token write happens twice it's idempotent — Google
-  // returns the same refresh_token unless it deliberately rotates. The risk
-  // is rare. Document and move on; revisit if we ever see invalid_grant
-  // post-race in the wild.
+  // Acquire a per-user transactional advisory lock + read the row under
+  // SELECT ... FOR UPDATE. Concurrent callers block on the lock instead of
+  // racing the refresh_token rotation (see google_oauth_acquire_refresh_lock
+  // SQL function).
+  const { data: lockRows, error: lockErr } = await admin.rpc(
+    "google_oauth_acquire_refresh_lock",
+    { p_user_id: userId },
+  );
 
-  const { data, error } = await admin
-    .from("google_oauth")
-    .select("user_id, refresh_token, access_token, expires_at, scopes, google_sub")
-    .eq("user_id", userId)
-    .maybeSingle<GoogleOAuthRow>();
-
-  if (error) throw new Error(`google_oauth read failed: ${error.message}`);
+  if (lockErr) throw new Error(`refresh lock failed: ${lockErr.message}`);
+  const data = (lockRows as GoogleOAuthRow[] | null)?.[0] ?? null;
   if (!data?.refresh_token) return null;
 
   if (!force && data.access_token && data.expires_at) {

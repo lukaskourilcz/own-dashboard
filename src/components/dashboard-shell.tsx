@@ -18,6 +18,7 @@ import { WeekView } from "@/components/calendar/week-view";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar, MobileNav, type NavTab } from "@/components/nav/sidebar";
+import { CommandPalette } from "@/components/command-palette";
 import type {
   Account,
   Book,
@@ -149,14 +150,23 @@ export function DashboardShell({
 
   const incomingInvites = coupleCtx.incomingInvites.length;
 
+  const focusQuickAdd = useCallback(() => {
+    document.getElementById("quick-add-input")?.focus();
+  }, []);
+
   return (
     <TooltipProvider>
       <ToastProvider>
+        <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
         <div className="min-h-screen bg-background">
           <Sidebar
             tab={tab}
             setTab={setTab}
-            user={{ name: user.name, email: user.email }}
+            user={{
+              name: user.name,
+              email: user.email,
+              avatar_url: user.avatar_url,
+            }}
             incomingInvites={incomingInvites}
           />
 
