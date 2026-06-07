@@ -1,17 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
-import type { Block } from "@blocknote/core";
+import {
+  BlockNoteSchema,
+  createCodeBlockSpec,
+  defaultBlockSpecs,
+  type Block,
+} from "@blocknote/core";
+import { codeBlockOptions } from "@blocknote/code-block";
 import { useTheme } from "@/lib/use-theme";
+
+// One schema reused across editor instances — wires Shiki-backed code blocks
+// (~40 languages pre-bundled) into the default block set.
+const editorSchema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    codeBlock: createCodeBlockSpec(codeBlockOptions),
+  },
+});
+
+/** Imperative handle exposed via ref — lets the parent ask the editor to
+ * serialize itself to Markdown for the "Copy as Markdown" action. */
+export type NoteEditorHandle = {
+  toMarkdown: () => Promise<string>;
+};
 
 type Props = {
   noteId: string; // Used as key by caller so editor remounts per note.
   initialContent: Block[];
   onChange: (doc: { title: string; content: Block[] }) => void;
+  handleRef?: React.RefObject<NoteEditorHandle | null>;
 };
 
 /**
@@ -32,7 +54,11 @@ function extractTitle(doc: Block[]): string {
   return "Untitled";
 }
 
-export function NoteEditor({ initialContent, onChange }: Props) {
+export function NoteEditor({
+  initialContent,
+  onChange,
+  handleRef,
+}: Props) {
   const { theme } = useTheme();
 
   // BlockNote requires at least one block to mount; provide a neutral
@@ -59,7 +85,21 @@ export function NoteEditor({ initialContent, onChange }: Props) {
 
   const editor = useCreateBlockNote({
     initialContent: seed,
+    schema: editorSchema,
   });
+
+  useImperativeHandle(
+    handleRef ?? { current: null },
+    () => ({
+      toMarkdown: async () => {
+        // blocksToMarkdownLossy: BlockNote → CommonMark-ish text. "Lossy"
+        // means BlockNote-specific blocks (callouts, etc.) flatten to the
+        // nearest Markdown equivalent. Good enough for "Copy as MD".
+        return await editor.blocksToMarkdownLossy(editor.document as Block[]);
+      },
+    }),
+    [editor],
+  );
 
   // Debounced onChange — fire 600ms after the last edit. We don't want a
   // network call on every keystroke, but we also don't want to lose the

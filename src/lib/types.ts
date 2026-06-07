@@ -151,6 +151,7 @@ export type Note = {
   // BlockNote document — array of Block objects with nested children.
   // Stored opaquely; only the editor reads its shape.
   content: unknown;
+  tags: string[];
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
