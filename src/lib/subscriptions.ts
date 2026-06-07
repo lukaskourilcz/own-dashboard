@@ -1,5 +1,6 @@
 import type { Subscription } from "@/lib/types";
 import { convert } from "@/lib/fx";
+import { parseDateOnly } from "@/lib/date-keys";
 
 export function isActive(sub: Subscription): boolean {
   // Treat undefined (pre-migration rows) as active.
@@ -42,7 +43,7 @@ export function upcomingRenewals(
   return subs
     .filter((s) => isActive(s) && s.next_billing_date)
     .filter((s) => {
-      const d = new Date(`${s.next_billing_date}T00:00:00`);
+      const d = parseDateOnly(s.next_billing_date!);
       return d >= today && d <= horizon;
     })
     .sort((a, b) =>

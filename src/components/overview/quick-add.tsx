@@ -1,55 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sparkles, CornerDownLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
-import { todayStr } from "@/lib/streaks";
-import { MOOD_META } from "@/lib/pulse";
-import type { DailyPulse, PulseMood, Streak, StreakLog, Todo } from "@/lib/types";
-
-type Updater<T> = (next: T | ((prev: T) => T)) => void;
-
-let tentativeQuickPulseCounter = 0;
-
-const MOOD_WORDS: Record<string, PulseMood> = {
-  rough: 1,
-  bad: 1,
-  awful: 1,
-  meh: 2,
-  off: 2,
-  okay: 3,
-  ok: 3,
-  fine: 3,
-  good: 4,
-  nice: 4,
-  great: 5,
-  amazing: 5,
-};
-
-function parseMood(rest: string): { mood: PulseMood; note: string } | null {
-  const trimmed = rest.trim();
-  if (!trimmed) return null;
-  const [first, ...restWords] = trimmed.split(/\s+/);
-  const note = restWords.join(" ").trim();
-  const asNumber = Number(first);
-  if (asNumber >= 1 && asNumber <= 5 && Number.isInteger(asNumber)) {
-    return { mood: asNumber as PulseMood, note };
-  }
-  const word = MOOD_WORDS[first.toLowerCase()];
-  if (word) return { mood: word, note };
-  return null;
-}
+import { todayKey } from "@/lib/date-keys";
+import type { Streak, StreakLog, Todo, Updater } from "@/lib/types";
 
 type Props = {
   setTodos: Updater<Todo[]>;
   streaks: Streak[];
   streakLogs: StreakLog[];
   setStreakLogs: Updater<StreakLog[]>;
-  setPulses: Updater<DailyPulse[]>;
-  pulses: DailyPulse[];
   onCalendarTitle: (title: string) => void;
 };
 
@@ -58,8 +21,6 @@ export function QuickAdd({
   streaks,
   streakLogs,
   setStreakLogs,
-  setPulses,
-  pulses,
   onCalendarTitle,
 }: Props) {
   const supabase = createClient();
@@ -113,7 +74,7 @@ export function QuickAdd({
           toast.err(`No streak named "${name}".`);
           return;
         }
-        const today = todayStr();
+        const today = todayKey();
         if (
           streakLogs.some(
             (l) => l.streak_id === streak.id && l.log_date === today,
@@ -144,79 +105,8 @@ export function QuickAdd({
         onCalendarTitle(title);
         setValue("");
         toast.info("Opened the calendar form.");
-      } else if (v.startsWith("!mood ")) {
-        const parsed = parseMood(v.slice("!mood ".length));
-        if (!parsed) {
-          toast.err("Try !mood 1-5 or !mood great/good/okay/meh/rough");
-          return;
-        }
-        const today = todayStr();
-        const existing = pulses.find(
-          (p) => p.user_id === userId && p.log_date === today,
-        );
-        if (existing) {
-          const before = existing;
-          setPulses((prev) =>
-            prev.map((p) =>
-              p.id === before.id
-                ? {
-                    ...p,
-                    mood: parsed.mood,
-                    note: parsed.note || p.note,
-                  }
-                : p,
-            ),
-          );
-          const { error } = await supabase
-            .from("daily_pulse")
-            .update({
-              mood: parsed.mood,
-              note: parsed.note || existing.note,
-            })
-            .eq("id", existing.id);
-          if (error) {
-            setPulses((prev) =>
-              prev.map((p) => (p.id === before.id ? before : p)),
-            );
-            toast.err(error.message);
-            return;
-          }
-        } else {
-          const tentativeId = `tmp-${++tentativeQuickPulseCounter}`;
-          const tentative: DailyPulse = {
-            id: tentativeId,
-            user_id: userId,
-            log_date: today,
-            mood: parsed.mood,
-            note: parsed.note || null,
-            created_at: "",
-          };
-          setPulses((prev) => [tentative, ...prev]);
-          const { data, error } = await supabase
-            .from("daily_pulse")
-            .insert({
-              user_id: userId,
-              log_date: today,
-              mood: parsed.mood,
-              note: parsed.note || null,
-            })
-            .select()
-            .single();
-          if (error || !data) {
-            setPulses((prev) => prev.filter((p) => p.id !== tentativeId));
-            toast.err(error?.message ?? "Could not save mood.");
-            return;
-          }
-          setPulses((prev) =>
-            prev.map((p) => (p.id === tentativeId ? data : p)),
-          );
-        }
-        setValue("");
-        toast.ok(
-          `${MOOD_META[parsed.mood].emoji} ${MOOD_META[parsed.mood].label} logged.`,
-        );
       } else {
-        toast.err("Use !todo, !streak, !cal, or !mood …");
+        toast.err("Use !todo, !streak, or !cal …");
       }
     } finally {
       setBusy(false);
@@ -224,21 +114,23 @@ export function QuickAdd({
   }
 
   return (
-    <form onSubmit={submit} className="flex gap-2">
-      <div className="relative flex-1">
-        <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-        <Input
-          ref={inputRef}
-          id="quick-add-input"
-          placeholder="Quick add — !todo, !streak, or !cal … (press n)"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="pl-9"
-        />
+    <form onSubmit={submit} className="relative">
+      <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
+      <Input
+        ref={inputRef}
+        id="quick-add-input"
+        placeholder="Quick add — !todo, !streak, or !cal …"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={busy}
+        className="pl-9 pr-20 h-10 text-sm"
+      />
+      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-foreground-subtle">
+        <kbd className="inline-flex h-5 items-center rounded border border-border bg-surface-muted px-1.5 text-[10px] font-medium">
+          n
+        </kbd>
+        <CornerDownLeft className="h-3 w-3" />
       </div>
-      <Button type="submit" disabled={busy}>
-        Add
-      </Button>
     </form>
   );
 }

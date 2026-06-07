@@ -1,4 +1,5 @@
 import { differenceInCalendarDays } from "date-fns";
+import { parseDateOnly } from "@/lib/date-keys";
 import type { ImportantDate } from "@/lib/types";
 
 export type DateOccurrence = {
@@ -9,7 +10,7 @@ export type DateOccurrence = {
 };
 
 export function nextOccurrence(d: ImportantDate, ref: Date = new Date()): Date {
-  const base = new Date(`${d.the_date}T00:00:00`);
+  const base = parseDateOnly(d.the_date);
   const today = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
   if (!d.is_recurring) return base;
 
@@ -54,7 +55,7 @@ export function buildOccurrences(
   return dates
     .map<DateOccurrence>((d) => {
       const next = nextOccurrence(d, ref);
-      const base = new Date(`${d.the_date}T00:00:00`);
+      const base = parseDateOnly(d.the_date);
       const yearsCompleted = d.is_recurring
         ? d.recurrence_unit === "monthly"
           ? null
@@ -74,8 +75,7 @@ export function nextUpcoming(
   dates: ImportantDate[],
   ref: Date = new Date(),
 ): DateOccurrence | null {
-  const list = buildOccurrences(dates, ref).filter((d) => d.daysUntil >= 0);
-  return list.length > 0 ? list[0] : null;
+  return buildOccurrences(dates, ref).find((d) => d.daysUntil >= 0) ?? null;
 }
 
 export function countdownLabel(daysUntil: number): string {

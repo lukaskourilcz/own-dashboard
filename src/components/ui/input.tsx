@@ -9,7 +9,12 @@ export const Input = React.forwardRef<
     type={type}
     ref={ref}
     className={cn(
-      "flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:placeholder:text-zinc-500",
+      "flex h-9 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground transition-all duration-150 ease-out",
+      "placeholder:text-foreground-subtle",
+      "hover:border-border-strong",
+      "focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "tabular",
       className,
     )}
     {...props}

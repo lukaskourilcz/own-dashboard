@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Own Dashboard",
-  description: "Personal dashboard for subscriptions, todos, streaks, and calendar.",
+  title: "Dashboard",
+  description: "Subscriptions, tasks, habits, plans, and your calendar — in one place.",
 };
 
 // Runs before React hydration to avoid a flash of incorrect theme.

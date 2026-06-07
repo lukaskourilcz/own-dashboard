@@ -2,25 +2,184 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ────────────────────────────────────────────────────────────────────────
+   Design tokens — minimal, neutral, shadcn-inspired.
+   Light/dark surfaces are paired; semantic colors stay subtle by default
+   and only earn saturation when they need to communicate (destructive,
+   focus ring). Accents use the same hue so the UI feels cohesive.
+   ──────────────────────────────────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* surfaces */
+  --background: #fafaf9;        /* page */
+  --surface: #ffffff;           /* cards */
+  --surface-muted: #f5f5f4;     /* nested */
+  --surface-hover: #f5f5f4;
+  --overlay: rgba(15, 15, 16, 0.4);
+
+  /* foreground */
+  --foreground: #0a0a0a;
+  --foreground-muted: #57534e;
+  --foreground-subtle: #a8a29e;
+
+  /* borders */
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+
+  /* primary (CTA) — inverted for shadcn vibe */
+  --primary: #0a0a0a;
+  --primary-foreground: #fafafa;
+  --primary-hover: #292524;
+
+  /* semantic, kept subtle */
+  --accent: #f5f5f4;
+  --accent-foreground: #0a0a0a;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --destructive: #dc2626;
+  --destructive-soft: #fef2f2;
+
+  --ring: rgba(10, 10, 10, 0.2);
+
+  /* shape */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* shadow — barely there */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 15, 16, 0.04);
+  --shadow: 0 1px 3px 0 rgba(15, 15, 16, 0.05), 0 1px 2px 0 rgba(15, 15, 16, 0.03);
+  --shadow-lg: 0 10px 30px -10px rgba(15, 15, 16, 0.12);
+
+  /* motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .dark {
   --background: #0a0a0a;
-  --foreground: #ededed;
+  --surface: #121212;
+  --surface-muted: #1a1a1a;
+  --surface-hover: #1c1c1c;
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --foreground: #fafafa;
+  --foreground-muted: #a1a1aa;
+  --foreground-subtle: #71717a;
+
+  --border: #262626;
+  --border-strong: #333333;
+
+  --primary: #fafafa;
+  --primary-foreground: #0a0a0a;
+  --primary-hover: #e5e5e5;
+
+  --accent: #1f1f1f;
+  --accent-foreground: #fafafa;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --destructive: #ef4444;
+  --destructive-soft: rgba(239, 68, 68, 0.12);
+
+  --ring: rgba(250, 250, 250, 0.2);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
   --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-ring: var(--ring);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-soft: var(--shadow-sm);
+  --shadow-card: var(--shadow);
+  --shadow-elevated: var(--shadow-lg);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "ss03", "cv11";
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* numeric stability — tabular figures for money, counts, dates */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* utility — subtle hover for interactive rows */
+@utility row-hover {
+  transition: background-color 150ms var(--ease-out);
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+}
+
+/* focus ring used everywhere */
+@utility focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  }
+}
+
+/* selection */
+::selection {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* scrollbar — subtle */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* enter animation for content panes */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

@@ -1,3 +1,5 @@
+export type Updater<T> = (next: T | ((prev: T) => T)) => void;
+
 export type Subscription = {
   id: string;
   user_id: string;
@@ -138,17 +140,6 @@ export type BookPage = {
   user_id: string;
   log_date: string;
   pages: number;
-  note: string | null;
-  created_at: string;
-};
-
-export type PulseMood = 1 | 2 | 3 | 4 | 5;
-
-export type DailyPulse = {
-  id: string;
-  user_id: string;
-  log_date: string;
-  mood: PulseMood;
   note: string | null;
   created_at: string;
 };

@@ -1,11 +1,42 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  Account,
   Couple,
   CoupleInvite,
+  Plan,
   Profile,
   SharingCategory,
   SharingPrefs,
+  Streak,
+  StreakLog,
+  Subscription,
+  Todo,
+  Transaction,
 } from "@/lib/types";
+
+export type ShareField =
+  | "share_subscriptions"
+  | "share_todos"
+  | "share_streaks"
+  | "share_finances"
+  | "share_plans"
+  | "share_books";
+
+export const SHARE_FIELDS: Record<SharingCategory, ShareField> = {
+  subscriptions: "share_subscriptions",
+  todos: "share_todos",
+  streaks: "share_streaks",
+  finances: "share_finances",
+  plans: "share_plans",
+  books: "share_books",
+};
+
+export function partnerDisplayName(
+  profile: Profile | null | undefined,
+  fallback = "Partner",
+): string {
+  return profile?.display_name ?? profile?.email ?? fallback;
+}
 
 export type CoupleContext = {
   couple: Couple | null;
@@ -32,21 +63,7 @@ export function partnerSharesCategory(
   prefs: SharingPrefs | null,
   category: SharingCategory,
 ): boolean {
-  if (!prefs) return false;
-  switch (category) {
-    case "subscriptions":
-      return prefs.share_subscriptions;
-    case "todos":
-      return prefs.share_todos;
-    case "streaks":
-      return prefs.share_streaks;
-    case "finances":
-      return prefs.share_finances;
-    case "plans":
-      return prefs.share_plans;
-    case "books":
-      return prefs.share_books;
-  }
+  return prefs?.[SHARE_FIELDS[category]] ?? false;
 }
 
 export async function loadCoupleContext(
@@ -117,13 +134,13 @@ export async function loadCoupleContext(
 }
 
 export type PartnerData = {
-  subscriptions: unknown[];
-  todos: unknown[];
-  streaks: unknown[];
-  streakLogs: unknown[];
-  plans: unknown[];
-  accounts: unknown[];
-  transactions: unknown[];
+  subscriptions: Subscription[];
+  todos: Todo[];
+  streaks: Streak[];
+  streakLogs: StreakLog[];
+  plans: Plan[];
+  accounts: Account[];
+  transactions: Transaction[];
 };
 
 export async function loadPartnerSharedData(
@@ -195,12 +212,12 @@ export async function loadPartnerSharedData(
   ]);
 
   return {
-    subscriptions: tasks[0].data ?? [],
-    todos: tasks[1].data ?? [],
-    streaks: tasks[2].data ?? [],
-    streakLogs: tasks[3].data ?? [],
-    plans: tasks[4].data ?? [],
-    accounts: tasks[5].data ?? [],
-    transactions: tasks[6].data ?? [],
+    subscriptions: (tasks[0].data ?? []) as Subscription[],
+    todos: (tasks[1].data ?? []) as Todo[],
+    streaks: (tasks[2].data ?? []) as Streak[],
+    streakLogs: (tasks[3].data ?? []) as StreakLog[],
+    plans: (tasks[4].data ?? []) as Plan[],
+    accounts: (tasks[5].data ?? []) as Account[],
+    transactions: (tasks[6].data ?? []) as Transaction[],
   };
 }

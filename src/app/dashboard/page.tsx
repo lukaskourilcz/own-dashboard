@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   fetchTodayWindowEvents,
   fetchUpcomingWeekEvents,
-} from "@/lib/calendar";
+} from "@/lib/calendar-server";
 import { loadCoupleContext, loadPartnerSharedData } from "@/lib/couple";
 import { DashboardShell } from "@/components/dashboard-shell";
 
@@ -77,28 +77,21 @@ export default async function DashboardPage() {
 
   // Books are loaded after couple context so RLS lets shared books through.
   // RLS scopes returned rows to "own", "couple member", or "books-shared by partner".
-  // daily_pulse RLS lets partners read each other's check-ins when paired.
-  const [booksRes, bookPagesRes, pulsesRes, importantDatesRes] =
-    await Promise.all([
-      supabase
-        .from("books")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("book_pages")
-        .select("*")
-        .order("log_date", { ascending: false })
-        .limit(1000),
-      supabase
-        .from("daily_pulse")
-        .select("*")
-        .order("log_date", { ascending: false })
-        .limit(180),
-      supabase
-        .from("important_dates")
-        .select("*")
-        .order("the_date", { ascending: true }),
-    ]);
+  const [booksRes, bookPagesRes, importantDatesRes] = await Promise.all([
+    supabase
+      .from("books")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("book_pages")
+      .select("*")
+      .order("log_date", { ascending: false })
+      .limit(1000),
+    supabase
+      .from("important_dates")
+      .select("*")
+      .order("the_date", { ascending: true }),
+  ]);
 
   const partnerData = coupleCtx.partnerId
     ? await loadPartnerSharedData(
@@ -125,7 +118,6 @@ export default async function DashboardPage() {
       initialPlans={plansRes.data ?? []}
       initialBooks={booksRes.data ?? []}
       initialBookPages={bookPagesRes.data ?? []}
-      initialPulses={pulsesRes.data ?? []}
       initialImportantDates={importantDatesRes.data ?? []}
       todayCalendar={todayCalendar}
       weekCalendar={weekCalendar}

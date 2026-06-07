@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   Legend,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RTooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -23,22 +23,20 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { todayKey } from "@/lib/date-keys";
 import { cn } from "@/lib/utils";
-import type { Book, BookPage, BookStatus, Profile } from "@/lib/types";
-import type { CoupleContext } from "@/lib/couple";
-
-type Updater<T> = (next: T | ((prev: T) => T)) => void;
+import type { Book, BookPage, BookStatus, Profile, Updater } from "@/lib/types";
+import { partnerDisplayName, type CoupleContext } from "@/lib/couple";
 
 let tentativeBookPageCounter = 0;
-
-function todayStr(): string {
-  return format(new Date(), "yyyy-MM-dd");
-}
 
 type NewBookForm = {
   title: string;
@@ -50,7 +48,7 @@ type NewBookForm = {
 const emptyBook: NewBookForm = {
   title: "",
   target_pages: "",
-  started_on: todayStr(),
+  started_on: todayKey(),
   shareWithPartner: true,
 };
 
@@ -79,9 +77,8 @@ export function BooksPanel({
   >({});
   const [showNew, setShowNew] = useState(false);
 
-  const partnerProfile: Profile | null = ctx.partnerProfile;
-  const partnerName =
-    partnerProfile?.display_name ?? partnerProfile?.email ?? "Partner";
+  const { partnerProfile } = ctx;
+  const partnerName = partnerDisplayName(partnerProfile);
 
   const activeBooks = books.filter((b) => b.status === "active");
   const otherBooks = books.filter((b) => b.status !== "active");
@@ -90,7 +87,10 @@ export function BooksPanel({
     return logBuf[bookId] ?? { pages: "", note: "" };
   }
 
-  function setBuf(bookId: string, patch: Partial<{ pages: string; note: string }>) {
+  function setBuf(
+    bookId: string,
+    patch: Partial<{ pages: string; note: string }>,
+  ) {
     setLogBuf((prev) => ({
       ...prev,
       [bookId]: { ...bufFor(bookId), ...patch },
@@ -103,9 +103,7 @@ export function BooksPanel({
       toast.err("Title is required.");
       return;
     }
-    const target = newBook.target_pages
-      ? Number(newBook.target_pages)
-      : null;
+    const target = newBook.target_pages ? Number(newBook.target_pages) : null;
     if (target !== null && (Number.isNaN(target) || target <= 0)) {
       toast.err("Target pages must be a positive number.");
       return;
@@ -139,18 +137,22 @@ export function BooksPanel({
       toast.err("Pages must be a positive number.");
       return;
     }
-    const today = todayStr();
+    const today = todayKey();
     const existing = pages.find(
       (p) =>
         p.book_id === book.id && p.user_id === userId && p.log_date === today,
     );
 
     if (existing) {
-      // Add to today's existing row.
-      const merged = { pages: existing.pages + n, note: buf.note || existing.note };
+      const merged = {
+        pages: existing.pages + n,
+        note: buf.note || existing.note,
+      };
       setPages((prev) =>
         prev.map((p) =>
-          p.id === existing.id ? { ...p, pages: merged.pages, note: merged.note ?? p.note } : p,
+          p.id === existing.id
+            ? { ...p, pages: merged.pages, note: merged.note ?? p.note }
+            : p,
         ),
       );
       const { error } = await supabase
@@ -158,12 +160,13 @@ export function BooksPanel({
         .update({ pages: merged.pages, note: merged.note })
         .eq("id", existing.id);
       if (error) {
-        setPages((prev) => prev.map((p) => (p.id === existing.id ? existing : p)));
+        setPages((prev) =>
+          prev.map((p) => (p.id === existing.id ? existing : p)),
+        );
         toast.err(error.message);
         return;
       }
     } else {
-      // Optimistic insert.
       const tentativeId = `tmp-${++tentativeBookPageCounter}`;
       const tentative: BookPage = {
         id: tentativeId,
@@ -215,190 +218,184 @@ export function BooksPanel({
 
   async function deleteBook(book: Book) {
     const ok = window.confirm(
-      `Delete "${book.title}" and all its page logs? This cannot be undone.`,
+      `Delete "${book.title}" and all its page logs?`,
     );
     if (!ok) return;
     setBooks((prev) => prev.filter((b) => b.id !== book.id));
     setPages((prev) => prev.filter((p) => p.book_id !== book.id));
     const { error } = await supabase.from("books").delete().eq("id", book.id);
-    if (error) {
-      toast.err(error.message);
-    }
+    if (error) toast.err(error.message);
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>
-            <span className="inline-flex items-center gap-1.5">
-              <BookOpen className="h-4 w-4" />
-              {activeBooks.length === 0
-                ? "Start a book"
-                : activeBooks.length === 1
-                  ? "Current book"
-                  : "Current books"}
-            </span>
-          </CardTitle>
+    <div>
+      <PageHeader
+        title="Books"
+        description="What you're reading, page by page."
+        action={
           <Button
             size="sm"
-            variant="outline"
+            variant={showNew ? "outline" : "default"}
             onClick={() => setShowNew((v) => !v)}
           >
-            <Plus className="h-4 w-4" />
-            {showNew ? "Cancel" : "New book"}
+            {showNew ? "Cancel" : <><Plus className="h-3.5 w-3.5" /> New book</>}
           </Button>
-        </CardHeader>
-        <CardContent>
-          {showNew && (
+        }
+      />
+
+      {showNew && (
+        <Card className="mb-4">
+          <CardContent className="pt-5">
             <form
               onSubmit={addBook}
-              className="mb-4 rounded-md border border-zinc-200 dark:border-zinc-800 p-3 space-y-2"
+              className="grid gap-3 sm:grid-cols-4 items-end"
             >
-              <div className="grid gap-2 sm:grid-cols-3">
-                <div className="space-y-1 sm:col-span-2">
-                  <Label htmlFor="book-title">Title</Label>
-                  <Input
-                    id="book-title"
-                    value={newBook.title}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, title: e.target.value })
-                    }
-                    placeholder="Untitled novel"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="book-target">Target pages</Label>
-                  <Input
-                    id="book-target"
-                    type="number"
-                    min={1}
-                    value={newBook.target_pages}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, target_pages: e.target.value })
-                    }
-                    placeholder="300"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2 items-end">
-                <div className="space-y-1">
-                  <Label htmlFor="book-start">Start date</Label>
-                  <Input
-                    id="book-start"
-                    type="date"
-                    value={newBook.started_on}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, started_on: e.target.value })
-                    }
-                  />
-                </div>
-                {ctx.couple && (
-                  <label className="inline-flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-zinc-300"
-                      checked={newBook.shareWithPartner}
-                      onChange={(e) =>
-                        setNewBook({
-                          ...newBook,
-                          shareWithPartner: e.target.checked,
-                        })
-                      }
-                    />
-                    Co-write with {partnerName}
-                  </label>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">
-                  <Plus className="h-4 w-4" /> Add book
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {activeBooks.length === 0 && !showNew ? (
-            <p className="text-sm text-zinc-500">
-              No active book. Click <span className="font-medium">New book</span> to
-              start one.
-            </p>
-          ) : (
-            <ul className="space-y-4">
-              {activeBooks.map((book) => (
-                <BookRow
-                  key={book.id}
-                  book={book}
-                  pages={pages.filter((p) => p.book_id === book.id)}
-                  userId={userId}
-                  userName={userName}
-                  partnerProfile={partnerProfile}
-                  partnerName={partnerName}
-                  isShared={book.couple_id !== null}
-                  logBuf={bufFor(book.id)}
-                  onBufChange={(patch) => setBuf(book.id, patch)}
-                  onLog={() => logPages(book)}
-                  onStatus={(s) => changeStatus(book, s)}
-                  onDelete={() => deleteBook(book)}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="book-title">Title</Label>
+                <Input
+                  id="book-title"
+                  value={newBook.title}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, title: e.target.value })
+                  }
+                  placeholder="Untitled novel"
                 />
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      {otherBooks.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Past and paused</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {otherBooks.map((book) => {
-                const bookPages = pages.filter((p) => p.book_id === book.id);
-                const total = bookPages.reduce((s, p) => s + p.pages, 0);
-                return (
-                  <li
-                    key={book.id}
-                    className="flex items-center justify-between py-2.5 gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p
-                        className={cn(
-                          "text-sm font-medium truncate",
-                          book.status === "done" && "line-through text-zinc-400",
-                        )}
-                      >
-                        {book.title}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {book.status} · {total} pages logged
-                      </p>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => changeStatus(book, "active")}
-                      >
-                        Resume
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => deleteBook(book)}
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="book-target">Target pages</Label>
+                <Input
+                  id="book-target"
+                  type="number"
+                  min={1}
+                  value={newBook.target_pages}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, target_pages: e.target.value })
+                  }
+                  placeholder="300"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="book-start">Start date</Label>
+                <Input
+                  id="book-start"
+                  type="date"
+                  value={newBook.started_on}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, started_on: e.target.value })
+                  }
+                />
+              </div>
+              {ctx.couple && (
+                <label className="inline-flex items-center gap-2 text-xs text-foreground-muted sm:col-span-3">
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 rounded border-border-strong"
+                    checked={newBook.shareWithPartner}
+                    onChange={(e) =>
+                      setNewBook({
+                        ...newBook,
+                        shareWithPartner: e.target.checked,
+                      })
+                    }
+                  />
+                  Co-read with {partnerName}
+                </label>
+              )}
+              <Button type="submit" className="sm:col-span-1">
+                <Plus className="h-3.5 w-3.5" /> Add book
+              </Button>
+            </form>
           </CardContent>
         </Card>
       )}
+
+      <div className="space-y-4">
+        {activeBooks.length === 0 && !showNew ? (
+          <Card>
+            <CardContent className="pt-5">
+              <EmptyState
+                icon={BookOpen}
+                title="No active book"
+                description={`Click "New book" to start one.`}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          activeBooks.map((book) => (
+            <BookRow
+              key={book.id}
+              book={book}
+              pages={pages.filter((p) => p.book_id === book.id)}
+              userId={userId}
+              userName={userName}
+              partnerProfile={partnerProfile}
+              partnerName={partnerName}
+              isShared={book.couple_id !== null}
+              logBuf={bufFor(book.id)}
+              onBufChange={(patch) => setBuf(book.id, patch)}
+              onLog={() => logPages(book)}
+              onStatus={(s) => changeStatus(book, s)}
+              onDelete={() => deleteBook(book)}
+            />
+          ))
+        )}
+
+        {otherBooks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Past and paused</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="-mx-2 divide-y divide-border">
+                {otherBooks.map((book) => {
+                  const bookPages = pages.filter((p) => p.book_id === book.id);
+                  const total = bookPages.reduce((s, p) => s + p.pages, 0);
+                  return (
+                    <li
+                      key={book.id}
+                      className="group flex items-center justify-between gap-3 px-2 py-2.5 row-hover"
+                    >
+                      <div className="min-w-0">
+                        <p
+                          className={cn(
+                            "text-sm font-medium truncate",
+                            book.status === "done" &&
+                              "line-through text-foreground-subtle",
+                          )}
+                        >
+                          {book.title}
+                        </p>
+                        <p className="text-[11px] text-foreground-subtle tabular">
+                          {book.status} · {total} pages
+                        </p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => changeStatus(book, "active")}
+                        >
+                          Resume
+                        </Button>
+                        <Tooltip content="Delete">
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={() => deleteBook(book)}
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </Tooltip>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
@@ -430,30 +427,36 @@ function BookRow({
   onStatus: (s: BookStatus) => void;
   onDelete: () => void;
 }) {
-  const today = todayStr();
-  const myTotal = pages
-    .filter((p) => p.user_id === userId)
-    .reduce((s, p) => s + p.pages, 0);
-  const partnerTotal = pages
-    .filter((p) => p.user_id !== userId)
-    .reduce((s, p) => s + p.pages, 0);
-  const total = myTotal + partnerTotal;
-  const todayMine = pages
-    .filter((p) => p.user_id === userId && p.log_date === today)
-    .reduce((s, p) => s + p.pages, 0);
-  const todayPartner = pages
-    .filter((p) => p.user_id !== userId && p.log_date === today)
-    .reduce((s, p) => s + p.pages, 0);
+  const today = todayKey();
+  const totals = pages.reduce(
+    (acc, p) => {
+      const mine = p.user_id === userId;
+      if (mine) {
+        acc.me += p.pages;
+        if (p.log_date === today) acc.todayMe += p.pages;
+      } else {
+        acc.partner += p.pages;
+        if (p.log_date === today) acc.todayPartner += p.pages;
+      }
+      return acc;
+    },
+    { me: 0, partner: 0, todayMe: 0, todayPartner: 0 },
+  );
+  const total = totals.me + totals.partner;
   const percent = book.target_pages
     ? Math.min(100, Math.round((total / book.target_pages) * 100))
     : null;
   const partnerId = partnerProfile?.id ?? null;
 
   const last14 = useMemo(() => {
-    const buckets = new Map<string, { date: string; me: number; partner: number }>();
+    const buckets = new Map<
+      string,
+      { date: string; me: number; partner: number }
+    >();
     for (let i = 13; i >= 0; i--) {
-      const key = format(subDays(new Date(), i), "yyyy-MM-dd");
-      buckets.set(key, { date: format(subDays(new Date(), i), "MMM d"), me: 0, partner: 0 });
+      const d = subDays(new Date(), i);
+      const key = format(d, "yyyy-MM-dd");
+      buckets.set(key, { date: format(d, "MMM d"), me: 0, partner: 0 });
     }
     for (const p of pages) {
       const b = buckets.get(p.log_date);
@@ -465,142 +468,204 @@ function BookRow({
   }, [pages, userId, partnerId]);
 
   return (
-    <li className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-medium truncate inline-flex items-center gap-2">
-            {book.title}
-            {isShared && (
-              <span className="text-[10px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400 font-medium">
-                shared
-              </span>
-            )}
-          </p>
-          <p className="text-xs text-zinc-500">
-            {book.target_pages
-              ? `${total} / ${book.target_pages} pages`
-              : `${total} pages`}
-            {book.started_on ? ` · started ${book.started_on}` : ""}
-          </p>
-        </div>
-        <div className="flex gap-1 shrink-0">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onStatus("done")}
-            title="Mark book as done"
-          >
-            <Check className="h-3.5 w-3.5" /> Done
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => onStatus("paused")}
-            aria-label="Pause book"
-          >
-            <Pause className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onDelete}
-            aria-label="Delete book"
-          >
-            <Trash2 className="h-4 w-4 text-red-500" />
-          </Button>
-        </div>
-      </div>
-
-      {percent !== null && (
-        <div>
-          <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-zinc-500 mt-1">{percent}% of target</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-2">
-          <p className="text-xs text-zinc-500">{userName} (you)</p>
-          <p className="text-lg font-semibold">{myTotal}</p>
-          <p className="text-[11px] text-zinc-500">
-            today {todayMine > 0 ? `+${todayMine}` : "0"}
-          </p>
-        </div>
-        {isShared ? (
-          <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-2">
-            <p className="text-xs text-zinc-500">{partnerName}</p>
-            <p className="text-lg font-semibold">{partnerTotal}</p>
-            <p className="text-[11px] text-zinc-500">
-              today {todayPartner > 0 ? `+${todayPartner}` : "0"}
+    <Card>
+      <CardContent className="pt-5">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-base tracking-tight inline-flex items-center gap-2">
+              {book.title}
+              {isShared && (
+                <SectionLabel className="!text-[9px] text-success">
+                  shared
+                </SectionLabel>
+              )}
+            </h3>
+            <p className="text-xs text-foreground-subtle tabular mt-0.5">
+              {book.target_pages
+                ? `${total} / ${book.target_pages} pages`
+                : `${total} pages`}
+              {book.started_on ? ` · started ${book.started_on}` : ""}
             </p>
           </div>
-        ) : (
-          <div className="rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 p-2 inline-flex flex-col justify-center text-xs text-zinc-400">
-            <CircleSlash className="h-3.5 w-3.5 mb-1" />
-            Solo book
+          <div className="flex gap-1 shrink-0">
+            <Tooltip content="Mark as done">
+              <Button size="sm" variant="outline" onClick={() => onStatus("done")}>
+                <Check className="h-3.5 w-3.5" /> Done
+              </Button>
+            </Tooltip>
+            <Tooltip content="Pause">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => onStatus("paused")}
+                aria-label="Pause book"
+              >
+                <Pause className="h-3.5 w-3.5" />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Delete">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={onDelete}
+                aria-label="Delete book"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
+
+        {percent !== null && (
+          <div className="mb-4">
+            <div className="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
+              <div
+                className="h-full bg-foreground transition-all duration-500 ease-out"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-foreground-subtle mt-1 tabular">
+              {percent}% of target
+            </p>
           </div>
         )}
-      </div>
 
-      {last14.some((d) => d.me + d.partner > 0) && (
-        <div className="h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={last14}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-              <XAxis dataKey="date" fontSize={10} />
-              <YAxis fontSize={10} width={28} />
-              <Tooltip
-                formatter={(value, name) => [
-                  `${value} pages`,
-                  name === "me" ? userName : partnerName,
-                ]}
-              />
-              <Legend
-                formatter={(name) => (name === "me" ? userName : partnerName)}
-              />
-              <Bar dataKey="me" stackId="a" fill="#10b981" />
-              {isShared && <Bar dataKey="partner" stackId="a" fill="#6366f1" />}
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <Stat
+            label={`${userName} (you)`}
+            value={totals.me}
+            todayDelta={totals.todayMe}
+          />
+          {isShared ? (
+            <Stat
+              label={partnerName}
+              value={totals.partner}
+              todayDelta={totals.todayPartner}
+            />
+          ) : (
+            <div className="rounded-md border border-dashed border-border p-3 flex flex-col justify-center text-xs text-foreground-subtle">
+              <CircleSlash className="h-3.5 w-3.5 mb-1" />
+              Solo book
+            </div>
+          )}
         </div>
-      )}
 
-      <div className="flex flex-wrap gap-2 items-end pt-1 border-t border-zinc-100 dark:border-zinc-800">
-        <div className="space-y-1 w-24">
-          <Label htmlFor={`pages-${book.id}`} className="text-xs">
-            Pages today
-          </Label>
-          <Input
-            id={`pages-${book.id}`}
-            type="number"
-            min={1}
-            value={logBuf.pages}
-            onChange={(e) => onBufChange({ pages: e.target.value })}
-            placeholder="3"
-          />
+        {last14.some((d) => d.me + d.partner > 0) && (
+          <div className="h-28 mb-4 -mx-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={last14}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--foreground-subtle)"
+                />
+                <YAxis
+                  fontSize={10}
+                  width={24}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--foreground-subtle)"
+                />
+                <RTooltip
+                  cursor={{ fill: "var(--surface-hover)" }}
+                  formatter={(value, name) => [
+                    `${value} pages`,
+                    name === "me" ? userName : partnerName,
+                  ]}
+                  contentStyle={chartTooltipStyle}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={6}
+                  wrapperStyle={{ fontSize: 10 }}
+                  formatter={(name) => (name === "me" ? userName : partnerName)}
+                />
+                <Bar
+                  dataKey="me"
+                  stackId="a"
+                  fill="var(--foreground)"
+                  radius={[2, 2, 0, 0]}
+                />
+                {isShared && (
+                  <Bar
+                    dataKey="partner"
+                    stackId="a"
+                    fill="var(--foreground-subtle)"
+                    radius={[2, 2, 0, 0]}
+                  />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Log row */}
+        <div className="flex flex-wrap gap-2 items-end pt-3 border-t border-border">
+          <div className="space-y-1.5 w-24">
+            <Label htmlFor={`pages-${book.id}`}>Pages today</Label>
+            <Input
+              id={`pages-${book.id}`}
+              type="number"
+              min={1}
+              value={logBuf.pages}
+              onChange={(e) => onBufChange({ pages: e.target.value })}
+              placeholder="3"
+            />
+          </div>
+          <div className="space-y-1.5 flex-1 min-w-40">
+            <Label htmlFor={`note-${book.id}`}>Note</Label>
+            <Textarea
+              id={`note-${book.id}`}
+              rows={1}
+              value={logBuf.note}
+              onChange={(e) => onBufChange({ note: e.target.value })}
+              placeholder="Optional"
+              className="min-h-9 py-1.5"
+            />
+          </div>
+          <Button onClick={onLog}>
+            <Pencil className="h-3.5 w-3.5" /> Log
+          </Button>
         </div>
-        <div className="space-y-1 flex-1 min-w-40">
-          <Label htmlFor={`note-${book.id}`} className="text-xs">
-            Note
-          </Label>
-          <Textarea
-            id={`note-${book.id}`}
-            rows={1}
-            value={logBuf.note}
-            onChange={(e) => onBufChange({ note: e.target.value })}
-            placeholder="Optional"
-          />
-        </div>
-        <Button onClick={onLog}>
-          <Pencil className="h-4 w-4" />
-          Log
-        </Button>
-      </div>
-    </li>
+      </CardContent>
+    </Card>
   );
 }
+
+function Stat({
+  label,
+  value,
+  todayDelta,
+}: {
+  label: string;
+  value: number;
+  todayDelta: number;
+}) {
+  return (
+    <div className="rounded-md border border-border bg-surface-muted/40 p-3">
+      <SectionLabel className="truncate">{label}</SectionLabel>
+      <p className="mt-1 text-xl font-semibold tabular tracking-tight">
+        {value}
+      </p>
+      <p className="text-[11px] text-foreground-subtle tabular">
+        today {todayDelta > 0 ? `+${todayDelta}` : "0"}
+      </p>
+    </div>
+  );
+}
+
+const chartTooltipStyle: React.CSSProperties = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: "8px",
+  fontSize: "12px",
+  boxShadow: "var(--shadow-card)",
+  padding: "6px 10px",
+};

@@ -1,19 +1,11 @@
-import { format, subDays } from "date-fns";
+import { subDays } from "date-fns";
 import type { Streak, StreakLog } from "@/lib/types";
+import { consecutiveDaysEndingOn, todayKey } from "@/lib/date-keys";
 
-export function todayStr(): string {
-  return format(new Date(), "yyyy-MM-dd");
-}
+export { todayKey as todayStr } from "@/lib/date-keys";
 
 export function computeStreak(logs: StreakLog[]): number {
-  const set = new Set(logs.map((l) => l.log_date));
-  let count = 0;
-  let cursor = new Date();
-  while (set.has(format(cursor, "yyyy-MM-dd"))) {
-    count++;
-    cursor = subDays(cursor, 1);
-  }
-  return count;
+  return consecutiveDaysEndingOn(logs.map((l) => l.log_date));
 }
 
 const DAY_MS = 1000 * 60 * 60 * 24;
@@ -63,7 +55,7 @@ export function streaksUncheckedToday(
   streaks: Streak[],
   logs: StreakLog[],
 ): Streak[] {
-  const today = todayStr();
+  const today = todayKey();
   const checkedIds = new Set(
     logs.filter((l) => l.log_date === today).map((l) => l.streak_id),
   );
@@ -76,20 +68,18 @@ export function uncheckedTodayWithCounts(
   streaks: Streak[],
   logs: StreakLog[],
 ): StreakWithCount[] {
-  const today = todayStr();
+  const today = todayKey();
   const grouped = logsByStreak(logs);
+  const yesterday = subDays(new Date(), 1);
   return streaks
     .filter((s) => !logs.some((l) => l.streak_id === s.id && l.log_date === today))
-    .map((s) => {
+    .map((s) => ({
+      streak: s,
       // Walk back from yesterday — that's the run today's check-in would extend.
-      const dates = new Set((grouped.get(s.id) ?? []).map((l) => l.log_date));
-      let count = 0;
-      let cursor = subDays(new Date(), 1);
-      while (dates.has(format(cursor, "yyyy-MM-dd"))) {
-        count++;
-        cursor = subDays(cursor, 1);
-      }
-      return { streak: s, count };
-    })
+      count: consecutiveDaysEndingOn(
+        (grouped.get(s.id) ?? []).map((l) => l.log_date),
+        yesterday,
+      ),
+    }))
     .sort((a, b) => b.count - a.count);
 }

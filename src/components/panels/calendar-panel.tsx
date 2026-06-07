@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { CalendarPlus, CheckCircle2 } from "lucide-react";
+import { CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
+import { todayKey } from "@/lib/date-keys";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
@@ -23,11 +23,9 @@ type FormState = {
   recurrence: Recurrence;
 };
 
-const todayStr = () => format(new Date(), "yyyy-MM-dd");
-
 const empty: FormState = {
   title: "",
-  date: todayStr(),
+  date: todayKey(),
   startTime: "09:00",
   endTime: "10:00",
   description: "",
@@ -103,16 +101,13 @@ export function CalendarPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarPlus className="h-4 w-4" />
-            New calendar event
-          </span>
+        <CardTitle className="inline-flex items-center gap-1.5">
+          <CalendarPlus className="h-3 w-3" /> New calendar event
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-3">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="cal-title">Title</Label>
             <Input
               id="cal-title"
@@ -121,13 +116,12 @@ export function CalendarPanel({
               placeholder="Dentist appointment"
             />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div
-              className={
-                "space-y-1 col-span-3 " +
-                (form.allDay ? "sm:col-span-3" : "sm:col-span-1")
-              }
-            >
+          <div
+            className={
+              "grid gap-2 " + (form.allDay ? "grid-cols-1" : "grid-cols-3")
+            }
+          >
+            <div className="space-y-1.5">
               <Label htmlFor="cal-date">Date</Label>
               <Input
                 id="cal-date"
@@ -138,7 +132,7 @@ export function CalendarPanel({
             </div>
             {!form.allDay && (
               <>
-                <div className="space-y-1 col-span-3 sm:col-span-1">
+                <div className="space-y-1.5">
                   <Label htmlFor="cal-start">Start</Label>
                   <Input
                     id="cal-start"
@@ -149,7 +143,7 @@ export function CalendarPanel({
                     }
                   />
                 </div>
-                <div className="space-y-1 col-span-3 sm:col-span-1">
+                <div className="space-y-1.5">
                   <Label htmlFor="cal-end">End</Label>
                   <Input
                     id="cal-end"
@@ -164,10 +158,10 @@ export function CalendarPanel({
             )}
           </div>
           <div className="flex flex-wrap gap-4 items-end">
-            <label className="inline-flex items-center gap-2 text-sm">
+            <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-zinc-300"
+                className="h-3.5 w-3.5 rounded border-border-strong"
                 checked={form.allDay}
                 onChange={(e) =>
                   setForm({ ...form, allDay: e.target.checked })
@@ -176,11 +170,7 @@ export function CalendarPanel({
               All day
             </label>
             <div className="space-y-1">
-              <Label htmlFor="cal-recurrence" className="text-xs">
-                Repeats
-              </Label>
               <Select
-                id="cal-recurrence"
                 value={form.recurrence}
                 onChange={(e) =>
                   setForm({
@@ -188,7 +178,7 @@ export function CalendarPanel({
                     recurrence: e.target.value as Recurrence,
                   })
                 }
-                className="h-8 w-32"
+                className="h-7 w-32 text-xs"
               >
                 <option value="none">Doesn&apos;t repeat</option>
                 <option value="daily">Daily</option>
@@ -198,7 +188,7 @@ export function CalendarPanel({
             </div>
           </div>
           {!compact && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <Label htmlFor="cal-desc">Description</Label>
               <Textarea
                 id="cal-desc"
@@ -206,38 +196,39 @@ export function CalendarPanel({
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="Optional notes"
+                placeholder="Optional"
+                rows={2}
               />
             </div>
           )}
           {result?.kind === "error" && (
-            <p className="text-sm text-red-600">{result.message}</p>
+            <p className="text-xs text-destructive">{result.message}</p>
           )}
           {result?.kind === "expired" && (
-            <div className="space-y-2 rounded-md border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 p-3">
-              <p className="text-sm text-amber-800 dark:text-amber-200">
+            <div className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3">
+              <p className="text-xs text-foreground-muted">
                 Google rejected the calendar token. Re-link to refresh access.
               </p>
               <RelinkGoogleButton reason="expired" />
             </div>
           )}
           {result?.kind === "ok" && (
-            <p className="text-sm text-emerald-600 inline-flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4" />
+            <p className="text-xs text-success inline-flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" />
               Event added to your Google Calendar.
               {result.link && (
                 <a
                   href={result.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="underline ml-1"
+                  className="underline inline-flex items-center gap-0.5"
                 >
-                  Open
+                  Open <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </p>
           )}
-          <Button type="submit" disabled={submitting}>
+          <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? "Adding…" : "Add to Google Calendar"}
           </Button>
         </form>

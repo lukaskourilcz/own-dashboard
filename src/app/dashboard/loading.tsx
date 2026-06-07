@@ -1,58 +1,86 @@
-import { LayoutDashboard } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Activity } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function PanelSkeleton({ lines = 4 }: { lines?: number }) {
   return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-4 w-32" />
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <div className="rounded-lg border border-border bg-surface p-5 shadow-soft space-y-3">
+      <Skeleton className="h-3 w-24" />
+      <div className="space-y-2 pt-1">
         {Array.from({ length: lines }, (_, i) => (
           <Skeleton key={i} className="h-3 w-full" />
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 flex items-center justify-center">
-              <LayoutDashboard className="h-4 w-4" />
-            </div>
-            <Skeleton className="h-4 w-32" />
+    <div className="min-h-screen bg-background">
+      {/* sidebar skeleton */}
+      <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface md:fixed md:inset-y-0 md:left-0">
+        <div className="flex h-14 items-center gap-2.5 px-4 border-b border-border">
+          <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
+            <Activity className="h-3.5 w-3.5" />
           </div>
+          <Skeleton className="h-3 w-20" />
         </div>
-      </header>
+        <div className="flex-1 p-2 space-y-1">
+          {Array.from({ length: 9 }, (_, i) => (
+            <Skeleton key={i} className="h-7 w-full" />
+          ))}
+        </div>
+      </aside>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 space-y-4">
-        <Skeleton className="h-9 w-full" />
-        <Card>
-          <CardContent className="pt-6 space-y-3">
-            <Skeleton className="h-4 w-72" />
-            <div className="grid gap-3 md:grid-cols-3">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
+      <main className="md:pl-60">
+        <div className="mx-auto max-w-6xl px-4 md:px-8 py-6 md:py-8 space-y-6">
+          {/* hero */}
+          <div className="rounded-xl border border-border bg-surface p-6 md:p-8 shadow-soft space-y-5">
+            <div className="flex items-baseline justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-7 w-64" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-7 w-32 rounded-full" />
             </div>
-          </CardContent>
-        </Card>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <PanelSkeleton lines={2} />
-          <PanelSkeleton lines={2} />
-          <PanelSkeleton lines={2} />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <PanelSkeleton />
-          <PanelSkeleton />
-          <PanelSkeleton />
-          <PanelSkeleton />
+            <div className="grid gap-6 md:grid-cols-3 pt-4 border-t border-border">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </div>
+          </div>
+          {/* quick add */}
+          <Skeleton className="h-10 w-full rounded-md" />
+          {/* KPIs */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border bg-surface p-4 shadow-soft space-y-2"
+              >
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <PanelSkeleton />
+            <PanelSkeleton />
+            <PanelSkeleton />
+            <PanelSkeleton />
+          </div>
         </div>
       </main>
     </div>

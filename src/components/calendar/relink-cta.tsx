@@ -23,7 +23,6 @@ export function RelinkGoogleButton({
       setError(error);
       setBusy(false);
     }
-    // On success the browser leaves for Google's consent screen.
   }
 
   return (
@@ -36,7 +35,7 @@ export function RelinkGoogleButton({
             ? "Re-link Google"
             : "Grant Calendar access"}
       </Button>
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      {error && <span className="text-xs text-destructive">{error}</span>}
     </div>
   );
 }
