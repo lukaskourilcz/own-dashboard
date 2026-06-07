@@ -151,8 +151,14 @@ export type Note = {
   // BlockNote document — array of Block objects with nested children.
   // Stored opaquely; only the editor reads its shape.
   content: unknown;
+  // Flattened plain text — derived from `content` on every save. Used for
+  // client-side full-text search and indexed via tsvector server-side.
+  plain_text: string;
   tags: string[];
   is_pinned: boolean;
+  // Drag-to-reorder anchor. Higher = earlier in the list within its
+  // is_pinned bucket.
+  sort_order: number;
   created_at: string;
   updated_at: string;
 };
