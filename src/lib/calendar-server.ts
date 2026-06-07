@@ -1,14 +1,27 @@
 import "server-only";
 import { fetchWithGoogleAuth } from "@/lib/google-token";
+import { createClient as createUserClient } from "@/lib/supabase/server";
+import { loadUserPreferences } from "@/lib/user-prefs";
 import type { EventsResult, GcalEvent } from "@/lib/calendar";
 
-async function fetchWindow(
+type RawEvent = GcalEvent & { _calendarId?: string };
+
+async function fetchOne(
+  calendarId: string,
   timeMin: Date,
   timeMax: Date,
   maxResults: number,
-): Promise<EventsResult> {
+): Promise<{
+  ok: boolean;
+  status?: number;
+  reason?: "no-token" | "unauthorized" | "error";
+  events?: RawEvent[];
+  message?: string;
+}> {
   const url = new URL(
-    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
+      calendarId,
+    )}/events`,
   );
   url.searchParams.set("timeMin", timeMin.toISOString());
   url.searchParams.set("timeMax", timeMax.toISOString());
@@ -19,25 +32,76 @@ async function fetchWindow(
   try {
     const res = await fetchWithGoogleAuth(url.toString());
 
-    // Synthetic 401 from fetchWithGoogleAuth means "no refresh token stored
-    // for this user" (either never linked or just revoked). The UI should
-    // surface a re-link CTA.
     if (res.status === 401 && res.statusText === "no-token") {
-      return { ok: false, reason: "no-token" };
+      return { ok: false, status: 401, reason: "no-token" };
     }
-    if (res.status === 401) return { ok: false, reason: "unauthorized" };
+    if (res.status === 401) {
+      return { ok: false, status: 401, reason: "unauthorized" };
+    }
     if (!res.ok) {
       return {
         ok: false,
+        status: res.status,
         reason: "error",
         message: `Calendar API ${res.status}`,
       };
     }
     const json = (await res.json()) as { items?: GcalEvent[] };
-    return { ok: true, events: json.items ?? [] };
+    const tagged: RawEvent[] = (json.items ?? []).map((e) => ({
+      ...e,
+      _calendarId: calendarId,
+    }));
+    return { ok: true, events: tagged };
   } catch (err) {
     return { ok: false, reason: "error", message: (err as Error).message };
   }
+}
+
+async function fetchWindow(
+  timeMin: Date,
+  timeMax: Date,
+  maxResults: number,
+): Promise<EventsResult> {
+  const supabase = await createUserClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, reason: "no-token" };
+
+  const prefs = await loadUserPreferences(user.id);
+  const calendarIds =
+    prefs.selected_calendar_ids.length > 0
+      ? prefs.selected_calendar_ids
+      : ["primary"];
+
+  const results = await Promise.all(
+    calendarIds.map((id) => fetchOne(id, timeMin, timeMax, maxResults)),
+  );
+
+  // If every single fetch failed with no-token / unauthorized, surface that
+  // single reason to the UI. If at least one calendar returned events, render
+  // those and silently drop the rest (a broken secondary calendar shouldn't
+  // hide the working primary one).
+  const successes = results.filter((r) => r.ok);
+  if (successes.length === 0) {
+    const first = results[0];
+    return {
+      ok: false,
+      reason: first?.reason ?? "error",
+      message: first?.message,
+    };
+  }
+
+  const merged = successes.flatMap((r) => r.events ?? []);
+  merged.sort((a, b) => {
+    const at =
+      a.start.dateTime ?? `${a.start.date ?? ""}T00:00:00`;
+    const bt =
+      b.start.dateTime ?? `${b.start.date ?? ""}T00:00:00`;
+    return at.localeCompare(bt);
+  });
+
+  return { ok: true, events: merged };
 }
 
 export async function fetchTodayWindowEvents(): Promise<EventsResult> {

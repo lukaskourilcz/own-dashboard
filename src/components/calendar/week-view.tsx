@@ -12,6 +12,7 @@ import {
   type GcalEvent,
 } from "@/lib/calendar";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
+import { CalendarPicker } from "@/components/calendar/calendar-picker";
 
 type DayBucket = { key: string; date: Date; events: GcalEvent[] };
 
@@ -40,7 +41,13 @@ function bucketByDay(events: GcalEvent[]): DayBucket[] {
   );
 }
 
-export function WeekView({ calendar }: { calendar: EventsResult }) {
+export function WeekView({
+  calendar,
+  selectedCalendarIds,
+}: {
+  calendar: EventsResult;
+  selectedCalendarIds: string[];
+}) {
   const buckets = useMemo(
     () => (calendar.ok ? bucketByDay(calendar.events) : []),
     [calendar],
@@ -48,10 +55,11 @@ export function WeekView({ calendar }: { calendar: EventsResult }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="inline-flex items-center gap-1.5">
           <CalendarDays className="h-3 w-3" /> Next 7 days
         </CardTitle>
+        <CalendarPicker initialSelected={selectedCalendarIds} />
       </CardHeader>
       <CardContent>
         {!calendar.ok ? (

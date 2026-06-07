@@ -19,6 +19,8 @@ import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar, MobileNav, type NavTab } from "@/components/nav/sidebar";
 import { CommandPalette } from "@/components/command-palette";
+import { MobileFab } from "@/components/mobile-fab";
+import { PartnerTicker } from "@/components/realtime/partner-ticker";
 import type {
   Account,
   Book,
@@ -50,6 +52,7 @@ type Props = {
   weekCalendar: EventsResult;
   coupleCtx: CoupleContext;
   partnerData: PartnerData | null;
+  selectedCalendarIds: string[];
 };
 
 const TAB_CHORDS: Record<string, NavTab> = {
@@ -80,6 +83,7 @@ export function DashboardShell({
   weekCalendar,
   coupleCtx,
   partnerData,
+  selectedCalendarIds,
 }: Props) {
   const [tab, setTab] = useState<NavTab>("overview");
   const [subscriptions, setSubscriptions] =
@@ -158,6 +162,18 @@ export function DashboardShell({
     <TooltipProvider>
       <ToastProvider>
         <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
+        <MobileFab
+          onClick={() => {
+            setTab("overview");
+            requestAnimationFrame(focusQuickAdd);
+          }}
+        />
+        {coupleCtx.partnerId && (
+          <PartnerTicker
+            partnerId={coupleCtx.partnerId}
+            partnerName={partnerName}
+          />
+        )}
         <div className="min-h-screen bg-background">
           <Sidebar
             tab={tab}
@@ -246,7 +262,10 @@ export function DashboardShell({
                         key={calendarPrefill?.nonce ?? "idle"}
                         initialTitle={calendarPrefill?.title}
                       />
-                      <WeekView calendar={weekCalendar} />
+                      <WeekView
+                        calendar={weekCalendar}
+                        selectedCalendarIds={selectedCalendarIds}
+                      />
                     </div>
                   )}
 

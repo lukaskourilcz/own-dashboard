@@ -14,7 +14,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Subscriptions, tasks, habits, plans, and your calendar — in one place.",
+  description:
+    "Subscriptions, tasks, habits, plans, and your calendar — in one place.",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Dashboard" },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: import("next").Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 // Runs before React hydration to avoid a flash of incorrect theme.

@@ -16,6 +16,19 @@ type Props = {
   onCalendarTitle: (title: string) => void;
 };
 
+type NlAction =
+  | { kind: "todo"; title: string; due_date?: string }
+  | { kind: "streak"; streak_name: string }
+  | {
+      kind: "calendar_event";
+      title: string;
+      date: string;
+      startTime?: string;
+      endTime?: string;
+      allDay?: boolean;
+      description?: string;
+    };
+
 export function QuickAdd({
   setTodos,
   streaks,
@@ -29,6 +42,57 @@ export function QuickAdd({
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function getUserId(): Promise<string | null> {
+    const { data: userData } = await supabase.auth.getUser();
+    return userData.user?.id ?? null;
+  }
+
+  async function addTodoLocal(userId: string, title: string, dueDate?: string) {
+    const { data, error } = await supabase
+      .from("todos")
+      .insert({ title, user_id: userId, due_date: dueDate ?? null })
+      .select()
+      .single();
+    if (error || !data) {
+      toast.err(error?.message ?? "Could not add todo.");
+      return false;
+    }
+    setTodos((prev) => [data, ...prev]);
+    toast.ok(`Added todo: ${title}`);
+    return true;
+  }
+
+  async function markStreakLocal(userId: string, name: string) {
+    const streak = streaks.find(
+      (s) => s.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (!streak) {
+      toast.err(`No habit named "${name}".`);
+      return false;
+    }
+    const today = todayKey();
+    if (
+      streakLogs.some(
+        (l) => l.streak_id === streak.id && l.log_date === today,
+      )
+    ) {
+      toast.info(`${streak.name} already done today.`);
+      return true;
+    }
+    const { data, error } = await supabase
+      .from("streak_logs")
+      .insert({ streak_id: streak.id, user_id: userId, log_date: today })
+      .select()
+      .single();
+    if (error || !data) {
+      toast.err(error?.message ?? "Could not mark habit.");
+      return false;
+    }
+    setStreakLogs((prev) => [...prev, data]);
+    toast.ok(`Marked ${streak.name} for today.`);
+    return true;
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const v = value.trim();
@@ -36,67 +100,32 @@ export function QuickAdd({
 
     setBusy(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await getUserId();
       if (!userId) {
         toast.err("Sign in first.");
         return;
       }
 
+      // Explicit prefixes always win — fast path, predictable, works offline.
       if (v.startsWith("!todo ")) {
         const title = v.slice("!todo ".length).trim();
         if (!title) {
           toast.err("Title is required.");
           return;
         }
-        const { data, error } = await supabase
-          .from("todos")
-          .insert({ title, user_id: userId })
-          .select()
-          .single();
-        if (error || !data) {
-          toast.err(error?.message ?? "Could not add todo.");
-          return;
-        }
-        setTodos((prev) => [data, ...prev]);
-        setValue("");
-        toast.ok(`Added todo: ${title}`);
-      } else if (v.startsWith("!streak ")) {
+        if (await addTodoLocal(userId, title)) setValue("");
+        return;
+      }
+      if (v.startsWith("!streak ")) {
         const name = v.slice("!streak ".length).trim();
         if (!name) {
-          toast.err("Streak name is required.");
+          toast.err("Habit name is required.");
           return;
         }
-        const streak = streaks.find(
-          (s) => s.name.toLowerCase() === name.toLowerCase(),
-        );
-        if (!streak) {
-          toast.err(`No streak named "${name}".`);
-          return;
-        }
-        const today = todayKey();
-        if (
-          streakLogs.some(
-            (l) => l.streak_id === streak.id && l.log_date === today,
-          )
-        ) {
-          toast.info(`${streak.name} already done today.`);
-          setValue("");
-          return;
-        }
-        const { data, error } = await supabase
-          .from("streak_logs")
-          .insert({ streak_id: streak.id, user_id: userId, log_date: today })
-          .select()
-          .single();
-        if (error || !data) {
-          toast.err(error?.message ?? "Could not mark streak.");
-          return;
-        }
-        setStreakLogs((prev) => [...prev, data]);
-        setValue("");
-        toast.ok(`Marked ${streak.name} for today.`);
-      } else if (v.startsWith("!cal ")) {
+        if (await markStreakLocal(userId, name)) setValue("");
+        return;
+      }
+      if (v.startsWith("!cal ")) {
         const title = v.slice("!cal ".length).trim();
         if (!title) {
           toast.err("Event title is required.");
@@ -105,8 +134,48 @@ export function QuickAdd({
         onCalendarTitle(title);
         setValue("");
         toast.info("Opened the calendar form.");
-      } else {
-        toast.err("Use !todo, !streak, or !cal …");
+        return;
+      }
+
+      // Otherwise: natural language via /api/quick-add → Claude Haiku tool-use.
+      const tz =
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined;
+      let parsed: { action: NlAction | null; disabled?: boolean } | null = null;
+      try {
+        const res = await fetch("/api/quick-add", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ input: v, timezone: tz }),
+        });
+        if (res.ok) parsed = await res.json();
+      } catch {
+        // Treat network errors as "no parse".
+      }
+
+      if (parsed?.disabled) {
+        toast.err("Use !todo, !streak, or !cal — NL parsing is off.");
+        return;
+      }
+      if (!parsed?.action) {
+        toast.err("Couldn't parse. Try !todo / !streak / !cal.");
+        return;
+      }
+
+      const a = parsed.action;
+      if (a.kind === "todo") {
+        if (await addTodoLocal(userId, a.title, a.due_date)) setValue("");
+      } else if (a.kind === "streak") {
+        if (await markStreakLocal(userId, a.streak_name)) setValue("");
+      } else if (a.kind === "calendar_event") {
+        // Hand off to the existing calendar route; surface the prefilled form
+        // so the user can confirm before creating the GCal event.
+        onCalendarTitle(a.title);
+        setValue("");
+        toast.info(
+          `Opening calendar form for "${a.title}" on ${a.date}${a.startTime ? ` at ${a.startTime}` : ""}.`,
+        );
       }
     } finally {
       setBusy(false);
@@ -119,7 +188,7 @@ export function QuickAdd({
       <Input
         ref={inputRef}
         id="quick-add-input"
-        placeholder="Quick add — !todo, !streak, or !cal …"
+        placeholder='"dinner with mom 7pm tomorrow" — or !todo / !streak / !cal'
         value={value}
         onChange={(e) => setValue(e.target.value)}
         disabled={busy}

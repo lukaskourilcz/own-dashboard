@@ -5,6 +5,7 @@ import {
   fetchUpcomingWeekEvents,
 } from "@/lib/calendar-server";
 import { loadCoupleContext, loadPartnerSharedData } from "@/lib/couple";
+import { loadUserPreferences } from "@/lib/user-prefs";
 import { DashboardShell } from "@/components/dashboard-shell";
 
 export default async function DashboardPage() {
@@ -101,6 +102,8 @@ export default async function DashboardPage() {
       )
     : null;
 
+  const prefs = await loadUserPreferences(user.id);
+
   return (
     <DashboardShell
       user={{
@@ -123,6 +126,7 @@ export default async function DashboardPage() {
       weekCalendar={weekCalendar}
       coupleCtx={coupleCtx}
       partnerData={partnerData}
+      selectedCalendarIds={prefs.selected_calendar_ids}
     />
   );
 }
