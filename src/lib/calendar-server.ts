@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { fetchWithGoogleAuth } from "@/lib/google-token";
 import type { EventsResult, GcalEvent } from "@/lib/calendar";
 
 async function fetchWindow(
@@ -7,12 +7,6 @@ async function fetchWindow(
   timeMax: Date,
   maxResults: number,
 ): Promise<EventsResult> {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.provider_token) return { ok: false, reason: "no-token" };
-
   const url = new URL(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
   );
@@ -23,13 +17,21 @@ async function fetchWindow(
   url.searchParams.set("maxResults", String(maxResults));
 
   try {
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${session.provider_token}` },
-      cache: "no-store",
-    });
+    const res = await fetchWithGoogleAuth(url.toString());
+
+    // Synthetic 401 from fetchWithGoogleAuth means "no refresh token stored
+    // for this user" (either never linked or just revoked). The UI should
+    // surface a re-link CTA.
+    if (res.status === 401 && res.statusText === "no-token") {
+      return { ok: false, reason: "no-token" };
+    }
     if (res.status === 401) return { ok: false, reason: "unauthorized" };
     if (!res.ok) {
-      return { ok: false, reason: "error", message: `Calendar API ${res.status}` };
+      return {
+        ok: false,
+        reason: "error",
+        message: `Calendar API ${res.status}`,
+      };
     }
     const json = (await res.json()) as { items?: GcalEvent[] };
     return { ok: true, events: json.items ?? [] };

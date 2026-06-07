@@ -651,3 +651,54 @@ create policy "important_dates update" on public.important_dates
 drop policy if exists "important_dates delete own" on public.important_dates;
 create policy "important_dates delete own" on public.important_dates
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Google OAuth refresh tokens (Phase 0)
+-- ----------------------------------------------------------------------------
+-- Supabase exposes session.provider_refresh_token only at code-exchange time
+-- and then nulls it on the next session refresh. We capture it in
+-- /auth/callback, persist here, and refresh access tokens server-side. No
+-- client ever reads this table; only service_role bypasses the empty
+-- RLS rule set.
+-- =============================================================
+create table if not exists public.google_oauth (
+  user_id        uuid primary key references auth.users(id) on delete cascade,
+  refresh_token  text not null,
+  access_token   text,
+  expires_at     timestamptz,
+  scopes         text[] not null default '{}',
+  google_sub     text,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create index if not exists google_oauth_expires_idx
+  on public.google_oauth (expires_at);
+
+alter table public.google_oauth enable row level security;
+
+revoke all on public.google_oauth from anon;
+revoke all on public.google_oauth from authenticated;
+grant all on public.google_oauth to service_role;
+
+create or replace function public.tg_google_oauth_touch()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists google_oauth_touch on public.google_oauth;
+create trigger google_oauth_touch
+  before update on public.google_oauth
+  for each row execute function public.tg_google_oauth_touch();
+
+-- is_shared_with_me is invoked from RLS policies (under the calling user's
+-- role for SELECT-time evaluation). Direct RPC by anon is unnecessary; revoke
+-- to keep the surface tight.
+revoke execute on function public.is_shared_with_me(uuid, text) from public;
+revoke execute on function public.is_shared_with_me(uuid, text) from anon;

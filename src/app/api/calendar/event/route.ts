@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { fetchWithGoogleAuth } from "@/lib/google-token";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
@@ -39,22 +40,10 @@ function addDays(iso: string, n: number): string {
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
-  const accessToken = session.provider_token;
-  if (!accessToken) {
-    return NextResponse.json(
-      {
-        error: "Google Calendar access has lapsed.",
-        reason: "no-token",
-      },
-      { status: 401 },
-    );
   }
 
   const body = (await request.json().catch(() => ({}))) as Payload;
@@ -107,18 +96,21 @@ export async function POST(request: Request) {
   const rule = rrule((recurrence ?? "none") as Recurrence);
   if (rule) event.recurrence = rule;
 
-  const res = await fetch(
+  const res = await fetchWithGoogleAuth(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(event),
     },
   );
 
+  if (res.status === 401 && res.statusText === "no-token") {
+    return NextResponse.json(
+      { error: "Google Calendar access has lapsed.", reason: "no-token" },
+      { status: 401 },
+    );
+  }
   if (res.status === 401) {
     return NextResponse.json(
       { error: "Google rejected the calendar token.", reason: "expired" },
