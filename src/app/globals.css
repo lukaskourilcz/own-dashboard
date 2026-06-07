@@ -183,3 +183,120 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   BlockNote editor — reskin Mantine defaults to match the design tokens.
+   The .bn-host wrapper scopes all overrides so we don't leak into other
+   parts of the app that might use Mantine in the future.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.bn-host {
+  /* Spacing matches the rest of the dashboard */
+  padding: 0.5rem 0.5rem 2rem;
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.bn-host [data-content-type] {
+  font-family: inherit;
+}
+
+/* BlockNote uses CSS variables prefixed with --bn- and --colors-. Override
+   them with the dashboard tokens. */
+.bn-host .bn-container {
+  --bn-colors-editor-text: var(--foreground);
+  --bn-colors-editor-background: transparent;
+  --bn-colors-menu-text: var(--foreground);
+  --bn-colors-menu-background: var(--surface);
+  --bn-colors-tooltip-text: var(--foreground);
+  --bn-colors-tooltip-background: var(--surface);
+  --bn-colors-hovered-text: var(--foreground);
+  --bn-colors-hovered-background: var(--surface-hover);
+  --bn-colors-selected-text: var(--foreground);
+  --bn-colors-selected-background: var(--accent);
+  --bn-colors-disabled-text: var(--foreground-subtle);
+  --bn-colors-disabled-background: var(--surface-muted);
+  --bn-colors-shadow: var(--shadow-elevated);
+  --bn-colors-border: var(--border);
+  --bn-colors-side-menu: var(--foreground-subtle);
+  --bn-colors-highlights-gray-background: var(--surface-muted);
+  --bn-font-family: var(--font-sans);
+  --bn-border-radius: var(--radius);
+  background: transparent;
+}
+
+.bn-host .bn-editor {
+  background: transparent !important;
+}
+
+.bn-host [contenteditable="true"]:focus {
+  outline: none;
+}
+
+/* Placeholder colour */
+.bn-host .bn-inline-content[data-placeholder]::before {
+  color: var(--foreground-subtle);
+}
+
+/* Headings */
+.bn-host h1.bn-block-content {
+  font-size: 1.875rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin-top: 1rem;
+}
+.bn-host h2.bn-block-content {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 0.75rem;
+}
+.bn-host h3.bn-block-content {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+/* Code blocks + inline code */
+.bn-host pre,
+.bn-host code {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+}
+.bn-host pre {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+}
+.bn-host code:not(pre code) {
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border);
+}
+
+/* Slash + formatting menus — tighten + match the rest of the popovers */
+.bn-host .mantine-Menu-dropdown,
+.bn-host .mantine-Popover-dropdown {
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-elevated) !important;
+  padding: 4px !important;
+}
+
+.bn-host .mantine-Menu-item[data-hovered="true"],
+.bn-host .mantine-Menu-item:hover {
+  background: var(--surface-hover) !important;
+  color: var(--foreground) !important;
+}
+
+.bn-host .mantine-Tooltip-tooltip {
+  background: var(--surface) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  font-size: 11px !important;
+}
+
+/* Drag handle on hover */
+.bn-host .bn-side-menu {
+  color: var(--foreground-subtle);
+}

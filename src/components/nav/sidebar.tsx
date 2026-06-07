@@ -7,6 +7,7 @@ import {
   BookOpen,
   CalendarDays,
   CreditCard,
+  FileText,
   Flame,
   Gift,
   Heart,
@@ -32,6 +33,7 @@ export type NavTab =
   | "plans"
   | "couple"
   | "books"
+  | "notes"
   | "dates";
 
 type Item = {
@@ -79,6 +81,7 @@ export function Sidebar({
   const items: Item[] = [
     { value: "overview", label: "Overview", icon: LayoutDashboard },
     { value: "calendar", label: "Calendar", icon: CalendarDays },
+    { value: "notes", label: "Notes", icon: FileText },
     { value: "todos", label: "Tasks", icon: ListTodo },
     { value: "streaks", label: "Habits", icon: Flame },
     { value: "finances", label: "Finances", icon: Wallet },
@@ -207,6 +210,7 @@ export function MobileNav({
   const items: Item[] = [
     { value: "overview", label: "Overview", icon: LayoutDashboard },
     { value: "calendar", label: "Calendar", icon: CalendarDays },
+    { value: "notes", label: "Notes", icon: FileText },
     { value: "todos", label: "Tasks", icon: ListTodo },
     { value: "streaks", label: "Habits", icon: Flame },
     { value: "finances", label: "Finances", icon: Wallet },

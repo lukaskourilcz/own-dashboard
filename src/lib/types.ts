@@ -144,6 +144,18 @@ export type BookPage = {
   created_at: string;
 };
 
+export type Note = {
+  id: string;
+  user_id: string;
+  title: string;
+  // BlockNote document — array of Block objects with nested children.
+  // Stored opaquely; only the editor reads its shape.
+  content: unknown;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type RecurrenceUnit = "yearly" | "monthly";
 
 export type ImportantDate = {

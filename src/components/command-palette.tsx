@@ -6,6 +6,7 @@ import {
   BookOpen,
   CalendarDays,
   CreditCard,
+  FileText,
   Flame,
   Gift,
   Heart,
@@ -74,6 +75,7 @@ export function CommandPalette({
     return [
       { id: "go-overview", label: "Overview", group: "Go to", icon: LayoutDashboard, keywords: "home dashboard g o", run: go("overview") },
       { id: "go-calendar", label: "Calendar", group: "Go to", icon: CalendarDays, keywords: "events g c", run: go("calendar") },
+      { id: "go-notes", label: "Notes", group: "Go to", icon: FileText, keywords: "notes prompts writing g n", run: go("notes") },
       { id: "go-todos", label: "Tasks", group: "Go to", icon: ListTodo, keywords: "todo g t", run: go("todos") },
       { id: "go-streaks", label: "Habits", group: "Go to", icon: Flame, keywords: "streak habit g s", run: go("streaks") },
       { id: "go-finances", label: "Finances", group: "Go to", icon: Wallet, keywords: "money transactions g f", run: go("finances") },

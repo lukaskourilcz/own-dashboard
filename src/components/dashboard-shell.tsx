@@ -10,6 +10,7 @@ import { FinancesPanel } from "@/components/panels/finances-panel";
 import { PlansPanel } from "@/components/panels/plans-panel";
 import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
+import { NotesPanel } from "@/components/panels/notes-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
@@ -26,6 +27,7 @@ import type {
   Book,
   BookPage,
   ImportantDate,
+  Note,
   Plan,
   Streak,
   StreakLog,
@@ -47,6 +49,7 @@ type Props = {
   initialPlans: Plan[];
   initialBooks: Book[];
   initialBookPages: BookPage[];
+  initialNotes: Note[];
   initialImportantDates: ImportantDate[];
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
@@ -64,6 +67,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
   p: "plans",
   u: "couple",
   b: "books",
+  n: "notes",
   d: "dates",
 };
 
@@ -78,6 +82,7 @@ export function DashboardShell({
   initialPlans,
   initialBooks,
   initialBookPages,
+  initialNotes,
   initialImportantDates,
   todayCalendar,
   weekCalendar,
@@ -97,6 +102,7 @@ export function DashboardShell({
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [bookPages, setBookPages] = useState<BookPage[]>(initialBookPages);
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [importantDates, setImportantDates] =
     useState<ImportantDate[]>(initialImportantDates);
   const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
@@ -332,6 +338,10 @@ export function DashboardShell({
                       userName={user.name ?? user.email.split("@")[0]}
                       ctx={coupleCtx}
                     />
+                  )}
+
+                  {tab === "notes" && (
+                    <NotesPanel notes={notes} setNotes={setNotes} />
                   )}
 
                   {tab === "dates" && (
