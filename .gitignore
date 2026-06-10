@@ -42,3 +42,7 @@ next-env.d.ts
 
 # claude code local settings
 .claude/
+
+# notes-mcp tool (local MCP server)
+/tools/notes-mcp/node_modules
+!tools/notes-mcp/.env.example

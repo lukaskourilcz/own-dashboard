@@ -3,6 +3,16 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=gcctapykhrdyxikieemn"
+    },
+    "own-dashboard-notes": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "tsx", "${CLAUDE_PROJECT_DIR}/tools/notes-mcp/src/server.ts"],
+      "env": {
+        "SUPABASE_URL": "https://gcctapykhrdyxikieemn.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
+        "DASHBOARD_USER_ID": "${DASHBOARD_USER_ID}"
+      }
     }
   }
 }
