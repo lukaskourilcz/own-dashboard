@@ -33,6 +33,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { todayKey } from "@/lib/date-keys";
 import { cn } from "@/lib/utils";
+import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Book, BookPage, BookStatus, Profile, Updater } from "@/lib/types";
 import { partnerDisplayName, type CoupleContext } from "@/lib/couple";
 
@@ -71,6 +72,7 @@ export function BooksPanel({
 }) {
   const supabase = createClient();
   const toast = useToast();
+  const t = useDict();
   const [newBook, setNewBook] = useState<NewBookForm>(emptyBook);
   const [logBuf, setLogBuf] = useState<
     Record<string, { pages: string; note: string }>
@@ -100,12 +102,12 @@ export function BooksPanel({
   async function addBook(e: React.FormEvent) {
     e.preventDefault();
     if (!newBook.title.trim()) {
-      toast.err("Title is required.");
+      toast.err(t.books.titleRequiredToast);
       return;
     }
     const target = newBook.target_pages ? Number(newBook.target_pages) : null;
     if (target !== null && (Number.isNaN(target) || target <= 0)) {
-      toast.err("Target pages must be a positive number.");
+      toast.err(t.books.targetPagesPositiveToast);
       return;
     }
     const { data, error } = await supabase
@@ -121,20 +123,20 @@ export function BooksPanel({
       .select()
       .single();
     if (error || !data) {
-      toast.err(error?.message ?? "Could not add book.");
+      toast.err(error?.message ?? t.books.couldNotAddBook);
       return;
     }
     setBooks((prev) => [data, ...prev]);
     setNewBook(emptyBook);
     setShowNew(false);
-    toast.ok(`Added "${data.title}".`);
+    toast.ok(t.books.addedToast(data.title));
   }
 
   async function logPages(book: Book) {
     const buf = bufFor(book.id);
     const n = Number(buf.pages);
     if (!buf.pages || Number.isNaN(n) || n <= 0) {
-      toast.err("Pages must be a positive number.");
+      toast.err(t.books.pagesPositiveToast);
       return;
     }
     const today = todayKey();
@@ -191,13 +193,13 @@ export function BooksPanel({
         .single();
       if (error || !data) {
         setPages((prev) => prev.filter((p) => p.id !== tentativeId));
-        toast.err(error?.message ?? "Could not log pages.");
+        toast.err(error?.message ?? t.books.couldNotLogPages);
         return;
       }
       setPages((prev) => prev.map((p) => (p.id === tentativeId ? data : p)));
     }
     setBuf(book.id, { pages: "", note: "" });
-    toast.ok(`+${n} page${n === 1 ? "" : "s"} on "${book.title}"`);
+    toast.ok(t.books.loggedToast(n, book.title));
   }
 
   async function changeStatus(book: Book, status: BookStatus) {
@@ -217,9 +219,7 @@ export function BooksPanel({
   }
 
   async function deleteBook(book: Book) {
-    const ok = window.confirm(
-      `Delete "${book.title}" and all its page logs?`,
-    );
+    const ok = window.confirm(t.books.deleteConfirm(book.title));
     if (!ok) return;
     setBooks((prev) => prev.filter((b) => b.id !== book.id));
     setPages((prev) => prev.filter((p) => p.book_id !== book.id));
@@ -230,15 +230,21 @@ export function BooksPanel({
   return (
     <div>
       <PageHeader
-        title="Books"
-        description="What you're reading, page by page."
+        title={t.books.title}
+        description={t.books.description}
         action={
           <Button
             size="sm"
             variant={showNew ? "outline" : "default"}
             onClick={() => setShowNew((v) => !v)}
           >
-            {showNew ? "Cancel" : <><Plus className="h-3.5 w-3.5" /> New book</>}
+            {showNew ? (
+              t.books.cancel
+            ) : (
+              <>
+                <Plus className="h-3.5 w-3.5" /> {t.books.newBook}
+              </>
+            )}
           </Button>
         }
       />
@@ -251,18 +257,18 @@ export function BooksPanel({
               className="grid gap-3 sm:grid-cols-4 items-end"
             >
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="book-title">Title</Label>
+                <Label htmlFor="book-title">{t.books.formTitle}</Label>
                 <Input
                   id="book-title"
                   value={newBook.title}
                   onChange={(e) =>
                     setNewBook({ ...newBook, title: e.target.value })
                   }
-                  placeholder="Untitled novel"
+                  placeholder={t.books.titlePlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="book-target">Target pages</Label>
+                <Label htmlFor="book-target">{t.books.targetPages}</Label>
                 <Input
                   id="book-target"
                   type="number"
@@ -271,11 +277,11 @@ export function BooksPanel({
                   onChange={(e) =>
                     setNewBook({ ...newBook, target_pages: e.target.value })
                   }
-                  placeholder="300"
+                  placeholder={t.books.targetPagesPlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="book-start">Start date</Label>
+                <Label htmlFor="book-start">{t.books.startDate}</Label>
                 <Input
                   id="book-start"
                   type="date"
@@ -298,11 +304,11 @@ export function BooksPanel({
                       })
                     }
                   />
-                  Co-read with {partnerName}
+                  {t.books.coReadWith(partnerName)}
                 </label>
               )}
               <Button type="submit" className="sm:col-span-1">
-                <Plus className="h-3.5 w-3.5" /> Add book
+                <Plus className="h-3.5 w-3.5" /> {t.books.addBook}
               </Button>
             </form>
           </CardContent>
@@ -315,8 +321,8 @@ export function BooksPanel({
             <CardContent className="pt-5">
               <EmptyState
                 icon={BookOpen}
-                title="No active book"
-                description={`Click "New book" to start one.`}
+                title={t.books.noActiveBook}
+                description={t.books.noActiveBookDescription}
               />
             </CardContent>
           </Card>
@@ -343,7 +349,7 @@ export function BooksPanel({
         {otherBooks.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Past and paused</CardTitle>
+              <CardTitle>{t.books.pastAndPaused}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="-mx-2 divide-y divide-border">
@@ -366,7 +372,8 @@ export function BooksPanel({
                           {book.title}
                         </p>
                         <p className="text-[11px] text-foreground-subtle tabular">
-                          {book.status} · {total} pages
+                          {t.books.statusLabel[book.status]} ·{" "}
+                          {t.books.pagesCount(total)}
                         </p>
                       </div>
                       <div className="flex gap-1 shrink-0">
@@ -375,14 +382,14 @@ export function BooksPanel({
                           variant="outline"
                           onClick={() => changeStatus(book, "active")}
                         >
-                          Resume
+                          {t.books.resume}
                         </Button>
-                        <Tooltip content="Delete">
+                        <Tooltip content={t.books.delete}>
                           <Button
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => deleteBook(book)}
-                            aria-label="Delete"
+                            aria-label={t.books.delete}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
@@ -427,6 +434,8 @@ function BookRow({
   onStatus: (s: BookStatus) => void;
   onDelete: () => void;
 }) {
+  const t = useDict();
+  const locale = useDateLocale();
   const today = todayKey();
   const totals = pages.reduce(
     (acc, p) => {
@@ -456,7 +465,11 @@ function BookRow({
     for (let i = 13; i >= 0; i--) {
       const d = subDays(new Date(), i);
       const key = format(d, "yyyy-MM-dd");
-      buckets.set(key, { date: format(d, "MMM d"), me: 0, partner: 0 });
+      buckets.set(key, {
+        date: format(d, t.books.chartDateFormat, { locale }),
+        me: 0,
+        partner: 0,
+      });
     }
     for (const p of pages) {
       const b = buckets.get(p.log_date);
@@ -465,7 +478,7 @@ function BookRow({
       else if (partnerId && p.user_id === partnerId) b.partner += p.pages;
     }
     return [...buckets.values()];
-  }, [pages, userId, partnerId]);
+  }, [pages, userId, partnerId, t, locale]);
 
   return (
     <Card>
@@ -476,39 +489,39 @@ function BookRow({
               {book.title}
               {isShared && (
                 <SectionLabel className="!text-[9px] text-success">
-                  shared
+                  {t.books.shared}
                 </SectionLabel>
               )}
             </h3>
             <p className="text-xs text-foreground-subtle tabular mt-0.5">
               {book.target_pages
-                ? `${total} / ${book.target_pages} pages`
-                : `${total} pages`}
-              {book.started_on ? ` · started ${book.started_on}` : ""}
+                ? t.books.pagesProgress(total, book.target_pages)
+                : t.books.pagesCount(total)}
+              {book.started_on ? ` · ${t.books.startedOn(book.started_on)}` : ""}
             </p>
           </div>
           <div className="flex gap-1 shrink-0">
-            <Tooltip content="Mark as done">
+            <Tooltip content={t.books.markAsDone}>
               <Button size="sm" variant="outline" onClick={() => onStatus("done")}>
-                <Check className="h-3.5 w-3.5" /> Done
+                <Check className="h-3.5 w-3.5" /> {t.books.done}
               </Button>
             </Tooltip>
-            <Tooltip content="Pause">
+            <Tooltip content={t.books.pause}>
               <Button
                 size="icon-sm"
                 variant="ghost"
                 onClick={() => onStatus("paused")}
-                aria-label="Pause book"
+                aria-label={t.books.pauseBook}
               >
                 <Pause className="h-3.5 w-3.5" />
               </Button>
             </Tooltip>
-            <Tooltip content="Delete">
+            <Tooltip content={t.books.delete}>
               <Button
                 size="icon-sm"
                 variant="ghost"
                 onClick={onDelete}
-                aria-label="Delete book"
+                aria-label={t.books.deleteBook}
               >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
@@ -525,14 +538,14 @@ function BookRow({
               />
             </div>
             <p className="text-[10px] text-foreground-subtle mt-1 tabular">
-              {percent}% of target
+              {t.books.percentOfTarget(percent)}
             </p>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <Stat
-            label={`${userName} (you)`}
+            label={t.books.youSuffix(userName)}
             value={totals.me}
             todayDelta={totals.todayMe}
           />
@@ -545,7 +558,7 @@ function BookRow({
           ) : (
             <div className="rounded-md border border-dashed border-border p-3 flex flex-col justify-center text-xs text-foreground-subtle">
               <CircleSlash className="h-3.5 w-3.5 mb-1" />
-              Solo book
+              {t.books.solo}
             </div>
           )}
         </div>
@@ -576,7 +589,7 @@ function BookRow({
                 <RTooltip
                   cursor={{ fill: "var(--surface-hover)" }}
                   formatter={(value, name) => [
-                    `${value} pages`,
+                    t.books.pagesTooltip(Number(value)),
                     name === "me" ? userName : partnerName,
                   ]}
                   contentStyle={chartTooltipStyle}
@@ -609,29 +622,29 @@ function BookRow({
         {/* Log row */}
         <div className="flex flex-wrap gap-2 items-end pt-3 border-t border-border">
           <div className="space-y-1.5 w-24">
-            <Label htmlFor={`pages-${book.id}`}>Pages today</Label>
+            <Label htmlFor={`pages-${book.id}`}>{t.books.pagesToday}</Label>
             <Input
               id={`pages-${book.id}`}
               type="number"
               min={1}
               value={logBuf.pages}
               onChange={(e) => onBufChange({ pages: e.target.value })}
-              placeholder="3"
+              placeholder={t.books.pagesTodayPlaceholder}
             />
           </div>
           <div className="space-y-1.5 flex-1 min-w-40">
-            <Label htmlFor={`note-${book.id}`}>Note</Label>
+            <Label htmlFor={`note-${book.id}`}>{t.books.note}</Label>
             <Textarea
               id={`note-${book.id}`}
               rows={1}
               value={logBuf.note}
               onChange={(e) => onBufChange({ note: e.target.value })}
-              placeholder="Optional"
+              placeholder={t.books.notePlaceholder}
               className="min-h-9 py-1.5"
             />
           </div>
           <Button onClick={onLog}>
-            <Pencil className="h-3.5 w-3.5" /> Log
+            <Pencil className="h-3.5 w-3.5" /> {t.books.log}
           </Button>
         </div>
       </CardContent>
@@ -648,6 +661,7 @@ function Stat({
   value: number;
   todayDelta: number;
 }) {
+  const t = useDict();
   return (
     <div className="rounded-md border border-border bg-surface-muted/40 p-3">
       <SectionLabel className="truncate">{label}</SectionLabel>
@@ -655,7 +669,7 @@ function Stat({
         {value}
       </p>
       <p className="text-[11px] text-foreground-subtle tabular">
-        today {todayDelta > 0 ? `+${todayDelta}` : "0"}
+        {t.books.todayDelta(todayDelta)}
       </p>
     </div>
   );

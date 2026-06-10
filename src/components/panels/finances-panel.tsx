@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { format, parseISO } from "date-fns";
 import {
   Bar,
   BarChart,
@@ -43,6 +44,7 @@ import {
 import { todayKey } from "@/lib/date-keys";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
+import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Account, Subscription, Transaction, Updater } from "@/lib/types";
 
 type TxForm = {
@@ -85,6 +87,8 @@ export function FinancesPanel({
   displayCurrency: string;
 }) {
   const supabase = createClient();
+  const t = useDict();
+  const locale = useDateLocale();
   const [txForm, setTxForm] = useState<TxForm>(emptyTx);
   const [acctForm, setAcctForm] = useState<AccountForm>(emptyAccount);
   const [editingAcct, setEditingAcct] = useState<string | null>(null);
@@ -96,25 +100,36 @@ export function FinancesPanel({
 
   const totalNet = netWorth(accounts, displayCurrency);
   const months = useMemo(
-    () => monthlyTotals(transactions, displayCurrency, 6),
-    [transactions, displayCurrency],
-  );
-  const categories = useMemo(
     () =>
-      expenseByCategory(
-        transactions,
-        displayCurrency,
-        subscriptions,
-        currentMonthKey(),
-      ),
-    [transactions, subscriptions, displayCurrency],
+      monthlyTotals(transactions, displayCurrency, 6).map((m) => ({
+        ...m,
+        // Re-derive the axis label in the active locale (lib emits English).
+        label: format(parseISO(`${m.month}-01`), t.finances.monthFormat, {
+          locale,
+        }),
+      })),
+    [transactions, displayCurrency, t, locale],
   );
+  const categories = useMemo(() => {
+    const labelFor = (name: string) =>
+      name === "Uncategorized"
+        ? t.finances.categoryUncategorized
+        : name === "Subscriptions"
+          ? t.finances.categorySubscriptions
+          : name;
+    return expenseByCategory(
+      transactions,
+      displayCurrency,
+      subscriptions,
+      currentMonthKey(),
+    ).map((c) => ({ ...c, name: labelFor(c.name) }));
+  }, [transactions, subscriptions, displayCurrency, t]);
 
   async function addTx(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!txForm.amount || Number(txForm.amount) <= 0) {
-      setError("Amount is required.");
+      setError(t.finances.amountRequired);
       return;
     }
     const { data: userData } = await supabase.auth.getUser();
@@ -135,7 +150,7 @@ export function FinancesPanel({
       .select()
       .single();
     if (error || !data) {
-      setError(error?.message ?? "Could not save.");
+      setError(error?.message ?? t.finances.amountRequired);
       return;
     }
     setTransactions((prev) => [data, ...prev]);
@@ -144,7 +159,7 @@ export function FinancesPanel({
 
   async function removeTx(id: string) {
     const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (!error) setTransactions((prev) => prev.filter((t) => t.id !== id));
+    if (!error) setTransactions((prev) => prev.filter((tx) => tx.id !== id));
   }
 
   async function addAccount(e: React.FormEvent) {
@@ -205,15 +220,15 @@ export function FinancesPanel({
   return (
     <div>
       <PageHeader
-        title="Finances"
-        description="Accounts, transactions, and trends."
+        title={t.finances.title}
+        description={t.finances.description}
       />
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Net worth */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
-              <Wallet className="h-3 w-3" /> Net worth
+              <Wallet className="h-3 w-3" /> {t.finances.netWorth}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -221,8 +236,7 @@ export function FinancesPanel({
               {formatCurrency(totalNet, displayCurrency)}
             </p>
             <p className="text-xs text-foreground-subtle mt-1">
-              across {accounts.length} account
-              {accounts.length === 1 ? "" : "s"}
+              {t.finances.acrossAccounts(accounts.length)}
             </p>
 
             {accounts.length > 0 && (
@@ -256,7 +270,7 @@ export function FinancesPanel({
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => saveAccount(a.id)}
-                            aria-label="Save"
+                            aria-label={t.common.save}
                           >
                             <Check className="h-3.5 w-3.5 text-success" />
                           </Button>
@@ -264,7 +278,7 @@ export function FinancesPanel({
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => setEditingAcct(null)}
-                            aria-label="Cancel"
+                            aria-label={t.common.cancel}
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>
@@ -284,22 +298,22 @@ export function FinancesPanel({
                               {formatCurrency(a.balance, a.currency)}
                             </span>
                             <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Tooltip content="Edit">
+                              <Tooltip content={t.common.edit}>
                                 <Button
                                   size="icon-sm"
                                   variant="ghost"
                                   onClick={() => startEditAccount(a)}
-                                  aria-label="Edit"
+                                  aria-label={t.common.edit}
                                 >
                                   <Pencil className="h-3 w-3" />
                                 </Button>
                               </Tooltip>
-                              <Tooltip content="Delete">
+                              <Tooltip content={t.common.delete}>
                                 <Button
                                   size="icon-sm"
                                   variant="ghost"
                                   onClick={() => deleteAccount(a.id)}
-                                  aria-label="Delete"
+                                  aria-label={t.common.delete}
                                 >
                                   <Trash2 className="h-3 w-3 text-destructive" />
                                 </Button>
@@ -319,7 +333,7 @@ export function FinancesPanel({
               className="mt-4 pt-4 border-t border-border space-y-2"
             >
               <Input
-                placeholder="Account name"
+                placeholder={t.finances.accountNamePlaceholder}
                 value={acctForm.name}
                 onChange={(e) =>
                   setAcctForm({ ...acctForm, name: e.target.value })
@@ -329,7 +343,7 @@ export function FinancesPanel({
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Balance"
+                  placeholder={t.finances.balancePlaceholder}
                   value={acctForm.balance}
                   onChange={(e) =>
                     setAcctForm({ ...acctForm, balance: e.target.value })
@@ -354,7 +368,7 @@ export function FinancesPanel({
                 size="sm"
                 className="w-full"
               >
-                <Plus className="h-3.5 w-3.5" /> Add account
+                <Plus className="h-3.5 w-3.5" /> {t.finances.addAccount}
               </Button>
             </form>
           </CardContent>
@@ -363,13 +377,13 @@ export function FinancesPanel({
         {/* Bar chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Last 6 months</CardTitle>
+            <CardTitle>{t.finances.last6Months}</CardTitle>
           </CardHeader>
           <CardContent>
             {months.every((m) => m.income === 0 && m.expense === 0) ? (
               <EmptyState
-                title="No transactions yet"
-                description="Add a few transactions to see income vs expense."
+                title={t.finances.noTransactionsYet}
+                description={t.finances.addFewTransactions}
                 className="py-10"
               />
             ) : (
@@ -409,13 +423,13 @@ export function FinancesPanel({
                     <Bar
                       dataKey="income"
                       fill="var(--success)"
-                      name="Income"
+                      name={t.finances.income}
                       radius={[3, 3, 0, 0]}
                     />
                     <Bar
                       dataKey="expense"
                       fill="var(--destructive)"
-                      name="Expense"
+                      name={t.finances.expense}
                       radius={[3, 3, 0, 0]}
                     />
                   </BarChart>
@@ -428,7 +442,7 @@ export function FinancesPanel({
         {/* Add transaction */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Add transaction</CardTitle>
+            <CardTitle>{t.finances.addTransaction}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={addTx} className="space-y-3">
@@ -443,7 +457,7 @@ export function FinancesPanel({
                       : "text-foreground-muted hover:text-foreground")
                   }
                 >
-                  <ArrowDownRight className="h-3.5 w-3.5" /> Expense
+                  <ArrowDownRight className="h-3.5 w-3.5" /> {t.finances.expense}
                 </button>
                 <button
                   type="button"
@@ -455,12 +469,12 @@ export function FinancesPanel({
                       : "text-foreground-muted hover:text-foreground")
                   }
                 >
-                  <ArrowUpRight className="h-3.5 w-3.5" /> Income
+                  <ArrowUpRight className="h-3.5 w-3.5" /> {t.finances.income}
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1.5 col-span-2">
-                  <Label htmlFor="tx-amount">Amount</Label>
+                  <Label htmlFor="tx-amount">{t.finances.amount}</Label>
                   <Input
                     id="tx-amount"
                     type="number"
@@ -469,11 +483,11 @@ export function FinancesPanel({
                     onChange={(e) =>
                       setTxForm({ ...txForm, amount: e.target.value })
                     }
-                    placeholder="12.50"
+                    placeholder={t.finances.amountPlaceholder}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="tx-currency">CCY</Label>
+                  <Label htmlFor="tx-currency">{t.finances.ccy}</Label>
                   <Select
                     id="tx-currency"
                     value={txForm.currency}
@@ -490,18 +504,18 @@ export function FinancesPanel({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="tx-category">Category</Label>
+                <Label htmlFor="tx-category">{t.finances.category}</Label>
                 <Input
                   id="tx-category"
                   value={txForm.category}
                   onChange={(e) =>
                     setTxForm({ ...txForm, category: e.target.value })
                   }
-                  placeholder="Groceries"
+                  placeholder={t.finances.categoryPlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="tx-date">Date</Label>
+                <Label htmlFor="tx-date">{t.finances.date}</Label>
                 <Input
                   id="tx-date"
                   type="date"
@@ -513,7 +527,7 @@ export function FinancesPanel({
               </div>
               {accounts.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="tx-account">Account</Label>
+                  <Label htmlFor="tx-account">{t.finances.account}</Label>
                   <Select
                     id="tx-account"
                     value={txForm.account_id}
@@ -521,7 +535,7 @@ export function FinancesPanel({
                       setTxForm({ ...txForm, account_id: e.target.value })
                     }
                   >
-                    <option value="">— None —</option>
+                    <option value="">{t.finances.noneOption}</option>
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.name}
@@ -531,18 +545,18 @@ export function FinancesPanel({
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label htmlFor="tx-note">Note</Label>
+                <Label htmlFor="tx-note">{t.finances.note}</Label>
                 <Textarea
                   id="tx-note"
                   value={txForm.note}
                   onChange={(e) => setTxForm({ ...txForm, note: e.target.value })}
-                  placeholder="Optional"
+                  placeholder={t.finances.notePlaceholder}
                   rows={2}
                 />
               </div>
               {error && <p className="text-xs text-destructive">{error}</p>}
               <Button type="submit" className="w-full">
-                <Plus className="h-3.5 w-3.5" /> Add
+                <Plus className="h-3.5 w-3.5" /> {t.common.add}
               </Button>
             </form>
           </CardContent>
@@ -551,13 +565,13 @@ export function FinancesPanel({
         {/* Categories */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>This month by category</CardTitle>
+            <CardTitle>{t.finances.thisMonthByCategory}</CardTitle>
           </CardHeader>
           <CardContent>
             {categories.length === 0 ? (
               <EmptyState
-                title="Nothing this month"
-                description="Categorize transactions to see the breakdown."
+                title={t.finances.nothingThisMonth}
+                description={t.finances.categorizeHint}
                 className="py-10"
               />
             ) : (
@@ -617,31 +631,31 @@ export function FinancesPanel({
         {/* Transactions list */}
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Recent transactions</CardTitle>
+            <CardTitle>{t.finances.recentTransactions}</CardTitle>
           </CardHeader>
           <CardContent>
             {transactions.length === 0 ? (
               <EmptyState
-                title="No transactions yet"
-                description="Add a transaction on the left."
+                title={t.finances.noTransactionsYet}
+                description={t.finances.addOnLeft}
               />
             ) : (
               <ul className="-mx-2 divide-y divide-border">
-                {transactions.slice(0, 20).map((t) => (
+                {transactions.slice(0, 20).map((tx) => (
                   <li
-                    key={t.id}
+                    key={tx.id}
                     className="group flex items-center justify-between gap-3 px-2 py-2.5 row-hover"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span
                         className={
                           "h-7 w-7 rounded-md inline-flex items-center justify-center " +
-                          (t.kind === "income"
+                          (tx.kind === "income"
                             ? "bg-success/10 text-success"
                             : "bg-destructive/10 text-destructive")
                         }
                       >
-                        {t.kind === "income" ? (
+                        {tx.kind === "income" ? (
                           <ArrowUpRight className="h-3.5 w-3.5" />
                         ) : (
                           <ArrowDownRight className="h-3.5 w-3.5" />
@@ -649,12 +663,14 @@ export function FinancesPanel({
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {t.category ??
-                            (t.kind === "income" ? "Income" : "Expense")}
+                          {tx.category ??
+                            (tx.kind === "income"
+                              ? t.finances.income
+                              : t.finances.expense)}
                         </p>
                         <p className="text-[11px] text-foreground-subtle tabular">
-                          {t.occurred_on}
-                          {t.note ? ` · ${t.note}` : ""}
+                          {tx.occurred_on}
+                          {tx.note ? ` · ${tx.note}` : ""}
                         </p>
                       </div>
                     </div>
@@ -662,20 +678,20 @@ export function FinancesPanel({
                       <span
                         className={
                           "text-sm font-medium tabular " +
-                          (t.kind === "income"
+                          (tx.kind === "income"
                             ? "text-success"
                             : "text-destructive")
                         }
                       >
-                        {t.kind === "income" ? "+" : "−"}
-                        {formatCurrency(t.amount, t.currency)}
+                        {tx.kind === "income" ? "+" : "−"}
+                        {formatCurrency(tx.amount, tx.currency)}
                       </span>
-                      <Tooltip content="Delete">
+                      <Tooltip content={t.common.delete}>
                         <Button
                           size="icon-sm"
                           variant="ghost"
-                          onClick={() => removeTx(t.id)}
-                          aria-label="Delete"
+                          onClick={() => removeTx(tx.id)}
+                          aria-label={t.common.delete}
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />

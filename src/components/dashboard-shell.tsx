@@ -12,6 +12,7 @@ import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
 import { NotesPanel } from "@/components/panels/notes-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
+import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
@@ -22,6 +23,7 @@ import { Sidebar, MobileNav, type NavTab } from "@/components/nav/sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
+import { useDisplayCurrency } from "@/lib/use-prefs";
 import type {
   Account,
   Book,
@@ -105,7 +107,8 @@ export function DashboardShell({
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [importantDates, setImportantDates] =
     useState<ImportantDate[]>(initialImportantDates);
-  const [displayCurrency, setDisplayCurrency] = useState<string>("USD");
+  const { currency: displayCurrency, setCurrency: setDisplayCurrency } =
+    useDisplayCurrency();
   const [calendarPrefill, setCalendarPrefill] = useState<{
     title: string;
     nonce: number;
@@ -352,6 +355,8 @@ export function DashboardShell({
                       ctx={coupleCtx}
                     />
                   )}
+
+                  {tab === "settings" && <SettingsPanel />}
                 </motion.div>
               </AnimatePresence>
             </div>

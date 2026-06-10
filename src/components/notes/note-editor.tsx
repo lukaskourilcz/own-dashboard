@@ -19,6 +19,7 @@ import {
 import { codeBlockOptions } from "@blocknote/code-block";
 import { Link2 } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
+import { useDict } from "@/lib/i18n";
 import { blocksToPlainText } from "@/lib/notes-text";
 
 // One schema reused across editor instances — wires Shiki-backed code blocks
@@ -57,7 +58,7 @@ type Props = {
   onNavigateToNote?: (noteId: string) => void;
 };
 
-function extractTitle(doc: Block[]): string {
+function extractTitle(doc: Block[], fallback: string): string {
   for (const block of doc) {
     const content = block.content;
     if (Array.isArray(content)) {
@@ -68,7 +69,7 @@ function extractTitle(doc: Block[]): string {
       if (text) return text.slice(0, 80);
     }
   }
-  return "Untitled";
+  return fallback;
 }
 
 export function NoteEditor({
@@ -79,6 +80,7 @@ export function NoteEditor({
   onNavigateToNote,
 }: Props) {
   const { theme } = useTheme();
+  const t = useDict();
 
   const seed = useMemo<Block[]>(() => {
     if (Array.isArray(initialContent) && initialContent.length > 0) {
@@ -131,10 +133,12 @@ export function NoteEditor({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onChangeRef = useRef(onChange);
   const onLinkRef = useRef(onRequestNoteLink);
+  const titleFallbackRef = useRef(t.notes.untitled);
   useEffect(() => {
     onChangeRef.current = onChange;
     onLinkRef.current = onRequestNoteLink;
-  }, [onChange, onRequestNoteLink]);
+    titleFallbackRef.current = t.notes.untitled;
+  }, [onChange, onRequestNoteLink, t]);
 
   useEffect(() => {
     if (!editor) return;
@@ -143,7 +147,7 @@ export function NoteEditor({
       timerRef.current = setTimeout(() => {
         const doc = editor.document as Block[];
         onChangeRef.current({
-          title: extractTitle(doc),
+          title: extractTitle(doc, titleFallbackRef.current),
           content: doc,
           plainText: blocksToPlainText(doc),
         });
@@ -153,7 +157,7 @@ export function NoteEditor({
       if (timerRef.current) clearTimeout(timerRef.current);
       const doc = editor.document as Block[];
       onChangeRef.current({
-        title: extractTitle(doc),
+        title: extractTitle(doc, titleFallbackRef.current),
         content: doc,
         plainText: blocksToPlainText(doc),
       });
@@ -189,8 +193,8 @@ export function NoteEditor({
               [
                 ...getDefaultReactSlashMenuItems(editor),
                 {
-                  title: "Link to note",
-                  subtext: "Reference another note",
+                  title: t.notes.linkToNote,
+                  subtext: t.notes.linkToNoteSubtext,
                   aliases: ["link", "note", "ref", "mention"],
                   group: "Embeds",
                   icon: <Link2 className="h-4 w-4" />,

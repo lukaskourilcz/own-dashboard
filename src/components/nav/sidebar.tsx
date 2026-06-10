@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ListTodo,
   LogOut,
+  Settings,
   Target,
   Unlink,
   Wallet,
@@ -21,6 +22,8 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useDict } from "@/lib/i18n";
+import { useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
 
 export type NavTab =
@@ -34,14 +37,30 @@ export type NavTab =
   | "couple"
   | "books"
   | "notes"
-  | "dates";
+  | "dates"
+  | "settings";
 
-type Item = {
-  value: NavTab;
-  label: string;
+type NavItem = {
+  value: Exclude<NavTab, "settings">;
   icon: typeof Activity;
-  badge?: number;
 };
+
+// Single source of truth for the main nav sections (order matters). "overview"
+// is always shown; the rest can be hidden via Settings. "settings" lives
+// outside this list — it has its own always-visible affordance.
+export const NAV_ITEMS: NavItem[] = [
+  { value: "overview", icon: LayoutDashboard },
+  { value: "calendar", icon: CalendarDays },
+  { value: "notes", icon: FileText },
+  { value: "todos", icon: ListTodo },
+  { value: "streaks", icon: Flame },
+  { value: "finances", icon: Wallet },
+  { value: "subscriptions", icon: CreditCard },
+  { value: "plans", icon: Target },
+  { value: "books", icon: BookOpen },
+  { value: "dates", icon: Gift },
+  { value: "couple", icon: Heart },
+];
 
 export function Sidebar({
   tab,
@@ -54,43 +73,34 @@ export function Sidebar({
   user: { name: string | null; email: string; avatar_url?: string | null };
   incomingInvites: number;
 }) {
+  const t = useDict();
+  const { isHidden } = useNavVisibility();
   const toast = useToast();
   const [disconnecting, setDisconnecting] = useState(false);
 
   async function disconnectGoogle() {
-    const ok = window.confirm(
-      "Disconnect Google? Calendar features will need a re-link.",
-    );
+    const ok = window.confirm(t.nav.disconnectConfirm);
     if (!ok) return;
     setDisconnecting(true);
     try {
       const res = await fetch("/api/google/disconnect", { method: "POST" });
       if (res.ok) {
-        toast.ok("Google disconnected.");
+        toast.ok(t.nav.disconnectOk);
         // Soft reload so server components re-render with the no-token state.
         window.location.reload();
       } else {
-        toast.err("Could not disconnect Google.");
+        toast.err(t.nav.disconnectErr);
       }
     } catch {
-      toast.err("Network error.");
+      toast.err(t.nav.networkErr);
     } finally {
       setDisconnecting(false);
     }
   }
-  const items: Item[] = [
-    { value: "overview", label: "Overview", icon: LayoutDashboard },
-    { value: "calendar", label: "Calendar", icon: CalendarDays },
-    { value: "notes", label: "Notes", icon: FileText },
-    { value: "todos", label: "Tasks", icon: ListTodo },
-    { value: "streaks", label: "Habits", icon: Flame },
-    { value: "finances", label: "Finances", icon: Wallet },
-    { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
-    { value: "plans", label: "Plans", icon: Target },
-    { value: "books", label: "Books", icon: BookOpen },
-    { value: "dates", label: "Dates", icon: Gift },
-    { value: "couple", label: "Couple", icon: Heart, badge: incomingInvites },
-  ];
+
+  const items = NAV_ITEMS.filter(
+    (it) => it.value === "overview" || !isHidden(it.value),
+  );
 
   const initials = (user.name?.trim() || user.email).slice(0, 2).toUpperCase();
 
@@ -101,13 +111,16 @@ export function Sidebar({
         <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
           <Activity className="h-3.5 w-3.5" />
         </div>
-        <span className="text-sm font-semibold tracking-tight">Dashboard</span>
+        <span className="text-sm font-semibold tracking-tight">
+          {t.nav.brand}
+        </span>
       </div>
 
       {/* nav */}
       <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {items.map((it) => {
           const active = tab === it.value;
+          const badge = it.value === "couple" ? incomingInvites : 0;
           return (
             <button
               key={it.value}
@@ -130,11 +143,11 @@ export function Sidebar({
               )}
               <it.icon className="relative z-10 h-4 w-4 shrink-0" />
               <span className="relative z-10 flex-1 text-left font-medium">
-                {it.label}
+                {t.nav.sections[it.value]}
               </span>
-              {it.badge ? (
+              {badge ? (
                 <span className="relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium text-background tabular">
-                  {it.badge}
+                  {badge}
                 </span>
               ) : null}
             </button>
@@ -166,25 +179,40 @@ export function Sidebar({
               {user.email}
             </p>
           </div>
-          <Tooltip content="Theme">
+          <Tooltip content={t.nav.settings}>
+            <button
+              type="button"
+              onClick={() => setTab("settings")}
+              aria-label={t.nav.settings}
+              className={cn(
+                "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
+                tab === "settings"
+                  ? "text-foreground bg-accent"
+                  : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
+              )}
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip content={t.nav.theme}>
             <span><ThemeToggle /></span>
           </Tooltip>
-          <Tooltip content="Disconnect Google">
+          <Tooltip content={t.nav.disconnectGoogle}>
             <button
               type="button"
               onClick={disconnectGoogle}
               disabled={disconnecting}
-              aria-label="Disconnect Google"
+              aria-label={t.nav.disconnectGoogle}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring disabled:opacity-50"
             >
               <Unlink className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
-          <Tooltip content="Sign out">
+          <Tooltip content={t.nav.signOut}>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                aria-label="Sign out"
+                aria-label={t.nav.signOut}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -207,24 +235,18 @@ export function MobileNav({
   setTab: (t: NavTab) => void;
   incomingInvites: number;
 }) {
-  const items: Item[] = [
-    { value: "overview", label: "Overview", icon: LayoutDashboard },
-    { value: "calendar", label: "Calendar", icon: CalendarDays },
-    { value: "notes", label: "Notes", icon: FileText },
-    { value: "todos", label: "Tasks", icon: ListTodo },
-    { value: "streaks", label: "Habits", icon: Flame },
-    { value: "finances", label: "Finances", icon: Wallet },
-    { value: "subscriptions", label: "Subs", icon: CreditCard },
-    { value: "plans", label: "Plans", icon: Target },
-    { value: "books", label: "Books", icon: BookOpen },
-    { value: "dates", label: "Dates", icon: Gift },
-    { value: "couple", label: "Couple", icon: Heart, badge: incomingInvites },
-  ];
+  const t = useDict();
+  const { isHidden } = useNavVisibility();
+  const items = NAV_ITEMS.filter(
+    (it) => it.value === "overview" || !isHidden(it.value),
+  );
+
   return (
     <div className="md:hidden sticky top-0 z-30 -mx-4 px-4 py-2 bg-surface/80 backdrop-blur border-b border-border">
       <div className="flex gap-1 overflow-x-auto">
         {items.map((it) => {
           const active = tab === it.value;
+          const badge = it.value === "couple" ? incomingInvites : 0;
           return (
             <button
               key={it.value}
@@ -238,15 +260,28 @@ export function MobileNav({
               )}
             >
               <it.icon className="h-3.5 w-3.5" />
-              {it.label}
-              {it.badge ? (
+              {t.nav.short[it.value] ?? t.nav.sections[it.value]}
+              {badge ? (
                 <span className="inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-foreground px-1 text-[9px] text-background tabular">
-                  {it.badge}
+                  {badge}
                 </span>
               ) : null}
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setTab("settings")}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+            tab === "settings"
+              ? "bg-accent text-foreground"
+              : "text-foreground-muted hover:text-foreground",
+          )}
+        >
+          <Settings className="h-3.5 w-3.5" />
+          {t.nav.sections.settings}
+        </button>
       </div>
     </div>
   );

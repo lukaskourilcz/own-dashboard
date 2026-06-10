@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
+import type { Locale } from "date-fns";
 import type { Streak, StreakLog, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -19,7 +21,7 @@ import {
   computeStreak,
   logsByStreak as groupLogs,
 } from "@/lib/streaks";
-import { todayKey } from "@/lib/date-keys";
+import { todayKey, parseDateOnly } from "@/lib/date-keys";
 import { StreakHeatmap } from "@/components/panels/streak-heatmap";
 
 let tentativeLogCounter = 0;
@@ -53,6 +55,8 @@ export function StreaksPanel({
   partnerName?: string;
 }) {
   const supabase = createClient();
+  const t = useDict();
+  const locale = useDateLocale();
   const [name, setName] = useState("");
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
   const [reminder, setReminder] = useState("");
@@ -150,15 +154,15 @@ export function StreaksPanel({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-1.5">
-            <Flame className="h-3 w-3" /> Habits
+            <Flame className="h-3 w-3" /> {t.streaks.compactTitle}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {streaks.length === 0 ? (
             <EmptyState
               icon={Flame}
-              title="No habits yet"
-              description="Track a daily habit in the Habits tab."
+              title={t.streaks.noHabitsYet}
+              description={t.streaks.trackDailyHabit}
               className="py-6"
             />
           ) : (
@@ -166,6 +170,8 @@ export function StreaksPanel({
               {streaks.map((s) => (
                 <StreakRow
                   key={s.id}
+                  t={t}
+                  locale={locale}
                   streak={s}
                   logs={logsByStreak.get(s.id) ?? []}
                   stripDays={stripDays}
@@ -178,6 +184,8 @@ export function StreaksPanel({
 
           {partnerStreaks && partnerStreaks.length > 0 && (
             <PartnerBlock
+              t={t}
+              locale={locale}
               streaks={partnerStreaks}
               logs={partnerLogs ?? []}
               stripDays={stripDays}
@@ -192,27 +200,27 @@ export function StreaksPanel({
   return (
     <div>
       <PageHeader
-        title="Habits"
-        description="Daily check-ins. Don't break the chain."
+        title={t.streaks.title}
+        description={t.streaks.description}
       />
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>New habit</CardTitle>
+            <CardTitle>{t.streaks.newHabit}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={addStreak} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="streak-name">Name</Label>
+                <Label htmlFor="streak-name">{t.streaks.name}</Label>
                 <Input
                   id="streak-name"
-                  placeholder="Read 30 min"
+                  placeholder={t.streaks.namePlaceholder}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Color</Label>
+                <Label>{t.streaks.color}</Label>
                 <div className="flex gap-1.5">
                   {DEFAULT_COLORS.map((c) => (
                     <button
@@ -226,7 +234,7 @@ export function StreaksPanel({
                           : "hover:scale-105",
                       )}
                       style={{ background: c }}
-                      aria-label={`Color ${c}`}
+                      aria-label={t.streaks.colorAria(c)}
                     />
                   ))}
                 </div>
@@ -234,7 +242,7 @@ export function StreaksPanel({
               <div className="space-y-1.5">
                 <Label htmlFor="streak-reminder" className="inline-flex items-center gap-1">
                   <Bell className="h-3 w-3" />
-                  Reminder
+                  {t.streaks.reminder}
                 </Label>
                 <Input
                   id="streak-reminder"
@@ -245,7 +253,7 @@ export function StreaksPanel({
               </div>
               <Button type="submit" disabled={saving} className="w-full">
                 <Plus className="h-3.5 w-3.5" />
-                Add habit
+                {t.streaks.addHabit}
               </Button>
             </form>
           </CardContent>
@@ -253,20 +261,22 @@ export function StreaksPanel({
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Your habits</CardTitle>
+            <CardTitle>{t.streaks.yourHabits}</CardTitle>
           </CardHeader>
           <CardContent>
             {streaks.length === 0 ? (
               <EmptyState
                 icon={Flame}
-                title="No habits yet"
-                description="Add a habit on the left and start checking in daily."
+                title={t.streaks.noHabitsYet}
+                description={t.streaks.addHabitDescription}
               />
             ) : (
               <ul className="space-y-4">
                 {streaks.map((s) => (
                   <StreakRow
                     key={s.id}
+                    t={t}
+                    locale={locale}
                     streak={s}
                     logs={logsByStreak.get(s.id) ?? []}
                     stripDays={stripDays}
@@ -279,6 +289,8 @@ export function StreaksPanel({
 
             {partnerStreaks && partnerStreaks.length > 0 && (
               <PartnerBlock
+                t={t}
+                locale={locale}
                 streaks={partnerStreaks}
                 logs={partnerLogs ?? []}
                 stripDays={stripDays}
@@ -293,6 +305,8 @@ export function StreaksPanel({
 }
 
 function StreakRow({
+  t,
+  locale,
   streak,
   logs,
   stripDays,
@@ -300,6 +314,8 @@ function StreakRow({
   onRemove,
   compact,
 }: {
+  t: Dict;
+  locale: Locale;
   streak: Streak;
   logs: StreakLog[];
   stripDays: string[];
@@ -326,12 +342,12 @@ function StreakRow({
           <p className="text-[11px] text-foreground-subtle inline-flex items-center gap-1.5 tabular">
             <span>
               <span className="text-foreground-muted font-medium">{streakCount}</span>{" "}
-              current
+              {t.streaks.current}
             </span>
             <span className="text-foreground-subtle/40">·</span>
             <span>
               <span className="text-foreground-muted font-medium">{best}</span>{" "}
-              best
+              {t.streaks.best}
             </span>
             {streak.reminder_time && (
               <>
@@ -355,14 +371,14 @@ function StreakRow({
               : "bg-primary text-primary-foreground hover:bg-primary-hover",
           )}
         >
-          {checkedToday ? "Done today" : "Mark today"}
+          {checkedToday ? t.streaks.doneToday : t.streaks.markToday}
         </motion.button>
         {!compact && onRemove && (
-          <Tooltip content="Delete">
+          <Tooltip content={t.common.delete}>
             <button
               type="button"
               onClick={onRemove}
-              aria-label="Delete"
+              aria-label={t.common.delete}
               className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -377,7 +393,7 @@ function StreakRow({
             return (
               <div
                 key={d}
-                title={d}
+                title={format(parseDateOnly(d), t.streaks.dateFormat, { locale })}
                 className={cn(
                   "h-4 flex-1 rounded-sm transition-opacity",
                   hit ? "opacity-100" : "opacity-15",
@@ -391,7 +407,12 @@ function StreakRow({
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto">
-          <StreakHeatmap color={streak.color} dates={dates} />
+          <StreakHeatmap
+            t={t}
+            locale={locale}
+            color={streak.color}
+            dates={dates}
+          />
         </div>
       )}
     </li>
@@ -399,11 +420,15 @@ function StreakRow({
 }
 
 function PartnerBlock({
+  t,
+  locale,
   streaks,
   logs,
   stripDays,
   partnerName,
 }: {
+  t: Dict;
+  locale: Locale;
   streaks: Streak[];
   logs: StreakLog[];
   stripDays: string[];
@@ -413,7 +438,7 @@ function PartnerBlock({
     <div className="mt-5 pt-4 border-t border-border">
       <SectionLabel className="mb-3 inline-flex items-center gap-1.5">
         <Heart className="h-3 w-3" />
-        {partnerName ?? "Partner"}&apos;s habits
+        {t.streaks.partnerHabits(partnerName ?? t.streaks.partnerFallback)}
       </SectionLabel>
       <ul className="space-y-3">
         {streaks.map((s) => {
@@ -435,7 +460,7 @@ function PartnerBlock({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm truncate text-foreground">{s.name}</p>
                   <p className="text-[11px] text-foreground-subtle tabular">
-                    {current} current · {best} best
+                    {t.streaks.currentVsBest(current, best)}
                   </p>
                 </div>
                 <span
@@ -446,7 +471,7 @@ function PartnerBlock({
                       : "bg-surface-muted text-foreground-subtle",
                   )}
                 >
-                  {checkedToday ? "done" : "—"}
+                  {checkedToday ? t.streaks.doneTag : t.streaks.notDoneTag}
                 </span>
               </div>
               <div className="mt-2.5 flex gap-1">
@@ -455,7 +480,9 @@ function PartnerBlock({
                   return (
                     <div
                       key={d}
-                      title={d}
+                      title={format(parseDateOnly(d), t.streaks.dateFormat, {
+                        locale,
+                      })}
                       className={cn(
                         "h-3 flex-1 rounded-sm",
                         hit ? "opacity-100" : "opacity-15",

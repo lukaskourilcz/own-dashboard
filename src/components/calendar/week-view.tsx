@@ -13,6 +13,7 @@ import {
 } from "@/lib/calendar";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { CalendarPicker } from "@/components/calendar/calendar-picker";
+import { useDict, useDateLocale } from "@/lib/i18n";
 
 type DayBucket = { key: string; date: Date; events: GcalEvent[] };
 
@@ -48,6 +49,8 @@ export function WeekView({
   calendar: EventsResult;
   selectedCalendarIds: string[];
 }) {
+  const t = useDict();
+  const locale = useDateLocale();
   const buckets = useMemo(
     () => (calendar.ok ? bucketByDay(calendar.events) : []),
     [calendar],
@@ -57,7 +60,7 @@ export function WeekView({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="inline-flex items-center gap-1.5">
-          <CalendarDays className="h-3 w-3" /> Next 7 days
+          <CalendarDays className="h-3 w-3" /> {t.calendar.next7Days}
         </CardTitle>
         <CalendarPicker initialSelected={selectedCalendarIds} />
       </CardHeader>
@@ -66,10 +69,10 @@ export function WeekView({
           <div className="space-y-3">
             <p className="text-sm text-foreground-muted">
               {calendar.reason === "unauthorized"
-                ? "Google rejected the calendar token."
+                ? t.calendar.errUnauthorized
                 : calendar.reason === "no-token"
-                  ? "We don't have a Calendar token yet."
-                  : "Couldn't load events from Google."}
+                  ? t.calendar.errNoToken
+                  : t.calendar.errLoad}
             </p>
             <RelinkGoogleButton
               reason={
@@ -80,8 +83,8 @@ export function WeekView({
         ) : buckets.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
-            title="Nothing scheduled"
-            description="Your week is wide open."
+            title={t.calendar.nothingScheduled}
+            description={t.calendar.weekWideOpen}
           />
         ) : (
           <ul className="space-y-5">
@@ -97,7 +100,9 @@ export function WeekView({
                         : "text-foreground-muted")
                     }
                   >
-                    {today ? "Today" : format(b.date, "EEEE, MMM d")}
+                    {today
+                      ? t.calendar.today
+                      : format(b.date, t.calendar.dayHeadingFormat, { locale })}
                   </p>
                   <ul className="space-y-1.5">
                     {b.events.map((ev) => (
@@ -106,11 +111,13 @@ export function WeekView({
                         className="group flex items-start gap-2 text-sm rounded-md -mx-1.5 px-1.5 py-1 row-hover"
                       >
                         <span className="font-mono text-[11px] text-foreground-subtle w-12 shrink-0 pt-0.5 tabular">
-                          {eventTimeLabel(ev)}
+                          {ev.start.date && !ev.start.dateTime
+                            ? t.calendar.allDayLabel
+                            : eventTimeLabel(ev)}
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className="block truncate text-foreground">
-                            {ev.summary ?? "(no title)"}
+                            {ev.summary ?? t.calendar.noTitle}
                           </span>
                           {ev.description && (
                             <span className="block truncate text-[11px] text-foreground-subtle mt-0.5">
@@ -122,7 +129,7 @@ export function WeekView({
                               {ev.recurringEventId && (
                                 <span className="inline-flex items-center gap-1">
                                   <Repeat className="h-2.5 w-2.5" />
-                                  repeats
+                                  {t.calendar.repeats}
                                 </span>
                               )}
                               {ev.location && (
@@ -142,7 +149,7 @@ export function WeekView({
                             target="_blank"
                             rel="noreferrer"
                             className="text-foreground-subtle hover:text-foreground transition-colors pt-0.5 opacity-0 group-hover:opacity-100"
-                            aria-label="Open in Google Calendar"
+                            aria-label={t.calendar.openInGoogleCalendar}
                           >
                             <ExternalLink className="h-3 w-3" />
                           </a>

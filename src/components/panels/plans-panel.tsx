@@ -23,30 +23,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Plan, PlanStatus, Updater } from "@/lib/types";
 
-const STATUSES: { key: PlanStatus; label: string; tone: string; dot: string }[] = [
+const STATUSES: { key: PlanStatus; tone: string; dot: string }[] = [
   {
     key: "idea",
-    label: "Idea",
     tone: "bg-surface-muted text-foreground-muted",
     dot: "bg-foreground-subtle",
   },
   {
     key: "active",
-    label: "Active",
     tone: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     dot: "bg-blue-500",
   },
   {
     key: "done",
-    label: "Done",
     tone: "bg-success/10 text-success",
     dot: "bg-success",
   },
   {
     key: "dropped",
-    label: "Dropped",
     tone: "bg-surface-muted text-foreground-subtle line-through",
     dot: "bg-foreground-subtle/50",
   },
@@ -76,6 +73,7 @@ export function PlansPanel({
   setPlans: Updater<Plan[]>;
 }) {
   const supabase = createClient();
+  const t = useDict();
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,11 +85,11 @@ export function PlansPanel({
     setError(null);
     setCalendarNote(null);
     if (!form.title.trim()) {
-      setError("Title is required.");
+      setError(t.plans.titleRequired);
       return;
     }
     if (form.addToCalendar && !form.target_date) {
-      setError("Target date is required to add to calendar.");
+      setError(t.plans.targetDateRequiredForCalendar);
       return;
     }
     setSaving(true);
@@ -113,7 +111,7 @@ export function PlansPanel({
       .select()
       .single();
     if (planErr || !plan) {
-      setError(planErr?.message ?? "Could not save plan.");
+      setError(planErr?.message ?? t.plans.couldNotSavePlan);
       setSaving(false);
       return;
     }
@@ -141,9 +139,7 @@ export function PlansPanel({
           .single();
         if (updated) saved = updated;
       } else {
-        setCalendarNote(
-          "Plan saved, but the calendar event couldn't be created.",
-        );
+        setCalendarNote(t.plans.calendarEventFailed);
       }
     }
 
@@ -210,8 +206,8 @@ export function PlansPanel({
   return (
     <div>
       <PageHeader
-        title="Plans"
-        description="What you're working toward."
+        title={t.plans.title}
+        description={t.plans.description}
         action={
           <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
             <button
@@ -224,7 +220,7 @@ export function PlansPanel({
                   : "text-foreground-muted hover:text-foreground",
               )}
             >
-              Board
+              {t.plans.board}
             </button>
             <button
               type="button"
@@ -236,7 +232,7 @@ export function PlansPanel({
                   : "text-foreground-muted hover:text-foreground",
               )}
             >
-              Timeline
+              {t.plans.timeline}
             </button>
           </div>
         }
@@ -246,22 +242,22 @@ export function PlansPanel({
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
-              <Target className="h-3 w-3" /> New plan
+              <Target className="h-3 w-3" /> {t.plans.newPlan}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={addPlan} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="plan-title">Title</Label>
+                <Label htmlFor="plan-title">{t.plans.formTitle}</Label>
                 <Input
                   id="plan-title"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Ship the side project"
+                  placeholder={t.plans.titlePlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-date">Target date</Label>
+                <Label htmlFor="plan-date">{t.plans.targetDate}</Label>
                 <Input
                   id="plan-date"
                   type="date"
@@ -272,7 +268,7 @@ export function PlansPanel({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-status">Status</Label>
+                <Label htmlFor="plan-status">{t.plans.status}</Label>
                 <Select
                   id="plan-status"
                   value={form.status}
@@ -282,18 +278,18 @@ export function PlansPanel({
                 >
                   {STATUSES.map((s) => (
                     <option key={s.key} value={s.key}>
-                      {s.label}
+                      {t.plans.statusLabel[s.key]}
                     </option>
                   ))}
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-notes">Notes</Label>
+                <Label htmlFor="plan-notes">{t.plans.notes}</Label>
                 <Textarea
                   id="plan-notes"
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Optional"
+                  placeholder={t.plans.notesPlaceholder}
                   rows={2}
                 />
               </div>
@@ -307,7 +303,7 @@ export function PlansPanel({
                   }
                 />
                 <CalendarPlus className="h-3 w-3" />
-                Add as a Google Calendar event
+                {t.plans.addToCalendar}
               </label>
               {error && <p className="text-xs text-destructive">{error}</p>}
               {calendarNote && (
@@ -315,7 +311,7 @@ export function PlansPanel({
               )}
               <Button type="submit" disabled={saving} className="w-full">
                 <Plus className="h-3.5 w-3.5" />
-                {saving ? "Saving…" : "Add plan"}
+                {saving ? t.plans.saving : t.plans.addPlan}
               </Button>
             </form>
           </CardContent>
@@ -324,15 +320,15 @@ export function PlansPanel({
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>
-              {view === "board" ? "Status board" : "Timeline"}
+              {view === "board" ? t.plans.statusBoard : t.plans.timeline}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {plans.length === 0 ? (
               <EmptyState
                 icon={Target}
-                title="No plans yet"
-                description="Add one on the left to start tracking your goals."
+                title={t.plans.noPlansYet}
+                description={t.plans.noPlansDescription}
               />
             ) : view === "board" ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -346,7 +342,7 @@ export function PlansPanel({
                         <span
                           className={cn("h-1.5 w-1.5 rounded-full", s.dot)}
                         />
-                        <SectionLabel>{s.label}</SectionLabel>
+                        <SectionLabel>{t.plans.statusLabel[s.key]}</SectionLabel>
                       </div>
                       <span className="text-[10px] text-foreground-subtle tabular">
                         {grouped[s.key].length}
@@ -363,7 +359,7 @@ export function PlansPanel({
                       ))}
                       {grouped[s.key].length === 0 && (
                         <li className="text-[11px] text-foreground-subtle italic px-1">
-                          empty
+                          {t.plans.empty}
                         </li>
                       )}
                     </ul>
@@ -398,6 +394,7 @@ function PlanCard({
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
 }) {
+  const t = useDict();
   const [editingStatus, setEditingStatus] = useState(false);
   return (
     <motion.li
@@ -417,7 +414,7 @@ function PlanCard({
         <button
           type="button"
           onClick={() => setEditingStatus((v) => !v)}
-          aria-label="Change status"
+          aria-label={t.plans.changeStatus}
           className="text-foreground-subtle hover:text-foreground transition-colors"
         >
           <Pencil className="h-2.5 w-2.5" />
@@ -425,7 +422,7 @@ function PlanCard({
         <button
           type="button"
           onClick={onDelete}
-          aria-label="Delete plan"
+          aria-label={t.plans.deletePlan}
           className="text-foreground-subtle hover:text-destructive transition-colors"
         >
           <Trash2 className="h-2.5 w-2.5" />
@@ -437,7 +434,7 @@ function PlanCard({
           {plan.linked_calendar_event_id && (
             <span className="inline-flex items-center gap-0.5">
               <ExternalLink className="h-2 w-2" />
-              cal
+              {t.plans.cal}
             </span>
           )}
         </p>
@@ -459,7 +456,7 @@ function PlanCard({
             >
               <span className="inline-flex items-center gap-1">
                 <Check className="h-2 w-2" />
-                {s.label}
+                {t.plans.statusLabel[s.key]}
               </span>
             </button>
           ))}
@@ -478,6 +475,8 @@ function TimelineRow({
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
 }) {
+  const t = useDict();
+  const locale = useDateLocale();
   const statusMeta = STATUSES.find((s) => s.key === plan.status)!;
   const daysOut = plan.target_date
     ? differenceInCalendarDays(new Date(plan.target_date), new Date())
@@ -491,7 +490,9 @@ function TimelineRow({
         {plan.target_date ? (
           <>
             <p className="font-medium text-foreground">
-              {format(new Date(plan.target_date), "MMM d")}
+              {format(new Date(plan.target_date), t.plans.timelineDateFormat, {
+                locale,
+              })}
             </p>
             <p
               className={cn(
@@ -504,14 +505,14 @@ function TimelineRow({
               {daysOut === null
                 ? ""
                 : daysOut === 0
-                  ? "today"
+                  ? t.plans.today
                   : daysOut > 0
-                    ? `in ${daysOut}d`
-                    : `${-daysOut}d ago`}
+                    ? t.plans.inDays(daysOut)
+                    : t.plans.daysAgo(-daysOut)}
             </p>
           </>
         ) : (
-          <p className="text-foreground-subtle">no date</p>
+          <p className="text-foreground-subtle">{t.plans.noDate}</p>
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -537,16 +538,16 @@ function TimelineRow({
       >
         {STATUSES.map((s) => (
           <option key={s.key} value={s.key}>
-            {s.label}
+            {t.plans.statusLabel[s.key]}
           </option>
         ))}
       </Select>
-      <Tooltip content="Delete">
+      <Tooltip content={t.plans.deletePlan}>
         <Button
           size="icon-sm"
           variant="ghost"
           onClick={onDelete}
-          aria-label="Delete plan"
+          aria-label={t.plans.deletePlan}
           className="opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <Trash2 className="h-3.5 w-3.5 text-destructive" />

@@ -21,6 +21,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useDict } from "@/lib/i18n";
 import type {
   CoupleInvite,
   SharingCategory,
@@ -32,21 +33,13 @@ import {
   type CoupleContext,
 } from "@/lib/couple";
 
-const CATEGORIES: { key: SharingCategory; label: string; hint: string }[] = [
-  {
-    key: "subscriptions",
-    label: "Subscriptions",
-    hint: "Recurring spend and pie chart",
-  },
-  { key: "todos", label: "Tasks", hint: "Open and completed tasks" },
-  { key: "streaks", label: "Habits", hint: "Habits, heatmap, and check-ins" },
-  {
-    key: "finances",
-    label: "Finances",
-    hint: "Accounts, balances, transactions",
-  },
-  { key: "plans", label: "Plans", hint: "Long-horizon goals and timeline" },
-  { key: "books", label: "Books", hint: "Pages written and book progress" },
+const CATEGORY_KEYS: SharingCategory[] = [
+  "subscriptions",
+  "todos",
+  "streaks",
+  "finances",
+  "plans",
+  "books",
 ];
 
 export function CouplePanel({
@@ -61,6 +54,7 @@ export function CouplePanel({
   const supabase = createClient();
   const router = useRouter();
   const toast = useToast();
+  const t = useDict();
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -71,7 +65,7 @@ export function CouplePanel({
     const target = inviteEmail.trim().toLowerCase();
     if (!target) return;
     if (target === userEmail.toLowerCase()) {
-      toast.err("That's your own email.");
+      toast.err(t.couple.ownEmail);
       return;
     }
     setSending(true);
@@ -84,7 +78,7 @@ export function CouplePanel({
       return;
     }
     setInviteEmail("");
-    toast.ok(`Invite sent to ${target}.`);
+    toast.ok(t.couple.inviteSent(target));
     router.refresh();
   }
 
@@ -110,7 +104,7 @@ export function CouplePanel({
         toast.err(error.message);
         return;
       }
-      toast.info("Invite declined.");
+      toast.info(t.couple.inviteDeclined);
       router.refresh();
       return;
     }
@@ -133,15 +127,13 @@ export function CouplePanel({
       toast.err(updateErr.message);
       return;
     }
-    toast.ok("You're paired. Reload to see shared data.");
+    toast.ok(t.couple.paired_);
     router.refresh();
   }
 
   async function unpair() {
     if (!ctx.couple) return;
-    const ok = window.confirm(
-      "Unpair? Your partner will lose access to anything you share.",
-    );
+    const ok = window.confirm(t.couple.confirmUnpair);
     if (!ok) return;
     const { error } = await supabase
       .from("couples")
@@ -151,7 +143,7 @@ export function CouplePanel({
       toast.err(error.message);
       return;
     }
-    toast.info("Unpaired.");
+    toast.info(t.couple.unpaired);
     router.refresh();
   }
 
@@ -173,20 +165,23 @@ export function CouplePanel({
     }
   }
 
-  const partnerName = partnerDisplayName(ctx.partnerProfile, "your partner");
+  const partnerName = partnerDisplayName(
+    ctx.partnerProfile,
+    t.couple.partnerFallbackYour,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Couple"
-        description="Pair up and choose what to share."
+        title={t.couple.title}
+        description={t.couple.description}
       />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <Heart className="h-3 w-3" />
-              {ctx.couple ? "Paired" : "Pair up"}
+              {ctx.couple ? t.couple.paired : t.couple.pairUp}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -210,24 +205,23 @@ export function CouplePanel({
                 </div>
                 <Button variant="outline" size="sm" onClick={unpair}>
                   <Unlink className="h-3.5 w-3.5" />
-                  Unpair
+                  {t.couple.unpair}
                 </Button>
               </div>
             ) : (
               <>
                 <p className="text-sm text-foreground-muted mb-3">
-                  Invite your partner&apos;s email. They&apos;ll see the invite the next
-                  time they sign in.
+                  {t.couple.inviteIntro}
                 </p>
                 <form onSubmit={sendInvite} className="space-y-2">
-                  <Label htmlFor="invite-email">Partner&apos;s email</Label>
+                  <Label htmlFor="invite-email">{t.couple.partnerEmail}</Label>
                   <div className="flex gap-2">
                     <Input
                       id="invite-email"
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="partner@example.com"
+                      placeholder={t.couple.partnerEmailPlaceholder}
                     />
                     <Button type="submit" disabled={sending} size="default">
                       <Send className="h-3.5 w-3.5" />
@@ -237,7 +231,7 @@ export function CouplePanel({
 
                 {ctx.incomingInvites.length > 0 && (
                   <div className="mt-6">
-                    <SectionLabel className="mb-2">Incoming</SectionLabel>
+                    <SectionLabel className="mb-2">{t.couple.incoming}</SectionLabel>
                     <ul className="space-y-1.5">
                       {ctx.incomingInvites.map((inv) => (
                         <li
@@ -246,14 +240,14 @@ export function CouplePanel({
                         >
                           <Mail className="h-3.5 w-3.5 text-foreground-subtle" />
                           <span className="text-sm flex-1 truncate">
-                            Pair request waiting
+                            {t.couple.pairRequestWaiting}
                           </span>
                           <Button
                             size="sm"
                             onClick={() => respondToInvite(inv, true)}
                           >
                             <Check className="h-3 w-3" />
-                            Accept
+                            {t.couple.accept}
                           </Button>
                           <Button
                             size="sm"
@@ -261,7 +255,7 @@ export function CouplePanel({
                             onClick={() => respondToInvite(inv, false)}
                           >
                             <X className="h-3 w-3" />
-                            Decline
+                            {t.couple.decline}
                           </Button>
                         </li>
                       ))}
@@ -271,24 +265,27 @@ export function CouplePanel({
 
                 {ctx.sentInvites.length > 0 && (
                   <div className="mt-6">
-                    <SectionLabel className="mb-2">Sent</SectionLabel>
+                    <SectionLabel className="mb-2">{t.couple.sent}</SectionLabel>
                     <ul className="space-y-1.5">
                       {ctx.sentInvites.map((inv) => (
                         <li
                           key={inv.id}
                           className="flex items-center gap-2 rounded-md border border-border p-2"
                         >
-                          <StatusChip status={inv.status} />
+                          <StatusChip
+                            status={inv.status}
+                            label={t.couple.status[inv.status]}
+                          />
                           <span className="text-sm flex-1 truncate">
                             {inv.invitee_email}
                           </span>
                           {inv.status === "pending" && (
-                            <Tooltip content="Cancel invite">
+                            <Tooltip content={t.couple.cancelInvite}>
                               <Button
                                 size="icon-sm"
                                 variant="ghost"
                                 onClick={() => cancelInvite(inv)}
-                                aria-label="Cancel invite"
+                                aria-label={t.couple.cancelInvite}
                               >
                                 <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
@@ -306,27 +303,28 @@ export function CouplePanel({
 
         <Card>
           <CardHeader>
-            <CardTitle>What you share</CardTitle>
+            <CardTitle>{t.couple.whatYouShare}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-foreground-muted mb-3">
               {ctx.couple
-                ? `${partnerName} sees anything you toggle on. Changes save instantly.`
-                : "Set what you'd like shared. These take effect once you pair up."}
+                ? t.couple.partnerSeesShared(partnerName)
+                : t.couple.setSharedBeforePair}
             </p>
             <ul className="space-y-1.5">
-              {CATEGORIES.map((c) => {
-                const on = prefs[SHARE_FIELDS[c.key]];
+              {CATEGORY_KEYS.map((key) => {
+                const on = prefs[SHARE_FIELDS[key]];
+                const cat = t.couple.categories[key];
                 return (
                   <li
-                    key={c.key}
+                    key={key}
                     className="flex items-start gap-3 rounded-md border border-border p-3"
                   >
-                    <Switch on={on} onClick={() => togglePref(c.key)} />
+                    <Switch on={on} onClick={() => togglePref(key)} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{c.label}</p>
+                      <p className="text-sm font-medium">{cat.label}</p>
                       <p className="text-xs text-foreground-subtle">
-                        {c.hint}
+                        {cat.hint}
                       </p>
                     </div>
                   </li>
@@ -337,14 +335,14 @@ export function CouplePanel({
             {ctx.couple && ctx.partnerPrefs && (
               <div className="mt-5">
                 <SectionLabel className="mb-2">
-                  What {partnerName} shares
+                  {t.couple.whatPartnerShares(partnerName)}
                 </SectionLabel>
                 <ul className="grid grid-cols-2 gap-1.5">
-                  {CATEGORIES.map((c) => {
-                    const on = ctx.partnerPrefs![SHARE_FIELDS[c.key]];
+                  {CATEGORY_KEYS.map((key) => {
+                    const on = ctx.partnerPrefs![SHARE_FIELDS[key]];
                     return (
                       <li
-                        key={c.key}
+                        key={key}
                         className={cn(
                           "inline-flex items-center gap-1.5 text-xs",
                           on
@@ -357,7 +355,7 @@ export function CouplePanel({
                         ) : (
                           <X className="h-3 w-3" />
                         )}
-                        {c.label}
+                        {t.couple.categories[key].label}
                       </li>
                     );
                   })}
@@ -392,7 +390,13 @@ function Switch({ on, onClick }: { on: boolean; onClick: () => void }) {
   );
 }
 
-function StatusChip({ status }: { status: "pending" | "accepted" | "declined" }) {
+function StatusChip({
+  status,
+  label,
+}: {
+  status: "pending" | "accepted" | "declined";
+  label: string;
+}) {
   const map = {
     pending: "bg-surface-muted text-foreground-subtle",
     accepted: "bg-success/10 text-success",
@@ -405,7 +409,7 @@ function StatusChip({ status }: { status: "pending" | "accepted" | "declined" })
         map[status],
       )}
     >
-      {status}
+      {label}
     </span>
   );
 }

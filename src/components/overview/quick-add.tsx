@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { todayKey } from "@/lib/date-keys";
+import { useDict } from "@/lib/i18n";
 import type { Streak, StreakLog, Todo, Updater } from "@/lib/types";
 
 type Props = {
@@ -38,6 +39,7 @@ export function QuickAdd({
 }: Props) {
   const supabase = createClient();
   const toast = useToast();
+  const t = useDict();
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,11 +56,11 @@ export function QuickAdd({
       .select()
       .single();
     if (error || !data) {
-      toast.err(error?.message ?? "Could not add todo.");
+      toast.err(error?.message ?? t.quickAdd.couldNotAddTodo);
       return false;
     }
     setTodos((prev) => [data, ...prev]);
-    toast.ok(`Added todo: ${title}`);
+    toast.ok(t.quickAdd.addedTodo(title));
     return true;
   }
 
@@ -67,7 +69,7 @@ export function QuickAdd({
       (s) => s.name.toLowerCase() === name.toLowerCase(),
     );
     if (!streak) {
-      toast.err(`No habit named "${name}".`);
+      toast.err(t.quickAdd.noHabitNamed(name));
       return false;
     }
     const today = todayKey();
@@ -76,7 +78,7 @@ export function QuickAdd({
         (l) => l.streak_id === streak.id && l.log_date === today,
       )
     ) {
-      toast.info(`${streak.name} already done today.`);
+      toast.info(t.quickAdd.alreadyDoneToday(streak.name));
       return true;
     }
     const { data, error } = await supabase
@@ -85,11 +87,11 @@ export function QuickAdd({
       .select()
       .single();
     if (error || !data) {
-      toast.err(error?.message ?? "Could not mark habit.");
+      toast.err(error?.message ?? t.quickAdd.couldNotMarkHabit);
       return false;
     }
     setStreakLogs((prev) => [...prev, data]);
-    toast.ok(`Marked ${streak.name} for today.`);
+    toast.ok(t.quickAdd.markedForToday(streak.name));
     return true;
   }
 
@@ -102,7 +104,7 @@ export function QuickAdd({
     try {
       const userId = await getUserId();
       if (!userId) {
-        toast.err("Sign in first.");
+        toast.err(t.quickAdd.signInFirst);
         return;
       }
 
@@ -110,7 +112,7 @@ export function QuickAdd({
       if (v.startsWith("!todo ")) {
         const title = v.slice("!todo ".length).trim();
         if (!title) {
-          toast.err("Title is required.");
+          toast.err(t.quickAdd.titleRequired);
           return;
         }
         if (await addTodoLocal(userId, title)) setValue("");
@@ -119,7 +121,7 @@ export function QuickAdd({
       if (v.startsWith("!streak ")) {
         const name = v.slice("!streak ".length).trim();
         if (!name) {
-          toast.err("Habit name is required.");
+          toast.err(t.quickAdd.habitNameRequired);
           return;
         }
         if (await markStreakLocal(userId, name)) setValue("");
@@ -128,12 +130,12 @@ export function QuickAdd({
       if (v.startsWith("!cal ")) {
         const title = v.slice("!cal ".length).trim();
         if (!title) {
-          toast.err("Event title is required.");
+          toast.err(t.quickAdd.eventTitleRequired);
           return;
         }
         onCalendarTitle(title);
         setValue("");
-        toast.info("Opened the calendar form.");
+        toast.info(t.quickAdd.openedCalendarForm);
         return;
       }
 
@@ -155,11 +157,11 @@ export function QuickAdd({
       }
 
       if (parsed?.disabled) {
-        toast.err("Use !todo, !streak, or !cal — NL parsing is off.");
+        toast.err(t.quickAdd.nlOff);
         return;
       }
       if (!parsed?.action) {
-        toast.err("Couldn't parse. Try !todo / !streak / !cal.");
+        toast.err(t.quickAdd.couldntParse);
         return;
       }
 
@@ -174,7 +176,7 @@ export function QuickAdd({
         onCalendarTitle(a.title);
         setValue("");
         toast.info(
-          `Opening calendar form for "${a.title}" on ${a.date}${a.startTime ? ` at ${a.startTime}` : ""}.`,
+          t.quickAdd.openingCalendarForm(a.title, a.date, a.startTime),
         );
       }
     } finally {
@@ -188,7 +190,7 @@ export function QuickAdd({
       <Input
         ref={inputRef}
         id="quick-add-input"
-        placeholder='"dinner with mom 7pm tomorrow" — or !todo / !streak / !cal'
+        placeholder={t.quickAdd.placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         disabled={busy}

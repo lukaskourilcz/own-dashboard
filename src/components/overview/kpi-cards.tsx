@@ -4,6 +4,7 @@ import { Flame, ListTodo, Sigma } from "lucide-react";
 import { longestActiveStreak } from "@/lib/streaks";
 import { totalMonthlyIn } from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";
+import { useDict } from "@/lib/i18n";
 import type { Streak, StreakLog, Subscription, Todo } from "@/lib/types";
 import { SectionLabel } from "@/components/ui/page-header";
 
@@ -22,6 +23,7 @@ export function KpiCards({
   streakLogs,
   displayCurrency,
 }: Props) {
+  const t = useDict();
   const spend = totalMonthlyIn(subscriptions, displayCurrency);
   const openTodos = todos.filter((t) => !t.done).length;
   const doneTodos = todos.length - openTodos;
@@ -31,21 +33,21 @@ export function KpiCards({
     <div className="grid gap-3 sm:grid-cols-3">
       <Kpi
         icon={Sigma}
-        label="Monthly recurring"
+        label={t.kpi.monthlyRecurring}
         value={formatCurrency(spend, displayCurrency)}
-        sub="subscriptions"
+        sub={t.kpi.subscriptions}
       />
       <Kpi
         icon={ListTodo}
-        label="Open tasks"
+        label={t.kpi.openTasks}
         value={String(openTodos)}
-        sub={`${doneTodos} done`}
+        sub={t.kpi.nDone(doneTodos)}
       />
       <Kpi
         icon={Flame}
-        label="Longest active streak"
-        value={best ? `${best.count}d` : "—"}
-        sub={best ? best.streak.name : "Track a habit to see it here"}
+        label={t.kpi.longestActiveStreak}
+        value={best ? t.kpi.days(best.count) : "—"}
+        sub={best ? best.streak.name : t.kpi.trackHabitHint}
       />
     </div>
   );

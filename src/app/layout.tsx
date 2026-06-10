@@ -30,8 +30,9 @@ export const viewport: import("next").Viewport = {
   viewportFit: "cover",
 };
 
-// Runs before React hydration to avoid a flash of incorrect theme.
-const themeBootstrap = `(function(){try{var s=localStorage.getItem("theme");var d=s==="dark"||(s==null&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
+// Runs before React hydration to avoid a flash of incorrect theme/language.
+// Theme → `dark` class; language → `lang` attribute (read back by useLang).
+const themeBootstrap = `(function(){try{var s=localStorage.getItem("theme");var d=s==="dark"||(s==null&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");var l=localStorage.getItem("lang");document.documentElement.lang=l==="en"?"en":"cs";}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -40,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="cs"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

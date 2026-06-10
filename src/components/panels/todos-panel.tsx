@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ListTodo, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
+import { parseDateOnly } from "@/lib/date-keys";
+import type { Locale } from "date-fns";
 import type { Todo, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +31,8 @@ export function TodosPanel({
   partnerName?: string;
 }) {
   const supabase = createClient();
+  const t = useDict();
+  const locale = useDateLocale();
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
@@ -58,40 +64,41 @@ export function TodosPanel({
     setSaving(false);
   }
 
-  async function toggle(t: Todo) {
-    const next = !t.done;
-    setTodos((prev) => prev.map((x) => (x.id === t.id ? { ...x, done: next } : x)));
+  async function toggle(td: Todo) {
+    const next = !td.done;
+    setTodos((prev) => prev.map((x) => (x.id === td.id ? { ...x, done: next } : x)));
     const { error } = await supabase
       .from("todos")
       .update({ done: next })
-      .eq("id", t.id);
+      .eq("id", td.id);
     if (error) {
       setTodos((prev) =>
-        prev.map((x) => (x.id === t.id ? { ...x, done: !next } : x)),
+        prev.map((x) => (x.id === td.id ? { ...x, done: !next } : x)),
       );
     }
   }
 
   async function remove(id: string) {
     const { error } = await supabase.from("todos").delete().eq("id", id);
-    if (!error) setTodos((prev) => prev.filter((t) => t.id !== id));
+    if (!error) setTodos((prev) => prev.filter((td) => td.id !== id));
   }
 
-  const open = todos.filter((t) => !t.done);
-  const done = todos.filter((t) => t.done);
+  const open = todos.filter((td) => !td.done);
+  const done = todos.filter((td) => td.done);
   const visible = compact ? open.slice(0, 5) : todos;
 
   if (compact) {
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Tasks</CardTitle>
+          <CardTitle>{t.todos.compactTitle}</CardTitle>
           <span className="text-xs text-foreground-subtle tabular">
-            {open.length} open · {done.length} done
+            {t.todos.openDoneCount(open.length, done.length)}
           </span>
         </CardHeader>
         <CardContent>
           <QuickAddForm
+            t={t}
             title={title}
             setTitle={setTitle}
             saving={saving}
@@ -100,16 +107,24 @@ export function TodosPanel({
           {visible.length === 0 ? (
             <EmptyState
               icon={ListTodo}
-              title="All clear"
-              description="No open tasks. Add one above."
+              title={t.todos.allClear}
+              description={t.todos.allClearDescription}
               className="py-6"
             />
           ) : (
-            <TodoList items={visible} onToggle={toggle} compact />
+            <TodoList
+              t={t}
+              locale={locale}
+              items={visible}
+              onToggle={toggle}
+              compact
+            />
           )}
           {partnerTodos && partnerTodos.length > 0 && (
             <PartnerBlock
-              items={partnerTodos.filter((t) => !t.done).slice(0, 3)}
+              t={t}
+              locale={locale}
+              items={partnerTodos.filter((td) => !td.done).slice(0, 3)}
               partnerName={partnerName}
             />
           )}
@@ -120,19 +135,16 @@ export function TodosPanel({
 
   return (
     <div>
-      <PageHeader
-        title="Tasks"
-        description="What you're working on and what's coming up."
-      />
+      <PageHeader title={t.todos.title} description={t.todos.description} />
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Add task</CardTitle>
+            <CardTitle>{t.todos.addTaskTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={addTodo} className="space-y-3">
               <Input
-                placeholder="What needs doing?"
+                placeholder={t.todos.whatNeedsDoing}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -143,30 +155,41 @@ export function TodosPanel({
               />
               <Button type="submit" disabled={saving} className="w-full">
                 <Plus className="h-3.5 w-3.5" />
-                Add task
+                {t.todos.addTask}
               </Button>
             </form>
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>All tasks</CardTitle>
+            <CardTitle>{t.todos.allTasks}</CardTitle>
             <span className="text-xs text-foreground-subtle tabular">
-              {open.length} open · {done.length} done
+              {t.todos.openDoneCount(open.length, done.length)}
             </span>
           </CardHeader>
           <CardContent>
             {todos.length === 0 ? (
               <EmptyState
                 icon={ListTodo}
-                title="Nothing on your plate"
-                description="Add a task on the left to get started."
+                title={t.todos.nothingOnPlate}
+                description={t.todos.nothingOnPlateDescription}
               />
             ) : (
-              <TodoList items={visible} onToggle={toggle} onRemove={remove} />
+              <TodoList
+                t={t}
+                locale={locale}
+                items={visible}
+                onToggle={toggle}
+                onRemove={remove}
+              />
             )}
             {partnerTodos && partnerTodos.length > 0 && (
-              <PartnerBlock items={partnerTodos} partnerName={partnerName} />
+              <PartnerBlock
+                t={t}
+                locale={locale}
+                items={partnerTodos}
+                partnerName={partnerName}
+              />
             )}
           </CardContent>
         </Card>
@@ -176,11 +199,13 @@ export function TodosPanel({
 }
 
 function QuickAddForm({
+  t,
   title,
   setTitle,
   saving,
   onSubmit,
 }: {
+  t: Dict;
   title: string;
   setTitle: (v: string) => void;
   saving: boolean;
@@ -189,7 +214,7 @@ function QuickAddForm({
   return (
     <form onSubmit={onSubmit} className="flex gap-2 mb-3">
       <Input
-        placeholder="Add a task…"
+        placeholder={t.todos.quickAddPlaceholder}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
@@ -201,22 +226,26 @@ function QuickAddForm({
 }
 
 function TodoList({
+  t,
+  locale,
   items,
   onToggle,
   onRemove,
   compact,
 }: {
+  t: Dict;
+  locale: Locale;
   items: Todo[];
-  onToggle: (t: Todo) => void;
+  onToggle: (todo: Todo) => void;
   onRemove?: (id: string) => void;
   compact?: boolean;
 }) {
   return (
     <ul className="-mx-2">
       <AnimatePresence initial={false}>
-        {items.map((t) => (
+        {items.map((td) => (
           <motion.li
-            key={t.id}
+            key={td.id}
             layout
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -224,28 +253,32 @@ function TodoList({
             transition={{ duration: 0.15 }}
             className="group flex items-center gap-3 rounded-md px-2 py-1.5 row-hover"
           >
-            <Checkbox checked={t.done} onChange={() => onToggle(t)} />
+            <Checkbox checked={td.done} onChange={() => onToggle(td)} />
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
                   "text-sm truncate transition-colors",
-                  t.done && "line-through text-foreground-subtle",
+                  td.done && "line-through text-foreground-subtle",
                 )}
               >
-                {t.title}
+                {td.title}
               </p>
-              {t.due_date && (
+              {td.due_date && (
                 <p className="text-[11px] text-foreground-subtle tabular">
-                  due {t.due_date}
+                  {t.todos.due(
+                    format(parseDateOnly(td.due_date), t.todos.dueDateFormat, {
+                      locale,
+                    }),
+                  )}
                 </p>
               )}
             </div>
             {!compact && onRemove && (
-              <Tooltip content="Delete">
+              <Tooltip content={t.common.delete}>
                 <button
                   type="button"
-                  onClick={() => onRemove(t.id)}
-                  aria-label="Delete"
+                  onClick={() => onRemove(td.id)}
+                  aria-label={t.common.delete}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -297,9 +330,13 @@ function Checkbox({
 }
 
 function PartnerBlock({
+  t,
+  locale,
   items,
   partnerName,
 }: {
+  t: Dict;
+  locale: Locale;
   items: Todo[];
   partnerName?: string;
 }) {
@@ -308,34 +345,38 @@ function PartnerBlock({
     <div className="mt-5 pt-4 border-t border-border">
       <SectionLabel className="mb-2 inline-flex items-center gap-1.5">
         <Heart className="h-3 w-3" />
-        From {partnerName ?? "partner"}
+        {t.todos.fromPartner(partnerName ?? t.todos.partnerFallback)}
       </SectionLabel>
       <ul className="-mx-2">
-        {items.map((t) => (
+        {items.map((td) => (
           <li
-            key={t.id}
+            key={td.id}
             className="flex items-center gap-3 rounded-md px-2 py-1.5 text-foreground-muted"
           >
             <span
               className={cn(
                 "h-4 w-4 shrink-0 rounded border border-border-strong flex items-center justify-center text-[10px]",
-                t.done && "bg-surface-muted",
+                td.done && "bg-surface-muted",
               )}
             >
-              {t.done ? "✓" : ""}
+              {td.done ? "✓" : ""}
             </span>
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
                   "text-sm truncate",
-                  t.done && "line-through text-foreground-subtle",
+                  td.done && "line-through text-foreground-subtle",
                 )}
               >
-                {t.title}
+                {td.title}
               </p>
-              {t.due_date && (
+              {td.due_date && (
                 <p className="text-[11px] text-foreground-subtle tabular">
-                  due {t.due_date}
+                  {t.todos.due(
+                    format(parseDateOnly(td.due_date), t.todos.dueDateFormat, {
+                      locale,
+                    }),
+                  )}
                 </p>
               )}
             </div>

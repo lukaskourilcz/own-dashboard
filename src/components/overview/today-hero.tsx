@@ -19,6 +19,7 @@ import {
 import { todayKey } from "@/lib/date-keys";
 import { useNow } from "@/lib/use-now";
 import { nextUpcoming } from "@/lib/important-dates";
+import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import type { ImportantDate, Streak, StreakLog, Todo } from "@/lib/types";
 import {
   eventDateKey,
@@ -41,19 +42,19 @@ type Props = {
   importantDates: ImportantDate[];
 };
 
-function greetingFor(date: Date): { text: string; Icon: typeof Sun } {
+function greetingFor(date: Date, t: Dict): { text: string; Icon: typeof Sun } {
   const hour = date.getHours();
-  if (hour < 12) return { text: "Good morning", Icon: Sunrise };
-  if (hour < 18) return { text: "Good afternoon", Icon: Sun };
-  return { text: "Good evening", Icon: Moon };
+  if (hour < 12) return { text: t.overview.goodMorning, Icon: Sunrise };
+  if (hour < 18) return { text: t.overview.goodAfternoon, Icon: Sun };
+  return { text: t.overview.goodEvening, Icon: Moon };
 }
 
-function formatCountdown(minutes: number): string {
-  if (minutes < 1) return "now";
-  if (minutes < 60) return `in ${minutes}m`;
+function formatCountdown(minutes: number, t: Dict): string {
+  if (minutes < 1) return t.overview.countdownNow;
+  if (minutes < 60) return t.overview.inMinutes(minutes);
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return m === 0 ? `in ${h}h` : `in ${h}h ${m}m`;
+  return m === 0 ? t.overview.inHours(h) : t.overview.inHoursMinutes(h, m);
 }
 
 export function TodayHero({
@@ -65,9 +66,11 @@ export function TodayHero({
   streakLogs,
   importantDates,
 }: Props) {
+  const t = useDict();
+  const locale = useDateLocale();
   const now = useNow();
   const display = now ?? new Date(0);
-  const greeting = now ? greetingFor(now) : null;
+  const greeting = now ? greetingFor(now, t) : null;
   const firstName = (userName?.trim() || userEmail).split(/[\s@]/)[0];
   const today = todayKey();
 
@@ -101,7 +104,7 @@ export function TodayHero({
   }, [todayEvents, now]);
 
   const dueToday = useMemo(
-    () => todos.filter((t) => !t.done && t.due_date && t.due_date <= today),
+    () => todos.filter((td) => !td.done && td.due_date && td.due_date <= today),
     [todos, today],
   );
 
@@ -131,10 +134,12 @@ export function TodayHero({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-            {greeting ? greeting.text : "Welcome"}, {firstName}
+            {greeting ? greeting.text : t.overview.welcome}, {firstName}
           </h1>
           <p className="mt-1 text-sm text-foreground-muted tabular">
-            {now ? format(display, "EEEE, MMMM d · HH:mm") : "Loading…"}
+            {now
+              ? format(display, t.overview.dateFormat, { locale })
+              : t.common.loading}
           </p>
         </div>
 
@@ -145,19 +150,19 @@ export function TodayHero({
               <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-60 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
             </span>
-            <span className="text-foreground-muted">Now</span>
+            <span className="text-foreground-muted">{t.overview.now}</span>
             <span className="font-medium text-foreground truncate max-w-[180px]">
-              {ongoing.summary ?? "(no title)"}
+              {ongoing.summary ?? t.overview.noTitle}
             </span>
           </div>
         ) : nextUp ? (
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs">
-            <span className="text-foreground-muted">Next</span>
+            <span className="text-foreground-muted">{t.overview.next}</span>
             <span className="font-medium text-foreground truncate max-w-[180px]">
-              {nextUp.ev.summary ?? "(no title)"}
+              {nextUp.ev.summary ?? t.overview.noTitle}
             </span>
             <span className="text-foreground-subtle tabular">
-              {formatCountdown(nextUp.minutes)}
+              {formatCountdown(nextUp.minutes, t)}
             </span>
           </div>
         ) : null}
@@ -174,13 +179,12 @@ export function TodayHero({
           </span>
           <span className="tabular">
             {upcoming.daysUntil === 0
-              ? "is today"
+              ? t.overview.isToday
               : upcoming.daysUntil === 1
-                ? "tomorrow"
-                : `in ${upcoming.daysUntil} days`}
-            {upcoming.yearsCompleted !== null &&
-            upcoming.yearsCompleted > 0
-              ? ` · year ${upcoming.yearsCompleted + 1}`
+                ? t.overview.tomorrow
+                : t.overview.inDays(upcoming.daysUntil)}
+            {upcoming.yearsCompleted !== null && upcoming.yearsCompleted > 0
+              ? ` · ${t.overview.yearN(upcoming.yearsCompleted + 1)}`
               : ""}
           </span>
         </p>
@@ -190,15 +194,15 @@ export function TodayHero({
       <div className="mt-6 grid gap-6 md:grid-cols-3">
         <Column
           icon={CalendarDays}
-          label="Today's events"
+          label={t.overview.todaysEvents}
           empty={
             !calendar.ok
               ? calendar.reason === "unauthorized"
-                ? "Calendar token expired."
+                ? t.overview.calendarTokenExpired
                 : calendar.reason === "no-token"
-                  ? "Grant Calendar access."
-                  : "Couldn't load events."
-              : "Nothing scheduled."
+                  ? t.overview.grantCalendarAccess
+                  : t.overview.couldntLoadEvents
+              : t.overview.nothingScheduled
           }
           relink={
             !calendar.ok &&
@@ -228,7 +232,9 @@ export function TodayHero({
                         isOngoing ? "text-success font-medium" : "text-foreground-subtle",
                       )}
                     >
-                      {eventTimeLabel(ev)}
+                      {ev.start.date && !ev.start.dateTime
+                        ? t.calendar.allDayLabel
+                        : eventTimeLabel(ev)}
                     </span>
                     <span className="flex-1 min-w-0">
                       <span
@@ -237,7 +243,7 @@ export function TodayHero({
                           isOngoing && "font-medium text-foreground",
                         )}
                       >
-                        {ev.summary ?? "(no title)"}
+                        {ev.summary ?? t.overview.noTitle}
                       </span>
                       {ev.description && (
                         <span className="block truncate text-[10px] text-foreground-subtle">
@@ -251,7 +257,7 @@ export function TodayHero({
                         target="_blank"
                         rel="noreferrer"
                         className="text-foreground-subtle hover:text-foreground transition-colors"
-                        aria-label="Open in Google Calendar"
+                        aria-label={t.overview.openInGoogleCalendar}
                       >
                         <ExternalLink className="h-3 w-3" />
                       </a>
@@ -265,25 +271,27 @@ export function TodayHero({
 
         <Column
           icon={ListTodo}
-          label="Due today"
-          empty="Nothing due."
+          label={t.overview.dueToday}
+          empty={t.overview.nothingDue}
           isEmpty={dueToday.length === 0}
         >
           <ul className="space-y-1.5">
-            {dueToday.slice(0, 4).map((t) => (
-              <li key={t.id} className="flex items-start gap-2 text-sm">
+            {dueToday.slice(0, 4).map((td) => (
+              <li key={td.id} className="flex items-start gap-2 text-sm">
                 <span
                   className={cn(
                     "tabular text-xs w-12 shrink-0 pt-0.5",
-                    t.due_date && t.due_date < today
+                    td.due_date && td.due_date < today
                       ? "text-destructive font-medium"
                       : "text-foreground-subtle",
                   )}
                 >
-                  {t.due_date === today ? "today" : "overdue"}
+                  {td.due_date === today
+                    ? t.overview.dueTodayTag
+                    : t.overview.overdue}
                 </span>
                 <span className="flex-1 truncate text-foreground">
-                  {t.title}
+                  {td.title}
                 </span>
               </li>
             ))}
@@ -292,11 +300,11 @@ export function TodayHero({
 
         <Column
           icon={Flame}
-          label="Habits left"
+          label={t.overview.habitsLeft}
           empty={
             streaks.length === 0
-              ? "No habits yet."
-              : "All done today."
+              ? t.overview.noHabitsYet
+              : t.overview.allDoneToday
           }
           isEmpty={
             streaks.length === 0 ||
@@ -314,7 +322,7 @@ export function TodayHero({
                   {s.name}
                 </span>
                 <span className="text-[11px] text-warning font-medium tabular shrink-0">
-                  {count}d at risk
+                  {t.overview.atRisk(count)}
                 </span>
               </li>
             ))}

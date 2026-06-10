@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { todayKey } from "@/lib/date-keys";
+import { useDict } from "@/lib/i18n";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
@@ -45,6 +46,7 @@ export function CalendarPanel({
   compact?: boolean;
   initialTitle?: string;
 }) {
+  const t = useDict();
   const [form, setForm] = useState<FormState>(() =>
     initialTitle ? { ...empty, title: initialTitle } : empty,
   );
@@ -55,11 +57,11 @@ export function CalendarPanel({
     e.preventDefault();
     setResult(null);
     if (!form.title.trim() || !form.date) {
-      setResult({ kind: "error", message: "Title and date are required." });
+      setResult({ kind: "error", message: t.calendar.titleAndDateRequired });
       return;
     }
     if (!form.allDay && (!form.startTime || !form.endTime)) {
-      setResult({ kind: "error", message: "Start and end time are required." });
+      setResult({ kind: "error", message: t.calendar.startAndEndRequired });
       return;
     }
     setSubmitting(true);
@@ -85,7 +87,7 @@ export function CalendarPanel({
       if (!res.ok) {
         setResult({
           kind: "error",
-          message: json.error ?? "Could not create event.",
+          message: json.error ?? t.calendar.couldNotCreateEvent,
         });
         return;
       }
@@ -102,18 +104,18 @@ export function CalendarPanel({
     <Card>
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-1.5">
-          <CalendarPlus className="h-3 w-3" /> New calendar event
+          <CalendarPlus className="h-3 w-3" /> {t.calendar.newEvent}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="cal-title">Title</Label>
+            <Label htmlFor="cal-title">{t.calendar.title}</Label>
             <Input
               id="cal-title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Dentist appointment"
+              placeholder={t.calendar.titlePlaceholder}
             />
           </div>
           <div
@@ -122,7 +124,7 @@ export function CalendarPanel({
             }
           >
             <div className="space-y-1.5">
-              <Label htmlFor="cal-date">Date</Label>
+              <Label htmlFor="cal-date">{t.calendar.date}</Label>
               <Input
                 id="cal-date"
                 type="date"
@@ -133,7 +135,7 @@ export function CalendarPanel({
             {!form.allDay && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cal-start">Start</Label>
+                  <Label htmlFor="cal-start">{t.calendar.start}</Label>
                   <Input
                     id="cal-start"
                     type="time"
@@ -144,7 +146,7 @@ export function CalendarPanel({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cal-end">End</Label>
+                  <Label htmlFor="cal-end">{t.calendar.end}</Label>
                   <Input
                     id="cal-end"
                     type="time"
@@ -167,7 +169,7 @@ export function CalendarPanel({
                   setForm({ ...form, allDay: e.target.checked })
                 }
               />
-              All day
+              {t.calendar.allDay}
             </label>
             <div className="space-y-1">
               <Select
@@ -180,23 +182,23 @@ export function CalendarPanel({
                 }
                 className="h-7 w-32 text-xs"
               >
-                <option value="none">Doesn&apos;t repeat</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
+                <option value="none">{t.calendar.recurrence.none}</option>
+                <option value="daily">{t.calendar.recurrence.daily}</option>
+                <option value="weekly">{t.calendar.recurrence.weekly}</option>
+                <option value="monthly">{t.calendar.recurrence.monthly}</option>
               </Select>
             </div>
           </div>
           {!compact && (
             <div className="space-y-1.5">
-              <Label htmlFor="cal-desc">Description</Label>
+              <Label htmlFor="cal-desc">{t.calendar.description}</Label>
               <Textarea
                 id="cal-desc"
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="Optional"
+                placeholder={t.calendar.descriptionPlaceholder}
                 rows={2}
               />
             </div>
@@ -207,7 +209,7 @@ export function CalendarPanel({
           {result?.kind === "expired" && (
             <div className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3">
               <p className="text-xs text-foreground-muted">
-                Google rejected the calendar token. Re-link to refresh access.
+                {t.calendar.tokenRejected}
               </p>
               <RelinkGoogleButton reason="expired" />
             </div>
@@ -215,7 +217,7 @@ export function CalendarPanel({
           {result?.kind === "ok" && (
             <p className="text-xs text-success inline-flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Event added to your Google Calendar.
+              {t.calendar.eventAdded}
               {result.link && (
                 <a
                   href={result.link}
@@ -223,13 +225,13 @@ export function CalendarPanel({
                   rel="noreferrer"
                   className="underline inline-flex items-center gap-0.5"
                 >
-                  Open <ExternalLink className="h-3 w-3" />
+                  {t.calendar.open} <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </p>
           )}
           <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? "Adding…" : "Add to Google Calendar"}
+            {submitting ? t.calendar.adding : t.calendar.addToGoogleCalendar}
           </Button>
         </form>
       </CardContent>

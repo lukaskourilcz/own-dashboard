@@ -1,15 +1,20 @@
 "use client";
 
 import { format, subDays } from "date-fns";
+import type { Locale } from "date-fns";
 import { cn } from "@/lib/utils";
+import { type Dict } from "@/lib/i18n";
+import { parseDateOnly } from "@/lib/date-keys";
 
 type Props = {
+  t: Dict;
+  locale: Locale;
   color: string;
   dates: Set<string>;
   weeks?: number;
 };
 
-export function StreakHeatmap({ color, dates, weeks = 12 }: Props) {
+export function StreakHeatmap({ t, locale, color, dates, weeks = 12 }: Props) {
   const totalDays = weeks * 7;
   const cells = [];
   for (let i = totalDays - 1; i >= 0; i--) {
@@ -24,7 +29,7 @@ export function StreakHeatmap({ color, dates, weeks = 12 }: Props) {
       {cells.map(({ date, hit }) => (
         <div
           key={date}
-          title={date}
+          title={format(parseDateOnly(date), t.streaks.dateFormat, { locale })}
           className={cn(
             "h-2.5 w-2.5 rounded-[2px] transition-opacity",
             !hit && "bg-surface-muted",

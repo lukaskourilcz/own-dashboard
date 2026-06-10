@@ -38,6 +38,7 @@ The app is a tab-based dashboard. After you sign in with Google, you land on **O
 | Pulse | Daily 1-5 mood + one-line note; 30-day dual-line trend when paired | `g m` |
 | Dates | Anniversaries, birthdays, deadlines with live countdowns; recurring yearly or monthly | `g d` |
 | Couple | Send invites, accept/decline, configure what to share, unpair | `g u` |
+| Settings | Language (Čeština / English), display currency, light/dark, and which sections show in the nav | sidebar gear |
 
 A quick-add bar at the top of Overview routes by prefix — see [Quick-add](#quick-add-prefix-routing).
 
@@ -155,6 +156,17 @@ The pairing surface.
 - **Paired state**: shows partner's display name + email, an **Unpair** button (with confirm), and a mirror of what they share with you.
 - **Sharing toggles**: per-category (subscriptions, todos, streaks, finances, plans, books). Each toggle is optimistic, upserts a `sharing_prefs` row.
 - The accept flow inserts a `couples` row with canonical sorted user ids (matching the unique constraint), then marks the invite `accepted`. `router.refresh()` reloads server context so the rest of the dashboard immediately reflects the new pairing.
+
+### Settings & internationalization
+
+A dedicated **Settings** tab (sidebar/mobile gear, always visible) holds the device-local preferences:
+
+- **Language** — the whole app is bilingual **Czech (default) / English**. Translations live in `src/lib/i18n/`: one typed dictionary file per section under `sections/`, assembled in `index.ts`. Components read strings via `const t = useDict()` (`t.<section>.<key>`); dynamic strings are functions (`t.kpi.nDone(3)`). Czech completeness is guaranteed by the type system — every `cs` block must satisfy the same type as its `en` block, so a missing key is a compile error. Dates render through `useDateLocale()` (date-fns `cs`/`enUS`).
+- **Display currency** — what every total/chart converts into; defaults to **CZK**. `formatCurrency` (`src/lib/utils.ts`) picks a native locale per currency code (e.g. CZK → `cs-CZ` → "1 234,56 Kč"), independent of UI language, so it's hydration-stable.
+- **Appearance** — light/dark, sharing the existing `useTheme` store.
+- **Navigation sections** — per-section show/hide toggles for the nav panel (Overview is always shown). The command palette still lists every section regardless, so hidden ones stay reachable by search.
+
+All three new preferences (`lang`, `displayCurrency`, `hiddenNavSections`) persist in `localStorage` via the same `useSyncExternalStore` pattern as `useTheme` (`src/lib/i18n/lang.ts`, `src/lib/use-prefs.ts`). Language is applied pre-hydration by the bootstrap script in `layout.tsx` (sets `<html lang>`), mirroring the dark-mode bootstrap.
 
 ---
 
@@ -496,7 +508,6 @@ The following items are intentionally scoped out. Each is small enough to ship a
 - **Partner data in Subscriptions / Finances / Plans**. The data flows through `partnerData` server-side, but the three panels don't yet render a "From <partner>" section. The pattern proven in Todos and Streaks extends directly (about 30 lines per panel).
 - **"Us" stats card on Overview**. Planned: days paired, books co-written, pages-together total, days both checked in. All deriveable from existing data with no new schema; just a small component drop-in.
 - **Email invites**. Couple invites currently surface in-app on the partner's next load. Real email send needs either Supabase Edge Functions + a transactional email API, or a server-route handler that calls Resend / Postmark / SES.
-- **Display-currency persistence**. The currency picker lives in shell state and resets on reload. `useTheme` is the reference pattern for localStorage persistence via `useSyncExternalStore`.
 - **Subscription / Books / etc. toast migration**. Toast is wired up via `ToastProvider` but only quick-add currently uses it. Remaining panels still have inline error/success text and can migrate incrementally.
 - **Edit a streak's reminder time** or **flip a book between solo and co-write after creation** — these are creation-time only right now. Inline-edit UI is the missing piece.
 - **Live FX rates**. `src/lib/fx.ts` carries a hard-coded snapshot. The function signature is set up to swap in a live API (e.g. Frankfurter, open.er-api.com) without touching call sites.

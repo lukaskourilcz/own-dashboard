@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { Activity, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useDict } from "@/lib/i18n";
 
 export default function LoginPage() {
+  const t = useDict();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,10 +58,10 @@ export default function LoginPage() {
             <Activity className="h-4 w-4" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back
+            {t.login.welcomeBack}
           </h1>
           <p className="mt-2 text-sm text-foreground-muted">
-            Track subscriptions, habits, plans, and your calendar.
+            {t.login.tagline}
           </p>
         </div>
 
@@ -71,14 +73,14 @@ export default function LoginPage() {
             className="w-full"
           >
             <GoogleIcon />
-            {loading ? "Redirecting…" : "Continue with Google"}
+            {loading ? t.common.redirecting : t.login.continueWithGoogle}
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>
           {error && (
             <p className="text-xs text-destructive text-center">{error}</p>
           )}
           <p className="text-[11px] text-foreground-subtle text-center leading-relaxed">
-            We request Calendar access to create events from the dashboard.
+            {t.login.calendarNotice}
           </p>
         </div>
       </motion.div>

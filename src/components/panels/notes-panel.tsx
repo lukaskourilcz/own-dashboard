@@ -49,6 +49,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Note, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tagColor } from "@/lib/tag-colors";
@@ -57,13 +58,20 @@ import type { NoteEditorHandle } from "@/components/notes/note-editor";
 // BlockNote pulls in ProseMirror + Mantine CSS — it's heavy. Lazy-load so it
 // doesn't bloat the dashboard's first paint, and only on the client because
 // the editor manipulates DOM directly.
+function EditorLoading() {
+  const t = useDict();
+  return (
+    <div className="p-6 text-xs text-foreground-subtle">
+      {t.notes.loadingEditor}
+    </div>
+  );
+}
+
 const NoteEditor = dynamic(
   () => import("@/components/notes/note-editor").then((m) => m.NoteEditor),
   {
     ssr: false,
-    loading: () => (
-      <div className="p-6 text-xs text-foreground-subtle">Loading editor…</div>
-    ),
+    loading: () => <EditorLoading />,
   },
 );
 
@@ -105,6 +113,8 @@ function safeFilename(title: string): string {
 export function NotesPanel({ notes, setNotes }: Props) {
   const supabase = createClient();
   const toast = useToast();
+  const t = useDict();
+  const locale = useDateLocale();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeTagFilter, setActiveTagFilter] = useState<Set<string>>(new Set());
@@ -129,7 +139,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
-    for (const n of notes) for (const t of n.tags ?? []) set.add(t);
+    for (const n of notes) for (const tag of n.tags ?? []) set.add(tag);
     return [...set].sort();
   }, [notes]);
 
@@ -144,7 +154,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
       }
       if (activeTagFilter.size > 0) {
         const has = new Set(n.tags ?? []);
-        for (const t of activeTagFilter) if (!has.has(t)) return false;
+        for (const tag of activeTagFilter) if (!has.has(tag)) return false;
       }
       return true;
     };
@@ -170,7 +180,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
     if (!userId) {
-      toast.err("Sign in first.");
+      toast.err(t.notes.signInFirst);
       return null;
     }
     // Place new notes above every existing one in their bucket.
@@ -182,7 +192,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
       .from("notes")
       .insert({
         user_id: userId,
-        title: seedTitle ?? "Untitled",
+        title: seedTitle ?? t.notes.untitled,
         content: seedContent ?? [],
         tags: [],
         sort_order: topSortOrder + 1,
@@ -190,7 +200,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
       .select()
       .single();
     if (error || !data) {
-      toast.err(error?.message ?? "Could not create note.");
+      toast.err(error?.message ?? t.notes.couldNotCreateNote);
       return null;
     }
     setNotes((prev) => [data as Note, ...prev]);
@@ -199,7 +209,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
   }
 
   async function deleteNote(id: string) {
-    const ok = window.confirm("Delete this note? This cannot be undone.");
+    const ok = window.confirm(t.notes.deleteConfirm);
     if (!ok) return;
     setNotes((prev) => prev.filter((n) => n.id !== id));
     if (selectedId === id) setSelectedId(null);
@@ -236,7 +246,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
     const { data, error } = await supabase
       .from("notes")
       .update({
-        title: doc.title || "Untitled",
+        title: doc.title || t.notes.untitled,
         content: doc.content,
         plain_text: doc.plainText,
       })
@@ -245,7 +255,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
       .single();
     setSavingId((s) => (s === noteId ? null : s));
     if (error || !data) {
-      toast.err(error?.message ?? "Could not save note.");
+      toast.err(error?.message ?? t.notes.couldNotSaveNote);
       return;
     }
     setNotes((prev) => prev.map((n) => (n.id === noteId ? (data as Note) : n)));
@@ -272,7 +282,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
   }
 
   async function removeTag(note: Note, tag: string) {
-    const nextTags = (note.tags ?? []).filter((t) => t !== tag);
+    const nextTags = (note.tags ?? []).filter((x) => x !== tag);
     setNotes((prev) =>
       prev.map((n) => (n.id === note.id ? { ...n, tags: nextTags } : n)),
     );
@@ -302,9 +312,9 @@ export function NotesPanel({ notes, setNotes }: Props) {
     try {
       const md = await editorHandleRef.current.toMarkdown();
       await navigator.clipboard.writeText(md);
-      toast.ok("Copied as Markdown.");
+      toast.ok(t.notes.copiedAsMarkdown);
     } catch {
-      toast.err("Could not copy.");
+      toast.err(t.notes.couldNotCopy);
     }
   }
 
@@ -314,7 +324,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
       const md = await editorHandleRef.current.toMarkdown();
       downloadBlob(`${safeFilename(selected.title)}.md`, md, "text/markdown");
     } catch {
-      toast.err("Could not export.");
+      toast.err(t.notes.couldNotExport);
     }
   }
 
@@ -372,8 +382,8 @@ export function NotesPanel({ notes, setNotes }: Props) {
   return (
     <div>
       <PageHeader
-        title="Notes"
-        description="A quiet place for thoughts, prompts, and drafts."
+        title={t.notes.title}
+        description={t.notes.description}
         action={
           <div className="flex items-center gap-1.5">
             <ImportMarkdownButton
@@ -388,9 +398,9 @@ export function NotesPanel({ notes, setNotes }: Props) {
                       .split("\n")
                       .map((l) => l.replace(/^#+\s*/, "").trim())
                       .find((l) => l.length > 0)
-                      ?.slice(0, 80) ?? "Imported note";
+                      ?.slice(0, 80) ?? t.notes.importedNote;
                   await createNote(blocks, title);
-                  toast.ok("Imported as a new note.");
+                  toast.ok(t.notes.importedAsNewNote);
                 } catch (err) {
                   toast.err((err as Error).message);
                 }
@@ -398,7 +408,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
             />
             <Button size="sm" onClick={() => createNote()}>
               <Plus className="h-3.5 w-3.5" />
-              New note
+              {t.notes.newNote}
             </Button>
           </div>
         }
@@ -408,14 +418,14 @@ export function NotesPanel({ notes, setNotes }: Props) {
       {allTags.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <Hash className="h-3 w-3 text-foreground-subtle" />
-          {allTags.map((t) => {
-            const on = activeTagFilter.has(t);
-            const c = tagColor(t);
+          {allTags.map((tag) => {
+            const on = activeTagFilter.has(tag);
+            const c = tagColor(tag);
             return (
               <button
-                key={t}
+                key={tag}
                 type="button"
-                onClick={() => toggleTagFilter(t)}
+                onClick={() => toggleTagFilter(tag)}
                 className={cn(
                   "text-[11px] font-medium rounded-full px-2 py-0.5 transition-colors border",
                   on
@@ -428,7 +438,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
                     : { background: c.bg, color: c.text, borderColor: c.border }
                 }
               >
-                {t}
+                {tag}
               </button>
             );
           })}
@@ -438,7 +448,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
               onClick={() => setActiveTagFilter(new Set())}
               className="text-[11px] text-foreground-subtle hover:text-foreground ml-1"
             >
-              Clear
+              {t.notes.clear}
             </button>
           )}
         </div>
@@ -456,7 +466,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-foreground-subtle" />
               <Input
-                placeholder="Search title + content…"
+                placeholder={t.notes.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-7 h-8 text-xs"
@@ -469,13 +479,13 @@ export function NotesPanel({ notes, setNotes }: Props) {
               icon={FileText}
               title={
                 query || activeTagFilter.size > 0
-                  ? "No matches"
-                  : "No notes yet"
+                  ? t.notes.noMatches
+                  : t.notes.noNotesYet
               }
               description={
                 query || activeTagFilter.size > 0
-                  ? "Try a different search or tag."
-                  : "Click New note to start writing."
+                  ? t.notes.noMatchesDescription
+                  : t.notes.noNotesDescription
               }
               className="py-10"
             />
@@ -483,7 +493,9 @@ export function NotesPanel({ notes, setNotes }: Props) {
             <div className="max-h-[60vh] overflow-y-auto p-1.5">
               {pinnedFiltered.length > 0 && (
                 <>
-                  <SectionLabel className="px-2 pt-1 pb-1">Pinned</SectionLabel>
+                  <SectionLabel className="px-2 pt-1 pb-1">
+                    {t.notes.pinned}
+                  </SectionLabel>
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -506,7 +518,9 @@ export function NotesPanel({ notes, setNotes }: Props) {
                     </SortableContext>
                   </DndContext>
                   {unpinnedFiltered.length > 0 && (
-                    <SectionLabel className="px-2 pt-3 pb-1">Notes</SectionLabel>
+                    <SectionLabel className="px-2 pt-3 pb-1">
+                      {t.notes.notes}
+                    </SectionLabel>
                   )}
                 </>
               )}
@@ -540,46 +554,52 @@ export function NotesPanel({ notes, setNotes }: Props) {
                   type="button"
                   onClick={() => setSelectedId(null)}
                   className="lg:hidden inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
-                  aria-label="Back"
+                  aria-label={t.notes.back}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate">
-                    {selected.title || "Untitled"}
+                    {selected.title || t.notes.untitled}
                   </p>
                   <p className="text-[10px] text-foreground-subtle tabular">
                     {savingId === selected.id
-                      ? "Saving…"
-                      : `Saved ${format(new Date(selected.updated_at), "HH:mm")}`}
+                      ? t.notes.saving
+                      : t.notes.savedAt(
+                          format(
+                            new Date(selected.updated_at),
+                            t.notes.savedTimeFormat,
+                            { locale },
+                          ),
+                        )}
                   </p>
                 </div>
-                <Tooltip content="Copy as Markdown">
+                <Tooltip content={t.notes.copyAsMarkdown}>
                   <Button
                     size="icon-sm"
                     variant="ghost"
                     onClick={copyAsMarkdown}
-                    aria-label="Copy as Markdown"
+                    aria-label={t.notes.copyAsMarkdown}
                   >
                     <Clipboard className="h-3.5 w-3.5" />
                   </Button>
                 </Tooltip>
-                <Tooltip content="Download .md">
+                <Tooltip content={t.notes.downloadMd}>
                   <Button
                     size="icon-sm"
                     variant="ghost"
                     onClick={downloadAsMarkdown}
-                    aria-label="Download as Markdown"
+                    aria-label={t.notes.downloadAsMarkdown}
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
                 </Tooltip>
-                <Tooltip content={selected.is_pinned ? "Unpin" : "Pin"}>
+                <Tooltip content={selected.is_pinned ? t.notes.unpin : t.notes.pin}>
                   <Button
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => togglePin(selected)}
-                    aria-label="Pin"
+                    aria-label={t.notes.pin}
                   >
                     {selected.is_pinned ? (
                       <PinOff className="h-3.5 w-3.5" />
@@ -588,12 +608,12 @@ export function NotesPanel({ notes, setNotes }: Props) {
                     )}
                   </Button>
                 </Tooltip>
-                <Tooltip content="Delete">
+                <Tooltip content={t.notes.delete}>
                   <Button
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => deleteNote(selected.id)}
-                    aria-label="Delete note"
+                    aria-label={t.notes.deleteNote}
                   >
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
@@ -602,11 +622,11 @@ export function NotesPanel({ notes, setNotes }: Props) {
 
               {/* Tag strip — chips + Add tag popover */}
               <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-border">
-                {(selected.tags ?? []).map((t) => {
-                  const c = tagColor(t);
+                {(selected.tags ?? []).map((tag) => {
+                  const c = tagColor(tag);
                   return (
                     <span
-                      key={t}
+                      key={tag}
                       className="group inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 border"
                       style={{
                         background: c.bg,
@@ -614,11 +634,11 @@ export function NotesPanel({ notes, setNotes }: Props) {
                         borderColor: c.border,
                       }}
                     >
-                      {t}
+                      {tag}
                       <button
                         type="button"
-                        onClick={() => removeTag(selected, t)}
-                        aria-label={`Remove ${t}`}
+                        onClick={() => removeTag(selected, tag)}
+                        aria-label={t.notes.removeTag(tag)}
                         className="opacity-50 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="h-2.5 w-2.5" />
@@ -626,7 +646,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
                     </span>
                   );
                 })}
-                <AddTagButton onAdd={(t) => addTag(selected, t)} />
+                <AddTagButton onAdd={(tag) => addTag(selected, tag)} />
               </div>
 
               <div className="flex-1 overflow-auto">
@@ -651,8 +671,8 @@ export function NotesPanel({ notes, setNotes }: Props) {
           ) : (
             <EmptyState
               icon={FileText}
-              title="Select a note"
-              description="Or create a new one to start writing."
+              title={t.notes.selectANote}
+              description={t.notes.selectANoteDescription}
               className="py-20"
             />
           )}
@@ -668,7 +688,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
         onPick={(n) => {
           editorHandleRef.current?.insertNoteLink(
             n.id,
-            n.title || "Untitled",
+            n.title || t.notes.untitled,
           );
           setLinkPickerOpen(false);
         }}
@@ -690,6 +710,8 @@ function NoteRow({
   onSelect: () => void;
   dragHandle?: React.ReactNode;
 }) {
+  const t = useDict();
+  const locale = useDateLocale();
   return (
     <motion.li
       layout
@@ -715,16 +737,16 @@ function NoteRow({
               <Pin className="h-3 w-3 text-warning shrink-0" />
             )}
             <span className="text-sm font-medium truncate">
-              {note.title || "Untitled"}
+              {note.title || t.notes.untitled}
             </span>
           </div>
           {note.tags && note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {note.tags.slice(0, 4).map((t) => {
-                const c = tagColor(t);
+              {note.tags.slice(0, 4).map((tag) => {
+                const c = tagColor(tag);
                 return (
                   <span
-                    key={t}
+                    key={tag}
                     className="text-[10px] rounded px-1 border"
                     style={{
                       background: c.bg,
@@ -732,7 +754,7 @@ function NoteRow({
                       borderColor: c.border,
                     }}
                   >
-                    {t}
+                    {tag}
                   </span>
                 );
               })}
@@ -741,6 +763,7 @@ function NoteRow({
           <p className="text-[10px] text-foreground-subtle tabular mt-0.5">
             {formatDistanceToNow(new Date(note.updated_at), {
               addSuffix: true,
+              locale,
             })}
           </p>
         </button>
@@ -758,6 +781,8 @@ function SortableNoteRow({
   isActive: boolean;
   onSelect: () => void;
 }) {
+  const t = useDict();
+  const locale = useDateLocale();
   const {
     attributes,
     listeners,
@@ -781,7 +806,7 @@ function SortableNoteRow({
       <div className="flex items-stretch">
         <button
           type="button"
-          aria-label="Drag to reorder"
+          aria-label={t.notes.dragToReorder}
           {...attributes}
           {...listeners}
           className="shrink-0 flex items-center justify-center w-5 text-foreground-subtle hover:text-foreground cursor-grab active:cursor-grabbing focus-ring"
@@ -801,16 +826,16 @@ function SortableNoteRow({
           <div className="flex items-center gap-1.5">
             <Pin className="h-3 w-3 text-warning shrink-0" />
             <span className="text-sm font-medium truncate">
-              {note.title || "Untitled"}
+              {note.title || t.notes.untitled}
             </span>
           </div>
           {note.tags && note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {note.tags.slice(0, 4).map((t) => {
-                const c = tagColor(t);
+              {note.tags.slice(0, 4).map((tag) => {
+                const c = tagColor(tag);
                 return (
                   <span
-                    key={t}
+                    key={tag}
                     className="text-[10px] rounded px-1 border"
                     style={{
                       background: c.bg,
@@ -818,7 +843,7 @@ function SortableNoteRow({
                       borderColor: c.border,
                     }}
                   >
-                    {t}
+                    {tag}
                   </span>
                 );
               })}
@@ -827,6 +852,7 @@ function SortableNoteRow({
           <p className="text-[10px] text-foreground-subtle tabular mt-0.5">
             {formatDistanceToNow(new Date(note.updated_at), {
               addSuffix: true,
+              locale,
             })}
           </p>
         </button>
@@ -838,6 +864,7 @@ function SortableNoteRow({
 /* ─────────────────────────────────────────────────────────────────────── */
 
 function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
+  const t = useDict();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
 
@@ -857,7 +884,7 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
           className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full border border-dashed border-border text-foreground-subtle hover:text-foreground hover:border-border-strong px-2 py-0.5 transition-colors focus-ring"
         >
           <Plus className="h-2.5 w-2.5" />
-          Add tag
+          {t.notes.addTag}
         </button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -869,7 +896,7 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
           <form onSubmit={submit} className="flex gap-1.5">
             <Input
               autoFocus
-              placeholder="prompt, draft, idea…"
+              placeholder={t.notes.addTagPlaceholder}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               className="h-8 text-xs"
@@ -879,7 +906,7 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
             </Button>
           </form>
           <p className="text-[10px] text-foreground-subtle mt-1.5 px-1">
-            Lowercase, hyphen-separated.
+            {t.notes.tagHint}
           </p>
         </Popover.Content>
       </Popover.Portal>
@@ -894,6 +921,7 @@ function ImportMarkdownButton({
 }: {
   onCreate: (md: string) => Promise<void> | void;
 }) {
+  const t = useDict();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -916,36 +944,36 @@ function ImportMarkdownButton({
       <Dialog.Trigger asChild>
         <Button size="sm" variant="outline">
           <Upload className="h-3.5 w-3.5" />
-          Import MD
+          {t.notes.importMd}
         </Button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
           <Dialog.Title className="text-sm font-semibold">
-            Import from Markdown
+            {t.notes.importFromMarkdown}
           </Dialog.Title>
           <Dialog.Description className="text-xs text-foreground-muted mt-1">
-            Paste Markdown — headings, lists, code blocks. Creates a new note.
+            {t.notes.importDialogDescription}
           </Dialog.Description>
           <form onSubmit={submit} className="mt-3 space-y-3">
             <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={12}
-              placeholder="# Title&#10;&#10;Your markdown here…"
+              placeholder={t.notes.importPlaceholder}
               className="font-mono text-xs"
               autoFocus
             />
             <div className="flex items-center justify-end gap-2">
               <Dialog.Close asChild>
                 <Button type="button" variant="ghost" size="sm">
-                  Cancel
+                  {t.notes.cancel}
                 </Button>
               </Dialog.Close>
               <Button type="submit" size="sm" disabled={busy || !text.trim()}>
                 <Download className="h-3.5 w-3.5" />
-                {busy ? "Importing…" : "Create note"}
+                {busy ? t.notes.importing : t.notes.createNote}
               </Button>
             </div>
           </form>
@@ -972,6 +1000,7 @@ function NoteLinkPicker({
   notes: Note[];
   onPick: (n: Note) => void;
 }) {
+  const t = useDict();
   const q = query.trim().toLowerCase();
   const results = q
     ? notes.filter((n) =>
@@ -984,24 +1013,24 @@ function NoteLinkPicker({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-[20vh] z-50 w-full max-w-md -translate-x-1/2 rounded-xl border border-border bg-surface shadow-elevated overflow-hidden">
-          <Dialog.Title className="sr-only">Link to a note</Dialog.Title>
+          <Dialog.Title className="sr-only">{t.notes.linkToANote}</Dialog.Title>
           <div className="flex items-center gap-2 px-3.5 border-b border-border">
             <Link2 className="h-4 w-4 text-foreground-subtle" />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a note to link…"
+              placeholder={t.notes.findNoteToLink}
               className="flex-1 h-11 bg-transparent text-sm outline-none placeholder:text-foreground-subtle"
             />
             <kbd className="text-[10px] text-foreground-subtle font-medium border border-border rounded px-1.5 py-0.5">
-              esc
+              {t.notes.esc}
             </kbd>
           </div>
           <div className="max-h-[50vh] overflow-y-auto p-1.5">
             {results.length === 0 ? (
               <p className="px-3 py-6 text-center text-xs text-foreground-subtle">
-                {notes.length === 0 ? "No other notes yet." : "No matches."}
+                {notes.length === 0 ? t.notes.noOtherNotes : t.notes.noMatchesShort}
               </p>
             ) : (
               <ul>
@@ -1015,7 +1044,7 @@ function NoteLinkPicker({
                       <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {n.title || "Untitled"}
+                          {n.title || t.notes.untitled}
                         </p>
                         {n.plain_text && (
                           <p className="text-[11px] text-foreground-subtle truncate">

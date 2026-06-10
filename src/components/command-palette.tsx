@@ -11,23 +11,28 @@ import {
   Gift,
   Heart,
   LayoutDashboard,
+  Languages,
   ListTodo,
   LogOut,
   Moon,
   Search,
+  Settings,
   Sun,
   Target,
   Wallet,
 } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
+import { useDict, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { NavTab } from "@/components/nav/sidebar";
+
+type Group = "go" | "act";
 
 type Action = {
   id: string;
   label: string;
   hint?: string;
-  group: "Go to" | "Actions";
+  group: Group;
   icon: typeof Search;
   keywords?: string;
   run: () => void;
@@ -41,6 +46,8 @@ export function CommandPalette({
   onFocusQuickAdd: () => void;
 }) {
   const { theme, toggle } = useTheme();
+  const { lang, setLang } = useLang();
+  const t = useDict();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -68,29 +75,31 @@ export function CommandPalette({
 
   const actions: Action[] = useMemo(() => {
     const close = () => setOpen(false);
-    const go = (t: NavTab) => () => {
-      setTab(t);
+    const go = (tab: NavTab) => () => {
+      setTab(tab);
       close();
     };
+    const s = t.nav.sections;
     return [
-      { id: "go-overview", label: "Overview", group: "Go to", icon: LayoutDashboard, keywords: "home dashboard g o", run: go("overview") },
-      { id: "go-calendar", label: "Calendar", group: "Go to", icon: CalendarDays, keywords: "events g c", run: go("calendar") },
-      { id: "go-notes", label: "Notes", group: "Go to", icon: FileText, keywords: "notes prompts writing g n", run: go("notes") },
-      { id: "go-todos", label: "Tasks", group: "Go to", icon: ListTodo, keywords: "todo g t", run: go("todos") },
-      { id: "go-streaks", label: "Habits", group: "Go to", icon: Flame, keywords: "streak habit g s", run: go("streaks") },
-      { id: "go-finances", label: "Finances", group: "Go to", icon: Wallet, keywords: "money transactions g f", run: go("finances") },
-      { id: "go-subs", label: "Subscriptions", group: "Go to", icon: CreditCard, keywords: "spend recurring", run: go("subscriptions") },
-      { id: "go-plans", label: "Plans", group: "Go to", icon: Target, keywords: "goals g p", run: go("plans") },
-      { id: "go-books", label: "Books", group: "Go to", icon: BookOpen, keywords: "reading g b", run: go("books") },
-      { id: "go-dates", label: "Dates", group: "Go to", icon: Gift, keywords: "anniversary birthday g d", run: go("dates") },
-      { id: "go-couple", label: "Couple", group: "Go to", icon: Heart, keywords: "partner pair sharing g u", run: go("couple") },
+      { id: "go-overview", label: s.overview, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g o", run: go("overview") },
+      { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g c", run: go("calendar") },
+      { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes prompts writing poznámky g n", run: go("notes") },
+      { id: "go-todos", label: s.todos, group: "go", icon: ListTodo, keywords: "todo tasks úkoly g t", run: go("todos") },
+      { id: "go-streaks", label: s.streaks, group: "go", icon: Flame, keywords: "streak habit návyky g s", run: go("streaks") },
+      { id: "go-finances", label: s.finances, group: "go", icon: Wallet, keywords: "money transactions finance g f", run: go("finances") },
+      { id: "go-subs", label: s.subscriptions, group: "go", icon: CreditCard, keywords: "spend recurring předplatná", run: go("subscriptions") },
+      { id: "go-plans", label: s.plans, group: "go", icon: Target, keywords: "goals plány g p", run: go("plans") },
+      { id: "go-books", label: s.books, group: "go", icon: BookOpen, keywords: "reading knihy g b", run: go("books") },
+      { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "anniversary birthday významné dny g d", run: go("dates") },
+      { id: "go-couple", label: s.couple, group: "go", icon: Heart, keywords: "partner pair sharing pár g u", run: go("couple") },
+      { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-quick-add",
-        label: "Open quick-add",
+        label: t.app.openQuickAdd,
         hint: "n",
-        group: "Actions",
+        group: "act",
         icon: Search,
-        keywords: "add new",
+        keywords: "add new rychlé přidání",
         run: () => {
           setTab("overview");
           close();
@@ -99,21 +108,32 @@ export function CommandPalette({
       },
       {
         id: "act-theme",
-        label: theme === "dark" ? "Switch to light mode" : "Switch to dark mode",
-        group: "Actions",
+        label: theme === "dark" ? t.app.switchToLight : t.app.switchToDark,
+        group: "act",
         icon: theme === "dark" ? Sun : Moon,
-        keywords: "dark light theme appearance",
+        keywords: "dark light theme appearance motiv vzhled",
         run: () => {
           toggle();
           close();
         },
       },
       {
+        id: "act-lang",
+        label: lang === "cs" ? t.app.switchToEnglish : t.app.switchToCzech,
+        group: "act",
+        icon: Languages,
+        keywords: "language jazyk čeština english angličtina",
+        run: () => {
+          setLang(lang === "cs" ? "en" : "cs");
+          close();
+        },
+      },
+      {
         id: "act-signout",
-        label: "Sign out",
-        group: "Actions",
+        label: t.nav.signOut,
+        group: "act",
         icon: LogOut,
-        keywords: "logout",
+        keywords: "logout odhlásit",
         run: () => {
           const form = document.createElement("form");
           form.method = "POST";
@@ -123,15 +143,13 @@ export function CommandPalette({
         },
       },
     ];
-  }, [setTab, onFocusQuickAdd, theme, toggle]);
+  }, [setTab, onFocusQuickAdd, theme, toggle, lang, setLang, t]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return actions;
     return actions.filter((a) =>
-      (a.label + " " + (a.keywords ?? "") + " " + a.group)
-        .toLowerCase()
-        .includes(q),
+      (a.label + " " + (a.keywords ?? "")).toLowerCase().includes(q),
     );
   }, [actions, query]);
 
@@ -155,10 +173,15 @@ export function CommandPalette({
 
   // Group rendering: stable group order, only show non-empty groups.
   const grouped = useMemo(() => {
-    const groups: Record<string, Action[]> = { "Go to": [], Actions: [] };
+    const groups: Record<Group, Action[]> = { go: [], act: [] };
     for (const a of filtered) groups[a.group].push(a);
     return groups;
   }, [filtered]);
+
+  const groupLabels: Record<Group, string> = {
+    go: t.app.groupGoTo,
+    act: t.app.groupActions,
+  };
 
   return (
     <AnimatePresence>
@@ -177,7 +200,7 @@ export function CommandPalette({
           />
           <motion.div
             role="dialog"
-            aria-label="Command palette"
+            aria-label={t.app.commandPalette}
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -192,7 +215,7 @@ export function CommandPalette({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onInputKey}
-                placeholder="Type a command or search…"
+                placeholder={t.app.searchPlaceholder}
                 className="flex-1 h-11 bg-transparent text-sm outline-none placeholder:text-foreground-subtle"
               />
               <kbd className="text-[10px] text-foreground-subtle font-medium border border-border rounded px-1.5 py-0.5">
@@ -203,17 +226,17 @@ export function CommandPalette({
             <div className="max-h-[60vh] overflow-y-auto p-1.5">
               {filtered.length === 0 ? (
                 <p className="px-3 py-6 text-center text-xs text-foreground-subtle">
-                  No matches.
+                  {t.app.noMatches}
                 </p>
               ) : (
-                Object.entries(grouped).map(([groupName, items]) =>
-                  items.length === 0 ? null : (
+                (Object.keys(grouped) as Group[]).map((groupName) =>
+                  grouped[groupName].length === 0 ? null : (
                     <div key={groupName} className="mb-1">
                       <p className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-foreground-subtle">
-                        {groupName}
+                        {groupLabels[groupName]}
                       </p>
                       <ul>
-                        {items.map((it) => {
+                        {grouped[groupName].map((it) => {
                           const idx = filtered.indexOf(it);
                           const isActive = idx === safeActive;
                           return (

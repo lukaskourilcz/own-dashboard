@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Plus, X } from "lucide-react";
+import { useDict } from "@/lib/i18n";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -12,6 +13,7 @@ type BeforeInstallPromptEvent = Event & {
 const INSTALL_DISMISSED_KEY = "dashboard.installDismissed";
 
 export function MobileFab({ onClick }: { onClick: () => void }) {
+  const t = useDict();
   const [installEvent, setInstallEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
@@ -57,7 +59,7 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
         type="button"
         onClick={onClick}
         whileTap={{ scale: 0.92 }}
-        aria-label="Quick add"
+        aria-label={t.app.quickAdd}
         className="md:hidden fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-elevated flex items-center justify-center focus-ring"
       >
         <Plus className="h-5 w-5" />
@@ -78,9 +80,9 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
                 <Download className="h-3.5 w-3.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">Install Dashboard</p>
+                <p className="text-sm font-medium">{t.app.installTitle}</p>
                 <p className="text-xs text-foreground-muted mt-0.5">
-                  Add to your home screen for one-tap access.
+                  {t.app.installBody}
                 </p>
                 <div className="flex gap-2 mt-2">
                   <button
@@ -88,21 +90,21 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
                     onClick={doInstall}
                     className="text-xs font-medium text-foreground underline-offset-2 hover:underline"
                   >
-                    Install
+                    {t.app.install}
                   </button>
                   <button
                     type="button"
                     onClick={dismissInstall}
                     className="text-xs text-foreground-subtle hover:text-foreground"
                   >
-                    Not now
+                    {t.app.notNow}
                   </button>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={dismissInstall}
-                aria-label="Dismiss"
+                aria-label={t.app.dismiss}
                 className="text-foreground-subtle hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />

@@ -3,22 +3,23 @@
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
+import { useDict, type Dict } from "@/lib/i18n";
 
 type Tracked = {
   table: string;
-  label: (count: number) => string;
+  label: (d: Dict, count: number) => string;
 };
 
 const TRACKED: Tracked[] = [
-  { table: "todos", label: (n) => `${n === 1 ? "a task" : `${n} tasks`}` },
-  { table: "streak_logs", label: (n) => `${n === 1 ? "a habit check-in" : `${n} habit check-ins`}` },
-  { table: "transactions", label: (n) => `${n === 1 ? "a transaction" : `${n} transactions`}` },
-  { table: "plans", label: (n) => `${n === 1 ? "a plan" : `${n} plans`}` },
-  { table: "books", label: (n) => `${n === 1 ? "a book" : `${n} books`}` },
-  { table: "book_pages", label: (n) => `${n === 1 ? "a reading session" : `${n} reading sessions`}` },
-  { table: "important_dates", label: (n) => `${n === 1 ? "a date" : `${n} dates`}` },
-  { table: "accounts", label: (n) => `${n === 1 ? "an account" : `${n} accounts`}` },
-  { table: "subscriptions", label: (n) => `${n === 1 ? "a subscription" : `${n} subscriptions`}` },
+  { table: "todos", label: (d, n) => d.couple.task(n) },
+  { table: "streak_logs", label: (d, n) => d.couple.habitCheckIn(n) },
+  { table: "transactions", label: (d, n) => d.couple.transaction(n) },
+  { table: "plans", label: (d, n) => d.couple.plan(n) },
+  { table: "books", label: (d, n) => d.couple.book(n) },
+  { table: "book_pages", label: (d, n) => d.couple.readingSession(n) },
+  { table: "important_dates", label: (d, n) => d.couple.dateItem(n) },
+  { table: "accounts", label: (d, n) => d.couple.account(n) },
+  { table: "subscriptions", label: (d, n) => d.couple.subscription(n) },
 ];
 
 const COALESCE_MS = 2500;
@@ -37,6 +38,7 @@ export function PartnerTicker({
 }) {
   const toast = useToast();
   const supabase = createClient();
+  const t = useDict();
   const pendingRef = useRef<Map<string, number>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -47,21 +49,22 @@ export function PartnerTicker({
       timerRef.current = null;
       if (counts.size === 0) return;
 
-      const parts = TRACKED.map((t) => {
-        const n = counts.get(t.table) ?? 0;
-        return n > 0 ? t.label(n) : null;
+      const parts = TRACKED.map((tr) => {
+        const n = counts.get(tr.table) ?? 0;
+        return n > 0 ? tr.label(t, n) : null;
       }).filter(Boolean);
 
       if (parts.length === 0) return;
 
       // Join with commas + "and" for natural reading. Keep it short.
+      const and = t.couple.and;
       let summary: string;
       if (parts.length === 1) summary = parts[0]!;
-      else if (parts.length === 2) summary = `${parts[0]} and ${parts[1]}`;
+      else if (parts.length === 2) summary = `${parts[0]} ${and} ${parts[1]}`;
       else
-        summary = `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+        summary = `${parts.slice(0, -1).join(", ")} ${and} ${parts[parts.length - 1]}`;
 
-      toast.info(`${partnerName} added ${summary}.`);
+      toast.info(t.couple.partnerAdded(partnerName, summary));
     }
 
     function schedule() {
@@ -86,18 +89,18 @@ export function PartnerTicker({
       );
 
     // One subscription per tracked table, all filtered by user_id=partnerId.
-    for (const t of TRACKED) {
+    for (const tr of TRACKED) {
       channel.on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: t.table,
+          table: tr.table,
           filter: `user_id=eq.${partnerId}`,
         },
         () => {
-          const prev = pendingRef.current.get(t.table) ?? 0;
-          pendingRef.current.set(t.table, prev + 1);
+          const prev = pendingRef.current.get(tr.table) ?? 0;
+          pendingRef.current.set(tr.table, prev + 1);
           schedule();
         },
       );

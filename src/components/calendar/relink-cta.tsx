@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { relinkGoogle } from "@/lib/google-auth";
+import { useDict } from "@/lib/i18n";
 
 export function RelinkGoogleButton({
   reason = "calendar-access",
@@ -12,6 +13,7 @@ export function RelinkGoogleButton({
   reason?: "calendar-access" | "expired";
   size?: "sm" | "default";
 }) {
+  const t = useDict();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +32,10 @@ export function RelinkGoogleButton({
       <Button onClick={onClick} disabled={busy} size={size} variant="outline">
         <RefreshCw className={"h-3.5 w-3.5" + (busy ? " animate-spin" : "")} />
         {busy
-          ? "Redirecting…"
+          ? t.common.redirecting
           : reason === "expired"
-            ? "Re-link Google"
-            : "Grant Calendar access"}
+            ? t.relink.relinkGoogle
+            : t.relink.grantCalendarAccess}
       </Button>
       {error && <span className="text-xs text-destructive">{error}</span>}
     </div>

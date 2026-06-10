@@ -21,6 +21,7 @@ import { Select } from "@/components/ui/select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useDict } from "@/lib/i18n";
 import {
   daysUntilRenewal,
   isActive,
@@ -65,6 +66,7 @@ export function SubscriptionsPanel({
   compact?: boolean;
 }) {
   const supabase = createClient();
+  const t = useDict();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export function SubscriptionsPanel({
     e.preventDefault();
     setError(null);
     if (!form.name.trim() || !form.amount) {
-      setError("Name and amount are required.");
+      setError(t.subscriptions.nameAndAmountRequired);
       return;
     }
     setSaving(true);
@@ -103,7 +105,7 @@ export function SubscriptionsPanel({
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
     if (!userId) {
-      setError("Not authenticated.");
+      setError(t.quickAdd.signInFirst);
       setSaving(false);
       return;
     }
@@ -167,15 +169,15 @@ export function SubscriptionsPanel({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-1.5">
-            <CreditCard className="h-3 w-3" /> Subscriptions
+            <CreditCard className="h-3 w-3" /> {t.subscriptions.compactTitle}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {subs.length === 0 ? (
             <EmptyState
               icon={CreditCard}
-              title="No subscriptions"
-              description="Track recurring spend in the Subscriptions tab."
+              title={t.subscriptions.noSubscriptions}
+              description={t.subscriptions.trackRecurringSpend}
               className="py-6"
             />
           ) : (
@@ -183,12 +185,14 @@ export function SubscriptionsPanel({
               <p className="text-2xl font-semibold tabular tracking-tight">
                 {formatCurrency(monthlyTotal, displayCurrency)}
                 <span className="text-sm font-normal text-foreground-subtle ml-1">
-                  /mo
+                  {t.subscriptions.perMo}
                 </span>
               </p>
               <p className="text-xs text-foreground-subtle tabular">
-                {formatCurrency(yearlyTotal, displayCurrency)} per year ·{" "}
-                {activeCount} active
+                {t.subscriptions.perYearAndActive(
+                  formatCurrency(yearlyTotal, displayCurrency),
+                  activeCount,
+                )}
               </p>
               {chartData.length > 0 && (
                 <div className="mt-3 h-32 -mx-2">
@@ -231,12 +235,14 @@ export function SubscriptionsPanel({
   return (
     <div>
       <PageHeader
-        title="Subscriptions"
-        description="Recurring spend across services."
+        title={t.subscriptions.title}
+        description={t.subscriptions.description}
         action={
           setDisplayCurrency && (
             <div className="inline-flex items-center gap-2">
-              <Label className="text-foreground-subtle">Display in</Label>
+              <Label className="text-foreground-subtle">
+                {t.subscriptions.displayIn}
+              </Label>
               <Select
                 value={displayCurrency}
                 onChange={(e) => setDisplayCurrency(e.target.value)}
@@ -257,34 +263,36 @@ export function SubscriptionsPanel({
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>
-              {form.id ? "Edit subscription" : "Add subscription"}
+              {form.id
+                ? t.subscriptions.editSubscription
+                : t.subscriptions.addSubscription}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="sub-name">Name</Label>
+                <Label htmlFor="sub-name">{t.subscriptions.name}</Label>
                 <Input
                   id="sub-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Netflix"
+                  placeholder={t.subscriptions.namePlaceholder}
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="sub-amount">Amount</Label>
+                  <Label htmlFor="sub-amount">{t.subscriptions.amount}</Label>
                   <Input
                     id="sub-amount"
                     type="number"
                     step="0.01"
                     value={form.amount}
                     onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                    placeholder="9.99"
+                    placeholder={t.subscriptions.amountPlaceholder}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="sub-currency">Currency</Label>
+                  <Label htmlFor="sub-currency">{t.subscriptions.currency}</Label>
                   <Select
                     id="sub-currency"
                     value={form.currency}
@@ -299,7 +307,7 @@ export function SubscriptionsPanel({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sub-cycle">Billing cycle</Label>
+                <Label htmlFor="sub-cycle">{t.subscriptions.billingCycle}</Label>
                 <Select
                   id="sub-cycle"
                   value={form.billing_cycle}
@@ -310,22 +318,22 @@ export function SubscriptionsPanel({
                     })
                   }
                 >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                  <option value="weekly">Weekly</option>
+                  <option value="monthly">{t.subscriptions.cycle.monthly}</option>
+                  <option value="yearly">{t.subscriptions.cycle.yearly}</option>
+                  <option value="weekly">{t.subscriptions.cycle.weekly}</option>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sub-category">Category</Label>
+                <Label htmlFor="sub-category">{t.subscriptions.category}</Label>
                 <Input
                   id="sub-category"
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  placeholder="Entertainment"
+                  placeholder={t.subscriptions.categoryPlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sub-next">Next billing</Label>
+                <Label htmlFor="sub-next">{t.subscriptions.nextBilling}</Label>
                 <Input
                   id="sub-next"
                   type="date"
@@ -341,7 +349,7 @@ export function SubscriptionsPanel({
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving} className="flex-1">
                   <Plus className="h-3.5 w-3.5" />
-                  {form.id ? "Save" : "Add"}
+                  {form.id ? t.common.save : t.common.add}
                 </Button>
                 {form.id && (
                   <Button
@@ -349,7 +357,7 @@ export function SubscriptionsPanel({
                     variant="outline"
                     onClick={() => setForm(emptyForm)}
                   >
-                    Cancel
+                    {t.common.cancel}
                   </Button>
                 )}
               </div>
@@ -359,17 +367,17 @@ export function SubscriptionsPanel({
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Monthly spend</CardTitle>
+            <CardTitle>{t.subscriptions.monthlySpend}</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
               <EmptyState
                 icon={CreditCard}
-                title="No active subscriptions"
+                title={t.subscriptions.noActiveSubscriptions}
                 description={
                   subs.length === 0
-                    ? "Add your first subscription on the left."
-                    : "All subscriptions are cancelled."
+                    ? t.subscriptions.addFirstLeft
+                    : t.subscriptions.allCancelled
                 }
               />
             ) : (
@@ -407,9 +415,13 @@ export function SubscriptionsPanel({
                   <p className="text-3xl font-semibold tracking-tight tabular">
                     {formatCurrency(monthlyTotal, displayCurrency)}
                   </p>
-                  <p className="text-xs text-foreground-subtle">per month</p>
+                  <p className="text-xs text-foreground-subtle">
+                    {t.subscriptions.perMonth}
+                  </p>
                   <p className="text-xs text-foreground-subtle mt-1 tabular">
-                    ≈ {formatCurrency(yearlyTotal, displayCurrency)} per year
+                    {t.subscriptions.perYearApprox(
+                      formatCurrency(yearlyTotal, displayCurrency),
+                    )}
                   </p>
                   <ul className="mt-4 space-y-1.5">
                     {chartData.map((d, i) => (
@@ -442,13 +454,13 @@ export function SubscriptionsPanel({
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <CalendarClock className="h-3 w-3" />
-              Next 30 days
+              {t.subscriptions.next30Days}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {renewals.length === 0 ? (
               <p className="text-xs text-foreground-subtle">
-                Nothing billing in the next 30 days.
+                {t.subscriptions.nothingBilling30}
               </p>
             ) : (
               <ul className="-mx-2">
@@ -476,7 +488,11 @@ export function SubscriptionsPanel({
                               : "bg-warning/10 text-warning",
                           )}
                         >
-                          {days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days}d`}
+                          {days <= 0
+                            ? t.subscriptions.tagToday
+                            : days === 1
+                              ? t.subscriptions.tagTomorrow
+                              : t.subscriptions.tagInDays(days)}
                         </span>
                       )}
                     </div>
@@ -501,14 +517,14 @@ export function SubscriptionsPanel({
 
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>All subscriptions</CardTitle>
+            <CardTitle>{t.subscriptions.allSubscriptions}</CardTitle>
           </CardHeader>
           <CardContent>
             {subs.length === 0 ? (
               <EmptyState
                 icon={CreditCard}
-                title="Nothing here yet"
-                description="Add your first subscription using the form."
+                title={t.subscriptions.nothingHereYet}
+                description={t.subscriptions.addFirstForm}
               />
             ) : (
               <ul className="-mx-2 divide-y divide-border">
@@ -535,32 +551,36 @@ export function SubscriptionsPanel({
                             {s.name}
                             {!active && (
                               <SectionLabel className="ml-2 inline">
-                                cancelled
+                                {t.subscriptions.cancelled}
                               </SectionLabel>
                             )}
                           </p>
                           <p className="text-xs text-foreground-subtle tabular">
                             {formatCurrency(s.amount, s.currency)} ·{" "}
-                            {s.billing_cycle}
+                            {t.subscriptions.cycle[s.billing_cycle]}
                             {s.category ? ` · ${s.category}` : ""}
                             {s.next_billing_date
-                              ? ` · next ${s.next_billing_date}`
+                              ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
                               : ""}
                           </p>
                         </div>
                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Tooltip content="Edit">
+                          <Tooltip content={t.common.edit}>
                             <Button
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => startEdit(s)}
-                              aria-label="Edit"
+                              aria-label={t.common.edit}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                           </Tooltip>
                           <Tooltip
-                            content={active ? "Cancel" : "Reactivate"}
+                            content={
+                              active
+                                ? t.subscriptions.cancelSub
+                                : t.subscriptions.reactivate
+                            }
                           >
                             <Button
                               size="icon-sm"
@@ -568,8 +588,8 @@ export function SubscriptionsPanel({
                               onClick={() => toggleActive(s)}
                               aria-label={
                                 active
-                                  ? "Cancel subscription"
-                                  : "Reactivate subscription"
+                                  ? t.subscriptions.cancelAria
+                                  : t.subscriptions.reactivateAria
                               }
                             >
                               {active ? (
@@ -579,12 +599,12 @@ export function SubscriptionsPanel({
                               )}
                             </Button>
                           </Tooltip>
-                          <Tooltip content="Delete">
+                          <Tooltip content={t.common.delete}>
                             <Button
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => handleDelete(s.id)}
-                              aria-label="Delete"
+                              aria-label={t.common.delete}
                             >
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>

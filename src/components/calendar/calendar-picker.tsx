@@ -6,6 +6,7 @@ import { Check, ChevronDown, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { useDict } from "@/lib/i18n";
 import type { GcalCalendarEntry } from "@/app/api/calendar/list/route";
 
 export function CalendarPicker({
@@ -13,6 +14,7 @@ export function CalendarPicker({
 }: {
   initialSelected: string[];
 }) {
+  const t = useDict();
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [calendars, setCalendars] = useState<GcalCalendarEntry[] | null>(null);
@@ -33,7 +35,7 @@ export function CalendarPicker({
       const d = (await r.json()) as { calendars: GcalCalendarEntry[] };
       setCalendars(d.calendars);
     } catch {
-      toast.err("Could not load calendars.");
+      toast.err(t.calendar.couldNotLoadCalendars);
     } finally {
       setLoading(false);
     }
@@ -66,10 +68,10 @@ export function CalendarPicker({
         }),
       });
       if (!res.ok) throw new Error("save failed");
-      toast.ok("Calendar selection saved. Reload to see changes.");
+      toast.ok(t.calendar.selectionSaved);
       setOpen(false);
     } catch {
-      toast.err("Could not save selection.");
+      toast.err(t.calendar.couldNotSaveSelection);
     } finally {
       setSaving(false);
     }
@@ -77,8 +79,8 @@ export function CalendarPicker({
 
   const label =
     selected.size === 1 && selected.has("primary")
-      ? "Primary"
-      : `${selected.size} selected`;
+      ? t.calendar.primaryLabel
+      : t.calendar.countSelected(selected.size);
 
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
@@ -99,14 +101,16 @@ export function CalendarPicker({
           className="z-40 w-72 rounded-lg border border-border bg-surface p-1.5 shadow-elevated"
         >
           <p className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-foreground-subtle">
-            Calendars to show
+            {t.calendar.calendarsToShow}
           </p>
           {loading && (
-            <p className="px-3 py-3 text-xs text-foreground-subtle">Loading…</p>
+            <p className="px-3 py-3 text-xs text-foreground-subtle">
+              {t.calendar.loading}
+            </p>
           )}
           {!loading && calendars && calendars.length === 0 && (
             <p className="px-3 py-3 text-xs text-foreground-subtle">
-              No calendars found.
+              {t.calendar.noCalendarsFound}
             </p>
           )}
           {!loading && calendars && (
@@ -136,7 +140,7 @@ export function CalendarPicker({
                         {c.summary}
                         {c.primary && (
                           <span className="ml-1 text-[10px] text-foreground-subtle">
-                            primary
+                            {t.calendar.primary}
                           </span>
                         )}
                       </span>
@@ -151,10 +155,10 @@ export function CalendarPicker({
           )}
           <div className="flex items-center justify-end gap-1.5 border-t border-border mt-1 pt-1.5 px-1.5 pb-0.5">
             <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
+              {t.calendar.cancel}
             </Button>
             <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? t.calendar.saving : t.calendar.save}
             </Button>
           </div>
         </Popover.Content>
