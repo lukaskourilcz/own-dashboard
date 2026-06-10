@@ -23,7 +23,8 @@ import { Sidebar, MobileNav, type NavTab } from "@/components/nav/sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
-import { useDisplayCurrency } from "@/lib/use-prefs";
+import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
+import { cn } from "@/lib/utils";
 import type {
   Account,
   Book,
@@ -93,6 +94,7 @@ export function DashboardShell({
   selectedCalendarIds,
 }: Props) {
   const [tab, setTab] = useState<NavTab>("overview");
+  const { collapsed: navCollapsed } = useNavCollapsed();
   const [subscriptions, setSubscriptions] =
     useState<Subscription[]>(initialSubscriptions);
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
@@ -195,7 +197,12 @@ export function DashboardShell({
             incomingInvites={incomingInvites}
           />
 
-          <main className="md:pl-60">
+          <main
+            className={cn(
+              "transition-[padding] duration-200 ease-out",
+              navCollapsed ? "md:pl-16" : "md:pl-60",
+            )}
+          >
             <div className="mx-auto max-w-6xl px-4 md:px-8 py-6 md:py-8">
               <MobileNav
                 tab={tab}

@@ -126,3 +126,54 @@ export function useNavVisibility(): {
     setHidden,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Navigation collapsed — when true the desktop sidebar shrinks to an
+// icon-only rail. Persisted as "1"/"0"; defaults to expanded.
+// ---------------------------------------------------------------------------
+
+const COLLAPSED_KEY = "navCollapsed";
+const collapsedListeners = new Set<() => void>();
+let collapsedCache: boolean | null = null;
+
+function readCollapsed(): boolean {
+  if (collapsedCache != null) return collapsedCache;
+  if (typeof window === "undefined") return false;
+  try {
+    collapsedCache = localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    collapsedCache = false;
+  }
+  return collapsedCache;
+}
+
+function subscribeCollapsed(cb: () => void): () => void {
+  collapsedListeners.add(cb);
+  return () => {
+    collapsedListeners.delete(cb);
+  };
+}
+
+const getServerCollapsed = (): boolean => false;
+
+export function useNavCollapsed(): {
+  collapsed: boolean;
+  toggle: () => void;
+  setCollapsed: (next: boolean) => void;
+} {
+  const collapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    readCollapsed,
+    getServerCollapsed,
+  );
+  const setCollapsed = (next: boolean): void => {
+    collapsedCache = next;
+    try {
+      localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+    } catch {
+      // ignore
+    }
+    for (const cb of collapsedListeners) cb();
+  };
+  return { collapsed, toggle: () => setCollapsed(!collapsed), setCollapsed };
+}

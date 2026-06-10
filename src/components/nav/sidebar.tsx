@@ -14,6 +14,8 @@ import {
   LayoutDashboard,
   ListTodo,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Target,
   Unlink,
@@ -23,7 +25,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
-import { useNavVisibility } from "@/lib/use-prefs";
+import { useNavCollapsed, useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
 
 export type NavTab =
@@ -75,6 +77,7 @@ export function Sidebar({
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
+  const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
   const toast = useToast();
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -105,30 +108,76 @@ export function Sidebar({
   const initials = (user.name?.trim() || user.email).slice(0, 2).toUpperCase();
 
   return (
-    <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface md:fixed md:inset-y-0 md:left-0 md:z-30">
+    <aside
+      className={cn(
+        "hidden md:flex md:flex-col md:border-r md:border-border md:bg-surface md:fixed md:inset-y-0 md:left-0 md:z-30",
+        "transition-[width] duration-200 ease-out",
+        collapsed ? "md:w-16" : "md:w-60",
+      )}
+    >
       {/* brand */}
-      <div className="flex h-14 items-center gap-2.5 px-4 border-b border-border">
-        <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
-          <Activity className="h-3.5 w-3.5" />
-        </div>
-        <span className="text-sm font-semibold tracking-tight">
-          {t.nav.brand}
-        </span>
+      <div
+        className={cn(
+          "flex h-14 items-center border-b border-border",
+          collapsed ? "justify-center px-2" : "gap-2.5 px-4",
+        )}
+      >
+        {collapsed ? (
+          // Collapsed: the logo doubles as the expand control, swapping to a
+          // panel icon on hover so it reads as interactive.
+          <Tooltip content={t.nav.expand} side="right">
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label={t.nav.expand}
+              aria-expanded={false}
+              className="group relative h-7 w-7 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center focus-ring"
+            >
+              <Activity className="h-3.5 w-3.5 transition-opacity group-hover:opacity-0" />
+              <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+            </button>
+          </Tooltip>
+        ) : (
+          <>
+            <div className="h-7 w-7 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
+              <Activity className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-sm font-semibold tracking-tight">
+              {t.nav.brand}
+            </span>
+            <Tooltip content={t.nav.collapse} side="right">
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                aria-label={t.nav.collapse}
+                aria-expanded={true}
+                className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
+            </Tooltip>
+          </>
+        )}
       </div>
 
       {/* nav */}
-      <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <nav className={cn("flex-1 overflow-y-auto p-2 space-y-0.5", collapsed && "px-1.5")}>
         {items.map((it) => {
           const active = tab === it.value;
           const badge = it.value === "couple" ? incomingInvites : 0;
-          return (
+          const label = t.nav.sections[it.value];
+          const button = (
             <button
               key={it.value}
               type="button"
               onClick={() => setTab(it.value)}
+              aria-label={collapsed ? label : undefined}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "relative w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-150",
-                "focus-ring",
+                "relative flex items-center rounded-md text-sm transition-colors duration-150 focus-ring",
+                collapsed
+                  ? "mx-auto h-9 w-9 justify-center"
+                  : "w-full gap-2.5 px-2.5 py-1.5",
                 active
                   ? "text-foreground"
                   : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
@@ -142,22 +191,42 @@ export function Sidebar({
                 />
               )}
               <it.icon className="relative z-10 h-4 w-4 shrink-0" />
-              <span className="relative z-10 flex-1 text-left font-medium">
-                {t.nav.sections[it.value]}
-              </span>
-              {badge ? (
-                <span className="relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium text-background tabular">
-                  {badge}
+              {!collapsed && (
+                <span className="relative z-10 flex-1 text-left font-medium">
+                  {label}
                 </span>
+              )}
+              {badge ? (
+                collapsed ? (
+                  <span className="absolute right-1 top-1 z-10 h-2 w-2 rounded-full bg-foreground ring-2 ring-surface" />
+                ) : (
+                  <span className="relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium text-background tabular">
+                    {badge}
+                  </span>
+                )
               ) : null}
             </button>
+          );
+          return collapsed ? (
+            <Tooltip key={it.value} content={label} side="right">
+              {button}
+            </Tooltip>
+          ) : (
+            button
           );
         })}
       </nav>
 
       {/* user footer */}
       <div className="border-t border-border p-2">
-        <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
+        <div
+          className={cn(
+            "flex rounded-md",
+            collapsed
+              ? "flex-col items-center gap-1 py-1"
+              : "items-center gap-2 px-2 py-1.5",
+          )}
+        >
           {user.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -171,7 +240,7 @@ export function Sidebar({
               {initials}
             </div>
           )}
-          <div className="flex-1 min-w-0">
+          <div className={cn("min-w-0", collapsed ? "hidden" : "flex-1")}>
             <p className="text-xs font-medium truncate">
               {user.name ?? user.email.split("@")[0]}
             </p>
@@ -179,7 +248,7 @@ export function Sidebar({
               {user.email}
             </p>
           </div>
-          <Tooltip content={t.nav.settings}>
+          <Tooltip content={t.nav.settings} side={collapsed ? "right" : "top"}>
             <button
               type="button"
               onClick={() => setTab("settings")}
@@ -194,10 +263,13 @@ export function Sidebar({
               <Settings className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
-          <Tooltip content={t.nav.theme}>
+          <Tooltip content={t.nav.theme} side={collapsed ? "right" : "top"}>
             <span><ThemeToggle /></span>
           </Tooltip>
-          <Tooltip content={t.nav.disconnectGoogle}>
+          <Tooltip
+            content={t.nav.disconnectGoogle}
+            side={collapsed ? "right" : "top"}
+          >
             <button
               type="button"
               onClick={disconnectGoogle}
@@ -208,7 +280,7 @@ export function Sidebar({
               <Unlink className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
-          <Tooltip content={t.nav.signOut}>
+          <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
