@@ -19,6 +19,8 @@ type NavStrings = {
   short: Partial<Record<NavSection, string>>;
   theme: string;
   settings: string;
+  collapse: string;
+  expand: string;
   disconnectGoogle: string;
   disconnectConfirm: string;
   disconnectOk: string;
@@ -47,6 +49,8 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     short: { subscriptions: "Subs" },
     theme: "Theme",
     settings: "Settings",
+    collapse: "Collapse sidebar",
+    expand: "Expand sidebar",
     disconnectGoogle: "Disconnect Google",
     disconnectConfirm:
       "Disconnect Google? Calendar features will need a re-link.",
@@ -74,6 +78,8 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     short: { subscriptions: "Předpl.", dates: "Dny" },
     theme: "Motiv",
     settings: "Nastavení",
+    collapse: "Sbalit panel",
+    expand: "Rozbalit panel",
     disconnectGoogle: "Odpojit Google",
     disconnectConfirm:
       "Odpojit Google? Funkce kalendáře budou vyžadovat opětovné propojení.",
