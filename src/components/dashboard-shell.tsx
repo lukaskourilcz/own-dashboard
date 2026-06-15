@@ -7,6 +7,7 @@ import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
 import { StreaksPanel } from "@/components/panels/streaks-panel";
 import { FinancesPanel } from "@/components/panels/finances-panel";
+import { InvoicesPanel } from "@/components/panels/invoices-panel";
 import { PlansPanel } from "@/components/panels/plans-panel";
 import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
@@ -30,6 +31,9 @@ import type {
   Book,
   BookPage,
   ImportantDate,
+  Invoice,
+  InvoiceItem,
+  InvoiceSettings,
   Note,
   Plan,
   Streak,
@@ -54,6 +58,9 @@ type Props = {
   initialBookPages: BookPage[];
   initialNotes: Note[];
   initialImportantDates: ImportantDate[];
+  initialInvoices: Invoice[];
+  initialInvoiceItems: InvoiceItem[];
+  initialInvoiceSettings: InvoiceSettings | null;
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
   coupleCtx: CoupleContext;
@@ -67,6 +74,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
   s: "streaks",
   t: "todos",
   f: "finances",
+  i: "invoices",
   p: "plans",
   u: "couple",
   b: "books",
@@ -87,6 +95,9 @@ export function DashboardShell({
   initialBookPages,
   initialNotes,
   initialImportantDates,
+  initialInvoices,
+  initialInvoiceItems,
+  initialInvoiceSettings,
   todayCalendar,
   weekCalendar,
   coupleCtx,
@@ -109,6 +120,11 @@ export function DashboardShell({
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [importantDates, setImportantDates] =
     useState<ImportantDate[]>(initialImportantDates);
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
+  const [invoiceItems, setInvoiceItems] =
+    useState<InvoiceItem[]>(initialInvoiceItems);
+  const [invoiceSettings, setInvoiceSettings] =
+    useState<InvoiceSettings | null>(initialInvoiceSettings);
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } =
     useDisplayCurrency();
   const [calendarPrefill, setCalendarPrefill] = useState<{
@@ -322,6 +338,19 @@ export function DashboardShell({
                       transactions={transactions}
                       setTransactions={setTransactions}
                       subscriptions={subscriptions}
+                      displayCurrency={displayCurrency}
+                    />
+                  )}
+
+                  {tab === "invoices" && (
+                    <InvoicesPanel
+                      invoices={invoices}
+                      setInvoices={setInvoices}
+                      items={invoiceItems}
+                      setItems={setInvoiceItems}
+                      settings={invoiceSettings}
+                      setSettings={setInvoiceSettings}
+                      userId={user.id}
                       displayCurrency={displayCurrency}
                     />
                   )}

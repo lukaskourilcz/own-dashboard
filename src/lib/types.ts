@@ -177,3 +177,85 @@ export type ImportantDate = {
   notes: string | null;
   created_at: string;
 };
+
+// ---------------------------------------------------------------------------
+// Invoices (Faktury) — Czech-format invoicing, inspired by fakturoid.cz.
+// ---------------------------------------------------------------------------
+
+export type InvoiceStatus = "draft" | "issued" | "paid" | "cancelled";
+export type PaymentMethod = "bank" | "cash" | "card";
+
+/**
+ * Per-user supplier (Dodavatel) details + invoicing defaults. One row per
+ * user; prefills every new invoice. Snapshotted onto each invoice at creation
+ * so a later edit here never rewrites already-issued documents.
+ */
+export type InvoiceSettings = {
+  user_id: string;
+  supplier_name: string;
+  supplier_address: string | null;
+  supplier_city: string | null;
+  supplier_zip: string | null;
+  supplier_country: string;
+  supplier_ico: string | null;
+  supplier_dic: string | null;
+  is_vat_payer: boolean;
+  bank_account: string | null;
+  iban: string | null;
+  default_due_days: number;
+  default_currency: string;
+  footer_note: string | null;
+  updated_at: string;
+};
+
+export type Invoice = {
+  id: string;
+  user_id: string;
+  number: string;
+  variable_symbol: string | null;
+  constant_symbol: string | null;
+  issue_date: string;
+  due_date: string;
+  taxable_supply_date: string | null;
+  payment_method: PaymentMethod;
+  currency: string;
+  status: InvoiceStatus;
+  paid_on: string | null;
+  round_total: boolean;
+  // Buyer (Odběratel)
+  buyer_name: string;
+  buyer_address: string | null;
+  buyer_city: string | null;
+  buyer_zip: string | null;
+  buyer_country: string;
+  buyer_ico: string | null;
+  buyer_dic: string | null;
+  // Supplier (Dodavatel) — snapshot, locked at creation
+  supplier_name: string;
+  supplier_address: string | null;
+  supplier_city: string | null;
+  supplier_zip: string | null;
+  supplier_country: string;
+  supplier_ico: string | null;
+  supplier_dic: string | null;
+  supplier_is_vat_payer: boolean;
+  bank_account: string | null;
+  iban: string | null;
+  note: string | null;
+  footer_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InvoiceItem = {
+  id: string;
+  invoice_id: string;
+  user_id: string;
+  description: string;
+  quantity: number;
+  unit: string | null;
+  unit_price: number; // per unit, without VAT
+  vat_rate: number; // percent: 21, 12, 0
+  position: number;
+  created_at: string;
+};

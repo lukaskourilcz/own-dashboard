@@ -16,6 +16,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Receipt,
   Settings,
   Target,
   Unlink,
@@ -35,6 +36,7 @@ export type NavTab =
   | "todos"
   | "streaks"
   | "finances"
+  | "invoices"
   | "plans"
   | "couple"
   | "books"
@@ -57,6 +59,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "todos", icon: ListTodo },
   { value: "streaks", icon: Flame },
   { value: "finances", icon: Wallet },
+  { value: "invoices", icon: Receipt },
   { value: "subscriptions", icon: CreditCard },
   { value: "plans", icon: Target },
   { value: "books", icon: BookOpen },

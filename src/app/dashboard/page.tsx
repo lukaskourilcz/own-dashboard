@@ -78,7 +78,15 @@ export default async function DashboardPage() {
 
   // Books are loaded after couple context so RLS lets shared books through.
   // RLS scopes returned rows to "own", "couple member", or "books-shared by partner".
-  const [booksRes, bookPagesRes, importantDatesRes, notesRes] = await Promise.all([
+  const [
+    booksRes,
+    bookPagesRes,
+    importantDatesRes,
+    notesRes,
+    invoicesRes,
+    invoiceItemsRes,
+    invoiceSettingsRes,
+  ] = await Promise.all([
     supabase
       .from("books")
       .select("*")
@@ -97,6 +105,22 @@ export default async function DashboardPage() {
       .select("*")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
+    supabase
+      .from("invoices")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("issue_date", { ascending: false })
+      .order("number", { ascending: false }),
+    supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .limit(2000),
+    supabase
+      .from("invoice_settings")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
   const partnerData = coupleCtx.partnerId
@@ -128,6 +152,9 @@ export default async function DashboardPage() {
       initialBookPages={bookPagesRes.data ?? []}
       initialNotes={notesRes.data ?? []}
       initialImportantDates={importantDatesRes.data ?? []}
+      initialInvoices={invoicesRes.data ?? []}
+      initialInvoiceItems={invoiceItemsRes.data ?? []}
+      initialInvoiceSettings={invoiceSettingsRes.data ?? null}
       todayCalendar={todayCalendar}
       weekCalendar={weekCalendar}
       coupleCtx={coupleCtx}

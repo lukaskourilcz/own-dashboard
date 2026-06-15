@@ -14,6 +14,7 @@ import { app } from "./sections/app";
 import { relink } from "./sections/relink";
 import { subscriptions } from "./sections/subscriptions";
 import { finances } from "./sections/finances";
+import { invoices } from "./sections/invoices";
 import { todos } from "./sections/todos";
 import { streaks } from "./sections/streaks";
 import { plans } from "./sections/plans";
@@ -38,6 +39,7 @@ export const dictionaries = {
     relink: relink.en,
     subscriptions: subscriptions.en,
     finances: finances.en,
+    invoices: invoices.en,
     todos: todos.en,
     streaks: streaks.en,
     plans: plans.en,
@@ -59,6 +61,7 @@ export const dictionaries = {
     relink: relink.cs,
     subscriptions: subscriptions.cs,
     finances: finances.cs,
+    invoices: invoices.cs,
     todos: todos.cs,
     streaks: streaks.cs,
     plans: plans.cs,

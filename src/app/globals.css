@@ -185,6 +185,37 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────────────────
+   Print — isolate the invoice document. Everything is hidden except the
+   element marked .invoice-print-area (which already renders on fixed
+   "paper" colours, so it prints cleanly regardless of light/dark mode).
+   ──────────────────────────────────────────────────────────────────────── */
+@media print {
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .invoice-print-area,
+  .invoice-print-area * {
+    visibility: visible;
+  }
+  .invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
    BlockNote editor — reskin Mantine defaults to match the design tokens.
    The .bn-host wrapper scopes all overrides so we don't leak into other
    parts of the app that might use Mantine in the future.

@@ -5,6 +5,7 @@ type NavSection =
   | "todos"
   | "streaks"
   | "finances"
+  | "invoices"
   | "subscriptions"
   | "plans"
   | "books"
@@ -39,6 +40,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       todos: "Tasks",
       streaks: "Habits",
       finances: "Finances",
+      invoices: "Invoices",
       subscriptions: "Subscriptions",
       plans: "Plans",
       books: "Books",
@@ -68,6 +70,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       todos: "Úkoly",
       streaks: "Návyky",
       finances: "Finance",
+      invoices: "Faktury",
       subscriptions: "Předplatná",
       plans: "Plány",
       books: "Knihy",

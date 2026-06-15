@@ -33,6 +33,7 @@ The app is a tab-based dashboard. After you sign in with Google, you land on **O
 | Todos | Open + done todos with optional due dates; partner's open todos show under your own when paired | `g t` |
 | Streaks | Daily-habit check-ins with 12-week heatmap, current vs best streak, optional reminder time | `g s` |
 | Finances | Accounts (net worth), income/expense transactions, monthly bar chart, this-month category donut | `g f` |
+| Invoices | Czech-format invoices (Faktury): supplier/customer, line items with VAT, totals, "QR Platba", printable detail | `g i` |
 | Plans | Long-horizon goals with timeline + kanban; optional "add to Google Calendar" tie-in | `g p` |
 | Books | Daily page logging, per-author totals, progress vs target. Solo or co-write with partner | `g b` |
 | Pulse | Daily 1-5 mood + one-line note; 30-day dual-line trend when paired | `g m` |
@@ -115,6 +116,19 @@ Two related concepts: **accounts** (where money lives) and **transactions** (whe
 - **Monthly bar chart**: 6-month income-vs-expense.
 - **This-month category donut**: groups expenses by category. The donut also folds **active subscriptions** in as a synthetic "Subscriptions" slice — so the user sees their real monthly outflow, not just what they manually logged. The synthetic slice respects the soft-cancel flag.
 - **Recent transactions list**: 20 most recent, with delete action.
+
+### Invoices (Faktury)
+
+Czech-format invoicing, modelled on fakturoid.cz. Three tables: `invoice_settings` (your supplier details + defaults, one row per user), `invoices` (header + a **snapshot** of both the customer and the supplier so an issued document never changes when settings are later edited), and `invoice_items` (line items).
+
+- **Supplier settings** (Nastavení fakturace): name/address, **IČO**/**DIČ**, bank account + IBAN, a **plátce DPH** (VAT-payer) flag, default due days, default currency, and a footer note. Prefilled into every new invoice.
+- **Create form**: customer block (Odběratel: name, IČO, DIČ, address), invoice details (number, **variabilní symbol**, **konstantní symbol**, issue/due dates, **DUZP** date of supply for VAT payers, payment method, currency), and repeatable line items (description, quantity, unit, unit price, per-line VAT rate). Totals — base, VAT recap by rate, optional **whole-crown rounding** for CZK, and grand total — compute live as you type. Save as **draft** (koncept) or **issue** (vystavit).
+- **VAT-aware**: for a non-VAT payer the VAT inputs/columns disappear and the document prints "Dodavatel není plátcem DPH."; for a payer the detail shows a full VAT recapitulation table. Czech 2024 rates: 21 / 12 / 0 %.
+- **QR Platba**: the printable detail renders a scannable **SPAYD** QR (`qrcode.react`). The IBAN is taken from settings, or derived from a domestic account number (`prefix-number/bank`) via the IBAN mod-97 algorithm.
+- **Printable detail**: a fixed-"paper" (always-light) document with a print stylesheet that isolates just the invoice, so `⌘P` yields a clean A4. Statuses: draft / issued / paid / cancelled, with **overdue** derived from the due date. Mark paid/unpaid and delete inline.
+- **Number generation**: the next number is suggested as `<year><3-digit sequence>` (e.g. `2026001`); the variable symbol defaults to the number's digits. All the math (line/VAT/rounding totals, SPAYD, account→IBAN, number suggestion, overdue) lives in `src/lib/invoices.ts` and is unit-tested.
+
+Invoices are personal — own-only RLS, not part of couples sharing.
 
 ### Plans
 
@@ -233,8 +247,9 @@ To keep the existing panels from accidentally rendering partner rows mixed into 
 | Database & auth | **Supabase** (Postgres + Auth + RLS) | `@supabase/ssr` for cookie-based session handling |
 | Charts | **Recharts** | Bar, Pie, Line — all server-data-driven, no client-fetched series |
 | Icons | **lucide-react** | (Note: package is pinned to `^1.14.0` — confirm this is the intended package, since lucide-react ships on `0.x` upstream) |
+| QR codes | **qrcode.react** | Renders the Czech "QR Platba" (SPAYD) on the invoice detail |
 | Dates | **date-fns** v4 | `format`, `subDays`, `differenceInCalendarDays`, etc. |
-| Tests | **Vitest** 4 | 77 unit tests covering all lib modules; config in `vitest.config.mts` |
+| Tests | **Vitest** 4 | 90 unit tests covering all lib modules; config in `vitest.config.mts` |
 | Auth provider | Google OAuth (via Supabase) | Calendar scope: `auth/calendar.events`; `userinfo.email` + `userinfo.profile` |
 
 The app does **not** depend on: an AI provider, a live FX API, an email service, an analytics SDK, an error tracker, a payment provider.
@@ -312,6 +327,7 @@ Gmail / vim-style two-key chords on the shell (`src/components/dashboard-shell.t
 | `g s` | Streaks |
 | `g t` | Todos |
 | `g f` | Finances |
+| `g i` | Invoices |
 | `g p` | Plans |
 | `g u` | Couple |
 | `g b` | Books |
@@ -348,6 +364,9 @@ All tables have RLS enabled. Every column is described inline in `supabase/schem
 | `accounts` | Bank/credit/savings accounts with balance | Partner read if `share_finances = true` |
 | `transactions` | Income/expense rows; indexed on `(user_id, occurred_on desc)` | Partner read if `share_finances = true` |
 | `plans` | Long-horizon goals; optional `linked_calendar_event_id` | Partner read if `share_plans = true` |
+| `invoice_settings` | Per-user supplier details + invoicing defaults (VAT flag, bank, due days) | Own only |
+| `invoices` | Invoice header + customer + snapshot of supplier block; unique `(user_id, number)` | Own only |
+| `invoice_items` | Line items with per-line VAT rate; cascade-deleted with the invoice | Own only |
 | `profiles` | Mirror of `auth.users` (display name + avatar) | Always readable by paired partner |
 | `couples` | The pairing row (`user_a_id` + `user_b_id`, sorted) | Visible to both members |
 | `couple_invites` | Pending / accepted / declined invites | Sender sees their sent; recipient sees invites for their email |
@@ -415,7 +434,7 @@ npm run test:watch  # Vitest in watch mode
 
 ### Tests
 
-77 unit tests live under `tests/lib/`, covering every pure module:
+90 unit tests live under `tests/lib/`, covering every pure module:
 
 | Module | Tests | Catches |
 | --- | --- | --- |
@@ -426,6 +445,7 @@ npm run test:watch  # Vitest in watch mode
 | `pulse` | 12 | streak from today, trend null-filling, averageMood window |
 | `finances` | 11 | net worth across currencies, monthly bucketing, "Subscriptions" synthetic slice |
 | `couple` | 8 | per-category flag, null prefs → false |
+| `invoices` | 25 | line/VAT/rounding totals, account→IBAN (mod-97), SPAYD, number suggestion, overdue |
 
 Time-dependent tests pin the clock to `2026-05-12` with `vi.useFakeTimers()` so results don't drift with the system date.
 
@@ -468,12 +488,18 @@ src/
       streaks-panel.tsx
       streak-heatmap.tsx
       finances-panel.tsx
+      invoices-panel.tsx           list + summary + view switching
       plans-panel.tsx
       books-panel.tsx
       pulse-panel.tsx
       important-dates-panel.tsx
       couple-panel.tsx
       calendar-panel.tsx
+    invoices/
+      invoice-form.tsx            create form (customer, items, live totals)
+      invoice-detail.tsx          printable document + SPAYD QR
+      supplier-settings.tsx       supplier details + invoicing defaults
+      status-badge.tsx            draft / issued / paid / overdue pill
     ui/                           shadcn-style primitives + Skeleton + Toast
   lib/
     supabase/
@@ -486,6 +512,7 @@ src/
     fx.ts                         static FX rates + convert()
     google-auth.ts                relinkGoogle (signInWithOAuth wrapper)
     important-dates.ts            nextOccurrence + buildOccurrences
+    invoices.ts                   line/VAT/rounding totals, SPAYD, account→IBAN, numbering
     pulse.ts                      mood meta, streak, trend, average
     streaks.ts                    computeStreak, bestStreak, unchecked, etc.
     subscriptions.ts              toMonthly, totals, upcomingRenewals

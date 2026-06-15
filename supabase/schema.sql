@@ -736,3 +736,143 @@ revoke all on function public.google_oauth_acquire_refresh_lock(uuid) from publi
 revoke all on function public.google_oauth_acquire_refresh_lock(uuid) from anon;
 revoke all on function public.google_oauth_acquire_refresh_lock(uuid) from authenticated;
 grant execute on function public.google_oauth_acquire_refresh_lock(uuid) to service_role;
+
+-- =============================================================
+-- Invoices (Faktury) — Czech-format invoicing
+-- ----------------------------------------------------------------------------
+-- Three tables:
+--   invoice_settings — one row per user: supplier (Dodavatel) details +
+--                      defaults (VAT-payer flag, bank, due days, currency).
+--   invoices         — header + buyer (Odběratel) + a snapshot of the supplier
+--                      block so an issued document never changes when settings
+--                      are edited later.
+--   invoice_items    — line items (Položky) with per-line VAT rate.
+-- All own-only RLS — invoices are personal and not part of couples sharing.
+-- =============================================================
+
+create table if not exists public.invoice_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  supplier_name text not null default '',
+  supplier_address text,
+  supplier_city text,
+  supplier_zip text,
+  supplier_country text not null default 'Česká republika',
+  supplier_ico text,
+  supplier_dic text,
+  is_vat_payer boolean not null default false,
+  bank_account text,
+  iban text,
+  default_due_days integer not null default 14 check (default_due_days >= 0),
+  default_currency text not null default 'CZK',
+  footer_note text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.invoice_settings enable row level security;
+
+drop policy if exists "invoice_settings select own" on public.invoice_settings;
+create policy "invoice_settings select own" on public.invoice_settings
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "invoice_settings insert own" on public.invoice_settings;
+create policy "invoice_settings insert own" on public.invoice_settings
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "invoice_settings update own" on public.invoice_settings;
+create policy "invoice_settings update own" on public.invoice_settings
+  for update using (auth.uid() = user_id);
+
+create table if not exists public.invoices (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  number text not null,
+  variable_symbol text,
+  constant_symbol text,
+  issue_date date not null default current_date,
+  due_date date not null default current_date,
+  taxable_supply_date date,
+  payment_method text not null default 'bank' check (payment_method in ('bank', 'cash', 'card')),
+  currency text not null default 'CZK',
+  status text not null default 'issued' check (status in ('draft', 'issued', 'paid', 'cancelled')),
+  paid_on date,
+  round_total boolean not null default true,
+  -- Buyer (Odběratel)
+  buyer_name text not null default '',
+  buyer_address text,
+  buyer_city text,
+  buyer_zip text,
+  buyer_country text not null default 'Česká republika',
+  buyer_ico text,
+  buyer_dic text,
+  -- Supplier (Dodavatel) snapshot
+  supplier_name text not null default '',
+  supplier_address text,
+  supplier_city text,
+  supplier_zip text,
+  supplier_country text not null default 'Česká republika',
+  supplier_ico text,
+  supplier_dic text,
+  supplier_is_vat_payer boolean not null default false,
+  bank_account text,
+  iban text,
+  note text,
+  footer_note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, number)
+);
+
+create index if not exists invoices_user_issue_idx
+  on public.invoices (user_id, issue_date desc);
+
+alter table public.invoices enable row level security;
+
+drop policy if exists "invoices select own" on public.invoices;
+create policy "invoices select own" on public.invoices
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "invoices insert own" on public.invoices;
+create policy "invoices insert own" on public.invoices
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "invoices update own" on public.invoices;
+create policy "invoices update own" on public.invoices
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "invoices delete own" on public.invoices;
+create policy "invoices delete own" on public.invoices
+  for delete using (auth.uid() = user_id);
+
+create table if not exists public.invoice_items (
+  id uuid primary key default gen_random_uuid(),
+  invoice_id uuid not null references public.invoices(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  description text not null default '',
+  quantity numeric(14, 3) not null default 1,
+  unit text,
+  unit_price numeric(14, 2) not null default 0,
+  vat_rate numeric(5, 2) not null default 0 check (vat_rate >= 0),
+  position integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists invoice_items_invoice_idx
+  on public.invoice_items (invoice_id);
+
+alter table public.invoice_items enable row level security;
+
+drop policy if exists "invoice_items select own" on public.invoice_items;
+create policy "invoice_items select own" on public.invoice_items
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "invoice_items insert own" on public.invoice_items;
+create policy "invoice_items insert own" on public.invoice_items
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "invoice_items update own" on public.invoice_items;
+create policy "invoice_items update own" on public.invoice_items
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "invoice_items delete own" on public.invoice_items;
+create policy "invoice_items delete own" on public.invoice_items
+  for delete using (auth.uid() = user_id);
