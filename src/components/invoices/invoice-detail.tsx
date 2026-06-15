@@ -2,7 +2,15 @@
 
 import { format, parseISO } from "date-fns";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, Check, Printer, RotateCcw, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Pencil,
+  Printer,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/invoices/status-badge";
 import {
@@ -26,6 +34,8 @@ export function InvoiceDetail({
   invoice,
   items,
   onBack,
+  onEdit,
+  onDuplicate,
   onMarkPaid,
   onMarkUnpaid,
   onDelete,
@@ -33,6 +43,8 @@ export function InvoiceDetail({
   invoice: Invoice;
   items: InvoiceItem[];
   onBack: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
   onMarkPaid: () => void;
   onMarkUnpaid: () => void;
   onDelete: () => void;
@@ -76,6 +88,12 @@ export function InvoiceDetail({
         </Button>
         <StatusBadge status={eff} />
         <div className="ml-auto flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5" /> {t.invoices.edit}
+          </Button>
+          <Button size="sm" variant="outline" onClick={onDuplicate}>
+            <Copy className="h-3.5 w-3.5" /> {t.invoices.duplicate}
+          </Button>
           {invoice.status === "paid" ? (
             <Button size="sm" variant="outline" onClick={onMarkUnpaid}>
               <RotateCcw className="h-3.5 w-3.5" /> {t.invoices.markUnpaid}
@@ -98,6 +116,12 @@ export function InvoiceDetail({
           </Button>
         </div>
       </div>
+
+      {!spayd && (
+        <p className="no-print -mt-2 mb-4 text-xs text-foreground-subtle">
+          {t.invoices.qrMissing}
+        </p>
+      )}
 
       {/* The document — fixed "paper" colours so it reads the same in dark mode
           and prints cleanly. */}

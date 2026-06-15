@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
   Check,
+  Copy,
   Plus,
   Receipt,
   RotateCcw,
@@ -36,6 +37,8 @@ import type {
 type View =
   | { mode: "list" }
   | { mode: "new" }
+  | { mode: "edit"; id: string }
+  | { mode: "duplicate"; id: string }
   | { mode: "detail"; id: string }
   | { mode: "settings" };
 
@@ -162,16 +165,41 @@ export function InvoicesPanel({
   if (view.mode === "new") {
     return (
       <InvoiceForm
+        mode="create"
         settings={settings}
         userId={userId}
         existingInvoices={invoices}
         setInvoices={setInvoices}
         setItems={setItems}
         onCancel={() => setView({ mode: "list" })}
-        onCreated={(id) => setView({ mode: "detail", id })}
+        onDone={(id) => setView({ mode: "detail", id })}
         onEditSupplier={() => setView({ mode: "settings" })}
       />
     );
+  }
+
+  if (view.mode === "edit" || view.mode === "duplicate") {
+    const src = invoices.find((i) => i.id === view.id);
+    if (src) {
+      return (
+        <InvoiceForm
+          mode={view.mode === "edit" ? "edit" : "duplicate"}
+          source={{
+            invoice: src,
+            items: items.filter((it) => it.invoice_id === src.id),
+          }}
+          settings={settings}
+          userId={userId}
+          existingInvoices={invoices}
+          setInvoices={setInvoices}
+          setItems={setItems}
+          onCancel={() => setView({ mode: "list" })}
+          onDone={(id) => setView({ mode: "detail", id })}
+          onEditSupplier={() => setView({ mode: "settings" })}
+        />
+      );
+    }
+    // Source vanished (e.g. deleted) — fall through to the list.
   }
 
   // When a detail's invoice still exists, show it; otherwise fall through to
@@ -186,6 +214,8 @@ export function InvoicesPanel({
         invoice={detailInvoice}
         items={items.filter((i) => i.invoice_id === detailInvoice.id)}
         onBack={() => setView({ mode: "list" })}
+        onEdit={() => setView({ mode: "edit", id: detailInvoice.id })}
+        onDuplicate={() => setView({ mode: "duplicate", id: detailInvoice.id })}
         onMarkPaid={() => setPaid(detailInvoice, true)}
         onMarkUnpaid={() => setPaid(detailInvoice, false)}
         onDelete={() => remove(detailInvoice)}
@@ -290,6 +320,18 @@ export function InvoicesPanel({
                       </span>
                       <StatusBadge status={eff} />
                       <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Tooltip content={t.invoices.duplicate}>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setView({ mode: "duplicate", id: inv.id })
+                            }
+                            aria-label={t.invoices.duplicate}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </Tooltip>
                         {inv.status === "paid" ? (
                           <Tooltip content={t.invoices.markUnpaid}>
                             <Button

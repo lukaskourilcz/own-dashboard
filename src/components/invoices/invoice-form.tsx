@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Building2, FileText, Plus, Trash2, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  FileText,
+  Plus,
+  Save,
+  Trash2,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,13 +40,17 @@ import type {
   Updater,
 } from "@/lib/types";
 
-// Module-level counter for local item keys — avoids Date.now()/crypto in the
-// render path (React 19 no-impure-calls), like the streak-log tentative ids.
+export type FormMode = "create" | "edit" | "duplicate";
+export type InvoiceSource = { invoice: Invoice; items: InvoiceItem[] };
+
+// Module-level counter for keys of items added at runtime — avoids
+// Date.now()/crypto in the render path (React 19 no-impure-calls).
 let itemKeyCounter = 0;
 const nextKey = () => `it-${++itemKeyCounter}`;
 
 type FormItem = {
   key: string;
+  id: string | null; // existing DB row (edit), or null for new rows
   description: string;
   quantity: string;
   unit: string;
@@ -46,9 +58,125 @@ type FormItem = {
   vat_rate: number;
 };
 
-function emptyItem(isVatPayer: boolean): FormItem {
+type Buyer = {
+  buyer_name: string;
+  buyer_address: string;
+  buyer_city: string;
+  buyer_zip: string;
+  buyer_country: string;
+  buyer_ico: string;
+  buyer_dic: string;
+};
+
+type SupplierSnapshot = {
+  supplier_name: string;
+  supplier_address: string | null;
+  supplier_city: string | null;
+  supplier_zip: string | null;
+  supplier_country: string;
+  supplier_ico: string | null;
+  supplier_dic: string | null;
+  supplier_is_vat_payer: boolean;
+  bank_account: string | null;
+  iban: string | null;
+  footer_note: string | null;
+};
+
+type Initial = {
+  isVatPayer: boolean;
+  number: string;
+  variableSymbol: string;
+  constantSymbol: string;
+  issueDate: string;
+  dueDate: string;
+  taxDate: string;
+  paymentMethod: PaymentMethod;
+  currency: string;
+  roundTotal: boolean;
+  note: string;
+  buyer: Buyer;
+  items: FormItem[];
+  // For edit: the invoice's own (already-issued) supplier block, preserved.
+  // For create/duplicate: null — the snapshot is taken from settings at save.
+  supplierSnapshot: SupplierSnapshot | null;
+};
+
+const PAYMENT_METHODS: PaymentMethod[] = ["bank", "cash", "card"];
+
+function emptyBuyer(): Buyer {
   return {
-    key: nextKey(),
+    buyer_name: "",
+    buyer_address: "",
+    buyer_city: "",
+    buyer_zip: "",
+    buyer_country: "Česká republika",
+    buyer_ico: "",
+    buyer_dic: "",
+  };
+}
+
+function buyerFrom(inv: Invoice): Buyer {
+  return {
+    buyer_name: inv.buyer_name,
+    buyer_address: inv.buyer_address ?? "",
+    buyer_city: inv.buyer_city ?? "",
+    buyer_zip: inv.buyer_zip ?? "",
+    buyer_country: inv.buyer_country,
+    buyer_ico: inv.buyer_ico ?? "",
+    buyer_dic: inv.buyer_dic ?? "",
+  };
+}
+
+function settingsSnapshot(s: InvoiceSettings | null): SupplierSnapshot {
+  return {
+    supplier_name: s?.supplier_name ?? "",
+    supplier_address: s?.supplier_address ?? null,
+    supplier_city: s?.supplier_city ?? null,
+    supplier_zip: s?.supplier_zip ?? null,
+    supplier_country: s?.supplier_country ?? "Česká republika",
+    supplier_ico: s?.supplier_ico ?? null,
+    supplier_dic: s?.supplier_dic ?? null,
+    supplier_is_vat_payer: s?.is_vat_payer ?? false,
+    bank_account: s?.bank_account ?? null,
+    iban: s?.iban ?? null,
+    footer_note: s?.footer_note ?? null,
+  };
+}
+
+function invoiceSnapshot(inv: Invoice): SupplierSnapshot {
+  return {
+    supplier_name: inv.supplier_name,
+    supplier_address: inv.supplier_address,
+    supplier_city: inv.supplier_city,
+    supplier_zip: inv.supplier_zip,
+    supplier_country: inv.supplier_country,
+    supplier_ico: inv.supplier_ico,
+    supplier_dic: inv.supplier_dic,
+    supplier_is_vat_payer: inv.supplier_is_vat_payer,
+    bank_account: inv.bank_account,
+    iban: inv.iban,
+    footer_note: inv.footer_note,
+  };
+}
+
+function toFormItems(items: InvoiceItem[], keepId: boolean): FormItem[] {
+  return [...items]
+    .sort((a, b) => a.position - b.position)
+    .map((it, i) => ({
+      key: `it-init-${i}`,
+      id: keepId ? it.id : null,
+      description: it.description,
+      quantity: String(Number(it.quantity)),
+      unit: it.unit ?? "",
+      unit_price: String(Number(it.unit_price)),
+      vat_rate: Number(it.vat_rate),
+    }));
+}
+
+function emptyItem(isVatPayer: boolean, key: string): FormItem {
+  return {
+    key,
+    id: null,
     description: "",
     quantity: "1",
     unit: "ks",
@@ -57,63 +185,125 @@ function emptyItem(isVatPayer: boolean): FormItem {
   };
 }
 
-const PAYMENT_METHODS: PaymentMethod[] = ["bank", "cash", "card"];
+function buildInitial(
+  mode: FormMode,
+  source: InvoiceSource | undefined,
+  settings: InvoiceSettings | null,
+  existingInvoices: Invoice[],
+): Initial {
+  if (mode === "edit" && source) {
+    const inv = source.invoice;
+    return {
+      isVatPayer: inv.supplier_is_vat_payer,
+      number: inv.number,
+      variableSymbol: inv.variable_symbol ?? "",
+      constantSymbol: inv.constant_symbol ?? "",
+      issueDate: inv.issue_date,
+      dueDate: inv.due_date,
+      taxDate: inv.taxable_supply_date ?? "",
+      paymentMethod: inv.payment_method,
+      currency: inv.currency,
+      roundTotal: inv.round_total,
+      note: inv.note ?? "",
+      buyer: buyerFrom(inv),
+      items: toFormItems(source.items, true),
+      supplierSnapshot: invoiceSnapshot(inv),
+    };
+  }
+
+  const isVatPayer = settings?.is_vat_payer ?? false;
+  const number = suggestInvoiceNumber(existingInvoices);
+  const dueDate = addDaysKey(todayKey(), settings?.default_due_days ?? 14);
+
+  if (mode === "duplicate" && source) {
+    const inv = source.invoice;
+    return {
+      isVatPayer,
+      number,
+      variableSymbol: defaultVariableSymbol(number),
+      constantSymbol: inv.constant_symbol ?? "",
+      issueDate: todayKey(),
+      dueDate,
+      taxDate: "",
+      paymentMethod: inv.payment_method,
+      currency: inv.currency,
+      roundTotal: inv.round_total,
+      note: inv.note ?? "",
+      buyer: buyerFrom(inv),
+      items: toFormItems(source.items, false),
+      supplierSnapshot: null,
+    };
+  }
+
+  return {
+    isVatPayer,
+    number,
+    variableSymbol: defaultVariableSymbol(number),
+    constantSymbol: "",
+    issueDate: todayKey(),
+    dueDate,
+    taxDate: "",
+    paymentMethod: "bank",
+    currency: settings?.default_currency ?? "CZK",
+    roundTotal: true,
+    note: "",
+    buyer: emptyBuyer(),
+    items: [emptyItem(isVatPayer, "it-init-0")],
+    supplierSnapshot: null,
+  };
+}
 
 export function InvoiceForm({
+  mode,
+  source,
   settings,
   userId,
   existingInvoices,
   setInvoices,
   setItems,
   onCancel,
-  onCreated,
+  onDone,
   onEditSupplier,
 }: {
+  mode: FormMode;
+  source?: InvoiceSource;
   settings: InvoiceSettings | null;
   userId: string;
   existingInvoices: Invoice[];
   setInvoices: Updater<Invoice[]>;
   setItems: Updater<InvoiceItem[]>;
   onCancel: () => void;
-  onCreated: (id: string) => void;
+  onDone: (id: string) => void;
   onEditSupplier: () => void;
 }) {
   const supabase = createClient();
   const toast = useToast();
   const t = useDict();
-  const isVatPayer = settings?.is_vat_payer ?? false;
 
-  const [number, setNumber] = useState(() =>
-    suggestInvoiceNumber(existingInvoices),
+  // Compute the initial form shape exactly once (lazy state init).
+  const [init] = useState<Initial>(() =>
+    buildInitial(mode, source, settings, existingInvoices),
   );
-  const [variableSymbol, setVariableSymbol] = useState(() =>
-    defaultVariableSymbol(suggestInvoiceNumber(existingInvoices)),
-  );
-  const [constantSymbol, setConstantSymbol] = useState("");
-  const [issueDate, setIssueDate] = useState(() => todayKey());
-  const [dueDate, setDueDate] = useState(() =>
-    addDaysKey(todayKey(), settings?.default_due_days ?? 14),
-  );
-  const [taxDate, setTaxDate] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bank");
-  const [currency, setCurrency] = useState(settings?.default_currency ?? "CZK");
-  const [roundTotal, setRoundTotal] = useState(true);
-  const [note, setNote] = useState("");
+  const isVatPayer = init.isVatPayer;
 
-  const [buyer, setBuyer] = useState({
-    buyer_name: "",
-    buyer_address: "",
-    buyer_city: "",
-    buyer_zip: "",
-    buyer_country: "Česká republika",
-    buyer_ico: "",
-    buyer_dic: "",
-  });
-
-  const [items, setFormItems] = useState<FormItem[]>(() => [
-    emptyItem(isVatPayer),
-  ]);
+  const [number, setNumber] = useState(init.number);
+  const [variableSymbol, setVariableSymbol] = useState(init.variableSymbol);
+  const [constantSymbol, setConstantSymbol] = useState(init.constantSymbol);
+  const [issueDate, setIssueDate] = useState(init.issueDate);
+  const [dueDate, setDueDate] = useState(init.dueDate);
+  const [taxDate, setTaxDate] = useState(init.taxDate);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    init.paymentMethod,
+  );
+  const [currency, setCurrency] = useState(init.currency);
+  const [roundTotal, setRoundTotal] = useState(init.roundTotal);
+  const [note, setNote] = useState(init.note);
+  const [buyer, setBuyer] = useState<Buyer>(init.buyer);
+  const [items, setFormItems] = useState<FormItem[]>(init.items);
   const [saving, setSaving] = useState(false);
+
+  const supplier = init.supplierSnapshot ?? settingsSnapshot(settings);
+  const hasSupplier = Boolean(supplier.supplier_name.trim());
 
   const parsed = items.map((it) => ({
     quantity: Number(it.quantity) || 0,
@@ -133,7 +323,7 @@ export function InvoiceForm({
   }
 
   function addItem() {
-    setFormItems((prev) => [...prev, emptyItem(isVatPayer)]);
+    setFormItems((prev) => [...prev, emptyItem(isVatPayer, nextKey())]);
   }
 
   function removeItem(key: string) {
@@ -142,7 +332,7 @@ export function InvoiceForm({
     );
   }
 
-  async function submit(status: "draft" | "issued") {
+  async function submit(intent: "draft" | "issued" | "keep") {
     const kept = items.filter((it) => it.description.trim() !== "");
     if (!buyer.buyer_name.trim()) {
       toast.err(t.invoices.buyerNameRequired);
@@ -158,8 +348,16 @@ export function InvoiceForm({
     }
     setSaving(true);
 
-    const invoiceRow = {
-      user_id: userId,
+    const buyerFields = {
+      buyer_name: buyer.buyer_name.trim(),
+      buyer_address: buyer.buyer_address.trim() || null,
+      buyer_city: buyer.buyer_city.trim() || null,
+      buyer_zip: buyer.buyer_zip.trim() || null,
+      buyer_country: buyer.buyer_country.trim() || "Česká republika",
+      buyer_ico: buyer.buyer_ico.trim() || null,
+      buyer_dic: buyer.buyer_dic.trim() || null,
+    };
+    const detailFields = {
       number: number.trim(),
       variable_symbol: variableSymbol.trim() || null,
       constant_symbol: constantSymbol.trim() || null,
@@ -168,32 +366,81 @@ export function InvoiceForm({
       taxable_supply_date: isVatPayer ? taxDate || null : null,
       payment_method: paymentMethod,
       currency,
-      status,
       round_total: roundTotal,
-      buyer_name: buyer.buyer_name.trim(),
-      buyer_address: buyer.buyer_address.trim() || null,
-      buyer_city: buyer.buyer_city.trim() || null,
-      buyer_zip: buyer.buyer_zip.trim() || null,
-      buyer_country: buyer.buyer_country.trim() || "Česká republika",
-      buyer_ico: buyer.buyer_ico.trim() || null,
-      buyer_dic: buyer.buyer_dic.trim() || null,
-      supplier_name: settings?.supplier_name ?? "",
-      supplier_address: settings?.supplier_address ?? null,
-      supplier_city: settings?.supplier_city ?? null,
-      supplier_zip: settings?.supplier_zip ?? null,
-      supplier_country: settings?.supplier_country ?? "Česká republika",
-      supplier_ico: settings?.supplier_ico ?? null,
-      supplier_dic: settings?.supplier_dic ?? null,
-      supplier_is_vat_payer: isVatPayer,
-      bank_account: settings?.bank_account ?? null,
-      iban: settings?.iban ?? null,
       note: note.trim() || null,
-      footer_note: settings?.footer_note ?? null,
     };
+    const itemRows = (invoiceId: string) =>
+      kept.map((it, i) => ({
+        invoice_id: invoiceId,
+        user_id: userId,
+        description: it.description.trim(),
+        quantity: Number(it.quantity) || 1,
+        unit: it.unit.trim() || null,
+        unit_price: Number(it.unit_price) || 0,
+        vat_rate: isVatPayer ? Number(it.vat_rate) || 0 : 0,
+        position: i,
+      }));
 
+    // ── Edit: update header, then replace the line items ──────────────────
+    if (mode === "edit" && source) {
+      const { data: inv, error } = await supabase
+        .from("invoices")
+        .update({ ...detailFields, ...buyerFields, updated_at: new Date().toISOString() })
+        .eq("id", source.invoice.id)
+        .select()
+        .single();
+      if (error || !inv) {
+        setSaving(false);
+        if (error?.code === "23505") toast.err(t.invoices.numberTaken);
+        else toast.err(error?.message ?? t.invoices.errorToast);
+        return;
+      }
+      await supabase
+        .from("invoice_items")
+        .delete()
+        .eq("invoice_id", source.invoice.id);
+      const { data: its, error: itErr } = await supabase
+        .from("invoice_items")
+        .insert(itemRows(source.invoice.id))
+        .select();
+      if (itErr || !its) {
+        setSaving(false);
+        toast.err(itErr?.message ?? t.invoices.errorToast);
+        return;
+      }
+      setInvoices((prev) => prev.map((i) => (i.id === inv.id ? inv : i)));
+      setItems((prev) => [
+        ...its,
+        ...prev.filter((i) => i.invoice_id !== inv.id),
+      ]);
+      setSaving(false);
+      toast.ok(t.invoices.updatedToast(inv.number));
+      onDone(inv.id);
+      return;
+    }
+
+    // ── Create / duplicate: insert a brand-new invoice ────────────────────
+    const status = intent === "draft" ? "draft" : "issued";
+    const snap = settingsSnapshot(settings);
     const { data: inv, error } = await supabase
       .from("invoices")
-      .insert(invoiceRow)
+      .insert({
+        user_id: userId,
+        ...detailFields,
+        ...buyerFields,
+        status,
+        supplier_name: snap.supplier_name,
+        supplier_address: snap.supplier_address,
+        supplier_city: snap.supplier_city,
+        supplier_zip: snap.supplier_zip,
+        supplier_country: snap.supplier_country,
+        supplier_ico: snap.supplier_ico,
+        supplier_dic: snap.supplier_dic,
+        supplier_is_vat_payer: isVatPayer,
+        bank_account: snap.bank_account,
+        iban: snap.iban,
+        footer_note: snap.footer_note,
+      })
       .select()
       .single();
     if (error || !inv) {
@@ -202,42 +449,27 @@ export function InvoiceForm({
       else toast.err(error?.message ?? t.invoices.errorToast);
       return;
     }
-
-    const itemRows = kept.map((it, i) => ({
-      invoice_id: inv.id,
-      user_id: userId,
-      description: it.description.trim(),
-      quantity: Number(it.quantity) || 1,
-      unit: it.unit.trim() || null,
-      unit_price: Number(it.unit_price) || 0,
-      vat_rate: isVatPayer ? Number(it.vat_rate) || 0 : 0,
-      position: i,
-    }));
     const { data: its, error: itErr } = await supabase
       .from("invoice_items")
-      .insert(itemRows)
+      .insert(itemRows(inv.id))
       .select();
     if (itErr || !its) {
-      // Roll back the header so we don't leave an item-less invoice behind.
       await supabase.from("invoices").delete().eq("id", inv.id);
       setSaving(false);
       toast.err(itErr?.message ?? t.invoices.errorToast);
       return;
     }
-
     setInvoices((prev) => [inv, ...prev]);
     setItems((prev) => [...its, ...prev]);
     setSaving(false);
     toast.ok(t.invoices.createdToast(inv.number));
-    onCreated(inv.id);
+    onDone(inv.id);
   }
-
-  const hasSupplier = Boolean(settings?.supplier_name?.trim());
 
   return (
     <div>
       <PageHeader
-        title={t.invoices.formNewTitle}
+        title={mode === "edit" ? t.invoices.formEditTitle : t.invoices.formNewTitle}
         action={
           <Button size="sm" variant="outline" onClick={onCancel}>
             <ArrowLeft className="h-3.5 w-3.5" /> {t.invoices.back}
@@ -246,7 +478,7 @@ export function InvoiceForm({
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Supplier (read-only, from settings) */}
+        {/* Supplier (read-only) */}
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
@@ -256,23 +488,23 @@ export function InvoiceForm({
           <CardContent>
             {hasSupplier ? (
               <div className="text-sm">
-                <p className="font-medium">{settings?.supplier_name}</p>
-                {settings?.supplier_address && (
+                <p className="font-medium">{supplier.supplier_name}</p>
+                {supplier.supplier_address && (
                   <p className="text-foreground-muted">
-                    {settings.supplier_address}
+                    {supplier.supplier_address}
                   </p>
                 )}
                 <p className="text-foreground-muted">
-                  {[settings?.supplier_zip, settings?.supplier_city]
+                  {[supplier.supplier_zip, supplier.supplier_city]
                     .filter(Boolean)
                     .join(" ")}
                 </p>
                 <p className="text-foreground-subtle text-xs mt-1 tabular">
-                  {settings?.supplier_ico
-                    ? `${t.invoices.icoLabel} ${settings.supplier_ico}`
+                  {supplier.supplier_ico
+                    ? `${t.invoices.icoLabel} ${supplier.supplier_ico}`
                     : ""}
-                  {settings?.supplier_dic
-                    ? `  ${t.invoices.dicLabel} ${settings.supplier_dic}`
+                  {supplier.supplier_dic
+                    ? `  ${t.invoices.dicLabel} ${supplier.supplier_dic}`
                     : ""}
                 </p>
                 <button
@@ -289,8 +521,7 @@ export function InvoiceForm({
                   {t.invoices.supplierMissing}
                 </p>
                 <Button size="sm" variant="outline" onClick={onEditSupplier}>
-                  <Building2 className="h-3.5 w-3.5" />{" "}
-                  {t.invoices.editSupplier}
+                  <Building2 className="h-3.5 w-3.5" /> {t.invoices.editSupplier}
                 </Button>
               </div>
             )}
@@ -546,7 +777,9 @@ export function InvoiceForm({
                         </div>
                       )}
                       <div className="ml-auto text-right space-y-1">
-                        <Label className="block">{t.invoices.itemLineTotal}</Label>
+                        <Label className="block">
+                          {t.invoices.itemLineTotal}
+                        </Label>
                         <p className="text-sm font-medium tabular h-8 flex items-center justify-end">
                           {formatCurrency(lineTotal(parsed[i]), currency)}
                         </p>
@@ -566,18 +799,13 @@ export function InvoiceForm({
                 </div>
               </div>
             ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addItem}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={addItem}>
               <Plus className="h-3.5 w-3.5" /> {t.invoices.addItem}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Summary + note */}
+        {/* Note */}
         <Card>
           <CardHeader>
             <CardTitle>{t.invoices.sectionNote}</CardTitle>
@@ -592,6 +820,7 @@ export function InvoiceForm({
           </CardContent>
         </Card>
 
+        {/* Summary */}
         <Card>
           <CardHeader>
             <CardTitle>{t.invoices.sectionSummary}</CardTitle>
@@ -646,16 +875,24 @@ export function InvoiceForm({
           <Button variant="outline" onClick={onCancel} disabled={saving}>
             {t.invoices.cancel}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => submit("draft")}
-            disabled={saving}
-          >
-            {t.invoices.saveDraft}
-          </Button>
-          <Button onClick={() => submit("issued")} disabled={saving}>
-            <FileText className="h-3.5 w-3.5" /> {t.invoices.issue}
-          </Button>
+          {mode === "edit" ? (
+            <Button onClick={() => submit("keep")} disabled={saving}>
+              <Save className="h-3.5 w-3.5" /> {t.invoices.saveChanges}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => submit("draft")}
+                disabled={saving}
+              >
+                {t.invoices.saveDraft}
+              </Button>
+              <Button onClick={() => submit("issued")} disabled={saving}>
+                <FileText className="h-3.5 w-3.5" /> {t.invoices.issue}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -126,6 +126,7 @@ Czech-format invoicing, modelled on fakturoid.cz. Three tables: `invoice_setting
 - **VAT-aware**: for a non-VAT payer the VAT inputs/columns disappear and the document prints "Dodavatel není plátcem DPH."; for a payer the detail shows a full VAT recapitulation table. Czech 2024 rates: 21 / 12 / 0 %.
 - **QR Platba**: the printable detail renders a scannable **SPAYD** QR (`qrcode.react`). The IBAN is taken from settings, or derived from a domestic account number (`prefix-number/bank`) via the IBAN mod-97 algorithm.
 - **Printable detail**: a fixed-"paper" (always-light) document with a print stylesheet that isolates just the invoice, so `⌘P` yields a clean A4. Statuses: draft / issued / paid / cancelled, with **overdue** derived from the due date. Mark paid/unpaid and delete inline.
+- **Edit & duplicate**: open any invoice to edit it in place (the header is updated and the line items replaced wholesale — they carry no external references), or **duplicate** it from the list or detail. The copy reuses the customer and line items, takes the next number and fresh issue/due dates, and is ready for you to tweak the amount — the quick path for recurring billing.
 - **Number generation**: the next number is suggested as `<year><3-digit sequence>` (e.g. `2026001`); the variable symbol defaults to the number's digits. All the math (line/VAT/rounding totals, SPAYD, account→IBAN, number suggestion, overdue) lives in `src/lib/invoices.ts` and is unit-tested.
 
 Invoices are personal — own-only RLS, not part of couples sharing.

@@ -23,6 +23,8 @@ type InvoicesStrings = {
 
   // Row / detail actions
   view: string;
+  edit: string;
+  duplicate: string;
   markPaid: string;
   markUnpaid: string;
   delete: string;
@@ -65,11 +67,14 @@ type InvoicesStrings = {
   totalToPayLabel: string;
   qrTitle: string;
   qrHint: string;
+  qrMissing: string;
 
   // Form
   formNewTitle: string;
+  formEditTitle: string;
   saveDraft: string;
   issue: string;
+  saveChanges: string;
   cancel: string;
   sectionSupplier: string;
   sectionBuyer: string;
@@ -138,6 +143,7 @@ type InvoicesStrings = {
   markedPaidToast: string;
   markedUnpaidToast: string;
   createdToast: (number: string) => string;
+  updatedToast: (number: string) => string;
   deleteConfirm: (number: string) => string;
 };
 
@@ -166,6 +172,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     },
 
     view: "View",
+    edit: "Edit",
+    duplicate: "Duplicate",
     markPaid: "Mark as paid",
     markUnpaid: "Mark as unpaid",
     delete: "Delete",
@@ -207,10 +215,14 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     totalToPayLabel: "Total due",
     qrTitle: "QR payment",
     qrHint: "Scan it in your banking app.",
+    qrMissing:
+      "Add a bank account in invoicing settings to generate a payment QR.",
 
     formNewTitle: "New invoice",
+    formEditTitle: "Edit invoice",
     saveDraft: "Save draft",
     issue: "Issue invoice",
+    saveChanges: "Save changes",
     cancel: "Cancel",
     sectionSupplier: "Supplier",
     sectionBuyer: "Customer",
@@ -281,6 +293,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     markedPaidToast: "Invoice marked as paid.",
     markedUnpaidToast: "Payment cleared.",
     createdToast: (number) => `Invoice ${number} created.`,
+    updatedToast: (number) => `Invoice ${number} updated.`,
     deleteConfirm: (number) => `Delete invoice ${number}? This can't be undone.`,
   },
   cs: {
@@ -307,6 +320,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     },
 
     view: "Zobrazit",
+    edit: "Upravit",
+    duplicate: "Duplikovat",
     markPaid: "Označit jako uhrazenou",
     markUnpaid: "Zrušit úhradu",
     delete: "Smazat",
@@ -348,10 +363,14 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     totalToPayLabel: "Celkem k úhradě",
     qrTitle: "QR platba",
     qrHint: "Naskenujte v mobilní bankovní aplikaci.",
+    qrMissing:
+      "Pro QR platbu vyplňte číslo účtu v nastavení fakturace.",
 
     formNewTitle: "Nová faktura",
+    formEditTitle: "Upravit fakturu",
     saveDraft: "Uložit koncept",
     issue: "Vystavit fakturu",
+    saveChanges: "Uložit změny",
     cancel: "Zrušit",
     sectionSupplier: "Dodavatel",
     sectionBuyer: "Odběratel",
@@ -422,6 +441,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     markedPaidToast: "Faktura označena jako uhrazená.",
     markedUnpaidToast: "Úhrada zrušena.",
     createdToast: (number) => `Faktura ${number} vytvořena.`,
+    updatedToast: (number) => `Faktura ${number} upravena.`,
     deleteConfirm: (number) =>
       `Smazat fakturu ${number}? Tuto akci nelze vrátit.`,
   },
