@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Building2, Save } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, Building2, Save, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ type Form = {
   default_due_days: string;
   default_currency: string;
   footer_note: string;
+  logo: string;
 };
 
 function fromSettings(s: InvoiceSettings | null): Form {
@@ -47,7 +48,60 @@ function fromSettings(s: InvoiceSettings | null): Form {
     default_due_days: String(s?.default_due_days ?? 14),
     default_currency: s?.default_currency ?? "CZK",
     footer_note: s?.footer_note ?? "",
+    logo: s?.logo ?? "",
   };
+}
+
+const ACCEPTED_LOGO_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/svg+xml",
+];
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("image load failed"));
+    img.src = src;
+  });
+}
+
+/**
+ * Turn a picked file into a compact data URL we can store inline. SVGs are
+ * kept as-is (vector); raster images are downscaled to ≤ 480 px on the long
+ * edge and re-encoded as PNG, so the row stays small and the logo travels
+ * embedded in the invoice (print/PDF included).
+ */
+async function processLogo(file: File): Promise<string> {
+  if (file.type === "image/svg+xml") return readAsDataUrl(file);
+  const dataUrl = await readAsDataUrl(file);
+  const img = await loadImage(dataUrl);
+  const max = 480;
+  let w = img.naturalWidth || img.width;
+  let h = img.naturalHeight || img.height;
+  if (Math.max(w, h) > max) {
+    const scale = max / Math.max(w, h);
+    w = Math.round(w * scale);
+    h = Math.round(h * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL("image/png");
 }
 
 function Switch({
@@ -97,9 +151,29 @@ export function SupplierSettings({
   const t = useDict();
   const [form, setForm] = useState<Form>(() => fromSettings(settings));
   const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+    if (!ACCEPTED_LOGO_TYPES.includes(file.type)) {
+      toast.err(t.invoices.logoInvalid);
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.err(t.invoices.logoTooLarge);
+      return;
+    }
+    try {
+      set("logo", await processLogo(file));
+    } catch {
+      toast.err(t.invoices.logoInvalid);
+    }
   }
 
   async function save(e: React.FormEvent) {
@@ -120,6 +194,7 @@ export function SupplierSettings({
       default_due_days: Math.max(0, Number(form.default_due_days) || 14),
       default_currency: form.default_currency,
       footer_note: form.footer_note.trim() || null,
+      logo: form.logo || null,
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await supabase
@@ -158,6 +233,47 @@ export function SupplierSettings({
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>{t.invoices.logoLabel}</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                {form.logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.logo}
+                    alt=""
+                    className="h-12 max-w-[160px] object-contain rounded-md border border-border bg-white p-1"
+                  />
+                )}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept={ACCEPTED_LOGO_TYPES.join(",")}
+                  className="hidden"
+                  onChange={onLogoFile}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5" /> {t.invoices.uploadLogo}
+                </Button>
+                {form.logo && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => set("logo", "")}
+                  >
+                    <X className="h-3.5 w-3.5" /> {t.invoices.removeLogo}
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-foreground-subtle">
+                {t.invoices.logoHint}
+              </p>
+            </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="set-name">{t.invoices.supplierNameLabel}</Label>
               <Input

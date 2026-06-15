@@ -213,6 +213,7 @@ export function InvoicesPanel({
       <InvoiceDetail
         invoice={detailInvoice}
         items={items.filter((i) => i.invoice_id === detailInvoice.id)}
+        logo={settings?.logo ?? null}
         onBack={() => setView({ mode: "list" })}
         onEdit={() => setView({ mode: "edit", id: detailInvoice.id })}
         onDuplicate={() => setView({ mode: "duplicate", id: detailInvoice.id })}

@@ -121,11 +121,11 @@ Two related concepts: **accounts** (where money lives) and **transactions** (whe
 
 Czech-format invoicing, modelled on fakturoid.cz. Three tables: `invoice_settings` (your supplier details + defaults, one row per user), `invoices` (header + a **snapshot** of both the customer and the supplier so an issued document never changes when settings are later edited), and `invoice_items` (line items).
 
-- **Supplier settings** (Nastavení fakturace): name/address, **IČO**/**DIČ**, bank account + IBAN, a **plátce DPH** (VAT-payer) flag, default due days, default currency, and a footer note. Prefilled into every new invoice.
+- **Supplier settings** (Nastavení fakturace): name/address, **IČO**/**DIČ**, bank account + IBAN, a **plátce DPH** (VAT-payer) flag, default due days, default currency, a footer note, and a **logo**. The logo is uploaded client-side, downscaled (≤ 480 px, re-encoded as PNG; SVGs kept as-is) and stored inline as a data URL, so it travels embedded in the rendered/printed invoice — no storage bucket needed. Prefilled into every new invoice.
 - **Create form**: customer block (Odběratel: name, IČO, DIČ, address), invoice details (number, **variabilní symbol**, **konstantní symbol**, issue/due dates, **DUZP** date of supply for VAT payers, payment method, currency), and repeatable line items (description, quantity, unit, unit price, per-line VAT rate). Totals — base, VAT recap by rate, optional **whole-crown rounding** for CZK, and grand total — compute live as you type. Save as **draft** (koncept) or **issue** (vystavit).
 - **VAT-aware**: for a non-VAT payer the VAT inputs/columns disappear and the document prints "Dodavatel není plátcem DPH."; for a payer the detail shows a full VAT recapitulation table. Czech 2024 rates: 21 / 12 / 0 %.
 - **QR Platba**: the printable detail renders a scannable **SPAYD** QR (`qrcode.react`). The IBAN is taken from settings, or derived from a domestic account number (`prefix-number/bank`) via the IBAN mod-97 algorithm.
-- **Printable detail**: a fixed-"paper" (always-light) document with a print stylesheet that isolates just the invoice, so `⌘P` yields a clean A4. Statuses: draft / issued / paid / cancelled, with **overdue** derived from the due date. Mark paid/unpaid and delete inline.
+- **Printable detail**: a minimalist, professional document — logo in the header, the parties side by side, a tinted payment panel, a clean line-item table, VAT recap, and an emphasised total. It renders on fixed "paper" colours (always light), and a print stylesheet isolates just the invoice so `⌘P` yields a clean A4. Statuses: draft / issued / paid / cancelled, with **overdue** derived from the due date. Mark paid/unpaid and delete inline.
 - **Edit & duplicate**: open any invoice to edit it in place (the header is updated and the line items replaced wholesale — they carry no external references), or **duplicate** it from the list or detail. The copy reuses the customer and line items, takes the next number and fresh issue/due dates, and is ready for you to tweak the amount — the quick path for recurring billing.
 - **Number generation**: the next number is suggested as `<year><3-digit sequence>` (e.g. `2026001`); the variable symbol defaults to the number's digits. All the math (line/VAT/rounding totals, SPAYD, account→IBAN, number suggestion, overdue) lives in `src/lib/invoices.ts` and is unit-tested.
 
@@ -365,7 +365,7 @@ All tables have RLS enabled. Every column is described inline in `supabase/schem
 | `accounts` | Bank/credit/savings accounts with balance | Partner read if `share_finances = true` |
 | `transactions` | Income/expense rows; indexed on `(user_id, occurred_on desc)` | Partner read if `share_finances = true` |
 | `plans` | Long-horizon goals; optional `linked_calendar_event_id` | Partner read if `share_plans = true` |
-| `invoice_settings` | Per-user supplier details + invoicing defaults (VAT flag, bank, due days) | Own only |
+| `invoice_settings` | Per-user supplier details + invoicing defaults (VAT flag, bank, due days, logo) | Own only |
 | `invoices` | Invoice header + customer + snapshot of supplier block; unique `(user_id, number)` | Own only |
 | `invoice_items` | Line items with per-line VAT rate; cascade-deleted with the invoice | Own only |
 | `profiles` | Mirror of `auth.users` (display name + avatar) | Always readable by paired partner |

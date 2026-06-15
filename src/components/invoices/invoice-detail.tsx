@@ -33,6 +33,7 @@ function fmtDate(key: string | null): string {
 export function InvoiceDetail({
   invoice,
   items,
+  logo,
   onBack,
   onEdit,
   onDuplicate,
@@ -42,6 +43,7 @@ export function InvoiceDetail({
 }: {
   invoice: Invoice;
   items: InvoiceItem[];
+  logo: string | null;
   onBack: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -126,35 +128,49 @@ export function InvoiceDetail({
       {/* The document — fixed "paper" colours so it reads the same in dark mode
           and prints cleanly. */}
       <div className="invoice-print-area mx-auto max-w-3xl rounded-lg border border-neutral-200 bg-white text-neutral-900 shadow-soft">
-        <div className="p-6 sm:p-10">
+        <div className="p-8 sm:p-12">
           {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">
+          <div className="flex items-start justify-between gap-6 border-b border-neutral-200 pb-8">
+            <div className="min-w-0">
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logo}
+                  alt=""
+                  className="h-16 max-w-[220px] object-contain"
+                />
+              ) : (
+                <p className="text-lg font-semibold tracking-tight">
+                  {invoice.supplier_name || "—"}
+                </p>
+              )}
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
                 {isVatPayer ? t.invoices.taxDocTitle : t.invoices.plainTitle}
-              </h2>
-              <p className="mt-1 text-2xl font-bold tabular">
+              </p>
+              <p className="mt-1.5 text-3xl font-bold tabular tracking-tight">
                 {invoice.number}
               </p>
+              {(eff === "paid" || eff === "overdue" || eff === "cancelled") && (
+                <span
+                  className={
+                    "mt-2 inline-block rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider " +
+                    (eff === "paid"
+                      ? "border-emerald-300 text-emerald-700"
+                      : eff === "overdue"
+                        ? "border-red-300 text-red-700"
+                        : "border-neutral-300 text-neutral-500")
+                  }
+                >
+                  {t.invoices.statusLabel[eff]}
+                </span>
+              )}
             </div>
-            {(eff === "paid" || eff === "overdue" || eff === "cancelled") && (
-              <span
-                className={
-                  "rounded-md border px-3 py-1 text-xs font-semibold uppercase tracking-wider " +
-                  (eff === "paid"
-                    ? "border-emerald-300 text-emerald-700"
-                    : eff === "overdue"
-                      ? "border-red-300 text-red-700"
-                      : "border-neutral-300 text-neutral-500")
-                }
-              >
-                {t.invoices.statusLabel[eff]}
-              </span>
-            )}
           </div>
 
           {/* Parties */}
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          <div className="mt-8 grid gap-8 sm:grid-cols-2">
             <Party
               label={t.invoices.supplierLabel}
               name={invoice.supplier_name}
@@ -181,8 +197,8 @@ export function InvoiceDetail({
             />
           </div>
 
-          {/* Meta */}
-          <div className="mt-6 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2 border-t border-neutral-200 pt-5">
+          {/* Payment + dates */}
+          <div className="mt-8 grid gap-x-8 gap-y-2 rounded-lg border border-neutral-200 bg-neutral-50 p-5 text-sm sm:grid-cols-2">
             <Meta label={t.invoices.vsLabel} value={invoice.variable_symbol} />
             {invoice.constant_symbol && (
               <Meta label={t.invoices.ksLabel} value={invoice.constant_symbol} />
@@ -215,9 +231,9 @@ export function InvoiceDetail({
           </div>
 
           {/* Items */}
-          <table className="mt-8 w-full text-sm">
+          <table className="mt-10 w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-300 text-left text-xs uppercase tracking-wide text-neutral-500">
+              <tr className="border-b border-neutral-200 text-left text-[11px] uppercase tracking-wider text-neutral-400">
                 <th className="py-2 pr-2 font-medium">
                   {t.invoices.thDescription}
                 </th>
@@ -239,20 +255,20 @@ export function InvoiceDetail({
             </thead>
             <tbody>
               {sorted.map((it, i) => (
-                <tr key={it.id} className="border-b border-neutral-100">
-                  <td className="py-2 pr-2">{it.description}</td>
-                  <td className="py-2 px-2 text-right tabular whitespace-nowrap">
+                <tr key={it.id} className="border-b border-neutral-100 align-top">
+                  <td className="py-2.5 pr-2">{it.description}</td>
+                  <td className="py-2.5 px-2 text-right tabular whitespace-nowrap text-neutral-600">
                     {Number(it.quantity)} {it.unit ?? ""}
                   </td>
-                  <td className="py-2 px-2 text-right tabular whitespace-nowrap">
+                  <td className="py-2.5 px-2 text-right tabular whitespace-nowrap text-neutral-600">
                     {money(Number(it.unit_price))}
                   </td>
                   {isVatPayer && (
-                    <td className="py-2 px-2 text-right tabular">
+                    <td className="py-2.5 px-2 text-right tabular text-neutral-600">
                       {Number(it.vat_rate)} %
                     </td>
                   )}
-                  <td className="py-2 pl-2 text-right tabular whitespace-nowrap font-medium">
+                  <td className="py-2.5 pl-2 text-right tabular whitespace-nowrap font-medium">
                     {money(isVatPayer ? lineTotal(parsed[i]) : lineBase(parsed[i]))}
                   </td>
                 </tr>
@@ -312,11 +328,11 @@ export function InvoiceDetail({
                   value={money(totals.rounding)}
                 />
               )}
-              <div className="flex items-center justify-between border-t-2 border-neutral-900 pt-2 mt-1">
-                <span className="font-semibold">
+              <div className="mt-2 flex items-center justify-between gap-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <span className="text-sm font-semibold">
                   {t.invoices.totalToPayLabel}
                 </span>
-                <span className="text-xl font-bold tabular">
+                <span className="text-2xl font-bold tabular tracking-tight">
                   {money(totals.total)}
                 </span>
               </div>

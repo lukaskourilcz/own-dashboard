@@ -205,6 +205,7 @@ export type InvoiceSettings = {
   default_due_days: number;
   default_currency: string;
   footer_note: string | null;
+  logo: string | null;
   updated_at: string;
 };
 

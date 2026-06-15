@@ -130,6 +130,12 @@ type InvoicesStrings = {
   ibanHint: string;
   footerNote: string;
   footerNotePlaceholder: string;
+  logoLabel: string;
+  logoHint: string;
+  uploadLogo: string;
+  removeLogo: string;
+  logoTooLarge: string;
+  logoInvalid: string;
   saveSettings: string;
 
   // Toasts / validation
@@ -281,6 +287,12 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     ibanHint: "Optional — we'll derive it from the account number for the QR.",
     footerNote: "Invoice footer",
     footerNotePlaceholder: 'e.g. "Not a VAT payer." or a thank-you note',
+    logoLabel: "Logo",
+    logoHint: "PNG, JPG or SVG — shown on every invoice.",
+    uploadLogo: "Upload logo",
+    removeLogo: "Remove",
+    logoTooLarge: "That file is too large (max 2 MB).",
+    logoInvalid: "Unsupported image format.",
     saveSettings: "Save settings",
 
     buyerNameRequired: "Enter the customer's name.",
@@ -429,6 +441,12 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     ibanHint: "Nepovinné — když nevyplníte, odvodíme ho z čísla účtu pro QR platbu.",
     footerNote: "Patička faktury",
     footerNotePlaceholder: 'Např. „Nejsem plátce DPH." nebo poděkování',
+    logoLabel: "Logo",
+    logoHint: "PNG, JPG nebo SVG — zobrazí se na každé faktuře.",
+    uploadLogo: "Nahrát logo",
+    removeLogo: "Odebrat",
+    logoTooLarge: "Soubor je příliš velký (max 2 MB).",
+    logoInvalid: "Nepodporovaný formát obrázku.",
     saveSettings: "Uložit nastavení",
 
     buyerNameRequired: "Vyplňte název odběratele.",

@@ -765,8 +765,13 @@ create table if not exists public.invoice_settings (
   default_due_days integer not null default 14 check (default_due_days >= 0),
   default_currency text not null default 'CZK',
   footer_note text,
+  logo text,
   updated_at timestamptz not null default now()
 );
+
+-- Logo (a data URL, or an external URL) rendered on the invoice document.
+alter table public.invoice_settings
+  add column if not exists logo text;
 
 alter table public.invoice_settings enable row level security;
 
