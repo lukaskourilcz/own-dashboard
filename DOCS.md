@@ -127,6 +127,7 @@ Czech-format invoicing, modelled on fakturoid.cz. Three tables: `invoice_setting
 - **QR Platba**: the printable detail renders a scannable **SPAYD** QR (`qrcode.react`). The IBAN is taken from settings, or derived from a domestic account number (`prefix-number/bank`) via the IBAN mod-97 algorithm.
 - **Printable detail**: a minimalist, professional document — logo in the header, the parties side by side, a tinted payment panel, a clean line-item table, VAT recap, and an emphasised total. It renders on fixed "paper" colours (always light), and a print stylesheet isolates just the invoice so `⌘P` yields a clean A4. Statuses: draft / issued / paid / cancelled, with **overdue** derived from the due date. Mark paid/unpaid and delete inline.
 - **Edit & duplicate**: open any invoice to edit it in place (the header is updated and the line items replaced wholesale — they carry no external references), or **duplicate** it from the list or detail. The copy reuses the customer and line items, takes the next number and fresh issue/due dates, and is ready for you to tweak the amount — the quick path for recurring billing.
+- **Import from PDF**: drag a PDF invoice onto the Invoices page (or click the dropzone) and it's parsed **client-side** with pdf.js — number, variable symbol, dates, currency, total + VAT, bank account / IBAN and the customer (Odběratel). The create form then opens **prefilled** for you to review and save (we don't blind-save heuristic data). The text→fields parsing (`src/lib/invoice-parser.ts`) is pure and unit-tested; pdf.js text extraction (`src/lib/pdf-extract.ts`) is a thin, dynamically-imported client layer so the heavy bundle is code-split.
 - **Number generation**: the next number is suggested as `<year><3-digit sequence>` (e.g. `2026001`); the variable symbol defaults to the number's digits. All the math (line/VAT/rounding totals, SPAYD, account→IBAN, number suggestion, overdue) lives in `src/lib/invoices.ts` and is unit-tested.
 
 Invoices are personal — own-only RLS, not part of couples sharing.
@@ -249,8 +250,9 @@ To keep the existing panels from accidentally rendering partner rows mixed into 
 | Charts | **Recharts** | Bar, Pie, Line — all server-data-driven, no client-fetched series |
 | Icons | **lucide-react** | (Note: package is pinned to `^1.14.0` — confirm this is the intended package, since lucide-react ships on `0.x` upstream) |
 | QR codes | **qrcode.react** | Renders the Czech "QR Platba" (SPAYD) on the invoice detail |
+| PDF import | **pdfjs-dist** | Client-side text extraction for drag-and-drop invoice import |
 | Dates | **date-fns** v4 | `format`, `subDays`, `differenceInCalendarDays`, etc. |
-| Tests | **Vitest** 4 | 90 unit tests covering all lib modules; config in `vitest.config.mts` |
+| Tests | **Vitest** 4 | 111 unit tests covering all lib modules; config in `vitest.config.mts` |
 | Auth provider | Google OAuth (via Supabase) | Calendar scope: `auth/calendar.events`; `userinfo.email` + `userinfo.profile` |
 
 The app does **not** depend on: an AI provider, a live FX API, an email service, an analytics SDK, an error tracker, a payment provider.
@@ -435,7 +437,7 @@ npm run test:watch  # Vitest in watch mode
 
 ### Tests
 
-90 unit tests live under `tests/lib/`, covering every pure module:
+111 unit tests live under `tests/lib/`, covering every pure module:
 
 | Module | Tests | Catches |
 | --- | --- | --- |
@@ -447,6 +449,7 @@ npm run test:watch  # Vitest in watch mode
 | `finances` | 11 | net worth across currencies, monthly bucketing, "Subscriptions" synthetic slice |
 | `couple` | 8 | per-category flag, null prefs → false |
 | `invoices` | 25 | line/VAT/rounding totals, account→IBAN (mod-97), SPAYD, number suggestion, overdue |
+| `invoice-parser` | 21 | Czech amount/date parsing, number/VS/dates/total/VAT extraction, account+IBAN, buyer block |
 
 Time-dependent tests pin the clock to `2026-05-12` with `vi.useFakeTimers()` so results don't drift with the system date.
 
@@ -514,6 +517,8 @@ src/
     google-auth.ts                relinkGoogle (signInWithOAuth wrapper)
     important-dates.ts            nextOccurrence + buildOccurrences
     invoices.ts                   line/VAT/rounding totals, SPAYD, account→IBAN, numbering
+    invoice-parser.ts             PDF-text → invoice fields (pure, tested)
+    pdf-extract.ts                pdf.js text extraction for PDF import (client)
     pulse.ts                      mood meta, streak, trend, average
     streaks.ts                    computeStreak, bestStreak, unchecked, etc.
     subscriptions.ts              toMonthly, totals, upcomingRenewals

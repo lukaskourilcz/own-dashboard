@@ -32,6 +32,7 @@ import {
 } from "@/lib/invoices";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
+import type { ParsedInvoice } from "@/lib/invoice-parser";
 import type {
   Invoice,
   InvoiceItem,
@@ -40,7 +41,7 @@ import type {
   Updater,
 } from "@/lib/types";
 
-export type FormMode = "create" | "edit" | "duplicate";
+export type FormMode = "create" | "edit" | "duplicate" | "import";
 export type InvoiceSource = { invoice: Invoice; items: InvoiceItem[] };
 
 // Module-level counter for keys of items added at runtime — avoids
@@ -102,6 +103,14 @@ type Initial = {
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = ["bank", "cash", "card"];
+
+/** Snap a parsed VAT ratio (vat/base) to the closest supported rate. */
+function snapVatRate(ratio: number): number {
+  const pct = ratio * 100;
+  return VAT_RATES.reduce<number>((best, r) =>
+    Math.abs(r - pct) < Math.abs(best - pct) ? r : best,
+  VAT_RATES[0]);
+}
 
 function emptyBuyer(): Buyer {
   return {
@@ -190,6 +199,8 @@ function buildInitial(
   source: InvoiceSource | undefined,
   settings: InvoiceSettings | null,
   existingInvoices: Invoice[],
+  prefill: ParsedInvoice | undefined,
+  importedItemLabel: string,
 ): Initial {
   if (mode === "edit" && source) {
     const inv = source.invoice;
@@ -208,6 +219,57 @@ function buildInitial(
       buyer: buyerFrom(inv),
       items: toFormItems(source.items, true),
       supplierSnapshot: invoiceSnapshot(inv),
+    };
+  }
+
+  if (mode === "import") {
+    const isVatPayer = settings?.is_vat_payer ?? false;
+    const number =
+      prefill?.number?.trim() || suggestInvoiceNumber(existingInvoices);
+    let unitPrice = prefill?.total;
+    let vatRate = isVatPayer ? 21 : 0;
+    if (isVatPayer && prefill?.vatBase) {
+      unitPrice = prefill.vatBase;
+      if (prefill.vatTotal) {
+        vatRate = snapVatRate(prefill.vatTotal / prefill.vatBase);
+      }
+    }
+    return {
+      isVatPayer,
+      number,
+      variableSymbol:
+        prefill?.variableSymbol?.trim() || defaultVariableSymbol(number),
+      constantSymbol: "",
+      issueDate: prefill?.issueDate || todayKey(),
+      dueDate:
+        prefill?.dueDate ||
+        addDaysKey(todayKey(), settings?.default_due_days ?? 14),
+      taxDate: (isVatPayer && prefill?.taxableSupplyDate) || "",
+      paymentMethod: "bank",
+      currency: prefill?.currency || settings?.default_currency || "CZK",
+      roundTotal: true,
+      note: "",
+      buyer: {
+        buyer_name: prefill?.buyer?.name ?? "",
+        buyer_address: "",
+        buyer_city: "",
+        buyer_zip: "",
+        buyer_country: "Česká republika",
+        buyer_ico: prefill?.buyer?.ico ?? "",
+        buyer_dic: prefill?.buyer?.dic ?? "",
+      },
+      items: [
+        {
+          key: "it-init-0",
+          id: null,
+          description: importedItemLabel,
+          quantity: "1",
+          unit: "ks",
+          unit_price: unitPrice != null ? String(unitPrice) : "",
+          vat_rate: vatRate,
+        },
+      ],
+      supplierSnapshot: null,
     };
   }
 
@@ -256,6 +318,7 @@ function buildInitial(
 export function InvoiceForm({
   mode,
   source,
+  prefill,
   settings,
   userId,
   existingInvoices,
@@ -267,6 +330,7 @@ export function InvoiceForm({
 }: {
   mode: FormMode;
   source?: InvoiceSource;
+  prefill?: ParsedInvoice;
   settings: InvoiceSettings | null;
   userId: string;
   existingInvoices: Invoice[];
@@ -282,7 +346,14 @@ export function InvoiceForm({
 
   // Compute the initial form shape exactly once (lazy state init).
   const [init] = useState<Initial>(() =>
-    buildInitial(mode, source, settings, existingInvoices),
+    buildInitial(
+      mode,
+      source,
+      settings,
+      existingInvoices,
+      prefill,
+      t.invoices.importedItem,
+    ),
   );
   const isVatPayer = init.isVatPayer;
 
@@ -469,13 +540,25 @@ export function InvoiceForm({
   return (
     <div>
       <PageHeader
-        title={mode === "edit" ? t.invoices.formEditTitle : t.invoices.formNewTitle}
+        title={
+          mode === "edit"
+            ? t.invoices.formEditTitle
+            : mode === "import"
+              ? t.invoices.formImportTitle
+              : t.invoices.formNewTitle
+        }
         action={
           <Button size="sm" variant="outline" onClick={onCancel}>
             <ArrowLeft className="h-3.5 w-3.5" /> {t.invoices.back}
           </Button>
         }
       />
+
+      {mode === "import" && (
+        <div className="mb-4 rounded-md border border-border bg-accent px-4 py-2.5 text-sm text-foreground-muted">
+          {t.invoices.importedHint}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Supplier (read-only) */}

@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
   Check,
   Copy,
+  FileUp,
+  Loader2,
   Plus,
   Receipt,
   RotateCcw,
@@ -25,6 +27,8 @@ import { createClient } from "@/lib/supabase/client";
 import { todayKey } from "@/lib/date-keys";
 import { convert } from "@/lib/fx";
 import { computeTotals, effectiveStatus } from "@/lib/invoices";
+import { extractPdfText } from "@/lib/pdf-extract";
+import { parseInvoiceText, type ParsedInvoice } from "@/lib/invoice-parser";
 import { formatCurrency } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import type {
@@ -39,6 +43,7 @@ type View =
   | { mode: "new" }
   | { mode: "edit"; id: string }
   | { mode: "duplicate"; id: string }
+  | { mode: "import"; prefill: ParsedInvoice }
   | { mode: "detail"; id: string }
   | { mode: "settings" };
 
@@ -69,6 +74,43 @@ export function InvoicesPanel({
   const toast = useToast();
   const t = useDict();
   const [view, setView] = useState<View>({ mode: "list" });
+  const [parsing, setParsing] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Drag a PDF onto the list → extract text → parse → open the form prefilled.
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+      toast.err(t.invoices.notPdf);
+      return;
+    }
+    setParsing(true);
+    try {
+      const text = await extractPdfText(file);
+      const prefill = parseInvoiceText(text);
+      setView({ mode: "import", prefill });
+    } catch {
+      toast.err(t.invoices.parseFailed);
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    void handleFile(e.dataTransfer.files?.[0]);
+  }
+  function onDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    if (!dragging) setDragging(true);
+  }
+  function onDragLeave(e: React.DragEvent) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setDragging(false);
+    }
+  }
 
   // Per-invoice total (in the invoice's own currency) + a display-currency
   // conversion for the summary tiles.
@@ -162,10 +204,11 @@ export function InvoicesPanel({
     );
   }
 
-  if (view.mode === "new") {
+  if (view.mode === "new" || view.mode === "import") {
     return (
       <InvoiceForm
-        mode="create"
+        mode={view.mode === "import" ? "import" : "create"}
+        prefill={view.mode === "import" ? view.prefill : undefined}
         settings={settings}
         userId={userId}
         existingInvoices={invoices}
@@ -227,7 +270,31 @@ export function InvoicesPanel({
   // ── List ─────────────────────────────────────────────────────────────────
 
   return (
-    <div>
+    <div
+      className="relative"
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {dragging && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-foreground/40 bg-background/80 backdrop-blur-sm">
+          <p className="inline-flex items-center gap-2 text-sm font-medium">
+            <FileUp className="h-4 w-4" /> {t.invoices.dropOverlay}
+          </p>
+        </div>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          void handleFile(f);
+        }}
+      />
+
       <PageHeader
         title={t.invoices.title}
         description={t.invoices.description}
@@ -246,6 +313,32 @@ export function InvoicesPanel({
           </div>
         }
       />
+
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={parsing}
+        className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed border-border-strong bg-surface-muted/40 px-4 py-3 text-sm transition-colors hover:border-foreground/30 focus-ring disabled:opacity-60"
+      >
+        {parsing ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin text-foreground-muted" />
+            <span className="text-foreground-muted">{t.invoices.parsing}</span>
+          </>
+        ) : (
+          <>
+            <FileUp className="h-4 w-4 text-foreground-muted" />
+            <span>
+              <span className="font-medium text-foreground">
+                {t.invoices.dropTitle}
+              </span>{" "}
+              <span className="text-foreground-subtle">
+                {t.invoices.dropHint}
+              </span>
+            </span>
+          </>
+        )}
+      </button>
 
       {invoices.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3 mb-4">

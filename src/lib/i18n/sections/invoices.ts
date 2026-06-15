@@ -115,6 +115,18 @@ type InvoicesStrings = {
   notePlaceholder: string;
   footerNoteLabel: string;
 
+  // Import (PDF)
+  formImportTitle: string;
+  importedHint: string;
+  importedItem: string;
+  dropTitle: string;
+  dropHint: string;
+  dropOverlay: string;
+  parsing: string;
+  parseFailed: string;
+  notPdf: string;
+  importButton: string;
+
   // Settings
   settingsTitle: string;
   settingsDesc: string;
@@ -273,6 +285,19 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     notePlaceholder: "Optional note shown on the invoice",
     footerNoteLabel: "Footer",
 
+    formImportTitle: "Invoice from PDF",
+    importedHint:
+      "We prefilled these fields from your PDF — review them and save.",
+    importedItem: "As per the attached invoice",
+    dropTitle: "Drop a PDF invoice here",
+    dropHint: "or click to choose a file",
+    dropOverlay: "Drop the PDF to import",
+    parsing: "Reading the PDF…",
+    parseFailed:
+      "Couldn't read that PDF. Try another file or fill the invoice in manually.",
+    notPdf: "Please drop a PDF file.",
+    importButton: "Import from PDF",
+
     settingsTitle: "Invoicing settings",
     settingsDesc: "Supplier details and defaults for new invoices.",
     supplierNameLabel: "Name / company",
@@ -426,6 +451,19 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     roundTotalToggle: "Zaokrouhlit na celé koruny",
     notePlaceholder: "Volitelná poznámka na faktuře",
     footerNoteLabel: "Patička",
+
+    formImportTitle: "Faktura z PDF",
+    importedHint:
+      "Údaje jsme předvyplnili z PDF — zkontrolujte je a uložte.",
+    importedItem: "Dle přiložené faktury",
+    dropTitle: "Přetáhněte sem PDF fakturu",
+    dropHint: "nebo klikněte pro výběr souboru",
+    dropOverlay: "Pusťte PDF pro načtení",
+    parsing: "Načítám PDF…",
+    parseFailed:
+      "PDF se nepodařilo načíst. Zkuste jiný soubor nebo fakturu vyplňte ručně.",
+    notPdf: "Přetáhněte prosím soubor PDF.",
+    importButton: "Importovat z PDF",
 
     settingsTitle: "Nastavení fakturace",
     settingsDesc: "Údaje dodavatele a výchozí hodnoty pro nové faktury.",
