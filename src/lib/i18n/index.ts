@@ -6,6 +6,7 @@ import { useLang, type Lang } from "./lang";
 import { common } from "./sections/common";
 import { nav } from "./sections/nav";
 import { settings } from "./sections/settings";
+import { dashboard } from "./sections/dashboard";
 import { overview } from "./sections/overview";
 import { kpi } from "./sections/kpi";
 import { quickAdd } from "./sections/quickAdd";
@@ -31,6 +32,7 @@ export const dictionaries = {
     common: common.en,
     nav: nav.en,
     settings: settings.en,
+    dashboard: dashboard.en,
     overview: overview.en,
     kpi: kpi.en,
     quickAdd: quickAdd.en,
@@ -53,6 +55,7 @@ export const dictionaries = {
     common: common.cs,
     nav: nav.cs,
     settings: settings.cs,
+    dashboard: dashboard.cs,
     overview: overview.cs,
     kpi: kpi.cs,
     quickAdd: quickAdd.cs,

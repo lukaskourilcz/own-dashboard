@@ -17,6 +17,8 @@ import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
+import { CustomizableOverview } from "@/components/overview/customizable-overview";
+import type { WidgetId } from "@/lib/dashboard-layout";
 import { WeekView } from "@/components/calendar/week-view";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -235,57 +237,71 @@ export function DashboardShell({
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 >
                   {tab === "overview" && (
-                    <div className="space-y-6">
-                      <TodayHero
-                        userName={user.name}
-                        userEmail={user.email}
-                        calendar={todayCalendar}
-                        todos={todos}
-                        streaks={streaks}
-                        streakLogs={streakLogs}
-                        importantDates={importantDates}
-                      />
-                      <QuickAdd
-                        setTodos={setTodos}
-                        streaks={streaks}
-                        streakLogs={streakLogs}
-                        setStreakLogs={setStreakLogs}
-                        onCalendarTitle={handleCalendarTitle}
-                      />
-                      <KpiCards
-                        subscriptions={subscriptions}
-                        todos={todos}
-                        streaks={streaks}
-                        streakLogs={streakLogs}
-                        displayCurrency={displayCurrency}
-                      />
-                      <div className="grid gap-4 lg:grid-cols-2">
-                        <TodosPanel
-                          todos={todos}
-                          setTodos={setTodos}
-                          compact
-                          partnerTodos={partnerTodos}
-                          partnerName={partnerName}
-                        />
-                        <StreaksPanel
-                          streaks={streaks}
-                          setStreaks={setStreaks}
-                          logs={streakLogs}
-                          setLogs={setStreakLogs}
-                          compact
-                          partnerStreaks={partnerStreaks}
-                          partnerLogs={partnerStreakLogs}
-                          partnerName={partnerName}
-                        />
-                        <SubscriptionsPanel
-                          subs={subscriptions}
-                          setSubs={setSubscriptions}
-                          displayCurrency={displayCurrency}
-                          compact
-                        />
-                        <CalendarPanel compact />
-                      </div>
-                    </div>
+                    <CustomizableOverview
+                      nodes={
+                        {
+                          "today-hero": (
+                            <TodayHero
+                              userName={user.name}
+                              userEmail={user.email}
+                              calendar={todayCalendar}
+                              todos={todos}
+                              streaks={streaks}
+                              streakLogs={streakLogs}
+                              importantDates={importantDates}
+                            />
+                          ),
+                          "quick-add": (
+                            <QuickAdd
+                              setTodos={setTodos}
+                              streaks={streaks}
+                              streakLogs={streakLogs}
+                              setStreakLogs={setStreakLogs}
+                              onCalendarTitle={handleCalendarTitle}
+                            />
+                          ),
+                          kpi: (
+                            <KpiCards
+                              subscriptions={subscriptions}
+                              todos={todos}
+                              streaks={streaks}
+                              streakLogs={streakLogs}
+                              displayCurrency={displayCurrency}
+                            />
+                          ),
+                          todos: (
+                            <TodosPanel
+                              todos={todos}
+                              setTodos={setTodos}
+                              compact
+                              partnerTodos={partnerTodos}
+                              partnerName={partnerName}
+                            />
+                          ),
+                          streaks: (
+                            <StreaksPanel
+                              streaks={streaks}
+                              setStreaks={setStreaks}
+                              logs={streakLogs}
+                              setLogs={setStreakLogs}
+                              compact
+                              partnerStreaks={partnerStreaks}
+                              partnerLogs={partnerStreakLogs}
+                              partnerName={partnerName}
+                            />
+                          ),
+                          subscriptions: (
+                            <SubscriptionsPanel
+                              subs={subscriptions}
+                              setSubs={setSubscriptions}
+                              displayCurrency={displayCurrency}
+                              compact
+                            />
+                          ),
+                          calendar: <CalendarPanel compact />,
+                        } satisfies Record<WidgetId, React.ReactNode>
+                      }
+                    />
                   )}
 
                   {tab === "calendar" && (
