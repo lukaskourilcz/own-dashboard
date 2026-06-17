@@ -91,11 +91,11 @@ export function CustomizableOverview({ nodes }: Props) {
   return (
     <div className="space-y-4">
       {/* Toolbar — Customize toggles edit mode; while editing, add/reset/done. */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-xs text-foreground-subtle">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="hidden min-w-0 flex-1 truncate text-xs text-foreground-subtle sm:block">
           {editing ? t.dashboard.editingHint : ""}
         </p>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
           {editing ? (
             <>
               <Button
@@ -293,8 +293,8 @@ function AddWidgetDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
+        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
           <Dialog.Title className="text-sm font-semibold">
             {t.dashboard.addTitle}
           </Dialog.Title>

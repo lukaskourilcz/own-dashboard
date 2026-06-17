@@ -32,10 +32,7 @@ export function Tooltip({
           align={align}
           sideOffset={6}
           className={cn(
-            "z-50 select-none rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-foreground shadow-elevated",
-            "data-[state=delayed-open]:animate-in data-[state=closed]:animate-out",
-            "data-[state=closed]:fade-out-0 data-[state=delayed-open]:fade-in-0",
-            "data-[state=closed]:zoom-out-95 data-[state=delayed-open]:zoom-in-95",
+            "anim-pop z-50 select-none rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-foreground shadow-elevated",
             className,
           )}
         >

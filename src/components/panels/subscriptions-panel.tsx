@@ -279,7 +279,7 @@ export function SubscriptionsPanel({
                   placeholder={t.subscriptions.namePlaceholder}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="sub-amount">{t.subscriptions.amount}</Label>
                   <Input
@@ -382,7 +382,7 @@ export function SubscriptionsPanel({
               />
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 items-center">
-                <div className="h-56">
+                <div className="h-48 sm:h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie

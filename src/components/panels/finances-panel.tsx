@@ -339,7 +339,7 @@ export function FinancesPanel({
                   setAcctForm({ ...acctForm, name: e.target.value })
                 }
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Input
                   type="number"
                   step="0.01"
@@ -387,7 +387,7 @@ export function FinancesPanel({
                 className="py-10"
               />
             ) : (
-              <div className="h-64">
+              <div className="h-52 sm:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={months}
@@ -472,8 +472,8 @@ export function FinancesPanel({
                   <ArrowUpRight className="h-3.5 w-3.5" /> {t.finances.income}
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1.5 col-span-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="tx-amount">{t.finances.amount}</Label>
                   <Input
                     id="tx-amount"
@@ -576,7 +576,7 @@ export function FinancesPanel({
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 items-center">
-                <div className="h-56">
+                <div className="h-48 sm:h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie

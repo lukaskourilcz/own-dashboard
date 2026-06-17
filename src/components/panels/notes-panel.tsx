@@ -891,7 +891,7 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
         <Popover.Content
           align="start"
           sideOffset={6}
-          className="z-40 w-56 rounded-lg border border-border bg-surface p-2 shadow-elevated"
+          className="anim-pop z-40 w-56 rounded-lg border border-border bg-surface p-2 shadow-elevated"
         >
           <form onSubmit={submit} className="flex gap-1.5">
             <Input
@@ -948,8 +948,8 @@ function ImportMarkdownButton({
         </Button>
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
+        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
           <Dialog.Title className="text-sm font-semibold">
             {t.notes.importFromMarkdown}
           </Dialog.Title>
@@ -1011,8 +1011,8 @@ function NoteLinkPicker({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-[20vh] z-50 w-full max-w-md -translate-x-1/2 rounded-xl border border-border bg-surface shadow-elevated overflow-hidden">
+        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Content className="anim-fade fixed left-1/2 top-[20vh] z-50 w-full max-w-md -translate-x-1/2 rounded-xl border border-border bg-surface shadow-elevated overflow-hidden">
           <Dialog.Title className="sr-only">{t.notes.linkToANote}</Dialog.Title>
           <div className="flex items-center gap-2 px-3.5 border-b border-border">
             <Link2 className="h-4 w-4 text-foreground-subtle" />

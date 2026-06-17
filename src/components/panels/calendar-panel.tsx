@@ -120,7 +120,8 @@ export function CalendarPanel({
           </div>
           <div
             className={
-              "grid gap-2 " + (form.allDay ? "grid-cols-1" : "grid-cols-3")
+              "grid gap-2 " +
+              (form.allDay ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-3")
             }
           >
             <div className="space-y-1.5">
