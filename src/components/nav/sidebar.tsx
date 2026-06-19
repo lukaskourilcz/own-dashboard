@@ -317,7 +317,10 @@ export function MobileNav({
   );
 
   return (
-    <div className="md:hidden sticky top-0 z-30 -mx-4 px-4 py-2 bg-surface/80 backdrop-blur border-b border-border">
+    <div
+      data-testid="mobile-nav"
+      className="md:hidden sticky top-0 z-30 -mx-4 px-4 py-2 bg-surface/80 backdrop-blur border-b border-border"
+    >
       <div className="flex gap-1 overflow-x-auto">
         {items.map((it) => {
           const active = tab === it.value;

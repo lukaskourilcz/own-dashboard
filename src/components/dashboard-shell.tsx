@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
@@ -188,7 +188,8 @@ export function DashboardShell({
   }, []);
 
   return (
-    <TooltipProvider>
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider>
       <ToastProvider>
         <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
         <MobileFab
@@ -415,6 +416,7 @@ export function DashboardShell({
           </main>
         </div>
       </ToastProvider>
-    </TooltipProvider>
+      </TooltipProvider>
+    </MotionConfig>
   );
 }

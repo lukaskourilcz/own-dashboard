@@ -65,7 +65,7 @@ function Kpi({
   sub: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:border-border-strong">
+    <div className="rounded-lg border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:border-border-strong hover:-translate-y-0.5 hover:shadow-card">
       <div className="flex items-center gap-2 text-foreground-muted">
         <Icon className="h-3.5 w-3.5" />
         <SectionLabel className="!text-[10px]">{label}</SectionLabel>

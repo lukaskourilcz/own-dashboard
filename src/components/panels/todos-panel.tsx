@@ -150,6 +150,7 @@ export function TodosPanel({
               />
               <Input
                 type="date"
+                aria-label={t.todos.dueDate}
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
@@ -218,7 +219,12 @@ function QuickAddForm({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-      <Button type="submit" disabled={saving} size="sm">
+      <Button
+        type="submit"
+        disabled={saving}
+        size="sm"
+        aria-label={t.todos.addTask}
+      >
         <Plus className="h-3.5 w-3.5" />
       </Button>
     </form>
@@ -253,7 +259,11 @@ function TodoList({
             transition={{ duration: 0.15 }}
             className="group flex items-center gap-3 rounded-md px-2 py-1.5 row-hover"
           >
-            <Checkbox checked={td.done} onChange={() => onToggle(td)} />
+            <Checkbox
+              checked={td.done}
+              onChange={() => onToggle(td)}
+              label={td.title}
+            />
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
@@ -295,15 +305,18 @@ function TodoList({
 function Checkbox({
   checked,
   onChange,
+  label,
 }: {
   checked: boolean;
   onChange: () => void;
+  label?: string;
 }) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={checked}
+      aria-label={label}
       onClick={onChange}
       className={cn(
         "h-4 w-4 shrink-0 rounded border transition-all duration-150 ease-out flex items-center justify-center focus-ring",

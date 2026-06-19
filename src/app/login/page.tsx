@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, MotionConfig } from "framer-motion";
 import { Activity, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export default function LoginPage() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen grid place-items-center bg-background px-4 relative overflow-hidden">
       {/* ambient gradient */}
       <div
@@ -85,6 +86,7 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+    </MotionConfig>
   );
 }
 

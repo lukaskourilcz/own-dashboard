@@ -20,6 +20,7 @@ type CoupleStrings = {
   inviteIntro: string;
   partnerEmail: string;
   partnerEmailPlaceholder: string;
+  sendInvite: string;
   incoming: string;
   pairRequestWaiting: string;
   accept: string;
@@ -76,6 +77,7 @@ export const couple: { en: CoupleStrings; cs: CoupleStrings } = {
       "Invite your partner's email. They'll see the invite the next time they sign in.",
     partnerEmail: "Partner's email",
     partnerEmailPlaceholder: "partner@example.com",
+    sendInvite: "Send invite",
     incoming: "Incoming",
     pairRequestWaiting: "Pair request waiting",
     accept: "Accept",
@@ -136,6 +138,7 @@ export const couple: { en: CoupleStrings; cs: CoupleStrings } = {
       "Pozvěte partnera jeho e-mailem. Pozvánku uvidí při příštím přihlášení.",
     partnerEmail: "E-mail partnera",
     partnerEmailPlaceholder: "partner@example.com",
+    sendInvite: "Odeslat pozvánku",
     incoming: "Přijaté",
     pairRequestWaiting: "Žádost o spárování čeká",
     accept: "Přijmout",

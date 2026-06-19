@@ -14,11 +14,11 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex items-end justify-between gap-4 mb-6 pb-4 border-b border-border",
+        "flex flex-col gap-3 mb-6 pb-4 border-b border-border sm:flex-row sm:items-end sm:justify-between sm:gap-4",
         className,
       )}
     >
-      <div>
+      <div className="min-w-0">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           {title}
         </h1>

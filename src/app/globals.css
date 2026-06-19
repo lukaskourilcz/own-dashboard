@@ -20,7 +20,8 @@
   /* foreground */
   --foreground: #0a0a0a;
   --foreground-muted: #57534e;
-  --foreground-subtle: #a8a29e;
+  /* Darkened from #a8a29e to meet WCAG AA contrast on surface + muted bg. */
+  --foreground-subtle: #6e6a63;
 
   /* borders */
   --border: #e7e5e4;
@@ -35,9 +36,10 @@
   --accent: #f5f5f4;
   --accent-foreground: #0a0a0a;
 
-  --success: #16a34a;
-  --warning: #d97706;
-  --destructive: #dc2626;
+  /* Darkened for WCAG AA as text on light surfaces + soft (/10) tints. */
+  --success: #0e7536;
+  --warning: #a04d08;
+  --destructive: #b91c1c;
   --destructive-soft: #fef2f2;
 
   --ring: rgba(10, 10, 10, 0.2);
@@ -67,7 +69,8 @@
 
   --foreground: #fafafa;
   --foreground-muted: #a1a1aa;
-  --foreground-subtle: #71717a;
+  /* Lightened from #71717a to meet WCAG AA contrast on dark surfaces. */
+  --foreground-subtle: #8a8a93;
 
   --border: #262626;
   --border-strong: #333333;
@@ -174,14 +177,83 @@ body {
   scrollbar-color: var(--border-strong) transparent;
 }
 
-/* enter animation for content panes */
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* ────────────────────────────────────────────────────────────────────────
+   Motion — short, eased entrance/exit animations for Radix overlays
+   (tooltip, popover, dialog), driven by the data-state attribute Radix sets
+   on each element. Tooltips/popovers render inside a Popper wrapper that owns
+   positioning, so scaling their content is safe; dialogs are positioned by
+   our own translate utilities, so their keyframes preserve that translate.
+   Everything here is neutralised under prefers-reduced-motion (see below).
+   ──────────────────────────────────────────────────────────────────────── */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes pop-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes dialog-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+}
+
+/* Opacity-only — safe on any element (dialog overlays, off-centre popovers). */
+.anim-fade[data-state="open"],
+.anim-fade[data-state="delayed-open"] {
+  animation: fade-in 150ms var(--ease-out);
+}
+.anim-fade[data-state="closed"] {
+  animation: fade-out 120ms var(--ease-out);
+}
+
+/* Scale + fade for Popper content; origin points back at the trigger. */
+.anim-pop {
+  transform-origin: var(--radix-popper-transform-origin, center);
+}
+.anim-pop[data-state="open"],
+.anim-pop[data-state="delayed-open"],
+.anim-pop[data-state="instant-open"] {
+  animation: pop-in 130ms var(--ease-out);
+}
+.anim-pop[data-state="closed"] {
+  animation: pop-out 100ms var(--ease-out);
+}
+
+/* Centre-anchored dialog content (paired with -translate-x/y-1/2). */
+.anim-dialog[data-state="open"] {
+  animation: dialog-in 170ms var(--ease-out);
+}
+.anim-dialog[data-state="closed"] {
+  animation: dialog-out 140ms var(--ease-out);
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Respect users who ask for less motion. Neutralises CSS animations and
+   transitions app-wide; framer-motion is handled separately via
+   <MotionConfig reducedMotion="user">.
+   ──────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
