@@ -24,7 +24,10 @@ export function tagColor(tag: string): {
   // light/dark mode. Text + border stay vivid for legibility.
   return {
     bg: `color-mix(in oklch, hsl(${hue} 70% 55%) 14%, var(--surface))`,
-    text: `hsl(${hue} 55% 38%)`,
+    // Blend the hue toward the foreground so the chip text keeps its colour
+    // identity while clearing WCAG AA on the tinted background in both themes
+    // (foreground flips light/dark).
+    text: `color-mix(in oklch, hsl(${hue} 70% 45%) 42%, var(--foreground))`,
     border: `color-mix(in oklch, hsl(${hue} 70% 55%) 35%, var(--border))`,
   };
 }

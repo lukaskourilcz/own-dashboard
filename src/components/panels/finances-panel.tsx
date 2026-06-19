@@ -334,6 +334,7 @@ export function FinancesPanel({
             >
               <Input
                 placeholder={t.finances.accountNamePlaceholder}
+                aria-label={t.finances.accountNamePlaceholder}
                 value={acctForm.name}
                 onChange={(e) =>
                   setAcctForm({ ...acctForm, name: e.target.value })
@@ -344,6 +345,7 @@ export function FinancesPanel({
                   type="number"
                   step="0.01"
                   placeholder={t.finances.balancePlaceholder}
+                  aria-label={t.finances.balancePlaceholder}
                   value={acctForm.balance}
                   onChange={(e) =>
                     setAcctForm({ ...acctForm, balance: e.target.value })
@@ -351,6 +353,7 @@ export function FinancesPanel({
                 />
                 <Select
                   value={acctForm.currency}
+                  aria-label={t.finances.ccy}
                   onChange={(e) =>
                     setAcctForm({ ...acctForm, currency: e.target.value })
                   }

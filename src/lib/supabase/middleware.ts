@@ -2,6 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  // Dev/E2E only: a fixture-fed preview of the dashboard shell is served at
+  // /dev-preview so the auth-gated UI can be exercised without a real session.
+  // The route itself also 404s in production, so this can never leak there.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    request.nextUrl.pathname.startsWith("/dev-preview")
+  ) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

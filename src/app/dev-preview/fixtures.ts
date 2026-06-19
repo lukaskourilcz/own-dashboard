@@ -1,0 +1,200 @@
+/**
+ * Deterministic fixture data for the /__preview dashboard harness (dev/E2E
+ * only — see ./page.tsx). Dates are computed relative to "now" so the hero,
+ * "due today", upcoming dates, and charts all populate with lifelike content.
+ *
+ * This file is never imported by the production app: the preview route 404s
+ * in production and the middleware only exempts /__preview outside production.
+ */
+import type {
+  Account,
+  Book,
+  BookPage,
+  ImportantDate,
+  Invoice,
+  InvoiceItem,
+  InvoiceSettings,
+  Note,
+  Plan,
+  Streak,
+  StreakLog,
+  Subscription,
+  Todo,
+  Transaction,
+} from "@/lib/types";
+import type { EventsResult } from "@/lib/calendar";
+import type { CoupleContext, PartnerData } from "@/lib/couple";
+
+const UID = "preview-user";
+const NOW = new Date();
+const TS = NOW.toISOString();
+
+function ymd(dayOffset = 0): string {
+  const d = new Date(NOW);
+  d.setDate(d.getDate() + dayOffset);
+  return d.toISOString().slice(0, 10);
+}
+function at(hour: number, minute = 0, dayOffset = 0): string {
+  const d = new Date(NOW);
+  d.setDate(d.getDate() + dayOffset);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+export const user = {
+  id: UID,
+  email: "jan.novak@example.com",
+  name: "Jan Novák",
+  avatar_url: null as string | null,
+};
+
+export const subscriptions: Subscription[] = [
+  { id: "s1", user_id: UID, name: "Netflix", amount: 279, currency: "CZK", billing_cycle: "monthly", category: "Entertainment", next_billing_date: ymd(8), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s2", user_id: UID, name: "Spotify", amount: 169, currency: "CZK", billing_cycle: "monthly", category: "Music", next_billing_date: ymd(3), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s3", user_id: UID, name: "iCloud+", amount: 25, currency: "CZK", billing_cycle: "monthly", category: "Storage", next_billing_date: ymd(20), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS },
+];
+
+export const todos: Todo[] = [
+  { id: "t1", user_id: UID, title: "Submit Q2 invoice", done: false, due_date: ymd(0), created_at: TS },
+  { id: "t2", user_id: UID, title: "Reply to landlord", done: false, due_date: ymd(-1), created_at: TS },
+  { id: "t3", user_id: UID, title: "Buy running shoes", done: false, due_date: ymd(2), created_at: TS },
+  { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, created_at: TS },
+  { id: "t5", user_id: UID, title: "Plan weekend trip", done: false, due_date: null, created_at: TS },
+];
+
+export const streaks: Streak[] = [
+  { id: "st1", user_id: UID, name: "Morning run", color: "#16a34a", reminder_time: null, created_at: TS },
+  { id: "st2", user_id: UID, name: "Read 20 min", color: "#6366f1", reminder_time: null, created_at: TS },
+  { id: "st3", user_id: UID, name: "No sugar", color: "#d97706", reminder_time: null, created_at: TS },
+];
+
+export const streakLogs: StreakLog[] = [
+  // Morning run — logged today + the previous five days (a healthy streak).
+  ...[0, 1, 2, 3, 4, 5].map((n) => ({ id: `l1-${n}`, streak_id: "st1", user_id: UID, log_date: ymd(-n), created_at: TS })),
+  // Read 20 min — logged the past three days but NOT today (shows as "left").
+  ...[1, 2, 3].map((n) => ({ id: `l2-${n}`, streak_id: "st2", user_id: UID, log_date: ymd(-n), created_at: TS })),
+  // No sugar — today + yesterday.
+  ...[0, 1].map((n) => ({ id: `l3-${n}`, streak_id: "st3", user_id: UID, log_date: ymd(-n), created_at: TS })),
+];
+
+export const accounts: Account[] = [
+  { id: "a1", user_id: UID, name: "Checking", balance: 48250, currency: "CZK", created_at: TS, updated_at: TS },
+  { id: "a2", user_id: UID, name: "Savings", balance: 152000, currency: "CZK", created_at: TS, updated_at: TS },
+];
+
+export const transactions: Transaction[] = [
+  { id: "tx1", user_id: UID, account_id: "a1", kind: "income", amount: 62000, currency: "CZK", category: "Salary", note: "June", occurred_on: ymd(-5), created_at: TS },
+  { id: "tx2", user_id: UID, account_id: "a1", kind: "expense", amount: 14500, currency: "CZK", category: "Rent", note: null, occurred_on: ymd(-4), created_at: TS },
+  { id: "tx3", user_id: UID, account_id: "a1", kind: "expense", amount: 3200, currency: "CZK", category: "Groceries", note: null, occurred_on: ymd(-3), created_at: TS },
+  { id: "tx4", user_id: UID, account_id: "a1", kind: "expense", amount: 890, currency: "CZK", category: "Transport", note: null, occurred_on: ymd(-2), created_at: TS },
+  { id: "tx5", user_id: UID, account_id: "a1", kind: "expense", amount: 1240, currency: "CZK", category: "Dining", note: "Dinner", occurred_on: ymd(-1), created_at: TS },
+  { id: "tx6", user_id: UID, account_id: "a2", kind: "income", amount: 5000, currency: "CZK", category: "Interest", note: null, occurred_on: ymd(0), created_at: TS },
+];
+
+export const plans: Plan[] = [
+  { id: "p1", user_id: UID, title: "Launch side project", target_date: ymd(45), status: "active", notes: "Ship the MVP first.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p2", user_id: UID, title: "Run a half marathon", target_date: ymd(90), status: "idea", notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p3", user_id: UID, title: "Read 12 books", target_date: ymd(180), status: "active", notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p4", user_id: UID, title: "Redesign portfolio", target_date: null, status: "done", notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+];
+
+export const books: Book[] = [
+  { id: "b1", couple_id: null, user_id: UID, title: "The Pragmatic Programmer", target_pages: 352, status: "active", started_on: ymd(-20), created_at: TS },
+  { id: "b2", couple_id: null, user_id: UID, title: "Dune", target_pages: 600, status: "active", started_on: ymd(-10), created_at: TS },
+];
+
+export const bookPages: BookPage[] = [
+  { id: "bp1", book_id: "b1", user_id: UID, log_date: ymd(-2), pages: 24, note: null, created_at: TS },
+  { id: "bp2", book_id: "b1", user_id: UID, log_date: ymd(-1), pages: 18, note: null, created_at: TS },
+  { id: "bp3", book_id: "b1", user_id: UID, log_date: ymd(0), pages: 30, note: "Chapter 5", created_at: TS },
+  { id: "bp4", book_id: "b2", user_id: UID, log_date: ymd(-1), pages: 40, note: null, created_at: TS },
+];
+
+export const notes: Note[] = [
+  { id: "n1", user_id: UID, title: "Project ideas", content: [], plain_text: "Brainstorm for the new app", tags: ["work", "ideas"], is_pinned: true, sort_order: 2, created_at: TS, updated_at: TS },
+  { id: "n2", user_id: UID, title: "Grocery list", content: [], plain_text: "Milk, eggs, bread", tags: ["home"], is_pinned: false, sort_order: 1, created_at: TS, updated_at: TS },
+];
+
+export const importantDates: ImportantDate[] = [
+  { id: "d1", user_id: UID, couple_id: null, title: "Anniversary", the_date: ymd(12), is_recurring: true, recurrence_unit: "yearly", emoji: "💍", notes: null, created_at: TS },
+  { id: "d2", user_id: UID, couple_id: null, title: "Mom's birthday", the_date: ymd(25), is_recurring: true, recurrence_unit: "yearly", emoji: "🎂", notes: null, created_at: TS },
+];
+
+export const invoiceSettings: InvoiceSettings = {
+  user_id: UID,
+  supplier_name: "Jan Novák",
+  supplier_address: "Korunní 12",
+  supplier_city: "Praha",
+  supplier_zip: "120 00",
+  supplier_country: "CZ",
+  supplier_ico: "12345678",
+  supplier_dic: "CZ12345678",
+  is_vat_payer: true,
+  bank_account: "123456789/0100",
+  iban: "CZ6508000000192000145399",
+  default_due_days: 14,
+  default_currency: "CZK",
+  footer_note: "Děkuji za platbu.",
+  logo: null,
+  updated_at: TS,
+};
+
+export const invoices: Invoice[] = [
+  {
+    id: "inv1", user_id: UID, number: "2026001", variable_symbol: "2026001", constant_symbol: null,
+    issue_date: ymd(-7), due_date: ymd(7), taxable_supply_date: ymd(-7), payment_method: "bank",
+    currency: "CZK", status: "issued", paid_on: null, round_total: true,
+    buyer_name: "Acme s.r.o.", buyer_address: "Hlavní 1", buyer_city: "Brno", buyer_zip: "602 00",
+    buyer_country: "CZ", buyer_ico: "87654321", buyer_dic: "CZ87654321",
+    supplier_name: "Jan Novák", supplier_address: "Korunní 12", supplier_city: "Praha", supplier_zip: "120 00",
+    supplier_country: "CZ", supplier_ico: "12345678", supplier_dic: "CZ12345678", supplier_is_vat_payer: true,
+    bank_account: "123456789/0100", iban: "CZ6508000000192000145399", note: null,
+    footer_note: "Děkuji za platbu.", created_at: TS, updated_at: TS,
+  },
+];
+
+export const invoiceItems: InvoiceItem[] = [
+  { id: "it1", invoice_id: "inv1", user_id: UID, description: "Web development", quantity: 20, unit: "h", unit_price: 1200, vat_rate: 21, position: 0, created_at: TS },
+  { id: "it2", invoice_id: "inv1", user_id: UID, description: "Consulting", quantity: 5, unit: "h", unit_price: 1500, vat_rate: 21, position: 1, created_at: TS },
+];
+
+export const todayCalendar: EventsResult = {
+  ok: true,
+  events: [
+    { id: "e1", summary: "Standup", start: { dateTime: at(9, 30) }, end: { dateTime: at(9, 45) } },
+    { id: "e2", summary: "Lunch with Petr", start: { dateTime: at(12, 30) }, end: { dateTime: at(13, 30) }, location: "Café" },
+    { id: "e3", summary: "Gym", start: { dateTime: at(18, 0) }, end: { dateTime: at(19, 0) } },
+  ],
+};
+
+export const weekCalendar: EventsResult = {
+  ok: true,
+  events: [
+    ...todayCalendar.events,
+    { id: "e4", summary: "Dentist", start: { dateTime: at(10, 0, 2) }, end: { dateTime: at(10, 30, 2) } },
+    { id: "e5", summary: "Team offsite", start: { date: ymd(3) }, end: { date: ymd(4) } },
+  ],
+};
+
+export const coupleCtx: CoupleContext = {
+  couple: null,
+  partnerId: null,
+  partnerProfile: null,
+  partnerPrefs: null,
+  myPrefs: {
+    user_id: UID,
+    share_subscriptions: false,
+    share_todos: false,
+    share_streaks: false,
+    share_finances: false,
+    share_plans: false,
+    share_books: false,
+    updated_at: TS,
+  },
+  incomingInvites: [],
+  sentInvites: [],
+};
+
+export const partnerData: PartnerData | null = null;
+export const selectedCalendarIds = ["primary"];

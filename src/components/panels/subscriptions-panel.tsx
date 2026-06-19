@@ -246,6 +246,7 @@ export function SubscriptionsPanel({
               <Select
                 value={displayCurrency}
                 onChange={(e) => setDisplayCurrency(e.target.value)}
+                aria-label={t.subscriptions.displayIn}
                 className="h-8 w-20 text-xs"
               >
                 {SUPPORTED_CURRENCIES.map((c) => (

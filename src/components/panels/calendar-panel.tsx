@@ -175,6 +175,7 @@ export function CalendarPanel({
             <div className="space-y-1">
               <Select
                 value={form.recurrence}
+                aria-label={t.calendar.repeats}
                 onChange={(e) =>
                   setForm({
                     ...form,

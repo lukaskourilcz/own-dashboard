@@ -20,7 +20,8 @@
   /* foreground */
   --foreground: #0a0a0a;
   --foreground-muted: #57534e;
-  --foreground-subtle: #a8a29e;
+  /* Darkened from #a8a29e to meet WCAG AA contrast on surface + muted bg. */
+  --foreground-subtle: #6e6a63;
 
   /* borders */
   --border: #e7e5e4;
@@ -35,9 +36,10 @@
   --accent: #f5f5f4;
   --accent-foreground: #0a0a0a;
 
-  --success: #16a34a;
-  --warning: #d97706;
-  --destructive: #dc2626;
+  /* Darkened for WCAG AA as text on light surfaces + soft (/10) tints. */
+  --success: #0e7536;
+  --warning: #a04d08;
+  --destructive: #b91c1c;
   --destructive-soft: #fef2f2;
 
   --ring: rgba(10, 10, 10, 0.2);
@@ -67,7 +69,8 @@
 
   --foreground: #fafafa;
   --foreground-muted: #a1a1aa;
-  --foreground-subtle: #71717a;
+  /* Lightened from #71717a to meet WCAG AA contrast on dark surfaces. */
+  --foreground-subtle: #8a8a93;
 
   --border: #262626;
   --border-strong: #333333;

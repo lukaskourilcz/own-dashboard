@@ -223,7 +223,12 @@ export function CouplePanel({
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder={t.couple.partnerEmailPlaceholder}
                     />
-                    <Button type="submit" disabled={sending} size="default">
+                    <Button
+                      type="submit"
+                      disabled={sending}
+                      size="default"
+                      aria-label={t.couple.sendInvite}
+                    >
                       <Send className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -320,7 +325,11 @@ export function CouplePanel({
                     key={key}
                     className="flex items-start gap-3 rounded-md border border-border p-3"
                   >
-                    <Switch on={on} onClick={() => togglePref(key)} />
+                    <Switch
+                      on={on}
+                      onClick={() => togglePref(key)}
+                      label={cat.label}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{cat.label}</p>
                       <p className="text-xs text-foreground-subtle">
@@ -369,12 +378,21 @@ export function CouplePanel({
   );
 }
 
-function Switch({ on, onClick }: { on: boolean; onClick: () => void }) {
+function Switch({
+  on,
+  onClick,
+  label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  label?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={on}
+      aria-label={label}
       className={cn(
         "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-out focus-ring mt-0.5",
         on ? "bg-foreground" : "bg-border-strong",

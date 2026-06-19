@@ -208,6 +208,7 @@ export function ImportantDatesPanel({
                   <div className="space-y-1">
                     <Select
                       value={form.recurrence_unit}
+                      aria-label={t.dates.repeats}
                       onChange={(e) =>
                         setForm({
                           ...form,
