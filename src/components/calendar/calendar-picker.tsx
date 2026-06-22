@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Check, ChevronDown, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
+import { qk } from "@/lib/queries/keys";
 import type { GcalCalendarEntry } from "@/app/api/calendar/list/route";
+
+async function fetchCalendars(): Promise<GcalCalendarEntry[]> {
+  const r = await fetch("/api/calendar/list");
+  if (!r.ok) throw new Error(`status ${r.status}`);
+  const d = (await r.json()) as { calendars: GcalCalendarEntry[] };
+  return d.calendars;
+}
 
 export function CalendarPicker({
   initialSelected,
@@ -17,34 +26,38 @@ export function CalendarPicker({
   const t = useDict();
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [calendars, setCalendars] = useState<GcalCalendarEntry[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(
     new Set(initialSelected.length > 0 ? initialSelected : ["primary"]),
   );
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  // Lazy-load on the first open (event-handler, not effect — avoids
-  // react-hooks/set-state-in-effect).
-  async function loadCalendars() {
-    if (calendars !== null) return;
-    setLoading(true);
-    try {
-      const r = await fetch("/api/calendar/list");
-      if (!r.ok) throw new Error(`status ${r.status}`);
-      const d = (await r.json()) as { calendars: GcalCalendarEntry[] };
-      setCalendars(d.calendars);
-    } catch {
-      toast.err(t.calendar.couldNotLoadCalendars);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Calendars load the first time the popover opens; React Query dedupes and
+  // keeps them for 5 min, so reopening is instant (no re-fetch per open).
+  const {
+    data: calendars,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: qk.calendarList,
+    queryFn: fetchCalendars,
+    enabled: open,
+    staleTime: 5 * 60_000,
+  });
 
-  function onOpenChange(next: boolean) {
-    setOpen(next);
-    if (next) void loadCalendars();
-  }
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/user/preferences", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ selected_calendar_ids: [...selected] }),
+      });
+      if (!res.ok) throw new Error("save failed");
+    },
+    onSuccess: () => {
+      toast.ok(t.calendar.selectionSaved);
+      setOpen(false);
+    },
+    onError: () => toast.err(t.calendar.couldNotSaveSelection),
+  });
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -57,33 +70,13 @@ export function CalendarPicker({
     });
   }
 
-  async function save() {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/user/preferences", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          selected_calendar_ids: [...selected],
-        }),
-      });
-      if (!res.ok) throw new Error("save failed");
-      toast.ok(t.calendar.selectionSaved);
-      setOpen(false);
-    } catch {
-      toast.err(t.calendar.couldNotSaveSelection);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const label =
     selected.size === 1 && selected.has("primary")
       ? t.calendar.primaryLabel
       : t.calendar.countSelected(selected.size);
 
   return (
-    <Popover.Root open={open} onOpenChange={onOpenChange}>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
           type="button"
@@ -103,17 +96,22 @@ export function CalendarPicker({
           <p className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-foreground-subtle">
             {t.calendar.calendarsToShow}
           </p>
-          {loading && (
+          {isLoading && (
             <p className="px-3 py-3 text-xs text-foreground-subtle">
               {t.calendar.loading}
             </p>
           )}
-          {!loading && calendars && calendars.length === 0 && (
+          {isError && (
+            <p className="px-3 py-3 text-xs text-foreground-subtle">
+              {t.calendar.couldNotLoadCalendars}
+            </p>
+          )}
+          {!isLoading && !isError && calendars?.length === 0 && (
             <p className="px-3 py-3 text-xs text-foreground-subtle">
               {t.calendar.noCalendarsFound}
             </p>
           )}
-          {!loading && calendars && (
+          {!isLoading && calendars && calendars.length > 0 && (
             <ul className="max-h-72 overflow-y-auto">
               {calendars.map((c) => {
                 const isOn = selected.has(c.primary ? "primary" : c.id);
@@ -157,8 +155,12 @@ export function CalendarPicker({
             <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
               {t.calendar.cancel}
             </Button>
-            <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? t.calendar.saving : t.calendar.save}
+            <Button
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? t.calendar.saving : t.calendar.save}
             </Button>
           </div>
         </Popover.Content>
