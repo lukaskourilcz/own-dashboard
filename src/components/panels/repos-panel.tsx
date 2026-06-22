@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -30,50 +30,40 @@ import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
 import {
   commitFile,
-  loadReposResult,
   normalizeRepoPath,
   type GithubCommitResult,
   type GithubRepo,
-  type LoadReposResult,
 } from "@/lib/github";
+import {
+  bumpRepoInCache,
+  setReposDisconnected,
+  useReposQuery,
+} from "@/lib/github-queries";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
+
+// Stable empty reference so the filter useMemo doesn't rerun every render.
+const EMPTY_REPOS: GithubRepo[] = [];
 
 export function ReposPanel() {
   const t = useDict();
   const toast = useToast();
-  const [status, setStatus] = useState<Status>("loading");
-  const [repos, setRepos] = useState<GithubRepo[]>([]);
+  const qc = useQueryClient();
+  const { data, isPending, isFetching, refetch } = useReposQuery();
   const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [writeTarget, setWriteTarget] = useState<GithubRepo | null>(null);
 
-  const apply = useCallback((r: LoadReposResult) => {
-    if (r.kind === "ok") {
-      setRepos(r.repos);
-      setStatus("connected");
-    } else {
-      setStatus(r.kind);
-    }
-  }, []);
-
-  // Load on mount. setState happens inside the .then callback (deferred), not
-  // synchronously in the effect body, so it stays clear of cascading renders.
-  useEffect(() => {
-    let active = true;
-    void loadReposResult().then((r) => {
-      if (active) apply(r);
-    });
-    return () => {
-      active = false;
-    };
-  }, [apply]);
-
-  const refresh = useCallback(() => {
-    setStatus("loading");
-    void loadReposResult().then(apply);
-  }, [apply]);
+  const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
+  const status: Status = isPending
+    ? "loading"
+    : data
+      ? data.kind === "ok"
+        ? "connected"
+        : data.kind
+      : "error";
 
   async function onConnect() {
     setConnecting(true);
@@ -92,8 +82,7 @@ export function ReposPanel() {
       const res = await fetch("/api/github/disconnect", { method: "POST" });
       if (res.ok) {
         toast.ok(t.github.disconnectOk);
-        setRepos([]);
-        setStatus("disconnected");
+        setReposDisconnected(qc);
       } else {
         toast.err(t.github.disconnectErr);
       }
@@ -103,24 +92,6 @@ export function ReposPanel() {
       setDisconnecting(false);
     }
   }
-
-  // Optimistically bump pushed_at after a commit and re-sort, so the repo the
-  // user just wrote to jumps to the top without a refetch.
-  const markCommitted = useCallback((repoId: number) => {
-    setRepos((prev) =>
-      [...prev]
-        .map((r) =>
-          r.id === repoId
-            ? { ...r, pushed_at: new Date().toISOString() }
-            : r,
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.pushed_at ?? 0).getTime() -
-            new Date(a.pushed_at ?? 0).getTime(),
-        ),
-    );
-  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -145,10 +116,13 @@ export function ReposPanel() {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={refresh}
+                  onClick={() => refetch()}
+                  disabled={isFetching}
                   aria-label={t.github.refresh}
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw
+                    className={"h-3.5 w-3.5" + (isFetching ? " animate-spin" : "")}
+                  />
                 </Button>
               </Tooltip>
               <Button
@@ -178,7 +152,7 @@ export function ReposPanel() {
           icon={GithubIcon}
           title={t.github.loadErr}
           action={
-            <Button variant="outline" size="sm" onClick={refresh}>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-3.5 w-3.5" />
               {t.github.refresh}
             </Button>
@@ -235,11 +209,8 @@ export function ReposPanel() {
         key={writeTarget?.id ?? "none"}
         repo={writeTarget}
         onClose={() => setWriteTarget(null)}
-        onCommitted={markCommitted}
-        onAuthLost={() => {
-          setRepos([]);
-          setStatus("disconnected");
-        }}
+        onCommitted={(repoId) => bumpRepoInCache(qc, repoId)}
+        onAuthLost={() => setReposDisconnected(qc)}
       />
     </div>
   );

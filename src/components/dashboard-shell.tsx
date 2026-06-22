@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
@@ -109,6 +110,17 @@ export function DashboardShell({
   selectedCalendarIds,
 }: Props) {
   const [tab, setTab] = useState<NavTab>("overview");
+  // One QueryClient per shell mount — stable across re-renders. Powers the
+  // GitHub repo queries (shared between the Repositories panel and the
+  // "Publish to repo" dialog).
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: 1, refetchOnWindowFocus: false },
+        },
+      }),
+  );
   const { collapsed: navCollapsed } = useNavCollapsed();
   const [subscriptions, setSubscriptions] =
     useState<Subscription[]>(initialSubscriptions);
@@ -190,6 +202,7 @@ export function DashboardShell({
   }, []);
 
   return (
+    <QueryClientProvider client={queryClient}>
     <MotionConfig reducedMotion="user">
       <TooltipProvider>
       <ToastProvider>
@@ -422,5 +435,6 @@ export function DashboardShell({
       </ToastProvider>
       </TooltipProvider>
     </MotionConfig>
+    </QueryClientProvider>
   );
 }
