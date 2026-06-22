@@ -29,6 +29,7 @@ import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
 import { useEntityStore } from "@/lib/queries/entities";
+import { fetchTodos } from "@/lib/queries/fetchers";
 import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type {
@@ -119,7 +120,7 @@ export function DashboardShell({
     qk.subscriptions,
     initialSubscriptions,
   );
-  const [todos, setTodos] = useEntityStore(qk.todos, initialTodos);
+  const [todos, setTodos] = useEntityStore(qk.todos, initialTodos, fetchTodos);
   const [streaks, setStreaks] = useEntityStore(qk.streaks, initialStreaks);
   const [streakLogs, setStreakLogs] = useEntityStore(
     qk.streakLogs,
@@ -297,7 +298,6 @@ export function DashboardShell({
                           todos: (
                             <TodosPanel
                               todos={todos}
-                              setTodos={setTodos}
                               compact
                               partnerTodos={partnerTodos}
                               partnerName={partnerName}
@@ -354,7 +354,6 @@ export function DashboardShell({
                   {tab === "todos" && (
                     <TodosPanel
                       todos={todos}
-                      setTodos={setTodos}
                       partnerTodos={partnerTodos}
                       partnerName={partnerName}
                     />
