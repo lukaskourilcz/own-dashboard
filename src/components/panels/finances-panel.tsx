@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
   Bar,
@@ -42,6 +43,7 @@ import {
   netWorth,
 } from "@/lib/finances";
 import { todayKey } from "@/lib/date-keys";
+import { qk } from "@/lib/queries/keys";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
@@ -87,6 +89,7 @@ export function FinancesPanel({
   displayCurrency: string;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const t = useDict();
   const locale = useDateLocale();
   const [txForm, setTxForm] = useState<TxForm>(emptyTx);
@@ -125,71 +128,163 @@ export function FinancesPanel({
     ).map((c) => ({ ...c, name: labelFor(c.name) }));
   }, [transactions, subscriptions, displayCurrency, t]);
 
-  async function addTx(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!txForm.amount || Number(txForm.amount) <= 0) {
-      setError(t.finances.amountRequired);
-      return;
-    }
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) return;
-    const { data, error } = await supabase
-      .from("transactions")
-      .insert({
-        user_id: userId,
-        account_id: txForm.account_id || null,
-        kind: txForm.kind,
-        amount: Number(txForm.amount),
-        currency: txForm.currency,
-        category: txForm.category.trim() || null,
-        note: txForm.note.trim() || null,
-        occurred_on: txForm.occurred_on,
-      })
-      .select()
-      .single();
-    if (error || !data) {
-      setError(error?.message ?? t.finances.amountRequired);
-      return;
-    }
-    setTransactions((prev) => [data, ...prev]);
-    setTxForm({ ...emptyTx, currency: txForm.currency });
-  }
+  // CREATE transaction: needs the server-generated id, so apply state in
+  // onSuccess (non-optimistic). Validation stays in the submit handler.
+  const addTxMutation = useMutation({
+    mutationFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data, error } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          account_id: txForm.account_id || null,
+          kind: txForm.kind,
+          amount: Number(txForm.amount),
+          currency: txForm.currency,
+          category: txForm.category.trim() || null,
+          note: txForm.note.trim() || null,
+          occurred_on: txForm.occurred_on,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Transaction;
+    },
+    onSuccess: (tx) => {
+      setTransactions((prev) => [tx, ...prev]);
+      setTxForm({ ...emptyTx, currency: txForm.currency });
+      void qc.invalidateQueries({ queryKey: qk.transactions });
+    },
+    onError: (e: unknown) => {
+      setError(
+        e instanceof Error ? e.message : t.finances.amountRequired,
+      );
+    },
+  });
 
-  async function removeTx(id: string) {
-    const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (!error) setTransactions((prev) => prev.filter((tx) => tx.id !== id));
-  }
+  // Optimistic delete: drop the row from the cache immediately, roll back on
+  // error, reconcile via invalidate once settled.
+  const removeTxMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.transactions });
+      const prev = qc.getQueryData<Transaction[]>(qk.transactions);
+      setTransactions((old) => old.filter((tx) => tx.id !== id));
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) setTransactions(ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.transactions }),
+  });
 
-  async function addAccount(e: React.FormEvent) {
-    e.preventDefault();
-    if (!acctForm.name.trim()) return;
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) return;
-    const { data, error } = await supabase
-      .from("accounts")
-      .insert({
-        user_id: userId,
-        name: acctForm.name.trim(),
-        balance: Number(acctForm.balance || 0),
-        currency: acctForm.currency,
-      })
-      .select()
-      .single();
-    if (!error && data) {
-      setAccounts((prev) => [...prev, data]);
+  // CREATE account: needs the server-generated id, so apply state in onSuccess.
+  const addAccountMutation = useMutation({
+    mutationFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data, error } = await supabase
+        .from("accounts")
+        .insert({
+          user_id: userId,
+          name: acctForm.name.trim(),
+          balance: Number(acctForm.balance || 0),
+          currency: acctForm.currency,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Account;
+    },
+    onSuccess: (account) => {
+      setAccounts((prev) => [...prev, account]);
       setAcctForm(emptyAccount);
-    }
-  }
+      void qc.invalidateQueries({ queryKey: qk.accounts });
+    },
+  });
 
   function startEditAccount(a: Account) {
     setEditingAcct(a.id);
     setEditBuf({ name: a.name, balance: String(a.balance) });
   }
 
-  async function saveAccount(id: string) {
+  // Optimistic update: the patch is applied to the cache before the await, so
+  // snapshot first and roll back on error.
+  const saveAccountMutation = useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: { name: string; balance: number; updated_at: string };
+    }) => {
+      const { error } = await supabase
+        .from("accounts")
+        .update(patch)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, patch }) => {
+      await qc.cancelQueries({ queryKey: qk.accounts });
+      const prev = qc.getQueryData<Account[]>(qk.accounts);
+      setAccounts((old) =>
+        old.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+      );
+      setEditingAcct(null);
+      return { prev };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prev) setAccounts(ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.accounts }),
+  });
+
+  // Optimistic delete: drop the account from the cache immediately.
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("accounts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.accounts });
+      const prev = qc.getQueryData<Account[]>(qk.accounts);
+      setAccounts((old) => old.filter((a) => a.id !== id));
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) setAccounts(ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.accounts }),
+  });
+
+  function addTx(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!txForm.amount || Number(txForm.amount) <= 0) {
+      setError(t.finances.amountRequired);
+      return;
+    }
+    addTxMutation.mutate();
+  }
+
+  const removeTx = (id: string) => removeTxMutation.mutate(id);
+
+  function addAccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!acctForm.name.trim()) return;
+    addAccountMutation.mutate();
+  }
+
+  function saveAccount(id: string) {
     const balance = Number(editBuf.balance);
     if (Number.isNaN(balance)) return;
     const patch = {
@@ -197,25 +292,10 @@ export function FinancesPanel({
       balance,
       updated_at: new Date().toISOString(),
     };
-    setAccounts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
-    );
-    setEditingAcct(null);
-    const { error } = await supabase.from("accounts").update(patch).eq("id", id);
-    if (error) {
-      const { data } = await supabase
-        .from("accounts")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (data) setAccounts((prev) => prev.map((a) => (a.id === id ? data : a)));
-    }
+    saveAccountMutation.mutate({ id, patch });
   }
 
-  async function deleteAccount(id: string) {
-    const { error } = await supabase.from("accounts").delete().eq("id", id);
-    if (!error) setAccounts((prev) => prev.filter((a) => a.id !== id));
-  }
+  const deleteAccount = (id: string) => deleteAccountMutation.mutate(id);
 
   return (
     <div>

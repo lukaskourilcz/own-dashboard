@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Pencil, Plus, Trash2 } from "lucide-react";
@@ -15,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import { buildOccurrences } from "@/lib/important-dates";
 import { todayKey } from "@/lib/date-keys";
 import { cn } from "@/lib/utils";
@@ -65,19 +67,15 @@ export function ImportantDatesPanel({
   ctx: CoupleContext;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
   const locale = useDateLocale();
   const [form, setForm] = useState<FormState>(empty);
   const occurrences = useMemo(() => buildOccurrences(dates), [dates]);
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.title.trim() || !form.the_date) {
-      toast.err(t.dates.titleAndDateRequired);
-      return;
-    }
-    const payload = {
+  function buildPayload() {
+    return {
       user_id: userId,
       couple_id: form.shareWithPartner && ctx.couple ? ctx.couple.id : null,
       title: form.title.trim(),
@@ -87,34 +85,87 @@ export function ImportantDatesPanel({
       emoji: form.emoji.trim() || null,
       notes: form.notes.trim() || null,
     };
+  }
 
-    if (form.id) {
+  const addMutation = useMutation({
+    mutationFn: async () => {
       const { data, error } = await supabase
         .from("important_dates")
-        .update(payload)
-        .eq("id", form.id)
+        .insert(buildPayload())
         .select()
         .single();
-      if (error || !data) {
-        toast.err(error?.message ?? t.dates.couldNotSave);
-        return;
-      }
-      setDates((prev) => prev.map((d) => (d.id === data.id ? data : d)));
-      toast.ok(t.dates.updated);
-    } else {
-      const { data, error } = await supabase
-        .from("important_dates")
-        .insert(payload)
-        .select()
-        .single();
-      if (error || !data) {
-        toast.err(error?.message ?? t.dates.couldNotSave);
-        return;
-      }
+      if (error || !data) throw error ?? new Error(t.dates.couldNotSave);
+      return data as ImportantDate;
+    },
+    onSuccess: (data) => {
       setDates((prev) => [data, ...prev]);
       toast.ok(t.dates.added(data.title));
+      setForm(empty);
+      void qc.invalidateQueries({ queryKey: qk.importantDates });
+    },
+    onError: (e) => {
+      toast.err(e instanceof Error ? e.message : t.dates.couldNotSave);
+    },
+  });
+
+  // Update applies post-success in the original: write to the cache in
+  // onSuccess, then reconcile with the DB via invalidate.
+  const updateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("important_dates")
+        .update(buildPayload())
+        .eq("id", id)
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error(t.dates.couldNotSave);
+      return data as ImportantDate;
+    },
+    onSuccess: (data) => {
+      setDates((prev) => prev.map((d) => (d.id === data.id ? data : d)));
+      toast.ok(t.dates.updated);
+      setForm(empty);
+      void qc.invalidateQueries({ queryKey: qk.importantDates });
+    },
+    onError: (e) => {
+      toast.err(e instanceof Error ? e.message : t.dates.couldNotSave);
+    },
+  });
+
+  // Optimistic delete: drop from the cache immediately, roll back on error,
+  // reconcile with the DB via invalidate once settled.
+  const removeMutation = useMutation({
+    mutationFn: async (d: ImportantDate) => {
+      const { error } = await supabase
+        .from("important_dates")
+        .delete()
+        .eq("id", d.id);
+      if (error) throw error;
+    },
+    onMutate: async (d) => {
+      await qc.cancelQueries({ queryKey: qk.importantDates });
+      const prev = qc.getQueryData<ImportantDate[]>(qk.importantDates);
+      setDates((old) => old.filter((x) => x.id !== d.id));
+      return { prev };
+    },
+    onError: (e, _d, ctx) => {
+      if (ctx?.prev) setDates(ctx.prev);
+      toast.err(e instanceof Error ? e.message : t.dates.couldNotSave);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.importantDates }),
+  });
+
+  function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.title.trim() || !form.the_date) {
+      toast.err(t.dates.titleAndDateRequired);
+      return;
     }
-    setForm(empty);
+    if (form.id) {
+      updateMutation.mutate(form.id);
+    } else {
+      addMutation.mutate();
+    }
   }
 
   function startEdit(d: ImportantDate) {
@@ -130,17 +181,7 @@ export function ImportantDatesPanel({
     });
   }
 
-  async function remove(d: ImportantDate) {
-    setDates((prev) => prev.filter((x) => x.id !== d.id));
-    const { error } = await supabase
-      .from("important_dates")
-      .delete()
-      .eq("id", d.id);
-    if (error) {
-      setDates((prev) => [d, ...prev]);
-      toast.err(error.message);
-    }
-  }
+  const remove = (d: ImportantDate) => removeMutation.mutate(d);
 
   return (
     <div>

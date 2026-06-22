@@ -29,7 +29,22 @@ import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
 import { useEntityStore } from "@/lib/queries/entities";
-import { fetchTodos } from "@/lib/queries/fetchers";
+import {
+  fetchAccounts,
+  fetchBookPages,
+  fetchBooks,
+  fetchImportantDates,
+  fetchInvoiceItems,
+  fetchInvoiceSettings,
+  fetchInvoices,
+  fetchNotes,
+  fetchPlans,
+  fetchStreakLogs,
+  fetchStreaks,
+  fetchSubscriptions,
+  fetchTodos,
+  fetchTransactions,
+} from "@/lib/queries/fetchers";
 import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type {
@@ -119,38 +134,57 @@ export function DashboardShell({
   const [subscriptions, setSubscriptions] = useEntityStore(
     qk.subscriptions,
     initialSubscriptions,
+    fetchSubscriptions,
   );
   const [todos, setTodos] = useEntityStore(qk.todos, initialTodos, fetchTodos);
-  const [streaks, setStreaks] = useEntityStore(qk.streaks, initialStreaks);
+  const [streaks, setStreaks] = useEntityStore(
+    qk.streaks,
+    initialStreaks,
+    fetchStreaks,
+  );
   const [streakLogs, setStreakLogs] = useEntityStore(
     qk.streakLogs,
     initialStreakLogs,
+    fetchStreakLogs,
   );
-  const [accounts, setAccounts] = useEntityStore(qk.accounts, initialAccounts);
+  const [accounts, setAccounts] = useEntityStore(
+    qk.accounts,
+    initialAccounts,
+    fetchAccounts,
+  );
   const [transactions, setTransactions] = useEntityStore(
     qk.transactions,
     initialTransactions,
+    fetchTransactions,
   );
-  const [plans, setPlans] = useEntityStore(qk.plans, initialPlans);
-  const [books, setBooks] = useEntityStore(qk.books, initialBooks);
+  const [plans, setPlans] = useEntityStore(qk.plans, initialPlans, fetchPlans);
+  const [books, setBooks] = useEntityStore(qk.books, initialBooks, fetchBooks);
   const [bookPages, setBookPages] = useEntityStore(
     qk.bookPages,
     initialBookPages,
+    fetchBookPages,
   );
-  const [notes, setNotes] = useEntityStore(qk.notes, initialNotes);
+  const [notes, setNotes] = useEntityStore(qk.notes, initialNotes, fetchNotes);
   const [importantDates, setImportantDates] = useEntityStore(
     qk.importantDates,
     initialImportantDates,
+    fetchImportantDates,
   );
-  const [invoices, setInvoices] = useEntityStore(qk.invoices, initialInvoices);
+  const [invoices, setInvoices] = useEntityStore(
+    qk.invoices,
+    initialInvoices,
+    fetchInvoices,
+  );
   const [invoiceItems, setInvoiceItems] = useEntityStore(
     qk.invoiceItems,
     initialInvoiceItems,
+    fetchInvoiceItems,
   );
   const [invoiceSettings, setInvoiceSettings] =
     useEntityStore<InvoiceSettings | null>(
       qk.invoiceSettings,
       initialInvoiceSettings,
+      fetchInvoiceSettings,
     );
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } =
     useDisplayCurrency();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
   Check,
@@ -24,6 +25,7 @@ import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDetail } from "@/components/invoices/invoice-detail";
 import { SupplierSettings } from "@/components/invoices/supplier-settings";
 import { createClient } from "@/lib/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import { todayKey } from "@/lib/date-keys";
 import { convert } from "@/lib/fx";
 import { computeTotals, effectiveStatus } from "@/lib/invoices";
@@ -71,6 +73,7 @@ export function InvoicesPanel({
   displayCurrency: string;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
   const [view, setView] = useState<View>({ mode: "list" });
@@ -162,33 +165,79 @@ export function InvoicesPanel({
     return { outstanding, overdue, paid, outstandingCount, overdueCount };
   }, [invoices, totalsById]);
 
-  async function setPaid(inv: Invoice, paid: boolean) {
-    const patch = paid
-      ? { status: "paid" as const, paid_on: todayKey() }
-      : { status: "issued" as const, paid_on: null };
-    setInvoices((prev) =>
-      prev.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)),
-    );
-    const { error } = await supabase
-      .from("invoices")
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq("id", inv.id);
-    if (error) {
-      setInvoices((prev) => prev.map((i) => (i.id === inv.id ? inv : i)));
-      toast.err(error.message);
-      return;
-    }
-    toast.ok(paid ? t.invoices.markedPaidToast : t.invoices.markedUnpaidToast);
+  // Optimistic: flip status in the cache before the await, roll back on error,
+  // reconcile via invalidate once settled.
+  const setPaidMutation = useMutation({
+    mutationFn: async ({ inv, paid }: { inv: Invoice; paid: boolean }) => {
+      const patch = paid
+        ? { status: "paid" as const, paid_on: todayKey() }
+        : { status: "issued" as const, paid_on: null };
+      const { error } = await supabase
+        .from("invoices")
+        .update({ ...patch, updated_at: new Date().toISOString() })
+        .eq("id", inv.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ inv, paid }) => {
+      await qc.cancelQueries({ queryKey: qk.invoices });
+      const prev = qc.getQueryData<Invoice[]>(qk.invoices);
+      const patch = paid
+        ? { status: "paid" as const, paid_on: todayKey() }
+        : { status: "issued" as const, paid_on: null };
+      setInvoices((old) =>
+        old.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)),
+      );
+      return { prev };
+    },
+    onError: (error, _vars, ctx) => {
+      if (ctx?.prev) setInvoices(ctx.prev);
+      toast.err((error as Error).message);
+    },
+    onSuccess: (_data, { paid }) => {
+      toast.ok(paid ? t.invoices.markedPaidToast : t.invoices.markedUnpaidToast);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.invoices }),
+  });
+
+  function setPaid(inv: Invoice, paid: boolean) {
+    setPaidMutation.mutate({ inv, paid });
   }
 
-  async function remove(inv: Invoice) {
+  // Optimistic delete: drop the invoice and its items from the cache before the
+  // await; the DB cascade removes the items server-side.
+  const removeMutation = useMutation({
+    mutationFn: async (inv: Invoice) => {
+      const { error } = await supabase
+        .from("invoices")
+        .delete()
+        .eq("id", inv.id);
+      if (error) throw error;
+    },
+    onMutate: async (inv) => {
+      await qc.cancelQueries({ queryKey: qk.invoices });
+      await qc.cancelQueries({ queryKey: qk.invoiceItems });
+      const prevInvoices = qc.getQueryData<Invoice[]>(qk.invoices);
+      const prevItems = qc.getQueryData<InvoiceItem[]>(qk.invoiceItems);
+      setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
+      setItems((prev) => prev.filter((i) => i.invoice_id !== inv.id));
+      setView({ mode: "list" });
+      return { prevInvoices, prevItems };
+    },
+    onError: (error, _inv, ctx) => {
+      if (ctx?.prevInvoices) setInvoices(ctx.prevInvoices);
+      if (ctx?.prevItems) setItems(ctx.prevItems);
+      toast.err((error as Error).message);
+    },
+    onSuccess: () => toast.ok(t.invoices.deletedToast),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.invoices });
+      void qc.invalidateQueries({ queryKey: qk.invoiceItems });
+    },
+  });
+
+  function remove(inv: Invoice) {
     if (!window.confirm(t.invoices.deleteConfirm(inv.number))) return;
-    setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
-    setItems((prev) => prev.filter((i) => i.invoice_id !== inv.id));
-    setView({ mode: "list" });
-    const { error } = await supabase.from("invoices").delete().eq("id", inv.id);
-    if (error) toast.err(error.message);
-    else toast.ok(t.invoices.deletedToast);
+    removeMutation.mutate(inv);
   }
 
   // ── Sub-views ────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import { motion } from "framer-motion";
 import { Bell, Flame, Heart, Plus, Trash2 } from "lucide-react";
@@ -22,6 +23,7 @@ import {
   logsByStreak as groupLogs,
 } from "@/lib/streaks";
 import { todayKey, parseDateOnly } from "@/lib/date-keys";
+import { qk } from "@/lib/queries/keys";
 import { StreakHeatmap } from "@/components/panels/streak-heatmap";
 
 let tentativeLogCounter = 0;
@@ -55,49 +57,142 @@ export function StreaksPanel({
   partnerName?: string;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const t = useDict();
   const locale = useDateLocale();
   const [name, setName] = useState("");
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
   const [reminder, setReminder] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const logsByStreak = useMemo(() => groupLogs(logs), [logs]);
 
-  async function addStreak(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) {
-      setSaving(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("streaks")
-      .insert({
-        name: name.trim(),
-        color,
-        reminder_time: reminder || null,
-        user_id: userId,
-      })
-      .select()
-      .single();
-    if (!error && data) {
-      setStreaks((prev) => [...prev, data]);
+  // Create needs the server-generated id, so it stays non-optimistic:
+  // apply the new row in onSuccess, reset inputs, then reconcile via invalidate.
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data, error } = await supabase
+        .from("streaks")
+        .insert({
+          name: name.trim(),
+          color,
+          reminder_time: reminder || null,
+          user_id: userId,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Streak;
+    },
+    onSuccess: (streak) => {
+      setStreaks((prev) => [...prev, streak]);
       setName("");
       setReminder("");
-    }
-    setSaving(false);
-  }
+      void qc.invalidateQueries({ queryKey: qk.streaks });
+    },
+  });
 
-  async function removeStreak(id: string) {
-    const { error } = await supabase.from("streaks").delete().eq("id", id);
-    if (!error) {
+  // Optimistic delete: drop the streak (and its logs) from the cache
+  // immediately, roll back on error, reconcile both keys once settled.
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("streaks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.streaks });
+      await qc.cancelQueries({ queryKey: qk.streakLogs });
+      const prevStreaks = qc.getQueryData<Streak[]>(qk.streaks);
+      const prevLogs = qc.getQueryData<StreakLog[]>(qk.streakLogs);
       setStreaks((prev) => prev.filter((s) => s.id !== id));
       setLogs((prev) => prev.filter((l) => l.streak_id !== id));
-    }
+      return { prevStreaks, prevLogs };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prevStreaks) setStreaks(ctx.prevStreaks);
+      if (ctx?.prevLogs) setLogs(ctx.prevLogs);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.streaks });
+      void qc.invalidateQueries({ queryKey: qk.streakLogs });
+    },
+  });
+
+  // Marking/unmarking a day is an insert/delete in streak_logs. The cache is
+  // updated optimistically before the await, so this mirrors the todos toggle:
+  // snapshot in onMutate, roll back on error, reconcile via invalidate.
+  const toggleMutation = useMutation({
+    mutationFn: async ({
+      streak,
+      existing,
+      userId,
+      date,
+    }: {
+      streak: Streak;
+      existing: StreakLog | undefined;
+      userId: string;
+      date: string;
+    }) => {
+      if (existing) {
+        const { error } = await supabase
+          .from("streak_logs")
+          .delete()
+          .eq("id", existing.id);
+        if (error) throw error;
+        return undefined;
+      }
+      const { data, error } = await supabase
+        .from("streak_logs")
+        .insert({ streak_id: streak.id, user_id: userId, log_date: date })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as StreakLog;
+    },
+    onMutate: async ({ existing, streak, userId, date }) => {
+      await qc.cancelQueries({ queryKey: qk.streakLogs });
+      const prev = qc.getQueryData<StreakLog[]>(qk.streakLogs);
+      if (existing) {
+        setLogs((old) => old.filter((l) => l.id !== existing.id));
+        return { prev, tentativeId: undefined };
+      }
+      const tentativeId = `tmp-${++tentativeLogCounter}`;
+      const tentative: StreakLog = {
+        id: tentativeId,
+        streak_id: streak.id,
+        user_id: userId,
+        log_date: date,
+        created_at: "",
+      };
+      setLogs((old) => [...old, tentative]);
+      return { prev, tentativeId };
+    },
+    onSuccess: (data, _vars, ctx) => {
+      // Insert resolved: swap the tentative row for the server one.
+      if (data && ctx?.tentativeId) {
+        setLogs((old) =>
+          old.map((l) => (l.id === ctx.tentativeId ? data : l)),
+        );
+      }
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prev) setLogs(ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.streakLogs }),
+  });
+
+  const saving = addMutation.isPending;
+
+  function addStreak(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    addMutation.mutate();
+  }
+
+  function removeStreak(id: string) {
+    removeMutation.mutate(id);
   }
 
   async function toggleToday(streak: Streak) {
@@ -108,37 +203,7 @@ export function StreaksPanel({
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
     if (!userId) return;
-
-    if (existing) {
-      setLogs((prev) => prev.filter((l) => l.id !== existing.id));
-      const { error } = await supabase
-        .from("streak_logs")
-        .delete()
-        .eq("id", existing.id);
-      if (error) setLogs((prev) => [...prev, existing]);
-    } else {
-      const tentativeId = `tmp-${++tentativeLogCounter}`;
-      const tentative: StreakLog = {
-        id: tentativeId,
-        streak_id: streak.id,
-        user_id: userId,
-        log_date: date,
-        created_at: "",
-      };
-      setLogs((prev) => [...prev, tentative]);
-      const { data, error } = await supabase
-        .from("streak_logs")
-        .insert({ streak_id: streak.id, user_id: userId, log_date: date })
-        .select()
-        .single();
-      if (error || !data) {
-        setLogs((prev) => prev.filter((l) => l.id !== tentativeId));
-      } else {
-        setLogs((prev) =>
-          prev.map((l) => (l.id === tentativeId ? data : l)),
-        );
-      }
-    }
+    toggleMutation.mutate({ streak, existing, userId, date });
   }
 
   const stripDays = useMemo(

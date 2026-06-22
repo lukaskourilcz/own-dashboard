@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from "recharts";
 import {
   CalendarClock,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/subscriptions";
 import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { qk } from "@/lib/queries/keys";
 import type { Subscription, Updater } from "@/lib/types";
 
 type FormState = {
@@ -66,9 +68,9 @@ export function SubscriptionsPanel({
   compact?: boolean;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const t = useDict();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const chartData = useMemo(
@@ -86,6 +88,98 @@ export function SubscriptionsPanel({
   const renewals = useMemo(() => upcomingRenewals(subs, 30), [subs]);
   const activeCount = subs.filter(isActive).length;
 
+  type SubPayload = {
+    name: string;
+    amount: number;
+    currency: string;
+    billing_cycle: FormState["billing_cycle"];
+    category: string | null;
+    next_billing_date: string | null;
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async (vars: { payload: SubPayload; userId: string }) => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .insert({ ...vars.payload, user_id: vars.userId })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Subscription;
+    },
+    onSuccess: (sub) => {
+      setSubs((prev) => [sub, ...prev]);
+      setForm(emptyForm);
+      void qc.invalidateQueries({ queryKey: qk.subscriptions });
+    },
+    onError: (e) => {
+      setError((e as Error).message);
+      setForm(emptyForm);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (vars: { id: string; payload: SubPayload }) => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .update({ ...vars.payload, updated_at: new Date().toISOString() })
+        .eq("id", vars.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Subscription;
+    },
+    onSuccess: (sub) => {
+      setSubs((prev) => prev.map((s) => (s.id === sub.id ? sub : s)));
+      setForm(emptyForm);
+      void qc.invalidateQueries({ queryKey: qk.subscriptions });
+    },
+    onError: (e) => {
+      setError((e as Error).message);
+      setForm(emptyForm);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("subscriptions")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, id) => {
+      setSubs((prev) => prev.filter((s) => s.id !== id));
+      void qc.invalidateQueries({ queryKey: qk.subscriptions });
+    },
+  });
+
+  // Optimistic toggle: flip is_active in the cache immediately, roll back on
+  // error, reconcile with the DB via invalidate once settled.
+  const toggleMutation = useMutation({
+    mutationFn: async (vars: { sub: Subscription; next: boolean }) => {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ is_active: vars.next, updated_at: new Date().toISOString() })
+        .eq("id", vars.sub.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ sub, next }) => {
+      await qc.cancelQueries({ queryKey: qk.subscriptions });
+      const prev = qc.getQueryData<Subscription[]>(qk.subscriptions);
+      setSubs((old) =>
+        old.map((s) => (s.id === sub.id ? { ...s, is_active: next } : s)),
+      );
+      return { prev };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prev) setSubs(ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
+  });
+
+  const saving = createMutation.isPending || updateMutation.isPending;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -93,8 +187,7 @@ export function SubscriptionsPanel({
       setError(t.subscriptions.nameAndAmountRequired);
       return;
     }
-    setSaving(true);
-    const payload = {
+    const payload: SubPayload = {
       name: form.name.trim(),
       amount: Number(form.amount),
       currency: form.currency,
@@ -106,50 +199,22 @@ export function SubscriptionsPanel({
     const userId = userData.user?.id;
     if (!userId) {
       setError(t.quickAdd.signInFirst);
-      setSaving(false);
       return;
     }
     if (form.id) {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .update({ ...payload, updated_at: new Date().toISOString() })
-        .eq("id", form.id)
-        .select()
-        .single();
-      if (error) setError(error.message);
-      else setSubs((prev) => prev.map((s) => (s.id === data!.id ? data! : s)));
+      updateMutation.mutate({ id: form.id, payload });
     } else {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .insert({ ...payload, user_id: userId })
-        .select()
-        .single();
-      if (error) setError(error.message);
-      else if (data) setSubs((prev) => [data, ...prev]);
+      createMutation.mutate({ payload, userId });
     }
-    setSaving(false);
-    setForm(emptyForm);
   }
 
-  async function handleDelete(id: string) {
-    const { error } = await supabase.from("subscriptions").delete().eq("id", id);
-    if (!error) setSubs((prev) => prev.filter((s) => s.id !== id));
+  function handleDelete(id: string) {
+    deleteMutation.mutate(id);
   }
 
-  async function toggleActive(sub: Subscription) {
+  function toggleActive(sub: Subscription) {
     const next = !isActive(sub);
-    setSubs((prev) =>
-      prev.map((s) => (s.id === sub.id ? { ...s, is_active: next } : s)),
-    );
-    const { error } = await supabase
-      .from("subscriptions")
-      .update({ is_active: next, updated_at: new Date().toISOString() })
-      .eq("id", sub.id);
-    if (error) {
-      setSubs((prev) =>
-        prev.map((s) => (s.id === sub.id ? { ...s, is_active: !next } : s)),
-      );
-    }
+    toggleMutation.mutate({ sub, next });
   }
 
   function startEdit(sub: Subscription) {

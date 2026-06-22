@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Building2, Save, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { useDict } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -147,10 +149,10 @@ export function SupplierSettings({
   onBack: () => void;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
   const [form, setForm] = useState<Form>(() => fromSettings(settings));
-  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof Form>(key: K, value: Form[K]) {
@@ -176,9 +178,34 @@ export function SupplierSettings({
     }
   }
 
-  async function save(e: React.FormEvent) {
+  // Settings upsert — a single row that needs the server's canonical copy back,
+  // so it's non-optimistic: the cache is updated in onSuccess (via onSaved,
+  // which is the panel's setSettings) and then qk.invoiceSettings is invalidated.
+  const saveMutation = useMutation({
+    mutationFn: async (row: Record<string, unknown>) => {
+      const { data, error } = await supabase
+        .from("invoice_settings")
+        .upsert(row)
+        .select()
+        .single();
+      if (error || !data) {
+        throw new Error(error?.message ?? t.invoices.errorToast);
+      }
+      return data as InvoiceSettings;
+    },
+    onSuccess: (data) => {
+      onSaved(data);
+      void qc.invalidateQueries({ queryKey: qk.invoiceSettings });
+      toast.ok(t.invoices.savedSettingsToast);
+      onBack();
+    },
+    onError: (error) => toast.err((error as Error).message),
+  });
+
+  const saving = saveMutation.isPending;
+
+  function save(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     const row = {
       user_id: userId,
       supplier_name: form.supplier_name.trim(),
@@ -197,19 +224,7 @@ export function SupplierSettings({
       logo: form.logo || null,
       updated_at: new Date().toISOString(),
     };
-    const { data, error } = await supabase
-      .from("invoice_settings")
-      .upsert(row)
-      .select()
-      .single();
-    setSaving(false);
-    if (error || !data) {
-      toast.err(error?.message ?? t.invoices.errorToast);
-      return;
-    }
-    onSaved(data);
-    toast.ok(t.invoices.savedSettingsToast);
-    onBack();
+    saveMutation.mutate(row);
   }
 
   return (

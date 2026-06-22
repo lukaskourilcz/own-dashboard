@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -49,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Note, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -114,6 +116,7 @@ function safeFilename(title: string): string {
 
 export function NotesPanel({ notes, setNotes }: Props) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
   const locale = useDateLocale();
@@ -179,63 +182,140 @@ export function NotesPanel({ notes, setNotes }: Props) {
     ? notes.find((n) => n.id === effectiveId) ?? null
     : null;
 
+  // CREATE — non-optimistic. The insert returns the row; we prepend it and
+  // select it in onSuccess, then invalidate to reconcile with the server.
+  const createMutation = useMutation({
+    mutationFn: async (vars: { content: unknown; title: string }) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      // Place new notes above every existing one in their bucket.
+      const topSortOrder = Math.max(0, ...notes.map((n) => n.sort_order ?? 0));
+      const { data, error } = await supabase
+        .from("notes")
+        .insert({
+          user_id: userId,
+          title: vars.title,
+          content: vars.content,
+          tags: [],
+          sort_order: topSortOrder + 1,
+        })
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as Note;
+    },
+    onSuccess: (note) => {
+      setNotes((prev) => [note, ...prev]);
+      setSelectedId(note.id);
+      void qc.invalidateQueries({ queryKey: qk.notes });
+    },
+  });
+
   async function createNote(seedContent?: unknown, seedTitle?: string) {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) {
-      toast.err(t.notes.signInFirst);
-      return null;
-    }
-    // Place new notes above every existing one in their bucket.
-    const topSortOrder = Math.max(
-      0,
-      ...notes.map((n) => n.sort_order ?? 0),
-    );
-    const { data, error } = await supabase
-      .from("notes")
-      .insert({
-        user_id: userId,
-        title: seedTitle ?? t.notes.untitled,
+    try {
+      return await createMutation.mutateAsync({
         content: seedContent ?? [],
-        tags: [],
-        sort_order: topSortOrder + 1,
-      })
-      .select()
-      .single();
-    if (error || !data) {
-      toast.err(error?.message ?? t.notes.couldNotCreateNote);
+        title: seedTitle ?? t.notes.untitled,
+      });
+    } catch (err) {
+      if ((err as Error)?.message === "no-user") {
+        toast.err(t.notes.signInFirst);
+      } else {
+        toast.err((err as Error)?.message ?? t.notes.couldNotCreateNote);
+      }
       return null;
     }
-    setNotes((prev) => [data as Note, ...prev]);
-    setSelectedId(data.id);
-    return data as Note;
   }
+
+  // DELETE — optimistic (row removed before the await in the original).
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.notes });
+      const prev = qc.getQueryData<Note[]>(qk.notes);
+      setNotes((old) => old.filter((n) => n.id !== id));
+      if (selectedId === id) setSelectedId(null);
+      return { prev };
+    },
+    onError: (e, _id, ctx) => {
+      if (ctx?.prev) setNotes(ctx.prev);
+      toast.err((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.notes }),
+  });
 
   async function deleteNote(id: string) {
     const ok = window.confirm(t.notes.deleteConfirm);
     if (!ok) return;
-    setNotes((prev) => prev.filter((n) => n.id !== id));
-    if (selectedId === id) setSelectedId(null);
-    const { error } = await supabase.from("notes").delete().eq("id", id);
-    if (error) toast.err(error.message);
+    deleteMutation.mutate(id);
   }
 
-  async function togglePin(note: Note) {
-    const next = !note.is_pinned;
-    setNotes((prev) =>
-      prev.map((n) => (n.id === note.id ? { ...n, is_pinned: next } : n)),
-    );
-    const { error } = await supabase
-      .from("notes")
-      .update({ is_pinned: next })
-      .eq("id", note.id);
-    if (error) {
-      setNotes((prev) =>
-        prev.map((n) => (n.id === note.id ? { ...n, is_pinned: !next } : n)),
+  // TOGGLE PIN — optimistic.
+  const togglePinMutation = useMutation({
+    mutationFn: async (vars: { id: string; next: boolean }) => {
+      const { error } = await supabase
+        .from("notes")
+        .update({ is_pinned: vars.next })
+        .eq("id", vars.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, next }) => {
+      await qc.cancelQueries({ queryKey: qk.notes });
+      const prev = qc.getQueryData<Note[]>(qk.notes);
+      setNotes((old) =>
+        old.map((n) => (n.id === id ? { ...n, is_pinned: next } : n)),
       );
-      toast.err(error.message);
-    }
+      return { prev };
+    },
+    onError: (e, _vars, ctx) => {
+      if (ctx?.prev) setNotes(ctx.prev);
+      toast.err((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.notes }),
+  });
+
+  function togglePin(note: Note) {
+    togglePinMutation.mutate({ id: note.id, next: !note.is_pinned });
   }
+
+  // AUTOSAVE — optimistic update of the returned row. savingId is set in
+  // onMutate and cleared in onSettled to drive the "saving…" indicator,
+  // mirroring the original set-before-await / clear-after-await behaviour.
+  const saveMutation = useMutation({
+    mutationFn: async (vars: {
+      noteId: string;
+      doc: { title: string; content: unknown; plainText: string };
+    }) => {
+      const { data, error } = await supabase
+        .from("notes")
+        .update({
+          title: vars.doc.title || t.notes.untitled,
+          content: vars.doc.content,
+          plain_text: vars.doc.plainText,
+        })
+        .eq("id", vars.noteId)
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as Note;
+    },
+    onMutate: ({ noteId }) => {
+      setSavingId(noteId);
+    },
+    onSuccess: (data, { noteId }) => {
+      setNotes((prev) => prev.map((n) => (n.id === noteId ? data : n)));
+    },
+    onError: (e) => {
+      toast.err((e as Error)?.message ?? t.notes.couldNotSaveNote);
+    },
+    onSettled: (_data, _e, { noteId }) => {
+      setSavingId((s) => (s === noteId ? null : s));
+    },
+  });
 
   async function saveDoc(
     noteId: string,
@@ -245,60 +325,45 @@ export function NotesPanel({ notes, setNotes }: Props) {
     if (lastSavedRef.current.get(noteId) === serialized) return;
     lastSavedRef.current.set(noteId, serialized);
 
-    setSavingId(noteId);
-    const { data, error } = await supabase
-      .from("notes")
-      .update({
-        title: doc.title || t.notes.untitled,
-        content: doc.content,
-        plain_text: doc.plainText,
-      })
-      .eq("id", noteId)
-      .select()
-      .single();
-    setSavingId((s) => (s === noteId ? null : s));
-    if (error || !data) {
-      toast.err(error?.message ?? t.notes.couldNotSaveNote);
-      return;
-    }
-    setNotes((prev) => prev.map((n) => (n.id === noteId ? (data as Note) : n)));
+    saveMutation.mutate({ noteId, doc });
   }
 
-  async function addTag(note: Note, rawTag: string) {
+  // TAGS — optimistic. add/remove share one mutation; the handlers compute the
+  // next tags array and roll back to the note's prior tags on error.
+  const tagsMutation = useMutation({
+    mutationFn: async (vars: { id: string; tags: string[] }) => {
+      const { error } = await supabase
+        .from("notes")
+        .update({ tags: vars.tags })
+        .eq("id", vars.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, tags }) => {
+      await qc.cancelQueries({ queryKey: qk.notes });
+      const prev = qc.getQueryData<Note[]>(qk.notes);
+      setNotes((old) =>
+        old.map((n) => (n.id === id ? { ...n, tags } : n)),
+      );
+      return { prev };
+    },
+    onError: (e, _vars, ctx) => {
+      if (ctx?.prev) setNotes(ctx.prev);
+      toast.err((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.notes }),
+  });
+
+  function addTag(note: Note, rawTag: string) {
     const tag = normalizeTag(rawTag);
     if (!tag) return;
     if ((note.tags ?? []).includes(tag)) return;
     const nextTags = [...(note.tags ?? []), tag].sort();
-    setNotes((prev) =>
-      prev.map((n) => (n.id === note.id ? { ...n, tags: nextTags } : n)),
-    );
-    const { error } = await supabase
-      .from("notes")
-      .update({ tags: nextTags })
-      .eq("id", note.id);
-    if (error) {
-      setNotes((prev) =>
-        prev.map((n) => (n.id === note.id ? { ...n, tags: note.tags } : n)),
-      );
-      toast.err(error.message);
-    }
+    tagsMutation.mutate({ id: note.id, tags: nextTags });
   }
 
-  async function removeTag(note: Note, tag: string) {
+  function removeTag(note: Note, tag: string) {
     const nextTags = (note.tags ?? []).filter((x) => x !== tag);
-    setNotes((prev) =>
-      prev.map((n) => (n.id === note.id ? { ...n, tags: nextTags } : n)),
-    );
-    const { error } = await supabase
-      .from("notes")
-      .update({ tags: nextTags })
-      .eq("id", note.id);
-    if (error) {
-      setNotes((prev) =>
-        prev.map((n) => (n.id === note.id ? { ...n, tags: note.tags } : n)),
-      );
-      toast.err(error.message);
-    }
+    tagsMutation.mutate({ id: note.id, tags: nextTags });
   }
 
   function toggleTagFilter(tag: string) {
@@ -339,7 +404,45 @@ export function NotesPanel({ notes, setNotes }: Props) {
     }),
   );
 
-  async function handlePinnedDragEnd(e: DragEndEvent) {
+  // REORDER — optimistic. The fractional sort_order is computed in the drag
+  // handler; only its persistence lives here. prevOrder is the moved item's
+  // order before the drag, used to roll back on error.
+  const reorderMutation = useMutation({
+    mutationFn: async (vars: {
+      id: string;
+      nextOrder: number;
+      prevOrder: number;
+    }) => {
+      const { error } = await supabase
+        .from("notes")
+        .update({ sort_order: vars.nextOrder })
+        .eq("id", vars.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, nextOrder }) => {
+      await qc.cancelQueries({ queryKey: qk.notes });
+      const prev = qc.getQueryData<Note[]>(qk.notes);
+      setNotes((old) =>
+        old.map((n) => (n.id === id ? { ...n, sort_order: nextOrder } : n)),
+      );
+      return { prev };
+    },
+    onError: (e, vars, ctx) => {
+      if (ctx?.prev) {
+        setNotes(ctx.prev);
+      } else {
+        setNotes((prev) =>
+          prev.map((n) =>
+            n.id === vars.id ? { ...n, sort_order: vars.prevOrder } : n,
+          ),
+        );
+      }
+      toast.err((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.notes }),
+  });
+
+  function handlePinnedDragEnd(e: DragEndEvent) {
     if (!e.over || e.active.id === e.over.id) return;
     const oldIndex = pinned.findIndex((n) => n.id === e.active.id);
     const newIndex = pinned.findIndex((n) => n.id === e.over!.id);
@@ -362,24 +465,11 @@ export function NotesPanel({ notes, setNotes }: Props) {
       return;
     }
 
-    // Optimistic update.
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.id === moved.id ? { ...n, sort_order: nextOrder } : n,
-      ),
-    );
-    const { error } = await supabase
-      .from("notes")
-      .update({ sort_order: nextOrder })
-      .eq("id", moved.id);
-    if (error) {
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.id === moved.id ? { ...n, sort_order: moved.sort_order } : n,
-        ),
-      );
-      toast.err(error.message);
-    }
+    reorderMutation.mutate({
+      id: moved.id,
+      nextOrder,
+      prevOrder: moved.sort_order,
+    });
   }
 
   return (

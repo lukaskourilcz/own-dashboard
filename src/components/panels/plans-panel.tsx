@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { differenceInCalendarDays, format } from "date-fns";
 import {
@@ -24,6 +25,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
+import { qk } from "@/lib/queries/keys";
 import type { Plan, PlanStatus, Updater } from "@/lib/types";
 
 const STATUSES: { key: PlanStatus; tone: string; dot: string }[] = [
@@ -73,14 +75,131 @@ export function PlansPanel({
   setPlans: Updater<Plan[]>;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const t = useDict();
   const [form, setForm] = useState<FormState>(empty);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calendarNote, setCalendarNote] = useState<string | null>(null);
   const [view, setView] = useState<"board" | "timeline">("board");
 
-  async function addPlan(e: React.FormEvent) {
+  // CREATE: needs the server-generated row (and the linked calendar event id),
+  // so this stays non-optimistic — apply to the cache in onSuccess. The
+  // calendar-event fetch + follow-up linked_calendar_event_id update are part
+  // of the mutation flow and are left exactly as before.
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data: plan, error: planErr } = await supabase
+        .from("plans")
+        .insert({
+          user_id: userId,
+          title: form.title.trim(),
+          target_date: form.target_date || null,
+          status: form.status,
+          notes: form.notes.trim() || null,
+        })
+        .select()
+        .single();
+      if (planErr || !plan) {
+        throw new Error(planErr?.message ?? t.plans.couldNotSavePlan);
+      }
+
+      let saved: Plan = plan;
+      if (form.addToCalendar && form.target_date) {
+        const res = await fetch("/api/calendar/event", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            title: form.title.trim(),
+            date: form.target_date,
+            allDay: true,
+            description: form.notes.trim(),
+            recurrence: "none",
+          }),
+        });
+        if (res.ok) {
+          const ev = await res.json();
+          const { data: updated } = await supabase
+            .from("plans")
+            .update({ linked_calendar_event_id: ev.id })
+            .eq("id", plan.id)
+            .select()
+            .single();
+          if (updated) saved = updated;
+        } else {
+          setCalendarNote(t.plans.calendarEventFailed);
+        }
+      }
+      return saved;
+    },
+    onSuccess: (saved) => {
+      setPlans((prev) => [saved, ...prev]);
+      setForm(empty);
+      void qc.invalidateQueries({ queryKey: qk.plans });
+    },
+    onError: (e) => {
+      // Original returned silently when there was no authenticated user.
+      if (e instanceof Error && e.message === "no-user") return;
+      setError(e instanceof Error ? e.message : t.plans.couldNotSavePlan);
+    },
+  });
+
+  // Optimistic: the status flips in the cache immediately, rolls back on
+  // error, and reconciles with the DB via invalidate once settled.
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ plan, status }: { plan: Plan; status: PlanStatus }) => {
+      const { error } = await supabase
+        .from("plans")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", plan.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ plan, status }) => {
+      await qc.cancelQueries({ queryKey: qk.plans });
+      const prev = qc.getQueryData<Plan[]>(qk.plans);
+      setPlans((old) =>
+        old.map((p) => (p.id === plan.id ? { ...p, status } : p)),
+      );
+      return { prev };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prev) setPlans(ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.plans }),
+  });
+
+  // DELETE: original removed from state only after a successful delete, so
+  // this applies the cache change in onSuccess (post-success), then fires the
+  // best-effort calendar-event cleanup fetch.
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("plans").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      const plan = plans.find((p) => p.id === id);
+      setPlans((prev) => prev.filter((p) => p.id !== id));
+      // Best-effort: delete the linked Google Calendar event so it doesn't
+      // orphan. Server treats 404/410 as success; failures here are silent.
+      if (plan?.linked_calendar_event_id) {
+        fetch("/api/calendar/event", {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: plan.linked_calendar_event_id }),
+        }).catch(() => {
+          /* network blip — event will be left as is in GCal */
+        });
+      }
+      void qc.invalidateQueries({ queryKey: qk.plans });
+    },
+  });
+
+  const saving = addMutation.isPending;
+
+  function addPlan(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setCalendarNote(null);
@@ -92,93 +211,15 @@ export function PlansPanel({
       setError(t.plans.targetDateRequiredForCalendar);
       return;
     }
-    setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) {
-      setSaving(false);
-      return;
-    }
-    const { data: plan, error: planErr } = await supabase
-      .from("plans")
-      .insert({
-        user_id: userId,
-        title: form.title.trim(),
-        target_date: form.target_date || null,
-        status: form.status,
-        notes: form.notes.trim() || null,
-      })
-      .select()
-      .single();
-    if (planErr || !plan) {
-      setError(planErr?.message ?? t.plans.couldNotSavePlan);
-      setSaving(false);
-      return;
-    }
-
-    let saved: Plan = plan;
-    if (form.addToCalendar && form.target_date) {
-      const res = await fetch("/api/calendar/event", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          date: form.target_date,
-          allDay: true,
-          description: form.notes.trim(),
-          recurrence: "none",
-        }),
-      });
-      if (res.ok) {
-        const ev = await res.json();
-        const { data: updated } = await supabase
-          .from("plans")
-          .update({ linked_calendar_event_id: ev.id })
-          .eq("id", plan.id)
-          .select()
-          .single();
-        if (updated) saved = updated;
-      } else {
-        setCalendarNote(t.plans.calendarEventFailed);
-      }
-    }
-
-    setPlans((prev) => [saved, ...prev]);
-    setForm(empty);
-    setSaving(false);
+    addMutation.mutate();
   }
 
-  async function updateStatus(plan: Plan, status: PlanStatus) {
-    setPlans((prev) =>
-      prev.map((p) => (p.id === plan.id ? { ...p, status } : p)),
-    );
-    const { error } = await supabase
-      .from("plans")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", plan.id);
-    if (error) {
-      setPlans((prev) =>
-        prev.map((p) => (p.id === plan.id ? { ...p, status: plan.status } : p)),
-      );
-    }
+  function updateStatus(plan: Plan, status: PlanStatus) {
+    updateStatusMutation.mutate({ plan, status });
   }
 
-  async function removePlan(id: string) {
-    const plan = plans.find((p) => p.id === id);
-    const { error } = await supabase.from("plans").delete().eq("id", id);
-    if (error) return;
-    setPlans((prev) => prev.filter((p) => p.id !== id));
-    // Best-effort: delete the linked Google Calendar event so it doesn't
-    // orphan. Server treats 404/410 as success; failures here are silent.
-    if (plan?.linked_calendar_event_id) {
-      fetch("/api/calendar/event", {
-        method: "DELETE",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: plan.linked_calendar_event_id }),
-      }).catch(() => {
-        /* network blip — event will be left as is in GCal */
-      });
-    }
+  function removePlan(id: string) {
+    removeMutation.mutate(id);
   }
 
   const grouped = useMemo(() => {
