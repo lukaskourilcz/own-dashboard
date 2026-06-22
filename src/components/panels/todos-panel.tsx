@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ListTodo, Plus, Trash2 } from "lucide-react";
@@ -13,75 +14,103 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { parseDateOnly } from "@/lib/date-keys";
+import { qk } from "@/lib/queries/keys";
 import type { Locale } from "date-fns";
-import type { Todo, Updater } from "@/lib/types";
+import type { Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function TodosPanel({
   todos,
-  setTodos,
   compact = false,
   partnerTodos,
   partnerName,
 }: {
   todos: Todo[];
-  setTodos: Updater<Todo[]>;
   compact?: boolean;
   partnerTodos?: Todo[];
   partnerName?: string;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const t = useDict();
   const locale = useDateLocale();
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  async function addTodo(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) return;
-    setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) {
-      setSaving(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("todos")
-      .insert({
-        title: title.trim(),
-        due_date: dueDate || null,
-        user_id: userId,
-      })
-      .select()
-      .single();
-    if (!error && data) {
-      setTodos((prev) => [data, ...prev]);
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data, error } = await supabase
+        .from("todos")
+        .insert({ title: title.trim(), due_date: dueDate || null, user_id: userId })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Todo;
+    },
+    onSuccess: (todo) => {
+      qc.setQueryData<Todo[]>(qk.todos, (prev = []) => [todo, ...prev]);
       setTitle("");
       setDueDate("");
-    }
-    setSaving(false);
-  }
+      void qc.invalidateQueries({ queryKey: qk.todos });
+    },
+  });
 
-  async function toggle(td: Todo) {
-    const next = !td.done;
-    setTodos((prev) => prev.map((x) => (x.id === td.id ? { ...x, done: next } : x)));
-    const { error } = await supabase
-      .from("todos")
-      .update({ done: next })
-      .eq("id", td.id);
-    if (error) {
-      setTodos((prev) =>
-        prev.map((x) => (x.id === td.id ? { ...x, done: !next } : x)),
+  // Optimistic toggle: flip in the cache immediately, roll back on error,
+  // reconcile with the DB via invalidate once settled.
+  const toggleMutation = useMutation({
+    mutationFn: async (td: Todo) => {
+      const { error } = await supabase
+        .from("todos")
+        .update({ done: !td.done })
+        .eq("id", td.id);
+      if (error) throw error;
+    },
+    onMutate: async (td) => {
+      await qc.cancelQueries({ queryKey: qk.todos });
+      const prev = qc.getQueryData<Todo[]>(qk.todos);
+      qc.setQueryData<Todo[]>(qk.todos, (old = []) =>
+        old.map((x) => (x.id === td.id ? { ...x, done: !td.done } : x)),
       );
-    }
+      return { prev };
+    },
+    onError: (_e, _td, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.todos }),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("todos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.todos });
+      const prev = qc.getQueryData<Todo[]>(qk.todos);
+      qc.setQueryData<Todo[]>(qk.todos, (old = []) =>
+        old.filter((td) => td.id !== id),
+      );
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.todos }),
+  });
+
+  const saving = addMutation.isPending;
+
+  function addTodo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    addMutation.mutate();
   }
 
-  async function remove(id: string) {
-    const { error } = await supabase.from("todos").delete().eq("id", id);
-    if (!error) setTodos((prev) => prev.filter((td) => td.id !== id));
-  }
+  const toggle = (td: Todo) => toggleMutation.mutate(td);
+  const remove = (id: string) => removeMutation.mutate(id);
 
   const open = todos.filter((td) => !td.done);
   const done = todos.filter((td) => td.done);

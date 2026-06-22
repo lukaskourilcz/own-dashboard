@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, CornerDownLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { todayKey } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
+import { qk } from "@/lib/queries/keys";
 import type { Streak, StreakLog, Todo, Updater } from "@/lib/types";
 
 type Props = {
@@ -38,6 +40,7 @@ export function QuickAdd({
   onCalendarTitle,
 }: Props) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,17 +52,65 @@ export function QuickAdd({
     return userData.user?.id ?? null;
   }
 
+  // Non-optimistic create: we need the server-assigned id before touching the
+  // cache, so mirror the reference todos `addMutation`.
+  const addTodoMutation = useMutation({
+    mutationFn: async (vars: {
+      userId: string;
+      title: string;
+      dueDate?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("todos")
+        .insert({
+          title: vars.title,
+          user_id: vars.userId,
+          due_date: vars.dueDate ?? null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Todo;
+    },
+    onSuccess: (todo) => {
+      setTodos((prev) => [todo, ...prev]);
+      void qc.invalidateQueries({ queryKey: qk.todos });
+    },
+  });
+
+  const markStreakMutation = useMutation({
+    mutationFn: async (vars: {
+      userId: string;
+      streakId: string;
+      today: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("streak_logs")
+        .insert({
+          streak_id: vars.streakId,
+          user_id: vars.userId,
+          log_date: vars.today,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as StreakLog;
+    },
+    onSuccess: (log) => {
+      setStreakLogs((prev) => [...prev, log]);
+      void qc.invalidateQueries({ queryKey: qk.streakLogs });
+    },
+  });
+
   async function addTodoLocal(userId: string, title: string, dueDate?: string) {
-    const { data, error } = await supabase
-      .from("todos")
-      .insert({ title, user_id: userId, due_date: dueDate ?? null })
-      .select()
-      .single();
-    if (error || !data) {
-      toast.err(error?.message ?? t.quickAdd.couldNotAddTodo);
+    try {
+      await addTodoMutation.mutateAsync({ userId, title, dueDate });
+    } catch (error) {
+      toast.err(
+        error instanceof Error ? error.message : t.quickAdd.couldNotAddTodo,
+      );
       return false;
     }
-    setTodos((prev) => [data, ...prev]);
     toast.ok(t.quickAdd.addedTodo(title));
     return true;
   }
@@ -81,16 +132,18 @@ export function QuickAdd({
       toast.info(t.quickAdd.alreadyDoneToday(streak.name));
       return true;
     }
-    const { data, error } = await supabase
-      .from("streak_logs")
-      .insert({ streak_id: streak.id, user_id: userId, log_date: today })
-      .select()
-      .single();
-    if (error || !data) {
-      toast.err(error?.message ?? t.quickAdd.couldNotMarkHabit);
+    try {
+      await markStreakMutation.mutateAsync({
+        userId,
+        streakId: streak.id,
+        today,
+      });
+    } catch (error) {
+      toast.err(
+        error instanceof Error ? error.message : t.quickAdd.couldNotMarkHabit,
+      );
       return false;
     }
-    setStreakLogs((prev) => [...prev, data]);
     toast.ok(t.quickAdd.markedForToday(streak.name));
     return true;
   }

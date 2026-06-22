@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import {
   Bar,
@@ -31,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import { todayKey } from "@/lib/date-keys";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
@@ -71,6 +73,7 @@ export function BooksPanel({
   ctx: CoupleContext;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
   const [newBook, setNewBook] = useState<NewBookForm>(emptyBook);
@@ -99,87 +102,67 @@ export function BooksPanel({
     }));
   }
 
-  async function addBook(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newBook.title.trim()) {
-      toast.err(t.books.titleRequiredToast);
-      return;
-    }
-    const target = newBook.target_pages ? Number(newBook.target_pages) : null;
-    if (target !== null && (Number.isNaN(target) || target <= 0)) {
-      toast.err(t.books.targetPagesPositiveToast);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("books")
-      .insert({
-        user_id: userId,
-        couple_id:
-          newBook.shareWithPartner && ctx.couple ? ctx.couple.id : null,
-        title: newBook.title.trim(),
-        target_pages: target,
-        started_on: newBook.started_on || null,
-      })
-      .select()
-      .single();
-    if (error || !data) {
-      toast.err(error?.message ?? t.books.couldNotAddBook);
-      return;
-    }
-    setBooks((prev) => [data, ...prev]);
-    setNewBook(emptyBook);
-    setShowNew(false);
-    toast.ok(t.books.addedToast(data.title));
-  }
+  // CREATE: needs the server-generated id, so apply state in onSuccess.
+  const addMutation = useMutation({
+    mutationFn: async (target: number | null) => {
+      const { data, error } = await supabase
+        .from("books")
+        .insert({
+          user_id: userId,
+          couple_id:
+            newBook.shareWithPartner && ctx.couple ? ctx.couple.id : null,
+          title: newBook.title.trim(),
+          target_pages: target,
+          started_on: newBook.started_on || null,
+        })
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error(t.books.couldNotAddBook);
+      return data as Book;
+    },
+    onSuccess: (data) => {
+      setBooks((prev) => [data, ...prev]);
+      setNewBook(emptyBook);
+      setShowNew(false);
+      toast.ok(t.books.addedToast(data.title));
+      void qc.invalidateQueries({ queryKey: qk.books });
+    },
+    onError: (e) => {
+      toast.err(e instanceof Error ? e.message : t.books.couldNotAddBook);
+    },
+  });
 
-  async function logPages(book: Book) {
-    const buf = bufFor(book.id);
-    const n = Number(buf.pages);
-    if (!buf.pages || Number.isNaN(n) || n <= 0) {
-      toast.err(t.books.pagesPositiveToast);
-      return;
-    }
-    const today = todayKey();
-    const existing = pages.find(
-      (p) =>
-        p.book_id === book.id && p.user_id === userId && p.log_date === today,
-    );
-
-    if (existing) {
-      const merged = {
-        pages: existing.pages + n,
-        note: buf.note || existing.note,
-      };
-      setPages((prev) =>
-        prev.map((p) =>
-          p.id === existing.id
-            ? { ...p, pages: merged.pages, note: merged.note ?? p.note }
-            : p,
-        ),
-      );
-      const { error } = await supabase
-        .from("book_pages")
-        .update({ pages: merged.pages, note: merged.note })
-        .eq("id", existing.id);
-      if (error) {
-        setPages((prev) =>
-          prev.map((p) => (p.id === existing.id ? existing : p)),
-        );
-        toast.err(error.message);
-        return;
+  // Logging a page either updates an existing same-day row (optimistic, state
+  // changed before the await) or inserts a brand-new one (needs the server id,
+  // so a tentative row is swapped in onSuccess). Both branches live in one
+  // book_pages mutation and reconcile via invalidate once settled.
+  const logMutation = useMutation({
+    mutationFn: async ({
+      book,
+      n,
+      buf,
+      today,
+      existing,
+    }: {
+      book: Book;
+      n: number;
+      buf: { pages: string; note: string };
+      today: string;
+      existing: BookPage | undefined;
+      tentativeId: string;
+    }) => {
+      if (existing) {
+        const merged = {
+          pages: existing.pages + n,
+          note: buf.note || existing.note,
+        };
+        const { error } = await supabase
+          .from("book_pages")
+          .update({ pages: merged.pages, note: merged.note })
+          .eq("id", existing.id);
+        if (error) throw error;
+        return null;
       }
-    } else {
-      const tentativeId = `tmp-${++tentativeBookPageCounter}`;
-      const tentative: BookPage = {
-        id: tentativeId,
-        book_id: book.id,
-        user_id: userId,
-        log_date: today,
-        pages: n,
-        note: buf.note || null,
-        created_at: "",
-      };
-      setPages((prev) => [tentative, ...prev]);
       const { data, error } = await supabase
         .from("book_pages")
         .insert({
@@ -191,40 +174,154 @@ export function BooksPanel({
         })
         .select()
         .single();
-      if (error || !data) {
-        setPages((prev) => prev.filter((p) => p.id !== tentativeId));
-        toast.err(error?.message ?? t.books.couldNotLogPages);
-        return;
+      if (error || !data)
+        throw error ?? new Error(t.books.couldNotLogPages);
+      return data as BookPage;
+    },
+    onMutate: async ({ book, n, buf, today, existing, tentativeId }) => {
+      await qc.cancelQueries({ queryKey: qk.bookPages });
+      const prev = qc.getQueryData<BookPage[]>(qk.bookPages);
+      if (existing) {
+        const merged = {
+          pages: existing.pages + n,
+          note: buf.note || existing.note,
+        };
+        setPages((old) =>
+          old.map((p) =>
+            p.id === existing.id
+              ? { ...p, pages: merged.pages, note: merged.note ?? p.note }
+              : p,
+          ),
+        );
+      } else {
+        const tentative: BookPage = {
+          id: tentativeId,
+          book_id: book.id,
+          user_id: userId,
+          log_date: today,
+          pages: n,
+          note: buf.note || null,
+          created_at: "",
+        };
+        setPages((old) => [tentative, ...old]);
       }
-      setPages((prev) => prev.map((p) => (p.id === tentativeId ? data : p)));
-    }
-    setBuf(book.id, { pages: "", note: "" });
-    toast.ok(t.books.loggedToast(n, book.title));
-  }
+      return { prev, existing, tentativeId };
+    },
+    onSuccess: (data, { book, n, tentativeId }, ctx2) => {
+      // Insert branch: swap the tentative row for the server row.
+      if (!ctx2?.existing && data) {
+        setPages((prev) => prev.map((p) => (p.id === tentativeId ? data : p)));
+      }
+      setBuf(book.id, { pages: "", note: "" });
+      toast.ok(t.books.loggedToast(n, book.title));
+    },
+    onError: (e, _vars, ctx2) => {
+      if (ctx2?.prev) qc.setQueryData(qk.bookPages, ctx2.prev);
+      if (ctx2?.existing) {
+        const existing = ctx2.existing;
+        setPages((prev) => prev.map((p) => (p.id === existing.id ? existing : p)));
+      } else if (ctx2?.tentativeId) {
+        const tentativeId = ctx2.tentativeId;
+        setPages((prev) => prev.filter((p) => p.id !== tentativeId));
+      }
+      toast.err(e instanceof Error ? e.message : t.books.couldNotLogPages);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.bookPages }),
+  });
 
-  async function changeStatus(book: Book, status: BookStatus) {
-    setBooks((prev) =>
-      prev.map((b) => (b.id === book.id ? { ...b, status } : b)),
-    );
-    const { error } = await supabase
-      .from("books")
-      .update({ status })
-      .eq("id", book.id);
-    if (error) {
+  // Optimistic status change: state flips before the await.
+  const statusMutation = useMutation({
+    mutationFn: async ({ book, status }: { book: Book; status: BookStatus }) => {
+      const { error } = await supabase
+        .from("books")
+        .update({ status })
+        .eq("id", book.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ book, status }) => {
+      await qc.cancelQueries({ queryKey: qk.books });
+      const prev = qc.getQueryData<Book[]>(qk.books);
+      setBooks((old) =>
+        old.map((b) => (b.id === book.id ? { ...b, status } : b)),
+      );
+      return { prev };
+    },
+    onError: (e, { book }, ctx2) => {
+      if (ctx2?.prev) qc.setQueryData(qk.books, ctx2.prev);
       setBooks((prev) =>
         prev.map((b) => (b.id === book.id ? { ...b, status: book.status } : b)),
       );
-      toast.err(error.message);
+      toast.err(e instanceof Error ? e.message : t.books.couldNotAddBook);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.books }),
+  });
+
+  // Optimistic delete: removes the book and its pages before the await. The
+  // book row lives under qk.books while its logs live under qk.bookPages, so
+  // both caches are snapshotted, updated, rolled back, and invalidated.
+  const deleteMutation = useMutation({
+    mutationFn: async (book: Book) => {
+      const { error } = await supabase.from("books").delete().eq("id", book.id);
+      if (error) throw error;
+    },
+    onMutate: async (book) => {
+      await qc.cancelQueries({ queryKey: qk.books });
+      await qc.cancelQueries({ queryKey: qk.bookPages });
+      const prevBooks = qc.getQueryData<Book[]>(qk.books);
+      const prevPages = qc.getQueryData<BookPage[]>(qk.bookPages);
+      setBooks((prev) => prev.filter((b) => b.id !== book.id));
+      setPages((prev) => prev.filter((p) => p.book_id !== book.id));
+      return { prevBooks, prevPages };
+    },
+    onError: (e, _book, ctx2) => {
+      if (ctx2?.prevBooks) qc.setQueryData(qk.books, ctx2.prevBooks);
+      if (ctx2?.prevPages) qc.setQueryData(qk.bookPages, ctx2.prevPages);
+      toast.err(e instanceof Error ? e.message : t.books.couldNotAddBook);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.books });
+      void qc.invalidateQueries({ queryKey: qk.bookPages });
+    },
+  });
+
+  function addBook(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newBook.title.trim()) {
+      toast.err(t.books.titleRequiredToast);
+      return;
     }
+    const target = newBook.target_pages ? Number(newBook.target_pages) : null;
+    if (target !== null && (Number.isNaN(target) || target <= 0)) {
+      toast.err(t.books.targetPagesPositiveToast);
+      return;
+    }
+    addMutation.mutate(target);
   }
 
-  async function deleteBook(book: Book) {
+  function logPages(book: Book) {
+    const buf = bufFor(book.id);
+    const n = Number(buf.pages);
+    if (!buf.pages || Number.isNaN(n) || n <= 0) {
+      toast.err(t.books.pagesPositiveToast);
+      return;
+    }
+    const today = todayKey();
+    const existing = pages.find(
+      (p) =>
+        p.book_id === book.id && p.user_id === userId && p.log_date === today,
+    );
+    const tentativeId = `tmp-${++tentativeBookPageCounter}`;
+    logMutation.mutate({ book, n, buf, today, existing, tentativeId });
+  }
+
+  function changeStatus(book: Book, status: BookStatus) {
+    statusMutation.mutate({ book, status });
+  }
+
+  function deleteBook(book: Book) {
     const ok = window.confirm(t.books.deleteConfirm(book.title));
     if (!ok) return;
-    setBooks((prev) => prev.filter((b) => b.id !== book.id));
-    setPages((prev) => prev.filter((p) => p.book_id !== book.id));
-    const { error } = await supabase.from("books").delete().eq("id", book.id);
-    if (error) toast.err(error.message);
+    deleteMutation.mutate(book);
   }
 
   return (

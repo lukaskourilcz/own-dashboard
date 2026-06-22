@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Building2,
@@ -19,6 +20,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { todayKey } from "@/lib/date-keys";
 import {
@@ -341,6 +343,7 @@ export function InvoiceForm({
   onEditSupplier: () => void;
 }) {
   const supabase = createClient();
+  const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
 
@@ -371,7 +374,6 @@ export function InvoiceForm({
   const [note, setNote] = useState(init.note);
   const [buyer, setBuyer] = useState<Buyer>(init.buyer);
   const [items, setFormItems] = useState<FormItem[]>(init.items);
-  const [saving, setSaving] = useState(false);
 
   const supplier = init.supplierSnapshot ?? settingsSnapshot(settings);
   const hasSupplier = Boolean(supplier.supplier_name.trim());
@@ -403,7 +405,113 @@ export function InvoiceForm({
     );
   }
 
-  async function submit(intent: "draft" | "issued" | "keep") {
+  // Error sentinel that carries the toast message the original code would have
+  // shown, so onError can surface it verbatim (incl. the 23505 special-case).
+  class SaveError extends Error {}
+
+  // ── Edit: update header, then replace the line items (one atomic write).
+  // Items need server-generated ids, so this is non-optimistic: cache is
+  // updated in onSuccess, then both keys are invalidated.
+  const saveEditMutation = useMutation({
+    mutationFn: async ({
+      invoiceId,
+      detailFields,
+      buyerFields,
+      itemRows,
+    }: {
+      invoiceId: string;
+      detailFields: Record<string, unknown>;
+      buyerFields: Record<string, unknown>;
+      itemRows: Array<Record<string, unknown>>;
+    }) => {
+      const { data: inv, error } = await supabase
+        .from("invoices")
+        .update({
+          ...detailFields,
+          ...buyerFields,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", invoiceId)
+        .select()
+        .single();
+      if (error || !inv) {
+        throw new SaveError(
+          error?.code === "23505"
+            ? t.invoices.numberTaken
+            : (error?.message ?? t.invoices.errorToast),
+        );
+      }
+      await supabase.from("invoice_items").delete().eq("invoice_id", invoiceId);
+      const { data: its, error: itErr } = await supabase
+        .from("invoice_items")
+        .insert(itemRows)
+        .select();
+      if (itErr || !its) {
+        throw new SaveError(itErr?.message ?? t.invoices.errorToast);
+      }
+      return { inv: inv as Invoice, its: its as InvoiceItem[] };
+    },
+    onSuccess: ({ inv, its }) => {
+      setInvoices((prev) => prev.map((i) => (i.id === inv.id ? inv : i)));
+      setItems((prev) => [
+        ...its,
+        ...prev.filter((i) => i.invoice_id !== inv.id),
+      ]);
+      void qc.invalidateQueries({ queryKey: qk.invoices });
+      void qc.invalidateQueries({ queryKey: qk.invoiceItems });
+      toast.ok(t.invoices.updatedToast(inv.number));
+      onDone(inv.id);
+    },
+    onError: (error) => toast.err((error as Error).message),
+  });
+
+  // ── Create / duplicate: insert a brand-new invoice + its items (atomic).
+  // Non-optimistic (needs the server id): cache updated in onSuccess, then
+  // both keys are invalidated.
+  const createMutation = useMutation({
+    mutationFn: async ({
+      invoiceRow,
+      buildItemRows,
+    }: {
+      invoiceRow: Record<string, unknown>;
+      buildItemRows: (invoiceId: string) => Array<Record<string, unknown>>;
+    }) => {
+      const { data: inv, error } = await supabase
+        .from("invoices")
+        .insert(invoiceRow)
+        .select()
+        .single();
+      if (error || !inv) {
+        throw new SaveError(
+          error?.code === "23505"
+            ? t.invoices.numberTaken
+            : (error?.message ?? t.invoices.errorToast),
+        );
+      }
+      const { data: its, error: itErr } = await supabase
+        .from("invoice_items")
+        .insert(buildItemRows(inv.id))
+        .select();
+      if (itErr || !its) {
+        await supabase.from("invoices").delete().eq("id", inv.id);
+        throw new SaveError(itErr?.message ?? t.invoices.errorToast);
+      }
+      return { inv: inv as Invoice, its: its as InvoiceItem[] };
+    },
+    onSuccess: ({ inv, its }) => {
+      setInvoices((prev) => [inv, ...prev]);
+      setItems((prev) => [...its, ...prev]);
+      void qc.invalidateQueries({ queryKey: qk.invoices });
+      void qc.invalidateQueries({ queryKey: qk.invoiceItems });
+      toast.ok(t.invoices.createdToast(inv.number));
+      onDone(inv.id);
+    },
+    onError: (error) => toast.err((error as Error).message),
+  });
+
+  const saving = saveEditMutation.isPending || createMutation.isPending;
+
+  function submit(intent: "draft" | "issued" | "keep") {
     const kept = items.filter((it) => it.description.trim() !== "");
     if (!buyer.buyer_name.trim()) {
       toast.err(t.invoices.buyerNameRequired);
@@ -417,7 +525,6 @@ export function InvoiceForm({
       toast.err(t.invoices.itemRequired);
       return;
     }
-    setSaving(true);
 
     const buyerFields = {
       buyer_name: buyer.buyer_name.trim(),
@@ -454,48 +561,20 @@ export function InvoiceForm({
 
     // ── Edit: update header, then replace the line items ──────────────────
     if (mode === "edit" && source) {
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .update({ ...detailFields, ...buyerFields, updated_at: new Date().toISOString() })
-        .eq("id", source.invoice.id)
-        .select()
-        .single();
-      if (error || !inv) {
-        setSaving(false);
-        if (error?.code === "23505") toast.err(t.invoices.numberTaken);
-        else toast.err(error?.message ?? t.invoices.errorToast);
-        return;
-      }
-      await supabase
-        .from("invoice_items")
-        .delete()
-        .eq("invoice_id", source.invoice.id);
-      const { data: its, error: itErr } = await supabase
-        .from("invoice_items")
-        .insert(itemRows(source.invoice.id))
-        .select();
-      if (itErr || !its) {
-        setSaving(false);
-        toast.err(itErr?.message ?? t.invoices.errorToast);
-        return;
-      }
-      setInvoices((prev) => prev.map((i) => (i.id === inv.id ? inv : i)));
-      setItems((prev) => [
-        ...its,
-        ...prev.filter((i) => i.invoice_id !== inv.id),
-      ]);
-      setSaving(false);
-      toast.ok(t.invoices.updatedToast(inv.number));
-      onDone(inv.id);
+      saveEditMutation.mutate({
+        invoiceId: source.invoice.id,
+        detailFields,
+        buyerFields,
+        itemRows: itemRows(source.invoice.id),
+      });
       return;
     }
 
     // ── Create / duplicate: insert a brand-new invoice ────────────────────
     const status = intent === "draft" ? "draft" : "issued";
     const snap = settingsSnapshot(settings);
-    const { data: inv, error } = await supabase
-      .from("invoices")
-      .insert({
+    createMutation.mutate({
+      invoiceRow: {
         user_id: userId,
         ...detailFields,
         ...buyerFields,
@@ -511,30 +590,9 @@ export function InvoiceForm({
         bank_account: snap.bank_account,
         iban: snap.iban,
         footer_note: snap.footer_note,
-      })
-      .select()
-      .single();
-    if (error || !inv) {
-      setSaving(false);
-      if (error?.code === "23505") toast.err(t.invoices.numberTaken);
-      else toast.err(error?.message ?? t.invoices.errorToast);
-      return;
-    }
-    const { data: its, error: itErr } = await supabase
-      .from("invoice_items")
-      .insert(itemRows(inv.id))
-      .select();
-    if (itErr || !its) {
-      await supabase.from("invoices").delete().eq("id", inv.id);
-      setSaving(false);
-      toast.err(itErr?.message ?? t.invoices.errorToast);
-      return;
-    }
-    setInvoices((prev) => [inv, ...prev]);
-    setItems((prev) => [...its, ...prev]);
-    setSaving(false);
-    toast.ok(t.invoices.createdToast(inv.number));
-    onDone(inv.id);
+      },
+      buildItemRows: itemRows,
+    });
   }
 
   return (
