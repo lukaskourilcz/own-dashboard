@@ -11,6 +11,7 @@ type NavSection =
   | "books"
   | "dates"
   | "couple"
+  | "github"
   | "settings";
 
 type NavStrings = {
@@ -46,9 +47,10 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       books: "Books",
       dates: "Dates",
       couple: "Couple",
+      github: "Repositories",
       settings: "Settings",
     },
-    short: { subscriptions: "Subs" },
+    short: { subscriptions: "Subs", github: "Repos" },
     theme: "Theme",
     settings: "Settings",
     collapse: "Collapse sidebar",
@@ -76,9 +78,10 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       books: "Knihy",
       dates: "Významné dny",
       couple: "Pár",
+      github: "Repozitáře",
       settings: "Nastavení",
     },
-    short: { subscriptions: "Předpl.", dates: "Dny" },
+    short: { subscriptions: "Předpl.", dates: "Dny", github: "Repa" },
     theme: "Motiv",
     settings: "Nastavení",
     collapse: "Sbalit panel",

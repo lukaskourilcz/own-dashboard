@@ -24,6 +24,7 @@ import { notes } from "./sections/notes";
 import { dates } from "./sections/dates";
 import { couple } from "./sections/couple";
 import { calendar } from "./sections/calendar";
+import { github } from "./sections/github";
 
 export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
 
@@ -50,6 +51,7 @@ export const dictionaries = {
     dates: dates.en,
     couple: couple.en,
     calendar: calendar.en,
+    github: github.en,
   },
   cs: {
     common: common.cs,
@@ -73,6 +75,7 @@ export const dictionaries = {
     dates: dates.cs,
     couple: couple.cs,
     calendar: calendar.cs,
+    github: github.cs,
   },
 };
 

@@ -881,3 +881,69 @@ create policy "invoice_items update own" on public.invoice_items
 drop policy if exists "invoice_items delete own" on public.invoice_items;
 create policy "invoice_items delete own" on public.invoice_items
   for delete using (auth.uid() = user_id);
+
+-- ----------------------------------------------------------------------------
+-- GitHub OAuth tokens. Mirrors google_oauth but adapted to GitHub: an OAuth
+-- App's user token does NOT expire and ships no refresh_token, so access_token
+-- (not refresh_token) is the primary credential and is NOT NULL. The refresh_*
+-- columns only fill in when the GitHub App "expiring tokens" mode is enabled.
+-- Service-role only — never exposed to anon/authenticated (the token grants
+-- write access to the user's repos).
+-- ----------------------------------------------------------------------------
+create table if not exists public.github_tokens (
+  user_id        uuid primary key references auth.users(id) on delete cascade,
+  access_token   text not null,
+  refresh_token  text,
+  expires_at     timestamptz,
+  scopes         text[] not null default '{}',
+  github_login   text,
+  github_id      bigint,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create index if not exists github_tokens_expires_idx
+  on public.github_tokens (expires_at);
+
+alter table public.github_tokens enable row level security;
+
+revoke all on public.github_tokens from anon;
+revoke all on public.github_tokens from authenticated;
+grant all on public.github_tokens to service_role;
+
+drop trigger if exists github_tokens_touch on public.github_tokens;
+create trigger github_tokens_touch
+  before update on public.github_tokens
+  for each row execute function public.tg_google_oauth_touch();
+
+-- Atomic per-user "refresh or get cached token" advisory lock, identical in
+-- spirit to google_oauth_acquire_refresh_lock. Only relevant when GitHub is in
+-- expiring-token mode (refresh_token present); a no-op fast-path otherwise.
+create or replace function public.github_tokens_acquire_refresh_lock(p_user_id uuid)
+returns table (
+  user_id uuid,
+  access_token text,
+  refresh_token text,
+  expires_at timestamptz,
+  scopes text[]
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform pg_advisory_xact_lock(
+    (hashtextextended('github:' || p_user_id::text, 0))::bigint
+  );
+  return query
+    select g.user_id, g.access_token, g.refresh_token, g.expires_at, g.scopes
+    from public.github_tokens g
+    where g.user_id = p_user_id
+    for update;
+end;
+$$;
+
+revoke all on function public.github_tokens_acquire_refresh_lock(uuid) from public;
+revoke all on function public.github_tokens_acquire_refresh_lock(uuid) from anon;
+revoke all on function public.github_tokens_acquire_refresh_lock(uuid) from authenticated;
+grant execute on function public.github_tokens_acquire_refresh_lock(uuid) to service_role;

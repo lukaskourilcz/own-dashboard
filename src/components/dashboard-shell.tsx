@@ -13,6 +13,7 @@ import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
 import { NotesPanel } from "@/components/panels/notes-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
+import { ReposPanel } from "@/components/panels/repos-panel";
 import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
@@ -82,6 +83,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
   b: "books",
   n: "notes",
   d: "dates",
+  r: "github",
 };
 
 export function DashboardShell({
@@ -408,6 +410,8 @@ export function DashboardShell({
                       ctx={coupleCtx}
                     />
                   )}
+
+                  {tab === "github" && <ReposPanel />}
 
                   {tab === "settings" && <SettingsPanel />}
                 </motion.div>

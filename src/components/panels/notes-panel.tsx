@@ -54,6 +54,8 @@ import type { Note, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tagColor } from "@/lib/tag-colors";
 import type { NoteEditorHandle } from "@/components/notes/note-editor";
+import { GithubIcon } from "@/components/icons/github";
+import { PublishToRepoDialog } from "@/components/github/publish-to-repo-dialog";
 
 // BlockNote pulls in ProseMirror + Mantine CSS — it's heavy. Lazy-load so it
 // doesn't bloat the dashboard's first paint, and only on the client because
@@ -123,6 +125,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
   const [linkPickerQuery, setLinkPickerQuery] = useState("");
   const lastSavedRef = useRef<Map<string, string>>(new Map());
   const editorHandleRef = useRef<NoteEditorHandle | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
 
   // Pinned bucket first (drag-orderable), then everything else by sort_order
   // desc. sort_order was backfilled from updated_at, so first render matches
@@ -594,6 +597,16 @@ export function NotesPanel({ notes, setNotes }: Props) {
                     <Download className="h-3.5 w-3.5" />
                   </Button>
                 </Tooltip>
+                <Tooltip content={t.github.publish}>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => setPublishOpen(true)}
+                    aria-label={t.github.publish}
+                  >
+                    <GithubIcon className="h-3.5 w-3.5" />
+                  </Button>
+                </Tooltip>
                 <Tooltip content={selected.is_pinned ? t.notes.unpin : t.notes.pin}>
                   <Button
                     size="icon-sm"
@@ -678,6 +691,17 @@ export function NotesPanel({ notes, setNotes }: Props) {
           )}
         </Card>
       </div>
+
+      {publishOpen && selected && (
+        <PublishToRepoDialog
+          getMarkdown={() =>
+            editorHandleRef.current?.toMarkdown() ?? Promise.resolve("")
+          }
+          defaultFileName={safeFilename(selected.title || t.notes.untitled)}
+          defaultMessage={t.github.messagePlaceholder}
+          onClose={() => setPublishOpen(false)}
+        />
+      )}
 
       <NoteLinkPicker
         open={linkPickerOpen}
