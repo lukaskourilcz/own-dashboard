@@ -10,6 +10,7 @@ import {
   FileText,
   Flame,
   Gift,
+  GitBranch,
   Heart,
   LayoutDashboard,
   ListTodo,
@@ -42,6 +43,7 @@ export type NavTab =
   | "books"
   | "notes"
   | "dates"
+  | "github"
   | "settings";
 
 type NavItem = {
@@ -65,6 +67,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "books", icon: BookOpen },
   { value: "dates", icon: Gift },
   { value: "couple", icon: Heart },
+  { value: "github", icon: GitBranch },
 ];
 
 export function Sidebar({
