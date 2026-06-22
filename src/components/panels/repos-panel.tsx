@@ -39,7 +39,7 @@ import {
   setReposDisconnected,
   useReposQuery,
 } from "@/lib/github-queries";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
 
@@ -53,7 +53,6 @@ export function ReposPanel() {
   const { data, isPending, isFetching, refetch } = useReposQuery();
   const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
   const [writeTarget, setWriteTarget] = useState<GithubRepo | null>(null);
 
   const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
@@ -75,22 +74,25 @@ export function ReposPanel() {
     // On success the browser navigates to GitHub, so no further work here.
   }
 
-  async function onDisconnect() {
-    if (!window.confirm(t.github.disconnectConfirm)) return;
-    setDisconnecting(true);
-    try {
+  const disconnectMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch("/api/github/disconnect", { method: "POST" });
-      if (res.ok) {
-        toast.ok(t.github.disconnectOk);
-        setReposDisconnected(qc);
-      } else {
-        toast.err(t.github.disconnectErr);
-      }
-    } catch {
-      toast.err(t.github.networkErr);
-    } finally {
-      setDisconnecting(false);
-    }
+      if (!res.ok) throw new Error("server");
+    },
+    onSuccess: () => {
+      toast.ok(t.github.disconnectOk);
+      setReposDisconnected(qc);
+    },
+    onError: (e) =>
+      toast.err(
+        (e as Error).message === "server"
+          ? t.github.disconnectErr
+          : t.github.networkErr,
+      ),
+  });
+
+  function onDisconnect() {
+    if (window.confirm(t.github.disconnectConfirm)) disconnectMutation.mutate();
   }
 
   const filtered = useMemo(() => {
@@ -129,7 +131,7 @@ export function ReposPanel() {
                 variant="outline"
                 size="sm"
                 onClick={onDisconnect}
-                disabled={disconnecting}
+                disabled={disconnectMutation.isPending}
               >
                 <Unlink className="h-3.5 w-3.5" />
                 {t.github.disconnect}

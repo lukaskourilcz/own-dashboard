@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
@@ -29,6 +28,8 @@ import { CommandPalette } from "@/components/command-palette";
 import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
+import { useEntityStore } from "@/lib/queries/entities";
+import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type {
   Account,
@@ -110,37 +111,46 @@ export function DashboardShell({
   selectedCalendarIds,
 }: Props) {
   const [tab, setTab] = useState<NavTab>("overview");
-  // One QueryClient per shell mount — stable across re-renders. Powers the
-  // GitHub repo queries (shared between the Repositories panel and the
-  // "Publish to repo" dialog).
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: { retry: 1, refetchOnWindowFocus: false },
-        },
-      }),
-  );
   const { collapsed: navCollapsed } = useNavCollapsed();
-  const [subscriptions, setSubscriptions] =
-    useState<Subscription[]>(initialSubscriptions);
-  const [todos, setTodos] = useState<Todo[]>(initialTodos);
-  const [streaks, setStreaks] = useState<Streak[]>(initialStreaks);
-  const [streakLogs, setStreakLogs] = useState<StreakLog[]>(initialStreakLogs);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(initialTransactions);
-  const [plans, setPlans] = useState<Plan[]>(initialPlans);
-  const [books, setBooks] = useState<Book[]>(initialBooks);
-  const [bookPages, setBookPages] = useState<BookPage[]>(initialBookPages);
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
-  const [importantDates, setImportantDates] =
-    useState<ImportantDate[]>(initialImportantDates);
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
-  const [invoiceItems, setInvoiceItems] =
-    useState<InvoiceItem[]>(initialInvoiceItems);
+  // Entity state now lives in the React Query cache (seeded from the server
+  // load). Each useEntityStore returns the same [data, setter] shape the panels
+  // already consume, so their code is unchanged — only the store moved.
+  const [subscriptions, setSubscriptions] = useEntityStore(
+    qk.subscriptions,
+    initialSubscriptions,
+  );
+  const [todos, setTodos] = useEntityStore(qk.todos, initialTodos);
+  const [streaks, setStreaks] = useEntityStore(qk.streaks, initialStreaks);
+  const [streakLogs, setStreakLogs] = useEntityStore(
+    qk.streakLogs,
+    initialStreakLogs,
+  );
+  const [accounts, setAccounts] = useEntityStore(qk.accounts, initialAccounts);
+  const [transactions, setTransactions] = useEntityStore(
+    qk.transactions,
+    initialTransactions,
+  );
+  const [plans, setPlans] = useEntityStore(qk.plans, initialPlans);
+  const [books, setBooks] = useEntityStore(qk.books, initialBooks);
+  const [bookPages, setBookPages] = useEntityStore(
+    qk.bookPages,
+    initialBookPages,
+  );
+  const [notes, setNotes] = useEntityStore(qk.notes, initialNotes);
+  const [importantDates, setImportantDates] = useEntityStore(
+    qk.importantDates,
+    initialImportantDates,
+  );
+  const [invoices, setInvoices] = useEntityStore(qk.invoices, initialInvoices);
+  const [invoiceItems, setInvoiceItems] = useEntityStore(
+    qk.invoiceItems,
+    initialInvoiceItems,
+  );
   const [invoiceSettings, setInvoiceSettings] =
-    useState<InvoiceSettings | null>(initialInvoiceSettings);
+    useEntityStore<InvoiceSettings | null>(
+      qk.invoiceSettings,
+      initialInvoiceSettings,
+    );
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } =
     useDisplayCurrency();
   const [calendarPrefill, setCalendarPrefill] = useState<{
@@ -202,7 +212,6 @@ export function DashboardShell({
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
     <MotionConfig reducedMotion="user">
       <TooltipProvider>
       <ToastProvider>
@@ -435,6 +444,5 @@ export function DashboardShell({
       </ToastProvider>
       </TooltipProvider>
     </MotionConfig>
-    </QueryClientProvider>
   );
 }

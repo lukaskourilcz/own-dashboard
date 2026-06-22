@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -85,26 +85,26 @@ export function Sidebar({
   const { isHidden } = useNavVisibility();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
   const toast = useToast();
-  const [disconnecting, setDisconnecting] = useState(false);
-
-  async function disconnectGoogle() {
-    const ok = window.confirm(t.nav.disconnectConfirm);
-    if (!ok) return;
-    setDisconnecting(true);
-    try {
+  const disconnectGoogle = useMutation({
+    mutationFn: async () => {
       const res = await fetch("/api/google/disconnect", { method: "POST" });
-      if (res.ok) {
-        toast.ok(t.nav.disconnectOk);
-        // Soft reload so server components re-render with the no-token state.
-        window.location.reload();
-      } else {
-        toast.err(t.nav.disconnectErr);
-      }
-    } catch {
-      toast.err(t.nav.networkErr);
-    } finally {
-      setDisconnecting(false);
-    }
+      if (!res.ok) throw new Error("server");
+    },
+    onSuccess: () => {
+      toast.ok(t.nav.disconnectOk);
+      // Soft reload so server components re-render with the no-token state.
+      window.location.reload();
+    },
+    onError: (e) =>
+      toast.err(
+        (e as Error).message === "server"
+          ? t.nav.disconnectErr
+          : t.nav.networkErr,
+      ),
+  });
+
+  function onDisconnectClick() {
+    if (window.confirm(t.nav.disconnectConfirm)) disconnectGoogle.mutate();
   }
 
   const items = NAV_ITEMS.filter(
@@ -278,8 +278,8 @@ export function Sidebar({
           >
             <button
               type="button"
-              onClick={disconnectGoogle}
-              disabled={disconnecting}
+              onClick={onDisconnectClick}
+              disabled={disconnectGoogle.isPending}
               aria-label={t.nav.disconnectGoogle}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring disabled:opacity-50"
             >
