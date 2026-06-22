@@ -10,7 +10,6 @@ import {
   FileText,
   Flame,
   Gift,
-  GitBranch,
   Heart,
   LayoutDashboard,
   ListTodo,
@@ -23,6 +22,7 @@ import {
   Unlink,
   Wallet,
 } from "lucide-react";
+import { GithubIcon } from "@/components/icons/github";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -67,7 +67,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "books", icon: BookOpen },
   { value: "dates", icon: Gift },
   { value: "couple", icon: Heart },
-  { value: "github", icon: GitBranch },
+  { value: "github", icon: GithubIcon },
 ];
 
 export function Sidebar({

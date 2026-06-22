@@ -9,7 +9,6 @@ import {
   FileText,
   Flame,
   Gift,
-  GitBranch,
   Heart,
   LayoutDashboard,
   Languages,
@@ -23,6 +22,7 @@ import {
   Target,
   Wallet,
 } from "lucide-react";
+import { GithubIcon } from "@/components/icons/github";
 import { useTheme } from "@/lib/use-theme";
 import { useDict, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -95,7 +95,7 @@ export function CommandPalette({
       { id: "go-books", label: s.books, group: "go", icon: BookOpen, keywords: "reading knihy g b", run: go("books") },
       { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "anniversary birthday významné dny g d", run: go("dates") },
       { id: "go-couple", label: s.couple, group: "go", icon: Heart, keywords: "partner pair sharing pár g u", run: go("couple") },
-      { id: "go-github", label: s.github, group: "go", icon: GitBranch, keywords: "github repos repositories git commit markdown repozitáře g r", run: go("github") },
+      { id: "go-github", label: s.github, group: "go", icon: GithubIcon, keywords: "github repos repositories git commit markdown repozitáře g r", run: go("github") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-quick-add",

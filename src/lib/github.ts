@@ -47,3 +47,64 @@ export function normalizeRepoPath(raw: string): string | null {
   }
   return segments.join("/");
 }
+
+// ---------------------------------------------------------------------------
+// Client-side data helpers. Plain fetch wrappers around our own API routes,
+// shared by the Repos panel and the "Publish to repo" dialog so both speak the
+// same protocol (and handle the not-connected case identically).
+// ---------------------------------------------------------------------------
+
+export type LoadReposResult =
+  | { kind: "ok"; repos: GithubRepo[] }
+  | { kind: "disconnected" }
+  | { kind: "error" };
+
+/** Fetch repos as a plain result (no React state) so callers can apply it
+ * inside a deferred callback — keeps setState out of effect bodies. */
+export async function loadReposResult(): Promise<LoadReposResult> {
+  try {
+    const res = await fetch("/api/github/repos");
+    if (res.status === 401) return { kind: "disconnected" };
+    if (!res.ok) return { kind: "error" };
+    const json = (await res.json()) as { repos: GithubRepo[] };
+    return { kind: "ok", repos: json.repos };
+  } catch {
+    return { kind: "error" };
+  }
+}
+
+export type CommitInput = {
+  owner: string;
+  repo: string;
+  path: string;
+  content: string;
+  message: string;
+  branch?: string;
+};
+
+export type CommitOutcome =
+  | { ok: true; result: GithubCommitResult }
+  | { ok: false; status: number; error: string };
+
+/** POST a single-file commit to /api/github/commit and normalize the result.
+ * `status === 401` signals GitHub disconnected — callers surface a reconnect. */
+export async function commitFile(input: CommitInput): Promise<CommitOutcome> {
+  try {
+    const res = await fetch("/api/github/commit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | (GithubCommitResult & { error?: string })
+      | null;
+    if (res.ok && json) return { ok: true, result: json as GithubCommitResult };
+    return {
+      ok: false,
+      status: res.status,
+      error: (json as { error?: string } | null)?.error ?? "commit failed",
+    };
+  } catch {
+    return { ok: false, status: 0, error: "network" };
+  }
+}

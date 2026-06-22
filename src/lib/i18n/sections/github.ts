@@ -28,6 +28,12 @@ type GithubStrings = {
   writeTitle: string;
   writeHint: string;
   done: string;
+  // Publish-to-repo (from a BlockNote note)
+  publish: string;
+  publishNote: string;
+  repository: string;
+  connectFirst: string;
+  loadingRepos: string;
   pathLabel: string;
   pathPlaceholder: string;
   branchLabel: string;
@@ -49,7 +55,7 @@ type GithubStrings = {
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
   en: {
-    title: "Repos",
+    title: "Repositories",
     subtitle: "Your active GitHub repositories.",
     connectTitle: "Connect GitHub",
     connectBody:
@@ -76,6 +82,11 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     writeTitle: "Write a file to",
     writeHint: "Creates a commit on the chosen branch (defaults to the repo default).",
     done: "Done",
+    publish: "Publish to repo",
+    publishNote: "Publish note to repo",
+    repository: "Repository",
+    connectFirst: "Connect GitHub from the Repositories tab first.",
+    loadingRepos: "Loading repositories…",
     pathLabel: "File path",
     pathPlaceholder: "notes/2026-06-22.md",
     branchLabel: "Branch (optional)",
@@ -122,6 +133,11 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     writeTitle: "Zapsat soubor do",
     writeHint: "Vytvoří commit ve zvolené větvi (výchozí je hlavní větev repozitáře).",
     done: "Hotovo",
+    publish: "Publikovat do repo",
+    publishNote: "Publikovat poznámku do repo",
+    repository: "Repozitář",
+    connectFirst: "Nejprve připoj GitHub v sekci Repozitáře.",
+    loadingRepos: "Načítám repozitáře…",
     pathLabel: "Cesta k souboru",
     pathPlaceholder: "poznamky/2026-06-22.md",
     branchLabel: "Větev (volitelné)",

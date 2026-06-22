@@ -6,7 +6,6 @@ import { formatDistanceToNow } from "date-fns";
 import {
   Archive,
   ExternalLink,
-  GitBranch,
   GitFork,
   Globe,
   Lock,
@@ -27,33 +26,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useDict, useDateLocale } from "@/lib/i18n";
+import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
 import {
+  commitFile,
+  loadReposResult,
   normalizeRepoPath,
   type GithubCommitResult,
   type GithubRepo,
+  type LoadReposResult,
 } from "@/lib/github";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
-
-type LoadResult =
-  | { kind: "ok"; repos: GithubRepo[] }
-  | { kind: "disconnected" }
-  | { kind: "error" };
-
-/** Fetch repos as a plain result (no React state) so callers apply it inside a
- * deferred callback — keeps setState out of the effect body. */
-async function loadReposResult(): Promise<LoadResult> {
-  try {
-    const res = await fetch("/api/github/repos");
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as { repos: GithubRepo[] };
-    return { kind: "ok", repos: json.repos };
-  } catch {
-    return { kind: "error" };
-  }
-}
 
 export function ReposPanel() {
   const t = useDict();
@@ -65,7 +49,7 @@ export function ReposPanel() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [writeTarget, setWriteTarget] = useState<GithubRepo | null>(null);
 
-  const apply = useCallback((r: LoadResult) => {
+  const apply = useCallback((r: LoadReposResult) => {
     if (r.kind === "ok") {
       setRepos(r.repos);
       setStatus("connected");
@@ -191,7 +175,7 @@ export function ReposPanel() {
 
       {status === "error" && (
         <EmptyState
-          icon={GitBranch}
+          icon={GithubIcon}
           title={t.github.loadErr}
           action={
             <Button variant="outline" size="sm" onClick={refresh}>
@@ -204,12 +188,12 @@ export function ReposPanel() {
 
       {status === "disconnected" && (
         <EmptyState
-          icon={GitBranch}
+          icon={GithubIcon}
           title={t.github.connectTitle}
           description={t.github.connectBody}
           action={
             <Button onClick={onConnect} disabled={connecting}>
-              <GitBranch className="h-4 w-4" />
+              <GithubIcon className="h-4 w-4" />
               {connecting ? t.common.redirecting : t.github.connect}
             </Button>
           }
@@ -229,9 +213,9 @@ export function ReposPanel() {
           )}
 
           {repos.length === 0 ? (
-            <EmptyState icon={GitBranch} title={t.github.empty} />
+            <EmptyState icon={GithubIcon} title={t.github.empty} />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={GitBranch} title={t.github.emptyHint} />
+            <EmptyState icon={GithubIcon} title={t.github.emptyHint} />
           ) : (
             <div className="space-y-2.5">
               {filtered.map((repo) => (
@@ -390,40 +374,31 @@ function WriteFileDialog({
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/github/commit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: repo.owner,
-          repo: repo.name,
-          path: normalized,
-          content,
-          message: message.trim() || t.github.messagePlaceholder,
-          branch: branch.trim() || undefined,
-        }),
+      const outcome = await commitFile({
+        owner: repo.owner,
+        repo: repo.name,
+        path: normalized,
+        content,
+        message: message.trim() || t.github.messagePlaceholder,
+        branch: branch.trim() || undefined,
       });
-      const json = (await res.json().catch(() => null)) as
-        | (GithubCommitResult & { error?: string })
-        | { error?: string }
-        | null;
-      if (res.status === 401) {
-        onAuthLost();
-        onClose();
-        toast.err(t.github.reconnect);
+      if (!outcome.ok) {
+        if (outcome.status === 401) {
+          onAuthLost();
+          onClose();
+          toast.err(t.github.reconnect);
+        } else {
+          toast.err(outcome.error || t.github.networkErr);
+        }
         return;
       }
-      if (!res.ok) {
-        toast.err((json as { error?: string })?.error ?? t.github.networkErr);
-        return;
-      }
-      const committed = json as GithubCommitResult;
-      setResult(committed);
+      setResult(outcome.result);
       onCommitted(repo.id);
       toast.ok(
-        committed.updated ? t.github.committedUpdate : t.github.committedNew,
+        outcome.result.updated
+          ? t.github.committedUpdate
+          : t.github.committedNew,
       );
-    } catch {
-      toast.err(t.github.networkErr);
     } finally {
       setBusy(false);
     }
