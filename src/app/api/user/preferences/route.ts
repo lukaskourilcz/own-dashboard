@@ -4,6 +4,7 @@ import { rejectCrossOrigin } from "@/lib/csrf";
 
 type Patch = {
   selected_calendar_ids?: string[];
+  visible_repo_ids?: string[];
   timezone?: string | null;
   nudge_hour?: number | null;
   notifications_renewals?: boolean;
@@ -32,6 +33,12 @@ export async function PATCH(request: Request) {
     patch.selected_calendar_ids = body.selected_calendar_ids
       .filter((s) => typeof s === "string" && s.length > 0)
       .slice(0, 20); // sanity cap
+  }
+  if (Array.isArray(body.visible_repo_ids)) {
+    // Empty array is meaningful — it clears the filter ("show all repos").
+    patch.visible_repo_ids = Array.from(
+      new Set(body.visible_repo_ids.filter((s) => typeof s === "string" && s.length > 0)),
+    ).slice(0, 500); // sanity cap — the repos API returns at most 100
   }
   if ("timezone" in body) patch.timezone = body.timezone ?? null;
   if ("nudge_hour" in body) patch.nudge_hour = body.nudge_hour ?? null;

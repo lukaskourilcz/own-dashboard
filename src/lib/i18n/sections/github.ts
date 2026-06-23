@@ -12,6 +12,20 @@ type GithubStrings = {
   emptyHint: string;
   loadErr: string;
   refresh: string;
+  // Repo visibility filter (saved allow-list)
+  filter: string;
+  filterTitle: string;
+  filterDesc: string;
+  filterSearch: string;
+  selectAll: string;
+  showAll: string;
+  save: string;
+  saving: string;
+  filterSaved: string;
+  filterErr: string;
+  pickAtLeastOne: string;
+  filterHidesAll: string;
+  showingCount: (shown: number, total: number) => string;
   updatedPrefix: string;
   never: string;
   privateLabel: string;
@@ -67,6 +81,20 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     emptyHint: "Nothing matches that filter.",
     loadErr: "Could not load repositories.",
     refresh: "Refresh",
+    filter: "Choose repos",
+    filterTitle: "Choose repositories to show",
+    filterDesc:
+      "Only the repos you select stay on your dashboard. New repos won't appear until you add them here.",
+    filterSearch: "Search repositories…",
+    selectAll: "Select all",
+    showAll: "Show all",
+    save: "Save",
+    saving: "Saving…",
+    filterSaved: "Repository filter saved.",
+    filterErr: "Could not save the filter.",
+    pickAtLeastOne: "Select at least one repository, or choose Show all.",
+    filterHidesAll: "Your filter hides every repository.",
+    showingCount: (shown, total) => `Showing ${shown} of ${total}`,
     updatedPrefix: "Updated",
     never: "never",
     privateLabel: "Private",
@@ -118,6 +146,20 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     emptyHint: "Filtru nic neodpovídá.",
     loadErr: "Nepodařilo se načíst repozitáře.",
     refresh: "Obnovit",
+    filter: "Vybrat repozitáře",
+    filterTitle: "Vyber repozitáře k zobrazení",
+    filterDesc:
+      "Na dashboardu zůstanou jen vybrané repozitáře. Nové se zobrazí, až je sem přidáš.",
+    filterSearch: "Hledat repozitáře…",
+    selectAll: "Vybrat vše",
+    showAll: "Zobrazit vše",
+    save: "Uložit",
+    saving: "Ukládám…",
+    filterSaved: "Filtr repozitářů uložen.",
+    filterErr: "Nepodařilo se uložit filtr.",
+    pickAtLeastOne: "Vyber aspoň jeden repozitář, nebo zvol Zobrazit vše.",
+    filterHidesAll: "Tvůj filtr skrývá všechny repozitáře.",
+    showingCount: (shown, total) => `Zobrazeno ${shown} z ${total}`,
     updatedPrefix: "Upraveno",
     never: "nikdy",
     privateLabel: "Soukromý",

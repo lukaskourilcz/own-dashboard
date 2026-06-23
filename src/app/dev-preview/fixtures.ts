@@ -198,3 +198,4 @@ export const coupleCtx: CoupleContext = {
 
 export const partnerData: PartnerData | null = null;
 export const selectedCalendarIds = ["primary"];
+export const repoVisibleIds: string[] = [];

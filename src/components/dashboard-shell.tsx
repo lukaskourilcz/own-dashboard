@@ -87,6 +87,7 @@ type Props = {
   coupleCtx: CoupleContext;
   partnerData: PartnerData | null;
   selectedCalendarIds: string[];
+  repoVisibleIds: string[];
 };
 
 const TAB_CHORDS: Record<string, NavTab> = {
@@ -125,6 +126,7 @@ export function DashboardShell({
   coupleCtx,
   partnerData,
   selectedCalendarIds,
+  repoVisibleIds,
 }: Props) {
   const [tab, setTab] = useState<NavTab>("overview");
   const { collapsed: navCollapsed } = useNavCollapsed();
@@ -466,7 +468,9 @@ export function DashboardShell({
                     />
                   )}
 
-                  {tab === "github" && <ReposPanel />}
+                  {tab === "github" && (
+                    <ReposPanel initialVisibleIds={repoVisibleIds} />
+                  )}
 
                   {tab === "settings" && <SettingsPanel />}
                 </motion.div>
