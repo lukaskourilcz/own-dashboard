@@ -947,3 +947,42 @@ revoke all on function public.github_tokens_acquire_refresh_lock(uuid) from publ
 revoke all on function public.github_tokens_acquire_refresh_lock(uuid) from anon;
 revoke all on function public.github_tokens_acquire_refresh_lock(uuid) from authenticated;
 grant execute on function public.github_tokens_acquire_refresh_lock(uuid) to service_role;
+
+-- =============================================================
+-- User preferences — one row per user (upserted on first write).
+-- ----------------------------------------------------------------------------
+-- Holds device-independent, server-synced settings: which Google calendars to
+-- show, notification toggles, the daily nudge hour/timezone, and the GitHub
+-- Repositories allow-list. Read with the user's own role (own-only RLS); the
+-- renewal-warnings cron reads it via service_role.
+-- =============================================================
+create table if not exists public.user_preferences (
+  user_id                uuid primary key references auth.users(id) on delete cascade,
+  selected_calendar_ids  text[] not null default '{}',
+  visible_repo_ids       text[] not null default '{}',
+  timezone               text,
+  nudge_hour             integer check (nudge_hour is null or nudge_hour between 0 and 23),
+  notifications_renewals boolean not null default true,
+  notifications_streaks  boolean not null default true,
+  updated_at             timestamptz not null default now()
+);
+
+-- Repositories filter: the GitHub repo ids (as text) the user chose to keep on
+-- the dashboard. Empty means "no filter" — show every repo the API returns.
+-- Idempotent migration for installs created before this column existed.
+alter table public.user_preferences
+  add column if not exists visible_repo_ids text[] not null default '{}';
+
+alter table public.user_preferences enable row level security;
+
+drop policy if exists "user_preferences select own" on public.user_preferences;
+create policy "user_preferences select own" on public.user_preferences
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "user_preferences insert own" on public.user_preferences;
+create policy "user_preferences insert own" on public.user_preferences
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "user_preferences update own" on public.user_preferences;
+create policy "user_preferences update own" on public.user_preferences
+  for update using (auth.uid() = user_id);

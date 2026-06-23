@@ -160,6 +160,7 @@ export default async function DashboardPage() {
       coupleCtx={coupleCtx}
       partnerData={partnerData}
       selectedCalendarIds={prefs.selected_calendar_ids}
+      repoVisibleIds={prefs.visible_repo_ids}
     />
   );
 }

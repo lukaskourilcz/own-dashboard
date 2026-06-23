@@ -35,6 +35,7 @@ export default function PreviewPage() {
       coupleCtx={f.coupleCtx}
       partnerData={f.partnerData}
       selectedCalendarIds={f.selectedCalendarIds}
+      repoVisibleIds={f.repoVisibleIds}
     />
   );
 }
