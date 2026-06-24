@@ -21,6 +21,7 @@ import {
   Settings,
   Sparkles,
   Target,
+  Terminal,
   Unlink,
   Wallet,
 } from "lucide-react";
@@ -31,24 +32,9 @@ import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { useNavCollapsed, useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+import type { NavTab } from "@/lib/nav-tabs";
 
-export type NavTab =
-  | "overview"
-  | "calendar"
-  | "subscriptions"
-  | "todos"
-  | "streaks"
-  | "finances"
-  | "invoices"
-  | "plans"
-  | "couple"
-  | "books"
-  | "notes"
-  | "prompts"
-  | "dates"
-  | "github"
-  | "ai"
-  | "settings";
+export type { NavTab };
 
 type NavItem = {
   value: Exclude<NavTab, "settings">;
@@ -63,6 +49,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "calendar", icon: CalendarDays },
   { value: "notes", icon: FileText },
   { value: "prompts", icon: MessageSquareText },
+  { value: "shortcuts", icon: Terminal },
   { value: "todos", icon: ListTodo },
   { value: "streaks", icon: Flame },
   { value: "finances", icon: Wallet },

@@ -13,6 +13,7 @@ import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
 import { NotesPanel } from "@/components/panels/notes-panel";
 import { PromptsPanel } from "@/components/panels/prompts-panel";
+import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
@@ -26,6 +27,7 @@ import { WeekView } from "@/components/calendar/week-view";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar, MobileNav, type NavTab } from "@/components/nav/sidebar";
+import { tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
@@ -45,6 +47,8 @@ import {
   fetchPlans,
   fetchPrompts,
   fetchRepoNotes,
+  fetchRepoLinks,
+  fetchShortcuts,
   fetchStreakLogs,
   fetchStreaks,
   fetchSubscriptions,
@@ -66,7 +70,9 @@ import type {
   Note,
   Plan,
   Prompt,
+  RepoLink,
   RepoNote,
+  Shortcut,
   Streak,
   StreakLog,
   Subscription,
@@ -78,6 +84,7 @@ import { partnerDisplayName, type CoupleContext, type PartnerData } from "@/lib/
 
 type Props = {
   user: { id: string; email: string; name: string | null; avatar_url: string | null };
+  initialTab: NavTab;
   initialSubscriptions: Subscription[];
   initialTodos: Todo[];
   initialStreaks: Streak[];
@@ -90,8 +97,10 @@ type Props = {
   initialNotes: Note[];
   initialPrompts: Prompt[];
   initialRepoNotes: RepoNote[];
+  initialRepoLinks: RepoLink[];
   initialAiLinks: AiLink[];
   initialAiCategories: AiCategory[];
+  initialShortcuts: Shortcut[];
   initialImportantDates: ImportantDate[];
   initialInvoices: Invoice[];
   initialInvoiceItems: InvoiceItem[];
@@ -116,6 +125,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
   b: "books",
   n: "notes",
   m: "prompts",
+  k: "shortcuts",
   d: "dates",
   r: "github",
   a: "ai",
@@ -123,6 +133,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
 
 export function DashboardShell({
   user,
+  initialTab,
   initialSubscriptions,
   initialTodos,
   initialStreaks,
@@ -135,8 +146,10 @@ export function DashboardShell({
   initialNotes,
   initialPrompts,
   initialRepoNotes,
+  initialRepoLinks,
   initialAiLinks,
   initialAiCategories,
+  initialShortcuts,
   initialImportantDates,
   initialInvoices,
   initialInvoiceItems,
@@ -148,7 +161,24 @@ export function DashboardShell({
   selectedCalendarIds,
   repoVisibleIds,
 }: Props) {
-  const [tab, setTab] = useState<NavTab>("overview");
+  const [tab, setTabState] = useState<NavTab>(initialTab);
+  // Reflect the active section in the URL (/dashboard/<section>) using the
+  // History API — no server round-trip, so the SPA feel is preserved. Deep
+  // links and refresh are resolved by the route on the server.
+  const setTab = useCallback((next: NavTab) => {
+    setTabState(next);
+    const path = tabToPath(next);
+    if (typeof window !== "undefined" && window.location.pathname !== path) {
+      window.history.pushState(null, "", path);
+    }
+  }, []);
+  // Keep the active tab in sync with browser back/forward.
+  useEffect(() => {
+    const onPop = () =>
+      setTabState(tabFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const { collapsed: navCollapsed } = useNavCollapsed();
   // Entity state now lives in the React Query cache (seeded from the server
   // load). Each useEntityStore returns the same [data, setter] shape the panels
@@ -197,6 +227,11 @@ export function DashboardShell({
     initialRepoNotes,
     fetchRepoNotes,
   );
+  const [repoLinks, setRepoLinks] = useEntityStore(
+    qk.repoLinks,
+    initialRepoLinks,
+    fetchRepoLinks,
+  );
   const [aiLinks, setAiLinks] = useEntityStore(
     qk.aiLinks,
     initialAiLinks,
@@ -206,6 +241,11 @@ export function DashboardShell({
     qk.aiCategories,
     initialAiCategories,
     fetchAiCategories,
+  );
+  const [shortcuts, setShortcuts] = useEntityStore(
+    qk.shortcuts,
+    initialShortcuts,
+    fetchShortcuts,
   );
   const [importantDates, setImportantDates] = useEntityStore(
     qk.importantDates,
@@ -235,10 +275,13 @@ export function DashboardShell({
     nonce: number;
   } | null>(null);
 
-  const handleCalendarTitle = useCallback((title: string) => {
-    setCalendarPrefill({ title, nonce: Date.now() });
-    setTab("calendar");
-  }, []);
+  const handleCalendarTitle = useCallback(
+    (title: string) => {
+      setCalendarPrefill({ title, nonce: Date.now() });
+      setTab("calendar");
+    },
+    [setTab],
+  );
 
   const partnerName = partnerDisplayName(coupleCtx.partnerProfile);
   const partnerTodos = partnerData?.todos ?? [];
@@ -280,7 +323,7 @@ export function DashboardShell({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [setTab]);
 
   const incomingInvites = coupleCtx.incomingInvites.length;
 
@@ -503,6 +546,13 @@ export function DashboardShell({
                     <PromptsPanel prompts={prompts} setPrompts={setPrompts} />
                   )}
 
+                  {tab === "shortcuts" && (
+                    <ShortcutsPanel
+                      shortcuts={shortcuts}
+                      setShortcuts={setShortcuts}
+                    />
+                  )}
+
                   {tab === "dates" && (
                     <ImportantDatesPanel
                       dates={importantDates}
@@ -517,6 +567,8 @@ export function DashboardShell({
                       initialVisibleIds={repoVisibleIds}
                       repoNotes={repoNotes}
                       setRepoNotes={setRepoNotes}
+                      repoLinks={repoLinks}
+                      setRepoLinks={setRepoLinks}
                     />
                   )}
 

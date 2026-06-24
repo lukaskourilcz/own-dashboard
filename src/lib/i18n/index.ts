@@ -22,6 +22,7 @@ import { plans } from "./sections/plans";
 import { books } from "./sections/books";
 import { notes } from "./sections/notes";
 import { prompts } from "./sections/prompts";
+import { shortcuts } from "./sections/shortcuts";
 import { dates } from "./sections/dates";
 import { couple } from "./sections/couple";
 import { calendar } from "./sections/calendar";
@@ -51,6 +52,7 @@ export const dictionaries = {
     books: books.en,
     notes: notes.en,
     prompts: prompts.en,
+    shortcuts: shortcuts.en,
     dates: dates.en,
     couple: couple.en,
     calendar: calendar.en,
@@ -77,6 +79,7 @@ export const dictionaries = {
     books: books.cs,
     notes: notes.cs,
     prompts: prompts.cs,
+    shortcuts: shortcuts.cs,
     dates: dates.cs,
     couple: couple.cs,
     calendar: calendar.cs,

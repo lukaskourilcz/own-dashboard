@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Popover from "@radix-ui/react-popover";
 import { formatDistanceToNow } from "date-fns";
 import {
   Archive,
@@ -10,11 +11,13 @@ import {
   Eye,
   GitFork,
   Globe,
+  Link2,
   ListFilter,
   Lock,
   Plus,
   RefreshCw,
   Star,
+  Trash2,
   Unlink,
   Upload,
   X,
@@ -33,6 +36,7 @@ import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
 import { createClient } from "@/lib/supabase/client";
 import { readRepoFilter, writeRepoFilter } from "@/lib/use-prefs";
+import { qk } from "@/lib/queries/keys";
 import {
   commitFile,
   normalizeRepoPath,
@@ -45,32 +49,71 @@ import {
   useReposQuery,
 } from "@/lib/github-queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { RepoNote, Updater } from "@/lib/types";
+import type { RepoLink, RepoNote, Updater } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
 
-// Stable empty reference so the filter useMemo doesn't rerun every render.
+// Stable empty references so the per-repo lookups never hand a card a fresh
+// array each render.
 const EMPTY_REPOS: GithubRepo[] = [];
+const EMPTY_NOTES: RepoNote[] = [];
 
 // The single markdown file each repo's notes are written to. A stable path so
 // "the latest .md" is always the same file — re-saving updates it in place.
 const NOTES_PATH = "dashboard-notes.md";
 
-/** Wrap a repo's notes body in a titled markdown document. The `---` dividers
- * the user inserts between notes render as horizontal rules. */
+/** Wrap a repo's notes in a titled markdown document. */
 function compileMarkdown(fullName: string, body: string): string {
   return `# Notes — ${fullName}\n\n${body.trim()}\n`;
+}
+
+/** Add https:// when no scheme is present, then validate. Returns the
+ * canonical href or null when it isn't a valid http(s) URL. */
+function normalizeUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    return u.href;
+  } catch {
+    return null;
+  }
+}
+
+/** Strip the scheme and a leading "www." for display:
+ * https://www.umyjemefasadu.cz → umyjemefasadu.cz */
+function displayUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.replace(/^www\./, "");
+    const path = u.pathname === "/" ? "" : u.pathname.replace(/\/+$/, "");
+    return `${host}${path}${u.search}`;
+  } catch {
+    return raw
+      .replace(/^https?:\/\//i, "")
+      .replace(/^www\./, "")
+      .replace(/\/+$/, "");
+  }
 }
 
 export function ReposPanel({
   initialVisibleIds,
   repoNotes,
   setRepoNotes,
+  repoLinks,
+  setRepoLinks,
 }: {
   /** Saved repo allow-list (GitHub repo ids as strings). Empty = show all. */
   initialVisibleIds: string[];
   repoNotes: RepoNote[];
   setRepoNotes: Updater<RepoNote[]>;
+  repoLinks: RepoLink[];
+  setRepoLinks: Updater<RepoLink[]>;
 }) {
   const t = useDict();
   const toast = useToast();
@@ -95,12 +138,29 @@ export function ReposPanel({
         : data.kind
       : "error";
 
-  // Index notes by repo id for O(1) lookup when rendering the grid.
-  const notesByRepo = useMemo(() => {
-    const map = new Map<string, RepoNote>();
-    for (const n of repoNotes) map.set(n.repo_id, n);
+  // Group note entries by repo (sorted) and index links by repo for O(1) lookup.
+  const entriesByRepo = useMemo(() => {
+    const map = new Map<string, RepoNote[]>();
+    for (const n of repoNotes) {
+      const arr = map.get(n.repo_id);
+      if (arr) arr.push(n);
+      else map.set(n.repo_id, [n]);
+    }
+    for (const arr of map.values()) {
+      arr.sort(
+        (a, b) =>
+          a.sort_order - b.sort_order ||
+          a.created_at.localeCompare(b.created_at),
+      );
+    }
     return map;
   }, [repoNotes]);
+
+  const linksByRepo = useMemo(() => {
+    const map = new Map<string, RepoLink>();
+    for (const l of repoLinks) map.set(l.repo_id, l);
+    return map;
+  }, [repoLinks]);
 
   async function onConnect() {
     setConnecting(true);
@@ -323,8 +383,10 @@ export function ReposPanel({
                 <RepoNotesCard
                   key={repo.id}
                   repo={repo}
-                  note={notesByRepo.get(String(repo.id))}
+                  notes={entriesByRepo.get(String(repo.id)) ?? EMPTY_NOTES}
+                  link={linksByRepo.get(String(repo.id))}
                   setRepoNotes={setRepoNotes}
+                  setRepoLinks={setRepoLinks}
                   onWrite={() => setWriteTarget(repo)}
                 />
               ))}
@@ -359,13 +421,17 @@ export function ReposPanel({
 
 function RepoNotesCard({
   repo,
-  note,
+  notes,
+  link,
   setRepoNotes,
+  setRepoLinks,
   onWrite,
 }: {
   repo: GithubRepo;
-  note: RepoNote | undefined;
+  notes: RepoNote[];
+  link: RepoLink | undefined;
   setRepoNotes: Updater<RepoNote[]>;
+  setRepoLinks: Updater<RepoLink[]>;
   onWrite: () => void;
 }) {
   const t = useDict();
@@ -375,130 +441,108 @@ function RepoNotesCard({
   const supabase = createClient();
   const repoId = String(repo.id);
 
-  // Local working copy. The card is keyed by repo.id, so this initializer runs
-  // fresh whenever the card (re)mounts — picking up the latest cached body.
-  const [body, setBody] = useState(note?.body ?? "");
-  const [savedState, setSavedState] = useState<"idle" | "saving" | "saved">(
-    "idle",
-  );
   const [pushing, setPushing] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const saveTimer = useRef<number | null>(null);
-  const dirtyRef = useRef(false);
-
-  // Clear any pending debounce on unmount.
-  useEffect(
-    () => () => {
-      if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    },
-    [],
-  );
+  const [autoFocusId, setAutoFocusId] = useState<string | null>(null);
 
   const updated = repo.pushed_at
     ? formatDistanceToNow(new Date(repo.pushed_at), { addSuffix: true, locale })
     : t.github.never;
 
-  // Upsert one row per (user, repo). Reconciles the shared cache on success so
-  // it survives the panel unmounting on a tab switch.
-  const saveMutation = useMutation({
-    mutationFn: async (text: string) => {
+  // UPDATE a single entry's body. Called from each entry on debounce/blur.
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: string }) => {
+      const { error } = await supabase
+        .from("repo_notes")
+        .update({ body, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onError: () => toast.err(t.github.noteSaveErr),
+  });
+
+  // Optimistic cache write + debounced DB write. Updating the cache here (not
+  // on every keystroke) keeps the shared store current for Save / remount
+  // without re-rendering the whole panel as you type.
+  function persistEntry(id: string, body: string) {
+    setRepoNotes((prev) => prev.map((n) => (n.id === id ? { ...n, body } : n)));
+    updateMutation.mutate({ id, body });
+  }
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
       if (!userId) throw new Error("no-user");
+      const sortOrder = Math.max(0, ...notes.map((n) => n.sort_order)) + 1;
       const { data, error } = await supabase
         .from("repo_notes")
-        .upsert(
-          {
-            user_id: userId,
-            repo_id: repoId,
-            repo_full_name: repo.full_name,
-            body: text,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,repo_id" },
-        )
+        .insert({
+          user_id: userId,
+          repo_id: repoId,
+          repo_full_name: repo.full_name,
+          body: "",
+          sort_order: sortOrder,
+        })
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
       return data as RepoNote;
     },
-    onMutate: () => setSavedState("saving"),
     onSuccess: (row) => {
-      dirtyRef.current = false;
-      setSavedState("saved");
-      setRepoNotes((prev) => {
-        const idx = prev.findIndex((n) => n.repo_id === repoId);
-        if (idx === -1) return [row, ...prev];
-        const next = prev.slice();
-        next[idx] = row;
-        return next;
-      });
+      setRepoNotes((prev) => [...prev, row]);
+      setAutoFocusId(row.id);
     },
-    onError: () => {
-      setSavedState("idle");
-      toast.err(t.github.networkErr);
+    onError: () => toast.err(t.github.noteSaveErr),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("repo_notes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.repoNotes });
+      const prev = qc.getQueryData<RepoNote[]>(qk.repoNotes);
+      setRepoNotes((old) => old.filter((n) => n.id !== id));
+      return { prev };
+    },
+    onSuccess: () => toast.ok(t.github.noteDeleted),
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) setRepoNotes(ctx.prev);
+      toast.err(t.github.noteDeleteErr);
     },
   });
 
-  function scheduleSave(text: string) {
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => {
-      if (dirtyRef.current) saveMutation.mutate(text);
-    }, 700);
-  }
-
-  function flushSave() {
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    if (dirtyRef.current && !saveMutation.isPending) saveMutation.mutate(body);
-  }
-
-  function onBodyChange(v: string) {
-    setBody(v);
-    dirtyRef.current = true;
-    setSavedState("saving");
-    // Keep the shared cache current so switching tabs mid-type (which unmounts
-    // this card) doesn't lose text before the debounce fires.
-    setRepoNotes((prev) => {
-      const idx = prev.findIndex((n) => n.repo_id === repoId);
-      if (idx === -1) return prev; // no row yet — created on first save
-      const next = prev.slice();
-      next[idx] = { ...next[idx], body: v };
-      return next;
-    });
-    scheduleSave(v);
-  }
-
-  // Append a markdown divider so the next note starts on a fresh row.
-  function startNewNote() {
-    const base = body.replace(/\s+$/, "");
-    const next = base ? `${base}\n\n---\n\n` : "";
-    setBody(next);
-    dirtyRef.current = true;
-    setSavedState("saving");
-    scheduleSave(next);
-    requestAnimationFrame(() => {
-      const el = textareaRef.current;
-      if (el) {
-        el.focus();
-        el.setSelectionRange(next.length, next.length);
-        el.scrollTop = el.scrollHeight;
-      }
-    });
+  function deleteEntry(note: RepoNote) {
+    if (note.body.trim() && !window.confirm(t.github.deleteNoteConfirm)) return;
+    deleteMutation.mutate(note.id);
   }
 
   async function saveToGithub() {
-    if (!body.trim()) {
+    // Read the freshest entries straight from the cache (entries flush to it on
+    // blur, which fires when the Save button takes focus).
+    const all = qc.getQueryData<RepoNote[]>(qk.repoNotes) ?? notes;
+    const text = all
+      .filter((n) => n.repo_id === repoId)
+      .sort(
+        (a, b) =>
+          a.sort_order - b.sort_order ||
+          a.created_at.localeCompare(b.created_at),
+      )
+      .map((n) => n.body.trim())
+      .filter(Boolean)
+      .join("\n\n---\n\n");
+    if (!text) {
       toast.err(t.github.notesNothing);
       return;
     }
-    flushSave();
     setPushing(true);
     try {
       const outcome = await commitFile({
         owner: repo.owner,
         repo: repo.name,
         path: NOTES_PATH,
-        content: compileMarkdown(repo.full_name, body),
+        content: compileMarkdown(repo.full_name, text),
         message: t.github.notesCommitMessage,
       });
       if (!outcome.ok) {
@@ -517,12 +561,7 @@ function RepoNotesCard({
     }
   }
 
-  const status =
-    saveMutation.isPending || savedState === "saving"
-      ? t.github.autosaving
-      : savedState === "saved"
-        ? t.github.saved
-        : null;
+  const saving = updateMutation.isPending || addMutation.isPending;
 
   return (
     <Card className="flex flex-col p-0">
@@ -545,6 +584,18 @@ function RepoNotesCard({
             {repo.fork && <Badge icon={GitFork} label={t.github.fork} />}
             {repo.archived && <Badge icon={Archive} label={t.github.archived} />}
           </div>
+          {link && (
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              title={link.url}
+              className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[11px] font-medium text-foreground hover:underline"
+            >
+              <Link2 className="h-3 w-3 shrink-0" />
+              <span className="truncate">{displayUrl(link.url)}</span>
+            </a>
+          )}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
             {repo.language && (
               <span className="inline-flex items-center gap-1">
@@ -564,7 +615,8 @@ function RepoNotesCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
-          <Tooltip content={t.github.writeFile}>
+          <RepoLinkControl repo={repo} link={link} setRepoLinks={setRepoLinks} />
+          <Tooltip content={t.github.writeFileHint}>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -585,26 +637,38 @@ function RepoNotesCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">
-        <Textarea
-          ref={textareaRef}
-          value={body}
-          onChange={(e) => onBodyChange(e.target.value)}
-          onBlur={flushSave}
-          placeholder={t.github.notePlaceholder}
-          className="min-h-[140px] flex-1 resize-y text-xs leading-relaxed"
-        />
-        <div className="flex items-center justify-between gap-2">
+        {notes.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-foreground-subtle">
+            {t.github.notesEmpty}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {notes.map((n) => (
+              <RepoNoteEntry
+                key={n.id}
+                note={n}
+                autoFocus={n.id === autoFocusId}
+                onPersist={persistEntry}
+                onDelete={() => deleteEntry(n)}
+              />
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2 pt-1">
           <span className="text-[10px] tabular text-foreground-subtle">
-            {status}
+            {saving ? t.github.autosaving : null}
           </span>
           <div className="flex items-center gap-1.5">
-            <Tooltip content={t.github.addNote}>
-              <Button variant="outline" size="sm" onClick={startNewNote}>
-                <Plus className="h-3.5 w-3.5" />
-                {t.github.addNote}
-              </Button>
-            </Tooltip>
-            <Tooltip content={t.github.notesTargetHint(NOTES_PATH)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addMutation.mutate()}
+              disabled={addMutation.isPending}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t.github.addNote}
+            </Button>
+            <Tooltip content={t.github.saveNotesHint}>
               <Button size="sm" onClick={saveToGithub} disabled={pushing}>
                 {pushing ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -618,6 +682,242 @@ function RepoNotesCard({
         </div>
       </div>
     </Card>
+  );
+}
+
+/** A single note entry: a self-contained autosaving textarea + delete button.
+ * Keystrokes stay local; the debounce/blur/unmount flush hands the latest body
+ * up to the card, which writes it to the cache + DB. */
+function RepoNoteEntry({
+  note,
+  autoFocus,
+  onPersist,
+  onDelete,
+}: {
+  note: RepoNote;
+  autoFocus: boolean;
+  onPersist: (id: string, body: string) => void;
+  onDelete: () => void;
+}) {
+  const t = useDict();
+  const [body, setBody] = useState(note.body);
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const timer = useRef<number | null>(null);
+
+  function clearTimer() {
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+  }
+
+  // Debounce the write; each keystroke reschedules with its own value, so the
+  // pending save always carries the latest text (no stale-closure refs needed).
+  function handleChange(v: string) {
+    setBody(v);
+    clearTimer();
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      onPersist(note.id, v);
+    }, 700);
+  }
+
+  // Blur flushes any pending edit immediately. Switching tabs blurs the
+  // textarea first, so this also covers the panel unmounting.
+  function handleBlur() {
+    if (timer.current) {
+      clearTimer();
+      onPersist(note.id, body);
+    }
+  }
+
+  useEffect(() => {
+    if (autoFocus) ref.current?.focus();
+  }, [autoFocus]);
+
+  useEffect(() => () => clearTimer(), []);
+
+  return (
+    <div className="group/entry relative">
+      <Textarea
+        ref={ref}
+        value={body}
+        onChange={(e) => handleChange(e.target.value)}
+        onBlur={handleBlur}
+        placeholder={t.github.notePlaceholder}
+        className="min-h-[64px] resize-y pr-8 text-xs leading-relaxed"
+      />
+      <Tooltip content={t.github.deleteNote}>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={t.github.deleteNote}
+          className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle opacity-100 transition-colors hover:bg-surface-hover hover:text-destructive focus-ring sm:opacity-0 sm:group-hover/entry:opacity-100"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
+    </div>
+  );
+}
+
+/** The Link icon + popover editor for a repo's custom URL. */
+function RepoLinkControl({
+  repo,
+  link,
+  setRepoLinks,
+}: {
+  repo: GithubRepo;
+  link: RepoLink | undefined;
+  setRepoLinks: Updater<RepoLink[]>;
+}) {
+  const t = useDict();
+  const toast = useToast();
+  const qc = useQueryClient();
+  const supabase = createClient();
+  const repoId = String(repo.id);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(link?.url ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const hasLink = Boolean(link);
+
+  const saveMutation = useMutation({
+    mutationFn: async (url: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data, error } = await supabase
+        .from("repo_links")
+        .upsert(
+          {
+            user_id: userId,
+            repo_id: repoId,
+            repo_full_name: repo.full_name,
+            url,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,repo_id" },
+        )
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as RepoLink;
+    },
+    onSuccess: (row) => {
+      setRepoLinks((prev) => {
+        const idx = prev.findIndex((l) => l.repo_id === repoId);
+        if (idx === -1) return [row, ...prev];
+        const next = prev.slice();
+        next[idx] = row;
+        return next;
+      });
+      toast.ok(t.github.linkSavedToast);
+      setOpen(false);
+    },
+    onError: () => toast.err(t.github.linkErr),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("repo_links")
+        .delete()
+        .eq("repo_id", repoId);
+      if (error) throw error;
+    },
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: qk.repoLinks });
+      const prev = qc.getQueryData<RepoLink[]>(qk.repoLinks);
+      setRepoLinks((old) => old.filter((l) => l.repo_id !== repoId));
+      return { prev };
+    },
+    onSuccess: () => toast.ok(t.github.linkRemovedToast),
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) setRepoLinks(ctx.prev);
+      toast.err(t.github.linkErr);
+    },
+    onSettled: () => setOpen(false),
+  });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const url = normalizeUrl(value);
+    if (!url) {
+      setError(t.github.linkInvalid);
+      return;
+    }
+    saveMutation.mutate(url);
+  }
+
+  return (
+    <Popover.Root
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setValue(link?.url ?? "");
+          setError(null);
+        }
+      }}
+    >
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          aria-label={hasLink ? t.github.linkEdit : t.github.linkAdd}
+          title={hasLink ? t.github.linkEdit : t.github.linkAdd}
+          className={cn(
+            "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
+            hasLink
+              ? "text-foreground hover:bg-surface-hover"
+              : "text-foreground-muted hover:bg-surface-hover hover:text-foreground",
+          )}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          align="end"
+          sideOffset={6}
+          className="anim-pop z-40 w-64 rounded-lg border border-border bg-surface p-2 shadow-elevated"
+        >
+          <form onSubmit={submit} className="space-y-1.5">
+            <Input
+              autoFocus
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={t.github.linkPlaceholder}
+              className="h-8 text-xs"
+              inputMode="url"
+            />
+            {error && <p className="text-[11px] text-destructive">{error}</p>}
+            <div className="flex items-center justify-between gap-2">
+              {hasLink ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeMutation.mutate()}
+                  disabled={removeMutation.isPending}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t.github.linkRemove}
+                </Button>
+              ) : (
+                <span />
+              )}
+              <Button
+                type="submit"
+                size="sm"
+                disabled={saveMutation.isPending || !value.trim()}
+              >
+                {t.github.save}
+              </Button>
+            </div>
+          </form>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 

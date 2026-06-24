@@ -14,7 +14,9 @@ import type {
   Note,
   Plan,
   Prompt,
+  RepoLink,
   RepoNote,
+  Shortcut,
   Streak,
   StreakLog,
   Subscription,
@@ -185,9 +187,17 @@ export async function fetchRepoNotes(): Promise<RepoNote[]> {
   const { data, error } = await supabase
     .from("repo_notes")
     .select("*")
-    .order("updated_at", { ascending: false });
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as RepoNote[];
+}
+
+export async function fetchRepoLinks(): Promise<RepoLink[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("repo_links").select("*");
+  if (error) throw error;
+  return (data ?? []) as RepoLink[];
 }
 
 export async function fetchAiLinks(): Promise<AiLink[]> {
@@ -209,4 +219,15 @@ export async function fetchAiCategories(): Promise<AiCategory[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as AiCategory[];
+}
+
+export async function fetchShortcuts(): Promise<Shortcut[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("shortcuts")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Shortcut[];
 }

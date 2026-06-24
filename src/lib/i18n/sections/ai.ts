@@ -46,6 +46,12 @@ type AiStrings = {
   signInFirst: string;
   couldNotSave: string;
   couldNotDelete: string;
+  linkCreated: string;
+  linkSaved: string;
+  linkDeleted: string;
+  categoryCreated: string;
+  categoryRenamed: string;
+  categoryDeleted: string;
   // Empty states
   noLinksYet: string;
   noLinksDescription: string;
@@ -96,8 +102,14 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     urlInvalid: "Enter a valid URL (https://…).",
     categoryNameRequired: "Category name is required.",
     signInFirst: "Sign in first.",
-    couldNotSave: "Could not save link.",
-    couldNotDelete: "Could not delete.",
+    couldNotSave: "Could not save the link. Please try again.",
+    couldNotDelete: "Could not delete that. Please try again.",
+    linkCreated: "Link added.",
+    linkSaved: "Link saved.",
+    linkDeleted: "Link deleted.",
+    categoryCreated: "Category created.",
+    categoryRenamed: "Category renamed.",
+    categoryDeleted: "Category deleted.",
     noLinksYet: "No AI links yet",
     noLinksDescription: "Add a link to start your collection.",
     noMatches: "No matches",
@@ -145,8 +157,14 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     urlInvalid: "Zadej platnou URL (https://…).",
     categoryNameRequired: "Název kategorie je povinný.",
     signInFirst: "Nejprve se přihlaste.",
-    couldNotSave: "Odkaz se nepodařilo uložit.",
-    couldNotDelete: "Nepodařilo se smazat.",
+    couldNotSave: "Odkaz se nepodařilo uložit. Zkuste to znovu.",
+    couldNotDelete: "Nepodařilo se to smazat. Zkuste to znovu.",
+    linkCreated: "Odkaz přidán.",
+    linkSaved: "Odkaz uložen.",
+    linkDeleted: "Odkaz smazán.",
+    categoryCreated: "Kategorie vytvořena.",
+    categoryRenamed: "Kategorie přejmenována.",
+    categoryDeleted: "Kategorie smazána.",
     noLinksYet: "Zatím žádné AI odkazy",
     noLinksDescription: "Přidej odkaz a začni svou sbírku.",
     noMatches: "Žádné výsledky",

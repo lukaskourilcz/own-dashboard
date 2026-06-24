@@ -28,9 +28,11 @@ import { useDict } from "@/lib/i18n";
 import type { Prompt, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const PREVIEW_LEN = 100;
+// Generous cap so the tiny, line-clamped preview can fill the card with as
+// much of the prompt as fits, without rendering an enormous body string.
+const PREVIEW_LEN = 600;
 
-/** First 100 characters of the prompt body, with an ellipsis when truncated. */
+/** A trimmed preview of the prompt body, with an ellipsis when truncated. */
 function preview(body: string): string {
   const clean = body.trim();
   if (clean.length <= PREVIEW_LEN) return clean;
@@ -96,8 +98,15 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
     },
     onSuccess: (p) => {
       setPrompts((prev) => [p, ...prev]);
+      toast.ok(t.prompts.createdToast);
       void qc.invalidateQueries({ queryKey: qk.prompts });
     },
+    onError: (e) =>
+      toast.err(
+        (e as Error)?.message === "no-user"
+          ? t.prompts.signInFirst
+          : t.prompts.couldNotSave,
+      ),
   });
 
   // UPDATE — the update returns the row; replace it in the cache on success.
@@ -118,8 +127,15 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
     },
     onSuccess: (p) => {
       setPrompts((prev) => prev.map((x) => (x.id === p.id ? p : x)));
+      toast.ok(t.prompts.savedToast);
       void qc.invalidateQueries({ queryKey: qk.prompts });
     },
+    onError: (e) =>
+      toast.err(
+        (e as Error)?.message === "no-user"
+          ? t.prompts.signInFirst
+          : t.prompts.couldNotSave,
+      ),
   });
 
   // DELETE — optimistic, rolls back on error.
@@ -134,9 +150,10 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
       setPrompts((old) => old.filter((p) => p.id !== id));
       return { prev };
     },
-    onError: (e, _id, ctx) => {
+    onSuccess: () => toast.ok(t.prompts.deletedToast),
+    onError: (_e, _id, ctx) => {
       if (ctx?.prev) setPrompts(ctx.prev);
-      toast.err((e as Error).message || t.prompts.couldNotDelete);
+      toast.err(t.prompts.couldNotDelete);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.prompts }),
   });
@@ -155,21 +172,15 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
       setFormError(t.prompts.bodyRequired);
       return;
     }
-    const onError = (err: unknown) =>
-      setFormError(
-        (err as Error)?.message === "no-user"
-          ? t.prompts.signInFirst
-          : (err as Error)?.message || t.prompts.couldNotSave,
-      );
     if (editing) {
       updateMutation.mutate(
         { id: editing.id, name, body },
-        { onSuccess: () => setDialogOpen(false), onError },
+        { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createMutation.mutate(
         { name, body },
-        { onSuccess: () => setDialogOpen(false), onError },
+        { onSuccess: () => setDialogOpen(false) },
       );
     }
   }
@@ -332,65 +343,73 @@ function PromptCard({
   return (
     <motion.div
       layout
-      className="group relative flex flex-col rounded-lg border border-border bg-surface p-3.5 shadow-soft transition-colors hover:border-border-strong"
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong"
     >
-      <div className="flex items-start gap-2">
-        <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+      {/* Title bar — slightly gray, with a divider off the content below. */}
+      <div className="flex items-center gap-2 border-b border-border bg-surface-muted px-3 py-2">
+        <h3
+          className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground"
+          title={prompt.name}
+        >
           {prompt.name}
         </h3>
-        <div className="flex shrink-0 items-center gap-0.5">
-          <Tooltip content={copied ? t.prompts.copied : t.prompts.copy}>
-            <button
-              type="button"
-              onClick={onCopy}
-              aria-label={t.prompts.copy}
-              className={cn(
-                "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
-                copied
-                  ? "text-success"
-                  : "text-foreground-muted hover:bg-surface-hover hover:text-foreground",
-              )}
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-            </button>
-          </Tooltip>
-          <Tooltip content={t.prompts.edit}>
-            <button
-              type="button"
-              onClick={onEdit}
-              aria-label={t.prompts.edit}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted opacity-100 transition-colors hover:bg-surface-hover hover:text-foreground focus-ring sm:opacity-0 sm:group-hover:opacity-100"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
-          <Tooltip content={t.prompts.delete}>
-            <button
-              type="button"
-              onClick={onDelete}
-              aria-label={t.prompts.deletePrompt}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted opacity-100 transition-colors hover:bg-surface-hover hover:text-destructive focus-ring sm:opacity-0 sm:group-hover:opacity-100"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
-        </div>
+        <Tooltip content={copied ? t.prompts.copied : t.prompts.copy}>
+          <button
+            type="button"
+            onClick={onCopy}
+            aria-label={t.prompts.copy}
+            className={cn(
+              "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors focus-ring",
+              copied
+                ? "text-success"
+                : "text-foreground-muted hover:bg-surface-hover hover:text-foreground",
+            )}
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </Tooltip>
       </div>
-      {/* The body preview doubles as the primary copy affordance. */}
+
+      {/* Content — tiny text to pack in as much of the prompt as possible.
+          The whole area is a click-to-copy target. */}
       <button
         type="button"
         onClick={onCopy}
         aria-label={t.prompts.copy}
-        className="mt-2 flex-1 rounded-md text-left focus-ring"
+        className="min-h-[64px] flex-1 cursor-copy px-3 pb-6 pt-2 text-left focus-ring"
       >
-        <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground-muted">
+        <p className="line-clamp-[16] whitespace-pre-wrap break-words text-[6px] leading-[9px] text-foreground-muted">
           {preview(prompt.body)}
         </p>
       </button>
+
+      {/* Edit / delete — tucked into the bottom-right, revealed on hover. */}
+      <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+        <Tooltip content={t.prompts.edit}>
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={t.prompts.edit}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-surface/80 text-foreground-muted backdrop-blur transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        </Tooltip>
+        <Tooltip content={t.prompts.delete}>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={t.prompts.deletePrompt}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-surface/80 text-foreground-muted backdrop-blur transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </Tooltip>
+      </div>
     </motion.div>
   );
 }

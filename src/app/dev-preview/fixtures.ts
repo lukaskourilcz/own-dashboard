@@ -19,7 +19,9 @@ import type {
   Note,
   Plan,
   Prompt,
+  RepoLink,
   RepoNote,
+  Shortcut,
   Streak,
   StreakLog,
   Subscription,
@@ -129,6 +131,14 @@ export const prompts: Prompt[] = [
 // Repo notes attach to live GitHub repos, which aren't available in the
 // auth-less preview (the Repos panel shows the Connect CTA), so this stays empty.
 export const repoNotes: RepoNote[] = [];
+export const repoLinks: RepoLink[] = [];
+
+export const shortcuts: Shortcut[] = [
+  { id: "sc1", user_id: UID, command: "sudo docker compose up -d seaweedfs-s3", description: "Starts the S3 server.", sort_order: 1, created_at: TS, updated_at: TS },
+  { id: "sc2", user_id: UID, command: "git push -u origin HEAD", description: "Push the current branch and set its upstream.", sort_order: 2, created_at: TS, updated_at: TS },
+  { id: "sc3", user_id: UID, command: "npm run dev", description: "Start the local dev server.", sort_order: 3, created_at: TS, updated_at: TS },
+  { id: "sc4", user_id: UID, command: "kubectl get pods -A", description: "List pods across all namespaces.", sort_order: 4, created_at: TS, updated_at: TS },
+];
 
 export const aiCategories: AiCategory[] = [
   { id: "ac1", user_id: UID, name: "DESIGN", sort_order: 1, created_at: TS },

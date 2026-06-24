@@ -1022,10 +1022,11 @@ create policy "prompts delete own" on public.prompts
   for delete using (auth.uid() = user_id);
 
 -- =============================================================
--- Repo notes — a quick scratchpad per GitHub repo (keyed by numeric id,
--- stored as text). One row per repo per user, autosaved as you type. Notes
--- within the body are separated by `---` dividers; a "Save to GitHub" action
--- writes the body to a markdown file in the repo. Personal; own-only RLS.
+-- Repo notes — quick notes attached to a GitHub repo (keyed by numeric id,
+-- stored as text). One row per note entry; each is its own editable/deletable
+-- field, autosaved as you type and ordered by sort_order. A "Save to GitHub"
+-- action joins a repo's entries with `---` dividers and writes them to a
+-- markdown file in the repo. Personal; own-only RLS.
 -- =============================================================
 create table if not exists public.repo_notes (
   id uuid primary key default gen_random_uuid(),
@@ -1033,14 +1034,20 @@ create table if not exists public.repo_notes (
   repo_id text not null,
   repo_full_name text not null,
   body text not null default '',
+  sort_order integer not null default 0,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  -- One scratchpad per repo per user; the panel upserts on this pair.
-  unique (user_id, repo_id)
+  updated_at timestamptz not null default now()
 );
 
+-- Migration for installs created with the earlier one-row-per-repo shape:
+-- drop the unique (user_id, repo_id) constraint and add the ordering column.
+alter table public.repo_notes
+  drop constraint if exists repo_notes_user_id_repo_id_key;
+alter table public.repo_notes
+  add column if not exists sort_order integer not null default 0;
+
 create index if not exists repo_notes_user_repo_idx
-  on public.repo_notes (user_id, repo_id);
+  on public.repo_notes (user_id, repo_id, sort_order);
 
 alter table public.repo_notes enable row level security;
 
@@ -1058,6 +1065,42 @@ create policy "repo_notes update own" on public.repo_notes
 
 drop policy if exists "repo_notes delete own" on public.repo_notes;
 create policy "repo_notes delete own" on public.repo_notes
+  for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Repo links — an optional custom URL pinned to a repo's card (e.g. the
+-- deployed site). One row per repo per user, upserted on that pair. Own-only RLS.
+-- =============================================================
+create table if not exists public.repo_links (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  repo_id text not null,
+  repo_full_name text not null,
+  url text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, repo_id)
+);
+
+create index if not exists repo_links_user_repo_idx
+  on public.repo_links (user_id, repo_id);
+
+alter table public.repo_links enable row level security;
+
+drop policy if exists "repo_links select own" on public.repo_links;
+create policy "repo_links select own" on public.repo_links
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "repo_links insert own" on public.repo_links;
+create policy "repo_links insert own" on public.repo_links
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "repo_links update own" on public.repo_links;
+create policy "repo_links update own" on public.repo_links
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "repo_links delete own" on public.repo_links;
+create policy "repo_links delete own" on public.repo_links
   for delete using (auth.uid() = user_id);
 
 -- =============================================================
@@ -1129,4 +1172,39 @@ create policy "ai_links update own" on public.ai_links
 
 drop policy if exists "ai_links delete own" on public.ai_links;
 create policy "ai_links delete own" on public.ai_links
+  for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Shortcuts — commands/snippets kept one click away, shown in a grid. Each
+-- cell copies its command; the description is its tooltip. Personal; own RLS.
+-- =============================================================
+create table if not exists public.shortcuts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  command text not null,
+  description text,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists shortcuts_user_idx
+  on public.shortcuts (user_id, sort_order);
+
+alter table public.shortcuts enable row level security;
+
+drop policy if exists "shortcuts select own" on public.shortcuts;
+create policy "shortcuts select own" on public.shortcuts
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "shortcuts insert own" on public.shortcuts;
+create policy "shortcuts insert own" on public.shortcuts
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "shortcuts update own" on public.shortcuts;
+create policy "shortcuts update own" on public.shortcuts
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "shortcuts delete own" on public.shortcuts;
+create policy "shortcuts delete own" on public.shortcuts
   for delete using (auth.uid() = user_id);

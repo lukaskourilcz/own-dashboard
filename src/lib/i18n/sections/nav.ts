@@ -3,6 +3,7 @@ type NavSection =
   | "calendar"
   | "notes"
   | "prompts"
+  | "shortcuts"
   | "todos"
   | "streaks"
   | "finances"
@@ -41,6 +42,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       calendar: "Calendar",
       notes: "Notes",
       prompts: "Prompts",
+      shortcuts: "Shortcuts",
       todos: "Tasks",
       streaks: "Habits",
       finances: "Finances",
@@ -74,6 +76,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       calendar: "Kalendář",
       notes: "Poznámky",
       prompts: "Prompty",
+      shortcuts: "Zkratky",
       todos: "Úkoly",
       streaks: "Návyky",
       finances: "Finance",
