@@ -382,7 +382,7 @@ function PromptCard({
         aria-label={t.prompts.copy}
         className="min-h-[64px] flex-1 cursor-copy px-3 pb-6 pt-2 text-left focus-ring"
       >
-        <p className="line-clamp-[16] whitespace-pre-wrap break-words text-[6px] leading-[9px] text-foreground-muted">
+        <p className="line-clamp-[16] whitespace-pre-wrap break-words text-[8px] leading-[12px] text-foreground-muted">
           {preview(prompt.body)}
         </p>
       </button>
