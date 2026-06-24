@@ -34,6 +34,16 @@ type ShortcutsStrings = {
   noShortcutsDescription: string;
   noMatches: string;
   noMatchesDescription: string;
+  // Reference cheatsheets
+  myShortcuts: string;
+  gitScripts: string;
+  colDescription: string;
+  keySubstTitle: string;
+  keySubstHint: string;
+  colWindows: string;
+  colMac: string;
+  translatedTitle: string;
+  colAction: string;
 };
 
 export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
@@ -70,6 +80,16 @@ export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
     noShortcutsDescription: "Add a command you want one click away.",
     noMatches: "No matches",
     noMatchesDescription: "Try a different search.",
+    myShortcuts: "My shortcuts",
+    gitScripts: "Git scripts",
+    colDescription: "Description",
+    keySubstTitle: "Key substitutions",
+    keySubstHint:
+      "Following a Windows VS Code tutorial? Press these on your Mac keyboard instead.",
+    colWindows: "Windows",
+    colMac: "Mac keyboard",
+    translatedTitle: "Essential shortcuts (translated)",
+    colAction: "Action",
   },
   cs: {
     title: "Zkratky",
@@ -104,5 +124,15 @@ export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
     noShortcutsDescription: "Přidej příkaz, který chceš mít po ruce.",
     noMatches: "Žádné výsledky",
     noMatchesDescription: "Zkus jiné hledání.",
+    myShortcuts: "Moje zkratky",
+    gitScripts: "Git skripty",
+    colDescription: "Popis",
+    keySubstTitle: "Náhrady kláves",
+    keySubstHint:
+      "Sleduješ Windows VS Code návod? Na Mac klávesnici stiskni místo toho tyto.",
+    colWindows: "Windows",
+    colMac: "Mac klávesnice",
+    translatedTitle: "Základní zkratky (přeložené)",
+    colAction: "Akce",
   },
 };

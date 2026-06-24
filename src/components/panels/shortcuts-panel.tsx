@@ -10,14 +10,19 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
-import { useDict } from "@/lib/i18n";
+import { useDict, useLang } from "@/lib/i18n";
 import type { Shortcut, Updater } from "@/lib/types";
+import {
+  GIT_SCRIPTS,
+  KEY_SUBSTITUTIONS,
+  TRANSLATED_SHORTCUTS,
+} from "@/lib/shortcuts-reference";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -33,6 +38,7 @@ export function ShortcutsPanel({ shortcuts, setShortcuts }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const { lang } = useLang();
   const toast = useToast();
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -202,6 +208,8 @@ export function ShortcutsPanel({ shortcuts, setShortcuts }: Props) {
         }
       />
 
+      <SectionLabel className="mb-2">{t.shortcuts.myShortcuts}</SectionLabel>
+
       {shortcuts.length > 0 && (
         <div className="relative mb-4 max-w-sm">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
@@ -250,6 +258,39 @@ export function ShortcutsPanel({ shortcuts, setShortcuts }: Props) {
           ))}
         </div>
       )}
+
+      {/* Reference cheatsheets — read-only (not click-to-copy). */}
+      <div className="mt-8 space-y-6">
+        <CheatTable
+          title={t.shortcuts.gitScripts}
+          headers={[t.shortcuts.command, t.shortcuts.colDescription]}
+          monoCols={[0]}
+          rows={GIT_SCRIPTS.map((r) => [r.command, lang === "cs" ? r.cs : r.en])}
+        />
+        <div className="space-y-3">
+          <CheatTable
+            title={t.shortcuts.keySubstTitle}
+            note={t.shortcuts.keySubstHint}
+            headers={[t.shortcuts.colWindows, t.shortcuts.colMac]}
+            monoCols={[0]}
+            rows={KEY_SUBSTITUTIONS.map((r) => [r.win, r.mac])}
+          />
+          <CheatTable
+            title={t.shortcuts.translatedTitle}
+            headers={[
+              t.shortcuts.colAction,
+              t.shortcuts.colWindows,
+              t.shortcuts.colMac,
+            ]}
+            monoCols={[1, 2]}
+            rows={TRANSLATED_SHORTCUTS.map((r) => [
+              lang === "cs" ? r.cs : r.en,
+              r.win,
+              r.mac,
+            ])}
+          />
+        </div>
+      </div>
 
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
         <Dialog.Portal>
@@ -373,5 +414,70 @@ function ShortcutCell({
         </Tooltip>
       </div>
     </motion.div>
+  );
+}
+
+/** Read-only reference table (Git scripts, key substitutions, translated
+ * shortcuts). Columns in `monoCols` render as monospace. */
+function CheatTable({
+  title,
+  note,
+  headers,
+  rows,
+  monoCols = [],
+}: {
+  title: string;
+  note?: string;
+  headers: string[];
+  rows: string[][];
+  monoCols?: number[];
+}) {
+  const mono = new Set(monoCols);
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="border-b border-border bg-surface-muted px-3 py-2">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+          {title}
+        </h3>
+        {note && (
+          <p className="mt-0.5 text-[11px] text-foreground-subtle">{note}</p>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left">
+              {headers.map((h) => (
+                <th
+                  key={h}
+                  className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-muted"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((cells, i) => (
+              <tr key={i} className="border-t border-border/60">
+                {cells.map((c, j) => (
+                  <td
+                    key={j}
+                    className={cn(
+                      "px-3 py-2 align-top",
+                      mono.has(j)
+                        ? "whitespace-nowrap font-mono text-[11px] text-foreground"
+                        : "text-xs text-foreground-muted",
+                    )}
+                  >
+                    {c}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
