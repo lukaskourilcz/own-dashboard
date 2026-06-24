@@ -43,16 +43,16 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute =
     url.pathname.startsWith("/login") || url.pathname.startsWith("/auth");
 
-  if (!user && !isAuthRoute && url.pathname !== "/") {
+  if (!user && !isAuthRoute) {
     const loginUrl = url.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
   }
 
   if (user && url.pathname === "/login") {
-    const dashUrl = url.clone();
-    dashUrl.pathname = "/dashboard";
-    return NextResponse.redirect(dashUrl);
+    const homeUrl = url.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
   }
 
   return supabaseResponse;

@@ -29,9 +29,9 @@ export function isNavTab(value: string | undefined | null): value is NavTab {
   return value != null && (NAV_TABS as readonly string[]).includes(value);
 }
 
-/** URL path for a tab. Overview is the bare /dashboard root. */
+/** URL path for a tab. Overview is the site root. */
 export function tabToPath(tab: NavTab): string {
-  return tab === "overview" ? "/dashboard" : `/dashboard/${tab}`;
+  return tab === "overview" ? "/" : `/${tab}`;
 }
 
 /** Resolve the active tab from an optional catch-all slug (server side). */
@@ -42,6 +42,6 @@ export function tabFromSlug(slug: string[] | undefined): NavTab {
 
 /** Resolve the active tab from a pathname (client side, e.g. on popstate). */
 export function tabFromPath(pathname: string): NavTab {
-  const seg = pathname.replace(/^\/dashboard\/?/, "").split("/")[0];
+  const seg = pathname.replace(/^\//, "").split("/")[0];
   return isNavTab(seg) ? seg : "overview";
 }

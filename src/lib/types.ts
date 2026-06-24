@@ -355,3 +355,22 @@ export type Shortcut = {
   created_at: string;
   updated_at: string;
 };
+
+// ---------------------------------------------------------------------------
+// Reference rows — editable cheatsheet tables in the Shortcuts section. `kind`
+// groups rows into a table; c1/c2/c3 are that table's (1–3) columns. Own RLS.
+// ---------------------------------------------------------------------------
+
+export type ReferenceKind = "git" | "subst" | "translated";
+
+export type ReferenceRow = {
+  id: string;
+  user_id: string;
+  kind: ReferenceKind;
+  c1: string;
+  c2: string;
+  c3: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};

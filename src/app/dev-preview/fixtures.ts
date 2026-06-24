@@ -19,6 +19,7 @@ import type {
   Note,
   Plan,
   Prompt,
+  ReferenceRow,
   RepoLink,
   RepoNote,
   Shortcut,
@@ -138,6 +139,15 @@ export const shortcuts: Shortcut[] = [
   { id: "sc2", user_id: UID, command: "git push -u origin HEAD", description: "Push the current branch and set its upstream.", sort_order: 2, created_at: TS, updated_at: TS },
   { id: "sc3", user_id: UID, command: "npm run dev", description: "Start the local dev server.", sort_order: 3, created_at: TS, updated_at: TS },
   { id: "sc4", user_id: UID, command: "kubectl get pods -A", description: "List pods across all namespaces.", sort_order: 4, created_at: TS, updated_at: TS },
+];
+
+export const referenceRows: ReferenceRow[] = [
+  { id: "rr1", user_id: UID, kind: "git", c1: "git fetch origin", c2: "Download new commits from the remote without touching your files.", c3: null, sort_order: 1, created_at: TS, updated_at: TS },
+  { id: "rr2", user_id: UID, kind: "git", c1: "git pull --rebase", c2: "Fetch, then replay your commits on top of the updated branch.", c3: null, sort_order: 2, created_at: TS, updated_at: TS },
+  { id: "rr3", user_id: UID, kind: "subst", c1: "Ctrl", c2: "Command (Cmd ⌘)", c3: null, sort_order: 1, created_at: TS, updated_at: TS },
+  { id: "rr4", user_id: UID, kind: "subst", c1: "Alt", c2: "Option (Opt ⌥)", c3: null, sort_order: 2, created_at: TS, updated_at: TS },
+  { id: "rr5", user_id: UID, kind: "translated", c1: "Command Palette", c2: "Ctrl + Shift + P", c3: "Cmd + Shift + P", sort_order: 1, created_at: TS, updated_at: TS },
+  { id: "rr6", user_id: UID, kind: "translated", c1: "Comment Line", c2: "Ctrl + K  Ctrl + C", c3: "Cmd + K  Cmd + C", sort_order: 2, created_at: TS, updated_at: TS },
 ];
 
 export const aiCategories: AiCategory[] = [

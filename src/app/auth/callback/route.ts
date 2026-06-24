@@ -11,12 +11,12 @@ import { storeGitHubTokens } from "@/lib/github-token";
  * page with a freshly minted Supabase session in their cookie jar.
  */
 function safeNext(raw: string | null): string {
-  if (!raw) return "/dashboard";
+  if (!raw) return "/";
   // Must start with single slash, must NOT start with // (protocol-relative)
   // or with /\ (Windows-style protocol-relative bypass).
-  if (!raw.startsWith("/")) return "/dashboard";
-  if (raw.startsWith("//")) return "/dashboard";
-  if (raw.startsWith("/\\")) return "/dashboard";
+  if (!raw.startsWith("/")) return "/";
+  if (raw.startsWith("//")) return "/";
+  if (raw.startsWith("/\\")) return "/";
   return raw;
 }
 

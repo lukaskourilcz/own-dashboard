@@ -9,17 +9,17 @@ import { loadUserPreferences } from "@/lib/user-prefs";
 import { isNavTab, tabFromSlug } from "@/lib/nav-tabs";
 import { DashboardShell } from "@/components/dashboard-shell";
 
-// Optional catch-all so each section has its own URL (/dashboard,
-// /dashboard/prompts, /dashboard/finances, …). The shell still loads all data
-// once and switches tabs client-side via the History API; this route only
-// resolves which tab a deep link / refresh should open on.
+// Root optional catch-all so each section has its own URL (/, /prompts,
+// /finances, …). The shell still loads all data once and switches tabs
+// client-side via the History API; this route only resolves which tab a deep
+// link / refresh should open on.
 export default async function DashboardPage({
   params,
 }: {
   params: Promise<{ slug?: string[] }>;
 }) {
   const { slug } = await params;
-  // Only a single, known section segment is valid (e.g. /dashboard/prompts).
+  // Only a single, known section segment is valid (e.g. /prompts).
   if (slug && (slug.length > 1 || !isNavTab(slug[0]))) notFound();
   const initialTab = tabFromSlug(slug);
 
@@ -103,6 +103,7 @@ export default async function DashboardPage({
     aiLinksRes,
     aiCategoriesRes,
     shortcutsRes,
+    referenceRowsRes,
     invoicesRes,
     invoiceItemsRes,
     invoiceSettingsRes,
@@ -149,6 +150,12 @@ export default async function DashboardPage({
       .order("sort_order", { ascending: true }),
     supabase
       .from("shortcuts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("reference_rows")
       .select("*")
       .eq("user_id", user.id)
       .order("sort_order", { ascending: true })
@@ -206,6 +213,7 @@ export default async function DashboardPage({
       initialAiLinks={aiLinksRes.data ?? []}
       initialAiCategories={aiCategoriesRes.data ?? []}
       initialShortcuts={shortcutsRes.data ?? []}
+      initialReferenceRows={referenceRowsRes.data ?? []}
       initialImportantDates={importantDatesRes.data ?? []}
       initialInvoices={invoicesRes.data ?? []}
       initialInvoiceItems={invoiceItemsRes.data ?? []}
