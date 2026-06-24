@@ -83,6 +83,10 @@ export default async function DashboardPage() {
     bookPagesRes,
     importantDatesRes,
     notesRes,
+    promptsRes,
+    repoNotesRes,
+    aiLinksRes,
+    aiCategoriesRes,
     invoicesRes,
     invoiceItemsRes,
     invoiceSettingsRes,
@@ -105,6 +109,26 @@ export default async function DashboardPage() {
       .select("*")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
+    supabase
+      .from("prompts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("repo_notes")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("ai_links")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("ai_categories")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true }),
     supabase
       .from("invoices")
       .select("*")
@@ -151,6 +175,10 @@ export default async function DashboardPage() {
       initialBooks={booksRes.data ?? []}
       initialBookPages={bookPagesRes.data ?? []}
       initialNotes={notesRes.data ?? []}
+      initialPrompts={promptsRes.data ?? []}
+      initialRepoNotes={repoNotesRes.data ?? []}
+      initialAiLinks={aiLinksRes.data ?? []}
+      initialAiCategories={aiCategoriesRes.data ?? []}
       initialImportantDates={importantDatesRes.data ?? []}
       initialInvoices={invoicesRes.data ?? []}
       initialInvoiceItems={invoiceItemsRes.data ?? []}

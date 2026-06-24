@@ -21,10 +21,12 @@ import { streaks } from "./sections/streaks";
 import { plans } from "./sections/plans";
 import { books } from "./sections/books";
 import { notes } from "./sections/notes";
+import { prompts } from "./sections/prompts";
 import { dates } from "./sections/dates";
 import { couple } from "./sections/couple";
 import { calendar } from "./sections/calendar";
 import { github } from "./sections/github";
+import { ai } from "./sections/ai";
 
 export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
 
@@ -48,10 +50,12 @@ export const dictionaries = {
     plans: plans.en,
     books: books.en,
     notes: notes.en,
+    prompts: prompts.en,
     dates: dates.en,
     couple: couple.en,
     calendar: calendar.en,
     github: github.en,
+    ai: ai.en,
   },
   cs: {
     common: common.cs,
@@ -72,10 +76,12 @@ export const dictionaries = {
     plans: plans.cs,
     books: books.cs,
     notes: notes.cs,
+    prompts: prompts.cs,
     dates: dates.cs,
     couple: couple.cs,
     calendar: calendar.cs,
     github: github.cs,
+    ai: ai.cs,
   },
 };
 

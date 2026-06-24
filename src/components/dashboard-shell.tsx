@@ -12,8 +12,10 @@ import { PlansPanel } from "@/components/panels/plans-panel";
 import { CouplePanel } from "@/components/panels/couple-panel";
 import { BooksPanel } from "@/components/panels/books-panel";
 import { NotesPanel } from "@/components/panels/notes-panel";
+import { PromptsPanel } from "@/components/panels/prompts-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
+import { AiPanel } from "@/components/panels/ai-panel";
 import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
@@ -31,6 +33,8 @@ import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
 import { useEntityStore } from "@/lib/queries/entities";
 import {
   fetchAccounts,
+  fetchAiCategories,
+  fetchAiLinks,
   fetchBookPages,
   fetchBooks,
   fetchImportantDates,
@@ -39,6 +43,8 @@ import {
   fetchInvoices,
   fetchNotes,
   fetchPlans,
+  fetchPrompts,
+  fetchRepoNotes,
   fetchStreakLogs,
   fetchStreaks,
   fetchSubscriptions,
@@ -49,6 +55,8 @@ import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type {
   Account,
+  AiCategory,
+  AiLink,
   Book,
   BookPage,
   ImportantDate,
@@ -57,6 +65,8 @@ import type {
   InvoiceSettings,
   Note,
   Plan,
+  Prompt,
+  RepoNote,
   Streak,
   StreakLog,
   Subscription,
@@ -78,6 +88,10 @@ type Props = {
   initialBooks: Book[];
   initialBookPages: BookPage[];
   initialNotes: Note[];
+  initialPrompts: Prompt[];
+  initialRepoNotes: RepoNote[];
+  initialAiLinks: AiLink[];
+  initialAiCategories: AiCategory[];
   initialImportantDates: ImportantDate[];
   initialInvoices: Invoice[];
   initialInvoiceItems: InvoiceItem[];
@@ -101,8 +115,10 @@ const TAB_CHORDS: Record<string, NavTab> = {
   u: "couple",
   b: "books",
   n: "notes",
+  m: "prompts",
   d: "dates",
   r: "github",
+  a: "ai",
 };
 
 export function DashboardShell({
@@ -117,6 +133,10 @@ export function DashboardShell({
   initialBooks,
   initialBookPages,
   initialNotes,
+  initialPrompts,
+  initialRepoNotes,
+  initialAiLinks,
+  initialAiCategories,
   initialImportantDates,
   initialInvoices,
   initialInvoiceItems,
@@ -167,6 +187,26 @@ export function DashboardShell({
     fetchBookPages,
   );
   const [notes, setNotes] = useEntityStore(qk.notes, initialNotes, fetchNotes);
+  const [prompts, setPrompts] = useEntityStore(
+    qk.prompts,
+    initialPrompts,
+    fetchPrompts,
+  );
+  const [repoNotes, setRepoNotes] = useEntityStore(
+    qk.repoNotes,
+    initialRepoNotes,
+    fetchRepoNotes,
+  );
+  const [aiLinks, setAiLinks] = useEntityStore(
+    qk.aiLinks,
+    initialAiLinks,
+    fetchAiLinks,
+  );
+  const [aiCategories, setAiCategories] = useEntityStore(
+    qk.aiCategories,
+    initialAiCategories,
+    fetchAiCategories,
+  );
   const [importantDates, setImportantDates] = useEntityStore(
     qk.importantDates,
     initialImportantDates,
@@ -459,6 +499,10 @@ export function DashboardShell({
                     <NotesPanel notes={notes} setNotes={setNotes} />
                   )}
 
+                  {tab === "prompts" && (
+                    <PromptsPanel prompts={prompts} setPrompts={setPrompts} />
+                  )}
+
                   {tab === "dates" && (
                     <ImportantDatesPanel
                       dates={importantDates}
@@ -469,7 +513,20 @@ export function DashboardShell({
                   )}
 
                   {tab === "github" && (
-                    <ReposPanel initialVisibleIds={repoVisibleIds} />
+                    <ReposPanel
+                      initialVisibleIds={repoVisibleIds}
+                      repoNotes={repoNotes}
+                      setRepoNotes={setRepoNotes}
+                    />
+                  )}
+
+                  {tab === "ai" && (
+                    <AiPanel
+                      aiLinks={aiLinks}
+                      setAiLinks={setAiLinks}
+                      aiCategories={aiCategories}
+                      setAiCategories={setAiCategories}
+                    />
                   )}
 
                   {tab === "settings" && <SettingsPanel />}

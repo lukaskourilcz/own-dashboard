@@ -986,3 +986,147 @@ create policy "user_preferences insert own" on public.user_preferences
 drop policy if exists "user_preferences update own" on public.user_preferences;
 create policy "user_preferences update own" on public.user_preferences
   for update using (auth.uid() = user_id);
+
+-- =============================================================
+-- Prompts — a personal library of reusable prompt texts. Rendered as
+-- copyable cards (name + preview). Personal; own-only RLS.
+-- =============================================================
+create table if not exists public.prompts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists prompts_user_created_idx
+  on public.prompts (user_id, created_at desc);
+
+alter table public.prompts enable row level security;
+
+drop policy if exists "prompts select own" on public.prompts;
+create policy "prompts select own" on public.prompts
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "prompts insert own" on public.prompts;
+create policy "prompts insert own" on public.prompts
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "prompts update own" on public.prompts;
+create policy "prompts update own" on public.prompts
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "prompts delete own" on public.prompts;
+create policy "prompts delete own" on public.prompts
+  for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Repo notes — a quick scratchpad per GitHub repo (keyed by numeric id,
+-- stored as text). One row per repo per user, autosaved as you type. Notes
+-- within the body are separated by `---` dividers; a "Save to GitHub" action
+-- writes the body to a markdown file in the repo. Personal; own-only RLS.
+-- =============================================================
+create table if not exists public.repo_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  repo_id text not null,
+  repo_full_name text not null,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  -- One scratchpad per repo per user; the panel upserts on this pair.
+  unique (user_id, repo_id)
+);
+
+create index if not exists repo_notes_user_repo_idx
+  on public.repo_notes (user_id, repo_id);
+
+alter table public.repo_notes enable row level security;
+
+drop policy if exists "repo_notes select own" on public.repo_notes;
+create policy "repo_notes select own" on public.repo_notes
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "repo_notes insert own" on public.repo_notes;
+create policy "repo_notes insert own" on public.repo_notes
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "repo_notes update own" on public.repo_notes;
+create policy "repo_notes update own" on public.repo_notes
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "repo_notes delete own" on public.repo_notes;
+create policy "repo_notes delete own" on public.repo_notes
+  for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- AI links — a catalogue of AI sites/tools the user discovered. Rendered as
+-- a table of link + description, grouped under user-defined categories
+-- (DESIGN, SECURITY, IDEAS, …). Personal; own-only RLS.
+-- =============================================================
+
+-- Customizable categories. Created before ai_links so the FK below resolves.
+create table if not exists public.ai_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists ai_categories_user_idx
+  on public.ai_categories (user_id, sort_order);
+
+alter table public.ai_categories enable row level security;
+
+drop policy if exists "ai_categories select own" on public.ai_categories;
+create policy "ai_categories select own" on public.ai_categories
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "ai_categories insert own" on public.ai_categories;
+create policy "ai_categories insert own" on public.ai_categories
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "ai_categories update own" on public.ai_categories;
+create policy "ai_categories update own" on public.ai_categories
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "ai_categories delete own" on public.ai_categories;
+create policy "ai_categories delete own" on public.ai_categories
+  for delete using (auth.uid() = user_id);
+
+create table if not exists public.ai_links (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  -- Null = Uncategorized. Category delete nulls this (link survives).
+  category_id uuid references public.ai_categories(id) on delete set null,
+  title text not null,
+  url text not null,
+  description text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists ai_links_user_created_idx
+  on public.ai_links (user_id, created_at desc);
+create index if not exists ai_links_category_idx
+  on public.ai_links (category_id);
+
+alter table public.ai_links enable row level security;
+
+drop policy if exists "ai_links select own" on public.ai_links;
+create policy "ai_links select own" on public.ai_links
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "ai_links insert own" on public.ai_links;
+create policy "ai_links insert own" on public.ai_links
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "ai_links update own" on public.ai_links;
+create policy "ai_links update own" on public.ai_links
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "ai_links delete own" on public.ai_links;
+create policy "ai_links delete own" on public.ai_links
+  for delete using (auth.uid() = user_id);

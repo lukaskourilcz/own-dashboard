@@ -8,6 +8,8 @@
  */
 import type {
   Account,
+  AiCategory,
+  AiLink,
   Book,
   BookPage,
   ImportantDate,
@@ -16,6 +18,8 @@ import type {
   InvoiceSettings,
   Note,
   Plan,
+  Prompt,
+  RepoNote,
   Streak,
   StreakLog,
   Subscription,
@@ -114,6 +118,28 @@ export const bookPages: BookPage[] = [
 export const notes: Note[] = [
   { id: "n1", user_id: UID, title: "Project ideas", content: [], plain_text: "Brainstorm for the new app", tags: ["work", "ideas"], is_pinned: true, sort_order: 2, created_at: TS, updated_at: TS },
   { id: "n2", user_id: UID, title: "Grocery list", content: [], plain_text: "Milk, eggs, bread", tags: ["home"], is_pinned: false, sort_order: 1, created_at: TS, updated_at: TS },
+];
+
+export const prompts: Prompt[] = [
+  { id: "pr1", user_id: UID, name: "Code review", body: "Review this pull request for correctness, security, and clarity. Flag risky changes and suggest concrete fixes with short examples.", created_at: TS, updated_at: TS },
+  { id: "pr2", user_id: UID, name: "Commit message", body: "Write a concise conventional-commit message for the staged diff. Imperative mood, a short subject, then a body explaining why.", created_at: TS, updated_at: TS },
+  { id: "pr3", user_id: UID, name: "Explain code", body: "Explain what this function does step by step, then list its edge cases and one way it could break.", created_at: TS, updated_at: TS },
+];
+
+// Repo notes attach to live GitHub repos, which aren't available in the
+// auth-less preview (the Repos panel shows the Connect CTA), so this stays empty.
+export const repoNotes: RepoNote[] = [];
+
+export const aiCategories: AiCategory[] = [
+  { id: "ac1", user_id: UID, name: "DESIGN", sort_order: 1, created_at: TS },
+  { id: "ac2", user_id: UID, name: "SECURITY", sort_order: 2, created_at: TS },
+  { id: "ac3", user_id: UID, name: "IDEAS", sort_order: 3, created_at: TS },
+];
+
+export const aiLinks: AiLink[] = [
+  { id: "al1", user_id: UID, category_id: "ac1", title: "Midjourney", url: "https://www.midjourney.com", description: "AI image generation for moodboards and concepts.", created_at: TS, updated_at: TS },
+  { id: "al2", user_id: UID, category_id: "ac2", title: "Have I Been Pwned", url: "https://haveibeenpwned.com", description: "Check if credentials appeared in a breach.", created_at: TS, updated_at: TS },
+  { id: "al3", user_id: UID, category_id: null, title: "Hugging Face", url: "https://huggingface.co", description: "Open models, datasets, and demos.", created_at: TS, updated_at: TS },
 ];
 
 export const importantDates: ImportantDate[] = [

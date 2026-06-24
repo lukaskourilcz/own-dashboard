@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -31,6 +31,7 @@ import { useToast } from "@/components/ui/toast";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
+import { createClient } from "@/lib/supabase/client";
 import {
   commitFile,
   normalizeRepoPath,
@@ -43,17 +44,32 @@ import {
   useReposQuery,
 } from "@/lib/github-queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { RepoNote, Updater } from "@/lib/types";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
 
 // Stable empty reference so the filter useMemo doesn't rerun every render.
 const EMPTY_REPOS: GithubRepo[] = [];
 
+// The single markdown file each repo's notes are written to. A stable path so
+// "the latest .md" is always the same file — re-saving updates it in place.
+const NOTES_PATH = "dashboard-notes.md";
+
+/** Wrap a repo's notes body in a titled markdown document. The `---` dividers
+ * the user inserts between notes render as horizontal rules. */
+function compileMarkdown(fullName: string, body: string): string {
+  return `# Notes — ${fullName}\n\n${body.trim()}\n`;
+}
+
 export function ReposPanel({
   initialVisibleIds,
+  repoNotes,
+  setRepoNotes,
 }: {
   /** Saved repo allow-list (GitHub repo ids as strings). Empty = show all. */
   initialVisibleIds: string[];
+  repoNotes: RepoNote[];
+  setRepoNotes: Updater<RepoNote[]>;
 }) {
   const t = useDict();
   const toast = useToast();
@@ -73,6 +89,13 @@ export function ReposPanel({
         ? "connected"
         : data.kind
       : "error";
+
+  // Index notes by repo id for O(1) lookup when rendering the grid.
+  const notesByRepo = useMemo(() => {
+    const map = new Map<string, RepoNote>();
+    for (const n of repoNotes) map.set(n.repo_id, n);
+    return map;
+  }, [repoNotes]);
 
   async function onConnect() {
     setConnecting(true);
@@ -198,9 +221,9 @@ export function ReposPanel({
       />
 
       {status === "loading" && (
-        <div className="space-y-2.5">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[72px] w-full" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-[260px] w-full" />
           ))}
         </div>
       )}
@@ -283,11 +306,13 @@ export function ReposPanel({
               }
             />
           ) : (
-            <div className="space-y-2.5">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((repo) => (
-                <RepoRow
+                <RepoNotesCard
                   key={repo.id}
                   repo={repo}
+                  note={notesByRepo.get(String(repo.id))}
+                  setRepoNotes={setRepoNotes}
                   onWrite={() => setWriteTarget(repo)}
                 />
               ))}
@@ -315,6 +340,272 @@ export function ReposPanel({
         />
       )}
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+
+function RepoNotesCard({
+  repo,
+  note,
+  setRepoNotes,
+  onWrite,
+}: {
+  repo: GithubRepo;
+  note: RepoNote | undefined;
+  setRepoNotes: Updater<RepoNote[]>;
+  onWrite: () => void;
+}) {
+  const t = useDict();
+  const locale = useDateLocale();
+  const toast = useToast();
+  const qc = useQueryClient();
+  const supabase = createClient();
+  const repoId = String(repo.id);
+
+  // Local working copy. The card is keyed by repo.id, so this initializer runs
+  // fresh whenever the card (re)mounts — picking up the latest cached body.
+  const [body, setBody] = useState(note?.body ?? "");
+  const [savedState, setSavedState] = useState<"idle" | "saving" | "saved">(
+    "idle",
+  );
+  const [pushing, setPushing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const saveTimer = useRef<number | null>(null);
+  const dirtyRef = useRef(false);
+
+  // Clear any pending debounce on unmount.
+  useEffect(
+    () => () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    },
+    [],
+  );
+
+  const updated = repo.pushed_at
+    ? formatDistanceToNow(new Date(repo.pushed_at), { addSuffix: true, locale })
+    : t.github.never;
+
+  // Upsert one row per (user, repo). Reconciles the shared cache on success so
+  // it survives the panel unmounting on a tab switch.
+  const saveMutation = useMutation({
+    mutationFn: async (text: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("no-user");
+      const { data, error } = await supabase
+        .from("repo_notes")
+        .upsert(
+          {
+            user_id: userId,
+            repo_id: repoId,
+            repo_full_name: repo.full_name,
+            body: text,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,repo_id" },
+        )
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as RepoNote;
+    },
+    onMutate: () => setSavedState("saving"),
+    onSuccess: (row) => {
+      dirtyRef.current = false;
+      setSavedState("saved");
+      setRepoNotes((prev) => {
+        const idx = prev.findIndex((n) => n.repo_id === repoId);
+        if (idx === -1) return [row, ...prev];
+        const next = prev.slice();
+        next[idx] = row;
+        return next;
+      });
+    },
+    onError: () => {
+      setSavedState("idle");
+      toast.err(t.github.networkErr);
+    },
+  });
+
+  function scheduleSave(text: string) {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      if (dirtyRef.current) saveMutation.mutate(text);
+    }, 700);
+  }
+
+  function flushSave() {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    if (dirtyRef.current && !saveMutation.isPending) saveMutation.mutate(body);
+  }
+
+  function onBodyChange(v: string) {
+    setBody(v);
+    dirtyRef.current = true;
+    setSavedState("saving");
+    // Keep the shared cache current so switching tabs mid-type (which unmounts
+    // this card) doesn't lose text before the debounce fires.
+    setRepoNotes((prev) => {
+      const idx = prev.findIndex((n) => n.repo_id === repoId);
+      if (idx === -1) return prev; // no row yet — created on first save
+      const next = prev.slice();
+      next[idx] = { ...next[idx], body: v };
+      return next;
+    });
+    scheduleSave(v);
+  }
+
+  // Append a markdown divider so the next note starts on a fresh row.
+  function startNewNote() {
+    const base = body.replace(/\s+$/, "");
+    const next = base ? `${base}\n\n---\n\n` : "";
+    setBody(next);
+    dirtyRef.current = true;
+    setSavedState("saving");
+    scheduleSave(next);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(next.length, next.length);
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+  }
+
+  async function saveToGithub() {
+    if (!body.trim()) {
+      toast.err(t.github.notesNothing);
+      return;
+    }
+    flushSave();
+    setPushing(true);
+    try {
+      const outcome = await commitFile({
+        owner: repo.owner,
+        repo: repo.name,
+        path: NOTES_PATH,
+        content: compileMarkdown(repo.full_name, body),
+        message: t.github.notesCommitMessage,
+      });
+      if (!outcome.ok) {
+        if (outcome.status === 401) {
+          setReposDisconnected(qc);
+          toast.err(t.github.reconnect);
+        } else {
+          toast.err(outcome.error || t.github.notesPushErr);
+        }
+        return;
+      }
+      bumpRepoInCache(qc, repo.id);
+      toast.ok(t.github.notesSavedFile(outcome.result.path));
+    } finally {
+      setPushing(false);
+    }
+  }
+
+  const status =
+    saveMutation.isPending || savedState === "saving"
+      ? t.github.autosaving
+      : savedState === "saved"
+        ? t.github.saved
+        : null;
+
+  return (
+    <Card className="flex flex-col p-0">
+      <div className="flex items-start justify-between gap-2 border-b border-border p-3">
+        <div className="min-w-0">
+          <a
+            href={repo.html_url}
+            target="_blank"
+            rel="noreferrer"
+            className="block truncate text-sm font-semibold text-foreground hover:underline"
+            title={repo.full_name}
+          >
+            {repo.name}
+          </a>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <Badge
+              icon={repo.private ? Lock : Globe}
+              label={repo.private ? t.github.privateLabel : t.github.publicLabel}
+            />
+            {repo.fork && <Badge icon={GitFork} label={t.github.fork} />}
+            {repo.archived && <Badge icon={Archive} label={t.github.archived} />}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+            {repo.language && (
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-foreground-subtle" />
+                {repo.language}
+              </span>
+            )}
+            {repo.stargazers_count > 0 && (
+              <span className="inline-flex items-center gap-1 tabular">
+                <Star className="h-3 w-3" />
+                {repo.stargazers_count}
+              </span>
+            )}
+            <span>
+              {t.github.updatedPrefix} {updated}
+            </span>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <Tooltip content={t.github.writeFile}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onWrite}
+              aria-label={t.github.writeFile}
+            >
+              <Upload className="h-3.5 w-3.5" />
+            </Button>
+          </Tooltip>
+          <Tooltip content={t.github.open}>
+            <Button asChild variant="ghost" size="icon-sm" aria-label={t.github.open}>
+              <a href={repo.html_url} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          </Tooltip>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <Textarea
+          ref={textareaRef}
+          value={body}
+          onChange={(e) => onBodyChange(e.target.value)}
+          onBlur={flushSave}
+          placeholder={t.github.notePlaceholder}
+          className="min-h-[140px] flex-1 resize-y text-xs leading-relaxed"
+        />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] tabular text-foreground-subtle">
+            {status}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Tooltip content={t.github.addNote}>
+              <Button variant="outline" size="sm" onClick={startNewNote}>
+                <Plus className="h-3.5 w-3.5" />
+                {t.github.addNote}
+              </Button>
+            </Tooltip>
+            <Tooltip content={t.github.notesTargetHint(NOTES_PATH)}>
+              <Button size="sm" onClick={saveToGithub} disabled={pushing}>
+                {pushing ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <GithubIcon className="h-3.5 w-3.5" />
+                )}
+                {pushing ? t.github.savingNotes : t.github.saveNotes}
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -473,83 +764,6 @@ function RepoFilterDialog({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
-  );
-}
-
-function RepoRow({
-  repo,
-  onWrite,
-}: {
-  repo: GithubRepo;
-  onWrite: () => void;
-}) {
-  const t = useDict();
-  const locale = useDateLocale();
-
-  const updated = repo.pushed_at
-    ? formatDistanceToNow(new Date(repo.pushed_at), {
-        addSuffix: true,
-        locale,
-      })
-    : t.github.never;
-
-  return (
-    <Card className="flex items-start justify-between gap-3 p-4">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <a
-            href={repo.html_url}
-            target="_blank"
-            rel="noreferrer"
-            className="truncate text-sm font-medium text-foreground hover:underline"
-          >
-            {repo.full_name}
-          </a>
-          <Badge
-            icon={repo.private ? Lock : Globe}
-            label={repo.private ? t.github.privateLabel : t.github.publicLabel}
-          />
-          {repo.fork && <Badge icon={GitFork} label={t.github.fork} />}
-          {repo.archived && <Badge icon={Archive} label={t.github.archived} />}
-        </div>
-        {repo.description && (
-          <p className="mt-1 line-clamp-2 text-xs text-foreground-muted">
-            {repo.description}
-          </p>
-        )}
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
-          {repo.language && (
-            <span className="inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-foreground-subtle" />
-              {repo.language}
-            </span>
-          )}
-          {repo.stargazers_count > 0 && (
-            <span className="inline-flex items-center gap-1 tabular">
-              <Star className="h-3 w-3" />
-              {repo.stargazers_count}
-            </span>
-          )}
-          <span>
-            {t.github.updatedPrefix} {updated}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1">
-        <Button variant="outline" size="sm" onClick={onWrite}>
-          <Upload className="h-3.5 w-3.5" />
-          {t.github.writeFile}
-        </Button>
-        <Tooltip content={t.github.open}>
-          <Button asChild variant="ghost" size="icon-sm" aria-label={t.github.open}>
-            <a href={repo.html_url} target="_blank" rel="noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </Button>
-        </Tooltip>
-      </div>
-    </Card>
   );
 }
 

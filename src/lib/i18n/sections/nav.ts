@@ -2,6 +2,7 @@ type NavSection =
   | "overview"
   | "calendar"
   | "notes"
+  | "prompts"
   | "todos"
   | "streaks"
   | "finances"
@@ -12,6 +13,7 @@ type NavSection =
   | "dates"
   | "couple"
   | "github"
+  | "ai"
   | "settings";
 
 type NavStrings = {
@@ -38,6 +40,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       overview: "Overview",
       calendar: "Calendar",
       notes: "Notes",
+      prompts: "Prompts",
       todos: "Tasks",
       streaks: "Habits",
       finances: "Finances",
@@ -48,6 +51,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       dates: "Dates",
       couple: "Couple",
       github: "Repositories",
+      ai: "AI links",
       settings: "Settings",
     },
     short: { subscriptions: "Subs", github: "Repos" },
@@ -69,6 +73,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       overview: "Přehled",
       calendar: "Kalendář",
       notes: "Poznámky",
+      prompts: "Prompty",
       todos: "Úkoly",
       streaks: "Návyky",
       finances: "Finance",
@@ -79,6 +84,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       dates: "Významné dny",
       couple: "Pár",
       github: "Repozitáře",
+      ai: "AI odkazy",
       settings: "Nastavení",
     },
     short: { subscriptions: "Předpl.", dates: "Dny", github: "Repa" },
