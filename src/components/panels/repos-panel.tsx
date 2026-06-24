@@ -32,6 +32,7 @@ import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
 import { createClient } from "@/lib/supabase/client";
+import { readRepoFilter, writeRepoFilter } from "@/lib/use-prefs";
 import {
   commitFile,
   normalizeRepoPath,
@@ -78,7 +79,11 @@ export function ReposPanel({
   const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [writeTarget, setWriteTarget] = useState<GithubRepo | null>(null);
-  const [visibleIds, setVisibleIds] = useState<string[]>(initialVisibleIds);
+  // Prefer the device-local copy (survives reloads even if the server prefs
+  // round-trip isn't available); fall back to the server-provided value.
+  const [visibleIds, setVisibleIds] = useState<string[]>(
+    () => readRepoFilter() ?? initialVisibleIds,
+  );
   const [filterOpen, setFilterOpen] = useState(false);
 
   const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
@@ -129,14 +134,21 @@ export function ReposPanel({
   }
 
   // Persist the chosen repo allow-list. An empty array clears the filter.
+  // The device-local copy is the source of truth that makes the selection
+  // stick across reloads; the server PATCH is a best-effort cross-device sync
+  // whose failure must not block the save (the server prefs row may not exist).
   const filterMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const res = await fetch("/api/user/preferences", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ visible_repo_ids: ids }),
-      });
-      if (!res.ok) throw new Error("save failed");
+      writeRepoFilter(ids);
+      try {
+        await fetch("/api/user/preferences", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ visible_repo_ids: ids }),
+        });
+      } catch {
+        // Offline or server prefs unavailable — the local copy is saved.
+      }
       return ids;
     },
     onSuccess: (ids) => {
