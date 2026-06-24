@@ -378,7 +378,7 @@ export function ReposPanel({
               }
             />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((repo) => (
                 <RepoNotesCard
                   key={repo.id}
@@ -654,31 +654,30 @@ function RepoNotesCard({
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <span className="text-[10px] tabular text-foreground-subtle">
-            {saving ? t.github.autosaving : null}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addMutation.mutate()}
-              disabled={addMutation.isPending}
-            >
+        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addMutation.mutate()}
+            disabled={addMutation.isPending}
+          >
+            {saving ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
               <Plus className="h-3.5 w-3.5" />
-              {t.github.addNote}
+            )}
+            {t.github.addNote}
+          </Button>
+          <Tooltip content={t.github.saveNotesHint}>
+            <Button size="sm" onClick={saveToGithub} disabled={pushing}>
+              {pushing ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <GithubIcon className="h-3.5 w-3.5" />
+              )}
+              {pushing ? t.github.savingNotes : t.github.saveNotes}
             </Button>
-            <Tooltip content={t.github.saveNotesHint}>
-              <Button size="sm" onClick={saveToGithub} disabled={pushing}>
-                {pushing ? (
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <GithubIcon className="h-3.5 w-3.5" />
-                )}
-                {pushing ? t.github.savingNotes : t.github.saveNotes}
-              </Button>
-            </Tooltip>
-          </div>
+          </Tooltip>
         </div>
       </div>
     </Card>
