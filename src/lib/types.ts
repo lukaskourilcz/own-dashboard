@@ -260,3 +260,62 @@ export type InvoiceItem = {
   position: number;
   created_at: string;
 };
+
+// ---------------------------------------------------------------------------
+// Prompts — a personal library of reusable prompt texts, shown as copyable
+// cards (name + a short preview). Personal; own-only RLS.
+// ---------------------------------------------------------------------------
+
+export type Prompt = {
+  id: string;
+  user_id: string;
+  name: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Repo notes — a quick scratchpad attached to a GitHub repo (keyed by its
+// numeric id, stored as text). One row per repo per user; autosaved as you
+// type. A "Save to GitHub" action writes the body to a markdown file in the
+// repo. Notes within the body are separated by `---` dividers. Own-only RLS.
+// ---------------------------------------------------------------------------
+
+export type RepoNote = {
+  id: string;
+  user_id: string;
+  repo_id: string;
+  repo_full_name: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// AI links — a catalogue of AI sites/tools the user discovered, shown as a
+// table of link + description, grouped under user-defined categories
+// (DESIGN, SECURITY, IDEAS, …). Personal; own-only RLS.
+// ---------------------------------------------------------------------------
+
+export type AiCategory = {
+  id: string;
+  user_id: string;
+  name: string;
+  // Ordering anchor for the category sections. Lower = earlier.
+  sort_order: number;
+  created_at: string;
+};
+
+export type AiLink = {
+  id: string;
+  user_id: string;
+  // Null = "Uncategorized". On category delete the FK nulls out, so a link is
+  // never lost — it just falls back to the Uncategorized group.
+  category_id: string | null;
+  title: string;
+  url: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};

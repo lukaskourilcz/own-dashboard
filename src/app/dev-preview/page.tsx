@@ -26,6 +26,10 @@ export default function PreviewPage() {
       initialBooks={f.books}
       initialBookPages={f.bookPages}
       initialNotes={f.notes}
+      initialPrompts={f.prompts}
+      initialRepoNotes={f.repoNotes}
+      initialAiLinks={f.aiLinks}
+      initialAiCategories={f.aiCategories}
       initialImportantDates={f.importantDates}
       initialInvoices={f.invoices}
       initialInvoiceItems={f.invoiceItems}

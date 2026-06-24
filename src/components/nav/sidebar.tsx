@@ -14,10 +14,12 @@ import {
   LayoutDashboard,
   ListTodo,
   LogOut,
+  MessageSquareText,
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
   Settings,
+  Sparkles,
   Target,
   Unlink,
   Wallet,
@@ -42,8 +44,10 @@ export type NavTab =
   | "couple"
   | "books"
   | "notes"
+  | "prompts"
   | "dates"
   | "github"
+  | "ai"
   | "settings";
 
 type NavItem = {
@@ -58,6 +62,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "overview", icon: LayoutDashboard },
   { value: "calendar", icon: CalendarDays },
   { value: "notes", icon: FileText },
+  { value: "prompts", icon: MessageSquareText },
   { value: "todos", icon: ListTodo },
   { value: "streaks", icon: Flame },
   { value: "finances", icon: Wallet },
@@ -68,6 +73,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "dates", icon: Gift },
   { value: "couple", icon: Heart },
   { value: "github", icon: GithubIcon },
+  { value: "ai", icon: Sparkles },
 ];
 
 export function Sidebar({

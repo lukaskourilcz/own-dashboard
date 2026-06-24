@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/client";
 import type {
   Account,
+  AiCategory,
+  AiLink,
   Book,
   BookPage,
   ImportantDate,
@@ -11,6 +13,8 @@ import type {
   InvoiceSettings,
   Note,
   Plan,
+  Prompt,
+  RepoNote,
   Streak,
   StreakLog,
   Subscription,
@@ -164,4 +168,45 @@ export async function fetchInvoiceSettings(): Promise<InvoiceSettings | null> {
     .maybeSingle();
   if (error) throw error;
   return (data ?? null) as InvoiceSettings | null;
+}
+
+export async function fetchPrompts(): Promise<Prompt[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("prompts")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Prompt[];
+}
+
+export async function fetchRepoNotes(): Promise<RepoNote[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("repo_notes")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as RepoNote[];
+}
+
+export async function fetchAiLinks(): Promise<AiLink[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("ai_links")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AiLink[];
+}
+
+export async function fetchAiCategories(): Promise<AiCategory[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("ai_categories")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as AiCategory[];
 }

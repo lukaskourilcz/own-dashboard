@@ -65,6 +65,21 @@ type GithubStrings = {
   needContent: string;
   cancel: string;
   networkErr: string;
+  // Per-repo quick notes (grid cards)
+  notesEmpty: string;
+  notePlaceholder: string;
+  addNote: string;
+  deleteNote: string;
+  deleteNoteConfirm: string;
+  autosaving: string;
+  saved: string;
+  saveNotes: string;
+  savingNotes: string;
+  notesNothing: string;
+  notesCommitMessage: string;
+  notesTargetHint: (path: string) => string;
+  notesSavedFile: (path: string) => string;
+  notesPushErr: string;
 };
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
@@ -132,6 +147,20 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     needContent: "Content can't be empty.",
     cancel: "Cancel",
     networkErr: "Network error.",
+    notesEmpty: "No notes yet — start typing below.",
+    notePlaceholder: "Write a quick note…",
+    addNote: "New note",
+    deleteNote: "Delete note",
+    deleteNoteConfirm: "Delete this note?",
+    autosaving: "Saving…",
+    saved: "Saved",
+    saveNotes: "Save to GitHub",
+    savingNotes: "Saving…",
+    notesNothing: "Write a note before saving.",
+    notesCommitMessage: "Update dashboard notes",
+    notesTargetHint: (path) => `Saves to ${path}`,
+    notesSavedFile: (path) => `Saved to ${path} on GitHub.`,
+    notesPushErr: "Could not save notes to GitHub.",
   },
   cs: {
     title: "Repozitáře",
@@ -197,5 +226,19 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     needContent: "Obsah nemůže být prázdný.",
     cancel: "Zrušit",
     networkErr: "Chyba sítě.",
+    notesEmpty: "Zatím žádné poznámky — začni psát níže.",
+    notePlaceholder: "Napiš rychlou poznámku…",
+    addNote: "Nová poznámka",
+    deleteNote: "Smazat poznámku",
+    deleteNoteConfirm: "Smazat tuto poznámku?",
+    autosaving: "Ukládání…",
+    saved: "Uloženo",
+    saveNotes: "Uložit na GitHub",
+    savingNotes: "Ukládání…",
+    notesNothing: "Před uložením napiš poznámku.",
+    notesCommitMessage: "Aktualizace poznámek z dashboardu",
+    notesTargetHint: (path) => `Uloží se do ${path}`,
+    notesSavedFile: (path) => `Uloženo do ${path} na GitHubu.`,
+    notesPushErr: "Poznámky se nepodařilo uložit na GitHub.",
   },
 };
