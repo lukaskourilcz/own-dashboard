@@ -242,20 +242,29 @@ To keep the existing panels from accidentally rendering partner rows mixed into 
 
 | Layer | Choice | Notes |
 | --- | --- | --- |
+| Hosting | **Vercel** (Hobby) | Serverless/edge functions for `/api/*`, edge CDN, and **Vercel Cron** (`vercel.json` → daily renewal-warnings job) |
 | Framework | **Next.js 16** (App Router, Turbopack build) | Uses the new `proxy.ts` convention (renamed from `middleware.ts`) |
 | Runtime | **React 19** | Uses `useSyncExternalStore`, class-based dark mode via Tailwind v4 |
 | Styling | **Tailwind CSS v4** | CSS-first config (`@import "tailwindcss"`, `@custom-variant`), no `tailwind.config.js` |
-| UI primitives | shadcn-style local components | `src/components/ui/*` — Card, Button, Input, Select, Tabs, Toast, Skeleton |
-| Database & auth | **Supabase** (Postgres + Auth + RLS) | `@supabase/ssr` for cookie-based session handling |
+| UI primitives | shadcn-style local components over **Radix UI** | `src/components/ui/*` — Card, Button, Input, Select, Tabs, Toast, Skeleton, Dialog, Tooltip |
+| Animation | **framer-motion** | Tab transitions and the sliding active-nav indicator |
+| Client data | **TanStack React Query** | Entity stores seeded from the server load; optimistic mutations |
+| Database & auth | **Supabase** (Postgres + Auth + RLS) | `@supabase/ssr` for cookie-based sessions; service-role key used server-side by the cron job |
+| Auth providers | **Google OAuth** + **GitHub OAuth** (via Supabase) | Google: `calendar.events` + `userinfo.email/profile`; GitHub: repo read/write for the Repositories panel |
+| AI | **Anthropic — Claude Haiku 4.5** (`@anthropic-ai/sdk`) | Natural-language quick-add parsing in `/api/quick-add`. Optional — degrades to the literal `!`-grammar without a key |
+| Email | **Resend** | Daily subscription-renewal warning emails, sent only from the cron job. Optional — no-ops without a key |
+| Error monitoring | **Sentry** (`@sentry/nextjs`) | Client/server/edge, `tracesSampleRate: 0.1`. Optional — the build only wraps with Sentry when DSN + org + project are set |
+| Notes editor | **BlockNote** | Block-based rich-text editor for the Notes panel |
+| Drag & drop | **dnd-kit** | Overview widget customization and sortable lists |
 | Charts | **Recharts** | Bar, Pie, Line — all server-data-driven, no client-fetched series |
-| Icons | **lucide-react** | (Note: package is pinned to `^1.14.0` — confirm this is the intended package, since lucide-react ships on `0.x` upstream) |
+| Icons | **lucide-react** | Pinned to `^1.14.0` (this app's intended major; verify an icon exists before importing) |
 | QR codes | **qrcode.react** | Renders the Czech "QR Platba" (SPAYD) on the invoice detail |
 | PDF import | **pdfjs-dist** | Client-side text extraction for drag-and-drop invoice import |
 | Dates | **date-fns** v4 | `format`, `subDays`, `differenceInCalendarDays`, etc. |
-| Tests | **Vitest** 4 | 111 unit tests covering all lib modules; config in `vitest.config.mts` |
-| Auth provider | Google OAuth (via Supabase) | Calendar scope: `auth/calendar.events`; `userinfo.email` + `userinfo.profile` |
+| Unit tests | **Vitest** 4 | 130 unit tests across the `lib/` modules; config in `vitest.config.mts` |
+| E2E tests | **Playwright** (+ `@axe-core/playwright`) | `e2e/*.spec.ts` — login, dashboard, customize, responsive, accessibility; renders the real shell via `/dev-preview` fixtures |
 
-The app does **not** depend on: an AI provider, a live FX API, an email service, an analytics SDK, an error tracker, a payment provider.
+The app does **not** depend on: a live FX API (rates are a static table in `src/lib/fx.ts`), an analytics SDK, an object-storage bucket (invoice logos are inline data URLs), or a payment provider. The **AI, email and error-monitoring** integrations are all **optional** — each no-ops cleanly when its env vars are absent, so a minimal deploy needs only the two `NEXT_PUBLIC_SUPABASE_*` vars.
 
 ---
 
@@ -413,12 +422,21 @@ For full deploy instructions (Supabase + Google OAuth + Vercel) see the step-by-
    ```
 5. **Vercel**: import the repo, set production branch, add the two env vars, deploy. After deploy, add the Vercel domain to Supabase's Site URL + Redirect URLs.
 
-### What you don't need
+### Optional integrations
 
-- **No AI API key** — the app has no LLM calls.
+These are wired up but each no-ops cleanly when its env vars are missing, so a minimal deploy needs only the two `NEXT_PUBLIC_SUPABASE_*` vars:
+
+- **Anthropic** (`ANTHROPIC_API_KEY`) — powers natural-language quick-add (Claude Haiku 4.5). Without it, quick-add falls back to the literal `!todo` / `!streak` / `!cal` / `!mood` grammar.
+- **Resend** (`RESEND_API_KEY`, optional `RESEND_FROM`) — sends the daily subscription-renewal warning emails from the Vercel Cron job. Without it, the cron no-ops.
+- **Sentry** (`SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`, plus `SENTRY_ORG` + `SENTRY_PROJECT` for build-time source-map upload) — error monitoring and tracing. The build only wraps with Sentry when these are set.
+- **GitHub OAuth** (`GITHUB_OAUTH_CLIENT_ID` / `_SECRET`) — only needed to revoke the grant on "Disconnect GitHub" and to refresh expiring GitHub-App tokens; classic OAuth tokens work without them.
+- **Cron secret** (`CRON_SECRET`) — set it so the renewal-warnings endpoint only runs when called by Vercel Cron with the matching `Authorization: Bearer` header.
+
+### What you still don't need
+
 - **No live FX API** — `src/lib/fx.ts` uses a hard-coded rate table with a TODO for live rates.
-- **No email/SMTP** — couple invites are surfaced in-app on the partner's next page load. Real email invites would need Supabase Edge Functions or Resend.
-- **No payments, analytics, or error tracker**.
+- **No object storage** — invoice logos are stored inline as data URLs in Postgres; PDFs are parsed client-side.
+- **No payments or analytics provider**.
 
 ---
 
@@ -437,7 +455,7 @@ npm run test:watch  # Vitest in watch mode
 
 ### Tests
 
-111 unit tests live under `tests/lib/`, covering every pure module:
+130 unit tests live under `tests/lib/`, covering the pure modules (the per-module table below is representative, not an exact current breakdown — the suite also covers `dashboard-layout`):
 
 | Module | Tests | Catches |
 | --- | --- | --- |
@@ -453,12 +471,13 @@ npm run test:watch  # Vitest in watch mode
 
 Time-dependent tests pin the clock to `2026-05-12` with `vi.useFakeTimers()` so results don't drift with the system date.
 
+A **Playwright E2E suite** lives under `e2e/` (login, dashboard, customize, responsive, and an axe-core accessibility pass), exercising the real shell through the `/dev-preview` fixture route. Run it with `npm run test:e2e`.
+
 **Not currently tested** (deferred):
 
-- **React components** — would need `@testing-library/react` + `jsdom` + a Supabase client mock.
+- **React components in isolation** — would need `@testing-library/react` + `jsdom` + a Supabase client mock.
 - **RLS policies** — the most security-critical piece; testing properly needs a real Supabase instance (local CLI or a test project).
 - **Google Calendar fetch** — `src/lib/calendar.ts`'s `fetch()` calls are not mocked.
-- **End-to-end** — no Playwright suite.
 
 ---
 
@@ -528,7 +547,8 @@ src/
     utils.ts                      cn, formatCurrency
   proxy.ts                        Next 16 proxy convention (session refresh)
 supabase/schema.sql               full DB schema + RLS (idempotent)
-tests/lib/                        77 Vitest tests
+tests/lib/                        130 Vitest unit tests (9 modules)
+e2e/                              Playwright specs (login, dashboard, customize, responsive, a11y)
 vitest.config.mts                 Vitest config (.mts because Vitest 4 needs ESM-loaded config)
 ```
 
@@ -540,13 +560,13 @@ The following items are intentionally scoped out. Each is small enough to ship a
 
 - **Partner data in Subscriptions / Finances / Plans**. The data flows through `partnerData` server-side, but the three panels don't yet render a "From <partner>" section. The pattern proven in Todos and Streaks extends directly (about 30 lines per panel).
 - **"Us" stats card on Overview**. Planned: days paired, books co-written, pages-together total, days both checked in. All deriveable from existing data with no new schema; just a small component drop-in.
-- **Email invites**. Couple invites currently surface in-app on the partner's next load. Real email send needs either Supabase Edge Functions + a transactional email API, or a server-route handler that calls Resend / Postmark / SES.
+- **Email invites**. Couple invites still surface in-app on the partner's next load — no email is sent on invite. Resend is already wired up (for renewal-warning emails), so adding invite emails is now mostly a matter of reusing it from the accept/invite flow rather than introducing a new dependency.
 - **Subscription / Books / etc. toast migration**. Toast is wired up via `ToastProvider` but only quick-add currently uses it. Remaining panels still have inline error/success text and can migrate incrementally.
 - **Edit a streak's reminder time** or **flip a book between solo and co-write after creation** — these are creation-time only right now. Inline-edit UI is the missing piece.
 - **Live FX rates**. `src/lib/fx.ts` carries a hard-coded snapshot. The function signature is set up to swap in a live API (e.g. Frankfurter, open.er-api.com) without touching call sites.
 - **Calendar-event editing/deletion**. The form creates events; it doesn't edit or delete. The week view shows events read-only with a deep link to Google Calendar.
 - **Notifications for streak reminders**. `streaks.reminder_time` is persisted but no scheduler reads it. A future Supabase Edge Function with `pg_cron` could send web push / email notifications.
-- **Component tests + RLS tests + E2E**. Lib coverage is solid (77 tests); the React tree and the database policies aren't tested. RTL + jsdom for components, a seeded Supabase instance for RLS, and Playwright for E2E are all sensible next layers.
+- **Component + RLS tests**. Lib coverage is solid (130 unit tests) and a Playwright E2E suite exercises the shell, but the React component tree in isolation and the database RLS policies still aren't directly tested. RTL + jsdom for components and a seeded Supabase instance for RLS are the sensible next layers.
 - **Refresh tokens for Google Calendar**. The app uses Supabase's `provider_token` which expires ~1 hour. The Re-link button handles recovery, but if you want background work against the calendar, you'd need to capture `provider_refresh_token` server-side on OAuth callback and exchange it manually.
 - **Mobile polish**. Layout is mostly responsive but the tab strip will overflow on very narrow screens; a bottom-nav variant on mobile would feel native. The current behavior is horizontal-scroll, which works but isn't pretty.
 
