@@ -22,6 +22,7 @@ export const qk = {
   aiLinks: ["aiLinks"] as const,
   aiCategories: ["aiCategories"] as const,
   shortcuts: ["shortcuts"] as const,
+  referenceRows: ["referenceRows"] as const,
   importantDates: ["importantDates"] as const,
   invoices: ["invoices"] as const,
   invoiceItems: ["invoiceItems"] as const,

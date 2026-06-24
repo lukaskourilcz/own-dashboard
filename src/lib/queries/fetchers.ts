@@ -14,6 +14,7 @@ import type {
   Note,
   Plan,
   Prompt,
+  ReferenceRow,
   RepoLink,
   RepoNote,
   Shortcut,
@@ -230,4 +231,15 @@ export async function fetchShortcuts(): Promise<Shortcut[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Shortcut[];
+}
+
+export async function fetchReferenceRows(): Promise<ReferenceRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("reference_rows")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ReferenceRow[];
 }

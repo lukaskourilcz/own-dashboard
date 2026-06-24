@@ -21,7 +21,7 @@ export async function connectGitHub(): Promise<{ error?: string }> {
   const { error } = await supabase.auth.linkIdentity({
     provider: "github",
     options: {
-      redirectTo: `${window.location.origin}/auth/callback?next=/dashboard&link=github`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/&link=github`,
       scopes: SCOPES,
     },
   });

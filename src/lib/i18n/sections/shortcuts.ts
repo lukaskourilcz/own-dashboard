@@ -44,6 +44,17 @@ type ShortcutsStrings = {
   colMac: string;
   translatedTitle: string;
   colAction: string;
+  // Editable table rows
+  addRow: string;
+  editRowTitle: string;
+  deleteRowConfirm: string;
+  rowRequired: string;
+  tableEmpty: string;
+  rowAdded: string;
+  rowSaved: string;
+  rowDeleted: string;
+  couldNotSaveRow: string;
+  couldNotDeleteRow: string;
 };
 
 export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
@@ -90,6 +101,16 @@ export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
     colMac: "Mac keyboard",
     translatedTitle: "Essential shortcuts (translated)",
     colAction: "Action",
+    addRow: "Add row",
+    editRowTitle: "Edit row",
+    deleteRowConfirm: "Delete this row?",
+    rowRequired: "Fill in the first column.",
+    tableEmpty: "No rows yet.",
+    rowAdded: "Row added.",
+    rowSaved: "Row saved.",
+    rowDeleted: "Row deleted.",
+    couldNotSaveRow: "Could not save the row. Please try again.",
+    couldNotDeleteRow: "Could not delete the row. Please try again.",
   },
   cs: {
     title: "Zkratky",
@@ -134,5 +155,15 @@ export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
     colMac: "Mac klávesnice",
     translatedTitle: "Základní zkratky (přeložené)",
     colAction: "Akce",
+    addRow: "Přidat řádek",
+    editRowTitle: "Upravit řádek",
+    deleteRowConfirm: "Smazat tento řádek?",
+    rowRequired: "Vyplň první sloupec.",
+    tableEmpty: "Zatím žádné řádky.",
+    rowAdded: "Řádek přidán.",
+    rowSaved: "Řádek uložen.",
+    rowDeleted: "Řádek smazán.",
+    couldNotSaveRow: "Řádek se nepodařilo uložit. Zkuste to znovu.",
+    couldNotDeleteRow: "Řádek se nepodařilo smazat. Zkuste to znovu.",
   },
 };

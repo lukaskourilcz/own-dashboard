@@ -33,6 +33,7 @@ export default function PreviewPage() {
       initialAiLinks={f.aiLinks}
       initialAiCategories={f.aiCategories}
       initialShortcuts={f.shortcuts}
+      initialReferenceRows={f.referenceRows}
       initialImportantDates={f.importantDates}
       initialInvoices={f.invoices}
       initialInvoiceItems={f.invoiceItems}

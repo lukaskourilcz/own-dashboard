@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -22,13 +21,11 @@ import {
   Sparkles,
   Target,
   Terminal,
-  Unlink,
   Wallet,
 } from "lucide-react";
 import { GithubIcon } from "@/components/icons/github";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { useNavCollapsed, useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
@@ -77,28 +74,6 @@ export function Sidebar({
   const t = useDict();
   const { isHidden } = useNavVisibility();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
-  const toast = useToast();
-  const disconnectGoogle = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/google/disconnect", { method: "POST" });
-      if (!res.ok) throw new Error("server");
-    },
-    onSuccess: () => {
-      toast.ok(t.nav.disconnectOk);
-      // Soft reload so server components re-render with the no-token state.
-      window.location.reload();
-    },
-    onError: (e) =>
-      toast.err(
-        (e as Error).message === "server"
-          ? t.nav.disconnectErr
-          : t.nav.networkErr,
-      ),
-  });
-
-  function onDisconnectClick() {
-    if (window.confirm(t.nav.disconnectConfirm)) disconnectGoogle.mutate();
-  }
 
   const items = NAV_ITEMS.filter(
     (it) => it.value === "overview" || !isHidden(it.value),
@@ -216,14 +191,12 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* user footer */}
-      <div className="border-t border-border p-2">
+      {/* user footer — identity on top, actions below */}
+      <div className="border-t border-border p-2 space-y-1.5">
         <div
           className={cn(
-            "flex rounded-md",
-            collapsed
-              ? "flex-col items-center gap-1 py-1"
-              : "items-center gap-2 px-2 py-1.5",
+            "flex items-center py-1",
+            collapsed ? "justify-center" : "gap-2 px-1",
           )}
         >
           {user.avatar_url ? (
@@ -239,14 +212,24 @@ export function Sidebar({
               {initials}
             </div>
           )}
-          <div className={cn("min-w-0", collapsed ? "hidden" : "flex-1")}>
-            <p className="text-xs font-medium truncate">
-              {user.name ?? user.email.split("@")[0]}
-            </p>
-            <p className="text-[11px] text-foreground-subtle truncate">
-              {user.email}
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium truncate">
+                {user.name ?? user.email.split("@")[0]}
+              </p>
+              <p className="text-[11px] text-foreground-subtle truncate">
+                {user.email}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            "flex items-center gap-1",
+            collapsed ? "flex-col" : "px-0.5",
+          )}
+        >
           <Tooltip content={t.nav.settings} side={collapsed ? "right" : "top"}>
             <button
               type="button"
@@ -264,20 +247,6 @@ export function Sidebar({
           </Tooltip>
           <Tooltip content={t.nav.theme} side={collapsed ? "right" : "top"}>
             <span><ThemeToggle /></span>
-          </Tooltip>
-          <Tooltip
-            content={t.nav.disconnectGoogle}
-            side={collapsed ? "right" : "top"}
-          >
-            <button
-              type="button"
-              onClick={onDisconnectClick}
-              disabled={disconnectGoogle.isPending}
-              aria-label={t.nav.disconnectGoogle}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring disabled:opacity-50"
-            >
-              <Unlink className="h-3.5 w-3.5" />
-            </button>
           </Tooltip>
           <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
             <form action="/auth/signout" method="post">

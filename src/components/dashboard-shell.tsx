@@ -49,6 +49,7 @@ import {
   fetchRepoNotes,
   fetchRepoLinks,
   fetchShortcuts,
+  fetchReferenceRows,
   fetchStreakLogs,
   fetchStreaks,
   fetchSubscriptions,
@@ -70,6 +71,7 @@ import type {
   Note,
   Plan,
   Prompt,
+  ReferenceRow,
   RepoLink,
   RepoNote,
   Shortcut,
@@ -101,6 +103,7 @@ type Props = {
   initialAiLinks: AiLink[];
   initialAiCategories: AiCategory[];
   initialShortcuts: Shortcut[];
+  initialReferenceRows: ReferenceRow[];
   initialImportantDates: ImportantDate[];
   initialInvoices: Invoice[];
   initialInvoiceItems: InvoiceItem[];
@@ -150,6 +153,7 @@ export function DashboardShell({
   initialAiLinks,
   initialAiCategories,
   initialShortcuts,
+  initialReferenceRows,
   initialImportantDates,
   initialInvoices,
   initialInvoiceItems,
@@ -162,7 +166,7 @@ export function DashboardShell({
   repoVisibleIds,
 }: Props) {
   const [tab, setTabState] = useState<NavTab>(initialTab);
-  // Reflect the active section in the URL (/dashboard/<section>) using the
+  // Reflect the active section in the URL (/<section>) using the
   // History API — no server round-trip, so the SPA feel is preserved. Deep
   // links and refresh are resolved by the route on the server.
   const setTab = useCallback((next: NavTab) => {
@@ -246,6 +250,11 @@ export function DashboardShell({
     qk.shortcuts,
     initialShortcuts,
     fetchShortcuts,
+  );
+  const [referenceRows, setReferenceRows] = useEntityStore(
+    qk.referenceRows,
+    initialReferenceRows,
+    fetchReferenceRows,
   );
   const [importantDates, setImportantDates] = useEntityStore(
     qk.importantDates,
@@ -550,6 +559,8 @@ export function DashboardShell({
                     <ShortcutsPanel
                       shortcuts={shortcuts}
                       setShortcuts={setShortcuts}
+                      referenceRows={referenceRows}
+                      setReferenceRows={setReferenceRows}
                     />
                   )}
 

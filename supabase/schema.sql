@@ -1208,3 +1208,42 @@ create policy "shortcuts update own" on public.shortcuts
 drop policy if exists "shortcuts delete own" on public.shortcuts;
 create policy "shortcuts delete own" on public.shortcuts
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Reference rows — editable cheatsheet tables in the Shortcuts section.
+-- `kind` groups rows into a table; c1/c2/c3 are that table's columns
+-- (git: command/description; subst: Windows/Mac; translated: action/
+-- Windows/Mac). Personal; own RLS.
+-- =============================================================
+create table if not exists public.reference_rows (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('git', 'subst', 'translated')),
+  c1 text not null default '',
+  c2 text not null default '',
+  c3 text,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists reference_rows_user_kind_idx
+  on public.reference_rows (user_id, kind, sort_order);
+
+alter table public.reference_rows enable row level security;
+
+drop policy if exists "reference_rows select own" on public.reference_rows;
+create policy "reference_rows select own" on public.reference_rows
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "reference_rows insert own" on public.reference_rows;
+create policy "reference_rows insert own" on public.reference_rows
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "reference_rows update own" on public.reference_rows;
+create policy "reference_rows update own" on public.reference_rows
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "reference_rows delete own" on public.reference_rows;
+create policy "reference_rows delete own" on public.reference_rows
+  for delete using (auth.uid() = user_id);
