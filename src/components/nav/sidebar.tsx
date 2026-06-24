@@ -8,6 +8,7 @@ import {
   CreditCard,
   FileText,
   Flame,
+  Gauge,
   Gift,
   Heart,
   LayoutDashboard,
@@ -57,6 +58,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "dates", icon: Gift },
   { value: "couple", icon: Heart },
   { value: "github", icon: GithubIcon },
+  { value: "costs", icon: Gauge },
   { value: "ai", icon: Sparkles },
 ];
 
