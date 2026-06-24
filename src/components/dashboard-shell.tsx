@@ -17,6 +17,7 @@ import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
+import { CostsPanel } from "@/components/panels/costs-panel";
 import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
@@ -580,6 +581,13 @@ export function DashboardShell({
                       setRepoNotes={setRepoNotes}
                       repoLinks={repoLinks}
                       setRepoLinks={setRepoLinks}
+                    />
+                  )}
+
+                  {tab === "costs" && (
+                    <CostsPanel
+                      initialVisibleIds={repoVisibleIds}
+                      onOpenRepos={() => setTab("github")}
                     />
                   )}
 

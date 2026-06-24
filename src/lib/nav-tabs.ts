@@ -19,6 +19,7 @@ export const NAV_TABS = [
   "dates",
   "couple",
   "github",
+  "costs",
   "ai",
   "settings",
 ] as const;

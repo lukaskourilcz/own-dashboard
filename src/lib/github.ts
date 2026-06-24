@@ -108,3 +108,33 @@ export async function commitFile(input: CommitInput): Promise<CommitOutcome> {
     return { ok: false, status: 0, error: "network" };
   }
 }
+
+export type RepoFileResult =
+  | { kind: "ok"; content: string; htmlUrl: string | null }
+  | { kind: "not-found" }
+  | { kind: "disconnected" }
+  | { kind: "error" };
+
+/** Read a text file from a repo root via /api/github/file. Distinguishes
+ * "no token" (disconnected) and "missing file" (not-found) so the UI can show
+ * the right affordance. */
+export async function loadRepoFile(
+  owner: string,
+  repo: string,
+  path: string,
+): Promise<RepoFileResult> {
+  try {
+    const qs = new URLSearchParams({ owner, repo, path });
+    const res = await fetch(`/api/github/file?${qs.toString()}`);
+    if (res.status === 401) return { kind: "disconnected" };
+    if (res.status === 404) return { kind: "not-found" };
+    if (!res.ok) return { kind: "error" };
+    const json = (await res.json()) as {
+      content: string;
+      html_url: string | null;
+    };
+    return { kind: "ok", content: json.content, htmlUrl: json.html_url };
+  } catch {
+    return { kind: "error" };
+  }
+}

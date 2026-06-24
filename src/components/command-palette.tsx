@@ -8,6 +8,7 @@ import {
   CreditCard,
   FileText,
   Flame,
+  Gauge,
   Gift,
   Heart,
   LayoutDashboard,
@@ -101,6 +102,7 @@ export function CommandPalette({
       { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "anniversary birthday významné dny g d", run: go("dates") },
       { id: "go-couple", label: s.couple, group: "go", icon: Heart, keywords: "partner pair sharing pár g u", run: go("couple") },
       { id: "go-github", label: s.github, group: "go", icon: GithubIcon, keywords: "github repos repositories git commit markdown notes repozitáře g r", run: go("github") },
+      { id: "go-costs", label: s.costs, group: "go", icon: Gauge, keywords: "costs scaling pricing tech stack budget infrastructure náklady škálování", run: go("costs") },
       { id: "go-ai", label: s.ai, group: "go", icon: Sparkles, keywords: "ai tools sites links discoveries findings catalogue g a", run: go("ai") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {

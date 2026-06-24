@@ -28,6 +28,7 @@ import { couple } from "./sections/couple";
 import { calendar } from "./sections/calendar";
 import { github } from "./sections/github";
 import { ai } from "./sections/ai";
+import { costs } from "./sections/costs";
 
 export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
 
@@ -58,6 +59,7 @@ export const dictionaries = {
     calendar: calendar.en,
     github: github.en,
     ai: ai.en,
+    costs: costs.en,
   },
   cs: {
     common: common.cs,
@@ -85,6 +87,7 @@ export const dictionaries = {
     calendar: calendar.cs,
     github: github.cs,
     ai: ai.cs,
+    costs: costs.cs,
   },
 };
 
