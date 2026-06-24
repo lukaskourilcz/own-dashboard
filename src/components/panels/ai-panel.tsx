@@ -147,8 +147,15 @@ export function AiPanel({
     },
     onSuccess: (l) => {
       setAiLinks((prev) => [l, ...prev]);
+      toast.ok(t.ai.linkCreated);
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
+    onError: (e) =>
+      toast.err(
+        (e as Error)?.message === "no-user"
+          ? t.ai.signInFirst
+          : t.ai.couldNotSave,
+      ),
   });
 
   const updateLink = useMutation({
@@ -176,8 +183,15 @@ export function AiPanel({
     },
     onSuccess: (l) => {
       setAiLinks((prev) => prev.map((x) => (x.id === l.id ? l : x)));
+      toast.ok(t.ai.linkSaved);
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
+    onError: (e) =>
+      toast.err(
+        (e as Error)?.message === "no-user"
+          ? t.ai.signInFirst
+          : t.ai.couldNotSave,
+      ),
   });
 
   const deleteLink = useMutation({
@@ -191,9 +205,10 @@ export function AiPanel({
       setAiLinks((old) => old.filter((l) => l.id !== id));
       return { prev };
     },
-    onError: (e, _id, ctx) => {
+    onSuccess: () => toast.ok(t.ai.linkDeleted),
+    onError: (_e, _id, ctx) => {
       if (ctx?.prev) setAiLinks(ctx.prev);
-      toast.err((e as Error).message || t.ai.couldNotDelete);
+      toast.err(t.ai.couldNotDelete);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.aiLinks }),
   });
@@ -217,13 +232,14 @@ export function AiPanel({
     },
     onSuccess: (c) => {
       setAiCategories((prev) => [...prev, c]);
+      toast.ok(t.ai.categoryCreated);
       void qc.invalidateQueries({ queryKey: qk.aiCategories });
     },
     onError: (e) =>
       toast.err(
-        (e as Error).message === "no-user"
+        (e as Error)?.message === "no-user"
           ? t.ai.signInFirst
-          : (e as Error).message || t.ai.couldNotSave,
+          : t.ai.couldNotSave,
       ),
   });
 
@@ -243,9 +259,10 @@ export function AiPanel({
       );
       return { prev };
     },
-    onError: (e, _vars, ctx) => {
+    onSuccess: () => toast.ok(t.ai.categoryRenamed),
+    onError: (_e, _vars, ctx) => {
       if (ctx?.prev) setAiCategories(ctx.prev);
-      toast.err((e as Error).message || t.ai.couldNotSave);
+      toast.err(t.ai.couldNotSave);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.aiCategories }),
   });
@@ -272,10 +289,11 @@ export function AiPanel({
       );
       return { prevCats, prevLinks };
     },
-    onError: (e, _id, ctx) => {
+    onSuccess: () => toast.ok(t.ai.categoryDeleted),
+    onError: (_e, _id, ctx) => {
       if (ctx?.prevCats) setAiCategories(ctx.prevCats);
       if (ctx?.prevLinks) setAiLinks(ctx.prevLinks);
-      toast.err((e as Error).message || t.ai.couldNotDelete);
+      toast.err(t.ai.couldNotDelete);
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.aiCategories });
@@ -324,21 +342,15 @@ export function AiPanel({
     }
     const description = form.description.trim() || null;
     const category_id = form.categoryId || null;
-    const onError = (err: unknown) =>
-      setFormError(
-        (err as Error)?.message === "no-user"
-          ? t.ai.signInFirst
-          : (err as Error)?.message || t.ai.couldNotSave,
-      );
     if (editing) {
       updateLink.mutate(
         { id: editing.id, title, url, description, category_id },
-        { onSuccess: () => setDialogOpen(false), onError },
+        { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createLink.mutate(
         { title, url, description, category_id },
-        { onSuccess: () => setDialogOpen(false), onError },
+        { onSuccess: () => setDialogOpen(false) },
       );
     }
   }

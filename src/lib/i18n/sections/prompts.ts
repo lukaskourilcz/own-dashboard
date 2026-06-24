@@ -27,6 +27,9 @@ type PromptsStrings = {
   signInFirst: string;
   couldNotSave: string;
   couldNotDelete: string;
+  createdToast: string;
+  savedToast: string;
+  deletedToast: string;
   // Empty states
   noPromptsYet: string;
   noPromptsDescription: string;
@@ -60,8 +63,11 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     nameRequired: "Name is required.",
     bodyRequired: "Prompt text is required.",
     signInFirst: "Sign in first.",
-    couldNotSave: "Could not save prompt.",
-    couldNotDelete: "Could not delete prompt.",
+    couldNotSave: "Could not save the prompt. Please try again.",
+    couldNotDelete: "Could not delete the prompt. Please try again.",
+    createdToast: "Prompt created.",
+    savedToast: "Prompt saved.",
+    deletedToast: "Prompt deleted.",
     noPromptsYet: "No prompts yet",
     noPromptsDescription: "Add a prompt to start building your library.",
     noMatches: "No matches",
@@ -92,8 +98,11 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     nameRequired: "Název je povinný.",
     bodyRequired: "Text promptu je povinný.",
     signInFirst: "Nejprve se přihlaste.",
-    couldNotSave: "Prompt se nepodařilo uložit.",
-    couldNotDelete: "Prompt se nepodařilo smazat.",
+    couldNotSave: "Prompt se nepodařilo uložit. Zkuste to znovu.",
+    couldNotDelete: "Prompt se nepodařilo smazat. Zkuste to znovu.",
+    createdToast: "Prompt vytvořen.",
+    savedToast: "Prompt uložen.",
+    deletedToast: "Prompt smazán.",
     noPromptsYet: "Zatím žádné prompty",
     noPromptsDescription: "Přidej prompt a začni budovat svou knihovnu.",
     noMatches: "Žádné výsledky",

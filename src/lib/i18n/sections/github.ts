@@ -80,6 +80,21 @@ type GithubStrings = {
   notesTargetHint: (path: string) => string;
   notesSavedFile: (path: string) => string;
   notesPushErr: string;
+  saveNotesHint: string;
+  writeFileHint: string;
+  // Per-repo custom link
+  linkAdd: string;
+  linkEdit: string;
+  linkPlaceholder: string;
+  linkRemove: string;
+  linkInvalid: string;
+  linkOpen: string;
+  noteSaveErr: string;
+  noteDeleted: string;
+  noteDeleteErr: string;
+  linkSavedToast: string;
+  linkRemovedToast: string;
+  linkErr: string;
 };
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
@@ -147,7 +162,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     needContent: "Content can't be empty.",
     cancel: "Cancel",
     networkErr: "Network error.",
-    notesEmpty: "No notes yet — start typing below.",
+    notesEmpty: "No notes yet — add one with New note.",
     notePlaceholder: "Write a quick note…",
     addNote: "New note",
     deleteNote: "Delete note",
@@ -161,6 +176,22 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     notesTargetHint: (path) => `Saves to ${path}`,
     notesSavedFile: (path) => `Saved to ${path} on GitHub.`,
     notesPushErr: "Could not save notes to GitHub.",
+    saveNotesHint:
+      "Pushes this card's notes to dashboard-notes.md in the repo (creates or updates that one file).",
+    writeFileHint:
+      "Commit any file — you choose the path, branch, commit message and content.",
+    linkAdd: "Add link",
+    linkEdit: "Edit link",
+    linkPlaceholder: "https://your-site.com",
+    linkRemove: "Remove",
+    linkInvalid: "Enter a valid URL.",
+    linkOpen: "Open link",
+    noteSaveErr: "Couldn't save your note — check your connection.",
+    noteDeleted: "Note deleted.",
+    noteDeleteErr: "Couldn't delete the note. Please try again.",
+    linkSavedToast: "Link saved.",
+    linkRemovedToast: "Link removed.",
+    linkErr: "Couldn't save the link. Please try again.",
   },
   cs: {
     title: "Repozitáře",
@@ -226,7 +257,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     needContent: "Obsah nemůže být prázdný.",
     cancel: "Zrušit",
     networkErr: "Chyba sítě.",
-    notesEmpty: "Zatím žádné poznámky — začni psát níže.",
+    notesEmpty: "Zatím žádné poznámky — přidej přes Nová poznámka.",
     notePlaceholder: "Napiš rychlou poznámku…",
     addNote: "Nová poznámka",
     deleteNote: "Smazat poznámku",
@@ -240,5 +271,21 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     notesTargetHint: (path) => `Uloží se do ${path}`,
     notesSavedFile: (path) => `Uloženo do ${path} na GitHubu.`,
     notesPushErr: "Poznámky se nepodařilo uložit na GitHub.",
+    saveNotesHint:
+      "Uloží poznámky z této karty do souboru dashboard-notes.md v repozitáři (vytvoří nebo aktualizuje právě tento soubor).",
+    writeFileHint:
+      "Zapíše libovolný soubor — sám zvolíš cestu, větev, commit zprávu i obsah.",
+    linkAdd: "Přidat odkaz",
+    linkEdit: "Upravit odkaz",
+    linkPlaceholder: "https://tvuj-web.cz",
+    linkRemove: "Odebrat",
+    linkInvalid: "Zadej platnou URL.",
+    linkOpen: "Otevřít odkaz",
+    noteSaveErr: "Poznámku se nepodařilo uložit — zkontroluj připojení.",
+    noteDeleted: "Poznámka smazána.",
+    noteDeleteErr: "Poznámku se nepodařilo smazat. Zkuste to znovu.",
+    linkSavedToast: "Odkaz uložen.",
+    linkRemovedToast: "Odkaz odebrán.",
+    linkErr: "Odkaz se nepodařilo uložit. Zkuste to znovu.",
   },
 };

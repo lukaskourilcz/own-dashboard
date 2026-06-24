@@ -22,6 +22,7 @@ import {
   Sparkles,
   Sun,
   Target,
+  Terminal,
   Wallet,
 } from "lucide-react";
 import { GithubIcon } from "@/components/icons/github";
@@ -89,6 +90,7 @@ export function CommandPalette({
       { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g c", run: go("calendar") },
       { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes writing drafts poznámky g n", run: go("notes") },
       { id: "go-prompts", label: s.prompts, group: "go", icon: MessageSquareText, keywords: "prompts snippets templates clipboard copy library prompty g m", run: go("prompts") },
+      { id: "go-shortcuts", label: s.shortcuts, group: "go", icon: Terminal, keywords: "shortcuts commands snippets terminal cli copy zkratky příkazy g k", run: go("shortcuts") },
       { id: "go-todos", label: s.todos, group: "go", icon: ListTodo, keywords: "todo tasks úkoly g t", run: go("todos") },
       { id: "go-streaks", label: s.streaks, group: "go", icon: Flame, keywords: "streak habit návyky g s", run: go("streaks") },
       { id: "go-finances", label: s.finances, group: "go", icon: Wallet, keywords: "money transactions finance g f", run: go("finances") },

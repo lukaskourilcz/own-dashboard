@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   fetchTodayWindowEvents,
@@ -6,9 +6,23 @@ import {
 } from "@/lib/calendar-server";
 import { loadCoupleContext, loadPartnerSharedData } from "@/lib/couple";
 import { loadUserPreferences } from "@/lib/user-prefs";
+import { isNavTab, tabFromSlug } from "@/lib/nav-tabs";
 import { DashboardShell } from "@/components/dashboard-shell";
 
-export default async function DashboardPage() {
+// Optional catch-all so each section has its own URL (/dashboard,
+// /dashboard/prompts, /dashboard/finances, …). The shell still loads all data
+// once and switches tabs client-side via the History API; this route only
+// resolves which tab a deep link / refresh should open on.
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ slug?: string[] }>;
+}) {
+  const { slug } = await params;
+  // Only a single, known section segment is valid (e.g. /dashboard/prompts).
+  if (slug && (slug.length > 1 || !isNavTab(slug[0]))) notFound();
+  const initialTab = tabFromSlug(slug);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,8 +99,10 @@ export default async function DashboardPage() {
     notesRes,
     promptsRes,
     repoNotesRes,
+    repoLinksRes,
     aiLinksRes,
     aiCategoriesRes,
+    shortcutsRes,
     invoicesRes,
     invoiceItemsRes,
     invoiceSettingsRes,
@@ -118,7 +134,9 @@ export default async function DashboardPage() {
       .from("repo_notes")
       .select("*")
       .eq("user_id", user.id)
-      .order("updated_at", { ascending: false }),
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase.from("repo_links").select("*").eq("user_id", user.id),
     supabase
       .from("ai_links")
       .select("*")
@@ -129,6 +147,12 @@ export default async function DashboardPage() {
       .select("*")
       .eq("user_id", user.id)
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("shortcuts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
     supabase
       .from("invoices")
       .select("*")
@@ -159,6 +183,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell
+      initialTab={initialTab}
       user={{
         id: user.id,
         email: user.email ?? "",
@@ -177,8 +202,10 @@ export default async function DashboardPage() {
       initialNotes={notesRes.data ?? []}
       initialPrompts={promptsRes.data ?? []}
       initialRepoNotes={repoNotesRes.data ?? []}
+      initialRepoLinks={repoLinksRes.data ?? []}
       initialAiLinks={aiLinksRes.data ?? []}
       initialAiCategories={aiCategoriesRes.data ?? []}
+      initialShortcuts={shortcutsRes.data ?? []}
       initialImportantDates={importantDatesRes.data ?? []}
       initialInvoices={invoicesRes.data ?? []}
       initialInvoiceItems={invoiceItemsRes.data ?? []}

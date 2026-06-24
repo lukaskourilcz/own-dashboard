@@ -16,6 +16,7 @@ export default function PreviewPage() {
   return (
     <DashboardShell
       user={f.user}
+      initialTab="overview"
       initialSubscriptions={f.subscriptions}
       initialTodos={f.todos}
       initialStreaks={f.streaks}
@@ -28,8 +29,10 @@ export default function PreviewPage() {
       initialNotes={f.notes}
       initialPrompts={f.prompts}
       initialRepoNotes={f.repoNotes}
+      initialRepoLinks={f.repoLinks}
       initialAiLinks={f.aiLinks}
       initialAiCategories={f.aiCategories}
+      initialShortcuts={f.shortcuts}
       initialImportantDates={f.importantDates}
       initialInvoices={f.invoices}
       initialInvoiceItems={f.invoiceItems}

@@ -276,10 +276,11 @@ export type Prompt = {
 };
 
 // ---------------------------------------------------------------------------
-// Repo notes — a quick scratchpad attached to a GitHub repo (keyed by its
-// numeric id, stored as text). One row per repo per user; autosaved as you
-// type. A "Save to GitHub" action writes the body to a markdown file in the
-// repo. Notes within the body are separated by `---` dividers. Own-only RLS.
+// Repo notes — quick notes attached to a GitHub repo (keyed by its numeric id,
+// stored as text). One row per note entry; each is its own editable/deletable
+// field, autosaved as you type and ordered by sort_order. A "Save to GitHub"
+// action joins a repo's entries with `---` dividers and writes them to a
+// markdown file in the repo. Own-only RLS.
 // ---------------------------------------------------------------------------
 
 export type RepoNote = {
@@ -288,6 +289,24 @@ export type RepoNote = {
   repo_id: string;
   repo_full_name: string;
   body: string;
+  // Ordering anchor within a repo. Lower = earlier; new notes append to the end.
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Repo links — an optional custom URL pinned to a repo's card (e.g. the
+// deployed site). One row per repo per user; displayed with the scheme and
+// leading "www." stripped. Own-only RLS.
+// ---------------------------------------------------------------------------
+
+export type RepoLink = {
+  id: string;
+  user_id: string;
+  repo_id: string;
+  repo_full_name: string;
+  url: string;
   created_at: string;
   updated_at: string;
 };
@@ -316,6 +335,23 @@ export type AiLink = {
   title: string;
   url: string;
   description: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Shortcuts — commands/snippets kept one click away, shown in a grid. Each
+// cell copies its command on click; the description is shown as its tooltip.
+// Own-only RLS.
+// ---------------------------------------------------------------------------
+
+export type Shortcut = {
+  id: string;
+  user_id: string;
+  command: string;
+  description: string | null;
+  // Ordering anchor in the grid. Lower = earlier.
+  sort_order: number;
   created_at: string;
   updated_at: string;
 };
