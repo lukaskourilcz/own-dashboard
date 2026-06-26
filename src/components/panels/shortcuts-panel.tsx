@@ -646,7 +646,7 @@ function EditableTable({
                       return (
                         <td
                           key={col.field}
-                          className="max-w-0 px-3 py-2 align-top"
+                          className="w-full max-w-0 px-3 py-2 align-top"
                         >
                           <span
                             className="block truncate text-xs text-foreground-muted"
@@ -660,7 +660,7 @@ function EditableTable({
                     return (
                       <td
                         key={col.field}
-                        className="whitespace-nowrap px-3 py-2 align-top font-mono text-[11px] text-foreground"
+                        className="w-px whitespace-nowrap px-3 py-2 align-top font-mono text-[11px] text-foreground"
                       >
                         {val}
                       </td>
