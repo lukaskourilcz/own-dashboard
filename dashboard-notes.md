@@ -73,6 +73,20 @@ Order stays stable.
 matching the request. A later background refetch from GitHub will reflect the
 repo's real `pushed_at` order, but there's no more jump on save.
 
+### ~~4. "Save to GitHub": confirm file created + clear local notes~~
+> When I hit the button Ulozit na Github, I want the user to know that the .md
+> file on GitHub was created and I want to delete the notes from here.
+
+**Done.** In `saveToGithub` (`src/components/panels/repos-panel.tsx`): after a
+successful push, the repo's `repo_notes` rows are deleted (DB + local store +
+cache) so the card returns to its empty state, and a confirmation toast
+(`notesSavedCleared`) tells the user the file was created on GitHub and the notes
+were cleared.
+
+**Decision:** clearing happens **automatically** on every successful push (owner's
+choice). If the post-push delete fails, the push is still reported as saved and
+the notes are left in place.
+
 ---
 
 ## Verification done this session
@@ -84,16 +98,4 @@ repo's real `pushed_at` order, but there's no more jump on save.
 ---
 
 ## Open / next tasks
-
-### 4. "Save to GitHub": confirm file created + clear local notes
-> When I hit the button Ulozit na Github, I want the user to know that the .md
-> file on GitHub was created and I want to delete the notes from here.
-
-**Not started.** Picked up from the default branch during merge — this task was
-added after the first three. Intended behaviour: when **Save to GitHub**
-(`saveToGithub` in `src/components/panels/repos-panel.tsx`) succeeds, surface a
-clear confirmation that the `dashboard-notes.md` file was created/updated on
-GitHub, then remove that repo's notes from the dashboard (delete the local
-`repo_notes` rows for the repo so the card returns to its empty state).
-Open question for the owner: should clearing be automatic on every successful
-push, or gated behind a confirm so notes aren't lost unexpectedly?
+_(none — add new tasks below this line)_

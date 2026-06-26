@@ -82,6 +82,7 @@ type GithubStrings = {
   notesCommitMessage: string;
   notesTargetHint: (path: string) => string;
   notesSavedFile: (path: string) => string;
+  notesSavedCleared: (path: string) => string;
   notesPushErr: string;
   saveNotesHint: string;
   writeFileHint: string;
@@ -181,6 +182,8 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     notesCommitMessage: "Update dashboard notes",
     notesTargetHint: (path) => `Saves to ${path}`,
     notesSavedFile: (path) => `Saved to ${path} on GitHub.`,
+    notesSavedCleared: (path) =>
+      `${path} created on GitHub — notes cleared from the dashboard.`,
     notesPushErr: "Could not save notes to GitHub.",
     saveNotesHint:
       "Pushes this card's notes to dashboard-notes.md in the repo (creates or updates that one file).",
@@ -279,6 +282,8 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     notesCommitMessage: "Aktualizace poznámek z dashboardu",
     notesTargetHint: (path) => `Uloží se do ${path}`,
     notesSavedFile: (path) => `Uloženo do ${path} na GitHubu.`,
+    notesSavedCleared: (path) =>
+      `${path} vytvořen na GitHubu — poznámky z dashboardu smazány.`,
     notesPushErr: "Poznámky se nepodařilo uložit na GitHub.",
     saveNotesHint:
       "Uloží poznámky z této karty do souboru dashboard-notes.md v repozitáři (vytvoří nebo aktualizuje právě tento soubor).",

@@ -559,7 +559,20 @@ function RepoNotesCard({
       // Reflect the push, but keep the board order stable — don't bump this
       // repo to the top just because notes were saved.
       touchRepoInCache(qc, repo.id);
-      toast.ok(t.github.notesSavedFile(outcome.result.path));
+      // The notes now live in the committed file, so clear them from the
+      // dashboard. If the delete fails the push still succeeded, so fall back
+      // to the plain "saved" confirmation and leave the notes in place.
+      const { error: clearErr } = await supabase
+        .from("repo_notes")
+        .delete()
+        .eq("repo_id", repoId);
+      if (clearErr) {
+        toast.ok(t.github.notesSavedFile(outcome.result.path));
+      } else {
+        setRepoNotes((prev) => prev.filter((n) => n.repo_id !== repoId));
+        void qc.invalidateQueries({ queryKey: qk.repoNotes });
+        toast.ok(t.github.notesSavedCleared(outcome.result.path));
+      }
     } finally {
       setPushing(false);
     }
