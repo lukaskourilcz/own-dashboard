@@ -9,3 +9,7 @@ When the new note in /github section is added, I want it to change from text are
 ---
 
 also, when I send the notes to Github, dont reorder the repos on the board.
+
+---
+
+When I hit the button Ulozit na Github, I want the user to know that the .md file on GitHub was created and I want to delete the notes from here.
