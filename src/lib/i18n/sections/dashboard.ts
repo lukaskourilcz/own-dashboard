@@ -41,6 +41,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       streaks: "Habits",
       subscriptions: "Subscriptions",
       calendar: "Calendar",
+      plans: "Recurring plans",
     },
     widgetDescriptions: {
       "today-hero": "Greeting, today's events, and what needs attention.",
@@ -50,6 +51,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       streaks: "Daily habit tracking.",
       subscriptions: "Recurring spend overview.",
       calendar: "Add and view calendar events.",
+      plans: "Recurring plans still due this period.",
     },
   },
   cs: {
@@ -74,6 +76,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       streaks: "Návyky",
       subscriptions: "Předplatná",
       calendar: "Kalendář",
+      plans: "Opakující se plány",
     },
     widgetDescriptions: {
       "today-hero": "Pozdrav, dnešní události a co vyžaduje pozornost.",
@@ -83,6 +86,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       streaks: "Sledování denních návyků.",
       subscriptions: "Přehled opakovaných výdajů.",
       calendar: "Přidávejte a prohlížejte události kalendáře.",
+      plans: "Opakující se plány k splnění v tomto období.",
     },
   },
 };

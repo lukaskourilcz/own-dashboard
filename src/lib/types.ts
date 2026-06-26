@@ -65,12 +65,21 @@ export type Transaction = {
 
 export type PlanStatus = "idea" | "active" | "done" | "dropped";
 
+// A plan can repeat on a fixed cadence. "none" is a one-off plan (the original
+// behaviour). Recurring plans drive the dashboard tracker: each period they
+// become "to do" again until marked done for that period.
+export type PlanRecurrence = "none" | "weekly" | "biweekly" | "monthly";
+
 export type Plan = {
   id: string;
   user_id: string;
   title: string;
   target_date: string | null;
   status: PlanStatus;
+  recurrence: PlanRecurrence;
+  // When the plan was last marked done. For recurring plans this is compared
+  // against the current period window to decide whether it's still pending.
+  last_completed_at: string | null;
   notes: string | null;
   linked_calendar_event_id: string | null;
   created_at: string;

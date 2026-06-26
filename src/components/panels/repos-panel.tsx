@@ -14,6 +14,7 @@ import {
   Link2,
   ListFilter,
   Lock,
+  Pencil,
   Plus,
   RefreshCw,
   Star,
@@ -46,6 +47,7 @@ import {
 import {
   bumpRepoInCache,
   setReposDisconnected,
+  touchRepoInCache,
   useReposQuery,
 } from "@/lib/github-queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -554,7 +556,9 @@ function RepoNotesCard({
         }
         return;
       }
-      bumpRepoInCache(qc, repo.id);
+      // Reflect the push, but keep the board order stable — don't bump this
+      // repo to the top just because notes were saved.
+      touchRepoInCache(qc, repo.id);
       toast.ok(t.github.notesSavedFile(outcome.result.path));
     } finally {
       setPushing(false);
@@ -684,9 +688,11 @@ function RepoNotesCard({
   );
 }
 
-/** A single note entry: a self-contained autosaving textarea + delete button.
- * Keystrokes stay local; the debounce/blur/unmount flush hands the latest body
- * up to the card, which writes it to the cache + DB. */
+/** A single note entry. A saved note renders as a compact card (truncated to a
+ * max height) with edit + delete actions — so it reads as "saved", not a live
+ * input. Clicking edit (or a freshly added empty note) opens the autosaving
+ * textarea; keystrokes stay local and the debounce/blur/unmount flush hands the
+ * latest body up to the card, which writes it to the cache + DB. */
 function RepoNoteEntry({
   note,
   autoFocus,
@@ -700,6 +706,9 @@ function RepoNoteEntry({
 }) {
   const t = useDict();
   const [body, setBody] = useState(note.body);
+  // Brand-new / empty notes open straight into edit mode; saved ones show the
+  // card. (autoFocus is set by the parent for the entry it just created.)
+  const [editing, setEditing] = useState(autoFocus || note.body.trim() === "");
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const timer = useRef<number | null>(null);
 
@@ -721,20 +730,59 @@ function RepoNoteEntry({
     }, 700);
   }
 
-  // Blur flushes any pending edit immediately. Switching tabs blurs the
-  // textarea first, so this also covers the panel unmounting.
+  // Flush any pending edit and collapse back to the card. Blur fires when the
+  // textarea loses focus (including a tab switch that unmounts the panel) and
+  // when the Done button is pressed.
   function handleBlur() {
-    if (timer.current) {
-      clearTimer();
-      onPersist(note.id, body);
-    }
+    clearTimer();
+    onPersist(note.id, body);
+    setEditing(false);
   }
 
+  // Focus the textarea whenever we enter edit mode (initial autofocus included).
   useEffect(() => {
-    if (autoFocus) ref.current?.focus();
-  }, [autoFocus]);
+    if (editing) ref.current?.focus();
+  }, [editing]);
 
   useEffect(() => () => clearTimer(), []);
+
+  if (!editing) {
+    const isEmpty = body.trim() === "";
+    return (
+      <div className="group/entry relative rounded-md border border-border bg-surface-muted/40 px-2.5 py-2 pr-14">
+        <p
+          className={cn(
+            "whitespace-pre-wrap break-words text-xs leading-relaxed line-clamp-6",
+            isEmpty && "italic text-foreground-subtle",
+          )}
+        >
+          {isEmpty ? t.github.emptyNote : body}
+        </p>
+        <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
+          <Tooltip content={t.github.editNote}>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              aria-label={t.github.editNote}
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip content={t.github.deleteNote}>
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label={t.github.deleteNote}
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group/entry relative">
@@ -746,16 +794,24 @@ function RepoNoteEntry({
         placeholder={t.github.notePlaceholder}
         className="min-h-[64px] resize-y pr-8 text-xs leading-relaxed"
       />
-      <Tooltip content={t.github.deleteNote}>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label={t.github.deleteNote}
-          className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle opacity-100 transition-colors hover:bg-surface-hover hover:text-destructive focus-ring sm:opacity-0 sm:group-hover/entry:opacity-100"
-        >
+      <div className="mt-1.5 flex items-center justify-end gap-1.5">
+        <Button type="button" variant="ghost" size="sm" onClick={onDelete}>
           <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </Tooltip>
+          {t.github.deleteNote}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          // onMouseDown so it fires before the textarea's blur collapses us.
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleBlur();
+          }}
+        >
+          <Check className="h-3.5 w-3.5" />
+          {t.github.doneEditing}
+        </Button>
+      </div>
     </div>
   );
 }

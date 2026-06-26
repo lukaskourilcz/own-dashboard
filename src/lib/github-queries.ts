@@ -33,6 +33,19 @@ export function bumpRepoInCache(qc: QueryClient, repoId: number): void {
   });
 }
 
+/** Refresh a repo's pushed_at in the cached list *without re-sorting*, so the
+ * board order stays put after an action that shouldn't reshuffle it (e.g.
+ * saving per-repo notes). The repo shows as just-updated but doesn't jump. */
+export function touchRepoInCache(qc: QueryClient, repoId: number): void {
+  qc.setQueryData<LoadReposResult>(reposQueryKey, (prev) => {
+    if (!prev || prev.kind !== "ok") return prev;
+    const repos = prev.repos.map((r) =>
+      r.id === repoId ? { ...r, pushed_at: new Date().toISOString() } : r,
+    );
+    return { kind: "ok", repos };
+  });
+}
+
 /** Flip the cache to "disconnected" (after an explicit disconnect or a 401)
  * so all consumers show the Connect CTA without a refetch. */
 export function setReposDisconnected(qc: QueryClient): void {

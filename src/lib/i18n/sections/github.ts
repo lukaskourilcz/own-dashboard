@@ -69,6 +69,9 @@ type GithubStrings = {
   notesEmpty: string;
   notePlaceholder: string;
   addNote: string;
+  editNote: string;
+  emptyNote: string;
+  doneEditing: string;
   deleteNote: string;
   deleteNoteConfirm: string;
   autosaving: string;
@@ -165,6 +168,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     notesEmpty: "No notes yet — add one with New note.",
     notePlaceholder: "Write a quick note…",
     addNote: "New note",
+    editNote: "Edit note",
+    emptyNote: "Empty note — click edit to write something.",
+    doneEditing: "Done",
     deleteNote: "Delete note",
     deleteNoteConfirm: "Delete this note?",
     autosaving: "Saving…",
@@ -260,6 +266,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     notesEmpty: "Zatím žádné poznámky — přidej přes Nová poznámka.",
     notePlaceholder: "Napiš rychlou poznámku…",
     addNote: "Nová poznámka",
+    editNote: "Upravit poznámku",
+    emptyNote: "Prázdná poznámka — uprav ji kliknutím na tužku.",
+    doneEditing: "Hotovo",
     deleteNote: "Smazat poznámku",
     deleteNoteConfirm: "Smazat tuto poznámku?",
     autosaving: "Ukládání…",

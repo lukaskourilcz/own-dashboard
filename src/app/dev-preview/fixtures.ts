@@ -100,10 +100,11 @@ export const transactions: Transaction[] = [
 ];
 
 export const plans: Plan[] = [
-  { id: "p1", user_id: UID, title: "Launch side project", target_date: ymd(45), status: "active", notes: "Ship the MVP first.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-  { id: "p2", user_id: UID, title: "Run a half marathon", target_date: ymd(90), status: "idea", notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-  { id: "p3", user_id: UID, title: "Read 12 books", target_date: ymd(180), status: "active", notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-  { id: "p4", user_id: UID, title: "Redesign portfolio", target_date: null, status: "done", notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p1", user_id: UID, title: "Launch side project", target_date: ymd(45), status: "active", recurrence: "none", last_completed_at: null, notes: "Ship the MVP first.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p2", user_id: UID, title: "Run a half marathon", target_date: ymd(90), status: "idea", recurrence: "none", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p3", user_id: UID, title: "Weekly review", target_date: null, status: "active", recurrence: "weekly", last_completed_at: null, notes: "Plan the week ahead.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p4", user_id: UID, title: "Pay rent", target_date: null, status: "active", recurrence: "monthly", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p5", user_id: UID, title: "Deep-clean flat", target_date: null, status: "active", recurrence: "biweekly", last_completed_at: TS, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
 ];
 
 export const books: Book[] = [
