@@ -304,17 +304,6 @@ export function PlansPanel({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-date">{t.plans.targetDate}</Label>
-                <Input
-                  id="plan-date"
-                  type="date"
-                  value={form.target_date}
-                  onChange={(e) =>
-                    setForm({ ...form, target_date: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
                 <Label htmlFor="plan-status">{t.plans.status}</Label>
                 <Select
                   id="plan-status"
@@ -340,12 +329,18 @@ export function PlansPanel({
                 <Select
                   id="plan-recurrence"
                   value={form.recurrence}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      recurrence: e.target.value as PlanRecurrence,
-                    })
-                  }
+                  onChange={(e) => {
+                    const recurrence = e.target.value as PlanRecurrence;
+                    // A recurring plan has no single end date, so drop the
+                    // target date + one-off calendar event when one is chosen.
+                    setForm((f) => ({
+                      ...f,
+                      recurrence,
+                      ...(recurrence !== "none"
+                        ? { target_date: "", addToCalendar: false }
+                        : {}),
+                    }));
+                  }}
                 >
                   {RECURRENCES.map((r) => (
                     <option key={r} value={r}>
@@ -354,6 +349,19 @@ export function PlansPanel({
                   ))}
                 </Select>
               </div>
+              {form.recurrence === "none" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="plan-date">{t.plans.targetDate}</Label>
+                  <Input
+                    id="plan-date"
+                    type="date"
+                    value={form.target_date}
+                    onChange={(e) =>
+                      setForm({ ...form, target_date: e.target.value })
+                    }
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="plan-notes">{t.plans.notes}</Label>
                 <Textarea
@@ -364,7 +372,12 @@ export function PlansPanel({
                   rows={2}
                 />
               </div>
-              <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
+              <label
+                className={cn(
+                  "inline-flex items-center gap-2 text-xs text-foreground-muted",
+                  form.recurrence !== "none" && "hidden",
+                )}
+              >
                 <input
                   type="checkbox"
                   className="h-3.5 w-3.5 rounded border-border-strong"

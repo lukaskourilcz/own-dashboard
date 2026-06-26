@@ -44,6 +44,9 @@
   *Customize → Add widget*.
 - Recurring plans with status `dropped` or `done` are treated as retired and
   excluded from the tracker. `idea`/`active` recurring plans are shown.
+- Follow-up: a recurring plan has no single end date, so the **Target date**
+  field and the one-off **Add to calendar** checkbox are hidden (and cleared)
+  whenever a recurrence is selected — only one-off plans show them.
 
 ### ~~2. GitHub notes: textarea → saved card~~
 > When the new note in /github section is added, I want it to change from text
