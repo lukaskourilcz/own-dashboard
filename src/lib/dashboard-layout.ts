@@ -17,7 +17,8 @@ export type WidgetId =
   | "todos"
   | "streaks"
   | "subscriptions"
-  | "calendar";
+  | "calendar"
+  | "plans";
 
 /** Every widget the overview knows how to render, in canonical order. */
 export const WIDGET_IDS: readonly WidgetId[] = [
@@ -28,6 +29,7 @@ export const WIDGET_IDS: readonly WidgetId[] = [
   "streaks",
   "subscriptions",
   "calendar",
+  "plans",
 ];
 
 /** The layout shown until the user customizes anything. */

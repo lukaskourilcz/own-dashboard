@@ -27,6 +27,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Plus,
+  Repeat,
   RotateCcw,
   Settings2,
   Sigma,
@@ -57,6 +58,7 @@ const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }>
     streaks: { icon: Flame, size: "half" },
     subscriptions: { icon: CreditCard, size: "half" },
     calendar: { icon: CalendarDays, size: "half" },
+    plans: { icon: Repeat, size: "half" },
   };
 
 type Props = {

@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Pencil,
   Plus,
+  Repeat,
   Target,
   Trash2,
 } from "lucide-react";
@@ -26,7 +27,9 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
-import type { Plan, PlanStatus, Updater } from "@/lib/types";
+import type { Plan, PlanRecurrence, PlanStatus, Updater } from "@/lib/types";
+
+const RECURRENCES: PlanRecurrence[] = ["none", "weekly", "biweekly", "monthly"];
 
 const STATUSES: { key: PlanStatus; tone: string; dot: string }[] = [
   {
@@ -55,6 +58,7 @@ type FormState = {
   title: string;
   target_date: string;
   status: PlanStatus;
+  recurrence: PlanRecurrence;
   notes: string;
   addToCalendar: boolean;
 };
@@ -63,6 +67,7 @@ const empty: FormState = {
   title: "",
   target_date: "",
   status: "idea",
+  recurrence: "none",
   notes: "",
   addToCalendar: false,
 };
@@ -98,6 +103,7 @@ export function PlansPanel({
           title: form.title.trim(),
           target_date: form.target_date || null,
           status: form.status,
+          recurrence: form.recurrence,
           notes: form.notes.trim() || null,
         })
         .select()
@@ -325,6 +331,30 @@ export function PlansPanel({
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="plan-recurrence">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Repeat className="h-3 w-3" />
+                    {t.plans.recurrence}
+                  </span>
+                </Label>
+                <Select
+                  id="plan-recurrence"
+                  value={form.recurrence}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      recurrence: e.target.value as PlanRecurrence,
+                    })
+                  }
+                >
+                  {RECURRENCES.map((r) => (
+                    <option key={r} value={r}>
+                      {t.plans.recurrenceLabel[r]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="plan-notes">{t.plans.notes}</Label>
                 <Textarea
                   id="plan-notes"
@@ -469,8 +499,16 @@ function PlanCard({
           <Trash2 className="h-2.5 w-2.5" />
         </button>
       </div>
-      {(plan.target_date || plan.linked_calendar_event_id) && (
-        <p className="text-[10px] text-foreground-subtle mt-1 flex items-center gap-1.5 tabular">
+      {(plan.target_date ||
+        plan.linked_calendar_event_id ||
+        plan.recurrence !== "none") && (
+        <p className="text-[10px] text-foreground-subtle mt-1 flex flex-wrap items-center gap-1.5 tabular">
+          {plan.recurrence !== "none" && (
+            <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-px font-medium text-primary">
+              <Repeat className="h-2 w-2" />
+              {t.plans.recurrenceChip[plan.recurrence]}
+            </span>
+          )}
           {plan.target_date && <span>{plan.target_date}</span>}
           {plan.linked_calendar_event_id && (
             <span className="inline-flex items-center gap-0.5">
@@ -559,12 +597,18 @@ function TimelineRow({
       <div className="flex-1 min-w-0">
         <p
           className={cn(
-            "text-sm font-medium truncate",
+            "text-sm font-medium truncate flex items-center gap-1.5",
             (plan.status === "done" || plan.status === "dropped") &&
               "line-through text-foreground-subtle",
           )}
         >
-          {plan.title}
+          <span className="truncate">{plan.title}</span>
+          {plan.recurrence !== "none" && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-1 py-px text-[10px] font-medium text-primary no-underline">
+              <Repeat className="h-2 w-2" />
+              {t.plans.recurrenceChip[plan.recurrence]}
+            </span>
+          )}
         </p>
         {plan.notes && (
           <p className="text-[11px] text-foreground-subtle truncate">

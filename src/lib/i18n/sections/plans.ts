@@ -1,4 +1,5 @@
 type PlanStatus = "idea" | "active" | "done" | "dropped";
+type PlanRecurrence = "none" | "weekly" | "biweekly" | "monthly";
 
 type PlansStrings = {
   title: string;
@@ -11,6 +12,22 @@ type PlansStrings = {
   targetDate: string;
   status: string;
   statusLabel: Record<PlanStatus, string>;
+  recurrence: string;
+  recurrenceLabel: Record<PlanRecurrence, string>;
+  /** Short cadence chip shown on a plan card (no "One-off" for none). */
+  recurrenceChip: Record<Exclude<PlanRecurrence, "none">, string>;
+  /** "this week" / "this fortnight" / "this month" — the active window. */
+  periodLabel: Record<Exclude<PlanRecurrence, "none">, string>;
+  // Dashboard recurring-plans widget.
+  recurringTitle: string;
+  recurringEmpty: string;
+  recurringEmptyHint: string;
+  recurringAllDone: string;
+  markDone: string;
+  markNotDone: string;
+  doneTag: string;
+  daysLeftLabel: (d: number) => string;
+  lastDayLabel: string;
   notes: string;
   notesPlaceholder: string;
   addToCalendar: string;
@@ -52,6 +69,33 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
       done: "Done",
       dropped: "Dropped",
     },
+    recurrence: "Repeat",
+    recurrenceLabel: {
+      none: "One-off",
+      weekly: "Weekly",
+      biweekly: "Every 2 weeks",
+      monthly: "Monthly",
+    },
+    recurrenceChip: {
+      weekly: "Weekly",
+      biweekly: "Biweekly",
+      monthly: "Monthly",
+    },
+    periodLabel: {
+      weekly: "this week",
+      biweekly: "this fortnight",
+      monthly: "this month",
+    },
+    recurringTitle: "Recurring plans",
+    recurringEmpty: "No recurring plans",
+    recurringEmptyHint:
+      "Add a plan with a weekly, biweekly or monthly repeat to track it here.",
+    recurringAllDone: "All done for now — nice work! 🎉",
+    markDone: "Mark done",
+    markNotDone: "Mark not done",
+    doneTag: "Done",
+    daysLeftLabel: (d) => (d === 1 ? "1 day left" : `${d} days left`),
+    lastDayLabel: "last day",
     notes: "Notes",
     notesPlaceholder: "Optional",
     addToCalendar: "Add as a Google Calendar event",
@@ -92,6 +136,34 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
       done: "Hotovo",
       dropped: "Zrušeno",
     },
+    recurrence: "Opakování",
+    recurrenceLabel: {
+      none: "Jednorázově",
+      weekly: "Týdně",
+      biweekly: "Jednou za 14 dní",
+      monthly: "Měsíčně",
+    },
+    recurrenceChip: {
+      weekly: "Týdně",
+      biweekly: "Co 14 dní",
+      monthly: "Měsíčně",
+    },
+    periodLabel: {
+      weekly: "tento týden",
+      biweekly: "tento čtrnáctidenní cyklus",
+      monthly: "tento měsíc",
+    },
+    recurringTitle: "Opakující se plány",
+    recurringEmpty: "Žádné opakující se plány",
+    recurringEmptyHint:
+      "Přidej plán s týdenním, čtrnáctidenním nebo měsíčním opakováním a sleduj ho tady.",
+    recurringAllDone: "Vše hotovo — paráda! 🎉",
+    markDone: "Označit jako hotové",
+    markNotDone: "Označit jako nehotové",
+    doneTag: "Hotovo",
+    daysLeftLabel: (d) =>
+      d === 1 ? "zbývá 1 den" : d >= 2 && d <= 4 ? `zbývají ${d} dny` : `zbývá ${d} dní`,
+    lastDayLabel: "poslední den",
     notes: "Poznámky",
     notesPlaceholder: "Volitelné",
     addToCalendar: "Přidat jako událost do Kalendáře Google",

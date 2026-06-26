@@ -201,11 +201,20 @@ create table if not exists public.plans (
   title text not null,
   target_date date,
   status text not null default 'idea' check (status in ('idea', 'active', 'done', 'dropped')),
+  recurrence text not null default 'none' check (recurrence in ('none', 'weekly', 'biweekly', 'monthly')),
+  last_completed_at timestamptz,
   notes text,
   linked_calendar_event_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Recurrence migration: existing installs need the new columns too.
+alter table public.plans
+  add column if not exists recurrence text not null default 'none'
+    check (recurrence in ('none', 'weekly', 'biweekly', 'monthly'));
+alter table public.plans
+  add column if not exists last_completed_at timestamptz;
 
 alter table public.plans enable row level security;
 

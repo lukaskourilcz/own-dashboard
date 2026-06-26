@@ -23,6 +23,7 @@ import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
+import { RecurringPlans } from "@/components/overview/recurring-plans";
 import type { WidgetId } from "@/lib/dashboard-layout";
 import { WeekView } from "@/components/calendar/week-view";
 import { ToastProvider } from "@/components/ui/toast";
@@ -453,6 +454,9 @@ export function DashboardShell({
                             />
                           ),
                           calendar: <CalendarPanel compact />,
+                          plans: (
+                            <RecurringPlans plans={plans} setPlans={setPlans} />
+                          ),
                         } satisfies Record<WidgetId, React.ReactNode>
                       }
                     />
