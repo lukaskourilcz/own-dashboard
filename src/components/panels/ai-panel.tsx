@@ -458,23 +458,8 @@ export function AiPanel({
               className="py-16"
             />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-surface-muted/50 text-left">
-                    <th className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
-                      {t.ai.colSite}
-                    </th>
-                    <th className="hidden px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted sm:table-cell">
-                      {t.ai.colDescription}
-                    </th>
-                    <th className="w-0 px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
-                      <span className="sr-only">{t.ai.colActions}</span>
-                    </th>
-                  </tr>
-                </thead>
-
-                {aiCategories.map((cat) => {
+            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {aiCategories.map((cat) => {
                   const links = byCategory.get(cat.id) ?? [];
                   // While searching, hide categories that have no matches.
                   if (searching && links.length === 0) return null;
@@ -525,7 +510,6 @@ export function AiPanel({
                     ))}
                   </CategoryGroup>
                 )}
-              </table>
             </div>
           )}
         </>
@@ -575,79 +559,68 @@ function CategoryGroup({
 }) {
   const t = useDict();
   return (
-    <tbody className="border-b border-border last:border-0">
-      <tr className="bg-surface-muted/30">
-        <td colSpan={3} className="px-3 py-1.5">
-          <div className="flex items-center gap-2">
-            {renaming ? (
-              <input
-                autoFocus
+    <Card className="flex flex-col overflow-hidden p-0">
+      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-3 py-2">
+        {renaming ? (
+          <input
+            autoFocus
+            aria-label={t.ai.renameCategory}
+            value={renameValue}
+            onChange={(e) => onRenameChange?.(e.target.value)}
+            onBlur={onCommitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onCommitRename?.();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                onCancelRename?.();
+              }
+            }}
+            maxLength={40}
+            className="h-6 rounded border border-border bg-surface px-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        ) : (
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+            {name}
+          </span>
+        )}
+        <span className="text-[10px] tabular text-foreground-subtle">
+          {count}
+        </span>
+        {!muted && !renaming && (
+          <div className="ml-auto flex items-center gap-0.5">
+            <Tooltip content={t.ai.renameCategory}>
+              <button
+                type="button"
+                onClick={onStartRename}
                 aria-label={t.ai.renameCategory}
-                value={renameValue}
-                onChange={(e) => onRenameChange?.(e.target.value)}
-                onBlur={onCommitRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    onCommitRename?.();
-                  } else if (e.key === "Escape") {
-                    e.preventDefault();
-                    onCancelRename?.();
-                  }
-                }}
-                maxLength={40}
-                className="h-6 rounded border border-border bg-surface px-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            ) : (
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
-                {name}
-              </span>
-            )}
-            <span className="text-[10px] tabular text-foreground-subtle">
-              {count}
-            </span>
-            {!muted && !renaming && (
-              <div className="flex items-center gap-0.5">
-                <Tooltip content={t.ai.renameCategory}>
-                  <button
-                    type="button"
-                    onClick={onStartRename}
-                    aria-label={t.ai.renameCategory}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                </Tooltip>
-                <Tooltip content={t.ai.deleteCategory}>
-                  <button
-                    type="button"
-                    onClick={onDelete}
-                    aria-label={t.ai.deleteCategory}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </Tooltip>
-              </div>
-            )}
+                className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            </Tooltip>
+            <Tooltip content={t.ai.deleteCategory}>
+              <button
+                type="button"
+                onClick={onDelete}
+                aria-label={t.ai.deleteCategory}
+                className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </Tooltip>
           </div>
-        </td>
-      </tr>
-      {children}
-    </tbody>
+        )}
+      </div>
+      <div className="divide-y divide-border/60">{children}</div>
+    </Card>
   );
 }
 
 function EmptyRow({ text }: { text: string }) {
   return (
-    <tr>
-      <td
-        colSpan={3}
-        className="px-3 py-2.5 text-xs italic text-foreground-subtle"
-      >
-        {text}
-      </td>
-    </tr>
+    <p className="px-3 py-2.5 text-xs italic text-foreground-subtle">{text}</p>
   );
 }
 
@@ -662,8 +635,8 @@ function LinkRow({
 }) {
   const t = useDict();
   return (
-    <tr className="group border-t border-border/60 transition-colors hover:bg-surface-hover/50">
-      <td className="px-3 py-2.5 align-top">
+    <div className="group flex items-start justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-surface-hover/50">
+      <div className="min-w-0">
         <a
           href={link.url}
           target="_blank"
@@ -676,41 +649,35 @@ function LinkRow({
         <p className="truncate text-[11px] text-foreground-subtle">
           {hostOf(link.url)}
         </p>
-        {/* Description on mobile, where its column is hidden. */}
         {link.description && (
-          <p className="mt-1 text-xs text-foreground-muted sm:hidden">
+          <p className="mt-1 text-xs text-foreground-muted">
             {link.description}
           </p>
         )}
-      </td>
-      <td className="hidden px-3 py-2.5 align-top text-xs text-foreground-muted sm:table-cell">
-        {link.description}
-      </td>
-      <td className="px-3 py-2.5 align-top">
-        <div className="flex items-center justify-end gap-0.5">
-          <Tooltip content={t.ai.edit}>
-            <button
-              type="button"
-              onClick={onEdit}
-              aria-label={t.ai.edit}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted opacity-100 transition-colors hover:bg-surface-hover hover:text-foreground focus-ring sm:opacity-0 sm:group-hover:opacity-100"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
-          <Tooltip content={t.ai.deleteLink}>
-            <button
-              type="button"
-              onClick={onDelete}
-              aria-label={t.ai.deleteLink}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted opacity-100 transition-colors hover:bg-surface-hover hover:text-destructive focus-ring sm:opacity-0 sm:group-hover:opacity-100"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
-        </div>
-      </td>
-    </tr>
+      </div>
+      <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+        <Tooltip content={t.ai.edit}>
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={t.ai.edit}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
+        <Tooltip content={t.ai.deleteLink}>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={t.ai.deleteLink}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
+      </div>
+    </div>
   );
 }
 
