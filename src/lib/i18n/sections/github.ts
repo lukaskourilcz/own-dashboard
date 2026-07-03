@@ -99,6 +99,22 @@ type GithubStrings = {
   linkSavedToast: string;
   linkRemovedToast: string;
   linkErr: string;
+  // "Check NEEDED" — combined to-do built from every repo's NEEDED.md
+  needed: {
+    button: string;
+    title: string;
+    subtitle: string;
+    scanning: string;
+    allClear: string;
+    allClearDesc: string;
+    reconnect: string;
+    openFile: string;
+    checkOff: string;
+    itemsCount: (n: number) => string;
+    removedFrom: (repo: string) => string;
+    updateErr: string;
+    commitMessage: (text: string) => string;
+  };
 };
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
@@ -201,6 +217,22 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     linkSavedToast: "Link saved.",
     linkRemovedToast: "Link removed.",
     linkErr: "Couldn't save the link. Please try again.",
+    needed: {
+      button: "Check NEEDED",
+      title: "NEEDED — combined to-do",
+      subtitle:
+        "Open items pulled from every repo's NEEDED.md. Checking one commits its removal from that file.",
+      scanning: "Scanning repositories…",
+      allClear: "All clear",
+      allClearDesc: "No open NEEDED items across your repositories.",
+      reconnect: "Reconnect GitHub to sync NEEDED files.",
+      openFile: "Open NEEDED.md",
+      checkOff: "Check off & remove from NEEDED.md",
+      itemsCount: (n) => (n === 1 ? "1 item" : `${n} items`),
+      removedFrom: (repo) => `Removed from ${repo}/NEEDED.md.`,
+      updateErr: "Could not update NEEDED.md.",
+      commitMessage: (text) => `chore: check off NEEDED item — ${text}`,
+    },
   },
   cs: {
     title: "Repozitáře",
@@ -301,5 +333,25 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     linkSavedToast: "Odkaz uložen.",
     linkRemovedToast: "Odkaz odebrán.",
     linkErr: "Odkaz se nepodařilo uložit. Zkuste to znovu.",
+    needed: {
+      button: "Zkontrolovat NEEDED",
+      title: "NEEDED — společný seznam úkolů",
+      subtitle:
+        "Otevřené položky ze souborů NEEDED.md všech repozitářů. Odškrtnutí commitne jejich odebrání z daného souboru.",
+      scanning: "Prohledávám repozitáře…",
+      allClear: "Hotovo",
+      allClearDesc: "Žádné otevřené NEEDED položky v repozitářích.",
+      reconnect: "Připoj znovu GitHub pro synchronizaci NEEDED souborů.",
+      openFile: "Otevřít NEEDED.md",
+      checkOff: "Odškrtnout a odebrat z NEEDED.md",
+      itemsCount: (n) => {
+        if (n === 1) return "1 položka";
+        if (n >= 2 && n <= 4) return `${n} položky`;
+        return `${n} položek`;
+      },
+      removedFrom: (repo) => `Odebráno z ${repo}/NEEDED.md.`,
+      updateErr: "Nepodařilo se aktualizovat NEEDED.md.",
+      commitMessage: (text) => `chore: odškrtnutí NEEDED položky — ${text}`,
+    },
   },
 };
