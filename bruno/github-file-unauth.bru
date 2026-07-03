@@ -1,0 +1,26 @@
+meta {
+  name: GitHub file read requires auth
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/github/file?owner=octocat&repo=hello-world&path=README.md
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 307
+  res.headers.location: contains /login
+}
+
+settings {
+  followRedirects: false
+}
+
+docs {
+  An unauthenticated file read is bounced to /login by the auth middleware
+  with a 307 — the handler never proxies a file on an anonymous caller's
+  behalf.
+}

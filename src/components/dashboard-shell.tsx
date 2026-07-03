@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
@@ -35,6 +35,8 @@ import { CommandPalette } from "@/components/command-palette";
 import { MobileFab } from "@/components/mobile-fab";
 import { PartnerTicker } from "@/components/realtime/partner-ticker";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
+import { useFxRates } from "@/lib/use-fx";
+import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import { useEntityStore } from "@/lib/queries/entities";
 import {
   fetchAccounts,
@@ -187,6 +189,10 @@ export function DashboardShell({
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   const { collapsed: navCollapsed } = useNavCollapsed();
+  // Keep live FX rates flowing into convert(); when they land this component
+  // re-renders and every panel below recomputes its converted totals.
+  useFxRates();
+  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
   // Entity state now lives in the React Query cache (seeded from the server
   // load). Each useEntityStore returns the same [data, setter] shape the panels
   // already consume, so their code is unchanged — only the store moved.
@@ -493,7 +499,7 @@ export function DashboardShell({
                     />
                   )}
 
-                  {tab === "tugedr" && <TugedrPanel />}
+                  {tab === "tugedr" && tugedrEnabled && <TugedrPanel />}
 
                   {tab === "streaks" && (
                     <StreaksPanel

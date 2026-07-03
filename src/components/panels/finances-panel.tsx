@@ -2,19 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { format, parseISO } from "date-fns";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip as RTooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -28,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
@@ -48,6 +38,20 @@ import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Account, Subscription, Transaction, Updater } from "@/lib/types";
+
+// Recharts is heavy; load the charts only when this panel renders so it stays
+// out of the initial bundle. A skeleton fills the reserved height meanwhile.
+const chartFallback = () => <Skeleton className="h-full w-full" />;
+const MonthsBarChart = dynamic(
+  () =>
+    import("@/components/charts/months-bar-chart").then((m) => m.MonthsBarChart),
+  { ssr: false, loading: chartFallback },
+);
+const CategoryDonut = dynamic(
+  () =>
+    import("@/components/charts/category-donut").then((m) => m.CategoryDonut),
+  { ssr: false, loading: chartFallback },
+);
 
 type TxForm = {
   kind: "income" | "expense";
@@ -471,52 +475,12 @@ export function FinancesPanel({
               />
             ) : (
               <div className="h-52 sm:h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={months}
-                    margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                    barCategoryGap="25%"
-                  >
-                    <XAxis
-                      dataKey="label"
-                      tickLine={false}
-                      axisLine={false}
-                      fontSize={11}
-                      stroke="var(--foreground-subtle)"
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      fontSize={11}
-                      width={50}
-                      stroke="var(--foreground-subtle)"
-                    />
-                    <RTooltip
-                      cursor={{ fill: "var(--surface-hover)" }}
-                      formatter={(value) =>
-                        formatCurrency(Number(value), displayCurrency)
-                      }
-                      contentStyle={chartTooltipStyle}
-                    />
-                    <Legend
-                      iconType="circle"
-                      iconSize={8}
-                      wrapperStyle={{ fontSize: 11 }}
-                    />
-                    <Bar
-                      dataKey="income"
-                      fill="var(--success)"
-                      name={t.finances.income}
-                      radius={[3, 3, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="expense"
-                      fill="var(--destructive)"
-                      name={t.finances.expense}
-                      radius={[3, 3, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <MonthsBarChart
+                  data={months}
+                  currency={displayCurrency}
+                  incomeLabel={t.finances.income}
+                  expenseLabel={t.finances.expense}
+                />
               </div>
             )}
           </CardContent>
@@ -660,33 +624,12 @@ export function FinancesPanel({
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 items-center">
                 <div className="h-48 sm:h-56">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categories}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={45}
-                        outerRadius={85}
-                        paddingAngle={1.5}
-                        stroke="var(--surface)"
-                        strokeWidth={2}
-                      >
-                        {categories.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={CHART_COLORS[i % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <RTooltip
-                        formatter={(value) =>
-                          formatCurrency(Number(value), displayCurrency)
-                        }
-                        contentStyle={chartTooltipStyle}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <CategoryDonut
+                    data={categories}
+                    currency={displayCurrency}
+                    innerRadius={45}
+                    outerRadius={85}
+                  />
                 </div>
                 <ul className="space-y-1.5 text-sm">
                   {categories.map((c, i) => (
@@ -792,11 +735,3 @@ export function FinancesPanel({
   );
 }
 
-const chartTooltipStyle: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border)",
-  borderRadius: "8px",
-  fontSize: "12px",
-  boxShadow: "var(--shadow-card)",
-  padding: "6px 10px",
-};

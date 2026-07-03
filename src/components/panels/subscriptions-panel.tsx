@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from "recharts";
+import dynamic from "next/dynamic";
 import {
   CalendarClock,
   CreditCard,
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
@@ -34,6 +35,13 @@ import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import type { Subscription, Updater } from "@/lib/types";
+
+// Recharts is heavy; load the donut only when this panel renders.
+const CategoryDonut = dynamic(
+  () =>
+    import("@/components/charts/category-donut").then((m) => m.CategoryDonut),
+  { ssr: false, loading: () => <Skeleton className="h-full w-full" /> },
+);
 
 type FormState = {
   id?: string;
@@ -261,33 +269,12 @@ export function SubscriptionsPanel({
               </p>
               {chartData.length > 0 && (
                 <div className="mt-3 h-32 -mx-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={32}
-                        outerRadius={56}
-                        paddingAngle={1.5}
-                        stroke="var(--surface)"
-                        strokeWidth={2}
-                      >
-                        {chartData.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={CHART_COLORS[i % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <RTooltip
-                        formatter={(value) =>
-                          formatCurrency(Number(value), displayCurrency)
-                        }
-                        contentStyle={chartTooltipStyle}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <CategoryDonut
+                    data={chartData}
+                    currency={displayCurrency}
+                    innerRadius={32}
+                    outerRadius={56}
+                  />
                 </div>
               )}
             </>
@@ -449,33 +436,12 @@ export function SubscriptionsPanel({
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 items-center">
                 <div className="h-48 sm:h-56">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={56}
-                        outerRadius={92}
-                        paddingAngle={1.5}
-                        stroke="var(--surface)"
-                        strokeWidth={2}
-                      >
-                        {chartData.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={CHART_COLORS[i % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <RTooltip
-                        formatter={(value) =>
-                          formatCurrency(Number(value), displayCurrency)
-                        }
-                        contentStyle={chartTooltipStyle}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <CategoryDonut
+                    data={chartData}
+                    currency={displayCurrency}
+                    innerRadius={56}
+                    outerRadius={92}
+                  />
                 </div>
                 <div>
                   <p className="text-3xl font-semibold tracking-tight tabular">
@@ -688,11 +654,3 @@ export function SubscriptionsPanel({
   );
 }
 
-const chartTooltipStyle: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border)",
-  borderRadius: "8px",
-  fontSize: "12px",
-  boxShadow: "var(--shadow-card)",
-  padding: "6px 10px",
-};

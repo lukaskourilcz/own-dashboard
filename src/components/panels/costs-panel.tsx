@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { Markdown } from "@/components/ui/markdown";
 import { GithubIcon } from "@/components/icons/github";
 import { useDict } from "@/lib/i18n";
+import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import { connectGitHub } from "@/lib/github-auth";
 import { loadRepoFile, type GithubRepo } from "@/lib/github";
 import { useReposQuery } from "@/lib/github-queries";
@@ -56,6 +57,8 @@ export function CostsPanel({
   const { data, isPending, isFetching, refetch } = useReposQuery();
   const [connecting, setConnecting] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  // Feature-flagged so the filter can be rolled out / killed remotely.
+  const filterEnabled = useFeatureFlag(FLAGS.costsFilter);
 
   const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
   const status: Status = isPending
@@ -134,15 +137,18 @@ export function CostsPanel({
   // When "only with file" is on we can't decide visibility until every check
   // resolves — show skeletons rather than flashing repos in and out.
   const resolvingFiles =
+    filterEnabled &&
     onlyWithFile &&
     active.some((r) => fileStatus.get(String(r.id)) === "pending");
 
-  const visibleRepos = active.filter((repo) => {
-    const id = String(repo.id);
-    if (hiddenSet.has(id)) return false;
-    if (onlyWithFile && fileStatus.get(id) !== "ok") return false;
-    return true;
-  });
+  const visibleRepos = filterEnabled
+    ? active.filter((repo) => {
+        const id = String(repo.id);
+        if (hiddenSet.has(id)) return false;
+        if (onlyWithFile && fileStatus.get(id) !== "ok") return false;
+        return true;
+      })
+    : active;
 
   async function onConnect() {
     setConnecting(true);
@@ -158,7 +164,7 @@ export function CostsPanel({
         action={
           status === "connected" ? (
             <div className="flex items-center gap-1">
-              {active.length > 0 && (
+              {active.length > 0 && filterEnabled && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -258,18 +264,20 @@ export function CostsPanel({
           </div>
         ))}
 
-      <FilterDialog
-        open={filterOpen}
-        onOpenChange={setFilterOpen}
-        repos={active}
-        fileStatus={fileStatus}
-        onlyWithFile={onlyWithFile}
-        setOnlyWithFile={setOnlyWithFile}
-        hiddenSet={hiddenSet}
-        toggleHidden={toggleHidden}
-        filterActive={filterActive}
-        clearFilters={clearFilters}
-      />
+      {filterEnabled && (
+        <FilterDialog
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
+          repos={active}
+          fileStatus={fileStatus}
+          onlyWithFile={onlyWithFile}
+          setOnlyWithFile={setOnlyWithFile}
+          hiddenSet={hiddenSet}
+          toggleHidden={toggleHidden}
+          filterActive={filterActive}
+          clearFilters={clearFilters}
+        />
+      )}
     </div>
   );
 }

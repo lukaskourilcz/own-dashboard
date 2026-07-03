@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   Activity,
   BookOpen,
@@ -29,6 +29,7 @@ import { GithubIcon } from "@/components/icons/github";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
+import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import { useNavCollapsed, useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
 import type { NavTab } from "@/lib/nav-tabs";
@@ -78,9 +79,12 @@ export function Sidebar({
   const t = useDict();
   const { isHidden } = useNavVisibility();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
+  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
 
   const items = NAV_ITEMS.filter(
-    (it) => it.value === "overview" || !isHidden(it.value),
+    (it) =>
+      (it.value === "overview" || !isHidden(it.value)) &&
+      (it.value !== "tugedr" || tugedrEnabled),
   );
 
   const initials = (user.name?.trim() || user.email).slice(0, 2).toUpperCase();
@@ -281,8 +285,11 @@ export function MobileNav({
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
+  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
   const items = NAV_ITEMS.filter(
-    (it) => it.value === "overview" || !isHidden(it.value),
+    (it) =>
+      (it.value === "overview" || !isHidden(it.value)) &&
+      (it.value !== "tugedr" || tugedrEnabled),
   );
 
   return (
