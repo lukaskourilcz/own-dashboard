@@ -5,6 +5,7 @@ type NavSection =
   | "prompts"
   | "shortcuts"
   | "todos"
+  | "tugedr"
   | "streaks"
   | "finances"
   | "invoices"
@@ -45,6 +46,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       prompts: "Prompts",
       shortcuts: "Shortcuts",
       todos: "Tasks",
+      tugedr: "Tugedr",
       streaks: "Habits",
       finances: "Finances",
       invoices: "Invoices",
@@ -80,6 +82,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       prompts: "Prompty",
       shortcuts: "Zkratky",
       todos: "Úkoly",
+      tugedr: "Tugedr",
       streaks: "Návyky",
       finances: "Finance",
       invoices: "Faktury",

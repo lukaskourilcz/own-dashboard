@@ -5,6 +5,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
+import { TugedrPanel } from "@/components/panels/tugedr-panel";
 import { StreaksPanel } from "@/components/panels/streaks-panel";
 import { FinancesPanel } from "@/components/panels/finances-panel";
 import { InvoicesPanel } from "@/components/panels/invoices-panel";
@@ -491,6 +492,8 @@ export function DashboardShell({
                       partnerName={partnerName}
                     />
                   )}
+
+                  {tab === "tugedr" && <TugedrPanel />}
 
                   {tab === "streaks" && (
                     <StreaksPanel

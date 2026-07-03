@@ -10,6 +10,7 @@ export const NAV_TABS = [
   "prompts",
   "shortcuts",
   "todos",
+  "tugedr",
   "streaks",
   "finances",
   "invoices",

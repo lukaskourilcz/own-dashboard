@@ -22,6 +22,7 @@ import {
   Sparkles,
   Target,
   Terminal,
+  Users,
   Wallet,
 } from "lucide-react";
 import { GithubIcon } from "@/components/icons/github";
@@ -49,6 +50,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "prompts", icon: MessageSquareText },
   { value: "shortcuts", icon: Terminal },
   { value: "todos", icon: ListTodo },
+  { value: "tugedr", icon: Users },
   { value: "streaks", icon: Flame },
   { value: "finances", icon: Wallet },
   { value: "invoices", icon: Receipt },
