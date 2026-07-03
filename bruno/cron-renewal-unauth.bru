@@ -1,0 +1,26 @@
+meta {
+  name: Cron endpoint requires auth
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/cron/renewal-warnings
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 307
+  res.headers.location: contains /login
+}
+
+settings {
+  followRedirects: false
+}
+
+docs {
+  A caller with no session is bounced to /login by the auth middleware with a
+  307. The handler additionally requires `Authorization: Bearer ${CRON_SECRET}`
+  (403 otherwise) as defense-in-depth for the Vercel Cron path.
+}

@@ -1,0 +1,27 @@
+meta {
+  name: GitHub repos require auth
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/github/repos
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 307
+  res.headers.location: contains /login
+}
+
+settings {
+  followRedirects: false
+}
+
+docs {
+  An unauthenticated request must never reach the repos handler. The auth
+  middleware bounces it to /login with a 307 before any GitHub call happens.
+  (followRedirects is off so we can observe the redirect instead of the
+  login page it lands on.)
+}

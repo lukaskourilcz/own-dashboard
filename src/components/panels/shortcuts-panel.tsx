@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Check, Copy, Pencil, Plus, Search, Terminal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

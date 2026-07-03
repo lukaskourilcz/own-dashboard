@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { motion, MotionConfig } from "framer-motion";
+import { motion, MotionConfig } from "motion/react";
 import { Activity, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { MeshGradient } from "@/components/ui/mesh-gradient";
 import { useDict } from "@/lib/i18n";
 
 export default function LoginPage() {
@@ -38,15 +39,8 @@ export default function LoginPage() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="min-h-screen grid place-items-center bg-background px-4 relative overflow-hidden">
-      {/* ambient gradient */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-50 dark:opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.08), transparent 50%), radial-gradient(ellipse at bottom, rgba(236, 72, 153, 0.06), transparent 50%)",
-        }}
-      />
+      {/* ambient mesh gradient */}
+      <MeshGradient />
 
       <motion.div
         initial={{ opacity: 0, y: 8 }}

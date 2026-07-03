@@ -12,6 +12,7 @@ import {
   Sunrise,
 } from "lucide-react";
 import { SectionLabel } from "@/components/ui/page-header";
+import { MeshGradient } from "@/components/ui/mesh-gradient";
 import {
   streaksUncheckedToday,
   uncheckedTodayWithCounts,
@@ -127,9 +128,11 @@ export function TodayHero({
 
   return (
     <section
-      className="rounded-xl border border-border bg-surface p-6 md:p-8 shadow-soft"
+      className="relative overflow-hidden rounded-xl border border-border bg-surface p-6 md:p-8 shadow-soft"
       suppressHydrationWarning
     >
+      <MeshGradient className="opacity-50 dark:opacity-30" />
+      <div className="relative">
       {/* greeting row */}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
@@ -341,6 +344,7 @@ export function TodayHero({
               ))}
           </ul>
         </Column>
+      </div>
       </div>
     </section>
   );

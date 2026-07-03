@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   BookOpen,
   CalendarDays,
@@ -30,6 +30,7 @@ import {
 import { GithubIcon } from "@/components/icons/github";
 import { useTheme } from "@/lib/use-theme";
 import { useDict, useLang } from "@/lib/i18n";
+import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import type { NavTab } from "@/components/nav/sidebar";
 
@@ -55,6 +56,7 @@ export function CommandPalette({
   const { theme, toggle } = useTheme();
   const { lang, setLang } = useLang();
   const t = useDict();
+  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -87,7 +89,7 @@ export function CommandPalette({
       close();
     };
     const s = t.nav.sections;
-    return [
+    const list: Action[] = [
       { id: "go-overview", label: s.overview, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g o", run: go("overview") },
       { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g c", run: go("calendar") },
       { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes writing drafts poznámky g n", run: go("notes") },
@@ -157,7 +159,8 @@ export function CommandPalette({
         },
       },
     ];
-  }, [setTab, onFocusQuickAdd, theme, toggle, lang, setLang, t]);
+    return list.filter((a) => a.id !== "go-tugedr" || tugedrEnabled);
+  }, [setTab, onFocusQuickAdd, theme, toggle, lang, setLang, t, tugedrEnabled]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

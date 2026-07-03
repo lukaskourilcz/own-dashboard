@@ -1,0 +1,33 @@
+meta {
+  name: Quick-add requires auth
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/quick-add
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "input": "buy milk tomorrow"
+  }
+}
+
+assert {
+  res.status: eq 307
+  res.headers.location: contains /login
+}
+
+settings {
+  followRedirects: false
+}
+
+docs {
+  An unauthenticated POST is bounced to /login by the auth middleware with a
+  307 — the LLM is never invoked for an anonymous caller. (The handler also
+  enforces a same-origin CSRF check and its own 401 as defense-in-depth once
+  a session cookie is present.)
+}

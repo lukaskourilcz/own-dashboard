@@ -15,6 +15,20 @@ type CostsStrings = {
   refresh: string;
   viewFile: string;
   openRepo: string;
+  // Filter
+  filter: string;
+  filterTitle: string;
+  onlyWithFile: string;
+  onlyWithFileHint: string;
+  reposLabel: string;
+  hasFile: string;
+  noFile: string;
+  showRepo: string;
+  hideRepo: string;
+  clearFilters: string;
+  done: string;
+  noMatch: string;
+  noMatchDesc: string;
 };
 
 export const costs: { en: CostsStrings; cs: CostsStrings } = {
@@ -37,6 +51,20 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     refresh: "Refresh",
     viewFile: "View file",
     openRepo: "Open repo",
+    filter: "Filter",
+    filterTitle: "Filter repositories",
+    onlyWithFile: "Only repos with a stack-and-scaling.md file",
+    onlyWithFileHint:
+      "Hide repositories that don't have the file in their root.",
+    reposLabel: "Repositories",
+    hasFile: "Has file",
+    noFile: "No file",
+    showRepo: "Show repository",
+    hideRepo: "Hide repository",
+    clearFilters: "Clear filters",
+    done: "Done",
+    noMatch: "No repositories match your filter",
+    noMatchDesc: "Adjust or clear the filter to see cost cards.",
   },
   cs: {
     title: "Náklady a škálování aplikací",
@@ -57,5 +85,18 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     refresh: "Obnovit",
     viewFile: "Zobrazit soubor",
     openRepo: "Otevřít repo",
+    filter: "Filtr",
+    filterTitle: "Filtrovat repozitáře",
+    onlyWithFile: "Jen repozitáře se souborem stack-and-scaling.md",
+    onlyWithFileHint: "Skryje repozitáře, které nemají soubor v rootu.",
+    reposLabel: "Repozitáře",
+    hasFile: "Má soubor",
+    noFile: "Bez souboru",
+    showRepo: "Zobrazit repozitář",
+    hideRepo: "Skrýt repozitář",
+    clearFilters: "Zrušit filtry",
+    done: "Hotovo",
+    noMatch: "Filtru neodpovídá žádný repozitář",
+    noMatchDesc: "Uprav nebo zruš filtr, aby se karty zobrazily.",
   },
 };

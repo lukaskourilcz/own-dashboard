@@ -3,16 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip as RTooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
 import {
   BookOpen,
   Check,
@@ -25,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
@@ -38,6 +30,16 @@ import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Book, BookPage, BookStatus, Profile, Updater } from "@/lib/types";
 import { partnerDisplayName, type CoupleContext } from "@/lib/couple";
+
+// Recharts is heavy; load the reading-activity chart only when a book row that
+// needs it renders.
+const ReadingActivityChart = dynamic(
+  () =>
+    import("@/components/charts/reading-activity-chart").then(
+      (m) => m.ReadingActivityChart,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-full w-full" /> },
+);
 
 let tentativeBookPageCounter = 0;
 
@@ -662,57 +664,13 @@ function BookRow({
 
         {last14.some((d) => d.me + d.partner > 0) && (
           <div className="h-28 mb-4 -mx-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={last14}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--border)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  stroke="var(--foreground-subtle)"
-                />
-                <YAxis
-                  fontSize={10}
-                  width={24}
-                  tickLine={false}
-                  axisLine={false}
-                  stroke="var(--foreground-subtle)"
-                />
-                <RTooltip
-                  cursor={{ fill: "var(--surface-hover)" }}
-                  formatter={(value, name) => [
-                    t.books.pagesTooltip(Number(value)),
-                    name === "me" ? userName : partnerName,
-                  ]}
-                  contentStyle={chartTooltipStyle}
-                />
-                <Legend
-                  iconType="circle"
-                  iconSize={6}
-                  wrapperStyle={{ fontSize: 10 }}
-                  formatter={(name) => (name === "me" ? userName : partnerName)}
-                />
-                <Bar
-                  dataKey="me"
-                  stackId="a"
-                  fill="var(--foreground)"
-                  radius={[2, 2, 0, 0]}
-                />
-                {isShared && (
-                  <Bar
-                    dataKey="partner"
-                    stackId="a"
-                    fill="var(--foreground-subtle)"
-                    radius={[2, 2, 0, 0]}
-                  />
-                )}
-              </BarChart>
-            </ResponsiveContainer>
+            <ReadingActivityChart
+              data={last14}
+              isShared={isShared}
+              meLabel={userName}
+              partnerLabel={partnerName}
+              pagesTooltip={t.books.pagesTooltip}
+            />
           </div>
         )}
 
@@ -772,11 +730,3 @@ function Stat({
   );
 }
 
-const chartTooltipStyle: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border)",
-  borderRadius: "8px",
-  fontSize: "12px",
-  boxShadow: "var(--shadow-card)",
-  padding: "6px 10px",
-};

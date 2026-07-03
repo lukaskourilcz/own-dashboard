@@ -242,7 +242,7 @@ body {
 
 /* ────────────────────────────────────────────────────────────────────────
    Respect users who ask for less motion. Neutralises CSS animations and
-   transitions app-wide; framer-motion is handled separately via
+   transitions app-wide; Motion (motion/react) is handled separately via
    <MotionConfig reducedMotion="user">.
    ──────────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

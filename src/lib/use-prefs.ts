@@ -210,3 +210,53 @@ export function writeRepoFilter(ids: string[]): void {
     // ignore — quota or privacy mode; the server sync is the fallback.
   }
 }
+
+// ---------------------------------------------------------------------------
+// Costs panel filters — device-local settings for the App-costs & scaling
+// section, kept separate from the shared Repositories filter above. Two knobs:
+// a boolean "only show repos that have the stack-and-scaling.md file", and an
+// explicit hide-list of repo ids the user doesn't want shown there.
+// ---------------------------------------------------------------------------
+
+const COSTS_ONLY_WITH_FILE_KEY = "costsOnlyWithFile";
+const COSTS_HIDDEN_REPOS_KEY = "costsHiddenRepoIds";
+
+export function readCostsOnlyWithFile(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(COSTS_ONLY_WITH_FILE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeCostsOnlyWithFile(value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(COSTS_ONLY_WITH_FILE_KEY, value ? "1" : "0");
+  } catch {
+    // ignore — quota or privacy mode.
+  }
+}
+
+export function readCostsHiddenRepos(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(COSTS_HIDDEN_REPOS_KEY);
+    if (raw == null) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function writeCostsHiddenRepos(ids: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(COSTS_HIDDEN_REPOS_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore — quota or privacy mode.
+  }
+}
