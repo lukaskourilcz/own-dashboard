@@ -54,6 +54,61 @@ function hostOf(url: string): string {
   }
 }
 
+/** A favicon URL for the link's host, served by Google's favicon proxy so we
+ * get a normalized 64px icon for almost any site. Null when the URL can't be
+ * parsed, in which case the avatar falls back to a colored letter tile. */
+function faviconUrl(url: string): string | null {
+  try {
+    const host = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+/** Stable hue in [0, 360) derived from a seed string, so a given site always
+ * gets the same fallback color. */
+function hueFrom(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) % 360;
+  }
+  return h;
+}
+
+/** Link icon: the site's favicon when it loads, otherwise a colored circle
+ * seeded from the host with the title's initial. */
+function LinkAvatar({ url, title }: { url: string; title: string }) {
+  const [failed, setFailed] = useState(false);
+  const src = failed ? null : faviconUrl(url);
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="mt-0.5 h-6 w-6 shrink-0 rounded-md bg-surface-muted object-contain p-0.5"
+      />
+    );
+  }
+
+  const hue = hueFrom(hostOf(url) || title);
+  const letter = (title.trim()[0] ?? "?").toUpperCase();
+  return (
+    <div
+      aria-hidden
+      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+      style={{ backgroundColor: `hsl(${hue} 55% 45%)` }}
+    >
+      {letter}
+    </div>
+  );
+}
+
 type Props = {
   aiLinks: AiLink[];
   setAiLinks: Updater<AiLink[]>;
@@ -636,24 +691,27 @@ function LinkRow({
   const t = useDict();
   return (
     <div className="group flex items-start justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-surface-hover/50">
-      <div className="min-w-0">
-        <a
-          href={link.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 font-medium text-foreground hover:underline"
-        >
-          {link.title}
-          <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
-        </a>
-        <p className="truncate text-[11px] text-foreground-subtle">
-          {hostOf(link.url)}
-        </p>
-        {link.description && (
-          <p className="mt-1 text-xs text-foreground-muted">
-            {link.description}
+      <div className="flex min-w-0 items-start gap-2.5">
+        <LinkAvatar url={link.url} title={link.title} />
+        <div className="min-w-0">
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-foreground hover:underline"
+          >
+            {link.title}
+            <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
+          </a>
+          <p className="truncate text-[11px] text-foreground-subtle">
+            {hostOf(link.url)}
           </p>
-        )}
+          {link.description && (
+            <p className="mt-1 text-xs text-foreground-muted">
+              {link.description}
+            </p>
+          )}
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
         <Tooltip content={t.ai.edit}>
