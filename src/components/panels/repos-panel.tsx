@@ -12,6 +12,7 @@ import {
   GitFork,
   Globe,
   Link2,
+  ListChecks,
   ListFilter,
   Lock,
   Pencil,
@@ -51,6 +52,7 @@ import {
   useReposQuery,
 } from "@/lib/github-queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { NeededChecklist } from "@/components/panels/needed-checklist";
 import type { RepoLink, RepoNote, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -124,6 +126,7 @@ export function ReposPanel({
   const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [writeTarget, setWriteTarget] = useState<GithubRepo | null>(null);
+  const [showNeeded, setShowNeeded] = useState(false);
   // Prefer the device-local copy (survives reloads even if the server prefs
   // round-trip isn't available); fall back to the server-provided value.
   const [visibleIds, setVisibleIds] = useState<string[]>(
@@ -267,6 +270,16 @@ export function ReposPanel({
               </Tooltip>
               {repos.length > 0 && (
                 <Button
+                  variant={showNeeded ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowNeeded((v) => !v)}
+                >
+                  <ListChecks className="h-3.5 w-3.5" />
+                  {t.github.needed.button}
+                </Button>
+              )}
+              {repos.length > 0 && (
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setFilterOpen(true)}
@@ -331,6 +344,10 @@ export function ReposPanel({
 
       {status === "connected" && (
         <>
+          {showNeeded && scoped.length > 0 && (
+            <NeededChecklist repos={scoped} />
+          )}
+
           {repos.length > 0 && (
             <div className="mb-4 space-y-2">
               <Input
