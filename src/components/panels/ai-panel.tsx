@@ -790,6 +790,49 @@ function LinkDialog({
   onSubmit: (e: React.FormEvent) => void;
 }) {
   const t = useDict();
+  const [enriching, setEnriching] = useState(false);
+  const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
+
+  // "Auto-fill": read the pasted URL via /api/ai-links/enrich (Jina + optional
+  // Claude) and populate the form. Fills empty fields; always refreshes the
+  // description (that's the point), but never clobbers a category/pricing the
+  // user already chose.
+  async function autoFill() {
+    const url = form.url.trim();
+    if (!url) {
+      setEnrichMsg(t.ai.enrichNeedsUrl);
+      return;
+    }
+    setEnriching(true);
+    setEnrichMsg(null);
+    try {
+      const res = await fetch("/api/ai-links/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          categories: categories.map((c) => ({ id: c.id, name: c.name })),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEnrichMsg(data?.error ?? t.ai.enrichFailed);
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        title: f.title.trim() || data.title || f.title,
+        description: data.description || f.description,
+        categoryId: f.categoryId || data.category_id || f.categoryId,
+        pricing: f.pricing || data.pricing || f.pricing,
+      }));
+    } catch {
+      setEnrichMsg(t.ai.enrichFailed);
+    } finally {
+      setEnriching(false);
+    }
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -814,13 +857,35 @@ function LinkDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ai-url">{t.ai.url}</Label>
-              <Input
-                id="ai-url"
-                value={form.url}
-                onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-                placeholder={t.ai.urlPlaceholder}
-                inputMode="url"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="ai-url"
+                  value={form.url}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, url: e.target.value }));
+                    if (enrichMsg) setEnrichMsg(null);
+                  }}
+                  placeholder={t.ai.urlPlaceholder}
+                  inputMode="url"
+                  className="flex-1"
+                />
+                <Tooltip content={t.ai.autoFillHint}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={autoFill}
+                    disabled={enriching || !form.url.trim()}
+                    className="shrink-0"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {enriching ? t.ai.enriching : t.ai.autoFill}
+                  </Button>
+                </Tooltip>
+              </div>
+              {enrichMsg && (
+                <p className="text-xs text-foreground-subtle">{enrichMsg}</p>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">

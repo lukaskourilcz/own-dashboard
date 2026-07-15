@@ -20,7 +20,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -76,6 +76,39 @@ const emptyTx: TxForm = {
 };
 
 const emptyAccount: AccountForm = { name: "", balance: "0", currency: "USD" };
+
+/** Compact in/out/net tile for the finance hero. */
+function StatTile({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof Wallet;
+  label: string;
+  value: string;
+  tone: "success" | "destructive" | "neutral";
+}) {
+  const toneCls =
+    tone === "success"
+      ? "text-success"
+      : tone === "destructive"
+        ? "text-destructive"
+        : "text-foreground-muted";
+  return (
+    <div className="rounded-xl border border-border bg-surface/70 px-2.5 py-2 text-left">
+      <div className={`flex items-center gap-1 ${toneCls}`}>
+        <Icon className="h-3 w-3" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+      <p className="mt-1 text-sm font-semibold tabular text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
 
 export function FinancesPanel({
   accounts,
@@ -301,28 +334,69 @@ export function FinancesPanel({
 
   const deleteAccount = (id: string) => deleteAccountMutation.mutate(id);
 
+  const thisMonth = months[months.length - 1] ?? { income: 0, expense: 0 };
+  const thisMonthNet = thisMonth.income - thisMonth.expense;
+
   return (
     <div>
       <PageHeader
         title={t.finances.title}
         description={t.finances.description}
       />
+
+      {/* Finance hero — leads with net worth (the focal balance) and this
+          month's in / out / net at a glance, fintech-app style. */}
+      <section className="mb-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface via-surface to-surface-muted/50 p-5 shadow-soft sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 text-foreground-muted">
+              <Wallet className="h-3.5 w-3.5" />
+              <SectionLabel>{t.finances.netWorth}</SectionLabel>
+            </div>
+            <p className="mt-1.5 text-4xl font-semibold tracking-tight tabular text-foreground sm:text-5xl">
+              {formatCurrency(totalNet, displayCurrency)}
+            </p>
+            <p className="mt-1 text-xs text-foreground-subtle">
+              {t.finances.acrossAccounts(accounts.length)}
+            </p>
+          </div>
+          <div className="sm:text-right">
+            <SectionLabel className="!text-[10px] text-foreground-subtle">
+              {t.finances.thisMonth}
+            </SectionLabel>
+            <div className="mt-1.5 grid grid-cols-3 gap-2 sm:gap-2.5">
+              <StatTile
+                icon={ArrowUpRight}
+                tone="success"
+                label={t.finances.income}
+                value={formatCurrency(thisMonth.income, displayCurrency)}
+              />
+              <StatTile
+                icon={ArrowDownRight}
+                tone="destructive"
+                label={t.finances.expense}
+                value={formatCurrency(thisMonth.expense, displayCurrency)}
+              />
+              <StatTile
+                icon={Wallet}
+                tone="neutral"
+                label={t.finances.net}
+                value={formatCurrency(thisMonthNet, displayCurrency)}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Net worth */}
+        {/* Accounts (net worth now lives in the hero above) */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
-              <Wallet className="h-3 w-3" /> {t.finances.netWorth}
+              <Wallet className="h-3 w-3" /> {t.finances.accountsTitle}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold tracking-tight tabular text-foreground">
-              {formatCurrency(totalNet, displayCurrency)}
-            </p>
-            <p className="text-xs text-foreground-subtle mt-1">
-              {t.finances.acrossAccounts(accounts.length)}
-            </p>
-
             {accounts.length > 0 && (
               <ul className="mt-4 -mx-2">
                 {accounts.map((a) => {
