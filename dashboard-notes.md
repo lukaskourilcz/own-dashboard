@@ -129,6 +129,35 @@ trimming, everything kept is a 4 or 5).
   left out on purpose — the list is for things the projects don't have yet.
 - No app code changed in this item; it's data (seed SQL) + docs only.
 
+### ~~6. AI links: Flux + Seedream, AI IMAGES category, cost labels~~
+> Tell me what Flux and Seedream do and add them there too. I need more design
+> tools like these too. Also, for every AI link, add a subsection with COST
+> info — which are free, which are paid, and paid-with-free-tier.
+
+**Done.** `supabase/seed-ai-links.sql` is now v2 (56 links, 9 categories):
+
+- New **AI IMAGES** category with 8 ranked links: FLUX / Black Forest Labs
+  (5/5), Midjourney (5/5), fal.ai (5/5), Seedream via Dreamina (4/5), Reve
+  (4/5), Krea (4/5), Leonardo AI (4/5), Replicate (4/5).
+- **Cost labels on every link** — descriptions are now
+  `score · cost · what it is`, with cost one of: `Free`,
+  `Free (open source)`, `Free tier + paid`, `Pay-per-use`, `Paid`.
+- **Upgrade-aware idempotency:** re-running the seed refreshes descriptions of
+  rows the seed itself wrote earlier (matched by URL + the `n/5 ·` description
+  prefix) so v1 rows pick up cost labels; user-authored links are never
+  modified. Verified on local Postgres 16: fresh run = 54 inserted / 0
+  refreshed (2 personal fixtures skipped); v1→v2 run = 8 inserted / 48
+  refreshed; re-run = 0 / 0.
+
+**Deviations / things to know:**
+- "Subsection with cost info" is implemented as a label inside each link
+  description (`4/5 · Free tier + paid · …`) — the `ai_links` schema has no
+  extra field for it, and this keeps it visible on every card with no app code
+  change.
+- Reve's official domain was verified as `reve.com` (redirects to
+  `app.reve.com`); several lookalike sites (reve2.app, reve-ai.art) are clones
+  and were avoided.
+
 ---
 
 ## Verification done this session

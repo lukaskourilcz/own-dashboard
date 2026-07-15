@@ -18,18 +18,26 @@ lives only in a seed script until you run it.
 1. Supabase Dashboard → **SQL Editor** → paste the whole of
    [`supabase/seed-ai-links.sql`](./supabase/seed-ai-links.sql) → **Run**.
 
-That inserts a researched, ranked catalogue of ~48 sites (AI design, components,
-free APIs, hosting, performance, Claude Code/MCP, security, inspiration) into
-your **AI links** section, grouped into 8 categories. Each description starts
-with its score (`5/5 · …`); only sites scoring 3+ were included.
+That inserts a researched, ranked catalogue of **56 sites** (AI design, AI
+image generation, components, free APIs, hosting, performance, Claude
+Code/MCP, security, inspiration) into your **AI links** section, grouped into
+9 categories. Each description reads `score · cost · what it is` — e.g.
+`5/5 · Free tier + paid · …` — so you can see at a glance what is free, what
+is freemium, and what is paid. Only sites scoring 3+ were included.
 
 - **Safe to re-run** — categories are reused by name, links are deduped by URL
-  (ignores `http/https`, `www.` and trailing slashes), and nothing you already
-  have is touched.
+  (ignores `http/https`, `www.` and trailing slashes), and links you created
+  yourself are never touched.
+- **Upgrade-aware** — if you already ran an earlier version of the seed,
+  re-running refreshes the descriptions of catalogue links (recognized by
+  their `n/5 ·` prefix) to pick up the cost labels, and adds the new
+  **AI IMAGES** category (FLUX, Seedream, Midjourney, fal.ai, Reve, Krea,
+  Leonardo, Replicate).
 - The script targets the account `kouril.lukas@gmail.com`; edit `v_email` at
   the top of the `do $$` block if your login email ever changes.
 - Verified locally against a Postgres 16 instance using the repo's real DDL:
-  first run inserts everything missing, second run inserts `0`.
+  fresh run inserts everything missing; upgrade-from-v1 run inserts 8 and
+  refreshes 48; second run does nothing (`0 inserted, 0 refreshed`).
 
 ---
 
