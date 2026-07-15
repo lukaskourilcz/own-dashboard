@@ -63,11 +63,12 @@ export const subscriptions: Subscription[] = [
 ];
 
 export const todos: Todo[] = [
-  { id: "t1", user_id: UID, title: "Submit Q2 invoice", done: false, due_date: ymd(0), created_at: TS },
-  { id: "t2", user_id: UID, title: "Reply to landlord", done: false, due_date: ymd(-1), created_at: TS },
-  { id: "t3", user_id: UID, title: "Buy running shoes", done: false, due_date: ymd(2), created_at: TS },
-  { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, created_at: TS },
-  { id: "t5", user_id: UID, title: "Plan weekend trip", done: false, due_date: null, created_at: TS },
+  { id: "t1", user_id: UID, title: "Submit Q2 invoice", done: false, due_date: ymd(0), category: null, created_at: TS },
+  { id: "t2", user_id: UID, title: "Reply to landlord", done: false, due_date: ymd(-1), category: null, created_at: TS },
+  { id: "t3", user_id: UID, title: "Buy running shoes", done: false, due_date: ymd(2), category: null, created_at: TS },
+  { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, category: null, created_at: TS },
+  { id: "t5", user_id: UID, title: "Add UPSTASH_REDIS_REST_URL in Vercel", done: false, due_date: null, category: "own-dashboard", created_at: TS },
+  { id: "t6", user_id: UID, title: "Generate real app icons with Recraft", done: false, due_date: null, category: "react-express-app", created_at: TS },
 ];
 
 export const streaks: Streak[] = [

@@ -49,8 +49,15 @@ create table if not exists public.todos (
   title text not null,
   done boolean not null default false,
   due_date date,
+  -- Optional grouping label. Used to bucket tasks in the UI — e.g. the repo
+  -- name when a task is imported from a repo's NEEDED.md. Null = ungrouped.
+  category text,
   created_at timestamptz not null default now()
 );
+
+-- Category migration: existing installs need the column too.
+alter table public.todos
+  add column if not exists category text;
 
 alter table public.todos enable row level security;
 

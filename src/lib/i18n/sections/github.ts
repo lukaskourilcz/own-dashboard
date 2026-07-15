@@ -114,6 +114,11 @@ type GithubStrings = {
     removedFrom: (repo: string) => string;
     updateErr: string;
     commitMessage: (text: string) => string;
+    createTodos: string;
+    createTodosHint: string;
+    todosCreated: (count: number, repos: number) => string;
+    todosNoneNew: string;
+    todosErr: string;
   };
 };
 
@@ -232,6 +237,13 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       removedFrom: (repo) => `Removed from ${repo}/NEEDED.md.`,
       updateErr: "Could not update NEEDED.md.",
       commitMessage: (text) => `chore: check off NEEDED item — ${text}`,
+      createTodos: "Add to Todos",
+      createTodosHint:
+        "Create a task in the Todos section for every open item, grouped by repo.",
+      todosCreated: (count, repos) =>
+        `Added ${count} task${count === 1 ? "" : "s"} across ${repos} repo${repos === 1 ? "" : "s"} to Todos.`,
+      todosNoneNew: "Todos already up to date — nothing new to add.",
+      todosErr: "Couldn't create the tasks. Please try again.",
     },
   },
   cs: {
@@ -352,6 +364,13 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       removedFrom: (repo) => `Odebráno z ${repo}/NEEDED.md.`,
       updateErr: "Nepodařilo se aktualizovat NEEDED.md.",
       commitMessage: (text) => `chore: odškrtnutí NEEDED položky — ${text}`,
+      createTodos: "Přidat do úkolů",
+      createTodosHint:
+        "Vytvoří úkol v sekci Úkoly pro každou otevřenou položku, seskupené podle repozitáře.",
+      todosCreated: (count, repos) =>
+        `Přidáno ${count} úkol${count === 1 ? "" : count >= 2 && count <= 4 ? "y" : "ů"} z ${repos} repozitář${repos === 1 ? "e" : "ů"} do Úkolů.`,
+      todosNoneNew: "Úkoly jsou aktuální — není co přidat.",
+      todosErr: "Úkoly se nepodařilo vytvořit. Zkuste to znovu.",
     },
   },
 };

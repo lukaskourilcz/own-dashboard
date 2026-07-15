@@ -20,6 +20,9 @@ export type Todo = {
   title: string;
   done: boolean;
   due_date: string | null;
+  // Optional grouping label (e.g. a repo name for tasks imported from its
+  // NEEDED.md). Null = ungrouped, shown under the default "Other" section.
+  category: string | null;
   created_at: string;
 };
 
