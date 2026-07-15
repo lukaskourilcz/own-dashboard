@@ -30,6 +30,9 @@ type AiStrings = {
   descriptionLabel: string;
   descriptionPlaceholder: string;
   category: string;
+  pricing: string;
+  pricingNone: string;
+  pricingLabel: { free: string; freemium: string; paid: string };
   cancel: string;
   create: string;
   save: string;
@@ -89,6 +92,13 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     descriptionLabel: "Description",
     descriptionPlaceholder: "What is it good for?",
     category: "Category",
+    pricing: "Pricing",
+    pricingNone: "Not set",
+    pricingLabel: {
+      free: "Free",
+      freemium: "Free tier + paid",
+      paid: "Paid",
+    },
     cancel: "Cancel",
     create: "Create",
     save: "Save",
@@ -144,6 +154,13 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     descriptionLabel: "Popis",
     descriptionPlaceholder: "K čemu je to dobré?",
     category: "Kategorie",
+    pricing: "Cena",
+    pricingNone: "Neuvedeno",
+    pricingLabel: {
+      free: "Zdarma",
+      freemium: "Free tier + placené",
+      paid: "Placené",
+    },
     cancel: "Zrušit",
     create: "Vytvořit",
     save: "Uložit",

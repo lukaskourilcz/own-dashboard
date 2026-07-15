@@ -153,10 +153,38 @@ trimming, everything kept is a 4 or 5).
 - "Subsection with cost info" is implemented as a label inside each link
   description (`4/5 · Free tier + paid · …`) — the `ai_links` schema has no
   extra field for it, and this keeps it visible on every card with no app code
-  change.
+  change. *(Superseded by item 7: pricing is now a structured column with a
+  colored badge.)*
 - Reve's official domain was verified as `reve.com` (redirects to
   `app.reve.com`); several lookalike sites (reve2.app, reve-ai.art) are clones
   and were avoided.
+
+### ~~7. AI links: pricing as a colored badge, out of the description~~
+> I want each link to have the pricing somewhere else than combined in the
+> description, nicely categorized + make the pricing a different color than
+> the description (free = green, free tier + paid = yellow, paid = red).
+
+**Done.**
+- **Data model:** new nullable `ai_links.pricing` column constrained to
+  `'free' | 'freemium' | 'paid'` (`supabase/schema.sql`, with the usual
+  `add column if not exists` migration). `AiPricing` type added in
+  `src/lib/types.ts`.
+- **UI (`src/components/panels/ai-panel.tsx`):** `PricingBadge` pill rendered
+  next to each link's host — green `success`, yellow `warning`, red
+  `destructive` tokens (10/30 alpha backgrounds/borders, same recipe as the
+  invoices `StatusBadge`, works in light + dark). The add/edit dialog has a
+  **Pricing** select (Not set / Free / Free tier + paid / Paid) beside
+  Category; create/update mutations persist it.
+- **i18n:** `pricing`, `pricingNone`, `pricingLabel.{free,freemium,paid}` in
+  EN + CS (`src/lib/i18n/sections/ai.ts`).
+- **Seed v3 (`supabase/seed-ai-links.sql`):** self-migrates the column, then
+  moves the cost out of every seed-authored description into `pricing`
+  (23 free · 30 freemium · 3 paid across the 56 links). Verified on local
+  Postgres 16 against the exact production state (v2-seeded DB, no pricing
+  column): `0 inserted / 56 refreshed`, re-run `0 / 0`, personal links
+  untouched, bad values rejected by the check constraint.
+- **Checks:** `npx tsc --noEmit` clean, `npm run lint` clean,
+  `npx vitest run` 147 passed, `npm run build` succeeds.
 
 ---
 

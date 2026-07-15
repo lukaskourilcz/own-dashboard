@@ -25,7 +25,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
-import type { AiCategory, AiLink, Updater } from "@/lib/types";
+import type { AiCategory, AiLink, AiPricing, Updater } from "@/lib/types";
 
 const UNCATEGORIZED = "__uncategorized__";
 
@@ -109,6 +109,24 @@ function LinkAvatar({ url, title }: { url: string; title: string }) {
   );
 }
 
+/** Colored cost-tier pill: free = green, freemium = yellow, paid = red. */
+const PRICING_TONE: Record<AiPricing, string> = {
+  free: "bg-success/10 text-success border-success/30",
+  freemium: "bg-warning/10 text-warning border-warning/30",
+  paid: "bg-destructive/10 text-destructive border-destructive/30",
+};
+
+function PricingBadge({ pricing }: { pricing: AiPricing }) {
+  const t = useDict();
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-px text-[10px] font-medium whitespace-nowrap ${PRICING_TONE[pricing]}`}
+    >
+      {t.ai.pricingLabel[pricing]}
+    </span>
+  );
+}
+
 type Props = {
   aiLinks: AiLink[];
   setAiLinks: Updater<AiLink[]>;
@@ -121,6 +139,7 @@ type LinkForm = {
   url: string;
   description: string;
   categoryId: string; // "" === Uncategorized
+  pricing: "" | AiPricing; // "" === not set
 };
 
 const emptyForm: LinkForm = {
@@ -128,6 +147,7 @@ const emptyForm: LinkForm = {
   url: "",
   description: "",
   categoryId: "",
+  pricing: "",
 };
 
 export function AiPanel({
@@ -220,6 +240,7 @@ export function AiPanel({
       url: string;
       description: string | null;
       category_id: string | null;
+      pricing: AiPricing | null;
     }) => {
       const { data, error } = await supabase
         .from("ai_links")
@@ -228,6 +249,7 @@ export function AiPanel({
           url: vars.url,
           description: vars.description,
           category_id: vars.category_id,
+          pricing: vars.pricing,
           updated_at: new Date().toISOString(),
         })
         .eq("id", vars.id)
@@ -372,6 +394,7 @@ export function AiPanel({
       url: l.url,
       description: l.description ?? "",
       categoryId: l.category_id ?? "",
+      pricing: l.pricing ?? "",
     });
     setFormError(null);
     setDialogOpen(true);
@@ -397,14 +420,15 @@ export function AiPanel({
     }
     const description = form.description.trim() || null;
     const category_id = form.categoryId || null;
+    const pricing = form.pricing || null;
     if (editing) {
       updateLink.mutate(
-        { id: editing.id, title, url, description, category_id },
+        { id: editing.id, title, url, description, category_id, pricing },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createLink.mutate(
-        { title, url, description, category_id },
+        { title, url, description, category_id, pricing },
         { onSuccess: () => setDialogOpen(false) },
       );
     }
@@ -703,9 +727,12 @@ function LinkRow({
             {link.title}
             <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
           </a>
-          <p className="truncate text-[11px] text-foreground-subtle">
-            {hostOf(link.url)}
-          </p>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="truncate text-[11px] text-foreground-subtle">
+              {hostOf(link.url)}
+            </p>
+            {link.pricing && <PricingBadge pricing={link.pricing} />}
+          </div>
           {link.description && (
             <p className="mt-1 text-xs text-foreground-muted">
               {link.description}
@@ -795,22 +822,42 @@ function LinkDialog({
                 inputMode="url"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ai-category">{t.ai.category}</Label>
-              <Select
-                id="ai-category"
-                value={form.categoryId}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, categoryId: e.target.value }))
-                }
-              >
-                <option value="">{t.ai.uncategorized}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-category">{t.ai.category}</Label>
+                <Select
+                  id="ai-category"
+                  value={form.categoryId}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, categoryId: e.target.value }))
+                  }
+                >
+                  <option value="">{t.ai.uncategorized}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-pricing">{t.ai.pricing}</Label>
+                <Select
+                  id="ai-pricing"
+                  value={form.pricing}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      pricing: e.target.value as LinkForm["pricing"],
+                    }))
+                  }
+                >
+                  <option value="">{t.ai.pricingNone}</option>
+                  <option value="free">{t.ai.pricingLabel.free}</option>
+                  <option value="freemium">{t.ai.pricingLabel.freemium}</option>
+                  <option value="paid">{t.ai.pricingLabel.paid}</option>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ai-description">{t.ai.descriptionLabel}</Label>

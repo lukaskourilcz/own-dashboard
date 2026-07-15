@@ -8,36 +8,34 @@ Nothing here blocks the deploy.
 
 ---
 
-## 0. NEW in this PR: load the curated AI links into your dashboard
+## 0. NEW in this PR: pricing badges — one SQL run needed
 
-**Status without you:** the AI links section is unchanged — the new catalogue
-lives only in a seed script until you run it.
+Every AI link now has a structured **pricing** field rendered as a colored
+badge next to the site host: **Free = green**, **Free tier + paid = yellow**,
+**Paid = red** (design tokens `success` / `warning` / `destructive`, so both
+themes work). The cost is no longer part of the description text.
 
-**To load it (one step):**
+**To finish the upgrade (one step):**
 
 1. Supabase Dashboard → **SQL Editor** → paste the whole of
    [`supabase/seed-ai-links.sql`](./supabase/seed-ai-links.sql) → **Run**.
 
-That inserts a researched, ranked catalogue of **56 sites** (AI design, AI
-image generation, components, free APIs, hosting, performance, Claude
-Code/MCP, security, inspiration) into your **AI links** section, grouped into
-9 categories. Each description reads `score · cost · what it is` — e.g.
-`5/5 · Free tier + paid · …` — so you can see at a glance what is free, what
-is freemium, and what is paid. Only sites scoring 3+ were included.
+The script migrates the `ai_links.pricing` column itself (same
+`add column if not exists` as `schema.sql`), then updates the catalogue rows:
+cost moves out of each description and into the badge. Expected notice for a
+DB seeded with the previous version: `0 new link(s) inserted, 56 link(s)
+refreshed`. On an empty AI section it inserts all 56 links with badges.
 
-- **Safe to re-run** — categories are reused by name, links are deduped by URL
-  (ignores `http/https`, `www.` and trailing slashes), and links you created
-  yourself are never touched.
-- **Upgrade-aware** — if you already ran an earlier version of the seed,
-  re-running refreshes the descriptions of catalogue links (recognized by
-  their `n/5 ·` prefix) to pick up the cost labels, and adds the new
-  **AI IMAGES** category (FLUX, Seedream, Midjourney, fal.ai, Reve, Krea,
-  Leonardo, Replicate).
+- **Safe to re-run** — categories reused by name, links deduped by URL, only
+  seed-authored rows (description starting `n/5 ·`) are refreshed; links you
+  created or edited yourself are never touched.
+- The link add/edit dialog now has a **Pricing** select (Not set / Free /
+  Free tier + paid / Paid), so your own links can get badges too.
 - The script targets the account `kouril.lukas@gmail.com`; edit `v_email` at
   the top of the `do $$` block if your login email ever changes.
-- Verified locally against a Postgres 16 instance using the repo's real DDL:
-  fresh run inserts everything missing; upgrade-from-v1 run inserts 8 and
-  refreshes 48; second run does nothing (`0 inserted, 0 refreshed`).
+- Verified locally against Postgres 16 with the repo's real DDL: v2→v3 run =
+  `0 inserted / 56 refreshed` (23 free · 30 freemium · 3 paid), re-run =
+  `0 / 0`, invalid pricing values rejected by the check constraint.
 
 ---
 
