@@ -109,7 +109,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "input too long." }, { status: 400 });
   }
 
-  const client = new Anthropic({ apiKey });
+  // Optional ANTHROPIC_BASE_URL routes through an Anthropic-compatible gateway
+  // (cost caps / caching / a free-tier proxy) without changing the tool-use
+  // logic. Unset = talk to Anthropic directly. See NEEDED.md.
+  const anthropicBaseUrl = process.env.ANTHROPIC_BASE_URL?.trim();
+  const client = new Anthropic(
+    anthropicBaseUrl ? { apiKey, baseURL: anthropicBaseUrl } : { apiKey },
+  );
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
   const tz = body.timezone || "UTC";

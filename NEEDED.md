@@ -8,7 +8,89 @@ Nothing here blocks the deploy.
 
 ---
 
-## 0. NEW in this PR: pricing badges — one SQL run needed
+## 0. NEWEST PR — AI-tools catalogue upgrades
+
+This PR adds security headers, an AI "Auto-fill" for the links section, rate
+limiting, a cron heartbeat, the Context7 MCP, and a Mobbin-style finance/
+overview redesign. **All of it ships working with zero config** — the list
+below is only to light up the optional parts. Grouped by the catalogue tool.
+
+### 0.1 Security headers + Content-Security-Policy *(Security Headers / MDN Observatory)*
+
+`next.config.ts` now sends HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options`,
+`Referrer-Policy`, `Permissions-Policy` (all **enforced**), plus a
+**`Content-Security-Policy-Report-Only`**. Report-Only means it **reports**
+violations to the browser console but **blocks nothing** — safe on an app with
+Supabase realtime, PostHog, Sentry and motion's inline styles.
+
+**Your step (when ready to enforce):**
+1. Deploy, use the app for a few days, watch the console for
+   `[Report Only] Refused to…` messages.
+2. Add any legit origin it flags to the matching directive in `next.config.ts`.
+3. When it's quiet, rename the header key `Content-Security-Policy-Report-Only`
+   → `Content-Security-Policy` to enforce. Verify at
+   <https://securityheaders.com> and <https://developer.mozilla.org/en-US/observatory>.
+
+### 0.2 AI "Auto-fill" for links *(Jina Reader / Firecrawl + Claude)*
+
+The Add/Edit AI-link dialog has a new **Auto-fill** button: paste a URL and it
+reads the page and fills the title, description, category and pricing.
+
+- **Works now with no key** — it uses **Jina Reader** (keyless) for the title +
+  description.
+- **Category + pricing + tighter description** turn on when `ANTHROPIC_API_KEY`
+  is set (the same key your quick-add already uses) — Claude Haiku picks the
+  best category from *your* list and guesses the pricing tier.
+- Optional: `JINA_API_KEY` raises Jina's rate limit; `FIRECRAWL_API_KEY`
+  (<https://firecrawl.dev>) swaps in Firecrawl for more robust extraction.
+
+Endpoint: `POST /api/ai-links/enrich`. It's read-only (never writes your DB) and
+rate-limited (see 0.3).
+
+### 0.3 Upstash rate limiting *(Upstash)*
+
+The new AI route (and any future one) is rate-limited. With no config it uses an
+in-memory limiter; set **`UPSTASH_REDIS_REST_URL`** + **`UPSTASH_REDIS_REST_TOKEN`**
+(free at <https://upstash.com>) to make it **distributed** across serverless
+instances. Falls back to in-memory automatically if Redis is unreachable.
+
+### 0.4 Renewal-warnings cron heartbeat *(Better Stack / UptimeRobot)*
+
+The daily renewal-warnings cron now pings a heartbeat **only after a successful
+run**, so if it silently fails (or the middleware bounce you documented earlier
+is still happening) your monitor alerts you.
+
+**Your step:** create a heartbeat/cron monitor at <https://betterstack.com> (or
+UptimeRobot), and set its URL as the **`HEARTBEAT_URL`** env var. No-op until set.
+
+### 0.5 Context7 MCP *(Context7)*
+
+`.mcp.json` now registers **Context7** alongside your Supabase + notes servers.
+When you edit this repo with Claude Code it pulls version-accurate **Next.js 16 /
+React 19 / Tailwind v4** docs — directly serving the `AGENTS.md` rule *"read the
+docs before writing code."* Activates automatically in Claude Code; no keys.
+
+### 0.6 LLM gateway seam *(OpenRouter / Groq / Google AI Studio)*
+
+`quick-add` (and the new enrich route) honour an optional **`ANTHROPIC_BASE_URL`**
+so you can route Claude calls through an Anthropic-compatible gateway for cost
+caps / caching. Unset = talk to Anthropic directly.
+
+### 0.7 Finance + overview redesign *(Mobbin-inspired)* — shipped, no action
+
+The Finances page now leads with a **fintech-style hero** (big net-worth balance
++ this-month Income / Expense / Net tiles), and the overview **KPI cards** got a
+cleaner label-and-icon-chip layout. All in your existing design tokens, so light
+and dark both work. Purely visual — nothing to configure.
+
+> **Verification note:** typecheck, lint, and `next build` all pass. I could not
+> capture a live screenshot from this sandbox (the dev-preview needs real
+> `NEXT_PUBLIC_SUPABASE_*` values and the sandbox kept killing the dev server),
+> so give the Finances page and overview a quick look after deploy.
+
+---
+
+## A. (earlier PR) pricing badges — one SQL run needed
 
 Every AI link now has a structured **pricing** field rendered as a colored
 badge next to the site host: **Free = green**, **Free tier + paid = yellow**,

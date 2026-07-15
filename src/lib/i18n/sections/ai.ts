@@ -33,6 +33,11 @@ type AiStrings = {
   pricing: string;
   pricingNone: string;
   pricingLabel: { free: string; freemium: string; paid: string };
+  autoFill: string;
+  autoFillHint: string;
+  enriching: string;
+  enrichNeedsUrl: string;
+  enrichFailed: string;
   cancel: string;
   create: string;
   save: string;
@@ -99,6 +104,11 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
       freemium: "Free tier + paid",
       paid: "Paid",
     },
+    autoFill: "Auto-fill",
+    autoFillHint: "Read the page and fill in the title, description, category and pricing.",
+    enriching: "Reading…",
+    enrichNeedsUrl: "Enter a URL first, then Auto-fill.",
+    enrichFailed: "Couldn't read that page — fill the fields in manually.",
     cancel: "Cancel",
     create: "Create",
     save: "Save",
@@ -161,6 +171,11 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
       freemium: "Free tier + placené",
       paid: "Placené",
     },
+    autoFill: "Doplnit",
+    autoFillHint: "Načte stránku a doplní název, popis, kategorii a cenu.",
+    enriching: "Načítání…",
+    enrichNeedsUrl: "Nejprve zadej URL, pak Doplnit.",
+    enrichFailed: "Stránku se nepodařilo načíst — vyplň pole ručně.",
     cancel: "Zrušit",
     create: "Vytvořit",
     save: "Uložit",

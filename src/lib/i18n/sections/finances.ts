@@ -3,6 +3,9 @@ type FinancesStrings = {
   description: string;
   netWorth: string;
   acrossAccounts: (n: number) => string;
+  accountsTitle: string;
+  thisMonth: string;
+  net: string;
   accountNamePlaceholder: string;
   balancePlaceholder: string;
   addAccount: string;
@@ -40,6 +43,9 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     description: "Accounts, transactions, and trends.",
     netWorth: "Net worth",
     acrossAccounts: (n) => `across ${n} account${n === 1 ? "" : "s"}`,
+    accountsTitle: "Accounts",
+    thisMonth: "This month",
+    net: "Net",
     accountNamePlaceholder: "Account name",
     balancePlaceholder: "Balance",
     addAccount: "Add account",
@@ -74,6 +80,9 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     description: "Účty, transakce a trendy.",
     netWorth: "Čisté jmění",
     acrossAccounts: (n) => (n === 1 ? "na 1 účtu" : `na ${n} účtech`),
+    accountsTitle: "Účty",
+    thisMonth: "Tento měsíc",
+    net: "Netto",
     accountNamePlaceholder: "Název účtu",
     balancePlaceholder: "Zůstatek",
     addAccount: "Přidat účet",

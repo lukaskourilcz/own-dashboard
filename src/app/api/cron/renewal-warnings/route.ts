@@ -154,5 +154,21 @@ export async function GET(request: Request) {
     }
   }
 
+  // Uptime heartbeat (Better Stack / UptimeRobot). Fires only after a
+  // successful run, so a failed/never-invoked cron sends no ping and the
+  // monitor alerts you — this daily job is otherwise invisible when it breaks.
+  // No-op until HEARTBEAT_URL is set. See NEEDED.md.
+  await pingHeartbeat();
+
   return NextResponse.json({ ok: true, scanned: rows.length, sent });
+}
+
+async function pingHeartbeat(): Promise<void> {
+  const url = process.env.HEARTBEAT_URL;
+  if (!url) return;
+  try {
+    await fetch(url, { signal: AbortSignal.timeout(10_000) });
+  } catch {
+    // Heartbeat is best-effort; never let it affect the cron's own result.
+  }
 }
