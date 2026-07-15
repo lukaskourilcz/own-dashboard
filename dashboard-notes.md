@@ -90,6 +90,45 @@ were cleared.
 choice). If the post-push delete fails, the push is still reported as saved and
 the notes are left in place.
 
+### ~~5. AI links: researched & ranked resource catalogue~~
+> Go to the AI links section and search the internet for great AI related
+> websites - I want a list of sites that use AI for design, or for any free
+> APIs, for any components, literally for anything that can improve my projects
+> that I am creating using Claude Code. Everything from hosting / design /
+> performance / data, etc. Rank each site 1–5 and drop anything scoring 1–2.
+
+**Done.** Researched ~60 candidate sites (July 2026) across AI design,
+components, free APIs/data, hosting/backend, performance/monitoring, Claude
+Code/MCP, security and inspiration; kept the 48 that scored 3+/5 (after
+trimming, everything kept is a 4 or 5).
+
+- Delivered as **`supabase/seed-ai-links.sql`** — the AI links data is per-user
+  in Supabase (RLS), so it can't be committed as app data. Run the script once
+  in the Supabase SQL Editor (see `NEEDED.md` §0) and the links appear in the
+  AI section, grouped into 8 categories (AI DESIGN, COMPONENTS & UI, FREE APIS
+  & DATA, HOSTING & BACKEND, PERFORMANCE & MONITORING, CLAUDE CODE & MCP,
+  SECURITY, INSPIRATION), each description prefixed with its score (`5/5 · …`).
+- **Idempotent:** categories are reused by name (case-insensitive), links are
+  deduped by URL (scheme/`www.`/trailing-slash-insensitive) against the whole
+  existing collection, and `created_at` is staggered per rank so the
+  best-scored links render first (the panel sorts newest-first).
+- **Verified** on a local Postgres 16 with the repo's real `ai_*` DDL + RLS and
+  a stubbed `auth.users`: fresh run inserted 46/48 (two deliberately
+  pre-existing URLs — one an `http://www.` variant — were correctly skipped),
+  re-run inserted 0, category `SECURITY` was reused rather than duplicated.
+
+**Deviations / things to know:**
+- Scored but **excluded** (1–2/5 or redundant next to a kept site): Railway &
+  Fly.io (free tiers effectively gone), Netlify (credit-based now, and Vercel
+  already covers it), JSONPlaceholder (superseded by DummyJSON), mcp.so
+  (redundant vs Smithery/PulseMCP), Uizard/Magic Patterns/Krea (weaker fit
+  than v0/Stitch/Recraft), publicapis.io-style SEO clones, and self-ranking
+  "best AI tool" sites (Komposo, AIDesigner) that couldn't be independently
+  verified.
+- Already-integrated services (Vercel, Supabase, Sentry, PostHog, Lucide) were
+  left out on purpose — the list is for things the projects don't have yet.
+- No app code changed in this item; it's data (seed SQL) + docs only.
+
 ---
 
 ## Verification done this session
