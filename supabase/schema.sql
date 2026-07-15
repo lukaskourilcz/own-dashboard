@@ -1156,9 +1156,17 @@ create table if not exists public.ai_links (
   title text not null,
   url text not null,
   description text,
+  -- Cost tier badge: 'free' (green), 'freemium' = free tier + paid (yellow),
+  -- 'paid' (red). Null = no badge shown.
+  pricing text check (pricing in ('free', 'freemium', 'paid')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Pricing migration: existing installs need the column too.
+alter table public.ai_links
+  add column if not exists pricing text
+    check (pricing in ('free', 'freemium', 'paid'));
 
 create index if not exists ai_links_user_created_idx
   on public.ai_links (user_id, created_at desc);
