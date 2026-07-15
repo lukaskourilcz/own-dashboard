@@ -18,6 +18,7 @@ type TodosStrings = {
   dueDateFormat: string;
   fromPartner: (name: string) => string;
   partnerFallback: string;
+  otherCategory: string;
 };
 
 export const todos: { en: TodosStrings; cs: TodosStrings } = {
@@ -40,6 +41,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dueDateFormat: "d MMM",
     fromPartner: (name) => `From ${name}`,
     partnerFallback: "partner",
+    otherCategory: "Other",
   },
   cs: {
     title: "Úkoly",
@@ -66,6 +68,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dueDateFormat: "d. MMM",
     fromPartner: (name) => `Od: ${name}`,
     partnerFallback: "partnera",
+    otherCategory: "Ostatní",
   },
 };
 

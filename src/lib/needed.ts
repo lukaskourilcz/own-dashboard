@@ -51,6 +51,38 @@ export function parseNeeded(
   return items;
 }
 
+/** Light markdown → plain text for a task title: unwrap links, bold and code,
+ * drop trailing "→ §x.y" cross-refs, collapse whitespace. */
+export function cleanNeededText(s: string): string {
+  return s
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // [text](url) → text
+    .replace(/\*\*([^*]+)\*\*/g, "$1") // **bold** → bold
+    .replace(/`([^`]+)`/g, "$1") // `code` → code
+    .replace(/\s*→\s*§[\w.]+\s*$/, "") // trailing "→ §0.2"
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * The items to import as todos. Prefers explicit task checkboxes (`- [ ]`) when
+ * a file uses them — that's the file's real action list — and otherwise falls
+ * back to every open list item (same as the on-screen checklist). Titles are
+ * cleaned of markdown.
+ */
+export function neededTodoItems(
+  content: string,
+  repo: GithubRepo,
+  htmlUrl: string | null,
+): NeededItem[] {
+  const all = parseNeeded(content, repo, htmlUrl);
+  const CHECKBOX_RE = /^\s*(?:[-*+]|\d+\.)\s+\[[ xX]?\]/;
+  const usesCheckboxes = all.some((it) => CHECKBOX_RE.test(it.raw));
+  const chosen = usesCheckboxes
+    ? all.filter((it) => CHECKBOX_RE.test(it.raw))
+    : all;
+  return chosen.map((it) => ({ ...it, text: cleanNeededText(it.text) }));
+}
+
 /** Remove the first line exactly equal to `raw` from `content`. Returns the new
  * content plus whether a line was removed (false = it was already gone). */
 export function removeNeededLine(

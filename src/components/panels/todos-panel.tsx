@@ -116,6 +116,25 @@ export function TodosPanel({
   const done = todos.filter((td) => td.done);
   const visible = compact ? open.slice(0, 5) : todos;
 
+  // Full view: bucket tasks by category (repo), uncategorized last. When no
+  // task has a category this collapses to a single ungrouped list (unchanged).
+  // Plain computation — the React Compiler handles memoization (matching the
+  // open/done/visible consts above).
+  const categoryMap = new Map<string | null, Todo[]>();
+  for (const td of visible) {
+    const key = td.category ?? null;
+    const arr = categoryMap.get(key);
+    if (arr) arr.push(td);
+    else categoryMap.set(key, [td]);
+  }
+  const grouped = [...categoryMap.entries()].sort((a, b) => {
+    if (a[0] === b[0]) return 0;
+    if (a[0] === null) return 1; // "Other" sinks to the bottom
+    if (b[0] === null) return -1;
+    return a[0].localeCompare(b[0]);
+  });
+  const hasCategories = grouped.some(([cat]) => cat !== null);
+
   if (compact) {
     return (
       <Card>
@@ -204,6 +223,28 @@ export function TodosPanel({
                 title={t.todos.nothingOnPlate}
                 description={t.todos.nothingOnPlateDescription}
               />
+            ) : hasCategories ? (
+              <div className="space-y-4">
+                {grouped.map(([cat, items]) => (
+                  <div key={cat ?? "__other__"}>
+                    <SectionLabel className="mb-1 flex items-center gap-1.5">
+                      <span className="truncate">
+                        {cat ?? t.todos.otherCategory}
+                      </span>
+                      <span className="tabular text-foreground-subtle">
+                        {items.length}
+                      </span>
+                    </SectionLabel>
+                    <TodoList
+                      t={t}
+                      locale={locale}
+                      items={items}
+                      onToggle={toggle}
+                      onRemove={remove}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : (
               <TodoList
                 t={t}
