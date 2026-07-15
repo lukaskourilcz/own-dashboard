@@ -8,6 +8,31 @@ Nothing here blocks the deploy.
 
 ---
 
+## 0. NEW in this PR: load the curated AI links into your dashboard
+
+**Status without you:** the AI links section is unchanged — the new catalogue
+lives only in a seed script until you run it.
+
+**To load it (one step):**
+
+1. Supabase Dashboard → **SQL Editor** → paste the whole of
+   [`supabase/seed-ai-links.sql`](./supabase/seed-ai-links.sql) → **Run**.
+
+That inserts a researched, ranked catalogue of ~48 sites (AI design, components,
+free APIs, hosting, performance, Claude Code/MCP, security, inspiration) into
+your **AI links** section, grouped into 8 categories. Each description starts
+with its score (`5/5 · …`); only sites scoring 3+ were included.
+
+- **Safe to re-run** — categories are reused by name, links are deduped by URL
+  (ignores `http/https`, `www.` and trailing slashes), and nothing you already
+  have is touched.
+- The script targets the account `kouril.lukas@gmail.com`; edit `v_email` at
+  the top of the `do $$` block if your login email ever changes.
+- Verified locally against a Postgres 16 instance using the repo's real DDL:
+  first run inserts everything missing, second run inserts `0`.
+
+---
+
 ## 1. PostHog — analytics, session replay, feature flags (optional)
 
 **Status without you:** the PostHog SDK never loads, no data is sent, and the
