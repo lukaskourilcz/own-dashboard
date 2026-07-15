@@ -1,14 +1,55 @@
-# NEEDED — manual steps after this PR
+# NEEDED — your to-do list
 
-Everything in this PR works **as-is with no action** — every new integration is
-opt-in and degrades gracefully. This file lists the optional things *you* can do
-to unlock the parts that need external accounts or a decision from you.
-
-Nothing here blocks the deploy.
+Everything is **merged and live with no action** — every integration degrades
+gracefully. This file is your checklist to switch on the optional parts. Nothing
+here blocks the deploy.
 
 ---
 
-## 0. NEWEST PR — AI-tools catalogue upgrades
+## ⭐ Start here — the whole checklist
+
+Tick these off top to bottom. Effort in brackets. Details for each are in the
+numbered sections below.
+
+- [ ] **Run the AI-links pricing SQL** once in Supabase — makes the color badges
+  appear. [2 min] → §A
+- [ ] **Add `ANTHROPIC_API_KEY`** in Vercel (if not already set) — turns the
+  links **Auto-fill** from title-only into smart category + pricing. [3 min] → §0.2
+- [ ] **Add `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`** — distributed
+  rate limiting for the AI route. [5 min] → §0.3
+- [ ] **Add `HEARTBEAT_URL` + create a cron monitor** — get alerted if the daily
+  renewal-emails job fails. [5 min] → §0.4
+- [ ] **Eyeball the Finances page + overview** after deploy and tell me if you
+  want the redesign tuned. [1 min] → §0.7
+- [ ] **When ready: enforce the CSP** — one-line edit after checking the console.
+  [10 min, later] → §0.1
+- [ ] *(Optional)* `JINA_API_KEY`, `FIRECRAWL_API_KEY`, `ANTHROPIC_BASE_URL` —
+  only if you want them. → §0.2 / §0.6
+- [ ] *(For editing with Claude Code, not the app)* Authorize the MCP
+  connectors. → §0.8
+
+### All the env vars in one place
+
+Add these in **Vercel → your `own-dashboard` project → Settings → Environment
+Variables** (set for **Production**, and Preview if you use it), then **redeploy**
+(Deployments → ⋯ → Redeploy). All are **optional** and server-side.
+
+| Env var | Unlocks | Where to get it | Section |
+| --- | --- | --- | --- |
+| `ANTHROPIC_API_KEY` | Smart Auto-fill (category + pricing) + existing quick-add | <https://console.anthropic.com> → API Keys | §0.2 |
+| `UPSTASH_REDIS_REST_URL` | Distributed rate limiting | Upstash console → your DB → REST | §0.3 |
+| `UPSTASH_REDIS_REST_TOKEN` | Distributed rate limiting | Upstash console → your DB → REST | §0.3 |
+| `HEARTBEAT_URL` | Cron failure alerts | Better Stack / UptimeRobot monitor URL | §0.4 |
+| `JINA_API_KEY` | Higher Jina rate limit *(optional)* | <https://jina.ai/reader> | §0.2 |
+| `FIRECRAWL_API_KEY` | Firecrawl extraction *(optional)* | <https://firecrawl.dev> | §0.2 |
+| `ANTHROPIC_BASE_URL` | Route Claude via a gateway *(optional)* | your gateway | §0.6 |
+
+> **Tip:** server-side vars like these take effect on the next deploy. After
+> adding any, trigger a redeploy so the running functions pick them up.
+
+---
+
+## 0. This PR — exact steps per feature
 
 This PR adds security headers, an AI "Auto-fill" for the links section, rate
 limiting, a cron heartbeat, the Context7 MCP, and a Mobbin-style finance/
@@ -23,70 +64,114 @@ below is only to light up the optional parts. Grouped by the catalogue tool.
 violations to the browser console but **blocks nothing** — safe on an app with
 Supabase realtime, PostHog, Sentry and motion's inline styles.
 
-**Your step (when ready to enforce):**
-1. Deploy, use the app for a few days, watch the console for
-   `[Report Only] Refused to…` messages.
-2. Add any legit origin it flags to the matching directive in `next.config.ts`.
-3. When it's quiet, rename the header key `Content-Security-Policy-Report-Only`
-   → `Content-Security-Policy` to enforce. Verify at
-   <https://securityheaders.com> and <https://developer.mozilla.org/en-US/observatory>.
+**Do this only when you're ready to enforce it (recommended after a few days):**
+
+1. Open the live site, open **DevTools → Console** (F12).
+2. Click around — dashboard, finances, calendar, add an AI link, etc.
+3. Look for lines like `[Report Only] Refused to load … Content Security Policy`.
+   - **None?** Great, go to step 4.
+   - **Some?** Note the blocked origin. Open `next.config.ts`, find the `csp`
+     array, and add that origin to the matching line (`connect-src` for API
+     calls, `img-src` for images, `script-src` for scripts). Redeploy, recheck.
+4. In `next.config.ts`, in the `securityHeaders` array, change the key
+   **`Content-Security-Policy-Report-Only`** to **`Content-Security-Policy`**
+   (delete `-Report-Only`). Commit + deploy.
+5. Confirm the grade at <https://securityheaders.com> (enter your URL) and
+   <https://developer.mozilla.org/en-US/observatory>.
+
+> Prefer I do step 4 for you later? Just say "enforce the CSP" once your console
+> is clean and I'll ship the one-line change.
 
 ### 0.2 AI "Auto-fill" for links *(Jina Reader / Firecrawl + Claude)*
 
-The Add/Edit AI-link dialog has a new **Auto-fill** button: paste a URL and it
-reads the page and fills the title, description, category and pricing.
+**What it is:** in the AI-links section, click **+ Add link**, paste a URL, and
+hit the new **Auto-fill** button — it reads the page and fills the fields.
 
-- **Works now with no key** — it uses **Jina Reader** (keyless) for the title +
-  description.
-- **Category + pricing + tighter description** turn on when `ANTHROPIC_API_KEY`
-  is set (the same key your quick-add already uses) — Claude Haiku picks the
-  best category from *your* list and guesses the pricing tier.
-- Optional: `JINA_API_KEY` raises Jina's rate limit; `FIRECRAWL_API_KEY`
-  (<https://firecrawl.dev>) swaps in Firecrawl for more robust extraction.
+**It already works** with no setup (title + description, via keyless Jina Reader).
 
-Endpoint: `POST /api/ai-links/enrich`. It's read-only (never writes your DB) and
-rate-limited (see 0.3).
+**To unlock smart category + pricing (recommended):**
+1. Get a key at <https://console.anthropic.com> → **API Keys** → **Create Key**
+   (starts with `sk-ant-…`). *You may already have this set for quick-add — if so,
+   skip; Auto-fill uses the same one.*
+2. Vercel → `own-dashboard` → **Settings → Environment Variables** → **Add New**:
+   - Key: `ANTHROPIC_API_KEY`  Value: your `sk-ant-…` key  → Production (+ Preview)
+   - **Save**, then **Deployments → ⋯ → Redeploy**.
+3. Test: add a link, paste e.g. `https://vercel.com`, click **Auto-fill** — it
+   should fill the name, a description, pick a category from your list, and set a
+   pricing badge.
+
+**Optional extras (skip unless you hit limits):**
+- `JINA_API_KEY` (<https://jina.ai/reader>) — raises Jina's free rate limit.
+- `FIRECRAWL_API_KEY` (<https://firecrawl.dev>) — more robust page extraction.
 
 ### 0.3 Upstash rate limiting *(Upstash)*
 
-The new AI route (and any future one) is rate-limited. With no config it uses an
-in-memory limiter; set **`UPSTASH_REDIS_REST_URL`** + **`UPSTASH_REDIS_REST_TOKEN`**
-(free at <https://upstash.com>) to make it **distributed** across serverless
-instances. Falls back to in-memory automatically if Redis is unreachable.
+**What it is:** the Auto-fill route is rate-limited. It works now (in-memory);
+Upstash makes the limit hold across all serverless instances.
+
+**Steps:**
+1. Sign up free at <https://upstash.com> → **Create Database** (Redis, pick a
+   region near your Vercel functions).
+2. On the database page, open the **REST** section and copy the two values.
+3. Vercel → **Settings → Environment Variables** → add both, then redeploy:
+   - `UPSTASH_REDIS_REST_URL` = the REST URL
+   - `UPSTASH_REDIS_REST_TOKEN` = the REST token
+4. Done — the app auto-detects them. (If Redis is ever unreachable it silently
+   falls back to in-memory, so it can't break a request.)
 
 ### 0.4 Renewal-warnings cron heartbeat *(Better Stack / UptimeRobot)*
 
-The daily renewal-warnings cron now pings a heartbeat **only after a successful
-run**, so if it silently fails (or the middleware bounce you documented earlier
-is still happening) your monitor alerts you.
+**What it is:** the daily subscription-renewal email job now pings a URL **only
+when it finishes successfully**. Point a "cron/heartbeat" monitor at that URL and
+you get alerted if a day's run fails or never runs.
 
-**Your step:** create a heartbeat/cron monitor at <https://betterstack.com> (or
-UptimeRobot), and set its URL as the **`HEARTBEAT_URL`** env var. No-op until set.
+**Steps:**
+1. Better Stack (<https://betterstack.com>): **Monitors → Create → Heartbeat**
+   (or **Cron**). Set the expected period to **1 day** with some grace (e.g. 1h).
+   *(UptimeRobot has an equivalent "Heartbeat" monitor.)*
+2. Copy the **heartbeat URL** it gives you.
+3. Vercel → **Settings → Environment Variables** → add, then redeploy:
+   - `HEARTBEAT_URL` = the heartbeat URL
+4. Verify: trigger the cron once (Vercel → your project → **Cron Jobs** → run, or
+   wait for 07:00 UTC) and confirm the monitor flips to "up".
 
-### 0.5 Context7 MCP *(Context7)*
+> Related: you earlier flagged that the auth middleware might bounce the cron to
+> `/login` before it runs (see §5 below). If the heartbeat monitor never goes
+> green, that's the likely cause — tell me and I'll fix the middleware matcher.
 
-`.mcp.json` now registers **Context7** alongside your Supabase + notes servers.
-When you edit this repo with Claude Code it pulls version-accurate **Next.js 16 /
-React 19 / Tailwind v4** docs — directly serving the `AGENTS.md` rule *"read the
-docs before writing code."* Activates automatically in Claude Code; no keys.
+### 0.5 Context7 MCP *(Context7)* — for editing, nothing to configure
 
-### 0.6 LLM gateway seam *(OpenRouter / Groq / Google AI Studio)*
+`.mcp.json` now registers **Context7**. Next time you open this repo in Claude
+Code it serves version-accurate **Next.js 16 / React 19 / Tailwind v4** docs.
+No keys, no app impact — it just makes future edits more accurate.
 
-`quick-add` (and the new enrich route) honour an optional **`ANTHROPIC_BASE_URL`**
-so you can route Claude calls through an Anthropic-compatible gateway for cost
-caps / caching. Unset = talk to Anthropic directly.
+### 0.6 LLM gateway seam *(optional — OpenRouter / Groq / Google AI Studio)*
 
-### 0.7 Finance + overview redesign *(Mobbin-inspired)* — shipped, no action
+Only if you want to route Claude calls through a gateway (cost caps / caching):
+set `ANTHROPIC_BASE_URL` to the gateway's Anthropic-compatible base URL in Vercel.
+Leave it unset to talk to Anthropic directly (the default). Nothing to do
+otherwise.
 
-The Finances page now leads with a **fintech-style hero** (big net-worth balance
-+ this-month Income / Expense / Net tiles), and the overview **KPI cards** got a
-cleaner label-and-icon-chip layout. All in your existing design tokens, so light
-and dark both work. Purely visual — nothing to configure.
+### 0.7 Finance + overview redesign — please eyeball, then tell me
 
-> **Verification note:** typecheck, lint, and `next build` all pass. I could not
-> capture a live screenshot from this sandbox (the dev-preview needs real
-> `NEXT_PUBLIC_SUPABASE_*` values and the sandbox kept killing the dev server),
-> so give the Finances page and overview a quick look after deploy.
+**Nothing to configure** — it's already live. After the deploy:
+1. Open **Finances** — it should lead with a big net-worth number and three
+   tiles (This month: Income / Expense / Net).
+2. Open the **overview/dashboard** — the KPI cards should show the label with a
+   small icon chip top-right and a large number below.
+3. Check both in **light and dark** (theme toggle).
+
+Tell me if you want any of it tuned — hero spacing, the gradient, tile order,
+colors — and I'll adjust. *(I built this verified by typecheck + lint + build,
+but couldn't screenshot it from the sandbox, so your eyes are the final check.)*
+
+### 0.8 Authorize MCP connectors *(only for editing with Claude Code)*
+
+Not needed for the app to run — this is so I (Claude Code) can use your Supabase,
+Gmail, Calendar and Drive connectors when helping you. In an **interactive**
+Claude Code session run **`/mcp`** and complete the sign-in for each of:
+`supabase`, `Gmail`, `Google_Calendar`, `Google_Drive`. (Context7 needs nothing.)
+I can't do this from a non-interactive session.
 
 ---
 
