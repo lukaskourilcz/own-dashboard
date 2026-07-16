@@ -19,6 +19,7 @@ import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
 import { CostsPanel } from "@/components/panels/costs-panel";
+import { JobsPanel } from "@/components/panels/jobs-panel";
 import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
@@ -44,10 +45,16 @@ import {
   fetchAiLinks,
   fetchBookPages,
   fetchBooks,
+  fetchCoverLetterTemplates,
   fetchImportantDates,
   fetchInvoiceItems,
   fetchInvoiceSettings,
   fetchInvoices,
+  fetchJobApplicationEvents,
+  fetchJobApplications,
+  fetchJobLastRun,
+  fetchJobListings,
+  fetchJobUserStates,
   fetchNotes,
   fetchPlans,
   fetchPrompts,
@@ -69,10 +76,16 @@ import type {
   AiLink,
   Book,
   BookPage,
+  CoverLetterTemplate,
   ImportantDate,
   Invoice,
   InvoiceItem,
   InvoiceSettings,
+  JobApplication,
+  JobApplicationEvent,
+  JobListing,
+  JobScrapeRun,
+  JobUserState,
   Note,
   Plan,
   Prompt,
@@ -113,6 +126,12 @@ type Props = {
   initialInvoices: Invoice[];
   initialInvoiceItems: InvoiceItem[];
   initialInvoiceSettings: InvoiceSettings | null;
+  initialJobListings: JobListing[];
+  initialJobUserStates: JobUserState[];
+  initialJobApplications: JobApplication[];
+  initialJobApplicationEvents: JobApplicationEvent[];
+  initialCoverLetterTemplates: CoverLetterTemplate[];
+  initialJobLastRun: JobScrapeRun | null;
   todayCalendar: EventsResult;
   weekCalendar: EventsResult;
   coupleCtx: CoupleContext;
@@ -137,6 +156,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
   d: "dates",
   r: "github",
   a: "ai",
+  j: "jobs",
 };
 
 export function DashboardShell({
@@ -163,6 +183,12 @@ export function DashboardShell({
   initialInvoices,
   initialInvoiceItems,
   initialInvoiceSettings,
+  initialJobListings,
+  initialJobUserStates,
+  initialJobApplications,
+  initialJobApplicationEvents,
+  initialCoverLetterTemplates,
+  initialJobLastRun,
   todayCalendar,
   weekCalendar,
   coupleCtx,
@@ -286,6 +312,38 @@ export function DashboardShell({
       initialInvoiceSettings,
       fetchInvoiceSettings,
     );
+  // No setter needed: listings and the run log only change server-side; a
+  // "Check now" refresh invalidates the queries and the fetchers re-pull.
+  const [jobListings] = useEntityStore(
+    qk.jobListings,
+    initialJobListings,
+    fetchJobListings,
+  );
+  const [jobUserStates, setJobUserStates] = useEntityStore(
+    qk.jobUserStates,
+    initialJobUserStates,
+    fetchJobUserStates,
+  );
+  const [jobApplications, setJobApplications] = useEntityStore(
+    qk.jobApplications,
+    initialJobApplications,
+    fetchJobApplications,
+  );
+  const [jobApplicationEvents, setJobApplicationEvents] = useEntityStore(
+    qk.jobApplicationEvents,
+    initialJobApplicationEvents,
+    fetchJobApplicationEvents,
+  );
+  const [coverLetterTemplates, setCoverLetterTemplates] = useEntityStore(
+    qk.coverLetterTemplates,
+    initialCoverLetterTemplates,
+    fetchCoverLetterTemplates,
+  );
+  const [jobLastRun] = useEntityStore<JobScrapeRun | null>(
+    qk.jobLastRun,
+    initialJobLastRun,
+    fetchJobLastRun,
+  );
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } =
     useDisplayCurrency();
   const [calendarPrefill, setCalendarPrefill] = useState<{
@@ -601,6 +659,22 @@ export function DashboardShell({
                     <CostsPanel
                       initialVisibleIds={repoVisibleIds}
                       onOpenRepos={() => setTab("github")}
+                    />
+                  )}
+
+                  {tab === "jobs" && (
+                    <JobsPanel
+                      listings={jobListings}
+                      userStates={jobUserStates}
+                      setUserStates={setJobUserStates}
+                      applications={jobApplications}
+                      setApplications={setJobApplications}
+                      events={jobApplicationEvents}
+                      setEvents={setJobApplicationEvents}
+                      templates={coverLetterTemplates}
+                      setTemplates={setCoverLetterTemplates}
+                      lastRun={jobLastRun}
+                      userId={user.id}
                     />
                   )}
 

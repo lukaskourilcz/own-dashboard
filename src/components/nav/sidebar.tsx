@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import {
   Activity,
   BookOpen,
+  BriefcaseBusiness,
   CalendarDays,
   CreditCard,
   FileText,
@@ -63,6 +64,7 @@ export const NAV_ITEMS: NavItem[] = [
   { value: "github", icon: GithubIcon },
   { value: "costs", icon: Gauge },
   { value: "ai", icon: Sparkles },
+  { value: "jobs", icon: BriefcaseBusiness },
 ];
 
 export function Sidebar({

@@ -1271,3 +1271,240 @@ create policy "reference_rows update own" on public.reference_rows
 drop policy if exists "reference_rows delete own" on public.reference_rows;
 create policy "reference_rows delete own" on public.reference_rows
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Notification log — one row per notification actually sent (renewal
+-- warning emails today; anything else later). The daily cron reads today's
+-- rows to dedupe retried invocations, so a (user, kind, ref) pair is
+-- emailed at most once per day. Written by the cron with the service role
+-- (bypasses RLS); users can read their own history.
+-- =============================================================
+create table if not exists public.notification_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null,
+  ref_id uuid,
+  meta jsonb,
+  sent_on date not null default current_date,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notification_log_user_sent_idx
+  on public.notification_log (user_id, sent_on desc);
+
+alter table public.notification_log enable row level security;
+
+drop policy if exists "notification_log select own" on public.notification_log;
+create policy "notification_log select own" on public.notification_log
+  for select using (auth.uid() = user_id);
+
+-- =============================================================
+-- Jobs — daily-scraped, remote-friendly European job listings plus the
+-- user's application tracker (cover letters, templates, status history).
+--
+-- job_listings is GLOBAL (no user_id): the cron scrapes every source once
+-- for all users. Any signed-in user can read; only the scraper writes,
+-- using the service role (which bypasses RLS) — hence no insert/update/
+-- delete policies at all.
+-- =============================================================
+create table if not exists public.job_listings (
+  id uuid primary key default gen_random_uuid(),
+  -- Scraper source id ('startupjobs', 'jobscz', 'pracecz', 'remoteok', …).
+  -- Open (no check constraint) so adding a source never needs a migration.
+  source text not null,
+  -- The source's own id/slug — the upsert key that keeps re-scrapes from
+  -- duplicating rows.
+  external_id text not null,
+  title text not null,
+  company text,
+  url text not null,
+  -- Raw location string as scraped ("Praha", "Europe, UK", "Anywhere"…).
+  location text,
+  -- Which of the tracked role buckets the title matched.
+  role text not null check (role in ('frontend', 'fullstack', 'software')),
+  remote boolean not null default true,
+  salary text,
+  tags text[] not null default '{}',
+  seniority text,
+  -- Source-reported publish date, when the source exposes one.
+  posted_at timestamptz,
+  first_seen_at timestamptz not null default now(),
+  -- Bumped on every scrape that still returns the offer; listings not seen
+  -- for JOB_STALE_DAYS get pruned by the cron.
+  last_seen_at timestamptz not null default now(),
+  unique (source, external_id)
+);
+
+create index if not exists job_listings_first_seen_idx
+  on public.job_listings (first_seen_at desc);
+create index if not exists job_listings_last_seen_idx
+  on public.job_listings (last_seen_at);
+
+alter table public.job_listings enable row level security;
+
+drop policy if exists "job_listings select authenticated" on public.job_listings;
+create policy "job_listings select authenticated" on public.job_listings
+  for select to authenticated using (true);
+
+-- Per-user triage state on a listing: shortlist it or hide it from the
+-- stack. One row per (user, listing); own-only RLS.
+create table if not exists public.job_user_state (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  listing_id uuid not null references public.job_listings(id) on delete cascade,
+  state text not null check (state in ('shortlisted', 'hidden')),
+  created_at timestamptz not null default now(),
+  unique (user_id, listing_id)
+);
+
+create index if not exists job_user_state_user_idx
+  on public.job_user_state (user_id, state);
+
+alter table public.job_user_state enable row level security;
+
+drop policy if exists "job_user_state select own" on public.job_user_state;
+create policy "job_user_state select own" on public.job_user_state
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "job_user_state insert own" on public.job_user_state;
+create policy "job_user_state insert own" on public.job_user_state
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "job_user_state update own" on public.job_user_state;
+create policy "job_user_state update own" on public.job_user_state
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "job_user_state delete own" on public.job_user_state;
+create policy "job_user_state delete own" on public.job_user_state
+  for delete using (auth.uid() = user_id);
+
+-- One row per application the user submitted. Job fields are SNAPSHOTTED
+-- from the listing at apply time (listing_id is only a soft link, nulled
+-- when the listing is pruned) so the history stays intact even after the
+-- offer disappears from the boards. Own-only RLS.
+create table if not exists public.job_applications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  listing_id uuid references public.job_listings(id) on delete set null,
+  title text not null,
+  company text,
+  url text,
+  source text,
+  location text,
+  cover_letter text not null default '',
+  status text not null default 'applied'
+    check (status in ('applied', 'interviewing', 'offer', 'rejected', 'withdrawn')),
+  -- The date the user actually applied ("when did I apply?" at a glance).
+  applied_on date not null default current_date,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists job_applications_user_applied_idx
+  on public.job_applications (user_id, applied_on desc);
+
+alter table public.job_applications enable row level security;
+
+drop policy if exists "job_applications select own" on public.job_applications;
+create policy "job_applications select own" on public.job_applications
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "job_applications insert own" on public.job_applications;
+create policy "job_applications insert own" on public.job_applications
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "job_applications update own" on public.job_applications;
+create policy "job_applications update own" on public.job_applications
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "job_applications delete own" on public.job_applications;
+create policy "job_applications delete own" on public.job_applications
+  for delete using (auth.uid() = user_id);
+
+-- Append-only history trail per application ("applied", each status
+-- change, ad-hoc notes) — powers the timeline in the Applied view. Rows
+-- are never edited, so there is no update policy. Cascade-deleted with
+-- the application. Own-only RLS.
+create table if not exists public.job_application_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  application_id uuid not null references public.job_applications(id) on delete cascade,
+  kind text not null check (kind in ('applied', 'status', 'note')),
+  detail text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists job_application_events_app_idx
+  on public.job_application_events (user_id, application_id, created_at desc);
+
+alter table public.job_application_events enable row level security;
+
+drop policy if exists "job_application_events select own" on public.job_application_events;
+create policy "job_application_events select own" on public.job_application_events
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "job_application_events insert own" on public.job_application_events;
+create policy "job_application_events insert own" on public.job_application_events
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "job_application_events delete own" on public.job_application_events;
+create policy "job_application_events delete own" on public.job_application_events
+  for delete using (auth.uid() = user_id);
+
+-- Reusable cover-letter templates. {{position}} / {{company}} / {{source}} /
+-- {{date}} placeholders are substituted client-side when a template is
+-- loaded into an application. Own-only RLS.
+create table if not exists public.cover_letter_templates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists cover_letter_templates_user_idx
+  on public.cover_letter_templates (user_id, created_at desc);
+
+alter table public.cover_letter_templates enable row level security;
+
+drop policy if exists "cover_letter_templates select own" on public.cover_letter_templates;
+create policy "cover_letter_templates select own" on public.cover_letter_templates
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "cover_letter_templates insert own" on public.cover_letter_templates;
+create policy "cover_letter_templates insert own" on public.cover_letter_templates
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "cover_letter_templates update own" on public.cover_letter_templates;
+create policy "cover_letter_templates update own" on public.cover_letter_templates
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "cover_letter_templates delete own" on public.cover_letter_templates;
+create policy "cover_letter_templates delete own" on public.cover_letter_templates
+  for delete using (auth.uid() = user_id);
+
+-- One row per scraper run (cron or manual refresh) — surfaces "last
+-- checked" in the Jobs header and per-source errors for debugging.
+-- Written with the service role only; readable by any signed-in user.
+create table if not exists public.job_scrape_runs (
+  id uuid primary key default gen_random_uuid(),
+  started_at timestamptz not null default now(),
+  finished_at timestamptz,
+  ok boolean not null default false,
+  inserted integer not null default 0,
+  refreshed integer not null default 0,
+  pruned integer not null default 0,
+  -- Per-source outcome map: { "<source>": { "count": n, "error": "…"? } }.
+  sources jsonb not null default '{}'::jsonb
+);
+
+create index if not exists job_scrape_runs_started_idx
+  on public.job_scrape_runs (started_at desc);
+
+alter table public.job_scrape_runs enable row level security;
+
+drop policy if exists "job_scrape_runs select authenticated" on public.job_scrape_runs;
+create policy "job_scrape_runs select authenticated" on public.job_scrape_runs
+  for select to authenticated using (true);

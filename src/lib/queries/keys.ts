@@ -27,6 +27,12 @@ export const qk = {
   invoices: ["invoices"] as const,
   invoiceItems: ["invoiceItems"] as const,
   invoiceSettings: ["invoiceSettings"] as const,
+  jobListings: ["jobListings"] as const,
+  jobUserStates: ["jobUserStates"] as const,
+  jobApplications: ["jobApplications"] as const,
+  jobApplicationEvents: ["jobApplicationEvents"] as const,
+  coverLetterTemplates: ["coverLetterTemplates"] as const,
+  jobLastRun: ["jobLastRun"] as const,
   // Network-backed.
   repos: ["github", "repos"] as const,
   calendarList: ["calendar", "list"] as const,

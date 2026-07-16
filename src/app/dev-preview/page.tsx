@@ -38,6 +38,12 @@ export default function PreviewPage() {
       initialInvoices={f.invoices}
       initialInvoiceItems={f.invoiceItems}
       initialInvoiceSettings={f.invoiceSettings}
+      initialJobListings={f.jobListings}
+      initialJobUserStates={f.jobUserStates}
+      initialJobApplications={f.jobApplications}
+      initialJobApplicationEvents={f.jobApplicationEvents}
+      initialCoverLetterTemplates={f.coverLetterTemplates}
+      initialJobLastRun={f.jobLastRun}
       todayCalendar={f.todayCalendar}
       weekCalendar={f.weekCalendar}
       coupleCtx={f.coupleCtx}

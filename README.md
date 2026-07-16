@@ -22,6 +22,7 @@ After signing in you land on **Overview** and can jump to any panel (sidebar, mo
 - **Notes / Prompts / Shortcuts / AI links** — a block editor, a copy-to-clipboard prompt library, a command cheatsheet grid, and a categorized link table.
 - **Repositories** — your GitHub repos with autosaving per-repo notes that compile to a `.md` and push back to GitHub.
 - **App costs & scaling** — per active repo, renders its root `stack-and-scaling.md` (stack, costs, scaling).
+- **Jobs** — remote-friendly European openings for frontend/fullstack/software roles, scraped daily at 10:00 (UTC+2) from startupjobs.cz, jobs.cz, prace.cz, Remote OK, Remotive, Arbeitnow, Jobicy and We Work Remotely; shortlist/hide triage, plus an application tracker with cover letters, reusable templates, applied dates and a status history.
 - **Settings** — language, display currency, theme, and which sections show in the nav.
 
 All data lives in your own Supabase Postgres with Row Level Security, so only you (and a partner, for what you choose to share) can read your records.

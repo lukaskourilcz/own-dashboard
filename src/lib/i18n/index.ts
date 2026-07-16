@@ -30,6 +30,7 @@ import { github } from "./sections/github";
 import { ai } from "./sections/ai";
 import { costs } from "./sections/costs";
 import { tugedr } from "./sections/tugedr";
+import { jobs } from "./sections/jobs";
 
 export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
 
@@ -62,6 +63,7 @@ export const dictionaries = {
     ai: ai.en,
     costs: costs.en,
     tugedr: tugedr.en,
+    jobs: jobs.en,
   },
   cs: {
     common: common.cs,
@@ -91,6 +93,7 @@ export const dictionaries = {
     ai: ai.cs,
     costs: costs.cs,
     tugedr: tugedr.cs,
+    jobs: jobs.cs,
   },
 };
 

@@ -17,6 +17,7 @@ type NavSection =
   | "github"
   | "costs"
   | "ai"
+  | "jobs"
   | "settings";
 
 type NavStrings = {
@@ -58,6 +59,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       github: "Repositories",
       costs: "Costs & scaling",
       ai: "AI links",
+      jobs: "Jobs",
       settings: "Settings",
     },
     short: { subscriptions: "Subs", github: "Repos", costs: "Costs" },
@@ -94,6 +96,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       github: "Repozitáře",
       costs: "Náklady a škálování",
       ai: "AI odkazy",
+      jobs: "Práce",
       settings: "Nastavení",
     },
     short: { subscriptions: "Předpl.", dates: "Dny", github: "Repa", costs: "Náklady" },

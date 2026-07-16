@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BookOpen,
+  BriefcaseBusiness,
   CalendarDays,
   CreditCard,
   FileText,
@@ -108,6 +109,7 @@ export function CommandPalette({
       { id: "go-github", label: s.github, group: "go", icon: GithubIcon, keywords: "github repos repositories git commit markdown notes repozitáře g r", run: go("github") },
       { id: "go-costs", label: s.costs, group: "go", icon: Gauge, keywords: "costs scaling pricing tech stack budget infrastructure náklady škálování", run: go("costs") },
       { id: "go-ai", label: s.ai, group: "go", icon: Sparkles, keywords: "ai tools sites links discoveries findings catalogue g a", run: go("ai") },
+      { id: "go-jobs", label: s.jobs, group: "go", icon: BriefcaseBusiness, keywords: "jobs positions openings applications cover letter práce pozice nabídky g j", run: go("jobs") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-quick-add",
