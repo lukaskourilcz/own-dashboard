@@ -1,7 +1,15 @@
-import { format, subDays } from "date-fns";
+import { differenceInCalendarDays, format, subDays } from "date-fns";
 
 export function todayKey(ref: Date = new Date()): string {
   return format(ref, "yyyy-MM-dd");
+}
+
+/**
+ * Whole calendar days from today until a `yyyy-MM-dd` date. Negative = overdue,
+ * 0 = due today, positive = days remaining. Powers task "time to finish".
+ */
+export function daysUntilDate(yyyyMmDd: string, ref: Date = new Date()): number {
+  return differenceInCalendarDays(parseDateOnly(yyyyMmDd), ref);
 }
 
 export function parseDateOnly(yyyyMmDd: string): Date {

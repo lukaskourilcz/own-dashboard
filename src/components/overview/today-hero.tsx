@@ -17,7 +17,7 @@ import {
   streaksUncheckedToday,
   uncheckedTodayWithCounts,
 } from "@/lib/streaks";
-import { todayKey } from "@/lib/date-keys";
+import { daysUntilDate, todayKey } from "@/lib/date-keys";
 import { useNow } from "@/lib/use-now";
 import { nextUpcoming } from "@/lib/important-dates";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
@@ -104,10 +104,16 @@ export function TodayHero({
     return { ongoing, nextUp };
   }, [todayEvents, now]);
 
-  const dueToday = useMemo(
-    () => todos.filter((td) => !td.done && td.due_date && td.due_date <= today),
-    [todos, today],
-  );
+  // Tasks with a deadline, soonest first: overdue + due within the next week.
+  // Shows the "time to finish" so the 7-day NEEDED timers surface here.
+  const dueSoon = useMemo(() => {
+    if (!now) return [];
+    return todos
+      .filter(
+        (td) => !td.done && td.due_date && daysUntilDate(td.due_date, now) <= 7,
+      )
+      .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
+  }, [todos, now]);
 
   const atRisk = useMemo(
     () => uncheckedTodayWithCounts(streaks, streakLogs).filter((x) => x.count > 0),
@@ -274,30 +280,35 @@ export function TodayHero({
 
         <Column
           icon={ListTodo}
-          label={t.overview.dueToday}
+          label={t.overview.dueSoon}
           empty={t.overview.nothingDue}
-          isEmpty={dueToday.length === 0}
+          isEmpty={dueSoon.length === 0}
         >
           <ul className="space-y-1.5">
-            {dueToday.slice(0, 4).map((td) => (
-              <li key={td.id} className="flex items-start gap-2 text-sm">
-                <span
-                  className={cn(
-                    "tabular text-xs w-12 shrink-0 pt-0.5",
-                    td.due_date && td.due_date < today
-                      ? "text-destructive font-medium"
-                      : "text-foreground-subtle",
-                  )}
-                >
-                  {td.due_date === today
-                    ? t.overview.dueTodayTag
-                    : t.overview.overdue}
-                </span>
-                <span className="flex-1 truncate text-foreground">
-                  {td.title}
-                </span>
-              </li>
-            ))}
+            {dueSoon.slice(0, 4).map((td) => {
+              const left = td.due_date ? daysUntilDate(td.due_date, display) : 0;
+              return (
+                <li key={td.id} className="flex items-start gap-2 text-sm">
+                  <span
+                    className={cn(
+                      "tabular text-xs w-14 shrink-0 pt-0.5",
+                      left < 0
+                        ? "text-destructive font-medium"
+                        : left === 0
+                          ? "text-warning font-medium"
+                          : "text-foreground-subtle",
+                    )}
+                  >
+                    {left === 0
+                      ? t.overview.dueTodayTag
+                      : t.overview.daysTag(left)}
+                  </span>
+                  <span className="flex-1 truncate text-foreground">
+                    {td.title}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </Column>
 

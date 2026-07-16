@@ -59,6 +59,38 @@ create table if not exists public.todos (
 alter table public.todos
   add column if not exists category text;
 
+-- NEEDED.md task-card migration. A task imported from a repo's NEEDED.md keeps
+-- the full context needed to render a rich card, refresh against the file, and
+-- (once finished) commit its removal from that file:
+--   source          — 'github' for NEEDED.md-imported tasks, null = manual.
+--   repo_id         — GitHub numeric repo id (as text) for grouping/sync.
+--   repo_full_name  — "owner/name", shown on the card.
+--   repo_owner/name — split form, needed for the commit + file API calls.
+--   repo_url        — link back to the repo (or its NEEDED.md).
+--   needed_raw      — the exact NEEDED.md source line, so refresh can tell if
+--                     the item is still present and removal can be precise.
+--   generated_at    — when the task was generated (drives the 7-day timer;
+--                     due_date is set to generated_at + 7 days on import).
+alter table public.todos
+  add column if not exists source text;
+alter table public.todos
+  add column if not exists repo_id text;
+alter table public.todos
+  add column if not exists repo_full_name text;
+alter table public.todos
+  add column if not exists repo_owner text;
+alter table public.todos
+  add column if not exists repo_name text;
+alter table public.todos
+  add column if not exists repo_url text;
+alter table public.todos
+  add column if not exists needed_raw text;
+alter table public.todos
+  add column if not exists generated_at timestamptz;
+
+create index if not exists todos_user_source_idx
+  on public.todos (user_id, source);
+
 alter table public.todos enable row level security;
 
 drop policy if exists "todos select own" on public.todos;

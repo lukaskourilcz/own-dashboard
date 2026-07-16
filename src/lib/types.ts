@@ -14,6 +14,10 @@ export type Subscription = {
   updated_at: string;
 };
 
+// Where a task came from. "github" = generated from a repo's NEEDED.md (carries
+// the repo_* + needed_raw context below); null/"manual" = added by hand.
+export type TodoSource = "github" | "manual";
+
 export type Todo = {
   id: string;
   user_id: string;
@@ -24,6 +28,20 @@ export type Todo = {
   // NEEDED.md). Null = ungrouped, shown under the default "Other" section.
   category: string | null;
   created_at: string;
+  // NEEDED.md task-card context. All null for a hand-added task.
+  source: TodoSource | null;
+  // GitHub numeric repo id (as text) — groups tasks into per-repo cards.
+  repo_id: string | null;
+  repo_full_name: string | null;
+  repo_owner: string | null;
+  repo_name: string | null;
+  repo_url: string | null;
+  // The exact NEEDED.md source line — lets Refresh detect the item is still
+  // present and lets "delete finished" remove precisely from the file.
+  needed_raw: string | null;
+  // When the task was generated. due_date is set to generated_at + 7 days so
+  // the dashboard can show a time-to-finish countdown.
+  generated_at: string | null;
 };
 
 export type Streak = {
