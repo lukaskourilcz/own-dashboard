@@ -357,6 +357,100 @@ export type AiLink = {
 };
 
 // ---------------------------------------------------------------------------
+// Jobs — daily-scraped remote-friendly European job listings (global rows,
+// written by the cron with the service role) plus the user's application
+// tracker: applications with cover letters, an append-only event history,
+// reusable cover-letter templates, and per-listing triage state.
+// ---------------------------------------------------------------------------
+
+export type JobRole = "frontend" | "fullstack" | "software";
+
+export type JobListing = {
+  id: string;
+  source: string;
+  external_id: string;
+  title: string;
+  company: string | null;
+  url: string;
+  location: string | null;
+  role: JobRole;
+  remote: boolean;
+  salary: string | null;
+  tags: string[];
+  seniority: string | null;
+  posted_at: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+};
+
+export type JobUserStateValue = "shortlisted" | "hidden";
+
+export type JobUserState = {
+  id: string;
+  user_id: string;
+  listing_id: string;
+  state: JobUserStateValue;
+  created_at: string;
+};
+
+export type JobApplicationStatus =
+  | "applied"
+  | "interviewing"
+  | "offer"
+  | "rejected"
+  | "withdrawn";
+
+export type JobApplication = {
+  id: string;
+  user_id: string;
+  // Soft link to the scraped listing; null once the listing is pruned. The
+  // fields below are snapshots taken at apply time, so history survives.
+  listing_id: string | null;
+  title: string;
+  company: string | null;
+  url: string | null;
+  source: string | null;
+  location: string | null;
+  cover_letter: string;
+  status: JobApplicationStatus;
+  applied_on: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type JobApplicationEventKind = "applied" | "status" | "note";
+
+export type JobApplicationEvent = {
+  id: string;
+  user_id: string;
+  application_id: string;
+  kind: JobApplicationEventKind;
+  detail: string | null;
+  created_at: string;
+};
+
+export type CoverLetterTemplate = {
+  id: string;
+  user_id: string;
+  name: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type JobScrapeRun = {
+  id: string;
+  started_at: string;
+  finished_at: string | null;
+  ok: boolean;
+  inserted: number;
+  refreshed: number;
+  pruned: number;
+  sources: Record<string, { count: number; error?: string }>;
+};
+
+// ---------------------------------------------------------------------------
 // Shortcuts — commands/snippets kept one click away, shown in a grid. Each
 // cell copies its command on click; the description is shown as its tooltip.
 // Own-only RLS.

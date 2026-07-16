@@ -12,10 +12,16 @@ import type {
   AiLink,
   Book,
   BookPage,
+  CoverLetterTemplate,
   ImportantDate,
   Invoice,
   InvoiceItem,
   InvoiceSettings,
+  JobApplication,
+  JobApplicationEvent,
+  JobListing,
+  JobScrapeRun,
+  JobUserState,
   Note,
   Plan,
   Prompt,
@@ -247,3 +253,94 @@ export const coupleCtx: CoupleContext = {
 export const partnerData: PartnerData | null = null;
 export const selectedCalendarIds = ["primary"];
 export const repoVisibleIds: string[] = [];
+
+export const jobListings: JobListing[] = [
+  {
+    id: "job-1",
+    source: "startupjobs",
+    external_id: "102781",
+    title: "Senior Frontend Engineer (React)",
+    company: "Ecomail.cz",
+    url: "https://www.startupjobs.cz/nabidka/102781/senior-frontend-engineer",
+    location: "Praha",
+    role: "frontend",
+    remote: true,
+    salary: "90 000 – 120 000 Kč",
+    tags: ["react", "typescript"],
+    seniority: "senior",
+    posted_at: TS,
+    first_seen_at: TS,
+    last_seen_at: TS,
+  },
+  {
+    id: "job-2",
+    source: "remotive",
+    external_id: "2091062",
+    title: "Product Engineer (Fullstack)",
+    company: "Clipster",
+    url: "https://remotive.com/remote-jobs/software-development/x",
+    location: "Europe, UK",
+    role: "fullstack",
+    remote: true,
+    salary: null,
+    tags: ["golang", "react"],
+    seniority: null,
+    posted_at: TS,
+    first_seen_at: TS,
+    last_seen_at: TS,
+  },
+];
+
+export const jobUserStates: JobUserState[] = [];
+
+export const jobApplications: JobApplication[] = [
+  {
+    id: "app-1",
+    user_id: UID,
+    listing_id: "job-2",
+    title: "Product Engineer (Fullstack)",
+    company: "Clipster",
+    url: "https://remotive.com/remote-jobs/software-development/x",
+    source: "remotive",
+    location: "Europe, UK",
+    cover_letter: "Dear team, …",
+    status: "applied",
+    applied_on: ymd(0),
+    notes: null,
+    created_at: TS,
+    updated_at: TS,
+  },
+];
+
+export const jobApplicationEvents: JobApplicationEvent[] = [
+  {
+    id: "appev-1",
+    user_id: UID,
+    application_id: "app-1",
+    kind: "applied",
+    detail: null,
+    created_at: TS,
+  },
+];
+
+export const coverLetterTemplates: CoverLetterTemplate[] = [
+  {
+    id: "tpl-1",
+    user_id: UID,
+    name: "Frontend — English",
+    body: "Dear Hiring Manager,\n\nI am applying for {{position}} at {{company}}.",
+    created_at: TS,
+    updated_at: TS,
+  },
+];
+
+export const jobLastRun: JobScrapeRun = {
+  id: "run-1",
+  started_at: TS,
+  finished_at: TS,
+  ok: true,
+  inserted: 2,
+  refreshed: 0,
+  pruned: 0,
+  sources: { startupjobs: { count: 1 }, remotive: { count: 1 } },
+};

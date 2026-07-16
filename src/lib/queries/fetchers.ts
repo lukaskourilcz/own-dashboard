@@ -7,10 +7,16 @@ import type {
   AiLink,
   Book,
   BookPage,
+  CoverLetterTemplate,
   ImportantDate,
   Invoice,
   InvoiceItem,
   InvoiceSettings,
+  JobApplication,
+  JobApplicationEvent,
+  JobListing,
+  JobScrapeRun,
+  JobUserState,
   Note,
   Plan,
   Prompt,
@@ -242,4 +248,72 @@ export async function fetchReferenceRows(): Promise<ReferenceRow[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as ReferenceRow[];
+}
+
+// Listings are global rows (RLS: any signed-in user reads; only the scraper
+// writes), so there's no user filter — mirrors the server load.
+export async function fetchJobListings(): Promise<JobListing[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("job_listings")
+    .select("*")
+    .order("first_seen_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []) as JobListing[];
+}
+
+export async function fetchJobUserStates(): Promise<JobUserState[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("job_user_state").select("*");
+  if (error) throw error;
+  return (data ?? []) as JobUserState[];
+}
+
+export async function fetchJobApplications(): Promise<JobApplication[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("job_applications")
+    .select("*")
+    .order("applied_on", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as JobApplication[];
+}
+
+export async function fetchJobApplicationEvents(): Promise<
+  JobApplicationEvent[]
+> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("job_application_events")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  return (data ?? []) as JobApplicationEvent[];
+}
+
+export async function fetchCoverLetterTemplates(): Promise<
+  CoverLetterTemplate[]
+> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("cover_letter_templates")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as CoverLetterTemplate[];
+}
+
+export async function fetchJobLastRun(): Promise<JobScrapeRun | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("job_scrape_runs")
+    .select("*")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as JobScrapeRun | null;
 }

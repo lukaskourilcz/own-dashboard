@@ -39,6 +39,7 @@ The app is a tab-based dashboard. After you sign in with Google, you land on **O
 | Pulse | Daily 1-5 mood + one-line note; 30-day dual-line trend when paired | `g m` |
 | Dates | Anniversaries, birthdays, deadlines with live countdowns; recurring yearly or monthly | `g d` |
 | Couple | Send invites, accept/decline, configure what to share, unpair | `g u` |
+| Jobs | Daily-scraped remote-friendly European dev openings (stacked list with shortlist/hide), plus an application tracker with cover letters, templates and status history | `g j` |
 | Settings | Language (Čeština / English), display currency, light/dark, and which sections show in the nav | sidebar gear |
 
 A quick-add bar at the top of Overview routes by prefix — see [Quick-add](#quick-add-prefix-routing).
@@ -172,6 +173,18 @@ The pairing surface.
 - **Paired state**: shows partner's display name + email, an **Unpair** button (with confirm), and a mirror of what they share with you.
 - **Sharing toggles**: per-category (subscriptions, todos, streaks, finances, plans, books). Each toggle is optimistic, upserts a `sharing_prefs` row.
 - The accept flow inserts a `couples` row with canonical sorted user ids (matching the unique constraint), then marks the invite `accepted`. `router.refresh()` reloads server context so the rest of the dashboard immediately reflects the new pairing.
+
+### Jobs
+
+A job-hunt hub with two subsections: **Open positions** and **Applied**.
+
+- **Open positions** is a stacked list of remote-friendly European openings for the three tracked role buckets (frontend / fullstack / software engineer). A Vercel Cron hits `/api/cron/jobs-scrape` daily at **08:00 UTC (= 10:00 Prague in summer)**; a rate-limited **Check now** button (`/api/jobs/refresh`) runs the same scrape on demand. The header shows when the boards were last checked and warns when a source failed.
+- **Sources** (`src/lib/jobs/sources.ts`): startupjobs.cz (their public JSON API, paginated), jobs.cz and prace.cz (server-rendered HTML; the remote-work requirement is folded into the full-text query — "frontend remote", "vývojář z domova", … — because neither board exposes a remote URL filter), Remote OK, Remotive, Arbeitnow and Jobicy (public JSON APIs) and We Work Remotely (RSS). Every source is best-effort: one failing board records an error in the run log without sinking the scrape.
+- **Filtering** (`src/lib/jobs/filter.ts`): titles are classified into role buckets with negative guards (QA/DevOps/data/mobile/marketing titles are rejected); locations must be Europe-compatible — explicit Europe/EU country mentions win, "worldwide/anywhere" passes, other-region-only restrictions ("USA only", LATAM) fail, unknown text fails closed.
+- **Listings are global rows** (`job_listings`, unique on `(source, external_id)`): the cron scrapes once for all users with the service role; signed-in users read. Re-scrapes bump `last_seen_at`; listings unseen for 45 days are pruned. Per-user triage lives in `job_user_state` (shortlist pins the row to the top, hide fades it out).
+- **Apply flow**: the Apply button opens a dialog with the job pre-filled — cover letter editor, template loader, applied-on date and notes. Applications snapshot the job fields, so history survives pruning. A manual "Log application" covers jobs found elsewhere. Listings you already applied to get a badge.
+- **Applied** shows stat tiles (total / last 7 / last 30 days / active), and per application: status select (applied → interviewing → offer / rejected / withdrawn), the cover letter editor, notes, and an expandable **history timeline** (`job_application_events`: applied, every status change).
+- **Cover letter templates**: three built-in starters (professional / short / startup, in both languages) plus user-saved ones (`cover_letter_templates`, manageable in a dialog, or "Save as template" straight from a letter). `{{position}}`, `{{company}}`, `{{source}}` and `{{date}}` are substituted on load (`src/lib/jobs/template.ts`).
 
 ### Settings & internationalization
 
@@ -387,6 +400,13 @@ All tables have RLS enabled. Every column is described inline in `supabase/schem
 | `book_pages` | Daily page log per author per book; unique on `(book_id, user_id, log_date)` | Same as parent book |
 | `daily_pulse` | Daily 1-5 mood + note; unique on `(user_id, log_date)` | Always readable by paired partner |
 | `important_dates` | Anniversaries / birthdays / deadlines | Owner or couple member (when `couple_id` is set) |
+| `notification_log` | One row per sent notification; dedupes cron retries | Own only (written by cron via service role) |
+| `job_listings` | Scraped remote-friendly EU dev openings; unique `(source, external_id)` | Global: all signed-in users read; only the scraper writes |
+| `job_user_state` | Per-listing shortlist/hide triage | Own only |
+| `job_applications` | Applications with snapshot fields, cover letter, status, `applied_on` | Own only |
+| `job_application_events` | Append-only history (applied, status changes) | Own only |
+| `cover_letter_templates` | Reusable cover-letter templates | Own only |
+| `job_scrape_runs` | One row per scrape run (counts + per-source errors) | Global read; service-role writes |
 
 ### RLS model
 
@@ -430,7 +450,7 @@ These are wired up but each no-ops cleanly when its env vars are missing, so a m
 - **Resend** (`RESEND_API_KEY`, optional `RESEND_FROM`) — sends the daily subscription-renewal warning emails from the Vercel Cron job. Without it, the cron no-ops.
 - **Sentry** (`SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`, plus `SENTRY_ORG` + `SENTRY_PROJECT` for build-time source-map upload) — error monitoring and tracing. The build only wraps with Sentry when these are set.
 - **GitHub OAuth** (`GITHUB_OAUTH_CLIENT_ID` / `_SECRET`) — only needed to revoke the grant on "Disconnect GitHub" and to refresh expiring GitHub-App tokens; classic OAuth tokens work without them.
-- **Cron secret** (`CRON_SECRET`) — set it so the renewal-warnings endpoint only runs when called by Vercel Cron with the matching `Authorization: Bearer` header.
+- **Cron secret** (`CRON_SECRET`) — set it so the cron endpoints (renewal warnings, daily job scrape) only run when called by Vercel Cron with the matching `Authorization: Bearer` header.
 
 ### What you still don't need
 
@@ -468,6 +488,10 @@ npm run test:watch  # Vitest in watch mode
 | `couple` | 8 | per-category flag, null prefs → false |
 | `invoices` | 25 | line/VAT/rounding totals, account→IBAN (mod-97), SPAYD, number suggestion, overdue |
 | `invoice-parser` | 21 | Czech amount/date parsing, number/VS/dates/total/VAT extraction, account+IBAN, buyer block |
+| `jobs-filter` | 13 | role bucketing (incl. Czech titles, negative guards), Europe/remote location gate |
+| `jobs-sources` | 20 | per-board normalizers + HTML/RSS parsers against live-shaped fixtures, Czech dates |
+| `jobs-template` | 7 | `{{placeholder}}` substitution, fallbacks, built-in template integrity |
+| `jobs-stats` | 4 | 7/30-day windows, status tallies, active count |
 
 Time-dependent tests pin the clock to `2026-05-12` with `vi.useFakeTimers()` so results don't drift with the system date.
 

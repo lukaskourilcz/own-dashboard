@@ -31,7 +31,9 @@ const csp = [
   ].join(" "),
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "upgrade-insecure-requests",
+  // NOTE: add "upgrade-insecure-requests" when flipping to enforcing mode —
+  // the directive is ignored under Report-Only and only produces a console
+  // error on every page load (which also failed the E2E console watch).
 ].join("; ");
 
 // Enforcing headers (these are safe to enforce immediately).
@@ -54,6 +56,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // The dev-tools indicator floats over the sidebar footer and intercepts
+  // clicks in Playwright runs; the E2E server (playwright.config.ts) sets
+  // NEXT_E2E=1 to hide it. Normal `next dev` keeps the indicator.
+  ...(process.env.NEXT_E2E ? { devIndicators: false as const } : {}),
 };
 
 // withSentryConfig is no-op when SENTRY_DSN is missing at runtime, but

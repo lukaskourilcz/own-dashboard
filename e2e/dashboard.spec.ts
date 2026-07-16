@@ -15,6 +15,7 @@ const TABS = [
   "Books",
   "Dates",
   "Couple",
+  "Jobs",
 ] as const;
 
 test.describe("dashboard sections", () => {

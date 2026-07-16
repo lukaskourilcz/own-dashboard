@@ -30,6 +30,9 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "preview-anon-key",
+      // Hide the dev-tools indicator — it overlaps the sidebar footer and
+      // intercepts pointer events in tests.
+      NEXT_E2E: "1",
     },
   },
 });

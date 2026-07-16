@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { DEFAULT_LAYOUT } from "../src/lib/dashboard-layout";
 import { gotoPreview, watchConsole } from "./helpers";
 
-const DEFAULT_WIDGET_COUNT = 7;
+// Derived from the app's own default layout so adding a widget (e.g. the
+// recurring-plans card) can never silently break this spec again.
+const DEFAULT_WIDGET_COUNT = DEFAULT_LAYOUT.length;
 
 test.describe("customizable overview", () => {
   test("reorder controls, remove, add dialog, persistence, and reset", async ({

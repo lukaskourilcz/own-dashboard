@@ -22,6 +22,7 @@ export const NAV_TABS = [
   "github",
   "costs",
   "ai",
+  "jobs",
   "settings",
 ] as const;
 

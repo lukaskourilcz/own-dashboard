@@ -178,6 +178,47 @@ export default async function DashboardPage({
       .maybeSingle(),
   ]);
 
+  // Jobs: listings + last run are global rows (RLS lets any signed-in user
+  // read; only the scrape cron writes), the rest are the user's own.
+  const [
+    jobListingsRes,
+    jobUserStatesRes,
+    jobApplicationsRes,
+    jobApplicationEventsRes,
+    coverLetterTemplatesRes,
+    jobLastRunRes,
+  ] = await Promise.all([
+    supabase
+      .from("job_listings")
+      .select("*")
+      .order("first_seen_at", { ascending: false })
+      .limit(500),
+    supabase.from("job_user_state").select("*").eq("user_id", user.id),
+    supabase
+      .from("job_applications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("applied_on", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("job_application_events")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase
+      .from("cover_letter_templates")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("job_scrape_runs")
+      .select("*")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
   const partnerData = coupleCtx.partnerId
     ? await loadPartnerSharedData(
         supabase,
@@ -218,6 +259,12 @@ export default async function DashboardPage({
       initialInvoices={invoicesRes.data ?? []}
       initialInvoiceItems={invoiceItemsRes.data ?? []}
       initialInvoiceSettings={invoiceSettingsRes.data ?? null}
+      initialJobListings={jobListingsRes.data ?? []}
+      initialJobUserStates={jobUserStatesRes.data ?? []}
+      initialJobApplications={jobApplicationsRes.data ?? []}
+      initialJobApplicationEvents={jobApplicationEventsRes.data ?? []}
+      initialCoverLetterTemplates={coverLetterTemplatesRes.data ?? []}
+      initialJobLastRun={jobLastRunRes.data ?? null}
       todayCalendar={todayCalendar}
       weekCalendar={weekCalendar}
       coupleCtx={coupleCtx}
