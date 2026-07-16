@@ -62,13 +62,26 @@ export const subscriptions: Subscription[] = [
   { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS },
 ];
 
+// Manual tasks carry null repo/source context; NEEDED-sourced ones (t5/t6)
+// carry the full task-card context + a 7-day timer (due_date = generated + 7).
+const MANUAL = {
+  source: null,
+  repo_id: null,
+  repo_full_name: null,
+  repo_owner: null,
+  repo_name: null,
+  repo_url: null,
+  needed_raw: null,
+  generated_at: null,
+} as const;
+
 export const todos: Todo[] = [
-  { id: "t1", user_id: UID, title: "Submit Q2 invoice", done: false, due_date: ymd(0), category: null, created_at: TS },
-  { id: "t2", user_id: UID, title: "Reply to landlord", done: false, due_date: ymd(-1), category: null, created_at: TS },
-  { id: "t3", user_id: UID, title: "Buy running shoes", done: false, due_date: ymd(2), category: null, created_at: TS },
-  { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, category: null, created_at: TS },
-  { id: "t5", user_id: UID, title: "Add UPSTASH_REDIS_REST_URL in Vercel", done: false, due_date: null, category: "own-dashboard", created_at: TS },
-  { id: "t6", user_id: UID, title: "Generate real app icons with Recraft", done: false, due_date: null, category: "react-express-app", created_at: TS },
+  { id: "t1", user_id: UID, title: "Submit Q2 invoice", done: false, due_date: ymd(0), category: null, created_at: TS, ...MANUAL },
+  { id: "t2", user_id: UID, title: "Reply to landlord", done: false, due_date: ymd(-1), category: null, created_at: TS, ...MANUAL },
+  { id: "t3", user_id: UID, title: "Buy running shoes", done: false, due_date: ymd(2), category: null, created_at: TS, ...MANUAL },
+  { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, category: null, created_at: TS, ...MANUAL },
+  { id: "t5", user_id: UID, title: "Add UPSTASH_REDIS_REST_URL in Vercel", done: false, due_date: ymd(5), category: "own-dashboard", created_at: TS, source: "github", repo_id: "1001", repo_full_name: "lukaskourilcz/own-dashboard", repo_owner: "lukaskourilcz", repo_name: "own-dashboard", repo_url: "https://github.com/lukaskourilcz/own-dashboard", needed_raw: "- [ ] Add UPSTASH_REDIS_REST_URL in Vercel", generated_at: ymd(-2) },
+  { id: "t6", user_id: UID, title: "Generate real app icons with Recraft", done: false, due_date: ymd(1), category: "react-express-app", created_at: TS, source: "github", repo_id: "1002", repo_full_name: "lukaskourilcz/react-express-app", repo_owner: "lukaskourilcz", repo_name: "react-express-app", repo_url: "https://github.com/lukaskourilcz/react-express-app", needed_raw: "- [ ] Generate real app icons with Recraft", generated_at: ymd(-6) },
 ];
 
 export const streaks: Streak[] = [

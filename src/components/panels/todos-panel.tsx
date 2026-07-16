@@ -4,17 +4,35 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, ListTodo, Plus, Trash2 } from "lucide-react";
+import {
+  ExternalLink,
+  Heart,
+  ListTodo,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/toast";
+import { GithubIcon } from "@/components/icons/github";
 import { createClient } from "@/lib/supabase/client";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
-import { parseDateOnly } from "@/lib/date-keys";
+import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
+import { useReposQuery } from "@/lib/github-queries";
+import { commitFile, loadRepoFile } from "@/lib/github";
+import { NEEDED_FILE, removeNeededLine } from "@/lib/needed";
+import {
+  buildNeededRows,
+  diffNeededTodos,
+  type NeededTodoRow,
+} from "@/lib/needed-sync";
 import type { Locale } from "date-fns";
 import type { Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -34,8 +52,13 @@ export function TodosPanel({
   const qc = useQueryClient();
   const t = useDict();
   const locale = useDateLocale();
+  const toast = useToast();
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [showFinished, setShowFinished] = useState(false);
+  // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
+  // query off in the compact dashboard widget.
+  const reposQuery = useReposQuery(!compact);
 
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -101,6 +124,168 @@ export function TodosPanel({
     onSettled: () => qc.invalidateQueries({ queryKey: qk.todos }),
   });
 
+  // Refresh: re-scan every repo's NEEDED.md, add newly-listed tasks and drop
+  // open GitHub tasks whose source line is gone. A repo whose file failed to
+  // load (transient error) is left untouched so nothing is lost on a blip.
+  const refresh = useMutation({
+    mutationFn: async () => {
+      const reposData = reposQuery.data;
+      if (!reposData || reposData.kind !== "ok") {
+        throw new Error(
+          reposData?.kind === "disconnected" ? "disconnected" : "no-repos",
+        );
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("disconnected");
+
+      const nowIso = new Date().toISOString();
+      const scanned = new Set<string>();
+      const freshRows: NeededTodoRow[] = [];
+      for (const repo of reposData.repos) {
+        const res = await loadRepoFile(repo.owner, repo.name, NEEDED_FILE);
+        if (res.kind === "disconnected") throw new Error("disconnected");
+        if (res.kind === "ok") {
+          scanned.add(String(repo.id));
+          freshRows.push(
+            ...buildNeededRows(userId, repo, res.content, res.htmlUrl, nowIso),
+          );
+        } else if (res.kind === "not-found") {
+          // No NEEDED.md anymore → its open tasks are stale, allow cleanup.
+          scanned.add(String(repo.id));
+        }
+        // "error" → skip: don't touch this repo's tasks on a transient failure.
+      }
+
+      const { data: existing } = await supabase
+        .from("todos")
+        .select("*")
+        .eq("user_id", userId);
+      const { toInsert, toDeleteIds } = diffNeededTodos(
+        scanned,
+        freshRows,
+        (existing ?? []) as Todo[],
+      );
+
+      if (toDeleteIds.length) {
+        const { error } = await supabase
+          .from("todos")
+          .delete()
+          .in("id", toDeleteIds);
+        if (error) throw error;
+      }
+      if (toInsert.length) {
+        const { error } = await supabase.from("todos").insert(toInsert);
+        if (error) throw error;
+      }
+      return { added: toInsert.length, removed: toDeleteIds.length };
+    },
+    onSuccess: ({ added, removed }) => {
+      toast.ok(
+        added === 0 && removed === 0
+          ? t.todos.refreshNothing
+          : t.todos.refreshDone(added, removed),
+      );
+      void qc.invalidateQueries({ queryKey: qk.todos });
+    },
+    onError: (e) => {
+      const m = (e as Error).message;
+      toast.err(
+        m === "disconnected"
+          ? t.todos.refreshDisconnected
+          : m === "no-repos"
+            ? t.todos.refreshNoRepos
+            : t.todos.refreshErr,
+      );
+    },
+  });
+
+  // Delete finished NEEDED tasks from their repos' NEEDED.md (one commit per
+  // repo), then clear the finished rows. Repos whose commit fails keep their
+  // rows so the action can be retried.
+  const clearFinished = useMutation({
+    mutationFn: async () => {
+      const finished = todos.filter(
+        (td) =>
+          td.done &&
+          td.source === "github" &&
+          td.needed_raw &&
+          td.repo_owner &&
+          td.repo_name,
+      );
+      if (finished.length === 0) return { removed: 0 };
+
+      const byRepo = new Map<string, Todo[]>();
+      for (const td of finished) {
+        const key = td.repo_id ?? `${td.repo_owner}/${td.repo_name}`;
+        const arr = byRepo.get(key);
+        if (arr) arr.push(td);
+        else byRepo.set(key, [td]);
+      }
+
+      const idsToDelete: string[] = [];
+      for (const tasks of byRepo.values()) {
+        const first = tasks[0];
+        const owner = first.repo_owner!;
+        const name = first.repo_name!;
+        const res = await loadRepoFile(owner, name, NEEDED_FILE);
+        if (res.kind === "disconnected") throw new Error("disconnected");
+        if (res.kind === "not-found") {
+          // File already gone — the lines are gone with it; just clear rows.
+          idsToDelete.push(...tasks.map((x) => x.id));
+          continue;
+        }
+        if (res.kind !== "ok") continue; // transient — keep rows, retry later
+
+        let content = res.content;
+        for (const td of tasks) {
+          const { next, removed } = removeNeededLine(content, td.needed_raw!);
+          if (removed) content = next;
+        }
+        if (content !== res.content) {
+          const outcome = await commitFile({
+            owner,
+            repo: name,
+            path: NEEDED_FILE,
+            content,
+            message: t.todos.finishedCommitMessage(tasks.length),
+          });
+          if (!outcome.ok) {
+            if (outcome.status === 401) throw new Error("disconnected");
+            continue; // commit failed — keep rows
+          }
+        }
+        idsToDelete.push(...tasks.map((x) => x.id));
+      }
+
+      if (idsToDelete.length) {
+        const { error } = await supabase
+          .from("todos")
+          .delete()
+          .in("id", idsToDelete);
+        if (error) throw error;
+      }
+      return { removed: idsToDelete.length };
+    },
+    onSuccess: ({ removed }) => {
+      toast.ok(
+        removed === 0
+          ? t.todos.clearFromNeededNone
+          : t.todos.clearFromNeededDone(removed),
+      );
+      void qc.invalidateQueries({ queryKey: qk.todos });
+      // Drop cached NEEDED file contents so the Repos checklist reflects it.
+      void qc.invalidateQueries({ queryKey: ["github", "file"] });
+    },
+    onError: (e) => {
+      toast.err(
+        (e as Error).message === "disconnected"
+          ? t.todos.refreshDisconnected
+          : t.todos.clearFromNeededErr,
+      );
+    },
+  });
+
   const saving = addMutation.isPending;
 
   function addTodo(e: React.FormEvent) {
@@ -115,25 +300,6 @@ export function TodosPanel({
   const open = todos.filter((td) => !td.done);
   const done = todos.filter((td) => td.done);
   const visible = compact ? open.slice(0, 5) : todos;
-
-  // Full view: bucket tasks by category (repo), uncategorized last. When no
-  // task has a category this collapses to a single ungrouped list (unchanged).
-  // Plain computation — the React Compiler handles memoization (matching the
-  // open/done/visible consts above).
-  const categoryMap = new Map<string | null, Todo[]>();
-  for (const td of visible) {
-    const key = td.category ?? null;
-    const arr = categoryMap.get(key);
-    if (arr) arr.push(td);
-    else categoryMap.set(key, [td]);
-  }
-  const grouped = [...categoryMap.entries()].sort((a, b) => {
-    if (a[0] === b[0]) return 0;
-    if (a[0] === null) return 1; // "Other" sinks to the bottom
-    if (b[0] === null) return -1;
-    return a[0].localeCompare(b[0]);
-  });
-  const hasCategories = grouped.some(([cat]) => cat !== null);
 
   if (compact) {
     return (
@@ -181,11 +347,60 @@ export function TodosPanel({
     );
   }
 
+  // Full view: open GitHub tasks become per-repo cards with a subcard each;
+  // hand-added tasks collect in a "Personal" card.
+  const openGithub = open.filter((td) => td.source === "github" && td.repo_id);
+  const openPersonal = open.filter(
+    (td) => !(td.source === "github" && td.repo_id),
+  );
+
+  const repoMap = new Map<
+    string,
+    { name: string; fullName: string | null; url: string | null; items: Todo[] }
+  >();
+  for (const td of openGithub) {
+    const key = td.repo_id!;
+    const g = repoMap.get(key);
+    if (g) g.items.push(td);
+    else
+      repoMap.set(key, {
+        name: td.repo_name ?? td.category ?? key,
+        fullName: td.repo_full_name,
+        url: td.repo_url,
+        items: [td],
+      });
+  }
+  const repoGroups = [...repoMap.values()].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  const finishedNeeded = done.filter(
+    (td) => td.source === "github" && td.needed_raw,
+  ).length;
+
   return (
     <div>
-      <PageHeader title={t.todos.title} description={t.todos.description} />
+      <PageHeader
+        title={t.todos.title}
+        description={t.todos.description}
+        action={
+          <Tooltip content={t.todos.refreshHint}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refresh.mutate()}
+              disabled={refresh.isPending || reposQuery.isPending}
+            >
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", refresh.isPending && "animate-spin")}
+              />
+              {refresh.isPending ? t.todos.refreshing : t.todos.refresh}
+            </Button>
+          </Tooltip>
+        }
+      />
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 self-start">
           <CardHeader>
             <CardTitle>{t.todos.addTaskTitle}</CardTitle>
           </CardHeader>
@@ -209,65 +424,372 @@ export function TodosPanel({
             </form>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>{t.todos.allTasks}</CardTitle>
-            <span className="text-xs text-foreground-subtle tabular">
-              {t.todos.openDoneCount(open.length, done.length)}
-            </span>
-          </CardHeader>
-          <CardContent>
-            {todos.length === 0 ? (
-              <EmptyState
-                icon={ListTodo}
-                title={t.todos.nothingOnPlate}
-                description={t.todos.nothingOnPlateDescription}
-              />
-            ) : hasCategories ? (
-              <div className="space-y-4">
-                {grouped.map(([cat, items]) => (
-                  <div key={cat ?? "__other__"}>
-                    <SectionLabel className="mb-1 flex items-center gap-1.5">
-                      <span className="truncate">
-                        {cat ?? t.todos.otherCategory}
-                      </span>
-                      <span className="tabular text-foreground-subtle">
-                        {items.length}
-                      </span>
-                    </SectionLabel>
-                    <TodoList
-                      t={t}
-                      locale={locale}
-                      items={items}
-                      onToggle={toggle}
-                      onRemove={remove}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <TodoList
-                t={t}
-                locale={locale}
-                items={visible}
-                onToggle={toggle}
-                onRemove={remove}
-              />
-            )}
-            {partnerTodos && partnerTodos.length > 0 && (
-              <PartnerBlock
-                t={t}
-                locale={locale}
-                items={partnerTodos}
-                partnerName={partnerName}
-              />
-            )}
-          </CardContent>
-        </Card>
+
+        <div className="lg:col-span-2 space-y-4">
+          {open.length === 0 ? (
+            <Card>
+              <CardContent className="pt-5">
+                <EmptyState
+                  icon={ListTodo}
+                  title={t.todos.nothingOnPlate}
+                  description={t.todos.nothingOnPlateDescription}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {repoGroups.map((g) => (
+                <RepoTaskCard
+                  key={g.fullName ?? g.name}
+                  t={t}
+                  locale={locale}
+                  group={g}
+                  onToggle={toggle}
+                  onRemove={remove}
+                />
+              ))}
+              {openPersonal.length > 0 && (
+                <PersonalTaskCard
+                  t={t}
+                  locale={locale}
+                  items={openPersonal}
+                  onToggle={toggle}
+                  onRemove={remove}
+                />
+              )}
+            </>
+          )}
+
+          {done.length > 0 && (
+            <FinishedSection
+              t={t}
+              locale={locale}
+              items={done}
+              open={showFinished}
+              onToggleOpen={() => setShowFinished((v) => !v)}
+              onReopen={toggle}
+              onRemove={remove}
+              canClearNeeded={finishedNeeded > 0}
+              clearing={clearFinished.isPending}
+              onClearNeeded={() => {
+                if (window.confirm(t.todos.clearFromNeededConfirm))
+                  clearFinished.mutate();
+              }}
+            />
+          )}
+
+          {partnerTodos && partnerTodos.length > 0 && (
+            <Card>
+              <CardContent className="pt-5">
+                <PartnerBlock
+                  t={t}
+                  locale={locale}
+                  items={partnerTodos}
+                  partnerName={partnerName}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+/* ----------------------------- Repo task card ---------------------------- */
+
+function RepoTaskCard({
+  t,
+  locale,
+  group,
+  onToggle,
+  onRemove,
+}: {
+  t: Dict;
+  locale: Locale;
+  group: {
+    name: string;
+    fullName: string | null;
+    url: string | null;
+    items: Todo[];
+  };
+  onToggle: (td: Todo) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
+        <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+        {group.url ? (
+          <a
+            href={group.url}
+            target="_blank"
+            rel="noreferrer"
+            title={group.fullName ?? group.name}
+            className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-foreground hover:underline"
+          >
+            <span className="truncate">{group.name}</span>
+            <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
+          </a>
+        ) : (
+          <span className="truncate text-sm font-semibold text-foreground">
+            {group.name}
+          </span>
+        )}
+        <span className="ml-auto shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+          {t.todos.repoTaskCount(group.items.length)}
+        </span>
+      </div>
+      <ul className="space-y-2 p-3">
+        <AnimatePresence initial={false}>
+          {group.items.map((td) => (
+            <TaskSubcard
+              key={td.id}
+              t={t}
+              locale={locale}
+              td={td}
+              onToggle={onToggle}
+              onRemove={onRemove}
+            />
+          ))}
+        </AnimatePresence>
+      </ul>
+    </Card>
+  );
+}
+
+function PersonalTaskCard({
+  t,
+  locale,
+  items,
+  onToggle,
+  onRemove,
+}: {
+  t: Dict;
+  locale: Locale;
+  items: Todo[];
+  onToggle: (td: Todo) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
+        <ListTodo className="h-4 w-4 shrink-0 text-foreground-muted" />
+        <span className="text-sm font-semibold text-foreground">
+          {t.todos.personalGroup}
+        </span>
+        <span className="ml-auto shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+          {t.todos.repoTaskCount(items.length)}
+        </span>
+      </div>
+      <ul className="space-y-2 p-3">
+        <AnimatePresence initial={false}>
+          {items.map((td) => (
+            <TaskSubcard
+              key={td.id}
+              t={t}
+              locale={locale}
+              td={td}
+              onToggle={onToggle}
+              onRemove={onRemove}
+            />
+          ))}
+        </AnimatePresence>
+      </ul>
+    </Card>
+  );
+}
+
+/** One task, rendered as a bordered subcard with its generated date + timer. */
+function TaskSubcard({
+  t,
+  locale,
+  td,
+  onToggle,
+  onRemove,
+}: {
+  t: Dict;
+  locale: Locale;
+  td: Todo;
+  onToggle: (td: Todo) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
+      transition={{ duration: 0.15 }}
+      className="group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2"
+    >
+      <Checkbox
+        checked={td.done}
+        onChange={() => onToggle(td)}
+        label={td.title}
+        className="mt-0.5"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="break-words text-sm text-foreground">{td.title}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
+          {td.generated_at && (
+            <span className="tabular">
+              {t.todos.generatedOn(
+                format(new Date(td.generated_at), t.todos.dueDateFormat, {
+                  locale,
+                }),
+              )}
+            </span>
+          )}
+          {td.due_date && <TimeChip t={t} due={td.due_date} />}
+        </div>
+      </div>
+      <Tooltip content={t.common.delete}>
+        <button
+          type="button"
+          onClick={() => onRemove(td.id)}
+          aria-label={t.common.delete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
+    </motion.li>
+  );
+}
+
+/** The "time to finish" chip — colour shifts as the 7-day timer runs down. */
+function TimeChip({ t, due }: { t: Dict; due: string }) {
+  const left = daysUntilDate(due);
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-1.5 py-0.5 font-medium tabular",
+        left < 0
+          ? "bg-destructive/10 text-destructive"
+          : left <= 2
+            ? "bg-warning/10 text-warning"
+            : "bg-surface text-foreground-muted",
+      )}
+    >
+      {t.todos.timeLeft(left)}
+    </span>
+  );
+}
+
+/* ------------------------------- Finished -------------------------------- */
+
+function FinishedSection({
+  t,
+  locale,
+  items,
+  open,
+  onToggleOpen,
+  onReopen,
+  onRemove,
+  canClearNeeded,
+  clearing,
+  onClearNeeded,
+}: {
+  t: Dict;
+  locale: Locale;
+  items: Todo[];
+  open: boolean;
+  onToggleOpen: () => void;
+  onReopen: (td: Todo) => void;
+  onRemove: (id: string) => void;
+  canClearNeeded: boolean;
+  clearing: boolean;
+  onClearNeeded: () => void;
+}) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
+        <button
+          type="button"
+          onClick={onToggleOpen}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-foreground focus-ring rounded"
+        >
+          {t.todos.finishedTitle}
+          <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+            {t.todos.finishedCount(items.length)}
+          </span>
+          <span className="text-[11px] font-normal text-foreground-subtle">
+            {open ? t.todos.finishedHide : t.todos.finishedShow}
+          </span>
+        </button>
+        {canClearNeeded && (
+          <Tooltip content={t.todos.clearFromNeededHint}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={onClearNeeded}
+              disabled={clearing}
+            >
+              {clearing ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <GithubIcon className="h-3.5 w-3.5" />
+              )}
+              {clearing ? t.todos.clearingFromNeeded : t.todos.clearFromNeeded}
+            </Button>
+          </Tooltip>
+        )}
+      </div>
+      {open && (
+        <ul className="divide-y divide-border/60">
+          {items.map((td) => (
+            <li
+              key={td.id}
+              className="group flex items-center gap-3 px-4 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-foreground-subtle line-through">
+                  {td.title}
+                </p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-foreground-subtle">
+                  {td.repo_name && <span className="truncate">{td.repo_name}</span>}
+                  {td.due_date && (
+                    <span className="tabular">
+                      {t.todos.due(
+                        format(parseDateOnly(td.due_date), t.todos.dueDateFormat, {
+                          locale,
+                        }),
+                      )}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Tooltip content={t.todos.reopen}>
+                <button
+                  type="button"
+                  onClick={() => onReopen(td)}
+                  aria-label={t.todos.reopen}
+                  className="p-1 rounded text-foreground-subtle hover:text-foreground focus-ring"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
+              <Tooltip content={t.common.delete}>
+                <button
+                  type="button"
+                  onClick={() => onRemove(td.id)}
+                  aria-label={t.common.delete}
+                  className="p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/* ------------------------------- Shared UI ------------------------------- */
 
 function QuickAddForm({
   t,
@@ -376,10 +898,12 @@ function Checkbox({
   checked,
   onChange,
   label,
+  className,
 }: {
   checked: boolean;
   onChange: () => void;
   label?: string;
+  className?: string;
 }) {
   return (
     <button
@@ -393,6 +917,7 @@ function Checkbox({
         checked
           ? "bg-primary border-primary text-primary-foreground"
           : "border-border-strong hover:border-foreground/40",
+        className,
       )}
     >
       {checked && (
@@ -425,7 +950,7 @@ function PartnerBlock({
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="mt-5 pt-4 border-t border-border">
+    <div className="mt-1">
       <SectionLabel className="mb-2 inline-flex items-center gap-1.5">
         <Heart className="h-3 w-3" />
         {t.todos.fromPartner(partnerName ?? t.todos.partnerFallback)}

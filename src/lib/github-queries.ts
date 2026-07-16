@@ -6,12 +6,15 @@ import { loadReposResult, type LoadReposResult } from "@/lib/github";
  * already-fetched repos instead of re-hitting GitHub. */
 export const reposQueryKey = ["github", "repos"] as const;
 
-export function useReposQuery() {
+export function useReposQuery(enabled = true) {
   return useQuery({
     queryKey: reposQueryKey,
     queryFn: loadReposResult,
     // Repos don't change second-to-second; serve cached for a minute.
     staleTime: 60_000,
+    // Off in contexts that only need repos on demand (e.g. the compact Tasks
+    // widget) so the dashboard doesn't hit GitHub before the user asks.
+    enabled,
   });
 }
 
