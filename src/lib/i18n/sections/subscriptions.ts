@@ -28,6 +28,7 @@ type SubscriptionsStrings = {
   allCancelled: string;
   perMonth: string;
   perYearApprox: (yearly: string) => string;
+  perMoApprox: (monthly: string) => string;
   next30Days: string;
   nothingBilling30: string;
   tagToday: string;
@@ -76,6 +77,7 @@ export const subscriptions: {
     allCancelled: "All subscriptions are cancelled.",
     perMonth: "per month",
     perYearApprox: (yearly) => `≈ ${yearly} per year`,
+    perMoApprox: (monthly) => `≈ ${monthly}/mo`,
     next30Days: "Next 30 days",
     nothingBilling30: "Nothing billing in the next 30 days.",
     tagToday: "today",
@@ -120,6 +122,7 @@ export const subscriptions: {
     allCancelled: "Všechna předplatná jsou zrušena.",
     perMonth: "měsíčně",
     perYearApprox: (yearly) => `≈ ${yearly} ročně`,
+    perMoApprox: (monthly) => `≈ ${monthly}/měs`,
     next30Days: "Příštích 30 dní",
     nothingBilling30: "Žádné platby v příštích 30 dnech.",
     tagToday: "dnes",

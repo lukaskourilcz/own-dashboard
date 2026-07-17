@@ -20,9 +20,13 @@ type NavSection =
   | "jobs"
   | "settings";
 
+type NavGroup = "planning" | "work" | "money" | "personal";
+
 type NavStrings = {
   brand: string;
   sections: Record<NavSection, string>;
+  // Sidebar group headings that bucket the sections into categories.
+  groups: Record<NavGroup, string>;
   // Condensed labels for the mobile bottom bar; falls back to `sections`.
   short: Partial<Record<NavSection, string>>;
   theme: string;
@@ -62,6 +66,12 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       jobs: "Jobs",
       settings: "Settings",
     },
+    groups: {
+      planning: "Planning",
+      work: "Work",
+      money: "Money",
+      personal: "Personal",
+    },
     short: { subscriptions: "Subs", github: "Repos", costs: "Costs" },
     theme: "Theme",
     settings: "Settings",
@@ -98,6 +108,12 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       ai: "AI odkazy",
       jobs: "Práce",
       settings: "Nastavení",
+    },
+    groups: {
+      planning: "Plánování",
+      work: "Práce",
+      money: "Peníze",
+      personal: "Osobní",
     },
     short: { subscriptions: "Předpl.", dates: "Dny", github: "Repa", costs: "Náklady" },
     theme: "Motiv",

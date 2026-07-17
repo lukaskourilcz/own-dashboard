@@ -42,29 +42,63 @@ type NavItem = {
   icon: typeof Activity;
 };
 
-// Single source of truth for the main nav sections (order matters). "overview"
-// is always shown; the rest can be hidden via Settings. "settings" lives
-// outside this list — it has its own always-visible affordance.
+type NavGroupId = "planning" | "work" | "money" | "personal";
+type NavGroup = { id: NavGroupId; items: NavItem[] };
+
+// Overview is the home base — always shown, pinned above every group.
+const OVERVIEW_ITEM: NavItem = { value: "overview", icon: LayoutDashboard };
+
+// The rest of the sections, bucketed into a handful of intent-based groups so
+// the rail reads as a short list of categories instead of a wall of ~19 links.
+// Order matters (within a group and across groups). "settings" lives outside
+// these groups — it has its own always-visible affordance in the footer.
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "planning",
+    items: [
+      { value: "calendar", icon: CalendarDays },
+      { value: "todos", icon: ListTodo },
+      { value: "plans", icon: Target },
+      { value: "streaks", icon: Flame },
+      { value: "dates", icon: Gift },
+    ],
+  },
+  {
+    id: "work",
+    items: [
+      { value: "github", icon: GithubIcon },
+      { value: "jobs", icon: BriefcaseBusiness },
+      { value: "ai", icon: Sparkles },
+      { value: "prompts", icon: MessageSquareText },
+      { value: "shortcuts", icon: Terminal },
+      { value: "costs", icon: Gauge },
+    ],
+  },
+  {
+    id: "money",
+    items: [
+      { value: "finances", icon: Wallet },
+      { value: "invoices", icon: Receipt },
+      { value: "subscriptions", icon: CreditCard },
+    ],
+  },
+  {
+    id: "personal",
+    items: [
+      { value: "notes", icon: FileText },
+      { value: "books", icon: BookOpen },
+      { value: "tugedr", icon: Users },
+      { value: "couple", icon: Heart },
+    ],
+  },
+];
+
+// Flat, ordered list (overview first, then every group in order). Kept as the
+// single source of truth for consumers that don't care about grouping — the
+// Settings visibility list and the mobile bottom bar.
 export const NAV_ITEMS: NavItem[] = [
-  { value: "overview", icon: LayoutDashboard },
-  { value: "calendar", icon: CalendarDays },
-  { value: "notes", icon: FileText },
-  { value: "prompts", icon: MessageSquareText },
-  { value: "shortcuts", icon: Terminal },
-  { value: "todos", icon: ListTodo },
-  { value: "tugedr", icon: Users },
-  { value: "streaks", icon: Flame },
-  { value: "finances", icon: Wallet },
-  { value: "invoices", icon: Receipt },
-  { value: "subscriptions", icon: CreditCard },
-  { value: "plans", icon: Target },
-  { value: "books", icon: BookOpen },
-  { value: "dates", icon: Gift },
-  { value: "couple", icon: Heart },
-  { value: "github", icon: GithubIcon },
-  { value: "costs", icon: Gauge },
-  { value: "ai", icon: Sparkles },
-  { value: "jobs", icon: BriefcaseBusiness },
+  OVERVIEW_ITEM,
+  ...NAV_GROUPS.flatMap((g) => g.items),
 ];
 
 export function Sidebar({
@@ -83,13 +117,70 @@ export function Sidebar({
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
   const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
 
-  const items = NAV_ITEMS.filter(
-    (it) =>
-      (it.value === "overview" || !isHidden(it.value)) &&
-      (it.value !== "tugedr" || tugedrEnabled),
-  );
+  const isVisible = (it: NavItem) =>
+    !isHidden(it.value) && (it.value !== "tugedr" || tugedrEnabled);
+
+  // Drop empty groups so we never render a lonely heading with no items.
+  const groups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter(isVisible),
+  })).filter((g) => g.items.length > 0);
 
   const initials = (user.name?.trim() || user.email).slice(0, 2).toUpperCase();
+
+  const renderItem = (it: NavItem) => {
+    const active = tab === it.value;
+    const badge = it.value === "couple" ? incomingInvites : 0;
+    const label = t.nav.sections[it.value];
+    const button = (
+      <button
+        key={it.value}
+        type="button"
+        onClick={() => setTab(it.value)}
+        aria-label={collapsed ? label : undefined}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "relative flex items-center rounded-md text-sm transition-colors duration-150 focus-ring",
+          collapsed
+            ? "mx-auto h-9 w-9 justify-center"
+            : "w-full gap-2.5 px-2.5 py-1.5",
+          active
+            ? "text-foreground"
+            : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
+        )}
+      >
+        {active && (
+          <motion.span
+            layoutId="active-nav"
+            className="absolute inset-0 rounded-md bg-accent"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+        )}
+        <it.icon className="relative z-10 h-4 w-4 shrink-0" />
+        {!collapsed && (
+          <span className="relative z-10 flex-1 text-left font-medium">
+            {label}
+          </span>
+        )}
+        {badge ? (
+          collapsed ? (
+            <span className="absolute right-1 top-1 z-10 h-2 w-2 rounded-full bg-foreground ring-2 ring-surface" />
+          ) : (
+            <span className="relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium text-background tabular">
+              {badge}
+            </span>
+          )
+        ) : null}
+      </button>
+    );
+    return collapsed ? (
+      <Tooltip key={it.value} content={label} side="right">
+        {button}
+      </Tooltip>
+    ) : (
+      button
+    );
+  };
 
   return (
     <aside
@@ -144,61 +235,29 @@ export function Sidebar({
         )}
       </div>
 
-      {/* nav */}
-      <nav className={cn("flex-1 overflow-y-auto p-2 space-y-0.5", collapsed && "px-1.5")}>
-        {items.map((it) => {
-          const active = tab === it.value;
-          const badge = it.value === "couple" ? incomingInvites : 0;
-          const label = t.nav.sections[it.value];
-          const button = (
-            <button
-              key={it.value}
-              type="button"
-              onClick={() => setTab(it.value)}
-              aria-label={collapsed ? label : undefined}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "relative flex items-center rounded-md text-sm transition-colors duration-150 focus-ring",
-                collapsed
-                  ? "mx-auto h-9 w-9 justify-center"
-                  : "w-full gap-2.5 px-2.5 py-1.5",
-                active
-                  ? "text-foreground"
-                  : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
-              )}
-            >
-              {active && (
-                <motion.span
-                  layoutId="active-nav"
-                  className="absolute inset-0 rounded-md bg-accent"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-              <it.icon className="relative z-10 h-4 w-4 shrink-0" />
-              {!collapsed && (
-                <span className="relative z-10 flex-1 text-left font-medium">
-                  {label}
-                </span>
-              )}
-              {badge ? (
-                collapsed ? (
-                  <span className="absolute right-1 top-1 z-10 h-2 w-2 rounded-full bg-foreground ring-2 ring-surface" />
-                ) : (
-                  <span className="relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium text-background tabular">
-                    {badge}
-                  </span>
-                )
-              ) : null}
-            </button>
-          );
-          return collapsed ? (
-            <Tooltip key={it.value} content={label} side="right">
-              {button}
-            </Tooltip>
-          ) : (
-            button
-          );
-        })}
+      {/* nav — overview pinned on top, the rest bucketed into labelled groups.
+          Collapsed, group labels give way to a hairline divider so the icons
+          stay legible in the 64px rail. */}
+      <nav
+        className={cn(
+          "flex-1 overflow-y-auto p-2",
+          collapsed ? "px-1.5 space-y-0.5" : "space-y-0.5",
+        )}
+      >
+        {renderItem(OVERVIEW_ITEM)}
+
+        {groups.map((g) => (
+          <div key={g.id} className={cn(!collapsed && "pt-2")}>
+            {collapsed ? (
+              <div className="my-1.5 mx-auto h-px w-6 bg-border" aria-hidden />
+            ) : (
+              <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+                {t.nav.groups[g.id]}
+              </p>
+            )}
+            <div className="space-y-0.5">{g.items.map(renderItem)}</div>
+          </div>
+        ))}
       </nav>
 
       {/* user footer — identity on top, actions below */}

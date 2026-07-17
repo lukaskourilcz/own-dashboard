@@ -5,8 +5,10 @@ import type {
   Account,
   AiCategory,
   AiLink,
+  BankConnection,
   Book,
   BookPage,
+  CategoryRule,
   CoverLetterTemplate,
   ImportantDate,
   Invoice,
@@ -95,6 +97,26 @@ export async function fetchTransactions(): Promise<Transaction[]> {
     .limit(500);
   if (error) throw error;
   return (data ?? []) as Transaction[];
+}
+
+export async function fetchBankConnections(): Promise<BankConnection[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("bank_connections")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as BankConnection[];
+}
+
+export async function fetchCategoryRules(): Promise<CategoryRule[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("transaction_category_rules")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as CategoryRule[];
 }
 
 export async function fetchPlans(): Promise<Plan[]> {

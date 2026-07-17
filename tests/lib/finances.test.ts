@@ -24,6 +24,7 @@ function acct(overrides: Partial<Account> = {}): Account {
     name: "Checking",
     balance: 0,
     currency: "USD",
+    external_ref: null,
     created_at: "",
     updated_at: "",
     ...overrides,
@@ -41,6 +42,7 @@ function tx(overrides: Partial<Transaction> = {}): Transaction {
     category: null,
     note: null,
     occurred_on: "2026-05-12",
+    external_id: null,
     created_at: "",
     ...overrides,
   };

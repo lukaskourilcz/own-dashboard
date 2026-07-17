@@ -21,6 +21,13 @@ type TodosStrings = {
   otherCategory: string;
   // Personal (hand-added) tasks group heading in the repo-card layout.
   personalGroup: string;
+  // Overview "tasks by category" card.
+  byCategory: string;
+  remainingLabel: string;
+  totalOpen: (n: number) => string;
+  moreTasks: (n: number) => string;
+  openAll: string;
+  categoryClear: string;
   // NEEDED.md task cards
   refresh: string;
   refreshHint: string;
@@ -76,6 +83,12 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     partnerFallback: "partner",
     otherCategory: "Other",
     personalGroup: "Personal",
+    byCategory: "By category",
+    remainingLabel: "left",
+    totalOpen: (n) => (n === 1 ? "1 task open" : `${n} tasks open`),
+    moreTasks: (n) => `+${n} more`,
+    openAll: "Open all",
+    categoryClear: "All done",
     refresh: "Refresh",
     refreshHint:
       "Re-scan every repo's NEEDED.md — add new tasks and drop ones no longer listed.",
@@ -145,6 +158,16 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     partnerFallback: "partnera",
     otherCategory: "Ostatní",
     personalGroup: "Osobní",
+    byCategory: "Podle kategorie",
+    remainingLabel: "zbývá",
+    totalOpen: (n) => {
+      if (n === 1) return "1 otevřený úkol";
+      if (n >= 2 && n <= 4) return `${n} otevřené úkoly`;
+      return `${n} otevřených úkolů`;
+    },
+    moreTasks: (n) => `+${n} dalších`,
+    openAll: "Zobrazit vše",
+    categoryClear: "Hotovo",
     refresh: "Obnovit",
     refreshHint:
       "Znovu projde NEEDED.md všech repozitářů — přidá nové úkoly a odebere ty, které už tam nejsou.",

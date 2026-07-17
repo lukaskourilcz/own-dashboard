@@ -21,6 +21,12 @@ numbered sections below.
   renewal-emails job fails. [5 min] → §0.4
 - [ ] **Eyeball the Finances page + overview** after deploy and tell me if you
   want the redesign tuned. [1 min] → §0.7
+- [ ] **Run the bank-sync SQL** once in Supabase — adds the `bank_connections`
+  table + dedupe columns so bank import works. **Required for both CSV import
+  and live sync.** [2 min] → §0.9
+- [ ] **(Optional) Add `GOCARDLESS_SECRET_ID` + `GOCARDLESS_SECRET_KEY`** — turns
+  on live Raiffeisenbank (and any EU bank) auto-sync. CSV import already works
+  without it. [10 min] → §0.9
 - [ ] **When ready: enforce the CSP** — one-line edit after checking the console.
   [10 min, later] → §0.1
 - [ ] *(Optional)* `JINA_API_KEY`, `FIRECRAWL_API_KEY`, `ANTHROPIC_BASE_URL` —
@@ -43,6 +49,8 @@ Variables** (set for **Production**, and Preview if you use it), then **redeploy
 | `JINA_API_KEY` | Higher Jina rate limit *(optional)* | <https://jina.ai/reader> | §0.2 |
 | `FIRECRAWL_API_KEY` | Firecrawl extraction *(optional)* | <https://firecrawl.dev> | §0.2 |
 | `ANTHROPIC_BASE_URL` | Route Claude via a gateway *(optional)* | your gateway | §0.6 |
+| `GOCARDLESS_SECRET_ID` | Live bank account + transaction sync | <https://bankaccountdata.gocardless.com> → User Secrets | §0.9 |
+| `GOCARDLESS_SECRET_KEY` | Live bank account + transaction sync | <https://bankaccountdata.gocardless.com> → User Secrets | §0.9 |
 
 > **Tip:** server-side vars like these take effect on the next deploy. After
 > adding any, trigger a redeploy so the running functions pick them up.
@@ -172,6 +180,65 @@ Gmail, Calendar and Drive connectors when helping you. In an **interactive**
 Claude Code session run **`/mcp`** and complete the sign-in for each of:
 `supabase`, `Gmail`, `Google_Calendar`, `Google_Drive`. (Context7 needs nothing.)
 I can't do this from a non-interactive session.
+
+---
+
+### 0.9 Bank sync (GoCardless) + CSV import — Finances → "Napojení banky"
+
+Reads your **Raiffeisenbank** (or any EU bank) balances and transactions into
+the Finances page. Two ways in — the CSV import needs only the SQL step; live
+sync also needs the two GoCardless secrets.
+
+**Step 1 — run the SQL once (required for both paths). [2 min]**
+
+Open **Supabase → SQL Editor** and run the new block at the bottom of
+`supabase/schema.sql` (the section headed *"Bank sync (GoCardless Bank Account
+Data) + import dedupe"*). It's idempotent — safe to run on top of your existing
+schema. It adds:
+- `transactions.external_id` + `accounts.external_ref` (dedupe keys, so
+  re-importing never doubles a transaction),
+- the `bank_connections` table (one row per linked bank).
+
+Easiest: paste just that section, or re-run the whole file — every statement is
+`create … if not exists` / `add column if not exists`.
+
+**Step 2 — CSV import works now. [0 min]**
+
+In internet banking (RB: **Účet → Historie → Export → CSV**), export a
+statement, then on the Finances page open **Napojení banky → Import z CSV →
+Vybrat CSV soubor**. The parser auto-detects the delimiter, Czech number format
+(`1 234,56`) and dates (`17.07.2026`), and skips rows it can't read. Re-importing
+the same file is safe — duplicates are ignored.
+
+**Step 3 — (optional) turn on live auto-sync. [10 min]**
+
+1. Create a free account at <https://bankaccountdata.gocardless.com/> (this is
+   GoCardless **Bank Account Data**, formerly Nordigen — *not* the payments
+   product). They're the licensed AISP, so you don't need your own licence.
+2. **User Secrets → Create new** → copy the **secret_id** and **secret_key**.
+3. Add them in **Vercel → Settings → Environment Variables** as
+   `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SECRET_KEY` (Production, server-side),
+   then **redeploy**.
+4. On the Finances page: **Napojení banky → Připojit banku → Raiffeisenbank**.
+   You'll be sent to the bank to approve **read-only** access, then bounced back
+   and synced automatically. Use **Synchronizovat** any time to pull new
+   transactions; **Odpojit** to revoke.
+
+**Daily auto-sync.** Once live sync is on, a Vercel Cron
+(`/api/cron/bank-sync`, 06:00 UTC — already in `vercel.json`) refreshes every
+linked bank each morning, so new transactions land without you pressing
+**Synchronizovat**. It reuses the same `CRON_SECRET` as the other crons (set it
+once in Vercel if you haven't). No secret → the cron no-ops safely.
+
+**Auto-categories.** Under **Napojení banky → Auto-kategorie** add rules like
+`albert → Potraviny` or `shell → Palivo`. Imported/synced transactions whose
+description contains the text are filed under that category automatically;
+**Použít na nezařazené** back-fills the rules over existing uncategorized rows.
+
+**Notes.** Free tier covers personal use; bank consent lasts ~90 days (EU rule),
+after which the connection shows **Vypršelo** and you reconnect in one click.
+GoCardless typically exposes ~90 days of history on first link. No secret ever
+reaches the browser — all bank calls run server-side in `/api/bank/*`.
 
 ---
 

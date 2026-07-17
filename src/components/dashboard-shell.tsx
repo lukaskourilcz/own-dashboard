@@ -24,6 +24,7 @@ import { SettingsPanel } from "@/components/panels/settings-panel";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { TodayHero } from "@/components/overview/today-hero";
+import { TasksOverview } from "@/components/overview/tasks-overview";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
 import type { WidgetId } from "@/lib/dashboard-layout";
@@ -491,11 +492,9 @@ export function DashboardShell({
                             />
                           ),
                           todos: (
-                            <TodosPanel
+                            <TasksOverview
                               todos={todos}
-                              compact
-                              partnerTodos={partnerTodos}
-                              partnerName={partnerName}
+                              onOpenAll={() => setTab("todos")}
                             />
                           ),
                           streaks: (

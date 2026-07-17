@@ -37,6 +37,7 @@ import { qk } from "@/lib/queries/keys";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
+import { BankSync } from "@/components/finances/bank-sync";
 import type { Account, Subscription, Transaction, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the charts only when this panel renders so it stays
@@ -389,6 +390,9 @@ export function FinancesPanel({
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
+        {/* Bank sync + CSV import — pull real balances/transactions in. */}
+        <BankSync transactions={transactions} />
+
         {/* Accounts (net worth now lives in the hero above) */}
         <Card className="lg:col-span-1">
           <CardHeader>
