@@ -34,6 +34,7 @@ export const qk = {
   coverLetterTemplates: ["coverLetterTemplates"] as const,
   jobLastRun: ["jobLastRun"] as const,
   bankConnections: ["bankConnections"] as const,
+  categoryRules: ["categoryRules"] as const,
   // Network-backed.
   repos: ["github", "repos"] as const,
   calendarList: ["calendar", "list"] as const,

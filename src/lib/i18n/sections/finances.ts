@@ -77,6 +77,15 @@ type BankStrings = {
   importErr: string;
   csvParseErr: string;
   nothingToImport: string;
+  rulesTitle: string;
+  rulesHint: string;
+  ruleMatchPlaceholder: string;
+  ruleCategoryPlaceholder: string;
+  addRule: string;
+  noRules: string;
+  applyToUncategorized: string;
+  applyDone: (n: number) => string;
+  applyNothing: string;
 };
 
 export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
@@ -164,6 +173,17 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importErr: "Import failed. Please try again.",
       csvParseErr: "Couldn't read that file.",
       nothingToImport: "No new transactions to import.",
+      rulesTitle: "Auto-categories",
+      rulesHint:
+        "When an imported transaction's description contains the text, file it under this category.",
+      ruleMatchPlaceholder: "Text in description (e.g. Albert)",
+      ruleCategoryPlaceholder: "Category (e.g. Groceries)",
+      addRule: "Add rule",
+      noRules: "No rules yet.",
+      applyToUncategorized: "Apply to uncategorized",
+      applyDone: (n) =>
+        n === 1 ? "Categorized 1 transaction." : `Categorized ${n} transactions.`,
+      applyNothing: "Nothing to categorize.",
     },
   },
   cs: {
@@ -258,6 +278,20 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importErr: "Import selhal. Zkus to znovu.",
       csvParseErr: "Soubor se nepodařilo přečíst.",
       nothingToImport: "Žádné nové transakce k importu.",
+      rulesTitle: "Auto-kategorie",
+      rulesHint:
+        "Když popis naimportované transakce obsahuje daný text, zařadí se do této kategorie.",
+      ruleMatchPlaceholder: "Text v popisu (např. Albert)",
+      ruleCategoryPlaceholder: "Kategorie (např. Potraviny)",
+      addRule: "Přidat pravidlo",
+      noRules: "Zatím žádná pravidla.",
+      applyToUncategorized: "Použít na nezařazené",
+      applyDone: (n) => {
+        if (n === 1) return "Zařazena 1 transakce.";
+        if (n >= 2 && n <= 4) return `Zařazeny ${n} transakce.`;
+        return `Zařazeno ${n} transakcí.`;
+      },
+      applyNothing: "Nebylo co zařadit.",
     },
   },
 };

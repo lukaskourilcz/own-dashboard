@@ -1616,3 +1616,35 @@ drop trigger if exists bank_connections_touch on public.bank_connections;
 create trigger bank_connections_touch
   before update on public.bank_connections
   for each row execute function public.tg_bank_connections_touch();
+
+-- Keyword → category rules applied to imported/synced transactions. The first
+-- rule whose `match` appears (case-insensitively) in a transaction's note wins,
+-- so a bank line like "ALBERT 1234 PRAHA" can auto-file under "Groceries".
+create table if not exists public.transaction_category_rules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  match text not null,
+  category text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists transaction_category_rules_user_idx
+  on public.transaction_category_rules (user_id, created_at);
+
+alter table public.transaction_category_rules enable row level security;
+
+drop policy if exists "tx_category_rules select own" on public.transaction_category_rules;
+create policy "tx_category_rules select own" on public.transaction_category_rules
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "tx_category_rules insert own" on public.transaction_category_rules;
+create policy "tx_category_rules insert own" on public.transaction_category_rules
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "tx_category_rules update own" on public.transaction_category_rules;
+create policy "tx_category_rules update own" on public.transaction_category_rules
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "tx_category_rules delete own" on public.transaction_category_rules;
+create policy "tx_category_rules delete own" on public.transaction_category_rules
+  for delete using (auth.uid() = user_id);

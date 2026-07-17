@@ -8,6 +8,7 @@ import {
   mapTransaction,
   type Balance,
 } from "@/lib/gocardless";
+import { categorizeNote, type Rule } from "@/lib/category-rules";
 import type { BankConnection } from "@/lib/types";
 
 /** GoCardless requisition status codes → our connection status. */
@@ -72,6 +73,14 @@ export async function syncConnection(
     (existingRows ?? []).map((r: { external_id: string }) => r.external_id),
   );
 
+  // Auto-category rules — applied to each new transaction's note.
+  const { data: ruleRows } = await admin
+    .from("transaction_category_rules")
+    .select("match, category")
+    .eq("user_id", conn.user_id)
+    .order("created_at", { ascending: true });
+  const rules = (ruleRows ?? []) as Rule[];
+
   let inserted = 0;
   let accountsLinked = 0;
 
@@ -128,7 +137,8 @@ export async function syncConnection(
     const rows = booked
       .map((tx) => mapTransaction(tx, conn.user_id, accountId))
       .filter((r): r is NonNullable<typeof r> => r !== null && !!r.occurred_on)
-      .filter((r) => !seen.has(r.external_id));
+      .filter((r) => !seen.has(r.external_id))
+      .map((r) => ({ ...r, category: categorizeNote(r.note, rules) }));
 
     // Guard against duplicates within this batch too.
     const batch: typeof rows = [];

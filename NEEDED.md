@@ -224,6 +224,17 @@ the same file is safe — duplicates are ignored.
    and synced automatically. Use **Synchronizovat** any time to pull new
    transactions; **Odpojit** to revoke.
 
+**Daily auto-sync.** Once live sync is on, a Vercel Cron
+(`/api/cron/bank-sync`, 06:00 UTC — already in `vercel.json`) refreshes every
+linked bank each morning, so new transactions land without you pressing
+**Synchronizovat**. It reuses the same `CRON_SECRET` as the other crons (set it
+once in Vercel if you haven't). No secret → the cron no-ops safely.
+
+**Auto-categories.** Under **Napojení banky → Auto-kategorie** add rules like
+`albert → Potraviny` or `shell → Palivo`. Imported/synced transactions whose
+description contains the text are filed under that category automatically;
+**Použít na nezařazené** back-fills the rules over existing uncategorized rows.
+
 **Notes.** Free tier covers personal use; bank consent lasts ~90 days (EU rule),
 after which the connection shows **Vypršelo** and you reconnect in one click.
 GoCardless typically exposes ~90 days of history on first link. No secret ever

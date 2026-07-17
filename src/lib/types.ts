@@ -90,6 +90,16 @@ export type Transaction = {
   created_at: string;
 };
 
+// A keyword → category rule. When a transaction's note contains `match`
+// (case-insensitively), it's auto-filed under `category` on import/sync.
+export type CategoryRule = {
+  id: string;
+  user_id: string;
+  match: string;
+  category: string;
+  created_at: string;
+};
+
 // A linked bank (a GoCardless "requisition"). Owned rows are readable by the
 // user; the /api/bank routes write them via the service role.
 export type BankConnection = {

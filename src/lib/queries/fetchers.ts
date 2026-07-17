@@ -8,6 +8,7 @@ import type {
   BankConnection,
   Book,
   BookPage,
+  CategoryRule,
   CoverLetterTemplate,
   ImportantDate,
   Invoice,
@@ -106,6 +107,16 @@ export async function fetchBankConnections(): Promise<BankConnection[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as BankConnection[];
+}
+
+export async function fetchCategoryRules(): Promise<CategoryRule[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("transaction_category_rules")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as CategoryRule[];
 }
 
 export async function fetchPlans(): Promise<Plan[]> {
