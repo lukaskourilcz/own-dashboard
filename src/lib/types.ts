@@ -67,6 +67,9 @@ export type Account = {
   name: string;
   balance: number;
   currency: string;
+  // Provider account id (GoCardless) when this account is bank-synced; null for
+  // hand-made accounts. Lets a sync update the same row instead of duplicating.
+  external_ref: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -81,7 +84,26 @@ export type Transaction = {
   category: string | null;
   note: string | null;
   occurred_on: string;
+  // Stable dedupe key: the bank's transactionId, or a "csv:<hash>" fingerprint
+  // for imported statement rows. Null for hand-added transactions.
+  external_id: string | null;
   created_at: string;
+};
+
+// A linked bank (a GoCardless "requisition"). Owned rows are readable by the
+// user; the /api/bank routes write them via the service role.
+export type BankConnection = {
+  id: string;
+  user_id: string;
+  provider: string;
+  requisition_id: string;
+  institution_id: string;
+  institution_name: string | null;
+  reference: string;
+  status: "created" | "linked" | "expired" | "error";
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type PlanStatus = "idea" | "active" | "done" | "dropped";

@@ -1540,3 +1540,79 @@ alter table public.job_scrape_runs enable row level security;
 drop policy if exists "job_scrape_runs select authenticated" on public.job_scrape_runs;
 create policy "job_scrape_runs select authenticated" on public.job_scrape_runs
   for select to authenticated using (true);
+
+-- =============================================================
+-- Section: Bank sync (GoCardless Bank Account Data) + import dedupe
+-- ----------------------------------------------------------------------------
+-- Read-only account/transaction sync via GoCardless (formerly Nordigen), plus
+-- a CSV/statement import path. Both write into the existing accounts /
+-- transactions tables; the columns below make re-syncing and re-importing
+-- idempotent so a transaction is never counted twice.
+-- =============================================================
+
+-- Stable external id: the GoCardless transactionId, or a deterministic
+-- "csv:<hash>" fingerprint for imported statement rows.
+alter table public.transactions
+  add column if not exists external_id text;
+
+create unique index if not exists transactions_user_external_uq
+  on public.transactions (user_id, external_id)
+  where external_id is not null;
+
+-- Ties one of our accounts to a provider account (GoCardless account id) so a
+-- sync updates the same row rather than spawning duplicates.
+alter table public.accounts
+  add column if not exists external_ref text;
+
+create unique index if not exists accounts_user_external_uq
+  on public.accounts (user_id, external_ref)
+  where external_ref is not null;
+
+-- One row per connected bank (a GoCardless "requisition"). Only service_role
+-- writes it (the /api/bank routes, which hold the app secrets); the owner may
+-- read its status and delete it to disconnect.
+create table if not exists public.bank_connections (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  provider text not null default 'gocardless',
+  requisition_id text not null,
+  institution_id text not null,
+  institution_name text,
+  reference text not null unique,
+  status text not null default 'created'
+    check (status in ('created', 'linked', 'expired', 'error')),
+  last_synced_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists bank_connections_user_idx
+  on public.bank_connections (user_id);
+
+alter table public.bank_connections enable row level security;
+
+drop policy if exists "bank_connections select own" on public.bank_connections;
+create policy "bank_connections select own" on public.bank_connections
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "bank_connections delete own" on public.bank_connections;
+create policy "bank_connections delete own" on public.bank_connections
+  for delete using (auth.uid() = user_id);
+
+grant all on public.bank_connections to service_role;
+
+create or replace function public.tg_bank_connections_touch()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists bank_connections_touch on public.bank_connections;
+create trigger bank_connections_touch
+  before update on public.bank_connections
+  for each row execute function public.tg_bank_connections_touch();

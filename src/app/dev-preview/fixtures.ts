@@ -106,17 +106,17 @@ export const streakLogs: StreakLog[] = [
 ];
 
 export const accounts: Account[] = [
-  { id: "a1", user_id: UID, name: "Checking", balance: 48250, currency: "CZK", created_at: TS, updated_at: TS },
-  { id: "a2", user_id: UID, name: "Savings", balance: 152000, currency: "CZK", created_at: TS, updated_at: TS },
+  { id: "a1", user_id: UID, name: "Checking", balance: 48250, currency: "CZK", external_ref: null, created_at: TS, updated_at: TS },
+  { id: "a2", user_id: UID, name: "Savings", balance: 152000, currency: "CZK", external_ref: null, created_at: TS, updated_at: TS },
 ];
 
 export const transactions: Transaction[] = [
-  { id: "tx1", user_id: UID, account_id: "a1", kind: "income", amount: 62000, currency: "CZK", category: "Salary", note: "June", occurred_on: ymd(-5), created_at: TS },
-  { id: "tx2", user_id: UID, account_id: "a1", kind: "expense", amount: 14500, currency: "CZK", category: "Rent", note: null, occurred_on: ymd(-4), created_at: TS },
-  { id: "tx3", user_id: UID, account_id: "a1", kind: "expense", amount: 3200, currency: "CZK", category: "Groceries", note: null, occurred_on: ymd(-3), created_at: TS },
-  { id: "tx4", user_id: UID, account_id: "a1", kind: "expense", amount: 890, currency: "CZK", category: "Transport", note: null, occurred_on: ymd(-2), created_at: TS },
-  { id: "tx5", user_id: UID, account_id: "a1", kind: "expense", amount: 1240, currency: "CZK", category: "Dining", note: "Dinner", occurred_on: ymd(-1), created_at: TS },
-  { id: "tx6", user_id: UID, account_id: "a2", kind: "income", amount: 5000, currency: "CZK", category: "Interest", note: null, occurred_on: ymd(0), created_at: TS },
+  { id: "tx1", user_id: UID, account_id: "a1", kind: "income", amount: 62000, currency: "CZK", category: "Salary", note: "June", occurred_on: ymd(-5), external_id: null, created_at: TS },
+  { id: "tx2", user_id: UID, account_id: "a1", kind: "expense", amount: 14500, currency: "CZK", category: "Rent", note: null, occurred_on: ymd(-4), external_id: null, created_at: TS },
+  { id: "tx3", user_id: UID, account_id: "a1", kind: "expense", amount: 3200, currency: "CZK", category: "Groceries", note: null, occurred_on: ymd(-3), external_id: null, created_at: TS },
+  { id: "tx4", user_id: UID, account_id: "a1", kind: "expense", amount: 890, currency: "CZK", category: "Transport", note: null, occurred_on: ymd(-2), external_id: null, created_at: TS },
+  { id: "tx5", user_id: UID, account_id: "a1", kind: "expense", amount: 1240, currency: "CZK", category: "Dining", note: "Dinner", occurred_on: ymd(-1), external_id: null, created_at: TS },
+  { id: "tx6", user_id: UID, account_id: "a2", kind: "income", amount: 5000, currency: "CZK", category: "Interest", note: null, occurred_on: ymd(0), external_id: null, created_at: TS },
 ];
 
 export const plans: Plan[] = [
