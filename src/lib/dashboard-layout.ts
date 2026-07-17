@@ -32,8 +32,21 @@ export const WIDGET_IDS: readonly WidgetId[] = [
   "plans",
 ];
 
-/** The layout shown until the user customizes anything. */
-export const DEFAULT_LAYOUT: readonly WidgetId[] = WIDGET_IDS;
+/**
+ * The layout shown until the user customizes anything. Tasks sit right under
+ * the greeting hero — the largest, first thing you act on — with the lighter
+ * quick-add / KPI cards below.
+ */
+export const DEFAULT_LAYOUT: readonly WidgetId[] = [
+  "today-hero",
+  "todos",
+  "kpi",
+  "quick-add",
+  "streaks",
+  "subscriptions",
+  "calendar",
+  "plans",
+];
 
 const KNOWN = new Set<WidgetId>(WIDGET_IDS);
 

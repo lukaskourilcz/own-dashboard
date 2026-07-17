@@ -34,6 +34,7 @@ import {
 import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
+import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
 import type { Subscription, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the donut only when this panel renders.
@@ -238,12 +239,28 @@ export function SubscriptionsPanel({
   }
 
   if (compact) {
+    // Always a detailed breakdown: every active service with its brand mark,
+    // billing cadence, and cost (converted to the display currency), busiest
+    // spend first. Cancelled subs sink to the bottom, dimmed.
+    const ordered = [...subs].sort((a, b) => {
+      const act = Number(isActive(b)) - Number(isActive(a));
+      if (act) return act;
+      return toMonthlyIn(b, displayCurrency) - toMonthlyIn(a, displayCurrency);
+    });
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="inline-flex items-center gap-1.5">
             <CreditCard className="h-3 w-3" /> {t.subscriptions.compactTitle}
           </CardTitle>
+          {subs.length > 0 && (
+            <span className="text-xs text-foreground-subtle tabular">
+              {t.subscriptions.perYearAndActive(
+                formatCurrency(yearlyTotal, displayCurrency),
+                activeCount,
+              )}
+            </span>
+          )}
         </CardHeader>
         <CardContent>
           {subs.length === 0 ? (
@@ -261,22 +278,51 @@ export function SubscriptionsPanel({
                   {t.subscriptions.perMo}
                 </span>
               </p>
-              <p className="text-xs text-foreground-subtle tabular">
-                {t.subscriptions.perYearAndActive(
-                  formatCurrency(yearlyTotal, displayCurrency),
-                  activeCount,
-                )}
-              </p>
-              {chartData.length > 0 && (
-                <div className="mt-3 h-32 -mx-2">
-                  <CategoryDonut
-                    data={chartData}
-                    currency={displayCurrency}
-                    innerRadius={32}
-                    outerRadius={56}
-                  />
-                </div>
-              )}
+              <ul className="mt-3 -mx-2 divide-y divide-border/70">
+                {ordered.map((s) => {
+                  const active = isActive(s);
+                  const monthly = toMonthlyIn(s, displayCurrency);
+                  return (
+                    <li
+                      key={s.id}
+                      className={cn(
+                        "flex items-center gap-3 px-2 py-2",
+                        !active && "opacity-55",
+                      )}
+                    >
+                      <SubscriptionIcon name={s.name} size={30} />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={cn(
+                            "truncate text-sm font-medium text-foreground",
+                            !active && "line-through",
+                          )}
+                        >
+                          {s.name}
+                        </p>
+                        <p className="truncate text-[11px] text-foreground-subtle">
+                          {t.subscriptions.cycle[s.billing_cycle]}
+                          {s.next_billing_date
+                            ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-medium tabular text-foreground">
+                          {formatCurrency(s.amount, s.currency)}
+                        </p>
+                        {s.billing_cycle !== "monthly" && (
+                          <p className="text-[11px] text-foreground-subtle tabular">
+                            {t.subscriptions.perMoApprox(
+                              formatCurrency(monthly, displayCurrency),
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </>
           )}
         </CardContent>
@@ -508,6 +554,7 @@ export function SubscriptionsPanel({
                       <span className="tabular text-xs text-foreground-subtle w-20 shrink-0">
                         {s.next_billing_date}
                       </span>
+                      <SubscriptionIcon name={s.name} size={26} />
                       <span className="font-medium text-sm truncate">
                         {s.name}
                       </span>
@@ -573,7 +620,9 @@ export function SubscriptionsPanel({
                           !active && "opacity-60",
                         )}
                       >
-                        <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <SubscriptionIcon name={s.name} size={34} />
+                          <div className="min-w-0">
                           <p
                             className={cn(
                               "font-medium text-sm truncate",
@@ -595,6 +644,7 @@ export function SubscriptionsPanel({
                               ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
                               : ""}
                           </p>
+                          </div>
                         </div>
                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Tooltip content={t.common.edit}>

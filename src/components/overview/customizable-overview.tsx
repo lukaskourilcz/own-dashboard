@@ -54,7 +54,7 @@ const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }>
     "today-hero": { icon: LayoutDashboard, size: "full" },
     "quick-add": { icon: Sparkles, size: "full" },
     kpi: { icon: Sigma, size: "full" },
-    todos: { icon: ListTodo, size: "half" },
+    todos: { icon: ListTodo, size: "full" },
     streaks: { icon: Flame, size: "half" },
     subscriptions: { icon: CreditCard, size: "half" },
     calendar: { icon: CalendarDays, size: "half" },
