@@ -59,6 +59,17 @@ type TodosStrings = {
   clearFromNeededErr: string;
   clearingFromNeeded: string;
   finishedCommitMessage: (n: number) => string;
+  // Importance scoring + filter
+  importanceLabel: string;
+  importanceNone: string;
+  importanceOption: (n: number) => string;
+  importanceOf: (n: number) => string;
+  importanceFilterLabel: string;
+  filterAll: string;
+  filterMin: (n: number) => string;
+  filterHidden: (n: number) => string;
+  filterEmptyTitle: string;
+  filterEmptyDescription: (n: number) => string;
 };
 
 export const todos: { en: TodosStrings; cs: TodosStrings } = {
@@ -130,6 +141,17 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     clearingFromNeeded: "Removing…",
     finishedCommitMessage: (n) =>
       `chore: remove ${n} finished task${n === 1 ? "" : "s"} from NEEDED.md`,
+    importanceLabel: "Importance",
+    importanceNone: "Importance — none",
+    importanceOption: (n) => `Importance ${n}${n === 5 ? " (highest)" : ""}`,
+    importanceOf: (n) => `Importance ${n}/5`,
+    importanceFilterLabel: "Importance",
+    filterAll: "All",
+    filterMin: (n) => (n === 5 ? "5" : `${n}+`),
+    filterHidden: (n) => `${n} hidden`,
+    filterEmptyTitle: "Nothing at this importance",
+    filterEmptyDescription: (n) =>
+      `No open tasks scored ${n} or higher. Lower the filter to see more.`,
   },
   cs: {
     title: "Úkoly",
@@ -219,6 +241,21 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     clearingFromNeeded: "Odebírám…",
     finishedCommitMessage: (n) =>
       `chore: odebrání ${n} hotových úkolů z NEEDED.md`,
+    importanceLabel: "Důležitost",
+    importanceNone: "Důležitost — žádná",
+    importanceOption: (n) => `Důležitost ${n}${n === 5 ? " (nejvyšší)" : ""}`,
+    importanceOf: (n) => `Důležitost ${n}/5`,
+    importanceFilterLabel: "Důležitost",
+    filterAll: "Vše",
+    filterMin: (n) => (n === 5 ? "5" : `${n}+`),
+    filterHidden: (n) => {
+      if (n === 1) return "1 skrytý";
+      if (n >= 2 && n <= 4) return `${n} skryté`;
+      return `${n} skrytých`;
+    },
+    filterEmptyTitle: "Nic s touto důležitostí",
+    filterEmptyDescription: (n) =>
+      `Žádné otevřené úkoly s důležitostí ${n} a vyšší. Sniž filtr a uvidíš víc.`,
   },
 };
 

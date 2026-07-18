@@ -12,11 +12,30 @@ export type NeededItem = {
   text: string;
   /** The exact source line, so we can remove precisely on check-off. */
   raw: string;
+  /** Importance 1–5 (5 = highest) parsed from an `[imp:N]` marker, else null. */
+  importance: number | null;
 };
 
 // A markdown list item: bullet or ordered, optional task-checkbox. Items already
 // ticked (`- [x]`) are treated as done and skipped — only open work surfaces.
 const ITEM_RE = /^\s*(?:[-*+]|\d+\.)\s+(\[([ xX])\]\s+)?(.+?)\s*$/;
+
+// An importance marker, e.g. `[imp:4]` (optionally wrapped in backticks). One
+// per task line; 1–5, 5 = highest. Stripped from the visible title on parse.
+const IMPORTANCE_RE = /`?\[imp:([1-5])\]`?/i;
+
+/** Pull the `[imp:N]` marker out of a task line, returning the score (or null)
+ * and the line text with the marker removed. */
+export function extractImportance(text: string): {
+  importance: number | null;
+  text: string;
+} {
+  const m = IMPORTANCE_RE.exec(text);
+  if (!m) return { importance: null, text };
+  const importance = Number(m[1]);
+  const stripped = text.replace(IMPORTANCE_RE, "").replace(/\s{2,}/g, " ").trim();
+  return { importance, text: stripped };
+}
 
 /** Parse a NEEDED.md into open action items — one per open markdown list line. */
 export function parseNeeded(
@@ -31,7 +50,7 @@ export function parseNeeded(
     if (!m) continue;
     const checkbox = m[2];
     if (checkbox && checkbox.toLowerCase() === "x") continue; // already done
-    const text = m[3].trim();
+    const { importance, text } = extractImportance(m[3].trim());
     if (!text) continue;
     // De-dupe identical lines within one file so the key stays unique.
     let key = `${repo.id}:${text.toLowerCase()}`;
@@ -46,6 +65,7 @@ export function parseNeeded(
       htmlUrl,
       text,
       raw,
+      importance,
     });
   }
   return items;
@@ -58,6 +78,7 @@ export function cleanNeededText(s: string): string {
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // [text](url) → text
     .replace(/\*\*([^*]+)\*\*/g, "$1") // **bold** → bold
     .replace(/`([^`]+)`/g, "$1") // `code` → code
+    .replace(/\[imp:[1-5]\]/gi, "") // any stray importance marker
     .replace(/\s*→\s*§[\w.]+\s*$/, "") // trailing "→ §0.2"
     .replace(/\s+/g, " ")
     .trim();

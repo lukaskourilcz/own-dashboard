@@ -42,6 +42,9 @@ export type Todo = {
   // When the task was generated. due_date is set to generated_at + 7 days so
   // the dashboard can show a time-to-finish countdown.
   generated_at: string | null;
+  // Importance 1–5 (5 = highest), parsed from a NEEDED.md `[imp:N]` marker or
+  // chosen by hand on a manual task. Null = unscored (drives the Tasks filter).
+  importance: number | null;
 };
 
 export type Streak = {

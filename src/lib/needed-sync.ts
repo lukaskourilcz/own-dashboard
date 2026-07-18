@@ -29,6 +29,8 @@ export type NeededTodoRow = {
   needed_raw: string;
   generated_at: string;
   due_date: string;
+  /** Importance 1–5 (5 = highest) from the task's `[imp:N]` marker, else null. */
+  importance: number | null;
 };
 
 /** Due date (date-only, yyyy-MM-dd) for a task generated at `generatedIso`. */
@@ -76,6 +78,7 @@ export function buildNeededRows(
     needed_raw: it.raw,
     generated_at: nowIso,
     due_date: dueDate,
+    importance: it.importance,
   }));
 }
 

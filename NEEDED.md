@@ -8,31 +8,22 @@ here blocks the deploy.
 
 ## ⭐ Start here — the whole checklist
 
-Tick these off top to bottom. Effort in brackets. Details for each are in the
-numbered sections below.
+Tick these off top to bottom. Each task carries a one-line "why" and an
+importance score `[imp:N]` (5 = highest). Details are in the numbered sections
+below.
 
-- [ ] **Run the AI-links pricing SQL** once in Supabase — makes the color badges
-  appear. [2 min] → §A
-- [ ] **Add `ANTHROPIC_API_KEY`** in Vercel (if not already set) — turns the
-  links **Auto-fill** from title-only into smart category + pricing. [3 min] → §0.2
-- [ ] **Add `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`** — distributed
-  rate limiting for the AI route. [5 min] → §0.3
-- [ ] **Add `HEARTBEAT_URL` + create a cron monitor** — get alerted if the daily
-  renewal-emails job fails. [5 min] → §0.4
-- [ ] **Eyeball the Finances page + overview** after deploy and tell me if you
-  want the redesign tuned. [1 min] → §0.7
-- [ ] **Run the bank-sync SQL** once in Supabase — adds the `bank_connections`
-  table + dedupe columns so bank import works. **Required for both CSV import
-  and live sync.** [2 min] → §0.9
-- [ ] **(Optional) Add `GOCARDLESS_SECRET_ID` + `GOCARDLESS_SECRET_KEY`** — turns
-  on live Raiffeisenbank (and any EU bank) auto-sync. CSV import already works
-  without it. [10 min] → §0.9
-- [ ] **When ready: enforce the CSP** — one-line edit after checking the console.
-  [10 min, later] → §0.1
-- [ ] *(Optional)* `JINA_API_KEY`, `FIRECRAWL_API_KEY`, `ANTHROPIC_BASE_URL` —
-  only if you want them. → §0.2 / §0.6
-- [ ] *(For editing with Claude Code, not the app)* Authorize the MCP
-  connectors. → §0.8
+- [ ] **Run the bank-sync SQL** in Supabase — required for both CSV import and live sync; bank import is broken without it. `[imp:4]`
+- [ ] **Run the AI-links pricing SQL** in Supabase — lights up the color pricing badges on every AI link. `[imp:3]`
+- [ ] **Add `ANTHROPIC_API_KEY`** in Vercel — upgrades link Auto-fill from title-only to smart category + pricing. `[imp:3]`
+- [ ] **Enforce the CSP** once the console is clean — closes the last security-header gap on the app. `[imp:3]`
+- [ ] **Add `HEARTBEAT_URL` + a cron monitor** — alerts you if the daily renewal-emails job silently fails. `[imp:2]`
+- [ ] **Add `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`** — makes AI-route rate limiting hold across serverless instances. `[imp:2]`
+- [ ] **Eyeball the Finances + overview redesign** after deploy — confirm the new layout reads well in light and dark. `[imp:2]`
+- [ ] **Add `GOCARDLESS_SECRET_ID` + `GOCARDLESS_SECRET_KEY`** — turns on live Raiffeisenbank auto-sync; optional, CSV import works without it. `[imp:2]`
+- [ ] **Add `JINA_API_KEY` / `FIRECRAWL_API_KEY` / `ANTHROPIC_BASE_URL`** — only if you hit Auto-fill limits or want a gateway. `[imp:1]`
+- [ ] **Check the renewal-warnings cron isn't bounced to `/login`** — if it is, the daily emails never actually send. `[imp:3]`
+- [ ] **Enable PostHog** (`NEXT_PUBLIC_POSTHOG_KEY` + host) — optional analytics, session replay, and feature-flag kill-switches. `[imp:2]`
+- [ ] **Authorize the MCP connectors** via `/mcp` — only so Claude Code can use your Supabase/Gmail/Calendar/Drive when editing. `[imp:1]`
 
 ### All the env vars in one place
 
