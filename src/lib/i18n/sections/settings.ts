@@ -17,6 +17,11 @@ type SettingsStrings = {
   tasks: string;
   tasksDesc: string;
   tasksAll: string;
+  cv: string;
+  cvDesc: string;
+  cvCzech: string;
+  cvEnglish: string;
+  cvPlaceholder: string;
 };
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
@@ -41,6 +46,12 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     tasksDesc:
       "How many tasks each category shows before “show all”.",
     tasksAll: "All",
+    cv: "CV links",
+    cvDesc:
+      "Google Docs links to your CVs — shown as buttons on the Jobs page. Paste the share URL; editing the doc keeps the same link.",
+    cvCzech: "🇨🇿 Czech CV",
+    cvEnglish: "🇬🇧 English CV",
+    cvPlaceholder: "https://docs.google.com/document/d/…",
   },
   cs: {
     title: "Nastavení",
@@ -62,5 +73,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     tasks: "Úkoly",
     tasksDesc: "Kolik úkolů každá kategorie zobrazí před „zobrazit vše“.",
     tasksAll: "Vše",
+    cv: "Odkazy na CV",
+    cvDesc:
+      "Odkazy na tvoje životopisy v Google Docs — zobrazí se jako tlačítka na stránce Práce. Vlož sdílecí URL; úpravy dokumentu odkaz nemění.",
+    cvCzech: "🇨🇿 České CV",
+    cvEnglish: "🇬🇧 Anglické CV",
+    cvPlaceholder: "https://docs.google.com/document/d/…",
   },
 };

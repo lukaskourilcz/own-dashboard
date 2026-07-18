@@ -49,6 +49,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
+import { useCvLinks } from "@/lib/use-prefs";
 import { jobSourceLabel } from "@/lib/jobs/meta";
 import { compareByFit, matchListing, type JobMatch } from "@/lib/jobs/match";
 import { applicationStats } from "@/lib/jobs/stats";
@@ -126,6 +127,7 @@ export function JobsPanel({
   userId,
 }: Props) {
   const t = useDict();
+  const { cs: cvCs, en: cvEn } = useCvLinks();
   const [view, setView] = useState<"open" | "applied">("open");
 
   // Listings the user already applied to, by listing id and by URL (manual
@@ -152,25 +154,57 @@ export function JobsPanel({
         title={t.jobs.title}
         description={t.jobs.description}
         action={
-          <div className="flex rounded-md border border-border bg-surface p-0.5">
-            {(["open", "applied"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={cn(
-                  "rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring",
-                  view === v
-                    ? "bg-accent text-foreground"
-                    : "text-foreground-muted hover:text-foreground",
+          <div className="flex flex-wrap items-center gap-2">
+            {(cvCs || cvEn) && (
+              <div className="flex items-center gap-1.5">
+                {cvCs && (
+                  <Button asChild variant="outline" size="sm">
+                    <a
+                      href={cvCs}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t.jobs.cvCzech}
+                    >
+                      <span aria-hidden>🇨🇿</span>
+                      {t.jobs.cvShort}
+                    </a>
+                  </Button>
                 )}
-              >
-                {v === "open" ? t.jobs.openTab : t.jobs.appliedTab}
-                <span className="ml-1.5 text-[10px] text-foreground-subtle tabular">
-                  {v === "open" ? listings.length : applications.length}
-                </span>
-              </button>
-            ))}
+                {cvEn && (
+                  <Button asChild variant="outline" size="sm">
+                    <a
+                      href={cvEn}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t.jobs.cvEnglish}
+                    >
+                      <span aria-hidden>🇬🇧</span>
+                      {t.jobs.cvShort}
+                    </a>
+                  </Button>
+                )}
+              </div>
+            )}
+            <div className="flex rounded-md border border-border bg-surface p-0.5">
+              {(["open", "applied"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring",
+                    view === v
+                      ? "bg-accent text-foreground"
+                      : "text-foreground-muted hover:text-foreground",
+                  )}
+                >
+                  {v === "open" ? t.jobs.openTab : t.jobs.appliedTab}
+                  <span className="ml-1.5 text-[10px] text-foreground-subtle tabular">
+                    {v === "open" ? listings.length : applications.length}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         }
       />

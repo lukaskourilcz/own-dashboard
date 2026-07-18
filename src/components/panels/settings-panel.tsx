@@ -2,6 +2,7 @@
 
 import {
   Coins,
+  FileText,
   Languages,
   ListTodo,
   Moon,
@@ -10,9 +11,12 @@ import {
   Sun,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { useDict, useLang } from "@/lib/i18n";
 import {
+  useCvLinks,
   useDisplayCurrency,
   useNavVisibility,
   useTasksPerCategory,
@@ -97,6 +101,7 @@ export function SettingsPanel() {
   const { theme, setTheme } = useTheme();
   const { count: tasksPerCategory, setCount: setTasksPerCategory } =
     useTasksPerCategory();
+  const { cs: cvCs, en: cvEn, setCs: setCvCs, setEn: setCvEn } = useCvLinks();
 
   return (
     <div>
@@ -198,6 +203,42 @@ export function SettingsPanel() {
                 { value: "dark", label: t.settings.dark, icon: Moon },
               ]}
             />
+          </CardContent>
+        </Card>
+
+        {/* CV links */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-1.5">
+              <FileText className="h-3 w-3" /> {t.settings.cv}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-foreground-subtle">{t.settings.cvDesc}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="cv-cs">{t.settings.cvCzech}</Label>
+                <Input
+                  id="cv-cs"
+                  type="url"
+                  inputMode="url"
+                  placeholder={t.settings.cvPlaceholder}
+                  value={cvCs}
+                  onChange={(e) => setCvCs(e.target.value.trim())}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cv-en">{t.settings.cvEnglish}</Label>
+                <Input
+                  id="cv-en"
+                  type="url"
+                  inputMode="url"
+                  placeholder={t.settings.cvPlaceholder}
+                  value={cvEn}
+                  onChange={(e) => setCvEn(e.target.value.trim())}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
