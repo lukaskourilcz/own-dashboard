@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   closestCenter,
   DndContext,
@@ -45,7 +52,19 @@ import {
   type WidgetId,
 } from "@/lib/dashboard-layout";
 import { useDashboardLayout } from "@/lib/use-dashboard-layout";
+import { useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+
+// Widgets that mirror a hideable nav section — hidden in Settings ⇒ hidden on
+// the overview too. Overview-only widgets (today-hero, quick-add, kpi) have no
+// entry and always show.
+const WIDGET_SECTION: Partial<Record<WidgetId, string>> = {
+  todos: "todos",
+  streaks: "streaks",
+  subscriptions: "subscriptions",
+  calendar: "calendar",
+  plans: "plans",
+};
 
 // Icon + grid footprint per widget. "full" widgets span both columns on large
 // screens; "half" widgets sit two-per-row. Labels/descriptions live in i18n.
@@ -69,8 +88,16 @@ type Props = {
 export function CustomizableOverview({ nodes }: Props) {
   const t = useDict();
   const { layout, setLayout, reset } = useDashboardLayout();
+  const { isHidden } = useNavVisibility();
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  // Respect the Settings nav-visibility choices: drop widgets whose section
+  // the user hid. Kept out of `layout` state so unhiding restores position.
+  const visibleLayout = layout.filter((id) => {
+    const section = WIDGET_SECTION[id];
+    return !section || !isHidden(section);
+  });
 
   // Pointer for mouse/touch, keyboard for accessibility — matches notes-panel.
   const sensors = useSensors(
@@ -162,9 +189,12 @@ export function CustomizableOverview({ nodes }: Props) {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={[...layout]} strategy={rectSortingStrategy}>
+          <SortableContext
+            items={[...visibleLayout]}
+            strategy={rectSortingStrategy}
+          >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {layout.map((id) => (
+              {visibleLayout.map((id) => (
                 <SortableWidget
                   key={id}
                   id={id}
@@ -293,62 +323,57 @@ function AddWidgetDialog({
 }) {
   const t = useDict();
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <Dialog.Title className="text-sm font-semibold">
-            {t.dashboard.addTitle}
-          </Dialog.Title>
-          <Dialog.Description className="mt-1 text-xs text-foreground-muted">
-            {t.dashboard.addDescription}
-          </Dialog.Description>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t.dashboard.addTitle}</DialogTitle>
+          <DialogDescription>{t.dashboard.addDescription}</DialogDescription>
+        </DialogHeader>
 
-          <div className="mt-4">
-            {available.length === 0 ? (
-              <p className="py-8 text-center text-xs text-foreground-subtle">
-                {t.dashboard.allAdded}
-              </p>
-            ) : (
-              <ul className="space-y-1.5">
-                {available.map((id) => {
-                  const Icon = WIDGET_META[id].icon;
-                  return (
-                    <li key={id}>
-                      <button
-                        type="button"
-                        onClick={() => onAdd(id)}
-                        className="flex w-full items-start gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring"
-                      >
-                        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-foreground">
-                          <Icon className="h-4 w-4" />
+        <div className="mt-4">
+          {available.length === 0 ? (
+            <p className="py-8 text-center text-xs text-foreground-subtle">
+              {t.dashboard.allAdded}
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {available.map((id) => {
+                const Icon = WIDGET_META[id].icon;
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      onClick={() => onAdd(id)}
+                      className="flex w-full items-start gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring"
+                    >
+                      <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-foreground">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-foreground">
+                          {t.dashboard.widgetNames[id]}
                         </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-medium text-foreground">
-                            {t.dashboard.widgetNames[id]}
-                          </span>
-                          <span className="block text-xs text-foreground-subtle">
-                            {t.dashboard.widgetDescriptions[id]}
-                          </span>
+                        <span className="block text-xs text-foreground-subtle">
+                          {t.dashboard.widgetDescriptions[id]}
                         </span>
-                        <Plus className="mt-1 h-4 w-4 shrink-0 text-foreground-subtle" />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+                      </span>
+                      <Plus className="mt-1 h-4 w-4 shrink-0 text-foreground-subtle" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
-          <div className="mt-4 flex justify-end">
-            <Dialog.Close asChild>
-              <Button size="sm" variant="ghost">
-                {t.dashboard.done}
-              </Button>
-            </Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <div className="mt-4 flex justify-end">
+          <DialogClose asChild>
+            <Button size="sm" variant="ghost">
+              {t.dashboard.done}
+            </Button>
+          </DialogClose>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

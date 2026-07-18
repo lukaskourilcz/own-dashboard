@@ -40,6 +40,10 @@ type TodosStrings = {
   refreshErr: string;
   neededBadge: string;
   openNeeded: string;
+  showAllCount: (n: number) => string;
+  showLess: string;
+  collapseGroup: string;
+  expandGroup: string;
   repoTaskCount: (n: number) => string;
   generatedOn: (date: string) => string;
   // "time to finish" chip on a task card; n days (negative = overdue, 0 = today).
@@ -114,6 +118,10 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshErr: "Couldn't refresh tasks. Please try again.",
     neededBadge: "NEEDED",
     openNeeded: "Open NEEDED.md",
+    showAllCount: (n) => `Show all ${n}`,
+    showLess: "Show less",
+    collapseGroup: "Collapse",
+    expandGroup: "Expand",
     repoTaskCount: (n) => (n === 1 ? "1 task" : `${n} tasks`),
     generatedOn: (date) => `generated ${date}`,
     timeLeft: (n) =>
@@ -205,6 +213,10 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshErr: "Úkoly se nepodařilo obnovit. Zkus to znovu.",
     neededBadge: "NEEDED",
     openNeeded: "Otevřít NEEDED.md",
+    showAllCount: (n) => `Zobrazit vše (${n})`,
+    showLess: "Zobrazit méně",
+    collapseGroup: "Sbalit",
+    expandGroup: "Rozbalit",
     repoTaskCount: (n) => {
       if (n === 1) return "1 úkol";
       if (n >= 2 && n <= 4) return `${n} úkoly`;

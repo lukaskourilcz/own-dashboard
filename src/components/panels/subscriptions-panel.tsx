@@ -19,9 +19,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import {
@@ -204,8 +205,7 @@ export function SubscriptionsPanel({
       category: form.category.trim() || null,
       next_billing_date: form.next_billing_date || null,
     };
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
+    const userId = await currentUserId(supabase);
     if (!userId) {
       setError(t.quickAdd.signInFirst);
       return;
@@ -341,18 +341,16 @@ export function SubscriptionsPanel({
               <Label className="text-foreground-subtle">
                 {t.subscriptions.displayIn}
               </Label>
-              <Select
+              <SimpleSelect
                 value={displayCurrency}
-                onChange={(e) => setDisplayCurrency(e.target.value)}
+                onValueChange={(v) => setDisplayCurrency(v)}
                 aria-label={t.subscriptions.displayIn}
                 className="h-8 w-20 text-xs"
-              >
-                {SUPPORTED_CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
+                options={SUPPORTED_CURRENCIES.map((c) => ({
+                  value: c,
+                  label: c,
+                }))}
+              />
             </div>
           )
         }
@@ -392,35 +390,34 @@ export function SubscriptionsPanel({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="sub-currency">{t.subscriptions.currency}</Label>
-                  <Select
+                  <SimpleSelect
                     id="sub-currency"
                     value={form.currency}
-                    onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                  >
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </Select>
+                    onValueChange={(v) => setForm({ ...form, currency: v })}
+                    options={SUPPORTED_CURRENCIES.map((c) => ({
+                      value: c,
+                      label: c,
+                    }))}
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="sub-cycle">{t.subscriptions.billingCycle}</Label>
-                <Select
+                <SimpleSelect
                   id="sub-cycle"
                   value={form.billing_cycle}
-                  onChange={(e) =>
+                  onValueChange={(v) =>
                     setForm({
                       ...form,
-                      billing_cycle: e.target.value as FormState["billing_cycle"],
+                      billing_cycle: v as FormState["billing_cycle"],
                     })
                   }
-                >
-                  <option value="monthly">{t.subscriptions.cycle.monthly}</option>
-                  <option value="yearly">{t.subscriptions.cycle.yearly}</option>
-                  <option value="weekly">{t.subscriptions.cycle.weekly}</option>
-                </Select>
+                  options={[
+                    { value: "monthly", label: t.subscriptions.cycle.monthly },
+                    { value: "yearly", label: t.subscriptions.cycle.yearly },
+                    { value: "weekly", label: t.subscriptions.cycle.weekly },
+                  ]}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="sub-category">{t.subscriptions.category}</Label>

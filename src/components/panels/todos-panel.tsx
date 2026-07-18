@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
+  ChevronDown,
+  ChevronRight,
   ExternalLink,
   Flag,
   Heart,
@@ -19,13 +20,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
+import { useTasksPerCategory } from "@/lib/use-prefs";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
@@ -65,14 +75,15 @@ export function TodosPanel({
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
   // importance is at least this. Applies to the full view's open-task groups.
   const [minImportance, setMinImportance] = useState(0);
+  // How many tasks each category shows before "show all" (Settings; 0 = all).
+  const { count: tasksPerCategory } = useTasksPerCategory();
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
   // query off in the compact dashboard widget.
   const reposQuery = useReposQuery(!compact);
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("todos")
@@ -151,8 +162,7 @@ export function TodosPanel({
           reposData?.kind === "disconnected" ? "disconnected" : "no-repos",
         );
       }
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("disconnected");
 
       const nowIso = new Date().toISOString();
@@ -371,12 +381,12 @@ export function TodosPanel({
     minImportance === 0 || (td.importance ?? 0) >= minImportance;
   const openVisible = open.filter(passesImportance);
   const hiddenByFilter = open.length - openVisible.length;
-  const openGithub = openVisible.filter(
-    (td) => td.source === "github" && td.repo_id,
-  );
-  const openPersonal = openVisible.filter(
-    (td) => !(td.source === "github" && td.repo_id),
-  );
+  const openGithub = openVisible
+    .filter((td) => td.source === "github" && td.repo_id)
+    .sort(byImportanceThenDue);
+  const openPersonal = openVisible
+    .filter((td) => !(td.source === "github" && td.repo_id))
+    .sort(byImportanceThenDue);
 
   const repoMap = new Map<
     string,
@@ -469,22 +479,50 @@ export function TodosPanel({
           ) : (
             <>
               {repoGroups.map((g) => (
-                <RepoTaskCard
+                <TaskGroupCard
                   key={g.fullName ?? g.name}
                   t={t}
                   locale={locale}
-                  group={g}
+                  items={g.items}
+                  limit={tasksPerCategory}
                   onToggle={toggle}
                   onRemove={remove}
+                  header={
+                    g.url ? (
+                      <a
+                        href={g.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={g.fullName ?? g.name}
+                        className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-foreground hover:underline"
+                      >
+                        <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        <span className="truncate">{g.name}</span>
+                        <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
+                      </a>
+                    ) : (
+                      <span className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-foreground">
+                        <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        <span className="truncate">{g.name}</span>
+                      </span>
+                    )
+                  }
                 />
               ))}
               {openPersonal.length > 0 && (
-                <PersonalTaskCard
+                <TaskGroupCard
                   t={t}
                   locale={locale}
                   items={openPersonal}
+                  limit={tasksPerCategory}
                   onToggle={toggle}
                   onRemove={remove}
+                  header={
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <ListTodo className="h-4 w-4 shrink-0 text-foreground-muted" />
+                      {t.todos.personalGroup}
+                    </span>
+                  }
                 />
               )}
             </>
@@ -539,106 +577,97 @@ export function TodosPanel({
   );
 }
 
-/* ----------------------------- Repo task card ---------------------------- */
+/* ---------------------------- Task group card ---------------------------- */
 
-function RepoTaskCard({
-  t,
-  locale,
-  group,
-  onToggle,
-  onRemove,
-}: {
-  t: Dict;
-  locale: Locale;
-  group: {
-    name: string;
-    fullName: string | null;
-    url: string | null;
-    items: Todo[];
-  };
-  onToggle: (td: Todo) => void;
-  onRemove: (id: string) => void;
-}) {
-  return (
-    <Card className="overflow-hidden p-0">
-      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
-        <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
-        {group.url ? (
-          <a
-            href={group.url}
-            target="_blank"
-            rel="noreferrer"
-            title={group.fullName ?? group.name}
-            className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-foreground hover:underline"
-          >
-            <span className="truncate">{group.name}</span>
-            <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
-          </a>
-        ) : (
-          <span className="truncate text-sm font-semibold text-foreground">
-            {group.name}
-          </span>
-        )}
-        <span className="ml-auto shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
-          {t.todos.repoTaskCount(group.items.length)}
-        </span>
-      </div>
-      <ul className="space-y-2 p-3">
-        <AnimatePresence initial={false}>
-          {group.items.map((td) => (
-            <TaskSubcard
-              key={td.id}
-              t={t}
-              locale={locale}
-              td={td}
-              onToggle={onToggle}
-              onRemove={onRemove}
-            />
-          ))}
-        </AnimatePresence>
-      </ul>
-    </Card>
-  );
+/** Order tasks within a category: highest importance first (unscored last),
+ * then soonest due date first. */
+function byImportanceThenDue(a: Todo, b: Todo): number {
+  const ia = a.importance ?? 0;
+  const ib = b.importance ?? 0;
+  if (ia !== ib) return ib - ia;
+  if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+  if (a.due_date) return -1;
+  if (b.due_date) return 1;
+  return 0;
 }
 
-function PersonalTaskCard({
+/**
+ * A collapsible category card (one repo, or "Personal"). Shows the first
+ * `limit` tasks (0 = all) with a "show all / show less" control, and the whole
+ * body can be collapsed from the header. Tasks arrive pre-sorted by importance.
+ */
+function TaskGroupCard({
   t,
   locale,
+  header,
   items,
+  limit,
   onToggle,
   onRemove,
 }: {
   t: Dict;
   locale: Locale;
+  header: React.ReactNode;
   items: Todo[];
+  limit: number;
   onToggle: (td: Todo) => void;
   onRemove: (id: string) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const total = items.length;
+  const capped = limit > 0 && !showAll;
+  const shown = capped ? items.slice(0, limit) : items;
+  const canExpand = limit > 0 && total > limit;
+
   return (
     <Card className="overflow-hidden p-0">
-      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
-        <ListTodo className="h-4 w-4 shrink-0 text-foreground-muted" />
-        <span className="text-sm font-semibold text-foreground">
-          {t.todos.personalGroup}
-        </span>
-        <span className="ml-auto shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
-          {t.todos.repoTaskCount(items.length)}
+      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-2 py-2.5 pr-4">
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? t.todos.expandGroup : t.todos.collapseGroup}
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </button>
+        <div className="min-w-0 flex-1">{header}</div>
+        <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+          {t.todos.repoTaskCount(total)}
         </span>
       </div>
-      <ul className="space-y-2 p-3">
-        <AnimatePresence initial={false}>
-          {items.map((td) => (
-            <TaskSubcard
-              key={td.id}
-              t={t}
-              locale={locale}
-              td={td}
-              onToggle={onToggle}
-              onRemove={onRemove}
-            />
-          ))}
-        </AnimatePresence>
-      </ul>
+      {!collapsed && (
+        <>
+          <ul className="space-y-2 p-3">
+            <AnimatePresence initial={false}>
+              {shown.map((td) => (
+                <TaskSubcard
+                  key={td.id}
+                  t={t}
+                  locale={locale}
+                  td={td}
+                  onToggle={onToggle}
+                  onRemove={onRemove}
+                />
+              ))}
+            </AnimatePresence>
+          </ul>
+          {canExpand && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full border-t border-border/60 px-4 py-2 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+            >
+              {showAll ? t.todos.showLess : t.todos.showAllCount(total)}
+            </button>
+          )}
+        </>
+      )}
     </Card>
   );
 }
@@ -945,14 +974,12 @@ function AddTaskDialog({
   onSubmit: (e: React.FormEvent) => void;
 }) {
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <Dialog.Title className="text-sm font-semibold">
-            {t.todos.addTaskTitle}
-          </Dialog.Title>
-          <form onSubmit={onSubmit} className="mt-3 space-y-3">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t.todos.addTaskTitle}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="todo-add-title">{t.todos.taskLabel}</Label>
               <Input
@@ -977,35 +1004,34 @@ function AddTaskDialog({
                 <Label htmlFor="todo-add-importance">
                   {t.todos.importanceLabel}
                 </Label>
-                <Select
+                <SimpleSelect
                   id="todo-add-importance"
                   value={newImportance}
-                  onChange={(e) => setNewImportance(e.target.value)}
-                >
-                  <option value="">{t.todos.importanceNone}</option>
-                  {[5, 4, 3, 2, 1].map((n) => (
-                    <option key={n} value={n}>
-                      {t.todos.importanceOption(n)}
-                    </option>
-                  ))}
-                </Select>
+                  onValueChange={setNewImportance}
+                  options={[
+                    { value: "", label: t.todos.importanceNone },
+                    ...[5, 4, 3, 2, 1].map((n) => ({
+                      value: String(n),
+                      label: t.todos.importanceOption(n),
+                    })),
+                  ]}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button type="button" variant="outline">
                   {t.common.cancel}
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button type="submit" disabled={saving || !title.trim()}>
                 <Plus className="h-3.5 w-3.5" />
                 {t.todos.addTask}
               </Button>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </DialogContent>
+    </Dialog>
   );
 }
 

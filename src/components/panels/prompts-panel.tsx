@@ -3,7 +3,13 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   Check,
   Copy,
@@ -23,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import type { Prompt, Updater } from "@/lib/types";
@@ -85,8 +92,7 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
   // then reconcile with the server via invalidate.
   const createMutation = useMutation({
     mutationFn: async (vars: { name: string; body: string }) => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("prompts")
@@ -266,13 +272,13 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
         </div>
       )}
 
-      <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-          <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-            <Dialog.Title className="text-sm font-semibold">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
               {editing ? t.prompts.editTitle : t.prompts.newTitle}
-            </Dialog.Title>
+            </DialogTitle>
+          </DialogHeader>
             <form onSubmit={submitForm} className="mt-3 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="prompt-name">{t.prompts.name}</Label>
@@ -304,11 +310,11 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
                 <p className="text-xs text-destructive">{formError}</p>
               )}
               <div className="flex items-center justify-end gap-2 pt-1">
-                <Dialog.Close asChild>
+                <DialogClose asChild>
                   <Button type="button" variant="ghost" size="sm">
                     {t.prompts.cancel}
                   </Button>
-                </Dialog.Close>
+                </DialogClose>
                 <Button type="submit" size="sm" disabled={saving}>
                   <Check className="h-3.5 w-3.5" />
                   {saving
@@ -319,9 +325,8 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
                 </Button>
               </div>
             </form>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

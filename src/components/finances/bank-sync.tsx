@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   ArrowRight,
   Building2,
@@ -15,7 +21,6 @@ import {
   Unlink,
   Upload,
   Wand2,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchCategoryRules } from "@/lib/queries/fetchers";
@@ -242,8 +248,7 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
   const importMutation = useMutation({
     mutationFn: async () => {
       if (!parsed || parsed.rows.length === 0) return { added: 0, dup: 0 };
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
 
       // Skip anything we already hold (dedupe on external_id).
@@ -366,8 +371,7 @@ function CategoryRules({ transactions }: { transactions: Transaction[] }) {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { error } = await supabase.from("transaction_category_rules").insert({
         user_id: userId,
@@ -551,28 +555,12 @@ function BankPickerDialog({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <Dialog.Title className="text-sm font-semibold">
-                {t.finances.bank.pickBank}
-              </Dialog.Title>
-              <Dialog.Description className="mt-1 text-xs text-foreground-muted">
-                {t.finances.bank.pickBankDesc}
-              </Dialog.Description>
-            </div>
-            <Dialog.Close asChild>
-              <button
-                aria-label={t.common.cancel}
-                className="rounded p-1 text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </Dialog.Close>
-          </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-w-md flex-col">
+        <DialogHeader>
+          <DialogTitle>{t.finances.bank.pickBank}</DialogTitle>
+          <DialogDescription>{t.finances.bank.pickBankDesc}</DialogDescription>
+        </DialogHeader>
 
           {notConfigured ? (
             <p className="mt-4 rounded-md border border-border bg-surface-muted/40 p-3 text-xs text-foreground-muted">
@@ -635,8 +623,7 @@ function BankPickerDialog({
               </div>
             </>
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -21,10 +21,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import {
   currentMonthKey,
@@ -170,8 +171,7 @@ export function FinancesPanel({
   // onSuccess (non-optimistic). Validation stays in the submit handler.
   const addTxMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("transactions")
@@ -227,8 +227,7 @@ export function FinancesPanel({
   // CREATE account: needs the server-generated id, so apply state in onSuccess.
   const addAccountMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("accounts")
@@ -513,19 +512,17 @@ export function FinancesPanel({
                     setAcctForm({ ...acctForm, balance: e.target.value })
                   }
                 />
-                <Select
+                <SimpleSelect
                   value={acctForm.currency}
                   aria-label={t.finances.ccy}
-                  onChange={(e) =>
-                    setAcctForm({ ...acctForm, currency: e.target.value })
+                  onValueChange={(v) =>
+                    setAcctForm({ ...acctForm, currency: v })
                   }
-                >
-                  {SUPPORTED_CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </Select>
+                  options={SUPPORTED_CURRENCIES.map((c) => ({
+                    value: c,
+                    label: c,
+                  }))}
+                />
               </div>
               <Button
                 type="submit"
@@ -613,19 +610,17 @@ export function FinancesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="tx-currency">{t.finances.ccy}</Label>
-                  <Select
+                  <SimpleSelect
                     id="tx-currency"
                     value={txForm.currency}
-                    onChange={(e) =>
-                      setTxForm({ ...txForm, currency: e.target.value })
+                    onValueChange={(v) =>
+                      setTxForm({ ...txForm, currency: v })
                     }
-                  >
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </Select>
+                    options={SUPPORTED_CURRENCIES.map((c) => ({
+                      value: c,
+                      label: c,
+                    }))}
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -653,20 +648,17 @@ export function FinancesPanel({
               {accounts.length > 0 && (
                 <div className="space-y-1.5">
                   <Label htmlFor="tx-account">{t.finances.account}</Label>
-                  <Select
+                  <SimpleSelect
                     id="tx-account"
                     value={txForm.account_id}
-                    onChange={(e) =>
-                      setTxForm({ ...txForm, account_id: e.target.value })
+                    onValueChange={(v) =>
+                      setTxForm({ ...txForm, account_id: v })
                     }
-                  >
-                    <option value="">{t.finances.noneOption}</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </Select>
+                    options={[
+                      { value: "", label: t.finances.noneOption },
+                      ...accounts.map((a) => ({ value: a.id, label: a.name })),
+                    ]}
+                  />
                 </div>
               )}
               <div className="space-y-1.5">

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -415,17 +415,15 @@ export function SupplierSettings({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="set-ccy">{t.invoices.defaultCurrency}</Label>
-                <Select
+                <SimpleSelect
                   id="set-ccy"
                   value={form.default_currency}
-                  onChange={(e) => set("default_currency", e.target.value)}
-                >
-                  {SUPPORTED_CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </Select>
+                  onValueChange={(v) => set("default_currency", v)}
+                  options={SUPPORTED_CURRENCIES.map((c) => ({
+                    value: c,
+                    label: c,
+                  }))}
+                />
               </div>
             </div>
             <div className="space-y-1.5">

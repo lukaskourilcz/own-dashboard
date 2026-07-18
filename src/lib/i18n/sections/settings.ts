@@ -14,6 +14,9 @@ type SettingsStrings = {
   navigation: string;
   navigationDesc: string;
   alwaysVisible: string;
+  tasks: string;
+  tasksDesc: string;
+  tasksAll: string;
 };
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
@@ -34,6 +37,10 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     navigationDesc:
       "Choose which sections appear in the navigation panel. Overview is always shown.",
     alwaysVisible: "Always visible",
+    tasks: "Tasks",
+    tasksDesc:
+      "How many tasks each category shows before “show all”.",
+    tasksAll: "All",
   },
   cs: {
     title: "Nastavení",
@@ -52,5 +59,8 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     navigationDesc:
       "Vyberte, které sekce se zobrazí v navigačním panelu. Přehled je vždy zobrazen.",
     alwaysVisible: "Vždy viditelné",
+    tasks: "Úkoly",
+    tasksDesc: "Kolik úkolů každá kategorie zobrazí před „zobrazit vše“.",
+    tasksAll: "Vše",
   },
 };

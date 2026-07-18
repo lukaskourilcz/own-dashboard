@@ -3,7 +3,6 @@ import {
   matchListing,
   listingHaystack,
   compareByFit,
-  topGaps,
   fitLevel,
   type JobMatch,
 } from "@/lib/jobs/match";
@@ -163,18 +162,5 @@ describe("compareByFit", () => {
     const a = { listing: listing({ role: "frontend" }), match: mk(null), shortlisted: false };
     const b = { listing: listing({ role: "frontend" }), match: mk(20), shortlisted: false };
     expect(compareByFit(a, b)).toBeGreaterThan(0); // scored b first
-  });
-});
-
-describe("topGaps", () => {
-  it("ranks missing techs by frequency across listings", () => {
-    const matches: JobMatch[] = [
-      { score: 50, level: "good", matched: [], missing: ["AWS", "GraphQL"], matchedWeight: 0 },
-      { score: 50, level: "good", matched: [], missing: ["AWS"], matchedWeight: 0 },
-      { score: 50, level: "good", matched: [], missing: ["Vue"], matchedWeight: 0 },
-    ];
-    const gaps = topGaps(matches, 2);
-    expect(gaps[0]).toEqual({ name: "AWS", count: 2 });
-    expect(gaps).toHaveLength(2);
   });
 });

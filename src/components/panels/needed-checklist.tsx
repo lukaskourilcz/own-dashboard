@@ -16,6 +16,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import {
   commitFile,
@@ -85,8 +86,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   // re-clicking never duplicates.
   const importTodos = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
 
       const nowIso = new Date().toISOString();

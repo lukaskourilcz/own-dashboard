@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -804,33 +804,27 @@ export function InvoiceForm({
             )}
             <div className="space-y-1.5">
               <Label htmlFor="i-pm">{t.invoices.fieldPaymentMethod}</Label>
-              <Select
+              <SimpleSelect
                 id="i-pm"
                 value={paymentMethod}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as PaymentMethod)
-                }
-              >
-                {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>
-                    {t.invoices.paymentMethod[m]}
-                  </option>
-                ))}
-              </Select>
+                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                options={PAYMENT_METHODS.map((m) => ({
+                  value: m,
+                  label: t.invoices.paymentMethod[m],
+                }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="i-ccy">{t.invoices.fieldCurrency}</Label>
-              <Select
+              <SimpleSelect
                 id="i-ccy"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-              >
-                {SUPPORTED_CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
+                onValueChange={setCurrency}
+                options={SUPPORTED_CURRENCIES.map((c) => ({
+                  value: c,
+                  label: c,
+                }))}
+              />
             </div>
           </CardContent>
         </Card>
@@ -898,23 +892,17 @@ export function InvoiceForm({
                       {isVatPayer && (
                         <div className="space-y-1 w-20">
                           <Label>{t.invoices.itemVat}</Label>
-                          <Select
+                          <SimpleSelect
                             value={String(it.vat_rate)}
-                            onChange={(e) =>
-                              setItemField(
-                                it.key,
-                                "vat_rate",
-                                Number(e.target.value),
-                              )
+                            onValueChange={(v) =>
+                              setItemField(it.key, "vat_rate", Number(v))
                             }
                             className="h-8 text-xs"
-                          >
-                            {VAT_RATES.map((r) => (
-                              <option key={r} value={r}>
-                                {r} %
-                              </option>
-                            ))}
-                          </Select>
+                            options={VAT_RATES.map((r) => ({
+                              value: String(r),
+                              label: `${r} %`,
+                            }))}
+                          />
                         </div>
                       )}
                       <div className="ml-auto text-right space-y-1">

@@ -1,10 +1,23 @@
 "use client";
 
-import { Coins, Languages, Moon, PanelLeft, Palette, Sun } from "lucide-react";
+import {
+  Coins,
+  Languages,
+  ListTodo,
+  Moon,
+  PanelLeft,
+  Palette,
+  Sun,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { useDict, useLang } from "@/lib/i18n";
-import { useDisplayCurrency, useNavVisibility } from "@/lib/use-prefs";
+import {
+  useDisplayCurrency,
+  useNavVisibility,
+  useTasksPerCategory,
+  TASKS_PER_CATEGORY_OPTIONS,
+} from "@/lib/use-prefs";
 import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { NAV_ITEMS } from "@/components/nav/sidebar";
@@ -82,6 +95,8 @@ export function SettingsPanel() {
   const { currency, setCurrency } = useDisplayCurrency();
   const { isHidden, toggle } = useNavVisibility();
   const { theme, setTheme } = useTheme();
+  const { count: tasksPerCategory, setCount: setTasksPerCategory } =
+    useTasksPerCategory();
 
   return (
     <div>
@@ -139,6 +154,28 @@ export function SettingsPanel() {
                 </button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Tasks */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-1.5">
+              <ListTodo className="h-3 w-3" /> {t.settings.tasks}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-foreground-subtle">
+              {t.settings.tasksDesc}
+            </p>
+            <Segmented
+              value={String(tasksPerCategory)}
+              onChange={(v) => setTasksPerCategory(Number(v))}
+              options={TASKS_PER_CATEGORY_OPTIONS.map((n) => ({
+                value: String(n),
+                label: n === 0 ? t.settings.tasksAll : String(n),
+              }))}
+            />
           </CardContent>
         </Card>
 

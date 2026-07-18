@@ -6,6 +6,7 @@ import { Sparkles, CornerDownLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { todayKey } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
@@ -46,11 +47,6 @@ export function QuickAdd({
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
-
-  async function getUserId(): Promise<string | null> {
-    const { data: userData } = await supabase.auth.getUser();
-    return userData.user?.id ?? null;
-  }
 
   // Non-optimistic create: we need the server-assigned id before touching the
   // cache, so mirror the reference todos `addMutation`.
@@ -155,7 +151,7 @@ export function QuickAdd({
 
     setBusy(true);
     try {
-      const userId = await getUserId();
+      const userId = await currentUserId(supabase);
       if (!userId) {
         toast.err(t.quickAdd.signInFirst);
         return;

@@ -240,23 +240,3 @@ export function compareByFit(
   }
   return b.listing.first_seen_at.localeCompare(a.listing.first_seen_at);
 }
-
-/**
- * Aggregate the most common gaps across a set of listings — "learn these to
- * unlock more roles". Returns techs sorted by how many postings want them.
- */
-export function topGaps(
-  matches: JobMatch[],
-  limit = 6,
-): { name: string; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const m of matches) {
-    for (const name of m.missing) {
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-  }
-  return [...counts.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, limit);
-}

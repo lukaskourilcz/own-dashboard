@@ -179,6 +179,62 @@ export function useNavCollapsed(): {
 }
 
 // ---------------------------------------------------------------------------
+// Tasks per category — how many tasks each Úkoly category card shows before
+// the "show all / show less" control. 0 means "show all". Defaults to 5.
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_TASKS_PER_CATEGORY = 5;
+/** Selectable values in Settings; 0 = show all. */
+export const TASKS_PER_CATEGORY_OPTIONS = [3, 5, 10, 0] as const;
+
+const TASKS_PER_CATEGORY_KEY = "tasksPerCategory";
+const tasksPerCategoryListeners = new Set<() => void>();
+let tasksPerCategoryCache: number | null = null;
+
+function readTasksPerCategory(): number {
+  if (tasksPerCategoryCache != null) return tasksPerCategoryCache;
+  if (typeof window === "undefined") return DEFAULT_TASKS_PER_CATEGORY;
+  try {
+    const raw = localStorage.getItem(TASKS_PER_CATEGORY_KEY);
+    const n = raw == null ? NaN : Number(raw);
+    tasksPerCategoryCache = Number.isFinite(n) && n >= 0 ? n : DEFAULT_TASKS_PER_CATEGORY;
+  } catch {
+    tasksPerCategoryCache = DEFAULT_TASKS_PER_CATEGORY;
+  }
+  return tasksPerCategoryCache;
+}
+
+function subscribeTasksPerCategory(cb: () => void): () => void {
+  tasksPerCategoryListeners.add(cb);
+  return () => {
+    tasksPerCategoryListeners.delete(cb);
+  };
+}
+
+const getServerTasksPerCategory = (): number => DEFAULT_TASKS_PER_CATEGORY;
+
+export function useTasksPerCategory(): {
+  count: number;
+  setCount: (next: number) => void;
+} {
+  const count = useSyncExternalStore(
+    subscribeTasksPerCategory,
+    readTasksPerCategory,
+    getServerTasksPerCategory,
+  );
+  const setCount = (next: number): void => {
+    tasksPerCategoryCache = next;
+    try {
+      localStorage.setItem(TASKS_PER_CATEGORY_KEY, String(next));
+    } catch {
+      // ignore
+    }
+    for (const cb of tasksPerCategoryListeners) cb();
+  };
+  return { count, setCount };
+}
+
+// ---------------------------------------------------------------------------
 // Repository filter — which repo ids stay pinned on the Repositories panel.
 // Persisted device-locally so the saved selection survives reloads even when
 // the server-synced copy (user_preferences.visible_repo_ids) isn't available.

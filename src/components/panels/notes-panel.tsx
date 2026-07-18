@@ -4,7 +4,15 @@ import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import * as Popover from "@radix-ui/react-popover";
 import {
   closestCenter,
@@ -50,6 +58,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Note, Updater } from "@/lib/types";
@@ -186,8 +195,7 @@ export function NotesPanel({ notes, setNotes }: Props) {
   // select it in onSuccess, then invalidate to reconcile with the server.
   const createMutation = useMutation({
     mutationFn: async (vars: { content: unknown; title: string }) => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       // Place new notes above every existing one in their bucket.
       const topSortOrder = Math.max(0, ...notes.map((n) => n.sort_order ?? 0));
@@ -1054,22 +1062,18 @@ function ImportMarkdownButton({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button size="sm" variant="outline">
           <Upload className="h-3.5 w-3.5" />
           {t.notes.importMd}
         </Button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <Dialog.Title className="text-sm font-semibold">
-            {t.notes.importFromMarkdown}
-          </Dialog.Title>
-          <Dialog.Description className="text-xs text-foreground-muted mt-1">
-            {t.notes.importDialogDescription}
-          </Dialog.Description>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t.notes.importFromMarkdown}</DialogTitle>
+          <DialogDescription>{t.notes.importDialogDescription}</DialogDescription>
+        </DialogHeader>
           <form onSubmit={submit} className="mt-3 space-y-3">
             <Textarea
               value={text}
@@ -1080,20 +1084,19 @@ function ImportMarkdownButton({
               autoFocus
             />
             <div className="flex items-center justify-end gap-2">
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
                   {t.notes.cancel}
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button type="submit" size="sm" disabled={busy || !text.trim()}>
                 <Download className="h-3.5 w-3.5" />
                 {busy ? t.notes.importing : t.notes.createNote}
               </Button>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1123,11 +1126,12 @@ function NoteLinkPicker({
     : notes;
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-fade fixed left-1/2 top-[20vh] z-50 w-full max-w-md -translate-x-1/2 rounded-xl border border-border bg-surface shadow-elevated overflow-hidden">
-          <Dialog.Title className="sr-only">{t.notes.linkToANote}</Dialog.Title>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="top-[20vh] max-w-md translate-y-0 overflow-hidden p-0"
+        showClose={false}
+      >
+        <DialogTitle className="sr-only">{t.notes.linkToANote}</DialogTitle>
           <div className="flex items-center gap-2 px-3.5 border-b border-border">
             <Link2 className="h-4 w-4 text-foreground-subtle" />
             <input
@@ -1172,8 +1176,7 @@ function NoteLinkPicker({
               </ul>
             )}
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

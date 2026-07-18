@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, RefreshCw, Upload, X } from "lucide-react";
+import { ExternalLink, RefreshCw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
@@ -100,26 +107,17 @@ export function PublishToRepoDialog({
   }
 
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <Dialog.Title className="flex items-center gap-1.5 text-sm font-semibold">
-                <GithubIcon className="h-4 w-4" />
-                {t.github.publishNote}
-              </Dialog.Title>
-              <Dialog.Description className="mt-1 text-xs text-foreground-muted">
-                {t.github.writeHint}
-              </Dialog.Description>
-            </div>
-            <Dialog.Close asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={t.github.cancel}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </Dialog.Close>
-          </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-1.5">
+              <GithubIcon className="h-4 w-4" />
+              {t.github.publishNote}
+            </DialogTitle>
+            <DialogDescription>
+              {t.github.writeHint}
+            </DialogDescription>
+          </DialogHeader>
 
           {isPending && (
             <p className="mt-6 mb-2 text-center text-sm text-foreground-muted">
@@ -166,27 +164,29 @@ export function PublishToRepoDialog({
                       {t.github.viewCommit}
                     </a>
                   </Button>
-                  <Dialog.Close asChild>
+                  <DialogClose asChild>
                     <Button size="sm" className="ml-auto">
                       {t.github.done}
                     </Button>
-                  </Dialog.Close>
+                  </DialogClose>
                 </div>
               </div>
             ) : (
               <div className="mt-4 space-y-3">
                 <PublishField label={t.github.repository}>
-                  <Select
+                  <SimpleSelect
                     value={selectedFullName}
-                    onChange={(e) => setSelected(e.target.value)}
-                  >
-                    {repos.map((r) => (
-                      <option key={r.id} value={r.full_name}>
-                        {r.full_name}
-                        {r.private ? " · private" : ""}
-                      </option>
-                    ))}
-                  </Select>
+                    onValueChange={setSelected}
+                    options={repos.map((r) => ({
+                      value: r.full_name,
+                      label: (
+                        <>
+                          {r.full_name}
+                          {r.private ? " · private" : ""}
+                        </>
+                      ),
+                    }))}
+                  />
                 </PublishField>
                 <PublishField label={t.github.pathLabel}>
                   <Input
@@ -210,11 +210,11 @@ export function PublishToRepoDialog({
                   />
                 </PublishField>
                 <div className="flex justify-end gap-2 pt-1">
-                  <Dialog.Close asChild>
+                  <DialogClose asChild>
                     <Button variant="ghost" size="sm">
                       {t.github.cancel}
                     </Button>
-                  </Dialog.Close>
+                  </DialogClose>
                   <Button size="sm" onClick={submit} disabled={busy}>
                     {busy ? (
                       <>
@@ -231,9 +231,8 @@ export function PublishToRepoDialog({
                 </div>
               </div>
             ))}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 
