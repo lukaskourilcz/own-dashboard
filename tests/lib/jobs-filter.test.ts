@@ -22,13 +22,28 @@ describe("matchRole", () => {
     );
   });
 
-  it("classifies generic software-engineering titles", () => {
+  it("classifies generic + JS-ecosystem software-engineering titles", () => {
     expect(matchRole("Software Engineer")).toBe("software");
     expect(matchRole("Senior Software Developer")).toBe("software");
-    expect(matchRole("PHP Developer")).toBe("software");
-    expect(matchRole("Backend Engineer (Go)")).toBe("software");
-    expect(matchRole("Java programátor")).toBe("software");
     expect(matchRole("Web Developer")).toBe("software");
+    expect(matchRole("Backend Engineer (Node.js)")).toBe("software");
+    expect(matchRole("TypeScript Engineer")).toBe("software");
+  });
+
+  it("rejects foreign-language roles outside the JS/TS/web skill set", () => {
+    expect(matchRole("Python Developer")).toBeNull();
+    expect(matchRole("Senior C++ Engineer")).toBeNull();
+    expect(matchRole("C# / .NET Developer")).toBeNull();
+    expect(matchRole("PHP Developer")).toBeNull();
+    expect(matchRole("Backend Engineer (Go)")).toBeNull();
+    expect(matchRole("Golang Backend Engineer")).toBeNull();
+    expect(matchRole("Java programátor")).toBeNull();
+    expect(matchRole("Ruby on Rails Developer")).toBeNull();
+    // ...unless the posting also shows a JS/web signal.
+    expect(matchRole("Fullstack Developer (React, Python)")).toBe("fullstack");
+    expect(matchRole("Software Engineer", "python react typescript")).toBe(
+      "software",
+    );
   });
 
   it("prefers fullstack over frontend when both appear", () => {

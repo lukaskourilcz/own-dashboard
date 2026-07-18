@@ -179,7 +179,7 @@ const PRACECZ_HTML = `
   <h2 data-testid="job-card-title"><a data-testid="advert-link" href="https://www.prace.cz/pd/1">Skladák</a></h2>
 </article>
 <article id="advert-aaaaaaaa-1111-2222-3333-444444444444" class="JobCard-module__JobCard">
-  <h2 data-testid="job-card-title"><a data-testid="advert-link" href="/firma/acme/nabidka/xyz?rps=2078">Software Engineer (Java)</a></h2>
+  <h2 data-testid="job-card-title"><a data-testid="advert-link" href="/firma/acme/nabidka/xyz?rps=2078">Software Engineer (Node.js)</a></h2>
 </article>
 `;
 
@@ -270,7 +270,7 @@ describe("normalizeArbeitnowItem", () => {
   const base = {
     slug: "senior-software-engineer-berlin-247930",
     company_name: "Think3DDD",
-    title: "Senior Software Engineer (Python)",
+    title: "Senior Software Engineer (TypeScript)",
     remote: true,
     url: "https://www.arbeitnow.com/jobs/companies/x/senior-software-engineer",
     tags: ["Software Development"],
