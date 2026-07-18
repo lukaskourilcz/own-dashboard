@@ -45,6 +45,24 @@ describe("parseNeeded", () => {
     expect(items).toHaveLength(2);
     expect(items[0].key).not.toBe(items[1].key);
   });
+
+  it("parses an [imp:N] marker and strips it from the title", () => {
+    const items = parseNeeded(
+      "- [ ] **Enable analytics** — see who visits. `[imp:2]`\n- No marker here\n",
+      repo,
+      null,
+    );
+    expect(items[0].importance).toBe(2);
+    expect(items[0].text).toBe("**Enable analytics** — see who visits.");
+    expect(items[1].importance).toBeNull();
+    expect(items[1].text).toBe("No marker here");
+  });
+
+  it("accepts the marker without backticks and anywhere on the line", () => {
+    const items = parseNeeded("- [imp:5] Ship the fix\n", repo, null);
+    expect(items[0].importance).toBe(5);
+    expect(items[0].text).toBe("Ship the fix");
+  });
 });
 
 describe("removeNeededLine", () => {

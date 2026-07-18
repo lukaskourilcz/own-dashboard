@@ -38,6 +38,7 @@ function todo(overrides: Partial<Todo>): Todo {
     repo_url: null,
     needed_raw: null,
     generated_at: null,
+    importance: null,
     ...overrides,
   };
 }

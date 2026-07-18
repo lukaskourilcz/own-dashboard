@@ -88,6 +88,13 @@ alter table public.todos
 alter table public.todos
   add column if not exists generated_at timestamptz;
 
+-- Importance migration: a 1–5 priority score (5 = highest). NEEDED.md tasks
+-- carry it from an `[imp:N]` marker on their source line; manual tasks can set
+-- it by hand. Null = unscored. Powers the Tasks section's importance filter.
+alter table public.todos
+  add column if not exists importance smallint
+  check (importance is null or importance between 1 and 5);
+
 create index if not exists todos_user_source_idx
   on public.todos (user_id, source);
 

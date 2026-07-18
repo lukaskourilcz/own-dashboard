@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ExternalLink,
+  Flag,
   Heart,
   ListTodo,
   Plus,
@@ -16,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -55,7 +57,11 @@ export function TodosPanel({
   const toast = useToast();
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [newImportance, setNewImportance] = useState("");
   const [showFinished, setShowFinished] = useState(false);
+  // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
+  // importance is at least this. Applies to the full view's open-task groups.
+  const [minImportance, setMinImportance] = useState(0);
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
   // query off in the compact dashboard widget.
   const reposQuery = useReposQuery(!compact);
@@ -67,7 +73,12 @@ export function TodosPanel({
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("todos")
-        .insert({ title: title.trim(), due_date: dueDate || null, user_id: userId })
+        .insert({
+          title: title.trim(),
+          due_date: dueDate || null,
+          importance: newImportance ? Number(newImportance) : null,
+          user_id: userId,
+        })
         .select()
         .single();
       if (error) throw error;
@@ -77,6 +88,7 @@ export function TodosPanel({
       qc.setQueryData<Todo[]>(qk.todos, (prev = []) => [todo, ...prev]);
       setTitle("");
       setDueDate("");
+      setNewImportance("");
       void qc.invalidateQueries({ queryKey: qk.todos });
     },
   });
@@ -348,9 +360,17 @@ export function TodosPanel({
   }
 
   // Full view: open GitHub tasks become per-repo cards with a subcard each;
-  // hand-added tasks collect in a "Personal" card.
-  const openGithub = open.filter((td) => td.source === "github" && td.repo_id);
-  const openPersonal = open.filter(
+  // hand-added tasks collect in a "Personal" card. The importance filter (0 =
+  // all) narrows to tasks scoring at least `minImportance`; unscored tasks
+  // (null) count as 0, so any active filter hides them.
+  const passesImportance = (td: Todo) =>
+    minImportance === 0 || (td.importance ?? 0) >= minImportance;
+  const openVisible = open.filter(passesImportance);
+  const hiddenByFilter = open.length - openVisible.length;
+  const openGithub = openVisible.filter(
+    (td) => td.source === "github" && td.repo_id,
+  );
+  const openPersonal = openVisible.filter(
     (td) => !(td.source === "github" && td.repo_id),
   );
 
@@ -417,6 +437,18 @@ export function TodosPanel({
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
+              <Select
+                aria-label={t.todos.importanceLabel}
+                value={newImportance}
+                onChange={(e) => setNewImportance(e.target.value)}
+              >
+                <option value="">{t.todos.importanceNone}</option>
+                {[5, 4, 3, 2, 1].map((n) => (
+                  <option key={n} value={n}>
+                    {t.todos.importanceOption(n)}
+                  </option>
+                ))}
+              </Select>
               <Button type="submit" disabled={saving} className="w-full">
                 <Plus className="h-3.5 w-3.5" />
                 {t.todos.addTask}
@@ -426,6 +458,14 @@ export function TodosPanel({
         </Card>
 
         <div className="lg:col-span-2 space-y-4">
+          {open.length > 0 && (
+            <ImportanceFilter
+              t={t}
+              value={minImportance}
+              onChange={setMinImportance}
+              hidden={hiddenByFilter}
+            />
+          )}
           {open.length === 0 ? (
             <Card>
               <CardContent className="pt-5">
@@ -433,6 +473,16 @@ export function TodosPanel({
                   icon={ListTodo}
                   title={t.todos.nothingOnPlate}
                   description={t.todos.nothingOnPlateDescription}
+                />
+              </CardContent>
+            </Card>
+          ) : openVisible.length === 0 ? (
+            <Card>
+              <CardContent className="pt-5">
+                <EmptyState
+                  icon={Flag}
+                  title={t.todos.filterEmptyTitle}
+                  description={t.todos.filterEmptyDescription(minImportance)}
                 />
               </CardContent>
             </Card>
@@ -630,7 +680,14 @@ function TaskSubcard({
         className="mt-0.5"
       />
       <div className="min-w-0 flex-1">
-        <p className="break-words text-sm text-foreground">{td.title}</p>
+        <div className="flex items-start gap-2">
+          <p className="min-w-0 flex-1 break-words text-sm text-foreground">
+            {td.title}
+          </p>
+          {td.importance != null && (
+            <ImportanceBadge t={t} value={td.importance} />
+          )}
+        </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
           {td.generated_at && (
             <span className="tabular">
@@ -786,6 +843,81 @@ function FinishedSection({
         </ul>
       )}
     </Card>
+  );
+}
+
+/* ------------------------------ Importance ------------------------------- */
+
+// Tailwind classes per score, warmer/stronger as importance climbs.
+const IMPORTANCE_STYLES: Record<number, string> = {
+  1: "bg-surface text-foreground-subtle border-border",
+  2: "bg-surface text-foreground-muted border-border",
+  3: "bg-primary/10 text-primary border-primary/20",
+  4: "bg-warning/10 text-warning border-warning/20",
+  5: "bg-destructive/10 text-destructive border-destructive/20",
+};
+
+/** Small pill showing a task's 1–5 importance score. */
+function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
+  return (
+    <Tooltip content={t.todos.importanceOf(value)}>
+      <span
+        className={cn(
+          "inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular",
+          IMPORTANCE_STYLES[value] ?? IMPORTANCE_STYLES[1],
+        )}
+        aria-label={t.todos.importanceOf(value)}
+      >
+        <Flag className="h-2.5 w-2.5" />
+        {value}
+      </span>
+    </Tooltip>
+  );
+}
+
+/** Segmented "minimum importance" filter. 0 = all; 1–5 = at-least-N. */
+function ImportanceFilter({
+  t,
+  value,
+  onChange,
+  hidden,
+}: {
+  t: Dict;
+  value: number;
+  onChange: (v: number) => void;
+  hidden: number;
+}) {
+  const levels = [0, 1, 2, 3, 4, 5];
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
+        <Flag className="h-3.5 w-3.5" />
+        {t.todos.importanceFilterLabel}
+      </span>
+      <div className="inline-flex overflow-hidden rounded-md border border-border">
+        {levels.map((lvl) => (
+          <button
+            key={lvl}
+            type="button"
+            onClick={() => onChange(lvl)}
+            aria-pressed={value === lvl}
+            className={cn(
+              "px-2.5 py-1 text-xs font-medium tabular transition-colors border-l border-border first:border-l-0 focus-ring",
+              value === lvl
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface text-foreground-muted hover:bg-surface-hover",
+            )}
+          >
+            {lvl === 0 ? t.todos.filterAll : t.todos.filterMin(lvl)}
+          </button>
+        ))}
+      </div>
+      {value !== 0 && hidden > 0 && (
+        <span className="text-[11px] text-foreground-subtle tabular">
+          {t.todos.filterHidden(hidden)}
+        </span>
+      )}
+    </div>
   );
 }
 
