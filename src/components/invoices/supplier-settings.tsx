@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { useDict } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 import type { InvoiceSettings } from "@/lib/types";
 
 type Form = {
@@ -104,37 +104,6 @@ async function processLogo(file: File): Promise<string> {
   if (!ctx) return dataUrl;
   ctx.drawImage(img, 0, 0, w, h);
   return canvas.toDataURL("image/png");
-}
-
-function Switch({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-ring",
-        checked ? "bg-primary" : "bg-surface-muted border border-border",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-block h-4 w-4 transform rounded-full bg-surface shadow-soft transition-transform",
-          checked ? "translate-x-4" : "translate-x-0.5",
-        )}
-      />
-    </button>
-  );
 }
 
 export function SupplierSettings({
@@ -398,8 +367,8 @@ export function SupplierSettings({
               </div>
               <Switch
                 checked={form.is_vat_payer}
-                onChange={() => set("is_vat_payer", !form.is_vat_payer)}
-                label={t.invoices.vatPayerToggle}
+                onCheckedChange={(v) => set("is_vat_payer", v)}
+                aria-label={t.invoices.vatPayerToggle}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { Switch } from "@/components/ui/switch";
 import { useDict, useLang } from "@/lib/i18n";
 import {
   useCvLinks,
@@ -59,37 +60,6 @@ function Segmented<T extends string>({
         );
       })}
     </div>
-  );
-}
-
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-ring",
-        checked ? "bg-primary" : "bg-surface-muted border border-border",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-block h-4 w-4 transform rounded-full bg-surface shadow-soft transition-transform",
-          checked ? "translate-x-4" : "translate-x-0.5",
-        )}
-      />
-    </button>
   );
 }
 
@@ -273,10 +243,10 @@ export function SettingsPanel() {
                         {t.settings.alwaysVisible}
                       </SectionLabel>
                     ) : (
-                      <Toggle
+                      <Switch
                         checked={visible}
-                        onChange={() => toggle(it.value)}
-                        label={t.nav.sections[it.value]}
+                        onCheckedChange={() => toggle(it.value)}
+                        aria-label={t.nav.sections[it.value]}
                       />
                     )}
                   </li>
