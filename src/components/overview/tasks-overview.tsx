@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { GithubIcon } from "@/components/icons/github";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { useDict, type Dict } from "@/lib/i18n";
 import { daysUntilDate } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
@@ -46,8 +47,7 @@ export function TasksOverview({
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("todos")

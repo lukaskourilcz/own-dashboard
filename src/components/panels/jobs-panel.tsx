@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertTriangle,
@@ -12,7 +11,6 @@ import {
   EyeOff,
   Files,
   FileText,
-  GraduationCap,
   History,
   Pencil,
   Plus,
@@ -29,7 +27,22 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+  SimpleSelect,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -37,12 +50,7 @@ import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { jobSourceLabel } from "@/lib/jobs/meta";
-import {
-  compareByFit,
-  matchListing,
-  topGaps,
-  type JobMatch,
-} from "@/lib/jobs/match";
+import { compareByFit, matchListing, type JobMatch } from "@/lib/jobs/match";
 import { applicationStats } from "@/lib/jobs/stats";
 import { BUILTIN_TEMPLATES, fillTemplate } from "@/lib/jobs/template";
 import type {
@@ -326,12 +334,6 @@ function OpenPositionsView({
     shortlistedOnly,
   ]);
 
-  // Top skills the visible roles want that aren't in the stack — "learn next".
-  const gaps = useMemo(
-    () => topGaps(visible.map((l) => matchById.get(l.id)).filter((m): m is JobMatch => !!m)),
-    [visible, matchById],
-  );
-
   // Set / replace / clear the per-listing triage state. Non-optimistic —
   // the returned row lands in the cache, then an invalidate reconciles.
   const stateMutation = useMutation({
@@ -423,39 +425,38 @@ function OpenPositionsView({
               className="h-9 pl-8 text-sm"
             />
           </div>
-          <Select
+          <SimpleSelect
             value={role}
-            onChange={(e) => setRole(e.target.value as "all" | JobRole)}
+            onValueChange={(v) => setRole(v as "all" | JobRole)}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.roleAll}
-          >
-            <option value="all">{t.jobs.roleAll}</option>
-            <option value="frontend">{t.jobs.roleFrontend}</option>
-            <option value="fullstack">{t.jobs.roleFullstack}</option>
-            <option value="software">{t.jobs.roleSoftware}</option>
-          </Select>
-          <Select
+            options={[
+              { value: "all", label: t.jobs.roleAll },
+              { value: "frontend", label: t.jobs.roleFrontend },
+              { value: "fullstack", label: t.jobs.roleFullstack },
+              { value: "software", label: t.jobs.roleSoftware },
+            ]}
+          />
+          <SimpleSelect
             value={source}
-            onChange={(e) => setSource(e.target.value)}
+            onValueChange={setSource}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.sourceAll}
-          >
-            <option value="all">{t.jobs.sourceAll}</option>
-            {sources.map((s) => (
-              <option key={s} value={s}>
-                {jobSourceLabel(s)}
-              </option>
-            ))}
-          </Select>
-          <Select
+            options={[
+              { value: "all", label: t.jobs.sourceAll },
+              ...sources.map((s) => ({ value: s, label: jobSourceLabel(s) })),
+            ]}
+          />
+          <SimpleSelect
             value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as "fit" | "newest")}
+            onValueChange={(v) => setSortMode(v as "fit" | "newest")}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.sortLabel}
-          >
-            <option value="fit">{t.jobs.sortBestFit}</option>
-            <option value="newest">{t.jobs.sortNewest}</option>
-          </Select>
+            options={[
+              { value: "fit", label: t.jobs.sortBestFit },
+              { value: "newest", label: t.jobs.sortNewest },
+            ]}
+          />
           <FilterToggle
             active={priorityOnly}
             onClick={() => setPriorityOnly((v) => !v)}
@@ -543,7 +544,6 @@ function OpenPositionsView({
         />
       ) : (
         <>
-          {gaps.length > 0 && <SkillsGapCard gaps={gaps} />}
           <p className="mb-2 text-[11px] text-foreground-subtle tabular">
             {visible.length} {t.jobs.listingsShown}
           </p>
@@ -639,32 +639,6 @@ function SkillChip({ label, kind }: { label: string; kind: "have" | "gap" }) {
     >
       {label}
     </span>
-  );
-}
-
-/** "Learn next" card: the tech most-wanted across the visible roles that the
- * stack is missing, ranked by how many postings ask for it. */
-function SkillsGapCard({ gaps }: { gaps: { name: string; count: number }[] }) {
-  const t = useDict();
-  return (
-    <Card className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-dashed p-3">
-      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
-        <GraduationCap className="h-4 w-4 text-foreground-muted" />
-        {t.jobs.gapsTitle}
-      </span>
-      <span className="text-[11px] text-foreground-muted">{t.jobs.gapsHint}</span>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {gaps.map((g) => (
-          <span
-            key={g.name}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-foreground-muted"
-          >
-            {g.name}
-            <span className="tabular text-foreground-subtle">×{g.count}</span>
-          </span>
-        ))}
-      </div>
-    </Card>
   );
 }
 
@@ -965,13 +939,11 @@ function ApplyDialog({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <Dialog.Title className="text-sm font-semibold">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+          <DialogTitle>
             {listing ? t.jobs.applyTitle : t.jobs.logManualTitle}
-          </Dialog.Title>
+          </DialogTitle>
           {listing && (
             <p className="mt-1 truncate text-xs text-foreground-muted">
               {[listing.title, listing.company].filter(Boolean).join(" — ")} (
@@ -1065,20 +1037,19 @@ function ApplyDialog({
               <p className="text-xs text-destructive">{formError}</p>
             )}
             <div className="flex items-center justify-end gap-2 pt-1">
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
                   {t.jobs.cancel}
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button type="submit" size="sm" disabled={createMutation.isPending}>
                 <Check className="h-3.5 w-3.5" />
                 {createMutation.isPending ? t.jobs.saving : t.jobs.saveApplication}
               </Button>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1162,30 +1133,36 @@ function CoverLetterField({
         <div className="flex items-center gap-1.5">
           <Select
             value=""
-            onChange={(e) => {
-              loadTemplate(e.target.value);
-              e.target.value = "";
+            onValueChange={(v) => {
+              if (v) loadTemplate(v);
             }}
-            className="h-7 w-auto min-w-36 text-[11px]"
-            aria-label={t.jobs.loadTemplate}
           >
-            <option value="">{t.jobs.loadTemplate}</option>
-            {templates.length > 0 && (
-              <optgroup label={t.jobs.savedTemplatesGroup}>
-                {templates.map((tpl) => (
-                  <option key={tpl.id} value={`tpl:${tpl.id}`}>
-                    {tpl.name}
-                  </option>
+            <SelectTrigger
+              className="h-7 w-auto min-w-36 text-[11px]"
+              aria-label={t.jobs.loadTemplate}
+            >
+              <SelectValue placeholder={t.jobs.loadTemplate} />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel>{t.jobs.savedTemplatesGroup}</SelectLabel>
+                  {templates.map((tpl) => (
+                    <SelectItem key={tpl.id} value={`tpl:${tpl.id}`}>
+                      {tpl.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
+              <SelectGroup>
+                <SelectLabel>{t.jobs.builtinTemplatesGroup}</SelectLabel>
+                {BUILTIN_TEMPLATES.map((b) => (
+                  <SelectItem key={b.id} value={`builtin:${b.id}`}>
+                    {b.name[lang]}
+                  </SelectItem>
                 ))}
-              </optgroup>
-            )}
-            <optgroup label={t.jobs.builtinTemplatesGroup}>
-              {BUILTIN_TEMPLATES.map((b) => (
-                <option key={b.id} value={`builtin:${b.id}`}>
-                  {b.name[lang]}
-                </option>
-              ))}
-            </optgroup>
+              </SelectGroup>
+            </SelectContent>
           </Select>
           <Button
             type="button"
@@ -1464,18 +1441,13 @@ function ApplicationRow({
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <Select
+          <SimpleSelect
             value={app.status}
-            onChange={(e) => onStatus(e.target.value as JobApplicationStatus)}
+            onValueChange={(v) => onStatus(v as JobApplicationStatus)}
             className="h-7 w-auto min-w-28 text-[11px]"
             aria-label={t.jobs.statusLabel}
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {statusLabel[s]}
-              </option>
-            ))}
-          </Select>
+            options={STATUSES.map((s) => ({ value: s, label: statusLabel[s] }))}
+          />
           <Tooltip content={t.jobs.coverLetterAction}>
             <button
               type="button"
@@ -1605,13 +1577,11 @@ function LetterDialog({
   });
 
   return (
-    <Dialog.Root open={app !== null} onOpenChange={(v) => !v && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <Dialog.Title className="text-sm font-semibold">
+    <Dialog open={app !== null} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-xl">
+          <DialogTitle>
             {t.jobs.coverLetter}
-          </Dialog.Title>
+          </DialogTitle>
           {app && (
             <p className="mt-1 truncate text-xs text-foreground-muted">
               {[app.title, app.company].filter(Boolean).join(" — ")}
@@ -1632,11 +1602,11 @@ function LetterDialog({
               userId={userId}
             />
             <div className="flex items-center justify-end gap-2">
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
                   {t.jobs.cancel}
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button
                 size="sm"
                 onClick={() => saveMutation.mutate()}
@@ -1647,9 +1617,8 @@ function LetterDialog({
               </Button>
             </div>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1781,15 +1750,13 @@ function TemplatesDialog({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-elevated">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl" showClose={false}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold">
+              <DialogTitle>
                 {t.jobs.templatesTitle}
-              </Dialog.Title>
+              </DialogTitle>
               <p className="mt-1 text-xs text-foreground-muted">
                 {t.jobs.templatesDescription}
               </p>
@@ -1900,16 +1867,15 @@ function TemplatesDialog({
                 </ul>
               )}
               <div className="mt-4 flex justify-end">
-                <Dialog.Close asChild>
+                <DialogClose asChild>
                   <Button type="button" variant="ghost" size="sm">
                     {t.jobs.cancel}
                   </Button>
-                </Dialog.Close>
+                </DialogClose>
               </div>
             </div>
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import * as Popover from "@radix-ui/react-popover";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -22,7 +29,6 @@ import {
   Trash2,
   Unlink,
   Upload,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +43,7 @@ import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { readRepoFilter, writeRepoFilter } from "@/lib/use-prefs";
 import { qk } from "@/lib/queries/keys";
 import {
@@ -489,8 +496,7 @@ function RepoNotesCard({
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const sortOrder = Math.max(0, ...notes.map((n) => n.sort_order)) + 1;
       const { data, error } = await supabase
@@ -868,8 +874,7 @@ function RepoLinkControl({
 
   const saveMutation = useMutation({
     mutationFn: async (url: string) => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("repo_links")
@@ -1051,25 +1056,12 @@ function RepoFilterDialog({
   const canSave = chosen.length > 0 && !saving;
 
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <Dialog.Title className="text-sm font-semibold">
-                {t.github.filterTitle}
-              </Dialog.Title>
-              <Dialog.Description className="mt-1 text-xs text-foreground-muted">
-                {t.github.filterDesc}
-              </Dialog.Description>
-            </div>
-            <Dialog.Close asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={t.github.cancel}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </Dialog.Close>
-          </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-w-lg flex-col">
+        <DialogHeader>
+          <DialogTitle>{t.github.filterTitle}</DialogTitle>
+          <DialogDescription>{t.github.filterDesc}</DialogDescription>
+        </DialogHeader>
 
           <div className="mt-4 flex items-center gap-2">
             <Input
@@ -1148,19 +1140,18 @@ function RepoFilterDialog({
                   {t.github.pickAtLeastOne}
                 </span>
               )}
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button variant="ghost" size="sm">
                   {t.github.cancel}
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button size="sm" onClick={() => onSave(chosen)} disabled={!canSave}>
                 {saving ? t.github.saving : t.github.save}
               </Button>
             </div>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1247,25 +1238,14 @@ function WriteFileDialog({
   }
 
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <Dialog.Title className="truncate text-sm font-semibold">
-                {t.github.writeTitle} {repo.full_name}
-              </Dialog.Title>
-              <Dialog.Description className="mt-1 text-xs text-foreground-muted">
-                {t.github.writeHint}
-              </Dialog.Description>
-            </div>
-            <Dialog.Close asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={t.github.cancel}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </Dialog.Close>
-          </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="truncate">
+            {t.github.writeTitle} {repo.full_name}
+          </DialogTitle>
+          <DialogDescription>{t.github.writeHint}</DialogDescription>
+        </DialogHeader>
 
           {result ? (
             <div className="mt-4 space-y-3">
@@ -1296,11 +1276,11 @@ function WriteFileDialog({
                   <Plus className="h-3.5 w-3.5" />
                   {t.github.writeFile}
                 </Button>
-                <Dialog.Close asChild>
+                <DialogClose asChild>
                   <Button size="sm" className="ml-auto">
                     {t.github.done}
                   </Button>
-                </Dialog.Close>
+                </DialogClose>
               </div>
             </div>
           ) : (
@@ -1336,11 +1316,11 @@ function WriteFileDialog({
                 />
               </FormRow>
               <div className="flex justify-end gap-2 pt-1">
-                <Dialog.Close asChild>
+                <DialogClose asChild>
                   <Button variant="ghost" size="sm">
                     {t.github.cancel}
                   </Button>
-                </Dialog.Close>
+                </DialogClose>
                 <Button size="sm" onClick={submit} disabled={busy}>
                   {busy ? (
                     <>
@@ -1357,9 +1337,8 @@ function WriteFileDialog({
               </div>
             </div>
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 

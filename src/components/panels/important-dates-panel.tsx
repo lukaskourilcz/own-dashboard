@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -247,20 +247,21 @@ export function ImportantDatesPanel({
                 </label>
                 {form.is_recurring && (
                   <div className="space-y-1">
-                    <Select
+                    <SimpleSelect
                       value={form.recurrence_unit}
                       aria-label={t.dates.repeats}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         setForm({
                           ...form,
-                          recurrence_unit: e.target.value as RecurrenceUnit,
+                          recurrence_unit: v as RecurrenceUnit,
                         })
                       }
                       className="h-7 w-28 text-xs"
-                    >
-                      <option value="yearly">{t.dates.yearly}</option>
-                      <option value="monthly">{t.dates.monthly}</option>
-                    </Select>
+                      options={[
+                        { value: "yearly", label: t.dates.yearly },
+                        { value: "monthly", label: t.dates.monthly },
+                      ]}
+                    />
                   </div>
                 )}
               </div>

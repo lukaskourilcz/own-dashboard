@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { todayKey } from "@/lib/date-keys";
@@ -173,22 +173,23 @@ export function CalendarPanel({
               {t.calendar.allDay}
             </label>
             <div className="space-y-1">
-              <Select
+              <SimpleSelect
                 value={form.recurrence}
                 aria-label={t.calendar.repeats}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   setForm({
                     ...form,
-                    recurrence: e.target.value as Recurrence,
+                    recurrence: v as Recurrence,
                   })
                 }
                 className="h-7 w-32 text-xs"
-              >
-                <option value="none">{t.calendar.recurrence.none}</option>
-                <option value="daily">{t.calendar.recurrence.daily}</option>
-                <option value="weekly">{t.calendar.recurrence.weekly}</option>
-                <option value="monthly">{t.calendar.recurrence.monthly}</option>
-              </Select>
+                options={[
+                  { value: "none", label: t.calendar.recurrence.none },
+                  { value: "daily", label: t.calendar.recurrence.daily },
+                  { value: "weekly", label: t.calendar.recurrence.weekly },
+                  { value: "monthly", label: t.calendar.recurrence.monthly },
+                ]}
+              />
             </div>
           </div>
           {!compact && (

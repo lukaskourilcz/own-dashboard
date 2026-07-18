@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   Check,
   Copy,
@@ -325,14 +331,11 @@ function FilterDialog({
 }) {
   const t = useDict();
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface p-5 shadow-elevated">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-w-md flex-col">
+        <DialogHeader>
           <div className="flex items-center justify-between gap-2">
-            <Dialog.Title className="text-sm font-semibold">
-              {t.costs.filterTitle}
-            </Dialog.Title>
+            <DialogTitle>{t.costs.filterTitle}</DialogTitle>
             {filterActive && (
               <button
                 type="button"
@@ -343,6 +346,7 @@ function FilterDialog({
               </button>
             )}
           </div>
+        </DialogHeader>
 
           {/* Only-with-file toggle */}
           <button
@@ -412,13 +416,12 @@ function FilterDialog({
           </div>
 
           <div className="mt-4 flex justify-end">
-            <Dialog.Close asChild>
+            <DialogClose asChild>
               <Button size="sm">{t.costs.done}</Button>
-            </Dialog.Close>
+            </DialogClose>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 

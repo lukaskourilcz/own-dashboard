@@ -35,8 +35,6 @@ type JobsStrings = {
   fitHint: (matched: number, missing: number) => string;
   fitYouHave: string;
   fitGaps: string;
-  gapsTitle: string;
-  gapsHint: string;
   // Listing cards
   remoteBadge: string;
   appliedBadge: string;
@@ -164,8 +162,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       } for this role.`,
     fitYouHave: "You have",
     fitGaps: "Gaps",
-    gapsTitle: "Learn next",
-    gapsHint: "Most-wanted skills across these roles that you don't have yet:",
     remoteBadge: "Remote",
     appliedBadge: "Applied",
     applyAction: "Apply",
@@ -294,8 +290,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       }.`,
     fitYouHave: "Umíš",
     fitGaps: "Chybí",
-    gapsTitle: "Nauč se dál",
-    gapsHint: "Nejžádanější dovednosti u těchto pozic, které zatím nemáš:",
     remoteBadge: "Remote",
     appliedBadge: "Přihlášeno",
     applyAction: "Přihlásit se",

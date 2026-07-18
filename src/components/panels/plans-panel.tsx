@@ -20,10 +20,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
@@ -93,8 +94,7 @@ export function PlansPanel({
   // of the mutation flow and are left exactly as before.
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data: plan, error: planErr } = await supabase
         .from("plans")
@@ -305,19 +305,17 @@ export function PlansPanel({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="plan-status">{t.plans.status}</Label>
-                <Select
+                <SimpleSelect
                   id="plan-status"
                   value={form.status}
-                  onChange={(e) =>
-                    setForm({ ...form, status: e.target.value as PlanStatus })
+                  onValueChange={(v) =>
+                    setForm({ ...form, status: v as PlanStatus })
                   }
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s.key} value={s.key}>
-                      {t.plans.statusLabel[s.key]}
-                    </option>
-                  ))}
-                </Select>
+                  options={STATUSES.map((s) => ({
+                    value: s.key,
+                    label: t.plans.statusLabel[s.key],
+                  }))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="plan-recurrence">
@@ -326,11 +324,11 @@ export function PlansPanel({
                     {t.plans.recurrence}
                   </span>
                 </Label>
-                <Select
+                <SimpleSelect
                   id="plan-recurrence"
                   value={form.recurrence}
-                  onChange={(e) => {
-                    const recurrence = e.target.value as PlanRecurrence;
+                  onValueChange={(v) => {
+                    const recurrence = v as PlanRecurrence;
                     // A recurring plan has no single end date, so drop the
                     // target date + one-off calendar event when one is chosen.
                     setForm((f) => ({
@@ -341,13 +339,11 @@ export function PlansPanel({
                         : {}),
                     }));
                   }}
-                >
-                  {RECURRENCES.map((r) => (
-                    <option key={r} value={r}>
-                      {t.plans.recurrenceLabel[r]}
-                    </option>
-                  ))}
-                </Select>
+                  options={RECURRENCES.map((r) => ({
+                    value: r,
+                    label: t.plans.recurrenceLabel[r],
+                  }))}
+                />
               </div>
               {form.recurrence === "none" && (
                 <div className="space-y-1.5">
@@ -629,17 +625,15 @@ function TimelineRow({
           </p>
         )}
       </div>
-      <Select
+      <SimpleSelect
         value={plan.status}
-        onChange={(e) => onStatus(e.target.value as PlanStatus)}
+        onValueChange={(v) => onStatus(v as PlanStatus)}
         className={cn("h-7 w-24 text-[11px]", statusMeta.tone)}
-      >
-        {STATUSES.map((s) => (
-          <option key={s.key} value={s.key}>
-            {t.plans.statusLabel[s.key]}
-          </option>
-        ))}
-      </Select>
+        options={STATUSES.map((s) => ({
+          value: s.key,
+          label: t.plans.statusLabel[s.key],
+        }))}
+      />
       <Tooltip content={t.plans.deletePlan}>
         <Button
           size="icon-sm"

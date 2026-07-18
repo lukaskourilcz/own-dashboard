@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import type { Locale } from "date-fns";
 import type { Streak, StreakLog, Updater } from "@/lib/types";
@@ -70,8 +71,7 @@ export function StreaksPanel({
   // apply the new row in onSuccess, reset inputs, then reconcile via invalidate.
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("streaks")
@@ -200,8 +200,7 @@ export function StreaksPanel({
     const existing = (logsByStreak.get(streak.id) ?? []).find(
       (l) => l.log_date === date,
     );
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
+    const userId = await currentUserId(supabase);
     if (!userId) return;
     toggleMutation.mutate({ streak, existing, userId, date });
   }

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
   Check,
   ExternalLink,
@@ -18,11 +17,19 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import type { AiCategory, AiLink, AiPricing, Updater } from "@/lib/types";
@@ -209,8 +216,7 @@ export function AiPanel({
 
   const createLink = useMutation({
     mutationFn: async (vars: Omit<AiLink, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("ai_links")
@@ -294,8 +300,7 @@ export function AiPanel({
 
   const createCategory = useMutation({
     mutationFn: async (name: string) => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const sortOrder =
         Math.max(0, ...aiCategories.map((c) => c.sort_order)) + 1;
@@ -834,14 +839,14 @@ function LinkDialog({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
-          <Dialog.Title className="text-sm font-semibold">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
             {editing ? t.ai.editLinkTitle : t.ai.newLinkTitle}
-          </Dialog.Title>
-          <form onSubmit={onSubmit} className="mt-3 space-y-3">
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="ai-name">{t.ai.name}</Label>
               <Input
@@ -890,38 +895,36 @@ function LinkDialog({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="ai-category">{t.ai.category}</Label>
-                <Select
+                <SimpleSelect
                   id="ai-category"
                   value={form.categoryId}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, categoryId: e.target.value }))
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, categoryId: v }))
                   }
-                >
-                  <option value="">{t.ai.uncategorized}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
+                  options={[
+                    { value: "", label: t.ai.uncategorized },
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ai-pricing">{t.ai.pricing}</Label>
-                <Select
+                <SimpleSelect
                   id="ai-pricing"
                   value={form.pricing}
-                  onChange={(e) =>
+                  onValueChange={(v) =>
                     setForm((f) => ({
                       ...f,
-                      pricing: e.target.value as LinkForm["pricing"],
+                      pricing: v as LinkForm["pricing"],
                     }))
                   }
-                >
-                  <option value="">{t.ai.pricingNone}</option>
-                  <option value="free">{t.ai.pricingLabel.free}</option>
-                  <option value="freemium">{t.ai.pricingLabel.freemium}</option>
-                  <option value="paid">{t.ai.pricingLabel.paid}</option>
-                </Select>
+                  options={[
+                    { value: "", label: t.ai.pricingNone },
+                    { value: "free", label: t.ai.pricingLabel.free },
+                    { value: "freemium", label: t.ai.pricingLabel.freemium },
+                    { value: "paid", label: t.ai.pricingLabel.paid },
+                  ]}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -938,19 +941,18 @@ function LinkDialog({
             </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
             <div className="flex items-center justify-end gap-2 pt-1">
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
                   {t.ai.cancel}
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button type="submit" size="sm" disabled={saving}>
                 <Check className="h-3.5 w-3.5" />
                 {saving ? t.ai.saving : editing ? t.ai.save : t.ai.create}
               </Button>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </DialogContent>
+    </Dialog>
   );
 }
