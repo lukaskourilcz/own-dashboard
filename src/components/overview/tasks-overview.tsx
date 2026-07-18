@@ -3,7 +3,13 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, ListTodo, Plus } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  ListTodo,
+  Plus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -210,6 +216,8 @@ function CategoryCard({
   group: Group;
   onToggle: (td: Todo) => void;
 }) {
+  // Collapsed by default so the overview stays compact — expand to see tasks.
+  const [open, setOpen] = useState(false);
   const remaining = group.open.length;
   const doneRatio = group.total > 0 ? (group.total - remaining) / group.total : 0;
   const preview = group.open.slice(0, 3);
@@ -218,6 +226,19 @@ function CategoryCard({
   return (
     <div className="flex flex-col rounded-lg border border-border bg-surface-muted/30 p-3.5">
       <div className="flex items-start gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? t.todos.collapseGroup : t.todos.expandGroup}
+          className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+        >
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+        </button>
         {group.kind === "github" ? (
           <GithubIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground-muted" />
         ) : (
@@ -258,36 +279,40 @@ function CategoryCard({
         />
       </div>
 
-      <ul className="mt-3 space-y-1">
-        <AnimatePresence initial={false}>
-          {preview.map((td) => (
-            <motion.li
-              key={td.id}
-              layout
-              initial={{ opacity: 0, y: -3 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-2"
-            >
-              <Checkbox
-                checked={td.done}
-                onChange={() => onToggle(td)}
-                label={td.title}
-              />
-              <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
-                {td.title}
-              </span>
-              {td.due_date && <DueChip t={t} due={td.due_date} />}
-            </motion.li>
-          ))}
-        </AnimatePresence>
-      </ul>
+      {open && (
+        <>
+          <ul className="mt-3 space-y-1">
+            <AnimatePresence initial={false}>
+              {preview.map((td) => (
+                <motion.li
+                  key={td.id}
+                  layout
+                  initial={{ opacity: 0, y: -3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-2"
+                >
+                  <Checkbox
+                    checked={td.done}
+                    onChange={() => onToggle(td)}
+                    label={td.title}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
+                    {td.title}
+                  </span>
+                  {td.due_date && <DueChip t={t} due={td.due_date} />}
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
 
-      {more > 0 && (
-        <p className="mt-2 text-[11px] text-foreground-subtle">
-          {t.todos.moreTasks(more)}
-        </p>
+          {more > 0 && (
+            <p className="mt-2 text-[11px] text-foreground-subtle">
+              {t.todos.moreTasks(more)}
+            </p>
+          )}
+        </>
       )}
     </div>
   );

@@ -52,7 +52,19 @@ import {
   type WidgetId,
 } from "@/lib/dashboard-layout";
 import { useDashboardLayout } from "@/lib/use-dashboard-layout";
+import { useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+
+// Widgets that mirror a hideable nav section — hidden in Settings ⇒ hidden on
+// the overview too. Overview-only widgets (today-hero, quick-add, kpi) have no
+// entry and always show.
+const WIDGET_SECTION: Partial<Record<WidgetId, string>> = {
+  todos: "todos",
+  streaks: "streaks",
+  subscriptions: "subscriptions",
+  calendar: "calendar",
+  plans: "plans",
+};
 
 // Icon + grid footprint per widget. "full" widgets span both columns on large
 // screens; "half" widgets sit two-per-row. Labels/descriptions live in i18n.
@@ -76,8 +88,16 @@ type Props = {
 export function CustomizableOverview({ nodes }: Props) {
   const t = useDict();
   const { layout, setLayout, reset } = useDashboardLayout();
+  const { isHidden } = useNavVisibility();
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  // Respect the Settings nav-visibility choices: drop widgets whose section
+  // the user hid. Kept out of `layout` state so unhiding restores position.
+  const visibleLayout = layout.filter((id) => {
+    const section = WIDGET_SECTION[id];
+    return !section || !isHidden(section);
+  });
 
   // Pointer for mouse/touch, keyboard for accessibility — matches notes-panel.
   const sensors = useSensors(
@@ -169,9 +189,12 @@ export function CustomizableOverview({ nodes }: Props) {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={[...layout]} strategy={rectSortingStrategy}>
+          <SortableContext
+            items={[...visibleLayout]}
+            strategy={rectSortingStrategy}
+          >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {layout.map((id) => (
+              {visibleLayout.map((id) => (
                 <SortableWidget
                   key={id}
                   id={id}
