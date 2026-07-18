@@ -156,9 +156,9 @@ export function JobsPanel({
         action={
           <div className="flex flex-wrap items-center gap-2">
             {(cvCs || cvEn) && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-1">
                 {cvCs && (
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="h-7 w-full justify-start">
                     <a
                       href={cvCs}
                       target="_blank"
@@ -171,7 +171,7 @@ export function JobsPanel({
                   </Button>
                 )}
                 {cvEn && (
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="h-7 w-full justify-start">
                     <a
                       href={cvEn}
                       target="_blank"
