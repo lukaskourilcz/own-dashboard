@@ -235,6 +235,61 @@ export function useTasksPerCategory(): {
 }
 
 // ---------------------------------------------------------------------------
+// CV links — the user's Google-Docs CV URLs (Czech + English), surfaced as
+// buttons on the Jobs page and edited in Settings. Device-local strings;
+// empty = not set (the button is hidden).
+// ---------------------------------------------------------------------------
+
+/** A minimal localStorage-backed string preference following the same
+ * cache + listener + useSyncExternalStore pattern as the prefs above. */
+function makeStringPref(key: string) {
+  const listeners = new Set<() => void>();
+  let cache: string | null = null;
+  return {
+    read(): string {
+      if (cache != null) return cache;
+      if (typeof window === "undefined") return "";
+      try {
+        cache = localStorage.getItem(key) ?? "";
+      } catch {
+        cache = "";
+      }
+      return cache;
+    },
+    subscribe(cb: () => void): () => void {
+      listeners.add(cb);
+      return () => {
+        listeners.delete(cb);
+      };
+    },
+    set(next: string): void {
+      cache = next;
+      try {
+        localStorage.setItem(key, next);
+      } catch {
+        // ignore — quota or privacy mode
+      }
+      for (const cb of listeners) cb();
+    },
+  };
+}
+
+const cvCsPref = makeStringPref("cvUrlCs");
+const cvEnPref = makeStringPref("cvUrlEn");
+const getServerCv = (): string => "";
+
+export function useCvLinks(): {
+  cs: string;
+  en: string;
+  setCs: (v: string) => void;
+  setEn: (v: string) => void;
+} {
+  const cs = useSyncExternalStore(cvCsPref.subscribe, cvCsPref.read, getServerCv);
+  const en = useSyncExternalStore(cvEnPref.subscribe, cvEnPref.read, getServerCv);
+  return { cs, en, setCs: cvCsPref.set, setEn: cvEnPref.set };
+}
+
+// ---------------------------------------------------------------------------
 // Repository filter — which repo ids stay pinned on the Repositories panel.
 // Persisted device-locally so the saved selection survives reloads even when
 // the server-synced copy (user_preferences.visible_repo_ids) isn't available.
