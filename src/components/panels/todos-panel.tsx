@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   ExternalLink,
   Flag,
@@ -17,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
@@ -58,6 +60,7 @@ export function TodosPanel({
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [newImportance, setNewImportance] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
   // importance is at least this. Applies to the full view's open-task groups.
@@ -89,6 +92,7 @@ export function TodosPanel({
       setTitle("");
       setDueDate("");
       setNewImportance("");
+      setAddOpen(false);
       void qc.invalidateQueries({ queryKey: qk.todos });
     },
   });
@@ -404,60 +408,36 @@ export function TodosPanel({
         title={t.todos.title}
         description={t.todos.description}
         action={
-          <Tooltip content={t.todos.refreshHint}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refresh.mutate()}
-              disabled={refresh.isPending || reposQuery.isPending}
-            >
-              <RefreshCw
-                className={cn("h-3.5 w-3.5", refresh.isPending && "animate-spin")}
-              />
-              {refresh.isPending ? t.todos.refreshing : t.todos.refresh}
-            </Button>
-          </Tooltip>
+          <div className="flex items-center gap-2">
+            <Tooltip content={t.todos.refreshHint}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refresh.mutate()}
+                disabled={refresh.isPending || reposQuery.isPending}
+              >
+                <RefreshCw
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    refresh.isPending && "animate-spin",
+                  )}
+                />
+                {refresh.isPending ? t.todos.refreshing : t.todos.refresh}
+              </Button>
+            </Tooltip>
+            <Tooltip content={t.todos.addTask}>
+              <Button
+                size="icon"
+                onClick={() => setAddOpen(true)}
+                aria-label={t.todos.addTask}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+          </div>
         }
       />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1 self-start">
-          <CardHeader>
-            <CardTitle>{t.todos.addTaskTitle}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addTodo} className="space-y-3">
-              <Input
-                placeholder={t.todos.whatNeedsDoing}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <Input
-                type="date"
-                aria-label={t.todos.dueDate}
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-              <Select
-                aria-label={t.todos.importanceLabel}
-                value={newImportance}
-                onChange={(e) => setNewImportance(e.target.value)}
-              >
-                <option value="">{t.todos.importanceNone}</option>
-                {[5, 4, 3, 2, 1].map((n) => (
-                  <option key={n} value={n}>
-                    {t.todos.importanceOption(n)}
-                  </option>
-                ))}
-              </Select>
-              <Button type="submit" disabled={saving} className="w-full">
-                <Plus className="h-3.5 w-3.5" />
-                {t.todos.addTask}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <div className="lg:col-span-2 space-y-4">
+      <div className="space-y-4">
           {open.length > 0 && (
             <ImportanceFilter
               t={t}
@@ -540,8 +520,21 @@ export function TodosPanel({
               </CardContent>
             </Card>
           )}
-        </div>
       </div>
+
+      <AddTaskDialog
+        t={t}
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        title={title}
+        setTitle={setTitle}
+        dueDate={dueDate}
+        setDueDate={setDueDate}
+        newImportance={newImportance}
+        setNewImportance={setNewImportance}
+        saving={saving}
+        onSubmit={addTodo}
+      />
     </div>
   );
 }
@@ -918,6 +911,101 @@ function ImportanceFilter({
         </span>
       )}
     </div>
+  );
+}
+
+/* ------------------------------ Add dialog ------------------------------- */
+
+/** Add-task form in a popup, opened by the header "+". Kept out of the page
+ * body so the full width can show current tasks — this form is rarely used
+ * (most tasks are generated from repos' NEEDED.md). */
+function AddTaskDialog({
+  t,
+  open,
+  onOpenChange,
+  title,
+  setTitle,
+  dueDate,
+  setDueDate,
+  newImportance,
+  setNewImportance,
+  saving,
+  onSubmit,
+}: {
+  t: Dict;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  setTitle: (v: string) => void;
+  dueDate: string;
+  setDueDate: (v: string) => void;
+  newImportance: string;
+  setNewImportance: (v: string) => void;
+  saving: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Content className="anim-dialog fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-elevated">
+          <Dialog.Title className="text-sm font-semibold">
+            {t.todos.addTaskTitle}
+          </Dialog.Title>
+          <form onSubmit={onSubmit} className="mt-3 space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="todo-add-title">{t.todos.taskLabel}</Label>
+              <Input
+                id="todo-add-title"
+                placeholder={t.todos.whatNeedsDoing}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="todo-add-due">{t.todos.dueDate}</Label>
+                <Input
+                  id="todo-add-due"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="todo-add-importance">
+                  {t.todos.importanceLabel}
+                </Label>
+                <Select
+                  id="todo-add-importance"
+                  value={newImportance}
+                  onChange={(e) => setNewImportance(e.target.value)}
+                >
+                  <option value="">{t.todos.importanceNone}</option>
+                  {[5, 4, 3, 2, 1].map((n) => (
+                    <option key={n} value={n}>
+                      {t.todos.importanceOption(n)}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Dialog.Close asChild>
+                <Button type="button" variant="outline">
+                  {t.common.cancel}
+                </Button>
+              </Dialog.Close>
+              <Button type="submit" disabled={saving || !title.trim()}>
+                <Plus className="h-3.5 w-3.5" />
+                {t.todos.addTask}
+              </Button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

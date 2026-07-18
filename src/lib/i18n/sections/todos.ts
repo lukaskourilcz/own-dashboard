@@ -7,6 +7,7 @@ type TodosStrings = {
   allClearDescription: string;
   addTask: string;
   addTaskTitle: string;
+  taskLabel: string;
   whatNeedsDoing: string;
   dueDate: string;
   allTasks: string;
@@ -82,6 +83,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     allClearDescription: "No open tasks. Add one above.",
     addTask: "Add task",
     addTaskTitle: "Add task",
+    taskLabel: "Task",
     whatNeedsDoing: "What needs doing?",
     dueDate: "Due date",
     allTasks: "All tasks",
@@ -168,6 +170,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     allClearDescription: "Žádné otevřené úkoly. Přidej nějaký výše.",
     addTask: "Přidat úkol",
     addTaskTitle: "Přidat úkol",
+    taskLabel: "Úkol",
     whatNeedsDoing: "Co je potřeba udělat?",
     dueDate: "Termín",
     allTasks: "Všechny úkoly",
