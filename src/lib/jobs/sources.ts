@@ -63,6 +63,28 @@ function clean(s: string | null | undefined): string | null {
   return t ? t : null;
 }
 
+/** Longest description snippet we keep — enough for tech-stack matching
+ * without bloating the row (matching only needs the keyword surface). */
+const DESC_CAP = 1500;
+
+/**
+ * Turn a source's HTML/description blob into a capped plain-text snippet:
+ * drop script/style, replace tags with spaces, decode entities, collapse
+ * whitespace, and truncate. Returns null when nothing usable remains.
+ */
+export function htmlToText(html: string | null | undefined, cap = DESC_CAP): string | null {
+  if (!html) return null;
+  const text = unescapeHtml(
+    html
+      .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<[^>]+>/g, " "),
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  return text.length > cap ? text.slice(0, cap).trimEnd() : text;
+}
+
 /**
  * Drop tracking query params — keeps upsert URLs stable across scrapes.
  * Relative links resolve against `base` (some prace.cz cards link
@@ -139,6 +161,7 @@ export function normalizeStartupJobsItem(
     remote: true,
     role,
     salary: startupJobsSalary(item.salary),
+    description: null, // list endpoint carries no body; title+tags drive fit
     tags: (item.areaNames ?? []).map((a) => a.trim()).filter(Boolean),
     seniority: clean((item.seniorities ?? []).join(", ")),
     postedAt: null,
@@ -293,6 +316,7 @@ export function parseJobsCzCards(
       remote: true,
       role,
       salary,
+      description: null, // result cards carry no body text
       tags: [],
       seniority: null,
       postedAt: status ? parseCzechDate(status, now) : null,
@@ -365,6 +389,7 @@ export function parsePraceCzCards(html: string): ScrapedJob[] {
       remote: true,
       role,
       salary,
+      description: null, // result cards carry no body text
       tags: [],
       seniority: null,
       postedAt: null,
@@ -405,6 +430,7 @@ type RemoteOkItem = {
   url?: string;
   apply_url?: string;
   date?: string;
+  description?: string;
   salary_min?: number;
   salary_max?: number;
 };
@@ -433,6 +459,7 @@ export function normalizeRemoteOkItem(item: RemoteOkItem): ScrapedJob | null {
     salary: nums.length
       ? nums.map((n) => `$${Math.round(n / 1000)}k`).join(" – ")
       : null,
+    description: htmlToText(item.description),
     tags: (item.tags ?? []).slice(0, 8),
     seniority: null,
     postedAt: item.date ?? null,
@@ -460,6 +487,7 @@ type RemotiveJob = {
   publication_date?: string;
   candidate_required_location?: string;
   salary?: string;
+  description?: string;
 };
 
 export function normalizeRemotiveItem(job: RemotiveJob): ScrapedJob | null {
@@ -478,6 +506,7 @@ export function normalizeRemotiveItem(job: RemotiveJob): ScrapedJob | null {
     remote: true,
     role,
     salary: clean(job.salary),
+    description: htmlToText(job.description),
     tags: (job.tags ?? []).slice(0, 8),
     seniority: null,
     postedAt: job.publication_date ?? null,
@@ -504,6 +533,7 @@ type ArbeitnowJob = {
   title?: string;
   remote?: boolean;
   url?: string;
+  description?: string;
   tags?: string[];
   job_types?: string[];
   location?: string;
@@ -526,6 +556,7 @@ export function normalizeArbeitnowItem(job: ArbeitnowJob): ScrapedJob | null {
     remote: true,
     role,
     salary: null,
+    description: htmlToText(job.description),
     tags: (job.tags ?? []).slice(0, 8),
     seniority: null,
     postedAt:
@@ -556,6 +587,8 @@ type JobicyJob = {
   jobGeo?: string;
   jobIndustry?: string[];
   jobLevel?: string;
+  jobExcerpt?: string;
+  jobDescription?: string;
   pubDate?: string;
   annualSalaryMin?: number | string;
   annualSalaryMax?: number | string;
@@ -585,6 +618,7 @@ export function normalizeJobicyItem(job: JobicyJob): ScrapedJob | null {
           job.salaryCurrency ? ` ${job.salaryCurrency}` : ""
         }`
       : null,
+    description: htmlToText(job.jobDescription ?? job.jobExcerpt),
     tags: (job.jobIndustry ?? []).map(unescapeHtml).slice(0, 8),
     seniority: clean(job.jobLevel),
     postedAt: job.pubDate ?? null,
@@ -642,6 +676,7 @@ export function parseWwrItems(xml: string): ScrapedJob[] {
       remote: true,
       role,
       salary: null,
+      description: htmlToText(rssTag(item, "description")),
       tags: [],
       seniority: null,
       postedAt:

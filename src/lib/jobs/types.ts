@@ -18,6 +18,9 @@ export type ScrapedJob = {
   remote: boolean;
   role: JobRole;
   salary: string | null;
+  /** Plain-text description snippet (HTML stripped, capped), when the source
+   * exposes one — powers tech-stack fit matching. Null on boards that don't. */
+  description: string | null;
   tags: string[];
   seniority: string | null;
   /** ISO timestamp of the source-reported publish date, when known. */
