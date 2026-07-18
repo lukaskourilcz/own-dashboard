@@ -21,21 +21,48 @@ const FRONTEND = /front[\s-]*end|\b(react|vue|angular|svelte|next\.?js)\b/i;
 // "software"/"web" or a backend-ish tech hint.
 const DEV_WORD =
   /\b(engineer|engineering|developer|dev|programmer|inženýr|inzenyr|vývojář(ka)?|vyvojar(ka)?|programátor(ka)?|programator(ka)?)\b/i;
+// Generic engineering signals (no specific language) + the JS/web ecosystem.
+// Foreign-language hints are deliberately NOT here — they're vetoed below.
 const TECH_HINT =
-  /\b(software|web|javascript|typescript|node(\.?js)?|python|java|golang|go|php|\.net|dotnet|c#|c\+\+|ruby|kotlin|rust|scala|elixir|backend|back[\s-]*end|api)\b/i;
+  /\b(software|web|javascript|typescript|node(\.?js)?|backend|back[\s-]*end|api)\b/i;
+
+// Languages/stacks outside the tracked JS/TS/web skill set. A title dominated
+// by one of these (Python, C++, C#, PHP, Go, Java, Ruby, …) is not relevant.
+// c++/c#/.net carry non-word chars, so they're matched separately below.
+const FOREIGN_LANG =
+  /\b(python|django|flask|fastapi|php|laravel|symfony|drupal|wordpress|ruby|rails|golang|go|rust|scala|kotlin|swift|elixir|erlang|perl|haskell|clojure|groovy|dotnet|java)\b(?!script)/i;
+const FOREIGN_SYMBOLIC = /(^|[^a-z0-9+#.])(c\+\+|c#|\.net|asp\.net|f#|objective-c)/i;
+
+// Signals that the posting IS in the tracked ecosystem — presence of any of
+// these spares a role from the foreign-language veto (e.g. "React + Python").
+const USER_SIGNAL =
+  /front[\s-]*end|full[\s-]*stack|next\.?js|node\.?js|react\.?js|\b(javascript|js|typescript|ts|react|reactjs|node|nodejs|express|vue|vuejs|angular|svelte|sveltekit|remix|astro|tailwind|web)\b/i;
+
+/** True when a posting's primary language is outside the tracked skill set and
+ * there's no JS/web signal to redeem it. */
+function isForeignPrimary(hay: string): boolean {
+  const foreign = FOREIGN_LANG.test(hay) || FOREIGN_SYMBOLIC.test(hay);
+  return foreign && !USER_SIGNAL.test(hay);
+}
 
 /**
- * Classify a job title into one of the tracked role buckets, or null when
- * it isn't a frontend/fullstack/software-engineering role. `extra` widens
- * the haystack (e.g. a source's category names) without letting it veto
- * the title.
+ * Classify a job title into one of the tracked role buckets, or null when it
+ * isn't a frontend/fullstack/software-engineering role in the JS/TS/web
+ * ecosystem. `extra` widens the haystack (e.g. a source's category names or
+ * tags) — it can rescue an ambiguous title into a role and can carry the
+ * foreign-language signal that vetoes an irrelevant one.
  */
 export function matchRole(title: string, extra?: string): JobRole | null {
   const t = title.trim();
   if (!t) return null;
   if (NEGATIVE.test(t)) return null;
 
-  const haystacks = extra ? [t, `${t} ${extra}`] : [t];
+  const wide = extra ? `${t} ${extra}` : t;
+  // Drop foreign-language roles (Python/C++/C#/PHP/Go/Java/…) unless the
+  // posting also shows a JS/web signal — keeps the list to the real skill set.
+  if (isForeignPrimary(wide)) return null;
+
+  const haystacks = extra ? [t, wide] : [t];
   for (const hay of haystacks) {
     if (FULLSTACK.test(hay)) return "fullstack";
     if (FRONTEND.test(hay)) return "frontend";
