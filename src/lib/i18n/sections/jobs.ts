@@ -5,7 +5,6 @@ type JobsStrings = {
   openTab: string;
   appliedTab: string;
   // CV quick-links
-  cvShort: string;
   cvCzech: string;
   cvEnglish: string;
   // Header / refresh
@@ -135,7 +134,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       "Remote-friendly European openings for frontend, fullstack and software engineers — checked daily at 10:00.",
     openTab: "Open positions",
     appliedTab: "Applied",
-    cvShort: "CV",
     cvCzech: "Open Czech CV",
     cvEnglish: "Open English CV",
     lastChecked: "Last checked",
@@ -266,7 +264,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       "Remote pozice v Evropě pro frontend, fullstack a software inženýry — kontrolováno denně v 10:00.",
     openTab: "Otevřené pozice",
     appliedTab: "Odeslané přihlášky",
-    cvShort: "CV",
     cvCzech: "Otevřít české CV",
     cvEnglish: "Otevřít anglické CV",
     lastChecked: "Naposledy zkontrolováno",

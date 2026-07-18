@@ -156,32 +156,44 @@ export function JobsPanel({
         action={
           <div className="flex flex-wrap items-center gap-2">
             {(cvCs || cvEn) && (
-              <div className="flex flex-col gap-1">
+              <div className="flex items-center">
                 {cvCs && (
-                  <Button asChild variant="outline" size="sm" className="h-7 w-full justify-start">
-                    <a
-                      href={cvCs}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={t.jobs.cvCzech}
+                  <Tooltip content={t.jobs.cvCzech}>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-base text-foreground-muted"
                     >
-                      <span aria-hidden>🇨🇿</span>
-                      {t.jobs.cvShort}
-                    </a>
-                  </Button>
+                      <a
+                        href={cvCs}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={t.jobs.cvCzech}
+                      >
+                        <span aria-hidden>🇨🇿</span>
+                      </a>
+                    </Button>
+                  </Tooltip>
                 )}
                 {cvEn && (
-                  <Button asChild variant="outline" size="sm" className="h-7 w-full justify-start">
-                    <a
-                      href={cvEn}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={t.jobs.cvEnglish}
+                  <Tooltip content={t.jobs.cvEnglish}>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-base text-foreground-muted"
                     >
-                      <span aria-hidden>🇬🇧</span>
-                      {t.jobs.cvShort}
-                    </a>
-                  </Button>
+                      <a
+                        href={cvEn}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={t.jobs.cvEnglish}
+                      >
+                        <span aria-hidden>🇬🇧</span>
+                      </a>
+                    </Button>
+                  </Tooltip>
                 )}
               </div>
             )}
