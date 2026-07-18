@@ -12,6 +12,7 @@ import {
   EyeOff,
   Files,
   FileText,
+  GraduationCap,
   History,
   Pencil,
   Plus,
@@ -19,6 +20,7 @@ import {
   Search,
   Send,
   Star,
+  Target,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,12 @@ import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { jobSourceLabel } from "@/lib/jobs/meta";
+import {
+  compareByFit,
+  matchListing,
+  topGaps,
+  type JobMatch,
+} from "@/lib/jobs/match";
 import { applicationStats } from "@/lib/jobs/stats";
 import { BUILTIN_TEMPLATES, fillTemplate } from "@/lib/jobs/template";
 import type {
@@ -56,6 +64,18 @@ const ROLE_TONE: Record<JobRole, string> = {
   fullstack: "bg-success/10 text-success border-success/30",
   software: "bg-surface-muted text-foreground-muted border-border",
 };
+
+// Fit-level → badge tone. Warmer/greener = stronger match.
+const FIT_TONE: Record<JobMatch["level"], string> = {
+  strong: "bg-success/10 text-success border-success/30",
+  good: "bg-primary/10 text-primary border-primary/25",
+  partial: "bg-warning/10 text-warning border-warning/25",
+  weak: "bg-surface-muted text-foreground-muted border-border",
+  unknown: "bg-surface text-foreground-subtle border-border",
+};
+
+// A listing counts as a "strong fit" (for the quick filter) at this score.
+const STRONG_FIT_MIN = 50;
 
 const STATUSES: JobApplicationStatus[] = [
   "applied",
@@ -223,6 +243,9 @@ function OpenPositionsView({
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"all" | JobRole>("all");
   const [source, setSource] = useState<string>("all");
+  const [sortMode, setSortMode] = useState<"fit" | "newest">("fit");
+  const [priorityOnly, setPriorityOnly] = useState(false);
+  const [strongFitOnly, setStrongFitOnly] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [shortlistedOnly, setShortlistedOnly] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -232,6 +255,14 @@ function OpenPositionsView({
     for (const s of userStates) m.set(s.listing_id, s);
     return m;
   }, [userStates]);
+
+  // Compare every listing to the tech stack once. Keyed by id so the row and
+  // the insight card share one computation.
+  const matchById = useMemo(() => {
+    const m = new Map<string, JobMatch>();
+    for (const l of listings) m.set(l.id, matchListing(l));
+    return m;
+  }, [listings]);
 
   const sources = useMemo(
     () => [...new Set(listings.map((l) => l.source))].sort(),
@@ -244,21 +275,62 @@ function OpenPositionsView({
       const st = stateByListing.get(l.id)?.state;
       if (st === "hidden" && !showHidden) return false;
       if (shortlistedOnly && st !== "shortlisted") return false;
+      if (priorityOnly && l.role === "software") return false;
       if (role !== "all" && l.role !== role) return false;
       if (source !== "all" && l.source !== source) return false;
+      if (strongFitOnly) {
+        const s = matchById.get(l.id)?.score;
+        if (s == null || s < STRONG_FIT_MIN) return false;
+      }
       if (!q) return true;
       return `${l.title}\n${l.company ?? ""}\n${l.location ?? ""}\n${l.tags.join(" ")}`
         .toLowerCase()
         .includes(q);
     });
-    // Shortlisted first, then newest finds — the "stack" to work through.
-    return rows.sort((a, b) => {
-      const sa = stateByListing.get(a.id)?.state === "shortlisted" ? 0 : 1;
-      const sb = stateByListing.get(b.id)?.state === "shortlisted" ? 0 : 1;
-      if (sa !== sb) return sa - sb;
-      return b.first_seen_at.localeCompare(a.first_seen_at);
-    });
-  }, [listings, stateByListing, query, role, source, showHidden, shortlistedOnly]);
+    const isShortlisted = (l: JobListing) =>
+      stateByListing.get(l.id)?.state === "shortlisted";
+    if (sortMode === "newest") {
+      // Shortlisted first, then newest finds.
+      return rows.sort((a, b) => {
+        const sa = isShortlisted(a) ? 0 : 1;
+        const sb = isShortlisted(b) ? 0 : 1;
+        if (sa !== sb) return sa - sb;
+        return b.first_seen_at.localeCompare(a.first_seen_at);
+      });
+    }
+    // "Best fit": shortlisted → FE/FS before software → score → breadth → newest.
+    const empty: JobMatch = {
+      score: null,
+      level: "unknown",
+      matched: [],
+      missing: [],
+      matchedWeight: 0,
+    };
+    return rows.sort((a, b) =>
+      compareByFit(
+        { listing: a, match: matchById.get(a.id) ?? empty, shortlisted: isShortlisted(a) },
+        { listing: b, match: matchById.get(b.id) ?? empty, shortlisted: isShortlisted(b) },
+      ),
+    );
+  }, [
+    listings,
+    stateByListing,
+    matchById,
+    query,
+    role,
+    source,
+    sortMode,
+    priorityOnly,
+    strongFitOnly,
+    showHidden,
+    shortlistedOnly,
+  ]);
+
+  // Top skills the visible roles want that aren't in the stack — "learn next".
+  const gaps = useMemo(
+    () => topGaps(visible.map((l) => matchById.get(l.id)).filter((m): m is JobMatch => !!m)),
+    [visible, matchById],
+  );
 
   // Set / replace / clear the per-listing triage state. Non-optimistic —
   // the returned row lands in the cache, then an invalidate reconciles.
@@ -375,6 +447,27 @@ function OpenPositionsView({
               </option>
             ))}
           </Select>
+          <Select
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value as "fit" | "newest")}
+            className="h-9 w-auto min-w-32 text-xs"
+            aria-label={t.jobs.sortLabel}
+          >
+            <option value="fit">{t.jobs.sortBestFit}</option>
+            <option value="newest">{t.jobs.sortNewest}</option>
+          </Select>
+          <FilterToggle
+            active={priorityOnly}
+            onClick={() => setPriorityOnly((v) => !v)}
+            icon={Target}
+            label={t.jobs.priorityOnly}
+          />
+          <FilterToggle
+            active={strongFitOnly}
+            onClick={() => setStrongFitOnly((v) => !v)}
+            icon={Check}
+            label={t.jobs.strongFitOnly}
+          />
           <FilterToggle
             active={shortlistedOnly}
             onClick={() => setShortlistedOnly((v) => !v)}
@@ -450,6 +543,7 @@ function OpenPositionsView({
         />
       ) : (
         <>
+          {gaps.length > 0 && <SkillsGapCard gaps={gaps} />}
           <p className="mb-2 text-[11px] text-foreground-subtle tabular">
             {visible.length} {t.jobs.listingsShown}
           </p>
@@ -459,6 +553,7 @@ function OpenPositionsView({
                 <ListingRow
                   key={l.id}
                   listing={l}
+                  match={matchById.get(l.id)}
                   state={stateByListing.get(l.id)?.state}
                   applied={
                     appliedListingIds.has(l.id) || appliedUrls.has(l.url)
@@ -505,8 +600,77 @@ function FilterToggle({
   );
 }
 
+/* --------------------------- Fit score + skills -------------------------- */
+
+/** The fit-score pill next to a listing's role badge. */
+function FitBadge({ match }: { match: JobMatch }) {
+  const t = useDict();
+  const label =
+    match.score === null ? t.jobs.fitUnknown : `${match.score}% ${t.jobs.fitSuffix}`;
+  const tip =
+    match.score === null
+      ? t.jobs.fitUnknownHint
+      : t.jobs.fitHint(match.matched.length, match.missing.length);
+  return (
+    <Tooltip content={tip}>
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular",
+          FIT_TONE[match.level],
+        )}
+      >
+        <Target className="h-2.5 w-2.5" />
+        {label}
+      </span>
+    </Tooltip>
+  );
+}
+
+/** A single skill chip — green when it's in the stack, muted when it's a gap. */
+function SkillChip({ label, kind }: { label: string; kind: "have" | "gap" }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium",
+        kind === "have"
+          ? "border-success/30 bg-success/10 text-success"
+          : "border-border bg-surface-muted text-foreground-muted line-through decoration-foreground-subtle/40",
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** "Learn next" card: the tech most-wanted across the visible roles that the
+ * stack is missing, ranked by how many postings ask for it. */
+function SkillsGapCard({ gaps }: { gaps: { name: string; count: number }[] }) {
+  const t = useDict();
+  return (
+    <Card className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-dashed p-3">
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+        <GraduationCap className="h-4 w-4 text-foreground-muted" />
+        {t.jobs.gapsTitle}
+      </span>
+      <span className="text-[11px] text-foreground-muted">{t.jobs.gapsHint}</span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {gaps.map((g) => (
+          <span
+            key={g.name}
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-foreground-muted"
+          >
+            {g.name}
+            <span className="tabular text-foreground-subtle">×{g.count}</span>
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 function ListingRow({
   listing,
+  match,
   state,
   applied,
   onShortlist,
@@ -514,6 +678,7 @@ function ListingRow({
   onApply,
 }: {
   listing: JobListing;
+  match: JobMatch | undefined;
   state: JobUserStateValue | undefined;
   applied: boolean;
   onShortlist: () => void;
@@ -561,6 +726,7 @@ function ListingRow({
           >
             {roleLabel[listing.role]}
           </span>
+          {match && <FitBadge match={match} />}
           {applied && (
             <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
               <Check className="h-2.5 w-2.5" />
@@ -578,6 +744,16 @@ function ListingRow({
           {listing.seniority ? ` · ${listing.seniority}` : ""} ·{" "}
           {t.jobs.firstSeen.toLowerCase()} {seen}
         </p>
+        {match && (match.matched.length > 0 || match.missing.length > 0) && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {match.matched.slice(0, 6).map((s) => (
+              <SkillChip key={s.name} label={s.name} kind="have" />
+            ))}
+            {match.missing.slice(0, 4).map((name) => (
+              <SkillChip key={name} label={name} kind="gap" />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
@@ -640,6 +816,48 @@ function ListingRow({
 /* ========================================================================= *
  * Apply dialog — from a listing or as a manual log                          *
  * ========================================================================= */
+
+/** Compact fit breakdown shown atop the apply dialog, so the cover letter can
+ * lean on the skills that match and consciously address the gaps. */
+function ApplyFitSummary({ listing }: { listing: JobListing }) {
+  const t = useDict();
+  const match = useMemo(() => matchListing(listing), [listing]);
+  if (match.matched.length === 0 && match.missing.length === 0) return null;
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-surface-muted/40 p-3">
+      <div className="flex items-center gap-2">
+        <FitBadge match={match} />
+        <span className="text-[11px] text-foreground-muted">
+          {t.jobs.fitHint(match.matched.length, match.missing.length)}
+        </span>
+      </div>
+      {match.matched.length > 0 && (
+        <div className="mt-2">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-foreground-subtle">
+            {t.jobs.fitYouHave}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {match.matched.map((s) => (
+              <SkillChip key={s.name} label={s.name} kind="have" />
+            ))}
+          </div>
+        </div>
+      )}
+      {match.missing.length > 0 && (
+        <div className="mt-2">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-foreground-subtle">
+            {t.jobs.fitGaps}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {match.missing.map((name) => (
+              <SkillChip key={name} label={name} kind="gap" />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ApplyDialog({
   open,
@@ -760,6 +978,7 @@ function ApplyDialog({
               {jobSourceLabel(listing.source)})
             </p>
           )}
+          {listing && <ApplyFitSummary listing={listing} />}
           <form onSubmit={submit} className="mt-3 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">

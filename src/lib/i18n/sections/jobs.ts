@@ -22,6 +22,21 @@ type JobsStrings = {
   sourceAll: string;
   showHidden: string;
   shortlistedOnly: string;
+  // Sort + fit filters
+  sortLabel: string;
+  sortBestFit: string;
+  sortNewest: string;
+  priorityOnly: string;
+  strongFitOnly: string;
+  // Fit score + skills
+  fitSuffix: string;
+  fitUnknown: string;
+  fitUnknownHint: string;
+  fitHint: (matched: number, missing: number) => string;
+  fitYouHave: string;
+  fitGaps: string;
+  gapsTitle: string;
+  gapsHint: string;
   // Listing cards
   remoteBadge: string;
   appliedBadge: string;
@@ -134,6 +149,23 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     sourceAll: "All sources",
     showHidden: "Show hidden",
     shortlistedOnly: "Shortlisted",
+    sortLabel: "Sort",
+    sortBestFit: "Best fit",
+    sortNewest: "Newest",
+    priorityOnly: "FE + FS",
+    strongFitOnly: "Strong fit",
+    fitSuffix: "fit",
+    fitUnknown: "No tech listed",
+    fitUnknownHint:
+      "This posting names no recognizable technology, so it can't be scored.",
+    fitHint: (matched, missing) =>
+      `You match ${matched} skill${matched === 1 ? "" : "s"}${
+        missing > 0 ? `, ${missing} gap${missing === 1 ? "" : "s"}` : ""
+      } for this role.`,
+    fitYouHave: "You have",
+    fitGaps: "Gaps",
+    gapsTitle: "Learn next",
+    gapsHint: "Most-wanted skills across these roles that you don't have yet:",
     remoteBadge: "Remote",
     appliedBadge: "Applied",
     applyAction: "Apply",
@@ -247,6 +279,23 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     sourceAll: "Všechny zdroje",
     showHidden: "Zobrazit skryté",
     shortlistedOnly: "Oblíbené",
+    sortLabel: "Řadit",
+    sortBestFit: "Nejlepší shoda",
+    sortNewest: "Nejnovější",
+    priorityOnly: "FE + FS",
+    strongFitOnly: "Silná shoda",
+    fitSuffix: "shoda",
+    fitUnknown: "Bez technologií",
+    fitUnknownHint:
+      "Inzerát neuvádí žádnou rozpoznatelnou technologii, nelze ho ohodnotit.",
+    fitHint: (matched, missing) =>
+      `Shoda: ${matched} ${csSkills(matched)}${
+        missing > 0 ? `, ${missing} ${csGaps(missing)}` : ""
+      }.`,
+    fitYouHave: "Umíš",
+    fitGaps: "Chybí",
+    gapsTitle: "Nauč se dál",
+    gapsHint: "Nejžádanější dovednosti u těchto pozic, které zatím nemáš:",
     remoteBadge: "Remote",
     appliedBadge: "Přihlášeno",
     applyAction: "Přihlásit se",
@@ -339,3 +388,17 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     bodyRequired: "Text šablony je povinný.",
   },
 };
+
+// Czech plural for "dovednost" (skill): 1 → singular, 2–4 → few, 0/5+ → many.
+function csSkills(n: number): string {
+  if (n === 1) return "dovednost";
+  if (n >= 2 && n <= 4) return "dovednosti";
+  return "dovedností";
+}
+
+// Czech plural for "mezera" (gap): 1 → singular, 2–4 → few, 0/5+ → many.
+function csGaps(n: number): string {
+  if (n === 1) return "mezera";
+  if (n >= 2 && n <= 4) return "mezery";
+  return "mezer";
+}

@@ -1374,6 +1374,12 @@ create table if not exists public.job_listings (
   unique (source, external_id)
 );
 
+-- Description snippet migration: a plain-text excerpt (HTML stripped, capped)
+-- from the source, used to compare each posting against the user's tech stack
+-- for the Jobs "fit" score. Null on boards that don't expose a description.
+alter table public.job_listings
+  add column if not exists description text;
+
 create index if not exists job_listings_first_seen_idx
   on public.job_listings (first_seen_at desc);
 create index if not exists job_listings_last_seen_idx

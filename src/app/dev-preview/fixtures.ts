@@ -282,6 +282,8 @@ export const jobListings: JobListing[] = [
     salary: "90 000 – 120 000 Kč",
     tags: ["react", "typescript"],
     seniority: "senior",
+    description:
+      "Build our marketing platform's UI with React, TypeScript and Next.js. Tailwind, testing with Playwright. GraphQL a plus.",
     posted_at: TS,
     first_seen_at: TS,
     last_seen_at: TS,
@@ -299,6 +301,8 @@ export const jobListings: JobListing[] = [
     salary: null,
     tags: ["golang", "react"],
     seniority: null,
+    description:
+      "Join a small team shipping a Go backend with a React frontend. Experience with AWS and Docker required.",
     posted_at: TS,
     first_seen_at: TS,
     last_seen_at: TS,

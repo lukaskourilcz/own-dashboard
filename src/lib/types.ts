@@ -431,6 +431,9 @@ export type JobListing = {
   salary: string | null;
   tags: string[];
   seniority: string | null;
+  // Plain-text description snippet (HTML stripped, capped) when the source
+  // exposes one; null on boards that don't. Feeds tech-stack fit matching.
+  description: string | null;
   posted_at: string | null;
   first_seen_at: string;
   last_seen_at: string;
