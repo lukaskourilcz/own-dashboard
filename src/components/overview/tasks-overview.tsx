@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { EmptyState } from "@/components/ui/empty-state";
 import { GithubIcon } from "@/components/icons/github";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -272,12 +274,7 @@ function CategoryCard({
       </div>
 
       {/* Progress: how much of this category is already done. */}
-      <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-border">
-        <div
-          className="h-full rounded-full bg-foreground/70 transition-[width] duration-300"
-          style={{ width: `${Math.round(doneRatio * 100)}%` }}
-        />
-      </div>
+      <Progress value={Math.round(doneRatio * 100)} className="mt-2.5" />
 
       {open && (
         <>
@@ -295,8 +292,8 @@ function CategoryCard({
                 >
                   <Checkbox
                     checked={td.done}
-                    onChange={() => onToggle(td)}
-                    label={td.title}
+                    onCheckedChange={() => onToggle(td)}
+                    aria-label={td.title}
                   />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
                     {td.title}
@@ -343,42 +340,3 @@ function DueChip({ t, due }: { t: Dict; due: string }) {
   );
 }
 
-function Checkbox({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label?: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={cn(
-        "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-150 ease-out focus-ring",
-        checked
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border-strong hover:border-foreground/40",
-      )}
-    >
-      {checked && (
-        <svg
-          viewBox="0 0 12 12"
-          className="h-2.5 w-2.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="2.5 6.5 5 9 9.5 3.5" />
-        </svg>
-      )}
-    </button>
-  );
-}

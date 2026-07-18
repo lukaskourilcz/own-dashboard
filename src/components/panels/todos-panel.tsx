@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -697,8 +698,8 @@ function TaskSubcard({
     >
       <Checkbox
         checked={td.done}
-        onChange={() => onToggle(td)}
-        label={td.title}
+        onCheckedChange={() => onToggle(td)}
+        aria-label={td.title}
         className="mt-0.5"
       />
       <div className="min-w-0 flex-1">
@@ -1099,8 +1100,8 @@ function TodoList({
           >
             <Checkbox
               checked={td.done}
-              onChange={() => onToggle(td)}
-              label={td.title}
+              onCheckedChange={() => onToggle(td)}
+              aria-label={td.title}
             />
             <div className="flex-1 min-w-0">
               <p
@@ -1137,49 +1138,6 @@ function TodoList({
         ))}
       </AnimatePresence>
     </ul>
-  );
-}
-
-function Checkbox({
-  checked,
-  onChange,
-  label,
-  className,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label?: string;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={cn(
-        "h-4 w-4 shrink-0 rounded border transition-all duration-150 ease-out flex items-center justify-center focus-ring",
-        checked
-          ? "bg-primary border-primary text-primary-foreground"
-          : "border-border-strong hover:border-foreground/40",
-        className,
-      )}
-    >
-      {checked && (
-        <svg
-          viewBox="0 0 12 12"
-          className="h-2.5 w-2.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="2.5 6.5 5 9 9.5 3.5" />
-        </svg>
-      )}
-    </button>
   );
 }
 
