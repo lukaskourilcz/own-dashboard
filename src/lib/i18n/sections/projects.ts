@@ -55,6 +55,7 @@ type ProjectsStrings = {
   notesPlaceholder: string;
   saveNotes: string;
   notesSaved: string;
+  saving: string;
 
   // Crons.
   crons: string;
@@ -147,7 +148,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     notes: "Notes",
     notesPlaceholder: "Quick notes about this project…",
     saveNotes: "Save notes",
-    notesSaved: "Notes saved.",
+    notesSaved: "Saved",
+    saving: "Saving…",
 
     crons: "Crons",
     cronsHint:
@@ -238,7 +240,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     notes: "Poznámky",
     notesPlaceholder: "Rychlé poznámky k projektu…",
     saveNotes: "Uložit poznámky",
-    notesSaved: "Poznámky uloženy.",
+    notesSaved: "Uloženo",
+    saving: "Ukládám…",
 
     crons: "Crony",
     cronsHint:

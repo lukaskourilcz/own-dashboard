@@ -3,12 +3,12 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Content-Security-Policy. Shipped as **Report-Only** first: it emits the
-// header and reports violations without blocking anything, so a complex app
-// (Supabase realtime, PostHog, Sentry, motion's inline styles, Next's inline
-// bootstrap) can't be broken by a too-tight rule. Watch the browser console /
-// a report endpoint for a few days, then flip the key to
-// `Content-Security-Policy` (enforcing) once it's clean — see NEEDED.md.
+// Content-Security-Policy. Now **enforcing** — the live console was verified
+// clean of Report-Only violations before the flip. It covers the app's real
+// surface (Supabase realtime, PostHog, Sentry, motion's inline styles, Next's
+// inline bootstrap). If you ever add a third-party host, extend the relevant
+// directive below (connect-src for fetch/ws, img-src for images, script-src
+// for scripts) — a blocked resource now actually fails, so watch for it.
 //
 // connect-src lists only what the BROWSER calls directly (server-side fetches —
 // Jina, Firecrawl, Google, Resend — are not subject to page CSP).
@@ -31,14 +31,15 @@ const csp = [
   ].join(" "),
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  // NOTE: add "upgrade-insecure-requests" when flipping to enforcing mode —
-  // the directive is ignored under Report-Only and only produces a console
-  // error on every page load (which also failed the E2E console watch).
+  // Now enforcing, so this is active: transparently upgrade any http
+  // subresource to https instead of blocking it. (Ignored under Report-Only,
+  // which is why it was held back until the flip.)
+  "upgrade-insecure-requests",
 ].join("; ");
 
-// Enforcing headers (these are safe to enforce immediately).
+// Enforcing headers.
 const securityHeaders = [
-  { key: "Content-Security-Policy-Report-Only", value: csp },
+  { key: "Content-Security-Policy", value: csp },
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains",
