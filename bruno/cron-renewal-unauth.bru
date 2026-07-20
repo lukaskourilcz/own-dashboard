@@ -6,13 +6,15 @@ meta {
 
 get {
   url: {{baseUrl}}/api/cron/renewal-warnings
+  headers {
+    Authorization: Bearer wrong-secret
+  }
   body: none
   auth: none
 }
 
 assert {
-  res.status: eq 307
-  res.headers.location: contains /login
+  res.status: eq 403
 }
 
 settings {
@@ -20,7 +22,11 @@ settings {
 }
 
 docs {
-  A caller with no session is bounced to /login by the auth middleware with a
-  307. The handler additionally requires `Authorization: Bearer ${CRON_SECRET}`
-  (403 otherwise) as defense-in-depth for the Vercel Cron path.
+  Cron routes are exempt from the page-level session redirect (Vercel Cron
+  carries `Authorization: Bearer ${CRON_SECRET}` but no session cookie — the
+  old redirect silently bounced the daily job to /login). The handler gates
+  itself: a wrong/absent bearer returns 403 when CRON_SECRET is set in the
+  app's env. NOTE: this assertion requires the running app to have CRON_SECRET
+  set; with it unset the route has no secret to check and this test does not
+  apply (see bruno/README.md and Local.bru).
 }

@@ -12,6 +12,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // API routes authenticate themselves — each one calls getUser() (returning
+  // 401), verifies `Authorization: Bearer $CRON_SECRET` (the cron jobs), or is
+  // intentionally public (the cron registry). Running the page-level
+  // session-redirect here would 307 any cookieless request to /login *before*
+  // the handler runs, which silently killed the Vercel Cron jobs (renewal
+  // emails, bank-sync) — they carry the bearer secret but no session cookie.
+  // Skip the redirect for /api and let each route do its own authz.
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

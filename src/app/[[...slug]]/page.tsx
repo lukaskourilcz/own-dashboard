@@ -107,6 +107,9 @@ export default async function DashboardPage({
     invoicesRes,
     invoiceItemsRes,
     invoiceSettingsRes,
+    projectsRes,
+    projectCostsRes,
+    cronsRes,
   ] = await Promise.all([
     supabase
       .from("books")
@@ -176,6 +179,23 @@ export default async function DashboardPage({
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle(),
+    supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("project_costs")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("crons")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
   ]);
 
   // Jobs: listings + last run are global rows (RLS lets any signed-in user
@@ -259,6 +279,9 @@ export default async function DashboardPage({
       initialInvoices={invoicesRes.data ?? []}
       initialInvoiceItems={invoiceItemsRes.data ?? []}
       initialInvoiceSettings={invoiceSettingsRes.data ?? null}
+      initialProjects={projectsRes.data ?? []}
+      initialProjectCosts={projectCostsRes.data ?? []}
+      initialCrons={cronsRes.data ?? []}
       initialJobListings={jobListingsRes.data ?? []}
       initialJobUserStates={jobUserStatesRes.data ?? []}
       initialJobApplications={jobApplicationsRes.data ?? []}

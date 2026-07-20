@@ -2,23 +2,28 @@
 
 A tiny [Bruno](https://usebruno.com) collection that guards the app's API
 routes against auth regressions. Each request hits a protected route with **no
-session** and asserts the auth middleware bounces it to `/login` with a `307`
-before the handler runs — so if a future change weakens that gate, these go red.
+session** and asserts the **handler's own** auth gate rejects it — so if a
+future change weakens that gate, these go red.
+
+API routes are exempt from the page-level session redirect (that redirect used
+to 307 cookieless requests to `/login`, which silently bounced the Vercel Cron
+jobs before their handlers ran). So each route now self-authenticates, and
+these tests assert that directly:
 
 | Request | Route | Expected |
 | --- | --- | --- |
-| GitHub repos require auth | `GET /api/github/repos` | `307` → `/login` |
-| GitHub file read requires auth | `GET /api/github/file` | `307` → `/login` |
-| Quick-add requires auth | `POST /api/quick-add` | `307` → `/login` |
-| Cron endpoint requires auth | `GET /api/cron/renewal-warnings` | `307` → `/login` |
+| GitHub repos require auth | `GET /api/github/repos` | `401` (getUser) |
+| GitHub file read requires auth | `GET /api/github/file` | `401` (getUser) |
+| Quick-add requires auth | `POST /api/quick-add` | `401` (same-origin, then getUser) |
+| Cron endpoint requires auth | `GET /api/cron/renewal-warnings` | `403` (bad bearer, needs `CRON_SECRET` set) |
 
-Redirect-following is disabled per request (`settings { followRedirects: false }`)
-so the `307` is observable instead of the login page it lands on.
-
-Defense-in-depth still lives in the handlers (a same-origin CSRF check + a `401`
-in quick-add; a `401` in the GitHub routes; a `Bearer ${CRON_SECRET}` → `403`
-check in cron). Those apply once a request gets past the middleware (i.e. with a
-session cookie); this collection covers the front-line unauthenticated gate.
+Notes:
+- Quick-add sends a same-origin `Origin` header so it clears the CSRF gate
+  (`rejectCrossOrigin`) and reaches the `401`; drop it and it's a `403`
+  "Missing Origin header." instead.
+- The cron test asserts the `Bearer ${CRON_SECRET}` mismatch → `403`, which
+  only applies when the running app has `CRON_SECRET` set. With it unset the
+  route has no secret to check and this test doesn't apply.
 
 ## Run
 

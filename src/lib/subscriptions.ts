@@ -17,6 +17,11 @@ export function toMonthlyIn(sub: Subscription, displayCurrency: string): number 
   return convert(toMonthly(sub), sub.currency, displayCurrency);
 }
 
+/** A single subscription's yearly cost (monthly × 12) in the display currency. */
+export function toYearlyIn(sub: Subscription, displayCurrency: string): number {
+  return toMonthlyIn(sub, displayCurrency) * 12;
+}
+
 export function totalMonthly(subs: Subscription[]): number {
   return subs.filter(isActive).reduce((acc, s) => acc + toMonthly(s), 0);
 }

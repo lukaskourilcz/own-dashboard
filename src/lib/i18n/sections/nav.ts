@@ -15,6 +15,7 @@ type NavSection =
   | "dates"
   | "couple"
   | "github"
+  | "projects"
   | "costs"
   | "ai"
   | "jobs"
@@ -61,6 +62,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       dates: "Dates",
       couple: "Couple",
       github: "Repositories",
+      projects: "Projects",
       costs: "Costs & scaling",
       ai: "AI links",
       jobs: "Jobs",
@@ -104,6 +106,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       dates: "Významné dny",
       couple: "Pár",
       github: "Repozitáře",
+      projects: "Projekty",
       costs: "Náklady a škálování",
       ai: "AI odkazy",
       jobs: "Práce",

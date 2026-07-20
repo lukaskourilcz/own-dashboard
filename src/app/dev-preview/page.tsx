@@ -38,6 +38,9 @@ export default function PreviewPage() {
       initialInvoices={f.invoices}
       initialInvoiceItems={f.invoiceItems}
       initialInvoiceSettings={f.invoiceSettings}
+      initialProjects={f.projects}
+      initialProjectCosts={f.projectCosts}
+      initialCrons={f.crons}
       initialJobListings={f.jobListings}
       initialJobUserStates={f.jobUserStates}
       initialJobApplications={f.jobApplications}

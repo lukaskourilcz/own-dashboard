@@ -20,6 +20,7 @@ export const NAV_TABS = [
   "dates",
   "couple",
   "github",
+  "projects",
   "costs",
   "ai",
   "jobs",

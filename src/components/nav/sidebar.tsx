@@ -9,6 +9,7 @@ import {
   CreditCard,
   FileText,
   Flame,
+  FolderKanban,
   Gauge,
   Gift,
   Heart,
@@ -61,13 +62,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { value: "plans", icon: Target },
       { value: "streaks", icon: Flame },
       { value: "dates", icon: Gift },
+      { value: "notes", icon: FileText },
     ],
   },
   {
     id: "work",
     items: [
       { value: "github", icon: GithubIcon },
+      { value: "projects", icon: FolderKanban },
       { value: "jobs", icon: BriefcaseBusiness },
+      { value: "tugedr", icon: Users },
       { value: "ai", icon: Sparkles },
       { value: "prompts", icon: MessageSquareText },
       { value: "shortcuts", icon: Terminal },
@@ -85,9 +89,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "personal",
     items: [
-      { value: "notes", icon: FileText },
       { value: "books", icon: BookOpen },
-      { value: "tugedr", icon: Users },
       { value: "couple", icon: Heart },
     ],
   },

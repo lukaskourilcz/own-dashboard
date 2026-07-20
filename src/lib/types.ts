@@ -377,6 +377,63 @@ export type RepoLink = {
 };
 
 // ---------------------------------------------------------------------------
+// Projects — an active side-project (usually one per GitHub repo) with its
+// recurring monthly running costs, free-form notes, and (for pipeline
+// projects like aifirst) a set of managed crons. Own-only RLS.
+// ---------------------------------------------------------------------------
+
+export type Project = {
+  id: string;
+  user_id: string;
+  name: string;
+  // Stable handle used by the cron registry API (e.g. "aifirst").
+  slug: string;
+  repo_full_name: string | null;
+  url: string | null;
+  notes: string;
+  color: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+// One monthly cost line for a project (Supabase, Vercel, AI API calls, …).
+// `amount` is the monthly figure in `currency`; yearly is derived (× 12).
+export type ProjectCost = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  label: string;
+  amount: number;
+  currency: string;
+  note: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// A dashboard-managed cron. AI-API-call crons carry cost info: the estimated
+// monthly spend is cost_per_run × runs_per_month.
+export type Cron = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  name: string;
+  schedule: string;
+  description: string;
+  endpoint: string;
+  is_ai_call: boolean;
+  cost_per_run: number;
+  currency: string;
+  runs_per_month: number;
+  enabled: boolean;
+  last_run_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
 // AI links — a catalogue of AI sites/tools the user discovered, shown as a
 // table of link + description, grouped under user-defined categories
 // (DESIGN, SECURITY, IDEAS, …). Personal; own-only RLS.

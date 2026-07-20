@@ -1661,3 +1661,135 @@ create policy "tx_category_rules update own" on public.transaction_category_rule
 drop policy if exists "tx_category_rules delete own" on public.transaction_category_rules;
 create policy "tx_category_rules delete own" on public.transaction_category_rules
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Projects — active side-projects (typically one per GitHub repo) with their
+-- recurring monthly running costs (Supabase, Vercel, AI API calls, …), a free-
+-- form notes field (same idea as the Notes section) and, for pipeline-driven
+-- projects like aifirst, a registry of scheduled crons. Yearly cost is always
+-- derived as monthly × 12 in the UI, never stored. Own-only RLS.
+-- =============================================================
+create table if not exists public.projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  -- Stable handle used by the cron registry API (e.g. 'aifirst'). Unique per user.
+  slug text not null,
+  repo_full_name text,
+  url text,
+  notes text not null default '',
+  color text,
+  sort_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, slug)
+);
+
+create index if not exists projects_user_idx
+  on public.projects (user_id, sort_order, created_at);
+
+alter table public.projects enable row level security;
+
+drop policy if exists "projects select own" on public.projects;
+create policy "projects select own" on public.projects
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "projects insert own" on public.projects;
+create policy "projects insert own" on public.projects
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "projects update own" on public.projects;
+create policy "projects update own" on public.projects
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "projects delete own" on public.projects;
+create policy "projects delete own" on public.projects
+  for delete using (auth.uid() = user_id);
+
+-- Individual monthly cost lines for a project. amount is the monthly figure in
+-- `currency`; the UI derives the yearly total (× 12) and a per-project chart.
+create table if not exists public.project_costs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  project_id uuid not null references public.projects(id) on delete cascade,
+  label text not null,
+  amount numeric not null default 0,
+  currency text not null default 'USD',
+  note text not null default '',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists project_costs_project_idx
+  on public.project_costs (project_id, sort_order);
+create index if not exists project_costs_user_idx
+  on public.project_costs (user_id);
+
+alter table public.project_costs enable row level security;
+
+drop policy if exists "project_costs select own" on public.project_costs;
+create policy "project_costs select own" on public.project_costs
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "project_costs insert own" on public.project_costs;
+create policy "project_costs insert own" on public.project_costs
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "project_costs update own" on public.project_costs;
+create policy "project_costs update own" on public.project_costs
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "project_costs delete own" on public.project_costs;
+create policy "project_costs delete own" on public.project_costs
+  for delete using (auth.uid() = user_id);
+
+-- Scheduled crons managed from the dashboard (e.g. the aifirst daily
+-- pipeline). Every AI-API-call cron carries its cost: cost_per_run × the
+-- expected runs_per_month is the estimated monthly spend the UI surfaces and
+-- rolls into the project total. The aifirst site can read the enabled set via
+-- GET /api/crons/registry?project=<slug>. Own-only RLS (the registry endpoint
+-- reads with the service role).
+create table if not exists public.crons (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  project_id uuid not null references public.projects(id) on delete cascade,
+  name text not null,
+  -- Standard 5-field cron expression, e.g. '0 6 * * *'.
+  schedule text not null default '0 6 * * *',
+  description text not null default '',
+  -- What the cron hits (a path or URL) — informational.
+  endpoint text not null default '',
+  is_ai_call boolean not null default false,
+  cost_per_run numeric not null default 0,
+  currency text not null default 'USD',
+  runs_per_month integer not null default 30,
+  enabled boolean not null default true,
+  last_run_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists crons_project_idx
+  on public.crons (project_id, created_at);
+create index if not exists crons_user_idx
+  on public.crons (user_id);
+
+alter table public.crons enable row level security;
+
+drop policy if exists "crons select own" on public.crons;
+create policy "crons select own" on public.crons
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "crons insert own" on public.crons;
+create policy "crons insert own" on public.crons
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "crons update own" on public.crons;
+create policy "crons update own" on public.crons
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "crons delete own" on public.crons;
+create policy "crons delete own" on public.crons
+  for delete using (auth.uid() = user_id);

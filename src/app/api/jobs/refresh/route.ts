@@ -52,5 +52,24 @@ export async function POST(request: Request) {
   }
 
   const summary = await runJobScrape(admin);
+
+  // A hidden offer is a decision, not a "look at it later" — so the manual
+  // refetch is where we make hiding permanent: purge the listings this user
+  // hid. The scrape above may have just re-upserted them (refreshing
+  // last_seen), so we delete *after* it; deleting the listing cascades the
+  // job_user_state row away too. If the board re-posts it later it comes back
+  // as a genuinely new listing, which is the intended behaviour.
+  if (summary.ok) {
+    const { data: hidden } = await admin
+      .from("job_user_state")
+      .select("listing_id")
+      .eq("user_id", user.id)
+      .eq("state", "hidden");
+    const ids = (hidden ?? []).map((r) => r.listing_id as string);
+    if (ids.length > 0) {
+      await admin.from("job_listings").delete().in("id", ids);
+    }
+  }
+
   return NextResponse.json(summary, { status: summary.ok ? 200 : 500 });
 }

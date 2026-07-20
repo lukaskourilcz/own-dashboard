@@ -11,8 +11,7 @@ get {
 }
 
 assert {
-  res.status: eq 307
-  res.headers.location: contains /login
+  res.status: eq 401
 }
 
 settings {
@@ -20,8 +19,8 @@ settings {
 }
 
 docs {
-  An unauthenticated request must never reach the repos handler. The auth
-  middleware bounces it to /login with a 307 before any GitHub call happens.
-  (followRedirects is off so we can observe the redirect instead of the
-  login page it lands on.)
+  An unauthenticated request must never reach the repos handler. API routes are
+  exempt from the page-level session redirect, so the handler gates itself:
+  getUser() finds no user and returns 401 "Not authenticated." before any
+  GitHub call happens.
 }

@@ -443,6 +443,9 @@ function OpenPositionsView({
       await Promise.all([
         qc.invalidateQueries({ queryKey: qk.jobListings }),
         qc.invalidateQueries({ queryKey: qk.jobLastRun }),
+        // The refresh also purges listings this user hid (cascading their
+        // state rows away), so re-pull the per-user state to stay in sync.
+        qc.invalidateQueries({ queryKey: qk.jobUserStates }),
       ]);
       toast.ok(t.jobs.refreshOk);
     } catch {
