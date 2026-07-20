@@ -27,6 +27,7 @@ import { dates } from "./sections/dates";
 import { couple } from "./sections/couple";
 import { calendar } from "./sections/calendar";
 import { github } from "./sections/github";
+import { projects } from "./sections/projects";
 import { ai } from "./sections/ai";
 import { costs } from "./sections/costs";
 import { tugedr } from "./sections/tugedr";
@@ -60,6 +61,7 @@ export const dictionaries = {
     couple: couple.en,
     calendar: calendar.en,
     github: github.en,
+    projects: projects.en,
     ai: ai.en,
     costs: costs.en,
     tugedr: tugedr.en,
@@ -90,6 +92,7 @@ export const dictionaries = {
     couple: couple.cs,
     calendar: calendar.cs,
     github: github.cs,
+    projects: projects.cs,
     ai: ai.cs,
     costs: costs.cs,
     tugedr: tugedr.cs,

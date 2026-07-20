@@ -1,0 +1,1111 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
+import {
+  Clock,
+  ExternalLink,
+  FolderKanban,
+  Pencil,
+  Plus,
+  Power,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { SimpleSelect } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip } from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/toast";
+import { GithubIcon } from "@/components/icons/github";
+import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/user";
+import { cn, formatCurrency } from "@/lib/utils";
+import { useDict } from "@/lib/i18n";
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
+import { CHART_COLORS } from "@/lib/chart-colors";
+import { qk } from "@/lib/queries/keys";
+import {
+  costMonthlyIn,
+  cronMonthlyIn,
+  cronsMonthlyIn,
+  costsMonthlyIn,
+  projectMonthlyIn,
+} from "@/lib/projects";
+import type { Cron, Project, ProjectCost, Updater } from "@/lib/types";
+
+const CategoryDonut = dynamic(
+  () =>
+    import("@/components/charts/category-donut").then((m) => m.CategoryDonut),
+  { ssr: false, loading: () => <Skeleton className="h-full w-full" /> },
+);
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+type ProjectForm = {
+  id?: string;
+  name: string;
+  slug: string;
+  repo_full_name: string;
+  url: string;
+};
+
+const emptyProjectForm: ProjectForm = {
+  name: "",
+  slug: "",
+  repo_full_name: "",
+  url: "",
+};
+
+export function ProjectsPanel({
+  projects,
+  setProjects,
+  costs,
+  setCosts,
+  crons,
+  setCrons,
+  displayCurrency,
+  setDisplayCurrency,
+}: {
+  projects: Project[];
+  setProjects: Updater<Project[]>;
+  costs: ProjectCost[];
+  setCosts: Updater<ProjectCost[]>;
+  crons: Cron[];
+  setCrons: Updater<Cron[]>;
+  displayCurrency: string;
+  setDisplayCurrency?: (next: string) => void;
+}) {
+  const supabase = createClient();
+  const qc = useQueryClient();
+  const t = useDict();
+  const toast = useToast();
+  const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const costsByProject = useMemo(() => {
+    const map = new Map<string, ProjectCost[]>();
+    for (const c of costs) {
+      const arr = map.get(c.project_id);
+      if (arr) arr.push(c);
+      else map.set(c.project_id, [c]);
+    }
+    return map;
+  }, [costs]);
+
+  const cronsByProject = useMemo(() => {
+    const map = new Map<string, Cron[]>();
+    for (const c of crons) {
+      const arr = map.get(c.project_id);
+      if (arr) arr.push(c);
+      else map.set(c.project_id, [c]);
+    }
+    return map;
+  }, [crons]);
+
+  const active = projects.filter((p) => p.is_active);
+
+  const chartData = useMemo(
+    () =>
+      active
+        .map((p) => ({
+          name: p.name,
+          value: Number(
+            projectMonthlyIn(
+              costsByProject.get(p.id) ?? [],
+              cronsByProject.get(p.id) ?? [],
+              displayCurrency,
+            ).toFixed(2),
+          ),
+        }))
+        .filter((d) => d.value > 0)
+        .sort((a, b) => b.value - a.value),
+    [active, costsByProject, cronsByProject, displayCurrency],
+  );
+
+  const grandMonthly = useMemo(
+    () =>
+      active.reduce(
+        (acc, p) =>
+          acc +
+          projectMonthlyIn(
+            costsByProject.get(p.id) ?? [],
+            cronsByProject.get(p.id) ?? [],
+            displayCurrency,
+          ),
+        0,
+      ),
+    [active, costsByProject, cronsByProject, displayCurrency],
+  );
+  const grandYearly = grandMonthly * 12;
+
+  async function submitProject(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!form.name.trim()) return setError(t.projects.nameRequired);
+    const slug = slugify(form.slug || form.name);
+    if (!slug) return setError(t.projects.slugRequired);
+    const payload = {
+      name: form.name.trim(),
+      slug,
+      repo_full_name: form.repo_full_name.trim() || null,
+      url: form.url.trim() || null,
+    };
+    setSaving(true);
+    try {
+      if (form.id) {
+        const { data, error } = await supabase
+          .from("projects")
+          .update({ ...payload, updated_at: new Date().toISOString() })
+          .eq("id", form.id)
+          .select()
+          .single();
+        if (error) throw error;
+        setProjects((prev) =>
+          prev.map((p) => (p.id === form.id ? (data as Project) : p)),
+        );
+      } else {
+        const userId = await currentUserId(supabase);
+        if (!userId) throw new Error(t.quickAdd.signInFirst);
+        const { data, error } = await supabase
+          .from("projects")
+          .insert({ ...payload, user_id: userId, sort_order: projects.length })
+          .select()
+          .single();
+        if (error) throw error;
+        setProjects((prev) => [...prev, data as Project]);
+      }
+      setForm(emptyProjectForm);
+      void qc.invalidateQueries({ queryKey: qk.projects });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleProjectActive(p: Project) {
+    const next = !p.is_active;
+    setProjects((prev) =>
+      prev.map((x) => (x.id === p.id ? { ...x, is_active: next } : x)),
+    );
+    const { error } = await supabase
+      .from("projects")
+      .update({ is_active: next, updated_at: new Date().toISOString() })
+      .eq("id", p.id);
+    if (error) {
+      setProjects((prev) =>
+        prev.map((x) => (x.id === p.id ? { ...x, is_active: !next } : x)),
+      );
+      toast.err(error.message);
+    }
+  }
+
+  async function deleteProject(p: Project) {
+    if (!window.confirm(t.projects.deleteProjectConfirm)) return;
+    const { error } = await supabase.from("projects").delete().eq("id", p.id);
+    if (error) return toast.err(error.message);
+    setProjects((prev) => prev.filter((x) => x.id !== p.id));
+    // Costs and crons cascade-delete in the DB; drop them from the cache too.
+    setCosts((prev) => prev.filter((c) => c.project_id !== p.id));
+    setCrons((prev) => prev.filter((c) => c.project_id !== p.id));
+    if (form.id === p.id) setForm(emptyProjectForm);
+    void qc.invalidateQueries({ queryKey: qk.projects });
+  }
+
+  function startEditProject(p: Project) {
+    setForm({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      repo_full_name: p.repo_full_name ?? "",
+      url: p.url ?? "",
+    });
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title={t.projects.title}
+        description={t.projects.description}
+        action={
+          setDisplayCurrency && (
+            <div className="inline-flex items-center gap-2">
+              <Label className="text-foreground-subtle">
+                {t.projects.displayIn}
+              </Label>
+              <SimpleSelect
+                value={displayCurrency}
+                onValueChange={(v) => setDisplayCurrency(v)}
+                aria-label={t.projects.displayIn}
+                className="h-8 w-20 text-xs"
+                options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
+              />
+            </div>
+          )
+        }
+      />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Add / edit project */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>
+              {form.id ? t.projects.editProject : t.projects.addProject}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={submitProject} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="proj-name">{t.projects.name}</Label>
+                <Input
+                  id="proj-name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder={t.projects.namePlaceholder}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="proj-slug">{t.projects.slug}</Label>
+                <Input
+                  id="proj-slug"
+                  value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  placeholder={form.name ? slugify(form.name) : t.projects.slugPlaceholder}
+                />
+                <p className="text-[11px] text-foreground-subtle">
+                  {t.projects.slugHint}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="proj-repo">{t.projects.repo}</Label>
+                <Input
+                  id="proj-repo"
+                  value={form.repo_full_name}
+                  onChange={(e) =>
+                    setForm({ ...form, repo_full_name: e.target.value })
+                  }
+                  placeholder={t.projects.repoPlaceholder}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="proj-url">{t.projects.url}</Label>
+                <Input
+                  id="proj-url"
+                  value={form.url}
+                  onChange={(e) => setForm({ ...form, url: e.target.value })}
+                  placeholder={t.projects.urlPlaceholder}
+                />
+              </div>
+              {error && <p className="text-xs text-destructive">{error}</p>}
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saving} className="flex-1">
+                  <Plus className="h-3.5 w-3.5" />
+                  {form.id ? t.common.save : t.common.add}
+                </Button>
+                {form.id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setForm(emptyProjectForm)}
+                  >
+                    {t.common.cancel}
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Totals + chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t.projects.allProjectsMonthly}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {chartData.length === 0 ? (
+              <EmptyState
+                icon={FolderKanban}
+                title={t.projects.noProjects}
+                description={t.projects.addFirstProject}
+              />
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 items-center">
+                <div className="h-48 sm:h-56">
+                  <CategoryDonut
+                    data={chartData}
+                    currency={displayCurrency}
+                    innerRadius={56}
+                    outerRadius={92}
+                  />
+                </div>
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight tabular">
+                    {formatCurrency(grandMonthly, displayCurrency)}
+                  </p>
+                  <p className="text-xs text-foreground-subtle">
+                    {t.projects.grandTotalMonthly.toLowerCase()} ·{" "}
+                    {t.projects.activeProjects(active.length)}
+                  </p>
+                  <p className="text-xs text-foreground-subtle mt-1 tabular">
+                    {t.projects.perYr(
+                      formatCurrency(grandYearly, displayCurrency),
+                    )}
+                  </p>
+                  <ul className="mt-4 space-y-1.5">
+                    {chartData.map((d, i) => (
+                      <li
+                        key={d.name}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <span
+                          className="h-2 w-2 rounded-sm shrink-0"
+                          style={{
+                            background: CHART_COLORS[i % CHART_COLORS.length],
+                          }}
+                        />
+                        <span className="flex-1 truncate text-foreground">
+                          {d.name}
+                        </span>
+                        <span className="tabular text-foreground-muted">
+                          {formatCurrency(d.value, displayCurrency)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Project cards */}
+      <div className="mt-4 grid gap-4">
+        {projects.length === 0 ? (
+          <Card>
+            <CardContent className="py-8">
+              <EmptyState
+                icon={FolderKanban}
+                title={t.projects.noProjects}
+                description={t.projects.addFirstProject}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          [...projects]
+            .sort(
+              (a, b) =>
+                Number(b.is_active) - Number(a.is_active) ||
+                a.sort_order - b.sort_order,
+            )
+            .map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                costs={costsByProject.get(p.id) ?? []}
+                crons={cronsByProject.get(p.id) ?? []}
+                setCosts={setCosts}
+                setCrons={setCrons}
+                setProjects={setProjects}
+                displayCurrency={displayCurrency}
+                editing={form.id === p.id}
+                onEdit={() => startEditProject(p)}
+                onToggleActive={() => toggleProjectActive(p)}
+                onDelete={() => deleteProject(p)}
+              />
+            ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Project card: totals, cost lines, notes, crons.
+// ---------------------------------------------------------------------------
+
+function ProjectCard({
+  project,
+  costs,
+  crons,
+  setCosts,
+  setCrons,
+  setProjects,
+  displayCurrency,
+  editing,
+  onEdit,
+  onToggleActive,
+  onDelete,
+}: {
+  project: Project;
+  costs: ProjectCost[];
+  crons: Cron[];
+  setCosts: Updater<ProjectCost[]>;
+  setCrons: Updater<Cron[]>;
+  setProjects: Updater<Project[]>;
+  displayCurrency: string;
+  editing: boolean;
+  onEdit: () => void;
+  onToggleActive: () => void;
+  onDelete: () => void;
+}) {
+  const t = useDict();
+  const monthly = projectMonthlyIn(costs, crons, displayCurrency);
+  const yearly = monthly * 12;
+
+  return (
+    <Card className={cn(editing && "ring-1 ring-ring", !project.is_active && "opacity-70")}>
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
+            <span className="truncate">{project.name}</span>
+            {!project.is_active && (
+              <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
+            )}
+          </CardTitle>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+            {project.repo_full_name && (
+              <a
+                href={`https://github.com/${project.repo_full_name}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+              >
+                <GithubIcon className="h-3 w-3" />
+                {project.repo_full_name}
+              </a>
+            )}
+            {project.url && (
+              <a
+                href={project.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+              >
+                <ExternalLink className="h-3 w-3" />
+                {t.projects.open}
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="text-right">
+            <p className="text-lg font-semibold tabular leading-none">
+              {formatCurrency(monthly, displayCurrency)}
+              <span className="text-xs font-normal text-foreground-subtle">
+                {t.projects.perMo}
+              </span>
+            </p>
+            <p className="text-[11px] text-foreground-subtle tabular mt-0.5">
+              {t.projects.perYr(formatCurrency(yearly, displayCurrency))}
+            </p>
+          </div>
+          <div className="flex gap-0.5">
+            <Tooltip content={t.common.edit}>
+              <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </Tooltip>
+            <Tooltip
+              content={project.is_active ? t.projects.markInactive : t.projects.markActive}
+            >
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={onToggleActive}
+                aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}
+              >
+                <Power
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    project.is_active ? "text-success" : "text-foreground-subtle",
+                  )}
+                />
+              </Button>
+            </Tooltip>
+            <Tooltip content={t.projects.deleteProject}>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={onDelete}
+                aria-label={t.projects.deleteProject}
+              >
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <CostsSection
+          project={project}
+          costs={costs}
+          setCosts={setCosts}
+          displayCurrency={displayCurrency}
+        />
+        <NotesSection project={project} setProjects={setProjects} />
+        <CronsSection
+          project={project}
+          crons={crons}
+          setCrons={setCrons}
+          displayCurrency={displayCurrency}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Cost lines
+// ---------------------------------------------------------------------------
+
+function CostsSection({
+  project,
+  costs,
+  setCosts,
+  displayCurrency,
+}: {
+  project: Project;
+  costs: ProjectCost[];
+  setCosts: Updater<ProjectCost[]>;
+  displayCurrency: string;
+}) {
+  const supabase = createClient();
+  const t = useDict();
+  const toast = useToast();
+  const [label, setLabel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(displayCurrency);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const total = costsMonthlyIn(costs, displayCurrency);
+
+  async function addCost(e: React.FormEvent) {
+    e.preventDefault();
+    if (!label.trim() || !amount) return;
+    setBusy(true);
+    try {
+      const userId = await currentUserId(supabase);
+      if (!userId) throw new Error(t.quickAdd.signInFirst);
+      const { data, error } = await supabase
+        .from("project_costs")
+        .insert({
+          user_id: userId,
+          project_id: project.id,
+          label: label.trim(),
+          amount: Number(amount),
+          currency,
+          note: note.trim(),
+          sort_order: costs.length,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      setCosts((prev) => [...prev, data as ProjectCost]);
+      setLabel("");
+      setAmount("");
+      setNote("");
+    } catch (err) {
+      toast.err((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeCost(id: string) {
+    const { error } = await supabase.from("project_costs").delete().eq("id", id);
+    if (error) return toast.err(error.message);
+    setCosts((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <SectionLabel>{t.projects.costs}</SectionLabel>
+        <span className="text-[11px] text-foreground-subtle tabular">
+          {formatCurrency(total, displayCurrency)}
+          {t.projects.perMo}
+        </span>
+      </div>
+      {costs.length === 0 ? (
+        <p className="mt-2 text-xs text-foreground-subtle">{t.projects.noCosts}</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-border/70">
+          {costs.map((c) => (
+            <li key={c.id} className="group flex items-center gap-3 py-1.5">
+              <span className="min-w-0 flex-1 truncate text-sm">{c.label}</span>
+              {c.note && (
+                <span className="hidden truncate text-[11px] text-foreground-subtle sm:inline">
+                  {c.note}
+                </span>
+              )}
+              <span className="shrink-0 text-right text-sm tabular">
+                {formatCurrency(c.amount, c.currency)}
+                {t.projects.perMo}
+                {c.currency !== displayCurrency && (
+                  <span className="ml-1 text-[11px] text-foreground-subtle">
+                    ≈ {formatCurrency(costMonthlyIn(c, displayCurrency), displayCurrency)}
+                  </span>
+                )}
+              </span>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                className="shrink-0 opacity-0 group-hover:opacity-100"
+                onClick={() => removeCost(c.id)}
+                aria-label={t.projects.deleteCost}
+              >
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form onSubmit={addCost} className="mt-2 flex flex-wrap items-end gap-2">
+        <Input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder={t.projects.costLabelPlaceholder}
+          className="h-8 w-32 text-sm"
+          aria-label={t.projects.costLabel}
+        />
+        <Input
+          type="number"
+          step="0.01"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0.00"
+          className="h-8 w-24 text-sm"
+          aria-label={t.projects.amount}
+        />
+        <SimpleSelect
+          value={currency}
+          onValueChange={setCurrency}
+          aria-label={t.projects.currency}
+          className="h-8 w-20 text-xs"
+          options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
+        />
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={t.projects.costNotePlaceholder}
+          className="h-8 min-w-0 flex-1 text-sm"
+          aria-label={t.projects.costNotePlaceholder}
+        />
+        <Button type="submit" size="sm" variant="outline" disabled={busy}>
+          <Plus className="h-3.5 w-3.5" />
+          {t.projects.addCost}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Quick notes (mirrors the Notes section idea)
+// ---------------------------------------------------------------------------
+
+function NotesSection({
+  project,
+  setProjects,
+}: {
+  project: Project;
+  setProjects: Updater<Project[]>;
+}) {
+  const supabase = createClient();
+  const t = useDict();
+  const toast = useToast();
+  const [value, setValue] = useState(project.notes);
+  const [busy, setBusy] = useState(false);
+  const dirty = value !== project.notes;
+
+  async function save() {
+    setBusy(true);
+    const { error } = await supabase
+      .from("projects")
+      .update({ notes: value, updated_at: new Date().toISOString() })
+      .eq("id", project.id);
+    setBusy(false);
+    if (error) return toast.err(error.message);
+    setProjects((prev) =>
+      prev.map((p) => (p.id === project.id ? { ...p, notes: value } : p)),
+    );
+    toast.ok(t.projects.notesSaved);
+  }
+
+  return (
+    <div>
+      <SectionLabel>{t.projects.notes}</SectionLabel>
+      <Textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={t.projects.notesPlaceholder}
+        className="mt-2"
+        rows={3}
+      />
+      <div className="mt-2 flex justify-end">
+        <Button size="sm" variant="outline" disabled={!dirty || busy} onClick={save}>
+          <Save className="h-3.5 w-3.5" />
+          {t.projects.saveNotes}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Crons
+// ---------------------------------------------------------------------------
+
+type CronForm = {
+  id?: string;
+  name: string;
+  schedule: string;
+  endpoint: string;
+  description: string;
+  is_ai_call: boolean;
+  cost_per_run: string;
+  currency: string;
+  runs_per_month: string;
+};
+
+function emptyCronForm(currency: string): CronForm {
+  return {
+    name: "",
+    schedule: "0 6 * * *",
+    endpoint: "",
+    description: "",
+    is_ai_call: false,
+    cost_per_run: "",
+    currency,
+    runs_per_month: "30",
+  };
+}
+
+function CronsSection({
+  project,
+  crons,
+  setCrons,
+  displayCurrency,
+}: {
+  project: Project;
+  crons: Cron[];
+  setCrons: Updater<Cron[]>;
+  displayCurrency: string;
+}) {
+  const supabase = createClient();
+  const t = useDict();
+  const toast = useToast();
+  const [form, setForm] = useState<CronForm>(emptyCronForm(displayCurrency));
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const aiSpend = cronsMonthlyIn(crons, displayCurrency);
+  const registryUrl = `/api/crons/registry?project=${project.slug}`;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setBusy(true);
+    const payload = {
+      name: form.name.trim(),
+      schedule: form.schedule.trim() || "0 6 * * *",
+      endpoint: form.endpoint.trim(),
+      description: form.description.trim(),
+      is_ai_call: form.is_ai_call,
+      cost_per_run: form.is_ai_call ? Number(form.cost_per_run || 0) : 0,
+      currency: form.currency,
+      runs_per_month: Number(form.runs_per_month || 0),
+    };
+    try {
+      if (form.id) {
+        const { data, error } = await supabase
+          .from("crons")
+          .update({ ...payload, updated_at: new Date().toISOString() })
+          .eq("id", form.id)
+          .select()
+          .single();
+        if (error) throw error;
+        setCrons((prev) => prev.map((c) => (c.id === form.id ? (data as Cron) : c)));
+      } else {
+        const userId = await currentUserId(supabase);
+        if (!userId) throw new Error(t.quickAdd.signInFirst);
+        const { data, error } = await supabase
+          .from("crons")
+          .insert({ ...payload, user_id: userId, project_id: project.id })
+          .select()
+          .single();
+        if (error) throw error;
+        setCrons((prev) => [...prev, data as Cron]);
+      }
+      setForm(emptyCronForm(displayCurrency));
+      setOpen(false);
+    } catch (err) {
+      toast.err((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleEnabled(c: Cron) {
+    const next = !c.enabled;
+    setCrons((prev) => prev.map((x) => (x.id === c.id ? { ...x, enabled: next } : x)));
+    const { error } = await supabase
+      .from("crons")
+      .update({ enabled: next, updated_at: new Date().toISOString() })
+      .eq("id", c.id);
+    if (error) {
+      setCrons((prev) => prev.map((x) => (x.id === c.id ? { ...x, enabled: !next } : x)));
+      toast.err(error.message);
+    }
+  }
+
+  async function remove(c: Cron) {
+    if (!window.confirm(t.projects.deleteCronConfirm)) return;
+    const { error } = await supabase.from("crons").delete().eq("id", c.id);
+    if (error) return toast.err(error.message);
+    setCrons((prev) => prev.filter((x) => x.id !== c.id));
+  }
+
+  function startEdit(c: Cron) {
+    setForm({
+      id: c.id,
+      name: c.name,
+      schedule: c.schedule,
+      endpoint: c.endpoint,
+      description: c.description,
+      is_ai_call: c.is_ai_call,
+      cost_per_run: String(c.cost_per_run),
+      currency: c.currency,
+      runs_per_month: String(c.runs_per_month),
+    });
+    setOpen(true);
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <SectionLabel>{t.projects.crons}</SectionLabel>
+          {aiSpend > 0 && (
+            <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] text-foreground-muted tabular">
+              <Sparkles className="h-3 w-3" />
+              {t.projects.aiSpendMonthly} {formatCurrency(aiSpend, displayCurrency)}
+              {t.projects.perMo}
+            </span>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setForm(emptyCronForm(displayCurrency));
+            setOpen((v) => !v);
+          }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t.projects.addCron}
+        </Button>
+      </div>
+      <p className="mt-1 text-[11px] text-foreground-subtle">
+        {t.projects.registryHint(registryUrl)}
+      </p>
+
+      {crons.length === 0 ? (
+        <p className="mt-2 text-xs text-foreground-subtle">{t.projects.noCrons}</p>
+      ) : (
+        <ul className="mt-2 space-y-1.5">
+          {crons.map((c) => {
+            const est = cronMonthlyIn(c, displayCurrency);
+            return (
+              <li
+                key={c.id}
+                className={cn(
+                  "group flex items-center gap-3 rounded-md border border-border/70 px-2.5 py-1.5",
+                  !c.enabled && "opacity-55",
+                )}
+              >
+                <Clock className="h-3.5 w-3.5 shrink-0 text-foreground-subtle" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {c.name}
+                    {c.is_ai_call && (
+                      <Sparkles className="ml-1 inline h-3 w-3 text-foreground-subtle" />
+                    )}
+                  </p>
+                  <p className="truncate text-[11px] text-foreground-subtle tabular">
+                    <code>{c.schedule}</code>
+                    {c.endpoint ? ` · ${c.endpoint}` : ""}
+                    {c.is_ai_call
+                      ? ` · ${formatCurrency(c.cost_per_run, c.currency)}×${c.runs_per_month} = ${formatCurrency(est, displayCurrency)}${t.projects.perMo}`
+                      : ""}
+                  </p>
+                </div>
+                <Tooltip content={c.enabled ? t.projects.disable : t.projects.enable}>
+                  <span>
+                    <Switch
+                      checked={c.enabled}
+                      onCheckedChange={() => toggleEnabled(c)}
+                      aria-label={c.enabled ? t.projects.disable : t.projects.enable}
+                    />
+                  </span>
+                </Tooltip>
+                <div className="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100">
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => startEdit(c)}
+                    aria-label={t.common.edit}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => remove(c)}
+                    aria-label={t.projects.deleteCron}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {open && (
+        <form
+          onSubmit={submit}
+          className="mt-3 space-y-3 rounded-md border border-border bg-surface-muted/40 p-3"
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">{t.projects.cronName}</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder={t.projects.cronNamePlaceholder}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t.projects.schedule}</Label>
+              <Input
+                value={form.schedule}
+                onChange={(e) => setForm({ ...form, schedule: e.target.value })}
+                placeholder={t.projects.schedulePlaceholder}
+                className="h-8 text-sm font-mono"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{t.projects.endpoint}</Label>
+            <Input
+              value={form.endpoint}
+              onChange={(e) => setForm({ ...form, endpoint: e.target.value })}
+              placeholder={t.projects.endpointPlaceholder}
+              className="h-8 text-sm font-mono"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{t.projects.cronDescription}</Label>
+            <Input
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder={t.projects.cronDescriptionPlaceholder}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={form.is_ai_call}
+              onCheckedChange={(v) => setForm({ ...form, is_ai_call: v })}
+              aria-label={t.projects.aiCall}
+              id={`ai-${project.id}`}
+            />
+            <Label htmlFor={`ai-${project.id}`} className="text-xs">
+              {t.projects.aiCall}
+              <span className="ml-1 text-foreground-subtle">
+                — {t.projects.aiCallHint}
+              </span>
+            </Label>
+          </div>
+          {form.is_ai_call && (
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="space-y-1">
+                <Label className="text-xs">{t.projects.costPerRun}</Label>
+                <Input
+                  type="number"
+                  step="0.0001"
+                  value={form.cost_per_run}
+                  onChange={(e) =>
+                    setForm({ ...form, cost_per_run: e.target.value })
+                  }
+                  placeholder="0.05"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t.projects.currency}</Label>
+                <SimpleSelect
+                  value={form.currency}
+                  onValueChange={(v) => setForm({ ...form, currency: v })}
+                  className="h-8 text-xs"
+                  options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t.projects.runsPerMonth}</Label>
+                <Input
+                  type="number"
+                  value={form.runs_per_month}
+                  onChange={(e) =>
+                    setForm({ ...form, runs_per_month: e.target.value })
+                  }
+                  placeholder="30"
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setForm(emptyCronForm(displayCurrency));
+                setOpen(false);
+              }}
+            >
+              {t.common.cancel}
+            </Button>
+            <Button type="submit" size="sm" disabled={busy}>
+              {form.id ? t.common.save : t.common.add}
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}

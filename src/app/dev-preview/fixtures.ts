@@ -13,6 +13,7 @@ import type {
   Book,
   BookPage,
   CoverLetterTemplate,
+  Cron,
   ImportantDate,
   Invoice,
   InvoiceItem,
@@ -24,6 +25,8 @@ import type {
   JobUserState,
   Note,
   Plan,
+  Project,
+  ProjectCost,
   Prompt,
   ReferenceRow,
   RepoLink,
@@ -155,6 +158,84 @@ export const prompts: Prompt[] = [
 // auth-less preview (the Repos panel shows the Connect CTA), so this stays empty.
 export const repoNotes: RepoNote[] = [];
 export const repoLinks: RepoLink[] = [];
+
+export const projects: Project[] = [
+  {
+    id: "proj-aifirst",
+    user_id: "u1",
+    name: "aifirst",
+    slug: "aifirst",
+    repo_full_name: "lukaskourilcz/aifirst",
+    url: "https://aifirst.example.com",
+    notes: "Daily AI magazine. Watch the FLUX image bill.",
+    color: null,
+    sort_order: 0,
+    is_active: true,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "proj-dashboard",
+    user_id: "u1",
+    name: "own-dashboard",
+    slug: "own-dashboard",
+    repo_full_name: "lukaskourilcz/own-dashboard",
+    url: null,
+    notes: "",
+    color: null,
+    sort_order: 1,
+    is_active: true,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+  },
+];
+
+export const projectCosts: ProjectCost[] = [
+  {
+    id: "pc-1",
+    user_id: "u1",
+    project_id: "proj-aifirst",
+    label: "Supabase",
+    amount: 25,
+    currency: "USD",
+    note: "Pro plan",
+    sort_order: 0,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "pc-2",
+    user_id: "u1",
+    project_id: "proj-aifirst",
+    label: "Vercel",
+    amount: 20,
+    currency: "USD",
+    note: "",
+    sort_order: 1,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+  },
+];
+
+export const crons: Cron[] = [
+  {
+    id: "cron-1",
+    user_id: "u1",
+    project_id: "proj-aifirst",
+    name: "Daily article generation",
+    schedule: "0 6 * * *",
+    description: "Scrape, curate, write + illustrate the daily issue.",
+    endpoint: "/api/cron/generate-daily",
+    is_ai_call: true,
+    cost_per_run: 0.35,
+    currency: "USD",
+    runs_per_month: 30,
+    enabled: true,
+    last_run_at: null,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+  },
+];
 
 export const shortcuts: Shortcut[] = [
   { id: "sc1", user_id: UID, command: "sudo docker compose up -d seaweedfs-s3", description: "Starts the S3 server.", sort_order: 1, created_at: TS, updated_at: TS },

@@ -17,6 +17,7 @@ import { PromptsPanel } from "@/components/panels/prompts-panel";
 import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
+import { ProjectsPanel } from "@/components/panels/projects-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
 import { CostsPanel } from "@/components/panels/costs-panel";
 import { JobsPanel } from "@/components/panels/jobs-panel";
@@ -51,6 +52,9 @@ import {
   fetchInvoiceItems,
   fetchInvoiceSettings,
   fetchInvoices,
+  fetchProjects,
+  fetchProjectCosts,
+  fetchCrons,
   fetchJobApplicationEvents,
   fetchJobApplications,
   fetchJobLastRun,
@@ -78,6 +82,9 @@ import type {
   Book,
   BookPage,
   CoverLetterTemplate,
+  Cron,
+  Project,
+  ProjectCost,
   ImportantDate,
   Invoice,
   InvoiceItem,
@@ -127,6 +134,9 @@ type Props = {
   initialInvoices: Invoice[];
   initialInvoiceItems: InvoiceItem[];
   initialInvoiceSettings: InvoiceSettings | null;
+  initialProjects: Project[];
+  initialProjectCosts: ProjectCost[];
+  initialCrons: Cron[];
   initialJobListings: JobListing[];
   initialJobUserStates: JobUserState[];
   initialJobApplications: JobApplication[];
@@ -184,6 +194,9 @@ export function DashboardShell({
   initialInvoices,
   initialInvoiceItems,
   initialInvoiceSettings,
+  initialProjects,
+  initialProjectCosts,
+  initialCrons,
   initialJobListings,
   initialJobUserStates,
   initialJobApplications,
@@ -313,6 +326,17 @@ export function DashboardShell({
       initialInvoiceSettings,
       fetchInvoiceSettings,
     );
+  const [projects, setProjects] = useEntityStore(
+    qk.projects,
+    initialProjects,
+    fetchProjects,
+  );
+  const [projectCosts, setProjectCosts] = useEntityStore(
+    qk.projectCosts,
+    initialProjectCosts,
+    fetchProjectCosts,
+  );
+  const [crons, setCrons] = useEntityStore(qk.crons, initialCrons, fetchCrons);
   // No setter needed: listings and the run log only change server-side; a
   // "Check now" refresh invalidates the queries and the fetchers re-pull.
   const [jobListings] = useEntityStore(
@@ -651,6 +675,19 @@ export function DashboardShell({
                       setRepoNotes={setRepoNotes}
                       repoLinks={repoLinks}
                       setRepoLinks={setRepoLinks}
+                    />
+                  )}
+
+                  {tab === "projects" && (
+                    <ProjectsPanel
+                      projects={projects}
+                      setProjects={setProjects}
+                      costs={projectCosts}
+                      setCosts={setProjectCosts}
+                      crons={crons}
+                      setCrons={setCrons}
+                      displayCurrency={displayCurrency}
+                      setDisplayCurrency={setDisplayCurrency}
                     />
                   )}
 
