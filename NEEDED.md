@@ -15,8 +15,8 @@ the repo (the DB-run items I can't check against your live Supabase).
 | # | Item | Imp | Why it's needed | Status (verified in code) |
 | --- | --- | --- | --- | --- |
 | 1 | ~~**Fix cron→`/login` bounce**~~ (§4) | **5** | `updateSession` was 307-redirecting cookieless requests to `/login`, so the Vercel Cron jobs (`Bearer $CRON_SECRET`, no cookie), the bank-sync cron, and the new `/api/crons/registry` were all bounced before their handlers ran. | ✅ **Fixed** — `/api` is now exempt from the session redirect; every route self-authenticates (and `/api/github/file` gained its own `getUser` gate). |
-| 2 | **Bank-sync SQL** (§0.9 step 1) | **4** | Adds `transactions.external_id`, `accounts.external_ref`, `bank_connections`. Without it CSV import **and** live sync both error — the whole Finances→bank feature is dead. | DDL present in `schema.sql`; **DB run still required.** |
-| 3 | **AI-links pricing SQL** (§A) | **3** | Migrates `ai_links.pricing` + reseeds badges. Badges render blank until run. | `pricing` column + `seed-ai-links.sql` present; **run required.** |
+| 2 | ~~**Bank-sync SQL**~~ (§0.9 step 1) | **4** | Adds `transactions.external_id`, `accounts.external_ref`, `bank_connections`. Was needed for CSV import + live sync. | ✅ **Done** — SQL run. |
+| 3 | ~~**AI-links pricing SQL**~~ (§A) | **3** | Migrates `ai_links.pricing` + reseeds badges. | ✅ **Done** — SQL run. |
 | 4 | **`ANTHROPIC_API_KEY`** (§0.2) | **3** | Upgrades link Auto-fill from title-only → smart category + pricing, and powers quick-add. Degrades gracefully without it. | Code present, keyless fallback works. |
 | 5 | **Enforce the CSP** (§0.1) | **3** | Closes the last security-header gap. | Confirmed still shipped as `Content-Security-Policy-Report-Only` in `next.config.ts`. |
 | 6 | **PostHog** (§1) | **2** | Analytics, session replay, and the `tugedr` / `costs-filter` flag kill-switches. Flags default **on** without it. | SDK gated on env; no-op until set. |
@@ -31,27 +31,18 @@ the repo (the DB-run items I can't check against your live Supabase).
 | 15 | **Live currency rates** (§2) | **0** | Keyless Frankfurter API with static fallback. | ✅ Done, nothing needed. |
 | 16 | **Motion / gradient / lazy charts** (§5) | **0** | Pure code changes. | ✅ Done, nothing needed. |
 
-**Bottom line:** **#1 (cron bounce) is now fixed and shipped** — the cron jobs
-and the new registry endpoint run. What's left for you: **#2–#3** are one-time
-SQL runs that unlock features you'll actually use; everything scored 1–2 is
-nice-to-have; the 0s need nothing.
+**Bottom line:** **#1 (cron bounce) is fixed and shipped**, and the two SQL runs
+(**#2 bank-sync**, **#3 AI-links pricing**) are **done**. The only item with real
+value left is enforcing the CSP; everything else is nice-to-have, and the 0s need
+nothing.
 
 ---
 
 ## ⏳ Do later — needs your Supabase / Vercel access (I can't do these for you)
 
-These three are the only items with real value left. They need dashboard access
-I don't have, so they're parked here for whenever you get to them. Full details
-are in the linked sections.
+One item left that carries real value; it needs dashboard access I don't have.
+Full details are in the linked section.
 
-- [ ] **Run the bank-sync SQL** `[imp:4]` — Supabase → **SQL Editor** → run the
-  block at the bottom of `supabase/schema.sql` headed *"Bank sync (GoCardless
-  Bank Account Data) + import dedupe"* (idempotent). Without it both CSV import
-  and live sync error. → details in **§0.9 step 1**.
-- [ ] **Run the AI-links pricing SQL** `[imp:3]` — Supabase → **SQL Editor** →
-  paste all of `supabase/seed-ai-links.sql` → **Run**. Lights up the pricing
-  badges (green/yellow/red) on every AI link. Safe to re-run. → details in
-  **§A**.
 - [ ] **Enforce the CSP** `[imp:3]` — the app ships
   `Content-Security-Policy-Report-Only` today (reports, blocks nothing). When
   ready: open the live site → DevTools **Console**, click around, and if there
@@ -60,10 +51,11 @@ are in the linked sections.
   `next.config.ts` and deploy. If you see violations, note the blocked origins
   and I'll add them to the `csp` array first. → details in **§0.1**. *(Tell me
   "enforce the CSP" once your console is clean and I'll ship the one-liner.)*
-
-> The new tables from the Projects/crons feature (`projects`, `project_costs`,
-> `crons`) are also in `supabase/schema.sql` — running the whole file once
-> covers them together with the bank-sync block above.
+- [ ] **Run the Projects/crons SQL** `[imp:3]` — the new `projects`,
+  `project_costs` and `crons` tables ship in `supabase/schema.sql`. If you only
+  ran the *bank block*, run these too (or just re-run the whole file — it's all
+  `create … if not exists`), otherwise the new **Projects** section can't
+  save. Skip if you already re-ran the full file.
 
 ---
 
@@ -73,8 +65,8 @@ Tick these off top to bottom. Each task carries a one-line "why" and an
 importance score `[imp:N]` (5 = highest). Details are in the numbered sections
 below.
 
-- [ ] **Run the bank-sync SQL** in Supabase — required for both CSV import and live sync; bank import is broken without it. `[imp:4]`
-- [ ] **Run the AI-links pricing SQL** in Supabase — lights up the color pricing badges on every AI link. `[imp:3]`
+- [x] ~~**Run the bank-sync SQL** in Supabase~~ — ✅ done.
+- [x] ~~**Run the AI-links pricing SQL** in Supabase~~ — ✅ done.
 - [ ] **Add `ANTHROPIC_API_KEY`** in Vercel — upgrades link Auto-fill from title-only to smart category + pricing. `[imp:3]`
 - [ ] **Enforce the CSP** once the console is clean — closes the last security-header gap on the app. `[imp:3]`
 - [ ] **Add `HEARTBEAT_URL` + a cron monitor** — alerts you if the daily renewal-emails job silently fails. `[imp:2]`
@@ -241,7 +233,7 @@ Reads your **Raiffeisenbank** (or any EU bank) balances and transactions into
 the Finances page. Two ways in — the CSV import needs only the SQL step; live
 sync also needs the two GoCardless secrets.
 
-**Step 1 — run the SQL once (required for both paths). [2 min]**
+**Step 1 — run the SQL once (required for both paths). [2 min]** — ✅ **done.**
 
 Open **Supabase → SQL Editor** and run the new block at the bottom of
 `supabase/schema.sql` (the section headed *"Bank sync (GoCardless Bank Account
@@ -294,7 +286,7 @@ reaches the browser — all bank calls run server-side in `/api/bank/*`.
 
 ---
 
-## A. (earlier PR) pricing badges — one SQL run needed
+## A. (earlier PR) pricing badges — ✅ SQL run done
 
 Every AI link now has a structured **pricing** field rendered as a colored
 badge next to the site host: **Free = green**, **Free tier + paid = yellow**,
