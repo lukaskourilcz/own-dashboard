@@ -3,6 +3,7 @@ import {
   isActive,
   toMonthly,
   toMonthlyIn,
+  toYearlyIn,
   totalMonthly,
   totalMonthlyIn,
   upcomingRenewals,
@@ -65,6 +66,19 @@ describe("toMonthlyIn", () => {
         "USD",
       ),
     ).toBeCloseTo(1.08, 2);
+  });
+});
+
+describe("toYearlyIn", () => {
+  it("is twelve times the monthly cost in the display currency", () => {
+    const s = sub({ amount: 9.99, currency: "USD", billing_cycle: "monthly" });
+    expect(toYearlyIn(s, "USD")).toBeCloseTo(9.99 * 12, 2);
+  });
+  it("normalises a yearly-billed sub back to its yearly amount", () => {
+    // 120 USD/yr -> 10/mo -> 120/yr again.
+    expect(
+      toYearlyIn(sub({ amount: 120, billing_cycle: "yearly" }), "USD"),
+    ).toBeCloseTo(120, 2);
   });
 });
 

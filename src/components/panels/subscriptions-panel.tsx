@@ -29,6 +29,7 @@ import {
   daysUntilRenewal,
   isActive,
   toMonthlyIn,
+  toYearlyIn,
   totalMonthlyIn,
   upcomingRenewals,
 } from "@/lib/subscriptions";
@@ -82,19 +83,32 @@ export function SubscriptionsPanel({
   const t = useDict();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  // Which cadence the spend breakdown chart is showing. Monthly is the day-to-
+  // day number; yearly (×12) is the one that actually stings on the card.
+  const [spendPeriod, setSpendPeriod] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
 
+  const yearly = spendPeriod === "yearly";
   const chartData = useMemo(
     () =>
       subs
         .filter(isActive)
         .map((s) => ({
           name: s.name,
-          value: Number(toMonthlyIn(s, displayCurrency).toFixed(2)),
-        })),
-    [subs, displayCurrency],
+          value: Number(
+            (yearly
+              ? toYearlyIn(s, displayCurrency)
+              : toMonthlyIn(s, displayCurrency)
+            ).toFixed(2),
+          ),
+        }))
+        .sort((a, b) => b.value - a.value),
+    [subs, displayCurrency, yearly],
   );
   const monthlyTotal = totalMonthlyIn(subs, displayCurrency);
   const yearlyTotal = monthlyTotal * 12;
+  const periodTotal = yearly ? yearlyTotal : monthlyTotal;
   const renewals = useMemo(() => upcomingRenewals(subs, 30), [subs]);
   const activeCount = subs.filter(isActive).length;
 
@@ -462,8 +476,42 @@ export function SubscriptionsPanel({
         </Card>
 
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t.subscriptions.monthlySpend}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle>
+              {yearly ? t.subscriptions.yearlySpend : t.subscriptions.monthlySpend}
+            </CardTitle>
+            <div
+              role="group"
+              aria-label={t.subscriptions.spendView}
+              className="inline-flex rounded-md border border-border p-0.5 text-xs"
+            >
+              <button
+                type="button"
+                aria-pressed={!yearly}
+                onClick={() => setSpendPeriod("monthly")}
+                className={cn(
+                  "rounded px-2 py-1 font-medium transition-colors focus-ring",
+                  !yearly
+                    ? "bg-accent text-foreground"
+                    : "text-foreground-subtle hover:text-foreground",
+                )}
+              >
+                {t.subscriptions.viewMonthly}
+              </button>
+              <button
+                type="button"
+                aria-pressed={yearly}
+                onClick={() => setSpendPeriod("yearly")}
+                className={cn(
+                  "rounded px-2 py-1 font-medium transition-colors focus-ring",
+                  yearly
+                    ? "bg-accent text-foreground"
+                    : "text-foreground-subtle hover:text-foreground",
+                )}
+              >
+                {t.subscriptions.viewYearly}
+              </button>
+            </div>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
@@ -488,15 +536,21 @@ export function SubscriptionsPanel({
                 </div>
                 <div>
                   <p className="text-3xl font-semibold tracking-tight tabular">
-                    {formatCurrency(monthlyTotal, displayCurrency)}
+                    {formatCurrency(periodTotal, displayCurrency)}
                   </p>
                   <p className="text-xs text-foreground-subtle">
-                    {t.subscriptions.perMonth}
+                    {yearly
+                      ? t.subscriptions.perYear
+                      : t.subscriptions.perMonth}
                   </p>
                   <p className="text-xs text-foreground-subtle mt-1 tabular">
-                    {t.subscriptions.perYearApprox(
-                      formatCurrency(yearlyTotal, displayCurrency),
-                    )}
+                    {yearly
+                      ? t.subscriptions.perMonthApprox(
+                          formatCurrency(monthlyTotal, displayCurrency),
+                        )
+                      : t.subscriptions.perYearApprox(
+                          formatCurrency(yearlyTotal, displayCurrency),
+                        )}
                   </p>
                   <ul className="mt-4 space-y-1.5">
                     {chartData.map((d, i) => (
@@ -640,6 +694,20 @@ export function SubscriptionsPanel({
                             {s.next_billing_date
                               ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
                               : ""}
+                          </p>
+                          <p className="text-[11px] text-foreground-subtle tabular">
+                            {formatCurrency(
+                              toMonthlyIn(s, displayCurrency),
+                              displayCurrency,
+                            )}
+                            {t.subscriptions.perMo}
+                            {" · "}
+                            {t.subscriptions.perYr(
+                              formatCurrency(
+                                toYearlyIn(s, displayCurrency),
+                                displayCurrency,
+                              ),
+                            )}
                           </p>
                           </div>
                         </div>

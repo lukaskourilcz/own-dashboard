@@ -23,12 +23,19 @@ type SubscriptionsStrings = {
   nextBilling: string;
   nameAndAmountRequired: string;
   monthlySpend: string;
+  yearlySpend: string;
+  spendView: string;
+  viewMonthly: string;
+  viewYearly: string;
   noActiveSubscriptions: string;
   addFirstLeft: string;
   allCancelled: string;
   perMonth: string;
+  perYear: string;
   perYearApprox: (yearly: string) => string;
+  perMonthApprox: (monthly: string) => string;
   perMoApprox: (monthly: string) => string;
+  perYr: (yearly: string) => string;
   next30Days: string;
   nothingBilling30: string;
   tagToday: string;
@@ -72,12 +79,19 @@ export const subscriptions: {
     nextBilling: "Next billing",
     nameAndAmountRequired: "Name and amount are required.",
     monthlySpend: "Monthly spend",
+    yearlySpend: "Yearly spend",
+    spendView: "Spend view",
+    viewMonthly: "Monthly",
+    viewYearly: "Yearly",
     noActiveSubscriptions: "No active subscriptions",
     addFirstLeft: "Add your first subscription on the left.",
     allCancelled: "All subscriptions are cancelled.",
     perMonth: "per month",
+    perYear: "per year",
     perYearApprox: (yearly) => `≈ ${yearly} per year`,
+    perMonthApprox: (monthly) => `≈ ${monthly} per month`,
     perMoApprox: (monthly) => `≈ ${monthly}/mo`,
+    perYr: (yearly) => `${yearly}/yr`,
     next30Days: "Next 30 days",
     nothingBilling30: "Nothing billing in the next 30 days.",
     tagToday: "today",
@@ -117,12 +131,19 @@ export const subscriptions: {
     nextBilling: "Příští platba",
     nameAndAmountRequired: "Název a částka jsou povinné.",
     monthlySpend: "Měsíční výdaje",
+    yearlySpend: "Roční výdaje",
+    spendView: "Zobrazení výdajů",
+    viewMonthly: "Měsíčně",
+    viewYearly: "Ročně",
     noActiveSubscriptions: "Žádná aktivní předplatná",
     addFirstLeft: "Přidejte první předplatné vlevo.",
     allCancelled: "Všechna předplatná jsou zrušena.",
     perMonth: "měsíčně",
+    perYear: "ročně",
     perYearApprox: (yearly) => `≈ ${yearly} ročně`,
+    perMonthApprox: (monthly) => `≈ ${monthly} měsíčně`,
     perMoApprox: (monthly) => `≈ ${monthly}/měs`,
+    perYr: (yearly) => `${yearly}/rok`,
     next30Days: "Příštích 30 dní",
     nothingBilling30: "Žádné platby v příštích 30 dnech.",
     tagToday: "dnes",
