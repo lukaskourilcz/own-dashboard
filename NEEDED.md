@@ -38,6 +38,35 @@ nice-to-have; the 0s need nothing.
 
 ---
 
+## ⏳ Do later — needs your Supabase / Vercel access (I can't do these for you)
+
+These three are the only items with real value left. They need dashboard access
+I don't have, so they're parked here for whenever you get to them. Full details
+are in the linked sections.
+
+- [ ] **Run the bank-sync SQL** `[imp:4]` — Supabase → **SQL Editor** → run the
+  block at the bottom of `supabase/schema.sql` headed *"Bank sync (GoCardless
+  Bank Account Data) + import dedupe"* (idempotent). Without it both CSV import
+  and live sync error. → details in **§0.9 step 1**.
+- [ ] **Run the AI-links pricing SQL** `[imp:3]` — Supabase → **SQL Editor** →
+  paste all of `supabase/seed-ai-links.sql` → **Run**. Lights up the pricing
+  badges (green/yellow/red) on every AI link. Safe to re-run. → details in
+  **§A**.
+- [ ] **Enforce the CSP** `[imp:3]` — the app ships
+  `Content-Security-Policy-Report-Only` today (reports, blocks nothing). When
+  ready: open the live site → DevTools **Console**, click around, and if there
+  are **no** `[Report Only] … Content Security Policy` violations, change the key
+  `Content-Security-Policy-Report-Only` → `Content-Security-Policy` in
+  `next.config.ts` and deploy. If you see violations, note the blocked origins
+  and I'll add them to the `csp` array first. → details in **§0.1**. *(Tell me
+  "enforce the CSP" once your console is clean and I'll ship the one-liner.)*
+
+> The new tables from the Projects/crons feature (`projects`, `project_costs`,
+> `crons`) are also in `supabase/schema.sql` — running the whole file once
+> covers them together with the bank-sync block above.
+
+---
+
 ## ⭐ Start here — the whole checklist
 
 Tick these off top to bottom. Each task carries a one-line "why" and an
