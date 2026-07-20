@@ -6,6 +6,39 @@ here blocks the deploy.
 
 ---
 
+## 🔎 Audit — importance of every item (1 = skip-able, 5 = do it)
+
+Scored against the actual code on 2026-07-20. **Importance = how much real value
+or risk it carries for you**, not how hard it is. Status is what I verified in
+the repo (the DB-run items I can't check against your live Supabase).
+
+| # | Item | Imp | Why it's needed | Status (verified in code) |
+| --- | --- | --- | --- | --- |
+| 1 | **Fix cron→`/login` bounce** (§4) | **5** | The auth matcher in `src/proxy.ts` still matches `/api/*` with no exclusion, and `updateSession` 307-redirects any cookieless request to `/login`. Vercel Cron sends `Bearer $CRON_SECRET` but **no cookie**, so the renewal-email cron, the bank-sync cron **and the new `/api/crons/registry`** all get bounced before their handler runs. Silently breaks paid features. | ⚠️ **Confirmed broken.** One-liner: exclude `/api` from the matcher. |
+| 2 | **Bank-sync SQL** (§0.9 step 1) | **4** | Adds `transactions.external_id`, `accounts.external_ref`, `bank_connections`. Without it CSV import **and** live sync both error — the whole Finances→bank feature is dead. | DDL present in `schema.sql`; **DB run still required.** |
+| 3 | **AI-links pricing SQL** (§A) | **3** | Migrates `ai_links.pricing` + reseeds badges. Badges render blank until run. | `pricing` column + `seed-ai-links.sql` present; **run required.** |
+| 4 | **`ANTHROPIC_API_KEY`** (§0.2) | **3** | Upgrades link Auto-fill from title-only → smart category + pricing, and powers quick-add. Degrades gracefully without it. | Code present, keyless fallback works. |
+| 5 | **Enforce the CSP** (§0.1) | **3** | Closes the last security-header gap. | Confirmed still shipped as `Content-Security-Policy-Report-Only` in `next.config.ts`. |
+| 6 | **PostHog** (§1) | **2** | Analytics, session replay, and the `tugedr` / `costs-filter` flag kill-switches. Flags default **on** without it. | SDK gated on env; no-op until set. |
+| 7 | **`HEARTBEAT_URL` + monitor** (§0.4) | **2** | Alerts you if the daily renewal cron silently fails. **Blocked by #1** — pointless until the cron actually runs. | Cron pings on success; gated by #1. |
+| 8 | **Upstash Redis** (§0.3) | **2** | Makes Auto-fill rate limiting hold across serverless instances; in-memory fallback works. | Auto-detected; safe fallback. |
+| 9 | **Eyeball Finances/overview redesign** (§0.7) | **2** | Pure visual QA in light + dark — I couldn't screenshot from the sandbox. | Shipped; your eyes are the check. |
+| 10 | **GoCardless secrets** (§0.9 step 3) | **2** | Turns on live Raiffeisenbank auto-sync. CSV import already covers the need. | Optional; server-side seam present. |
+| 11 | **Bruno auth tests** (§3) | **1** | Optional local/CI auth-regression check. | Collection in `bruno/`. |
+| 12 | **`JINA` / `FIRECRAWL` / `ANTHROPIC_BASE_URL`** (§0.2/§0.6) | **1** | Only if you hit Auto-fill limits or want an LLM gateway. | Optional seams present. |
+| 13 | **Authorize MCP connectors** (§0.8) | **1** | Dev-tooling only — lets Claude Code use your Supabase/Gmail/etc. No app impact. | Needs an interactive `/mcp` session. |
+| 14 | **Context7 MCP** (§0.5) | **1** | Version-accurate docs when editing with Claude Code. Nothing to configure. | ✅ Already wired; no action. |
+| 15 | **Live currency rates** (§2) | **0** | Keyless Frankfurter API with static fallback. | ✅ Done, nothing needed. |
+| 16 | **Motion / gradient / lazy charts** (§5) | **0** | Pure code changes. | ✅ Done, nothing needed. |
+
+**Bottom line:** only **#1 (cron bounce)** is a genuine "do this" — it silently
+disables features you've already paid to build. **#2–#3** are one-time SQL runs
+that unlock features you'll actually use. Everything scored 1–2 is
+nice-to-have; the 0s need nothing. Say "fix the cron matcher" and I'll ship the
+one-line change (it also unblocks #7 and the new cron registry endpoint).
+
+---
+
 ## ⭐ Start here — the whole checklist
 
 Tick these off top to bottom. Each task carries a one-line "why" and an
