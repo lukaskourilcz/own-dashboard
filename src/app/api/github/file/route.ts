@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { fetchWithGitHubAuth } from "@/lib/github-token";
 import { normalizeRepoPath } from "@/lib/github";
 
@@ -10,6 +11,17 @@ const NAME_RE = /^[A-Za-z0-9._-]+$/;
  * Used by the "App costs & scaling" cards to load stack-and-scaling.md.
  */
 export async function GET(request: Request) {
+  // Self-authenticate: this route is reachable without the page-level session
+  // redirect (API routes are exempt from it), so it must gate itself — never a
+  // public proxy for arbitrary repo files.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
   const url = new URL(request.url);
   const owner = (url.searchParams.get("owner") ?? "").trim();
   const repo = (url.searchParams.get("repo") ?? "").trim();

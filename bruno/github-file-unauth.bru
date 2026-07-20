@@ -11,8 +11,7 @@ get {
 }
 
 assert {
-  res.status: eq 307
-  res.headers.location: contains /login
+  res.status: eq 401
 }
 
 settings {
@@ -20,7 +19,8 @@ settings {
 }
 
 docs {
-  An unauthenticated file read is bounced to /login by the auth middleware
-  with a 307 — the handler never proxies a file on an anonymous caller's
-  behalf.
+  An unauthenticated file read must never proxy a file on an anonymous caller's
+  behalf. API routes are exempt from the page-level session redirect, so the
+  handler gates itself: getUser() finds no user and returns 401 before any
+  GitHub Contents call happens.
 }
