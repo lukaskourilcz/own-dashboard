@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import {
@@ -10,12 +10,17 @@ import {
   Pencil,
   Plus,
   Power,
-  Save,
   Sparkles,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,10 +28,10 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
+import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -96,6 +101,7 @@ export function ProjectsPanel({
   const t = useDict();
   const toast = useToast();
   const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
+  const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -192,12 +198,19 @@ export function ProjectsPanel({
         setProjects((prev) => [...prev, data as Project]);
       }
       setForm(emptyProjectForm);
+      setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.projects });
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setSaving(false);
     }
+  }
+
+  function openNewProject() {
+    setForm(emptyProjectForm);
+    setError(null);
+    setFormOpen(true);
   }
 
   async function toggleProjectActive(p: Project) {
@@ -237,6 +250,8 @@ export function ProjectsPanel({
       repo_full_name: p.repo_full_name ?? "",
       url: p.url ?? "",
     });
+    setError(null);
+    setFormOpen(true);
   }
 
   return (
@@ -245,156 +260,157 @@ export function ProjectsPanel({
         title={t.projects.title}
         description={t.projects.description}
         action={
-          setDisplayCurrency && (
-            <div className="inline-flex items-center gap-2">
-              <Label className="text-foreground-subtle">
-                {t.projects.displayIn}
-              </Label>
-              <SimpleSelect
-                value={displayCurrency}
-                onValueChange={(v) => setDisplayCurrency(v)}
-                aria-label={t.projects.displayIn}
-                className="h-8 w-20 text-xs"
-                options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
-              />
-            </div>
-          )
+          <div className="inline-flex items-center gap-2">
+            {setDisplayCurrency && (
+              <>
+                <Label className="hidden text-foreground-subtle sm:inline">
+                  {t.projects.displayIn}
+                </Label>
+                <SimpleSelect
+                  value={displayCurrency}
+                  onValueChange={(v) => setDisplayCurrency(v)}
+                  aria-label={t.projects.displayIn}
+                  className="h-8 w-20 text-xs"
+                  options={SUPPORTED_CURRENCIES.map((c) => ({
+                    value: c,
+                    label: c,
+                  }))}
+                />
+              </>
+            )}
+            <Button size="sm" onClick={openNewProject}>
+              <Plus className="h-3.5 w-3.5" />
+              {t.projects.addProject}
+            </Button>
+          </div>
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Add / edit project */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>
-              {form.id ? t.projects.editProject : t.projects.addProject}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={submitProject} className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="proj-name">{t.projects.name}</Label>
-                <Input
-                  id="proj-name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder={t.projects.namePlaceholder}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="proj-slug">{t.projects.slug}</Label>
-                <Input
-                  id="proj-slug"
-                  value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  placeholder={form.name ? slugify(form.name) : t.projects.slugPlaceholder}
-                />
-                <p className="text-[11px] text-foreground-subtle">
-                  {t.projects.slugHint}
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="proj-repo">{t.projects.repo}</Label>
-                <Input
-                  id="proj-repo"
-                  value={form.repo_full_name}
-                  onChange={(e) =>
-                    setForm({ ...form, repo_full_name: e.target.value })
-                  }
-                  placeholder={t.projects.repoPlaceholder}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="proj-url">{t.projects.url}</Label>
-                <Input
-                  id="proj-url"
-                  value={form.url}
-                  onChange={(e) => setForm({ ...form, url: e.target.value })}
-                  placeholder={t.projects.urlPlaceholder}
-                />
-              </div>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={saving} className="flex-1">
-                  <Plus className="h-3.5 w-3.5" />
-                  {form.id ? t.common.save : t.common.add}
-                </Button>
-                {form.id && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setForm(emptyProjectForm)}
-                  >
-                    {t.common.cancel}
-                  </Button>
-                )}
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Totals + chart */}
-        <Card className="lg:col-span-2">
+      {/* Totals + chart (full width — the form now lives in a dialog) */}
+      {chartData.length > 0 && (
+        <Card>
           <CardHeader>
             <CardTitle>{t.projects.allProjectsMonthly}</CardTitle>
           </CardHeader>
           <CardContent>
-            {chartData.length === 0 ? (
-              <EmptyState
-                icon={FolderKanban}
-                title={t.projects.noProjects}
-                description={t.projects.addFirstProject}
-              />
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 items-center">
-                <div className="h-48 sm:h-56">
-                  <CategoryDonut
-                    data={chartData}
-                    currency={displayCurrency}
-                    innerRadius={56}
-                    outerRadius={92}
-                  />
-                </div>
-                <div>
-                  <p className="text-3xl font-semibold tracking-tight tabular">
-                    {formatCurrency(grandMonthly, displayCurrency)}
-                  </p>
-                  <p className="text-xs text-foreground-subtle">
-                    {t.projects.grandTotalMonthly.toLowerCase()} ·{" "}
-                    {t.projects.activeProjects(active.length)}
-                  </p>
-                  <p className="text-xs text-foreground-subtle mt-1 tabular">
-                    {t.projects.perYr(
-                      formatCurrency(grandYearly, displayCurrency),
-                    )}
-                  </p>
-                  <ul className="mt-4 space-y-1.5">
-                    {chartData.map((d, i) => (
-                      <li
-                        key={d.name}
-                        className="flex items-center gap-2 text-xs"
-                      >
-                        <span
-                          className="h-2 w-2 rounded-sm shrink-0"
-                          style={{
-                            background: CHART_COLORS[i % CHART_COLORS.length],
-                          }}
-                        />
-                        <span className="flex-1 truncate text-foreground">
-                          {d.name}
-                        </span>
-                        <span className="tabular text-foreground-muted">
-                          {formatCurrency(d.value, displayCurrency)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            <div className="grid items-center gap-6 sm:grid-cols-2">
+              <div className="h-48 sm:h-56">
+                <CategoryDonut
+                  data={chartData}
+                  currency={displayCurrency}
+                  innerRadius={56}
+                  outerRadius={92}
+                />
               </div>
-            )}
+              <div>
+                <p className="text-3xl font-semibold tracking-tight tabular">
+                  {formatCurrency(grandMonthly, displayCurrency)}
+                </p>
+                <p className="text-xs text-foreground-subtle">
+                  {t.projects.grandTotalMonthly.toLowerCase()} ·{" "}
+                  {t.projects.activeProjects(active.length)}
+                </p>
+                <p className="text-xs text-foreground-subtle mt-1 tabular">
+                  {t.projects.perYr(
+                    formatCurrency(grandYearly, displayCurrency),
+                  )}
+                </p>
+                <ul className="mt-4 space-y-1.5">
+                  {chartData.map((d, i) => (
+                    <li
+                      key={d.name}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <span
+                        className="h-2 w-2 rounded-sm shrink-0"
+                        style={{
+                          background: CHART_COLORS[i % CHART_COLORS.length],
+                        }}
+                      />
+                      <span className="flex-1 truncate text-foreground">
+                        {d.name}
+                      </span>
+                      <span className="tabular text-foreground-muted">
+                        {formatCurrency(d.value, displayCurrency)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Add / edit project — dialog keeps the page free for the projects. */}
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {form.id ? t.projects.editProject : t.projects.addProject}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitProject} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-name">{t.projects.name}</Label>
+              <Input
+                id="proj-name"
+                autoFocus
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder={t.projects.namePlaceholder}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-slug">{t.projects.slug}</Label>
+              <Input
+                id="proj-slug"
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                placeholder={
+                  form.name ? slugify(form.name) : t.projects.slugPlaceholder
+                }
+              />
+              <p className="text-[11px] text-foreground-subtle">
+                {t.projects.slugHint}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-repo">{t.projects.repo}</Label>
+              <Input
+                id="proj-repo"
+                value={form.repo_full_name}
+                onChange={(e) =>
+                  setForm({ ...form, repo_full_name: e.target.value })
+                }
+                placeholder={t.projects.repoPlaceholder}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-url">{t.projects.url}</Label>
+              <Input
+                id="proj-url"
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                placeholder={t.projects.urlPlaceholder}
+              />
+            </div>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFormOpen(false)}
+              >
+                {t.common.cancel}
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {form.id ? t.common.save : t.common.add}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Project cards */}
       <div className="mt-4 grid gap-4">
@@ -405,6 +421,12 @@ export function ProjectsPanel({
                 icon={FolderKanban}
                 title={t.projects.noProjects}
                 description={t.projects.addFirstProject}
+                action={
+                  <Button size="sm" onClick={openNewProject}>
+                    <Plus className="h-3.5 w-3.5" />
+                    {t.projects.addProject}
+                  </Button>
+                }
               />
             </CardContent>
           </Card>
@@ -734,39 +756,53 @@ function NotesSection({
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
-  const [value, setValue] = useState(project.notes);
-  const [busy, setBusy] = useState(false);
-  const dirty = value !== project.notes;
+  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  // Last value we persisted, so a lossy markdown round-trip on mount doesn't
+  // trigger a spurious write.
+  const lastSavedRef = useRef(project.notes ?? "");
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function save() {
-    setBusy(true);
+  // Realtime autosave — the editor debounces, this persists. No save button.
+  async function saveMarkdown(md: string) {
+    const next = md.trim();
+    if (next === (lastSavedRef.current ?? "").trim()) return;
+    setStatus("saving");
     const { error } = await supabase
       .from("projects")
-      .update({ notes: value, updated_at: new Date().toISOString() })
+      .update({ notes: next, updated_at: new Date().toISOString() })
       .eq("id", project.id);
-    setBusy(false);
-    if (error) return toast.err(error.message);
+    if (error) {
+      setStatus("idle");
+      toast.err(error.message);
+      return;
+    }
+    lastSavedRef.current = next;
     setProjects((prev) =>
-      prev.map((p) => (p.id === project.id ? { ...p, notes: value } : p)),
+      prev.map((p) => (p.id === project.id ? { ...p, notes: next } : p)),
     );
-    toast.ok(t.projects.notesSaved);
+    setStatus("saved");
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setStatus("idle"), 1500);
   }
 
   return (
     <div>
-      <SectionLabel>{t.projects.notes}</SectionLabel>
-      <Textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={t.projects.notesPlaceholder}
-        className="mt-2"
-        rows={3}
-      />
-      <div className="mt-2 flex justify-end">
-        <Button size="sm" variant="outline" disabled={!dirty || busy} onClick={save}>
-          <Save className="h-3.5 w-3.5" />
-          {t.projects.saveNotes}
-        </Button>
+      <div className="flex items-center justify-between">
+        <SectionLabel>{t.projects.notes}</SectionLabel>
+        <span className="text-[11px] text-foreground-subtle">
+          {status === "saving"
+            ? t.projects.saving
+            : status === "saved"
+              ? t.projects.notesSaved
+              : ""}
+        </span>
+      </div>
+      <div className="mt-2 min-h-[96px] rounded-md border border-border bg-surface py-1">
+        <ProjectNotesEditor
+          projectId={project.id}
+          initialMarkdown={project.notes ?? ""}
+          onSaveMarkdown={saveMarkdown}
+        />
       </div>
     </div>
   );
