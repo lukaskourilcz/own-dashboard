@@ -4,9 +4,28 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  ChevronDown,
   Clock,
   ExternalLink,
   FolderKanban,
+  GripVertical,
   Pencil,
   Plus,
   Power,
@@ -40,7 +59,11 @@ import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import { useReposQuery } from "@/lib/github-queries";
-import { readRepoFilter } from "@/lib/use-prefs";
+import {
+  readRepoFilter,
+  readCollapsedProjects,
+  writeCollapsedProjects,
+} from "@/lib/use-prefs";
 import { cronSeedsForRepo } from "@/lib/project-cron-seeds";
 import type { GithubRepo } from "@/lib/github";
 import {
@@ -284,6 +307,78 @@ export function ProjectsPanel({
   }, [crons]);
 
   const active = projects.filter((p) => p.is_active);
+
+  // Manual order — the card list is driven purely by sort_order (drag updates
+  // it), with created_at as a stable tie-breaker for equal orders.
+  const ordered = useMemo(
+    () =>
+      [...projects].sort(
+        (a, b) =>
+          a.sort_order - b.sort_order ||
+          a.created_at.localeCompare(b.created_at),
+      ),
+    [projects],
+  );
+
+  // Collapsed cards — a per-device view preference kept in localStorage.
+  const [collapsed, setCollapsed] = useState<Set<string>>(
+    () => new Set(readCollapsedProjects()),
+  );
+  function toggleCollapsed(id: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writeCollapsedProjects([...next]);
+      return next;
+    });
+  }
+
+  // Drag-to-reorder. sort_order is an integer column, so we resequence the
+  // whole list to 0..n-1 on drop (no fractional indexing) and persist the rows
+  // that actually moved. Optimistic, with a snapshot rollback on failure.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  async function handleDragEnd(e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return;
+    const oldIndex = ordered.findIndex((p) => p.id === e.active.id);
+    const newIndex = ordered.findIndex((p) => p.id === e.over!.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const resequenced = arrayMove(ordered, oldIndex, newIndex);
+    const orderById = new Map(resequenced.map((p, i) => [p.id, i]));
+    const changed = resequenced.filter((p, i) => p.sort_order !== i);
+    if (changed.length === 0) return;
+
+    const snapshot = projects;
+    setProjects((prev) =>
+      prev.map((p) =>
+        orderById.has(p.id) ? { ...p, sort_order: orderById.get(p.id)! } : p,
+      ),
+    );
+    try {
+      const now = new Date().toISOString();
+      const results = await Promise.all(
+        changed.map((p) =>
+          supabase
+            .from("projects")
+            .update({ sort_order: orderById.get(p.id)!, updated_at: now })
+            .eq("id", p.id),
+        ),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
+      void qc.invalidateQueries({ queryKey: qk.projects });
+    } catch (err) {
+      setProjects(snapshot);
+      toast.err((err as Error).message);
+    }
+  }
 
   const chartData = useMemo(
     () =>
@@ -570,9 +665,9 @@ export function ProjectsPanel({
         </DialogContent>
       </Dialog>
 
-      {/* Project cards */}
-      <div className="mt-4 grid gap-4">
-        {projects.length === 0 ? (
+      {/* Project cards — two-column grid, drag to reorder, click to collapse. */}
+      {projects.length === 0 ? (
+        <div className="mt-4">
           <Card>
             <CardContent className="py-8">
               <EmptyState
@@ -588,35 +683,44 @@ export function ProjectsPanel({
               />
             </CardContent>
           </Card>
-        ) : (
-          [...projects]
-            .sort(
-              (a, b) =>
-                Number(b.is_active) - Number(a.is_active) ||
-                a.sort_order - b.sort_order,
-            )
-            .map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                costs={costsByProject.get(p.id) ?? []}
-                crons={cronsByProject.get(p.id) ?? []}
-                setCosts={setCosts}
-                setCrons={setCrons}
-                setProjects={setProjects}
-                displayCurrency={displayCurrency}
-                editing={form.id === p.id}
-                synced={
-                  !!p.repo_full_name &&
-                  activeRepoNames.has(p.repo_full_name.toLowerCase())
-                }
-                onEdit={() => startEditProject(p)}
-                onToggleActive={() => toggleProjectActive(p)}
-                onDelete={() => deleteProject(p)}
-              />
-            ))
-        )}
-      </div>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={ordered.map((p) => p.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+              {ordered.map((p) => (
+                <SortableProjectCard
+                  key={p.id}
+                  project={p}
+                  costs={costsByProject.get(p.id) ?? []}
+                  crons={cronsByProject.get(p.id) ?? []}
+                  setCosts={setCosts}
+                  setCrons={setCrons}
+                  setProjects={setProjects}
+                  displayCurrency={displayCurrency}
+                  editing={form.id === p.id}
+                  synced={
+                    !!p.repo_full_name &&
+                    activeRepoNames.has(p.repo_full_name.toLowerCase())
+                  }
+                  collapsed={collapsed.has(p.id)}
+                  onToggleCollapsed={() => toggleCollapsed(p.id)}
+                  onEdit={() => startEditProject(p)}
+                  onToggleActive={() => toggleProjectActive(p)}
+                  onDelete={() => deleteProject(p)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }
@@ -624,6 +728,54 @@ export function ProjectsPanel({
 // ---------------------------------------------------------------------------
 // Project card: totals, cost lines, notes, crons.
 // ---------------------------------------------------------------------------
+
+type ProjectCardProps = {
+  project: Project;
+  costs: ProjectCost[];
+  crons: Cron[];
+  setCosts: Updater<ProjectCost[]>;
+  setCrons: Updater<Cron[]>;
+  setProjects: Updater<Project[]>;
+  displayCurrency: string;
+  editing: boolean;
+  /** True when this project mirrors a currently-active Repository. */
+  synced: boolean;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  onEdit: () => void;
+  onToggleActive: () => void;
+  onDelete: () => void;
+};
+
+/** Sortable wrapper: the grid cell is the drag node; the grip handle inside the
+ * card header carries the drag listeners so only it initiates a drag. */
+function SortableProjectCard(props: ProjectCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.project.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("relative", isDragging && "z-10")}
+    >
+      <ProjectCard
+        {...props}
+        isDragging={isDragging}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
 
 function ProjectCard({
   project,
@@ -635,69 +787,80 @@ function ProjectCard({
   displayCurrency,
   editing,
   synced,
+  collapsed,
+  onToggleCollapsed,
   onEdit,
   onToggleActive,
   onDelete,
-}: {
-  project: Project;
-  costs: ProjectCost[];
-  crons: Cron[];
-  setCosts: Updater<ProjectCost[]>;
-  setCrons: Updater<Cron[]>;
-  setProjects: Updater<Project[]>;
-  displayCurrency: string;
-  editing: boolean;
-  /** True when this project mirrors a currently-active Repository. */
-  synced: boolean;
-  onEdit: () => void;
-  onToggleActive: () => void;
-  onDelete: () => void;
+  isDragging,
+  dragHandleProps,
+}: ProjectCardProps & {
+  isDragging?: boolean;
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
 }) {
   const t = useDict();
   const monthly = projectMonthlyIn(costs, crons, displayCurrency);
   const yearly = monthly * 12;
 
   return (
-    <Card className={cn(editing && "ring-1 ring-ring", !project.is_active && "opacity-70")}>
+    <Card
+      className={cn(
+        editing && "ring-1 ring-ring",
+        !project.is_active && "opacity-70",
+        isDragging && "shadow-elevated ring-1 ring-border-strong",
+      )}
+    >
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div className="min-w-0">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
-            <span className="truncate">{project.name}</span>
-            {!project.is_active && (
-              <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
-            )}
-            {synced && (
-              <Tooltip content={t.projects.syncedHint}>
-                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
-                  <GithubIcon className="h-2.5 w-2.5" />
-                  {t.projects.synced}
-                </span>
-              </Tooltip>
-            )}
-          </CardTitle>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
-            {project.repo_full_name && (
-              <a
-                href={`https://github.com/${project.repo_full_name}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
-              >
-                <GithubIcon className="h-3 w-3" />
-                {project.repo_full_name}
-              </a>
-            )}
-            {project.url && (
-              <a
-                href={project.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {t.projects.open}
-              </a>
+        <div className="flex min-w-0 items-start gap-1.5">
+          <button
+            type="button"
+            aria-label={t.projects.dragHandle}
+            className="mt-0.5 shrink-0 cursor-grab touch-none rounded text-foreground-subtle transition-colors hover:text-foreground focus-ring active:cursor-grabbing"
+            {...dragHandleProps}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
+              <span className="truncate">{project.name}</span>
+              {!project.is_active && (
+                <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
+              )}
+              {synced && (
+                <Tooltip content={t.projects.syncedHint}>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+                    <GithubIcon className="h-2.5 w-2.5" />
+                    {t.projects.synced}
+                  </span>
+                </Tooltip>
+              )}
+            </CardTitle>
+            {!collapsed && (
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+                {project.repo_full_name && (
+                  <a
+                    href={`https://github.com/${project.repo_full_name}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                  >
+                    <GithubIcon className="h-3 w-3" />
+                    {project.repo_full_name}
+                  </a>
+                )}
+                {project.url && (
+                  <a
+                    href={project.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {t.projects.open}
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -714,6 +877,22 @@ function ProjectCard({
             </p>
           </div>
           <div className="flex gap-0.5">
+            <Tooltip content={collapsed ? t.projects.expand : t.projects.collapse}>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={onToggleCollapsed}
+                aria-label={collapsed ? t.projects.expand : t.projects.collapse}
+                aria-expanded={!collapsed}
+              >
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    collapsed && "-rotate-90",
+                  )}
+                />
+              </Button>
+            </Tooltip>
             <Tooltip content={t.common.edit}>
               <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
                 <Pencil className="h-3.5 w-3.5" />
@@ -749,21 +928,23 @@ function ProjectCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-5">
-        <CostsSection
-          project={project}
-          costs={costs}
-          setCosts={setCosts}
-          displayCurrency={displayCurrency}
-        />
-        <NotesSection project={project} setProjects={setProjects} />
-        <CronsSection
-          project={project}
-          crons={crons}
-          setCrons={setCrons}
-          displayCurrency={displayCurrency}
-        />
-      </CardContent>
+      {!collapsed && (
+        <CardContent className="space-y-5">
+          <CostsSection
+            project={project}
+            costs={costs}
+            setCosts={setCosts}
+            displayCurrency={displayCurrency}
+          />
+          <NotesSection project={project} setProjects={setProjects} />
+          <CronsSection
+            project={project}
+            crons={crons}
+            setCrons={setCrons}
+            displayCurrency={displayCurrency}
+          />
+        </CardContent>
+      )}
     </Card>
   );
 }
@@ -970,7 +1151,7 @@ function NotesSection({
               : ""}
         </span>
       </div>
-      <div className="mt-2 min-h-[96px] rounded-md border border-border bg-surface py-1">
+      <div className="project-notes mt-2 min-h-[96px] rounded-md border border-border bg-surface py-1">
         <ProjectNotesEditor
           projectId={project.id}
           initialMarkdown={project.notes ?? ""}

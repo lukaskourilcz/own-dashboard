@@ -3,6 +3,7 @@
 import {
   Coins,
   FileText,
+  GripVertical,
   Languages,
   ListTodo,
   Moon,
@@ -10,6 +11,23 @@ import {
   Palette,
   Sun,
 } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,14 +37,18 @@ import { useDict, useLang } from "@/lib/i18n";
 import {
   useCvLinks,
   useDisplayCurrency,
+  useNavOrder,
   useNavVisibility,
   useTasksPerCategory,
+  sortByNavOrder,
   TASKS_PER_CATEGORY_OPTIONS,
 } from "@/lib/use-prefs";
 import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
-import { NAV_ITEMS } from "@/components/nav/sidebar";
+import { NAV_GROUPS, OVERVIEW_ITEM } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
+
+type NavRowItem = { value: string; icon: typeof Sun };
 
 function Segmented<T extends string>({
   value,
@@ -68,7 +90,35 @@ export function SettingsPanel() {
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
   const { isHidden, toggle } = useNavVisibility();
+  const { order, setOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  // Reordering is scoped to a single group (the sidebar keeps its groups), so
+  // on drop we rebuild the full flat order group-by-group and persist it.
+  function handleGroupDragEnd(groupId: string, e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return;
+    const group = NAV_GROUPS.find((g) => g.id === groupId);
+    if (!group) return;
+    const current = sortByNavOrder(group.items, order);
+    const oldIndex = current.findIndex((i) => i.value === e.active.id);
+    const newIndex = current.findIndex((i) => i.value === e.over!.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const movedGroup = arrayMove(current, oldIndex, newIndex);
+    const flat: string[] = [];
+    for (const g of NAV_GROUPS) {
+      const items =
+        g.id === groupId ? movedGroup : sortByNavOrder(g.items, order);
+      flat.push(...items.map((i) => i.value));
+    }
+    setOrder(flat);
+  }
   const { count: tasksPerCategory, setCount: setTasksPerCategory } =
     useTasksPerCategory();
   const { cs: cvCs, en: cvEn, setCs: setCvCs, setEn: setCvEn } = useCvLinks();
@@ -223,39 +273,110 @@ export function SettingsPanel() {
             <p className="text-xs text-foreground-subtle mb-3">
               {t.settings.navigationDesc}
             </p>
-            <ul className="-mx-2 divide-y divide-border">
-              {NAV_ITEMS.map((it) => {
-                const locked = it.value === "overview";
-                const visible = !isHidden(it.value);
-                return (
-                  <li
-                    key={it.value}
-                    className="flex items-center justify-between gap-3 px-2 py-2.5"
+
+            {/* Overview — pinned, always visible, not reorderable. */}
+            <div className="flex items-center justify-between gap-3 px-2 py-2.5">
+              <div className="flex min-w-0 items-center gap-2.5 pl-[26px]">
+                <OVERVIEW_ITEM.icon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                <span className="truncate text-sm font-medium">
+                  {t.nav.sections.overview}
+                </span>
+              </div>
+              <SectionLabel className="shrink-0">
+                {t.settings.alwaysVisible}
+              </SectionLabel>
+            </div>
+
+            {NAV_GROUPS.map((g) => {
+              const items = sortByNavOrder(g.items, order);
+              return (
+                <div key={g.id} className="mt-3">
+                  <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+                    {t.nav.groups[g.id]}
+                  </p>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handleGroupDragEnd(g.id, e)}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <it.icon className="h-4 w-4 shrink-0 text-foreground-muted" />
-                      <span className="text-sm font-medium truncate">
-                        {t.nav.sections[it.value]}
-                      </span>
-                    </div>
-                    {locked ? (
-                      <SectionLabel className="shrink-0">
-                        {t.settings.alwaysVisible}
-                      </SectionLabel>
-                    ) : (
-                      <Switch
-                        checked={visible}
-                        onCheckedChange={() => toggle(it.value)}
-                        aria-label={t.nav.sections[it.value]}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                    <SortableContext
+                      items={items.map((i) => i.value)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <ul>
+                        {items.map((it) => (
+                          <SortableNavRow
+                            key={it.value}
+                            item={it}
+                            label={t.nav.sections[it.value]}
+                            dragLabel={t.settings.reorder}
+                            visible={!isHidden(it.value)}
+                            onToggle={() => toggle(it.value)}
+                          />
+                        ))}
+                      </ul>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
     </div>
+  );
+}
+
+/** A draggable, toggleable nav-section row in Settings. The grip handle carries
+ * the drag listeners so the Switch stays independently clickable. */
+function SortableNavRow({
+  item,
+  label,
+  dragLabel,
+  visible,
+  onToggle,
+}: {
+  item: NavRowItem;
+  label: string;
+  dragLabel: string;
+  visible: boolean;
+  onToggle: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.value });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-md bg-surface px-2 py-2.5",
+        isDragging && "shadow-soft ring-1 ring-border",
+      )}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <button
+          type="button"
+          aria-label={dragLabel}
+          className="shrink-0 cursor-grab touch-none rounded text-foreground-subtle transition-colors hover:text-foreground focus-ring active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <item.icon className="h-4 w-4 shrink-0 text-foreground-muted" />
+        <span className="truncate text-sm font-medium">{label}</span>
+      </div>
+      <Switch checked={visible} onCheckedChange={onToggle} aria-label={label} />
+    </li>
   );
 }
