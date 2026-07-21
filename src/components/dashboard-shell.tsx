@@ -73,6 +73,7 @@ import {
 import { qk } from "@/lib/queries/keys";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+import { isActionableNotification } from "@/lib/notifications";
 import type {
   Account, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
   ImportantDate, InboxItem, Invoice, InvoiceItem, InvoiceSettings,
@@ -194,7 +195,7 @@ export function DashboardShell(props: Props) {
     <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
     <MobileFab onClick={() => { setTab("home"); requestAnimationFrame(focusQuickAdd); }} />
     <div className="min-h-screen bg-background">
-      <Sidebar tab={tab} setTab={setTab} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => !item.read_at && !item.dismissed_at).length} />
+      <Sidebar tab={tab} setTab={setTab} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => isActionableNotification(item)).length} />
       <main className={cn("transition-[padding] duration-200 ease-out", navCollapsed ? "md:pl-16" : "md:pl-60")}><div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
         <MobileNav tab={tab} setTab={setTab} />
         <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>

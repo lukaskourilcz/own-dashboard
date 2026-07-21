@@ -336,7 +336,7 @@ export function useTasksPerCategory(): {
 
 // ---------------------------------------------------------------------------
 // CV links — the user's Google-Docs CV URLs (Czech + English), surfaced as
-// buttons on the Jobs page and edited in Settings. Device-local strings;
+// buttons on the Career page and edited in Settings. Device-local strings;
 // empty = not set (the button is hidden).
 // ---------------------------------------------------------------------------
 

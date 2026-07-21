@@ -45,7 +45,7 @@ Home shows the daily operating context: calendar, deadlines, opportunity follow-
 
 ### Inbox
 
-Inbox is a triage queue, not a second task list. Manual captures and integration events land as `inbox_items`; notification records are visible in the same action center and through the sidebar unread indicator. Search, source/status/destination filters, snooze, dismiss, restore, source links, and bulk dismiss support deliberate triage. A user chooses the destination and clicks Process; only then is the destination record created or a transaction categorized and the inbox item marked processed. Valid relationship identifiers in an item's payload are carried into routed records and are rechecked by RLS.
+Inbox is a triage queue, not a second task list. Manual captures and integration events land as `inbox_items`; notification records are visible in the same action center and through the sidebar unread indicator. Notifications support safe source links, mark-read, snooze, and dismiss actions. Inbox search, source/status/destination filters, snooze, dismiss, restore, source links, and bulk dismiss support deliberate triage. A user chooses the destination and clicks Process; only then is the destination record created or a transaction categorized and the inbox item marked processed. Valid relationship identifiers in an item's payload are carried into routed records and are rechecked by RLS.
 
 ### Work
 
@@ -98,9 +98,13 @@ Table-level CSV is available for non-full, non-legacy scopes through `?format=cs
 
 ## AI boundary
 
-AI is contextual rather than a global chat surface. `/api/quick-add` returns a structured proposed action only. Task and inbox writes require user confirmation; calendar proposals open the existing prefilled form for review. AI link enrichment proposes metadata but the existing form remains the save boundary.
+AI is contextual rather than a global chat surface. `/api/quick-add` returns a structured proposed action only. Task and inbox writes require user confirmation; calendar proposals open the existing prefilled form for review. It can also route an owned-record question to `/api/ai/search`, which requires sensitive-context opt-in and explicit consent, reads a bounded professional snapshot, and returns a read-only answer with validated source identifiers. AI link enrichment proposes metadata but the existing form remains the save boundary.
 
-`/api/ai/project-copilot` loads only an authenticated, owned project's bounded related context and returns validated facts, risks, suggestions, and deterministic source identifiers. Notes and invoice metadata are excluded unless sensitive-context opt-in is enabled. `/api/ai/weekly-brief` requires that opt-in, reads a bounded multi-domain operating snapshot, and fills the editable weekly-review draft only after explicit consent. Saving or completing the review remains a separate user action. Both endpoints are rate-limited, read-only, and reject invalid structured model output.
+`/api/ai/project-copilot` loads only an authenticated, owned project's bounded related context and returns validated facts, risks, suggestions, and deterministic source identifiers. Notes and invoice metadata are excluded unless sensitive-context opt-in is enabled. `/api/ai/weekly-brief` requires that opt-in, reads a bounded multi-domain operating snapshot, and fills the editable weekly-review draft only after explicit consent. Saving or completing the review remains a separate user action.
+
+`/api/ai/career-copilot` grounds one owned listing against bounded projects, notes, repository notes, applications, and events; it returns evidence, gaps, suggestions, a cover-letter draft, and interview questions without changing the application. `/api/ai/knowledge-review` returns maintenance proposals from bounded notes, prompts, AI links, projects, repository notes, and reference rows. Search, career, and knowledge workflows require an explicit browser confirmation, are rate-limited and read-only, validate every cited identifier against the server-loaded source set, and reject invalid structured model output.
+
+Invoice PDF extraction stays local to the browser and deterministic. The selected file is parsed with `pdf.js`, is not sent to an AI provider, and is not stored. A model fallback is intentionally omitted until secure temporary upload and provider-retention behavior can be guaranteed.
 
 AI enablement and sensitive-context opt-in live in `user_preferences`. Sensitive opt-in defaults off. Intent, enrichment, and synthesis model ids plus the compatible provider base URL are centralized in `src/lib/ai-config.ts`. See [AI and privacy](./docs/ai-and-privacy.md).
 
@@ -114,6 +118,6 @@ Czech and English dictionaries share typed interfaces. New professional copy is 
 
 ## Testing
 
-- Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, and strict AI-output validation.
-- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login, and axe accessibility scans.
+- Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, and strict AI-output and citation validation.
+- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login, contextual AI proposal flows, and axe accessibility scans.
 - Production build is a required verification step because the shell spans server/client boundaries and lazy chart/editor bundles.

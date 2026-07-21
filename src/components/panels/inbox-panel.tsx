@@ -12,6 +12,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
+import { isActionableNotification, safeNotificationUrl } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import type { AppNotification, ClientOpportunity, ImportantDate, InboxItem, InboxStatus, JobApplication, Note, Organization, Project, Todo, Transaction, Updater } from "@/lib/types";
@@ -127,15 +128,14 @@ export function InboxPanel({ items, setItems, notifications, setNotifications }:
     onError: () => toast.err(p.couldNotSave),
   });
 
-  const readMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const read_at = new Date().toISOString();
-      const { error } = await supabase.from("notifications").update({ read_at }).eq("id", id);
+  const notificationMutation = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Pick<Partial<AppNotification>, "read_at" | "dismissed_at" | "snoozed_until"> }) => {
+      const { data, error } = await supabase.from("notifications").update(patch).eq("id", id).select().single();
       if (error) throw error;
-      return { id, read_at };
+      return data as AppNotification;
     },
-    onSuccess: ({ id, read_at }) => {
-      setNotifications((old) => old.map((item) => item.id === id ? { ...item, read_at } : item));
+    onSuccess: (notification) => {
+      setNotifications((old) => old.map((item) => item.id === notification.id ? notification : item));
       void qc.invalidateQueries({ queryKey: qk.notifications });
     },
     onError: () => toast.err(p.couldNotSave),
@@ -154,9 +154,10 @@ export function InboxPanel({ items, setItems, notifications, setNotifications }:
     (destinationFilter === "all" || item.suggested_destination === destinationFilter) &&
     (!query || `${item.title} ${item.summary ?? ""}`.toLocaleLowerCase().includes(query)),
   );
+  const actionableNotifications = notifications.filter((item) => isActionableNotification(item));
   return <div>
     <PageHeader title={p.inboxTitle} description={p.inboxDescription} />
-    <Card className="mb-4"><CardContent className="p-4"><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">{p.notificationsTitle}</p>{notifications.filter((item) => !item.read_at && !item.dismissed_at).length === 0 ? <p className="text-sm text-foreground-muted">{p.notificationsEmpty}</p> : <div className="space-y-2">{notifications.filter((item) => !item.read_at && !item.dismissed_at).slice(0, 5).map((item) => <div key={item.id} className="flex items-start gap-3 rounded-lg border border-border p-3"><div className="min-w-0 flex-1"><p className="text-sm font-medium">{item.title}</p>{item.body && <p className="mt-1 text-xs text-foreground-muted">{item.body}</p>}</div><Button variant="ghost" size="sm" onClick={() => readMutation.mutate(item.id)}>{p.markRead}</Button></div>)}</div>}</CardContent></Card>
+    <Card className="mb-4"><CardContent className="p-4"><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">{p.notificationsTitle}</p>{actionableNotifications.length === 0 ? <p className="text-sm text-foreground-muted">{p.notificationsEmpty}</p> : <div className="space-y-2">{actionableNotifications.slice(0, 5).map((item) => { const actionUrl = safeNotificationUrl(item.action_url); return <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-start"><div className="min-w-0 flex-1"><p className="text-sm font-medium">{item.title}</p>{item.body && <p className="mt-1 text-xs text-foreground-muted">{item.body}</p>}</div><div className="flex flex-wrap gap-1">{actionUrl && <Button asChild variant="ghost" size="sm"><a href={actionUrl}><ExternalLink />{p.openSource}</a></Button>}<Button variant="ghost" size="sm" onClick={() => notificationMutation.mutate({ id: item.id, patch: { read_at: new Date().toISOString() } })}>{p.markRead}</Button><Button variant="ghost" size="sm" onClick={() => { const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); notificationMutation.mutate({ id: item.id, patch: { snoozed_until: tomorrow.toISOString() } }); }}>{p.snooze}</Button><Button variant="ghost" size="sm" onClick={() => notificationMutation.mutate({ id: item.id, patch: { dismissed_at: new Date().toISOString() } })}>{p.dismiss}</Button></div></div>; })}</div>}</CardContent></Card>
     <form className="mb-4 flex gap-2" onSubmit={(event) => { event.preventDefault(); if (capture.trim()) captureMutation.mutate(); }}><Input value={capture} onChange={(event) => setCapture(event.target.value)} placeholder={p.capturePlaceholder} /><Button type="submit" disabled={!capture.trim() || captureMutation.isPending}><Plus />{p.capture}</Button></form>
     <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><Input aria-label={p.searchInbox} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchInbox} /><SimpleSelect aria-label={p.status} value={filter} onValueChange={(value) => setFilter(value as InboxStatus)} options={(["pending", "processed", "snoozed", "dismissed"] as InboxStatus[]).map((status) => ({ value: status, label: p[status] }))} /><SimpleSelect aria-label={p.allSources} value={sourceFilter} onValueChange={setSourceFilter} options={[{ value: "all", label: p.allSources }, ...sources.map((source) => ({ value: source, label: source }))]} /><SimpleSelect aria-label={p.allDestinations} value={destinationFilter} onValueChange={setDestinationFilter} options={[{ value: "all", label: p.allDestinations }, ...destinationOptions]} /></div>
     {visible.length > 1 && filter !== "dismissed" && <Button className="mb-4" size="sm" variant="outline" onClick={() => bulkDismissMutation.mutate(visible.map((item) => item.id))} disabled={bulkDismissMutation.isPending}>{p.bulkDismiss}</Button>}

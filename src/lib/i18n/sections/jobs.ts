@@ -125,6 +125,23 @@ type JobsStrings = {
   noTemplatesYet: string;
   nameRequired: string;
   bodyRequired: string;
+  copilotAction: string;
+  copilotTitle: string;
+  copilotDescription: string;
+  copilotConsent: string;
+  copilotNeedsSensitive: string;
+  copilotGenerate: string;
+  copilotGenerating: string;
+  copilotFailed: string;
+  copilotEvidence: string;
+  copilotGaps: string;
+  copilotSuggestions: string;
+  copilotDraft: string;
+  copilotInterview: string;
+  copilotCopy: string;
+  copilotCopied: string;
+  copilotCopyFailed: string;
+  copilotProposalNotice: string;
 };
 
 export const jobs: { en: JobsStrings; cs: JobsStrings } = {
@@ -257,6 +274,23 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noTemplatesYet: "No saved templates yet — the starter templates below are always available.",
     nameRequired: "Name is required.",
     bodyRequired: "Template text is required.",
+    copilotAction: "Career copilot",
+    copilotTitle: "Career copilot",
+    copilotDescription: "Compare this listing with your owned project and career evidence. Nothing is saved automatically.",
+    copilotConsent: "Send this listing and the minimum relevant project, note, repository-note, and application evidence to AI for review?",
+    copilotNeedsSensitive: "Enable sensitive AI context in Settings to use Career copilot.",
+    copilotGenerate: "Generate evidence review",
+    copilotGenerating: "Reviewing evidence…",
+    copilotFailed: "The Career review could not be generated.",
+    copilotEvidence: "Grounded evidence",
+    copilotGaps: "Missing evidence",
+    copilotSuggestions: "Suggestions",
+    copilotDraft: "Cover-letter draft",
+    copilotInterview: "Interview preparation",
+    copilotCopy: "Copy draft",
+    copilotCopied: "Draft copied.",
+    copilotCopyFailed: "Could not copy the draft.",
+    copilotProposalNotice: "AI output is a proposal. Verify every claim before using or saving it.",
   },
   cs: {
     title: "Kariéra",
@@ -387,6 +421,23 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       "Zatím žádné uložené šablony — výchozí šablony níže jsou k dispozici vždy.",
     nameRequired: "Název je povinný.",
     bodyRequired: "Text šablony je povinný.",
+    copilotAction: "Kariérní copilot",
+    copilotTitle: "Kariérní copilot",
+    copilotDescription: "Porovná nabídku s vašimi vlastními podklady z projektů a kariéry. Nic se neukládá automaticky.",
+    copilotConsent: "Odeslat tuto nabídku a minimální relevantní podklady z projektů, poznámek, repozitářů a přihlášek AI k posouzení?",
+    copilotNeedsSensitive: "Pro Kariérního copilota povolte v Nastavení citlivý AI kontext.",
+    copilotGenerate: "Vytvořit posouzení podkladů",
+    copilotGenerating: "Posuzuji podklady…",
+    copilotFailed: "Kariérní posouzení se nepodařilo vytvořit.",
+    copilotEvidence: "Doložené podklady",
+    copilotGaps: "Chybějící podklady",
+    copilotSuggestions: "Návrhy",
+    copilotDraft: "Návrh motivačního dopisu",
+    copilotInterview: "Příprava na pohovor",
+    copilotCopy: "Kopírovat návrh",
+    copilotCopied: "Návrh zkopírován.",
+    copilotCopyFailed: "Návrh se nepodařilo zkopírovat.",
+    copilotProposalNotice: "Výstup AI je pouze návrh. Před použitím nebo uložením ověřte každé tvrzení.",
   },
 };
 

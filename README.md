@@ -25,7 +25,7 @@ Pulse, habits/streaks, books/reading, and couples mode were retired. Their rows 
 - Tasks, Google Calendar, goals, and professional dates
 - Block notes, prompts, link catalogue, command snippets, and reference tables
 - Inbox capture, notifications, filtering, snoozing, and deliberate routing into eight professional destinations
-- Contextual AI intent parsing, project briefs, and weekly operating briefs with explicit consent and no autonomous writes
+- Contextual AI intent parsing, owned-record search, project and weekly briefs, career assistance, and knowledge-maintenance proposals with explicit consent and no autonomous writes
 - Own-only Supabase RLS for professional and financial data
 - Full, financial, professional, knowledge, projects, notes, prompts, career, and legacy JSON exports plus table-level CSV
 

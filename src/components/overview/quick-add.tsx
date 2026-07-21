@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, CornerDownLeft } from "lucide-react";
+import { Sparkles, CornerDownLeft, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,7 @@ type Props = {
 type NlAction =
   | { kind: "todo"; title: string; due_date?: string }
   | { kind: "inbox"; title: string; summary?: string }
+  | { kind: "search"; question: string }
   | {
       kind: "calendar_event";
       title: string;
@@ -29,6 +30,12 @@ type NlAction =
       allDay?: boolean;
       description?: string;
     };
+
+type SearchAnswer = {
+  answer: string;
+  evidence: { claim: string; sourceIds: string[] }[];
+  limitations: string[];
+};
 
 export function QuickAdd({
   setTodos,
@@ -42,6 +49,7 @@ export function QuickAdd({
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
+  const [searchAnswer, setSearchAnswer] = useState<SearchAnswer | null>(null);
 
   // Non-optimistic create: we need the server-assigned id before touching the
   // cache, so mirror the reference todos `addMutation`.
@@ -124,17 +132,16 @@ export function QuickAdd({
 
     setBusy(true);
     try {
-      const userId = await currentUserId(supabase);
-      if (!userId) {
-        toast.err(t.quickAdd.signInFirst);
-        return;
-      }
-
       // Explicit prefixes always win — fast path, predictable, works offline.
       if (v.startsWith("!todo ")) {
         const title = v.slice("!todo ".length).trim();
         if (!title) {
           toast.err(t.quickAdd.titleRequired);
+          return;
+        }
+        const userId = await currentUserId(supabase);
+        if (!userId) {
+          toast.err(t.quickAdd.signInFirst);
           return;
         }
         if (await addTodoLocal(userId, title)) setValue("");
@@ -144,6 +151,11 @@ export function QuickAdd({
         const title = v.slice("!inbox ".length).trim();
         if (!title) {
           toast.err(t.quickAdd.titleRequired);
+          return;
+        }
+        const userId = await currentUserId(supabase);
+        if (!userId) {
+          toast.err(t.quickAdd.signInFirst);
           return;
         }
         if (await addInboxLocal(userId, title)) setValue("");
@@ -189,9 +201,38 @@ export function QuickAdd({
 
       const a = parsed.action;
       if (a.kind === "todo") {
+        const userId = await currentUserId(supabase);
+        if (!userId) {
+          toast.err(t.quickAdd.signInFirst);
+          return;
+        }
         if (window.confirm(t.quickAdd.confirmTodo(a.title)) && await addTodoLocal(userId, a.title, a.due_date)) setValue("");
       } else if (a.kind === "inbox") {
+        const userId = await currentUserId(supabase);
+        if (!userId) {
+          toast.err(t.quickAdd.signInFirst);
+          return;
+        }
         if (window.confirm(t.quickAdd.confirmInbox(a.title)) && await addInboxLocal(userId, a.title, a.summary)) setValue("");
+      } else if (a.kind === "search") {
+        if (!window.confirm(t.quickAdd.confirmSearch)) return;
+        try {
+          const response = await fetch("/api/ai/search", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ question: a.question }),
+          });
+          if (response.status === 403) {
+            toast.err(t.quickAdd.searchNeedsSensitive);
+            return;
+          }
+          const result = await response.json().catch(() => null) as { answer?: SearchAnswer } | null;
+          if (!response.ok || !result?.answer) throw new Error("unavailable");
+          setSearchAnswer(result.answer);
+          setValue("");
+        } catch {
+          toast.err(t.quickAdd.searchFailed);
+        }
       } else if (a.kind === "calendar_event") {
         // Hand off to the existing calendar route; surface the prefilled form
         // so the user can confirm before creating the GCal event.
@@ -207,6 +248,7 @@ export function QuickAdd({
   }
 
   return (
+    <div className="space-y-3">
     <form onSubmit={submit} className="relative">
       <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
       <Input
@@ -225,5 +267,12 @@ export function QuickAdd({
         <CornerDownLeft className="h-3 w-3" />
       </div>
     </form>
+    {searchAnswer && <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+      <div className="flex items-start justify-between gap-3"><p className="font-medium">{t.quickAdd.searchAnswer}</p><button type="button" onClick={() => setSearchAnswer(null)} aria-label={t.app.dismiss} className="rounded text-foreground-muted hover:text-foreground focus-ring"><X className="h-4 w-4" /></button></div>
+      <p className="mt-2 whitespace-pre-wrap text-foreground-muted">{searchAnswer.answer}</p>
+      {searchAnswer.evidence.length > 0 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">{t.quickAdd.searchEvidence}</p><ul className="mt-1 space-y-1.5">{searchAnswer.evidence.map((item) => <li key={`${item.claim}-${item.sourceIds.join("-")}`}><p>{item.claim}</p><p className="text-[10px] text-foreground-muted">{item.sourceIds.join(" · ")}</p></li>)}</ul></div>}
+      {searchAnswer.limitations.length > 0 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">{t.quickAdd.searchLimitations}</p><ul className="mt-1 list-disc space-y-1 pl-4 text-foreground-muted">{searchAnswer.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div>}
+    </div>}
+    </div>
   );
 }

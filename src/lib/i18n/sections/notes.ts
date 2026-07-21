@@ -57,6 +57,16 @@ type NotesStrings = {
   /** Slash menu item to insert a link to another note. */
   linkToNote: string;
   linkToNoteSubtext: string;
+  knowledgeReview: string;
+  knowledgeTitle: string;
+  knowledgeDescription: string;
+  knowledgeConsent: string;
+  knowledgeNeedsSensitive: string;
+  knowledgeReviewing: string;
+  knowledgeFailed: string;
+  knowledgeEmpty: string;
+  knowledgeProposalNotice: string;
+  knowledgeKinds: Record<"related_notes" | "duplicate_prompt" | "decision" | "unresolved_question" | "outdated_documentation" | "glossary" | "candidate_task", string>;
 };
 
 export const notes: { en: NotesStrings; cs: NotesStrings } = {
@@ -117,6 +127,16 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     noMatchesShort: "No matches.",
     linkToNote: "Link to note",
     linkToNoteSubtext: "Reference another note",
+    knowledgeReview: "AI maintenance",
+    knowledgeTitle: "Knowledge maintenance",
+    knowledgeDescription: "Evidence-grounded proposals across notes, prompts, links, projects, repository notes, and references.",
+    knowledgeConsent: "Send the minimum bounded knowledge context to AI for a maintenance review? Nothing will be changed automatically.",
+    knowledgeNeedsSensitive: "Enable sensitive AI context in Settings to review private knowledge.",
+    knowledgeReviewing: "Reviewing knowledge…",
+    knowledgeFailed: "The knowledge review could not be generated.",
+    knowledgeEmpty: "No maintenance proposals were found.",
+    knowledgeProposalNotice: "These are proposals only. Review them before creating or changing any record.",
+    knowledgeKinds: { related_notes: "Related notes", duplicate_prompt: "Duplicate prompt", decision: "Decision", unresolved_question: "Open question", outdated_documentation: "Documentation", glossary: "Glossary", candidate_task: "Candidate task" },
   },
   cs: {
     title: "Poznámky",
@@ -175,5 +195,15 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     noMatchesShort: "Žádné výsledky.",
     linkToNote: "Odkaz na poznámku",
     linkToNoteSubtext: "Odkázat na jinou poznámku",
+    knowledgeReview: "AI údržba",
+    knowledgeTitle: "Údržba znalostí",
+    knowledgeDescription: "Návrhy podložené zdroji napříč poznámkami, prompty, odkazy, projekty, poznámkami k repozitářům a referencemi.",
+    knowledgeConsent: "Odeslat AI minimální omezený kontext znalostí ke kontrole údržby? Nic se nezmění automaticky.",
+    knowledgeNeedsSensitive: "Pro kontrolu soukromých znalostí povolte v Nastavení citlivý AI kontext.",
+    knowledgeReviewing: "Kontroluji znalosti…",
+    knowledgeFailed: "Kontrolu znalostí se nepodařilo vytvořit.",
+    knowledgeEmpty: "Nebyly nalezeny žádné návrhy údržby.",
+    knowledgeProposalNotice: "Jde pouze o návrhy. Před vytvořením nebo změnou záznamu je zkontrolujte.",
+    knowledgeKinds: { related_notes: "Související poznámky", duplicate_prompt: "Duplicitní prompt", decision: "Rozhodnutí", unresolved_question: "Otevřená otázka", outdated_documentation: "Dokumentace", glossary: "Slovník", candidate_task: "Návrh úkolu" },
   },
 };
