@@ -63,6 +63,30 @@ describe("parseNeeded", () => {
     expect(items[0].importance).toBe(5);
     expect(items[0].text).toBe("Ship the fix");
   });
+
+  it("reads an [imp:N] marker off an indented continuation line", () => {
+    const items = parseNeeded(
+      "- [ ] **Do the thing** — a long description that\n" +
+        "  wraps onto a second line. `[imp:4]`\n" +
+        "- [ ] Next task\n",
+      repo,
+      null,
+    );
+    expect(items[0].importance).toBe(4);
+    // needed_raw stays the item's own line so completion-removal still works.
+    expect(items[0].raw).toBe("- [ ] **Do the thing** — a long description that");
+    expect(items[1].importance).toBeNull();
+  });
+
+  it("does not pull a marker across a blank line or the next item", () => {
+    const items = parseNeeded(
+      "- [ ] First\n\n  stray `[imp:3]`\n- [ ] Second `[imp:2]`\n",
+      repo,
+      null,
+    );
+    expect(items[0].importance).toBeNull();
+    expect(items[1].importance).toBe(2);
+  });
 });
 
 describe("removeNeededLine", () => {
