@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   Bot,
   Coins,
   Download,
@@ -100,13 +101,17 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
   const { order, setOrder, reset: resetOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
   const [aiPrefs, setAiPrefs] = useState({ enabled: true, sensitive: false });
+  const [renewalNotifications, setRenewalNotifications] = useState(true);
   const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null }>>(null);
   useEffect(() => {
     if (!syncPreferences) return;
     void fetch("/api/user/preferences", { cache: "no-store" })
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
-        if (data) setAiPrefs({ enabled: data.ai_enabled ?? true, sensitive: data.ai_sensitive_opt_in ?? false });
+        if (data) {
+          setAiPrefs({ enabled: data.ai_enabled ?? true, sensitive: data.ai_sensitive_opt_in ?? false });
+          setRenewalNotifications(data.notifications_renewals ?? true);
+        }
       });
   }, [syncPreferences]);
   useEffect(() => {
@@ -120,6 +125,12 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
     setAiPrefs(next);
     if (syncPreferences) {
       void fetch("/api/user/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ ai_enabled: next.enabled, ai_sensitive_opt_in: next.sensitive }) });
+    }
+  };
+  const patchRenewalNotifications = (notifications_renewals: boolean) => {
+    setRenewalNotifications(notifications_renewals);
+    if (syncPreferences) {
+      void fetch("/api/user/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ notifications_renewals }) });
     }
   };
 
@@ -345,7 +356,12 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
 
         <Card>
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Bot className="h-3 w-3" />{t.settings.ai}</CardTitle></CardHeader>
-          <CardContent className="space-y-4"><p className="text-xs text-foreground-subtle">{t.settings.aiDesc}</p><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium">{t.settings.aiEnabled}</span><Switch aria-label={t.settings.aiEnabled} checked={aiPrefs.enabled} onCheckedChange={(enabled) => patchAiPrefs({ enabled })} /></div><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{t.settings.aiSensitive}</p><p className="mt-1 text-xs text-foreground-subtle">{t.settings.aiSensitiveDesc}</p></div><Switch aria-label={t.settings.aiSensitive} checked={aiPrefs.sensitive} disabled={!aiPrefs.enabled} onCheckedChange={(sensitive) => patchAiPrefs({ sensitive })} /></div></CardContent>
+          <CardContent className="space-y-4"><p className="text-xs text-foreground-subtle">{t.settings.aiDesc}</p><div className="space-y-1 text-xs text-foreground-subtle"><p>{t.settings.aiModels}</p><p>{t.settings.aiDataCategories}</p><p>{t.settings.aiWrites}</p></div><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium">{t.settings.aiEnabled}</span><Switch aria-label={t.settings.aiEnabled} checked={aiPrefs.enabled} onCheckedChange={(enabled) => patchAiPrefs({ enabled })} /></div><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{t.settings.aiSensitive}</p><p className="mt-1 text-xs text-foreground-subtle">{t.settings.aiSensitiveDesc}</p></div><Switch aria-label={t.settings.aiSensitive} checked={aiPrefs.sensitive} disabled={!aiPrefs.enabled} onCheckedChange={(sensitive) => patchAiPrefs({ sensitive })} /></div></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Bell className="h-3 w-3" />{t.settings.notifications}</CardTitle></CardHeader>
+          <CardContent className="space-y-4"><p className="text-xs text-foreground-subtle">{t.settings.notificationsDesc}</p><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{t.settings.renewalNotifications}</p><p className="mt-1 text-xs text-foreground-subtle">{t.settings.renewalNotificationsDesc}</p></div><Switch aria-label={t.settings.renewalNotifications} checked={renewalNotifications} onCheckedChange={patchRenewalNotifications} /></div></CardContent>
         </Card>
 
         <Card>

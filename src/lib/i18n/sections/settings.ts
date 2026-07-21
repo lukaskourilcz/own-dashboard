@@ -29,6 +29,13 @@ type SettingsStrings = {
   aiEnabled: string;
   aiSensitive: string;
   aiSensitiveDesc: string;
+  aiModels: string;
+  aiDataCategories: string;
+  aiWrites: string;
+  notifications: string;
+  notificationsDesc: string;
+  renewalNotifications: string;
+  renewalNotificationsDesc: string;
   dataExport: string;
   dataExportDesc: string;
   exportFull: string;
@@ -77,7 +84,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     tasksAll: "All",
     cv: "CV links",
     cvDesc:
-      "Google Docs links to your CVs — shown as buttons on the Jobs page. Paste the share URL; editing the doc keeps the same link.",
+      "Google Docs links to your CVs — shown as buttons on the Career page. Paste the share URL; editing the doc keeps the same link.",
     cvCzech: "🇨🇿 Czech CV",
     cvEnglish: "🇬🇧 English CV",
     cvPlaceholder: "https://docs.google.com/document/d/…",
@@ -87,6 +94,13 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     aiEnabled: "Enable contextual AI",
     aiSensitive: "Allow sensitive context",
     aiSensitiveDesc: "Off by default. Only enable when you intentionally want financial or private text included.",
+    aiModels: "Fast models classify short captures; synthesis models create bounded, source-backed briefs and proposals. Model identifiers are configured on the server.",
+    aiDataCategories: "Sensitive workflows may send selected project, task, cost, invoice metadata, career, note, repository-document, client, subscription, and date records after confirmation.",
+    aiWrites: "AI output is a preview. Database writes always require a separate confirmation; destructive and external actions are unsupported.",
+    notifications: "Notifications",
+    notificationsDesc: "Choose only the notification types currently supported by the app.",
+    renewalNotifications: "Subscription renewal warnings",
+    renewalNotificationsDesc: "Allow scheduled email warnings for active subscriptions renewing today or in three days.",
     dataExport: "Data & export",
     dataExportDesc: "Download portable JSON. Legacy personal data remains available after its source tables are removed.",
     exportFull: "Full export",
@@ -142,6 +156,13 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     aiEnabled: "Povolit kontextovou AI",
     aiSensitive: "Povolit citlivý kontext",
     aiSensitiveDesc: "Ve výchozím stavu vypnuto. Zapněte jen tehdy, když chcete vědomě zahrnout finanční nebo soukromý text.",
+    aiModels: "Rychlé modely třídí krátké záznamy; syntetizační modely vytvářejí omezené, zdroji podložené přehledy a návrhy. Identifikátory modelů se nastavují na serveru.",
+    aiDataCategories: "Citlivé postupy mohou po potvrzení odeslat vybrané záznamy projektů, úkolů, nákladů, metadat faktur, kariéry, poznámek, dokumentů repozitáře, klientů, předplatných a termínů.",
+    aiWrites: "Výstup AI je náhled. Zápis do databáze vždy vyžaduje samostatné potvrzení; destruktivní a externí akce nejsou podporovány.",
+    notifications: "Oznámení",
+    notificationsDesc: "Vyberte pouze typy oznámení, které aplikace aktuálně podporuje.",
+    renewalNotifications: "Upozornění na obnovení předplatného",
+    renewalNotificationsDesc: "Povolte plánované e-mailové upozornění pro aktivní předplatná obnovovaná dnes nebo za tři dny.",
     dataExport: "Data a export",
     dataExportDesc: "Stáhněte přenositelný JSON. Starší osobní data zůstávají dostupná i po odstranění zdrojových tabulek.",
     exportFull: "Úplný export",

@@ -37,11 +37,15 @@ export async function stubBackend(page: Page): Promise<void> {
     body: JSON.stringify({ repos: [] }),
   }));
   await page.route(/example\.supabase\.co/, (route) => {
-    const isAuth = route.request().url().includes("/auth/");
+    const url = route.request().url();
+    const isCurrentUser = url.includes("/auth/v1/user");
+    const isAuth = url.includes("/auth/");
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: isAuth ? "{}" : "[]",
+      body: isCurrentUser
+        ? JSON.stringify({ id: "u1", aud: "authenticated", role: "authenticated", email: "jan.novak@example.com", user_metadata: {}, created_at: "2025-01-01T00:00:00Z" })
+        : isAuth ? "{}" : "[]",
     });
   });
 }

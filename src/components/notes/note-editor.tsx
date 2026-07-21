@@ -109,10 +109,22 @@ export function NoteEditor({
 
   // BlockNote does not expose a contenteditable aria-label prop. Name the
   // mounted TipTap input directly so assistive technology announces the
-  // editor as a real input field rather than an anonymous region.
+  // editor as a real input field rather than an anonymous region. BlockNote
+  // can replace the editable node after our first effect, so keep the label
+  // attached across its internal mount cycle.
   useEffect(() => {
-    const editable = hostRef.current?.querySelector<HTMLElement>(".tiptap");
-    editable?.setAttribute("aria-label", t.notes.editorLabel);
+    const host = hostRef.current;
+    if (!host) return;
+    const applyLabel = () => {
+      const editable = host.querySelector<HTMLElement>(".tiptap");
+      if (editable?.getAttribute("aria-label") !== t.notes.editorLabel) {
+        editable?.setAttribute("aria-label", t.notes.editorLabel);
+      }
+    };
+    applyLabel();
+    const observer = new MutationObserver(applyLabel);
+    observer.observe(host, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [editor, t.notes.editorLabel]);
 
   useImperativeHandle(
