@@ -29,6 +29,17 @@ type CostsStrings = {
   done: string;
   noMatch: string;
   noMatchDesc: string;
+  // Cost overview (aggregate spend pies)
+  overviewTitle: string;
+  overviewMonthly: string;
+  overviewYearly: string;
+  overviewTotal: string;
+  overviewProjects: string;
+  overviewSubscriptions: string;
+  overviewUncategorized: string;
+  overviewEmpty: string;
+  overviewPerMo: string;
+  overviewPerYr: string;
 };
 
 export const costs: { en: CostsStrings; cs: CostsStrings } = {
@@ -65,6 +76,16 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     done: "Done",
     noMatch: "No repositories match your filter",
     noMatchDesc: "Adjust or clear the filter to see cost cards.",
+    overviewTitle: "Cost overview",
+    overviewMonthly: "Monthly",
+    overviewYearly: "Yearly",
+    overviewTotal: "All costs",
+    overviewProjects: "Projects",
+    overviewSubscriptions: "Subscriptions",
+    overviewUncategorized: "Other",
+    overviewEmpty: "Add project costs or subscriptions to see the breakdown.",
+    overviewPerMo: "/mo",
+    overviewPerYr: "/yr",
   },
   cs: {
     title: "Náklady a škálování aplikací",
@@ -98,5 +119,15 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     done: "Hotovo",
     noMatch: "Filtru neodpovídá žádný repozitář",
     noMatchDesc: "Uprav nebo zruš filtr, aby se karty zobrazily.",
+    overviewTitle: "Přehled nákladů",
+    overviewMonthly: "Měsíčně",
+    overviewYearly: "Ročně",
+    overviewTotal: "Všechny náklady",
+    overviewProjects: "Projekty",
+    overviewSubscriptions: "Předplatná",
+    overviewUncategorized: "Ostatní",
+    overviewEmpty: "Přidej náklady projektů nebo předplatná a uvidíš rozpad.",
+    overviewPerMo: "/měs",
+    overviewPerYr: "/rok",
   },
 };

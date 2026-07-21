@@ -696,6 +696,11 @@ export function DashboardShell({
                     <CostsPanel
                       initialVisibleIds={repoVisibleIds}
                       onOpenRepos={() => setTab("github")}
+                      projects={projects}
+                      projectCosts={projectCosts}
+                      crons={crons}
+                      subscriptions={subscriptions}
+                      displayCurrency={displayCurrency}
                     />
                   )}
 
