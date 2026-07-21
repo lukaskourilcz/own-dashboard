@@ -15,10 +15,10 @@ export type WidgetId =
   | "quick-add"
   | "kpi"
   | "todos"
-  | "streaks"
+  | "work-attention"
   | "subscriptions"
   | "calendar"
-  | "plans";
+  | "goals";
 
 /** Every widget the overview knows how to render, in canonical order. */
 export const WIDGET_IDS: readonly WidgetId[] = [
@@ -26,10 +26,10 @@ export const WIDGET_IDS: readonly WidgetId[] = [
   "quick-add",
   "kpi",
   "todos",
-  "streaks",
+  "work-attention",
   "subscriptions",
   "calendar",
-  "plans",
+  "goals",
 ];
 
 /**
@@ -42,10 +42,10 @@ export const DEFAULT_LAYOUT: readonly WidgetId[] = [
   "todos",
   "kpi",
   "quick-add",
-  "streaks",
+  "work-attention",
   "subscriptions",
   "calendar",
-  "plans",
+  "goals",
 ];
 
 const KNOWN = new Set<WidgetId>(WIDGET_IDS);

@@ -274,7 +274,11 @@ function CategoryCard({
       </div>
 
       {/* Progress: how much of this category is already done. */}
-      <Progress value={Math.round(doneRatio * 100)} className="mt-2.5" />
+      <Progress
+        value={Math.round(doneRatio * 100)}
+        aria-label={`${group.name}: ${Math.round(doneRatio * 100)}%`}
+        className="mt-2.5"
+      />
 
       {open && (
         <>
@@ -339,4 +343,3 @@ function DueChip({ t, due }: { t: Dict; due: string }) {
     </Tooltip>
   );
 }
-

@@ -90,7 +90,7 @@ type BankStrings = {
 
 export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
   en: {
-    title: "Finances",
+    title: "Money",
     description: "Accounts, transactions, and trends.",
     netWorth: "Net worth",
     acrossAccounts: (n) => `across ${n} account${n === 1 ? "" : "s"}`,
@@ -187,7 +187,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     },
   },
   cs: {
-    title: "Finance",
+    title: "Peníze",
     description: "Účty, transakce a trendy.",
     netWorth: "Čisté jmění",
     acrossAccounts: (n) => (n === 1 ? "na 1 účtu" : `na ${n} účtech`),

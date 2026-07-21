@@ -15,6 +15,5 @@ export function useFeatureFlag(key: string, defaultValue = true): boolean {
 
 /** Flag keys used across the app — keep names in one place. */
 export const FLAGS = {
-  tugedr: "tugedr",
   costsFilter: "costs-filter",
 } as const;

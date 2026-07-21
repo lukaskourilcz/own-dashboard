@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import { differenceInMinutes, format } from "date-fns";
 import {
+  BriefcaseBusiness,
   CalendarDays,
   ExternalLink,
-  Flame,
   ListTodo,
   Moon,
   Sun,
@@ -13,15 +13,11 @@ import {
 } from "lucide-react";
 import { SectionLabel } from "@/components/ui/page-header";
 import { MeshGradient } from "@/components/ui/mesh-gradient";
-import {
-  streaksUncheckedToday,
-  uncheckedTodayWithCounts,
-} from "@/lib/streaks";
 import { daysUntilDate, todayKey } from "@/lib/date-keys";
 import { useNow } from "@/lib/use-now";
 import { nextUpcoming } from "@/lib/important-dates";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
-import type { ImportantDate, Streak, StreakLog, Todo } from "@/lib/types";
+import type { ClientOpportunity, ImportantDate, Todo } from "@/lib/types";
 import {
   eventDateKey,
   eventEnd,
@@ -38,8 +34,7 @@ type Props = {
   userEmail: string;
   calendar: EventsResult;
   todos: Todo[];
-  streaks: Streak[];
-  streakLogs: StreakLog[];
+  opportunities: ClientOpportunity[];
   importantDates: ImportantDate[];
 };
 
@@ -63,8 +58,7 @@ export function TodayHero({
   userEmail,
   calendar,
   todos,
-  streaks,
-  streakLogs,
+  opportunities,
   importantDates,
 }: Props) {
   const t = useDict();
@@ -115,17 +109,9 @@ export function TodayHero({
       .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
   }, [todos, now]);
 
-  const atRisk = useMemo(
-    () => uncheckedTodayWithCounts(streaks, streakLogs).filter((x) => x.count > 0),
-    [streaks, streakLogs],
-  );
-
-  const otherUnchecked = useMemo(() => {
-    const atRiskIds = new Set(atRisk.map((x) => x.streak.id));
-    return streaksUncheckedToday(streaks, streakLogs).filter(
-      (s) => !atRiskIds.has(s.id),
-    );
-  }, [streaks, streakLogs, atRisk]);
+  const followUps = useMemo(() => opportunities
+    .filter((item) => !["won", "lost", "expired", "archived"].includes(item.status) && item.next_follow_up_at)
+    .sort((a, b) => (a.next_follow_up_at ?? "").localeCompare(b.next_follow_up_at ?? "")), [opportunities]);
 
   const upcoming = useMemo(
     () => (now ? nextUpcoming(importantDates, now) : null),
@@ -313,46 +299,20 @@ export function TodayHero({
         </Column>
 
         <Column
-          icon={Flame}
-          label={t.overview.habitsLeft}
-          empty={
-            streaks.length === 0
-              ? t.overview.noHabitsYet
-              : t.overview.allDoneToday
-          }
-          isEmpty={
-            streaks.length === 0 ||
-            (atRisk.length === 0 && otherUnchecked.length === 0)
-          }
+          icon={BriefcaseBusiness}
+          label={t.overview.followUps}
+          empty={t.overview.noFollowUps}
+          isEmpty={followUps.length === 0}
         >
           <ul className="space-y-1.5">
-            {atRisk.slice(0, 4).map(({ streak: s, count }) => (
-              <li key={s.id} className="flex items-center gap-2 text-sm">
-                <span
-                  className="h-1.5 w-1.5 rounded-full shrink-0"
-                  style={{ background: s.color }}
-                />
-                <span className="flex-1 truncate text-foreground">
-                  {s.name}
-                </span>
-                <span className="text-[11px] text-warning font-medium tabular shrink-0">
-                  {t.overview.atRisk(count)}
+            {followUps.slice(0, 4).map((item) => (
+              <li key={item.id} className="flex items-center gap-2 text-sm">
+                <span className="flex-1 truncate text-foreground">{item.title}</span>
+                <span className="text-[11px] text-foreground-subtle tabular shrink-0">
+                  {item.next_follow_up_at?.slice(0, 10)}
                 </span>
               </li>
             ))}
-            {otherUnchecked
-              .slice(0, Math.max(0, 4 - atRisk.length))
-              .map((s) => (
-                <li key={s.id} className="flex items-center gap-2 text-sm">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full shrink-0"
-                    style={{ background: s.color }}
-                  />
-                  <span className="flex-1 truncate text-foreground-muted">
-                    {s.name}
-                  </span>
-                </li>
-              ))}
           </ul>
         </Column>
       </div>

@@ -26,7 +26,7 @@ type AppStrings = {
 export const app: { en: AppStrings; cs: AppStrings } = {
   en: {
     quickAdd: "Quick add",
-    installTitle: "Install Dashboard",
+    installTitle: `Install ${brandConfig.name}`,
     installBody: "Add to your home screen for one-tap access.",
     install: "Install",
     notNow: "Not now",
@@ -49,7 +49,7 @@ export const app: { en: AppStrings; cs: AppStrings } = {
   },
   cs: {
     quickAdd: "Rychlé přidání",
-    installTitle: "Nainstalovat Dashboard",
+    installTitle: `Nainstalovat ${brandConfig.name}`,
     installBody: "Přidejte na plochu pro přístup jedním klepnutím.",
     install: "Nainstalovat",
     notNow: "Teď ne",
@@ -71,3 +71,4 @@ export const app: { en: AppStrings; cs: AppStrings } = {
     notFoundLogin: "Přihlásit se",
   },
 };
+import { brandConfig } from "@/lib/brand";

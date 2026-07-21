@@ -88,6 +88,13 @@ const NoteEditor = dynamic(
   },
 );
 
+function noteDate(note: Pick<Note, "updated_at" | "created_at">): Date {
+  const updated = new Date(note.updated_at);
+  if (!Number.isNaN(updated.getTime())) return updated;
+  const created = new Date(note.created_at);
+  return Number.isNaN(created.getTime()) ? new Date(0) : created;
+}
+
 type Props = {
   notes: Note[];
   setNotes: Updater<Note[]>;
@@ -663,12 +670,12 @@ export function NotesPanel({ notes, setNotes }: Props) {
                   <p className="text-xs font-medium truncate">
                     {selected.title || t.notes.untitled}
                   </p>
-                  <p className="text-[10px] text-foreground-subtle tabular">
+                  <p className="text-[10px] text-foreground-muted tabular">
                     {savingId === selected.id
                       ? t.notes.saving
                       : t.notes.savedAt(
                           format(
-                            new Date(selected.updated_at),
+                            noteDate(selected),
                             t.notes.savedTimeFormat,
                             { locale },
                           ),
@@ -882,8 +889,8 @@ function NoteRow({
               })}
             </div>
           )}
-          <p className="text-[10px] text-foreground-subtle tabular mt-0.5">
-            {formatDistanceToNow(new Date(note.updated_at), {
+          <p className="text-[10px] text-foreground-muted tabular mt-0.5">
+            {formatDistanceToNow(noteDate(note), {
               addSuffix: true,
               locale,
             })}
@@ -971,8 +978,8 @@ function SortableNoteRow({
               })}
             </div>
           )}
-          <p className="text-[10px] text-foreground-subtle tabular mt-0.5">
-            {formatDistanceToNow(new Date(note.updated_at), {
+          <p className="text-[10px] text-foreground-muted tabular mt-0.5">
+            {formatDistanceToNow(noteDate(note), {
               addSuffix: true,
               locale,
             })}

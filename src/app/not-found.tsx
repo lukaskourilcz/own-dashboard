@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Compass, Home, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { brandConfig } from "@/lib/brand";
 import { useDict } from "@/lib/i18n";
 
 /**
@@ -21,8 +22,10 @@ export default function NotFound() {
         <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-foreground-muted">
           <Compass className="h-5 w-5" />
         </div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-foreground-subtle">
-          404
+        <p className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-foreground-subtle">
+          <span>{brandConfig.name}</span>
+          <span aria-hidden>·</span>
+          <span>404</span>
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
           {t.app.notFoundTitle}

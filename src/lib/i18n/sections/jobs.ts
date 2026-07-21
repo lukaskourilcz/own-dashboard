@@ -129,7 +129,7 @@ type JobsStrings = {
 
 export const jobs: { en: JobsStrings; cs: JobsStrings } = {
   en: {
-    title: "Jobs",
+    title: "Career",
     description:
       "Remote-friendly European openings for frontend, fullstack and software engineers — checked daily at 10:00.",
     openTab: "Open positions",
@@ -259,7 +259,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     bodyRequired: "Template text is required.",
   },
   cs: {
-    title: "Práce",
+    title: "Kariéra",
     description:
       "Remote pozice v Evropě pro frontend, fullstack a software inženýry — kontrolováno denně v 10:00.",
     openTab: "Otevřené pozice",

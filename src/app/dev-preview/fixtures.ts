@@ -8,10 +8,10 @@
  */
 import type {
   Account,
+  AppNotification,
+  ClientOpportunity,
   AiCategory,
   AiLink,
-  Book,
-  BookPage,
   CoverLetterTemplate,
   Cron,
   ImportantDate,
@@ -24,6 +24,7 @@ import type {
   JobScrapeRun,
   JobUserState,
   Note,
+  Organization,
   Plan,
   Project,
   ProjectCost,
@@ -32,14 +33,13 @@ import type {
   RepoLink,
   RepoNote,
   Shortcut,
-  Streak,
-  StreakLog,
   Subscription,
   Todo,
   Transaction,
+  InboxItem,
+  WeeklyReview,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
-import type { CoupleContext, PartnerData } from "@/lib/couple";
 
 const UID = "preview-user";
 const NOW = new Date();
@@ -94,21 +94,6 @@ export const todos: Todo[] = [
   { id: "t6", user_id: UID, title: "Generate real app icons with Recraft", done: false, due_date: ymd(1), category: "react-express-app", created_at: TS, source: "github", repo_id: "1002", repo_full_name: "lukaskourilcz/react-express-app", repo_owner: "lukaskourilcz", repo_name: "react-express-app", repo_url: "https://github.com/lukaskourilcz/react-express-app", needed_raw: "- [ ] Generate real app icons with Recraft", generated_at: ymd(-6), importance: 5 },
 ];
 
-export const streaks: Streak[] = [
-  { id: "st1", user_id: UID, name: "Morning run", color: "#16a34a", reminder_time: null, created_at: TS },
-  { id: "st2", user_id: UID, name: "Read 20 min", color: "#6366f1", reminder_time: null, created_at: TS },
-  { id: "st3", user_id: UID, name: "No sugar", color: "#d97706", reminder_time: null, created_at: TS },
-];
-
-export const streakLogs: StreakLog[] = [
-  // Morning run — logged today + the previous five days (a healthy streak).
-  ...[0, 1, 2, 3, 4, 5].map((n) => ({ id: `l1-${n}`, streak_id: "st1", user_id: UID, log_date: ymd(-n), created_at: TS })),
-  // Read 20 min — logged the past three days but NOT today (shows as "left").
-  ...[1, 2, 3].map((n) => ({ id: `l2-${n}`, streak_id: "st2", user_id: UID, log_date: ymd(-n), created_at: TS })),
-  // No sugar — today + yesterday.
-  ...[0, 1].map((n) => ({ id: `l3-${n}`, streak_id: "st3", user_id: UID, log_date: ymd(-n), created_at: TS })),
-];
-
 export const accounts: Account[] = [
   { id: "a1", user_id: UID, name: "Checking", balance: 48250, currency: "CZK", external_ref: null, created_at: TS, updated_at: TS },
   { id: "a2", user_id: UID, name: "Savings", balance: 152000, currency: "CZK", external_ref: null, created_at: TS, updated_at: TS },
@@ -129,18 +114,6 @@ export const plans: Plan[] = [
   { id: "p3", user_id: UID, title: "Weekly review", target_date: null, status: "active", recurrence: "weekly", last_completed_at: null, notes: "Plan the week ahead.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
   { id: "p4", user_id: UID, title: "Pay rent", target_date: null, status: "active", recurrence: "monthly", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
   { id: "p5", user_id: UID, title: "Deep-clean flat", target_date: null, status: "active", recurrence: "biweekly", last_completed_at: TS, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-];
-
-export const books: Book[] = [
-  { id: "b1", couple_id: null, user_id: UID, title: "The Pragmatic Programmer", target_pages: 352, status: "active", started_on: ymd(-20), created_at: TS },
-  { id: "b2", couple_id: null, user_id: UID, title: "Dune", target_pages: 600, status: "active", started_on: ymd(-10), created_at: TS },
-];
-
-export const bookPages: BookPage[] = [
-  { id: "bp1", book_id: "b1", user_id: UID, log_date: ymd(-2), pages: 24, note: null, created_at: TS },
-  { id: "bp2", book_id: "b1", user_id: UID, log_date: ymd(-1), pages: 18, note: null, created_at: TS },
-  { id: "bp3", book_id: "b1", user_id: UID, log_date: ymd(0), pages: 30, note: "Chapter 5", created_at: TS },
-  { id: "bp4", book_id: "b2", user_id: UID, log_date: ymd(-1), pages: 40, note: null, created_at: TS },
 ];
 
 export const notes: Note[] = [
@@ -266,8 +239,8 @@ export const aiLinks: AiLink[] = [
 ];
 
 export const importantDates: ImportantDate[] = [
-  { id: "d1", user_id: UID, couple_id: null, title: "Anniversary", the_date: ymd(12), is_recurring: true, recurrence_unit: "yearly", emoji: "💍", notes: null, created_at: TS },
-  { id: "d2", user_id: UID, couple_id: null, title: "Mom's birthday", the_date: ymd(25), is_recurring: true, recurrence_unit: "yearly", emoji: "🎂", notes: null, created_at: TS },
+  { id: "d1", user_id: UID, title: "Contract renewal", the_date: ymd(12), is_recurring: true, recurrence_unit: "yearly", emoji: "📄", notes: null, created_at: TS },
+  { id: "d2", user_id: UID, title: "Conference CFP", the_date: ymd(25), is_recurring: false, recurrence_unit: null, emoji: "🎤", notes: null, created_at: TS },
 ];
 
 export const invoiceSettings: InvoiceSettings = {
@@ -326,28 +299,41 @@ export const weekCalendar: EventsResult = {
   ],
 };
 
-export const coupleCtx: CoupleContext = {
-  couple: null,
-  partnerId: null,
-  partnerProfile: null,
-  partnerPrefs: null,
-  myPrefs: {
-    user_id: UID,
-    share_subscriptions: false,
-    share_todos: false,
-    share_streaks: false,
-    share_finances: false,
-    share_plans: false,
-    share_books: false,
-    updated_at: TS,
-  },
-  incomingInvites: [],
-  sentInvites: [],
-};
-
-export const partnerData: PartnerData | null = null;
 export const selectedCalendarIds = ["primary"];
 export const repoVisibleIds: string[] = [];
+
+export const organizations: Organization[] = [{
+  id: "org-acme", user_id: UID, name: "Acme s.r.o.", type: "client",
+  website: "https://example.com", logo_url: null, email: "hello@example.com",
+  phone: null, address: null, city: "Prague", zip: null, country: "CZ",
+  company_id: "87654321", vat_id: "CZ87654321", notes: "Retained product client.",
+  status: "active", created_at: TS, updated_at: TS,
+}];
+
+export const opportunities: ClientOpportunity[] = [{
+  id: "opp-1", user_id: UID, organization_id: "org-acme", project_id: null,
+  source: "tugedr", source_url: "https://tugedr.com", title: "Acme customer portal",
+  description: "Discovery and implementation of a self-service portal.", status: "proposal_sent",
+  budget_min: 90000, budget_max: 140000, currency: "CZK", rate_type: "fixed",
+  deadline: ymd(30), next_follow_up_at: at(9, 0, 1), contact_name: "Eva",
+  contact_email: "eva@example.com", notes: "", won_at: null, lost_at: null,
+  created_at: TS, updated_at: TS,
+}];
+
+export const inboxItems: InboxItem[] = [{
+  id: "inbox-1", user_id: UID, source_type: "manual", source_id: null,
+  title: "Review Acme analytics request", summary: "Decide whether this belongs in the current scope.",
+  payload: {}, suggested_destination: "task", status: "pending", snoozed_until: null,
+  processed_at: null, created_at: TS, updated_at: TS,
+}];
+
+export const weeklyReviews: WeeklyReview[] = [];
+
+export const notifications: AppNotification[] = [{
+  id: "notice-1", user_id: UID, kind: "follow_up_due", source_type: "client_opportunity",
+  source_id: "opp-1", title: "Acme follow-up is due tomorrow", body: "Review the proposal before contacting Eva.",
+  action_url: "/opportunities", read_at: null, dismissed_at: null, snoozed_until: null, created_at: TS,
+}];
 
 export const jobListings: JobListing[] = [
   {

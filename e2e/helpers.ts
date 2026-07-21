@@ -17,7 +17,10 @@ export function watchConsole(page: Page): string[] {
   page.on("console", (msg) => {
     if (msg.type() !== "error") return;
     const text = msg.text();
-    if (!BENIGN.some((b) => text.includes(b))) errors.push(text);
+    if (!BENIGN.some((b) => text.includes(b))) {
+      const source = msg.location().url;
+      errors.push(source ? `${text} (${source})` : text);
+    }
   });
   page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
   return errors;
@@ -28,6 +31,11 @@ export function watchConsole(page: Page): string[] {
  * fixture harness never surfaces a network error.
  */
 export async function stubBackend(page: Page): Promise<void> {
+  await page.route("**/api/github/repos", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ repos: [] }),
+  }));
   await page.route(/example\.supabase\.co/, (route) => {
     const isAuth = route.request().url().includes("/auth/");
     return route.fulfill({

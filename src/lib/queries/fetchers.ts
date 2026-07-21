@@ -6,8 +6,7 @@ import type {
   AiCategory,
   AiLink,
   BankConnection,
-  Book,
-  BookPage,
+  ClientOpportunity,
   CategoryRule,
   CoverLetterTemplate,
   ImportantDate,
@@ -20,6 +19,10 @@ import type {
   JobScrapeRun,
   JobUserState,
   Note,
+  Organization,
+  InboxItem,
+  AppNotification,
+  WeeklyReview,
   Cron,
   Plan,
   Project,
@@ -30,8 +33,6 @@ import type {
   RepoNote,
   Shortcut,
   SpendCategory,
-  Streak,
-  StreakLog,
   Subscription,
   Todo,
   Transaction,
@@ -41,7 +42,7 @@ import type {
  * Client-side Supabase fetchers used as React Query `queryFn`s, so an
  * `invalidateQueries` after a mutation refetches the canonical rows. Each
  * mirrors the matching server load in `dashboard/page.tsx`. RLS already scopes
- * results to the current user (and shared rows for books/important_dates), so
+ * results to the current user through own-only RLS, so
  * the explicit user filter is omitted — matching the server's effective set.
  */
 
@@ -63,23 +64,6 @@ export async function fetchSubscriptions(): Promise<Subscription[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Subscription[];
-}
-
-export async function fetchStreaks(): Promise<Streak[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("streaks")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Streak[];
-}
-
-export async function fetchStreakLogs(): Promise<StreakLog[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("streak_logs").select("*");
-  if (error) throw error;
-  return (data ?? []) as StreakLog[];
 }
 
 export async function fetchAccounts(): Promise<Account[]> {
@@ -133,25 +117,56 @@ export async function fetchPlans(): Promise<Plan[]> {
   return (data ?? []) as Plan[];
 }
 
-export async function fetchBooks(): Promise<Book[]> {
+export async function fetchOrganizations(): Promise<Organization[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("books")
+    .from("organizations")
+    .select("*")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Organization[];
+}
+
+export async function fetchOpportunities(): Promise<ClientOpportunity[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("client_opportunities")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ClientOpportunity[];
+}
+
+export async function fetchInboxItems(): Promise<InboxItem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("inbox_items")
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as Book[];
+  return (data ?? []) as InboxItem[];
 }
 
-export async function fetchBookPages(): Promise<BookPage[]> {
+export async function fetchNotifications(): Promise<AppNotification[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("book_pages")
+    .from("notifications")
     .select("*")
-    .order("log_date", { ascending: false })
-    .limit(1000);
+    .order("created_at", { ascending: false })
+    .limit(100);
   if (error) throw error;
-  return (data ?? []) as BookPage[];
+  return (data ?? []) as AppNotification[];
+}
+
+export async function fetchWeeklyReviews(): Promise<WeeklyReview[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("weekly_reviews")
+    .select("*")
+    .order("week_start", { ascending: false })
+    .limit(12);
+  if (error) throw error;
+  return (data ?? []) as WeeklyReview[];
 }
 
 export async function fetchImportantDates(): Promise<ImportantDate[]> {

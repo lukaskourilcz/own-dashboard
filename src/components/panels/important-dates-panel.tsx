@@ -22,7 +22,6 @@ import { todayKey } from "@/lib/date-keys";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import type { ImportantDate, RecurrenceUnit, Updater } from "@/lib/types";
-import { partnerDisplayName, type CoupleContext } from "@/lib/couple";
 
 /** Localized mirror of countdownLabel from @/lib/important-dates. */
 function countdownLabelLocalized(daysUntil: number, t: Dict): string {
@@ -42,7 +41,6 @@ type FormState = {
   recurrence_unit: RecurrenceUnit;
   emoji: string;
   notes: string;
-  shareWithPartner: boolean;
 };
 
 const empty: FormState = {
@@ -52,19 +50,16 @@ const empty: FormState = {
   recurrence_unit: "yearly",
   emoji: "",
   notes: "",
-  shareWithPartner: true,
 };
 
 export function ImportantDatesPanel({
   dates,
   setDates,
   userId,
-  ctx,
 }: {
   dates: ImportantDate[];
   setDates: Updater<ImportantDate[]>;
   userId: string;
-  ctx: CoupleContext;
 }) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -77,7 +72,6 @@ export function ImportantDatesPanel({
   function buildPayload() {
     return {
       user_id: userId,
-      couple_id: form.shareWithPartner && ctx.couple ? ctx.couple.id : null,
       title: form.title.trim(),
       the_date: form.the_date,
       is_recurring: form.is_recurring,
@@ -177,7 +171,6 @@ export function ImportantDatesPanel({
       recurrence_unit: d.recurrence_unit ?? "yearly",
       emoji: d.emoji ?? "",
       notes: d.notes ?? "",
-      shareWithPartner: d.couple_id !== null,
     });
   }
 
@@ -265,21 +258,6 @@ export function ImportantDatesPanel({
                   </div>
                 )}
               </div>
-              {ctx.couple && (
-                <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
-                  <input
-                    type="checkbox"
-                    className="h-3.5 w-3.5 rounded border-border-strong"
-                    checked={form.shareWithPartner}
-                    onChange={(e) =>
-                      setForm({ ...form, shareWithPartner: e.target.checked })
-                    }
-                  />
-                  {t.dates.shareWith(
-                    partnerDisplayName(ctx.partnerProfile, t.dates.partnerFallback),
-                  )}
-                </label>
-              )}
               <div className="space-y-1.5">
                 <Label htmlFor="ind-notes">{t.dates.notes}</Label>
                 <Textarea
@@ -359,11 +337,6 @@ export function ImportantDatesPanel({
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
                             {o.date.title}
-                            {o.date.couple_id && (
-                              <span className="ml-2 text-[9px] uppercase tracking-wider text-success font-semibold">
-                                {t.dates.shared}
-                              </span>
-                            )}
                           </p>
                           <p className="text-[11px] text-foreground-subtle">
                             {o.date.is_recurring

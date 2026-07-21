@@ -114,6 +114,7 @@ function displayUrl(raw: string): string {
 
 export function ReposPanel({
   initialVisibleIds,
+  repoFullName,
   repoNotes,
   setRepoNotes,
   repoLinks,
@@ -121,6 +122,8 @@ export function ReposPanel({
 }: {
   /** Saved repo allow-list (GitHub repo ids as strings). Empty = show all. */
   initialVisibleIds: string[];
+  /** When set, embed only this repository in its owning project workspace. */
+  repoFullName?: string;
   repoNotes: RepoNote[];
   setRepoNotes: Updater<RepoNote[]>;
   repoLinks: RepoLink[];
@@ -141,7 +144,13 @@ export function ReposPanel({
   );
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
+  const allRepos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
+  const repos = useMemo(
+    () => repoFullName
+      ? allRepos.filter((repo) => repo.full_name.toLowerCase() === repoFullName.toLowerCase())
+      : allRepos,
+    [allRepos, repoFullName],
+  );
   const status: Status = isPending
     ? "loading"
     : data
@@ -233,7 +242,7 @@ export function ReposPanel({
 
   // Saved allow-list applied to the live repo list. Empty list = no filter, so
   // everything the API returned is shown (the default, backward-compatible).
-  const filterActive = visibleIds.length > 0;
+  const filterActive = !repoFullName && visibleIds.length > 0;
   const visibleSet = useMemo(() => new Set(visibleIds), [visibleIds]);
   const scoped = useMemo(
     () =>
@@ -257,8 +266,8 @@ export function ReposPanel({
   return (
     <div>
       <PageHeader
-        title={t.github.title}
-        description={t.github.subtitle}
+        title={repoFullName ?? t.github.title}
+        description={repoFullName ? t.professional.projectRepository : t.github.subtitle}
         action={
           status === "connected" ? (
             <div className="flex items-center gap-1.5">
@@ -285,7 +294,7 @@ export function ReposPanel({
                   {t.github.needed.button}
                 </Button>
               )}
-              {repos.length > 0 && (
+              {repos.length > 0 && !repoFullName && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -355,7 +364,7 @@ export function ReposPanel({
             <NeededChecklist repos={scoped} />
           )}
 
-          {repos.length > 0 && (
+          {repos.length > 0 && !repoFullName && (
             <div className="mb-4 space-y-2">
               <Input
                 value={query}
@@ -430,7 +439,7 @@ export function ReposPanel({
         onAuthLost={() => setReposDisconnected(qc)}
       />
 
-      {filterOpen && (
+      {filterOpen && !repoFullName && (
         <RepoFilterDialog
           repos={repos}
           initialVisibleIds={visibleIds}

@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
+import { brandConfig } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Dashboard",
-    short_name: "Dashboard",
-    description:
-      "Personal dashboard for tasks, habits, plans, finances, calendar.",
+    name: brandConfig.name,
+    short_name: brandConfig.shortName,
+    description: brandConfig.description.en,
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -22,6 +22,6 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
-    categories: ["productivity", "lifestyle"],
+    categories: ["productivity", "business", "finance"],
   };
 }

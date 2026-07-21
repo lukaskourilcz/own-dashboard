@@ -28,8 +28,8 @@ import { CSS } from "@dnd-kit/utilities";
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
+  BriefcaseBusiness,
   CreditCard,
-  Flame,
   GripVertical,
   LayoutDashboard,
   ListTodo,
@@ -59,11 +59,11 @@ import { cn } from "@/lib/utils";
 // the overview too. Overview-only widgets (today-hero, quick-add, kpi) have no
 // entry and always show.
 const WIDGET_SECTION: Partial<Record<WidgetId, string>> = {
-  todos: "todos",
-  streaks: "streaks",
+  todos: "tasks",
+  "work-attention": "work",
   subscriptions: "subscriptions",
   calendar: "calendar",
-  plans: "plans",
+  goals: "goals",
 };
 
 // Icon + grid footprint per widget. "full" widgets span both columns on large
@@ -74,10 +74,10 @@ const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }>
     "quick-add": { icon: Sparkles, size: "full" },
     kpi: { icon: Sigma, size: "full" },
     todos: { icon: ListTodo, size: "full" },
-    streaks: { icon: Flame, size: "half" },
+    "work-attention": { icon: BriefcaseBusiness, size: "full" },
     subscriptions: { icon: CreditCard, size: "half" },
     calendar: { icon: CalendarDays, size: "half" },
-    plans: { icon: Repeat, size: "half" },
+    goals: { icon: Repeat, size: "half" },
   };
 
 type Props = {

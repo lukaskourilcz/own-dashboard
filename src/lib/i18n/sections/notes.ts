@@ -2,6 +2,7 @@ type NotesStrings = {
   title: string;
   description: string;
   loadingEditor: string;
+  editorLabel: string;
   newNote: string;
   importMd: string;
   untitled: string;
@@ -63,6 +64,7 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     title: "Notes",
     description: "A quiet place for thoughts, prompts, and drafts.",
     loadingEditor: "Loading editor…",
+    editorLabel: "Note content",
     newNote: "New note",
     importMd: "Import MD",
     untitled: "Untitled",
@@ -120,6 +122,7 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     title: "Poznámky",
     description: "Klidné místo pro myšlenky, nápady a koncepty.",
     loadingEditor: "Načítání editoru…",
+    editorLabel: "Obsah poznámky",
     newNote: "Nová poznámka",
     importMd: "Importovat MD",
     untitled: "Bez názvu",

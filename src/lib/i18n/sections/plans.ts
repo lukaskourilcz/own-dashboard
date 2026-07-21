@@ -54,8 +54,8 @@ type PlansStrings = {
 
 export const plans: { en: PlansStrings; cs: PlansStrings } = {
   en: {
-    title: "Plans",
-    description: "What you're working toward.",
+    title: "Goals",
+    description: "Outcomes you're working toward.",
     board: "Board",
     timeline: "Timeline",
     newPlan: "New plan",
@@ -121,8 +121,8 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     noDate: "no date",
   },
   cs: {
-    title: "Plány",
-    description: "Na čem pracuješ.",
+    title: "Cíle",
+    description: "Výsledky, ke kterým směřujete.",
     board: "Nástěnka",
     timeline: "Časová osa",
     newPlan: "Nový plán",

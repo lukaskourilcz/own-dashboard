@@ -23,6 +23,33 @@ type SettingsStrings = {
   cvCzech: string;
   cvEnglish: string;
   cvPlaceholder: string;
+  resetNavigation: string;
+  ai: string;
+  aiDesc: string;
+  aiEnabled: string;
+  aiSensitive: string;
+  aiSensitiveDesc: string;
+  dataExport: string;
+  dataExportDesc: string;
+  exportFull: string;
+  exportFinancial: string;
+  exportProfessional: string;
+  exportKnowledge: string;
+  exportLegacy: string;
+  exportProjects: string;
+  exportNotes: string;
+  exportPrompts: string;
+  exportCareer: string;
+  exportTransactionsCsv: string;
+  integrations: string;
+  integrationsDesc: string;
+  connected: string;
+  notConnected: string;
+  configured: string;
+  notConfigured: string;
+  bankSync: string;
+  emailDelivery: string;
+  lastSync: string;
 };
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
@@ -41,7 +68,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     dark: "Dark",
     navigation: "Navigation sections",
     navigationDesc:
-      "Toggle which sections appear in the navigation panel, and drag to reorder them within each group. Overview is always shown.",
+      "Toggle which sections appear in navigation and drag to reorder within each group. Home and Inbox stay pinned.",
     alwaysVisible: "Always visible",
     reorder: "Drag to reorder",
     tasks: "Tasks",
@@ -54,6 +81,33 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     cvCzech: "🇨🇿 Czech CV",
     cvEnglish: "🇬🇧 English CV",
     cvPlaceholder: "https://docs.google.com/document/d/…",
+    resetNavigation: "Reset navigation",
+    ai: "AI & privacy",
+    aiDesc: "AI is contextual and opt-in. Model output is previewed before any write.",
+    aiEnabled: "Enable contextual AI",
+    aiSensitive: "Allow sensitive context",
+    aiSensitiveDesc: "Off by default. Only enable when you intentionally want financial or private text included.",
+    dataExport: "Data & export",
+    dataExportDesc: "Download portable JSON. Legacy personal data remains available after its source tables are removed.",
+    exportFull: "Full export",
+    exportFinancial: "Financial",
+    exportProfessional: "Professional",
+    exportKnowledge: "Knowledge",
+    exportLegacy: "Legacy archive",
+    exportProjects: "Projects",
+    exportNotes: "Notes",
+    exportPrompts: "Prompts",
+    exportCareer: "Career",
+    exportTransactionsCsv: "Transactions CSV",
+    integrations: "Integrations",
+    integrationsDesc: "Connection state only. Credentials and provider tokens are never exposed here.",
+    connected: "Connected",
+    notConnected: "Not connected",
+    configured: "Configured",
+    notConfigured: "Not configured",
+    bankSync: "Bank sync",
+    emailDelivery: "Email delivery",
+    lastSync: "Last sync",
   },
   cs: {
     title: "Nastavení",
@@ -70,7 +124,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     dark: "Tmavý",
     navigation: "Sekce navigace",
     navigationDesc:
-      "Zapněte, které sekce se zobrazí v navigačním panelu, a přetažením změňte jejich pořadí v rámci skupiny. Přehled je vždy zobrazen.",
+      "Zapněte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Inbox zůstávají připnuté.",
     alwaysVisible: "Vždy viditelné",
     reorder: "Přetáhni pro změnu pořadí",
     tasks: "Úkoly",
@@ -82,5 +136,32 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     cvCzech: "🇨🇿 České CV",
     cvEnglish: "🇬🇧 Anglické CV",
     cvPlaceholder: "https://docs.google.com/document/d/…",
+    resetNavigation: "Obnovit navigaci",
+    ai: "AI a soukromí",
+    aiDesc: "AI je kontextová a volitelná. Před každým zápisem se zobrazí náhled.",
+    aiEnabled: "Povolit kontextovou AI",
+    aiSensitive: "Povolit citlivý kontext",
+    aiSensitiveDesc: "Ve výchozím stavu vypnuto. Zapněte jen tehdy, když chcete vědomě zahrnout finanční nebo soukromý text.",
+    dataExport: "Data a export",
+    dataExportDesc: "Stáhněte přenositelný JSON. Starší osobní data zůstávají dostupná i po odstranění zdrojových tabulek.",
+    exportFull: "Úplný export",
+    exportFinancial: "Finance",
+    exportProfessional: "Profesní",
+    exportKnowledge: "Znalosti",
+    exportLegacy: "Archiv starších dat",
+    exportProjects: "Projekty",
+    exportNotes: "Poznámky",
+    exportPrompts: "Prompty",
+    exportCareer: "Kariéra",
+    exportTransactionsCsv: "Transakce CSV",
+    integrations: "Integrace",
+    integrationsDesc: "Zobrazuje se pouze stav připojení. Přihlašovací údaje ani tokeny poskytovatelů se zde nikdy neodhalují.",
+    connected: "Připojeno",
+    notConnected: "Nepřipojeno",
+    configured: "Nakonfigurováno",
+    notConfigured: "Nenakonfigurováno",
+    bankSync: "Synchronizace banky",
+    emailDelivery: "Doručování e-mailů",
+    lastSync: "Poslední synchronizace",
   },
 };

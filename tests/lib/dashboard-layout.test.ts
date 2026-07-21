@@ -101,12 +101,12 @@ describe("withoutWidget", () => {
 });
 
 describe("moveWidget", () => {
-  const base: WidgetId[] = ["kpi", "todos", "streaks", "calendar"];
+  const base: WidgetId[] = ["kpi", "todos", "work-attention", "calendar"];
 
   it("moves an item forward", () => {
     expect(moveWidget(base, 0, 2)).toEqual([
       "todos",
-      "streaks",
+      "work-attention",
       "kpi",
       "calendar",
     ]);
@@ -117,14 +117,14 @@ describe("moveWidget", () => {
       "kpi",
       "calendar",
       "todos",
-      "streaks",
+      "work-attention",
     ]);
   });
 
   it("clamps an out-of-range target", () => {
     expect(moveWidget(base, 0, 99)).toEqual([
       "todos",
-      "streaks",
+      "work-attention",
       "calendar",
       "kpi",
     ]);
@@ -138,6 +138,6 @@ describe("moveWidget", () => {
 
   it("does not mutate the input", () => {
     moveWidget(base, 0, 2);
-    expect(base).toEqual(["kpi", "todos", "streaks", "calendar"]);
+    expect(base).toEqual(["kpi", "todos", "work-attention", "calendar"]);
   });
 });

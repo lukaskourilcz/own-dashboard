@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { brandConfig } from "@/lib/brand";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency } from "@/lib/utils";
 
@@ -139,7 +140,7 @@ export async function GET(request: Request) {
         from: fromAddress,
         to: target.email,
         subject,
-        text: `Hi ${name},\n\n${sub.name} (${amount}) renews ${when} (${sub.next_billing_date}).\n\nIf you don't want this anymore, cancel it now to avoid the charge.\n\n— Your dashboard`,
+        text: `Hi ${name},\n\n${sub.name} (${amount}) renews ${when} (${sub.next_billing_date}).\n\nIf you don't want this anymore, cancel it now to avoid the charge.\n\n— ${brandConfig.name}`,
       });
       await admin.from("notification_log").insert({
         user_id: sub.user_id,

@@ -9,7 +9,6 @@ import {
   ChevronRight,
   ExternalLink,
   Flag,
-  Heart,
   ListTodo,
   Plus,
   RefreshCw,
@@ -31,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
@@ -61,13 +60,9 @@ import { cn } from "@/lib/utils";
 export function TodosPanel({
   todos,
   compact = false,
-  partnerTodos,
-  partnerName,
 }: {
   todos: Todo[];
   compact?: boolean;
-  partnerTodos?: Todo[];
-  partnerName?: string;
 }) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -370,14 +365,6 @@ export function TodosPanel({
               compact
             />
           )}
-          {partnerTodos && partnerTodos.length > 0 && (
-            <PartnerBlock
-              t={t}
-              locale={locale}
-              items={partnerTodos.filter((td) => !td.done).slice(0, 3)}
-              partnerName={partnerName}
-            />
-          )}
         </CardContent>
       </Card>
     );
@@ -566,18 +553,6 @@ export function TodosPanel({
             />
           )}
 
-          {partnerTodos && partnerTodos.length > 0 && (
-            <Card>
-              <CardContent className="pt-5">
-                <PartnerBlock
-                  t={t}
-                  locale={locale}
-                  items={partnerTodos}
-                  partnerName={partnerName}
-                />
-              </CardContent>
-            </Card>
-          )}
       </div>
 
       <AddTaskDialog
@@ -1200,63 +1175,5 @@ function TodoList({
         ))}
       </AnimatePresence>
     </ul>
-  );
-}
-
-function PartnerBlock({
-  t,
-  locale,
-  items,
-  partnerName,
-}: {
-  t: Dict;
-  locale: Locale;
-  items: Todo[];
-  partnerName?: string;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <div className="mt-1">
-      <SectionLabel className="mb-2 inline-flex items-center gap-1.5">
-        <Heart className="h-3 w-3" />
-        {t.todos.fromPartner(partnerName ?? t.todos.partnerFallback)}
-      </SectionLabel>
-      <ul className="-mx-2">
-        {items.map((td) => (
-          <li
-            key={td.id}
-            className="flex items-center gap-3 rounded-md px-2 py-1.5 text-foreground-muted"
-          >
-            <span
-              className={cn(
-                "h-4 w-4 shrink-0 rounded border border-border-strong flex items-center justify-center text-[10px]",
-                td.done && "bg-surface-muted",
-              )}
-            >
-              {td.done ? "✓" : ""}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "text-sm truncate",
-                  td.done && "line-through text-foreground-subtle",
-                )}
-              >
-                {td.title}
-              </p>
-              {td.due_date && (
-                <p className="text-[11px] text-foreground-subtle tabular">
-                  {t.todos.due(
-                    format(parseDateOnly(td.due_date), t.todos.dueDateFormat, {
-                      locale,
-                    }),
-                  )}
-                </p>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

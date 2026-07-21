@@ -44,13 +44,13 @@ type CostsStrings = {
 
 export const costs: { en: CostsStrings; cs: CostsStrings } = {
   en: {
-    title: "Scaling",
+    title: "Stack & scaling",
     description:
-      "Tech stack and scaling for your active repositories.",
+      "Tech stack and scaling notes for this project's repository.",
     noActiveRepos: "No active repositories",
     noActiveReposDesc:
-      "Pick the repos you want to track in the Repositories section — they show up here.",
-    openRepositories: "Open Repositories",
+      "Link a GitHub repository to this project to inspect its stack and scaling notes.",
+    openRepositories: "Open project repository",
     fileMissingTitle: "No stack-and-scaling.md yet",
     fileMissingDesc:
       "Add it to the repo root. Copy the prompt and run it in that repo with Claude Code.",
@@ -88,13 +88,13 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     overviewPerYr: "/yr",
   },
   cs: {
-    title: "Škálování",
+    title: "Stack a škálování",
     description:
-      "Tech stack a škálování tvých aktivních repozitářů.",
+      "Tech stack a poznámky ke škálování pro repozitář tohoto projektu.",
     noActiveRepos: "Žádné aktivní repozitáře",
     noActiveReposDesc:
-      "Vyber repozitáře, které chceš sledovat, v sekci Repozitáře — objeví se tady.",
-    openRepositories: "Otevřít Repozitáře",
+      "Propoj s projektem GitHub repozitář a zobraz jeho stack a poznámky ke škálování.",
+    openRepositories: "Otevřít repozitář projektu",
     fileMissingTitle: "Zatím žádný stack-and-scaling.md",
     fileMissingDesc:
       "Přidej ho do rootu repa. Zkopíruj prompt a spusť ho v daném repu přes Claude Code.",

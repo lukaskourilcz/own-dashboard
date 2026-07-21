@@ -3,35 +3,35 @@
 import { motion } from "motion/react";
 import {
   Activity,
-  BookOpen,
+  Bell,
   BriefcaseBusiness,
   CalendarDays,
+  CircleDollarSign,
   CreditCard,
+  FolderInput,
   FileText,
-  Flame,
   FolderKanban,
-  Gauge,
   Gift,
-  Heart,
+  Inbox,
+  Landmark,
   LayoutDashboard,
   ListTodo,
   LogOut,
   MessageSquareText,
+  Network,
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
   Settings,
-  Sparkles,
+  Tags,
   Target,
   Terminal,
   Users,
   Wallet,
 } from "lucide-react";
-import { GithubIcon } from "@/components/icons/github";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
-import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import {
   useNavCollapsed,
   useNavOrder,
@@ -48,11 +48,12 @@ type NavItem = {
   icon: typeof Activity;
 };
 
-type NavGroupId = "planning" | "work" | "money" | "personal";
+type NavGroupId = "work" | "money" | "planning" | "library";
 type NavGroup = { id: NavGroupId; items: NavItem[] };
 
-// Overview is the home base — always shown, pinned above every group.
-export const OVERVIEW_ITEM: NavItem = { value: "overview", icon: LayoutDashboard };
+export const HOME_ITEM: NavItem = { value: "home", icon: LayoutDashboard };
+export const INBOX_ITEM: NavItem = { value: "inbox", icon: Inbox };
+export const PRIMARY_NAV_ITEMS: NavItem[] = [HOME_ITEM, INBOX_ITEM];
 
 // The rest of the sections, bucketed into a handful of intent-based groups so
 // the rail reads as a short list of categories instead of a wall of ~19 links.
@@ -60,42 +61,42 @@ export const OVERVIEW_ITEM: NavItem = { value: "overview", icon: LayoutDashboard
 // these groups — it has its own always-visible affordance in the footer.
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: "planning",
-    items: [
-      { value: "calendar", icon: CalendarDays },
-      { value: "todos", icon: ListTodo },
-      { value: "plans", icon: Target },
-      { value: "streaks", icon: Flame },
-      { value: "dates", icon: Gift },
-      { value: "notes", icon: FileText },
-    ],
-  },
-  {
     id: "work",
     items: [
-      { value: "github", icon: GithubIcon },
+      { value: "work", icon: BriefcaseBusiness },
       { value: "projects", icon: FolderKanban },
-      { value: "jobs", icon: BriefcaseBusiness },
-      { value: "tugedr", icon: Users },
-      { value: "ai", icon: Sparkles },
-      { value: "prompts", icon: MessageSquareText },
-      { value: "shortcuts", icon: Terminal },
-      { value: "costs", icon: Gauge },
+      { value: "opportunities", icon: FolderInput },
+      { value: "clients", icon: Users },
+      { value: "career", icon: Network },
+      { value: "invoices", icon: Receipt },
     ],
   },
   {
     id: "money",
     items: [
-      { value: "finances", icon: Wallet },
-      { value: "invoices", icon: Receipt },
+      { value: "money", icon: Wallet },
+      { value: "accounts", icon: Landmark },
+      { value: "transactions", icon: CircleDollarSign },
       { value: "subscriptions", icon: CreditCard },
+      { value: "categories", icon: Tags },
     ],
   },
   {
-    id: "personal",
+    id: "planning",
     items: [
-      { value: "books", icon: BookOpen },
-      { value: "couple", icon: Heart },
+      { value: "tasks", icon: ListTodo },
+      { value: "calendar", icon: CalendarDays },
+      { value: "goals", icon: Target },
+      { value: "dates", icon: Gift },
+    ],
+  },
+  {
+    id: "library",
+    items: [
+      { value: "notes", icon: FileText },
+      { value: "prompts", icon: MessageSquareText },
+      { value: "links", icon: Network },
+      { value: "references", icon: Terminal },
     ],
   },
 ];
@@ -104,7 +105,7 @@ export const NAV_GROUPS: NavGroup[] = [
 // single source of truth for consumers that don't care about grouping — the
 // Settings visibility list and the mobile bottom bar.
 export const NAV_ITEMS: NavItem[] = [
-  OVERVIEW_ITEM,
+  ...PRIMARY_NAV_ITEMS,
   ...NAV_GROUPS.flatMap((g) => g.items),
 ];
 
@@ -112,21 +113,18 @@ export function Sidebar({
   tab,
   setTab,
   user,
-  incomingInvites,
+  unreadNotifications = 0,
 }: {
   tab: NavTab;
   setTab: (t: NavTab) => void;
   user: { name: string | null; email: string; avatar_url?: string | null };
-  incomingInvites: number;
+  unreadNotifications?: number;
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
-  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
-
-  const isVisible = (it: NavItem) =>
-    !isHidden(it.value) && (it.value !== "tugedr" || tugedrEnabled);
+  const isVisible = (it: NavItem) => !isHidden(it.value);
 
   // Drop empty groups so we never render a lonely heading with no items, and
   // apply the user's custom order within each group.
@@ -139,7 +137,6 @@ export function Sidebar({
 
   const renderItem = (it: NavItem) => {
     const active = tab === it.value;
-    const badge = it.value === "couple" ? incomingInvites : 0;
     const label = t.nav.sections[it.value];
     const button = (
       <button
@@ -171,15 +168,6 @@ export function Sidebar({
             {label}
           </span>
         )}
-        {badge ? (
-          collapsed ? (
-            <span className="absolute right-1 top-1 z-10 h-2 w-2 rounded-full bg-foreground ring-2 ring-surface" />
-          ) : (
-            <span className="relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-medium text-background tabular">
-              {badge}
-            </span>
-          )
-        ) : null}
       </button>
     );
     return collapsed ? (
@@ -253,7 +241,7 @@ export function Sidebar({
           collapsed ? "px-1.5 space-y-0.5" : "space-y-0.5",
         )}
       >
-        {renderItem(OVERVIEW_ITEM)}
+        {PRIMARY_NAV_ITEMS.filter(isVisible).map(renderItem)}
 
         {groups.map((g) => (
           <div key={g.id} className={cn(!collapsed && "pt-2")}>
@@ -308,6 +296,17 @@ export function Sidebar({
             collapsed ? "flex-col" : "px-0.5",
           )}
         >
+          <Tooltip content={t.nav.sections.inbox} side={collapsed ? "right" : "top"}>
+            <button
+              type="button"
+              onClick={() => setTab("inbox")}
+              aria-label={t.nav.sections.inbox}
+              className="relative inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground focus-ring"
+            >
+              <Bell className="h-3.5 w-3.5" />
+              {unreadNotifications > 0 && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
+            </button>
+          </Tooltip>
           <Tooltip content={t.nav.settings} side={collapsed ? "right" : "top"}>
             <button
               type="button"
@@ -347,26 +346,22 @@ export function Sidebar({
 export function MobileNav({
   tab,
   setTab,
-  incomingInvites,
 }: {
   tab: NavTab;
   setTab: (t: NavTab) => void;
-  incomingInvites: number;
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
-  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
-  // Overview stays pinned first; the rest follow the user's custom order
+  // Home and Inbox stay pinned first; the rest follow the user's custom order
   // (grouped, so items stay within their group like the sidebar).
   const orderedItems = [
-    OVERVIEW_ITEM,
+    ...PRIMARY_NAV_ITEMS,
     ...NAV_GROUPS.flatMap((g) => sortByNavOrder(g.items, order)),
   ];
   const items = orderedItems.filter(
     (it) =>
-      (it.value === "overview" || !isHidden(it.value)) &&
-      (it.value !== "tugedr" || tugedrEnabled),
+      !isHidden(it.value),
   );
 
   return (
@@ -377,7 +372,6 @@ export function MobileNav({
       <div className="flex gap-1 overflow-x-auto">
         {items.map((it) => {
           const active = tab === it.value;
-          const badge = it.value === "couple" ? incomingInvites : 0;
           return (
             <button
               key={it.value}
@@ -392,11 +386,6 @@ export function MobileNav({
             >
               <it.icon className="h-3.5 w-3.5" />
               {t.nav.short[it.value] ?? t.nav.sections[it.value]}
-              {badge ? (
-                <span className="inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-foreground px-1 text-[9px] text-background tabular">
-                  {badge}
-                </span>
-              ) : null}
             </button>
           );
         })}

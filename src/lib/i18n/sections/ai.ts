@@ -69,8 +69,8 @@ type AiStrings = {
 
 export const ai: { en: AiStrings; cs: AiStrings } = {
   en: {
-    title: "AI links",
-    description: "AI sites and tools you've discovered, organized your way.",
+    title: "Links",
+    description: "Useful professional sites and tools, organized your way.",
     addLink: "Add link",
     addCategory: "Add category",
     addCategoryPlaceholder: "Add category",
@@ -136,8 +136,8 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     noMatchesDescription: "Try a different search.",
   },
   cs: {
-    title: "AI links",
-    description: "AI weby a nástroje, které jsi objevil, uspořádané po svém.",
+    title: "Odkazy",
+    description: "Užitečné profesní weby a nástroje uspořádané po vašem.",
     addLink: "Přidat odkaz",
     addCategory: "Přidat kategorii",
     addCategoryPlaceholder: "Přidat kategorii",

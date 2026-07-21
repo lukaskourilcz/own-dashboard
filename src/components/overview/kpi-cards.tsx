@@ -1,33 +1,30 @@
 "use client";
 
-import { Flame, ListTodo, Sigma } from "lucide-react";
-import { longestActiveStreak } from "@/lib/streaks";
+import { FolderKanban, ListTodo, Sigma } from "lucide-react";
 import { totalMonthlyIn } from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
-import type { Streak, StreakLog, Subscription, Todo } from "@/lib/types";
+import type { Project, Subscription, Todo } from "@/lib/types";
 import { SectionLabel } from "@/components/ui/page-header";
 
 type Props = {
   subscriptions: Subscription[];
   todos: Todo[];
-  streaks: Streak[];
-  streakLogs: StreakLog[];
+  projects: Project[];
   displayCurrency: string;
 };
 
 export function KpiCards({
   subscriptions,
   todos,
-  streaks,
-  streakLogs,
+  projects,
   displayCurrency,
 }: Props) {
   const t = useDict();
   const spend = totalMonthlyIn(subscriptions, displayCurrency);
   const openTodos = todos.filter((t) => !t.done).length;
   const doneTodos = todos.length - openTodos;
-  const best = longestActiveStreak(streaks, streakLogs);
+  const activeProjects = projects.filter((project) => project.is_active && project.status !== "archived").length;
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
@@ -44,10 +41,10 @@ export function KpiCards({
         sub={t.kpi.nDone(doneTodos)}
       />
       <Kpi
-        icon={Flame}
-        label={t.kpi.longestActiveStreak}
-        value={best ? t.kpi.days(best.count) : "—"}
-        sub={best ? best.streak.name : t.kpi.trackHabitHint}
+        icon={FolderKanban}
+        label={t.kpi.activeProjects}
+        value={String(activeProjects)}
+        sub={t.kpi.projectPortfolio}
       />
     </div>
   );

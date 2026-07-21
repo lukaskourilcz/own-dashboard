@@ -38,18 +38,19 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
   });
 
   const TABS = [
-    "Overview",
+    "Home",
     "Calendar",
     "Notes",
     "Tasks",
-    "Habits",
-    "Finances",
+    "Work overview",
+    "Opportunities",
+    "Clients",
+    "Money overview",
     "Invoices",
     "Subscriptions",
-    "Plans",
-    "Books",
+    "Goals",
     "Dates",
-    "Couple",
+    "Inbox",
     "Settings",
   ] as const;
 
@@ -57,15 +58,14 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
     test(`dashboard – ${tab}`, async ({ page }, testInfo) => {
       test.skip(testInfo.project.name === "mobile", "scan once on desktop");
       await gotoPreview(page);
-      if (tab !== "Overview") {
-        await page
-          .locator("aside")
-          .getByRole("button", { name: tab, exact: true })
-          .click();
-        // Wait out the tab transition (AnimatePresence mode="wait" plays an
-        // exit then an enter) so axe never samples a mid-fade frame.
-        await page.waitForTimeout(600);
+      if (tab !== "Home") {
+        const region = tab === "Settings" ? page.locator("aside") : page.locator("aside nav");
+        await region.getByRole("button", { name: tab, exact: true }).click();
       }
+      // Wait out both the initial Home entrance and subsequent tab transition
+      // (AnimatePresence mode="wait" plays an exit then an enter) so axe never
+      // samples content while parent opacity is still below 1.
+      await page.waitForTimeout(600);
       const serious = await scan(page);
       expect(JSON.stringify(summarize(serious), null, 2)).toBe("[]");
     });

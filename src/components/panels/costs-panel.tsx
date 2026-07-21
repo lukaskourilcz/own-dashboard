@@ -53,11 +53,14 @@ const EMPTY_REPOS: GithubRepo[] = [];
 
 export function CostsPanel({
   initialVisibleIds,
+  repoFullName,
   onOpenRepos,
 }: {
   /** Saved repo allow-list (GitHub repo ids). Empty = every repo is active. */
   initialVisibleIds: string[];
-  onOpenRepos: () => void;
+  /** When set, embed stack/scaling details for only this project repository. */
+  repoFullName?: string;
+  onOpenRepos?: () => void;
 }) {
   const t = useDict();
   const { data, isPending, isFetching, refetch } = useReposQuery();
@@ -75,16 +78,19 @@ export function CostsPanel({
         : data.kind
       : "error";
 
-  // Active repos = the shared Repositories allow-list applied (empty = all),
-  // mirroring the Repositories section. Read once per mount.
+  // Active repos = this project repository when embedded, otherwise the
+  // shared repository allow-list (empty = all). Read once per mount.
   const [visibleIds] = useState<string[]>(
     () => readRepoFilter() ?? initialVisibleIds,
   );
   const active = useMemo(() => {
+    if (repoFullName) {
+      return repos.filter((repo) => repo.full_name.toLowerCase() === repoFullName.toLowerCase());
+    }
     if (visibleIds.length === 0) return repos;
     const set = new Set(visibleIds);
     return repos.filter((r) => set.has(String(r.id)));
-  }, [repos, visibleIds]);
+  }, [repoFullName, repos, visibleIds]);
 
   // Costs-panel-specific filters, persisted device-locally so they survive
   // reloads. `onlyWithFile` hides repos lacking the file; `hiddenIds` is an
@@ -96,7 +102,7 @@ export function CostsPanel({
     readCostsHiddenRepos(),
   );
   const hiddenSet = useMemo(() => new Set(hiddenIds), [hiddenIds]);
-  const filterActive = onlyWithFile || hiddenIds.length > 0;
+  const filterActive = !repoFullName && (onlyWithFile || hiddenIds.length > 0);
 
   const setOnlyWithFile = (v: boolean) => {
     setOnlyWithFileState(v);
@@ -144,10 +150,11 @@ export function CostsPanel({
   // resolves — show skeletons rather than flashing repos in and out.
   const resolvingFiles =
     filterEnabled &&
+    !repoFullName &&
     onlyWithFile &&
     active.some((r) => fileStatus.get(String(r.id)) === "pending");
 
-  const visibleRepos = filterEnabled
+  const visibleRepos = filterEnabled && !repoFullName
     ? active.filter((repo) => {
         const id = String(repo.id);
         if (hiddenSet.has(id)) return false;
@@ -170,7 +177,7 @@ export function CostsPanel({
         action={
           status === "connected" ? (
             <div className="flex items-center gap-1">
-              {active.length > 0 && filterEnabled && (
+              {active.length > 0 && filterEnabled && !repoFullName && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -245,11 +252,11 @@ export function CostsPanel({
             icon={Gauge}
             title={t.costs.noActiveRepos}
             description={t.costs.noActiveReposDesc}
-            action={
+            action={onOpenRepos ? (
               <Button variant="outline" size="sm" onClick={onOpenRepos}>
                 {t.costs.openRepositories}
               </Button>
-            }
+            ) : undefined}
           />
         ) : visibleRepos.length === 0 ? (
           <EmptyState
@@ -270,7 +277,7 @@ export function CostsPanel({
           </div>
         ))}
 
-      {filterEnabled && (
+      {filterEnabled && !repoFullName && (
         <FilterDialog
           open={filterOpen}
           onOpenChange={setFilterOpen}

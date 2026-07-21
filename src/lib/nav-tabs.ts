@@ -1,51 +1,86 @@
-// Canonical list of dashboard sections — the source of truth for valid tab
-// ids and their URL slugs. (The sidebar's display order lives in NAV_ITEMS;
-// this list is only about which ids are valid.) No "use client" and no
-// client-only imports, so both the server route and client shell can use it.
-
+// Canonical professional information architecture. The app intentionally keeps
+// its existing catch-all SPA shell; these ids are both the client view keys and
+// the canonical URL slugs.
 export const NAV_TABS = [
-  "overview",
+  "home",
+  "inbox",
+  "work",
+  "projects",
+  "opportunities",
+  "clients",
+  "career",
+  "invoices",
+  "money",
+  "accounts",
+  "transactions",
+  "subscriptions",
+  "categories",
+  "tasks",
   "calendar",
+  "goals",
+  "dates",
   "notes",
   "prompts",
-  "shortcuts",
-  "todos",
-  "tugedr",
-  "streaks",
-  "finances",
-  "invoices",
-  "subscriptions",
-  "plans",
-  "books",
-  "dates",
-  "couple",
-  "github",
-  "projects",
-  "costs",
-  "ai",
-  "jobs",
+  "links",
+  "references",
   "settings",
 ] as const;
 
 export type NavTab = (typeof NAV_TABS)[number];
 
+/** Old bookmarks that still have a meaningful professional destination. */
+export const LEGACY_ROUTE_ALIASES = {
+  overview: "home",
+  todos: "tasks",
+  plans: "goals",
+  jobs: "career",
+  finances: "money",
+  github: "projects",
+  repositories: "projects",
+  costs: "projects",
+  scaling: "projects",
+  ai: "links",
+  "ai-links": "links",
+  shortcuts: "references",
+  tugedr: "opportunities",
+} as const satisfies Record<string, NavTab>;
+
 export function isNavTab(value: string | undefined | null): value is NavTab {
   return value != null && (NAV_TABS as readonly string[]).includes(value);
 }
 
-/** URL path for a tab. Overview is the site root. */
-export function tabToPath(tab: NavTab): string {
-  return tab === "overview" ? "/" : `/${tab}`;
+export function isNavPathSegment(value: string | undefined | null): boolean {
+  return (
+    isNavTab(value) ||
+    (value != null && value in LEGACY_ROUTE_ALIASES)
+  );
 }
 
-/** Resolve the active tab from an optional catch-all slug (server side). */
+/** The only nested dashboard route is a canonical project workspace. */
+export function isDashboardSlug(slug: string[] | undefined): boolean {
+  if (!slug || slug.length === 0) return true;
+  if (slug.length === 1) return isNavPathSegment(slug[0]);
+  return slug.length === 2 && slug[0] === "projects" && slug[1].trim().length > 0;
+}
+
+export function tabToPath(tab: NavTab): string {
+  return tab === "home" ? "/" : `/${tab}`;
+}
+
 export function tabFromSlug(slug: string[] | undefined): NavTab {
   const first = slug?.[0];
-  return isNavTab(first) ? first : "overview";
+  if (isNavTab(first)) return first;
+  if (first && first in LEGACY_ROUTE_ALIASES) {
+    return LEGACY_ROUTE_ALIASES[first as keyof typeof LEGACY_ROUTE_ALIASES];
+  }
+  return "home";
 }
 
-/** Resolve the active tab from a pathname (client side, e.g. on popstate). */
 export function tabFromPath(pathname: string): NavTab {
-  const seg = pathname.replace(/^\//, "").split("/")[0];
-  return isNavTab(seg) ? seg : "overview";
+  const segment = pathname.replace(/^\//, "").split("/")[0];
+  return tabFromSlug(segment ? [segment] : undefined);
+}
+
+export function isLegacyRouteSegment(value: string | undefined): boolean {
+  return value != null && value in LEGACY_ROUTE_ALIASES;
 }

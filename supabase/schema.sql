@@ -1,5 +1,8 @@
--- Personal Dashboard schema
--- Run this in the Supabase SQL editor.
+-- OwnDashboard historic baseline schema.
+-- Fresh installations run this once, then every file in supabase/migrations
+-- in timestamp order. Existing installations must not re-run this baseline.
+-- The migrations archive and remove the retired personal/couples tables below;
+-- they remain here only so a fresh database can execute the same safe upgrade.
 
 -- =============================================================
 -- Subscriptions
@@ -284,6 +287,16 @@ create policy "plans delete own" on public.plans
 -- Couples mode: pairing + sharing preferences + profiles
 -- =============================================================
 
+-- Create the relationship table before the profiles policy references it.
+create table if not exists public.couples (
+  id uuid primary key default gen_random_uuid(),
+  user_a_id uuid not null references auth.users(id) on delete cascade,
+  user_b_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  check (user_a_id <> user_b_id),
+  unique (user_a_id, user_b_id)
+);
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
@@ -312,15 +325,6 @@ create policy "profiles insert own" on public.profiles
 drop policy if exists "profiles update own" on public.profiles;
 create policy "profiles update own" on public.profiles
   for update using (auth.uid() = id);
-
-create table if not exists public.couples (
-  id uuid primary key default gen_random_uuid(),
-  user_a_id uuid not null references auth.users(id) on delete cascade,
-  user_b_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  check (user_a_id <> user_b_id),
-  unique (user_a_id, user_b_id)
-);
 
 alter table public.couples enable row level security;
 

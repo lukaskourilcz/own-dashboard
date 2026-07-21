@@ -11,7 +11,6 @@ function date(overrides: Partial<ImportantDate> = {}): ImportantDate {
   return {
     id: "x",
     user_id: "u",
-    couple_id: null,
     title: "Birthday",
     the_date: "2000-01-15",
     is_recurring: true,
@@ -129,7 +128,7 @@ describe("buildOccurrences", () => {
     const ref = new Date(2026, 4, 12);
     const wedding = date({ the_date: "2020-08-01" });
     const [o] = buildOccurrences([wedding], ref);
-    // Next occurrence is 2026-08-01. The couple turns (2026 - 2020) = 6 — and
+    // Next occurrence is 2026-08-01. The date turns (2026 - 2020) = 6 — and
     // buildOccurrences exposes yearsCompleted as one less than that (5),
     // because the upcoming date marks the start of year 6.
     expect(o.yearsCompleted).toBe(5);
