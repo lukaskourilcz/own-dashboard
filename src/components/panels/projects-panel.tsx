@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import {
@@ -39,6 +39,10 @@ import { useDict } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
+import { useReposQuery } from "@/lib/github-queries";
+import { readRepoFilter } from "@/lib/use-prefs";
+import { cronSeedsForRepo } from "@/lib/project-cron-seeds";
+import type { GithubRepo } from "@/lib/github";
 import {
   costMonthlyIn,
   cronMonthlyIn,
@@ -86,6 +90,7 @@ export function ProjectsPanel({
   setCrons,
   displayCurrency,
   setDisplayCurrency,
+  initialVisibleIds = [],
 }: {
   projects: Project[];
   setProjects: Updater<Project[]>;
@@ -95,6 +100,8 @@ export function ProjectsPanel({
   setCrons: Updater<Cron[]>;
   displayCurrency: string;
   setDisplayCurrency?: (next: string) => void;
+  /** Saved repo allow-list (GitHub repo ids). Empty = every repo is active. */
+  initialVisibleIds?: string[];
 }) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -104,6 +111,157 @@ export function ProjectsPanel({
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // --- Sync active Repositories → Projects -------------------------------
+  // The active repos are the shared Repositories allow-list applied to the live
+  // repo list (empty allow-list = all repos) — the same set the Repositories
+  // and Costs sections show. Every active repo automatically gets a project so
+  // it can carry costs, crons and notes. Removing a repo from the allow-list
+  // leaves its project (and data) in place — we only ever add, never delete.
+  const { data: reposData } = useReposQuery();
+  const [visibleIds] = useState<string[]>(
+    () => readRepoFilter() ?? initialVisibleIds,
+  );
+  const activeRepos = useMemo<GithubRepo[]>(() => {
+    const repos = reposData?.kind === "ok" ? reposData.repos : [];
+    if (visibleIds.length === 0) return repos;
+    const set = new Set(visibleIds);
+    return repos.filter((r) => set.has(String(r.id)));
+  }, [reposData, visibleIds]);
+
+  // repo_full_name (lowercased) of every project that already has one, so we can
+  // tell which active repos still need a project — and flag synced project cards.
+  const projectRepoNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of projects) {
+      if (p.repo_full_name) set.add(p.repo_full_name.toLowerCase());
+    }
+    return set;
+  }, [projects]);
+
+  // Full names of the currently-active repos, so a card can show it's synced
+  // from the Repositories section (vs. a hand-added project).
+  const activeRepoNames = useMemo(
+    () => new Set(activeRepos.map((r) => r.full_name.toLowerCase())),
+    [activeRepos],
+  );
+
+  // Guard rails so the sync effect never double-inserts across re-renders /
+  // StrictMode: repo full names we've started creating, and project ids we've
+  // already seeded crons for this mount.
+  const creatingRepos = useRef<Set<string>>(new Set());
+  const seededProjectIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function seedCronsFor(project: Project) {
+      const seeds = cronSeedsForRepo(project.repo_full_name);
+      if (seeds.length === 0 || seededProjectIds.current.has(project.id)) return;
+      seededProjectIds.current.add(project.id);
+      const userId = await currentUserId(supabase);
+      if (!userId) return;
+      const rows = seeds.map((s) => ({
+        user_id: userId,
+        project_id: project.id,
+        name: s.name,
+        schedule: s.schedule,
+        endpoint: s.endpoint,
+        description: s.description,
+        is_ai_call: s.is_ai_call,
+        cost_per_run: 0,
+        currency: displayCurrency,
+        runs_per_month: s.runs_per_month,
+        enabled: true,
+      }));
+      const { data, error } = await supabase.from("crons").insert(rows).select();
+      if (error || !data) {
+        seededProjectIds.current.delete(project.id);
+        return;
+      }
+      if (!cancelled) setCrons((prev) => [...prev, ...(data as Cron[])]);
+    }
+
+    async function sync() {
+      // Backfill crons for repos whose project already exists but is still
+      // cron-less (e.g. it was created before its workflows were known).
+      for (const repo of activeRepos) {
+        const match = projects.find(
+          (p) =>
+            p.repo_full_name?.toLowerCase() === repo.full_name.toLowerCase(),
+        );
+        if (
+          match &&
+          cronSeedsForRepo(repo.full_name).length > 0 &&
+          !crons.some((c) => c.project_id === match.id) &&
+          !seededProjectIds.current.has(match.id)
+        ) {
+          await seedCronsFor(match);
+        }
+      }
+
+      // Create a project for each active repo that doesn't have one yet.
+      const missing = activeRepos.filter(
+        (r) =>
+          !projectRepoNames.has(r.full_name.toLowerCase()) &&
+          !creatingRepos.current.has(r.full_name.toLowerCase()),
+      );
+      if (missing.length === 0) return;
+
+      const userId = await currentUserId(supabase);
+      if (!userId) return;
+
+      // Allocate unique slugs against existing ones and within this batch.
+      const usedSlugs = new Set(projects.map((p) => p.slug));
+      let sortBase = projects.length;
+
+      for (const repo of missing) {
+        const key = repo.full_name.toLowerCase();
+        creatingRepos.current.add(key);
+        let slug = slugify(repo.name) || slugify(repo.full_name) || "project";
+        if (usedSlugs.has(slug)) {
+          let n = 2;
+          while (usedSlugs.has(`${slug}-${n}`)) n++;
+          slug = `${slug}-${n}`;
+        }
+        usedSlugs.add(slug);
+        try {
+          const { data, error } = await supabase
+            .from("projects")
+            .insert({
+              user_id: userId,
+              name: repo.name,
+              slug,
+              repo_full_name: repo.full_name,
+              url: null,
+              sort_order: sortBase++,
+              is_active: true,
+            })
+            .select()
+            .single();
+          if (error || !data) {
+            // A concurrent create (another tab/device) may have won the slug —
+            // let the query reconcile instead of surfacing an error.
+            creatingRepos.current.delete(key);
+            continue;
+          }
+          const created = data as Project;
+          if (!cancelled) setProjects((prev) => [...prev, created]);
+          await seedCronsFor(created);
+        } catch {
+          creatingRepos.current.delete(key);
+        }
+      }
+      if (!cancelled) void qc.invalidateQueries({ queryKey: qk.projects });
+    }
+
+    void sync();
+    return () => {
+      cancelled = true;
+    };
+    // Re-run when the active repo set or the existing projects change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRepos, projectRepoNames]);
 
   const costsByProject = useMemo(() => {
     const map = new Map<string, ProjectCost[]>();
@@ -448,6 +606,10 @@ export function ProjectsPanel({
                 setProjects={setProjects}
                 displayCurrency={displayCurrency}
                 editing={form.id === p.id}
+                synced={
+                  !!p.repo_full_name &&
+                  activeRepoNames.has(p.repo_full_name.toLowerCase())
+                }
                 onEdit={() => startEditProject(p)}
                 onToggleActive={() => toggleProjectActive(p)}
                 onDelete={() => deleteProject(p)}
@@ -472,6 +634,7 @@ function ProjectCard({
   setProjects,
   displayCurrency,
   editing,
+  synced,
   onEdit,
   onToggleActive,
   onDelete,
@@ -484,6 +647,8 @@ function ProjectCard({
   setProjects: Updater<Project[]>;
   displayCurrency: string;
   editing: boolean;
+  /** True when this project mirrors a currently-active Repository. */
+  synced: boolean;
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
@@ -501,6 +666,14 @@ function ProjectCard({
             <span className="truncate">{project.name}</span>
             {!project.is_active && (
               <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
+            )}
+            {synced && (
+              <Tooltip content={t.projects.syncedHint}>
+                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+                  <GithubIcon className="h-2.5 w-2.5" />
+                  {t.projects.synced}
+                </span>
+              </Tooltip>
             )}
           </CardTitle>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">

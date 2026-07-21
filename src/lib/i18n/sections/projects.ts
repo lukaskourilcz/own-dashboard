@@ -31,6 +31,8 @@ type ProjectsStrings = {
   // Project card.
   active: string;
   inactive: string;
+  synced: string;
+  syncedHint: string;
   markActive: string;
   markInactive: string;
   monthly: string;
@@ -98,7 +100,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
   en: {
     title: "Projects",
     description:
-      "Monthly running costs, notes and crons across your active projects.",
+      "Monthly running costs, notes and crons across your active projects. Active repositories show up here automatically.",
     displayIn: "Display in",
 
     grandTotalMonthly: "Total monthly",
@@ -126,6 +128,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
 
     active: "active",
     inactive: "inactive",
+    synced: "Repository",
+    syncedHint: "Synced automatically from an active repository in Repositories.",
     markActive: "Mark active",
     markInactive: "Mark inactive",
     monthly: "Monthly",
@@ -189,7 +193,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
   cs: {
     title: "Projekty",
     description:
-      "Měsíční provozní náklady, poznámky a crony aktivních projektů.",
+      "Měsíční provozní náklady, poznámky a crony aktivních projektů. Aktivní repozitáře se sem přidají automaticky.",
     displayIn: "Zobrazit v",
 
     grandTotalMonthly: "Celkem měsíčně",
@@ -218,6 +222,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
 
     active: "aktivní",
     inactive: "neaktivní",
+    synced: "Repozitář",
+    syncedHint:
+      "Automaticky synchronizováno z aktivního repozitáře v sekci Repozitáře.",
     markActive: "Označit jako aktivní",
     markInactive: "Označit jako neaktivní",
     monthly: "Měsíčně",

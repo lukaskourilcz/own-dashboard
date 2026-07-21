@@ -16,6 +16,11 @@ type AppStrings = {
   switchToDark: string;
   switchToEnglish: string;
   switchToCzech: string;
+  // Not-found (wrong URL) page.
+  notFoundTitle: string;
+  notFoundBody: string;
+  notFoundHome: string;
+  notFoundLogin: string;
 };
 
 export const app: { en: AppStrings; cs: AppStrings } = {
@@ -36,6 +41,11 @@ export const app: { en: AppStrings; cs: AppStrings } = {
     switchToDark: "Switch to dark mode",
     switchToEnglish: "Switch to English",
     switchToCzech: "Přepnout do češtiny",
+    notFoundTitle: "Wrong URL",
+    notFoundBody:
+      "That address doesn’t exist. You may have mistyped it — let’s get you back on track.",
+    notFoundHome: "Go to homepage",
+    notFoundLogin: "Sign in",
   },
   cs: {
     quickAdd: "Rychlé přidání",
@@ -54,5 +64,10 @@ export const app: { en: AppStrings; cs: AppStrings } = {
     switchToDark: "Přepnout na tmavý režim",
     switchToEnglish: "Switch to English",
     switchToCzech: "Přepnout do češtiny",
+    notFoundTitle: "Špatná adresa",
+    notFoundBody:
+      "Tahle adresa neexistuje. Nejspíš došlo k překlepu — pojďme tě vrátit zpět.",
+    notFoundHome: "Přejít na úvodní stránku",
+    notFoundLogin: "Přihlásit se",
   },
 };
