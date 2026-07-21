@@ -445,6 +445,74 @@ export function writeCostsHiddenRepos(ids: string[]): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Spend categories — a user-managed list of category names shared by the
+// Subscriptions and Finances (costs) sections. The category itself is still
+// stored as a plain string on each row; this is just the pick-list that powers
+// the category selector, kept device-local so no schema change is needed.
+// ---------------------------------------------------------------------------
+
+const SPEND_CATEGORIES_KEY = "spendCategories";
+const spendCatListeners = new Set<() => void>();
+const EMPTY_CATS: readonly string[] = Object.freeze([]);
+let spendCatCache: readonly string[] | null = null;
+
+function readSpendCategories(): readonly string[] {
+  if (spendCatCache != null) return spendCatCache;
+  if (typeof window === "undefined") return EMPTY_CATS;
+  try {
+    const raw = localStorage.getItem(SPEND_CATEGORIES_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    spendCatCache = Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : EMPTY_CATS;
+  } catch {
+    spendCatCache = EMPTY_CATS;
+  }
+  return spendCatCache;
+}
+
+function subscribeSpendCategories(cb: () => void): () => void {
+  spendCatListeners.add(cb);
+  return () => {
+    spendCatListeners.delete(cb);
+  };
+}
+
+const getServerSpendCategories = (): readonly string[] => EMPTY_CATS;
+
+export function useSpendCategories(): {
+  categories: readonly string[];
+  addCategory: (name: string) => void;
+  removeCategory: (name: string) => void;
+} {
+  const categories = useSyncExternalStore(
+    subscribeSpendCategories,
+    readSpendCategories,
+    getServerSpendCategories,
+  );
+  const persist = (next: string[]): void => {
+    spendCatCache = Object.freeze([...next]);
+    try {
+      localStorage.setItem(SPEND_CATEGORIES_KEY, JSON.stringify(next));
+    } catch {
+      // ignore — quota or privacy mode.
+    }
+    for (const cb of spendCatListeners) cb();
+  };
+  const addCategory = (name: string): void => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    // Case-insensitive de-dupe so "Zábava" and "zábava" don't both appear.
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return;
+    persist([...categories, trimmed]);
+  };
+  const removeCategory = (name: string): void => {
+    persist(categories.filter((c) => c !== name));
+  };
+  return { categories, addCategory, removeCategory };
+}
+
 // Collapsed project cards (project ids). Reorder persists to the DB via
 // sort_order; collapse is a per-device view preference, so it lives here.
 const COLLAPSED_PROJECTS_KEY = "collapsedProjectIds";
