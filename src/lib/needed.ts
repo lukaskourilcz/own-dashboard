@@ -45,13 +45,33 @@ export function parseNeeded(
 ): NeededItem[] {
   const items: NeededItem[] = [];
   const seen = new Set<string>();
-  for (const raw of content.split(/\r?\n/)) {
+  const lines = content.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
     const m = ITEM_RE.exec(raw);
     if (!m) continue;
     const checkbox = m[2];
     if (checkbox && checkbox.toLowerCase() === "x") continue; // already done
-    const { importance, text } = extractImportance(m[3].trim());
+    const parsed = extractImportance(m[3].trim());
+    const text = parsed.text;
+    let importance = parsed.importance;
     if (!text) continue;
+    // A task can wrap onto indented continuation lines; if its `[imp:N]` marker
+    // sits on one of them, adopt it (needed_raw stays the item's own line, so
+    // completion-removal still targets a single line).
+    if (importance === null) {
+      for (let j = i + 1; j < lines.length; j++) {
+        const cont = lines[j];
+        if (cont.trim() === "") break; // blank line ends the item
+        if (ITEM_RE.test(cont)) break; // the next list item
+        if (!/^\s+\S/.test(cont)) break; // non-indented → not a continuation
+        const found = extractImportance(cont);
+        if (found.importance !== null) {
+          importance = found.importance;
+          break;
+        }
+      }
+    }
     // De-dupe identical lines within one file so the key stays unique.
     let key = `${repo.id}:${text.toLowerCase()}`;
     let n = 1;

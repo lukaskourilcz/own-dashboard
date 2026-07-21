@@ -478,7 +478,7 @@ export function TodosPanel({
               </CardContent>
             </Card>
           ) : (
-            <>
+            <div className="grid items-start gap-4 lg:grid-cols-2">
               {repoGroups.map((g) => (
                 <TaskGroupCard
                   key={g.fullName ?? g.name}
@@ -526,7 +526,7 @@ export function TodosPanel({
                   }
                 />
               )}
-            </>
+            </div>
           )}
 
           {done.length > 0 && (
