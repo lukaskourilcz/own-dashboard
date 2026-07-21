@@ -37,6 +37,8 @@ import type {
   Invoice,
   InvoiceItem,
   InvoiceSettings,
+  Organization,
+  Project,
   Updater,
 } from "@/lib/types";
 
@@ -62,6 +64,8 @@ export function InvoicesPanel({
   setSettings,
   userId,
   displayCurrency,
+  organizations,
+  projects,
 }: {
   invoices: Invoice[];
   setInvoices: Updater<Invoice[]>;
@@ -71,6 +75,8 @@ export function InvoicesPanel({
   setSettings: (s: InvoiceSettings) => void;
   userId: string;
   displayCurrency: string;
+  organizations: Organization[];
+  projects: Project[];
 }) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -263,6 +269,8 @@ export function InvoicesPanel({
         existingInvoices={invoices}
         setInvoices={setInvoices}
         setItems={setItems}
+        organizations={organizations}
+        projects={projects}
         onCancel={() => setView({ mode: "list" })}
         onDone={(id) => setView({ mode: "detail", id })}
         onEditSupplier={() => setView({ mode: "settings" })}
@@ -285,6 +293,8 @@ export function InvoicesPanel({
           existingInvoices={invoices}
           setInvoices={setInvoices}
           setItems={setItems}
+          organizations={organizations}
+          projects={projects}
           onCancel={() => setView({ mode: "list" })}
           onDone={(id) => setView({ mode: "detail", id })}
           onEditSupplier={() => setView({ mode: "settings" })}

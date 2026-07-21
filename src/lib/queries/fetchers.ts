@@ -37,6 +37,24 @@ import type {
   Todo,
   Transaction,
 } from "@/lib/types";
+import type { EventsResult } from "@/lib/calendar";
+
+async function fetchCalendarWindow(window: "today" | "week"): Promise<EventsResult> {
+  const response = await fetch(`/api/calendar/events?window=${window}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = (await response.json().catch(() => null)) as EventsResult | null;
+  if (!response.ok || !data) throw new Error("Could not load calendar events.");
+  return data;
+}
+
+export function fetchTodayCalendar(): Promise<EventsResult> {
+  return fetchCalendarWindow("today");
+}
+
+export function fetchWeekCalendar(): Promise<EventsResult> {
+  return fetchCalendarWindow("week");
+}
 
 /**
  * Client-side Supabase fetchers used as React Query `queryFn`s, so an

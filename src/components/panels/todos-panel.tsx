@@ -54,14 +54,18 @@ import {
   type NeededTodoRow,
 } from "@/lib/needed-sync";
 import type { Locale } from "date-fns";
-import type { Todo } from "@/lib/types";
+import type { Organization, Project, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function TodosPanel({
   todos,
+  projects = [],
+  organizations = [],
   compact = false,
 }: {
   todos: Todo[];
+  projects?: Project[];
+  organizations?: Organization[];
   compact?: boolean;
 }) {
   const supabase = createClient();
@@ -72,6 +76,8 @@ export function TodosPanel({
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [newImportance, setNewImportance] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
@@ -96,6 +102,8 @@ export function TodosPanel({
           title: title.trim(),
           due_date: dueDate || null,
           importance: newImportance ? Number(newImportance) : null,
+          project_id: projectId || null,
+          organization_id: organizationId || null,
           user_id: userId,
         })
         .select()
@@ -108,6 +116,8 @@ export function TodosPanel({
       setTitle("");
       setDueDate("");
       setNewImportance("");
+      setProjectId("");
+      setOrganizationId("");
       setAddOpen(false);
       void qc.invalidateQueries({ queryKey: qk.todos });
     },
@@ -565,6 +575,12 @@ export function TodosPanel({
         setDueDate={setDueDate}
         newImportance={newImportance}
         setNewImportance={setNewImportance}
+        projectId={projectId}
+        setProjectId={setProjectId}
+        organizationId={organizationId}
+        setOrganizationId={setOrganizationId}
+        projects={projects}
+        organizations={organizations}
         saving={saving}
         onSubmit={addTodo}
       />
@@ -996,6 +1012,12 @@ function AddTaskDialog({
   setDueDate,
   newImportance,
   setNewImportance,
+  projectId,
+  setProjectId,
+  organizationId,
+  setOrganizationId,
+  projects,
+  organizations,
   saving,
   onSubmit,
 }: {
@@ -1008,6 +1030,12 @@ function AddTaskDialog({
   setDueDate: (v: string) => void;
   newImportance: string;
   setNewImportance: (v: string) => void;
+  projectId: string;
+  setProjectId: (v: string) => void;
+  organizationId: string;
+  setOrganizationId: (v: string) => void;
+  projects: Project[];
+  organizations: Organization[];
   saving: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }) {
@@ -1052,6 +1080,32 @@ function AddTaskDialog({
                       value: String(n),
                       label: t.todos.importanceOption(n),
                     })),
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="todo-add-project">{t.todos.project}</Label>
+                <SimpleSelect
+                  id="todo-add-project"
+                  value={projectId}
+                  onValueChange={setProjectId}
+                  options={[
+                    { value: "", label: t.todos.noProject },
+                    ...projects.map((project) => ({ value: project.id, label: project.name })),
+                  ]}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="todo-add-organization">{t.todos.organization}</Label>
+                <SimpleSelect
+                  id="todo-add-organization"
+                  value={organizationId}
+                  onValueChange={setOrganizationId}
+                  options={[
+                    { value: "", label: t.todos.noOrganization },
+                    ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
                   ]}
                 />
               </div>

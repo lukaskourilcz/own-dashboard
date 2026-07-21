@@ -11,7 +11,7 @@ const isDev = process.env.NODE_ENV !== "production";
 // for scripts) — a blocked resource now actually fails, so watch for it.
 //
 // connect-src lists only what the BROWSER calls directly (server-side fetches —
-// Jina, Firecrawl, Google, Resend — are not subject to page CSP).
+// Jina, Anthropic, Google, Resend — are not subject to page CSP).
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",

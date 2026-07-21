@@ -10,6 +10,10 @@ type TodosStrings = {
   taskLabel: string;
   whatNeedsDoing: string;
   dueDate: string;
+  project: string;
+  organization: string;
+  noProject: string;
+  noOrganization: string;
   allTasks: string;
   nothingOnPlate: string;
   nothingOnPlateDescription: string;
@@ -91,6 +95,10 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     taskLabel: "Task",
     whatNeedsDoing: "What needs doing?",
     dueDate: "Due date",
+    project: "Project",
+    organization: "Organization",
+    noProject: "No project",
+    noOrganization: "No organization",
     allTasks: "All tasks",
     nothingOnPlate: "Nothing on your plate",
     nothingOnPlateDescription: "Add a task on the left to get started.",
@@ -98,7 +106,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     due: (date) => `due ${date}`,
     dueDateFormat: "d MMM",
     otherCategory: "Other",
-    personalGroup: "Personal",
+    personalGroup: "Manual tasks",
     byCategory: "By category",
     remainingLabel: "left",
     totalOpen: (n) => (n === 1 ? "1 task open" : `${n} tasks open`),
@@ -183,6 +191,10 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     taskLabel: "Úkol",
     whatNeedsDoing: "Co je potřeba udělat?",
     dueDate: "Termín",
+    project: "Projekt",
+    organization: "Organizace",
+    noProject: "Bez projektu",
+    noOrganization: "Bez organizace",
     allTasks: "Všechny úkoly",
     nothingOnPlate: "Nemáš nic na práci",
     nothingOnPlateDescription: "Přidej úkol vlevo a začni.",
@@ -190,7 +202,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     due: (date) => `termín ${date}`,
     dueDateFormat: "d. MMM",
     otherCategory: "Ostatní",
-    personalGroup: "Osobní",
+    personalGroup: "Ruční úkoly",
     byCategory: "Podle kategorie",
     remainingLabel: "zbývá",
     totalOpen: (n) => {

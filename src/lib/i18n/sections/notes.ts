@@ -36,6 +36,8 @@ type NotesStrings = {
   pin: string;
   delete: string;
   deleteNote: string;
+  linkedProject: string;
+  noProject: string;
   removeTag: (tag: string) => string;
   selectANote: string;
   selectANoteDescription: string;
@@ -106,6 +108,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     pin: "Pin",
     delete: "Delete",
     deleteNote: "Delete note",
+    linkedProject: "Linked project",
+    noProject: "No project",
     removeTag: (tag) => `Remove ${tag}`,
     selectANote: "Select a note",
     selectANoteDescription: "Or create a new one to start writing.",
@@ -174,6 +178,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     pin: "Připnout",
     delete: "Smazat",
     deleteNote: "Smazat poznámku",
+    linkedProject: "Propojený projekt",
+    noProject: "Bez projektu",
     removeTag: (tag) => `Odebrat ${tag}`,
     selectANote: "Vyberte poznámku",
     selectANoteDescription: "Nebo vytvořte novou a začněte psát.",

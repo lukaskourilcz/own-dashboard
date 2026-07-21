@@ -43,4 +43,6 @@ export const qk = {
   // Network-backed.
   repos: ["github", "repos"] as const,
   calendarList: ["calendar", "list"] as const,
+  calendarToday: ["calendar", "events", "today"] as const,
+  calendarWeek: ["calendar", "events", "week"] as const,
 } satisfies Record<string, QueryKey>;

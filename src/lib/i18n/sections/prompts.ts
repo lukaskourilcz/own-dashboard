@@ -18,6 +18,8 @@ type PromptsStrings = {
   namePlaceholder: string;
   promptText: string;
   promptPlaceholder: string;
+  project: string;
+  noProject: string;
   cancel: string;
   create: string;
   save: string;
@@ -56,6 +58,8 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     namePlaceholder: "e.g. Code review",
     promptText: "Prompt",
     promptPlaceholder: "Paste or write your prompt…",
+    project: "Project",
+    noProject: "No linked project",
     cancel: "Cancel",
     create: "Create",
     save: "Save",
@@ -91,6 +95,8 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     namePlaceholder: "např. Code review",
     promptText: "Prompt",
     promptPlaceholder: "Vlož nebo napiš svůj prompt…",
+    project: "Projekt",
+    noProject: "Bez propojeného projektu",
     cancel: "Zrušit",
     create: "Vytvořit",
     save: "Uložit",

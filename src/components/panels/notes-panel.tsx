@@ -55,6 +55,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -62,7 +63,7 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict, useDateLocale } from "@/lib/i18n";
-import type { Note, Updater } from "@/lib/types";
+import type { Note, Project, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tagColor } from "@/lib/tag-colors";
 import type { NoteEditorHandle } from "@/components/notes/note-editor";
@@ -99,6 +100,7 @@ function noteDate(note: Pick<Note, "updated_at" | "created_at">): Date {
 type Props = {
   notes: Note[];
   setNotes: Updater<Note[]>;
+  projects: Project[];
 };
 
 function normalizeTag(raw: string): string {
@@ -131,7 +133,7 @@ function safeFilename(title: string): string {
     .slice(0, 60);
 }
 
-export function NotesPanel({ notes, setNotes }: Props) {
+export function NotesPanel({ notes, setNotes, projects }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
@@ -292,6 +294,24 @@ export function NotesPanel({ notes, setNotes }: Props) {
       toast.err((e as Error).message);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.notes }),
+  });
+
+  const projectLinkMutation = useMutation({
+    mutationFn: async ({ id, project_id }: { id: string; project_id: string }) => {
+      const { data, error } = await supabase
+        .from("notes")
+        .update({ project_id: project_id || null, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error(t.notes.couldNotSaveNote);
+      return data as Note;
+    },
+    onSuccess: (note) => {
+      setNotes((current) => current.map((item) => item.id === note.id ? note : item));
+      void qc.invalidateQueries({ queryKey: qk.notes });
+    },
+    onError: () => toast.err(t.notes.couldNotSaveNote),
   });
 
   async function deleteNote(id: string) {
@@ -717,6 +737,16 @@ export function NotesPanel({ notes, setNotes }: Props) {
                         )}
                   </p>
                 </div>
+                <SimpleSelect
+                  value={selected.project_id ?? ""}
+                  aria-label={t.notes.linkedProject}
+                  onValueChange={(project_id) => projectLinkMutation.mutate({ id: selected.id, project_id })}
+                  className="hidden h-8 w-40 text-xs sm:flex"
+                  options={[
+                    { value: "", label: t.notes.noProject },
+                    ...projects.map((project) => ({ value: project.id, label: project.name })),
+                  ]}
+                />
                 <Tooltip content={t.notes.copyAsMarkdown}>
                   <Button
                     size="icon-sm"

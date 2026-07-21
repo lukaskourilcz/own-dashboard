@@ -1,99 +1,64 @@
 # OwnDashboard
 
-OwnDashboard is a bilingual, self-hosted professional personal operating system. It brings delivery, client pipeline, career, money, planning, and reusable knowledge into one authenticated workspace.
+OwnDashboard is a bilingual, self-hosted personal operating system for running professional work. It connects projects, client acquisition, clients, career, invoices, costs, planning, and reusable knowledge in one authenticated, own-data-only workspace.
 
-The canonical information architecture is:
+It is deliberately a personal application—not a SaaS, team workspace, CRM, or accounting suite. OwnDashboard remains the temporary product name until a replacement is explicitly approved; all application branding is centralized in `src/lib/brand.ts`.
 
-- Home and Inbox
-- Work: Overview, Projects, Opportunities, Clients, Career, Invoices
-- Money: Overview, Accounts, Transactions, Subscriptions, Categories
-- Planning: Tasks, Calendar, Goals, Dates
-- Library: Notes, Prompts, Links, References
-- Settings
+## Product areas
 
-Pulse, habits/streaks, books/reading, and couples mode were retired. Their rows are archived before removal and remain downloadable from Settings → Data & export. Tugedr is retained only as an opportunity source; it is not a separate scratchpad.
+- **Home and Inbox** — an attention-focused daily surface, quick capture, unclassified input, operational warnings, notifications, snooze/dismiss, and deliberate conversion into professional records.
+- **Work** — portfolio overview, explainable project health, weekly reviews, project workspaces, client opportunities, organizations/clients, Career, and the canonical invoice workflow.
+- **Projects** — overview, local/imported tasks, derived activity, GitHub repository documents, NEEDED.md intake, cron and operations metadata, project costs, linked subscriptions/transactions/invoices, knowledge, and a project-scoped copilot.
+- **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking.
+- **Career** — scraped listings, shortlist/hide state, application pipeline and history, cover-letter templates, follow-ups, and an evidence-grounded Career copilot.
+- **Money and invoices** — accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
+- **Planning** — project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
+- **Library** — BlockNote notes, reusable prompts, enriched links, shortcuts, and structured references. Notes and prompts can be linked to project knowledge without duplicating their records.
+- **Settings** — appearance, navigation, integrations, notification controls, AI/privacy consent, own-only exports, legacy archive download, and account controls.
 
-## What is included
+Pulse, habits/streaks, books/reading, and couples mode are retired. The cleanup migration archives their rows before removal, restores strict own-only policies, and keeps the archive downloadable from Settings → Data & export.
 
-- Work overview with delivery metrics, explainable project-health warnings, follow-ups, and weekly reviews
-- Project workspaces at `/projects/[slug]` with overview, tasks, activity, repository, operations, finance, knowledge, explainable health, and a source-backed project copilot
-- Opportunity pipeline with Tugedr/referral/direct/inbound sources and confirmed, transactional conversion into linked organizations and projects
-- Client organizations with connected projects, opportunities, invoices, tasks, notes, dates, and FX-normalized revenue context
-- Career listings and application tracking
-- Czech VAT-aware invoices, QR payment, PDF import, and supplier defaults
-- Accounts, transactions, bank sync, subscriptions, spend categories, and FX-aware totals
-- Tasks, Google Calendar, goals, and professional dates
-- Block notes, prompts, link catalogue, command snippets, and reference tables
-- Inbox capture, notifications, filtering, snoozing, and deliberate routing into eight professional destinations
-- Contextual AI intent parsing, owned-record search, project and weekly briefs, career assistance, and knowledge-maintenance proposals with explicit consent and no autonomous writes
-- Own-only Supabase RLS for professional and financial data
-- Full, financial, professional, knowledge, projects, notes, prompts, career, and legacy JSON exports plus table-level CSV
+## AI and safety boundaries
 
-## Stack
+AI is contextual rather than a standalone chatbot. The Anthropic integration supports intent routing, owned-record search, weekly operating briefs, project and Career copilots, link enrichment, and knowledge-maintenance proposals.
 
-Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Supabase Auth/Postgres/RLS · TanStack Query · Radix UI · Recharts · BlockNote · Vitest · Playwright.
+- Server routes authenticate the user and load only owned records relevant to the initiated workflow.
+- Financial, invoice, calendar, career, repository-document, client, subscription, and private-note context requires explicit initiation; the most sensitive workflows also respect the Settings opt-in.
+- Model output is schema-validated and presented as fact/risk/suggestion or a proposal.
+- AI never autonomously deletes records, sends invoices, marks payments, disconnects integrations, triggers crons, or writes GitHub workflows.
+- Application writes require a separate user confirmation and server-side authorization.
+- Prompt/response contents and private record values are not sent to PostHog event properties.
 
-Optional integrations: Google Calendar, GitHub, GoCardless, Anthropic-compatible AI, Resend, and Sentry.
+See [AI and privacy](./docs/ai-and-privacy.md) for the exact boundaries.
 
-## Setup
+## Architecture and stack
 
-### 1. Install
+| Layer | Implementation |
+| --- | --- |
+| Web | Modified Next.js `16.2.6` App Router, React `19.2`, strict TypeScript 5, Tailwind CSS 4, Motion |
+| Data/auth | Supabase Postgres and Auth via `@supabase/ssr`/`supabase-js`; explicit Data API grants and own-only RLS |
+| Client data | TanStack React Query 5 with centralized keys, route-scoped server seeds, lazy destination fetches, bounded stale times, invalidation, cancellation, and optimistic updates where reversible |
+| UI | Radix primitives, Lucide, Recharts, BlockNote, date-fns, QRCode |
+| AI/extraction | Anthropic SDK with centralized Haiku/Sonnet-class model roles; pdf.js deterministic extraction first; optional Jina Reader enrichment |
+| Operations | Vercel functions/crons, optional Upstash rate limiting, Resend email, PostHog analytics/flags, Sentry monitoring |
+| Integrations | Google Calendar OAuth, GitHub OAuth/repository files and commits, GoCardless Bank Account Data |
+| Quality | ESLint, TypeScript, Vitest, Playwright, axe accessibility checks |
 
-```bash
-npm ci
+The authenticated dashboard uses one canonical catch-all route and interactive shell to preserve navigation state. The server now seeds only the entities required by the requested destination; moving within the shell enables the corresponding React Query fetchers on demand. Google Calendar windows follow the same model through an authenticated, bounded endpoint. Supabase RLS remains the final data boundary, including ownership checks on related project and organization IDs.
+
+## Information architecture and routes
+
+```text
+Home
+Inbox
+Work: Overview · Projects · Opportunities · Clients · Career · Invoices
+Money: Overview · Accounts · Transactions · Subscriptions · Categories
+Planning: Tasks · Calendar · Goals · Dates
+Library: Notes · Prompts · Links · References
+Settings
 ```
 
-### 2. Environment
-
-Copy `.env.example` to `.env.local`. The minimum is:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_PUBLISHABLE_OR_ANON_KEY
-```
-
-Optional server variables are documented in [External setup](./docs/external-setup.md). AI model ids can be overridden with `AI_INTENT_MODEL`, `AI_ENRICHMENT_MODEL`, and `AI_SYNTHESIS_MODEL`; provider routing can use `ANTHROPIC_BASE_URL`.
-
-### 3. Database
-
-Existing installations apply the two migrations in timestamp order:
-
-1. `20260721165419_professional_restructure_core.sql` — additive professional entities, relationships, grants, indexes, and own-only relationship policies.
-2. `20260721165421_remove_legacy_personal_scope.sql` — archive first, restore own-only reads, then remove retired personal tables and the sharing function.
-
-Use the normal linked-project migration workflow:
-
-```bash
-npx supabase db push --linked
-```
-
-Do not run the cleanup migration by itself. Export legacy data before rollout if you want an extra off-platform copy. For a brand-new instance, initialize the historic base from `supabase/schema.sql`, then apply both migrations in order. See [Migration and rollback guide](./docs/migration-guide.md).
-
-The migrations were validated locally against a disposable PostgreSQL database with two simulated authenticated users, including the opportunity-conversion transaction, relationship ownership checks, archive cleanup, and cross-user isolation. No linked or production Supabase project is modified by this repository change; deployment remains an explicit operator step.
-
-### 4. Run
-
-```bash
-npm run dev
-```
-
-Open <http://localhost:3000>.
-
-## Quality commands
-
-```bash
-npm run lint
-npx tsc --noEmit
-npm run test
-npm run build
-npm run test:e2e
-```
-
-The `/dev-preview` route is an auth-free deterministic test harness in development only and returns 404 in production.
-
-## Route compatibility
-
-Meaningful bookmarks redirect to their professional destination:
+Project workspaces use `/projects/[id-or-slug]`. Meaningful old bookmarks redirect:
 
 - `/overview` → `/`
 - `/todos` → `/tasks`
@@ -105,11 +70,65 @@ Meaningful bookmarks redirect to their professional destination:
 - `/shortcuts` → `/references`
 - `/tugedr` → `/opportunities`
 
-Removed personal routes such as `/streaks`, `/books`, and `/couple` return 404; stale local navigation preferences are repaired on read.
+Removed personal destinations such as `/streaks`, `/books`, and `/couple` return 404. Stale stored navigation preferences are normalized and cannot resurrect removed sections.
 
-## Documentation
+## Local setup
+
+1. Install dependencies:
+
+```bash
+npm ci
+```
+
+2. Copy `.env.example` to `.env.local`. The minimum browser-safe variables are:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR-PUBLISHABLE-OR-ANON-KEY
+```
+
+All optional AI, OAuth, cron, email, bank, rate-limit, analytics, and monitoring variables are documented inline in `.env.example` and in [External setup](./docs/external-setup.md).
+
+3. Prepare the database.
+
+For an existing installation, link the intended Supabase project and push migrations in timestamp order:
+
+```bash
+npx supabase db push --linked
+```
+
+The relevant migrations are:
+
+1. `20260721165419_professional_restructure_core.sql` — professional entities, relationships, explicit grants/indexes, transaction-safe opportunity conversion, and own-only relationship policies.
+2. `20260721165421_remove_legacy_personal_scope.sql` — archive legacy data, restore own-only reads, then remove retired personal tables and sharing infrastructure.
+
+Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying both migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
+
+4. Start the app:
+
+```bash
+npm run dev
+```
+
+Open <http://localhost:3000>. `/dev-preview` provides deterministic data for local/Playwright UI validation and returns 404 in production.
+
+## Validation
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run test
+npm run build
+npm run test:e2e
+```
+
+## Deployment and owner actions
+
+The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md), including setting `main` as the GitHub default branch. Cost tiers and scaling triggers are documented in [stack-and-scaling.md](./stack-and-scaling.md).
+
+## More documentation
 
 - [Architecture and product reference](./DOCS.md)
-- [Migration and rollback guide](./docs/migration-guide.md)
+- [External services, callbacks, and rename checklist](./docs/external-setup.md)
+- [Migration and rollback](./docs/migration-guide.md)
 - [AI and privacy](./docs/ai-and-privacy.md)
-- [External setup checklist](./docs/external-setup.md)

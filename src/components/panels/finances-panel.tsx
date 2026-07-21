@@ -73,6 +73,7 @@ type TxForm = {
   note: string;
   occurred_on: string;
   account_id: string;
+  project_id: string;
 };
 
 type AccountForm = { name: string; balance: string; currency: string };
@@ -85,6 +86,7 @@ const emptyTx: TxForm = {
   note: "",
   occurred_on: todayKey(),
   account_id: "",
+  project_id: "",
 };
 
 const emptyAccount: AccountForm = { name: "", balance: "0", currency: "USD" };
@@ -200,6 +202,7 @@ export function FinancesPanel({
           category: txForm.category.trim() || null,
           note: txForm.note.trim() || null,
           occurred_on: txForm.occurred_on,
+          project_id: txForm.project_id || null,
         })
         .select()
         .single();
@@ -685,6 +688,20 @@ export function FinancesPanel({
                   />
                 </div>
               )}
+              {projects.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="tx-project">{t.finances.project}</Label>
+                  <SimpleSelect
+                    id="tx-project"
+                    value={txForm.project_id}
+                    onValueChange={(project_id) => setTxForm({ ...txForm, project_id })}
+                    options={[
+                      { value: "", label: t.finances.noneOption },
+                      ...projects.map((project) => ({ value: project.id, label: project.name })),
+                    ]}
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="tx-note">{t.finances.note}</Label>
                 <Textarea
@@ -790,6 +807,9 @@ export function FinancesPanel({
                         </p>
                         <p className="text-[11px] text-foreground-subtle tabular">
                           {tx.occurred_on}
+                          {tx.project_id
+                            ? ` · ${projects.find((project) => project.id === tx.project_id)?.name ?? t.finances.project}`
+                            : ""}
                           {tx.note ? ` · ${tx.note}` : ""}
                         </p>
                       </div>
@@ -828,4 +848,3 @@ export function FinancesPanel({
     </div>
   );
 }
-

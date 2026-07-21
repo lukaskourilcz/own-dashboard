@@ -4,19 +4,16 @@ export const STACK_AND_SCALING_FILE = "stack-and-scaling.md";
 // The prompt to hand another Claude Code session so it writes / updates the
 // stack-and-scaling.md in a repo root. Surfaced via a "Copy prompt" button on
 // cards whose repo doesn't have the file yet.
-export const STACK_AND_SCALING_PROMPT = `Add a file named \`stack-and-scaling.md\` to the root of this repository (update it if it already exists). Inspect the actual code, package manifests, infrastructure/config, environment variables, and deployment files to determine what is really used — do not guess.
+export const STACK_AND_SCALING_PROMPT = `Add or update \`stack-and-scaling.md\` at this repository root. Inspect the actual code, manifests, infrastructure configuration, environment variables, cron/deployment files, and documented product scope; do not guess what is deployed or paid.
 
-Keep it SHORT: the whole file must be readable in one glance — a title, a one-line description, then 5–6 bullets and nothing else. No long prose, no per-dependency breakdown, no extra headings. Each bullet is a single line; if it won't fit on one line, cut detail until it does. Write in English and follow this exact structure:
+Write a concise English operating reference with:
 
-# <App name>
+1. Product name and one-sentence scope.
+2. The actual production stack.
+3. A current-cost table that separates fixed platform cost, variable usage, and excluded items. If live billing is unavailable, say so explicitly and describe free-tier versus reliable-production scenarios.
+4. Official provider links and the date every price was checked.
+5. Realistic 1-owner, 100-user, and 1,000-user planning bands with assumptions. Make clear when a user-count scenario conflicts with the current product model.
+6. Measured upgrade triggers for database, hosting/functions, AI, email, caching/rate limiting, analytics, and monitoring.
+7. Cost controls the owner should configure.
 
-<one-line description of what the app does — max 120 characters>
-
-- **Now:** <total $/month to run it today> — <the hosting/service tiers in one short phrase>, at <current users/traffic assumption>.
-- **Stack:** <the key production services, separated by " · ">.
-- **First ceiling:** <the single limit or blocker you'd hit first, and why>.
-- **At 100 users:** <new $/month> — <the 1–3 upgrades that actually cost money>.
-- **At 1,000 users:** <new $/month> — <the main architecture changes needed: read replica, caching, queue, CDN, etc.>.
-- **Watch:** <the one or two costs/bottlenecks that scale with usage rather than sitting on a flat free tier>.
-
-Use real numbers, tiers, and $/month from this repository's actual stack.`;
+Never prescribe a replica, queue, cache, larger database, or paid plan solely from user count. Tie architecture changes to observed latency, storage, connection, retry, concurrency, token, or quota pressure. Keep estimates honest: distinguish official prices from calculated scenarios, and do not call a service free when its public pricing is unavailable.`;

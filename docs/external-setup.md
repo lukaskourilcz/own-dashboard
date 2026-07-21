@@ -1,63 +1,115 @@
-# External setup checklist
+# External setup and production rollout
 
-These steps require accounts or secrets and are intentionally not automated by repository code.
+These steps require the owner's provider accounts, billing access, secrets, or production domain. Repository code intentionally does not perform them. The concise outstanding checklist lives in `NEEDED.md`; this document supplies the implementation details.
 
-## Supabase
+## 1. GitHub and deployment baseline
 
-- Link the intended project and apply migrations in order.
-- Set the site URL and allowed auth redirects for local and production domains.
-- Enable Google and/or GitHub providers only if those integrations are required.
-- Verify RLS with two test users before production rollout.
-- Set `SUPABASE_SERVICE_ROLE_KEY` only in the server deployment environment.
+- Set `main` as the repository's default branch. It currently still points to `claude/personal-dashboard-app-O4De1`.
+- Connect the Vercel project to `main`, add the production domain, and configure environment variables for Production and the Preview environments that should exercise integrations.
+- Deploy only after the database migration plan below is ready; the professional shell expects its new tables and columns.
 
-## Google Calendar
+## 2. Supabase database and Auth
 
-- Enable Google Calendar API.
-- Add the Supabase auth callback URI to the OAuth client.
-- Configure calendar event plus user email/profile scopes.
-- Add local and production app callback URLs in Supabase.
+1. Back up the intended database or create a recovery point.
+2. Link the Supabase CLI to the intended project.
+3. Apply migrations in timestamp order:
 
-## GitHub
+```bash
+npx supabase db push --linked
+```
 
-- Enable the Supabase GitHub provider for repository materialization and NEEDED.md workflows.
-- Configure OAuth callback/redirect URLs and grant only the repository permissions the workflow needs.
+Do not rerun `supabase/schema.sql` on an existing installation and do not run the cleanup migration alone. `20260721165421_remove_legacy_personal_scope.sql` first writes every owner's retired personal records to `legacy_personal_archives`, then removes Pulse, habits, books, couple tables, and partner sharing. Follow `docs/migration-guide.md` for verification and rollback.
 
-## Bank sync
+Set these deployment variables:
 
-- Configure the GoCardless/Nordigen credentials expected by the existing bank routes.
-- Test requisition callbacks against the production domain and verify transaction deduplication before enabling broadly.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` server-side when privileged token refresh/provider-sync routes are used
 
-## AI
+In Supabase Auth:
 
-- Set `ANTHROPIC_API_KEY`, or an Anthropic-compatible gateway plus `ANTHROPIC_BASE_URL`.
-- Optionally pin `AI_INTENT_MODEL`, `AI_ENRICHMENT_MODEL`, and `AI_SYNTHESIS_MODEL`.
-- Review provider retention terms before allowing any sensitive-context workflow.
+- Set the production Site URL.
+- Allow `http://localhost:3000/auth/callback` for local development and `https://YOUR-DOMAIN/auth/callback` for production.
+- Enable only the Google/GitHub providers that will be used.
+- After migration, test with two users: user B must not select user A's rows or attach a project/organization relationship to them.
 
-## Notifications, email, and monitoring
+## 3. Google Calendar
 
-- Set Resend sender/domain credentials before enabling renewal emails.
-- Set `CRON_SECRET` and verify scheduled requests include the expected authorization.
-- Configure Sentry DSNs plus organization/project identifiers if monitoring is desired.
-- Review Vercel cron schedules and deployment-region/timezone assumptions.
+1. Enable Google Calendar API in the Google Cloud project.
+2. Configure the OAuth consent screen and authorized production domain.
+3. Add the Supabase provider callback (`https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`) to the Google OAuth client.
+4. Configure the same client ID/secret in Supabase Auth and as server variables `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
+5. Confirm the app callback URLs from the Supabase section are allowlisted.
+6. Sign in, explicitly link Google from Settings, create an event, verify agenda loading, then disconnect/relink to test refresh-token behavior.
 
-## Future brand, domain, and repository rename
+The app requests profile/email plus Calendar access when Google is deliberately linked. It does not store full Calendar event bodies in Postgres.
 
-OwnDashboard remains the temporary confirmed name. If a replacement name is approved, update `src/lib/brand.ts` first, then perform these external steps manually:
+## 4. GitHub
 
-- Rename the Vercel project and attach the intended production domain; keep the old domain redirecting during the transition.
-- Update `NEXT_PUBLIC_APP_URL`, Supabase Site URL, and every Supabase Auth redirect allowlist entry.
-- Change the Supabase project display name only; do not rotate its URL or keys solely for branding.
-- Update Google OAuth application name, authorized JavaScript origins, consent-screen domains, and local/production callback URIs.
-- Update GitHub OAuth application name, homepage, and callback URL.
-- If the GitHub repository itself is renamed, update the local `origin`, deployment linkage, badges, and any repository-scoped GitHub Actions secrets.
-- Add the new production domain to PostHog's allowed/configured domains and verify that no captured payload contains private record content.
-- Update Sentry project/environment release settings and allowed origins without exposing DSNs to unauthorized contexts.
-- Verify the Resend sending domain, sender identity, and branded templates after DNS validation.
-- Update external cron consumers and monitors to the new domain without changing their `CRON_SECRET` contract.
-- Reinstall or refresh the PWA after deploy so cached manifest names and icons are replaced; keep the previous service-worker/cache migration behavior intact.
+1. Configure a GitHub OAuth app and add the Supabase provider callback (`https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`).
+2. Configure the provider in Supabase Auth.
+3. Add `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` if revoke/disconnect and expiring-token refresh should be supported.
+4. Grant only the repository access needed for repository discovery, Markdown reads, NEEDED.md synchronization, and confirmed file commits.
+5. Link GitHub in Settings, activate a repository as a project, inspect documents, then perform a disposable confirmed Markdown commit.
 
-None of these external rename/domain steps are performed by the repository implementation.
+OwnDashboard reads GitHub Actions schedule metadata where available. It does not trigger workflows or edit workflow cron files.
 
-## Post-deploy smoke test
+## 5. Contextual AI and enrichment
 
-Sign in, create an organization and Tugedr opportunity, convert it to a project, open `/projects/[slug]`, route an Inbox item, generate and separately save a weekly review, create an invoice, download every JSON export scope plus a transactions CSV, inspect integration status without exposing tokens, verify Google/GitHub callbacks, and confirm a second user cannot read or link to the first user's rows.
+- Set `ANTHROPIC_API_KEY`.
+- Leave `ANTHROPIC_BASE_URL` unset for the official Anthropic API, or set it only for a verified compatible gateway.
+- Keep the defaults in `.env.example` or explicitly set `AI_INTENT_MODEL`, `AI_ENRICHMENT_MODEL`, and `AI_SYNTHESIS_MODEL` to supported model IDs.
+- Add `JINA_API_KEY` only when higher link-reader throughput is needed.
+- Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for rate limiting shared across serverless instances.
+- Configure provider spend limits and review provider retention terms before enabling sensitive AI context.
+
+`FIRECRAWL_API_KEY` is not read by the repository. Without Anthropic, deterministic `!todo`, `!inbox`, and `!cal` quick capture remains available, while AI search, briefs, copilots, enrichment, and knowledge review remain unavailable.
+
+## 6. Scheduled jobs, email, and bank sync
+
+Set a strong `CRON_SECRET`. Vercel's `vercel.json` contains:
+
+- `/api/cron/bank-sync` at 06:00 UTC daily
+- `/api/cron/renewal-warnings` at 07:00 UTC daily
+- `/api/cron/jobs-scrape` at 08:00 UTC daily
+
+Verify the deployment sends the expected Bearer authorization. Add `HEARTBEAT_URL` for renewal-job success pings. `CRON_REGISTRY_TOKEN` is needed only if an external system writes registry metadata.
+
+For email, verify a Resend domain and set:
+
+- `RESEND_API_KEY`
+- `RESEND_FROM` (for example `OwnDashboard <notifications@your-domain.example>`)
+
+For GoCardless Bank Account Data, set `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SECRET_KEY`, connect a bank, confirm the callback at `https://YOUR-DOMAIN/api/bank/callback`, run two syncs, and verify external transaction IDs prevent duplicates. Do not assume a universal free price; check the owner's GoCardless agreement. CSV import remains the offline fallback.
+
+## 7. Analytics and monitoring
+
+PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, configure a billing limit, and test the currently referenced `costs-filter` feature flag. There is no Tugedr feature-flag kill-switch in this repository.
+
+Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and a build-time `SENTRY_AUTH_TOKEN` when source-map upload is desired. Keep `sendDefaultPii` disabled and inspect real events for private record content before broad use.
+
+## 8. Post-deploy smoke test
+
+1. Sign in and confirm Home loads without fetching unrelated Career/transaction tables; navigate between sections and confirm destination data loads.
+2. Create an organization and a Tugedr opportunity, convert it with confirmation, and open `/projects/[slug]`.
+3. Link a task, subscription, transaction, professional date, prompt, note, and invoice to the project; verify they appear in the relevant workspace tabs.
+4. Route, snooze, and dismiss Inbox/notification items.
+5. Generate a weekly brief/project copilot result, verify sources and proposals, and confirm nothing is written until a separate action.
+6. Create a Czech invoice, verify totals/QR/print output, and test deterministic PDF import review.
+7. Download full, financial, professional, knowledge, and legacy exports; retain the legacy archive off-platform if needed.
+8. Exercise each enabled integration's connect, error, disconnect, and reauthorization state.
+9. Sign in as a second user and verify cross-user reads and relationship writes fail.
+
+## 9. Future brand, domain, and repository rename
+
+OwnDashboard remains the temporary confirmed name. When a replacement name is approved, update `src/lib/brand.ts` first, then:
+
+- Rename the Vercel project and attach the new domain; keep the old domain redirecting during transition.
+- Update Supabase Site URL and Auth redirect allowlist. Change only the Supabase display name unless a project migration is deliberately planned.
+- Update Google/GitHub OAuth application names, homepages, consent-screen domains, origins, and callback URLs.
+- If the GitHub repository is renamed, update local `origin`, Vercel linkage, badges, repository allowlists, and Actions secrets.
+- Update PostHog configured domains, Sentry project/environment/release configuration, and the Resend sender/domain/templates.
+- Update external cron consumers and heartbeat monitors without changing their secret contract.
+- Ask installed-PWA users to reinstall/refresh after deployment so the new manifest name and icons replace cached metadata.
+
+Do not rename the product to Takt; that name was explicitly rejected.
