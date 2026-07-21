@@ -1194,6 +1194,46 @@ drop policy if exists "ai_categories delete own" on public.ai_categories;
 create policy "ai_categories delete own" on public.ai_categories
   for delete using (auth.uid() = user_id);
 
+-- =============================================================
+-- Spend categories — a small, user-managed pick-list shared by the
+-- Subscriptions and Finances sections. The category itself is still stored as a
+-- plain text value on each subscription/transaction row; this table just powers
+-- the category selector so the labels stay consistent. Own-only RLS.
+-- =============================================================
+create table if not exists public.spend_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists spend_categories_user_idx
+  on public.spend_categories (user_id, sort_order, created_at);
+
+-- One spelling per user, case-insensitively (so "Zábava" / "zábava" can't both
+-- exist). Matches the client's case-insensitive de-dupe.
+create unique index if not exists spend_categories_user_name_uq
+  on public.spend_categories (user_id, lower(name));
+
+alter table public.spend_categories enable row level security;
+
+drop policy if exists "spend_categories select own" on public.spend_categories;
+create policy "spend_categories select own" on public.spend_categories
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "spend_categories insert own" on public.spend_categories;
+create policy "spend_categories insert own" on public.spend_categories
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "spend_categories update own" on public.spend_categories;
+create policy "spend_categories update own" on public.spend_categories
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "spend_categories delete own" on public.spend_categories;
+create policy "spend_categories delete own" on public.spend_categories
+  for delete using (auth.uid() = user_id);
+
 create table if not exists public.ai_links (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,

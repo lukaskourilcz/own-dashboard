@@ -44,9 +44,9 @@ type CostsStrings = {
 
 export const costs: { en: CostsStrings; cs: CostsStrings } = {
   en: {
-    title: "App costs & scaling",
+    title: "Scaling",
     description:
-      "Tech stack, running costs and scaling for your active repositories.",
+      "Tech stack and scaling for your active repositories.",
     noActiveRepos: "No active repositories",
     noActiveReposDesc:
       "Pick the repos you want to track in the Repositories section — they show up here.",
@@ -88,9 +88,9 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     overviewPerYr: "/yr",
   },
   cs: {
-    title: "Náklady a škálování aplikací",
+    title: "Škálování",
     description:
-      "Tech stack, náklady na provoz a škálování tvých aktivních repozitářů.",
+      "Tech stack a škálování tvých aktivních repozitářů.",
     noActiveRepos: "Žádné aktivní repozitáře",
     noActiveReposDesc:
       "Vyber repozitáře, které chceš sledovat, v sekci Repozitáře — objeví se tady.",

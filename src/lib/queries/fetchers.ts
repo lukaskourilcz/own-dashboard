@@ -29,6 +29,7 @@ import type {
   RepoLink,
   RepoNote,
   Shortcut,
+  SpendCategory,
   Streak,
   StreakLog,
   Subscription,
@@ -283,6 +284,17 @@ export async function fetchAiCategories(): Promise<AiCategory[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as AiCategory[];
+}
+
+export async function fetchSpendCategories(): Promise<SpendCategory[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("spend_categories")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as SpendCategory[];
 }
 
 export async function fetchShortcuts(): Promise<Shortcut[]> {

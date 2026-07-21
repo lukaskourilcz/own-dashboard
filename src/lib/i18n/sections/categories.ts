@@ -9,6 +9,7 @@ type CategoriesStrings = {
   empty: string;
   deleteAria: string;
   exists: string;
+  saveErr: string;
 };
 
 export const categories: { en: CategoriesStrings; cs: CategoriesStrings } = {
@@ -24,6 +25,7 @@ export const categories: { en: CategoriesStrings; cs: CategoriesStrings } = {
     empty: "No categories yet.",
     deleteAria: "Delete category",
     exists: "That category already exists.",
+    saveErr: "Could not save the category.",
   },
   cs: {
     placeholder: "Vyber kategorii",
@@ -37,5 +39,6 @@ export const categories: { en: CategoriesStrings; cs: CategoriesStrings } = {
     empty: "Zatím žádné kategorie.",
     deleteAria: "Smazat kategorii",
     exists: "Tahle kategorie už existuje.",
+    saveErr: "Kategorii se nepodařilo uložit.",
   },
 };

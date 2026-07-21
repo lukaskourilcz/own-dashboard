@@ -40,7 +40,16 @@ import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { BankSync } from "@/components/finances/bank-sync";
-import type { Account, Subscription, Transaction, Updater } from "@/lib/types";
+import type {
+  Account,
+  Cron,
+  Project,
+  ProjectCost,
+  Subscription,
+  Transaction,
+  Updater,
+} from "@/lib/types";
+import { CostOverview } from "@/components/cost-overview";
 
 // Recharts is heavy; load the charts only when this panel renders so it stays
 // out of the initial bundle. A skeleton fills the reserved height meanwhile.
@@ -119,6 +128,9 @@ export function FinancesPanel({
   transactions,
   setTransactions,
   subscriptions,
+  projects,
+  projectCosts,
+  crons,
   displayCurrency,
 }: {
   accounts: Account[];
@@ -126,6 +138,9 @@ export function FinancesPanel({
   transactions: Transaction[];
   setTransactions: Updater<Transaction[]>;
   subscriptions: Subscription[];
+  projects: Project[];
+  projectCosts: ProjectCost[];
+  crons: Cron[];
   displayCurrency: string;
 }) {
   const supabase = createClient();
@@ -388,6 +403,15 @@ export function FinancesPanel({
           </div>
         </div>
       </section>
+
+      {/* Cost overview — aggregate project + subscription spend as pies. */}
+      <CostOverview
+        projects={projects}
+        projectCosts={projectCosts}
+        crons={crons}
+        subscriptions={subscriptions}
+        displayCurrency={displayCurrency}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Bank sync + CSV import — pull real balances/transactions in. */}

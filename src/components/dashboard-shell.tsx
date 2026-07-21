@@ -601,6 +601,9 @@ export function DashboardShell({
                       transactions={transactions}
                       setTransactions={setTransactions}
                       subscriptions={subscriptions}
+                      projects={projects}
+                      projectCosts={projectCosts}
+                      crons={crons}
                       displayCurrency={displayCurrency}
                     />
                   )}
@@ -696,11 +699,6 @@ export function DashboardShell({
                     <CostsPanel
                       initialVisibleIds={repoVisibleIds}
                       onOpenRepos={() => setTab("github")}
-                      projects={projects}
-                      projectCosts={projectCosts}
-                      crons={crons}
-                      subscriptions={subscriptions}
-                      displayCurrency={displayCurrency}
                     />
                   )}
 

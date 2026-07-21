@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
 import { SimpleSelect } from "@/components/ui/select";
 import { useDict } from "@/lib/i18n";
-import { useSpendCategories } from "@/lib/use-prefs";
+import { useSpendCategories } from "@/lib/use-spend-categories";
 import { cn } from "@/lib/utils";
 
 /**
@@ -54,7 +54,7 @@ export function CategorySelect({
       const v = c?.trim();
       if (v && !byKey.has(v.toLowerCase())) byKey.set(v.toLowerCase(), v);
     };
-    categories.forEach(put);
+    categories.forEach((c) => put(c.name));
     used.forEach(put);
     put(value);
     return [...byKey.values()].sort((a, b) => a.localeCompare(b));
@@ -126,13 +126,13 @@ export function CategorySelect({
           ) : (
             <ul className="mt-4 -mx-1 max-h-64 space-y-0.5 overflow-y-auto px-1">
               {categories.map((c) => {
-                const selected = c === value;
+                const selected = c.name === value;
                 return (
-                  <li key={c} className="flex items-center gap-1">
+                  <li key={c.id} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => {
-                        onChange(c);
+                        onChange(c.name);
                         setOpen(false);
                       }}
                       className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-surface-hover focus-ring"
@@ -140,14 +140,14 @@ export function CategorySelect({
                       <span className="grid h-4 w-4 shrink-0 place-items-center">
                         {selected && <Check className="h-3.5 w-3.5" />}
                       </span>
-                      <span className="flex-1 truncate">{c}</span>
+                      <span className="flex-1 truncate">{c.name}</span>
                     </button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => removeCategory(c)}
-                      aria-label={`${t.categories.deleteAria}: ${c}`}
+                      onClick={() => removeCategory(c.id)}
+                      aria-label={`${t.categories.deleteAria}: ${c.name}`}
                     >
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </Button>
