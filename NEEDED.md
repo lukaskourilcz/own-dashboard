@@ -7,15 +7,15 @@ where you can filter tasks by that priority.
 
 ## Tasks
 
-- [ ] **Run the Projects/crons SQL** — re-run `supabase/schema.sql`; without the `projects`/`project_costs`/`crons` tables the Projects section can't save. `[imp:3]`
-- [ ] **Add `ANTHROPIC_API_KEY`** in Vercel — upgrades link Auto-fill to smart category + pricing and powers quick-add (keyless fallback works). `[imp:3]`
-- [ ] **Enable PostHog** — analytics, session replay, and the `tugedr` / `costs-filter` flag kill-switches; add `NEXT_PUBLIC_POSTHOG_KEY` + `_HOST` and redeploy. `[imp:2]`
-- [ ] **Add `HEARTBEAT_URL` + a cron monitor** — alerts you if the daily renewal-warnings cron silently fails. `[imp:2]`
-- [ ] **Add Upstash Redis** (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) — makes Auto-fill rate limiting hold across serverless instances (in-memory fallback works). `[imp:2]`
-- [ ] **Add GoCardless secrets** (`GOCARDLESS_SECRET_ID` / `_KEY`) — turns on live Raiffeisenbank auto-sync in Finances → "Napojení banky" (CSV import already covers the need). `[imp:2]`
-- [ ] **Run the Bruno API auth tests** — optional local/CI auth-regression check (collection in `bruno/`). `[imp:1]`
-- [ ] **Add `JINA` / `FIRECRAWL` / `ANTHROPIC_BASE_URL`** — only if you hit Auto-fill limits or want an LLM gateway. `[imp:1]`
-- [ ] **Authorize the Supabase/Gmail/Calendar/Drive MCP connectors** — dev tooling only; run `/mcp` in an interactive session. `[imp:1]`
+- [ ] **Run the Projects/crons SQL** — re-run `supabase/schema.sql`; without the `projects`/`project_costs`/`crons` tables the Projects section can't save. `[imp:3]` `[owner:me]`
+- [ ] **Add `ANTHROPIC_API_KEY`** in Vercel — upgrades link Auto-fill to smart category + pricing and powers quick-add (keyless fallback works). `[imp:3]` `[owner:me]`
+- [ ] **Enable PostHog** — analytics, session replay, and the `tugedr` / `costs-filter` flag kill-switches; add `NEXT_PUBLIC_POSTHOG_KEY` + `_HOST` and redeploy. `[imp:2]` `[owner:me]`
+- [ ] **Add `HEARTBEAT_URL` + a cron monitor** — alerts you if the daily renewal-warnings cron silently fails. `[imp:2]` `[owner:me]`
+- [ ] **Add Upstash Redis** (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) — makes Auto-fill rate limiting hold across serverless instances (in-memory fallback works). `[imp:2]` `[owner:me]`
+- [ ] **Add GoCardless secrets** (`GOCARDLESS_SECRET_ID` / `_KEY`) — turns on live Raiffeisenbank auto-sync in Finances → "Napojení banky" (CSV import already covers the need). `[imp:2]` `[owner:me]`
+- [ ] **Run the Bruno API auth tests** — optional local/CI auth-regression check (collection in `bruno/`). `[imp:1]` `[owner:me]`
+- [ ] **Add `JINA` / `FIRECRAWL` / `ANTHROPIC_BASE_URL`** — only if you hit Auto-fill limits or want an LLM gateway. `[imp:1]` `[owner:me]`
+- [ ] **Authorize the Supabase/Gmail/Calendar/Drive MCP connectors** — dev tooling only; run `/mcp` in an interactive session. `[imp:1]` `[owner:me]`
 
 ## Details
 

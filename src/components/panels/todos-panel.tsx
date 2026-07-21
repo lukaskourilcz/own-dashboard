@@ -15,6 +15,7 @@ import {
   RefreshCw,
   RotateCcw,
   Trash2,
+  UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,12 @@ import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
 import { useReposQuery } from "@/lib/github-queries";
 import { commitFile, loadRepoFile } from "@/lib/github";
-import { NEEDED_FILE, removeNeededLine } from "@/lib/needed";
+import {
+  NEEDED_FILE,
+  removeNeededLine,
+  extractAssignee,
+  type Assignee,
+} from "@/lib/needed";
 import {
   buildNeededRows,
   diffNeededTodos,
@@ -76,6 +82,9 @@ export function TodosPanel({
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
   // importance is at least this. Applies to the full view's open-task groups.
   const [minImportance, setMinImportance] = useState(0);
+  // Who the task is for: "all" | "me" | "ai" (from the NEEDED.md `[owner:…]`
+  // marker, carried on the stored `needed_raw` line).
+  const [assigneeFilter, setAssigneeFilter] = useState<"all" | Assignee>("all");
   // How many tasks each category shows before "show all" (Settings; 0 = all).
   const { count: tasksPerCategory } = useTasksPerCategory();
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
@@ -380,7 +389,14 @@ export function TodosPanel({
   // (null) count as 0, so any active filter hides them.
   const passesImportance = (td: Todo) =>
     minImportance === 0 || (td.importance ?? 0) >= minImportance;
-  const openVisible = open.filter(passesImportance);
+  // Assignee comes from the task's `[owner:…]` marker on its NEEDED.md line.
+  // Hand-added tasks (no source line) count as "me" — they're the user's own.
+  const passesAssignee = (td: Todo) => {
+    if (assigneeFilter === "all") return true;
+    const who = extractAssignee(td.needed_raw) ?? (td.needed_raw ? null : "me");
+    return who === assigneeFilter;
+  };
+  const openVisible = open.filter((td) => passesImportance(td) && passesAssignee(td));
   const hiddenByFilter = open.length - openVisible.length;
   const openGithub = openVisible
     .filter((td) => td.source === "github" && td.repo_id)
@@ -450,12 +466,15 @@ export function TodosPanel({
       />
       <div className="space-y-4">
           {open.length > 0 && (
-            <ImportanceFilter
-              t={t}
-              value={minImportance}
-              onChange={setMinImportance}
-              hidden={hiddenByFilter}
-            />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <ImportanceFilter
+                t={t}
+                value={minImportance}
+                onChange={setMinImportance}
+                hidden={hiddenByFilter}
+              />
+              <AssigneeFilter t={t} value={assigneeFilter} onChange={setAssigneeFilter} />
+            </div>
           )}
           {open.length === 0 ? (
             <Card>
@@ -940,6 +959,49 @@ function ImportanceFilter({
           {t.todos.filterHidden(hidden)}
         </span>
       )}
+    </div>
+  );
+}
+
+/** Segmented "who does it" filter: all / me / AI, from the `[owner:…]` marker. */
+function AssigneeFilter({
+  t,
+  value,
+  onChange,
+}: {
+  t: Dict;
+  value: "all" | Assignee;
+  onChange: (v: "all" | Assignee) => void;
+}) {
+  const options: { value: "all" | Assignee; label: string }[] = [
+    { value: "all", label: t.todos.filterAll },
+    { value: "me", label: t.todos.assigneeMe },
+    { value: "ai", label: t.todos.assigneeAi },
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
+        <UserRound className="h-3.5 w-3.5" />
+        {t.todos.assigneeFilterLabel}
+      </span>
+      <div className="inline-flex overflow-hidden rounded-md border border-border">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            aria-pressed={value === o.value}
+            className={cn(
+              "px-2.5 py-1 text-xs font-medium transition-colors border-l border-border first:border-l-0 focus-ring",
+              value === o.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface text-foreground-muted hover:bg-surface-hover",
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

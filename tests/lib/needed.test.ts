@@ -87,6 +87,30 @@ describe("parseNeeded", () => {
     expect(items[0].importance).toBeNull();
     expect(items[1].importance).toBe(2);
   });
+
+  it("parses the [owner:me|ai] marker and strips it from the title", () => {
+    const items = parseNeeded(
+      "- [ ] **Add a key** — do it. `[imp:3]` `[owner:me]`\n" +
+        "- [ ] **Split the bundle** `[owner:ai]`\n" +
+        "- [ ] No owner marker\n",
+      repo,
+      null,
+    );
+    expect(items[0].assignee).toBe("me");
+    expect(items[0].text).toBe("**Add a key** — do it.");
+    expect(items[1].assignee).toBe("ai");
+    expect(items[2].assignee).toBeNull();
+  });
+
+  it("reads the owner marker off a continuation line too", () => {
+    const items = parseNeeded(
+      "- [ ] **Wrapped task** — a long line that\n  keeps going. `[imp:2]` `[owner:ai]`\n",
+      repo,
+      null,
+    );
+    expect(items[0].importance).toBe(2);
+    expect(items[0].assignee).toBe("ai");
+  });
 });
 
 describe("removeNeededLine", () => {

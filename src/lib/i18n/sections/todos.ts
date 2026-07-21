@@ -73,6 +73,9 @@ type TodosStrings = {
   filterAll: string;
   filterMin: (n: number) => string;
   filterHidden: (n: number) => string;
+  assigneeFilterLabel: string;
+  assigneeMe: string;
+  assigneeAi: string;
   filterEmptyTitle: string;
   filterEmptyDescription: (n: number) => string;
 };
@@ -159,6 +162,9 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     filterAll: "All",
     filterMin: (n) => (n === 5 ? "5" : `${n}+`),
     filterHidden: (n) => `${n} hidden`,
+    assigneeFilterLabel: "For",
+    assigneeMe: "Me",
+    assigneeAi: "AI",
     filterEmptyTitle: "Nothing at this importance",
     filterEmptyDescription: (n) =>
       `No open tasks scored ${n} or higher. Lower the filter to see more.`,
@@ -271,6 +277,9 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     filterEmptyTitle: "Nic s touto důležitostí",
     filterEmptyDescription: (n) =>
       `Žádné otevřené úkoly s důležitostí ${n} a vyšší. Sniž filtr a uvidíš víc.`,
+    assigneeFilterLabel: "Pro",
+    assigneeMe: "Já",
+    assigneeAi: "AI",
   },
 };
 
