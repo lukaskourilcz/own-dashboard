@@ -32,7 +32,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
 import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
-import { useNavCollapsed, useNavVisibility } from "@/lib/use-prefs";
+import {
+  useNavCollapsed,
+  useNavOrder,
+  useNavVisibility,
+  sortByNavOrder,
+} from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
 import type { NavTab } from "@/lib/nav-tabs";
 
@@ -47,7 +52,7 @@ type NavGroupId = "planning" | "work" | "money" | "personal";
 type NavGroup = { id: NavGroupId; items: NavItem[] };
 
 // Overview is the home base — always shown, pinned above every group.
-const OVERVIEW_ITEM: NavItem = { value: "overview", icon: LayoutDashboard };
+export const OVERVIEW_ITEM: NavItem = { value: "overview", icon: LayoutDashboard };
 
 // The rest of the sections, bucketed into a handful of intent-based groups so
 // the rail reads as a short list of categories instead of a wall of ~19 links.
@@ -116,16 +121,18 @@ export function Sidebar({
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
+  const { order } = useNavOrder();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
   const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
 
   const isVisible = (it: NavItem) =>
     !isHidden(it.value) && (it.value !== "tugedr" || tugedrEnabled);
 
-  // Drop empty groups so we never render a lonely heading with no items.
+  // Drop empty groups so we never render a lonely heading with no items, and
+  // apply the user's custom order within each group.
   const groups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter(isVisible),
+    items: sortByNavOrder(g.items.filter(isVisible), order),
   })).filter((g) => g.items.length > 0);
 
   const initials = (user.name?.trim() || user.email).slice(0, 2).toUpperCase();
@@ -348,8 +355,15 @@ export function MobileNav({
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
+  const { order } = useNavOrder();
   const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
-  const items = NAV_ITEMS.filter(
+  // Overview stays pinned first; the rest follow the user's custom order
+  // (grouped, so items stay within their group like the sidebar).
+  const orderedItems = [
+    OVERVIEW_ITEM,
+    ...NAV_GROUPS.flatMap((g) => sortByNavOrder(g.items, order)),
+  ];
+  const items = orderedItems.filter(
     (it) =>
       (it.value === "overview" || !isHidden(it.value)) &&
       (it.value !== "tugedr" || tugedrEnabled),

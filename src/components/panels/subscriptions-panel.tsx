@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
+import { CategorySelect } from "@/components/category-select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
@@ -435,11 +436,12 @@ export function SubscriptionsPanel({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="sub-category">{t.subscriptions.category}</Label>
-                <Input
+                <CategorySelect
                   id="sub-category"
+                  ariaLabel={t.subscriptions.category}
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  placeholder={t.subscriptions.categoryPlaceholder}
+                  onChange={(v) => setForm({ ...form, category: v })}
+                  used={subs.map((s) => s.category)}
                 />
               </div>
               <div className="space-y-1.5">

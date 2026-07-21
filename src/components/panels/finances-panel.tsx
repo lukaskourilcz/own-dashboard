@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { CategorySelect } from "@/components/category-select";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
@@ -39,7 +40,16 @@ import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { BankSync } from "@/components/finances/bank-sync";
-import type { Account, Subscription, Transaction, Updater } from "@/lib/types";
+import type {
+  Account,
+  Cron,
+  Project,
+  ProjectCost,
+  Subscription,
+  Transaction,
+  Updater,
+} from "@/lib/types";
+import { CostOverview } from "@/components/cost-overview";
 
 // Recharts is heavy; load the charts only when this panel renders so it stays
 // out of the initial bundle. A skeleton fills the reserved height meanwhile.
@@ -118,6 +128,9 @@ export function FinancesPanel({
   transactions,
   setTransactions,
   subscriptions,
+  projects,
+  projectCosts,
+  crons,
   displayCurrency,
 }: {
   accounts: Account[];
@@ -125,6 +138,9 @@ export function FinancesPanel({
   transactions: Transaction[];
   setTransactions: Updater<Transaction[]>;
   subscriptions: Subscription[];
+  projects: Project[];
+  projectCosts: ProjectCost[];
+  crons: Cron[];
   displayCurrency: string;
 }) {
   const supabase = createClient();
@@ -388,6 +404,15 @@ export function FinancesPanel({
         </div>
       </section>
 
+      {/* Cost overview — aggregate project + subscription spend as pies. */}
+      <CostOverview
+        projects={projects}
+        projectCosts={projectCosts}
+        crons={crons}
+        subscriptions={subscriptions}
+        displayCurrency={displayCurrency}
+      />
+
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Bank sync + CSV import — pull real balances/transactions in. */}
         <BankSync transactions={transactions} />
@@ -625,13 +650,12 @@ export function FinancesPanel({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="tx-category">{t.finances.category}</Label>
-                <Input
+                <CategorySelect
                   id="tx-category"
+                  ariaLabel={t.finances.category}
                   value={txForm.category}
-                  onChange={(e) =>
-                    setTxForm({ ...txForm, category: e.target.value })
-                  }
-                  placeholder={t.finances.categoryPlaceholder}
+                  onChange={(v) => setTxForm({ ...txForm, category: v })}
+                  used={transactions.map((tx) => tx.category)}
                 />
               </div>
               <div className="space-y-1.5">

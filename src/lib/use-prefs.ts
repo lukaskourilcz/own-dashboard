@@ -128,6 +128,79 @@ export function useNavVisibility(): {
 }
 
 // ---------------------------------------------------------------------------
+// Navigation order — a custom order for the nav sections, chosen by dragging in
+// Settings. Stored as an ordered list of section ids; empty means "use the
+// built-in order". Sections not present fall back to their default position.
+// ---------------------------------------------------------------------------
+
+const NAV_ORDER_KEY = "navOrder";
+const navOrderListeners = new Set<() => void>();
+const EMPTY_ORDER: readonly string[] = Object.freeze([]);
+let navOrderCache: readonly string[] | null = null;
+
+function readNavOrder(): readonly string[] {
+  if (navOrderCache != null) return navOrderCache;
+  if (typeof window === "undefined") return EMPTY_ORDER;
+  try {
+    const raw = localStorage.getItem(NAV_ORDER_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    navOrderCache = Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : EMPTY_ORDER;
+  } catch {
+    navOrderCache = EMPTY_ORDER;
+  }
+  return navOrderCache;
+}
+
+function subscribeNavOrder(cb: () => void): () => void {
+  navOrderListeners.add(cb);
+  return () => {
+    navOrderListeners.delete(cb);
+  };
+}
+
+const getServerNavOrder = (): readonly string[] => EMPTY_ORDER;
+
+export function useNavOrder(): {
+  order: readonly string[];
+  setOrder: (next: string[]) => void;
+} {
+  const order = useSyncExternalStore(
+    subscribeNavOrder,
+    readNavOrder,
+    getServerNavOrder,
+  );
+  const setOrder = (next: string[]): void => {
+    navOrderCache = Object.freeze([...next]);
+    try {
+      localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(next));
+    } catch {
+      // ignore — quota or privacy mode.
+    }
+    for (const cb of navOrderListeners) cb();
+  };
+  return { order, setOrder };
+}
+
+/**
+ * Stable-sort items by a saved custom nav order. Items whose `value` appears in
+ * `order` come first, in that order; anything not listed keeps its original
+ * relative position after them (Array.sort is stable). An empty order is a
+ * no-op, so callers keep the built-in ordering until the user customizes it.
+ */
+export function sortByNavOrder<T extends { value: string }>(
+  items: T[],
+  order: readonly string[],
+): T[] {
+  if (order.length === 0) return items;
+  const idx = new Map(order.map((v, i) => [v, i]));
+  return [...items].sort(
+    (a, b) => (idx.get(a.value) ?? Infinity) - (idx.get(b.value) ?? Infinity),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Navigation collapsed — when true the desktop sidebar shrinks to an
 // icon-only rail. Persisted as "1"/"0"; defaults to expanded.
 // ---------------------------------------------------------------------------
@@ -367,6 +440,32 @@ export function writeCostsHiddenRepos(ids: string[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(COSTS_HIDDEN_REPOS_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore — quota or privacy mode.
+  }
+}
+
+// Collapsed project cards (project ids). Reorder persists to the DB via
+// sort_order; collapse is a per-device view preference, so it lives here.
+const COLLAPSED_PROJECTS_KEY = "collapsedProjectIds";
+
+export function readCollapsedProjects(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(COLLAPSED_PROJECTS_KEY);
+    if (raw == null) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function writeCollapsedProjects(ids: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(COLLAPSED_PROJECTS_KEY, JSON.stringify(ids));
   } catch {
     // ignore — quota or privacy mode.
   }

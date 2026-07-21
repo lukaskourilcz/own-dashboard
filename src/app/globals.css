@@ -331,6 +331,20 @@ body {
   background: transparent !important;
 }
 
+/* Project notes use the same editor as the Notes section but want a more
+   compact body text. Scope to .project-notes so the main Notes section is
+   unaffected. Headings keep their absolute sizes (set above). */
+.project-notes .bn-host {
+  padding: 0.25rem 0.25rem 1rem;
+}
+.project-notes .bn-host [data-content-type="paragraph"],
+.project-notes .bn-host [data-content-type="bulletListItem"],
+.project-notes .bn-host [data-content-type="numberedListItem"],
+.project-notes .bn-host [data-content-type="checkListItem"] {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 .bn-host [contenteditable="true"]:focus {
   outline: none;
 }

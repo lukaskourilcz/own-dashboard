@@ -14,6 +14,7 @@ type SettingsStrings = {
   navigation: string;
   navigationDesc: string;
   alwaysVisible: string;
+  reorder: string;
   tasks: string;
   tasksDesc: string;
   tasksAll: string;
@@ -40,8 +41,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     dark: "Dark",
     navigation: "Navigation sections",
     navigationDesc:
-      "Choose which sections appear in the navigation panel. Overview is always shown.",
+      "Toggle which sections appear in the navigation panel, and drag to reorder them within each group. Overview is always shown.",
     alwaysVisible: "Always visible",
+    reorder: "Drag to reorder",
     tasks: "Tasks",
     tasksDesc:
       "How many tasks each category shows before “show all”.",
@@ -68,8 +70,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     dark: "Tmavý",
     navigation: "Sekce navigace",
     navigationDesc:
-      "Vyberte, které sekce se zobrazí v navigačním panelu. Přehled je vždy zobrazen.",
+      "Zapněte, které sekce se zobrazí v navigačním panelu, a přetažením změňte jejich pořadí v rámci skupiny. Přehled je vždy zobrazen.",
     alwaysVisible: "Vždy viditelné",
+    reorder: "Přetáhni pro změnu pořadí",
     tasks: "Úkoly",
     tasksDesc: "Kolik úkolů každá kategorie zobrazí před „zobrazit vše“.",
     tasksAll: "Vše",

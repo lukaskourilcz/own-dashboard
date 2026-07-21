@@ -448,6 +448,17 @@ export type AiCategory = {
   created_at: string;
 };
 
+// A user-managed spend category, shared by the Subscriptions and Finances
+// sections. The category value stored on each row stays a plain string; this is
+// just the pick-list that powers the selector.
+export type SpendCategory = {
+  id: string;
+  user_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+};
+
 // Cost tier of an AI link, rendered as a colored badge: free = green,
 // freemium (free tier + paid) = yellow, paid = red. Null = no badge.
 export type AiPricing = "free" | "freemium" | "paid";

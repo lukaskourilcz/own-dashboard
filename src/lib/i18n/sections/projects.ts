@@ -33,6 +33,9 @@ type ProjectsStrings = {
   inactive: string;
   synced: string;
   syncedHint: string;
+  collapse: string;
+  expand: string;
+  dragHandle: string;
   markActive: string;
   markInactive: string;
   monthly: string;
@@ -130,6 +133,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     inactive: "inactive",
     synced: "Repository",
     syncedHint: "Synced automatically from an active repository in Repositories.",
+    collapse: "Collapse",
+    expand: "Expand",
+    dragHandle: "Drag to reorder",
     markActive: "Mark active",
     markInactive: "Mark inactive",
     monthly: "Monthly",
@@ -225,6 +231,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     synced: "Repozitář",
     syncedHint:
       "Automaticky synchronizováno z aktivního repozitáře v sekci Repozitáře.",
+    collapse: "Sbalit",
+    expand: "Rozbalit",
+    dragHandle: "Přetáhni pro změnu pořadí",
     markActive: "Označit jako aktivní",
     markInactive: "Označit jako neaktivní",
     monthly: "Měsíčně",
