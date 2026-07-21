@@ -93,6 +93,10 @@ type InvoicesStrings = {
   fieldCountry: string;
   fieldIco: string;
   fieldDic: string;
+  linkedOrganization: string;
+  linkedProject: string;
+  noLinkedOrganization: string;
+  noLinkedProject: string;
   fieldNumber: string;
   fieldVs: string;
   fieldKs: string;
@@ -259,6 +263,10 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     fieldCountry: "Country",
     fieldIco: "Reg. No.",
     fieldDic: "VAT No.",
+    linkedOrganization: "Linked organization",
+    linkedProject: "Linked project",
+    noLinkedOrganization: "No linked organization",
+    noLinkedProject: "No linked project",
     fieldNumber: "Invoice number",
     fieldVs: "Variable symbol",
     fieldKs: "Constant symbol",
@@ -426,6 +434,10 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     fieldCountry: "Země",
     fieldIco: "IČO",
     fieldDic: "DIČ",
+    linkedOrganization: "Propojená organizace",
+    linkedProject: "Propojený projekt",
+    noLinkedOrganization: "Bez propojené organizace",
+    noLinkedProject: "Bez propojeného projektu",
     fieldNumber: "Číslo faktury",
     fieldVs: "Variabilní symbol",
     fieldKs: "Konstantní symbol",

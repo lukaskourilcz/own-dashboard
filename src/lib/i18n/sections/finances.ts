@@ -22,6 +22,7 @@ type FinancesStrings = {
   categoryPlaceholder: string;
   date: string;
   account: string;
+  project: string;
   noneOption: string;
   note: string;
   notePlaceholder: string;
@@ -113,6 +114,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categoryPlaceholder: "Groceries",
     date: "Date",
     account: "Account",
+    project: "Project",
     noneOption: "— None —",
     note: "Note",
     notePlaceholder: "Optional",
@@ -210,6 +212,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categoryPlaceholder: "Potraviny",
     date: "Datum",
     account: "Účet",
+    project: "Projekt",
     noneOption: "— Žádný —",
     note: "Poznámka",
     notePlaceholder: "Volitelné",

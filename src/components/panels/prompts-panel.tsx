@@ -25,6 +25,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
+import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -32,7 +33,7 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
-import type { Prompt, Updater } from "@/lib/types";
+import type { Project, Prompt, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // Generous cap so the tiny, line-clamped preview can fill the card with as
@@ -49,9 +50,10 @@ function preview(body: string): string {
 type Props = {
   prompts: Prompt[];
   setPrompts: Updater<Prompt[]>;
+  projects: Project[];
 };
 
-export function PromptsPanel({ prompts, setPrompts }: Props) {
+export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -59,9 +61,10 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Prompt | null>(null);
-  const [form, setForm] = useState<{ name: string; body: string }>({
+  const [form, setForm] = useState<{ name: string; body: string; project_id: string }>({
     name: "",
     body: "",
+    project_id: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -76,14 +79,14 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
 
   function openCreate() {
     setEditing(null);
-    setForm({ name: "", body: "" });
+    setForm({ name: "", body: "", project_id: "" });
     setFormError(null);
     setDialogOpen(true);
   }
 
   function openEdit(p: Prompt) {
     setEditing(p);
-    setForm({ name: p.name, body: p.body });
+    setForm({ name: p.name, body: p.body, project_id: p.project_id ?? "" });
     setFormError(null);
     setDialogOpen(true);
   }
@@ -91,12 +94,12 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
   // CREATE — non-optimistic: the insert returns the row, which we prepend and
   // then reconcile with the server via invalidate.
   const createMutation = useMutation({
-    mutationFn: async (vars: { name: string; body: string }) => {
+    mutationFn: async (vars: { name: string; body: string; project_id: string }) => {
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("prompts")
-        .insert({ user_id: userId, name: vars.name, body: vars.body })
+        .insert({ user_id: userId, name: vars.name, body: vars.body, project_id: vars.project_id || null })
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
@@ -117,12 +120,13 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
 
   // UPDATE — the update returns the row; replace it in the cache on success.
   const updateMutation = useMutation({
-    mutationFn: async (vars: { id: string; name: string; body: string }) => {
+    mutationFn: async (vars: { id: string; name: string; body: string; project_id: string }) => {
       const { data, error } = await supabase
         .from("prompts")
         .update({
           name: vars.name,
           body: vars.body,
+          project_id: vars.project_id || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", vars.id)
@@ -180,12 +184,12 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
     }
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, name, body },
+        { id: editing.id, name, body, project_id: form.project_id },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createMutation.mutate(
-        { name, body },
+        { name, body, project_id: form.project_id },
         { onSuccess: () => setDialogOpen(false) },
       );
     }
@@ -304,6 +308,18 @@ export function PromptsPanel({ prompts, setPrompts }: Props) {
                   placeholder={t.prompts.promptPlaceholder}
                   rows={8}
                   className="font-mono text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="prompt-project">{t.prompts.project}</Label>
+                <SimpleSelect
+                  id="prompt-project"
+                  value={form.project_id}
+                  onValueChange={(project_id) => setForm((current) => ({ ...current, project_id }))}
+                  options={[
+                    { value: "", label: t.prompts.noProject },
+                    ...projects.map((project) => ({ value: project.id, label: project.name })),
+                  ]}
                 />
               </div>
               {formError && (

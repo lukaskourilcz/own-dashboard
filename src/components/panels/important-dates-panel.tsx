@@ -21,7 +21,7 @@ import { buildOccurrences } from "@/lib/important-dates";
 import { todayKey } from "@/lib/date-keys";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
-import type { ImportantDate, RecurrenceUnit, Updater } from "@/lib/types";
+import type { ImportantDate, Organization, Project, RecurrenceUnit, Updater } from "@/lib/types";
 
 /** Localized mirror of countdownLabel from @/lib/important-dates. */
 function countdownLabelLocalized(daysUntil: number, t: Dict): string {
@@ -41,6 +41,8 @@ type FormState = {
   recurrence_unit: RecurrenceUnit;
   emoji: string;
   notes: string;
+  project_id: string;
+  organization_id: string;
 };
 
 const empty: FormState = {
@@ -50,16 +52,22 @@ const empty: FormState = {
   recurrence_unit: "yearly",
   emoji: "",
   notes: "",
+  project_id: "",
+  organization_id: "",
 };
 
 export function ImportantDatesPanel({
   dates,
   setDates,
   userId,
+  projects = [],
+  organizations = [],
 }: {
   dates: ImportantDate[];
   setDates: Updater<ImportantDate[]>;
   userId: string;
+  projects?: Project[];
+  organizations?: Organization[];
 }) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -78,6 +86,8 @@ export function ImportantDatesPanel({
       recurrence_unit: form.is_recurring ? form.recurrence_unit : null,
       emoji: form.emoji.trim() || null,
       notes: form.notes.trim() || null,
+      project_id: form.project_id || null,
+      organization_id: form.organization_id || null,
     };
   }
 
@@ -171,6 +181,8 @@ export function ImportantDatesPanel({
       recurrence_unit: d.recurrence_unit ?? "yearly",
       emoji: d.emoji ?? "",
       notes: d.notes ?? "",
+      project_id: d.project_id ?? "",
+      organization_id: d.organization_id ?? "",
     });
   }
 
@@ -221,8 +233,34 @@ export function ImportantDatesPanel({
                     onChange={(e) =>
                       setForm({ ...form, emoji: e.target.value })
                     }
-                    placeholder="❤️"
+                    placeholder="📌"
                     maxLength={4}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ind-project">{t.dates.project}</Label>
+                  <SimpleSelect
+                    id="ind-project"
+                    value={form.project_id}
+                    onValueChange={(project_id) => setForm({ ...form, project_id })}
+                    options={[
+                      { value: "", label: t.dates.noProject },
+                      ...projects.map((project) => ({ value: project.id, label: project.name })),
+                    ]}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ind-organization">{t.dates.organization}</Label>
+                  <SimpleSelect
+                    id="ind-organization"
+                    value={form.organization_id}
+                    onValueChange={(organization_id) => setForm({ ...form, organization_id })}
+                    options={[
+                      { value: "", label: t.dates.noOrganization },
+                      ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
+                    ]}
                   />
                 </div>
               </div>
@@ -342,11 +380,14 @@ export function ImportantDatesPanel({
                             {o.date.is_recurring
                               ? o.date.recurrence_unit === "monthly"
                                 ? t.dates.everyMonth
-                                : o.yearsCompleted !== null &&
-                                    o.yearsCompleted > 0
-                                  ? t.dates.turning(o.yearsCompleted + 1)
-                                  : t.dates.yearlyLabel
+                                : t.dates.yearlyLabel
                               : t.dates.oneOff}
+                            {o.date.project_id
+                              ? ` · ${projects.find((project) => project.id === o.date.project_id)?.name ?? t.dates.project}`
+                              : ""}
+                            {o.date.organization_id
+                              ? ` · ${organizations.find((organization) => organization.id === o.date.organization_id)?.name ?? t.dates.organization}`
+                              : ""}
                             {o.date.notes ? ` · ${o.date.notes}` : ""}
                           </p>
                         </div>

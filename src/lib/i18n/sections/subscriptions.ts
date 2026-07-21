@@ -21,6 +21,8 @@ type SubscriptionsStrings = {
   category: string;
   categoryPlaceholder: string;
   nextBilling: string;
+  project: string;
+  generalOverhead: string;
   nameAndAmountRequired: string;
   monthlySpend: string;
   yearlySpend: string;
@@ -77,6 +79,8 @@ export const subscriptions: {
     category: "Category",
     categoryPlaceholder: "Entertainment",
     nextBilling: "Next billing",
+    project: "Project",
+    generalOverhead: "General overhead",
     nameAndAmountRequired: "Name and amount are required.",
     monthlySpend: "Monthly spend",
     yearlySpend: "Yearly spend",
@@ -129,6 +133,8 @@ export const subscriptions: {
     category: "Kategorie",
     categoryPlaceholder: "Zábava",
     nextBilling: "Příští platba",
+    project: "Projekt",
+    generalOverhead: "Obecná režie",
     nameAndAmountRequired: "Název a částka jsou povinné.",
     monthlySpend: "Měsíční výdaje",
     yearlySpend: "Roční výdaje",

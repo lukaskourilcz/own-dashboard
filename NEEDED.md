@@ -1,49 +1,35 @@
-# NEEDED — OwnDashboard to-do list
+# NEEDED — owner rollout checklist
 
-Everything is **merged and live** — every integration degrades gracefully, so
-nothing here blocks the app. Each task carries an importance score `[imp:N]`
-(1–5, 5 = highest). This file is parsed into the OwnDashboard **Úkoly** section,
-where you can filter tasks by that priority.
+The repository implementation is complete. The items below are the external account, secret, migration, and rollout steps that still require the repository owner. They are intentionally not performed by application code. This file is also imported into OwnDashboard Tasks; keep the `[imp:N]` and `[owner:me]` markers.
 
-## Tasks
+## Required before the restructured app is used in production
 
-- [ ] **Run the Projects/crons SQL** — re-run `supabase/schema.sql`; without the `projects`/`project_costs`/`crons` tables the Projects section can't save. `[imp:3]` `[owner:me]`
-- [ ] **Add `ANTHROPIC_API_KEY`** in Vercel — upgrades link Auto-fill to smart category + pricing and powers quick-add (keyless fallback works). `[imp:3]` `[owner:me]`
-- [ ] **Enable PostHog** — analytics, session replay, and the `tugedr` / `costs-filter` flag kill-switches; add `NEXT_PUBLIC_POSTHOG_KEY` + `_HOST` and redeploy. `[imp:2]` `[owner:me]`
-- [ ] **Add `HEARTBEAT_URL` + a cron monitor** — alerts you if the daily renewal-warnings cron silently fails. `[imp:2]` `[owner:me]`
-- [ ] **Add Upstash Redis** (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) — makes Auto-fill rate limiting hold across serverless instances (in-memory fallback works). `[imp:2]` `[owner:me]`
-- [ ] **Add GoCardless secrets** (`GOCARDLESS_SECRET_ID` / `_KEY`) — turns on live Raiffeisenbank auto-sync in Finances → "Napojení banky" (CSV import already covers the need). `[imp:2]` `[owner:me]`
-- [ ] **Run the Bruno API auth tests** — optional local/CI auth-regression check (collection in `bruno/`). `[imp:1]` `[owner:me]`
-- [ ] **Add `JINA` / `FIRECRAWL` / `ANTHROPIC_BASE_URL`** — only if you hit Auto-fill limits or want an LLM gateway. `[imp:1]` `[owner:me]`
-- [ ] **Authorize the Supabase/Gmail/Calendar/Drive MCP connectors** — dev tooling only; run `/mcp` in an interactive session. `[imp:1]` `[owner:me]`
+- [ ] **Back up Supabase and apply the two pending migrations** with `npx supabase db push --linked`; run `20260721165419_professional_restructure_core.sql` before `20260721165421_remove_legacy_personal_scope.sql`. Do **not** rerun `supabase/schema.sql` on an existing project. `[imp:5]` `[owner:me]`
+- [ ] **Verify the production deployment environment** has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; add `SUPABASE_SERVICE_ROLE_KEY` server-side if Google token refresh, bank sync, or other privileged server workflows are enabled. Never expose the service-role key as `NEXT_PUBLIC_*`. `[imp:5]` `[owner:me]`
+- [ ] **Set `main` as the GitHub default branch.** The repository currently defaults to `claude/personal-dashboard-app-O4De1`, even though the completed product is merged into `main`. `[imp:4]` `[owner:me]`
+- [ ] **Deploy `main`, then run the post-deploy smoke test** in `docs/external-setup.md`: sign in, create and convert an opportunity, open a project workspace, link an invoice/subscription/task, process Inbox, export data, and verify a second account cannot read or link the first account's records. `[imp:4]` `[owner:me]`
 
-## Details
+## Enable the product capabilities you want
 
-Add every env var in **Vercel → Settings → Environment Variables** (Production +
-Preview) and redeploy so the functions pick them up.
+- [ ] **Contextual AI:** set `ANTHROPIC_API_KEY`. Optionally set `ANTHROPIC_BASE_URL` and the three centralized model overrides (`AI_INTENT_MODEL`, `AI_ENRICHMENT_MODEL`, `AI_SYNTHESIS_MODEL`). Without a key, deterministic `!todo`, `!inbox`, and `!cal` capture still works, but AI routing, search, briefs, copilots, enrichment, and knowledge review do not. `[imp:4]` `[owner:me]`
+- [ ] **Scheduled jobs:** set a strong `CRON_SECRET` in Vercel and verify the three schedules in `vercel.json` call bank sync at 06:00 UTC, renewal warnings at 07:00 UTC, and jobs scraping at 08:00 UTC. Add `HEARTBEAT_URL` if you want an external success monitor. `[imp:4]` `[owner:me]`
+- [ ] **Google Calendar:** enable the Google Calendar API, configure Google in Supabase Auth, add local/production redirect URLs, and set `GOOGLE_OAUTH_CLIENT_ID` plus `GOOGLE_OAUTH_CLIENT_SECRET` for server-side token refresh. `[imp:3]` `[owner:me]`
+- [ ] **GitHub project operations:** configure GitHub in Supabase Auth and the OAuth callback. Set `GITHUB_OAUTH_CLIENT_ID` plus `GITHUB_OAUTH_CLIENT_SECRET` if disconnect/revoke and expiring-token refresh are required. Confirm the OAuth grant covers only repositories the app should read or update. `[imp:3]` `[owner:me]`
+- [ ] **Renewal email:** verify a Resend sending domain, then set `RESEND_API_KEY` and `RESEND_FROM`. The in-app notification centre works without email. `[imp:3]` `[owner:me]`
+- [ ] **Bank sync:** create GoCardless Bank Account Data credentials and set `GOCARDLESS_SECRET_ID` plus `GOCARDLESS_SECRET_KEY`. Test the production callback and transaction deduplication. CSV statement import remains available without this integration. `[imp:3]` `[owner:me]`
 
-| Env var | Unlocks | Where to get it |
-| --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Smart Auto-fill (category + pricing) + quick-add | <https://console.anthropic.com> → API Keys |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Distributed rate limiting | Upstash console → your DB → REST |
-| `HEARTBEAT_URL` | Cron failure alerts | Better Stack / UptimeRobot monitor URL |
-| `NEXT_PUBLIC_POSTHOG_KEY` (+ `_HOST`) | Analytics / replay / flags | <https://posthog.com> → project API key (EU: `https://eu.i.posthog.com`) |
-| `JINA_API_KEY` | Higher Jina rate limit *(optional)* | <https://jina.ai/reader> |
-| `FIRECRAWL_API_KEY` | Firecrawl extraction *(optional)* | <https://firecrawl.dev> |
-| `ANTHROPIC_BASE_URL` | Route Claude via a gateway *(optional)* | your gateway |
-| `GOCARDLESS_SECRET_ID` / `_KEY` | Live bank + transaction sync | <https://bankaccountdata.gocardless.com> → User Secrets |
+## Optional production hardening
 
-**PostHog flag kill-switches** (both default **on**; act only to turn one off —
-create a flag with the key and set it `false`): `tugedr` (the Tugedr section) and
-`costs-filter` (the Filter button in App costs & scaling).
+- [ ] **Distributed AI rate limiting:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Without them, the app uses a best-effort in-memory limiter per server instance. `[imp:2]` `[owner:me]`
+- [ ] **Error monitoring:** configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and the deployment's Sentry auth token/release integration if desired. Verify captured context contains no private record bodies. `[imp:2]` `[owner:me]`
+- [ ] **Privacy-conscious analytics:** configure `NEXT_PUBLIC_POSTHOG_KEY` and optionally `NEXT_PUBLIC_POSTHOG_HOST`. The only repository feature flag currently referenced is `costs-filter`; no Tugedr kill-switch exists. Leave PostHog unset to disable the client SDK. `[imp:2]` `[owner:me]`
+- [ ] **Higher link-enrichment throughput:** add `JINA_API_KEY` only if the anonymous Jina Reader allowance is insufficient. `FIRECRAWL_API_KEY` is not used by this repository. `[imp:1]` `[owner:me]`
+- [ ] **Cron registry ingestion:** set `CRON_REGISTRY_TOKEN` only if an external system writes to the cron registry endpoint. `[imp:1]` `[owner:me]`
 
-**GoCardless bank sync.** After adding the secrets: Finances → **Napojení banky →
-Připojit banku → Raiffeisenbank**, approve read-only access. A Vercel Cron
-(`/api/cron/bank-sync`, 06:00 UTC) refreshes linked banks daily (reuses
-`CRON_SECRET`; no secret → the cron no-ops). Bank consent lasts ~90 days (EU
-rule), then reconnect in one click. Add **Auto-kategorie** rules (e.g.
-`albert → Potraviny`) to file transactions automatically.
+## Brand and domain — wait for a confirmed replacement name
 
-**Bruno auth tests** — from the repo root with the app running:
-`npx @usebruno/cli run bruno --env Local` (asserts protected routes reject
-unauthenticated calls). Point the `Local` env at preview/prod to test those.
+- [ ] When a final name is approved, update `src/lib/brand.ts`, then follow the manual rename checklist in `docs/external-setup.md` for Vercel, the domain, Supabase, Google/GitHub OAuth apps, PostHog, Sentry, Resend, cron monitors, and installed PWAs. OwnDashboard remains the deliberate temporary name; do not rename it to Takt. `[imp:1]` `[owner:me]`
+
+## Migration safety note
+
+The cleanup migration first copies Pulse, habits/streaks, books/reading, couples, invitations, and sharing preferences into the own-only `legacy_personal_archives` table, then drops the retired tables and partner-sharing function. After deployment, download the archive from **Settings → Data & export → Legacy** and retain it off-platform if needed. See `docs/migration-guide.md` for verification and rollback order.

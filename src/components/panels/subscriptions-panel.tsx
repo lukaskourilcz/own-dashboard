@@ -38,7 +38,7 @@ import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
-import type { Subscription, Updater } from "@/lib/types";
+import type { Project, Subscription, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the donut only when this panel renders.
 const CategoryDonut = dynamic(
@@ -55,6 +55,7 @@ type FormState = {
   billing_cycle: "monthly" | "yearly" | "weekly";
   category: string;
   next_billing_date: string;
+  project_id: string;
 };
 
 const emptyForm: FormState = {
@@ -64,6 +65,7 @@ const emptyForm: FormState = {
   billing_cycle: "monthly",
   category: "",
   next_billing_date: "",
+  project_id: "",
 };
 
 export function SubscriptionsPanel({
@@ -71,12 +73,14 @@ export function SubscriptionsPanel({
   setSubs,
   displayCurrency,
   setDisplayCurrency,
+  projects = [],
   compact = false,
 }: {
   subs: Subscription[];
   setSubs: Updater<Subscription[]>;
   displayCurrency: string;
   setDisplayCurrency?: (next: string) => void;
+  projects?: Project[];
   compact?: boolean;
 }) {
   const supabase = createClient();
@@ -120,6 +124,7 @@ export function SubscriptionsPanel({
     billing_cycle: FormState["billing_cycle"];
     category: string | null;
     next_billing_date: string | null;
+    project_id: string | null;
   };
 
   const createMutation = useMutation({
@@ -219,6 +224,7 @@ export function SubscriptionsPanel({
       billing_cycle: form.billing_cycle,
       category: form.category.trim() || null,
       next_billing_date: form.next_billing_date || null,
+      project_id: form.project_id || null,
     };
     const userId = await currentUserId(supabase);
     if (!userId) {
@@ -250,6 +256,7 @@ export function SubscriptionsPanel({
       billing_cycle: sub.billing_cycle,
       category: sub.category ?? "",
       next_billing_date: sub.next_billing_date ?? "",
+      project_id: sub.project_id ?? "",
     });
   }
 
@@ -453,6 +460,18 @@ export function SubscriptionsPanel({
                   onChange={(e) =>
                     setForm({ ...form, next_billing_date: e.target.value })
                   }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sub-project">{t.subscriptions.project}</Label>
+                <SimpleSelect
+                  id="sub-project"
+                  value={form.project_id}
+                  onValueChange={(project_id) => setForm({ ...form, project_id })}
+                  options={[
+                    { value: "", label: t.subscriptions.generalOverhead },
+                    ...projects.map((project) => ({ value: project.id, label: project.name })),
+                  ]}
                 />
               </div>
               {error && (
@@ -693,6 +712,9 @@ export function SubscriptionsPanel({
                             {formatCurrency(s.amount, s.currency)} ·{" "}
                             {t.subscriptions.cycle[s.billing_cycle]}
                             {s.category ? ` · ${s.category}` : ""}
+                            {s.project_id
+                              ? ` · ${projects.find((project) => project.id === s.project_id)?.name ?? t.subscriptions.project}`
+                              : ` · ${t.subscriptions.generalOverhead}`}
                             {s.next_billing_date
                               ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
                               : ""}
@@ -770,4 +792,3 @@ export function SubscriptionsPanel({
     </div>
   );
 }
-

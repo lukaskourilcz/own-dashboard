@@ -12,6 +12,10 @@ type DatesStrings = {
   monthly: string;
   notes: string;
   notesPlaceholder: string;
+  project: string;
+  organization: string;
+  noProject: string;
+  noOrganization: string;
   comingUp: string;
   noDatesYet: string;
   noDatesYetDescription: string;
@@ -37,11 +41,11 @@ type DatesStrings = {
 export const dates: { en: DatesStrings; cs: DatesStrings } = {
   en: {
     title: "Dates",
-    description: "Anniversaries, birthdays, and deadlines.",
+    description: "Professional deadlines, launches, renewals, and milestones.",
     editDate: "Edit date",
     addDate: "Add a date",
     titleLabel: "Title",
-    titlePlaceholder: "Anniversary",
+    titlePlaceholder: "Contract renewal",
     date: "Date",
     emoji: "Emoji",
     repeats: "Repeats",
@@ -49,10 +53,14 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
     monthly: "Monthly",
     notes: "Notes",
     notesPlaceholder: "Optional",
+    project: "Project",
+    organization: "Organization",
+    noProject: "No project",
+    noOrganization: "No organization",
     comingUp: "Coming up",
     noDatesYet: "No dates yet",
     noDatesYetDescription:
-      "Anniversaries, birthdays, deadlines — anything you don't want to miss.",
+      "Add a contract deadline, project launch, interview, renewal, or professional milestone.",
     everyMonth: "every month",
     turning: (n) => `turning ${n}`,
     yearlyLabel: "yearly",
@@ -71,11 +79,11 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
   },
   cs: {
     title: "Významné dny",
-    description: "Výročí, narozeniny a termíny.",
+    description: "Profesní termíny, spuštění, obnovy a milníky.",
     editDate: "Upravit den",
     addDate: "Přidat den",
     titleLabel: "Název",
-    titlePlaceholder: "Výročí",
+    titlePlaceholder: "Obnova smlouvy",
     date: "Datum",
     emoji: "Emoji",
     repeats: "Opakuje se",
@@ -83,10 +91,14 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
     monthly: "Měsíčně",
     notes: "Poznámky",
     notesPlaceholder: "Volitelné",
+    project: "Projekt",
+    organization: "Organizace",
+    noProject: "Bez projektu",
+    noOrganization: "Bez organizace",
     comingUp: "Nadcházející",
     noDatesYet: "Zatím žádné dny",
     noDatesYetDescription:
-      "Výročí, narozeniny, termíny — cokoli, na co nechceš zapomenout.",
+      "Přidejte termín smlouvy, spuštění projektu, pohovor, obnovu nebo profesní milník.",
     everyMonth: "každý měsíc",
     turning: (n) => `bude mu ${n}`,
     yearlyLabel: "ročně",

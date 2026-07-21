@@ -39,7 +39,9 @@ import type {
   Invoice,
   InvoiceItem,
   InvoiceSettings,
+  Organization,
   PaymentMethod,
+  Project,
   Updater,
 } from "@/lib/types";
 
@@ -97,6 +99,8 @@ type Initial = {
   currency: string;
   roundTotal: boolean;
   note: string;
+  organizationId: string;
+  projectId: string;
   buyer: Buyer;
   items: FormItem[];
   // For edit: the invoice's own (already-issued) supplier block, preserved.
@@ -218,6 +222,8 @@ function buildInitial(
       currency: inv.currency,
       roundTotal: inv.round_total,
       note: inv.note ?? "",
+      organizationId: inv.organization_id ?? "",
+      projectId: inv.project_id ?? "",
       buyer: buyerFrom(inv),
       items: toFormItems(source.items, true),
       supplierSnapshot: invoiceSnapshot(inv),
@@ -251,6 +257,8 @@ function buildInitial(
       currency: prefill?.currency || settings?.default_currency || "CZK",
       roundTotal: true,
       note: "",
+      organizationId: "",
+      projectId: "",
       buyer: {
         buyer_name: prefill?.buyer?.name ?? "",
         buyer_address: "",
@@ -293,6 +301,8 @@ function buildInitial(
       currency: inv.currency,
       roundTotal: inv.round_total,
       note: inv.note ?? "",
+      organizationId: inv.organization_id ?? "",
+      projectId: inv.project_id ?? "",
       buyer: buyerFrom(inv),
       items: toFormItems(source.items, false),
       supplierSnapshot: null,
@@ -311,6 +321,8 @@ function buildInitial(
     currency: settings?.default_currency ?? "CZK",
     roundTotal: true,
     note: "",
+    organizationId: "",
+    projectId: "",
     buyer: emptyBuyer(),
     items: [emptyItem(isVatPayer, "it-init-0")],
     supplierSnapshot: null,
@@ -326,6 +338,8 @@ export function InvoiceForm({
   existingInvoices,
   setInvoices,
   setItems,
+  organizations,
+  projects,
   onCancel,
   onDone,
   onEditSupplier,
@@ -338,6 +352,8 @@ export function InvoiceForm({
   existingInvoices: Invoice[];
   setInvoices: Updater<Invoice[]>;
   setItems: Updater<InvoiceItem[]>;
+  organizations: Organization[];
+  projects: Project[];
   onCancel: () => void;
   onDone: (id: string) => void;
   onEditSupplier: () => void;
@@ -372,8 +388,25 @@ export function InvoiceForm({
   const [currency, setCurrency] = useState(init.currency);
   const [roundTotal, setRoundTotal] = useState(init.roundTotal);
   const [note, setNote] = useState(init.note);
+  const [organizationId, setOrganizationId] = useState(init.organizationId);
+  const [projectId, setProjectId] = useState(init.projectId);
   const [buyer, setBuyer] = useState<Buyer>(init.buyer);
   const [items, setFormItems] = useState<FormItem[]>(init.items);
+
+  function selectOrganization(id: string) {
+    setOrganizationId(id);
+    const organization = organizations.find((item) => item.id === id);
+    if (!organization) return;
+    setBuyer({
+      buyer_name: organization.name,
+      buyer_address: organization.address ?? "",
+      buyer_city: organization.city ?? "",
+      buyer_zip: organization.zip ?? "",
+      buyer_country: organization.country ?? "Česká republika",
+      buyer_ico: organization.company_id ?? "",
+      buyer_dic: organization.vat_id ?? "",
+    });
+  }
 
   const supplier = init.supplierSnapshot ?? settingsSnapshot(settings);
   const hasSupplier = Boolean(supplier.supplier_name.trim());
@@ -546,6 +579,8 @@ export function InvoiceForm({
       currency,
       round_total: roundTotal,
       note: note.trim() || null,
+      organization_id: organizationId || null,
+      project_id: projectId || null,
     };
     const itemRows = (invoiceId: string) =>
       kept.map((it, i) => ({
@@ -677,6 +712,30 @@ export function InvoiceForm({
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="b-organization">{t.invoices.linkedOrganization}</Label>
+              <SimpleSelect
+                id="b-organization"
+                value={organizationId}
+                onValueChange={selectOrganization}
+                options={[
+                  { value: "", label: t.invoices.noLinkedOrganization },
+                  ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
+                ]}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="b-project">{t.invoices.linkedProject}</Label>
+              <SimpleSelect
+                id="b-project"
+                value={projectId}
+                onValueChange={setProjectId}
+                options={[
+                  { value: "", label: t.invoices.noLinkedProject },
+                  ...projects.map((project) => ({ value: project.id, label: project.name })),
+                ]}
+              />
+            </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="b-name">{t.invoices.fieldName}</Label>
               <Input

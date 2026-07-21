@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DASHBOARD_DATA_KEYS } from "@/lib/dashboard-data";
 import * as f from "./fixtures";
 
 /**
@@ -21,6 +22,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
       user={f.user}
       initialTab={previewProject ? "projects" : "home"}
       initialProjectId={previewProject?.id}
+      initialDataKeys={[...DASHBOARD_DATA_KEYS]}
       initialSubscriptions={f.subscriptions}
       initialTodos={f.todos}
       initialAccounts={f.accounts}
