@@ -688,6 +688,7 @@ export function DashboardShell({
                       setCrons={setCrons}
                       displayCurrency={displayCurrency}
                       setDisplayCurrency={setDisplayCurrency}
+                      initialVisibleIds={repoVisibleIds}
                     />
                   )}
 

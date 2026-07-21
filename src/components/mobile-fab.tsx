@@ -25,21 +25,55 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
       typeof window !== "undefined" &&
       window.localStorage.getItem(INSTALL_DISMISSED_KEY) === "1";
 
+    // Already running as an installed app — never offer to install again.
+    const installed =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        // iOS Safari exposes standalone here instead of via matchMedia.
+        (window.navigator as { standalone?: boolean }).standalone === true);
+
     function onBefore(e: Event) {
       e.preventDefault();
-      if (dismissed) return;
+      if (dismissed || installed) return;
       setInstallEvent(e as BeforeInstallPromptEvent);
       setShowInstall(true);
     }
+
+    // Once installed, hide the banner and don't resurface it. Accepting the
+    // prompt hands the app to its own window (the browser reparents this tab —
+    // expected behaviour); this just keeps our UI in sync.
+    function onInstalled() {
+      setShowInstall(false);
+      setInstallEvent(null);
+      try {
+        window.localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
+      } catch {
+        // Private mode / storage disabled — ignore.
+      }
+    }
+
     window.addEventListener("beforeinstallprompt", onBefore);
-    return () => window.removeEventListener("beforeinstallprompt", onBefore);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBefore);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   async function doInstall() {
     if (!installEvent) return;
-    await installEvent.prompt();
+    // Hide our banner first so only the browser's native dialog remains.
     setShowInstall(false);
-    setInstallEvent(null);
+    try {
+      await installEvent.prompt();
+      await installEvent.userChoice;
+    } catch {
+      // The event can only be used once; ignore replays / gesture errors.
+    } finally {
+      // A prompt is single-use — drop it either way. `appinstalled` handles the
+      // accepted case; a dismissal simply leaves the FAB with no banner.
+      setInstallEvent(null);
+    }
   }
 
   function dismissInstall() {
