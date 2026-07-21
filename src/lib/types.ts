@@ -12,6 +12,7 @@ export type Subscription = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  project_id?: string | null;
 };
 
 // Where a task came from. "github" = generated from a repo's NEEDED.md (carries
@@ -45,23 +46,10 @@ export type Todo = {
   // Importance 1–5 (5 = highest), parsed from a NEEDED.md `[imp:N]` marker or
   // chosen by hand on a manual task. Null = unscored (drives the Tasks filter).
   importance: number | null;
-};
-
-export type Streak = {
-  id: string;
-  user_id: string;
-  name: string;
-  color: string;
-  reminder_time: string | null;
-  created_at: string;
-};
-
-export type StreakLog = {
-  id: string;
-  streak_id: string;
-  user_id: string;
-  log_date: string;
-  created_at: string;
+  project_id?: string | null;
+  organization_id?: string | null;
+  opportunity_id?: string | null;
+  job_application_id?: string | null;
 };
 
 export type Account = {
@@ -91,6 +79,9 @@ export type Transaction = {
   // for imported statement rows. Null for hand-added transactions.
   external_id: string | null;
   created_at: string;
+  project_id?: string | null;
+  organization_id?: string | null;
+  invoice_id?: string | null;
 };
 
 // A keyword → category rule. When a transaction's note contains `match`
@@ -150,65 +141,6 @@ export type Profile = {
   updated_at: string;
 };
 
-export type Couple = {
-  id: string;
-  user_a_id: string;
-  user_b_id: string;
-  created_at: string;
-};
-
-export type InviteStatus = "pending" | "accepted" | "declined";
-
-export type CoupleInvite = {
-  id: string;
-  inviter_id: string;
-  invitee_email: string;
-  status: InviteStatus;
-  created_at: string;
-};
-
-export type SharingCategory =
-  | "subscriptions"
-  | "todos"
-  | "streaks"
-  | "finances"
-  | "plans"
-  | "books";
-
-export type SharingPrefs = {
-  user_id: string;
-  share_subscriptions: boolean;
-  share_todos: boolean;
-  share_streaks: boolean;
-  share_finances: boolean;
-  share_plans: boolean;
-  share_books: boolean;
-  updated_at: string;
-};
-
-export type BookStatus = "active" | "done" | "paused";
-
-export type Book = {
-  id: string;
-  couple_id: string | null;
-  user_id: string;
-  title: string;
-  target_pages: number | null;
-  status: BookStatus;
-  started_on: string | null;
-  created_at: string;
-};
-
-export type BookPage = {
-  id: string;
-  book_id: string;
-  user_id: string;
-  log_date: string;
-  pages: number;
-  note: string | null;
-  created_at: string;
-};
-
 export type Note = {
   id: string;
   user_id: string;
@@ -226,6 +158,10 @@ export type Note = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  project_id?: string | null;
+  organization_id?: string | null;
+  opportunity_id?: string | null;
+  job_application_id?: string | null;
 };
 
 export type RecurrenceUnit = "yearly" | "monthly";
@@ -233,7 +169,6 @@ export type RecurrenceUnit = "yearly" | "monthly";
 export type ImportantDate = {
   id: string;
   user_id: string;
-  couple_id: string | null;
   title: string;
   the_date: string;
   is_recurring: boolean;
@@ -241,6 +176,8 @@ export type ImportantDate = {
   emoji: string | null;
   notes: string | null;
   created_at: string;
+  project_id?: string | null;
+  organization_id?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -311,6 +248,8 @@ export type Invoice = {
   footer_note: string | null;
   created_at: string;
   updated_at: string;
+  organization_id?: string | null;
+  project_id?: string | null;
 };
 
 export type InvoiceItem = {
@@ -338,6 +277,9 @@ export type Prompt = {
   body: string;
   created_at: string;
   updated_at: string;
+  project_id?: string | null;
+  organization_id?: string | null;
+  opportunity_id?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -396,6 +338,11 @@ export type Project = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  organization_id?: string | null;
+  summary?: string;
+  status?: "planned" | "active" | "on_hold" | "completed" | "archived";
+  revenue?: number;
+  revenue_currency?: string;
 };
 
 // One monthly cost line for a project (Supabase, Vercel, AI API calls, …).
@@ -541,6 +488,8 @@ export type JobApplication = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  organization_id?: string | null;
+  next_follow_up_at?: string | null;
 };
 
 export type JobApplicationEventKind = "applied" | "status" | "note";
@@ -606,6 +555,128 @@ export type ReferenceRow = {
   c2: string;
   c3: string | null;
   sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Professional operating-system entities.
+// ---------------------------------------------------------------------------
+
+export type OrganizationType =
+  | "client"
+  | "prospective_client"
+  | "employer"
+  | "prospective_employer"
+  | "personal_project"
+  | "other";
+
+export type Organization = {
+  id: string;
+  user_id: string;
+  name: string;
+  type: OrganizationType;
+  website: string | null;
+  logo_url: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  zip: string | null;
+  country: string | null;
+  company_id: string | null;
+  vat_id: string | null;
+  notes: string;
+  status: "active" | "inactive" | "archived";
+  created_at: string;
+  updated_at: string;
+};
+
+export type OpportunitySource =
+  | "tugedr"
+  | "referral"
+  | "direct"
+  | "existing_client"
+  | "inbound"
+  | "other";
+
+export type OpportunityStatus =
+  | "discovered"
+  | "shortlisted"
+  | "contacted"
+  | "proposal_sent"
+  | "negotiating"
+  | "won"
+  | "lost"
+  | "expired"
+  | "archived";
+
+export type ClientOpportunity = {
+  id: string;
+  user_id: string;
+  organization_id: string | null;
+  project_id: string | null;
+  source: OpportunitySource;
+  source_url: string | null;
+  title: string;
+  description: string;
+  status: OpportunityStatus;
+  budget_min: number | null;
+  budget_max: number | null;
+  currency: string;
+  rate_type: "fixed" | "hourly" | "daily" | "monthly" | "unknown" | null;
+  deadline: string | null;
+  next_follow_up_at: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  notes: string;
+  won_at: string | null;
+  lost_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InboxStatus = "pending" | "snoozed" | "processed" | "dismissed";
+
+export type InboxItem = {
+  id: string;
+  user_id: string;
+  source_type: string;
+  source_id: string | null;
+  title: string;
+  summary: string | null;
+  payload: Record<string, unknown>;
+  suggested_destination: string | null;
+  status: InboxStatus;
+  snoozed_until: string | null;
+  processed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  kind: string;
+  source_type: string | null;
+  source_id: string | null;
+  title: string;
+  body: string | null;
+  action_url: string | null;
+  read_at: string | null;
+  dismissed_at: string | null;
+  snoozed_until: string | null;
+  created_at: string;
+};
+
+export type WeeklyReview = {
+  id: string;
+  user_id: string;
+  week_start: string;
+  status: "draft" | "completed";
+  items: Record<string, unknown>;
+  summary: string;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
 };

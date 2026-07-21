@@ -17,8 +17,6 @@ type TodosStrings = {
   due: (date: string) => string;
   // date-fns format pattern for due dates; the locale object is applied separately.
   dueDateFormat: string;
-  fromPartner: (name: string) => string;
-  partnerFallback: string;
   otherCategory: string;
   // Personal (hand-added) tasks group heading in the repo-card layout.
   personalGroup: string;
@@ -99,8 +97,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     quickAddPlaceholder: "Add a task…",
     due: (date) => `due ${date}`,
     dueDateFormat: "d MMM",
-    fromPartner: (name) => `From ${name}`,
-    partnerFallback: "partner",
     otherCategory: "Other",
     personalGroup: "Personal",
     byCategory: "By category",
@@ -193,8 +189,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     quickAddPlaceholder: "Přidat úkol…",
     due: (date) => `termín ${date}`,
     dueDateFormat: "d. MMM",
-    fromPartner: (name) => `Od: ${name}`,
-    partnerFallback: "partnera",
     otherCategory: "Ostatní",
     personalGroup: "Osobní",
     byCategory: "Podle kategorie",

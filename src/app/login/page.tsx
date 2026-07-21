@@ -6,6 +6,7 @@ import { Activity, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { MeshGradient } from "@/components/ui/mesh-gradient";
+import { brandConfig } from "@/lib/brand";
 import { useDict } from "@/lib/i18n";
 
 export default function LoginPage() {
@@ -52,6 +53,9 @@ export default function LoginPage() {
           <div className="mx-auto h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mb-4 shadow-card">
             <Activity className="h-4 w-4" />
           </div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-foreground-subtle">
+            {brandConfig.name}
+          </p>
           <h1 className="text-2xl font-semibold tracking-tight">
             {t.login.welcomeBack}
           </h1>

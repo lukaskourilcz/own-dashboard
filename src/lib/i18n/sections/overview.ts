@@ -17,18 +17,16 @@ type OverviewStrings = {
   dueSoon: string;
   // Compact day count on a task chip, e.g. "3d". Negative n = overdue.
   daysTag: (n: number) => string;
-  habitsLeft: string;
+  followUps: string;
   nothingScheduled: string;
   nothingDue: string;
-  noHabitsYet: string;
-  allDoneToday: string;
+  noFollowUps: string;
   calendarTokenExpired: string;
   grantCalendarAccess: string;
   couldntLoadEvents: string;
   openInGoogleCalendar: string;
   overdue: string;
   dueTodayTag: string;
-  atRisk: (n: number) => string;
   isToday: string;
   tomorrow: string;
   inDays: (n: number) => string;
@@ -53,18 +51,16 @@ export const overview: { en: OverviewStrings; cs: OverviewStrings } = {
     dueToday: "Due today",
     dueSoon: "Due soon",
     daysTag: (n) => (n < 0 ? `${-n}d late` : n === 0 ? "today" : `${n}d`),
-    habitsLeft: "Habits left",
+    followUps: "Opportunity follow-ups",
     nothingScheduled: "Nothing scheduled.",
     nothingDue: "Nothing due.",
-    noHabitsYet: "No habits yet.",
-    allDoneToday: "All done today.",
+    noFollowUps: "No follow-ups scheduled.",
     calendarTokenExpired: "Calendar token expired.",
     grantCalendarAccess: "Grant Calendar access.",
     couldntLoadEvents: "Couldn't load events.",
     openInGoogleCalendar: "Open in Google Calendar",
     overdue: "overdue",
     dueTodayTag: "today",
-    atRisk: (n) => `${n}d at risk`,
     isToday: "is today",
     tomorrow: "tomorrow",
     inDays: (n) => `in ${n} days`,
@@ -87,18 +83,16 @@ export const overview: { en: OverviewStrings; cs: OverviewStrings } = {
     dueToday: "Termín dnes",
     dueSoon: "Blíží se termín",
     daysTag: (n) => (n < 0 ? `${-n} d po` : n === 0 ? "dnes" : `za ${n} d`),
-    habitsLeft: "Zbývající návyky",
+    followUps: "Follow-upy příležitostí",
     nothingScheduled: "Nic naplánováno.",
     nothingDue: "Žádný termín.",
-    noHabitsYet: "Zatím žádné návyky.",
-    allDoneToday: "Vše dnes hotovo.",
+    noFollowUps: "Žádné naplánované follow-upy.",
     calendarTokenExpired: "Token kalendáře vypršel.",
     grantCalendarAccess: "Povolte přístup ke Kalendáři.",
     couldntLoadEvents: "Nepodařilo se načíst události.",
     openInGoogleCalendar: "Otevřít v Kalendáři Google",
     overdue: "po termínu",
     dueTodayTag: "dnes",
-    atRisk: (n) => `${n} d v ohrožení`,
     isToday: "je dnes",
     tomorrow: "zítra",
     inDays: (n) => `za ${n} dní`,

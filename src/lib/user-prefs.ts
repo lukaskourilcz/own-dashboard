@@ -9,7 +9,8 @@ export type UserPreferences = {
   timezone: string | null;
   nudge_hour: number | null;
   notifications_renewals: boolean;
-  notifications_streaks: boolean;
+  ai_enabled: boolean;
+  ai_sensitive_opt_in: boolean;
 };
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -18,7 +19,8 @@ const DEFAULT_PREFS: UserPreferences = {
   timezone: null,
   nudge_hour: null,
   notifications_renewals: true,
-  notifications_streaks: true,
+  ai_enabled: true,
+  ai_sensitive_opt_in: false,
 };
 
 export async function loadUserPreferences(
@@ -28,7 +30,7 @@ export async function loadUserPreferences(
   const { data } = await supabase
     .from("user_preferences")
     .select(
-      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, notifications_streaks",
+      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, ai_enabled, ai_sensitive_opt_in",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -45,6 +47,7 @@ export async function loadUserPreferences(
     timezone: data.timezone ?? null,
     nudge_hour: data.nudge_hour ?? null,
     notifications_renewals: data.notifications_renewals ?? true,
-    notifications_streaks: data.notifications_streaks ?? true,
+    ai_enabled: data.ai_enabled ?? true,
+    ai_sensitive_opt_in: data.ai_sensitive_opt_in ?? false,
   };
 }

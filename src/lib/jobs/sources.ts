@@ -1,3 +1,4 @@
+import { brandConfig } from "@/lib/brand";
 import { isEuropeFriendly, matchRole } from "./filter";
 import type { ScrapedJob } from "./types";
 
@@ -21,7 +22,8 @@ import type { ScrapedJob } from "./types";
 
 const BROWSER_UA =
   "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0";
-const API_UA = "own-dashboard-jobs (personal job tracker)";
+
+const API_UA = `${brandConfig.fileNamePrefix}-career (professional opportunity tracker)`;
 
 const FETCH_TIMEOUT_MS = 12_000;
 

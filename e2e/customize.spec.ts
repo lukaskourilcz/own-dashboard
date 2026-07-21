@@ -65,7 +65,7 @@ test.describe("customizable overview", () => {
     );
 
     // Exit edit mode — controls disappear. ("exact" avoids matching the
-    // streak panel's "Done today" buttons.)
+    // project cards' action buttons.)
     await page.getByRole("button", { name: "Done", exact: true }).click();
     await expect(page.getByRole("button", { name: "Remove widget" })).toHaveCount(
       0,

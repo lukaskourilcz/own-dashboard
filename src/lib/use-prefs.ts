@@ -1,6 +1,11 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import {
+  LEGACY_ROUTE_ALIASES,
+  NAV_TABS,
+  type NavTab,
+} from "@/lib/nav-tabs";
 
 /**
  * Lightweight client-persisted UI preferences, following the same
@@ -70,15 +75,36 @@ const navListeners = new Set<() => void>();
 const EMPTY_HIDDEN: readonly string[] = Object.freeze([]);
 let hiddenCache: readonly string[] | null = null;
 
+const PREFERENCE_NAV_IDS = new Set<string>(
+  NAV_TABS.filter((id) => id !== "home" && id !== "inbox" && id !== "settings"),
+);
+
+/** Map meaningful legacy ids and discard removed/unknown sections. */
+export function normalizeNavPreferenceIds(input: unknown): NavTab[] {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set<NavTab>();
+  const normalized: NavTab[] = [];
+  for (const item of input) {
+    if (typeof item !== "string") continue;
+    const mapped = (
+      item in LEGACY_ROUTE_ALIASES
+        ? LEGACY_ROUTE_ALIASES[item as keyof typeof LEGACY_ROUTE_ALIASES]
+        : item
+    ) as NavTab;
+    if (!PREFERENCE_NAV_IDS.has(mapped) || seen.has(mapped)) continue;
+    seen.add(mapped);
+    normalized.push(mapped);
+  }
+  return normalized;
+}
+
 function readHidden(): readonly string[] {
   if (hiddenCache != null) return hiddenCache;
   if (typeof window === "undefined") return EMPTY_HIDDEN;
   try {
     const raw = localStorage.getItem(HIDDEN_NAV_KEY);
     const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    hiddenCache = Array.isArray(parsed)
-      ? parsed.filter((x): x is string => typeof x === "string")
-      : EMPTY_HIDDEN;
+    hiddenCache = normalizeNavPreferenceIds(parsed);
   } catch {
     hiddenCache = EMPTY_HIDDEN;
   }
@@ -99,6 +125,7 @@ export function useNavVisibility(): {
   isHidden: (id: string) => boolean;
   toggle: (id: string) => void;
   setHidden: (next: string[]) => void;
+  reset: () => void;
 } {
   const hidden = useSyncExternalStore(
     subscribeHidden,
@@ -124,6 +151,7 @@ export function useNavVisibility(): {
     isHidden: (id: string) => hidden.includes(id),
     toggle,
     setHidden,
+    reset: () => setHidden([]),
   };
 }
 
@@ -144,9 +172,7 @@ function readNavOrder(): readonly string[] {
   try {
     const raw = localStorage.getItem(NAV_ORDER_KEY);
     const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    navOrderCache = Array.isArray(parsed)
-      ? parsed.filter((x): x is string => typeof x === "string")
-      : EMPTY_ORDER;
+    navOrderCache = normalizeNavPreferenceIds(parsed);
   } catch {
     navOrderCache = EMPTY_ORDER;
   }
@@ -165,6 +191,7 @@ const getServerNavOrder = (): readonly string[] => EMPTY_ORDER;
 export function useNavOrder(): {
   order: readonly string[];
   setOrder: (next: string[]) => void;
+  reset: () => void;
 } {
   const order = useSyncExternalStore(
     subscribeNavOrder,
@@ -180,7 +207,7 @@ export function useNavOrder(): {
     }
     for (const cb of navOrderListeners) cb();
   };
-  return { order, setOrder };
+  return { order, setOrder, reset: () => setOrder([]) };
 }
 
 /**

@@ -10,14 +10,11 @@ type DatesStrings = {
   repeats: string;
   yearly: string;
   monthly: string;
-  shareWith: (name: string) => string;
-  partnerFallback: string;
   notes: string;
   notesPlaceholder: string;
   comingUp: string;
   noDatesYet: string;
   noDatesYetDescription: string;
-  shared: string;
   everyMonth: string;
   turning: (n: number) => string;
   yearlyLabel: string;
@@ -50,15 +47,12 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
     repeats: "Repeats",
     yearly: "Yearly",
     monthly: "Monthly",
-    shareWith: (name) => `Share with ${name}`,
-    partnerFallback: "partner",
     notes: "Notes",
     notesPlaceholder: "Optional",
     comingUp: "Coming up",
     noDatesYet: "No dates yet",
     noDatesYetDescription:
       "Anniversaries, birthdays, deadlines — anything you don't want to miss.",
-    shared: "shared",
     everyMonth: "every month",
     turning: (n) => `turning ${n}`,
     yearlyLabel: "yearly",
@@ -87,15 +81,12 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
     repeats: "Opakuje se",
     yearly: "Ročně",
     monthly: "Měsíčně",
-    shareWith: (name) => `Sdílet s ${name}`,
-    partnerFallback: "partnerem",
     notes: "Poznámky",
     notesPlaceholder: "Volitelné",
     comingUp: "Nadcházející",
     noDatesYet: "Zatím žádné dny",
     noDatesYetDescription:
       "Výročí, narozeniny, termíny — cokoli, na co nechceš zapomenout.",
-    shared: "sdíleno",
     everyMonth: "každý měsíc",
     turning: (n) => `bude mu ${n}`,
     yearlyLabel: "ročně",

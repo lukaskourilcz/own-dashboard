@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { brandConfig } from "@/lib/brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,10 +15,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description:
-    "Subscriptions, tasks, habits, plans, and your calendar — in one place.",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Dashboard" },
+  title: {
+    default: brandConfig.name,
+    template: brandConfig.titleTemplate,
+  },
+  description: brandConfig.description.en,
+  applicationName: brandConfig.name,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: brandConfig.shortName,
+  },
   formatDetection: { telephone: false },
 };
 

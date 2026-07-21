@@ -10,22 +10,22 @@ import * as f from "./fixtures";
  */
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-export default function PreviewPage() {
+export default async function PreviewPage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
   if (process.env.NODE_ENV === "production") notFound();
+  const { project } = await searchParams;
+  const previewProject = project ? f.projects.find((item) => item.id === project || item.slug === project) : undefined;
 
   return (
     <DashboardShell
+      isPreview
       user={f.user}
-      initialTab="overview"
+      initialTab={previewProject ? "projects" : "home"}
+      initialProjectId={previewProject?.id}
       initialSubscriptions={f.subscriptions}
       initialTodos={f.todos}
-      initialStreaks={f.streaks}
-      initialStreakLogs={f.streakLogs}
       initialAccounts={f.accounts}
       initialTransactions={f.transactions}
       initialPlans={f.plans}
-      initialBooks={f.books}
-      initialBookPages={f.bookPages}
       initialNotes={f.notes}
       initialPrompts={f.prompts}
       initialRepoNotes={f.repoNotes}
@@ -41,6 +41,11 @@ export default function PreviewPage() {
       initialProjects={f.projects}
       initialProjectCosts={f.projectCosts}
       initialCrons={f.crons}
+      initialOrganizations={f.organizations}
+      initialOpportunities={f.opportunities}
+      initialInboxItems={f.inboxItems}
+      initialNotifications={f.notifications}
+      initialWeeklyReviews={f.weeklyReviews}
       initialJobListings={f.jobListings}
       initialJobUserStates={f.jobUserStates}
       initialJobApplications={f.jobApplications}
@@ -49,8 +54,6 @@ export default function PreviewPage() {
       initialJobLastRun={f.jobLastRun}
       todayCalendar={f.todayCalendar}
       weekCalendar={f.weekCalendar}
-      coupleCtx={f.coupleCtx}
-      partnerData={f.partnerData}
       selectedCalendarIds={f.selectedCalendarIds}
       repoVisibleIds={f.repoVisibleIds}
     />

@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  Bot,
   Coins,
+  Download,
   FileText,
   GripVertical,
   Languages,
@@ -9,8 +11,12 @@ import {
   Moon,
   PanelLeft,
   Palette,
+  Plug,
+  RotateCcw,
+  Shield,
   Sun,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -33,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useDict, useLang } from "@/lib/i18n";
 import {
   useCvLinks,
@@ -45,7 +52,7 @@ import {
 } from "@/lib/use-prefs";
 import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
-import { NAV_GROUPS, OVERVIEW_ITEM } from "@/components/nav/sidebar";
+import { HOME_ITEM, INBOX_ITEM, NAV_GROUPS } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
 
 type NavRowItem = { value: string; icon: typeof Sun };
@@ -85,13 +92,36 @@ function Segmented<T extends string>({
   );
 }
 
-export function SettingsPanel() {
+export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: boolean }) {
   const t = useDict();
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
-  const { isHidden, toggle } = useNavVisibility();
-  const { order, setOrder } = useNavOrder();
+  const { isHidden, toggle, reset: resetVisibility } = useNavVisibility();
+  const { order, setOrder, reset: resetOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
+  const [aiPrefs, setAiPrefs] = useState({ enabled: true, sensitive: false });
+  const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null }>>(null);
+  useEffect(() => {
+    if (!syncPreferences) return;
+    void fetch("/api/user/preferences", { cache: "no-store" })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data) setAiPrefs({ enabled: data.ai_enabled ?? true, sensitive: data.ai_sensitive_opt_in ?? false });
+      });
+  }, [syncPreferences]);
+  useEffect(() => {
+    if (!syncPreferences) return;
+    void fetch("/api/integrations/status", { cache: "no-store" })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (data) setIntegrations(data); });
+  }, [syncPreferences]);
+  const patchAiPrefs = (patch: { enabled?: boolean; sensitive?: boolean }) => {
+    const next = { ...aiPrefs, ...patch };
+    setAiPrefs(next);
+    if (syncPreferences) {
+      void fetch("/api/user/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ ai_enabled: next.enabled, ai_sensitive_opt_in: next.sensitive }) });
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -274,18 +304,7 @@ export function SettingsPanel() {
               {t.settings.navigationDesc}
             </p>
 
-            {/* Overview — pinned, always visible, not reorderable. */}
-            <div className="flex items-center justify-between gap-3 px-2 py-2.5">
-              <div className="flex min-w-0 items-center gap-2.5 pl-[26px]">
-                <OVERVIEW_ITEM.icon className="h-4 w-4 shrink-0 text-foreground-muted" />
-                <span className="truncate text-sm font-medium">
-                  {t.nav.sections.overview}
-                </span>
-              </div>
-              <SectionLabel className="shrink-0">
-                {t.settings.alwaysVisible}
-              </SectionLabel>
-            </div>
+            {[HOME_ITEM, INBOX_ITEM].map((item) => <div key={item.value} className="flex items-center justify-between gap-3 px-2 py-2.5"><div className="flex min-w-0 items-center gap-2.5 pl-[26px]"><item.icon className="h-4 w-4 shrink-0 text-foreground-muted" /><span className="truncate text-sm font-medium">{t.nav.sections[item.value]}</span></div><SectionLabel className="shrink-0">{t.settings.alwaysVisible}</SectionLabel></div>)}
 
             {NAV_GROUPS.map((g) => {
               const items = sortByNavOrder(g.items, order);
@@ -320,7 +339,23 @@ export function SettingsPanel() {
                 </div>
               );
             })}
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => { resetVisibility(); resetOrder(); }}><RotateCcw />{t.settings.resetNavigation}</Button>
           </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Bot className="h-3 w-3" />{t.settings.ai}</CardTitle></CardHeader>
+          <CardContent className="space-y-4"><p className="text-xs text-foreground-subtle">{t.settings.aiDesc}</p><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium">{t.settings.aiEnabled}</span><Switch aria-label={t.settings.aiEnabled} checked={aiPrefs.enabled} onCheckedChange={(enabled) => patchAiPrefs({ enabled })} /></div><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{t.settings.aiSensitive}</p><p className="mt-1 text-xs text-foreground-subtle">{t.settings.aiSensitiveDesc}</p></div><Switch aria-label={t.settings.aiSensitive} checked={aiPrefs.sensitive} disabled={!aiPrefs.enabled} onCheckedChange={(sensitive) => patchAiPrefs({ sensitive })} /></div></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Plug className="h-3 w-3" />{t.settings.integrations}</CardTitle></CardHeader>
+          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><SectionLabel>{state ? (state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured) : "…"}</SectionLabel></div>; })}</CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Shield className="h-3 w-3" />{t.settings.dataExport}</CardTitle></CardHeader>
+          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.dataExportDesc}</p><div className="flex flex-wrap gap-2">{[["/api/export/full", t.settings.exportFull], ["/api/export/financial", t.settings.exportFinancial], ["/api/export/professional", t.settings.exportProfessional], ["/api/export/knowledge", t.settings.exportKnowledge], ["/api/export/projects", t.settings.exportProjects], ["/api/export/notes", t.settings.exportNotes], ["/api/export/prompts", t.settings.exportPrompts], ["/api/export/career", t.settings.exportCareer], ["/api/export/financial?format=csv&table=transactions", t.settings.exportTransactionsCsv], ["/api/export/legacy", t.settings.exportLegacy]].map(([href, label]) => <Button key={href} variant="outline" size="sm" asChild><a href={href} download><Download />{label}</a></Button>)}</div></CardContent>
         </Card>
       </div>
     </div>

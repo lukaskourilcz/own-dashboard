@@ -2,22 +2,24 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
+import { AI_MODELS, anthropicRuntime } from "@/lib/ai-config";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Natural-language quick-add. The client sends one short string ("dinner with
  * mom 7pm tomorrow") and we route it to a tool-use call against Claude Haiku.
- * The model picks ONE of {add_todo, mark_streak, add_calendar_event} and
- * returns structured args. We return the planned action — the client executes
+ * The model picks ONE of {add_todo, capture_inbox, add_calendar_event} and
+ * returns structured args. We return the planned action — the client previews
  * the actual mutation against Supabase / the existing /api/calendar/event
  * route, so this endpoint stays read-only on user data.
  *
  * If ANTHROPIC_API_KEY is unset, returns a `disabled` flag so the client can
- * fall back to the literal !todo / !streak / !cal grammar.
+ * fall back to the literal !todo / !inbox / !cal grammar.
  */
 
 type Action =
   | { kind: "todo"; title: string; due_date?: string }
-  | { kind: "streak"; streak_name: string }
+  | { kind: "inbox"; title: string; summary?: string }
   | {
       kind: "calendar_event";
       title: string;
@@ -46,19 +48,16 @@ const TOOLS = [
     },
   },
   {
-    name: "mark_streak",
+    name: "capture_inbox",
     description:
-      "Mark a habit/streak as done for today. Use when the user says they did a habit (e.g. 'read 30 min', 'meditated', 'gym done').",
+      "Capture an ambiguous thought, lead, request, or item that needs later triage in Inbox.",
     input_schema: {
       type: "object",
       properties: {
-        streak_name: {
-          type: "string",
-          description:
-            "Name of the streak/habit to mark. Match by name — the client looks it up case-insensitively.",
-        },
+        title: { type: "string", description: "Short capture title." },
+        summary: { type: "string", description: "Optional context preserved for later triage." },
       },
-      required: ["streak_name"],
+      required: ["title"],
     },
   },
   {
@@ -92,7 +91,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const { data: preferences } = await supabase.from("user_preferences").select("ai_enabled").eq("user_id", user.id).maybeSingle();
+  if (preferences?.ai_enabled === false) return NextResponse.json({ disabled: true });
+
+  const rl = await rateLimit(user.id, { key: "quick-add-ai", limit: 30, windowSec: 3600 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
+
+  const { apiKey, baseURL } = anthropicRuntime();
   if (!apiKey) {
     return NextResponse.json({ disabled: true });
   }
@@ -112,9 +122,8 @@ export async function POST(request: Request) {
   // Optional ANTHROPIC_BASE_URL routes through an Anthropic-compatible gateway
   // (cost caps / caching / a free-tier proxy) without changing the tool-use
   // logic. Unset = talk to Anthropic directly. See NEEDED.md.
-  const anthropicBaseUrl = process.env.ANTHROPIC_BASE_URL?.trim();
   const client = new Anthropic(
-    anthropicBaseUrl ? { apiKey, baseURL: anthropicBaseUrl } : { apiKey },
+    baseURL ? { apiKey, baseURL } : { apiKey },
   );
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
@@ -124,17 +133,17 @@ export async function POST(request: Request) {
   try {
     response = await client.messages.create({
       // Per the project's AGENTS.md, Haiku 4.5 is the latest small-fast tier.
-      model: "claude-haiku-4-5-20251001",
+      model: AI_MODELS.intent,
       max_tokens: 512,
       tools: TOOLS as unknown as Anthropic.Messages.Tool[],
       tool_choice: { type: "auto" },
       system:
-        `You are a strict intent parser for a personal dashboard. The user pastes one short line; you call EXACTLY ONE tool that captures their intent.\n\n` +
+        `You are a strict intent parser for a professional personal operating system. The user pastes one short line; you call EXACTLY ONE tool that captures their intent.\n\n` +
         `Today is ${todayIso} (${tz}). Resolve relative dates from this.\n\n` +
         `Heuristics:\n` +
         `- If the line has an explicit time of day → add_calendar_event.\n` +
-        `- If the line says something was done past-tense ("read 30 min", "did yoga") → mark_streak with the habit name.\n` +
-        `- Otherwise → add_todo. Include due_date only if a deadline is clearly stated.\n` +
+        `- If the line is a clear action or commitment → add_todo. Include due_date only if a deadline is clearly stated.\n` +
+        `- If it is ambiguous, reference material, a lead, or needs triage → capture_inbox.\n` +
         `- Output ONLY a tool call. Do not include free-form text.`,
       messages: [{ role: "user", content: input }],
     });
@@ -153,7 +162,7 @@ export async function POST(request: Request) {
   if (!toolBlock) {
     return NextResponse.json({
       action: null,
-      note: "Could not parse. Try a more specific phrasing or !todo/!streak/!cal.",
+        note: "Could not parse. Try a more specific phrasing or !todo/!inbox/!cal.",
     });
   }
 
@@ -168,10 +177,14 @@ export async function POST(request: Request) {
         typeof inputArgs.due_date === "string" ? inputArgs.due_date : undefined,
     };
   } else if (
-    toolBlock.name === "mark_streak" &&
-    typeof inputArgs.streak_name === "string"
+    toolBlock.name === "capture_inbox" &&
+    typeof inputArgs.title === "string"
   ) {
-    action = { kind: "streak", streak_name: inputArgs.streak_name };
+    action = {
+      kind: "inbox",
+      title: inputArgs.title,
+      summary: typeof inputArgs.summary === "string" ? inputArgs.summary : undefined,
+    };
   } else if (
     toolBlock.name === "add_calendar_event" &&
     typeof inputArgs.title === "string" &&

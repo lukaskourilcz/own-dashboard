@@ -3,9 +3,8 @@ type KpiStrings = {
   subscriptions: string;
   openTasks: string;
   nDone: (n: number) => string;
-  longestActiveStreak: string;
-  trackHabitHint: string;
-  days: (n: number) => string;
+  activeProjects: string;
+  projectPortfolio: string;
 };
 
 export const kpi: { en: KpiStrings; cs: KpiStrings } = {
@@ -14,17 +13,15 @@ export const kpi: { en: KpiStrings; cs: KpiStrings } = {
     subscriptions: "subscriptions",
     openTasks: "Open tasks",
     nDone: (n) => `${n} done`,
-    longestActiveStreak: "Longest active streak",
-    trackHabitHint: "Track a habit to see it here",
-    days: (n) => `${n}d`,
+    activeProjects: "Active projects",
+    projectPortfolio: "professional portfolio",
   },
   cs: {
     monthlyRecurring: "Měsíční výdaje",
     subscriptions: "předplatná",
     openTasks: "Otevřené úkoly",
     nDone: (n) => `${n} hotovo`,
-    longestActiveStreak: "Nejdelší aktivní série",
-    trackHabitHint: "Sledujte návyk a uvidíte ho zde",
-    days: (n) => `${n} d`,
+    activeProjects: "Aktivní projekty",
+    projectPortfolio: "profesní portfolio",
   },
 };

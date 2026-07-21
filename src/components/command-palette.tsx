@@ -3,15 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  BookOpen,
   BriefcaseBusiness,
   CalendarDays,
   CreditCard,
   FileText,
-  Flame,
-  Gauge,
+  FolderKanban,
   Gift,
-  Heart,
+  Inbox,
   LayoutDashboard,
   Languages,
   ListTodo,
@@ -22,16 +20,13 @@ import {
   Receipt,
   Search,
   Settings,
-  Sparkles,
   Sun,
   Target,
   Terminal,
   Wallet,
 } from "lucide-react";
-import { GithubIcon } from "@/components/icons/github";
 import { useTheme } from "@/lib/use-theme";
 import { useDict, useLang } from "@/lib/i18n";
-import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import type { NavTab } from "@/components/nav/sidebar";
 
@@ -57,7 +52,6 @@ export function CommandPalette({
   const { theme, toggle } = useTheme();
   const { lang, setLang } = useLang();
   const t = useDict();
-  const tugedrEnabled = useFeatureFlag(FLAGS.tugedr);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -91,25 +85,27 @@ export function CommandPalette({
     };
     const s = t.nav.sections;
     const list: Action[] = [
-      { id: "go-overview", label: s.overview, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g o", run: go("overview") },
-      { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g c", run: go("calendar") },
+      { id: "go-home", label: s.home, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g h", run: go("home") },
+      { id: "go-inbox", label: s.inbox, group: "go", icon: Inbox, keywords: "capture triage zachytit", run: go("inbox") },
+      { id: "go-work", label: s.work, group: "go", icon: BriefcaseBusiness, keywords: "work overview delivery práce", run: go("work") },
+      { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
+      { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "pipeline leads tugedr opportunities příležitosti", run: go("opportunities") },
+      { id: "go-clients", label: s.clients, group: "go", icon: Users, keywords: "clients organizations contacts klienti", run: go("clients") },
+      { id: "go-career", label: s.career, group: "go", icon: BriefcaseBusiness, keywords: "career jobs applications práce pozice", run: go("career") },
+      { id: "go-invoices", label: s.invoices, group: "go", icon: Receipt, keywords: "invoice billing vat dph faktury", run: go("invoices") },
+      { id: "go-money", label: s.money, group: "go", icon: Wallet, keywords: "money finance peníze", run: go("money") },
+      { id: "go-accounts", label: s.accounts, group: "go", icon: Wallet, keywords: "accounts bank účty", run: go("accounts") },
+      { id: "go-transactions", label: s.transactions, group: "go", icon: Wallet, keywords: "transactions income expense transakce", run: go("transactions") },
+      { id: "go-subs", label: s.subscriptions, group: "go", icon: CreditCard, keywords: "spend recurring předplatná", run: go("subscriptions") },
+      { id: "go-categories", label: s.categories, group: "go", icon: Wallet, keywords: "categories rules kategorie", run: go("categories") },
+      { id: "go-tasks", label: s.tasks, group: "go", icon: ListTodo, keywords: "todo tasks úkoly g t", run: go("tasks") },
+      { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g l", run: go("calendar") },
+      { id: "go-goals", label: s.goals, group: "go", icon: Target, keywords: "goals plans cíle", run: go("goals") },
+      { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "important deadlines dates termíny", run: go("dates") },
       { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes writing drafts poznámky g n", run: go("notes") },
       { id: "go-prompts", label: s.prompts, group: "go", icon: MessageSquareText, keywords: "prompts snippets templates clipboard copy library prompty g m", run: go("prompts") },
-      { id: "go-shortcuts", label: s.shortcuts, group: "go", icon: Terminal, keywords: "shortcuts commands snippets terminal cli copy zkratky příkazy g k", run: go("shortcuts") },
-      { id: "go-todos", label: s.todos, group: "go", icon: ListTodo, keywords: "todo tasks úkoly g t", run: go("todos") },
-      { id: "go-tugedr", label: s.tugedr, group: "go", icon: Users, keywords: "tugedr together todo ideas list scratch nápady", run: go("tugedr") },
-      { id: "go-streaks", label: s.streaks, group: "go", icon: Flame, keywords: "streak habit návyky g s", run: go("streaks") },
-      { id: "go-finances", label: s.finances, group: "go", icon: Wallet, keywords: "money transactions finance g f", run: go("finances") },
-      { id: "go-invoices", label: s.invoices, group: "go", icon: Receipt, keywords: "invoice billing vat dph faktury fakturace g i", run: go("invoices") },
-      { id: "go-subs", label: s.subscriptions, group: "go", icon: CreditCard, keywords: "spend recurring předplatná", run: go("subscriptions") },
-      { id: "go-plans", label: s.plans, group: "go", icon: Target, keywords: "goals plány g p", run: go("plans") },
-      { id: "go-books", label: s.books, group: "go", icon: BookOpen, keywords: "reading knihy g b", run: go("books") },
-      { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "anniversary birthday významné dny g d", run: go("dates") },
-      { id: "go-couple", label: s.couple, group: "go", icon: Heart, keywords: "partner pair sharing pár g u", run: go("couple") },
-      { id: "go-github", label: s.github, group: "go", icon: GithubIcon, keywords: "github repos repositories git commit markdown notes repozitáře g r", run: go("github") },
-      { id: "go-costs", label: s.costs, group: "go", icon: Gauge, keywords: "costs scaling pricing tech stack budget infrastructure náklady škálování", run: go("costs") },
-      { id: "go-ai", label: s.ai, group: "go", icon: Sparkles, keywords: "ai tools sites links discoveries findings catalogue g a", run: go("ai") },
-      { id: "go-jobs", label: s.jobs, group: "go", icon: BriefcaseBusiness, keywords: "jobs positions openings applications cover letter práce pozice nabídky g j", run: go("jobs") },
+      { id: "go-links", label: s.links, group: "go", icon: FileText, keywords: "links tools sites odkazy", run: go("links") },
+      { id: "go-references", label: s.references, group: "go", icon: Terminal, keywords: "references commands snippets cheatsheet", run: go("references") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-quick-add",
@@ -119,7 +115,7 @@ export function CommandPalette({
         icon: Search,
         keywords: "add new rychlé přidání",
         run: () => {
-          setTab("overview");
+          setTab("home");
           close();
           requestAnimationFrame(() => onFocusQuickAdd());
         },
@@ -161,8 +157,8 @@ export function CommandPalette({
         },
       },
     ];
-    return list.filter((a) => a.id !== "go-tugedr" || tugedrEnabled);
-  }, [setTab, onFocusQuickAdd, theme, toggle, lang, setLang, t, tugedrEnabled]);
+    return list;
+  }, [setTab, onFocusQuickAdd, theme, toggle, lang, setLang, t]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

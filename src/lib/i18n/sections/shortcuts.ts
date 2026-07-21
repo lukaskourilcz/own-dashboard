@@ -59,8 +59,8 @@ type ShortcutsStrings = {
 
 export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
   en: {
-    title: "Shortcuts",
-    description: "Commands and snippets kept one click away — click to copy.",
+    title: "References",
+    description: "Commands, snippets, and cheatsheets kept one click away.",
     addShortcut: "Add shortcut",
     searchPlaceholder: "Search shortcuts…",
     copy: "Click to copy",
@@ -113,8 +113,8 @@ export const shortcuts: { en: ShortcutsStrings; cs: ShortcutsStrings } = {
     couldNotDeleteRow: "Could not delete the row. Please try again.",
   },
   cs: {
-    title: "Zkratky",
-    description: "Příkazy a útržky po ruce — kliknutím zkopíruješ.",
+    title: "Reference",
+    description: "Příkazy, útržky a taháky na jedno kliknutí.",
     addShortcut: "Přidat zkratku",
     searchPlaceholder: "Hledat zkratky…",
     copy: "Kliknutím zkopíruješ",

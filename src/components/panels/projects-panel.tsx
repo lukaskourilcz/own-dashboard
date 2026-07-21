@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   DndContext,
   KeyboardSensor,
@@ -51,6 +52,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
+import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -73,7 +75,25 @@ import {
   costsMonthlyIn,
   projectMonthlyIn,
 } from "@/lib/projects";
-import type { Cron, Project, ProjectCost, Updater } from "@/lib/types";
+import type {
+  ClientOpportunity,
+  Cron,
+  ImportantDate,
+  InboxItem,
+  Invoice,
+  InvoiceItem,
+  Note,
+  Organization,
+  Project,
+  ProjectCost,
+  Prompt,
+  RepoLink,
+  RepoNote,
+  Subscription,
+  Todo,
+  Transaction,
+  Updater,
+} from "@/lib/types";
 
 const CategoryDonut = dynamic(
   () =>
@@ -104,7 +124,67 @@ const emptyProjectForm: ProjectForm = {
   url: "",
 };
 
-export function ProjectsPanel({
+type ProjectsPanelProps = {
+  projects: Project[];
+  setProjects: Updater<Project[]>;
+  costs: ProjectCost[];
+  setCosts: Updater<ProjectCost[]>;
+  crons: Cron[];
+  setCrons: Updater<Cron[]>;
+  displayCurrency: string;
+  setDisplayCurrency?: (next: string) => void;
+  initialVisibleIds?: string[];
+  initialProjectId?: string;
+  todos: Todo[];
+  notes: Note[];
+  invoices: Invoice[];
+  invoiceItems: InvoiceItem[];
+  subscriptions: Subscription[];
+  transactions: Transaction[];
+  organizations: Organization[];
+  opportunities: ClientOpportunity[];
+  importantDates: ImportantDate[];
+  prompts: Prompt[];
+  inboxItems: InboxItem[];
+  repoNotes: RepoNote[];
+  setRepoNotes: Updater<RepoNote[]>;
+  repoLinks: RepoLink[];
+  setRepoLinks: Updater<RepoLink[]>;
+  syncRepositories?: boolean;
+};
+
+export function ProjectsPanel(props: ProjectsPanelProps) {
+  const selected = props.initialProjectId
+    ? props.projects.find((project) => project.id === props.initialProjectId)
+    : null;
+  if (selected) {
+    return <ProjectWorkspace
+      project={selected}
+      costs={props.costs.filter((item) => item.project_id === selected.id)}
+      crons={props.crons.filter((item) => item.project_id === selected.id)}
+      todos={props.todos}
+      notes={props.notes}
+      invoices={props.invoices}
+      invoiceItems={props.invoiceItems}
+      subscriptions={props.subscriptions}
+      transactions={props.transactions}
+      organizations={props.organizations}
+      opportunities={props.opportunities}
+      importantDates={props.importantDates}
+      prompts={props.prompts}
+      inboxItems={props.inboxItems}
+      repoNotes={props.repoNotes}
+      setRepoNotes={props.setRepoNotes}
+      repoLinks={props.repoLinks}
+      setRepoLinks={props.setRepoLinks}
+      displayCurrency={props.displayCurrency}
+      repositoryIntegrationEnabled={props.syncRepositories !== false}
+    />;
+  }
+  return <ProjectsListPanel {...props} />;
+}
+
+function ProjectsListPanel({
   projects,
   setProjects,
   costs,
@@ -114,18 +194,8 @@ export function ProjectsPanel({
   displayCurrency,
   setDisplayCurrency,
   initialVisibleIds = [],
-}: {
-  projects: Project[];
-  setProjects: Updater<Project[]>;
-  costs: ProjectCost[];
-  setCosts: Updater<ProjectCost[]>;
-  crons: Cron[];
-  setCrons: Updater<Cron[]>;
-  displayCurrency: string;
-  setDisplayCurrency?: (next: string) => void;
-  /** Saved repo allow-list (GitHub repo ids). Empty = every repo is active. */
-  initialVisibleIds?: string[];
-}) {
+  syncRepositories = true,
+}: ProjectsPanelProps) {
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -141,7 +211,7 @@ export function ProjectsPanel({
   // and Costs sections show. Every active repo automatically gets a project so
   // it can carry costs, crons and notes. Removing a repo from the allow-list
   // leaves its project (and data) in place — we only ever add, never delete.
-  const { data: reposData } = useReposQuery();
+  const { data: reposData } = useReposQuery(syncRepositories);
   const [visibleIds] = useState<string[]>(
     () => readRepoFilter() ?? initialVisibleIds,
   );
@@ -162,8 +232,8 @@ export function ProjectsPanel({
     return set;
   }, [projects]);
 
-  // Full names of the currently-active repos, so a card can show it's synced
-  // from the Repositories section (vs. a hand-added project).
+  // Full names of the currently-active repos, so a card can show it is synced
+  // from GitHub (rather than being a manually added project).
   const activeRepoNames = useMemo(
     () => new Set(activeRepos.map((r) => r.full_name.toLowerCase())),
     [activeRepos],
@@ -860,6 +930,13 @@ function ProjectCard({
                     {t.projects.open}
                   </a>
                 )}
+                <Link
+                  href={`/projects/${encodeURIComponent(project.slug)}`}
+                  className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                >
+                  <FolderKanban className="h-3 w-3" />
+                  {t.professional.projectWorkspace}
+                </Link>
               </div>
             )}
           </div>

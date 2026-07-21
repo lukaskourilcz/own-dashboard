@@ -132,7 +132,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     active: "active",
     inactive: "inactive",
     synced: "Repository",
-    syncedHint: "Synced automatically from an active repository in Repositories.",
+    syncedHint: "Synced automatically from its linked GitHub repository.",
     collapse: "Collapse",
     expand: "Expand",
     dragHandle: "Drag to reorder",
@@ -230,7 +230,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     inactive: "neaktivní",
     synced: "Repozitář",
     syncedHint:
-      "Automaticky synchronizováno z aktivního repozitáře v sekci Repozitáře.",
+      "Automaticky synchronizováno z propojeného GitHub repozitáře.",
     collapse: "Sbalit",
     expand: "Rozbalit",
     dragHandle: "Přetáhni pro změnu pořadí",

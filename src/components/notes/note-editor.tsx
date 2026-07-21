@@ -81,6 +81,7 @@ export function NoteEditor({
 }: Props) {
   const { theme } = useTheme();
   const t = useDict();
+  const hostRef = useRef<HTMLDivElement>(null);
 
   const seed = useMemo<Block[]>(() => {
     if (Array.isArray(initialContent) && initialContent.length > 0) {
@@ -105,6 +106,14 @@ export function NoteEditor({
     initialContent: seed,
     schema: editorSchema,
   });
+
+  // BlockNote does not expose a contenteditable aria-label prop. Name the
+  // mounted TipTap input directly so assistive technology announces the
+  // editor as a real input field rather than an anonymous region.
+  useEffect(() => {
+    const editable = hostRef.current?.querySelector<HTMLElement>(".tiptap");
+    editable?.setAttribute("aria-label", t.notes.editorLabel);
+  }, [editor, t.notes.editorLabel]);
 
   useImperativeHandle(
     handleRef ?? { current: null },
@@ -131,6 +140,7 @@ export function NoteEditor({
 
   // Debounced onChange — fire 600ms after the last edit.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const changedRef = useRef(false);
   const onChangeRef = useRef(onChange);
   const onLinkRef = useRef(onRequestNoteLink);
   const titleFallbackRef = useRef(t.notes.untitled);
@@ -143,6 +153,7 @@ export function NoteEditor({
   useEffect(() => {
     if (!editor) return;
     const unsubscribe = editor.onChange(() => {
+      changedRef.current = true;
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         const doc = editor.document as Block[];
@@ -151,16 +162,20 @@ export function NoteEditor({
           content: doc,
           plainText: blocksToPlainText(doc),
         });
+        changedRef.current = false;
+        timerRef.current = null;
       }, 600);
     });
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      const doc = editor.document as Block[];
-      onChangeRef.current({
-        title: extractTitle(doc, titleFallbackRef.current),
-        content: doc,
-        plainText: blocksToPlainText(doc),
-      });
+      if (changedRef.current) {
+        const doc = editor.document as Block[];
+        onChangeRef.current({
+          title: extractTitle(doc, titleFallbackRef.current),
+          content: doc,
+          plainText: blocksToPlainText(doc),
+        });
+      }
       if (typeof unsubscribe === "function") unsubscribe();
     };
   }, [editor]);
@@ -180,7 +195,7 @@ export function NoteEditor({
   }
 
   return (
-    <div className="bn-host" onClickCapture={onClickCapture}>
+    <div ref={hostRef} className="bn-host" onClickCapture={onClickCapture}>
       <BlockNoteView
         editor={editor}
         theme={theme === "dark" ? "dark" : "light"}

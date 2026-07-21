@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { AI_MODELS, anthropicRuntime } from "@/lib/ai-config";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
@@ -116,18 +117,18 @@ export async function POST(request: Request) {
     pricing: null,
   };
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const { data: preferences } = await supabase.from("user_preferences").select("ai_enabled").eq("user_id", user.id).maybeSingle();
+  const { apiKey, baseURL } = anthropicRuntime();
   const categories = Array.isArray(body.categories) ? body.categories : [];
-  if (apiKey && (page.title || page.content)) {
+  if (apiKey && preferences?.ai_enabled !== false && (page.title || page.content)) {
     try {
-      const baseURL = process.env.ANTHROPIC_BASE_URL?.trim();
       const client = new Anthropic(baseURL ? { apiKey, baseURL } : { apiKey });
       const catNames = categories.map((c) => c.name);
       const msg = await client.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: AI_MODELS.enrichment,
         max_tokens: 300,
         system:
-          "You catalogue AI/developer tools for a personal dashboard. Given a page, " +
+          "You catalogue AI/developer tools for a professional knowledge library. Given a page, " +
           "return STRICT JSON only (no prose) with keys: " +
           '"description" (<=120 chars, plain, what the tool is good for), ' +
           '"category" (choose the single best from the provided list, or null if none fit), ' +

@@ -7,22 +7,19 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
-import { todayKey } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
-import type { Streak, StreakLog, Todo, Updater } from "@/lib/types";
+import type { InboxItem, Todo, Updater } from "@/lib/types";
 
 type Props = {
   setTodos: Updater<Todo[]>;
-  streaks: Streak[];
-  streakLogs: StreakLog[];
-  setStreakLogs: Updater<StreakLog[]>;
+  setInboxItems: Updater<InboxItem[]>;
   onCalendarTitle: (title: string) => void;
 };
 
 type NlAction =
   | { kind: "todo"; title: string; due_date?: string }
-  | { kind: "streak"; streak_name: string }
+  | { kind: "inbox"; title: string; summary?: string }
   | {
       kind: "calendar_event";
       title: string;
@@ -35,9 +32,7 @@ type NlAction =
 
 export function QuickAdd({
   setTodos,
-  streaks,
-  streakLogs,
-  setStreakLogs,
+  setInboxItems,
   onCalendarTitle,
 }: Props) {
   const supabase = createClient();
@@ -74,27 +69,25 @@ export function QuickAdd({
     },
   });
 
-  const markStreakMutation = useMutation({
-    mutationFn: async (vars: {
-      userId: string;
-      streakId: string;
-      today: string;
-    }) => {
+  const addInboxMutation = useMutation({
+    mutationFn: async (vars: { userId: string; title: string; summary?: string }) => {
       const { data, error } = await supabase
-        .from("streak_logs")
+        .from("inbox_items")
         .insert({
-          streak_id: vars.streakId,
           user_id: vars.userId,
-          log_date: vars.today,
+          title: vars.title,
+          summary: vars.summary ?? null,
+          source_type: "quick_add",
+          suggested_destination: "task",
         })
         .select()
         .single();
       if (error) throw error;
-      return data as StreakLog;
+      return data as InboxItem;
     },
-    onSuccess: (log) => {
-      setStreakLogs((prev) => [...prev, log]);
-      void qc.invalidateQueries({ queryKey: qk.streakLogs });
+    onSuccess: (item) => {
+      setInboxItems((prev) => [item, ...prev]);
+      void qc.invalidateQueries({ queryKey: qk.inboxItems });
     },
   });
 
@@ -111,36 +104,16 @@ export function QuickAdd({
     return true;
   }
 
-  async function markStreakLocal(userId: string, name: string) {
-    const streak = streaks.find(
-      (s) => s.name.toLowerCase() === name.toLowerCase(),
-    );
-    if (!streak) {
-      toast.err(t.quickAdd.noHabitNamed(name));
-      return false;
-    }
-    const today = todayKey();
-    if (
-      streakLogs.some(
-        (l) => l.streak_id === streak.id && l.log_date === today,
-      )
-    ) {
-      toast.info(t.quickAdd.alreadyDoneToday(streak.name));
-      return true;
-    }
+  async function addInboxLocal(userId: string, title: string, summary?: string) {
     try {
-      await markStreakMutation.mutateAsync({
-        userId,
-        streakId: streak.id,
-        today,
-      });
+      await addInboxMutation.mutateAsync({ userId, title, summary });
     } catch (error) {
       toast.err(
-        error instanceof Error ? error.message : t.quickAdd.couldNotMarkHabit,
+        error instanceof Error ? error.message : t.quickAdd.couldNotAddInbox,
       );
       return false;
     }
-    toast.ok(t.quickAdd.markedForToday(streak.name));
+    toast.ok(t.quickAdd.addedInbox(title));
     return true;
   }
 
@@ -167,13 +140,13 @@ export function QuickAdd({
         if (await addTodoLocal(userId, title)) setValue("");
         return;
       }
-      if (v.startsWith("!streak ")) {
-        const name = v.slice("!streak ".length).trim();
-        if (!name) {
-          toast.err(t.quickAdd.habitNameRequired);
+      if (v.startsWith("!inbox ")) {
+        const title = v.slice("!inbox ".length).trim();
+        if (!title) {
+          toast.err(t.quickAdd.titleRequired);
           return;
         }
-        if (await markStreakLocal(userId, name)) setValue("");
+        if (await addInboxLocal(userId, title)) setValue("");
         return;
       }
       if (v.startsWith("!cal ")) {
@@ -216,9 +189,9 @@ export function QuickAdd({
 
       const a = parsed.action;
       if (a.kind === "todo") {
-        if (await addTodoLocal(userId, a.title, a.due_date)) setValue("");
-      } else if (a.kind === "streak") {
-        if (await markStreakLocal(userId, a.streak_name)) setValue("");
+        if (window.confirm(t.quickAdd.confirmTodo(a.title)) && await addTodoLocal(userId, a.title, a.due_date)) setValue("");
+      } else if (a.kind === "inbox") {
+        if (window.confirm(t.quickAdd.confirmInbox(a.title)) && await addInboxLocal(userId, a.title, a.summary)) setValue("");
       } else if (a.kind === "calendar_event") {
         // Hand off to the existing calendar route; surface the prefilled form
         // so the user can confirm before creating the GCal event.

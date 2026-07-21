@@ -17,22 +17,19 @@ import { subscriptions } from "./sections/subscriptions";
 import { finances } from "./sections/finances";
 import { invoices } from "./sections/invoices";
 import { todos } from "./sections/todos";
-import { streaks } from "./sections/streaks";
 import { plans } from "./sections/plans";
-import { books } from "./sections/books";
 import { notes } from "./sections/notes";
 import { prompts } from "./sections/prompts";
 import { shortcuts } from "./sections/shortcuts";
 import { dates } from "./sections/dates";
-import { couple } from "./sections/couple";
 import { calendar } from "./sections/calendar";
 import { github } from "./sections/github";
 import { projects } from "./sections/projects";
 import { ai } from "./sections/ai";
 import { costs } from "./sections/costs";
-import { tugedr } from "./sections/tugedr";
 import { jobs } from "./sections/jobs";
 import { categories } from "./sections/categories";
+import { professional } from "./sections/professional";
 
 export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
 
@@ -52,22 +49,19 @@ export const dictionaries = {
     finances: finances.en,
     invoices: invoices.en,
     todos: todos.en,
-    streaks: streaks.en,
     plans: plans.en,
-    books: books.en,
     notes: notes.en,
     prompts: prompts.en,
     shortcuts: shortcuts.en,
     dates: dates.en,
-    couple: couple.en,
     calendar: calendar.en,
     github: github.en,
     projects: projects.en,
     ai: ai.en,
     costs: costs.en,
-    tugedr: tugedr.en,
     jobs: jobs.en,
     categories: categories.en,
+    professional: professional.en,
   },
   cs: {
     common: common.cs,
@@ -84,22 +78,19 @@ export const dictionaries = {
     finances: finances.cs,
     invoices: invoices.cs,
     todos: todos.cs,
-    streaks: streaks.cs,
     plans: plans.cs,
-    books: books.cs,
     notes: notes.cs,
     prompts: prompts.cs,
     shortcuts: shortcuts.cs,
     dates: dates.cs,
-    couple: couple.cs,
     calendar: calendar.cs,
     github: github.cs,
     projects: projects.cs,
     ai: ai.cs,
     costs: costs.cs,
-    tugedr: tugedr.cs,
     jobs: jobs.cs,
     categories: categories.cs,
+    professional: professional.cs,
   },
 };
 

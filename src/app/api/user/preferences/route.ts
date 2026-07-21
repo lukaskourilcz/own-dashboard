@@ -8,8 +8,26 @@ type Patch = {
   timezone?: string | null;
   nudge_hour?: number | null;
   notifications_renewals?: boolean;
-  notifications_streaks?: boolean;
+  ai_enabled?: boolean;
+  ai_sensitive_opt_in?: boolean;
 };
+
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  const { data, error } = await supabase
+    .from("user_preferences")
+    .select("ai_enabled, ai_sensitive_opt_in, notifications_renewals")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error) return NextResponse.json({ error: "Could not load preferences." }, { status: 500 });
+  return NextResponse.json({
+    ai_enabled: data?.ai_enabled ?? true,
+    ai_sensitive_opt_in: data?.ai_sensitive_opt_in ?? false,
+    notifications_renewals: data?.notifications_renewals ?? true,
+  });
+}
 
 export async function PATCH(request: Request) {
   const csrf = rejectCrossOrigin(request);
@@ -45,8 +63,11 @@ export async function PATCH(request: Request) {
   if (typeof body.notifications_renewals === "boolean") {
     patch.notifications_renewals = body.notifications_renewals;
   }
-  if (typeof body.notifications_streaks === "boolean") {
-    patch.notifications_streaks = body.notifications_streaks;
+  if (typeof body.ai_enabled === "boolean") {
+    patch.ai_enabled = body.ai_enabled;
+  }
+  if (typeof body.ai_sensitive_opt_in === "boolean") {
+    patch.ai_sensitive_opt_in = body.ai_sensitive_opt_in;
   }
 
   const { error } = await supabase

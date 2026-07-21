@@ -1,614 +1,119 @@
-# Own Dashboard — Documentation
+# OwnDashboard architecture
 
-A single-user-or-couple personal dashboard. Tracks subscriptions, todos, streaks, finances, plans, books, daily mood, and important dates. Built for a person who wants one place that holds the whole picture of their life — and, optionally, a partner's life alongside it.
+## Product model
 
-This document is the canonical reference for what the app does, how it's wired up, and what it *won't* do without further work.
+OwnDashboard is an own-only professional operating system. The main entities form a connected graph:
 
----
+```text
+Organization ─┬─ Opportunities ── won conversion ── Project
+              ├─ Projects
+              └─ Invoices
 
-## Contents
+Project ──────┬─ Tasks          Opportunity ── Tasks / Notes / Prompts
+              ├─ Notes
+              ├─ Costs / Crons
+              ├─ Transactions / Subscriptions / Invoices
+              └─ Dates / Prompts
 
-- [At a glance](#at-a-glance)
-- [Features in detail](#features-in-detail)
-- [Couples mode](#couples-mode)
-- [Technical stack](#technical-stack)
-- [Architecture](#architecture)
-- [Database](#database)
-- [Setup](#setup)
-- [Development](#development)
-- [Project layout](#project-layout)
-- [Known limitations and deferred work](#known-limitations-and-deferred-work)
-
----
-
-## At a glance
-
-The app is a tab-based dashboard. After you sign in with Google, you land on **Overview** and can navigate to any of the panels below.
-
-| Tab | What it tracks | Shortcut |
-| --- | --- | --- |
-| Overview | Hero card (greeting + ongoing event + at-risk streaks + nearest important date), 3 KPI cards, compact versions of every panel | `g o` |
-| Calendar | Form to create Google Calendar events (with all-day + RRULE recurrence) and a 7-day agenda view | `g c` |
-| Subscriptions | Pie-chart breakdown, currency conversion, soft-cancel, "renewals in 30 days" list | (`g`-then-`s` is taken by Streaks; use the tab) |
-| Todos | Open + done todos with optional due dates; partner's open todos show under your own when paired | `g t` |
-| Streaks | Daily-habit check-ins with 12-week heatmap, current vs best streak, optional reminder time | `g s` |
-| Finances | Accounts (net worth), income/expense transactions, monthly bar chart, this-month category donut | `g f` |
-| Invoices | Czech-format invoices (Faktury): supplier/customer, line items with VAT, totals, "QR Platba", printable detail | `g i` |
-| Plans | Long-horizon goals with timeline + kanban; optional "add to Google Calendar" tie-in | `g p` |
-| Books | Daily page logging, per-author totals, progress vs target. Solo or co-write with partner | `g b` |
-| Pulse | Daily 1-5 mood + one-line note; 30-day dual-line trend when paired | `g m` |
-| Dates | Anniversaries, birthdays, deadlines with live countdowns; recurring yearly or monthly | `g d` |
-| Couple | Send invites, accept/decline, configure what to share, unpair | `g u` |
-| Jobs | Daily-scraped remote-friendly European dev openings (stacked list with shortlist/hide), plus an application tracker with cover letters, templates and status history | `g j` |
-| Settings | Language (Čeština / English), display currency, light/dark, and which sections show in the nav | sidebar gear |
-
-A quick-add bar at the top of Overview routes by prefix — see [Quick-add](#quick-add-prefix-routing).
-
----
-
-## Features in detail
-
-### Overview tab
-
-- **Today hero**: live-ticking greeting (good morning / afternoon / evening based on the current hour, ticking every 30 s), current time, today's date.
-- **Ongoing event indicator**: if a Google Calendar event is happening right now, it pulses in the greeting row. Otherwise the row shows "Next: <event> in 14m" with a humanized countdown.
-- **Nearest important date**: any anniversary/birthday/deadline within 60 days is surfaced under the greeting line ("🎂 Sarah's birthday in 12 days").
-- **Three KPI tiles**: monthly subscription spend (in the chosen display currency), open-todo count, and longest active streak.
-- **Three day-context lists**: today's calendar events, todos due today (or overdue), and streaks not yet checked today. At-risk streaks (where you'd lose a 2+ day run) are surfaced first with a "12-day streak at risk" amber label.
-- **Compact panels grid**: small versions of Pulse, Subscriptions, Todos, Streaks, and Calendar, all editable inline.
-
-The hero handles hydration timing carefully — server and client render identical markup until the clock hook (`src/lib/use-now.ts`) takes over on the client. No flash of "Loading…" because the underlying data is server-rendered.
-
-### Pulse
-
-Daily 1-5 mood (😞 Rough → 😄 Great) with an optional one-line note. One row per user per day, enforced by a `unique(user_id, log_date)` constraint.
-
-- **Compact card** on Overview shows your current mood, your partner's, and prompts a one-tap pick if you haven't logged yet.
-- **Full tab** adds a note editor, three stat tiles (check-in streak, your 14-day average, partner's 14-day average), and a dual-line 30-day trend chart.
-- **Always shared** with the paired partner — there's no separate share toggle. The whole point of the feature is to surface "how each other is doing today."
-- Quick-add: `!mood great`, `!mood 4`, or `!mood 5 finished the chapter` — accepts a 1-5 digit or a mood word (rough, meh, okay, fine, good, great, amazing, plus synonyms).
-
-### Calendar
-
-The dashboard does **not** store calendar events. It reads from and writes to the user's Google Calendar directly using the `provider_token` Supabase keeps on the session.
-
-- **Week view** (right side of the Calendar tab): the next 7 days of events grouped by day with "Today" highlighted. Recurring events are tagged with a 🔁 icon.
-- **Create event form** (left side):
-  - Title, date, start, end, description
-  - **All-day toggle**: hides time inputs and sends `start.date` + exclusive `end.date` (Google convention)
-  - **Repeats**: Daily / Weekly / Monthly → translated to `RRULE:FREQ=...` strings
-- **Expired-token handling**: if Google returns 401, the form, hero, and week view all show a **Re-link Google** button that re-runs OAuth with `prompt=consent` to refresh the token.
-
-### Subscriptions
-
-- **Original-currency storage** with **display-currency totals**. Each subscription has its own currency (USD, EUR, GBP, CZK, CAD). A static FX table in `src/lib/fx.ts` converts everything into a chosen display currency for totals and charts. The display-currency picker lives in the Spending overview card header.
-- **Soft-cancel**: pause a subscription with `is_active = false`. Cancelled rows are excluded from totals and the pie chart, but still listed (strikethrough, dimmed, sorted to the bottom). Toggle back with the play button. Hard-delete via trash is also available.
-- **Pie chart**: monthly cost breakdown, active subs only.
-- **Renewals next 30 days** card: list sorted by `next_billing_date`, with cross-currency conversion hints when the sub's currency differs from your display currency.
-- **Billing cycles**: monthly (identity), yearly (÷ 12), weekly (× 52/12).
-
-### Todos
-
-Open and done lists, optional due dates. The Overview compact card shows the 5 most recent open todos; the full tab shows everything with a delete action.
-
-- **Optimistic toggle**: clicking the checkbox flips the state instantly, then writes to Supabase. Errors roll back.
-- **Partner section** (when paired and the partner has shared todos): appears under your own list with a heart icon. Read-only — no checkbox or delete button, matching the "writes are own-only" RLS contract.
-
-### Streaks
-
-Daily habit tracking. Each streak is a named habit with a color. A "log" row records that you did the habit on a date.
-
-- **12-week heatmap** (GitHub-style) on the full tab. Today is in the bottom-right; every cell has a date tooltip.
-- **Compact mode** (Overview) uses a 7-day strip instead of the heatmap to fit the smaller card.
-- **Current vs best**: the row shows "12 current · 47 best". Current walks back from today; best scans all history for the longest consecutive run.
-- **Optional reminder time**: stored as a Postgres `time` value (e.g. `09:00`). No notification machinery is wired up yet — it's persisted so a future scheduler can pick it up.
-- **Optimistic check-in**: marking today inserts a tentative row, swaps in the server's row on success, rolls back on error.
-- **At-risk surfacing**: an unchecked streak with a 2+ day current run is promoted to the top of the Overview "streaks left today" section.
-- **Partner section** (when paired): partner's streaks render below yours with their heatmap, but no "Mark today" button — they own their check-ins.
-- Quick-add: `!streak Read 30 min` finds a streak by name (case-insensitive) and marks it for today.
-
-### Finances
-
-Two related concepts: **accounts** (where money lives) and **transactions** (where money moves).
-
-- **Net worth tile**: sum of all account balances, converted into the display currency.
-- **Inline-editable accounts**: click pencil → edit name + balance → save (optimistic, with server-fetch rollback on error).
-- **Income / expense form**: kind toggle (red ↓ / green ↑), amount + currency, category, date, optional account link, optional note.
-- **Monthly bar chart**: 6-month income-vs-expense.
-- **This-month category donut**: groups expenses by category. The donut also folds **active subscriptions** in as a synthetic "Subscriptions" slice — so the user sees their real monthly outflow, not just what they manually logged. The synthetic slice respects the soft-cancel flag.
-- **Recent transactions list**: 20 most recent, with delete action.
-
-### Invoices (Faktury)
-
-Czech-format invoicing, modelled on fakturoid.cz. Three tables: `invoice_settings` (your supplier details + defaults, one row per user), `invoices` (header + a **snapshot** of both the customer and the supplier so an issued document never changes when settings are later edited), and `invoice_items` (line items).
-
-- **Supplier settings** (Nastavení fakturace): name/address, **IČO**/**DIČ**, bank account + IBAN, a **plátce DPH** (VAT-payer) flag, default due days, default currency, a footer note, and a **logo**. The logo is uploaded client-side, downscaled (≤ 480 px, re-encoded as PNG; SVGs kept as-is) and stored inline as a data URL, so it travels embedded in the rendered/printed invoice — no storage bucket needed. Prefilled into every new invoice.
-- **Create form**: customer block (Odběratel: name, IČO, DIČ, address), invoice details (number, **variabilní symbol**, **konstantní symbol**, issue/due dates, **DUZP** date of supply for VAT payers, payment method, currency), and repeatable line items (description, quantity, unit, unit price, per-line VAT rate). Totals — base, VAT recap by rate, optional **whole-crown rounding** for CZK, and grand total — compute live as you type. Save as **draft** (koncept) or **issue** (vystavit).
-- **VAT-aware**: for a non-VAT payer the VAT inputs/columns disappear and the document prints "Dodavatel není plátcem DPH."; for a payer the detail shows a full VAT recapitulation table. Czech 2024 rates: 21 / 12 / 0 %.
-- **QR Platba**: the printable detail renders a scannable **SPAYD** QR (`qrcode.react`). The IBAN is taken from settings, or derived from a domestic account number (`prefix-number/bank`) via the IBAN mod-97 algorithm.
-- **Printable detail**: a minimalist, professional document — logo in the header, the parties side by side, a tinted payment panel, a clean line-item table, VAT recap, and an emphasised total. It renders on fixed "paper" colours (always light), and a print stylesheet isolates just the invoice so `⌘P` yields a clean A4. Statuses: draft / issued / paid / cancelled, with **overdue** derived from the due date. Mark paid/unpaid and delete inline.
-- **Edit & duplicate**: open any invoice to edit it in place (the header is updated and the line items replaced wholesale — they carry no external references), or **duplicate** it from the list or detail. The copy reuses the customer and line items, takes the next number and fresh issue/due dates, and is ready for you to tweak the amount — the quick path for recurring billing.
-- **Import from PDF**: drag a PDF invoice onto the Invoices page (or click the dropzone) and it's parsed **client-side** with pdf.js — number, variable symbol, dates, currency, total + VAT, bank account / IBAN and the customer (Odběratel). The create form then opens **prefilled** for you to review and save (we don't blind-save heuristic data). The text→fields parsing (`src/lib/invoice-parser.ts`) is pure and unit-tested; pdf.js text extraction (`src/lib/pdf-extract.ts`) is a thin, dynamically-imported client layer so the heavy bundle is code-split.
-- **Number generation**: the next number is suggested as `<year><3-digit sequence>` (e.g. `2026001`); the variable symbol defaults to the number's digits. All the math (line/VAT/rounding totals, SPAYD, account→IBAN, number suggestion, overdue) lives in `src/lib/invoices.ts` and is unit-tested.
-
-Invoices are personal — own-only RLS, not part of couples sharing.
-
-### Plans
-
-Long-horizon goals separate from todos. Statuses: `idea / active / done / dropped`.
-
-- **Two views, switchable**:
-  - **Board**: 4 status columns, each card has a "change status" popover with the other three options.
-  - **Timeline**: rows sorted by target date. Overdue rows go red. "in 3d" / "5d ago" relative hints. Status is changed via a tinted Select.
-- **Optional Google Calendar tie-in**: tick "Add as an all-day Google Calendar event" on the form. The panel creates the plan first, then POSTs to `/api/calendar/event` and patches the returned `linked_calendar_event_id` back onto the plan row. If the calendar call fails (e.g. 401), the plan still saves and the user gets a nudge to re-link.
-
-### Books
-
-Co-author-friendly book tracking. Each book has a title, optional `target_pages`, and a `status`. Each daily page log is a row in `book_pages` with a unique constraint on `(book_id, user_id, log_date)`.
-
-- **Per-author counters**: each book shows "Me / Partner" totals plus today's increment. Solo books just show your column.
-- **Progress bar** against `target_pages` (if set).
-- **14-day stacked bar chart**: who wrote how much each day.
-- **Co-write toggle** on new-book form (visible when paired): flips `couple_id` on so both partners can log against the same book.
-- **Logging is two-tier**: if you already logged today, the row's pages get incremented and the note merged; otherwise a new row inserts optimistically.
-- Status: `active / paused / done`. Pausing or completing keeps the data; deletion cascades to page logs.
-
-### Important Dates
-
-Anniversaries, birthdays, deadlines.
-
-- **Form**: title, date, optional emoji, recurring toggle (yearly or monthly), partner-share toggle, notes.
-- **Coming up list**: sorted by next occurrence. Soon (≤ 7 days) rows highlight emerald; past one-offs fade out.
-- **Recurrence math** (`src/lib/important-dates.ts`):
-  - **Yearly**: returns this year's date if upcoming, next year's if already passed.
-  - **Monthly**: clamps day-31 to month-end (so a "Rent on the 31st" date hits Feb 28, Apr 30, etc.). Leap-year-aware (Feb 29 in leap years).
-  - **Years completed**: for yearly recurrences, displays "year N" so you know it's your 5th anniversary, not your 6th.
-- **Overview hero pulls in** the next-upcoming date within 60 days, so anniversaries float to the top of consciousness on the front page.
-
-### Couple
-
-The pairing surface.
-
-- **Solo state**: form to invite a partner's email, list of incoming invites (accept / decline), list of sent invites with status pills.
-- **Paired state**: shows partner's display name + email, an **Unpair** button (with confirm), and a mirror of what they share with you.
-- **Sharing toggles**: per-category (subscriptions, todos, streaks, finances, plans, books). Each toggle is optimistic, upserts a `sharing_prefs` row.
-- The accept flow inserts a `couples` row with canonical sorted user ids (matching the unique constraint), then marks the invite `accepted`. `router.refresh()` reloads server context so the rest of the dashboard immediately reflects the new pairing.
-
-### Jobs
-
-A job-hunt hub with two subsections: **Open positions** and **Applied**.
-
-- **Open positions** is a stacked list of remote-friendly European openings for the three tracked role buckets (frontend / fullstack / software engineer). A Vercel Cron hits `/api/cron/jobs-scrape` daily at **08:00 UTC (= 10:00 Prague in summer)**; a rate-limited **Check now** button (`/api/jobs/refresh`) runs the same scrape on demand. The header shows when the boards were last checked and warns when a source failed.
-- **Sources** (`src/lib/jobs/sources.ts`): startupjobs.cz (their public JSON API, paginated), jobs.cz and prace.cz (server-rendered HTML; the remote-work requirement is folded into the full-text query — "frontend remote", "vývojář z domova", … — because neither board exposes a remote URL filter), Remote OK, Remotive, Arbeitnow and Jobicy (public JSON APIs) and We Work Remotely (RSS). Every source is best-effort: one failing board records an error in the run log without sinking the scrape.
-- **Filtering** (`src/lib/jobs/filter.ts`): titles are classified into role buckets with negative guards (QA/DevOps/data/mobile/marketing titles are rejected); locations must be Europe-compatible — explicit Europe/EU country mentions win, "worldwide/anywhere" passes, other-region-only restrictions ("USA only", LATAM) fail, unknown text fails closed.
-- **Listings are global rows** (`job_listings`, unique on `(source, external_id)`): the cron scrapes once for all users with the service role; signed-in users read. Re-scrapes bump `last_seen_at`; listings unseen for 45 days are pruned. Per-user triage lives in `job_user_state` (shortlist pins the row to the top, hide fades it out).
-- **Apply flow**: the Apply button opens a dialog with the job pre-filled — cover letter editor, template loader, applied-on date and notes. Applications snapshot the job fields, so history survives pruning. A manual "Log application" covers jobs found elsewhere. Listings you already applied to get a badge.
-- **Applied** shows stat tiles (total / last 7 / last 30 days / active), and per application: status select (applied → interviewing → offer / rejected / withdrawn), the cover letter editor, notes, and an expandable **history timeline** (`job_application_events`: applied, every status change).
-- **Cover letter templates**: three built-in starters (professional / short / startup, in both languages) plus user-saved ones (`cover_letter_templates`, manageable in a dialog, or "Save as template" straight from a letter). `{{position}}`, `{{company}}`, `{{source}}` and `{{date}}` are substituted on load (`src/lib/jobs/template.ts`).
-
-### Settings & internationalization
-
-A dedicated **Settings** tab (sidebar/mobile gear, always visible) holds the device-local preferences:
-
-- **Language** — the whole app is bilingual **Czech (default) / English**. Translations live in `src/lib/i18n/`: one typed dictionary file per section under `sections/`, assembled in `index.ts`. Components read strings via `const t = useDict()` (`t.<section>.<key>`); dynamic strings are functions (`t.kpi.nDone(3)`). Czech completeness is guaranteed by the type system — every `cs` block must satisfy the same type as its `en` block, so a missing key is a compile error. Dates render through `useDateLocale()` (date-fns `cs`/`enUS`).
-- **Display currency** — what every total/chart converts into; defaults to **CZK**. `formatCurrency` (`src/lib/utils.ts`) picks a native locale per currency code (e.g. CZK → `cs-CZ` → "1 234,56 Kč"), independent of UI language, so it's hydration-stable.
-- **Appearance** — light/dark, sharing the existing `useTheme` store.
-- **Navigation sections** — per-section show/hide toggles for the nav panel (Overview is always shown). The command palette still lists every section regardless, so hidden ones stay reachable by search.
-
-All three new preferences (`lang`, `displayCurrency`, `hiddenNavSections`) persist in `localStorage` via the same `useSyncExternalStore` pattern as `useTheme` (`src/lib/i18n/lang.ts`, `src/lib/use-prefs.ts`). Language is applied pre-hydration by the bootstrap script in `layout.tsx` (sets `<html lang>`), mirroring the dark-mode bootstrap.
-
----
-
-## Couples mode
-
-### Pairing flow
-
-1. User A invites by email. A `couple_invites` row is created with `inviter_id = A` and `invitee_email = B's email`.
-2. User B signs in (or refreshes). RLS on `couple_invites` lets B see invites where `invitee_email = auth.jwt() ->> 'email'`. The Couple tab shows the pending invite.
-3. B clicks **Accept**. The panel inserts a `couples` row (sorted user ids) and marks the invite `accepted`.
-4. Both users now see each other's shared data on next render.
-
-No email is actually sent on invite. The invitee discovers the invite when they next open the dashboard. (Real email invites would need Supabase Edge Functions or a third-party like Resend — see [Known limitations](#known-limitations-and-deferred-work).)
-
-### Sharing preferences
-
-Each user has a `sharing_prefs` row controlling which categories are visible to their partner. Defaults: everything off **except** `share_books = true` (books are the explicit couples feature).
-
-| Category | What gets shared when on |
-| --- | --- |
-| `subscriptions` | Your active + inactive subs, totals, renewals |
-| `todos` | Your open + done todos |
-| `streaks` | Your streaks + their daily logs |
-| `finances` | Your accounts + transactions |
-| `plans` | Your long-horizon goals |
-| `books` | Books with a matching `couple_id` (and book_pages on them) |
-
-**Pulse** is intentionally shared whenever you're paired — no toggle, because the whole feature is "see how each other is doing today."
-
-**Important dates**: per-row decision via the "Share with partner" checkbox at creation time.
-
-### Where partner data shows up
-
-Currently rendered in: **Todos**, **Streaks**, **Pulse**, **Books** (when co-written), **Important Dates** (when shared).
-
-Currently **not** wired up: Subscriptions, Finances, Plans. The data is fetched by the server-side `loadPartnerSharedData` helper and reaches the shell, but the panel UIs don't yet render a "From <partner>" section for these three. The shape extends straightforwardly from the Todos/Streaks pattern (about 30 lines per panel).
-
-### The RLS model
-
-Every user table has its SELECT policy widened from "own only" to "own OR partner-shared":
-
-```sql
-create policy "todos select own or shared" on public.todos
-  for select using (
-    auth.uid() = user_id
-    or public.is_shared_with_me(user_id, 'todos')
-  );
+Inbox item ── confirmed routing ── Task | Note | Opportunity | Project
+                                  Organization | Job application | Date
+                                  Transaction category
 ```
 
-`is_shared_with_me(target, category)` is a SECURITY DEFINER function that joins `couples` and `sharing_prefs` in one query. **Writes (INSERT / UPDATE / DELETE) are still "own only"** — a partner can never mutate your data.
+These are real foreign-key relationships. RLS policies verify that every referenced organization, project, opportunity, invoice, or job application belongs to the authenticated user.
 
-To keep the existing panels from accidentally rendering partner rows mixed into their own data, every server-side fetch in `src/app/dashboard/page.tsx` explicitly filters by `user_id = current user`. Partner data flows through a separate, dedicated query path (`loadPartnerSharedData`).
+## Application architecture
 
----
+`src/app/[[...slug]]/page.tsx` is the authenticated server boundary. It:
 
-## Technical stack
+- validates a canonical or supported legacy route;
+- redirects meaningful legacy bookmarks;
+- checks the user with `auth.getUser()`;
+- loads own-scoped Supabase rows and Google Calendar windows in parallel;
+- performs no profile upsert or other rendering side effect;
+- seeds `DashboardShell` with server data.
 
-| Layer | Choice | Notes |
-| --- | --- | --- |
-| Hosting | **Vercel** (Hobby) | Serverless/edge functions for `/api/*`, edge CDN, and **Vercel Cron** (`vercel.json` → daily renewal-warnings job) |
-| Framework | **Next.js 16** (App Router, Turbopack build) | Uses the new `proxy.ts` convention (renamed from `middleware.ts`) |
-| Runtime | **React 19** | Uses `useSyncExternalStore`, class-based dark mode via Tailwind v4 |
-| Styling | **Tailwind CSS v4** | CSS-first config (`@import "tailwindcss"`, `@custom-variant`), no `tailwind.config.js` |
-| UI primitives | shadcn-style local components over **Radix UI** | `src/components/ui/*` — Card, Button, Input, Select, Tabs, Toast, Skeleton, Dialog, Tooltip |
-| Animation | **framer-motion** | Tab transitions and the sliding active-nav indicator |
-| Client data | **TanStack React Query** | Entity stores seeded from the server load; optimistic mutations |
-| Database & auth | **Supabase** (Postgres + Auth + RLS) | `@supabase/ssr` for cookie-based sessions; service-role key used server-side by the cron job |
-| Auth providers | **Google OAuth** + **GitHub OAuth** (via Supabase) | Google: `calendar.events` + `userinfo.email/profile`; GitHub: repo read/write for the Repositories panel |
-| AI | **Anthropic — Claude Haiku 4.5** (`@anthropic-ai/sdk`) | Natural-language quick-add parsing in `/api/quick-add`. Optional — degrades to the literal `!`-grammar without a key |
-| Email | **Resend** | Daily subscription-renewal warning emails, sent only from the cron job. Optional — no-ops without a key |
-| Error monitoring | **Sentry** (`@sentry/nextjs`) | Client/server/edge, `tracesSampleRate: 0.1`. Optional — the build only wraps with Sentry when DSN + org + project are set |
-| Notes editor | **BlockNote** | Block-based rich-text editor for the Notes panel |
-| Drag & drop | **dnd-kit** | Overview widget customization and sortable lists |
-| Charts | **Recharts** | Bar, Pie, Line — all server-data-driven, no client-fetched series |
-| Icons | **lucide-react** | Pinned to `^1.14.0` (this app's intended major; verify an icon exists before importing) |
-| QR codes | **qrcode.react** | Renders the Czech "QR Platba" (SPAYD) on the invoice detail |
-| PDF import | **pdfjs-dist** | Client-side text extraction for drag-and-drop invoice import |
-| Dates | **date-fns** v4 | `format`, `subDays`, `differenceInCalendarDays`, etc. |
-| Unit tests | **Vitest** 4 | 130 unit tests across the `lib/` modules; config in `vitest.config.mts` |
-| E2E tests | **Playwright** (+ `@axe-core/playwright`) | `e2e/*.spec.ts` — login, dashboard, customize, responsive, accessibility; renders the real shell via `/dev-preview` fixtures |
+`src/components/dashboard-shell.tsx` keeps the existing single-shell architecture. Entity state is stored in the shared TanStack Query cache through `useEntityStore`, so existing high-value panels remain controlled and cache invalidation stays centralized.
 
-The app does **not** depend on: a live FX API (rates are a static table in `src/lib/fx.ts`), an analytics SDK, an object-storage bucket (invoice logos are inline data URLs), or a payment provider. The **AI, email and error-monitoring** integrations are all **optional** — each no-ops cleanly when its env vars are absent, so a minimal deploy needs only the two `NEXT_PUBLIC_SUPABASE_*` vars.
+The shell switches canonical routes with the History API for an SPA feel. Browser back/forward is synchronized through `popstate`. The sidebar, mobile navigation, keyboard chords, and command palette all use the same `NavTab` source of truth. Project detail is the one supported nested route: `/projects/[id-or-slug]`. The authenticated server boundary resolves it only against the current user's loaded projects; unknown or cross-user identifiers return 404.
 
----
+## Hubs
 
-## Architecture
+### Home
 
-### Server vs client components
+Home shows the daily operating context: calendar, deadlines, opportunity follow-ups, recurring spend, open tasks, active projects, quick capture, and configurable widgets. The retired habit KPI/widget was replaced by project/work attention.
 
-- **`src/app/dashboard/page.tsx`** is a Server Component. It does the heavy lifting: auth check, profile upsert, parallel data fetches (eight Supabase queries + two Google Calendar window fetches + couple context), and partner data load. Everything is awaited and passed down as props.
-- **`src/components/dashboard-shell.tsx`** is a Client Component. It receives the server-rendered data, holds it as `useState`, and threads it through every panel. This is where tab state, keyboard shortcuts, display currency, and the calendar prefill nonce live.
-- **Panels** (`src/components/panels/*.tsx`) are Client Components. They receive `items` + `setItems` props (controlled state) and own their forms, validation, and Supabase mutations.
+### Inbox
 
-The shell-lifts-everything pattern means the quick-add bar can mutate todos / streak_logs / pulses from one place without prop-drilling refs or using a global store.
+Inbox is a triage queue, not a second task list. Manual captures and integration events land as `inbox_items`; notification records are visible in the same action center and through the sidebar unread indicator. Search, source/status/destination filters, snooze, dismiss, restore, source links, and bulk dismiss support deliberate triage. A user chooses the destination and clicks Process; only then is the destination record created or a transaction categorized and the inbox item marked processed. Valid relationship identifiers in an item's payload are carried into routed records and are rechecked by RLS.
 
-### State management
+### Work
 
-There is no Redux, Zustand, or Context layer. State lives in `DashboardShell` via `useState` for each slice:
+Work overview summarizes active projects, open opportunities, due follow-ups, issued invoices, explainable project-health warnings, and the current weekly review. Health is a transparent heuristic based on on-hold status, overdue linked tasks, disabled crons, and costs without recorded revenue.
 
-- `subscriptions`, `todos`, `streaks`, `streakLogs`, `accounts`, `transactions`, `plans`, `books`, `bookPages`, `pulses`, `importantDates` — all `useState<T[]>(initial...)`.
-- Each panel receives both the array and the setter, so mutations bubble up naturally.
+Projects retain the mature GitHub, notes, cost, and cron implementation. Each project has a canonical workspace with Overview, Tasks, Activity, Repository, Operations, Finance, and Knowledge tabs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
 
-Display currency, current tab, and calendar prefill nonce are also shell-level state.
+Opportunities provide the Tugedr/referral/direct/inbound pipeline. After browser confirmation, the `convert_opportunity_to_project` security-invoker RPC locks the owned opportunity and atomically creates or links its organization, creates the project, preserves the opportunity currency as project revenue currency, and marks the opportunity won. A failure rolls back the whole conversion. Clients are organizations with connected projects, opportunities, invoices, tasks, notes, and dates. Career and Invoices reuse the established implementations.
 
-The clock (`useNow`) and theme (`useTheme`) use `useSyncExternalStore` for module-singleton stores — that's the React 19 pattern that satisfies the new no-impure-calls and no-setState-in-effect rules.
+### Money
 
-### Optimistic updates
-
-All mutations follow the same shape:
-
-```ts
-// 1. Apply locally (optimistic)
-setItems((prev) => prev.map(...));
-// 2. Write to Supabase
-const { error } = await supabase.from(...).update(...);
-// 3. Roll back on error
-if (error) {
-  setItems((prev) => prev.map(... back to before ...));
-  toast.err(error.message);
-}
-```
+Money preserves accounts, transactions, bank synchronization, subscriptions, categories, charts, and project infrastructure costs. Canonical child routes currently open the same integrated financial workspace so no mature functionality is duplicated.
 
-For inserts that need a tentative id (before the server returns the real one), the pattern uses a **module-level counter** for the tentative id:
+### Planning and Library
 
-```ts
-let tentativeStreakLogCounter = 0;
-// inside the handler:
-const tentativeId = `tmp-${++tentativeStreakLogCounter}`;
-```
+Planning preserves Tasks, Google Calendar, Goals (the renamed plans system), and own-only professional Dates. Library preserves Notes, Prompts, Links (the broadened link catalogue), and References (commands plus editable cheatsheets).
 
-This dodges React 19's no-impure-calls rule, which would flag `Date.now()` and `crypto.randomUUID()` inside a component function body even though those are only called in event handlers.
+## Database and RLS
 
-### Quick-add prefix routing
+The professional foundation migration creates:
 
-The Overview quick-add bar parses the first word of input:
+- `organizations`
+- `client_opportunities`
+- `inbox_items`
+- `notifications`
+- `weekly_reviews`
+- a missing `notes` definition for fresh environments
 
-| Prefix | Effect |
-| --- | --- |
-| `!todo <title>` | Inserts a todo |
-| `!streak <name>` | Marks the named streak for today (case-insensitive; tolerates already-done) |
-| `!cal <title>` | Switches to Calendar tab with the title prefilled |
-| `!mood <level>` | Logs Pulse (level can be `1-5` or `rough/meh/okay/good/great` + synonyms) |
+It extends projects with `organization_id`, `summary`, `status`, `revenue`, and `revenue_currency`, and adds optional canonical relationships to tasks, notes, invoices, subscriptions, transactions, dates, prompts, and job applications. It also installs the confirmed opportunity-conversion transaction.
 
-Errors and successes surface as toasts.
+Every new user table has RLS enabled, explicit `authenticated` Data API grants, four own-only CRUD policies, and service-role grants. Insert/update relationship policies use `WITH CHECK` and verify the owner of each foreign row. No new `SECURITY DEFINER` authorization function is introduced.
 
-### Keyboard shortcuts
+The cleanup migration snapshots retired rows per user into `legacy_personal_archives`, restores own-only read policies, drops the couple relationship from dates, and then removes Pulse, streak, book, couple, invite, sharing, and helper-function storage.
 
-Gmail / vim-style two-key chords on the shell (`src/components/dashboard-shell.tsx`):
+## Exports
 
-| Chord | Action |
-| --- | --- |
-| `g o` | Overview |
-| `g c` | Calendar |
-| `g s` | Streaks |
-| `g t` | Todos |
-| `g f` | Finances |
-| `g i` | Invoices |
-| `g p` | Plans |
-| `g u` | Couple |
-| `g b` | Books |
-| `g m` | Pulse |
-| `g d` | Dates |
-| `n` | Focus the quick-add input (jumps to Overview first if you're elsewhere) |
+Authenticated, private/no-store JSON downloads are available at:
 
-The chord window is 1.5 s. Inputs, textareas, and selects are ignored so typing in a form doesn't trigger navigation.
+- `/api/export/full`
+- `/api/export/financial`
+- `/api/export/professional`
+- `/api/export/knowledge`
+- `/api/export/projects`
+- `/api/export/notes`
+- `/api/export/prompts`
+- `/api/export/career`
+- `/api/export/legacy`
 
-### Theming and dark mode
+Table-level CSV is available for non-full, non-legacy scopes through `?format=csv&table=TABLE`, with the table restricted to that scope's allowlist. The legacy endpoint reads `legacy_personal_archives` after migration and falls back to live legacy tables before migration. Missing optional tables are represented as unavailable rather than causing the whole export to fail. Full export includes a safe profile/preferences subset and deliberately excludes OAuth tokens, service credentials, and provider secrets.
 
-Class-based (`<html class="dark">`) via Tailwind v4's `@custom-variant dark (&:where(.dark, .dark *))`. A tiny synchronous script in `<head>` (`src/app/layout.tsx`) reads `localStorage.theme` or `prefers-color-scheme` and sets the class before React hydrates — no flash of incorrect theme.
+## AI boundary
 
-`useTheme` (`src/lib/use-theme.ts`) uses `useSyncExternalStore` so the toggle stays in sync with the DOM class even if something else writes to it.
+AI is contextual rather than a global chat surface. `/api/quick-add` returns a structured proposed action only. Task and inbox writes require user confirmation; calendar proposals open the existing prefilled form for review. AI link enrichment proposes metadata but the existing form remains the save boundary.
 
-### Toast system
+`/api/ai/project-copilot` loads only an authenticated, owned project's bounded related context and returns validated facts, risks, suggestions, and deterministic source identifiers. Notes and invoice metadata are excluded unless sensitive-context opt-in is enabled. `/api/ai/weekly-brief` requires that opt-in, reads a bounded multi-domain operating snapshot, and fills the editable weekly-review draft only after explicit consent. Saving or completing the review remains a separate user action. Both endpoints are rate-limited, read-only, and reject invalid structured model output.
 
-A single `ToastProvider` (`src/components/ui/toast.tsx`) wraps the shell. The hook is `useToast()` and exposes `{ push, ok, err, info }`. Currently consumed by the quick-add bar; other panels still use inline error/success text and would migrate incrementally.
+AI enablement and sensitive-context opt-in live in `user_preferences`. Sensitive opt-in defaults off. Intent, enrichment, and synthesis model ids plus the compatible provider base URL are centralized in `src/lib/ai-config.ts`. See [AI and privacy](./docs/ai-and-privacy.md).
 
----
+## Integration status
 
-## Database
+Settings calls an authenticated, private/no-store status endpoint. It reports only connection/configuration booleans and the user's latest bank-sync timestamp. OAuth token tables are checked server-side with the service role after user authentication; tokens and secret values never enter the response.
 
-### Tables
+## Internationalization
 
-All tables have RLS enabled. Every column is described inline in `supabase/schema.sql` — this is a summary.
+Czech and English dictionaries share typed interfaces. New professional copy is in `src/lib/i18n/sections/professional.ts`. Product identity is centralized in `src/lib/brand.ts` and reused by document metadata, PWA manifest, login, app, and navigation.
 
-| Table | Purpose | Cross-user visibility |
-| --- | --- | --- |
-| `subscriptions` | Recurring spending; FX-aware; soft-cancel via `is_active` | Partner read if `share_subscriptions = true` |
-| `todos` | Tasks with optional due date | Partner read if `share_todos = true` |
-| `streaks` | Named habits with color + optional reminder time | Partner read if `share_streaks = true` |
-| `streak_logs` | One row per streak per day; unique constraint | Partner read if `share_streaks = true` |
-| `accounts` | Bank/credit/savings accounts with balance | Partner read if `share_finances = true` |
-| `transactions` | Income/expense rows; indexed on `(user_id, occurred_on desc)` | Partner read if `share_finances = true` |
-| `plans` | Long-horizon goals; optional `linked_calendar_event_id` | Partner read if `share_plans = true` |
-| `invoice_settings` | Per-user supplier details + invoicing defaults (VAT flag, bank, due days, logo) | Own only |
-| `invoices` | Invoice header + customer + snapshot of supplier block; unique `(user_id, number)` | Own only |
-| `invoice_items` | Line items with per-line VAT rate; cascade-deleted with the invoice | Own only |
-| `profiles` | Mirror of `auth.users` (display name + avatar) | Always readable by paired partner |
-| `couples` | The pairing row (`user_a_id` + `user_b_id`, sorted) | Visible to both members |
-| `couple_invites` | Pending / accepted / declined invites | Sender sees their sent; recipient sees invites for their email |
-| `sharing_prefs` | Per-user per-category opt-in toggles | Always readable by paired partner |
-| `books` | Books being written; optional `couple_id` for co-authoring | Owner, couple member, or `share_books = true` |
-| `book_pages` | Daily page log per author per book; unique on `(book_id, user_id, log_date)` | Same as parent book |
-| `daily_pulse` | Daily 1-5 mood + note; unique on `(user_id, log_date)` | Always readable by paired partner |
-| `important_dates` | Anniversaries / birthdays / deadlines | Owner or couple member (when `couple_id` is set) |
-| `notification_log` | One row per sent notification; dedupes cron retries | Own only (written by cron via service role) |
-| `job_listings` | Scraped remote-friendly EU dev openings; unique `(source, external_id)` | Global: all signed-in users read; only the scraper writes |
-| `job_user_state` | Per-listing shortlist/hide triage | Own only |
-| `job_applications` | Applications with snapshot fields, cover letter, status, `applied_on` | Own only |
-| `job_application_events` | Append-only history (applied, status changes) | Own only |
-| `cover_letter_templates` | Reusable cover-letter templates | Own only |
-| `job_scrape_runs` | One row per scrape run (counts + per-source errors) | Global read; service-role writes |
+## Testing
 
-### RLS model
-
-Two-layer policies on every user table:
-
-- **SELECT** policy: `auth.uid() = user_id OR <partner-shared>`. The partner-shared check goes through `is_shared_with_me(user_id, '<category>')`, a SECURITY DEFINER SQL function that joins `couples` and `sharing_prefs` in one query.
-- **INSERT / UPDATE / DELETE** policies: `auth.uid() = user_id` — own data only. A partner can never write your data, even if you share it with them.
-
-The two exceptions:
-
-- **Books** and **book_pages**: when a book has a `couple_id` set, both partners can UPDATE the book (e.g. mark it done) — but only the row's own author can log a page for themselves.
-- **Important dates**: same — either partner can edit a shared row.
-
-### Migration strategy
-
-`supabase/schema.sql` is the single source of truth and is **idempotent** — every block uses `if not exists` / `drop policy if exists ... create policy ...` / `create or replace function`. Safe to re-run on an existing project after pulling new code; new tables and policies are added incrementally without dropping existing data.
-
-When new columns are added to existing tables (e.g. `is_active`, `reminder_time`), the file uses `alter table ... add column if not exists` so the migration is portable between fresh and existing installs.
-
----
-
-## Setup
-
-For full deploy instructions (Supabase + Google OAuth + Vercel) see the step-by-step in the project's most recent chat / `README.md`. The condensed version:
-
-1. **Supabase**: create a project, copy `Project URL` + `anon public` key. In SQL Editor, run `supabase/schema.sql`. In Authentication → URL Configuration, set the Site URL and add redirect URLs for both `http://localhost:3000/auth/callback` and your eventual production URL.
-2. **Google Cloud**: create a project, enable the **Google Calendar API**, configure the OAuth consent screen (scopes: `calendar.events`, `userinfo.email`, `userinfo.profile`), create an OAuth client (Web), and paste the **Supabase callback URL** (`https://<project>.supabase.co/auth/v1/callback`) as the authorized redirect URI.
-3. **Wire Google into Supabase**: Authentication → Providers → Google → paste Client ID + Secret.
-4. **Local `.env.local`**:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-   ```
-5. **Vercel**: import the repo, set production branch, add the two env vars, deploy. After deploy, add the Vercel domain to Supabase's Site URL + Redirect URLs.
-
-### Optional integrations
-
-These are wired up but each no-ops cleanly when its env vars are missing, so a minimal deploy needs only the two `NEXT_PUBLIC_SUPABASE_*` vars:
-
-- **Anthropic** (`ANTHROPIC_API_KEY`) — powers natural-language quick-add (Claude Haiku 4.5). Without it, quick-add falls back to the literal `!todo` / `!streak` / `!cal` / `!mood` grammar.
-- **Resend** (`RESEND_API_KEY`, optional `RESEND_FROM`) — sends the daily subscription-renewal warning emails from the Vercel Cron job. Without it, the cron no-ops.
-- **Sentry** (`SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`, plus `SENTRY_ORG` + `SENTRY_PROJECT` for build-time source-map upload) — error monitoring and tracing. The build only wraps with Sentry when these are set.
-- **GitHub OAuth** (`GITHUB_OAUTH_CLIENT_ID` / `_SECRET`) — only needed to revoke the grant on "Disconnect GitHub" and to refresh expiring GitHub-App tokens; classic OAuth tokens work without them.
-- **Cron secret** (`CRON_SECRET`) — set it so the cron endpoints (renewal warnings, daily job scrape) only run when called by Vercel Cron with the matching `Authorization: Bearer` header.
-
-### What you still don't need
-
-- **No live FX API** — `src/lib/fx.ts` uses a hard-coded rate table with a TODO for live rates.
-- **No object storage** — invoice logos are stored inline as data URLs in Postgres; PDFs are parsed client-side.
-- **No payments or analytics provider**.
-
----
-
-## Development
-
-### Scripts
-
-```
-npm run dev         # Next.js dev server (Turbopack)
-npm run build       # production build
-npm run start       # serve the production build
-npm run lint        # ESLint (using eslint-config-next)
-npm test            # Vitest, one-shot
-npm run test:watch  # Vitest in watch mode
-```
-
-### Tests
-
-130 unit tests live under `tests/lib/`, covering the pure modules (the per-module table below is representative, not an exact current breakdown — the suite also covers `dashboard-layout`):
-
-| Module | Tests | Catches |
-| --- | --- | --- |
-| `fx` | 6 | identity, unknown-currency passthrough, cross-pivot EUR→GBP |
-| `subscriptions` | 11 | monthly/yearly/weekly conversion, FX mixing, pre-migration `is_active`, renewal window |
-| `streaks` | 15 | today-missing → 0, gap stops, bestStreak across gaps, at-risk count from yesterday |
-| `important-dates` | 13 | yearly rollover, day-31 → Feb 28 / Feb 29 clamping in leap years, non-recurring preservation |
-| `pulse` | 12 | streak from today, trend null-filling, averageMood window |
-| `finances` | 11 | net worth across currencies, monthly bucketing, "Subscriptions" synthetic slice |
-| `couple` | 8 | per-category flag, null prefs → false |
-| `invoices` | 25 | line/VAT/rounding totals, account→IBAN (mod-97), SPAYD, number suggestion, overdue |
-| `invoice-parser` | 21 | Czech amount/date parsing, number/VS/dates/total/VAT extraction, account+IBAN, buyer block |
-| `jobs-filter` | 13 | role bucketing (incl. Czech titles, negative guards), Europe/remote location gate |
-| `jobs-sources` | 20 | per-board normalizers + HTML/RSS parsers against live-shaped fixtures, Czech dates |
-| `jobs-template` | 7 | `{{placeholder}}` substitution, fallbacks, built-in template integrity |
-| `jobs-stats` | 4 | 7/30-day windows, status tallies, active count |
-
-Time-dependent tests pin the clock to `2026-05-12` with `vi.useFakeTimers()` so results don't drift with the system date.
-
-A **Playwright E2E suite** lives under `e2e/` (login, dashboard, customize, responsive, and an axe-core accessibility pass), exercising the real shell through the `/dev-preview` fixture route. Run it with `npm run test:e2e`.
-
-**Not currently tested** (deferred):
-
-- **React components in isolation** — would need `@testing-library/react` + `jsdom` + a Supabase client mock.
-- **RLS policies** — the most security-critical piece; testing properly needs a real Supabase instance (local CLI or a test project).
-- **Google Calendar fetch** — `src/lib/calendar.ts`'s `fetch()` calls are not mocked.
-
----
-
-## Project layout
-
-```
-src/
-  app/
-    api/calendar/event/route.ts   POST → create Google Calendar event
-    auth/callback/route.ts        OAuth code exchange
-    auth/signout/route.ts         POST → sign out
-    dashboard/
-      page.tsx                    server-side data load (8 Supabase + 2 Google Calendar)
-      loading.tsx                 Suspense fallback (skeleton grid)
-    login/page.tsx                Google sign-in
-    layout.tsx                    fonts, dark-mode bootstrap script
-    globals.css                   Tailwind v4 + dark variant
-  components/
-    dashboard-shell.tsx           tab state, keyboard shortcuts, lifted data, ToastProvider
-    theme-toggle.tsx              header light/dark toggle
-    calendar/
-      relink-cta.tsx              "Re-link Google" button used in 3 places
-      week-view.tsx               7-day agenda card
-    overview/
-      today-hero.tsx              greeting + KPIs + day context
-      kpi-cards.tsx               3 summary tiles
-      quick-add.tsx               !todo / !streak / !cal / !mood input
-    panels/
-      subscriptions-panel.tsx
-      todos-panel.tsx
-      streaks-panel.tsx
-      streak-heatmap.tsx
-      finances-panel.tsx
-      invoices-panel.tsx           list + summary + view switching
-      plans-panel.tsx
-      books-panel.tsx
-      pulse-panel.tsx
-      important-dates-panel.tsx
-      couple-panel.tsx
-      calendar-panel.tsx
-    invoices/
-      invoice-form.tsx            create form (customer, items, live totals)
-      invoice-detail.tsx          printable document + SPAYD QR
-      supplier-settings.tsx       supplier details + invoicing defaults
-      status-badge.tsx            draft / issued / paid / overdue pill
-    ui/                           shadcn-style primitives + Skeleton + Toast
-  lib/
-    supabase/
-      server.ts                   Server Component / Route Handler client
-      client.ts                   Client Component client
-      middleware.ts               session refresher (called from proxy.ts)
-    calendar.ts                   server-side Google Calendar window fetch
-    couple.ts                     loadCoupleContext, loadPartnerSharedData
-    finances.ts                   netWorth, monthlyTotals, expenseByCategory
-    fx.ts                         static FX rates + convert()
-    google-auth.ts                relinkGoogle (signInWithOAuth wrapper)
-    important-dates.ts            nextOccurrence + buildOccurrences
-    invoices.ts                   line/VAT/rounding totals, SPAYD, account→IBAN, numbering
-    invoice-parser.ts             PDF-text → invoice fields (pure, tested)
-    pdf-extract.ts                pdf.js text extraction for PDF import (client)
-    pulse.ts                      mood meta, streak, trend, average
-    streaks.ts                    computeStreak, bestStreak, unchecked, etc.
-    subscriptions.ts              toMonthly, totals, upcomingRenewals
-    types.ts                      all DB row types
-    use-now.ts                    ticking clock via useSyncExternalStore
-    use-theme.ts                  theme hook (class-based dark mode)
-    utils.ts                      cn, formatCurrency
-  proxy.ts                        Next 16 proxy convention (session refresh)
-supabase/schema.sql               full DB schema + RLS (idempotent)
-tests/lib/                        130 Vitest unit tests (9 modules)
-e2e/                              Playwright specs (login, dashboard, customize, responsive, a11y)
-vitest.config.mts                 Vitest config (.mts because Vitest 4 needs ESM-loaded config)
-```
-
----
-
-## Known limitations and deferred work
-
-The following items are intentionally scoped out. Each is small enough to ship as a focused commit if you decide it matters.
-
-- **Partner data in Subscriptions / Finances / Plans**. The data flows through `partnerData` server-side, but the three panels don't yet render a "From <partner>" section. The pattern proven in Todos and Streaks extends directly (about 30 lines per panel).
-- **"Us" stats card on Overview**. Planned: days paired, books co-written, pages-together total, days both checked in. All deriveable from existing data with no new schema; just a small component drop-in.
-- **Email invites**. Couple invites still surface in-app on the partner's next load — no email is sent on invite. Resend is already wired up (for renewal-warning emails), so adding invite emails is now mostly a matter of reusing it from the accept/invite flow rather than introducing a new dependency.
-- **Subscription / Books / etc. toast migration**. Toast is wired up via `ToastProvider` but only quick-add currently uses it. Remaining panels still have inline error/success text and can migrate incrementally.
-- **Edit a streak's reminder time** or **flip a book between solo and co-write after creation** — these are creation-time only right now. Inline-edit UI is the missing piece.
-- **Live FX rates**. `src/lib/fx.ts` carries a hard-coded snapshot. The function signature is set up to swap in a live API (e.g. Frankfurter, open.er-api.com) without touching call sites.
-- **Calendar-event editing/deletion**. The form creates events; it doesn't edit or delete. The week view shows events read-only with a deep link to Google Calendar.
-- **Notifications for streak reminders**. `streaks.reminder_time` is persisted but no scheduler reads it. A future Supabase Edge Function with `pg_cron` could send web push / email notifications.
-- **Component + RLS tests**. Lib coverage is solid (130 unit tests) and a Playwright E2E suite exercises the shell, but the React component tree in isolation and the database RLS policies still aren't directly tested. RTL + jsdom for components and a seeded Supabase instance for RLS are the sensible next layers.
-- **Refresh tokens for Google Calendar**. The app uses Supabase's `provider_token` which expires ~1 hour. The Re-link button handles recovery, but if you want background work against the calendar, you'd need to capture `provider_refresh_token` server-side on OAuth callback and exchange it manually.
-- **Mobile polish**. Layout is mostly responsive but the tab strip will overflow on very narrow screens; a bottom-nav variant on mobile would feel native. The current behavior is horizontal-scroll, which works but isn't pretty.
-
----
-
-## Acknowledgements
-
-Built incrementally across several pairing sessions with an assistant. Each major section landed in its own commit so the history can be cherry-picked or rolled back per feature:
-
-| Theme | Commits |
-| --- | --- |
-| Overview, KPIs, quick-add, bonus polish (live "now", at-risk streaks) | `847a925`, `f6f782e` |
-| Subscriptions polish (FX, soft-cancel, renewals) | `255625e` |
-| Streaks polish (heatmap, best vs current, reminder time) | `0c48129` |
-| Calendar upgrade (week view, RRULE, all-day, 401 handling) | `8aab45e` |
-| Finances panel | `3b42d7d` |
-| Plans panel | `4d52f18` |
-| Cross-cutting (dark mode, toasts, skeletons, shortcuts) | `d21b9cf` |
-| Couples mode infrastructure + UI + partner data | `605e58e`, `e1ef31d`, `d0aebbf`, `32b3184` |
-| Pulse, Important Dates | `927411b`, `1b002b7` |
-| Vitest + 77 lib tests | `793bca6` |
+- Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, and strict AI-output validation.
+- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login, and axe accessibility scans.
+- Production build is a required verification step because the shell spans server/client boundaries and lazy chart/editor bundles.
