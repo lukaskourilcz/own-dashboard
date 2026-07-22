@@ -1,88 +1,68 @@
 {
   "schemaVersion": 1,
-  "status": "fallback-generator-research-required",
+  "status": "provider-research-required",
   "generatedAt": null,
-  "attemptedAt": "2026-07-22",
+  "providerResearchAt": null,
   "policy": {
-    "substituteGeneratorsAllowed": true,
+    "researchedGeneratorsAllowed": true,
     "generatedUiAllowed": false,
     "authenticScreenshotSource": "/dev-preview",
-    "notes": "The Higgsfield MCP, workspace, catalog, and cost preflight were available, but the active MCP trial reported zero usable trial credits. No generation completed and proposed paths remain unreferenced reservations. A future agent must research at least three current low-cost or free generators from primary sources before selecting a fallback; placeholders remain prohibited."
+    "notes": "No generation has been approved and proposed paths remain unreferenced reservations. A future agent must research at least three current low-cost or free generators from primary sources before selecting a provider; placeholders remain prohibited."
   },
-  "fallbackPolicy": {
-    "researchRequiredWhenHiggsfieldBlocked": true,
+  "providerResearch": {
+    "requiredBeforeGeneration": true,
     "minimumProviders": 3,
     "sourcePolicy": "Use current primary provider pricing, licensing/terms, privacy/retention, format/dimension, watermark, and workflow documentation with access dates.",
     "selectionPolicy": "Prefer a no-subscription or low-cost option whose outputs may be stored in the repository and deployed application, requires no private product data, supports the required formats, and satisfies the same quality gates.",
     "authorizationBoundary": "Do not register accounts, purchase plans or credits, expose credentials, or upload private data without owner authorization.",
-    "provenancePolicy": "Record actual provider, model/mode, exact cost or free allowance, source URLs, prompts, references, selected/rejected variants, and output rights. Never describe fallback output as Higgsfield output.",
+    "provenancePolicy": "Record actual provider, model/mode, exact cost or free allowance, source URLs, prompts, references, selected/rejected variants, and output rights.",
     "noViableProvider": "Return reusable prompts and keep the assets deferred without placeholders."
-  },
-  "capabilityAudit": {
-    "workspace": "private Plus workspace selected successfully",
-    "catalog": ["recraft_v4_1", "z_image", "soul_location"],
-    "costPreflight": "successful",
-    "generationResult": "blocked",
-    "billingState": "active MCP trial with zero remaining trial credits",
-    "requestIds": [
-      "a3adb7e8-7e81-4523-b0ef-af1243ddf61a",
-      "c4715d59-6eeb-41c6-9f6c-729a38dde82d",
-      "a45b54ba-f0f8-4ce8-a84f-227a9ab1d003",
-      "d3d73301-dda1-4a6c-81af-97b6577f7c07",
-      "b71d84e8-f897-4ade-bbd7-8147ceb6f144",
-      "4f4e806f-06bf-4644-a275-8a172ad744fa"
-    ]
   },
   "assets": [
     {
       "name": "brand-mark-exploration",
-      "status": "blocked-no-usable-mcp-credits",
+      "status": "pending-provider-selection",
       "purpose": "Explore name-independent operational-cartography directions before deterministic SVG refinement.",
       "placement": "BrandMark, favicon, PWA icon",
       "productionBrief": "Compact linked frame/node symbol; legible in monochrome and at favicon size; not crypto, analytics, a gauge, sparkle, or OpenAI-like knot.",
       "finalPrompt": "Brand symbol exploration for a private professional operating system. Abstract operational cartography: one compact structured frame, one linked project path, three to five connected work nodes, modular grid logic, and a subtle abstract O and D relationship. Flat vector-style logo mark only, centered with generous clear space on warm off-white. No wordmark, no letters, no readable text. Must remain distinct at favicon size and work in monochrome. Precise simple geometry, modest corners, consistent stroke weight. Limited colors: deep ink blue, graphite, warm paper, one restrained amber signal.",
       "negativePrompt": "Crypto token, analytics logo, speedometer, OpenAI knot, sparkle, star, generic nine-dot grid, chain link, circuit board, gradient, glow, glass, 3D, mockup, shadow, background scene, watermark, third-party mark.",
-      "model": ["recraft_v4_1", "z_image"],
-      "generationMode": "text-to-image exploration; vector mode requested from Recraft",
+      "model": null,
+      "generationMode": null,
       "referenceInputs": [],
       "selectedVariant": null,
-      "rejectedDirections": [
-        "Recraft request produced no asset: only_website_usage_on_trial_is_available.",
-        "Z Image request produced no asset: only_website_usage_on_trial_is_available."
-      ],
+      "rejectedDirections": [],
       "proposedExportPaths": ["public/brand/mark.svg", "public/brand/mark-dark.svg", "public/brand/mark-mono.svg"],
       "responsiveVariants": ["16", "32", "192", "512", "maskable-512"],
       "motionFallback": null,
       "accessibility": "Brand identity; adjacent product name remains text where needed.",
       "dimensions": null,
       "fileSizes": null,
-      "regenerationInstructions": "Check Higgsfield first. If it remains blocked, research at least three current low-cost/free providers under fallbackPolicy and select a documented safe option. Generate at least three directions, review at 16/32 px, then redraw the accepted geometry deterministically.",
-      "provenance": "Higgsfield MCP attempt on 2026-07-22; no output returned",
+      "regenerationInstructions": "Research at least three current low-cost/free providers under providerResearch and select a documented safe option. Generate at least three directions, review at 16/32 px, then redraw the accepted geometry deterministically.",
+      "provenance": "Not generated",
       "usageRestrictions": "Redraw selected concept deterministically; do not ship a raw raster as the only mark."
     },
     {
       "name": "login-hero-stills",
-      "status": "blocked-no-usable-mcp-credits",
+      "status": "pending-provider-selection",
       "purpose": "Establish connected professional-work atmosphere without competing with authentication.",
       "placement": "src/app/login/page.tsx data-brand-media-slot=login-hero",
       "productionBrief": "Text-free editorial map of opportunity, client, project, repository, task, cost, invoice, and knowledge with strong sign-in-safe negative space.",
       "finalPrompt": "Editorial operational cartography for a private professional operating system. Eight modular paper-and-mineral forms suggest opportunity, client, project, repository branch, task, cost, invoice, and knowledge, joined by thin precise routes and small signal nodes. Structured asymmetrical orthographic composition with mild physical depth, large calm negative space on the left, and the visual focus on the right two-thirds. Warm paper and stone, deep graphite, deep ink cobalt, one restrained amber signal, soft directional light, matte technical-drawing texture, and fine paper grain.",
       "negativePrompt": "Readable text, letters, numbers, fake UI, screens, people, office, robot, brain, circuitry, purple, neon, glass, glossy plastic, floating random objects, third-party logos, watermark, dramatic perspective, lens flare.",
-      "model": "soul_location",
-      "generationMode": "text-to-image environment",
+      "model": null,
+      "generationMode": null,
       "referenceInputs": [],
       "selectedVariant": null,
-      "rejectedDirections": [
-        "No direction was returned; four requests ended with the Higgsfield generic generation error while the billing endpoint reported zero remaining MCP trial credits."
-      ],
+      "rejectedDirections": [],
       "proposedExportPaths": ["public/brand/login-desktop.avif", "public/brand/login-desktop-dark.avif", "public/brand/login-mobile.avif"],
       "responsiveVariants": ["desktop-light", "desktop-dark", "mobile"],
       "motionFallback": "Static stills are the baseline.",
       "accessibility": "Decorative; empty alt text and no information encoded only in the image.",
       "dimensions": ["desktop TBD", "mobile TBD"],
       "fileSizes": ["desktop <= 300 KB", "mobile <= 180 KB"],
-      "regenerationInstructions": "Check Higgsfield first. If it remains blocked, research and select a provider under fallbackPolicy. Request at least three desktop directions, select in the real login layout, then derive and review dark and mobile crops before export.",
-      "provenance": "Higgsfield Soul Location attempts on 2026-07-22; no output returned",
+      "regenerationInstructions": "Research and select a provider under providerResearch. Request at least three desktop directions, select in the real login layout, then derive and review dark and mobile crops before export.",
+      "provenance": "Not generated",
       "usageRestrictions": "No people, fake UI, readable labels, neon, or third-party marks."
     },
     {
@@ -110,32 +90,30 @@
     },
     {
       "name": "professional-empty-state-family",
-      "status": "blocked-no-usable-mcp-credits",
+      "status": "pending-provider-selection",
       "purpose": "Provide a restrained visual cue for the four highest-value initial empty states.",
       "placement": "Inbox, Opportunities, Projects, Clients EmptyState consumers",
       "productionBrief": "Four related text-free map fragments sharing line weight, material, perspective, and palette; each remains secondary to title and action.",
       "finalPrompt": "A coherent family of clean text-free editorial operational-map fragments for a professional work tool: modular paper forms linked by precise graphite paths, warm stone background, deep ink-blue structure, restrained amber signals, orthographic top-down composition, and matte technical-drawing texture. Four related subjects represent an unprocessed inbox path, an opportunity path, a project territory, and a client relationship cluster.",
       "negativePrompt": "People, readable text, UI, logos, neon, gradients, glass, cartoon mascots, confetti, random objects, watermark, fake data.",
-      "model": "soul_location",
-      "generationMode": "text-to-image environment family",
+      "model": null,
+      "generationMode": null,
       "referenceInputs": [],
       "selectedVariant": null,
-      "rejectedDirections": [
-        "No family direction was returned; the request ended with the Higgsfield generic generation error while the billing endpoint reported zero remaining MCP trial credits."
-      ],
+      "rejectedDirections": [],
       "proposedExportPaths": ["public/brand/empty-inbox.webp", "public/brand/empty-opportunities.webp", "public/brand/empty-projects.webp", "public/brand/empty-clients.webp"],
       "responsiveVariants": ["shared-responsive-crop"],
       "motionFallback": null,
       "accessibility": "Decorative; localized HTML communicates the state and action.",
       "dimensions": null,
       "fileSizes": ["each <= 100 KB"],
-      "regenerationInstructions": "Check Higgsfield first. If it remains blocked, research and select a provider under fallbackPolicy. Generate at least three coherent family directions, reject text/artifacts, then export only the four approved crops and integrate them together.",
-      "provenance": "Higgsfield Soul Location attempt on 2026-07-22; no output returned",
+      "regenerationInstructions": "Research and select a provider under providerResearch. Generate at least three coherent family directions, reject text/artifacts, then export only the four approved crops and integrate them together.",
+      "provenance": "Not generated",
       "usageRestrictions": "Do not expand into filler illustrations across all screens."
     },
     {
       "name": "repository-presentation-image",
-      "status": "blocked-before-generation",
+      "status": "pending-provider-selection",
       "purpose": "Present OwnDashboard in README, documentation, and optional Open Graph metadata using authentic fixture UI.",
       "placement": "README/docs and metadata only after final file exists",
       "productionBrief": "Deterministically composite a real /dev-preview screenshot with the approved mark and a quiet operational-cartography environment.",
@@ -152,8 +130,8 @@
       "accessibility": "README image requires descriptive alt text; OG is metadata presentation.",
       "dimensions": ["1200x630 for OG"],
       "fileSizes": null,
-      "regenerationInstructions": "Check Higgsfield first and use fallbackPolicy when blocked. Capture authentic fixture UI first, generate three text-free environmental frames, then composite the selected frame and untouched screenshot deterministically.",
-      "provenance": "Not submitted after the account-wide generation gate was confirmed",
+      "regenerationInstructions": "Research and select a provider under providerResearch. Capture authentic fixture UI first, generate three text-free environmental frames, then composite the selected frame and untouched screenshot deterministically.",
+      "provenance": "Not generated",
       "usageRestrictions": "No generated interface pixels, fake metrics, testimonials, users, or logos."
     },
     {

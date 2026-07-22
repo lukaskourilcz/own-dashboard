@@ -2,9 +2,9 @@
 
 Updated: 2026-07-22
 
-Branch: `codex/media-generator-fallback-policy`
+Branch: `codex/remove-platform-references`
 
-Previous implementation pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` (merged into `main`). Higgsfield capability-audit pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/57` (merged into `main`).
+Previous implementation pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` (merged into `main`). Brand-media policy pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/58` (merged into `main`).
 
 This is the restart-safe control point for the completed design and architecture overhaul. Start from the branch HEAD, read the files below, and do not repeat completed work or reset the repository.
 
@@ -79,11 +79,11 @@ Completed successfully at this checkpoint:
 
 Rerun the exact commands if any code changes after this handoff; never convert discovery or interrupted execution into a pass claim.
 
-## Higgsfield MCP is connected but generation is credit-blocked
+## Brand media remains pending
 
-The follow-up run connected to the Higgsfield MCP, selected the private Plus workspace, inspected the live model catalog, and completed cost preflights. The MCP billing status reported an active trial with zero remaining trial credits. Recraft and Z Image rejected MCP generation as website-only on the trial; Soul Location returned generation errors. The generation library remained empty and production code still references no nonexistent media.
+No generated asset is approved or referenced by production code. Provider-specific experiments are intentionally excluded from the current control surface.
 
-Before buying Higgsfield credits, the next agent must search current primary provider sources for at least three low-cost or free alternatives and compare price/free quota, output rights, watermark, privacy/retention, formats, quality fit, and credential requirements. It may use a safe documented fallback without private data; it must not register, purchase, or expose credentials without owner authorization. Follow `docs/design/higgsfield-art-direction.md` and resume from the exact prompts and request IDs in `docs/design/generated-media-manifest.json` for:
+The next agent must search current primary provider sources for at least three low-cost or free generators and compare price/free quota, output rights, watermark, privacy/retention, formats, quality fit, and credential requirements. It may use a safe documented provider without private data; it must not register, purchase, or expose credentials without owner authorization. Follow `docs/design/brand-media-art-direction.md` and resume from the prompts in `docs/design/generated-media-manifest.json` for:
 
 - name-independent brand-symbol exploration and refined favicon/PWA exports;
 - login desktop light/dark and mobile stills;
@@ -97,7 +97,7 @@ Before buying Higgsfield credits, the next agent must search current primary pro
 - Apply all four pending Supabase migrations, including `20260722190000_operational_workflow_extensions.sql`, through the repository's normal reviewed migration workflow.
 - Configure `AGENT_RUNNER_TOKEN` and `DASHBOARD_OWNER_ID` only if the VPS queue should be consumed; validate with a disposable task first.
 - Exercise OAuth, GitHub, Google Calendar, GoCardless, Resend, PostHog, Sentry, and Anthropic against real configured provider accounts.
-- Research and select a safe low-cost/free media generator; add Higgsfield MCP credits only if no suitable fallback exists. Generate and approve only the manifest's high-value media.
+- Research and select a safe low-cost/free media generator. Generate and approve only the manifest's high-value media.
 
 These are external-state tasks, not unfinished repository implementation.
 

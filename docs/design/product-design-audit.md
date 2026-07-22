@@ -73,7 +73,7 @@ Every production area needs distinct initial-empty, filtered-empty, loading/unav
 
 ## Generated-media boundary
 
-Higgsfield connected during the follow-up production pass, but its billing status reported zero usable MCP trial credits and every generation request produced an error. A future pass must research at least three current low-cost or free alternatives and may use a documented provider with acceptable rights, privacy, watermark, format, and quality behavior. High-value uses remain a name-independent mark exploration, login desktop/mobile artwork, four restrained empty-state illustrations, and an authentic `/dev-preview`-based repository/Open Graph composition. Generated media remains harmful in financial tables, charts, invoice paper output, repository/bank UI, notes editing, dense screens, or any representation of real records. No filler, unreviewed output, or fake UI may ship.
+No generated media has been approved. A future pass must research at least three current low-cost or free providers and may use a documented option with acceptable rights, privacy, watermark, format, and quality behavior. High-value uses remain a name-independent mark exploration, login desktop/mobile artwork, four restrained empty-state illustrations, and an authentic `/dev-preview`-based repository/Open Graph composition. Generated media remains harmful in financial tables, charts, invoice paper output, repository/bank UI, notes editing, dense screens, or any representation of real records. No filler, unreviewed output, or fake UI may ship.
 
 ## Baseline validation record
 
