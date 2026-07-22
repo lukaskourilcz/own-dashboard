@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Compass, Home, LogIn } from "lucide-react";
+import { Home, LogIn } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { brandConfig } from "@/lib/brand";
 import { useDict } from "@/lib/i18n";
@@ -17,11 +18,9 @@ export default function NotFound() {
   const t = useDict();
 
   return (
-    <main className="flex min-h-full flex-1 items-center justify-center px-6 py-16">
+    <main className="operational-grid flex min-h-full flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-md text-center">
-        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-foreground-muted">
-          <Compass className="h-5 w-5" />
-        </div>
+        <BrandMark className="mx-auto mb-5 h-12 w-12" />
         <p className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-foreground-subtle">
           <span>{brandConfig.name}</span>
           <span aria-hidden>·</span>

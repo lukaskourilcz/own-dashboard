@@ -94,7 +94,7 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
         onClick={onClick}
         whileTap={{ scale: 0.92 }}
         aria-label={t.app.quickAdd}
-        className="md:hidden fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-elevated flex items-center justify-center focus-ring"
+        className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated focus-ring md:hidden"
       >
         <Plus className="h-5 w-5" />
       </motion.button>
@@ -107,7 +107,7 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.15 }}
-            className="fixed left-4 right-4 md:left-auto md:right-6 md:w-80 bottom-20 md:bottom-6 z-40 rounded-lg border border-border bg-surface shadow-elevated p-3"
+            className="fixed bottom-36 left-4 right-4 z-40 rounded-lg border border-border bg-surface p-3 shadow-elevated md:bottom-6 md:left-auto md:right-6 md:w-80"
           >
             <div className="flex items-start gap-3">
               <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center shrink-0">

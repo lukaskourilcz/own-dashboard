@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, MotionConfig } from "motion/react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
@@ -13,6 +13,10 @@ export default function LoginPage() {
   const t = useDict();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "auth") setError(t.login.authError);
+  }, [t.login.authError]);
 
   async function signInWithGoogle() {
     setLoading(true);

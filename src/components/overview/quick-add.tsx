@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, CornerDownLeft, X } from "lucide-react";
+import { Command, CornerDownLeft, X } from "lucide-react";
+import { AiProposalPanel } from "@/components/ui/ai-proposal";
+import { EntityBadge } from "@/components/ui/status-badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -250,7 +252,7 @@ export function QuickAdd({
   return (
     <div className="space-y-3">
     <form onSubmit={submit} className="relative">
-      <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
+      <Command className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
       <Input
         ref={inputRef}
         id="quick-add-input"
@@ -267,12 +269,12 @@ export function QuickAdd({
         <CornerDownLeft className="h-3 w-3" />
       </div>
     </form>
-    {searchAnswer && <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+    {searchAnswer && <AiProposalPanel label={t.quickAdd.searchAnswer} description={t.quickAdd.confirmSearch} className="text-sm">
       <div className="flex items-start justify-between gap-3"><p className="font-medium">{t.quickAdd.searchAnswer}</p><button type="button" onClick={() => setSearchAnswer(null)} aria-label={t.app.dismiss} className="rounded text-foreground-muted hover:text-foreground focus-ring"><X className="h-4 w-4" /></button></div>
       <p className="mt-2 whitespace-pre-wrap text-foreground-muted">{searchAnswer.answer}</p>
-      {searchAnswer.evidence.length > 0 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">{t.quickAdd.searchEvidence}</p><ul className="mt-1 space-y-1.5">{searchAnswer.evidence.map((item) => <li key={`${item.claim}-${item.sourceIds.join("-")}`}><p>{item.claim}</p><p className="text-[10px] text-foreground-muted">{item.sourceIds.join(" · ")}</p></li>)}</ul></div>}
+      {searchAnswer.evidence.length > 0 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">{t.quickAdd.searchEvidence}</p><ul className="mt-1 space-y-2">{searchAnswer.evidence.map((item) => <li key={`${item.claim}-${item.sourceIds.join("-")}`} className="border-l-2 border-ai-evidence pl-2"><p>{item.claim}</p><div className="mt-1 flex flex-wrap gap-1">{item.sourceIds.map((sourceId) => <EntityBadge key={sourceId}>{sourceId}</EntityBadge>)}</div></li>)}</ul></div>}
       {searchAnswer.limitations.length > 0 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">{t.quickAdd.searchLimitations}</p><ul className="mt-1 list-disc space-y-1 pl-4 text-foreground-muted">{searchAnswer.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div>}
-    </div>}
+    </AiProposalPanel>}
     </div>
   );
 }
