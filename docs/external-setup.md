@@ -18,7 +18,7 @@ These steps require the owner's provider accounts, billing access, secrets, or p
 npx supabase db push --linked
 ```
 
-Do not rerun `supabase/schema.sql` on an existing installation and do not run the cleanup migration alone. `20260721165421_remove_legacy_personal_scope.sql` first writes every owner's retired personal records to `legacy_personal_archives`, then removes Pulse, habits, books, couple tables, and partner sharing. Follow `docs/migration-guide.md` for verification and rollback.
+Do not rerun `supabase/schema.sql` on an existing installation and do not run the cleanup migration alone. `20260721165421_remove_legacy_personal_scope.sql` first writes every owner's retired personal records to `legacy_personal_archives`, then removes Pulse, habits, books, couple tables, and partner sharing. `20260722150000_atomic_inbox_routing.sql` then adds the own-scoped transaction boundary used by Inbox processing. Follow `docs/migration-guide.md` for verification and rollback.
 
 Set these deployment variables:
 

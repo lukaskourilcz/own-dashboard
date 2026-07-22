@@ -101,8 +101,9 @@ The relevant migrations are:
 
 1. `20260721165419_professional_restructure_core.sql` — professional entities, relationships, explicit grants/indexes, transaction-safe opportunity conversion, and own-only relationship policies.
 2. `20260721165421_remove_legacy_personal_scope.sql` — archive legacy data, restore own-only reads, then remove retired personal tables and sharing infrastructure.
+3. `20260722150000_atomic_inbox_routing.sql` — route one owned Inbox item and mark it processed in a single `SECURITY INVOKER` transaction.
 
-Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying both migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
+Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying all migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
 4. Start the app:
 
@@ -132,3 +133,5 @@ The repository cannot safely configure external account secrets, OAuth consent s
 - [External services, callbacks, and rename checklist](./docs/external-setup.md)
 - [Migration and rollback](./docs/migration-guide.md)
 - [AI and privacy](./docs/ai-and-privacy.md)
+- [Product design audit](./docs/design/product-design-audit.md)
+- [Brand system](./docs/design/brand-system.md) and [design system](./docs/design/design-system.md)

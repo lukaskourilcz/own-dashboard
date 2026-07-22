@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
+import { Metric } from "@/components/ui/metric";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { assessProjectHealth } from "@/lib/project-health";
@@ -57,7 +59,16 @@ export function WorkOverviewPanel({
   const toast = useToast();
   const weekStart = mondayKey();
   const current = reviews.find((review) => review.week_start === weekStart);
-  const [summary, setSummary] = useState(current?.summary ?? "");
+  const currentItems = current?.items ?? {};
+  const readReviewItem = (key: string, fallback = "") => Array.isArray(currentItems[key]) ? (currentItems[key] as string[]).join("\n") : fallback;
+  const [reviewDraft, setReviewDraft] = useState({
+    facts: readReviewItem("facts"),
+    risks: readReviewItem("risks"),
+    decisions: readReviewItem("decisions"),
+    priorities: readReviewItem("priorities", current?.summary ?? ""),
+    followUps: readReviewItem("followUps"),
+    sources: readReviewItem("sources"),
+  });
   const [generating, setGenerating] = useState(false);
   const attention = useMemo(
     () => projects
@@ -80,8 +91,8 @@ export function WorkOverviewPanel({
         .upsert({
           user_id: userId,
           week_start: weekStart,
-          summary: summary.trim(),
-          items: {},
+          summary: reviewDraft.priorities.trim(),
+          items: Object.fromEntries(Object.entries(reviewDraft).map(([key, value]) => [key, value.split("\n").map((item) => item.trim()).filter(Boolean)])),
           status: complete ? "completed" : "draft",
           completed_at: complete ? now : null,
           updated_at: now,
@@ -127,12 +138,13 @@ export function WorkOverviewPanel({
       const response = await fetch("/api/ai/weekly-brief", { method: "POST" });
       if (!response.ok) throw new Error("unavailable");
       const { brief } = await response.json() as { brief: { facts: string[]; risks: string[]; suggestions: string[]; sources: string[] } };
-      setSummary([
-        `${p.facts}:`, ...brief.facts.map((item) => `- ${item}`), "",
-        `${p.risks}:`, ...brief.risks.map((item) => `- ${item}`), "",
-        `${p.suggestions}:`, ...brief.suggestions.map((item) => `- ${item}`), "",
-        `${p.sources}:`, brief.sources.join(", "),
-      ].join("\n"));
+      setReviewDraft((currentDraft) => ({
+        ...currentDraft,
+        facts: brief.facts.join("\n"),
+        risks: brief.risks.join("\n"),
+        priorities: brief.suggestions.join("\n"),
+        sources: brief.sources.join("\n"),
+      }));
     } catch {
       toast.err(p.aiUnavailable);
     } finally {
@@ -143,21 +155,16 @@ export function WorkOverviewPanel({
   return (
     <div>
       <PageHeader title={p.workTitle} description={p.workDescription} />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        {metrics.map(({ label, value, icon: Icon }) => (
-          <Card key={label}><CardContent className="flex items-center justify-between p-4">
-            <div><SectionLabel>{label}</SectionLabel><p className="mt-2 text-3xl font-semibold tabular">{value}</p></div>
-            <Icon className="h-5 w-5 text-foreground-muted" />
-          </CardContent></Card>
-        ))}
+      <div className="surface-band -mx-4 grid grid-cols-2 gap-y-2 px-4 py-3 sm:grid-cols-3 md:-mx-6 md:px-6 xl:-mx-8 xl:grid-cols-6 xl:px-8">
+        {metrics.map(({ label, value, icon }) => <Metric key={label} label={label} value={value} icon={icon} tone={label === p.followUps && value > 0 ? "attention" : "default"} />)}
       </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card>
+      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,.8fr)]">
+        <Card className="border-l-2 border-l-warning">
           <CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {attention.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : attention.map(({ project, result }) => (
-              <Link key={project.id} href={`/projects/${encodeURIComponent(project.slug)}`} className="block rounded-lg border border-border p-3 hover:border-border-strong">
-                <div className="flex items-center justify-between gap-3"><p className="font-medium">{project.name}</p><span className="text-xs text-warning">{result.health === "healthy" ? p.healthy : result.health === "attention" ? p.attentionStatus : p.atRisk}</span></div>
+              <Link key={project.id} href={`/projects/${encodeURIComponent(project.slug)}`} className="block border-b border-border py-2.5 last:border-0">
+                <div className="flex items-center justify-between gap-3"><p className="font-medium">{project.name}</p><StatusBadge value={result.health} /></div>
                 <p className="mt-1 text-xs text-foreground-muted">{result.reasons.map(healthReason).join(" · ")}</p>
               </Link>
             ))}
@@ -167,8 +174,8 @@ export function WorkOverviewPanel({
           <CardHeader><CardTitle>{p.weeklyReview}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-foreground-muted">{p.weeklyReviewDescription}</p>
-            <Textarea value={summary} onChange={(event) => setSummary(event.target.value)} placeholder={p.reviewPlaceholder} rows={7} />
-            <div className="flex gap-2">
+            <div className="grid gap-3 sm:grid-cols-2"><ReviewField label={p.facts} value={reviewDraft.facts} onChange={(facts) => setReviewDraft((old) => ({ ...old, facts }))} /><ReviewField label={p.risks} value={reviewDraft.risks} onChange={(risks) => setReviewDraft((old) => ({ ...old, risks }))} /><ReviewField label={p.decisions} value={reviewDraft.decisions} onChange={(decisions) => setReviewDraft((old) => ({ ...old, decisions }))} /><ReviewField label={p.priorities} value={reviewDraft.priorities} onChange={(priorities) => setReviewDraft((old) => ({ ...old, priorities }))} /><ReviewField label={p.followUpActions} value={reviewDraft.followUps} onChange={(followUps) => setReviewDraft((old) => ({ ...old, followUps }))} /><ReviewField label={p.sources} value={reviewDraft.sources} onChange={(sources) => setReviewDraft((old) => ({ ...old, sources }))} /></div>
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={generateWeeklyBrief} disabled={generating}><Bot />{generating ? p.generatingBrief : p.generateWeeklyBrief}</Button>
               <Button variant="outline" onClick={() => reviewMutation.mutate(false)} disabled={reviewMutation.isPending}>{p.saveReview}</Button>
               <Button onClick={() => reviewMutation.mutate(true)} disabled={reviewMutation.isPending}>{p.completeReview}</Button>
@@ -177,9 +184,13 @@ export function WorkOverviewPanel({
         </Card>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{p.pipeline}</CardTitle></CardHeader><CardContent>{opportunities.filter((item) => !CLOSED.has(item.status)).length === 0 ? <p className="text-sm text-foreground-muted">{p.pipelineEmpty}</p> : <ul className="space-y-2">{opportunities.filter((item) => !CLOSED.has(item.status)).slice(0, 6).map((item) => <li key={item.id}><Link href="/opportunities" className="flex items-center justify-between gap-3 rounded-md border border-border p-3 hover:border-border-strong"><span className="text-sm font-medium">{item.title}</span><span className="text-xs text-foreground-muted">{item.status.replaceAll("_", " ")}</span></Link></li>)}</ul>}</CardContent></Card>
-        <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="space-y-2">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" className="flex items-center justify-between gap-3 rounded-md border border-border p-3 hover:border-border-strong"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.pipeline}</CardTitle></CardHeader><CardContent>{opportunities.filter((item) => !CLOSED.has(item.status)).length === 0 ? <p className="text-sm text-foreground-muted">{p.pipelineEmpty}</p> : <ul className="divide-y divide-border">{opportunities.filter((item) => !CLOSED.has(item.status)).slice(0, 6).map((item) => <li key={item.id}><Link href="/opportunities" className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><StatusBadge value={item.status} /></Link></li>)}</ul>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
       </div>
     </div>
   );
+}
+
+function ReviewField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return <label className="space-y-1.5"><SectionLabel>{label}</SectionLabel><Textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder="—" rows={3} className="min-h-20" /></label>;
 }
