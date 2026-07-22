@@ -2,9 +2,9 @@
 
 Updated: 2026-07-22
 
-Branch: `codex/operational-workflow-improvements`
+Branch: `codex/higgsfield-media-integration`
 
-Pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` targeting `main`.
+Previous implementation pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` (merged into `main`).
 
 This is the restart-safe control point for the completed design and architecture overhaul. Start from the branch HEAD, read the files below, and do not repeat completed work or reset the repository.
 
@@ -79,11 +79,11 @@ Completed successfully at this checkpoint:
 
 Rerun the exact commands if any code changes after this handoff; never convert discovery or interrupted execution into a pass claim.
 
-## Higgsfield remains deferred
+## Higgsfield MCP is connected but generation is credit-blocked
 
-Higgsfield was unavailable by explicit instruction. No research attempts, substitute generator, placeholder art, fake UI, or nonexistent production references were added. Integration seams and provenance fields are ready.
+The follow-up run connected to the Higgsfield MCP, selected the private Plus workspace, inspected the live model catalog, and completed cost preflights. The MCP billing status reported an active trial with zero remaining trial credits. Recraft and Z Image rejected MCP generation as website-only on the trial; Soul Location returned generation errors. The generation library remained empty. No asset was returned, no substitute generator or placeholder was used, and production code still references no nonexistent media.
 
-When the actual Higgsfield MCP becomes available, follow `docs/design/higgsfield-art-direction.md` and `docs/design/generated-media-manifest.json` for:
+After usable paid or trial MCP credits are available, follow `docs/design/higgsfield-art-direction.md` and resume from the exact attempted prompts and request IDs in `docs/design/generated-media-manifest.json` for:
 
 - name-independent brand-symbol exploration and refined favicon/PWA exports;
 - login desktop light/dark and mobile stills;
@@ -97,7 +97,7 @@ When the actual Higgsfield MCP becomes available, follow `docs/design/higgsfield
 - Apply all four pending Supabase migrations, including `20260722190000_operational_workflow_extensions.sql`, through the repository's normal reviewed migration workflow.
 - Configure `AGENT_RUNNER_TOKEN` and `DASHBOARD_OWNER_ID` only if the VPS queue should be consumed; validate with a disposable task first.
 - Exercise OAuth, GitHub, Google Calendar, GoCardless, Resend, PostHog, Sentry, and Anthropic against real configured provider accounts.
-- Generate and approve Higgsfield media only after the real MCP is installed.
+- Add usable Higgsfield MCP generation credits, then generate and approve only the manifest's high-value media; MCP connectivity alone has already been verified.
 
 These are external-state tasks, not unfinished repository implementation.
 

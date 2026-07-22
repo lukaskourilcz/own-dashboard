@@ -131,7 +131,7 @@ The deterministic `/dev-preview` harness drives the Playwright responsive matrix
 
 OwnDashboard follows the documented **calm operational intelligence** thesis and **operational cartography** visual direction. Production UI uses semantic tokens, canonical localized statuses, one Lucide icon family, compact data presentation, and authentic application rendering. Generated UI, fabricated metrics, and filler illustration are prohibited.
 
-Higgsfield production is intentionally deferred until its MCP is available. No substitute or placeholder artwork is shipped. The login and empty-state components expose integration seams, and the media manifest records proposed destinations without referencing nonexistent files.
+Higgsfield production remains deferred after a live MCP capability audit: the workspace and catalog connected, but the active trial reported zero usable generation credits and returned no assets. No substitute or placeholder artwork is shipped. The login layout exposes its media seam, existing empty states remain complete without illustration, and the manifest records attempted prompts and proposed destinations without referencing nonexistent files.
 
 ## Deployment and owner actions
 
@@ -146,6 +146,6 @@ The repository cannot safely configure external account secrets, OAuth consent s
 - [Product design audit](./docs/design/product-design-audit.md)
 - [Reference research](./docs/design/reference-research.md)
 - [Brand system](./docs/design/brand-system.md) and [design system](./docs/design/design-system.md)
-- [Deferred media opportunity audit](./docs/design/higgsfield-opportunity-audit.md), [art direction](./docs/design/higgsfield-art-direction.md), and [manifest](./docs/design/generated-media-manifest.json)
+- [Higgsfield media opportunity audit](./docs/design/higgsfield-opportunity-audit.md), [art direction](./docs/design/higgsfield-art-direction.md), and [manifest](./docs/design/generated-media-manifest.json)
 - [Visual QA record](./docs/design/visual-qa.md)
 - [Future-agent control document](./CLAUDE.md)

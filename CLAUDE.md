@@ -21,7 +21,7 @@ Agents is a durable task queue, never a browser remote shell. Keep `AGENT_RUNNER
 
 Design for “calm operational intelligence” through operational cartography: connected records, clear signals, aligned dense rows, border hierarchy, warm neutral/graphite surfaces, deep ink/cobalt structure, and amber attention. Search before creating; reuse semantic tokens and shared components; never add filler media, fake UI, glass, glow, generic gradients, decorative sparkles/metrics, nested-card walls, or a second icon system. Keep Geist, tabular figures, restrained motion, reduced-motion support, and EN/CS parity. Validate long content, non-happy paths, mobile widths, keyboard flow, and WCAG 2.2 AA behavior.
 
-Higgsfield is optional and currently deferred. When its actual MCP is unavailable, do not research, connect, wait, substitute another generator, or add fake placeholders. Preserve the documented media seams and authentic `/dev-preview` screenshots.
+Higgsfield is optional and generated media is currently credit-blocked. MCP presence is not sufficient: check workspace selection, balance, billing/trial status, and a cost-only preflight before production. When the MCP is unavailable or has no usable credits, do not wait, substitute another generator, or add fake placeholders. Preserve documented media seams and authentic `/dev-preview` screenshots; resume from the recorded prompts and request evidence in the media manifest.
 
 ## Project workflows
 

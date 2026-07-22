@@ -17,6 +17,7 @@ The repository implementation is complete. The items below are the external acco
 - [ ] **Renewal email:** verify a Resend sending domain, then set `RESEND_API_KEY` and `RESEND_FROM`. The in-app notification centre works without email. `[imp:3]` `[owner:me]`
 - [ ] **Bank sync:** create GoCardless Bank Account Data credentials and set `GOCARDLESS_SECRET_ID` plus `GOCARDLESS_SECRET_KEY`. Test the production callback and transaction deduplication. CSV statement import remains available without this integration. `[imp:3]` `[owner:me]`
 - [ ] **VPS agents:** set a long random `AGENT_RUNNER_TOKEN` and the owner's Supabase UUID as `DASHBOARD_OWNER_ID` in the deployed server environment and in the trusted VPS worker. Test claim/report with a disposable task before delegating real work; never expose the token to browser code or logs. `[imp:4]` `[owner:me]`
+- [ ] **Higgsfield brand-media production:** the MCP is connected, but the 2026-07-22 capability audit found an active trial with zero usable MCP credits. [Add an MCP credit allowance](https://higgsfield.ai/mcp-credits?show_modal=auto_refill&source=mcp), then resume from `docs/design/generated-media-manifest.json`; do not substitute another generator or publish unreviewed output. This is a one-off design-production dependency, not a runtime application dependency. `[imp:2]` `[owner:me]`
 
 ## Optional production hardening
 

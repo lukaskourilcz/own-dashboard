@@ -73,7 +73,7 @@ Every production area needs distinct initial-empty, filtered-empty, loading/unav
 
 ## Generated-media boundary
 
-Higgsfield is unavailable for this implementation and all generated media is deferred. High-value future uses are a name-independent mark exploration, login desktop/mobile artwork, four restrained empty-state illustrations, and an authentic `/dev-preview`-based repository/Open Graph composition. Generated media would be harmful in financial tables, charts, invoice paper output, repository/bank UI, notes editing, dense screens, or any representation of real records. No substitute generated assets or fake UI may ship.
+Higgsfield connected during the follow-up production pass, but its billing status reported zero usable MCP trial credits and every generation request produced an error. High-value future uses remain a name-independent mark exploration, login desktop/mobile artwork, four restrained empty-state illustrations, and an authentic `/dev-preview`-based repository/Open Graph composition. Generated media would be harmful in financial tables, charts, invoice paper output, repository/bank UI, notes editing, dense screens, or any representation of real records. No substitute generated assets or fake UI may ship.
 
 ## Baseline validation record
 

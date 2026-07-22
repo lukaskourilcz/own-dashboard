@@ -7,7 +7,7 @@ description: Prepare, generate, review, integrate, optimize, or document OwnDash
 
 ## Availability gate
 
-Inspect callable tools first. If Higgsfield is unavailable, do not research it, connect it, wait, invent capabilities, generate substitutes, or add fake placeholders. Keep the existing layout seam intact, record the asset as deferred in `docs/design/generated-media-manifest.json`, and continue all non-media work.
+Inspect callable tools first. MCP presence is not enough: select the intended workspace, inspect balance plus billing/trial status, and run a cost-only preflight. If Higgsfield is unavailable or has no usable generation credits, do not wait, invent capabilities, generate substitutes, or add fake placeholders. Keep the existing layout seam intact, record the exact gate and request evidence in `docs/design/generated-media-manifest.json`, and continue all non-media work. Do not repeat failed model discovery when the manifest already proves an account-wide billing gate.
 
 ## Production boundary
 
