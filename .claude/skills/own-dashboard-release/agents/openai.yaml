@@ -1,0 +1,4 @@
+interface:
+  display_name: "OwnDashboard Release"
+  short_description: "Run the complete OwnDashboard release gate"
+  default_prompt: "Use $own-dashboard-release to validate this OwnDashboard change and report exact evidence."

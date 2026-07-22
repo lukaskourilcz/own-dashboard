@@ -1,0 +1,4 @@
+interface:
+  display_name: "OwnDashboard Higgsfield"
+  short_description: "Prepare governed brand-media production work"
+  default_prompt: "Use $own-dashboard-higgsfield to prepare or integrate an approved OwnDashboard brand-media asset."
