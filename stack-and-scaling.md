@@ -26,7 +26,7 @@ Free-tier production means [Vercel Hobby](https://vercel.com/pricing) plus [Supa
 
 AI is the main true pay-as-you-go line item. The defaults use a Haiku-class model for routing/enrichment and a Sonnet-class model for synthesis. Current official [Anthropic pricing](https://docs.anthropic.com/en/docs/about-claude/pricing) is $1/M input + $5/M output tokens for Claude Haiku 4.5 and $3/M input + $15/M output tokens for Claude Sonnet 4.5. A light personal workload is commonly only a few dollars, but long project notes, repository documents, or repeated copilots can make it higher. Set provider budget alerts rather than relying on this estimate.
 
-Higgsfield is not part of the deployed runtime stack. It is an optional one-off design-production tool for the approved brand-media placements. The 2026-07-22 MCP audit found a connected Plus trial but zero usable generation credits, so no media cost was incurred and no asset shipped. Any future credit purchase should be treated as a design-production expense, not included in OwnDashboard's monthly operating total.
+Higgsfield is not part of the deployed runtime stack. It is a preferred one-off design-production tool for approved brand-media placements, but the 2026-07-22 MCP audit found a connected Plus trial with zero usable generation credits. Before buying credits, a future agent must research at least three current low-cost or free alternatives and document price/free quota, output rights, watermark, privacy/retention, formats, and credential requirements. Any selected generator cost is a design-production expense, not part of OwnDashboard's monthly operating total.
 
 ## Optional service allowances
 

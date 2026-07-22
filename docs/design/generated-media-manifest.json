@@ -1,13 +1,22 @@
 {
   "schemaVersion": 1,
-  "status": "blocked-higgsfield-trial-credits-exhausted",
+  "status": "fallback-generator-research-required",
   "generatedAt": null,
   "attemptedAt": "2026-07-22",
   "policy": {
-    "substituteGeneratorsAllowed": false,
+    "substituteGeneratorsAllowed": true,
     "generatedUiAllowed": false,
     "authenticScreenshotSource": "/dev-preview",
-    "notes": "The Higgsfield MCP, workspace, catalog, and cost preflight were available, but the active MCP trial reported zero usable trial credits. No generation completed, no substitute or placeholder media was created, and proposed paths remain unreferenced reservations."
+    "notes": "The Higgsfield MCP, workspace, catalog, and cost preflight were available, but the active MCP trial reported zero usable trial credits. No generation completed and proposed paths remain unreferenced reservations. A future agent must research at least three current low-cost or free generators from primary sources before selecting a fallback; placeholders remain prohibited."
+  },
+  "fallbackPolicy": {
+    "researchRequiredWhenHiggsfieldBlocked": true,
+    "minimumProviders": 3,
+    "sourcePolicy": "Use current primary provider pricing, licensing/terms, privacy/retention, format/dimension, watermark, and workflow documentation with access dates.",
+    "selectionPolicy": "Prefer a no-subscription or low-cost option whose outputs may be stored in the repository and deployed application, requires no private product data, supports the required formats, and satisfies the same quality gates.",
+    "authorizationBoundary": "Do not register accounts, purchase plans or credits, expose credentials, or upload private data without owner authorization.",
+    "provenancePolicy": "Record actual provider, model/mode, exact cost or free allowance, source URLs, prompts, references, selected/rejected variants, and output rights. Never describe fallback output as Higgsfield output.",
+    "noViableProvider": "Return reusable prompts and keep the assets deferred without placeholders."
   },
   "capabilityAudit": {
     "workspace": "private Plus workspace selected successfully",
@@ -47,7 +56,7 @@
       "accessibility": "Brand identity; adjacent product name remains text where needed.",
       "dimensions": null,
       "fileSizes": null,
-      "regenerationInstructions": "Confirm the MCP billing endpoint reports usable paid or trial credits before retrying. Generate at least three directions, review at 16/32 px, then redraw the accepted geometry deterministically.",
+      "regenerationInstructions": "Check Higgsfield first. If it remains blocked, research at least three current low-cost/free providers under fallbackPolicy and select a documented safe option. Generate at least three directions, review at 16/32 px, then redraw the accepted geometry deterministically.",
       "provenance": "Higgsfield MCP attempt on 2026-07-22; no output returned",
       "usageRestrictions": "Redraw selected concept deterministically; do not ship a raw raster as the only mark."
     },
@@ -72,7 +81,7 @@
       "accessibility": "Decorative; empty alt text and no information encoded only in the image.",
       "dimensions": ["desktop TBD", "mobile TBD"],
       "fileSizes": ["desktop <= 300 KB", "mobile <= 180 KB"],
-      "regenerationInstructions": "Confirm usable MCP credits, request at least three desktop directions, select in the real login layout, then derive and review dark and mobile crops before export.",
+      "regenerationInstructions": "Check Higgsfield first. If it remains blocked, research and select a provider under fallbackPolicy. Request at least three desktop directions, select in the real login layout, then derive and review dark and mobile crops before export.",
       "provenance": "Higgsfield Soul Location attempts on 2026-07-22; no output returned",
       "usageRestrictions": "No people, fake UI, readable labels, neon, or third-party marks."
     },
@@ -120,7 +129,7 @@
       "accessibility": "Decorative; localized HTML communicates the state and action.",
       "dimensions": null,
       "fileSizes": ["each <= 100 KB"],
-      "regenerationInstructions": "Confirm usable MCP credits, generate at least three coherent family directions, reject text/artifacts, then export only the four approved crops and integrate them together.",
+      "regenerationInstructions": "Check Higgsfield first. If it remains blocked, research and select a provider under fallbackPolicy. Generate at least three coherent family directions, reject text/artifacts, then export only the four approved crops and integrate them together.",
       "provenance": "Higgsfield Soul Location attempt on 2026-07-22; no output returned",
       "usageRestrictions": "Do not expand into filler illustrations across all screens."
     },
@@ -143,7 +152,7 @@
       "accessibility": "README image requires descriptive alt text; OG is metadata presentation.",
       "dimensions": ["1200x630 for OG"],
       "fileSizes": null,
-      "regenerationInstructions": "After usable MCP credits are confirmed, capture authentic fixture UI first, generate three text-free environmental frames, then composite the selected frame and untouched screenshot deterministically.",
+      "regenerationInstructions": "Check Higgsfield first and use fallbackPolicy when blocked. Capture authentic fixture UI first, generate three text-free environmental frames, then composite the selected frame and untouched screenshot deterministically.",
       "provenance": "Not submitted after the account-wide generation gate was confirmed",
       "usageRestrictions": "No generated interface pixels, fake metrics, testimonials, users, or logos."
     },
