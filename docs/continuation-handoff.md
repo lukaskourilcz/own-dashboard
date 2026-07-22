@@ -4,9 +4,11 @@ Updated: 2026-07-22
 
 Branch: `codex/operational-workflow-improvements`
 
+Pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` targeting `main`.
+
 This is the restart-safe control point for the completed design and architecture overhaul. Start from the branch HEAD, read the files below, and do not repeat completed work or reset the repository.
 
-The follow-up operational implementation is checkpointed at `74120df` and adds the Career table/sorting, subscription grouping/importance/renewal countdowns, a sortable Projects summary with project development links and client communication history, dedicated drag handles, and the Agents VPS task queue. The documentation/test commit containing this handoff follows that code checkpoint; inspect `git log --oneline origin/main..HEAD` for its final hash.
+The follow-up operational implementation is checkpointed at `74120df` and adds the Career table/sorting, subscription grouping/importance/renewal countdowns, a sortable Projects summary with project development links and client communication history, dedicated drag handles, and the Agents VPS task queue. Documentation, fixture, responsive containment, and validation coverage are checkpointed at `d4e4735`. If PR #56 is already merged, continue from `main`; otherwise continue from this branch and preserve both commits.
 
 ## Read first
 
@@ -29,7 +31,7 @@ These four pre-existing user changes are unrelated to this overhaul and remain i
 - `.agents/skills/supabase/SKILL.md`
 - `skills-lock.json`
 
-Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. The commit containing this handoff is the current branch HEAD; inspect `git log --oneline origin/main..HEAD` for immutable hashes after checkout.
+Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. Inspect PR #56 and `git log --oneline` before doing further repository work; this handoff itself may be the final small release commit after the two implementation checkpoints above.
 
 ## Completed product work
 
