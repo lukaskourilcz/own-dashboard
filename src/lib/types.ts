@@ -8,12 +8,25 @@ export type Subscription = {
   currency: string;
   billing_cycle: "monthly" | "yearly" | "weekly";
   category: string | null;
+  category_group?: SubscriptionCategoryGroup;
+  importance?: SubscriptionImportance;
   next_billing_date: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   project_id?: string | null;
 };
+
+export type SubscriptionCategoryGroup =
+  | "development"
+  | "entertainment"
+  | "business"
+  | "infrastructure"
+  | "productivity"
+  | "finance"
+  | "other";
+
+export type SubscriptionImportance = "essential" | "useful" | "optional";
 
 // Where a task came from. "github" = generated from a repo's NEEDED.md (carries
 // the repo_* + needed_raw context below); null/"manual" = added by hand.
@@ -332,6 +345,7 @@ export type Project = {
   slug: string;
   repo_full_name: string | null;
   url: string | null;
+  dev_url?: string | null;
   notes: string;
   color: string | null;
   sort_order: number;
@@ -343,6 +357,44 @@ export type Project = {
   status?: "planned" | "active" | "on_hold" | "completed" | "archived";
   revenue?: number;
   revenue_currency?: string;
+};
+
+export type ProjectCommunication = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  occurred_at: string;
+  channel: "email" | "call" | "meeting" | "chat" | "other";
+  direction: "inbound" | "outbound" | "internal";
+  contact: string | null;
+  subject: string | null;
+  summary: string;
+  next_action: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AgentTaskStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type AgentTask = {
+  id: string;
+  user_id: string;
+  project_id: string | null;
+  title: string;
+  instructions: string;
+  agent_name: string | null;
+  priority: number;
+  status: AgentTaskStatus;
+  result: string | null;
+  claimed_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 // One monthly cost line for a project (Supabase, Vercel, AI API calls, …).

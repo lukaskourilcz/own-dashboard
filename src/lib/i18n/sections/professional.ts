@@ -85,6 +85,22 @@ const professionalEn = {
     projectOperations: "Operations",
     projectFinance: "Finance",
     projectKnowledge: "Knowledge",
+    projectCommunication: "Communication",
+    communicationHistory: "Client communication",
+    addCommunication: "Add communication",
+    communicationSummary: "Summary",
+    communicationSummaryPlaceholder: "What was agreed, decided, or requested?",
+    communicationSubject: "Subject",
+    communicationContact: "Contact",
+    communicationChannel: "Channel",
+    communicationDirection: "Direction",
+    communicationDate: "Date and time",
+    communicationNextAction: "Next action",
+    communicationNextActionPlaceholder: "Follow-up or commitment…",
+    communicationChannels: { email: "Email", call: "Call", meeting: "Meeting", chat: "Chat", other: "Other" },
+    communicationDirections: { inbound: "Inbound", outbound: "Outbound", internal: "Internal note" },
+    deleteCommunication: "Delete communication record",
+    deleteCommunicationConfirm: "Delete this communication record?",
     projectCopilot: "Project copilot",
     projectCopilotDescription: "Generate a source-backed project brief from this project's records.",
     generateBrief: "Generate brief",
@@ -119,6 +135,7 @@ const professionalEn = {
     projectSummary: "Project summary",
     priorities: "Current priorities",
     externalProject: "Project site",
+    developmentProject: "Development",
     repositoryUnavailable: "No repository is linked to this project.",
     operationalWarning: "Operational warning",
     completed: "Completed",
@@ -148,7 +165,11 @@ const professionalEn = {
     aiWeeklyConsent: "Generate this week's operating brief now? This explicitly sends a minimal set of your professional, deadline, subscription, and invoice records to the configured model. Sensitive AI access must be enabled in Settings.",
 };
 
-type ProfessionalStrings = Record<keyof typeof professionalEn, string>;
+type ProfessionalStrings = {
+  [Key in keyof typeof professionalEn]: (typeof professionalEn)[Key] extends Record<string, string>
+    ? Record<keyof (typeof professionalEn)[Key], string>
+    : string;
+};
 
 export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } = {
   en: professionalEn,
@@ -239,6 +260,22 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
     projectOperations: "Provoz",
     projectFinance: "Finance",
     projectKnowledge: "Znalosti",
+    projectCommunication: "Komunikace",
+    communicationHistory: "Komunikace se zákazníkem",
+    addCommunication: "Přidat komunikaci",
+    communicationSummary: "Shrnutí",
+    communicationSummaryPlaceholder: "Co bylo dohodnuto, rozhodnuto nebo požadováno?",
+    communicationSubject: "Předmět",
+    communicationContact: "Kontakt",
+    communicationChannel: "Kanál",
+    communicationDirection: "Směr",
+    communicationDate: "Datum a čas",
+    communicationNextAction: "Další krok",
+    communicationNextActionPlaceholder: "Follow-up nebo závazek…",
+    communicationChannels: { email: "E-mail", call: "Hovor", meeting: "Schůzka", chat: "Chat", other: "Ostatní" },
+    communicationDirections: { inbound: "Příchozí", outbound: "Odchozí", internal: "Interní poznámka" },
+    deleteCommunication: "Smazat záznam komunikace",
+    deleteCommunicationConfirm: "Smazat tento záznam komunikace?",
     projectCopilot: "Projektový copilot",
     projectCopilotDescription: "Vygeneruje projektový přehled podložený zdroji z tohoto projektu.",
     generateBrief: "Vygenerovat přehled",
@@ -273,6 +310,7 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
     projectSummary: "Shrnutí projektu",
     priorities: "Aktuální priority",
     externalProject: "Web projektu",
+    developmentProject: "Vývoj",
     repositoryUnavailable: "K projektu není připojen repozitář.",
     operationalWarning: "Provozní upozornění",
     completed: "Dokončeno",

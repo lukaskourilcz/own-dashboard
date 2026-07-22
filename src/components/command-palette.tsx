@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BriefcaseBusiness,
+  Bot,
   CalendarDays,
   CreditCard,
   FileText,
@@ -91,6 +92,7 @@ export function CommandPalette({
       { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
       { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "pipeline leads tugedr opportunities příležitosti", run: go("opportunities") },
       { id: "go-clients", label: s.clients, group: "go", icon: Users, keywords: "clients organizations contacts klienti", run: go("clients") },
+      { id: "go-agents", label: s.agents, group: "go", icon: Bot, keywords: "agents vps workers tasks agenti úkoly", run: go("agents") },
       { id: "go-career", label: s.career, group: "go", icon: BriefcaseBusiness, keywords: "career jobs applications práce pozice", run: go("career") },
       { id: "go-invoices", label: s.invoices, group: "go", icon: Receipt, keywords: "invoice billing vat dph faktury", run: go("invoices") },
       { id: "go-money", label: s.money, group: "go", icon: Wallet, keywords: "money finance peníze", run: go("money") },

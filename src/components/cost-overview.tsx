@@ -83,19 +83,28 @@ export function CostOverview({
     [projects, costsByProject, cronsByProject, displayCurrency],
   );
 
-  // Active subscriptions → one slice per category (e.g. Entertainment).
+  // Active subscriptions → one slice per canonical operational group. The
+  // custom detail category remains on the subscription itself.
   const subscriptionSlices = useMemo<Slice[]>(() => {
     const byCategory = new Map<string, number>();
     for (const s of subscriptions) {
       if (!subIsActive(s)) continue;
-      const key = s.category?.trim() || t.costs.overviewUncategorized;
+      const key = t.subscriptions.group[s.category_group ?? "other"];
       byCategory.set(key, (byCategory.get(key) ?? 0) + toMonthlyIn(s, displayCurrency));
     }
     return [...byCategory.entries()]
       .map(([name, value]) => ({ name, value }))
       .filter((s) => s.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [subscriptions, displayCurrency, t.costs.overviewUncategorized]);
+  }, [subscriptions, displayCurrency, t]);
+
+  const importantSubscriptions = useMemo(() => {
+    const importanceOrder = { essential: 0, useful: 1, optional: 2 } as const;
+    return subscriptions.filter(subIsActive).sort((a, b) => {
+      const importance = importanceOrder[a.importance ?? "useful"] - importanceOrder[b.importance ?? "useful"];
+      return importance || toMonthlyIn(b, displayCurrency) - toMonthlyIn(a, displayCurrency);
+    });
+  }, [subscriptions, displayCurrency]);
 
   const projectsTotal = projectSlices.reduce((a, s) => a + s.value, 0);
   const subsTotal = subscriptionSlices.reduce((a, s) => a + s.value, 0);
@@ -169,6 +178,7 @@ export function CostOverview({
           />
         </div>
       )}
+      {importantSubscriptions.length > 0 && <div className="border-t border-border px-4 py-3"><div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">{importantSubscriptions.map((subscription) => <div key={subscription.id} className="flex min-w-0 items-center justify-between gap-3 text-xs"><div className="min-w-0"><p className="truncate font-medium text-foreground">{subscription.name}</p><p className="truncate text-[11px] text-foreground-subtle">{t.subscriptions.group[subscription.category_group ?? "other"]} · {t.subscriptions.importanceValue[subscription.importance ?? "useful"]}</p></div><span className="shrink-0 tabular text-foreground-muted">{formatCurrency(toMonthlyIn(subscription, displayCurrency), displayCurrency)}{t.subscriptions.perMo}</span></div>)}</div></div>}
     </Card>
   );
 }

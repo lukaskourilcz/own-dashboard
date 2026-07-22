@@ -1,4 +1,6 @@
 type Cycle = "monthly" | "yearly" | "weekly";
+type Group = "development" | "entertainment" | "business" | "infrastructure" | "productivity" | "finance" | "other";
+type Importance = "essential" | "useful" | "optional";
 
 type SubscriptionsStrings = {
   title: string;
@@ -20,10 +22,15 @@ type SubscriptionsStrings = {
   cycle: Record<Cycle, string>;
   category: string;
   categoryPlaceholder: string;
+  categoryGroup: string;
+  group: Record<Group, string>;
+  importance: string;
+  importanceValue: Record<Importance, string>;
   nextBilling: string;
   project: string;
   generalOverhead: string;
   nameAndAmountRequired: string;
+  renewalRequired: string;
   monthlySpend: string;
   yearlySpend: string;
   spendView: string;
@@ -43,6 +50,8 @@ type SubscriptionsStrings = {
   tagToday: string;
   tagTomorrow: string;
   tagInDays: (d: number) => string;
+  overdueByDays: (d: number) => string;
+  renewalMissing: string;
   allSubscriptions: string;
   nothingHereYet: string;
   addFirstForm: string;
@@ -78,10 +87,15 @@ export const subscriptions: {
     cycle: { monthly: "Monthly", yearly: "Yearly", weekly: "Weekly" },
     category: "Category",
     categoryPlaceholder: "Entertainment",
+    categoryGroup: "Spending group",
+    group: { development: "Development", entertainment: "Entertainment", business: "Business / self-employment", infrastructure: "Infrastructure", productivity: "Productivity", finance: "Finance", other: "Other" },
+    importance: "Importance",
+    importanceValue: { essential: "Essential", useful: "Useful", optional: "Optional" },
     nextBilling: "Next billing",
     project: "Project",
     generalOverhead: "General overhead",
     nameAndAmountRequired: "Name and amount are required.",
+    renewalRequired: "Active subscriptions need a next billing date.",
     monthlySpend: "Monthly spend",
     yearlySpend: "Yearly spend",
     spendView: "Spend view",
@@ -101,6 +115,8 @@ export const subscriptions: {
     tagToday: "today",
     tagTomorrow: "tomorrow",
     tagInDays: (d) => `in ${d}d`,
+    overdueByDays: (d) => `${d}d overdue`,
+    renewalMissing: "next payment missing",
     allSubscriptions: "All subscriptions",
     nothingHereYet: "Nothing here yet",
     addFirstForm: "Add your first subscription using the form.",
@@ -132,10 +148,15 @@ export const subscriptions: {
     cycle: { monthly: "Měsíčně", yearly: "Ročně", weekly: "Týdně" },
     category: "Kategorie",
     categoryPlaceholder: "Zábava",
+    categoryGroup: "Skupina výdajů",
+    group: { development: "Vývoj", entertainment: "Zábava", business: "Podnikání / OSVČ", infrastructure: "Infrastruktura", productivity: "Produktivita", finance: "Finance", other: "Ostatní" },
+    importance: "Důležitost",
+    importanceValue: { essential: "Nezbytné", useful: "Užitečné", optional: "Volitelné" },
     nextBilling: "Příští platba",
     project: "Projekt",
     generalOverhead: "Obecná režie",
     nameAndAmountRequired: "Název a částka jsou povinné.",
+    renewalRequired: "Aktivní předplatné musí mít datum příští platby.",
     monthlySpend: "Měsíční výdaje",
     yearlySpend: "Roční výdaje",
     spendView: "Zobrazení výdajů",
@@ -155,6 +176,8 @@ export const subscriptions: {
     tagToday: "dnes",
     tagTomorrow: "zítra",
     tagInDays: (d) => `za ${d} d`,
+    overdueByDays: (d) => `${d} d po termínu`,
+    renewalMissing: "chybí příští platba",
     allSubscriptions: "Všechna předplatná",
     nothingHereYet: "Zatím tu nic není",
     addFirstForm: "Přidejte první předplatné pomocí formuláře.",

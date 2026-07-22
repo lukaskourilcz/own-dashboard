@@ -38,7 +38,7 @@ import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
-import type { Project, Subscription, Updater } from "@/lib/types";
+import type { Project, Subscription, SubscriptionCategoryGroup, SubscriptionImportance, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the donut only when this panel renders.
 const CategoryDonut = dynamic(
@@ -54,6 +54,8 @@ type FormState = {
   currency: string;
   billing_cycle: "monthly" | "yearly" | "weekly";
   category: string;
+  category_group: SubscriptionCategoryGroup;
+  importance: SubscriptionImportance;
   next_billing_date: string;
   project_id: string;
 };
@@ -64,9 +66,28 @@ const emptyForm: FormState = {
   currency: "USD",
   billing_cycle: "monthly",
   category: "",
+  category_group: "other",
+  importance: "useful",
   next_billing_date: "",
   project_id: "",
 };
+
+function renewalDistance(
+  days: number | null,
+  strings: {
+    tagToday: string;
+    tagTomorrow: string;
+    tagInDays: (days: number) => string;
+    overdueByDays: (days: number) => string;
+    renewalMissing: string;
+  },
+): string {
+  if (days === null) return strings.renewalMissing;
+  if (days < 0) return strings.overdueByDays(Math.abs(days));
+  if (days === 0) return strings.tagToday;
+  if (days === 1) return strings.tagTomorrow;
+  return strings.tagInDays(days);
+}
 
 export function SubscriptionsPanel({
   subs,
@@ -95,22 +116,17 @@ export function SubscriptionsPanel({
   );
 
   const yearly = spendPeriod === "yearly";
-  const chartData = useMemo(
-    () =>
-      subs
-        .filter(isActive)
-        .map((s) => ({
-          name: s.name,
-          value: Number(
-            (yearly
-              ? toYearlyIn(s, displayCurrency)
-              : toMonthlyIn(s, displayCurrency)
-            ).toFixed(2),
-          ),
-        }))
-        .sort((a, b) => b.value - a.value),
-    [subs, displayCurrency, yearly],
-  );
+  const chartData = useMemo(() => {
+    const grouped = new Map<SubscriptionCategoryGroup, number>();
+    for (const subscription of subs.filter(isActive)) {
+      const group = subscription.category_group ?? "other";
+      const value = yearly ? toYearlyIn(subscription, displayCurrency) : toMonthlyIn(subscription, displayCurrency);
+      grouped.set(group, (grouped.get(group) ?? 0) + value);
+    }
+    return [...grouped.entries()]
+      .map(([group, value]) => ({ name: t.subscriptions.group[group], value: Number(value.toFixed(2)) }))
+      .sort((a, b) => b.value - a.value);
+  }, [subs, displayCurrency, yearly, t]);
   const monthlyTotal = totalMonthlyIn(subs, displayCurrency);
   const yearlyTotal = monthlyTotal * 12;
   const periodTotal = yearly ? yearlyTotal : monthlyTotal;
@@ -123,6 +139,8 @@ export function SubscriptionsPanel({
     currency: string;
     billing_cycle: FormState["billing_cycle"];
     category: string | null;
+    category_group: SubscriptionCategoryGroup;
+    importance: SubscriptionImportance;
     next_billing_date: string | null;
     project_id: string | null;
   };
@@ -217,12 +235,18 @@ export function SubscriptionsPanel({
       setError(t.subscriptions.nameAndAmountRequired);
       return;
     }
+    if (!form.next_billing_date) {
+      setError(t.subscriptions.renewalRequired);
+      return;
+    }
     const payload: SubPayload = {
       name: form.name.trim(),
       amount: Number(form.amount),
       currency: form.currency,
       billing_cycle: form.billing_cycle,
       category: form.category.trim() || null,
+      category_group: form.category_group,
+      importance: form.importance,
       next_billing_date: form.next_billing_date || null,
       project_id: form.project_id || null,
     };
@@ -255,6 +279,8 @@ export function SubscriptionsPanel({
       currency: sub.currency,
       billing_cycle: sub.billing_cycle,
       category: sub.category ?? "",
+      category_group: sub.category_group ?? "other",
+      importance: sub.importance ?? "useful",
       next_billing_date: sub.next_billing_date ?? "",
       project_id: sub.project_id ?? "",
     });
@@ -304,6 +330,7 @@ export function SubscriptionsPanel({
                 {ordered.map((s) => {
                   const active = isActive(s);
                   const monthly = toMonthlyIn(s, displayCurrency);
+                  const days = daysUntilRenewal(s);
                   return (
                     <li
                       key={s.id}
@@ -325,8 +352,8 @@ export function SubscriptionsPanel({
                         <p className="truncate text-[11px] text-foreground-subtle">
                           {t.subscriptions.cycle[s.billing_cycle]}
                           {s.next_billing_date
-                            ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
-                            : ""}
+                            ? ` · ${t.subscriptions.nextOn(s.next_billing_date)} · ${renewalDistance(days, t.subscriptions)}`
+                            : ` · ${t.subscriptions.renewalMissing}`}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -450,6 +477,16 @@ export function SubscriptionsPanel({
                   onChange={(v) => setForm({ ...form, category: v })}
                   used={subs.map((s) => s.category)}
                 />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-category-group">{t.subscriptions.categoryGroup}</Label>
+                  <SimpleSelect id="sub-category-group" value={form.category_group} onValueChange={(category_group) => setForm({ ...form, category_group: category_group as SubscriptionCategoryGroup })} options={(Object.keys(t.subscriptions.group) as SubscriptionCategoryGroup[]).map((value) => ({ value, label: t.subscriptions.group[value] }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-importance">{t.subscriptions.importance}</Label>
+                  <SimpleSelect id="sub-importance" value={form.importance} onValueChange={(importance) => setForm({ ...form, importance: importance as SubscriptionImportance })} options={(Object.keys(t.subscriptions.importanceValue) as SubscriptionImportance[]).map((value) => ({ value, label: t.subscriptions.importanceValue[value] }))} />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="sub-next">{t.subscriptions.nextBilling}</Label>
@@ -630,20 +667,18 @@ export function SubscriptionsPanel({
                       <span className="font-medium text-sm truncate">
                         {s.name}
                       </span>
-                      {soon && days !== null && (
+                      {days !== null && (
                         <span
                           className={cn(
                             "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded shrink-0",
                             days <= 0
                               ? "bg-destructive/10 text-destructive"
-                              : "bg-warning/10 text-warning",
+                              : soon
+                                ? "bg-warning/10 text-warning"
+                                : "bg-surface-muted text-foreground-muted",
                           )}
                         >
-                          {days <= 0
-                            ? t.subscriptions.tagToday
-                            : days === 1
-                              ? t.subscriptions.tagTomorrow
-                              : t.subscriptions.tagInDays(days)}
+                          {renewalDistance(days, t.subscriptions)}
                         </span>
                       )}
                     </div>
@@ -683,6 +718,7 @@ export function SubscriptionsPanel({
                   .sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
                   .map((s) => {
                     const active = isActive(s);
+                    const days = daysUntilRenewal(s);
                     return (
                       <li
                         key={s.id}
@@ -712,12 +748,14 @@ export function SubscriptionsPanel({
                             {formatCurrency(s.amount, s.currency)} ·{" "}
                             {t.subscriptions.cycle[s.billing_cycle]}
                             {s.category ? ` · ${s.category}` : ""}
+                            {` · ${t.subscriptions.group[s.category_group ?? "other"]}`}
+                            {` · ${t.subscriptions.importanceValue[s.importance ?? "useful"]}`}
                             {s.project_id
                               ? ` · ${projects.find((project) => project.id === s.project_id)?.name ?? t.subscriptions.project}`
                               : ` · ${t.subscriptions.generalOverhead}`}
                             {s.next_billing_date
-                              ? ` · ${t.subscriptions.nextOn(s.next_billing_date)}`
-                              : ""}
+                              ? ` · ${t.subscriptions.nextOn(s.next_billing_date)} · ${renewalDistance(days, t.subscriptions)}`
+                              : ` · ${t.subscriptions.renewalMissing}`}
                           </p>
                           <p className="text-[11px] text-foreground-subtle tabular">
                             {formatCurrency(

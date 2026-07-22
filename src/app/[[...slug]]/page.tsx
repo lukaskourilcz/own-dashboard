@@ -25,7 +25,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     subscriptionsRes, todosRes, accountsRes, transactionsRes, plansRes,
     notesRes, promptsRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, shortcutsRes,
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
-    invoiceSettingsRes, projectsRes, projectCostsRes, cronsRes,
+    invoiceSettingsRes, projectsRes, projectCommunicationsRes, agentTasksRes, projectCostsRes, cronsRes,
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
     jobListingsRes, jobUserStatesRes, jobApplicationsRes,
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
@@ -49,6 +49,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("invoiceItems", () => supabase.from("invoice_items").select("*").eq("user_id", user.id).limit(2000)),
     loadWhen("invoiceSettings", () => supabase.from("invoice_settings").select("*").eq("user_id", user.id).maybeSingle()),
     loadWhen("projects", () => supabase.from("projects").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
+    loadWhen("projectCommunications", () => supabase.from("project_communications").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(500)),
+    loadWhen("agentTasks", () => supabase.from("agent_tasks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
     loadWhen("projectCosts", () => supabase.from("project_costs").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("crons", () => supabase.from("crons").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
     loadWhen("organizations", () => supabase.from("organizations").select("*").eq("user_id", user.id).order("name", { ascending: true })),
@@ -95,6 +97,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialInvoiceItems={invoiceItemsRes?.data ?? []}
     initialInvoiceSettings={invoiceSettingsRes?.data ?? null}
     initialProjects={projectsRes?.data ?? []}
+    initialProjectCommunications={projectCommunicationsRes?.data ?? []}
+    initialAgentTasks={agentTasksRes?.data ?? []}
     initialProjectCosts={projectCostsRes?.data ?? []}
     initialCrons={cronsRes?.data ?? []}
     initialOrganizations={organizationsRes?.data ?? []}

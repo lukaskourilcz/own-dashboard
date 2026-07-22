@@ -41,6 +41,8 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
       initialInvoiceItems={f.invoiceItems}
       initialInvoiceSettings={f.invoiceSettings}
       initialProjects={f.projects}
+      initialProjectCommunications={f.projectCommunications}
+      initialAgentTasks={f.agentTasks}
       initialProjectCosts={f.projectCosts}
       initialCrons={f.crons}
       initialOrganizations={f.organizations}
