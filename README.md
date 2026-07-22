@@ -111,7 +111,7 @@ Do not rerun `supabase/schema.sql` on an existing project and do not apply the c
 npm run dev
 ```
 
-Open <http://localhost:3000>. `/dev-preview` provides deterministic data for local/Playwright UI validation and returns 404 in production.
+Open <http://localhost:3000>. `/dev-preview` provides deterministic data for local UI validation and returns 404 in ordinary production builds. Playwright alone sets the server-only `NEXT_E2E=1` flag on its local optimized test build; never configure that flag in a deployed environment.
 
 ## Validation
 
@@ -123,7 +123,7 @@ npm run build
 npm run test:e2e
 ```
 
-The deterministic `/dev-preview` harness drives the Playwright responsive matrix at 360, 430, 768, 1024, 1440, and 1728 px, including mobile destination access, Czech copy, dark mode, overflow, and axe checks. It contains fixtures only and remains unavailable in production.
+The deterministic `/dev-preview` harness drives the Playwright responsive matrix at 360, 430, 768, 1024, 1440, and 1728 px, including mobile destination access, Czech copy, dark mode, overflow, axe checks, PWA metadata, and single-page A4 invoice output. It contains fixtures only and remains unavailable in deployed production.
 
 ## Product design and media
 

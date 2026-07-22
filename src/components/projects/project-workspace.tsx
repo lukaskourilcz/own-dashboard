@@ -177,7 +177,7 @@ export function ProjectWorkspace(props: Props) {
   }
 
   return <div>
-    <Link href="/projects" className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</Link>
+    <Link href="/projects" prefetch={false} className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</Link>
     <PageHeader
       title={project.name}
       description={project.summary || p.projectWorkspace}

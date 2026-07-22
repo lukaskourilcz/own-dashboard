@@ -22,7 +22,7 @@
   /* foreground */
   --foreground: #17191c;
   --foreground-muted: #565a60;
-  --foreground-subtle: #6d7075;
+  --foreground-subtle: #62666b;
 
   /* borders */
   --border: #ddd8cf;
@@ -389,6 +389,10 @@ textarea {
    "paper" colours, so it prints cleanly regardless of light/dark mode).
    ──────────────────────────────────────────────────────────────────────── */
 @media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
   body {
     background: #fff;
   }
@@ -408,6 +412,24 @@ textarea {
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  .invoice-print-area > div {
+    padding: 32px !important;
+  }
+  .invoice-print-area .mt-10 {
+    margin-top: 24px !important;
+  }
+  .invoice-print-area .mt-8 {
+    margin-top: 24px !important;
+  }
+  .invoice-print-area .mt-6 {
+    margin-top: 16px !important;
+  }
+  .invoice-print-area .pb-8 {
+    padding-bottom: 24px !important;
+  }
+  .invoice-print-area .pt-6 {
+    padding-top: 16px !important;
   }
   .no-print {
     display: none !important;

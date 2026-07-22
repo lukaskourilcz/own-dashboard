@@ -957,6 +957,7 @@ function ProjectCard({
                 )}
                 <Link
                   href={`/projects/${encodeURIComponent(project.slug)}`}
+                  prefetch={false}
                   className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
                 >
                   <FolderKanban className="h-3 w-3" />

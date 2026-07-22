@@ -6,7 +6,7 @@ Scope: private sign-in, authenticated shell, core professional workflows, projec
 
 ## Method
 
-`/dev-preview` remains the canonical fixture-only visual harness and returns 404 in production. The Playwright suite now encodes checks at 360, 430, 768, 1024, 1440, and 1728 px. The matrix includes Czech at 360 px, dark mode at 1024 px, desktop/mobile navigation changes, horizontal overflow, the mobile Quick Add clearance, and access to every destination through the mobile More sheet.
+`/dev-preview` remains the canonical fixture-only visual harness and returns 404 in ordinary production builds. Playwright sets the server-only `NEXT_E2E=1` flag on its local production build so the same optimized server can expose fixtures during tests. The suite checks 360, 430, 768, 1024, 1440, and 1728 px. The matrix includes Czech at 360 px, dark mode at 1024 px, desktop/mobile navigation changes, horizontal overflow, the mobile Quick Add clearance, and access to every destination through the mobile More sheet.
 
 The test suite also covers:
 
@@ -16,7 +16,7 @@ The test suite also covers:
 - removed personal destinations;
 - mobile destination-sheet semantics;
 - axe scans for serious or critical WCAG A/AA violations;
-- print-specific invoice behavior already covered by the repository suites.
+- a dark-mode Czech invoice rendered to a parsed, single-page A4 PDF.
 
 ## Implementation review
 
@@ -48,9 +48,21 @@ The code review and static checks confirmed these design constraints:
 
 ## Runtime result
 
-The browser-backed visual run could not be completed in this environment. Both the default Turbopack development server and a fresh-cache webpack development server started, but did not return `/login` within the configured Playwright server window; the webpack attempt remained in route compilation for more than twenty minutes. The in-app browser also rejected a localhost reload under its URL policy. The processes were stopped cleanly, and the generated `.next` cache was moved to Trash as a recoverable cleanup.
+The final `npm run test:e2e` run completed against the optimized local Next.js server: **37 passed, 25 intentionally skipped by project, 0 failed** across the desktop and mobile projects. The skips avoid duplicating desktop-only coverage in the mobile project and vice versa; no required assertion was disabled to obtain the result.
 
-Accordingly, this document does not claim screenshot, axe-runtime, responsive-runtime, or invoice-print-runtime success. The checks are implemented and discoverable, but must be rerun when the local Next server can serve the deterministic preview. Static TypeScript/JSX bundling and unit-test results are recorded in the final implementation report and should not be mistaken for visual execution.
+Verified runtime evidence:
+
+- the responsive matrix completed without document-level overflow at all six required widths;
+- Czech rendered at 360 px, dark mode rendered at 1024 px, and the remaining matrix cases rendered in English/light mode;
+- desktop sidebar, mobile navigation, mobile More dialog, and fixed Quick Add clearance passed;
+- login plus 14 representative authenticated destinations passed axe with no serious or critical WCAG A/AA violations;
+- the open mobile destination dialog passed axe and remained keyboard/semantics reachable;
+- all 21 canonical sidebar destinations opened without console errors;
+- the manifest, dynamic PNG icon, and maskable icon declaration passed;
+- a dark-mode Czech invoice remained white, retained print isolation, generated a PDF larger than 10 KB, parsed successfully, and occupied exactly one A4 page;
+- the rendered invoice was visually inspected after the print-spacing correction; the earlier footer-only second page no longer exists.
+
+The suite intentionally uses a production-backed fixture server because cold development compilation was nondeterministic under shared host load. Per-test assertions remain capped at 90 seconds; only the one-time build/server setup receives a longer window.
 
 ## Media QA
 
@@ -58,9 +70,8 @@ No Higgsfield output or substitute artwork was generated. There are therefore no
 
 ## Rerun
 
-1. Start from a clean generated cache if the local compiler continues to compact indefinitely.
-2. Run `npm run test:e2e` so Playwright owns the fixture server.
-3. Inspect failures at each encoded width instead of updating snapshots blindly.
-4. Capture authentic `/dev-preview` screenshots only after functional assertions and axe pass.
-5. Check both languages, both themes, long labels and values, zoom/reflow, focus order, dialog escape/focus return, and invoice print preview manually.
-6. Record exact results here; do not convert unexecuted coverage into a pass claim.
+1. Run `npm run test:e2e`; Playwright builds once and owns the optimized fixture server.
+2. Inspect failures at each encoded width instead of weakening assertions or updating snapshots blindly.
+3. Capture authentic `/dev-preview` screenshots only after functional assertions and axe pass.
+4. Recheck both languages, both themes, long labels and values, zoom/reflow, focus order, dialog escape/focus return, and invoice print preview whenever shared layout or typography changes.
+5. Keep `NEXT_E2E` confined to local/CI test processes. Never configure it in a deployed environment.

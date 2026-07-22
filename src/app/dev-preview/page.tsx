@@ -12,7 +12,7 @@ import * as f from "./fixtures";
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function PreviewPage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (process.env.NODE_ENV === "production" && process.env.NEXT_E2E !== "1") notFound();
   const { project } = await searchParams;
   const previewProject = project ? f.projects.find((item) => item.id === project || item.slug === project) : undefined;
 

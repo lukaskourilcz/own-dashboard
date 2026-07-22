@@ -25,7 +25,7 @@ export function MonthsBarChart({
   expenseLabel: string;
 }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       <BarChart
         data={data}
         margin={{ top: 8, right: 8, left: 0, bottom: 0 }}

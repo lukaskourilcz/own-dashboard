@@ -33,6 +33,8 @@ test.describe("login", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await stubBackend(page);
     await page.goto("/login?error=auth");
-    await expect(page.getByRole("alert")).toContainText("Sign-in could not be completed");
+    await expect(page.locator("p[role=alert]")).toContainText(
+      /Sign-in could not be completed|Přihlášení se nepodařilo dokončit/,
+    );
   });
 });

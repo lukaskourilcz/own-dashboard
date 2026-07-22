@@ -94,7 +94,7 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
         onClick={onClick}
         whileTap={{ scale: 0.92 }}
         aria-label={t.app.quickAdd}
-        className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated focus-ring md:hidden"
+        className="fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated focus-ring md:hidden"
       >
         <Plus className="h-5 w-5" />
       </motion.button>

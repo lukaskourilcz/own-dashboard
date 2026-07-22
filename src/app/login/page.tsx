@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
@@ -13,10 +14,6 @@ export default function LoginPage() {
   const t = useDict();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("error") === "auth") setError(t.login.authError);
-  }, [t.login.authError]);
 
   async function signInWithGoogle() {
     setLoading(true);
@@ -77,9 +74,9 @@ export default function LoginPage() {
             {loading ? t.common.redirecting : t.login.continueWithGoogle}
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>
-          {error && (
-            <p role="alert" className="mt-3 border-l-2 border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">{error}</p>
-          )}
+          <Suspense fallback={error ? <LoginErrorMessage message={error} /> : null}>
+            <LoginError error={error} authError={t.login.authError} loading={loading} />
+          </Suspense>
           <p className="mt-4 text-[11px] leading-relaxed text-foreground-subtle">
             {t.login.calendarNotice}
           </p>
@@ -88,6 +85,20 @@ export default function LoginPage() {
       </motion.div>
     </main>
     </MotionConfig>
+  );
+}
+
+function LoginError({ error, authError, loading }: { error: string | null; authError: string; loading: boolean }) {
+  const searchParams = useSearchParams();
+  const message = error ?? (!loading && searchParams.get("error") === "auth" ? authError : null);
+  return message ? <LoginErrorMessage message={message} /> : null;
+}
+
+function LoginErrorMessage({ message }: { message: string }) {
+  return (
+    <p role="alert" className="mt-3 border-l-2 border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">
+      {message}
+    </p>
   );
 }
 

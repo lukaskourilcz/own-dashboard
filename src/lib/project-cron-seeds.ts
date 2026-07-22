@@ -30,7 +30,7 @@ export const REPO_CRON_SEEDS: Record<string, CronSeed[]> = {
       schedule: "0 6 * * *",
       endpoint: ".github/workflows/daily.yml",
       description:
-        "GitHub Actions — vygeneruje denní článek, obnoví AI pulse a embeddings.",
+        "GitHub Actions — vygeneruje denní článek, obnoví AI přehled a embeddings.",
       is_ai_call: true,
       runs_per_month: 30,
     },
