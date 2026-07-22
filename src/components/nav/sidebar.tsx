@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
-  Activity,
   Bell,
   BriefcaseBusiness,
   CalendarDays,
@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   ListTodo,
   LogOut,
+  Menu,
   MessageSquareText,
   Network,
   PanelLeftClose,
@@ -29,7 +30,10 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
 import {
@@ -45,7 +49,7 @@ export type { NavTab };
 
 type NavItem = {
   value: Exclude<NavTab, "settings">;
-  icon: typeof Activity;
+  icon: LucideIcon;
 };
 
 type NavGroupId = "work" | "money" | "planning" | "library";
@@ -184,7 +188,7 @@ export function Sidebar({
       className={cn(
         "hidden md:flex md:flex-col md:border-r md:border-border md:bg-surface md:fixed md:inset-y-0 md:left-0 md:z-30",
         "transition-[width] duration-200 ease-out",
-        collapsed ? "md:w-16" : "md:w-60",
+        collapsed ? "md:w-[var(--rail-width)]" : "md:w-[var(--sidebar-width)]",
       )}
     >
       {/* brand */}
@@ -203,17 +207,15 @@ export function Sidebar({
               onClick={toggleCollapsed}
               aria-label={t.nav.expand}
               aria-expanded={false}
-              className="group relative h-7 w-7 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center focus-ring"
+              className="group relative h-8 w-8 shrink-0 rounded-md text-primary-foreground flex items-center justify-center focus-ring"
             >
-              <Activity className="h-3.5 w-3.5 transition-opacity group-hover:opacity-0" />
+              <BrandMark className="h-8 w-8 transition-opacity group-hover:opacity-0" />
               <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
           </Tooltip>
         ) : (
           <>
-            <div className="h-7 w-7 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
-              <Activity className="h-3.5 w-3.5" />
-            </div>
+            <BrandMark className="h-8 w-8" />
             <span className="text-sm font-semibold tracking-tight">
               {t.nav.brand}
             </span>
@@ -351,26 +353,26 @@ export function MobileNav({
   setTab: (t: NavTab) => void;
 }) {
   const t = useDict();
+  const [moreOpen, setMoreOpen] = useState(false);
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
-  // Home and Inbox stay pinned first; the rest follow the user's custom order
-  // (grouped, so items stay within their group like the sidebar).
-  const orderedItems = [
-    ...PRIMARY_NAV_ITEMS,
-    ...NAV_GROUPS.flatMap((g) => sortByNavOrder(g.items, order)),
-  ];
-  const items = orderedItems.filter(
-    (it) =>
-      !isHidden(it.value),
-  );
+  const primaryValues: NavTab[] = ["home", "inbox", "work", "projects"];
+  const allItems = [...PRIMARY_NAV_ITEMS, ...NAV_GROUPS.flatMap((g) => sortByNavOrder(g.items, order))];
+  const primaryItems = allItems.filter((item) => primaryValues.includes(item.value) && !isHidden(item.value));
+  const secondaryGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: sortByNavOrder(group.items.filter((item) => !primaryValues.includes(item.value) && !isHidden(item.value)), order),
+  })).filter((group) => group.items.length > 0);
 
   return (
-    <div
-      data-testid="mobile-nav"
-      className="md:hidden sticky top-0 z-30 -mx-4 px-4 py-2 bg-surface/80 backdrop-blur border-b border-border"
-    >
-      <div className="flex gap-1 overflow-x-auto">
-        {items.map((it) => {
+    <>
+      <nav
+        data-testid="mobile-nav"
+        aria-label={t.nav.mobileNavigation}
+        className="safe-area-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface-elevated/95 px-2 pt-1.5 backdrop-blur md:hidden"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+        {primaryItems.map((it) => {
           const active = tab === it.value;
           return (
             <button
@@ -378,31 +380,51 @@ export function MobileNav({
               type="button"
               onClick={() => setTab(it.value)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+                "inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[10px] font-medium transition-colors focus-ring",
                 active
-                  ? "bg-accent text-foreground"
+                  ? "bg-surface-selected text-accent-foreground"
                   : "text-foreground-muted hover:text-foreground",
               )}
             >
-              <it.icon className="h-3.5 w-3.5" />
+              <it.icon className="h-4 w-4" />
               {t.nav.short[it.value] ?? t.nav.sections[it.value]}
             </button>
           );
         })}
         <button
           type="button"
-          onClick={() => setTab("settings")}
+          onClick={() => setMoreOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={moreOpen}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-            tab === "settings"
-              ? "bg-accent text-foreground"
+            "inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[10px] font-medium transition-colors focus-ring",
+            secondaryGroups.some((group) => group.items.some((item) => item.value === tab)) || tab === "settings"
+              ? "bg-surface-selected text-accent-foreground"
               : "text-foreground-muted hover:text-foreground",
           )}
         >
-          <Settings className="h-3.5 w-3.5" />
-          {t.nav.sections.settings}
+          <Menu className="h-4 w-4" />
+          {t.nav.more}
         </button>
       </div>
-    </div>
+      </nav>
+      <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
+        <DialogContent className="sheet-dialog !bottom-0 !left-0 !right-0 !top-auto !w-full !max-w-none !translate-x-0 !translate-y-0 rounded-b-none rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 md:hidden">
+          <DialogHeader>
+            <DialogTitle>{t.nav.allAreas}</DialogTitle>
+            <DialogDescription>{t.nav.allAreasDescription}</DialogDescription>
+          </DialogHeader>
+          <nav className="max-h-[65vh] overflow-y-auto" aria-label={t.nav.allAreas}>
+            {secondaryGroups.map((group) => <div key={group.id} className="border-t border-border py-3 first:border-t-0">
+              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground-subtle">{t.nav.groups[group.id]}</p>
+              <div className="grid grid-cols-2 gap-1">
+                {group.items.map((item) => <button key={item.value} type="button" onClick={() => { setTab(item.value); setMoreOpen(false); }} className={cn("flex min-h-11 items-center gap-2 rounded-md px-2 text-left text-sm focus-ring", tab === item.value ? "bg-surface-selected text-accent-foreground" : "text-foreground-muted hover:bg-surface-hover hover:text-foreground")}><item.icon className="h-4 w-4" />{t.nav.sections[item.value]}</button>)}
+              </div>
+            </div>)}
+            <div className="border-t border-border pt-3"><button type="button" onClick={() => { setTab("settings"); setMoreOpen(false); }} className={cn("flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm focus-ring", tab === "settings" ? "bg-surface-selected text-accent-foreground" : "text-foreground-muted hover:bg-surface-hover hover:text-foreground")}><Settings className="h-4 w-4" />{t.nav.sections.settings}</button></div>
+          </nav>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

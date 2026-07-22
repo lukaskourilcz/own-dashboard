@@ -18,6 +18,11 @@ type NavStrings = {
   disconnectErr: string;
   networkErr: string;
   signOut: string;
+  more: string;
+  mobileNavigation: string;
+  allAreas: string;
+  allAreasDescription: string;
+  skipToContent: string;
 };
 
 export const nav: { en: NavStrings; cs: NavStrings } = {
@@ -59,6 +64,11 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     disconnectErr: "Could not disconnect Google.",
     networkErr: "Network error.",
     signOut: "Sign out",
+    more: "More",
+    mobileNavigation: "Primary navigation",
+    allAreas: "All areas",
+    allAreasDescription: "Open any visible OwnDashboard destination.",
+    skipToContent: "Skip to content",
   },
   cs: {
     brand: brandConfig.name,
@@ -98,5 +108,10 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     disconnectErr: "Nepodařilo se odpojit Google.",
     networkErr: "Chyba sítě.",
     signOut: "Odhlásit se",
+    more: "Více",
+    mobileNavigation: "Hlavní navigace",
+    allAreas: "Všechny sekce",
+    allAreasDescription: "Otevřete libovolnou viditelnou část OwnDashboardu.",
+    skipToContent: "Přejít na obsah",
   },
 };
