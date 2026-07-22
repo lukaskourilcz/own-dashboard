@@ -48,6 +48,20 @@ test.describe("responsive chrome", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
   });
 
+  test("mobile Career keeps the data table inside its own scroller", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "mobile-only assertion");
+    await gotoPreview(page);
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "All areas" });
+    await dialog.getByRole("button", { name: "Career", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Career" })).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.body.scrollWidth - document.body.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
+    await expect(page.getByRole("columnheader", { name: "Match" })).toBeAttached();
+  });
+
   test("representative widths reflow without page overflow", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "run the width matrix once");
     for (const width of [360, 430, 768, 1024, 1440, 1728]) {

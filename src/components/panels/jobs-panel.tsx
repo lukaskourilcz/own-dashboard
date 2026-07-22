@@ -154,7 +154,7 @@ export function JobsPanel({
   const [copilotFor, setCopilotFor] = useState<JobListing | null>(null);
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title={t.jobs.title}
         description={t.jobs.description}
@@ -310,7 +310,7 @@ function OpenPositionsView({
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"all" | JobRole>("all");
   const [source, setSource] = useState<string>("all");
-  const [sortMode, setSortMode] = useState<"fit" | "newest">("fit");
+  const [sortMode, setSortMode] = useState<"fit" | "fit-asc" | "newest" | "remote" | "location">("fit");
   const [priorityOnly, setPriorityOnly] = useState(false);
   const [strongFitOnly, setStrongFitOnly] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
@@ -365,7 +365,6 @@ function OpenPositionsView({
         return b.first_seen_at.localeCompare(a.first_seen_at);
       });
     }
-    // "Best fit": shortlisted → FE/FS before software → score → breadth → newest.
     const empty: JobMatch = {
       score: null,
       level: "unknown",
@@ -373,12 +372,25 @@ function OpenPositionsView({
       missing: [],
       matchedWeight: 0,
     };
-    return rows.sort((a, b) =>
+    const byFit = (a: JobListing, b: JobListing) =>
       compareByFit(
         { listing: a, match: matchById.get(a.id) ?? empty, shortlisted: isShortlisted(a) },
         { listing: b, match: matchById.get(b.id) ?? empty, shortlisted: isShortlisted(b) },
-      ),
-    );
+      );
+    if (sortMode === "fit-asc") {
+      return rows.sort((a, b) => {
+        const aScore = matchById.get(a.id)?.score ?? Number.POSITIVE_INFINITY;
+        const bScore = matchById.get(b.id)?.score ?? Number.POSITIVE_INFINITY;
+        return aScore - bScore || a.title.localeCompare(b.title);
+      });
+    }
+    if (sortMode === "remote") {
+      return rows.sort((a, b) => Number(b.remote) - Number(a.remote) || byFit(a, b));
+    }
+    if (sortMode === "location") {
+      return rows.sort((a, b) => (a.location ?? "").localeCompare(b.location ?? "") || byFit(a, b));
+    }
+    return rows.sort(byFit);
   }, [
     listings,
     stateByListing,
@@ -474,7 +486,7 @@ function OpenPositionsView({
   );
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* toolbar */}
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -511,12 +523,15 @@ function OpenPositionsView({
           />
           <SimpleSelect
             value={sortMode}
-            onValueChange={(v) => setSortMode(v as "fit" | "newest")}
+            onValueChange={(v) => setSortMode(v as typeof sortMode)}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.sortLabel}
             options={[
               { value: "fit", label: t.jobs.sortBestFit },
+              { value: "fit-asc", label: t.jobs.sortLowestFit },
               { value: "newest", label: t.jobs.sortNewest },
+              { value: "remote", label: t.jobs.sortRemote },
+              { value: "location", label: t.jobs.sortLocation },
             ]}
           />
           <FilterToggle
@@ -545,7 +560,7 @@ function OpenPositionsView({
           />
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-foreground-muted">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
           {failedSources.length > 0 && (
             <Tooltip
               content={`${t.jobs.sourceErrors}: ${failedSources
@@ -609,8 +624,21 @@ function OpenPositionsView({
           <p className="mb-2 text-[11px] text-foreground-subtle tabular">
             {visible.length} {t.jobs.listingsShown}
           </p>
-          <Card className="p-0 overflow-hidden">
-            <ul className="divide-y divide-border">
+          <Card className="min-w-0 max-w-full overflow-hidden p-0">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain [contain:inline-size]">
+              <table className="w-full min-w-[980px] text-left">
+                <thead className="border-b border-border bg-surface-secondary text-[11px] font-medium text-foreground-muted">
+                  <tr>
+                    <th scope="col" className="px-4 py-2.5">{t.jobs.tablePosition}</th>
+                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableCompany}</th>
+                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableMatch}</th>
+                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableRemote}</th>
+                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableLocation}</th>
+                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableSource}</th>
+                    <th scope="col" className="px-4 py-2.5 text-right"><span className="sr-only">{t.jobs.tableActions}</span></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
               {visible.map((l) => (
                 <ListingRow
                   key={l.id}
@@ -626,7 +654,9 @@ function OpenPositionsView({
                   onCopilot={() => onCopilot(l)}
                 />
               ))}
-            </ul>
+                </tbody>
+              </table>
+            </div>
           </Card>
         </>
       )}
@@ -735,19 +765,15 @@ function ListingRow({
     addSuffix: true,
     locale,
   });
-  const subtitle = [listing.company, listing.location, listing.salary]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
-    <li
+    <tr
       className={cn(
-        "group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-hover",
+        "group align-top transition-colors hover:bg-surface-hover",
         state === "hidden" && "opacity-50",
       )}
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <td className="max-w-md px-4 py-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <a
             href={listing.url}
             target="_blank"
@@ -765,7 +791,6 @@ function ListingRow({
           >
             {roleLabel[listing.role]}
           </span>
-          {match && <FitBadge match={match} />}
           {applied && (
             <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
               <Check className="h-2.5 w-2.5" />
@@ -773,29 +798,25 @@ function ListingRow({
             </span>
           )}
         </div>
-        {subtitle && (
-          <p className="mt-0.5 truncate text-xs text-foreground-muted">
-            {subtitle}
-          </p>
-        )}
-        <p className="mt-0.5 text-[11px] text-foreground-subtle">
-          {jobSourceLabel(listing.source)} · {t.jobs.remoteBadge}
-          {listing.seniority ? ` · ${listing.seniority}` : ""} ·{" "}
-          {t.jobs.firstSeen.toLowerCase()} {seen}
-        </p>
+        {listing.salary && <p className="mt-1 text-xs text-foreground-muted">{listing.salary}</p>}
         {match && (match.matched.length > 0 || match.missing.length > 0) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {match.matched.slice(0, 6).map((s) => (
+            {match.matched.slice(0, 4).map((s) => (
               <SkillChip key={s.name} label={s.name} kind="have" />
             ))}
-            {match.missing.slice(0, 4).map((name) => (
+            {match.missing.slice(0, 2).map((name) => (
               <SkillChip key={name} label={name} kind="gap" />
             ))}
           </div>
         )}
-      </div>
-
-      <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
+      </td>
+      <td className="px-3 py-3 text-sm text-foreground-muted">{listing.company || "—"}</td>
+      <td className="px-3 py-3">{match ? <FitBadge match={match} /> : "—"}</td>
+      <td className="px-3 py-3 text-xs font-medium text-foreground-muted">{listing.remote ? t.jobs.remoteYes : t.jobs.remoteNo}</td>
+      <td className="max-w-48 px-3 py-3 text-xs text-foreground-muted">{listing.location || "—"}</td>
+      <td className="px-3 py-3"><p className="text-xs text-foreground-muted">{jobSourceLabel(listing.source)}</p><p className="mt-1 whitespace-nowrap text-[11px] text-foreground-subtle">{seen}{listing.seniority ? ` · ${listing.seniority}` : ""}</p></td>
+      <td className="px-4 py-3">
+      <div className="flex shrink-0 items-center justify-end gap-0.5">
         <Tooltip content={t.jobs.copilotAction}>
           <button type="button" onClick={onCopilot} aria-label={t.jobs.copilotAction} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring">
             <Bot className="h-3.5 w-3.5" />
@@ -853,7 +874,8 @@ function ListingRow({
           {t.jobs.applyAction}
         </Button>
       </div>
-    </li>
+      </td>
+    </tr>
   );
 }
 

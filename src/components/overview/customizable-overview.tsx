@@ -246,6 +246,7 @@ function SortableWidget({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -276,11 +277,12 @@ function SortableWidget({
         {editing && (
           <div className="mb-2 flex items-center gap-1.5">
             <button
+              ref={setActivatorNodeRef}
               type="button"
               aria-label={t.dashboard.dragToReorder}
               {...attributes}
               {...listeners}
-              className="inline-flex h-6 w-6 cursor-grab items-center justify-center rounded text-foreground-subtle hover:bg-surface-hover hover:text-foreground active:cursor-grabbing focus-ring"
+              className="inline-flex h-6 w-6 touch-none select-none cursor-grab items-center justify-center rounded text-foreground-subtle hover:bg-surface-hover hover:text-foreground active:cursor-grabbing focus-ring"
             >
               <GripVertical className="h-3.5 w-3.5" />
             </button>

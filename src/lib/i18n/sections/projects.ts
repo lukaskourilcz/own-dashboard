@@ -25,6 +25,8 @@ type ProjectsStrings = {
   repoPlaceholder: string;
   url: string;
   urlPlaceholder: string;
+  devUrl: string;
+  devUrlPlaceholder: string;
   nameRequired: string;
   slugRequired: string;
 
@@ -43,6 +45,17 @@ type ProjectsStrings = {
   open: string;
   deleteProject: string;
   deleteProjectConfirm: string;
+  tableProject: string;
+  tableClient: string;
+  tableHealth: string;
+  tableRepository: string;
+  tableMonthlyCost: string;
+  tableTasks: string;
+  tableNextDate: string;
+  tableActions: string;
+  workspace: string;
+  development: string;
+  manage: string;
 
   // Costs.
   costs: string;
@@ -126,6 +139,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     repoPlaceholder: "owner/repo",
     url: "URL",
     urlPlaceholder: "https://…",
+    devUrl: "Development URL",
+    devUrlPlaceholder: "https://dev.example.com or http://localhost:3000",
     nameRequired: "Name is required.",
     slugRequired: "Slug is required.",
 
@@ -144,6 +159,17 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     deleteProject: "Delete project",
     deleteProjectConfirm:
       "Delete this project? Its costs and crons are removed too.",
+    tableProject: "Project",
+    tableClient: "Client",
+    tableHealth: "Health",
+    tableRepository: "Repository",
+    tableMonthlyCost: "Monthly cost",
+    tableTasks: "Open tasks",
+    tableNextDate: "Next date",
+    tableActions: "Actions",
+    workspace: "Workspace",
+    development: "Dev",
+    manage: "Manage operations",
 
     costs: "Costs",
     addCost: "Add cost",
@@ -223,6 +249,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     repoPlaceholder: "owner/repo",
     url: "URL",
     urlPlaceholder: "https://…",
+    devUrl: "Vývojová URL",
+    devUrlPlaceholder: "https://dev.example.com nebo http://localhost:3000",
     nameRequired: "Název je povinný.",
     slugRequired: "Identifikátor je povinný.",
 
@@ -242,6 +270,17 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     deleteProject: "Smazat projekt",
     deleteProjectConfirm:
       "Smazat tento projekt? Odstraní se i jeho náklady a crony.",
+    tableProject: "Projekt",
+    tableClient: "Klient",
+    tableHealth: "Stav",
+    tableRepository: "Repozitář",
+    tableMonthlyCost: "Měsíční náklady",
+    tableTasks: "Otevřené úkoly",
+    tableNextDate: "Příští termín",
+    tableActions: "Akce",
+    workspace: "Workspace",
+    development: "Dev",
+    manage: "Spravovat provoz",
 
     costs: "Náklady",
     addCost: "Přidat náklad",

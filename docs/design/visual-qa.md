@@ -15,6 +15,9 @@ The test suite also covers:
 - login and OAuth callback errors;
 - removed personal destinations;
 - mobile destination-sheet semantics;
+- the width-contained mobile Career table and its sortable columns;
+- subscription grouping, importance, next-payment dates, and renewal countdowns;
+- the project communication timeline and VPS Agents task queue;
 - axe scans for serious or critical WCAG A/AA violations;
 - a dark-mode Czech invoice rendered to a parsed, single-page A4 PDF.
 
@@ -40,6 +43,8 @@ The code review and static checks confirmed these design constraints:
 | Responsive matrix | No document-level overflow at all six required widths |
 | Navigation | Desktop sidebar and mobile bottom navigation switch at the defined breakpoint |
 | Mobile hierarchy | More opens an accessible destination dialog and navigates to Opportunities |
+| Career table | Match/Remote/Location remain semantic and the wide table scrolls without widening the mobile page |
+| Operational workflows | Project Communication, the Agents queue, and subscription grouping/renewals render from deterministic fixtures |
 | Fixed controls | Quick Add does not overlap the mobile navigation |
 | Localization | Narrowest matrix case renders Czech fixtures |
 | Theme | 1024 px matrix case renders dark mode |
@@ -48,16 +53,17 @@ The code review and static checks confirmed these design constraints:
 
 ## Runtime result
 
-The final `npm run test:e2e` run completed against the optimized local Next.js server: **37 passed, 25 intentionally skipped by project, 0 failed** across the desktop and mobile projects. The skips avoid duplicating desktop-only coverage in the mobile project and vice versa; no required assertion was disabled to obtain the result.
+The final `npm run test:e2e` run completed against the optimized local Next.js server: **43 passed, 31 intentionally skipped by project, 0 failed** across the desktop and mobile projects. The skips avoid duplicating desktop-only coverage in the mobile project and vice versa; no required assertion was disabled to obtain the result.
 
 Verified runtime evidence:
 
 - the responsive matrix completed without document-level overflow at all six required widths;
 - Czech rendered at 360 px, dark mode rendered at 1024 px, and the remaining matrix cases rendered in English/light mode;
 - desktop sidebar, mobile navigation, mobile More dialog, and fixed Quick Add clearance passed;
-- login plus 14 representative authenticated destinations passed axe with no serious or critical WCAG A/AA violations;
+- login plus 17 representative authenticated destinations passed axe with no serious or critical WCAG A/AA violations;
 - the open mobile destination dialog passed axe and remained keyboard/semantics reachable;
-- all 21 canonical sidebar destinations opened without console errors;
+- all 23 canonical destinations (22 sidebar areas plus Settings) opened without console errors;
+- Career sorting, mobile table containment, project Communication, the Agents queue, and subscription group/importance/countdown presentation passed their workflow assertions;
 - the manifest, dynamic PNG icon, and maskable icon declaration passed;
 - a dark-mode Czech invoice remained white, retained print isolation, generated a PDF larger than 10 KB, parsed successfully, and occupied exactly one A4 page;
 - the rendered invoice was visually inspected after the print-spacing correction; the earlier footer-only second page no longer exists.

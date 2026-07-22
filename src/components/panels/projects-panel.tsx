@@ -16,7 +16,7 @@ import {
 import {
   SortableContext,
   arrayMove,
-  rectSortingStrategy,
+  verticalListSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -64,8 +64,6 @@ import { qk } from "@/lib/queries/keys";
 import { useReposQuery } from "@/lib/github-queries";
 import {
   readRepoFilter,
-  readCollapsedProjects,
-  writeCollapsedProjects,
 } from "@/lib/use-prefs";
 import { cronSeedsForRepo } from "@/lib/project-cron-seeds";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
@@ -87,6 +85,7 @@ import type {
   Note,
   Organization,
   Project,
+  ProjectCommunication,
   ProjectCost,
   Prompt,
   RepoLink,
@@ -117,6 +116,7 @@ type ProjectForm = {
   slug: string;
   repo_full_name: string;
   url: string;
+  dev_url: string;
 };
 
 const emptyProjectForm: ProjectForm = {
@@ -124,6 +124,7 @@ const emptyProjectForm: ProjectForm = {
   slug: "",
   repo_full_name: "",
   url: "",
+  dev_url: "",
 };
 
 type ProjectsPanelProps = {
@@ -152,6 +153,8 @@ type ProjectsPanelProps = {
   setRepoNotes: Updater<RepoNote[]>;
   repoLinks: RepoLink[];
   setRepoLinks: Updater<RepoLink[]>;
+  communications: ProjectCommunication[];
+  setCommunications: Updater<ProjectCommunication[]>;
   syncRepositories?: boolean;
 };
 
@@ -179,6 +182,8 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       setRepoNotes={props.setRepoNotes}
       repoLinks={props.repoLinks}
       setRepoLinks={props.setRepoLinks}
+      communications={props.communications}
+      setCommunications={props.setCommunications}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
     />;
@@ -209,6 +214,7 @@ function ProjectsListPanel({
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [manageProjectId, setManageProjectId] = useState<string | null>(null);
 
   // --- Sync active Repositories → Projects -------------------------------
   // The active repos are the shared Repositories allow-list applied to the live
@@ -395,20 +401,6 @@ function ProjectsListPanel({
     [projects],
   );
 
-  // Collapsed cards — a per-device view preference kept in localStorage.
-  const [collapsed, setCollapsed] = useState<Set<string>>(
-    () => new Set(readCollapsedProjects()),
-  );
-  function toggleCollapsed(id: string) {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      writeCollapsedProjects([...next]);
-      return next;
-    });
-  }
-
   // Drag-to-reorder. sort_order is an integer column, so we resequence the
   // whole list to 0..n-1 on drop (no fractional indexing) and persist the rows
   // that actually moved. Optimistic, with a snapshot rollback on failure.
@@ -500,6 +492,7 @@ function ProjectsListPanel({
       slug,
       repo_full_name: form.repo_full_name.trim() || null,
       url: form.url.trim() || null,
+      dev_url: form.dev_url.trim() || null,
     };
     setSaving(true);
     try {
@@ -577,6 +570,7 @@ function ProjectsListPanel({
       slug: p.slug,
       repo_full_name: p.repo_full_name ?? "",
       url: p.url ?? "",
+      dev_url: p.dev_url ?? "",
     });
     setError(null);
     setFormOpen(true);
@@ -723,6 +717,15 @@ function ProjectsListPanel({
                 placeholder={t.projects.urlPlaceholder}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-dev-url">{t.projects.devUrl}</Label>
+              <Input
+                id="proj-dev-url"
+                value={form.dev_url}
+                onChange={(e) => setForm({ ...form, dev_url: e.target.value })}
+                placeholder={t.projects.devUrlPlaceholder}
+              />
+            </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
             <div className="flex justify-end gap-2 pt-1">
               <Button
@@ -740,7 +743,8 @@ function ProjectsListPanel({
         </DialogContent>
       </Dialog>
 
-      {/* Project cards — two-column grid, drag to reorder, click to collapse. */}
+      {/* Dense summary table. Detailed operations remain available from each
+          row and the canonical /projects/[slug] workspace. */}
       {projects.length === 0 ? (
         <div className="mt-4">
           <Card>
@@ -767,42 +771,52 @@ function ProjectsListPanel({
         >
           <SortableContext
             items={ordered.map((p) => p.id)}
-            strategy={rectSortingStrategy}
+            strategy={verticalListSortingStrategy}
           >
-            <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+            <Card className="mt-4 overflow-hidden p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1040px] text-left text-sm">
+                  <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
+                  <tbody className="divide-y divide-border">
               {ordered.map((p) => {
                 const projectTodos = todos.filter((item) => item.project_id === p.id || (!item.project_id && p.repo_full_name != null && item.repo_full_name === p.repo_full_name));
                 const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
                 const organization = organizations.find((item) => item.id === p.organization_id);
-                return <SortableProjectCard
+                return <SortableProjectRow
                   key={p.id}
                   project={p}
-                  costs={costsByProject.get(p.id) ?? []}
-                  crons={cronsByProject.get(p.id) ?? []}
-                  setCosts={setCosts}
-                  setCrons={setCrons}
-                  setProjects={setProjects}
+                  monthlyCost={projectMonthlyIn(costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], displayCurrency)}
                   displayCurrency={displayCurrency}
-                  editing={form.id === p.id}
-                  synced={
-                    !!p.repo_full_name &&
-                    activeRepoNames.has(p.repo_full_name.toLowerCase())
-                  }
-                  collapsed={collapsed.has(p.id)}
-                  onToggleCollapsed={() => toggleCollapsed(p.id)}
+                  synced={!!p.repo_full_name && activeRepoNames.has(p.repo_full_name.toLowerCase())}
                   onEdit={() => startEditProject(p)}
                   onToggleActive={() => toggleProjectActive(p)}
                   onDelete={() => deleteProject(p)}
+                  onManage={() => setManageProjectId(p.id)}
                   health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
                   openTaskCount={projectTodos.filter((item) => !item.done).length}
                   organizationName={organization?.name}
                   nextDate={projectDates[0]?.the_date}
                 />
               })}
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </SortableContext>
         </DndContext>
       )}
+
+      <Dialog open={manageProjectId !== null} onOpenChange={(open) => !open && setManageProjectId(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader><DialogTitle>{t.projects.manage}</DialogTitle></DialogHeader>
+          {ordered.find((project) => project.id === manageProjectId) && (() => {
+            const project = ordered.find((item) => item.id === manageProjectId)!;
+            const projectTodos = todos.filter((item) => item.project_id === project.id || (!item.project_id && project.repo_full_name != null && item.repo_full_name === project.repo_full_name));
+            const projectDates = importantDates.filter((item) => item.project_id === project.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
+            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={!!project.repo_full_name && activeRepoNames.has(project.repo_full_name.toLowerCase())} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -823,6 +837,7 @@ type ProjectCardProps = {
   /** True when this project mirrors a currently-active Repository. */
   synced: boolean;
   collapsed: boolean;
+  collapsible?: boolean;
   onToggleCollapsed: () => void;
   onEdit: () => void;
   onToggleActive: () => void;
@@ -833,33 +848,70 @@ type ProjectCardProps = {
   nextDate?: string;
 };
 
-/** Sortable wrapper: the grid cell is the drag node; the grip handle inside the
- * card header carries the drag listeners so only it initiates a drag. */
-function SortableProjectCard(props: ProjectCardProps) {
+function SortableProjectRow({
+  project,
+  monthlyCost,
+  displayCurrency,
+  synced,
+  health,
+  openTaskCount,
+  organizationName,
+  nextDate,
+  onEdit,
+  onToggleActive,
+  onDelete,
+  onManage,
+}: {
+  project: Project;
+  monthlyCost: number;
+  displayCurrency: string;
+  synced: boolean;
+  health: ProjectHealth;
+  openTaskCount: number;
+  organizationName?: string;
+  nextDate?: string;
+  onEdit: () => void;
+  onToggleActive: () => void;
+  onDelete: () => void;
+  onManage: () => void;
+}) {
+  const t = useDict();
   const {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: props.project.id });
+  } = useSortable({ id: project.id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
   return (
-    <div
+    <tr
       ref={setNodeRef}
       style={style}
-      className={cn("relative", isDragging && "z-10")}
+      className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
-      <ProjectCard
-        {...props}
-        isDragging={isDragging}
-        dragHandleProps={{ ...attributes, ...listeners }}
-      />
-    </div>
+      <td className="px-2 py-2.5"><button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button></td>
+      <td className="px-3 py-2.5"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link><div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}</div></td>
+      <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
+      <td className="px-3 py-2.5"><StatusBadge value={health} /></td>
+      <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
+      <td className="px-3 py-2.5 text-right font-medium tabular">{formatCurrency(monthlyCost, displayCurrency)}</td>
+      <td className="px-3 py-2.5 text-right tabular text-foreground-muted">{openTaskCount}</td>
+      <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{nextDate ?? "—"}</td>
+      <td className="px-3 py-2.5"><div className="flex justify-end gap-1">
+        {project.dev_url && <Tooltip content={t.projects.development}><Button asChild size="icon-sm" variant="ghost"><a href={project.dev_url} target="_blank" rel="noreferrer" aria-label={t.projects.development}><ExternalLink /></a></Button></Tooltip>}
+        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
+        <Tooltip content={t.projects.manage}><Button size="icon-sm" variant="ghost" onClick={onManage} aria-label={t.projects.manage}><Cpu /></Button></Tooltip>
+        <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
+        <Tooltip content={project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
+        <Tooltip content={t.projects.deleteProject}><Button size="icon-sm" variant="ghost" onClick={onDelete} aria-label={t.projects.deleteProject}><Trash2 className="text-destructive" /></Button></Tooltip>
+      </div></td>
+    </tr>
   );
 }
 
@@ -874,6 +926,7 @@ function ProjectCard({
   editing,
   synced,
   collapsed,
+  collapsible = true,
   onToggleCollapsed,
   onEdit,
   onToggleActive,
@@ -980,7 +1033,7 @@ function ProjectCard({
             </p>
           </div>
           <div className="flex gap-0.5">
-            <Tooltip content={collapsed ? t.projects.expand : t.projects.collapse}>
+            {collapsible && <Tooltip content={collapsed ? t.projects.expand : t.projects.collapse}>
               <Button
                 size="icon-sm"
                 variant="ghost"
@@ -995,7 +1048,7 @@ function ProjectCard({
                   )}
                 />
               </Button>
-            </Tooltip>
+            </Tooltip>}
             <Tooltip content={t.common.edit}>
               <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
                 <Pencil className="h-3.5 w-3.5" />

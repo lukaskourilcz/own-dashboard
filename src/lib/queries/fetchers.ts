@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type {
   Account,
+  AgentTask,
   AiCategory,
   AiLink,
   BankConnection,
@@ -26,6 +27,7 @@ import type {
   Cron,
   Plan,
   Project,
+  ProjectCommunication,
   ProjectCost,
   Prompt,
   ReferenceRow,
@@ -82,6 +84,28 @@ export async function fetchSubscriptions(): Promise<Subscription[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Subscription[];
+}
+
+export async function fetchProjectCommunications(): Promise<ProjectCommunication[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("project_communications")
+    .select("*")
+    .order("occurred_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []) as ProjectCommunication[];
+}
+
+export async function fetchAgentTasks(): Promise<AgentTask[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("agent_tasks")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(250);
+  if (error) throw error;
+  return (data ?? []) as AgentTask[];
 }
 
 export async function fetchAccounts(): Promise<Account[]> {

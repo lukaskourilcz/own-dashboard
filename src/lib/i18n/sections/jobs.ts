@@ -28,7 +28,10 @@ type JobsStrings = {
   // Sort + fit filters
   sortLabel: string;
   sortBestFit: string;
+  sortLowestFit: string;
   sortNewest: string;
+  sortRemote: string;
+  sortLocation: string;
   priorityOnly: string;
   strongFitOnly: string;
   // Fit score + skills
@@ -54,6 +57,15 @@ type JobsStrings = {
   noMatches: string;
   noMatchesDescription: string;
   listingsShown: string;
+  tablePosition: string;
+  tableCompany: string;
+  tableMatch: string;
+  tableRemote: string;
+  tableLocation: string;
+  tableSource: string;
+  tableActions: string;
+  remoteYes: string;
+  remoteNo: string;
   // Apply dialog / application form
   applyTitle: string;
   logManualTitle: string;
@@ -171,7 +183,10 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     shortlistedOnly: "Shortlisted",
     sortLabel: "Sort",
     sortBestFit: "Best fit",
+    sortLowestFit: "Lowest fit",
     sortNewest: "Newest",
+    sortRemote: "Remote first",
+    sortLocation: "Location A–Z",
     priorityOnly: "FE + FS",
     strongFitOnly: "Strong fit",
     fitSuffix: "fit",
@@ -200,6 +215,15 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noMatches: "Nothing matches",
     noMatchesDescription: "Try different filters or clear the search.",
     listingsShown: "positions",
+    tablePosition: "Position",
+    tableCompany: "Company",
+    tableMatch: "Match",
+    tableRemote: "Remote",
+    tableLocation: "Location",
+    tableSource: "Source / found",
+    tableActions: "Actions",
+    remoteYes: "Yes",
+    remoteNo: "No",
     applyTitle: "Apply for this position",
     logManualTitle: "Log an application",
     logManual: "Log application",
@@ -318,7 +342,10 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     shortlistedOnly: "Oblíbené",
     sortLabel: "Řadit",
     sortBestFit: "Nejlepší shoda",
+    sortLowestFit: "Nejnižší shoda",
     sortNewest: "Nejnovější",
+    sortRemote: "Nejdříve remote",
+    sortLocation: "Lokalita A–Z",
     priorityOnly: "FE + FS",
     strongFitOnly: "Silná shoda",
     fitSuffix: "shoda",
@@ -347,6 +374,15 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noMatches: "Nic neodpovídá",
     noMatchesDescription: "Zkuste jiné filtry nebo smažte hledání.",
     listingsShown: "pozic",
+    tablePosition: "Pozice",
+    tableCompany: "Firma",
+    tableMatch: "Shoda",
+    tableRemote: "Remote",
+    tableLocation: "Lokalita",
+    tableSource: "Zdroj / nalezeno",
+    tableActions: "Akce",
+    remoteYes: "Ano",
+    remoteNo: "Ne",
     applyTitle: "Přihlásit se na pozici",
     logManualTitle: "Zaznamenat přihlášku",
     logManual: "Zaznamenat přihlášku",

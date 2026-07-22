@@ -8,6 +8,7 @@
  */
 import type {
   Account,
+  AgentTask,
   AppNotification,
   ClientOpportunity,
   AiCategory,
@@ -27,6 +28,7 @@ import type {
   Organization,
   Plan,
   Project,
+  ProjectCommunication,
   ProjectCost,
   Prompt,
   ReferenceRow,
@@ -65,10 +67,10 @@ export const user = {
 };
 
 export const subscriptions: Subscription[] = [
-  { id: "s1", user_id: UID, name: "Netflix", amount: 279, currency: "CZK", billing_cycle: "monthly", category: "Entertainment", next_billing_date: ymd(8), is_active: true, created_at: TS, updated_at: TS },
-  { id: "s2", user_id: UID, name: "Spotify", amount: 169, currency: "CZK", billing_cycle: "monthly", category: "Music", next_billing_date: ymd(3), is_active: true, created_at: TS, updated_at: TS },
-  { id: "s3", user_id: UID, name: "iCloud+", amount: 25, currency: "CZK", billing_cycle: "monthly", category: "Storage", next_billing_date: ymd(20), is_active: true, created_at: TS, updated_at: TS },
-  { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s1", user_id: UID, name: "Netflix", amount: 279, currency: "CZK", billing_cycle: "monthly", category: "Entertainment", category_group: "entertainment", importance: "optional", next_billing_date: ymd(8), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s2", user_id: UID, name: "Spotify", amount: 169, currency: "CZK", billing_cycle: "monthly", category: "Music", category_group: "entertainment", importance: "optional", next_billing_date: ymd(3), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s3", user_id: UID, name: "iCloud+", amount: 25, currency: "CZK", billing_cycle: "monthly", category: "Storage", category_group: "infrastructure", importance: "essential", next_billing_date: ymd(20), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", category_group: "development", importance: "useful", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS },
 ];
 
 // Manual tasks carry null repo/source context; NEEDED-sourced ones (t5/t6)
@@ -160,6 +162,41 @@ export const projects: Project[] = [
     is_active: true,
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
+  },
+];
+
+export const projectCommunications: ProjectCommunication[] = [
+  {
+    id: "comm-1",
+    user_id: UID,
+    project_id: "proj-aifirst",
+    occurred_at: TS,
+    channel: "meeting",
+    direction: "outbound",
+    contact: "Editorial partner",
+    subject: "Launch scope",
+    summary: "Confirmed the first release scope and the weekly review cadence.",
+    next_action: "Send the revised launch checklist.",
+    created_at: TS,
+    updated_at: TS,
+  },
+];
+
+export const agentTasks: AgentTask[] = [
+  {
+    id: "agent-task-1",
+    user_id: UID,
+    project_id: "proj-dashboard",
+    title: "Validate the dashboard release",
+    instructions: "Run lint, TypeScript, unit tests, and report any failures without changing production data.",
+    agent_name: "codex-vps-1",
+    priority: 4,
+    status: "queued",
+    result: null,
+    claimed_at: null,
+    completed_at: null,
+    created_at: TS,
+    updated_at: TS,
   },
 ];
 

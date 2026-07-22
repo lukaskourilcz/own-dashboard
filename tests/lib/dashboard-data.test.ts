@@ -16,6 +16,7 @@ describe("dashboard route data boundaries", () => {
     const keys = dashboardDataKeysForTab("projects");
     for (const key of [
       "projects",
+      "projectCommunications",
       "todos",
       "subscriptions",
       "transactions",
@@ -27,6 +28,14 @@ describe("dashboard route data boundaries", () => {
     ] as const) {
       expect(keys.has(key), key).toBe(true);
     }
+  });
+
+  it("loads only the agent queue and project labels for Agents", () => {
+    const keys = dashboardDataKeysForTab("agents");
+    expect(keys.has("agentTasks")).toBe(true);
+    expect(keys.has("projects")).toBe(true);
+    expect(keys.has("transactions")).toBe(false);
+    expect(keys.has("jobListings")).toBe(false);
   });
 
   it("keeps the notification bell available on every destination", () => {

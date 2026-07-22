@@ -8,6 +8,7 @@ export const NAV_TABS = [
   "projects",
   "opportunities",
   "clients",
+  "agents",
   "career",
   "invoices",
   "money",

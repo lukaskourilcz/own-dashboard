@@ -990,6 +990,7 @@ function SortableNoteRow({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -1008,11 +1009,12 @@ function SortableNoteRow({
     >
       <div className="flex items-stretch">
         <button
+          ref={setActivatorNodeRef}
           type="button"
           aria-label={t.notes.dragToReorder}
           {...attributes}
           {...listeners}
-          className="shrink-0 flex items-center justify-center w-5 text-foreground-subtle hover:text-foreground cursor-grab active:cursor-grabbing focus-ring"
+          className="shrink-0 flex touch-none select-none items-center justify-center w-7 text-foreground-subtle hover:text-foreground cursor-grab active:cursor-grabbing focus-ring"
         >
           <GripVertical className="h-3 w-3" />
         </button>

@@ -8,7 +8,7 @@ import { useDict } from "@/lib/i18n";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency, cn } from "@/lib/utils";
 import { projectMonthlyIn } from "@/lib/projects";
-import { isActive as subIsActive, toMonthlyIn } from "@/lib/subscriptions";
+import { daysUntilRenewal, isActive as subIsActive, toMonthlyIn } from "@/lib/subscriptions";
 import type { Cron, Project, ProjectCost, Subscription } from "@/lib/types";
 
 const CategoryDonut = dynamic(
@@ -83,19 +83,28 @@ export function CostOverview({
     [projects, costsByProject, cronsByProject, displayCurrency],
   );
 
-  // Active subscriptions → one slice per category (e.g. Entertainment).
+  // Active subscriptions → one slice per canonical operational group. The
+  // custom detail category remains on the subscription itself.
   const subscriptionSlices = useMemo<Slice[]>(() => {
     const byCategory = new Map<string, number>();
     for (const s of subscriptions) {
       if (!subIsActive(s)) continue;
-      const key = s.category?.trim() || t.costs.overviewUncategorized;
+      const key = t.subscriptions.group[s.category_group ?? "other"];
       byCategory.set(key, (byCategory.get(key) ?? 0) + toMonthlyIn(s, displayCurrency));
     }
     return [...byCategory.entries()]
       .map(([name, value]) => ({ name, value }))
       .filter((s) => s.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [subscriptions, displayCurrency, t.costs.overviewUncategorized]);
+  }, [subscriptions, displayCurrency, t]);
+
+  const importantSubscriptions = useMemo(() => {
+    const importanceOrder = { essential: 0, useful: 1, optional: 2 } as const;
+    return subscriptions.filter(subIsActive).sort((a, b) => {
+      const importance = importanceOrder[a.importance ?? "useful"] - importanceOrder[b.importance ?? "useful"];
+      return importance || toMonthlyIn(b, displayCurrency) - toMonthlyIn(a, displayCurrency);
+    });
+  }, [subscriptions, displayCurrency]);
 
   const projectsTotal = projectSlices.reduce((a, s) => a + s.value, 0);
   const subsTotal = subscriptionSlices.reduce((a, s) => a + s.value, 0);
@@ -167,6 +176,38 @@ export function CostOverview({
             currency={displayCurrency}
             perLabel={perLabel}
           />
+        </div>
+      )}
+      {importantSubscriptions.length > 0 && (
+        <div className="border-t border-border px-4 py-3">
+          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
+            {importantSubscriptions.map((subscription) => {
+              const days = daysUntilRenewal(subscription);
+              const renewal = days === null
+                ? t.subscriptions.renewalMissing
+                : days < 0
+                  ? t.subscriptions.overdueByDays(Math.abs(days))
+                  : days === 0
+                    ? t.subscriptions.tagToday
+                    : days === 1
+                      ? t.subscriptions.tagTomorrow
+                      : t.subscriptions.tagInDays(days);
+              return (
+                <div key={subscription.id} className="flex min-w-0 items-start justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{subscription.name}</p>
+                    <p className="truncate text-[11px] text-foreground-subtle">
+                      {t.subscriptions.group[subscription.category_group ?? "other"]} · {t.subscriptions.importanceValue[subscription.importance ?? "useful"]}
+                    </p>
+                    <p className="truncate text-[11px] tabular text-foreground-subtle">
+                      {subscription.next_billing_date ? `${t.subscriptions.nextOn(subscription.next_billing_date)} · ` : ""}{renewal}
+                    </p>
+                  </div>
+                  <span className="shrink-0 tabular text-foreground-muted">{formatCurrency(toMonthlyIn(subscription, displayCurrency), displayCurrency)}{t.subscriptions.perMo}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </Card>

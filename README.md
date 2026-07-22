@@ -8,10 +8,11 @@ It is deliberately a personal application—not a SaaS, team workspace, CRM, or 
 
 - **Home and Inbox** — an attention-focused daily surface, quick capture, unclassified input, operational warnings, notifications, snooze/dismiss, and deliberate conversion into professional records.
 - **Work** — portfolio overview, explainable project health, weekly reviews, project workspaces, client opportunities, organizations/clients, Career, and the canonical invoice workflow.
-- **Projects** — overview, local/imported tasks, derived activity, GitHub repository documents, NEEDED.md intake, cron and operations metadata, project costs, linked subscriptions/transactions/invoices, knowledge, and a project-scoped copilot.
+- **Projects** — a sortable portfolio table plus a workspace per project with overview, tasks, activity, client communication history, GitHub repository documents, development/production links, cron and operations metadata, finance, knowledge, and a project-scoped copilot.
+- **Agents** — an own-only task queue for explicit work delegated to authenticated workers running on the owner's VPS. The browser never receives the runner token and is not a remote shell.
 - **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking.
-- **Career** — scraped listings, shortlist/hide state, application pipeline and history, cover-letter templates, follow-ups, and an evidence-grounded Career copilot.
-- **Money and invoices** — accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
+- **Career** — a dense listing table sortable by match, remote availability, location, or discovery date; shortlist/hide state, application history, cover-letter templates, follow-ups, and an evidence-grounded Career copilot.
+- **Money and invoices** — accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions grouped by operational purpose and importance with renewal countdowns, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
 - **Planning** — project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
 - **Library** — BlockNote notes, reusable prompts, enriched links, shortcuts, and structured references. Notes and prompts can be linked to project knowledge without duplicating their records.
 - **Settings** — appearance, navigation, integrations, notification controls, AI/privacy consent, own-only exports, legacy archive download, and account controls.
@@ -51,7 +52,7 @@ The authenticated dashboard uses one canonical catch-all route and interactive s
 ```text
 Home
 Inbox
-Work: Overview · Projects · Opportunities · Clients · Career · Invoices
+Work: Overview · Projects · Opportunities · Clients · Agents · Career · Invoices
 Money: Overview · Accounts · Transactions · Subscriptions · Categories
 Planning: Tasks · Calendar · Goals · Dates
 Library: Notes · Prompts · Links · References
@@ -102,6 +103,7 @@ The relevant migrations are:
 1. `20260721165419_professional_restructure_core.sql` — professional entities, relationships, explicit grants/indexes, transaction-safe opportunity conversion, and own-only relationship policies.
 2. `20260721165421_remove_legacy_personal_scope.sql` — archive legacy data, restore own-only reads, then remove retired personal tables and sharing infrastructure.
 3. `20260722150000_atomic_inbox_routing.sql` — route one owned Inbox item and mark it processed in a single `SECURITY INVOKER` transaction.
+4. `20260722190000_operational_workflow_extensions.sql` — subscription grouping/importance, project development links and communication history, plus the own-only VPS agent task queue and atomic claim RPC.
 
 Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying all migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
@@ -133,7 +135,7 @@ Higgsfield production is intentionally deferred until its MCP is available. No s
 
 ## Deployment and owner actions
 
-The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md), including setting `main` as the GitHub default branch. Cost tiers and scaling triggers are documented in [stack-and-scaling.md](./stack-and-scaling.md).
+The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md). Cost tiers and scaling triggers are documented in [stack-and-scaling.md](./stack-and-scaling.md).
 
 ## More documentation
 

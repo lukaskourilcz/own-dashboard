@@ -2,9 +2,13 @@
 
 Updated: 2026-07-22
 
-Branch: `agent/own-dashboard-design-overhaul`
+Branch: `codex/operational-workflow-improvements`
+
+Pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` targeting `main`.
 
 This is the restart-safe control point for the completed design and architecture overhaul. Start from the branch HEAD, read the files below, and do not repeat completed work or reset the repository.
+
+The follow-up operational implementation is checkpointed at `74120df` and adds the Career table/sorting, subscription grouping/importance/renewal countdowns, a sortable Projects summary with project development links and client communication history, dedicated drag handles, and the Agents VPS task queue. Documentation, fixture, responsive containment, and validation coverage are checkpointed at `d4e4735`. If PR #56 is already merged, continue from `main`; otherwise continue from this branch and preserve both commits.
 
 ## Read first
 
@@ -27,7 +31,7 @@ These four pre-existing user changes are unrelated to this overhaul and remain i
 - `.agents/skills/supabase/SKILL.md`
 - `skills-lock.json`
 
-Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. The commit containing this handoff is the current branch HEAD; inspect `git log --oneline origin/main..HEAD` for immutable hashes after checkout.
+Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. Inspect PR #56 and `git log --oneline` before doing further repository work; this handoff itself may be the final small release commit after the two implementation checkpoints above.
 
 ## Completed product work
 
@@ -40,6 +44,11 @@ Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. The commi
 - Reworked login, sidebar/rail, mobile navigation, command access, Home attention hierarchy, Inbox triage, Work weekly review, Projects, project workspaces, Opportunities, Clients, Career, Invoices, Money, Planning, Library, Settings, contextual AI states, and disconnected states.
 - Preserved the catch-all shell, History API, route-scoped React Query loading, own-only RLS, static FX, Czech invoice/VAT/QR behavior, integrations, contextual AI consent/evidence, EN/CS parity, keyboard navigation, PWA behavior, and retired-scope 404s.
 - Added an own-scoped, `SECURITY INVOKER`, row-locked, idempotent Inbox routing RPC in `supabase/migrations/20260722150000_atomic_inbox_routing.sql`. It has not been applied to a live database.
+- Added `supabase/migrations/20260722190000_operational_workflow_extensions.sql` for canonical subscription classification, `projects.dev_url`, project-owned communication history, and an own-only agent task queue. Its service-role-only claim RPC uses `FOR UPDATE SKIP LOCKED`; it has not been applied to a live database.
+- Career listings are a semantic table with a dedicated match column and sorting by match, remote, location, or discovery date.
+- Projects are a dense sortable summary table. Text is selectable because dnd-kit listeners now live only on dedicated handles across Projects, Home customization, Notes, and navigation settings.
+- Project workspaces include Communication and separate Development/Project site actions.
+- Agents queues explicit tasks for trusted VPS workers through authenticated claim/report endpoints; it is not a remote shell.
 - Disabled automatic Next.js prefetch on authenticated relationship/deep-workspace links. Explicit navigation is unchanged, while fixture console errors and unnecessary server-seed preloads are avoided.
 
 ## Completed engineering and agent architecture
@@ -57,14 +66,15 @@ Completed successfully at this checkpoint:
 
 - `npm run lint`
 - `npx tsc --noEmit`
-- `npm run test` — 26 files, 241 tests passed
+- `npm run test` — 26 files, 242 tests passed
 - `npm run build` — optimized Next.js production build completed
-- `npm run test:e2e` — 37 passed, 25 intentional project skips, 0 failed
-- axe — login, 14 representative desktop destinations, and the open mobile More dialog had no serious or critical A/AA violations
+- `npm run test:e2e` — 43 passed, 31 intentional project skips, 0 failed
+- axe — login, 17 representative desktop destinations, and the open mobile More dialog had no serious or critical A/AA violations
 - responsive runtime — 360, 430, 768, 1024, 1440, and 1728 px, including Czech and dark-mode cases, passed without document overflow
 - invoice print — dark-mode Czech invoice parsed as exactly one A4 PDF page and retained white print isolation
 - PWA — manifest, dynamic PNG icon, and maskable declaration passed
 - all canonical desktop destinations opened without console errors
+- Career mobile table containment, project Communication, Agents, and grouped subscription renewal assertions passed
 - documentation links, deferred-media JSON, raw-color/enum/retired-scope searches, and `git diff --check` passed
 
 Rerun the exact commands if any code changes after this handoff; never convert discovery or interrupted execution into a pass claim.
@@ -84,7 +94,8 @@ When the actual Higgsfield MCP becomes available, follow `docs/design/higgsfield
 
 ## External work that still requires owner systems
 
-- Apply the new Supabase migration through the repository's normal reviewed migration workflow.
+- Apply all four pending Supabase migrations, including `20260722190000_operational_workflow_extensions.sql`, through the repository's normal reviewed migration workflow.
+- Configure `AGENT_RUNNER_TOKEN` and `DASHBOARD_OWNER_ID` only if the VPS queue should be consumed; validate with a disposable task first.
 - Exercise OAuth, GitHub, Google Calendar, GoCardless, Resend, PostHog, Sentry, and Anthropic against real configured provider accounts.
 - Generate and approve Higgsfield media only after the real MCP is installed.
 

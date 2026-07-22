@@ -398,6 +398,7 @@ function SortableNavRow({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -417,9 +418,10 @@ function SortableNavRow({
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <button
+          ref={setActivatorNodeRef}
           type="button"
           aria-label={dragLabel}
-          className="shrink-0 cursor-grab touch-none rounded text-foreground-subtle transition-colors hover:text-foreground focus-ring active:cursor-grabbing"
+          className="shrink-0 cursor-grab touch-none select-none rounded text-foreground-subtle transition-colors hover:text-foreground focus-ring active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
