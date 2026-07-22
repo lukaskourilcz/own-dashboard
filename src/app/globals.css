@@ -2,53 +2,87 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ────────────────────────────────────────────────────────────────────────
-   Design tokens — minimal, neutral, shadcn-inspired.
-   Light/dark surfaces are paired; semantic colors stay subtle by default
-   and only earn saturation when they need to communicate (destructive,
-   focus ring). Accents use the same hue so the UI feels cohesive.
-   ──────────────────────────────────────────────────────────────────────── */
+/* OwnDashboard — operational cartography.
+   Warm paper and graphite establish a private work ledger; deep ink defines
+   structure and selection; amber is reserved for attention. Components use
+   semantic tokens only so a future approved rename can retain the system. */
 
 :root {
   /* surfaces */
-  --background: #fafaf9;        /* page */
-  --surface: #ffffff;           /* cards */
-  --surface-muted: #f5f5f4;     /* nested */
-  --surface-hover: #f5f5f4;
+  --background: #f6f4ef;
+  --surface: #fcfbf8;
+  --surface-secondary: #f1eee7;
+  --surface-muted: #ebe7de;
+  --surface-inset: #efebe3;
+  --surface-hover: #e9e5dc;
+  --surface-selected: #e4ebf6;
+  --surface-elevated: #ffffff;
   --overlay: rgba(15, 15, 16, 0.4);
 
   /* foreground */
-  --foreground: #0a0a0a;
-  --foreground-muted: #57534e;
-  /* Darkened from #a8a29e to meet WCAG AA contrast on surface + muted bg. */
-  --foreground-subtle: #6e6a63;
+  --foreground: #17191c;
+  --foreground-muted: #565a60;
+  --foreground-subtle: #6d7075;
 
   /* borders */
-  --border: #e7e5e4;
-  --border-strong: #d6d3d1;
+  --border: #ddd8cf;
+  --border-strong: #c7c0b5;
 
-  /* primary (CTA) — inverted for shadcn vibe */
-  --primary: #0a0a0a;
-  --primary-foreground: #fafafa;
-  --primary-hover: #292524;
+  --primary: #183b6b;
+  --primary-foreground: #ffffff;
+  --primary-hover: #112f59;
+  --brand: #24558f;
+  --brand-soft: #e4ebf6;
 
   /* semantic, kept subtle */
-  --accent: #f5f5f4;
-  --accent-foreground: #0a0a0a;
+  --accent: #e4ebf6;
+  --accent-foreground: #17365f;
 
-  /* Darkened for WCAG AA as text on light surfaces + soft (/10) tints. */
-  --success: #0e7536;
-  --warning: #a04d08;
-  --destructive: #b91c1c;
+  --information: #24558f;
+  --success: #1c6c43;
+  --warning: #9a550b;
+  --risk: #a13b29;
+  --destructive: #a52b2b;
   --destructive-soft: #fef2f2;
+  --information-soft: #e8eef7;
+  --success-soft: #e7f1eb;
+  --warning-soft: #f7edda;
+  --risk-soft: #f6e8e3;
 
-  --ring: rgba(10, 10, 10, 0.2);
+  --skeleton: #e7e2d9;
+  --chart-1: #24558f;
+  --chart-2: #627890;
+  --chart-3: #b27620;
+  --chart-4: #397255;
+  --chart-5: #895b4d;
+
+  --ai-fact: #24558f;
+  --ai-risk: #a13b29;
+  --ai-suggestion: #68743f;
+  --ai-evidence: #646b76;
+
+  --ring: rgba(36, 85, 143, 0.34);
 
   /* shape */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  --radius-sm: 4px;
+  --radius: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  /* layout and density */
+  --page-max: 90rem;
+  --page-reading: 72rem;
+  --sidebar-width: 15.5rem;
+  --rail-width: 4.25rem;
+  --row-dense: 2.5rem;
+  --row-regular: 2.875rem;
+  --dialog-width: 32rem;
+  --drawer-width: 30rem;
+
+  /* motion */
+  --motion-fast: 110ms;
+  --motion-standard: 170ms;
+  --motion-deliberate: 240ms;
 
   /* shadow — barely there */
   --shadow-sm: 0 1px 2px 0 rgba(15, 15, 16, 0.04);
@@ -61,33 +95,56 @@
 }
 
 .dark {
-  --background: #0a0a0a;
-  --surface: #121212;
-  --surface-muted: #1a1a1a;
-  --surface-hover: #1c1c1c;
+  --background: #101214;
+  --surface: #15181b;
+  --surface-secondary: #1a1d20;
+  --surface-muted: #202429;
+  --surface-inset: #0d0f11;
+  --surface-hover: #23282e;
+  --surface-selected: #1b2b40;
+  --surface-elevated: #1c2024;
   --overlay: rgba(0, 0, 0, 0.6);
 
-  --foreground: #fafafa;
-  --foreground-muted: #a1a1aa;
-  /* Lightened from #71717a to meet WCAG AA contrast on dark surfaces. */
-  --foreground-subtle: #8a8a93;
+  --foreground: #f1f0ec;
+  --foreground-muted: #b1b2b3;
+  --foreground-subtle: #92969b;
 
-  --border: #262626;
-  --border-strong: #333333;
+  --border: #2a2f34;
+  --border-strong: #3b424a;
 
-  --primary: #fafafa;
-  --primary-foreground: #0a0a0a;
-  --primary-hover: #e5e5e5;
+  --primary: #dbe8fb;
+  --primary-foreground: #122b4d;
+  --primary-hover: #c4d8f4;
+  --brand: #8db4e5;
+  --brand-soft: #1b2b40;
 
-  --accent: #1f1f1f;
-  --accent-foreground: #fafafa;
+  --accent: #1b2b40;
+  --accent-foreground: #dbe8fb;
 
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --destructive: #ef4444;
+  --information: #8db4e5;
+  --success: #70bf8f;
+  --warning: #e5ad55;
+  --risk: #e58a73;
+  --destructive: #ef7777;
   --destructive-soft: rgba(239, 68, 68, 0.12);
+  --information-soft: #1b2b40;
+  --success-soft: #182a20;
+  --warning-soft: #302514;
+  --risk-soft: #311f1b;
 
-  --ring: rgba(250, 250, 250, 0.2);
+  --skeleton: #202429;
+  --chart-1: #8db4e5;
+  --chart-2: #91a5ba;
+  --chart-3: #e5ad55;
+  --chart-4: #70bf8f;
+  --chart-5: #d69d8c;
+
+  --ai-fact: #8db4e5;
+  --ai-risk: #e58a73;
+  --ai-suggestion: #b7c77d;
+  --ai-evidence: #aeb5bd;
+
+  --ring: rgba(141, 180, 229, 0.4);
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -97,8 +154,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-inset: var(--surface-inset);
   --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-surface-elevated: var(--surface-elevated);
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
   --color-foreground-subtle: var(--foreground-subtle);
@@ -107,13 +168,31 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-hover: var(--primary-hover);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-information: var(--information);
+  --color-information-soft: var(--information-soft);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-risk: var(--risk);
+  --color-risk-soft: var(--risk-soft);
   --color-destructive: var(--destructive);
   --color-destructive-soft: var(--destructive-soft);
   --color-ring: var(--ring);
+  --color-skeleton: var(--skeleton);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-ai-fact: var(--ai-fact);
+  --color-ai-risk: var(--ai-risk);
+  --color-ai-suggestion: var(--ai-suggestion);
+  --color-ai-evidence: var(--ai-evidence);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius);
@@ -141,6 +220,46 @@ body {
   font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  min-width: 320px;
+}
+
+button,
+[role="button"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@utility page-frame {
+  width: min(100%, var(--page-max));
+  margin-inline: auto;
+}
+
+@utility reading-frame {
+  width: min(100%, var(--page-reading));
+}
+
+@utility surface-band {
+  border-block: 1px solid var(--border);
+  background: var(--surface-secondary);
+}
+
+@utility dense-row {
+  min-height: var(--row-dense);
+  border-bottom: 1px solid var(--border);
+}
+
+@utility safe-area-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.operational-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--border) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
 }
 
 /* numeric stability — tabular figures for money, counts, dates */
@@ -238,6 +357,14 @@ body {
 }
 .anim-dialog[data-state="closed"] {
   animation: dialog-out 140ms var(--ease-out);
+}
+
+.sheet-dialog[data-state="open"] {
+  animation: fade-in var(--motion-standard) var(--ease-out);
+}
+
+.sheet-dialog[data-state="closed"] {
+  animation: fade-out var(--motion-fast) var(--ease-out);
 }
 
 /* ────────────────────────────────────────────────────────────────────────

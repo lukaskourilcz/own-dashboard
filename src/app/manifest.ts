@@ -7,11 +7,12 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: brandConfig.shortName,
     description: brandConfig.description.en,
     start_url: "/",
+    id: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#fafaf9",
-    theme_color: "#0a0a0a",
+    background_color: "#f6f4ef",
+    theme_color: "#183b6b",
     icons: [
       { src: "/icon", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },
@@ -23,5 +24,10 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     categories: ["productivity", "business", "finance"],
+    shortcuts: [
+      { name: "Inbox", short_name: "Inbox", url: "/inbox" },
+      { name: "Projects", short_name: "Projects", url: "/projects" },
+      { name: "Quick capture", short_name: "Capture", url: "/?capture=1" },
+    ],
   };
 }

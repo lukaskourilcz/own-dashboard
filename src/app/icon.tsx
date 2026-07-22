@@ -6,10 +6,8 @@ export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 
 /**
- * Minimal "stacked panels" mark — two concentric rounded rectangles in
- * black-on-cream (matches the dashboard's primary + background tokens).
- * Reads cleanly at 16×16 (browser tab) and looks intentional at PWA size.
- * No letter monogram — letters mush at small sizes.
+ * Connected-work mark — a structured frame, linked path, two square nodes,
+ * and one circular endpoint. It mirrors the CSS BrandMark placement contract.
  */
 export default function Icon() {
   return new ImageResponse(
@@ -18,34 +16,33 @@ export default function Icon() {
         style={{
           width: "100%",
           height: "100%",
-          background: "#0a0a0a",
+          background: "#183b6b",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        {/* outer panel */}
         <div
           style={{
-            width: 320,
-            height: 320,
-            borderRadius: 56,
-            background: "#fafafa",
+            position: "relative",
+            width: 300,
+            height: 300,
+            borderRadius: 52,
+            background: "#ffffff",
             display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "flex-end",
-            padding: 40,
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {/* inner panel — offset bottom-right */}
           <div
             style={{
-              width: 160,
-              height: 160,
-              borderRadius: 28,
-              background: "#0a0a0a",
+              position: "absolute", left: 78, top: 74, width: 142, height: 142,
+              borderLeft: "18px solid #183b6b", borderBottom: "18px solid #183b6b", borderRadius: 8,
             }}
           />
+          <div style={{ position: "absolute", left: 54, top: 50, width: 64, height: 64, borderRadius: 12, background: "#183b6b" }} />
+          <div style={{ position: "absolute", right: 50, top: 50, width: 64, height: 64, borderRadius: 12, border: "16px solid #183b6b", background: "#ffffff" }} />
+          <div style={{ position: "absolute", right: 50, bottom: 48, width: 64, height: 64, borderRadius: 64, background: "#183b6b" }} />
         </div>
       </div>
     ),
