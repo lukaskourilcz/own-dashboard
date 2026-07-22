@@ -6,6 +6,7 @@ describe("professional navigation", () => {
   it("uses canonical professional routes", () => {
     expect(tabToPath("home")).toBe("/");
     expect(tabToPath("opportunities")).toBe("/opportunities");
+    expect(tabToPath("agents")).toBe("/agents");
     expect(isNavTab("books")).toBe(false);
     expect(isNavTab("streaks")).toBe(false);
     expect(isNavTab("couple")).toBe(false);

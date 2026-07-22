@@ -132,6 +132,21 @@ export function SubscriptionsPanel({
   const periodTotal = yearly ? yearlyTotal : monthlyTotal;
   const renewals = useMemo(() => upcomingRenewals(subs, 30), [subs]);
   const activeCount = subs.filter(isActive).length;
+  const groupOrder = useMemo(
+    () =>
+      new Map<SubscriptionCategoryGroup, number>(
+        ([
+          "development",
+          "infrastructure",
+          "business",
+          "productivity",
+          "finance",
+          "entertainment",
+          "other",
+        ] as SubscriptionCategoryGroup[]).map((group, index) => [group, index]),
+      ),
+    [],
+  );
 
   type SubPayload = {
     name: string;
@@ -715,7 +730,15 @@ export function SubscriptionsPanel({
             ) : (
               <ul className="-mx-2 divide-y divide-border">
                 {[...subs]
-                  .sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
+                  .sort((a, b) => {
+                    const activeOrder = Number(isActive(b)) - Number(isActive(a));
+                    if (activeOrder) return activeOrder;
+                    const groupDifference =
+                      (groupOrder.get(a.category_group ?? "other") ?? 99) -
+                      (groupOrder.get(b.category_group ?? "other") ?? 99);
+                    if (groupDifference) return groupDifference;
+                    return a.name.localeCompare(b.name);
+                  })
                   .map((s) => {
                     const active = isActive(s);
                     const days = daysUntilRenewal(s);

@@ -9,6 +9,7 @@ const TABS = [
   "Projects",
   "Opportunities",
   "Clients",
+  "Agents",
   "Career",
   "Invoices",
   "Money overview",
@@ -91,13 +92,47 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     await page.goto("/dev-preview?project=aifirst");
     await expect(page.getByRole("heading", { level: 1, name: "aifirst" })).toBeVisible();
-    for (const tab of ["Overview", "Tasks", "Activity", "Repository", "Operations", "Finance", "Knowledge"]) {
+    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Operations", "Finance", "Knowledge"]) {
       await expect(page.getByRole("tab", { name: tab })).toBeVisible();
     }
     await page.getByRole("tab", { name: "Operations" }).click();
     await expect(page.getByText("Daily article generation")).toBeVisible();
     await page.getByRole("tab", { name: "Finance" }).click();
     await expect(page.getByText("Supabase", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Communication" }).click();
+    await expect(page.getByText("Confirmed the first release scope and the weekly review cadence.")).toBeVisible();
+    await expect(page.getByText("Send the revised launch checklist.")).toBeVisible();
+  });
+
+  test("Career uses sortable operational columns and Agents exposes the VPS queue", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    const sidebar = page.locator("aside nav");
+    await sidebar.getByRole("button", { name: "Career" }).click();
+    for (const heading of ["Position", "Company", "Match", "Remote", "Location", "Source / found"]) {
+      await expect(page.getByRole("columnheader", { name: heading })).toBeVisible();
+    }
+    await page.getByLabel("Sort").click();
+    await page.getByRole("option", { name: "Remote first" }).click();
+    await page.getByLabel("Sort").click();
+    await page.getByRole("option", { name: "Location A–Z" }).click();
+    await sidebar.getByRole("button", { name: "Agents" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
+    await expect(page.getByText("Validate the dashboard release")).toBeVisible();
+  });
+
+  test("Subscriptions group comparable services and show every renewal", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Subscriptions", exact: true }).click();
+    const netflix = page.getByRole("listitem").filter({ hasText: "Netflix" }).filter({ hasText: "Entertainment" });
+    await expect(netflix).toContainText("Entertainment");
+    await expect(netflix).toContainText("Optional");
+    await expect(netflix).toContainText("in 8d");
+    const figma = page.getByRole("listitem").filter({ hasText: "Figma" });
+    await expect(figma).toContainText("Development");
+    await expect(figma).toContainText("Useful");
+    await expect(figma).toContainText("in 120d");
   });
 
   test("read-only AI search shows cited evidence after explicit consent", async ({ page }, testInfo) => {

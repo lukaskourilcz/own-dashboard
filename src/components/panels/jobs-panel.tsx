@@ -154,7 +154,7 @@ export function JobsPanel({
   const [copilotFor, setCopilotFor] = useState<JobListing | null>(null);
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title={t.jobs.title}
         description={t.jobs.description}
@@ -486,7 +486,7 @@ function OpenPositionsView({
   );
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* toolbar */}
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -560,7 +560,7 @@ function OpenPositionsView({
           />
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-foreground-muted">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
           {failedSources.length > 0 && (
             <Tooltip
               content={`${t.jobs.sourceErrors}: ${failedSources
@@ -624,8 +624,8 @@ function OpenPositionsView({
           <p className="mb-2 text-[11px] text-foreground-subtle tabular">
             {visible.length} {t.jobs.listingsShown}
           </p>
-          <Card className="overflow-hidden p-0">
-            <div className="overflow-x-auto">
+          <Card className="min-w-0 max-w-full overflow-hidden p-0">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain [contain:inline-size]">
               <table className="w-full min-w-[980px] text-left">
                 <thead className="border-b border-border bg-surface-secondary text-[11px] font-medium text-foreground-muted">
                   <tr>

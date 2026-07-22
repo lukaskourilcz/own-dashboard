@@ -1,5 +1,10 @@
 # Notes — lukaskourilcz/own-dashboard
 
+> Historical implementation log. For the current product, rollout, architecture,
+> and outstanding owner actions use `README.md`, `DOCS.md`, `NEEDED.md`, and
+> `stack-and-scaling.md`; those files are authoritative when older entries below
+> describe superseded navigation or setup steps.
+
 > **Status legend:** ~~struck-through~~ = done. Open bullets = still to do.
 > Each finished item has a short **Done:** note describing what shipped and
 > where, plus any deviation from the original ask.
@@ -186,15 +191,30 @@ trimming, everything kept is a 4 or 5).
 - **Checks:** `npx tsc --noEmit` clean, `npm run lint` clean,
   `npx vitest run` 147 passed, `npm run build` succeeds.
 
+### ~~8. Operational tables, renewals, project workspaces, and VPS Agents~~
+
+**Done.** Career listings are a semantic table with match, remote, location,
+source, and action columns plus sorting by best/lowest match, remote, location,
+or discovery date. Projects is now a sortable summary table; each existing
+project keeps its canonical `/projects/[id-or-slug]` workspace and gains a
+development URL plus project-owned client communication timeline. Dragging uses
+dedicated activator handles, so selectable text inside rows/cards no longer
+starts a drag. Subscriptions expose their next charge and remaining/overdue
+days everywhere, retain a custom category, and add operational group and
+importance fields for the Money overview. Agents provides an own-only task
+queue for authenticated VPS workers through atomic claim/report endpoints; it
+does not execute arbitrary browser-side commands.
+
 ---
 
 ## Verification done this session
 - `npx tsc --noEmit` — clean
 - `npm run lint` (changed files) — clean
-- `npx vitest run` — 140 passed (incl. new `plan-recurrence` tests)
+- `npx vitest run` — 242 passed across 26 files
 - `npm run build` — succeeds
+- `npm run test:e2e` — 43 passed, 31 intentional project skips, 0 failed
 
 ---
 
 ## Open / next tasks
-_(none — add new tasks below this line)_
+No repository follow-up remains from these historical requests. Production-account, migration, secret, and smoke-test actions are tracked only in `NEEDED.md`.

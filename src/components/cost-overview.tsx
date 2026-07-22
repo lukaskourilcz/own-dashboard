@@ -8,7 +8,7 @@ import { useDict } from "@/lib/i18n";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency, cn } from "@/lib/utils";
 import { projectMonthlyIn } from "@/lib/projects";
-import { isActive as subIsActive, toMonthlyIn } from "@/lib/subscriptions";
+import { daysUntilRenewal, isActive as subIsActive, toMonthlyIn } from "@/lib/subscriptions";
 import type { Cron, Project, ProjectCost, Subscription } from "@/lib/types";
 
 const CategoryDonut = dynamic(
@@ -178,7 +178,38 @@ export function CostOverview({
           />
         </div>
       )}
-      {importantSubscriptions.length > 0 && <div className="border-t border-border px-4 py-3"><div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">{importantSubscriptions.map((subscription) => <div key={subscription.id} className="flex min-w-0 items-center justify-between gap-3 text-xs"><div className="min-w-0"><p className="truncate font-medium text-foreground">{subscription.name}</p><p className="truncate text-[11px] text-foreground-subtle">{t.subscriptions.group[subscription.category_group ?? "other"]} · {t.subscriptions.importanceValue[subscription.importance ?? "useful"]}</p></div><span className="shrink-0 tabular text-foreground-muted">{formatCurrency(toMonthlyIn(subscription, displayCurrency), displayCurrency)}{t.subscriptions.perMo}</span></div>)}</div></div>}
+      {importantSubscriptions.length > 0 && (
+        <div className="border-t border-border px-4 py-3">
+          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
+            {importantSubscriptions.map((subscription) => {
+              const days = daysUntilRenewal(subscription);
+              const renewal = days === null
+                ? t.subscriptions.renewalMissing
+                : days < 0
+                  ? t.subscriptions.overdueByDays(Math.abs(days))
+                  : days === 0
+                    ? t.subscriptions.tagToday
+                    : days === 1
+                      ? t.subscriptions.tagTomorrow
+                      : t.subscriptions.tagInDays(days);
+              return (
+                <div key={subscription.id} className="flex min-w-0 items-start justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{subscription.name}</p>
+                    <p className="truncate text-[11px] text-foreground-subtle">
+                      {t.subscriptions.group[subscription.category_group ?? "other"]} · {t.subscriptions.importanceValue[subscription.importance ?? "useful"]}
+                    </p>
+                    <p className="truncate text-[11px] tabular text-foreground-subtle">
+                      {subscription.next_billing_date ? `${t.subscriptions.nextOn(subscription.next_billing_date)} · ` : ""}{renewal}
+                    </p>
+                  </div>
+                  <span className="shrink-0 tabular text-foreground-muted">{formatCurrency(toMonthlyIn(subscription, displayCurrency), displayCurrency)}{t.subscriptions.perMo}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

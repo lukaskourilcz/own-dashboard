@@ -10,6 +10,7 @@ Personal professional operating system for projects, clients, career, money, pla
 - Optional Upstash Redis rate limiting, Resend email, PostHog, and Sentry
 - Google Calendar, GitHub, and GoCardless Bank Account Data integrations
 - Three daily Vercel cron routes: bank sync, renewal warnings, and job scraping
+- Optional VPS workers consuming the indexed, own-only `agent_tasks` queue through authenticated claim/report endpoints
 
 ## What it costs now
 
@@ -56,6 +57,7 @@ These are planning bands, not quotes. AI prompt size and call frequency can move
 3. **Database compute and connections** should drive Supabase upgrades. Watch p95 query time, CPU, memory, database size, and connection saturation; optimize queries/indexes before selecting larger compute or replicas.
 4. **Vercel function duration and transfer** matter for PDF parsing, GitHub/Google calls, scraping, and AI streams. Move work to a durable queue only when jobs outlive request limits or need reliable retries—cron count alone is not a reason.
 5. **Email and observability volume** become paid only after their generous free allowances. Configure hard billing limits in PostHog/Sentry and a Resend daily/monthly cap.
+6. **Agent queue age and failure rate** are the VPS automation signals. Track oldest queued age, running-task duration, and failed outcomes; add heartbeats/leases and retry policy only after real unattended execution requires them.
 
 ## Scaling architecture when measurements justify it
 
@@ -63,6 +65,7 @@ These are planning bands, not quotes. AI prompt size and call frequency can move
 - Add indexes from real slow-query evidence and keep explicit RLS/grants on every new table.
 - Use Upstash for distributed throttling once multiple serverless instances make the in-memory fallback insufficient.
 - Add a durable queue for bank sync, scraping, notification delivery, and long AI work only when retries/concurrency are operational requirements.
+- The current agent queue is durable and uses `FOR UPDATE SKIP LOCKED`, so multiple VPS workers cannot claim the same row. It deliberately has no automatic retry or arbitrary command transport; add leases, capability routing, and bounded retries only from measured worker needs.
 - Add read replicas only for demonstrated read pressure and replica-safe workloads; they are not a default 1,000-user requirement.
 - Preserve the current static FX model unless the product explicitly accepts the cost, reliability, and audit implications of live rates.
 

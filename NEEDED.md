@@ -4,9 +4,8 @@ The repository implementation is complete. The items below are the external acco
 
 ## Required before the restructured app is used in production
 
-- [ ] **Back up Supabase and apply the three pending migrations** with `npx supabase db push --linked`; run `20260721165419_professional_restructure_core.sql`, then `20260721165421_remove_legacy_personal_scope.sql`, then `20260722150000_atomic_inbox_routing.sql`. Do **not** rerun `supabase/schema.sql` on an existing project. `[imp:5]` `[owner:me]`
+- [ ] **Back up Supabase and apply the four pending migrations** with `npx supabase db push --linked`; run `20260721165419_professional_restructure_core.sql`, then `20260721165421_remove_legacy_personal_scope.sql`, `20260722150000_atomic_inbox_routing.sql`, and `20260722190000_operational_workflow_extensions.sql`. Do **not** rerun `supabase/schema.sql` on an existing project. `[imp:5]` `[owner:me]`
 - [ ] **Verify the production deployment environment** has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; add `SUPABASE_SERVICE_ROLE_KEY` server-side if Google token refresh, bank sync, or other privileged server workflows are enabled. Never expose the service-role key as `NEXT_PUBLIC_*`. `[imp:5]` `[owner:me]`
-- [ ] **Set `main` as the GitHub default branch.** The repository currently defaults to `claude/personal-dashboard-app-O4De1`, even though the completed product is merged into `main`. `[imp:4]` `[owner:me]`
 - [ ] **Deploy `main`, then run the post-deploy smoke test** in `docs/external-setup.md`: sign in, create and convert an opportunity, open a project workspace, link an invoice/subscription/task, process Inbox, export data, and verify a second account cannot read or link the first account's records. `[imp:4]` `[owner:me]`
 
 ## Enable the product capabilities you want
@@ -17,6 +16,7 @@ The repository implementation is complete. The items below are the external acco
 - [ ] **GitHub project operations:** configure GitHub in Supabase Auth and the OAuth callback. Set `GITHUB_OAUTH_CLIENT_ID` plus `GITHUB_OAUTH_CLIENT_SECRET` if disconnect/revoke and expiring-token refresh are required. Confirm the OAuth grant covers only repositories the app should read or update. `[imp:3]` `[owner:me]`
 - [ ] **Renewal email:** verify a Resend sending domain, then set `RESEND_API_KEY` and `RESEND_FROM`. The in-app notification centre works without email. `[imp:3]` `[owner:me]`
 - [ ] **Bank sync:** create GoCardless Bank Account Data credentials and set `GOCARDLESS_SECRET_ID` plus `GOCARDLESS_SECRET_KEY`. Test the production callback and transaction deduplication. CSV statement import remains available without this integration. `[imp:3]` `[owner:me]`
+- [ ] **VPS agents:** set a long random `AGENT_RUNNER_TOKEN` and the owner's Supabase UUID as `DASHBOARD_OWNER_ID` in the deployed server environment and in the trusted VPS worker. Test claim/report with a disposable task before delegating real work; never expose the token to browser code or logs. `[imp:4]` `[owner:me]`
 
 ## Optional production hardening
 

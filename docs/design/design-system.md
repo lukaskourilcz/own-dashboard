@@ -53,10 +53,12 @@ New generic abstractions require two real consumers. Search before creating. Exi
 
 Transactions, invoices, listings, projects, references, and other comparable entities are rows/tables. Activity and notifications are chronological rows. Opportunities may use a board only when stage movement is the action; a dense list remains available. Cards summarize, contain a focused object, or elevate a workflow. A card inside a card is normally a signal to use a section line or inset band.
 
+Sortable containers expose one dedicated drag handle. Attach dnd-kit activator listeners and `touch-action: none` only to that handle; keep row/card text selectable and leave ordinary links and actions outside the drag target.
+
 ## Responsive transformations
 
 - Mobile primary navigation is Home, Inbox, Work, Projects, More. More must expose all visible owner destinations and Settings.
-- Tables become structured rows when comparison remains clear; legal/financial column sets may scroll with a visible affordance and sticky labels.
+- Tables become structured rows when comparison remains clear; wide operational, legal, or financial column sets may scroll inside a width-contained region without creating document-level overflow.
 - Filters wrap or stack; no control becomes hover-only.
 - Project workspace tabs remain horizontally scrollable with an obvious active state.
 - Split panes and form grids stack; dialogs become near-full-width with safe margins.

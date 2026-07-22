@@ -6,6 +6,8 @@ Status: authoritative baseline for the July 2026 design overhaul. Repository cod
 
 OwnDashboard is a private, bilingual, self-hosted operating system for one technically capable professional. It joins delivery, client acquisition, organizations, Career, invoices, costs, banking, planning, and reusable knowledge without pretending to be a team SaaS, CRM, accounting suite, or lifestyle tracker. The high-frequency loop is Home → capture → Inbox triage → canonical record. The other defining loops are opportunity → organization → project → invoice; project → tasks/repository/operations/finance/knowledge; and listing → evidence-grounded application.
 
+Implementation follow-up (2026-07-22): Career now uses a sortable comparable table; Projects uses a sortable portfolio table with dedicated drag handles and per-project communication/development context; subscription views expose renewal countdown, operational group, and importance; and Agents provides an explicit own-only VPS task queue rather than a remote terminal. These changes resolve the specific listing/project/card-density findings below without weakening the existing workflow boundaries.
+
 The product must answer what needs attention, why, which records are connected, and what action is safe to take next. Trust is most sensitive in invoice math and print, bank data, destructive actions, opportunity conversion, exports, integration credentials, RLS, and any AI workflow that reads private context.
 
 ## Architecture that design work must preserve

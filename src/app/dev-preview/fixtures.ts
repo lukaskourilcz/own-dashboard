@@ -67,10 +67,10 @@ export const user = {
 };
 
 export const subscriptions: Subscription[] = [
-  { id: "s1", user_id: UID, name: "Netflix", amount: 279, currency: "CZK", billing_cycle: "monthly", category: "Entertainment", next_billing_date: ymd(8), is_active: true, created_at: TS, updated_at: TS },
-  { id: "s2", user_id: UID, name: "Spotify", amount: 169, currency: "CZK", billing_cycle: "monthly", category: "Music", next_billing_date: ymd(3), is_active: true, created_at: TS, updated_at: TS },
-  { id: "s3", user_id: UID, name: "iCloud+", amount: 25, currency: "CZK", billing_cycle: "monthly", category: "Storage", next_billing_date: ymd(20), is_active: true, created_at: TS, updated_at: TS },
-  { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s1", user_id: UID, name: "Netflix", amount: 279, currency: "CZK", billing_cycle: "monthly", category: "Entertainment", category_group: "entertainment", importance: "optional", next_billing_date: ymd(8), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s2", user_id: UID, name: "Spotify", amount: 169, currency: "CZK", billing_cycle: "monthly", category: "Music", category_group: "entertainment", importance: "optional", next_billing_date: ymd(3), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s3", user_id: UID, name: "iCloud+", amount: 25, currency: "CZK", billing_cycle: "monthly", category: "Storage", category_group: "infrastructure", importance: "essential", next_billing_date: ymd(20), is_active: true, created_at: TS, updated_at: TS },
+  { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", category_group: "development", importance: "useful", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS },
 ];
 
 // Manual tasks carry null repo/source context; NEEDED-sourced ones (t5/t6)

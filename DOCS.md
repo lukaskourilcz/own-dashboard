@@ -11,6 +11,7 @@ Organization ─┬─ Opportunities ── won conversion ── Project
 
 Project ──────┬─ Tasks          Opportunity ── Tasks / Notes / Prompts
               ├─ Notes
+              ├─ Client communication
               ├─ Costs / Crons
               ├─ Transactions / Subscriptions / Invoices
               └─ Dates / Prompts
@@ -51,13 +52,17 @@ Inbox is a triage queue, not a second task list. Manual captures and integration
 
 Work overview summarizes active projects, open opportunities, due follow-ups, issued invoices, explainable project-health warnings, and the current weekly review. Health is a transparent heuristic based on on-hold status, overdue linked tasks, disabled crons, and costs without recorded revenue.
 
-Projects retain the mature GitHub, notes, cost, and cron implementation. Each project has a canonical workspace with Overview, Tasks, Activity, Repository, Operations, Finance, and Knowledge tabs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
+Projects use a sortable summary table with a dedicated non-text drag handle. Each project has a canonical workspace with Overview, Tasks, Activity, Communication, Repository, Operations, Finance, and Knowledge tabs. Communication records are project-owned timeline entries with channel, direction, contact, summary, and next action. Projects may store separate production and development URLs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
+
+Career listings are rendered as a semantic, horizontally resilient table. Match is an explicit comparable column and users can sort by best/lowest match, remote availability, location, or discovery date without changing the scraped source records.
+
+Agents is an own-only queue, not a remote terminal. The browser creates durable `agent_tasks`; a VPS worker authenticates with a server-only bearer token, identifies itself, atomically claims one eligible queued task through `claim_agent_task`, and can report completion only for the row it currently owns. The worker endpoints are `/api/agents/claim` and `/api/agents/report`; service-role use is constrained by `DASHBOARD_OWNER_ID`, task id, agent name, and running status.
 
 Opportunities provide the Tugedr/referral/direct/inbound pipeline. After browser confirmation, the `convert_opportunity_to_project` security-invoker RPC locks the owned opportunity and atomically creates or links its organization, creates the project, preserves the opportunity currency as project revenue currency, and marks the opportunity won. A failure rolls back the whole conversion. Clients are organizations with connected projects, opportunities, invoices, tasks, notes, and dates. Career and Invoices reuse the established implementations.
 
 ### Money
 
-Money preserves accounts, transactions, bank synchronization, subscriptions, categories, charts, and project infrastructure costs. Canonical child routes currently open the same integrated financial workspace so no mature functionality is duplicated.
+Money preserves accounts, transactions, bank synchronization, subscriptions, categories, charts, and project infrastructure costs. Subscriptions retain a custom detail category and add a canonical operational group (`development`, `entertainment`, `business`, `infrastructure`, `productivity`, `finance`, or `other`) plus an importance level. Active records require a next billing date in the UI; every recurring-spend view shows the date and remaining/overdue days. Canonical child routes currently open the same integrated financial workspace so no mature functionality is duplicated.
 
 ### Planning and Library
 
@@ -79,6 +84,8 @@ It extends projects with `organization_id`, `summary`, `status`, `revenue`, and 
 Every new user table has RLS enabled, explicit `authenticated` Data API grants, four own-only CRUD policies, and service-role grants. Insert/update relationship policies use `WITH CHECK` and verify the owner of each foreign row. No new `SECURITY DEFINER` authorization function is introduced.
 
 The cleanup migration snapshots retired rows per user into `legacy_personal_archives`, restores own-only read policies, drops the couple relationship from dates, and then removes Pulse, streak, book, couple, invite, sharing, and helper-function storage. The subsequent Inbox-routing migration adds only a `SECURITY INVOKER` RPC; it does not bypass existing row or relationship policies.
+
+`20260722190000_operational_workflow_extensions.sql` adds `project_communications` and `agent_tasks`, both with explicit Data API grants, indexed owner/relationship access, own-only RLS, and foreign-project ownership checks. `claim_agent_task` remains `SECURITY INVOKER`, uses `FOR UPDATE SKIP LOCKED`, and is executable only by `service_role`; the browser cannot invoke it.
 
 ## Exports
 
@@ -130,6 +137,6 @@ Future coding agents start with `AGENTS.md` and `CLAUDE.md`, then use the narrow
 
 - Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, and strict AI-output and citation validation.
 - Vitest also guards the atomic Inbox-routing migration, localized presentation labels, and local documentation links.
-- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login and auth errors, contextual AI proposal flows, mobile destination access, and axe accessibility scans.
+- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login and auth errors, contextual AI proposal flows, mobile destination access, Career table containment/sorting, project Communication, Agents, subscription classification/renewals, and axe accessibility scans.
 - Responsive coverage explicitly checks 360, 430, 768, 1024, 1440, and 1728 px, with a Czech narrow view and a dark 1024 px view.
 - Production build is a required verification step because the shell spans server/client boundaries and lazy chart/editor bundles.
