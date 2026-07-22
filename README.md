@@ -131,7 +131,7 @@ The deterministic `/dev-preview` harness drives the Playwright responsive matrix
 
 OwnDashboard follows the documented **calm operational intelligence** thesis and **operational cartography** visual direction. Production UI uses semantic tokens, canonical localized statuses, one Lucide icon family, compact data presentation, and authentic application rendering. Generated UI, fabricated metrics, and filler illustration are prohibited.
 
-Higgsfield production remains deferred after a live MCP capability audit: the workspace and catalog connected, but the active trial reported zero usable generation credits and returned no assets. No substitute or placeholder artwork is shipped. The login layout exposes its media seam, existing empty states remain complete without illustration, and the manifest records attempted prompts and proposed destinations without referencing nonexistent files.
+Higgsfield production remains deferred after a live MCP capability audit: the workspace and catalog connected, but the active trial reported zero usable generation credits and returned no assets. No placeholder artwork is shipped. The next media-production pass must compare at least three current low-cost or free generators from primary provider sources and may use a documented fallback with suitable output rights, privacy, formats, and no watermark. The login layout exposes its media seam, existing empty states remain complete without illustration, and the manifest records prompts and proposed destinations without referencing nonexistent files.
 
 ## Deployment and owner actions
 

@@ -72,7 +72,7 @@ The suite intentionally uses a production-backed fixture server because cold dev
 
 ## Media QA
 
-No Higgsfield output or substitute artwork was generated. The MCP connected and cost preflight worked, but the active trial reported zero usable generation credits; the attempted requests returned no media. There are therefore no shipped files to inspect for text artifacts, watermarks, third-party marks, crop failures, motion, or file-size budgets. The manifest records the exact gate, requests, intended placements, and accessibility classifications without production references. After usable credits are available, integrate only accepted assets and extend this record with real dimensions, sizes, light/dark/mobile crops, reduced-motion fallback, and contextual screenshots.
+No generated artwork was produced. The Higgsfield MCP connected and cost preflight worked, but the active trial reported zero usable generation credits; the attempted requests returned no media. There are therefore no shipped files to inspect for text artifacts, watermarks, third-party marks, crop failures, motion, or file-size budgets. The manifest records the exact gate, prompts, intended placements, and accessibility classifications without production references. After Higgsfield or a researched low-cost/free fallback produces reviewed assets, extend this record with provider/model provenance, license and pricing sources, real dimensions, sizes, light/dark/mobile crops, reduced-motion fallback, and contextual screenshots.
 
 ## Rerun
 

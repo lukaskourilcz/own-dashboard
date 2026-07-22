@@ -1,13 +1,15 @@
 ---
 name: own-dashboard-higgsfield
-description: Prepare, generate, review, integrate, optimize, or document OwnDashboard Higgsfield brand media when an actual Higgsfield MCP capability is available. Use for the deferred symbol exploration, login hero, selected empty-state family, or authentic screenshot presentation asset; never use for operational data, invoices, charts, tables, or fake UI.
+description: Research, prepare, generate, review, integrate, optimize, or document OwnDashboard brand media. Prefer Higgsfield when usable; when it is unavailable or credit-blocked, perform current primary-source research for low-cost or free generators before selecting a documented fallback. Use for symbol exploration, login hero, selected empty-state family, or authentic screenshot presentation assets; never use for operational data, invoices, charts, tables, or fake UI.
 ---
 
 # OwnDashboard Higgsfield media
 
 ## Availability gate
 
-Inspect callable tools first. MCP presence is not enough: select the intended workspace, inspect balance plus billing/trial status, and run a cost-only preflight. If Higgsfield is unavailable or has no usable generation credits, do not wait, invent capabilities, generate substitutes, or add fake placeholders. Keep the existing layout seam intact, record the exact gate and request evidence in `docs/design/generated-media-manifest.json`, and continue all non-media work. Do not repeat failed model discovery when the manifest already proves an account-wide billing gate.
+Inspect callable tools first. MCP presence is not enough: select the intended workspace, inspect balance plus billing/trial status, and run a cost-only preflight. If Higgsfield is unavailable or has no usable generation credits, do not wait or repeat failed model discovery. Instead, perform current web research from primary provider documentation for at least three genuinely viable low-cost or free image generators.
+
+Compare each fallback's current free allowance or exact cost, supported dimensions/formats, text-free illustration quality, output ownership and redistribution terms, watermark policy, privacy/retention, API or manual workflow, and credential requirements. Record dated source URLs and the selection in `docs/design/generated-media-manifest.json`. Prefer a no-subscription option that permits repository and application use. Do not create an account, start a paid plan, expose credentials, or upload private data without owner authorization. If no safe option exists, provide the reusable prompts and keep the media deferred; never add fake placeholders.
 
 ## Production boundary
 
@@ -18,4 +20,4 @@ Inspect callable tools first. MCP presence is not enough: select the intended wo
 - For each available production task, define placement, dimensions, crop, negative space, theme variants, fallback, accessibility, and performance budget before generation. Review multiple genuinely different outputs and reject weak directions.
 - Use SVG for a refined final mark; WebP/AVIF for stills; WebM/MP4 only for justified motion with poster/static/reduced-motion fallbacks. Never ship raw generation as the only mark.
 - Capture interface screenshots from `/dev-preview`; composite them deterministically and never ask generation to redraw interface text.
-- Optimize, integrate, validate in context, and update the manifest with the actual model/mode, prompt, negative prompt, references, selected/rejected variants, dimensions, byte size, provenance, and regeneration notes. Never store credentials.
+- Optimize, integrate, validate in context, and update the manifest with the actual provider, model/mode, prompt, negative prompt, pricing/license sources, references, selected/rejected variants, dimensions, byte size, provenance, and regeneration notes. Never describe fallback output as Higgsfield output and never store credentials.

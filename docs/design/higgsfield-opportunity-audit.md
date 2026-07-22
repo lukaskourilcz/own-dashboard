@@ -1,6 +1,6 @@
 # Higgsfield opportunity audit
 
-Status: generation blocked after a live capability audit on 2026-07-22. The Higgsfield MCP connected, the private Plus workspace and model catalog loaded, and cost preflight succeeded. The billing endpoint then reported an active MCP trial with zero remaining trial credits. Recraft and Z Image returned `only_website_usage_on_trial_is_available`; Soul Location returned generation errors. No job produced an asset, no credit was spent, and no substitute generator or placeholder was used.
+Status: Higgsfield generation blocked after a live capability audit on 2026-07-22. The MCP connected, the private Plus workspace and model catalog loaded, and cost preflight succeeded. The billing endpoint then reported an active MCP trial with zero remaining trial credits. Recraft and Z Image returned `only_website_usage_on_trial_is_available`; Soul Location returned generation errors. No job produced an asset and no credit was spent. The next pass must research safe low-cost or free alternatives before considering a paid Higgsfield allowance.
 
 The governing rule is simple: generated media may establish a small brand atmosphere around authentic OwnDashboard UI; it must never fabricate operational evidence.
 
@@ -31,3 +31,5 @@ The governing rule is simple: generated media may establish a small brand atmosp
 An asset is eligible only when its real MCP capability is known, it has a concrete placement and size budget, three materially different outputs can be reviewed, weak directions can be rejected, authentic UI stays untouched, responsive/theme fallbacks exist, and exact provenance can be recorded in `generated-media-manifest.json`.
 
 MCP presence is not enough: `balance`, workspace selection, model discovery, and a `get_cost` preflight must all succeed, and the billing status must report usable paid or trial credits before production requests are submitted. The exact attempted prompts, models, errors, and request IDs are recorded in the manifest so the next run can resume without repeating the failed capability discovery.
+
+When Higgsfield is still blocked, current alternative-generator research is mandatory. Compare at least three providers using direct pricing, terms/licensing, privacy/retention, format/dimension, watermark, and workflow documentation. A fallback is acceptable only when its outputs may be stored in the repository and deployed application, it does not require private product data, and it can satisfy the same art-direction and quality gates. Record the selected and rejected providers with dated links. If account creation or payment is required, stop before that external action and provide the owner with the selection and reusable prompts.

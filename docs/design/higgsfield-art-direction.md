@@ -1,6 +1,6 @@
-# Higgsfield art direction and production gate
+# Brand-media art direction and generator gate
 
-The MCP capability audit ran on 2026-07-22. Workspace discovery, model discovery, and cost preflight worked, but the active MCP trial had zero remaining trial credits; all generation requests returned errors and produced no media. This document remains the approved art direction and integration boundary. Exact attempted prompts, models, request IDs, and provenance are in `generated-media-manifest.json`.
+The Higgsfield MCP capability audit ran on 2026-07-22. Workspace discovery, model discovery, and cost preflight worked, but the active trial had zero remaining trial credits; all generation requests returned errors and produced no media. This document remains the approved art direction and integration boundary for Higgsfield or a reviewed fallback. Exact attempted prompts, models, request IDs, and provenance are in `generated-media-manifest.json`.
 
 ## Direction
 
@@ -20,4 +20,8 @@ Use paper, warm stone, graphite, charcoal, deep ink/cobalt, and limited amber. M
 
 Use SVG for the final mark; AVIF/WebP for still art; WebM plus MP4 only for justified motion. Target under 300 KB for desktop login, 180 KB mobile, 100 KB per empty state, and 1.5 MB for an optional loop. Record intrinsic dimensions, byte sizes, crops, accessibility classification, real model/mode, exact prompt/negative prompt, references, selected and rejected variants, provenance, and regeneration notes only after actual generation.
 
-Before a future run spends production effort, verify the selected workspace and query both credit balance and trial/billing status. A catalog response or nominal workspace balance does not prove credits are usable. Run a cost-only preflight, then one production request; if billing status reports zero usable credits or the backend returns a plan restriction, stop generation without creating substitutes. The current priority order remains: mark exploration, login stills, empty-state family, then the authentic screenshot presentation frame. Motion and optional explanatory art remain rejected until the static placements prove insufficient.
+Before a future run spends production effort, verify the selected Higgsfield workspace and query both credit balance and trial/billing status. A catalog response or nominal workspace balance does not prove credits are usable. Run a cost-only preflight, then one production request. If billing status reports zero usable credits or the backend returns a plan restriction, perform current web research using primary provider sources for at least three low-cost or free alternatives.
+
+Compare exact cost/free quota, output ownership and redistribution, watermark policy, privacy/retention, supported dimensions/formats, quality fit, API/manual workflow, and credential requirements. Prefer a no-subscription option that permits use in the repository and deployed application. Record the date and direct sources in the manifest. Do not create accounts, purchase plans, expose credentials, or upload private data without owner authorization. Apply the same prompts, art direction, rejection criteria, responsive review, optimization, and provenance regardless of provider; never label fallback output as Higgsfield. If no safe alternative qualifies, preserve reusable prompts and leave the assets deferred without placeholders.
+
+The priority order remains: mark exploration, login stills, empty-state family, then the authentic screenshot presentation frame. Motion and optional explanatory art remain rejected until the static placements prove insufficient.
