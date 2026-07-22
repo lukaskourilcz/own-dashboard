@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
-import { Activity, ArrowRight } from "lucide-react";
+import { ArrowRight, LockKeyhole } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { MeshGradient } from "@/components/ui/mesh-gradient";
 import { brandConfig } from "@/lib/brand";
 import { useDict } from "@/lib/i18n";
 
@@ -39,32 +40,30 @@ export default function LoginPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div className="min-h-screen grid place-items-center bg-background px-4 relative overflow-hidden">
-      {/* ambient mesh gradient */}
-      <MeshGradient />
-
+    <main className="relative min-h-screen overflow-hidden bg-background">
+      <div aria-hidden className="operational-grid pointer-events-none absolute inset-0 opacity-70" />
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-sm"
+        className="relative mx-auto grid min-h-screen w-full max-w-6xl items-stretch lg:grid-cols-[1.15fr_0.85fr]"
       >
-        <div className="text-center mb-8">
-          <div className="mx-auto h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mb-4 shadow-card">
-            <Activity className="h-4 w-4" />
+        <section data-brand-media-slot="login-hero" className="flex flex-col justify-between border-b border-border px-6 py-8 sm:px-10 sm:py-10 lg:border-b-0 lg:border-r lg:px-14 lg:py-14">
+          <div className="flex items-center gap-3">
+            <BrandMark className="h-9 w-9" />
+            <div><p className="text-sm font-semibold">{brandConfig.name}</p><p className="text-[11px] text-foreground-subtle">{t.login.privateSystem}</p></div>
           </div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-foreground-subtle">
-            {brandConfig.name}
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {t.login.welcomeBack}
-          </h1>
-          <p className="mt-2 text-sm text-foreground-muted">
-            {t.login.tagline}
-          </p>
-        </div>
+          <div className="max-w-xl py-16 lg:py-24">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-brand">{t.login.welcomeBack}</p>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">{t.login.tagline}</h1>
+            <p className="mt-5 max-w-lg text-sm leading-6 text-foreground-muted">{t.login.connectedAreas}</p>
+          </div>
+          <div className="border-l-2 border-brand px-3 py-1"><p className="text-xs font-semibold">{t.login.trustTitle}</p><p className="mt-1 max-w-md text-xs leading-5 text-foreground-muted">{t.login.trustBody}</p></div>
+        </section>
 
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card space-y-4">
+        <section className="flex items-center px-6 py-10 sm:px-10 lg:px-14">
+        <div className="w-full rounded-lg border border-border bg-surface p-5 shadow-soft sm:p-6">
+          <div className="mb-5"><div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-inset text-brand"><LockKeyhole className="h-4 w-4" /></div><h2 className="text-lg font-semibold tracking-tight">{t.login.signInTitle}</h2><p className="mt-1 text-xs text-foreground-muted">{t.login.privateSystem}</p></div>
           <Button
             onClick={signInWithGoogle}
             disabled={loading}
@@ -75,16 +74,31 @@ export default function LoginPage() {
             {loading ? t.common.redirecting : t.login.continueWithGoogle}
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>
-          {error && (
-            <p className="text-xs text-destructive text-center">{error}</p>
-          )}
-          <p className="text-[11px] text-foreground-subtle text-center leading-relaxed">
+          <Suspense fallback={error ? <LoginErrorMessage message={error} /> : null}>
+            <LoginError error={error} authError={t.login.authError} loading={loading} />
+          </Suspense>
+          <p className="mt-4 text-[11px] leading-relaxed text-foreground-subtle">
             {t.login.calendarNotice}
           </p>
         </div>
+        </section>
       </motion.div>
-    </div>
+    </main>
     </MotionConfig>
+  );
+}
+
+function LoginError({ error, authError, loading }: { error: string | null; authError: string; loading: boolean }) {
+  const searchParams = useSearchParams();
+  const message = error ?? (!loading && searchParams.get("error") === "auth" ? authError : null);
+  return message ? <LoginErrorMessage message={message} /> : null;
+}
+
+function LoginErrorMessage({ message }: { message: string }) {
+  return (
+    <p role="alert" className="mt-3 border-l-2 border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">
+      {message}
+    </p>
   );
 }
 

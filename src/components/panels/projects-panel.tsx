@@ -30,10 +30,11 @@ import {
   Pencil,
   Plus,
   Power,
-  Sparkles,
+  Cpu,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -67,6 +68,7 @@ import {
   writeCollapsedProjects,
 } from "@/lib/use-prefs";
 import { cronSeedsForRepo } from "@/lib/project-cron-seeds";
+import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
 import type { GithubRepo } from "@/lib/github";
 import {
   costMonthlyIn,
@@ -195,6 +197,9 @@ function ProjectsListPanel({
   setDisplayCurrency,
   initialVisibleIds = [],
   syncRepositories = true,
+  todos,
+  organizations,
+  importantDates,
 }: ProjectsPanelProps) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -765,8 +770,11 @@ function ProjectsListPanel({
             strategy={rectSortingStrategy}
           >
             <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
-              {ordered.map((p) => (
-                <SortableProjectCard
+              {ordered.map((p) => {
+                const projectTodos = todos.filter((item) => item.project_id === p.id || (!item.project_id && p.repo_full_name != null && item.repo_full_name === p.repo_full_name));
+                const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
+                const organization = organizations.find((item) => item.id === p.organization_id);
+                return <SortableProjectCard
                   key={p.id}
                   project={p}
                   costs={costsByProject.get(p.id) ?? []}
@@ -785,8 +793,12 @@ function ProjectsListPanel({
                   onEdit={() => startEditProject(p)}
                   onToggleActive={() => toggleProjectActive(p)}
                   onDelete={() => deleteProject(p)}
+                  health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
+                  openTaskCount={projectTodos.filter((item) => !item.done).length}
+                  organizationName={organization?.name}
+                  nextDate={projectDates[0]?.the_date}
                 />
-              ))}
+              })}
             </div>
           </SortableContext>
         </DndContext>
@@ -815,6 +827,10 @@ type ProjectCardProps = {
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
+  health: ProjectHealth;
+  openTaskCount: number;
+  organizationName?: string;
+  nextDate?: string;
 };
 
 /** Sortable wrapper: the grid cell is the drag node; the grip handle inside the
@@ -862,6 +878,10 @@ function ProjectCard({
   onEdit,
   onToggleActive,
   onDelete,
+  health,
+  openTaskCount,
+  organizationName,
+  nextDate,
   isDragging,
   dragHandleProps,
 }: ProjectCardProps & {
@@ -891,9 +911,11 @@ function ProjectCard({
             <GripVertical className="h-4 w-4" />
           </button>
           <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-base">
               <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
               <span className="truncate">{project.name}</span>
+              <StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />
+              <StatusBadge value={health} />
               {!project.is_active && (
                 <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
               )}
@@ -908,6 +930,9 @@ function ProjectCard({
             </CardTitle>
             {!collapsed && (
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+                {organizationName && <EntityBadge>{organizationName}</EntityBadge>}
+                <span className="tabular">{t.professional.openTasks}: {openTaskCount}</span>
+                {nextDate && <span className="tabular">{t.nav.sections.dates}: {nextDate}</span>}
                 {project.repo_full_name && (
                   <a
                     href={`https://github.com/${project.repo_full_name}`}
@@ -932,6 +957,7 @@ function ProjectCard({
                 )}
                 <Link
                   href={`/projects/${encodeURIComponent(project.slug)}`}
+                  prefetch={false}
                   className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
                 >
                   <FolderKanban className="h-3 w-3" />
@@ -1375,7 +1401,7 @@ function CronsSection({
           <SectionLabel>{t.projects.crons}</SectionLabel>
           {aiSpend > 0 && (
             <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] text-foreground-muted tabular">
-              <Sparkles className="h-3 w-3" />
+              <Cpu className="h-3 w-3" />
               {t.projects.aiSpendMonthly} {formatCurrency(aiSpend, displayCurrency)}
               {t.projects.perMo}
             </span>
@@ -1416,7 +1442,7 @@ function CronsSection({
                   <p className="truncate text-sm font-medium">
                     {c.name}
                     {c.is_ai_call && (
-                      <Sparkles className="ml-1 inline h-3 w-3 text-foreground-subtle" />
+                      <Cpu className="ml-1 inline h-3 w-3 text-foreground-subtle" />
                     )}
                   </p>
                   <p className="truncate text-[11px] text-foreground-subtle tabular">

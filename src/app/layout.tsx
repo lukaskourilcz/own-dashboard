@@ -27,12 +27,18 @@ export const metadata: Metadata = {
     title: brandConfig.shortName,
   },
   formatDetection: { telephone: false },
+  openGraph: {
+    title: brandConfig.name,
+    description: brandConfig.description.en,
+    type: "website",
+  },
+  twitter: { card: "summary", title: brandConfig.name, description: brandConfig.description.en },
 };
 
 export const viewport: import("next").Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f4ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#101214" },
   ],
   width: "device-width",
   initialScale: 1,

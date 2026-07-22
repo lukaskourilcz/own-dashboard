@@ -12,7 +12,6 @@ import {
   Sunrise,
 } from "lucide-react";
 import { SectionLabel } from "@/components/ui/page-header";
-import { MeshGradient } from "@/components/ui/mesh-gradient";
 import { daysUntilDate, todayKey } from "@/lib/date-keys";
 import { useNow } from "@/lib/use-now";
 import { nextUpcoming } from "@/lib/important-dates";
@@ -120,10 +119,10 @@ export function TodayHero({
 
   return (
     <section
-      className="relative overflow-hidden rounded-xl border border-border bg-surface p-6 md:p-8 shadow-soft"
+      className="relative overflow-hidden rounded-lg border border-border bg-surface p-5 md:p-7"
       suppressHydrationWarning
     >
-      <MeshGradient className="opacity-50 dark:opacity-30" />
+      <div aria-hidden className="operational-grid pointer-events-none absolute inset-0 opacity-50" />
       <div className="relative">
       {/* greeting row */}
       <div className="flex flex-wrap items-baseline justify-between gap-2">

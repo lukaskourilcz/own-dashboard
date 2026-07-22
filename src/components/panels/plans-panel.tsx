@@ -40,8 +40,8 @@ const STATUSES: { key: PlanStatus; tone: string; dot: string }[] = [
   },
   {
     key: "active",
-    tone: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    dot: "bg-blue-500",
+    tone: "bg-information-soft text-information",
+    dot: "bg-information",
   },
   {
     key: "done",

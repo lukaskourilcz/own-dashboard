@@ -45,7 +45,7 @@ Home shows the daily operating context: calendar, deadlines, opportunity follow-
 
 ### Inbox
 
-Inbox is a triage queue, not a second task list. Manual captures and integration events land as `inbox_items`; notification records are visible in the same action center and through the sidebar unread indicator. Notifications support safe source links, mark-read, snooze, and dismiss actions. Inbox search, source/status/destination filters, snooze, dismiss, restore, source links, and bulk dismiss support deliberate triage. A user chooses the destination and clicks Process; only then is the destination record created or a transaction categorized and the inbox item marked processed. Valid relationship identifiers in an item's payload are carried into routed records and are rechecked by RLS.
+Inbox is a triage queue, not a second task list. Manual captures and integration events land as `inbox_items`; notification records are visible in the same action center and through the sidebar unread indicator. Notifications support safe source links, mark-read, snooze, and dismiss actions. Inbox search, source/status/destination filters, snooze, dismiss, restore, source links, and bulk dismiss support deliberate triage. A user chooses the destination and clicks Process; only then does the `route_inbox_item` `SECURITY INVOKER` RPC create or update the destination and mark the item processed in one transaction. Retries return the recorded route instead of creating duplicates. Valid relationship identifiers in an item's payload are carried into routed records and are rechecked by RLS.
 
 ### Work
 
@@ -78,7 +78,7 @@ It extends projects with `organization_id`, `summary`, `status`, `revenue`, and 
 
 Every new user table has RLS enabled, explicit `authenticated` Data API grants, four own-only CRUD policies, and service-role grants. Insert/update relationship policies use `WITH CHECK` and verify the owner of each foreign row. No new `SECURITY DEFINER` authorization function is introduced.
 
-The cleanup migration snapshots retired rows per user into `legacy_personal_archives`, restores own-only read policies, drops the couple relationship from dates, and then removes Pulse, streak, book, couple, invite, sharing, and helper-function storage.
+The cleanup migration snapshots retired rows per user into `legacy_personal_archives`, restores own-only read policies, drops the couple relationship from dates, and then removes Pulse, streak, book, couple, invite, sharing, and helper-function storage. The subsequent Inbox-routing migration adds only a `SECURITY INVOKER` RPC; it does not bypass existing row or relationship policies.
 
 ## Exports
 
@@ -116,8 +116,20 @@ Settings calls an authenticated, private/no-store status endpoint. It reports on
 
 Czech and English dictionaries share typed interfaces. New professional copy is in `src/lib/i18n/sections/professional.ts`. Product identity is centralized in `src/lib/brand.ts` and reused by document metadata, PWA manifest, login, app, and navigation.
 
+## Product design and public surfaces
+
+The authoritative product-design system lives under `docs/design/`. Its thesis is calm operational intelligence for one professional, expressed through operational cartography: aligned relationships, compact ledger-like rows, restrained signals, and explicit evidence. The implementation extends the existing neutral foundation with semantic paper, stone, graphite, ink, amber, success, risk, integration, AI, and chart tokens. Status labels are canonical and localized rather than formatting database enums at render time.
+
+The public surface remains a private sign-in entry, not a marketing site. It uses the centralized brand mark, explains the own-only operating model, keeps Google sign-in primary, handles callback errors, and exposes a media seam without shipping substitute artwork. Higgsfield assets remain deferred in `docs/design/generated-media-manifest.json`; production metadata does not reference proposed files.
+
+The web app manifest and dynamic icon route reuse the same name-independent brand symbol. The authenticated shell can expose the browser install prompt through the existing mobile PWA affordance. There is no custom offline data cache or service worker: authenticated records and integrations remain online-dependent, which avoids presenting stale financial, invoice, or operational data as current. `/dev-preview` is fixture-only and returns 404 in ordinary production; only Playwright's local optimized build exposes it through the server-only `NEXT_E2E=1` flag.
+
+Future coding agents start with `AGENTS.md` and `CLAUDE.md`, then use the narrow product, design-system, visual-QA, release, and deferred-media skills in `.claude/skills/`. The project commands under `.claude/commands/` implement repository inspection, screen work, visual QA, asset production, and release validation against real paths.
+
 ## Testing
 
 - Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, and strict AI-output and citation validation.
-- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login, contextual AI proposal flows, and axe accessibility scans.
+- Vitest also guards the atomic Inbox-routing migration, localized presentation labels, and local documentation links.
+- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login and auth errors, contextual AI proposal flows, mobile destination access, and axe accessibility scans.
+- Responsive coverage explicitly checks 360, 430, 768, 1024, 1440, and 1728 px, with a Czech narrow view and a dark 1024 px view.
 - Production build is a required verification step because the shell spans server/client boundaries and lazy chart/editor bundles.

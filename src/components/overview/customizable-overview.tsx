@@ -29,6 +29,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   BriefcaseBusiness,
+  Command,
   CreditCard,
   GripVertical,
   LayoutDashboard,
@@ -38,7 +39,6 @@ import {
   RotateCcw,
   Settings2,
   Sigma,
-  Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ const WIDGET_SECTION: Partial<Record<WidgetId, string>> = {
 const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }> =
   {
     "today-hero": { icon: LayoutDashboard, size: "full" },
-    "quick-add": { icon: Sparkles, size: "full" },
+    "quick-add": { icon: Command, size: "full" },
     kpi: { icon: Sigma, size: "full" },
     todos: { icon: ListTodo, size: "full" },
     "work-attention": { icon: BriefcaseBusiness, size: "full" },

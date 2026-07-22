@@ -14,9 +14,10 @@ export default defineConfig({
   // 30 s default on CI and clean developer machines.
   timeout: 90_000,
   fullyParallel: true,
-  // Multiple axe scans and cold Turbopack routes are CPU-heavy. Bounding
-  // concurrency keeps local and CI runs deterministic on smaller machines.
-  workers: 2,
+  // Route compilation and axe scans contend heavily when the deterministic
+  // preview is cold. One worker avoids duplicate compilation and keeps the
+  // same coverage deterministic on smaller machines.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
@@ -29,10 +30,16 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 5"] } },
   ],
   webServer: {
-    command: `npx next dev -p ${PORT}`,
-    url: `${BASE_URL}/login`,
+    // Compile once, then run the same production server used after deployment.
+    // NEXT_E2E exposes fixture-only /dev-preview for this build and nowhere
+    // else; ordinary production builds retain the route's 404 guard.
+    command: `npm run build && npx next start -p ${PORT}`,
+    url: `${BASE_URL}/dev-preview`,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    // The production build is the server setup step, not an individual test.
+    // Leave test assertions at 90 s while allowing shared/low-core runners to
+    // finish the one-time compile before the suite begins.
+    timeout: 300_000,
     env: {
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "preview-anon-key",

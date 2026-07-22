@@ -5,7 +5,7 @@ import { totalMonthlyIn } from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import type { Project, Subscription, Todo } from "@/lib/types";
-import { SectionLabel } from "@/components/ui/page-header";
+import { Metric } from "@/components/ui/metric";
 
 type Props = {
   subscriptions: Subscription[];
@@ -27,7 +27,7 @@ export function KpiCards({
   const activeProjects = projects.filter((project) => project.is_active && project.status !== "archived").length;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-3">
       <Kpi
         icon={Sigma}
         label={t.kpi.monthlyRecurring}
@@ -62,19 +62,6 @@ function Kpi({
   sub: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:border-border-strong hover:-translate-y-0.5 hover:shadow-card">
-      <div className="flex items-center justify-between gap-2">
-        <SectionLabel className="!text-[10px] text-foreground-muted">
-          {label}
-        </SectionLabel>
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-surface-muted text-foreground-muted">
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-      </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight tabular text-foreground">
-        {value}
-      </p>
-      <p className="mt-0.5 text-xs text-foreground-subtle truncate">{sub}</p>
-    </div>
+    <Metric label={label} value={value} detail={sub} icon={Icon} />
   );
 }

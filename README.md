@@ -101,8 +101,9 @@ The relevant migrations are:
 
 1. `20260721165419_professional_restructure_core.sql` — professional entities, relationships, explicit grants/indexes, transaction-safe opportunity conversion, and own-only relationship policies.
 2. `20260721165421_remove_legacy_personal_scope.sql` — archive legacy data, restore own-only reads, then remove retired personal tables and sharing infrastructure.
+3. `20260722150000_atomic_inbox_routing.sql` — route one owned Inbox item and mark it processed in a single `SECURITY INVOKER` transaction.
 
-Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying both migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
+Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying all migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
 4. Start the app:
 
@@ -110,7 +111,7 @@ Do not rerun `supabase/schema.sql` on an existing project and do not apply the c
 npm run dev
 ```
 
-Open <http://localhost:3000>. `/dev-preview` provides deterministic data for local/Playwright UI validation and returns 404 in production.
+Open <http://localhost:3000>. `/dev-preview` provides deterministic data for local UI validation and returns 404 in ordinary production builds. Playwright alone sets the server-only `NEXT_E2E=1` flag on its local optimized test build; never configure that flag in a deployed environment.
 
 ## Validation
 
@@ -122,6 +123,14 @@ npm run build
 npm run test:e2e
 ```
 
+The deterministic `/dev-preview` harness drives the Playwright responsive matrix at 360, 430, 768, 1024, 1440, and 1728 px, including mobile destination access, Czech copy, dark mode, overflow, axe checks, PWA metadata, and single-page A4 invoice output. It contains fixtures only and remains unavailable in deployed production.
+
+## Product design and media
+
+OwnDashboard follows the documented **calm operational intelligence** thesis and **operational cartography** visual direction. Production UI uses semantic tokens, canonical localized statuses, one Lucide icon family, compact data presentation, and authentic application rendering. Generated UI, fabricated metrics, and filler illustration are prohibited.
+
+Higgsfield production is intentionally deferred until its MCP is available. No substitute or placeholder artwork is shipped. The login and empty-state components expose integration seams, and the media manifest records proposed destinations without referencing nonexistent files.
+
 ## Deployment and owner actions
 
 The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md), including setting `main` as the GitHub default branch. Cost tiers and scaling triggers are documented in [stack-and-scaling.md](./stack-and-scaling.md).
@@ -132,3 +141,9 @@ The repository cannot safely configure external account secrets, OAuth consent s
 - [External services, callbacks, and rename checklist](./docs/external-setup.md)
 - [Migration and rollback](./docs/migration-guide.md)
 - [AI and privacy](./docs/ai-and-privacy.md)
+- [Product design audit](./docs/design/product-design-audit.md)
+- [Reference research](./docs/design/reference-research.md)
+- [Brand system](./docs/design/brand-system.md) and [design system](./docs/design/design-system.md)
+- [Deferred media opportunity audit](./docs/design/higgsfield-opportunity-audit.md), [art direction](./docs/design/higgsfield-art-direction.md), and [manifest](./docs/design/generated-media-manifest.json)
+- [Visual QA record](./docs/design/visual-qa.md)
+- [Future-agent control document](./CLAUDE.md)

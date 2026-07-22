@@ -2,13 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  // Dev/E2E only: a fixture-fed preview of the dashboard shell is served at
-  // /dev-preview so the auth-gated UI can be exercised without a real session.
-  // The route itself also 404s in production, so this can never leak there.
-  if (
-    process.env.NODE_ENV !== "production" &&
-    request.nextUrl.pathname.startsWith("/dev-preview")
-  ) {
+  // The page owns the environment guard: ordinary production builds call
+  // notFound(), while local development and explicit NEXT_E2E builds render
+  // fixtures. Bypass auth here so production reaches that 404 instead of
+  // leaking the route as an authentication redirect.
+  if (request.nextUrl.pathname.startsWith("/dev-preview")) {
     return NextResponse.next({ request });
   }
 

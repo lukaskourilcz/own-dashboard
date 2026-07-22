@@ -1,0 +1,4 @@
+interface:
+  display_name: "OwnDashboard Product"
+  short_description: "Implement OwnDashboard product workflows safely"
+  default_prompt: "Use $own-dashboard-product to implement this OwnDashboard workflow without breaking its domain boundaries."

@@ -6,23 +6,26 @@ export function EmptyState({
   title,
   description,
   action,
+  align = "center",
   className,
 }: {
   icon?: LucideIcon;
   title: string;
   description?: string;
   action?: React.ReactNode;
+  align?: "center" | "start";
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center py-10 px-6 text-center",
+        "flex flex-col justify-center py-8 px-5",
+        align === "center" ? "items-center text-center" : "items-start text-left",
         className,
       )}
     >
       {Icon && (
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-foreground-subtle">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface-inset text-foreground-subtle">
           <Icon className="h-4 w-4" />
         </div>
       )}

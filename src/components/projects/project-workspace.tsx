@@ -19,11 +19,15 @@ import { CostsPanel } from "@/components/panels/costs-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
-import { useDict } from "@/lib/i18n";
+import { Metric as OperationalMetric } from "@/components/ui/metric";
+import { AiProposalPanel, AiResultGroup } from "@/components/ui/ai-proposal";
+import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
+import { useDict, useLang } from "@/lib/i18n";
 import { convert } from "@/lib/fx";
 import { computeTotals } from "@/lib/invoices";
 import { assessProjectHealth } from "@/lib/project-health";
 import { projectMonthlyIn } from "@/lib/projects";
+import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
 import type {
   ClientOpportunity,
@@ -96,6 +100,7 @@ function matchesProjectInbox(item: InboxItem, projectId: string): boolean {
 export function ProjectWorkspace(props: Props) {
   const { project, displayCurrency } = props;
   const t = useDict();
+  const { lang } = useLang();
   const p = t.professional;
   const [tab, setTab] = useState<WorkspaceTab>("overview");
   const [brief, setBrief] = useState<ProjectBrief | null>(null);
@@ -126,8 +131,8 @@ export function ProjectWorkspace(props: Props) {
   const activity = [
     ...projectNotes.map((item) => ({ id: `note-${item.id}`, at: item.updated_at, label: `${t.nav.sections.notes}: ${item.title}` })),
     ...projectTodos.map((item) => ({ id: `todo-${item.id}`, at: item.created_at, label: `${t.nav.sections.tasks}: ${item.title}` })),
-    ...projectInvoices.map((item) => ({ id: `invoice-${item.id}`, at: item.updated_at, label: `${t.nav.sections.invoices}: ${item.number} · ${item.status}` })),
-    ...projectOpportunities.map((item) => ({ id: `opportunity-${item.id}`, at: item.updated_at, label: `${p.opportunity}: ${item.title} · ${item.status}` })),
+    ...projectInvoices.map((item) => ({ id: `invoice-${item.id}`, at: item.updated_at, label: `${t.nav.sections.invoices}: ${item.number} · ${statusLabel(item.status, lang)}` })),
+    ...projectOpportunities.map((item) => ({ id: `opportunity-${item.id}`, at: item.updated_at, label: `${p.opportunity}: ${item.title} · ${statusLabel(item.status, lang)}` })),
     ...props.costs.map((item) => ({ id: `cost-${item.id}`, at: item.updated_at, label: `${p.monthlyCost}: ${item.label}` })),
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 20);
 
@@ -172,47 +177,40 @@ export function ProjectWorkspace(props: Props) {
   }
 
   return <div>
-    <Link href="/projects" className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</Link>
+    <Link href="/projects" prefetch={false} className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</Link>
     <PageHeader
       title={project.name}
       description={project.summary || p.projectWorkspace}
-      action={<div className="flex items-center gap-2"><SectionLabel>{project.status ?? (project.is_active ? "active" : "archived")}</SectionLabel>{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
+      eyebrow={organization?.name ?? p.projectWorkspace}
+      action={<div className="flex items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
     />
     <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1" role="tablist" aria-label={p.projectWorkspace}>
       {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
     </div>
 
     {tab === "overview" && <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label={p.health} value={healthLabel} icon={Activity} />
-        <Metric label={p.openTasks} value={String(projectTodos.filter((item) => !item.done).length)} icon={ListTodo} />
-        <Metric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} />
-        <Metric label={p.outstandingAmount} value={formatCurrency(outstanding, displayCurrency)} icon={BriefcaseBusiness} />
+      <div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4">
+        <OperationalMetric label={p.health} value={healthLabel} icon={Activity} tone={health.health === "at_risk" ? "risk" : health.health === "attention" ? "attention" : "default"} />
+        <OperationalMetric label={p.openTasks} value={String(projectTodos.filter((item) => !item.done).length)} icon={ListTodo} />
+        <OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} />
+        <OperationalMetric label={p.outstandingAmount} value={formatCurrency(outstanding, displayCurrency)} icon={BriefcaseBusiness} tone={outstanding > 0 ? "attention" : "default"} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization?.name ?? p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 space-y-1">{projectDates.slice(0, 5).map((date) => <li key={date.id}>{date.the_date} · {date.title}</li>)}</ul></div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
       </div>
-      <Card><CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-4 w-4" />{p.projectCopilot}</CardTitle></CardHeader><CardContent className="space-y-3"><p className="text-sm text-foreground-muted">{p.projectCopilotDescription}</p><Button onClick={generateBrief} disabled={generating}>{generating ? p.generatingBrief : p.generateBrief}</Button>{briefError && <p className="text-sm text-destructive">{p.aiUnavailable}</p>}{brief && <div className="grid gap-3 md:grid-cols-3"><BriefList title={p.facts} items={brief.facts} /><BriefList title={p.risks} items={brief.risks} /><BriefList title={p.suggestions} items={brief.suggestions} /><div className="md:col-span-3"><SectionLabel>{p.sources}</SectionLabel><p className="mt-1 text-xs text-foreground-muted">{brief.sources.join(" · ")}</p></div></div>}</CardContent></Card>
+      <AiProposalPanel label={p.projectCopilot} description={`${p.projectCopilotDescription} ${p.aiNotSaved}`}><div className="space-y-3"><Button onClick={generateBrief} disabled={generating}><Bot />{generating ? p.generatingBrief : p.generateBrief}</Button>{briefError && <p role="alert" className="text-sm text-destructive">{p.aiUnavailable}</p>}{brief && <><div className="grid gap-4 md:grid-cols-3"><AiResultGroup kind="facts" title={p.facts} items={brief.facts} /><AiResultGroup kind="risks" title={p.risks} items={brief.risks} /><AiResultGroup kind="suggestions" title={p.suggestions} items={brief.suggestions} /></div><div className="border-t border-border pt-3"><p className="text-[11px] text-foreground-muted">{brief.limited && p.limitedContext}</p><div className="mt-2 flex flex-wrap gap-1.5">{brief.sources.map((source) => <EntityBadge key={source}>{source}</EntityBadge>)}</div></div></>}</div></AiProposalPanel>
     </div>}
 
-    {tab === "tasks" && <div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.projectTasks} icon={ListTodo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><RecordCard title={p.relatedInbox} icon={BriefcaseBusiness} empty={p.noRelatedRecords} items={projectInbox.map((item) => ({ id: item.id, primary: item.title, secondary: item.status }))} /></div>}
+    {tab === "tasks" && <div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.projectTasks} icon={ListTodo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><RecordCard title={p.relatedInbox} icon={BriefcaseBusiness} empty={p.noRelatedRecords} items={projectInbox.map((item) => ({ id: item.id, primary: item.title, secondary: statusLabel(item.status, lang) }))} /></div>}
     {tab === "activity" && <RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} />}
     {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
     {tab === "operations" && <div className="space-y-4"><RecordCard title={p.projectOperations} icon={ServerCog} empty={p.noRelatedRecords} items={props.crons.map((item) => ({ id: item.id, primary: item.name, secondary: `${item.schedule} · ${item.enabled ? p.open : p.operationalWarning}${item.last_run_at ? ` · ${item.last_run_at.slice(0, 10)}` : ""}` }))} />{project.repo_full_name && props.repositoryIntegrationEnabled && <CostsPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} />}</div>}
-    {tab === "finance" && <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><Metric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><Metric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><Metric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={t.nav.sections.invoices} icon={FileText} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${item.status} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectSubscriptions.map((item) => ({ id: item.id, primary: item.name, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || item.kind, secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /><RecordCard title={p.monthlyCost} icon={CircleDollarSign} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /></div></div>}
+    {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={t.nav.sections.invoices} icon={FileText} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectSubscriptions.map((item) => ({ id: item.id, primary: item.name, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /><RecordCard title={p.monthlyCost} icon={CircleDollarSign} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /></div></div>}
     {tab === "knowledge" && <div className="grid gap-4 lg:grid-cols-2"><RecordCard title={t.nav.sections.notes} icon={FileText} empty={p.noRelatedRecords} items={projectNotes.map((item) => ({ id: item.id, primary: item.title, secondary: item.plain_text.slice(0, 120) }))} /><RecordCard title={t.nav.sections.prompts} icon={Bot} empty={p.noRelatedRecords} items={projectPrompts.map((item) => ({ id: item.id, primary: item.name, secondary: item.body.slice(0, 120) }))} /></div>}
   </div>;
 }
 
-function Metric({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Activity }) {
-  return <Card><CardContent className="flex items-center justify-between p-4"><div><SectionLabel>{label}</SectionLabel><p className="mt-2 text-xl font-semibold tabular">{value}</p></div><Icon className="h-5 w-5 text-foreground-muted" /></CardContent></Card>;
-}
-
 function RecordCard({ title, icon: Icon, empty, items }: { title: string; icon: typeof Activity; empty: string; items: { id: string; primary: string; secondary?: string }[] }) {
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="space-y-2">{items.map((item) => <li key={item.id} className="rounded-md border border-border p-3"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
-}
-
-function BriefList({ title, items }: { title: string; items: string[] }) {
-  return <div className="rounded-md border border-border p-3"><SectionLabel>{title}</SectionLabel>{items.length === 0 ? <p className="mt-2 text-xs text-foreground-muted">—</p> : <ul className="mt-2 list-disc space-y-1 pl-4 text-sm">{items.map((item) => <li key={item}>{item}</li>)}</ul>}</div>;
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
 }

@@ -8,7 +8,8 @@ import {
   Pencil,
   Plus,
   Search,
-  Sparkles,
+  Link2,
+  ScanText,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -485,7 +486,7 @@ export function AiPanel({
       {isEmpty ? (
         <Card className="p-0">
           <EmptyState
-            icon={Sparkles}
+            icon={Link2}
             title={t.ai.noLinksYet}
             description={t.ai.noLinksDescription}
             action={
@@ -883,7 +884,7 @@ function LinkDialog({
                     disabled={enriching || !form.url.trim()}
                     className="shrink-0"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <ScanText className="h-3.5 w-3.5" />
                     {enriching ? t.ai.enriching : t.ai.autoFill}
                   </Button>
                 </Tooltip>

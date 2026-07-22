@@ -363,9 +363,7 @@ export function FinancesPanel({
         description={t.finances.description}
       />
 
-      {/* Finance hero — leads with net worth (the focal balance) and this
-          month's in / out / net at a glance, fintech-app style. */}
-      <section className="mb-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface via-surface to-surface-muted/50 p-5 shadow-soft sm:p-6">
+      <section className="surface-band mb-4 overflow-hidden p-4 sm:p-5">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-1.5 text-foreground-muted">

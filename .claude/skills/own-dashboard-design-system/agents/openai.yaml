@@ -1,0 +1,4 @@
+interface:
+  display_name: "OwnDashboard Design System"
+  short_description: "Apply the operational design system consistently"
+  default_prompt: "Use $own-dashboard-design-system to refine this OwnDashboard interface with existing tokens and components."

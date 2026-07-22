@@ -1,0 +1,4 @@
+interface:
+  display_name: "OwnDashboard Visual QA"
+  short_description: "Validate responsive and accessible product UI"
+  default_prompt: "Use $own-dashboard-visual-qa to validate this OwnDashboard screen across required states and widths."

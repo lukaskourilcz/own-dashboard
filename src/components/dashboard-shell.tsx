@@ -77,6 +77,7 @@ import { qk } from "@/lib/queries/keys";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
 import { isActionableNotification } from "@/lib/notifications";
+import { useDict } from "@/lib/i18n";
 import type {
   Account, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
   ImportantDate, InboxItem, Invoice, InvoiceItem, InvoiceSettings,
@@ -137,6 +138,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
 
 export function DashboardShell(props: Props) {
   const { user } = props;
+  const t = useDict();
   const [tab, setTabState] = useState<NavTab>(props.initialTab);
   const seededData = useMemo(() => new Set(props.initialDataKeys), [props.initialDataKeys]);
   const dataOptions = useCallback((key: DashboardDataKey) => ({
@@ -205,11 +207,12 @@ export function DashboardShell(props: Props) {
   return <MotionConfig reducedMotion="user"><TooltipProvider><ToastProvider>
     <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
     <MobileFab onClick={() => { setTab("home"); requestAnimationFrame(focusQuickAdd); }} />
+    <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0">{t.nav.skipToContent}</a>
     <div className="min-h-screen bg-background">
       <Sidebar tab={tab} setTab={setTab} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => isActionableNotification(item)).length} />
-      <main className={cn("transition-[padding] duration-200 ease-out", navCollapsed ? "md:pl-16" : "md:pl-60")}><div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
+      <main id="main-content" className={cn("pb-20 transition-[padding] duration-200 ease-out md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}><div className="page-frame px-4 py-5 md:px-6 md:py-7 xl:px-8">
         <MobileNav tab={tab} setTab={setTab} />
-        <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>
+        <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === "home" && <CustomizableOverview nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={todos} opportunities={opportunities} importantDates={importantDates} />,
             "quick-add": <QuickAdd setTodos={setTodos} setInboxItems={setInboxItems} onCalendarTitle={handleCalendarTitle} />,
