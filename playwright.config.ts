@@ -29,7 +29,11 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 5"] } },
   ],
   webServer: {
-    command: `npx next dev -p ${PORT}`,
+    // The modified Next.js Turbopack filesystem cache can spend several
+    // minutes compacting on macOS Documents workspaces. Webpack is an
+    // explicitly supported Next 16 dev option and keeps the deterministic QA
+    // harness within the server timeout.
+    command: `npx next dev --webpack -p ${PORT}`,
     url: `${BASE_URL}/login`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

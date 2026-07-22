@@ -28,4 +28,11 @@ test.describe("login", () => {
 
     expect(errors, errors.join("\n")).toEqual([]);
   });
+
+  test("explains an OAuth callback failure", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await stubBackend(page);
+    await page.goto("/login?error=auth");
+    await expect(page.getByRole("alert")).toContainText("Sign-in could not be completed");
+  });
 });

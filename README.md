@@ -123,6 +123,14 @@ npm run build
 npm run test:e2e
 ```
 
+The deterministic `/dev-preview` harness drives the Playwright responsive matrix at 360, 430, 768, 1024, 1440, and 1728 px, including mobile destination access, Czech copy, dark mode, overflow, and axe checks. It contains fixtures only and remains unavailable in production.
+
+## Product design and media
+
+OwnDashboard follows the documented **calm operational intelligence** thesis and **operational cartography** visual direction. Production UI uses semantic tokens, canonical localized statuses, one Lucide icon family, compact data presentation, and authentic application rendering. Generated UI, fabricated metrics, and filler illustration are prohibited.
+
+Higgsfield production is intentionally deferred until its MCP is available. No substitute or placeholder artwork is shipped. The login and empty-state components expose integration seams, and the media manifest records proposed destinations without referencing nonexistent files.
+
 ## Deployment and owner actions
 
 The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md), including setting `main` as the GitHub default branch. Cost tiers and scaling triggers are documented in [stack-and-scaling.md](./stack-and-scaling.md).
@@ -134,4 +142,8 @@ The repository cannot safely configure external account secrets, OAuth consent s
 - [Migration and rollback](./docs/migration-guide.md)
 - [AI and privacy](./docs/ai-and-privacy.md)
 - [Product design audit](./docs/design/product-design-audit.md)
+- [Reference research](./docs/design/reference-research.md)
 - [Brand system](./docs/design/brand-system.md) and [design system](./docs/design/design-system.md)
+- [Deferred media opportunity audit](./docs/design/higgsfield-opportunity-audit.md), [art direction](./docs/design/higgsfield-art-direction.md), and [manifest](./docs/design/generated-media-manifest.json)
+- [Visual QA record](./docs/design/visual-qa.md)
+- [Future-agent control document](./CLAUDE.md)

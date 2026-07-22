@@ -78,7 +78,12 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     const nav = testInfo.project.name === "mobile" ? page.getByTestId("mobile-nav") : page.locator("aside");
     await expect(nav.getByRole("button", { name: "Home" })).toBeVisible();
-    await expect(nav.getByRole("button", { name: testInfo.project.name === "mobile" ? "Leads" : "Opportunities" })).toBeVisible();
+    if (testInfo.project.name === "mobile") {
+      await nav.getByRole("button", { name: "More", exact: true }).click();
+      await expect(page.getByRole("dialog", { name: "All areas" }).getByRole("button", { name: "Opportunities", exact: true })).toBeVisible();
+    } else {
+      await expect(nav.getByRole("button", { name: "Opportunities", exact: true })).toBeVisible();
+    }
   });
 
   test("project workspace exposes the unified project context", async ({ page }, testInfo) => {

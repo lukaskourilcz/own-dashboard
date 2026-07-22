@@ -70,4 +70,13 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
       expect(JSON.stringify(summarize(serious), null, 2)).toBe("[]");
     });
   }
+
+  test("mobile navigation and destination sheet", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "scan the mobile shell once");
+    await gotoPreview(page);
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "All areas" })).toBeVisible();
+    const serious = await scan(page);
+    expect(JSON.stringify(summarize(serious), null, 2)).toBe("[]");
+  });
 });
