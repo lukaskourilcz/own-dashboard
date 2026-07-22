@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Name-independent connected-work mark. It is intentionally deterministic and
- * monochrome-capable; future Higgsfield exploration may refine, not replace,
+ * monochrome-capable; future reviewed exploration may refine, not replace,
  * this component's accessible placement contract.
  */
 export function BrandMark({ className, label }: { className?: string; label?: string }) {

@@ -28,7 +28,7 @@ English and Czech must express the same meaning and consequence, not merely fit 
 
 The current deterministic mark is implemented by `src/components/brand-mark.tsx` and mirrored by the dynamic app icon. It uses a structured frame, a linked path, two square nodes, and one circular endpoint. It is name-independent, compact, monochrome-capable, and deliberately avoids a dashboard gauge, sparkle, crypto coin, analytics graph, and the OpenAI knot.
 
-Higgsfield symbol exploration remains blocked because the connected MCP trial has no usable generation credits. The attempted vector and stylized model requests produced no asset. The next pass must compare safe low-cost or free alternatives before buying credits. Any generator may inform proportions only after three genuinely different directions are reviewed; the selected concept must preserve the placement contract and small-size clarity and be redrawn deterministically. Do not replace the component with an unreviewed raster logo.
+No generated symbol exploration has been approved. The next pass must compare safe low-cost or free providers before production. Generated directions may inform proportions only after three genuinely different options are reviewed; the selected concept must preserve the placement contract and small-size clarity and be redrawn deterministically. Do not replace the component with an unreviewed raster logo.
 
 ## Color
 

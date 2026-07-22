@@ -1,0 +1,4 @@
+interface:
+  display_name: "OwnDashboard Brand Media"
+  short_description: "Research and govern brand-media production"
+  default_prompt: "Use $own-dashboard-brand-media to research a safe generator and prepare or integrate an approved OwnDashboard brand-media asset."
