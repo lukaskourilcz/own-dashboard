@@ -16,6 +16,9 @@ type PromptsStrings = {
   editTitle: string;
   name: string;
   namePlaceholder: string;
+  descriptionLabel: string;
+  descriptionPlaceholder: string;
+  noDescription: string;
   promptText: string;
   promptPlaceholder: string;
   project: string;
@@ -56,6 +59,9 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     editTitle: "Edit prompt",
     name: "Name",
     namePlaceholder: "e.g. Code review",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Briefly, what this prompt does",
+    noDescription: "No description yet",
     promptText: "Prompt",
     promptPlaceholder: "Paste or write your prompt…",
     project: "Project",
@@ -93,6 +99,9 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     editTitle: "Upravit prompt",
     name: "Název",
     namePlaceholder: "např. Code review",
+    descriptionLabel: "Popis",
+    descriptionPlaceholder: "Stručně, co tento prompt dělá",
+    noDescription: "Zatím bez popisu",
     promptText: "Prompt",
     promptPlaceholder: "Vlož nebo napiš svůj prompt…",
     project: "Projekt",
