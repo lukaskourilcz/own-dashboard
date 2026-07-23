@@ -37,11 +37,13 @@ Home and login may breathe. Work, Projects, Opportunities, Career, Money, and In
 - `PageHeader` supports regular and compact density plus an optional contextual eyebrow.
 - `Card` is a flat contained module; it no longer implies elevation.
 - `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations.
+- `ConfirmationProvider` and `useConfirmation` are the only destructive-confirmation surface. Deletions use the branded Radix dialog with a named consequence and explicit destructive action; browser-native confirmation dialogs are reserved for non-destructive consent until migrated.
 - `StatusBadge` is the canonical label/marker/tone presentation for shared project, opportunity, organization, inbox, invoice, and health states.
 - `EntityBadge` shows relationships without pretending they are statuses.
 - `Metric` creates compact border-led measures instead of repeating equal cards.
 - `AiProposalPanel` and `AiResultGroup` distinguish facts, risks, suggestions, and evidence without sparkles, gradients, bot mascots, or implied writes.
 - `BrandMark` is the name-independent shell/auth/icon placement contract.
+- `DailyFocusPanel` is an operational execution surface: it snapshots at most seven active-project or GLOBAL tasks, exposes waiting age, and uses the 49-day completion garden as professional task history rather than lifestyle gamification.
 
 New generic abstractions require two real consumers. Search before creating. Existing invoice, Career, finance, editor, and repository components retain domain logic while adopting shared surface and status primitives incrementally.
 
@@ -54,6 +56,8 @@ New generic abstractions require two real consumers. Search before creating. Exi
 Transactions, invoices, listings, projects, references, and other comparable entities are rows/tables. Activity and notifications are chronological rows. Opportunities may use a board only when stage movement is the action; a dense list remains available. Cards summarize, contain a focused object, or elevate a workflow. A card inside a card is normally a signal to use a section line or inset band.
 
 Sortable containers expose one dedicated drag handle. Attach dnd-kit activator listeners and `touch-action: none` only to that handle; keep row/card text selectable and leave ordinary links and actions outside the drag target.
+
+Unequal Library groups use masonry-style CSS columns with `break-inside: avoid`; do not use a row-aligned grid that reserves the tallest category's height across every column.
 
 ## Responsive transformations
 

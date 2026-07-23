@@ -57,7 +57,7 @@ test.describe("dashboard sections", () => {
     expect(errors, errors.join("\n")).toEqual([]);
   });
 
-  test("home shows lifelike fixture content and no removed personal navigation", async ({ page }) => {
+  test("home shows lifelike fixture content and no removed personal navigation", async ({ page }, testInfo) => {
     await gotoPreview(page);
     // Greeting hero addresses the fixture user by first name.
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Jan");
@@ -65,7 +65,27 @@ test.describe("dashboard sections", () => {
     await expect(
       page.getByRole("button", { name: "Customize" }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Today's seven" }),
+    ).toBeVisible();
+    await expect(page.getByText("0 of 7 completed")).toBeVisible();
+    await expect(page.getByText("GLOBAL", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 3, name: "Completion garden" }),
+    ).toBeVisible();
+    await expect(page.getByText(/^Waiting /).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Generate a new seven" }),
+    ).toBeVisible();
     const sidebar = page.locator("aside");
+    if (testInfo.project.name === "desktop") {
+      await expect(
+        sidebar.getByRole("link", { name: "aifirst", exact: true }),
+      ).toBeVisible();
+      await expect(
+        sidebar.getByRole("link", { name: "own-dashboard", exact: true }),
+      ).toBeVisible();
+    }
     await expect(sidebar.getByRole("button", { name: "Habits" })).toHaveCount(0);
     await expect(sidebar.getByRole("button", { name: "Books" })).toHaveCount(0);
     await expect(sidebar.getByRole("button", { name: "Couple" })).toHaveCount(0);
@@ -78,12 +98,12 @@ test.describe("dashboard sections", () => {
     });
     await gotoPreview(page);
     const nav = testInfo.project.name === "mobile" ? page.getByTestId("mobile-nav") : page.locator("aside");
-    await expect(nav.getByRole("button", { name: "Home" })).toBeVisible();
+    await expect(nav.getByRole("button", { name: /^(Home|Domů)$/ })).toBeVisible();
     if (testInfo.project.name === "mobile") {
-      await nav.getByRole("button", { name: "More", exact: true }).click();
-      await expect(page.getByRole("dialog", { name: "All areas" }).getByRole("button", { name: "Opportunities", exact: true })).toBeVisible();
+      await nav.getByRole("button", { name: /^(More|Více)$/ }).click();
+      await expect(page.getByRole("dialog", { name: /^(All areas|Všechny sekce)$/ }).getByRole("button", { name: /^(Opportunities|Příležitosti)$/ })).toBeVisible();
     } else {
-      await expect(nav.getByRole("button", { name: "Opportunities", exact: true })).toBeVisible();
+      await expect(nav.getByRole("button", { name: /^(Opportunities|Příležitosti)$/ })).toBeVisible();
     }
   });
 

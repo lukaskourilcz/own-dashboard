@@ -1,6 +1,6 @@
 # OwnDashboard visual QA
 
-Date: 2026-07-22
+Date: 2026-07-23
 
 Scope: private sign-in, authenticated shell, core professional workflows, project workspace, semantic design system, responsive navigation, accessibility states, and deferred-media seams.
 
@@ -18,6 +18,9 @@ The test suite also covers:
 - the width-contained mobile Career table and its sortable columns;
 - subscription grouping, importance, next-payment dates, and renewal countdowns;
 - the project communication timeline and VPS Agents task queue;
+- Home daily focus with seven deterministic items, GLOBAL priority, waiting age, regeneration, completion garden, and active-project navigation links;
+- Career selection semantics and owner-scoped permanent deletion controls;
+- application-styled destructive confirmation surfaces;
 - axe scans for serious or critical WCAG A/AA violations;
 - a dark-mode Czech invoice rendered to a parsed, single-page A4 PDF.
 
@@ -45,6 +48,7 @@ The code review and static checks confirmed these design constraints:
 | Mobile hierarchy | More opens an accessible destination dialog and navigates to Opportunities |
 | Career table | Match/Remote/Location remain semantic and the wide table scrolls without widening the mobile page |
 | Operational workflows | Project Communication, the Agents queue, and subscription grouping/renewals render from deterministic fixtures |
+| Daily focus | Seven active/GLOBAL tasks, priority order, waiting age, regeneration, garden, and active-project navigation render from deterministic fixtures |
 | Fixed controls | Quick Add does not overlap the mobile navigation |
 | Localization | Narrowest matrix case renders Czech fixtures |
 | Theme | 1024 px matrix case renders dark mode |
@@ -64,6 +68,7 @@ Verified runtime evidence:
 - the open mobile destination dialog passed axe and remained keyboard/semantics reachable;
 - all 23 canonical destinations (22 sidebar areas plus Settings) opened without console errors;
 - Career sorting, mobile table containment, project Communication, the Agents queue, and subscription group/importance/countdown presentation passed their workflow assertions;
+- Home rendered the deterministic seven-task focus at desktop and mobile widths, including GLOBAL, waiting-age, garden, regeneration, and active-project navigation assertions;
 - the manifest, dynamic PNG icon, and maskable icon declaration passed;
 - a dark-mode Czech invoice remained white, retained print isolation, generated a PDF larger than 10 KB, parsed successfully, and occupied exactly one A4 page;
 - the rendered invoice was visually inspected after the print-spacing correction; the earlier footer-only second page no longer exists.

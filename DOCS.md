@@ -42,7 +42,7 @@ The shell switches canonical routes with the History API for an SPA feel. Browse
 
 ### Home
 
-Home shows the daily operating context: calendar, deadlines, opportunity follow-ups, recurring spend, open tasks, active projects, quick capture, and configurable widgets. The retired habit KPI/widget was replaced by project/work attention.
+Home shows the daily operating context: calendar, deadlines, opportunity follow-ups, recurring spend, active projects, quick capture, and configurable widgets. Its task surface transactionally snapshots up to seven open tasks each day, ordered by priority and randomized within priority bands. GLOBAL tasks are database-enforced priority 6. Completing all seven marks that professional workday in a 49-day GitHub-style completion garden; this is task execution history, not the retired lifestyle streak feature.
 
 ### Inbox
 
@@ -54,7 +54,7 @@ Work overview summarizes active projects, open opportunities, due follow-ups, is
 
 Projects use a sortable summary table with a dedicated non-text drag handle. Each project has a canonical workspace with Overview, Tasks, Activity, Communication, Repository, Operations, Finance, and Knowledge tabs. Communication records are project-owned timeline entries with channel, direction, contact, summary, and next action. Projects may store separate production and development URLs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
 
-Career listings are rendered as a semantic, horizontally resilient table. Match is an explicit comparable column and users can sort by best/lowest match, remote availability, location, or discovery date without changing the scraped source records.
+Career listings are rendered as a semantic, horizontally resilient table. Match is an explicit comparable column and users can sort by best/lowest match, remote availability, location, or discovery date. Rows support accessible bulk selection. Permanent deletion writes an owner-scoped `deleted` tombstone, so a shared scraped listing cannot reappear for that owner after refresh and one owner cannot mutate the global feed for another.
 
 Agents is an own-only queue, not a remote terminal. The browser creates durable `agent_tasks`; a VPS worker authenticates with a server-only bearer token, identifies itself, atomically claims one eligible queued task through `claim_agent_task`, and can report completion only for the row it currently owns. The worker endpoints are `/api/agents/claim` and `/api/agents/report`; service-role use is constrained by `DASHBOARD_OWNER_ID`, task id, agent name, and running status.
 
@@ -66,7 +66,7 @@ Money preserves accounts, transactions, bank synchronization, subscriptions, cat
 
 ### Planning and Library
 
-Planning preserves Tasks, Google Calendar, Goals (the renamed plans system), and own-only professional Dates. Library preserves Notes, Prompts, Links (the broadened link catalogue), and References (commands plus editable cheatsheets).
+Planning preserves Tasks, Google Calendar, Goals (the renamed plans system), and own-only professional Dates. Tasks distinguish GLOBAL work from active-project work and exclude inactive-project tasks from operational surfaces. Library preserves Notes, Prompts, Links (the broadened link catalogue), and References. Empty notes older than the editing grace period are removed automatically; every note exposes full-context copy. Link categories use masonry columns so unequal groups do not create empty grid rows. Project Knowledge parses `about-project.md` into Tech stack and third-party library lists and can explicitly recheck GitHub.
 
 ## Database and RLS
 
@@ -86,6 +86,8 @@ Every new user table has RLS enabled, explicit `authenticated` Data API grants, 
 The cleanup migration snapshots retired rows per user into `legacy_personal_archives`, restores own-only read policies, drops the couple relationship from dates, and then removes Pulse, streak, book, couple, invite, sharing, and helper-function storage. The subsequent Inbox-routing migration adds only a `SECURITY INVOKER` RPC; it does not bypass existing row or relationship policies.
 
 `20260722190000_operational_workflow_extensions.sql` adds `project_communications` and `agent_tasks`, both with explicit Data API grants, indexed owner/relationship access, own-only RLS, and foreign-project ownership checks. `claim_agent_task` remains `SECURITY INVOKER`, uses `FOR UPDATE SKIP LOCKED`, and is executable only by `service_role`; the browser cannot invoke it.
+
+`20260723065433_daily_focus_synced_preferences.sql` extends task importance to 6, enforces GLOBAL task scope in a trigger, and adds own-only `daily_focus_sets` plus snapshot items. The `create_daily_focus_set` RPC is `SECURITY INVOKER`, uses an owner/date advisory transaction lock, excludes inactive projects, and preserves historical titles if a task is later removed. The same migration stores language, theme, currency, navigation visibility/order, task density, and CV links in `user_preferences`, and migrates Career `hidden` state into durable owner-scoped `deleted` tombstones.
 
 ## Exports
 
@@ -117,7 +119,7 @@ AI enablement and sensitive-context opt-in live in `user_preferences`. Sensitive
 
 ## Integration status
 
-Settings calls an authenticated, private/no-store status endpoint. It reports only connection/configuration booleans and the user's latest bank-sync timestamp. OAuth token tables are checked server-side with the service role after user authentication; tokens and secret values never enter the response.
+Settings calls authenticated, private/no-store endpoints. UI preferences are loaded at the server boundary and hydrate the existing local cache, while edits are upserted into the own-only `user_preferences` row for cross-device consistency. Active projects use the canonical `projects.is_active` field rather than a second preference list; a bounded active-project navigation seed is the only project data loaded for routes that otherwise do not need projects. Integration status reports only connection/configuration booleans and the user's latest bank-sync timestamp. OAuth token tables are checked server-side with the service role after user authentication; tokens and secret values never enter the response.
 
 ## Internationalization
 

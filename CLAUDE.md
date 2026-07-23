@@ -2,7 +2,7 @@
 
 # OwnDashboard control document
 
-OwnDashboard is a bilingual, self-hosted, own-only professional operating system for one software engineer/freelancer. It connects projects, client opportunities, organizations, VPS agent tasks, Career, Czech invoices, money, planning, knowledge, integrations, notifications, weekly reviews, and contextual AI. Tugedr is a client-opportunity source. Pulse, habits/streaks, books/reading, couples, partner data, and general lifestyle tracking are retired and must not return. Keep the temporary name OwnDashboard centralized in `src/lib/brand.ts`; never rename it to Takt.
+OwnDashboard is a bilingual, self-hosted, own-only professional operating system for one software engineer/freelancer. It connects projects, client opportunities, organizations, VPS agent tasks, Career, Czech invoices, money, planning, knowledge, integrations, notifications, weekly reviews, and contextual AI. Tugedr is a client-opportunity source. Pulse, lifestyle habits/streaks, books/reading, couples, partner data, and general lifestyle tracking are retired and must not return. The Home completion garden is professional seven-task execution history backed by `daily_focus_*`; it must never reuse or restore the retired personal `streaks` model. Keep the temporary name OwnDashboard centralized in `src/lib/brand.ts`; never rename it to Takt.
 
 ## Read before changing
 

@@ -1,8 +1,8 @@
 # OwnDashboard overhaul continuation handoff
 
-Updated: 2026-07-22
+Updated: 2026-07-23
 
-Branch: `codex/remove-platform-references`
+Branch: `codex/daily-focus-active-projects`
 
 Previous implementation pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` (merged into `main`). Brand-media policy pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/58` (merged into `main`).
 
@@ -50,6 +50,12 @@ Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. Inspect P
 - Project workspaces include Communication and separate Development/Project site actions.
 - Agents queues explicit tasks for trusted VPS workers through authenticated claim/report endpoints; it is not a remote shell.
 - Disabled automatic Next.js prefetch on authenticated relationship/deep-workspace links. Explicit navigation is unchanged, while fixture console errors and unnecessary server-seed preloads are avoided.
+- Added database-backed GLOBAL tasks with enforced priority 6, a daily priority-first seven-task snapshot, waiting-age labels, manual regeneration, and a professional 49-day completion garden.
+- Added database-synchronized language, theme, currency, navigation, layout, task-density, and CV preferences. Settings now controls active projects, and active-project scope is reused by navigation, operational tables, and selectors.
+- Project Knowledge reads `about-project.md` from the linked GitHub repository and presents its summary, Tech stack, and third-party libraries with an explicit current-information check.
+- Career listings support selection and permanent owner-scoped deletion tombstones; the former Hide workflow is removed.
+- Empty notes are cleaned up after the editing grace period, every note has full-context copy, and uneven Links categories use masonry columns.
+- Destructive actions use the shared application confirmation dialog rather than browser-native delete popups.
 
 ## Completed engineering and agent architecture
 
@@ -66,7 +72,7 @@ Completed successfully at this checkpoint:
 
 - `npm run lint`
 - `npx tsc --noEmit`
-- `npm run test` — 26 files, 242 tests passed
+- `npm run test` — rerun after the daily-focus milestone; the last pre-build run passed 28 files and 247 tests
 - `npm run build` — optimized Next.js production build completed
 - `npm run test:e2e` — 43 passed, 31 intentional project skips, 0 failed
 - axe — login, 17 representative desktop destinations, and the open mobile More dialog had no serious or critical A/AA violations
@@ -94,7 +100,7 @@ The next agent must search current primary provider sources for at least three l
 
 ## External work that still requires owner systems
 
-- Apply all four pending Supabase migrations, including `20260722190000_operational_workflow_extensions.sql`, through the repository's normal reviewed migration workflow.
+- Back up the linked database and apply all five pending Supabase migrations, including `20260723065433_daily_focus_synced_preferences.sql`, through the repository's normal reviewed migration workflow.
 - Configure `AGENT_RUNNER_TOKEN` and `DASHBOARD_OWNER_ID` only if the VPS queue should be consumed; validate with a disposable task first.
 - Exercise OAuth, GitHub, Google Calendar, GoCardless, Resend, PostHog, Sentry, and Anthropic against real configured provider accounts.
 - Research and select a safe low-cost/free media generator. Generate and approve only the manifest's high-value media.
