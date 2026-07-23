@@ -182,3 +182,36 @@ export async function loadProjectCommits(
     return { kind: "error" };
   }
 }
+
+/** One commit in the cross-project feed (GET /api/github/activity). */
+export type CrossProjectCommit = {
+  projectId: string;
+  projectName: string;
+  projectSlug: string;
+  repo: string;
+  sha: string;
+  shortSha: string;
+  message: string;
+  author: string;
+  date: string;
+  url: string;
+};
+
+export type CrossProjectActivityResult =
+  | { kind: "ok"; items: CrossProjectCommit[] }
+  | { kind: "disconnected" }
+  | { kind: "error" };
+
+/** Load a merged recent-commit feed across the owner's active project repos. */
+export async function loadCrossProjectActivity(): Promise<CrossProjectActivityResult> {
+  try {
+    const res = await fetch("/api/github/activity");
+    if (res.status === 401) return { kind: "disconnected" };
+    if (!res.ok) return { kind: "error" };
+    const json = (await res.json()) as { items: CrossProjectCommit[]; connected: boolean };
+    if (!json.connected) return { kind: "disconnected" };
+    return { kind: "ok", items: json.items };
+  } catch {
+    return { kind: "error" };
+  }
+}
