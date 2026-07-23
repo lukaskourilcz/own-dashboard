@@ -76,7 +76,9 @@ const page = await browser.newPage({ viewport, deviceScaleFactor, ignoreHTTPSErr
 try {
   await page.goto(url, { waitUntil: 'load', timeout: 60_000 });
   await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-  await page.evaluate(() => (document as any).fonts?.ready);
+  await page.evaluate(() =>
+    (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready,
+  );
   const hideCss = hideSelectors.length
     ? `${hideSelectors.join(', ')} { display: none !important; }`
     : '';
