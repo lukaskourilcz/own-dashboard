@@ -1,5 +1,5 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
-import { loadReposResult, loadProjectCommits, type LoadReposResult } from "@/lib/github";
+import { loadReposResult, loadProjectCommits, loadCrossProjectActivity, type LoadReposResult } from "@/lib/github";
 
 /** Single cache key for the repo list — the Repositories panel and the
  * "Publish to repo" dialog share it, so opening the dialog reuses the panel's
@@ -66,5 +66,16 @@ export function useProjectCommitsQuery(
     queryFn: () => loadProjectCommits(repoFullName as string),
     staleTime: 60_000,
     enabled: enabled && !!repoFullName,
+  });
+}
+
+/** Merged recent-commit feed across active project repos. On demand only (the
+ * Work overview), cached briefly so it doesn't refetch on every visit. */
+export function useCrossProjectActivityQuery(enabled = true) {
+  return useQuery({
+    queryKey: ["github", "activity"] as const,
+    queryFn: loadCrossProjectActivity,
+    staleTime: 60_000,
+    enabled,
   });
 }

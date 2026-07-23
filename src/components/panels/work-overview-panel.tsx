@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { assessProjectHealth } from "@/lib/project-health";
+import { useCrossProjectActivityQuery } from "@/lib/github-queries";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
@@ -115,6 +116,9 @@ export function WorkOverviewPanel({
     .filter((x) => x.is_active && x.status !== "archived" && x.repo_full_name)
     .slice(0, 12);
 
+  const activityQuery = useCrossProjectActivityQuery();
+  const activity = activityQuery.data;
+
   const metrics = [
     { label: p.activeProjects, value: projects.filter((x) => x.is_active && x.status !== "archived").length, icon: FolderKanban },
     { label: p.openOpportunities, value: opportunities.filter((x) => !CLOSED.has(x.status)).length, icon: BriefcaseBusiness },
@@ -204,6 +208,33 @@ export function WorkOverviewPanel({
                     <span className="truncate text-sm font-medium">{project.name}</span>
                     <span className="shrink-0 font-mono text-[11px] text-foreground-muted">{project.repo_full_name}</span>
                   </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+      <Card className="mt-4">
+        <CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.crossProjectActivity}</CardTitle></CardHeader>
+        <CardContent>
+          <p className="mb-3 text-xs text-foreground-muted">{p.crossProjectActivityDescription}</p>
+          {activity?.kind === "disconnected" ? (
+            <p className="text-sm text-foreground-muted">{p.githubDisconnected}</p>
+          ) : activityQuery.isPending ? (
+            <p className="text-sm text-foreground-muted">{p.githubLoading}</p>
+          ) : activity?.kind !== "ok" ? (
+            <p className="text-sm text-foreground-muted">{p.githubError}</p>
+          ) : activity.items.length === 0 ? (
+            <p className="text-sm text-foreground-muted">{p.githubEmpty}</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {activity.items.map((c) => (
+                <li key={`${c.projectId}-${c.sha}`} className="py-2">
+                  <a href={c.url} target="_blank" rel="noreferrer" className="block truncate text-sm text-foreground hover:underline focus-ring" title={c.message}>{c.message}</a>
+                  <p className="mt-0.5 font-mono text-[11px] text-foreground-muted">
+                    <Link href={`/projects/${encodeURIComponent(c.projectSlug)}`} prefetch={false} className="hover:underline">{c.projectName}</Link>
+                    {` · ${c.shortSha}`}{c.author ? ` · ${c.author}` : ""}{c.date ? ` · ${c.date.slice(0, 10)}` : ""}
+                  </p>
                 </li>
               ))}
             </ul>
