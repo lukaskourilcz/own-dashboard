@@ -566,3 +566,11 @@ textarea {
 .bn-host .bn-side-menu {
   color: var(--foreground-subtle);
 }
+
+/* Keep this final in the cascade: Tailwind shadow utilities are emitted after
+   the earlier print block in optimized builds. */
+@media print {
+  .invoice-print-area {
+    box-shadow: none !important;
+  }
+}

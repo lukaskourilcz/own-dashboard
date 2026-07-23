@@ -14,6 +14,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict, useLang } from "@/lib/i18n";
 import { statusLabel } from "@/lib/status-presentation";
 import { computeTotals } from "@/lib/invoices";
@@ -44,6 +45,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<OrganizationType | "all">("all");
@@ -61,10 +63,19 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     onError: () => toast.err(p.couldNotSave),
   });
   const removeMutation = useMutation({
-    mutationFn: async (id: string) => { if (!window.confirm(p.confirmDeleteOrganization)) throw new Error("cancelled"); const { error } = await supabase.from("organizations").delete().eq("id", id); if (error) throw error; return id; },
+    mutationFn: async (id: string) => { const { error } = await supabase.from("organizations").delete().eq("id", id); if (error) throw error; return id; },
     onSuccess: (id) => setOrganizations((old) => old.filter((item) => item.id !== id)),
-    onError: (error) => { if (!(error instanceof Error && error.message === "cancelled")) toast.err(p.couldNotSave); },
+    onError: () => toast.err(p.couldNotSave),
   });
+  const removeOrganization = async (id: string) => {
+    if (await confirm({
+      title: p.delete,
+      description: p.confirmDeleteOrganization,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeMutation.mutate(id);
+  };
   const clientQuery = search.trim().toLocaleLowerCase();
   const visibleOrganizations = organizations.filter((org) =>
     (typeFilter === "all" || org.type === typeFilter) &&
@@ -91,7 +102,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       const counts = { projects: relatedProjects.length, opportunities: relatedOpportunities.length, invoices: relatedInvoices.length };
       const invoiceTotal = relatedInvoices.reduce((sum, invoice) => sum + convert(computeTotals(invoiceItems.filter((item) => item.invoice_id === invoice.id).map((item) => ({ quantity: Number(item.quantity), unit_price: Number(item.unit_price), vat_rate: Number(item.vat_rate) })), { roundTotal: invoice.round_total, currency: invoice.currency }).total, invoice.currency, displayCurrency), 0);
       const expanded = expandedId === org.id;
-      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(13rem,.8fr)_auto] sm:items-center"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div><p className="mt-1 text-xs text-foreground-muted">{org.email ?? org.website ?? p.noRelatedRecords}</p></button><div className="grid grid-cols-3 gap-2 text-center text-[11px] text-foreground-muted"><span><strong className="block text-sm tabular text-foreground">{counts.projects}</strong>{p.projects}</span><span><strong className="block text-sm tabular text-foreground">{counts.opportunities}</strong>{p.opportunities}</span><span><strong className="block text-sm tabular text-foreground">{counts.invoices}</strong>{p.invoices}</span></div><div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} onClick={() => removeMutation.mutate(org.id)}><Trash2 /></Button></div></div>
+      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(13rem,.8fr)_auto] sm:items-center"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div><p className="mt-1 text-xs text-foreground-muted">{org.email ?? org.website ?? p.noRelatedRecords}</p></button><div className="grid grid-cols-3 gap-2 text-center text-[11px] text-foreground-muted"><span><strong className="block text-sm tabular text-foreground">{counts.projects}</strong>{p.projects}</span><span><strong className="block text-sm tabular text-foreground">{counts.opportunities}</strong>{p.opportunities}</span><span><strong className="block text-sm tabular text-foreground">{counts.invoices}</strong>{p.invoices}</span></div><div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} onClick={() => void removeOrganization(org.id)}><Trash2 /></Button></div></div>
         {expanded && <div className="grid gap-4 border-t border-border bg-surface-inset p-4 lg:grid-cols-[minmax(14rem,.65fr)_minmax(0,1.35fr)]"><div className="space-y-2">{org.email && <a href={`mailto:${org.email}`} className="block text-sm underline">{org.email}</a>}{org.website && <a href={org.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm underline">{org.website}<ExternalLink className="h-3 w-3" /></a>}{org.notes && <p className="text-sm text-foreground-muted">{org.notes}</p>}{relatedInvoices.length > 0 && <p className="pt-2 text-xs font-medium tabular">{p.totalInvoiced}: {formatCurrency(invoiceTotal, displayCurrency)}</p>}</div><div><p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">{p.relatedWork}</p><ul className="mt-2 divide-y divide-border text-xs text-foreground-muted">{relatedProjects.map((item) => <li key={item.id} className="py-1.5"><Link className="font-medium text-foreground underline" href={`/projects/${encodeURIComponent(item.slug)}`} prefetch={false}>{item.name}</Link></li>)}{relatedOpportunities.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.opportunity}: {item.title}</span><StatusBadge value={item.status} /></li>)}{relatedInvoices.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.invoices}: {item.number}</span><StatusBadge value={item.status} /></li>)}{relatedTodos.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.task}: {item.title}</li>)}{relatedNotes.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.note}: {item.title}</li>)}{relatedDates.slice(0, 3).map((item) => <li key={item.id} className="py-1.5 tabular">{item.the_date}: {item.title}</li>)}</ul></div></div>}
       </article>;
     })}</div>}

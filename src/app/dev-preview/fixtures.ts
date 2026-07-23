@@ -94,6 +94,9 @@ export const todos: Todo[] = [
   { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, category: null, created_at: TS, ...MANUAL },
   { id: "t5", user_id: UID, title: "Add UPSTASH_REDIS_REST_URL in Vercel", done: false, due_date: ymd(5), category: "own-dashboard", created_at: TS, source: "github", repo_id: "1001", repo_full_name: "lukaskourilcz/own-dashboard", repo_owner: "lukaskourilcz", repo_name: "own-dashboard", repo_url: "https://github.com/lukaskourilcz/own-dashboard", needed_raw: "- [ ] Add UPSTASH_REDIS_REST_URL in Vercel", generated_at: ymd(-2), importance: 3 },
   { id: "t6", user_id: UID, title: "Generate real app icons with Recraft", done: false, due_date: ymd(1), category: "react-express-app", created_at: TS, source: "github", repo_id: "1002", repo_full_name: "lukaskourilcz/react-express-app", repo_owner: "lukaskourilcz", repo_name: "react-express-app", repo_url: "https://github.com/lukaskourilcz/react-express-app", needed_raw: "- [ ] Generate real app icons with Recraft", generated_at: ymd(-6), importance: 5 },
+  { id: "t7", user_id: UID, title: "Review the weekly operating plan", done: false, due_date: ymd(0), category: null, created_at: at(8, 0, -12), ...MANUAL, importance: 6, is_global: true },
+  { id: "t8", user_id: UID, title: "Verify project deployment", done: false, due_date: ymd(1), category: "aifirst", created_at: at(9, 0, -4), ...MANUAL, importance: 4, project_id: "proj-aifirst", is_global: false },
+  { id: "t9", user_id: UID, title: "Review dashboard accessibility report", done: false, due_date: ymd(3), category: "own-dashboard", created_at: at(10, 0, -3), ...MANUAL, importance: 2, project_id: "proj-dashboard", is_global: false },
 ];
 
 export const accounts: Account[] = [

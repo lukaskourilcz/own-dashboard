@@ -23,7 +23,6 @@ type JobsStrings = {
   roleFullstack: string;
   roleSoftware: string;
   sourceAll: string;
-  showHidden: string;
   shortlistedOnly: string;
   // Sort + fit filters
   sortLabel: string;
@@ -48,8 +47,13 @@ type JobsStrings = {
   openOriginal: string;
   shortlist: string;
   unshortlist: string;
-  hide: string;
-  unhide: string;
+  deleteListing: string;
+  deleteSelected: (count: number) => string;
+  deleteListingsTitle: string;
+  deleteListingsDescription: (count: number) => string;
+  selectedListings: (count: number) => string;
+  selectAllListings: string;
+  listingDeleted: string;
   firstSeen: string;
   posted: string;
   noListingsYet: string;
@@ -179,7 +183,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     roleFullstack: "Fullstack",
     roleSoftware: "Software",
     sourceAll: "All sources",
-    showHidden: "Show hidden",
     shortlistedOnly: "Shortlisted",
     sortLabel: "Sort",
     sortBestFit: "Best fit",
@@ -205,8 +208,14 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     openOriginal: "Open the original posting",
     shortlist: "Shortlist",
     unshortlist: "Remove from shortlist",
-    hide: "Hide from the list",
-    unhide: "Unhide",
+    deleteListing: "Delete permanently",
+    deleteSelected: (count) => `Delete ${count}`,
+    deleteListingsTitle: "Delete selected positions?",
+    deleteListingsDescription: (count) =>
+      `${count} selected position${count === 1 ? "" : "s"} will be permanently removed from your feed and will not return after another check.`,
+    selectedListings: (count) => `${count} selected`,
+    selectAllListings: "Select all visible rows",
+    listingDeleted: "Selected positions were deleted.",
     firstSeen: "Found",
     posted: "Posted",
     noListingsYet: "No open positions yet",
@@ -338,7 +347,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     roleFullstack: "Fullstack",
     roleSoftware: "Software",
     sourceAll: "Všechny zdroje",
-    showHidden: "Zobrazit skryté",
     shortlistedOnly: "Oblíbené",
     sortLabel: "Řadit",
     sortBestFit: "Nejlepší shoda",
@@ -364,8 +372,14 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     openOriginal: "Otevřít původní inzerát",
     shortlist: "Přidat do oblíbených",
     unshortlist: "Odebrat z oblíbených",
-    hide: "Skrýt ze seznamu",
-    unhide: "Zobrazit zpět",
+    deleteListing: "Nenávratně smazat",
+    deleteSelected: (count) => `Smazat (${count})`,
+    deleteListingsTitle: "Smazat vybrané pozice?",
+    deleteListingsDescription: (count) =>
+      `${count} vybraných pozic bude trvale odebráno z tvého přehledu a nevrátí se ani po další kontrole.`,
+    selectedListings: (count) => `Vybráno: ${count}`,
+    selectAllListings: "Vybrat všechny viditelné řádky",
+    listingDeleted: "Vybrané pozice byly smazány.",
     firstSeen: "Nalezeno",
     posted: "Zveřejněno",
     noListingsYet: "Zatím žádné otevřené pozice",

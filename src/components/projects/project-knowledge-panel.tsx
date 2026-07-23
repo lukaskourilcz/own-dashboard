@@ -1,0 +1,149 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { BookOpen, Package, RefreshCw, Wrench } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ABOUT_PROJECT_FILE, parseAboutProject } from "@/lib/about-project";
+import { loadRepoFile } from "@/lib/github";
+import { useDict } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+
+export function ProjectKnowledgePanel({
+  repoFullName,
+  enabled = true,
+}: {
+  repoFullName: string | null;
+  enabled?: boolean;
+}) {
+  const t = useDict();
+  const p = t.professional;
+  const [owner, repo] = repoFullName?.split("/") ?? [];
+  const query = useQuery({
+    queryKey: ["github", "about-project", owner, repo],
+    queryFn: () => loadRepoFile(owner, repo, ABOUT_PROJECT_FILE),
+    enabled: enabled && Boolean(owner && repo),
+    staleTime: 5 * 60_000,
+  });
+
+  const result = query.data;
+  const knowledge =
+    result?.kind === "ok" ? parseAboutProject(result.content) : null;
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            {ABOUT_PROJECT_FILE}
+          </CardTitle>
+          <p className="mt-1 text-xs text-foreground-subtle">
+            {p.aboutProjectDescription}
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void query.refetch()}
+          disabled={!repoFullName || query.isFetching}
+        >
+          <RefreshCw
+            className={cn("h-3.5 w-3.5", query.isFetching && "animate-spin")}
+          />
+          {query.isFetching ? p.checkingKnowledge : p.checkKnowledge}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {!repoFullName || !enabled ? (
+          <EmptyState
+            icon={BookOpen}
+            title={p.repositoryUnavailable}
+            description={p.aboutProjectRepositoryRequired}
+          />
+        ) : result?.kind === "not-found" ? (
+          <EmptyState
+            icon={BookOpen}
+            title={p.aboutProjectMissing}
+            description={p.aboutProjectMissingDescription}
+          />
+        ) : result?.kind === "disconnected" ? (
+          <EmptyState
+            icon={BookOpen}
+            title={p.githubDisconnected}
+            description={p.aboutProjectRepositoryRequired}
+          />
+        ) : result?.kind === "error" || query.isError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {p.aboutProjectError}
+          </p>
+        ) : query.isLoading ? (
+          <div className="grid gap-3 sm:grid-cols-2" aria-live="polite">
+            <div className="h-28 animate-pulse rounded-md bg-skeleton" />
+            <div className="h-28 animate-pulse rounded-md bg-skeleton" />
+          </div>
+        ) : knowledge ? (
+          <div className="space-y-4">
+            {knowledge.summary && (
+              <p className="max-w-3xl text-sm leading-6 text-foreground-muted">
+                {knowledge.summary}
+              </p>
+            )}
+            <div className="grid gap-3 md:grid-cols-2">
+              <KnowledgeList
+                title={p.techStack}
+                icon={Wrench}
+                empty={p.noTechStack}
+                items={knowledge.techStack}
+              />
+              <KnowledgeList
+                title={p.thirdPartyLibraries}
+                icon={Package}
+                empty={p.noThirdPartyLibraries}
+                items={knowledge.libraries}
+              />
+            </div>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function KnowledgeList({
+  title,
+  icon: Icon,
+  items,
+  empty,
+}: {
+  title: string;
+  icon: typeof Wrench;
+  items: { name: string; description: string }[];
+  empty: string;
+}) {
+  return (
+    <section className="rounded-md border border-border bg-surface-inset p-3">
+      <h3 className="flex items-center gap-2 text-sm font-semibold">
+        <Icon className="h-3.5 w-3.5" />
+        {title}
+      </h3>
+      {items.length === 0 ? (
+        <p className="mt-3 text-xs text-foreground-subtle">{empty}</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-border">
+          {items.map((item) => (
+            <li key={`${item.name}-${item.description}`} className="py-2">
+              <p className="font-mono text-xs font-semibold">{item.name}</p>
+              {item.description && (
+                <p className="mt-0.5 text-xs leading-5 text-foreground-muted">
+                  {item.description}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

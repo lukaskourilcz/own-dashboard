@@ -8,10 +8,9 @@ import {
 } from "@/lib/dashboard-layout";
 
 /**
- * Device-local persistence for the overview's widget layout, following the
- * same localStorage + useSyncExternalStore pattern as use-prefs.ts. The
- * arrangement is a per-device preference and intentionally not synced to the
- * server.
+ * Local cache for the overview widget layout. The authenticated shell hydrates
+ * it from user_preferences and customization writes both this cache and the
+ * owner row so another device receives the same arrangement.
  */
 
 const LAYOUT_KEY = "dashboardLayout";

@@ -138,7 +138,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   prompts: ["prompts", "projects", "notifications"],
   links: ["aiLinks", "aiCategories", "notifications"],
   references: ["shortcuts", "referenceRows", "notifications"],
-  settings: ["notifications"],
+  settings: ["projects", "notifications"],
 };
 
 export function dashboardDataKeysForTab(tab: NavTab): ReadonlySet<DashboardDataKey> {

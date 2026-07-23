@@ -13,6 +13,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +34,7 @@ export function AgentsPanel({ tasks, setTasks, projects }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +89,13 @@ export function AgentsPanel({ tasks, setTasks, projects }: Props) {
   }
 
   async function removeTask(task: AgentTask) {
-    if (!window.confirm(s.removeConfirm)) return;
+    if (!await confirm({
+      title: s.remove,
+      description: s.removeConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) return;
     const { error: deleteError } = await supabase.from("agent_tasks").delete().eq("id", task.id);
     if (deleteError) return toast.err(deleteError.message);
     setTasks((prev) => prev.filter((item) => item.id !== task.id));

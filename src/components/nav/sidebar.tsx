@@ -45,6 +45,7 @@ import {
 } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
 import type { NavTab } from "@/lib/nav-tabs";
+import type { Project } from "@/lib/types";
 
 export type { NavTab };
 
@@ -119,17 +120,31 @@ export function Sidebar({
   tab,
   setTab,
   user,
+  projects = [],
   unreadNotifications = 0,
+  syncPreferences = true,
 }: {
   tab: NavTab;
   setTab: (t: NavTab) => void;
   user: { name: string | null; email: string; avatar_url?: string | null };
+  projects?: Pick<Project, "id" | "name" | "slug" | "is_active">[];
   unreadNotifications?: number;
+  syncPreferences?: boolean;
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
+  const toggleCollapsedAndSync = () => {
+    const next = !collapsed;
+    toggleCollapsed();
+    if (!syncPreferences) return;
+    void fetch("/api/user/preferences", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ navigation_collapsed: next }),
+    });
+  };
   const isVisible = (it: NavItem) => !isHidden(it.value);
 
   // Drop empty groups so we never render a lonely heading with no items, and
@@ -206,7 +221,7 @@ export function Sidebar({
           <Tooltip content={t.nav.expand} side="right">
             <button
               type="button"
-              onClick={toggleCollapsed}
+              onClick={toggleCollapsedAndSync}
               aria-label={t.nav.expand}
               aria-expanded={false}
               className="group relative h-8 w-8 shrink-0 rounded-md text-primary-foreground flex items-center justify-center focus-ring"
@@ -224,7 +239,7 @@ export function Sidebar({
             <Tooltip content={t.nav.collapse} side="right">
               <button
                 type="button"
-                onClick={toggleCollapsed}
+                onClick={toggleCollapsedAndSync}
                 aria-label={t.nav.collapse}
                 aria-expanded={true}
                 className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
@@ -256,7 +271,30 @@ export function Sidebar({
                 {t.nav.groups[g.id]}
               </p>
             )}
-            <div className="space-y-0.5">{g.items.map(renderItem)}</div>
+            <div className="space-y-0.5">
+              {g.items.map((item) => (
+                <div key={item.value}>
+                  {renderItem(item)}
+                  {!collapsed &&
+                    item.value === "projects" &&
+                    projects.length > 0 && (
+                      <ul className="ml-7 mt-1 space-y-0.5 border-l border-border pl-2">
+                        {projects.map((project) => (
+                          <li key={project.id}>
+                            <a
+                              href={`/projects/${encodeURIComponent(project.slug)}`}
+                              className="block truncate rounded px-2 py-1 text-[11px] text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+                              title={project.name}
+                            >
+                              {project.name}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </nav>
@@ -327,7 +365,7 @@ export function Sidebar({
             </button>
           </Tooltip>
           <Tooltip content={t.nav.theme} side={collapsed ? "right" : "top"}>
-            <span><ThemeToggle /></span>
+            <span><ThemeToggle syncPreferences={syncPreferences} /></span>
           </Tooltip>
           <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
             <form action="/auth/signout" method="post">

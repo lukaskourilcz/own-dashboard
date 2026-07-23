@@ -20,6 +20,7 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
@@ -53,6 +54,7 @@ export function ShortcutsPanel({
   const qc = useQueryClient();
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Shortcut | null>(null);
@@ -202,9 +204,14 @@ export function ShortcutsPanel({
     }
   }
 
-  function removeShortcut(s: Shortcut) {
-    if (!window.confirm(t.shortcuts.deleteConfirm)) return;
-    deleteMutation.mutate(s.id);
+  async function removeShortcut(s: Shortcut) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.shortcuts.deleteConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteMutation.mutate(s.id);
   }
 
   return (
@@ -461,6 +468,7 @@ function EditableTable({
   const qc = useQueryClient();
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ReferenceRow | null>(null);
   const [form, setForm] = useState<{ c1: string; c2: string; c3: string }>({
@@ -589,9 +597,14 @@ function EditableTable({
       createMut.mutate({ c1, c2, c3 }, { onSuccess: () => setOpen(false) });
     }
   }
-  function removeRow(r: ReferenceRow) {
-    if (!window.confirm(t.shortcuts.deleteRowConfirm)) return;
-    deleteMut.mutate(r.id);
+  async function removeRow(r: ReferenceRow) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.shortcuts.deleteRowConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteMut.mutate(r.id);
   }
 
   return (

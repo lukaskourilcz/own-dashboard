@@ -127,7 +127,7 @@ export function InvoiceDetail({
 
       {/* The document — fixed "paper" colours so it reads the same in dark mode
           and prints cleanly. */}
-      <div className="invoice-print-area mx-auto max-w-3xl rounded-lg border border-neutral-200 bg-white text-neutral-900 shadow-soft">
+      <div className="invoice-print-area mx-auto max-w-3xl rounded-lg border border-neutral-200 bg-white text-neutral-900">
         <div className="p-8 sm:p-12">
           {/* Header */}
           <div className="flex items-start justify-between gap-6 border-b border-neutral-200 pb-8">

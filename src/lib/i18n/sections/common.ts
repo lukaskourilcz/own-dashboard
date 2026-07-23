@@ -8,6 +8,7 @@ type CommonStrings = {
   redirecting: string;
   none: string;
   optional: string;
+  deletePermanentlyConfirm: string;
 };
 
 export const common: { en: CommonStrings; cs: CommonStrings } = {
@@ -21,6 +22,7 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     redirecting: "Redirecting…",
     none: "None",
     optional: "Optional",
+    deletePermanentlyConfirm: "This item will be permanently deleted.",
   },
   cs: {
     add: "Přidat",
@@ -32,5 +34,6 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     redirecting: "Přesměrování…",
     none: "Žádné",
     optional: "Volitelné",
+    deletePermanentlyConfirm: "Tato položka bude nenávratně smazána.",
   },
 };

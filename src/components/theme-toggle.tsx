@@ -3,8 +3,22 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
 
-export function ThemeToggle() {
-  const { theme, toggle } = useTheme();
+export function ThemeToggle({
+  syncPreferences = true,
+}: {
+  syncPreferences?: boolean;
+}) {
+  const { theme, setTheme } = useTheme();
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    if (!syncPreferences) return;
+    void fetch("/api/user/preferences", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ theme: next }),
+    });
+  };
   return (
     <button
       type="button"

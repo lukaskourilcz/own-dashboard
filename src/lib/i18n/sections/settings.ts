@@ -57,6 +57,11 @@ type SettingsStrings = {
   bankSync: string;
   emailDelivery: string;
   lastSync: string;
+  activeProjects: string;
+  activeProjectsDesc: string;
+  activeProjectCount: (active: number, total: number) => string;
+  projectWithoutRepository: string;
+  projectUpdateFailed: string;
 };
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
@@ -122,6 +127,12 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     bankSync: "Bank sync",
     emailDelivery: "Email delivery",
     lastSync: "Last sync",
+    activeProjects: "Active projects",
+    activeProjectsDesc:
+      "Only active GitHub projects appear in navigation, selectors, daily focus, and operational tables. This selection is synchronized between devices.",
+    activeProjectCount: (active, total) => `${active} of ${total} active`,
+    projectWithoutRepository: "No GitHub repository linked",
+    projectUpdateFailed: "Could not update the active project.",
   },
   cs: {
     title: "Nastavení",
@@ -184,5 +195,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     bankSync: "Synchronizace banky",
     emailDelivery: "Doručování e-mailů",
     lastSync: "Poslední synchronizace",
+    activeProjects: "Aktivní projekty",
+    activeProjectsDesc:
+      "V navigaci, selektorech, denním výběru a provozních tabulkách se zobrazují jen aktivní GitHub projekty. Výběr se synchronizuje mezi zařízeními.",
+    activeProjectCount: (active, total) => `${active} z ${total} aktivních`,
+    projectWithoutRepository: "Bez napojeného GitHub repozitáře",
+    projectUpdateFailed: "Aktivní projekt se nepodařilo změnit.",
   },
 };

@@ -23,6 +23,7 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn } from "@/lib/utils";
@@ -83,6 +84,7 @@ export function PlansPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const confirm = useConfirmation();
   const [form, setForm] = useState<FormState>(empty);
   const [error, setError] = useState<string | null>(null);
   const [calendarNote, setCalendarNote] = useState<string | null>(null);
@@ -224,8 +226,14 @@ export function PlansPanel({
     updateStatusMutation.mutate({ plan, status });
   }
 
-  function removePlan(id: string) {
-    removeMutation.mutate(id);
+  async function removePlan(id: string) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.common.deletePermanentlyConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeMutation.mutate(id);
   }
 
   const grouped = useMemo(() => {

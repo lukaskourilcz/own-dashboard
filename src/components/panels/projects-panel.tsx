@@ -51,6 +51,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { GithubIcon } from "@/components/icons/github";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
@@ -210,6 +211,7 @@ function ProjectsListPanel({
   const qc = useQueryClient();
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -552,7 +554,13 @@ function ProjectsListPanel({
   }
 
   async function deleteProject(p: Project) {
-    if (!window.confirm(t.projects.deleteProjectConfirm)) return;
+    if (!await confirm({
+      title: t.projects.deleteProject,
+      description: t.projects.deleteProjectConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) return;
     const { error } = await supabase.from("projects").delete().eq("id", p.id);
     if (error) return toast.err(error.message);
     setProjects((prev) => prev.filter((x) => x.id !== p.id));
@@ -1123,6 +1131,7 @@ function CostsSection({
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState(displayCurrency);
@@ -1164,6 +1173,13 @@ function CostsSection({
   }
 
   async function removeCost(id: string) {
+    if (!await confirm({
+      title: t.projects.deleteCost,
+      description: t.projects.deleteCost,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) return;
     const { error } = await supabase.from("project_costs").delete().eq("id", id);
     if (error) return toast.err(error.message);
     setCosts((prev) => prev.filter((c) => c.id !== id));
@@ -1361,6 +1377,7 @@ function CronsSection({
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [form, setForm] = useState<CronForm>(emptyCronForm(displayCurrency));
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -1426,7 +1443,13 @@ function CronsSection({
   }
 
   async function remove(c: Cron) {
-    if (!window.confirm(t.projects.deleteCronConfirm)) return;
+    if (!await confirm({
+      title: t.projects.deleteCron,
+      description: t.projects.deleteCronConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) return;
     const { error } = await supabase.from("crons").delete().eq("id", c.id);
     if (error) return toast.err(error.message);
     setCrons((prev) => prev.filter((x) => x.id !== c.id));

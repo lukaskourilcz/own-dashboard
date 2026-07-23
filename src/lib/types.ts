@@ -56,13 +56,42 @@ export type Todo = {
   // When the task was generated. due_date is set to generated_at + 7 days so
   // the dashboard can show a time-to-finish countdown.
   generated_at: string | null;
-  // Importance 1–5 (5 = highest), parsed from a NEEDED.md `[imp:N]` marker or
-  // chosen by hand on a manual task. Null = unscored (drives the Tasks filter).
+  // Importance 1–6 (6 is reserved for GLOBAL tasks). NEEDED.md tasks use 1–5.
   importance: number | null;
+  // GLOBAL tasks are not project-scoped and the database always assigns
+  // importance 6.
+  is_global?: boolean;
   project_id?: string | null;
   organization_id?: string | null;
   opportunity_id?: string | null;
   job_application_id?: string | null;
+};
+
+export type DailyFocusItem = {
+  id: string;
+  set_id: string;
+  todo_id: string | null;
+  position: number;
+  title_snapshot: string;
+  project_name_snapshot: string | null;
+  importance_snapshot: number | null;
+  waiting_since: string;
+  completed_at: string | null;
+};
+
+export type DailyFocusDay = {
+  date: string;
+  completed: boolean;
+  completedCount: number;
+  total: number;
+};
+
+export type DailyFocus = {
+  setId: string;
+  date: string;
+  generation: number;
+  items: DailyFocusItem[];
+  garden: DailyFocusDay[];
 };
 
 export type Account = {
@@ -506,7 +535,7 @@ export type JobListing = {
   last_seen_at: string;
 };
 
-export type JobUserStateValue = "shortlisted" | "hidden";
+export type JobUserStateValue = "shortlisted" | "deleted";
 
 export type JobUserState = {
   id: string;

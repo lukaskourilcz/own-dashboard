@@ -39,6 +39,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
@@ -131,6 +132,7 @@ export function ReposPanel({
 }) {
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
   const qc = useQueryClient();
   const { data, isPending, isFetching, refetch } = useReposQuery();
   const [query, setQuery] = useState("");
@@ -210,8 +212,14 @@ export function ReposPanel({
       ),
   });
 
-  function onDisconnect() {
-    if (window.confirm(t.github.disconnectConfirm)) disconnectMutation.mutate();
+  async function onDisconnect() {
+    if (await confirm({
+      title: t.github.disconnect,
+      description: t.github.disconnectConfirm,
+      confirmLabel: t.github.disconnect,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) disconnectMutation.mutate();
   }
 
   // Persist the chosen repo allow-list. An empty array clears the filter.
@@ -472,6 +480,7 @@ function RepoNotesCard({
   const t = useDict();
   const locale = useDateLocale();
   const toast = useToast();
+  const confirm = useConfirmation();
   const qc = useQueryClient();
   const supabase = createClient();
   const repoId = String(repo.id);
@@ -547,9 +556,14 @@ function RepoNotesCard({
     },
   });
 
-  function deleteEntry(note: RepoNote) {
-    if (note.body.trim() && !window.confirm(t.github.deleteNoteConfirm)) return;
-    deleteMutation.mutate(note.id);
+  async function deleteEntry(note: RepoNote) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.github.deleteNoteConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteMutation.mutate(note.id);
   }
 
   async function saveToGithub() {

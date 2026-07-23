@@ -8,10 +8,10 @@ import {
 } from "@/lib/nav-tabs";
 
 /**
- * Lightweight client-persisted UI preferences, following the same
- * localStorage + useSyncExternalStore pattern as `useTheme`
- * (see src/lib/use-theme.ts). These are device-local and intentionally not
- * synced to the server.
+ * Lightweight client cache for UI preferences, following the same
+ * localStorage + useSyncExternalStore pattern as `useTheme`. Settings-facing
+ * values are hydrated from and written to the own-only user_preferences row;
+ * localStorage prevents a flash and keeps preview/offline UI usable.
  */
 
 // ---------------------------------------------------------------------------

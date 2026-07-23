@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
@@ -31,6 +32,7 @@ export function ProjectCommunicationPanel({ projectId, communications, setCommun
   const p = t.professional;
   const supabase = createClient();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +70,13 @@ export function ProjectCommunicationPanel({ projectId, communications, setCommun
   }
 
   async function remove(item: ProjectCommunication) {
-    if (!window.confirm(p.deleteCommunicationConfirm)) return;
+    if (!await confirm({
+      title: p.deleteCommunication,
+      description: p.deleteCommunicationConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) return;
     const { error: deleteError } = await supabase.from("project_communications").delete().eq("id", item.id);
     if (deleteError) return toast.err(deleteError.message);
     setCommunications((prev) => prev.filter((row) => row.id !== item.id));

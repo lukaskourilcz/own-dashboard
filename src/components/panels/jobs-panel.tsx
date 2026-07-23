@@ -10,7 +10,6 @@ import {
   Check,
   Clipboard,
   ExternalLink,
-  EyeOff,
   Files,
   FileText,
   History,
@@ -25,6 +24,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -152,6 +153,15 @@ export function JobsPanel({
   const [applyFor, setApplyFor] = useState<JobListing | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [copilotFor, setCopilotFor] = useState<JobListing | null>(null);
+  const deletedListingIds = useMemo(
+    () =>
+      new Set(
+        userStates
+          .filter((state) => state.state === "deleted")
+          .map((state) => state.listing_id),
+      ),
+    [userStates],
+  );
 
   return (
     <div className="min-w-0">
@@ -217,7 +227,11 @@ export function JobsPanel({
                 >
                   {v === "open" ? t.jobs.openTab : t.jobs.appliedTab}
                   <span className="ml-1.5 text-[10px] text-foreground-subtle tabular">
-                    {v === "open" ? listings.length : applications.length}
+                    {v === "open"
+                      ? listings.filter(
+                          (listing) => !deletedListingIds.has(listing.id),
+                        ).length
+                      : applications.length}
                   </span>
                 </button>
               ))}
@@ -306,6 +320,7 @@ function OpenPositionsView({
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
+  const confirm = useConfirmation();
 
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"all" | JobRole>("all");
@@ -313,9 +328,9 @@ function OpenPositionsView({
   const [sortMode, setSortMode] = useState<"fit" | "fit-asc" | "newest" | "remote" | "location">("fit");
   const [priorityOnly, setPriorityOnly] = useState(false);
   const [strongFitOnly, setStrongFitOnly] = useState(false);
-  const [showHidden, setShowHidden] = useState(false);
   const [shortlistedOnly, setShortlistedOnly] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   const stateByListing = useMemo(() => {
     const m = new Map<string, JobUserState>();
@@ -340,7 +355,7 @@ function OpenPositionsView({
     const q = query.trim().toLowerCase();
     const rows = listings.filter((l) => {
       const st = stateByListing.get(l.id)?.state;
-      if (st === "hidden" && !showHidden) return false;
+      if (st === "deleted") return false;
       if (shortlistedOnly && st !== "shortlisted") return false;
       if (priorityOnly && l.role === "software") return false;
       if (role !== "all" && l.role !== role) return false;
@@ -401,7 +416,6 @@ function OpenPositionsView({
     sortMode,
     priorityOnly,
     strongFitOnly,
-    showHidden,
     shortlistedOnly,
   ]);
 
@@ -453,6 +467,47 @@ function OpenPositionsView({
     stateMutation.mutate({ listing, next, existing });
   }
 
+  const deleteMutation = useMutation({
+    mutationFn: async (rows: JobListing[]) => {
+      const { data, error } = await supabase
+        .from("job_user_state")
+        .upsert(
+          rows.map((listing) => ({
+            user_id: userId,
+            listing_id: listing.id,
+            state: "deleted" as const,
+          })),
+          { onConflict: "user_id,listing_id" },
+        )
+        .select();
+      if (error) throw error;
+      return (data ?? []) as JobUserState[];
+    },
+    onSuccess: (rows) => {
+      const deletedIds = new Set(rows.map((row) => row.listing_id));
+      setUserStates((current) => [
+        ...current.filter((row) => !deletedIds.has(row.listing_id)),
+        ...rows,
+      ]);
+      setSelected(new Set());
+      toast.ok(t.jobs.listingDeleted);
+      void qc.invalidateQueries({ queryKey: qk.jobUserStates });
+    },
+    onError: () => toast.err(t.jobs.couldNotSave),
+  });
+
+  async function deleteListings(rows: JobListing[]) {
+    if (rows.length === 0) return;
+    const approved = await confirm({
+      title: t.jobs.deleteListingsTitle,
+      description: t.jobs.deleteListingsDescription(rows.length),
+      confirmLabel: t.jobs.deleteSelected(rows.length),
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    });
+    if (approved) deleteMutation.mutate(rows);
+  }
+
   async function refresh() {
     setRefreshing(true);
     try {
@@ -468,8 +523,8 @@ function OpenPositionsView({
       await Promise.all([
         qc.invalidateQueries({ queryKey: qk.jobListings }),
         qc.invalidateQueries({ queryKey: qk.jobLastRun }),
-        // The refresh also purges listings this user hid (cascading their
-        // state rows away), so re-pull the per-user state to stay in sync.
+        // Re-pull owner state; permanent deletion tombstones must survive
+        // scraper refreshes and continue excluding those listings.
         qc.invalidateQueries({ queryKey: qk.jobUserStates }),
       ]);
       toast.ok(t.jobs.refreshOk);
@@ -552,12 +607,26 @@ function OpenPositionsView({
             icon={Star}
             label={t.jobs.shortlistedOnly}
           />
-          <FilterToggle
-            active={showHidden}
-            onClick={() => setShowHidden((v) => !v)}
-            icon={EyeOff}
-            label={t.jobs.showHidden}
-          />
+          {selected.size > 0 && (
+            <>
+              <span className="text-xs font-medium text-foreground-muted">
+                {t.jobs.selectedListings(selected.size)}
+              </span>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() =>
+                  void deleteListings(
+                    listings.filter((listing) => selected.has(listing.id)),
+                  )
+                }
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t.jobs.deleteSelected(selected.size)}
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
@@ -626,9 +695,25 @@ function OpenPositionsView({
           </p>
           <Card className="min-w-0 max-w-full overflow-hidden p-0">
             <div className="max-w-full overflow-x-auto overscroll-x-contain [contain:inline-size]">
-              <table className="w-full min-w-[980px] text-left">
+              <table className="w-full min-w-[1020px] text-left">
                 <thead className="border-b border-border bg-surface-secondary text-[11px] font-medium text-foreground-muted">
                   <tr>
+                    <th scope="col" className="w-10 px-3 py-2.5">
+                      <Checkbox
+                        checked={
+                          visible.length > 0 &&
+                          visible.every((listing) => selected.has(listing.id))
+                        }
+                        onCheckedChange={(checked) =>
+                          setSelected(
+                            checked
+                              ? new Set(visible.map((listing) => listing.id))
+                              : new Set(),
+                          )
+                        }
+                        aria-label={t.jobs.selectAllListings}
+                      />
+                    </th>
                     <th scope="col" className="px-4 py-2.5">{t.jobs.tablePosition}</th>
                     <th scope="col" className="px-3 py-2.5">{t.jobs.tableCompany}</th>
                     <th scope="col" className="px-3 py-2.5">{t.jobs.tableMatch}</th>
@@ -648,8 +733,17 @@ function OpenPositionsView({
                   applied={
                     appliedListingIds.has(l.id) || appliedUrls.has(l.url)
                   }
+                  selected={selected.has(l.id)}
+                  onSelect={() =>
+                    setSelected((current) => {
+                      const next = new Set(current);
+                      if (next.has(l.id)) next.delete(l.id);
+                      else next.add(l.id);
+                      return next;
+                    })
+                  }
                   onShortlist={() => toggleState(l, "shortlisted")}
-                  onHide={() => toggleState(l, "hidden")}
+                  onDelete={() => void deleteListings([l])}
                   onApply={() => onApply(l)}
                   onCopilot={() => onCopilot(l)}
                 />
@@ -740,8 +834,10 @@ function ListingRow({
   match,
   state,
   applied,
+  selected,
+  onSelect,
   onShortlist,
-  onHide,
+  onDelete,
   onApply,
   onCopilot,
 }: {
@@ -749,8 +845,10 @@ function ListingRow({
   match: JobMatch | undefined;
   state: JobUserStateValue | undefined;
   applied: boolean;
+  selected: boolean;
+  onSelect: () => void;
   onShortlist: () => void;
-  onHide: () => void;
+  onDelete: () => void;
   onApply: () => void;
   onCopilot: () => void;
 }) {
@@ -766,12 +864,14 @@ function ListingRow({
     locale,
   });
   return (
-    <tr
-      className={cn(
-        "group align-top transition-colors hover:bg-surface-hover",
-        state === "hidden" && "opacity-50",
-      )}
-    >
+    <tr className="group align-top transition-colors hover:bg-surface-hover">
+      <td className="w-10 px-3 py-3">
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onSelect}
+          aria-label={listing.title}
+        />
+      </td>
       <td className="max-w-md px-4 py-3">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <a
@@ -847,15 +947,14 @@ function ListingRow({
             />
           </button>
         </Tooltip>
-        <Tooltip content={state === "hidden" ? t.jobs.unhide : t.jobs.hide}>
+        <Tooltip content={t.jobs.deleteListing}>
           <button
             type="button"
-            onClick={onHide}
-            aria-label={state === "hidden" ? t.jobs.unhide : t.jobs.hide}
-            aria-pressed={state === "hidden"}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+            onClick={onDelete}
+            aria-label={t.jobs.deleteListing}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
           >
-            <EyeOff className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </Tooltip>
         <Tooltip content={t.jobs.openOriginal}>
@@ -1371,6 +1470,7 @@ function AppliedView({
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
+  const confirm = useConfirmation();
 
   const stats = useMemo(() => applicationStats(applications), [applications]);
   const [letterFor, setLetterFor] = useState<JobApplication | null>(null);
@@ -1439,9 +1539,14 @@ function AppliedView({
     },
   });
 
-  function removeApplication(app: JobApplication) {
-    if (!window.confirm(t.jobs.deleteApplicationConfirm)) return;
-    deleteMutation.mutate(app.id);
+  async function removeApplication(app: JobApplication) {
+    if (await confirm({
+      title: t.jobs.deleteApplication,
+      description: t.jobs.deleteApplicationConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteMutation.mutate(app.id);
   }
 
   const statusLabel: Record<JobApplicationStatus, string> = {
@@ -1798,6 +1903,7 @@ function TemplatesDialog({
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
+  const confirm = useConfirmation();
 
   const [editing, setEditing] = useState<CoverLetterTemplate | null>(null);
   const [creating, setCreating] = useState(false);
@@ -2007,10 +2113,15 @@ function TemplatesDialog({
                       <Tooltip content={t.jobs.deleteTemplate}>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (window.confirm(t.jobs.deleteTemplateConfirm))
-                              deleteMutation.mutate(tpl.id);
-                          }}
+                          onClick={() => void confirm({
+                            title: t.jobs.deleteTemplate,
+                            description: t.jobs.deleteTemplateConfirm,
+                            confirmLabel: t.common.delete,
+                            cancelLabel: t.common.cancel,
+                            destructive: true,
+                          }).then((approved) => {
+                            if (approved) deleteMutation.mutate(tpl.id);
+                          })}
                           aria-label={t.jobs.deleteTemplate}
                           className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
                         >

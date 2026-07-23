@@ -41,6 +41,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
       initialInvoiceItems={f.invoiceItems}
       initialInvoiceSettings={f.invoiceSettings}
       initialProjects={f.projects}
+      initialNavigationProjects={f.projects}
       initialProjectCommunications={f.projectCommunications}
       initialAgentTasks={f.agentTasks}
       initialProjectCosts={f.projectCosts}
@@ -60,6 +61,27 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
       weekCalendar={f.weekCalendar}
       selectedCalendarIds={f.selectedCalendarIds}
       repoVisibleIds={f.repoVisibleIds}
+      initialPreferences={{
+        language: "cs",
+        theme: "light",
+        display_currency: "CZK",
+        hidden_navigation: [],
+        navigation_order: [],
+        navigation_collapsed: false,
+        dashboard_layout: [
+          "today-hero",
+          "todos",
+          "kpi",
+          "quick-add",
+          "work-attention",
+          "subscriptions",
+          "calendar",
+          "goals",
+        ],
+        tasks_per_category: 5,
+        cv_url_cs: "",
+        cv_url_en: "",
+      }}
     />
   );
 }

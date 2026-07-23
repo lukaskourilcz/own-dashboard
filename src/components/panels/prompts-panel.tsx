@@ -29,6 +29,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
@@ -57,6 +58,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const confirm = useConfirmation();
   const toast = useToast();
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -209,9 +211,14 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
     }
   }
 
-  function removePrompt(p: Prompt) {
-    if (!window.confirm(t.prompts.deleteConfirm)) return;
-    deleteMutation.mutate(p.id);
+  async function removePrompt(p: Prompt) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.prompts.deleteConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteMutation.mutate(p.id);
   }
 
   return (

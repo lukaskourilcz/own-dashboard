@@ -14,6 +14,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict, useLang } from "@/lib/i18n";
 import { statusLabel } from "@/lib/status-presentation";
 import { qk } from "@/lib/queries/keys";
@@ -56,6 +57,7 @@ export function OpportunitiesPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [filter, setFilter] = useState<OpportunityStatus | "open">("open");
@@ -63,6 +65,15 @@ export function OpportunitiesPanel({
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<ClientOpportunity | null>(null);
   const [conversionOrganizationName, setConversionOrganizationName] = useState("");
+  const removeOpportunity = async (id: string) => {
+    if (await confirm({
+      title: p.delete,
+      description: t.common.deletePermanentlyConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeMutation.mutate(id);
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -190,7 +201,7 @@ export function OpportunitiesPanel({
           <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{item.title}</h2><StatusBadge value={item.status} /><EntityBadge>{statusLabel(item.source, lang)}</EntityBadge></div>{item.description && <p className="mt-1 line-clamp-2 text-xs text-foreground-muted">{item.description}</p>}<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">{item.budget_min != null && <span className="tabular">{item.budget_min.toLocaleString()}–{(item.budget_max ?? item.budget_min).toLocaleString()} {item.currency}</span>}{item.deadline && <span className="tabular">{p.deadline}: {item.deadline}</span>}{item.next_follow_up_at && <span className="tabular text-warning">{p.followUp}: {item.next_follow_up_at.slice(0, 10)}</span>}{item.source_url && <a className="inline-flex items-center gap-1 underline" href={item.source_url} target="_blank" rel="noreferrer">{p.openSource}<ExternalLink className="h-3 w-3" /></a>}</div></div>
           <SimpleSelect aria-label={`${p.status}: ${item.title}`} value={item.status} onValueChange={(status) => statusMutation.mutate({ id: item.id, status: status as OpportunityStatus })} options={STATUSES.map((status) => ({ value: status, label: statusLabel(status, lang) }))} />
           <SimpleSelect aria-label={`${p.organization}: ${item.title}`} value={item.organization_id ?? ""} onValueChange={(organization_id) => organizationMutation.mutate({ id: item.id, organization_id })} options={organizationOptions} />
-          <div className="flex items-center gap-1 md:justify-end"><Button variant="outline" size="sm" onClick={() => { setConverting(item); setConversionOrganizationName(""); }} disabled={Boolean(item.project_id) || convertMutation.isPending}>{item.project_id ? p.converted : p.convertToProject}</Button><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${item.title}`} onClick={() => removeMutation.mutate(item.id)}><Trash2 /></Button></div>
+          <div className="flex items-center gap-1 md:justify-end"><Button variant="outline" size="sm" onClick={() => { setConverting(item); setConversionOrganizationName(""); }} disabled={Boolean(item.project_id) || convertMutation.isPending}>{item.project_id ? p.converted : p.convertToProject}</Button><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${item.title}`} onClick={() => void removeOpportunity(item.id)}><Trash2 /></Button></div>
         </article>)}
       </div>}
       <Dialog open={Boolean(converting)} onOpenChange={(next) => { if (!next) { setConverting(null); setConversionOrganizationName(""); } }}>

@@ -29,6 +29,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
@@ -168,6 +169,7 @@ export function AiPanel({
   const qc = useQueryClient();
   const t = useDict();
   const toast = useToast();
+  const confirm = useConfirmation();
 
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -458,14 +460,24 @@ export function AiPanel({
     setRenameValue("");
   }
 
-  function removeCategory(c: AiCategory) {
-    if (!window.confirm(t.ai.deleteCategoryConfirm(c.name))) return;
-    deleteCategory.mutate(c.id);
+  async function removeCategory(c: AiCategory) {
+    if (await confirm({
+      title: t.ai.deleteCategory,
+      description: t.ai.deleteCategoryConfirm(c.name),
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteCategory.mutate(c.id);
   }
 
-  function removeLink(l: AiLink) {
-    if (!window.confirm(t.ai.deleteLinkConfirm)) return;
-    deleteLink.mutate(l.id);
+  async function removeLink(l: AiLink) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.ai.deleteLinkConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteLink.mutate(l.id);
   }
 
   /* ---- render -------------------------------------------------------- */
@@ -543,7 +555,7 @@ export function AiPanel({
               className="py-16"
             />
           ) : (
-            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
               {aiCategories.map((cat) => {
                   const links = byCategory.get(cat.id) ?? [];
                   // While searching, hide categories that have no matches.
@@ -644,7 +656,7 @@ function CategoryGroup({
 }) {
   const t = useDict();
   return (
-    <Card className="flex flex-col overflow-hidden p-0">
+    <Card className="mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top">
       <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-3 py-2">
         {renaming ? (
           <input

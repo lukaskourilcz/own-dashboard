@@ -3,8 +3,8 @@
  *
  * The overview tab is user-customizable: widgets can be reordered, removed, and
  * re-added. A layout is just an ordered list of widget ids, persisted
- * client-side (see use-dashboard-layout.ts) following the same localStorage
- * approach as the other device-local UI prefs in use-prefs.ts.
+ * client-side (see use-dashboard-layout.ts) and synchronized through the
+ * owner-scoped user_preferences row.
  *
  * This module holds only data + pure logic so it can be unit-tested and shared
  * safely across the server/client boundary.

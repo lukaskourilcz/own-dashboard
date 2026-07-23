@@ -6,6 +6,7 @@ import {
   Coins,
   Download,
   FileText,
+  FolderKanban,
   GripVertical,
   Languages,
   ListTodo,
@@ -56,6 +57,9 @@ import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { HOME_ITEM, INBOX_ITEM, NAV_GROUPS } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import type { Project, Updater } from "@/lib/types";
+import { useToast } from "@/components/ui/toast";
 
 type NavRowItem = { value: string; icon: typeof Sun };
 
@@ -94,16 +98,39 @@ function Segmented<T extends string>({
   );
 }
 
-export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: boolean }) {
+export function SettingsPanel({
+  projects = [],
+  setProjects = () => undefined,
+  syncPreferences = true,
+}: {
+  projects?: Project[];
+  setProjects?: Updater<Project[]>;
+  syncPreferences?: boolean;
+}) {
   const t = useDict();
+  const toast = useToast();
+  const supabase = createClient();
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
-  const { isHidden, toggle, reset: resetVisibility } = useNavVisibility();
+  const {
+    hidden,
+    isHidden,
+    setHidden,
+    reset: resetVisibility,
+  } = useNavVisibility();
   const { order, setOrder, reset: resetOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
   const [aiPrefs, setAiPrefs] = useState({ enabled: true, sensitive: false });
   const [renewalNotifications, setRenewalNotifications] = useState(true);
   const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null }>>(null);
+  const savePreferences = (patch: Record<string, unknown>) => {
+    if (!syncPreferences) return;
+    void fetch("/api/user/preferences", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+  };
   useEffect(() => {
     if (!syncPreferences) return;
     void fetch("/api/user/preferences", { cache: "no-store" })
@@ -125,13 +152,35 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
     const next = { ...aiPrefs, ...patch };
     setAiPrefs(next);
     if (syncPreferences) {
-      void fetch("/api/user/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ ai_enabled: next.enabled, ai_sensitive_opt_in: next.sensitive }) });
+      savePreferences({ ai_enabled: next.enabled, ai_sensitive_opt_in: next.sensitive });
     }
   };
   const patchRenewalNotifications = (notifications_renewals: boolean) => {
     setRenewalNotifications(notifications_renewals);
     if (syncPreferences) {
-      void fetch("/api/user/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ notifications_renewals }) });
+      savePreferences({ notifications_renewals });
+    }
+  };
+  const toggleProject = async (project: Project) => {
+    const next = !project.is_active;
+    setProjects((current) =>
+      current.map((item) =>
+        item.id === project.id ? { ...item, is_active: next } : item,
+      ),
+    );
+    const { error } = await supabase
+      .from("projects")
+      .update({ is_active: next, updated_at: new Date().toISOString() })
+      .eq("id", project.id);
+    if (error) {
+      setProjects((current) =>
+        current.map((item) =>
+          item.id === project.id
+            ? { ...item, is_active: project.is_active }
+            : item,
+        ),
+      );
+      toast.err(t.settings.projectUpdateFailed);
     }
   };
 
@@ -160,6 +209,7 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
       flat.push(...items.map((i) => i.value));
     }
     setOrder(flat);
+    savePreferences({ navigation_order: flat });
   }
   const { count: tasksPerCategory, setCount: setTasksPerCategory } =
     useTasksPerCategory();
@@ -183,7 +233,10 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
             </p>
             <Segmented
               value={lang}
-              onChange={setLang}
+              onChange={(language) => {
+                setLang(language);
+                savePreferences({ language });
+              }}
               options={[
                 { value: "cs", label: t.settings.czech },
                 { value: "en", label: t.settings.english },
@@ -208,7 +261,10 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setCurrency(c)}
+                  onClick={() => {
+                    setCurrency(c);
+                    savePreferences({ display_currency: c });
+                  }}
                   aria-pressed={currency === c}
                   className={cn(
                     "rounded-md border px-3 py-1.5 text-xs font-medium tabular transition-colors focus-ring",
@@ -237,12 +293,61 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
             </p>
             <Segmented
               value={String(tasksPerCategory)}
-              onChange={(v) => setTasksPerCategory(Number(v))}
+              onChange={(v) => {
+                const tasks_per_category = Number(v);
+                setTasksPerCategory(tasks_per_category);
+                savePreferences({ tasks_per_category });
+              }}
               options={TASKS_PER_CATEGORY_OPTIONS.map((n) => ({
                 value: String(n),
                 label: n === 0 ? t.settings.tasksAll : String(n),
               }))}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-1.5">
+              <FolderKanban className="h-3 w-3" />
+              {t.settings.activeProjects}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs text-foreground-subtle">
+                {t.settings.activeProjectsDesc}
+              </p>
+              <SectionLabel className="shrink-0">
+                {t.settings.activeProjectCount(
+                  projects.filter((project) => project.is_active).length,
+                  projects.length,
+                )}
+              </SectionLabel>
+            </div>
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {projects.map((project) => (
+                <li
+                  key={project.id}
+                  className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {project.name}
+                    </p>
+                    <p className="truncate font-mono text-[10px] text-foreground-subtle">
+                      {project.repo_full_name ??
+                        t.settings.projectWithoutRepository}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={project.is_active}
+                    onCheckedChange={() => void toggleProject(project)}
+                    aria-label={project.name}
+                  />
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
 
@@ -259,7 +364,10 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
             </p>
             <Segmented
               value={theme}
-              onChange={setTheme}
+              onChange={(theme) => {
+                setTheme(theme);
+                savePreferences({ theme });
+              }}
               options={[
                 { value: "light", label: t.settings.light, icon: Sun },
                 { value: "dark", label: t.settings.dark, icon: Moon },
@@ -287,6 +395,7 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
                   placeholder={t.settings.cvPlaceholder}
                   value={cvCs}
                   onChange={(e) => setCvCs(e.target.value.trim())}
+                  onBlur={() => savePreferences({ cv_url_cs: cvCs })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -298,6 +407,7 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
                   placeholder={t.settings.cvPlaceholder}
                   value={cvEn}
                   onChange={(e) => setCvEn(e.target.value.trim())}
+                  onBlur={() => savePreferences({ cv_url_en: cvEn })}
                 />
               </div>
             </div>
@@ -342,7 +452,13 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
                             label={t.nav.sections[it.value]}
                             dragLabel={t.settings.reorder}
                             visible={!isHidden(it.value)}
-                            onToggle={() => toggle(it.value)}
+                            onToggle={() => {
+                              const next = hidden.includes(it.value)
+                                ? hidden.filter((value) => value !== it.value)
+                                : [...hidden, it.value];
+                              setHidden(next);
+                              savePreferences({ hidden_navigation: next });
+                            }}
                           />
                         ))}
                       </ul>
@@ -351,7 +467,11 @@ export function SettingsPanel({ syncPreferences = true }: { syncPreferences?: bo
                 </div>
               );
             })}
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => { resetVisibility(); resetOrder(); }}><RotateCcw />{t.settings.resetNavigation}</Button>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => {
+              resetVisibility();
+              resetOrder();
+              savePreferences({ hidden_navigation: [], navigation_order: [] });
+            }}><RotateCcw />{t.settings.resetNavigation}</Button>
           </CardContent>
         </Card>
 

@@ -32,6 +32,8 @@ import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
 import { createClient } from "@/lib/supabase/client";
@@ -73,11 +75,13 @@ export function TodosPanel({
   const t = useDict();
   const locale = useDateLocale();
   const toast = useToast();
+  const confirm = useConfirmation();
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [newImportance, setNewImportance] = useState("");
   const [projectId, setProjectId] = useState("");
   const [organizationId, setOrganizationId] = useState("");
+  const [isGlobal, setIsGlobal] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
@@ -102,7 +106,8 @@ export function TodosPanel({
           title: title.trim(),
           due_date: dueDate || null,
           importance: newImportance ? Number(newImportance) : null,
-          project_id: projectId || null,
+          is_global: isGlobal,
+          project_id: isGlobal ? null : projectId || null,
           organization_id: organizationId || null,
           user_id: userId,
         })
@@ -118,6 +123,7 @@ export function TodosPanel({
       setNewImportance("");
       setProjectId("");
       setOrganizationId("");
+      setIsGlobal(false);
       setAddOpen(false);
       void qc.invalidateQueries({ queryKey: qk.todos });
     },
@@ -336,7 +342,15 @@ export function TodosPanel({
   }
 
   const toggle = (td: Todo) => toggleMutation.mutate(td);
-  const remove = (id: string) => removeMutation.mutate(id);
+  const remove = async (id: string) => {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.todos.deleteTaskConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeMutation.mutate(id);
+  };
 
   const open = todos.filter((td) => !td.done);
   const done = todos.filter((td) => td.done);
@@ -396,10 +410,16 @@ export function TodosPanel({
   const openVisible = open.filter((td) => passesImportance(td) && passesAssignee(td));
   const hiddenByFilter = open.length - openVisible.length;
   const openGithub = openVisible
-    .filter((td) => td.source === "github" && td.repo_id)
+    .filter((td) => !td.is_global && td.source === "github" && td.repo_id)
+    .sort(byImportanceThenDue);
+  const openGlobal = openVisible
+    .filter((td) => td.is_global)
     .sort(byImportanceThenDue);
   const openPersonal = openVisible
-    .filter((td) => !(td.source === "github" && td.repo_id))
+    .filter(
+      (td) =>
+        !td.is_global && !(td.source === "github" && td.repo_id),
+    )
     .sort(byImportanceThenDue);
 
   const repoMap = new Map<
@@ -495,6 +515,22 @@ export function TodosPanel({
             </Card>
           ) : (
             <div className="grid items-start gap-4 lg:grid-cols-2">
+              {openGlobal.length > 0 && (
+                <TaskGroupCard
+                  t={t}
+                  locale={locale}
+                  items={openGlobal}
+                  limit={tasksPerCategory}
+                  onToggle={toggle}
+                  onRemove={remove}
+                  header={
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <Flag className="h-4 w-4 shrink-0 text-warning" />
+                      {t.todos.globalGroup}
+                    </span>
+                  }
+                />
+              )}
               {repoGroups.map((g) => (
                 <TaskGroupCard
                   key={g.fullName ?? g.name}
@@ -557,8 +593,15 @@ export function TodosPanel({
               canClearNeeded={finishedNeeded > 0}
               clearing={clearFinished.isPending}
               onClearNeeded={() => {
-                if (window.confirm(t.todos.clearFromNeededConfirm))
-                  clearFinished.mutate();
+                void confirm({
+                  title: t.todos.clearFromNeeded,
+                  description: t.todos.clearFromNeededConfirm,
+                  confirmLabel: t.common.delete,
+                  cancelLabel: t.common.cancel,
+                  destructive: true,
+                }).then((approved) => {
+                  if (approved) clearFinished.mutate();
+                });
               }}
             />
           )}
@@ -579,6 +622,8 @@ export function TodosPanel({
         setProjectId={setProjectId}
         organizationId={organizationId}
         setOrganizationId={setOrganizationId}
+        isGlobal={isGlobal}
+        setIsGlobal={setIsGlobal}
         projects={projects}
         organizations={organizations}
         saving={saving}
@@ -888,9 +933,10 @@ const IMPORTANCE_STYLES: Record<number, string> = {
   3: "bg-primary/10 text-primary border-primary/20",
   4: "bg-warning/10 text-warning border-warning/20",
   5: "bg-destructive/10 text-destructive border-destructive/20",
+  6: "bg-warning/15 text-warning border-warning/30",
 };
 
-/** Small pill showing a task's 1–5 importance score. */
+/** Small pill showing a task's 1–6 importance score. */
 function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
   return (
     <Tooltip content={t.todos.importanceOf(value)}>
@@ -1016,6 +1062,8 @@ function AddTaskDialog({
   setProjectId,
   organizationId,
   setOrganizationId,
+  isGlobal,
+  setIsGlobal,
   projects,
   organizations,
   saving,
@@ -1034,6 +1082,8 @@ function AddTaskDialog({
   setProjectId: (v: string) => void;
   organizationId: string;
   setOrganizationId: (v: string) => void;
+  isGlobal: boolean;
+  setIsGlobal: (v: boolean) => void;
   projects: Project[];
   organizations: Organization[];
   saving: boolean;
@@ -1046,6 +1096,27 @@ function AddTaskDialog({
           <DialogTitle>{t.todos.addTaskTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="mt-3 space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface-inset px-3 py-2.5">
+              <div>
+                <Label htmlFor="todo-add-global">{t.todos.globalTask}</Label>
+                <p className="mt-0.5 text-[11px] text-foreground-subtle">
+                  {t.todos.globalGroup} · {t.todos.importanceOption(6)}
+                </p>
+              </div>
+              <Switch
+                id="todo-add-global"
+                checked={isGlobal}
+                onCheckedChange={(checked) => {
+                  setIsGlobal(checked);
+                  if (checked) {
+                    setNewImportance("6");
+                    setProjectId("");
+                  } else if (newImportance === "6") {
+                    setNewImportance("");
+                  }
+                }}
+              />
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="todo-add-title">{t.todos.taskLabel}</Label>
               <Input
@@ -1074,6 +1145,7 @@ function AddTaskDialog({
                   id="todo-add-importance"
                   value={newImportance}
                   onValueChange={setNewImportance}
+                  disabled={isGlobal}
                   options={[
                     { value: "", label: t.todos.importanceNone },
                     ...[5, 4, 3, 2, 1].map((n) => ({
@@ -1091,6 +1163,7 @@ function AddTaskDialog({
                   id="todo-add-project"
                   value={projectId}
                   onValueChange={setProjectId}
+                  disabled={isGlobal}
                   options={[
                     { value: "", label: t.todos.noProject },
                     ...projects.map((project) => ({ value: project.id, label: project.name })),

@@ -22,6 +22,7 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { CategorySelect } from "@/components/category-select";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -107,6 +108,7 @@ export function SubscriptionsPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const confirm = useConfirmation();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   // Which cadence the spend breakdown chart is showing. Monthly is the day-to-
@@ -277,8 +279,14 @@ export function SubscriptionsPanel({
     }
   }
 
-  function handleDelete(id: string) {
-    deleteMutation.mutate(id);
+  async function handleDelete(id: string) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.common.deletePermanentlyConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteMutation.mutate(id);
   }
 
   function toggleActive(sub: Subscription) {

@@ -80,6 +80,21 @@ type TodosStrings = {
   assigneeAi: string;
   filterEmptyTitle: string;
   filterEmptyDescription: (n: number) => string;
+  globalGroup: string;
+  globalTask: string;
+  dailyFocusTitle: string;
+  dailyFocusDescription: string;
+  dailyFocusProgress: (done: number, total: number) => string;
+  regenerateDailyFocus: string;
+  regeneratingDailyFocus: string;
+  dailyFocusEmpty: string;
+  dailyFocusEmptyDescription: string;
+  waitingFor: (duration: string) => string;
+  completionGarden: string;
+  completionGardenDescription: string;
+  completedDay: string;
+  incompleteDay: string;
+  deleteTaskConfirm: string;
 };
 
 export const todos: { en: TodosStrings; cs: TodosStrings } = {
@@ -160,8 +175,9 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       `chore: remove ${n} finished task${n === 1 ? "" : "s"} from NEEDED.md`,
     importanceLabel: "Importance",
     importanceNone: "Importance — none",
-    importanceOption: (n) => `Importance ${n}${n === 5 ? " (highest)" : ""}`,
-    importanceOf: (n) => `Importance ${n}/5`,
+    importanceOption: (n) =>
+      `Importance ${n}${n === 6 ? " (GLOBAL)" : n === 5 ? " (highest project)" : ""}`,
+    importanceOf: (n) => `Importance ${n}/6`,
     importanceFilterLabel: "Importance",
     filterAll: "All",
     filterMin: (n) => (n === 5 ? "5" : `${n}+`),
@@ -172,6 +188,24 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     filterEmptyTitle: "Nothing at this importance",
     filterEmptyDescription: (n) =>
       `No open tasks scored ${n} or higher. Lower the filter to see more.`,
+    globalGroup: "GLOBAL",
+    globalTask: "Global task",
+    dailyFocusTitle: "Today's seven",
+    dailyFocusDescription:
+      "A daily focus drawn from active projects, highest priority first.",
+    dailyFocusProgress: (done, total) => `${done} of ${total} completed`,
+    regenerateDailyFocus: "Generate a new seven",
+    regeneratingDailyFocus: "Generating…",
+    dailyFocusEmpty: "No tasks to draw",
+    dailyFocusEmptyDescription:
+      "Add an open global task or a task in an active project.",
+    waitingFor: (duration) => `Waiting ${duration}`,
+    completionGarden: "Completion garden",
+    completionGardenDescription:
+      "A green day means all seven selected tasks were completed.",
+    completedDay: "All seven completed",
+    incompleteDay: "Daily focus not completed",
+    deleteTaskConfirm: "This task will be permanently deleted.",
   },
   cs: {
     title: "Úkoly",
@@ -270,8 +304,9 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       `chore: odebrání ${n} hotových úkolů z NEEDED.md`,
     importanceLabel: "Důležitost",
     importanceNone: "Důležitost — žádná",
-    importanceOption: (n) => `Důležitost ${n}${n === 5 ? " (nejvyšší)" : ""}`,
-    importanceOf: (n) => `Důležitost ${n}/5`,
+    importanceOption: (n) =>
+      `Důležitost ${n}${n === 6 ? " (GLOBÁLNÍ)" : n === 5 ? " (nejvyšší projektová)" : ""}`,
+    importanceOf: (n) => `Důležitost ${n}/6`,
     importanceFilterLabel: "Důležitost",
     filterAll: "Vše",
     filterMin: (n) => (n === 5 ? "5" : `${n}+`),
@@ -286,6 +321,24 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     assigneeFilterLabel: "Pro",
     assigneeMe: "Já",
     assigneeAi: "AI",
+    globalGroup: "GLOBÁLNÍ",
+    globalTask: "Globální úkol",
+    dailyFocusTitle: "Dnešní sedmička",
+    dailyFocusDescription:
+      "Denní výběr z aktivních projektů, nejvyšší priority mají přednost.",
+    dailyFocusProgress: (done, total) => `Hotovo ${done} z ${total}`,
+    regenerateDailyFocus: "Vygenerovat novou sedmičku",
+    regeneratingDailyFocus: "Generuji…",
+    dailyFocusEmpty: "Není z čeho vybírat",
+    dailyFocusEmptyDescription:
+      "Přidej otevřený globální úkol nebo úkol v aktivním projektu.",
+    waitingFor: (duration) => `Čeká ${duration}`,
+    completionGarden: "Zahrada dokončení",
+    completionGardenDescription:
+      "Zelený den znamená, že bylo dokončeno všech sedm vybraných úkolů.",
+    completedDay: "Všech sedm dokončeno",
+    incompleteDay: "Denní výběr nebyl dokončen",
+    deleteTaskConfirm: "Tento úkol bude nenávratně smazán.",
   },
 };
 

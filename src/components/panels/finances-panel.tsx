@@ -25,6 +25,7 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
@@ -148,6 +149,7 @@ export function FinancesPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const confirm = useConfirmation();
   const locale = useDateLocale();
   const [txForm, setTxForm] = useState<TxForm>(emptyTx);
   const [acctForm, setAcctForm] = useState<AccountForm>(emptyAccount);
@@ -332,7 +334,15 @@ export function FinancesPanel({
     addTxMutation.mutate();
   }
 
-  const removeTx = (id: string) => removeTxMutation.mutate(id);
+  const removeTx = async (id: string) => {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.common.deletePermanentlyConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeTxMutation.mutate(id);
+  };
 
   function addAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -351,7 +361,15 @@ export function FinancesPanel({
     saveAccountMutation.mutate({ id, patch });
   }
 
-  const deleteAccount = (id: string) => deleteAccountMutation.mutate(id);
+  const deleteAccount = async (id: string) => {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.common.deletePermanentlyConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) deleteAccountMutation.mutate(id);
+  };
 
   const thisMonth = months[months.length - 1] ?? { income: 0, expense: 0 };
   const thisMonthNet = thisMonth.income - thisMonth.expense;

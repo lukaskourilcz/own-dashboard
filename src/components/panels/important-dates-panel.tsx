@@ -15,6 +15,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { buildOccurrences } from "@/lib/important-dates";
@@ -73,6 +74,7 @@ export function ImportantDatesPanel({
   const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
+  const confirm = useConfirmation();
   const locale = useDateLocale();
   const [form, setForm] = useState<FormState>(empty);
   const occurrences = useMemo(() => buildOccurrences(dates), [dates]);
@@ -186,7 +188,15 @@ export function ImportantDatesPanel({
     });
   }
 
-  const remove = (d: ImportantDate) => removeMutation.mutate(d);
+  const remove = async (d: ImportantDate) => {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.common.deletePermanentlyConfirm,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeMutation.mutate(d);
+  };
 
   return (
     <div>

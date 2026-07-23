@@ -46,6 +46,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useDict } from "@/lib/i18n";
 import {
   availableWidgets,
+  DEFAULT_LAYOUT,
   moveWidget,
   withWidget,
   withoutWidget,
@@ -83,14 +84,28 @@ const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }>
 type Props = {
   /** Rendered content for every widget the overview can show. */
   nodes: Record<WidgetId, React.ReactNode>;
+  /** Fixture previews have no authenticated preference endpoint. */
+  syncPreferences?: boolean;
 };
 
-export function CustomizableOverview({ nodes }: Props) {
+export function CustomizableOverview({
+  nodes,
+  syncPreferences = true,
+}: Props) {
   const t = useDict();
-  const { layout, setLayout, reset } = useDashboardLayout();
+  const { layout, setLayout } = useDashboardLayout();
   const { isHidden } = useNavVisibility();
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const persistLayout = (next: readonly WidgetId[]) => {
+    setLayout(next);
+    if (!syncPreferences) return;
+    void fetch("/api/user/preferences", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dashboard_layout: next }),
+    });
+  };
 
   // Respect the Settings nav-visibility choices: drop widgets whose section
   // the user hid. Kept out of `layout` state so unhiding restores position.
@@ -112,7 +127,7 @@ export function CustomizableOverview({ nodes }: Props) {
     const from = layout.indexOf(e.active.id as WidgetId);
     const to = layout.indexOf(e.over.id as WidgetId);
     if (from < 0 || to < 0) return;
-    setLayout(moveWidget(layout, from, to));
+    persistLayout(moveWidget(layout, from, to));
   }
 
   const available = availableWidgets(layout);
@@ -140,7 +155,8 @@ export function CustomizableOverview({ nodes }: Props) {
                 size="sm"
                 variant="ghost"
                 onClick={() => {
-                  if (window.confirm(t.dashboard.resetConfirm)) reset();
+                  if (window.confirm(t.dashboard.resetConfirm))
+                    persistLayout(DEFAULT_LAYOUT);
                 }}
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -202,7 +218,7 @@ export function CustomizableOverview({ nodes }: Props) {
                   icon={WIDGET_META[id].icon}
                   label={t.dashboard.widgetNames[id]}
                   editing={editing}
-                  onRemove={() => setLayout(withoutWidget(layout, id))}
+                  onRemove={() => persistLayout(withoutWidget(layout, id))}
                 >
                   {nodes[id]}
                 </SortableWidget>
@@ -216,7 +232,7 @@ export function CustomizableOverview({ nodes }: Props) {
         open={addOpen}
         onOpenChange={setAddOpen}
         available={available}
-        onAdd={(id) => setLayout(withWidget(layout, id))}
+        onAdd={(id) => persistLayout(withWidget(layout, id))}
       />
     </div>
   );

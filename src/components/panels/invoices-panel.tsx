@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { StatusBadge } from "@/components/invoices/status-badge";
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDetail } from "@/components/invoices/invoice-detail";
@@ -82,6 +83,7 @@ export function InvoicesPanel({
   const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
+  const confirm = useConfirmation();
   const [view, setView] = useState<View>({ mode: "list" });
   const [parsing, setParsing] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -241,9 +243,14 @@ export function InvoicesPanel({
     },
   });
 
-  function remove(inv: Invoice) {
-    if (!window.confirm(t.invoices.deleteConfirm(inv.number))) return;
-    removeMutation.mutate(inv);
+  async function remove(inv: Invoice) {
+    if (await confirm({
+      title: t.common.delete,
+      description: t.invoices.deleteConfirm(inv.number),
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    })) removeMutation.mutate(inv);
   }
 
   // ── Sub-views ────────────────────────────────────────────────────────────

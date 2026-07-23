@@ -29,7 +29,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
     jobListingsRes, jobUserStatesRes, jobApplicationsRes,
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
-    todayCalendar, weekCalendar, prefs,
+    todayCalendar, weekCalendar, prefs, navigationProjectsRes,
   ] = await Promise.all([
     loadWhen("subscriptions", () => supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("todos", () => supabase.from("todos").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
@@ -67,6 +67,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("todayCalendar", fetchTodayWindowEvents),
     loadWhen("weekCalendar", fetchUpcomingWeekEvents),
     loadUserPreferences(user.id),
+    supabase
+      .from("projects")
+      .select("id, name, slug, is_active")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .limit(50),
   ]);
 
   const requestedProject = slug?.[0] === "projects" && slug[1]
@@ -97,6 +104,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialInvoiceItems={invoiceItemsRes?.data ?? []}
     initialInvoiceSettings={invoiceSettingsRes?.data ?? null}
     initialProjects={projectsRes?.data ?? []}
+    initialNavigationProjects={navigationProjectsRes.data ?? []}
     initialProjectCommunications={projectCommunicationsRes?.data ?? []}
     initialAgentTasks={agentTasksRes?.data ?? []}
     initialProjectCosts={projectCostsRes?.data ?? []}
@@ -116,5 +124,17 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     weekCalendar={weekCalendar ?? { ok: true, events: [] }}
     selectedCalendarIds={prefs.selected_calendar_ids}
     repoVisibleIds={prefs.visible_repo_ids}
+    initialPreferences={{
+      language: prefs.language,
+      theme: prefs.theme,
+      display_currency: prefs.display_currency,
+      hidden_navigation: prefs.hidden_navigation,
+      navigation_order: prefs.navigation_order,
+      navigation_collapsed: prefs.navigation_collapsed,
+      dashboard_layout: prefs.dashboard_layout,
+      tasks_per_category: prefs.tasks_per_category,
+      cv_url_cs: prefs.cv_url_cs,
+      cv_url_en: prefs.cv_url_en,
+    }}
   />;
 }

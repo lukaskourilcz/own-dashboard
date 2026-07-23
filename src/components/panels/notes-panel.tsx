@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
@@ -59,6 +59,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
@@ -134,9 +135,10 @@ function safeFilename(title: string): string {
 }
 
 export function NotesPanel({ notes, setNotes, projects }: Props) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const qc = useQueryClient();
   const toast = useToast();
+  const confirm = useConfirmation();
   const t = useDict();
   const locale = useDateLocale();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -231,6 +233,34 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
     ? notes.find((n) => n.id === effectiveId) ?? null
     : null;
 
+  useEffect(() => {
+    const staleEmptyIds = notes
+      .filter((note) => {
+        const empty =
+          !(note.plain_text ?? "").trim() &&
+          (!note.title.trim() || note.title === t.notes.untitled);
+        return (
+          empty &&
+          Date.now() - noteDate(note).getTime() > 10 * 60_000 &&
+          note.id !== selected?.id
+        );
+      })
+      .map((note) => note.id);
+    if (staleEmptyIds.length === 0) return;
+    void supabase
+      .from("notes")
+      .delete()
+      .in("id", staleEmptyIds)
+      .then(({ error }) => {
+        if (!error) {
+          setNotes((current) =>
+            current.filter((note) => !staleEmptyIds.includes(note.id)),
+          );
+          void qc.invalidateQueries({ queryKey: qk.notes });
+        }
+      });
+  }, [notes, qc, selected?.id, setNotes, supabase, t.notes.untitled]);
+
   // CREATE — non-optimistic. The insert returns the row; we prepend it and
   // select it in onSuccess, then invalidate to reconcile with the server.
   const createMutation = useMutation({
@@ -315,9 +345,35 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
   });
 
   async function deleteNote(id: string) {
-    const ok = window.confirm(t.notes.deleteConfirm);
+    const ok = await confirm({
+      title: t.notes.deleteNote,
+      description: t.notes.deleteConfirm,
+      confirmLabel: t.notes.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    });
     if (!ok) return;
     deleteMutation.mutate(id);
+  }
+
+  async function copyNoteContext(note: Note) {
+    const project = projects.find((item) => item.id === note.project_id);
+    const context = [
+      `# ${note.title || t.notes.untitled}`,
+      project ? `Project: ${project.name}` : null,
+      note.tags?.length ? `Tags: ${note.tags.join(", ")}` : null,
+      "",
+      note.plain_text ?? "",
+    ]
+      .filter((line): line is string => line !== null)
+      .join("\n")
+      .trim();
+    try {
+      await navigator.clipboard.writeText(context);
+      toast.ok(t.notes.copiedAsMarkdown);
+    } catch {
+      toast.err(t.notes.couldNotCopy);
+    }
   }
 
   // TOGGLE PIN — optimistic.
@@ -675,6 +731,7 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
                             note={n}
                             isActive={n.id === effectiveId}
                             onSelect={() => setSelectedId(n.id)}
+                            onCopy={() => void copyNoteContext(n)}
                           />
                         ))}
                       </ul>
@@ -695,6 +752,7 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
                       note={n}
                       isActive={n.id === effectiveId}
                       onSelect={() => setSelectedId(n.id)}
+                      onCopy={() => void copyNoteContext(n)}
                     />
                   ))}
                 </AnimatePresence>
@@ -906,11 +964,13 @@ function NoteRow({
   note,
   isActive,
   onSelect,
+  onCopy,
   dragHandle,
 }: {
   note: Note;
   isActive: boolean;
   onSelect: () => void;
+  onCopy: () => void;
   dragHandle?: React.ReactNode;
 }) {
   const t = useDict();
@@ -970,6 +1030,16 @@ function NoteRow({
             })}
           </p>
         </button>
+        <Tooltip content={t.notes.copyAsMarkdown}>
+          <button
+            type="button"
+            onClick={onCopy}
+            aria-label={t.notes.copyAsMarkdown}
+            className="my-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
+          >
+            <Clipboard className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
       </div>
     </motion.li>
   );
@@ -979,10 +1049,12 @@ function SortableNoteRow({
   note,
   isActive,
   onSelect,
+  onCopy,
 }: {
   note: Note;
   isActive: boolean;
   onSelect: () => void;
+  onCopy: () => void;
 }) {
   const t = useDict();
   const locale = useDateLocale();
@@ -1018,6 +1090,16 @@ function SortableNoteRow({
         >
           <GripVertical className="h-3 w-3" />
         </button>
+        <Tooltip content={t.notes.copyAsMarkdown}>
+          <button
+            type="button"
+            onClick={onCopy}
+            aria-label={t.notes.copyAsMarkdown}
+            className="my-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
+          >
+            <Clipboard className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
         <button
           type="button"
           onClick={onSelect}
