@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Bot, BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GithubIcon } from "@/components/icons/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,6 +111,10 @@ export function WorkOverviewPanel({
     onError: () => toast.err(p.couldNotSave),
   });
 
+  const projectRepos = projects
+    .filter((x) => x.is_active && x.status !== "archived" && x.repo_full_name)
+    .slice(0, 12);
+
   const metrics = [
     { label: p.activeProjects, value: projects.filter((x) => x.is_active && x.status !== "archived").length, icon: FolderKanban },
     { label: p.openOpportunities, value: opportunities.filter((x) => !CLOSED.has(x.status)).length, icon: BriefcaseBusiness },
@@ -187,6 +192,24 @@ export function WorkOverviewPanel({
         <Card><CardHeader><CardTitle>{p.pipeline}</CardTitle></CardHeader><CardContent>{opportunities.filter((item) => !CLOSED.has(item.status)).length === 0 ? <p className="text-sm text-foreground-muted">{p.pipelineEmpty}</p> : <ul className="divide-y divide-border">{opportunities.filter((item) => !CLOSED.has(item.status)).slice(0, 6).map((item) => <li key={item.id}><Link href="/opportunities" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><StatusBadge value={item.status} /></Link></li>)}</ul>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
       </div>
+      <Card className="mt-4">
+        <CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepositories}</CardTitle></CardHeader>
+        <CardContent>
+          <p className="mb-3 text-xs text-foreground-muted">{p.projectRepositoriesDescription}</p>
+          {projectRepos.length === 0 ? <p className="text-sm text-foreground-muted">{p.noRelatedRecords}</p> : (
+            <ul className="grid gap-1 sm:grid-cols-2">
+              {projectRepos.map((project) => (
+                <li key={project.id}>
+                  <Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 hover:border-border-strong focus-ring">
+                    <span className="truncate text-sm font-medium">{project.name}</span>
+                    <span className="shrink-0 font-mono text-[11px] text-foreground-muted">{project.repo_full_name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

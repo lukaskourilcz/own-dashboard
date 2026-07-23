@@ -1,5 +1,5 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
-import { loadReposResult, type LoadReposResult } from "@/lib/github";
+import { loadReposResult, loadProjectCommits, type LoadReposResult } from "@/lib/github";
 
 /** Single cache key for the repo list — the Repositories panel and the
  * "Publish to repo" dialog share it, so opening the dialog reuses the panel's
@@ -53,4 +53,18 @@ export function touchRepoInCache(qc: QueryClient, repoId: number): void {
  * so all consumers show the Connect CTA without a refetch. */
 export function setReposDisconnected(qc: QueryClient): void {
   qc.setQueryData<LoadReposResult>(reposQueryKey, { kind: "disconnected" });
+}
+
+/** Recent commits + code volume for one project repo. On demand only (the
+ * project workspace's activity view), so it doesn't hit GitHub until opened. */
+export function useProjectCommitsQuery(
+  repoFullName: string | null | undefined,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["github", "commits", repoFullName ?? ""] as const,
+    queryFn: () => loadProjectCommits(repoFullName as string),
+    staleTime: 60_000,
+    enabled: enabled && !!repoFullName,
+  });
 }
