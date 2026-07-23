@@ -37,17 +37,6 @@ import { useDict } from "@/lib/i18n";
 import type { Project, Prompt, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// Generous cap so the tiny, line-clamped preview can fill the card with as
-// much of the prompt as fits, without rendering an enormous body string.
-const PREVIEW_LEN = 600;
-
-/** A trimmed preview of the prompt body, with an ellipsis when truncated. */
-function preview(body: string): string {
-  const clean = body.trim();
-  if (clean.length <= PREVIEW_LEN) return clean;
-  return clean.slice(0, PREVIEW_LEN).trimEnd() + "…";
-}
-
 type Props = {
   prompts: Prompt[];
   setPrompts: Updater<Prompt[]>;
@@ -63,8 +52,9 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Prompt | null>(null);
-  const [form, setForm] = useState<{ name: string; body: string; project_id: string }>({
+  const [form, setForm] = useState<{ name: string; description: string; body: string; project_id: string }>({
     name: "",
+    description: "",
     body: "",
     project_id: "",
   });
@@ -75,20 +65,25 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
     const q = query.trim().toLowerCase();
     if (!q) return prompts;
     return prompts.filter((p) =>
-      `${p.name}\n${p.body}`.toLowerCase().includes(q),
+      `${p.name}\n${p.description}\n${p.body}`.toLowerCase().includes(q),
     );
   }, [prompts, query]);
 
   function openCreate() {
     setEditing(null);
-    setForm({ name: "", body: "", project_id: "" });
+    setForm({ name: "", description: "", body: "", project_id: "" });
     setFormError(null);
     setDialogOpen(true);
   }
 
   function openEdit(p: Prompt) {
     setEditing(p);
-    setForm({ name: p.name, body: p.body, project_id: p.project_id ?? "" });
+    setForm({
+      name: p.name,
+      description: p.description ?? "",
+      body: p.body,
+      project_id: p.project_id ?? "",
+    });
     setFormError(null);
     setDialogOpen(true);
   }
@@ -96,12 +91,12 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   // CREATE — non-optimistic: the insert returns the row, which we prepend and
   // then reconcile with the server via invalidate.
   const createMutation = useMutation({
-    mutationFn: async (vars: { name: string; body: string; project_id: string }) => {
+    mutationFn: async (vars: { name: string; description: string; body: string; project_id: string }) => {
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("prompts")
-        .insert({ user_id: userId, name: vars.name, body: vars.body, project_id: vars.project_id || null })
+        .insert({ user_id: userId, name: vars.name, description: vars.description, body: vars.body, project_id: vars.project_id || null })
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
@@ -122,11 +117,12 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
 
   // UPDATE — the update returns the row; replace it in the cache on success.
   const updateMutation = useMutation({
-    mutationFn: async (vars: { id: string; name: string; body: string; project_id: string }) => {
+    mutationFn: async (vars: { id: string; name: string; description: string; body: string; project_id: string }) => {
       const { data, error } = await supabase
         .from("prompts")
         .update({
           name: vars.name,
+          description: vars.description,
           body: vars.body,
           project_id: vars.project_id || null,
           updated_at: new Date().toISOString(),
@@ -175,6 +171,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   function submitForm(e: React.FormEvent) {
     e.preventDefault();
     const name = form.name.trim();
+    const description = form.description.trim();
     const body = form.body.trim();
     if (!name) {
       setFormError(t.prompts.nameRequired);
@@ -186,12 +183,12 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
     }
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, name, body, project_id: form.project_id },
+        { id: editing.id, name, description, body, project_id: form.project_id },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createMutation.mutate(
-        { name, body, project_id: form.project_id },
+        { name, description, body, project_id: form.project_id },
         { onSuccess: () => setDialogOpen(false) },
       );
     }
@@ -305,6 +302,18 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
                 />
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="prompt-description">{t.prompts.descriptionLabel}</Label>
+                <Input
+                  id="prompt-description"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  placeholder={t.prompts.descriptionPlaceholder}
+                  maxLength={160}
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="prompt-body">{t.prompts.promptText}</Label>
                 <Textarea
                   id="prompt-body"
@@ -402,17 +411,24 @@ function PromptCard({
         </Tooltip>
       </div>
 
-      {/* Content — tiny text to pack in as much of the prompt as possible.
-          The whole area is a click-to-copy target. */}
+      {/* Content — a brief description of what the prompt does. The full body
+          stays hidden until the edit dialog. The whole area copies the body. */}
       <button
         type="button"
         onClick={onCopy}
         aria-label={t.prompts.copy}
+        title={t.prompts.copy}
         className="min-h-[64px] flex-1 cursor-copy px-3 pb-6 pt-2 text-left focus-ring"
       >
-        <p className="line-clamp-[16] whitespace-pre-wrap break-words text-[8px] leading-[12px] text-foreground-muted">
-          {preview(prompt.body)}
-        </p>
+        {prompt.description?.trim() ? (
+          <p className="line-clamp-3 text-[11px] leading-[15px] text-foreground-muted">
+            {prompt.description}
+          </p>
+        ) : (
+          <p className="text-[11px] italic leading-[15px] text-foreground-subtle">
+            {t.prompts.noDescription}
+          </p>
+        )}
       </button>
 
       {/* Edit / delete — tucked into the bottom-right, revealed on hover. */}

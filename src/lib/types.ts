@@ -316,6 +316,7 @@ export type Prompt = {
   id: string;
   user_id: string;
   name: string;
+  description: string;
   body: string;
   created_at: string;
   updated_at: string;

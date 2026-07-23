@@ -138,3 +138,47 @@ export async function loadRepoFile(
     return { kind: "error" };
   }
 }
+
+/** A single commit surfaced by GET /api/github/commits. */
+export type GithubCommit = {
+  sha: string;
+  shortSha: string;
+  message: string;
+  author: string;
+  date: string;
+  url: string;
+};
+
+/** Additions/deletions over a recent window (best-effort; may be null while
+ * GitHub is still computing repository statistics). */
+export type GithubCodeVolume = {
+  additions: number;
+  deletions: number;
+  weeks: number;
+};
+
+export type ProjectCommitsResult =
+  | { kind: "ok"; commits: GithubCommit[]; codeVolume: GithubCodeVolume | null }
+  | { kind: "disconnected" }
+  | { kind: "error" };
+
+/** Load a project repo's recent commits + recent code volume as a plain
+ * result, so callers can render change-history without holding a token. */
+export async function loadProjectCommits(
+  repoFullName: string,
+): Promise<ProjectCommitsResult> {
+  try {
+    const res = await fetch(
+      `/api/github/commits?repo=${encodeURIComponent(repoFullName)}`,
+    );
+    if (res.status === 401) return { kind: "disconnected" };
+    if (!res.ok) return { kind: "error" };
+    const json = (await res.json()) as {
+      commits: GithubCommit[];
+      codeVolume: GithubCodeVolume | null;
+    };
+    return { kind: "ok", commits: json.commits, codeVolume: json.codeVolume };
+  } catch {
+    return { kind: "error" };
+  }
+}
