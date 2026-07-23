@@ -89,6 +89,10 @@ type TodosStrings = {
   regeneratingDailyFocus: string;
   dailyFocusEmpty: string;
   dailyFocusEmptyDescription: string;
+  dailyFocusUnavailable: string;
+  dailyFocusUnavailableDescription: string;
+  dailyFocusRefreshErr: string;
+  dailyFocusRetry: string;
   waitingFor: (duration: string) => string;
   completionGarden: string;
   completionGardenDescription: string;
@@ -199,6 +203,12 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dailyFocusEmpty: "No tasks to draw",
     dailyFocusEmptyDescription:
       "Add an open global task or a task in an active project.",
+    dailyFocusUnavailable: "Today's seven is unavailable",
+    dailyFocusUnavailableDescription:
+      "The focus snapshot could not be loaded. Apply the latest database migrations or try again.",
+    dailyFocusRefreshErr:
+      "Tasks were refreshed, but today's seven could not be regenerated.",
+    dailyFocusRetry: "Try again",
     waitingFor: (duration) => `Waiting ${duration}`,
     completionGarden: "Completion garden",
     completionGardenDescription:
@@ -332,6 +342,12 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dailyFocusEmpty: "Není z čeho vybírat",
     dailyFocusEmptyDescription:
       "Přidej otevřený globální úkol nebo úkol v aktivním projektu.",
+    dailyFocusUnavailable: "Dnešní sedmička není dostupná",
+    dailyFocusUnavailableDescription:
+      "Výběr se nepodařilo načíst. Použij nejnovější databázové migrace nebo to zkus znovu.",
+    dailyFocusRefreshErr:
+      "Úkoly byly obnoveny, ale dnešní sedmičku se nepodařilo vygenerovat.",
+    dailyFocusRetry: "Zkusit znovu",
     waitingFor: (duration) => `Čeká ${duration}`,
     completionGarden: "Zahrada dokončení",
     completionGardenDescription:

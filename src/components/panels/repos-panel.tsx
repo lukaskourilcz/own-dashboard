@@ -40,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { saveUserPreferences } from "@/lib/preference-client";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
@@ -230,11 +231,7 @@ export function ReposPanel({
     mutationFn: async (ids: string[]) => {
       writeRepoFilter(ids);
       try {
-        await fetch("/api/user/preferences", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ visible_repo_ids: ids }),
-        });
+        await saveUserPreferences({ visible_repo_ids: ids });
       } catch {
         // Offline or server prefs unavailable — the local copy is saved.
       }

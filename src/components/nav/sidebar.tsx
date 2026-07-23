@@ -44,6 +44,7 @@ import {
   sortByNavOrder,
 } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+import { saveUserPreferences } from "@/lib/preference-client";
 import type { NavTab } from "@/lib/nav-tabs";
 import type { Project } from "@/lib/types";
 
@@ -123,6 +124,7 @@ export function Sidebar({
   projects = [],
   unreadNotifications = 0,
   syncPreferences = true,
+  onOpenProject,
 }: {
   tab: NavTab;
   setTab: (t: NavTab) => void;
@@ -130,6 +132,7 @@ export function Sidebar({
   projects?: Pick<Project, "id" | "name" | "slug" | "is_active">[];
   unreadNotifications?: number;
   syncPreferences?: boolean;
+  onOpenProject?: (project: Pick<Project, "id" | "name" | "slug" | "is_active">) => void;
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
@@ -139,11 +142,9 @@ export function Sidebar({
     const next = !collapsed;
     toggleCollapsed();
     if (!syncPreferences) return;
-    void fetch("/api/user/preferences", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ navigation_collapsed: next }),
-    });
+    void saveUserPreferences({ navigation_collapsed: next }).catch(
+      () => undefined,
+    );
   };
   const isVisible = (it: NavItem) => !isHidden(it.value);
 
@@ -283,6 +284,11 @@ export function Sidebar({
                           <li key={project.id}>
                             <a
                               href={`/projects/${encodeURIComponent(project.slug)}`}
+                              onClick={(event) => {
+                                if (!onOpenProject) return;
+                                event.preventDefault();
+                                onOpenProject(project);
+                              }}
                               className="block truncate rounded px-2 py-1 text-[11px] text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
                               title={project.name}
                             >

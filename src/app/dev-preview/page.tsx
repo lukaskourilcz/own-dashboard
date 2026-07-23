@@ -81,6 +81,8 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
         tasks_per_category: 5,
         cv_url_cs: "",
         cv_url_en: "",
+        hidden_project_tabs: [],
+        sync_available: true,
       }}
     />
   );

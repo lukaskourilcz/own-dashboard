@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ExternalLink,
   Flag,
+  FolderKanban,
   ListTodo,
   Plus,
   RefreshCw,
@@ -126,6 +127,7 @@ export function TodosPanel({
       setIsGlobal(false);
       setAddOpen(false);
       void qc.invalidateQueries({ queryKey: qk.todos });
+      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
     },
   });
 
@@ -150,7 +152,11 @@ export function TodosPanel({
     onError: (_e, _td, ctx) => {
       if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.todos }),
+    onSettled: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: qk.todos }),
+        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
+      ]),
   });
 
   const removeMutation = useMutation({
@@ -169,7 +175,11 @@ export function TodosPanel({
     onError: (_e, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.todos }),
+    onSettled: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: qk.todos }),
+        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
+      ]),
   });
 
   // Refresh: re-scan every repo's NEEDED.md, add newly-listed tasks and drop
@@ -225,15 +235,24 @@ export function TodosPanel({
         const { error } = await supabase.from("todos").insert(toInsert);
         if (error) throw error;
       }
-      return { added: toInsert.length, removed: toDeleteIds.length };
+      const focusResponse = await fetch("/api/daily-focus", {
+        method: "POST",
+      });
+      return {
+        added: toInsert.length,
+        removed: toDeleteIds.length,
+        dailyFocusUpdated: focusResponse.ok,
+      };
     },
-    onSuccess: ({ added, removed }) => {
+    onSuccess: async ({ added, removed, dailyFocusUpdated }) => {
       toast.ok(
         added === 0 && removed === 0
           ? t.todos.refreshNothing
           : t.todos.refreshDone(added, removed),
       );
-      void qc.invalidateQueries({ queryKey: qk.todos });
+      await qc.invalidateQueries({ queryKey: qk.todos });
+      await qc.invalidateQueries({ queryKey: qk.dailyFocus });
+      if (!dailyFocusUpdated) toast.err(t.todos.dailyFocusRefreshErr);
     },
     onError: (e) => {
       const m = (e as Error).message;
@@ -321,6 +340,7 @@ export function TodosPanel({
           : t.todos.clearFromNeededDone(removed),
       );
       void qc.invalidateQueries({ queryKey: qk.todos });
+      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
       // Drop cached NEEDED file contents so the Repos checklist reflects it.
       void qc.invalidateQueries({ queryKey: ["github", "file"] });
     },
@@ -409,38 +429,66 @@ export function TodosPanel({
   };
   const openVisible = open.filter((td) => passesImportance(td) && passesAssignee(td));
   const hiddenByFilter = open.length - openVisible.length;
-  const openGithub = openVisible
-    .filter((td) => !td.is_global && td.source === "github" && td.repo_id)
-    .sort(byImportanceThenDue);
   const openGlobal = openVisible
     .filter((td) => td.is_global)
     .sort(byImportanceThenDue);
-  const openPersonal = openVisible
-    .filter(
-      (td) =>
-        !td.is_global && !(td.source === "github" && td.repo_id),
-    )
-    .sort(byImportanceThenDue);
 
-  const repoMap = new Map<
+  const projectById = new Map(projects.map((project) => [project.id, project]));
+  const projectByRepo = new Map(
+    projects
+      .filter((project) => project.repo_full_name)
+      .map((project) => [project.repo_full_name!.toLowerCase(), project]),
+  );
+  const projectForTodo = (todo: Todo) =>
+    (todo.project_id ? projectById.get(todo.project_id) : undefined) ??
+    (todo.repo_full_name
+      ? projectByRepo.get(todo.repo_full_name.toLowerCase())
+      : undefined);
+
+  const taskGroupMap = new Map<
     string,
-    { name: string; fullName: string | null; url: string | null; items: Todo[] }
+    {
+      name: string;
+      fullName: string | null;
+      url: string | null;
+      project: boolean;
+      items: Todo[];
+    }
   >();
-  for (const td of openGithub) {
-    const key = td.repo_id!;
-    const g = repoMap.get(key);
+  for (const td of openVisible.filter((item) => !item.is_global)) {
+    const project = projectForTodo(td);
+    const isGithubOrphan =
+      !project && td.source === "github" && Boolean(td.repo_id);
+    if (!project && !isGithubOrphan) continue;
+    const key = project ? `project:${project.id}` : `repo:${td.repo_id}`;
+    const g = taskGroupMap.get(key);
     if (g) g.items.push(td);
     else
-      repoMap.set(key, {
-        name: td.repo_name ?? td.category ?? key,
-        fullName: td.repo_full_name,
-        url: td.repo_url,
+      taskGroupMap.set(key, {
+        name: project?.name ?? td.repo_name ?? td.category ?? key,
+        fullName: project?.repo_full_name ?? td.repo_full_name,
+        url:
+          project?.repo_full_name != null
+            ? `https://github.com/${project.repo_full_name}`
+            : td.repo_url,
+        project: Boolean(project),
         items: [td],
       });
   }
-  const repoGroups = [...repoMap.values()].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const taskGroups = [...taskGroupMap.values()]
+    .map((group) => ({
+      ...group,
+      items: group.items.sort(byImportanceThenDue),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const openPersonal = openVisible
+    .filter(
+      (td) =>
+        !td.is_global &&
+        !projectForTodo(td) &&
+        !(td.source === "github" && td.repo_id),
+    )
+    .sort(byImportanceThenDue);
 
   const finishedNeeded = done.filter(
     (td) => td.source === "github" && td.needed_raw,
@@ -531,7 +579,7 @@ export function TodosPanel({
                   }
                 />
               )}
-              {repoGroups.map((g) => (
+              {taskGroups.map((g) => (
                 <TaskGroupCard
                   key={g.fullName ?? g.name}
                   t={t}
@@ -549,13 +597,21 @@ export function TodosPanel({
                         title={g.fullName ?? g.name}
                         className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-foreground hover:underline"
                       >
-                        <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        {g.project ? (
+                          <FolderKanban className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        ) : (
+                          <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        )}
                         <span className="truncate">{g.name}</span>
                         <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
                       </a>
                     ) : (
                       <span className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-foreground">
-                        <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        {g.project ? (
+                          <FolderKanban className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        ) : (
+                          <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
+                        )}
                         <span className="truncate">{g.name}</span>
                       </span>
                     )

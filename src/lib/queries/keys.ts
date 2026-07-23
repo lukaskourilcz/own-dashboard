@@ -8,6 +8,7 @@ export const qk = {
   // Dashboard entities (seeded from the server load, mutated in place).
   subscriptions: ["subscriptions"] as const,
   todos: ["todos"] as const,
+  dailyFocus: ["daily-focus"] as const,
   accounts: ["accounts"] as const,
   transactions: ["transactions"] as const,
   plans: ["plans"] as const,

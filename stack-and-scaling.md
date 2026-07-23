@@ -11,7 +11,7 @@ Personal professional operating system for projects, clients, career, money, pla
 - Google Calendar, GitHub, and GoCardless Bank Account Data integrations
 - Three daily Vercel cron routes: bank sync, renewal warnings, and job scraping
 - Optional VPS workers consuming the indexed, own-only `agent_tasks` queue through authenticated claim/report endpoints
-- Own-only daily focus snapshots and synchronized UI preferences in Supabase
+- Own-only daily focus snapshots and synchronized UI preferences, including project-workspace tab visibility, in Supabase
 
 ## What it costs now
 
@@ -61,7 +61,7 @@ These are planning bands, not quotes. AI prompt size and call frequency can move
 4. **Vercel function duration and transfer** matter for PDF parsing, GitHub/Google calls, scraping, and AI streams. Move work to a durable queue only when jobs outlive request limits or need reliable retries—cron count alone is not a reason.
 5. **Email and observability volume** become paid only after their generous free allowances. Configure hard billing limits in PostHog/Sentry and a Resend daily/monthly cap.
 6. **Agent queue age and failure rate** are the VPS automation signals. Track oldest queued age, running-task duration, and failed outcomes; add heartbeats/leases and retry policy only after real unattended execution requires them.
-7. **Daily focus history** is intentionally tiny: at most seven snapshot rows per generation. If manual regeneration becomes unusually frequent, retain only the best/completed generation per old date after measuring table growth; do not discard the current audit trail pre-emptively.
+7. **Daily focus history** is intentionally tiny: at most seven snapshot rows per generation. Candidates come from GLOBAL work and active projects, with NEEDED.md tasks mapped by repository when needed. If manual regeneration becomes unusually frequent, retain only the best/completed generation per old date after measuring table growth; do not discard the current audit trail pre-emptively.
 
 ## Scaling architecture when measurements justify it
 

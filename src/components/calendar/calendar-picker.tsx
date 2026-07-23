@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
+import { saveUserPreferences } from "@/lib/preference-client";
 import type { GcalCalendarEntry } from "@/app/api/calendar/list/route";
 
 async function fetchCalendars(): Promise<GcalCalendarEntry[]> {
@@ -45,12 +46,7 @@ export function CalendarPicker({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/user/preferences", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ selected_calendar_ids: [...selected] }),
-      });
-      if (!res.ok) throw new Error("save failed");
+      await saveUserPreferences({ selected_calendar_ids: [...selected] });
     },
     onSuccess: () => {
       toast.ok(t.calendar.selectionSaved);

@@ -124,6 +124,95 @@ test.describe("dashboard sections", () => {
     await expect(page.getByText("Send the revised launch checklist.")).toBeVisible();
   });
 
+  test("project navigation stays in the shell and Projects returns to the table", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    const sidebar = page.locator("aside");
+
+    await sidebar.getByRole("link", { name: "aifirst", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "aifirst" }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/projects\/aifirst$/);
+
+    await sidebar.getByRole("button", { name: "Projects", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Projects" }),
+    ).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Project" })).toBeVisible();
+    await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test("navigation and project-tab visibility survive a refresh", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    const sidebar = page.locator("aside");
+    await sidebar.getByRole("button", { name: "Settings" }).click();
+
+    await page.getByRole("switch", { name: "Career", exact: true }).click();
+    await page.getByRole("switch", { name: "Communication", exact: true }).click();
+    await expect(
+      sidebar.getByRole("button", { name: "Career", exact: true }),
+    ).toHaveCount(0);
+
+    // Re-enter the deterministic preview as a real refresh would re-enter the
+    // authenticated catch-all route. The client cache must survive the page.
+    await page.goto("/dev-preview");
+    await expect(
+      page.locator("aside").getByRole("button", { name: "Career", exact: true }),
+    ).toHaveCount(0);
+    await page
+      .locator("aside")
+      .getByRole("link", { name: "aifirst", exact: true })
+      .click();
+    await expect(
+      page.getByRole("tab", { name: "Communication", exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "Activity", exact: true })).toBeVisible();
+  });
+
+  test("Tasks groups manual and imported work by active project", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Tasks" }).click();
+    const main = page.locator("#main-content");
+    await expect(main.getByText("aifirst", { exact: true }).first()).toBeVisible();
+    await expect(
+      main.getByText("own-dashboard", { exact: true }).first(),
+    ).toBeVisible();
+    await expect(
+      main.getByText("Verify project deployment").first(),
+    ).toBeVisible();
+    await expect(
+      main.getByText("Review dashboard accessibility report").first(),
+    ).toBeVisible();
+  });
+
+  test("destructive confirmation opens at a stable viewport center", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Tasks" }).click();
+    await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    const first = await dialog.boundingBox();
+    await page.waitForTimeout(80);
+    const settled = await dialog.boundingBox();
+    expect(first).not.toBeNull();
+    expect(settled).not.toBeNull();
+    expect(Math.abs((first?.x ?? 0) - (settled?.x ?? 0))).toBeLessThan(1);
+    expect(Math.abs((first?.y ?? 0) - (settled?.y ?? 0))).toBeLessThan(1);
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    expect(
+      Math.abs(
+        (settled?.x ?? 0) +
+          (settled?.width ?? 0) / 2 -
+          (viewport?.width ?? 0) / 2,
+      ),
+    ).toBeLessThan(2);
+  });
+
   test("Career uses sortable operational columns and Agents exposes the VPS queue", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);

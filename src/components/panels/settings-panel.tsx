@@ -18,7 +18,7 @@ import {
   Shield,
   Sun,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -50,6 +50,7 @@ import {
   useNavOrder,
   useNavVisibility,
   useTasksPerCategory,
+  useProjectTabVisibility,
   sortByNavOrder,
   TASKS_PER_CATEGORY_OPTIONS,
 } from "@/lib/use-prefs";
@@ -60,6 +61,11 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Project, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
+import { saveUserPreferences } from "@/lib/preference-client";
+import {
+  PROJECT_WORKSPACE_TABS,
+  type ProjectWorkspaceTab,
+} from "@/lib/project-workspace-tabs";
 
 type NavRowItem = { value: string; icon: typeof Sun };
 
@@ -102,10 +108,12 @@ export function SettingsPanel({
   projects = [],
   setProjects = () => undefined,
   syncPreferences = true,
+  preferencesSyncAvailable = true,
 }: {
   projects?: Project[];
   setProjects?: Updater<Project[]>;
   syncPreferences?: boolean;
+  preferencesSyncAvailable?: boolean;
 }) {
   const t = useDict();
   const toast = useToast();
@@ -123,12 +131,13 @@ export function SettingsPanel({
   const [aiPrefs, setAiPrefs] = useState({ enabled: true, sensitive: false });
   const [renewalNotifications, setRenewalNotifications] = useState(true);
   const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null }>>(null);
+  const saveErrorShown = useRef(false);
   const savePreferences = (patch: Record<string, unknown>) => {
     if (!syncPreferences) return;
-    void fetch("/api/user/preferences", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(patch),
+    void saveUserPreferences(patch).catch(() => {
+      if (saveErrorShown.current) return;
+      saveErrorShown.current = true;
+      toast.err(t.settings.preferenceSaveFailed);
     });
   };
   useEffect(() => {
@@ -214,10 +223,42 @@ export function SettingsPanel({
   const { count: tasksPerCategory, setCount: setTasksPerCategory } =
     useTasksPerCategory();
   const { cs: cvCs, en: cvEn, setCs: setCvCs, setEn: setCvEn } = useCvLinks();
+  const { hiddenProjectTabs, setHiddenProjectTabs } =
+    useProjectTabVisibility();
+  const toggleProjectTab = (tab: ProjectWorkspaceTab) => {
+    if (tab === "overview") return;
+    const next = hiddenProjectTabs.includes(tab)
+      ? hiddenProjectTabs.filter((item) => item !== tab)
+      : [...hiddenProjectTabs, tab];
+    setHiddenProjectTabs(next);
+    savePreferences({ hidden_project_tabs: next });
+  };
+  const projectTabLabel = (tab: ProjectWorkspaceTab) => {
+    const labels = {
+      overview: t.professional.projectOverview,
+      tasks: t.professional.projectTasks,
+      activity: t.professional.projectActivity,
+      communication: t.professional.projectCommunication,
+      repository: t.professional.projectRepository,
+      operations: t.professional.projectOperations,
+      finance: t.professional.projectFinance,
+      knowledge: t.professional.projectKnowledge,
+    };
+    return labels[tab];
+  };
 
   return (
     <div>
       <PageHeader title={t.settings.title} description={t.settings.description} />
+
+      {!preferencesSyncAvailable && (
+        <div
+          role="status"
+          className="mb-4 rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground"
+        >
+          {t.settings.preferenceSyncUnavailable}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Language */}
@@ -242,6 +283,44 @@ export function SettingsPanel({
                 { value: "en", label: t.settings.english },
               ]}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-1.5">
+              <FolderKanban className="h-3 w-3" />
+              {t.settings.projectSections}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-foreground-subtle">
+              {t.settings.projectSectionsDesc}
+            </p>
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {PROJECT_WORKSPACE_TABS.map((tab) => {
+                const alwaysVisible = tab === "overview";
+                return (
+                  <li
+                    key={tab}
+                    className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
+                  >
+                    <span className="text-sm font-medium">
+                      {projectTabLabel(tab)}
+                    </span>
+                    {alwaysVisible ? (
+                      <SectionLabel>{t.settings.alwaysVisible}</SectionLabel>
+                    ) : (
+                      <Switch
+                        checked={!hiddenProjectTabs.includes(tab)}
+                        onCheckedChange={() => toggleProjectTab(tab)}
+                        aria-label={projectTabLabel(tab)}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           </CardContent>
         </Card>
 

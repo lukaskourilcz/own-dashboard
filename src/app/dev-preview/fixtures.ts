@@ -97,6 +97,9 @@ export const todos: Todo[] = [
   { id: "t7", user_id: UID, title: "Review the weekly operating plan", done: false, due_date: ymd(0), category: null, created_at: at(8, 0, -12), ...MANUAL, importance: 6, is_global: true },
   { id: "t8", user_id: UID, title: "Verify project deployment", done: false, due_date: ymd(1), category: "aifirst", created_at: at(9, 0, -4), ...MANUAL, importance: 4, project_id: "proj-aifirst", is_global: false },
   { id: "t9", user_id: UID, title: "Review dashboard accessibility report", done: false, due_date: ymd(3), category: "own-dashboard", created_at: at(10, 0, -3), ...MANUAL, importance: 2, project_id: "proj-dashboard", is_global: false },
+  { id: "t10", user_id: UID, title: "Review the ingestion retry policy", done: false, due_date: ymd(4), category: "aifirst", created_at: at(11, 0, -5), ...MANUAL, importance: 3, project_id: "proj-aifirst", is_global: false },
+  { id: "t11", user_id: UID, title: "Document the release migration", done: false, due_date: ymd(5), category: "own-dashboard", created_at: at(12, 0, -7), ...MANUAL, importance: 2, project_id: "proj-dashboard", is_global: false },
+  { id: "t12", user_id: UID, title: "Verify integration reconnect states", done: false, due_date: ymd(6), category: "own-dashboard", created_at: at(13, 0, -8), ...MANUAL, importance: 1, project_id: "proj-dashboard", is_global: false },
 ];
 
 export const accounts: Account[] = [

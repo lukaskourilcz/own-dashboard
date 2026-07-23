@@ -155,6 +155,9 @@ export function DashboardShell(props: Props) {
   const { user } = props;
   const t = useDict();
   const [tab, setTabState] = useState<NavTab>(props.initialTab);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    props.initialProjectId ?? null,
+  );
   const seededData = useMemo(() => new Set(props.initialDataKeys), [props.initialDataKeys]);
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
@@ -162,10 +165,10 @@ export function DashboardShell(props: Props) {
   }), [seededData, tab]);
   const setTab = useCallback((next: NavTab) => {
     setTabState(next);
+    setSelectedProjectId(null);
     const path = tabToPath(next);
     if (typeof window !== "undefined" && window.location.pathname !== path) window.history.pushState(null, "", path);
   }, []);
-  useEffect(() => { const onPop = () => setTabState(tabFromPath(window.location.pathname)); window.addEventListener("popstate", onPop); return () => window.removeEventListener("popstate", onPop); }, []);
   const { collapsed: navCollapsed } = useNavCollapsed();
   const [subscriptions, setSubscriptions] = useEntityStore(qk.subscriptions, props.initialSubscriptions, fetchSubscriptions, dataOptions("subscriptions"));
   const [todos, setTodos] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
@@ -189,6 +192,42 @@ export function DashboardShell(props: Props) {
     () => projects.filter((project) => project.is_active),
     [projects],
   );
+  const openProject = useCallback(
+    (project: Pick<Project, "id" | "slug">) => {
+      setTabState("projects");
+      setSelectedProjectId(project.id);
+      const path = `/projects/${encodeURIComponent(project.slug)}`;
+      if (window.location.pathname !== path) {
+        window.history.pushState(null, "", path);
+      }
+    },
+    [],
+  );
+  useEffect(() => {
+    const onPop = () => {
+      const nextTab = tabFromPath(window.location.pathname);
+      setTabState(nextTab);
+      const segments = window.location.pathname.split("/").filter(Boolean);
+      if (nextTab === "projects" && segments[1]) {
+        let key = segments[1];
+        try {
+          key = decodeURIComponent(key);
+        } catch {
+          // Keep the raw segment; the canonical server boundary handles
+          // malformed/unknown direct routes as 404.
+        }
+        setSelectedProjectId(
+          projects.find(
+            (project) => project.id === key || project.slug === key,
+          )?.id ?? null,
+        );
+      } else {
+        setSelectedProjectId(null);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [projects]);
   const activeNavigationProjects = useMemo(
     () =>
       projects.length > 0
@@ -256,7 +295,7 @@ export function DashboardShell(props: Props) {
     <MobileFab onClick={() => { setTab("home"); requestAnimationFrame(focusQuickAdd); }} />
     <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0">{t.nav.skipToContent}</a>
     <div className="min-h-screen bg-background">
-      <Sidebar tab={tab} setTab={setTab} projects={activeNavigationProjects} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => isActionableNotification(item)).length} syncPreferences={!props.isPreview} />
+      <Sidebar tab={tab} setTab={setTab} projects={activeNavigationProjects} onOpenProject={openProject} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => isActionableNotification(item)).length} syncPreferences={!props.isPreview} />
       <main id="main-content" className={cn("min-w-0 overflow-x-clip pb-20 transition-[padding] duration-200 ease-out md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}><div className="page-frame min-w-0 px-4 py-5 md:px-6 md:py-7 xl:px-8">
         <MobileNav tab={tab} setTab={setTab} />
         <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
@@ -272,7 +311,7 @@ export function DashboardShell(props: Props) {
           } satisfies Record<WidgetId, React.ReactNode>} />}
           {tab === "inbox" && <InboxPanel items={inboxItems} setItems={setInboxItems} notifications={notifications} setNotifications={setNotifications} />}
           {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} />}
-          {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} initialProjectId={props.initialProjectId} todos={todos} notes={notes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} syncRepositories={!props.isPreview} />}
+          {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} syncRepositories={!props.isPreview} />}
           {tab === "opportunities" && <OpportunitiesPanel opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
           {tab === "agents" && <AgentsPanel tasks={agentTasks} setTasks={setAgentTasks} projects={activeProjects} />}
@@ -288,7 +327,7 @@ export function DashboardShell(props: Props) {
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} projects={activeProjects} />}
           {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
-          {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} syncPreferences={!props.isPreview} />}
+          {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
         </motion.div></AnimatePresence>
       </div></main>
     </div>

@@ -135,6 +135,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
       tasks_per_category: prefs.tasks_per_category,
       cv_url_cs: prefs.cv_url_cs,
       cv_url_en: prefs.cv_url_en,
+      hidden_project_tabs: prefs.hidden_project_tabs,
+      sync_available: prefs.sync_available,
     }}
   />;
 }

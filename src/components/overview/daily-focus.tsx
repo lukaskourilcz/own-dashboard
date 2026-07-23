@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, subDays } from "date-fns";
-import { Check, RefreshCw, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,8 +15,6 @@ import { useDateLocale, useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import type { DailyFocus, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-const dailyFocusKey = ["daily-focus"] as const;
 
 async function loadDailyFocus(): Promise<DailyFocus> {
   const response = await fetch("/api/daily-focus", { cache: "no-store" });
@@ -39,7 +37,7 @@ export function DailyFocusPanel({
   const qc = useQueryClient();
   const supabase = createClient();
   const focus = useQuery({
-    queryKey: dailyFocusKey,
+    queryKey: qk.dailyFocus,
     queryFn: loadDailyFocus,
     staleTime: 60_000,
     enabled: !isPreview,
@@ -55,7 +53,7 @@ export function DailyFocusPanel({
       }
       return body;
     },
-    onSuccess: (data) => qc.setQueryData(dailyFocusKey, data),
+    onSuccess: (data) => qc.setQueryData(qk.dailyFocus, data),
   });
   const toggle = useMutation({
     mutationFn: async ({
@@ -73,7 +71,7 @@ export function DailyFocusPanel({
     },
     onSuccess: async () => {
       await Promise.all([
-        qc.invalidateQueries({ queryKey: dailyFocusKey }),
+        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
         qc.invalidateQueries({ queryKey: qk.todos }),
       ]);
     },
@@ -89,7 +87,13 @@ export function DailyFocusPanel({
       date: format(new Date(), "yyyy-MM-dd"),
       generation: 1,
       items: todos
-        .filter((todo) => !todo.done)
+        .filter(
+          (todo) =>
+            !todo.done &&
+            (todo.is_global ||
+              Boolean(todo.project_id) ||
+              Boolean(todo.repo_full_name)),
+        )
         .sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0))
         .slice(0, 7)
         .map((todo, index) => ({
@@ -168,6 +172,24 @@ export function DailyFocusPanel({
                 />
               ))}
             </div>
+          ) : focus.isError || regenerate.isError ? (
+            <EmptyState
+              icon={AlertTriangle}
+              title={t.todos.dailyFocusUnavailable}
+              description={t.todos.dailyFocusUnavailableDescription}
+              action={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => regenerate.mutate()}
+                  disabled={regenerate.isPending}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t.todos.dailyFocusRetry}
+                </Button>
+              }
+              className="py-12"
+            />
           ) : total === 0 ? (
             <EmptyState
               icon={Sparkles}

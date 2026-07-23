@@ -359,6 +359,20 @@ textarea {
   animation: dialog-out 140ms var(--ease-out);
 }
 
+/* Destructive confirmations must stay geometrically fixed while their content
+   mounts. Fade only; translating/scaling this high-frequency modal caused a
+   visible off-centre first frame in some Chromium composites. */
+.confirmation-dialog[data-state="open"] {
+  animation: fade-in 120ms var(--ease-out);
+  /* Tailwind 4 centers with the individual `translate` property. Adding a
+     transform translation here would apply a second -50% offset. */
+  transform: none;
+}
+.confirmation-dialog[data-state="closed"] {
+  animation: fade-out 90ms var(--ease-out);
+  transform: none;
+}
+
 .sheet-dialog[data-state="open"] {
   animation: fade-in var(--motion-standard) var(--ease-out);
 }

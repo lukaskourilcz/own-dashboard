@@ -62,6 +62,10 @@ type SettingsStrings = {
   activeProjectCount: (active: number, total: number) => string;
   projectWithoutRepository: string;
   projectUpdateFailed: string;
+  preferenceSaveFailed: string;
+  preferenceSyncUnavailable: string;
+  projectSections: string;
+  projectSectionsDesc: string;
 };
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
@@ -133,6 +137,12 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     activeProjectCount: (active, total) => `${active} of ${total} active`,
     projectWithoutRepository: "No GitHub repository linked",
     projectUpdateFailed: "Could not update the active project.",
+    preferenceSaveFailed: "Could not synchronize this setting.",
+    preferenceSyncUnavailable:
+      "Database preference sync is unavailable. Local choices are preserved on this device; apply the latest Supabase migrations to restore cross-device sync.",
+    projectSections: "Project workspace sections",
+    projectSectionsDesc:
+      "Choose which tabs appear inside every project workspace. Overview always stays visible.",
   },
   cs: {
     title: "Nastavení",
@@ -201,5 +211,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     activeProjectCount: (active, total) => `${active} z ${total} aktivních`,
     projectWithoutRepository: "Bez napojeného GitHub repozitáře",
     projectUpdateFailed: "Aktivní projekt se nepodařilo změnit.",
+    preferenceSaveFailed: "Toto nastavení se nepodařilo synchronizovat.",
+    preferenceSyncUnavailable:
+      "Databázová synchronizace nastavení není dostupná. Lokální volby na tomto zařízení zůstanou zachované; pro synchronizaci mezi zařízeními aplikuj nejnovější Supabase migrace.",
+    projectSections: "Sekce projektového workspace",
+    projectSectionsDesc:
+      "Vyber, které záložky se zobrazí uvnitř každého projektu. Přehled zůstává vždy viditelný.",
   },
 };

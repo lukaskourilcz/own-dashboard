@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient as createUserClient } from "@/lib/supabase/server";
 import { DEFAULT_LAYOUT } from "@/lib/dashboard-layout";
+import { normalizeHiddenProjectTabs } from "@/lib/project-workspace-tabs";
 
 export type UserPreferences = {
   selected_calendar_ids: string[];
@@ -22,6 +23,8 @@ export type UserPreferences = {
   tasks_per_category: number;
   cv_url_cs: string;
   cv_url_en: string;
+  hidden_project_tabs: string[];
+  sync_available: boolean;
 };
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -42,19 +45,25 @@ const DEFAULT_PREFS: UserPreferences = {
   tasks_per_category: 5,
   cv_url_cs: "",
   cv_url_en: "",
+  hidden_project_tabs: [],
+  sync_available: true,
 };
 
 export async function loadUserPreferences(
   userId: string,
 ): Promise<UserPreferences> {
   const supabase = await createUserClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_preferences")
     .select(
-      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, ai_enabled, ai_sensitive_opt_in, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en",
+      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, ai_enabled, ai_sensitive_opt_in, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs",
     )
     .eq("user_id", userId)
     .maybeSingle();
+  // A missing migration or Data API grant must not overwrite a valid local
+  // cache with defaults during hydration. Keep the app usable and surface the
+  // unavailable sync boundary through Settings instead.
+  if (error) return { ...DEFAULT_PREFS, sync_available: false };
   if (!data) return DEFAULT_PREFS;
   return {
     selected_calendar_ids:
@@ -98,5 +107,7 @@ export async function loadUserPreferences(
         : 5,
     cv_url_cs: data.cv_url_cs ?? "",
     cv_url_en: data.cv_url_en ?? "",
+    hidden_project_tabs: normalizeHiddenProjectTabs(data.hidden_project_tabs),
+    sync_available: true,
   };
 }

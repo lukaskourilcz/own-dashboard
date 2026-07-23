@@ -9,6 +9,7 @@ import {
   useNavOrder,
   useNavVisibility,
   useTasksPerCategory,
+  useProjectTabVisibility,
 } from "@/lib/use-prefs";
 import { useTheme } from "@/lib/use-theme";
 import { useDashboardLayout } from "@/lib/use-dashboard-layout";
@@ -25,6 +26,8 @@ export type SyncedUiPreferences = {
   tasks_per_category: number;
   cv_url_cs: string;
   cv_url_en: string;
+  hidden_project_tabs: string[];
+  sync_available: boolean;
 };
 
 export function PreferenceHydrator({
@@ -42,10 +45,12 @@ export function PreferenceHydrator({
   const { setCount } = useTasksPerCategory();
   const { setCs, setEn } = useCvLinks();
   const { setLayout } = useDashboardLayout();
+  const { setHiddenProjectTabs } = useProjectTabVisibility();
 
   useEffect(() => {
     if (hydrated.current) return;
     hydrated.current = true;
+    if (!preferences.sync_available) return;
     setLang(preferences.language);
     setTheme(preferences.theme);
     setCurrency(preferences.display_currency);
@@ -56,6 +61,7 @@ export function PreferenceHydrator({
     setCount(preferences.tasks_per_category);
     setCs(preferences.cv_url_cs);
     setEn(preferences.cv_url_en);
+    setHiddenProjectTabs(preferences.hidden_project_tabs);
   }, [
     preferences,
     setCollapsed,
@@ -68,6 +74,7 @@ export function PreferenceHydrator({
     setLayout,
     setOrder,
     setTheme,
+    setHiddenProjectTabs,
   ]);
 
   return null;

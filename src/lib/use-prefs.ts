@@ -6,6 +6,10 @@ import {
   NAV_TABS,
   type NavTab,
 } from "@/lib/nav-tabs";
+import {
+  normalizeHiddenProjectTabs,
+  type ProjectWorkspaceTab,
+} from "@/lib/project-workspace-tabs";
 
 /**
  * Lightweight client cache for UI preferences, following the same
@@ -225,6 +229,64 @@ export function sortByNavOrder<T extends { value: string }>(
   return [...items].sort(
     (a, b) => (idx.get(a.value) ?? Infinity) - (idx.get(b.value) ?? Infinity),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Project workspace visibility — synchronized like navigation visibility.
+// ---------------------------------------------------------------------------
+
+const HIDDEN_PROJECT_TABS_KEY = "hiddenProjectTabs";
+const projectTabListeners = new Set<() => void>();
+const EMPTY_PROJECT_TABS: readonly ProjectWorkspaceTab[] = Object.freeze([]);
+let hiddenProjectTabsCache: readonly ProjectWorkspaceTab[] | null = null;
+
+function readHiddenProjectTabs(): readonly ProjectWorkspaceTab[] {
+  if (hiddenProjectTabsCache != null) return hiddenProjectTabsCache;
+  if (typeof window === "undefined") return EMPTY_PROJECT_TABS;
+  try {
+    const raw = localStorage.getItem(HIDDEN_PROJECT_TABS_KEY);
+    hiddenProjectTabsCache = normalizeHiddenProjectTabs(
+      raw ? JSON.parse(raw) : [],
+    );
+  } catch {
+    hiddenProjectTabsCache = EMPTY_PROJECT_TABS;
+  }
+  return hiddenProjectTabsCache;
+}
+
+function subscribeProjectTabs(cb: () => void): () => void {
+  projectTabListeners.add(cb);
+  return () => projectTabListeners.delete(cb);
+}
+
+export function useProjectTabVisibility(): {
+  hiddenProjectTabs: readonly ProjectWorkspaceTab[];
+  isProjectTabHidden: (tab: ProjectWorkspaceTab) => boolean;
+  setHiddenProjectTabs: (tabs: string[]) => void;
+} {
+  const hiddenProjectTabs = useSyncExternalStore(
+    subscribeProjectTabs,
+    readHiddenProjectTabs,
+    () => EMPTY_PROJECT_TABS,
+  );
+  const setHiddenProjectTabs = (tabs: string[]) => {
+    const normalized = Object.freeze(normalizeHiddenProjectTabs(tabs));
+    hiddenProjectTabsCache = normalized;
+    try {
+      localStorage.setItem(
+        HIDDEN_PROJECT_TABS_KEY,
+        JSON.stringify(normalized),
+      );
+    } catch {
+      // Local cache is optional; the database remains authoritative.
+    }
+    for (const cb of projectTabListeners) cb();
+  };
+  return {
+    hiddenProjectTabs,
+    isProjectTabHidden: (tab) => hiddenProjectTabs.includes(tab),
+    setHiddenProjectTabs,
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Activity,
   ArrowLeft,
@@ -31,6 +30,11 @@ import { assessProjectHealth } from "@/lib/project-health";
 import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
+import {
+  PROJECT_WORKSPACE_TABS,
+  type ProjectWorkspaceTab,
+} from "@/lib/project-workspace-tabs";
+import { useProjectTabVisibility } from "@/lib/use-prefs";
 import type {
   ClientOpportunity,
   Cron,
@@ -51,8 +55,6 @@ import type {
   Transaction,
   Updater,
 } from "@/lib/types";
-
-type WorkspaceTab = "overview" | "tasks" | "activity" | "communication" | "repository" | "operations" | "finance" | "knowledge";
 
 type ProjectBrief = {
   facts: string[];
@@ -85,6 +87,7 @@ type Props = {
   setCommunications: Updater<ProjectCommunication[]>;
   displayCurrency: string;
   repositoryIntegrationEnabled: boolean;
+  onBackToProjects: () => void;
 };
 
 function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
@@ -107,7 +110,8 @@ export function ProjectWorkspace(props: Props) {
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
-  const [tab, setTab] = useState<WorkspaceTab>("overview");
+  const [tab, setTab] = useState<ProjectWorkspaceTab>("overview");
+  const { isProjectTabHidden } = useProjectTabVisibility();
   const [brief, setBrief] = useState<ProjectBrief | null>(null);
   const [briefError, setBriefError] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -143,16 +147,19 @@ export function ProjectWorkspace(props: Props) {
     ...projectCommunications.map((item) => ({ id: `communication-${item.id}`, at: item.occurred_at, label: `${p.projectCommunication}: ${item.subject || item.summary.slice(0, 80)}` })),
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 20);
 
-  const tabs: { id: WorkspaceTab; label: string }[] = [
-    { id: "overview", label: p.projectOverview },
-    { id: "tasks", label: p.projectTasks },
-    { id: "activity", label: p.projectActivity },
-    { id: "communication", label: p.projectCommunication },
-    { id: "repository", label: p.projectRepository },
-    { id: "operations", label: p.projectOperations },
-    { id: "finance", label: p.projectFinance },
-    { id: "knowledge", label: p.projectKnowledge },
-  ];
+  const tabLabels: Record<ProjectWorkspaceTab, string> = {
+    overview: p.projectOverview,
+    tasks: p.projectTasks,
+    activity: p.projectActivity,
+    communication: p.projectCommunication,
+    repository: p.projectRepository,
+    operations: p.projectOperations,
+    finance: p.projectFinance,
+    knowledge: p.projectKnowledge,
+  };
+  const tabs = PROJECT_WORKSPACE_TABS.filter(
+    (item) => item === "overview" || !isProjectTabHidden(item),
+  ).map((id) => ({ id, label: tabLabels[id] }));
 
   const healthLabel = health.health === "healthy" ? p.healthy : health.health === "attention" ? p.attentionStatus : p.atRisk;
   const localHealthReason = (reason: string) => {
@@ -185,7 +192,7 @@ export function ProjectWorkspace(props: Props) {
   }
 
   return <div>
-    <Link href="/projects" prefetch={false} className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</Link>
+    <button type="button" onClick={props.onBackToProjects} className="mb-3 inline-flex items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground focus-ring"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</button>
     <PageHeader
       title={project.name}
       description={project.summary || p.projectWorkspace}

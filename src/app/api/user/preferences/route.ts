@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { DEFAULT_LAYOUT } from "@/lib/dashboard-layout";
+import { normalizeHiddenProjectTabs } from "@/lib/project-workspace-tabs";
 
 type Patch = {
   selected_calendar_ids?: string[];
@@ -21,6 +22,7 @@ type Patch = {
   tasks_per_category?: number;
   cv_url_cs?: string;
   cv_url_en?: string;
+  hidden_project_tabs?: string[];
 };
 
 export async function GET() {
@@ -29,7 +31,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   const { data, error } = await supabase
     .from("user_preferences")
-    .select("ai_enabled, ai_sensitive_opt_in, notifications_renewals, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en")
+    .select("ai_enabled, ai_sensitive_opt_in, notifications_renewals, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs")
     .eq("user_id", user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: "Could not load preferences." }, { status: 500 });
@@ -47,6 +49,8 @@ export async function GET() {
     tasks_per_category: data?.tasks_per_category ?? 5,
     cv_url_cs: data?.cv_url_cs ?? "",
     cv_url_en: data?.cv_url_en ?? "",
+    hidden_project_tabs: normalizeHiddenProjectTabs(data?.hidden_project_tabs),
+    sync_available: true,
   });
 }
 
@@ -140,6 +144,11 @@ export async function PATCH(request: Request) {
   }
   if (typeof body.cv_url_en === "string") {
     patch.cv_url_en = body.cv_url_en.slice(0, 2000);
+  }
+  if (Array.isArray(body.hidden_project_tabs)) {
+    patch.hidden_project_tabs = normalizeHiddenProjectTabs(
+      body.hidden_project_tabs,
+    );
   }
 
   const { error } = await supabase

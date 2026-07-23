@@ -138,7 +138,9 @@ type ProjectsPanelProps = {
   displayCurrency: string;
   setDisplayCurrency?: (next: string) => void;
   initialVisibleIds?: string[];
-  initialProjectId?: string;
+  selectedProjectId?: string;
+  onOpenProject: (project: Project) => void;
+  onBackToProjects: () => void;
   todos: Todo[];
   notes: Note[];
   invoices: Invoice[];
@@ -160,8 +162,8 @@ type ProjectsPanelProps = {
 };
 
 export function ProjectsPanel(props: ProjectsPanelProps) {
-  const selected = props.initialProjectId
-    ? props.projects.find((project) => project.id === props.initialProjectId)
+  const selected = props.selectedProjectId
+    ? props.projects.find((project) => project.id === props.selectedProjectId)
     : null;
   if (selected) {
     return <ProjectWorkspace
@@ -187,6 +189,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       setCommunications={props.setCommunications}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
+      onBackToProjects={props.onBackToProjects}
     />;
   }
   return <ProjectsListPanel {...props} />;
@@ -206,6 +209,7 @@ function ProjectsListPanel({
   todos,
   organizations,
   importantDates,
+  onOpenProject,
 }: ProjectsPanelProps) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -800,6 +804,7 @@ function ProjectsListPanel({
                   onToggleActive={() => toggleProjectActive(p)}
                   onDelete={() => deleteProject(p)}
                   onManage={() => setManageProjectId(p.id)}
+                  onOpen={() => onOpenProject(p)}
                   health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
                   openTaskCount={projectTodos.filter((item) => !item.done).length}
                   organizationName={organization?.name}
@@ -821,7 +826,7 @@ function ProjectsListPanel({
             const project = ordered.find((item) => item.id === manageProjectId)!;
             const projectTodos = todos.filter((item) => item.project_id === project.id || (!item.project_id && project.repo_full_name != null && item.repo_full_name === project.repo_full_name));
             const projectDates = importantDates.filter((item) => item.project_id === project.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
-            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={!!project.repo_full_name && activeRepoNames.has(project.repo_full_name.toLowerCase())} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
+            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={!!project.repo_full_name && activeRepoNames.has(project.repo_full_name.toLowerCase())} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -850,6 +855,7 @@ type ProjectCardProps = {
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
+  onOpen: () => void;
   health: ProjectHealth;
   openTaskCount: number;
   organizationName?: string;
@@ -869,6 +875,7 @@ function SortableProjectRow({
   onToggleActive,
   onDelete,
   onManage,
+  onOpen,
 }: {
   project: Project;
   monthlyCost: number;
@@ -882,6 +889,7 @@ function SortableProjectRow({
   onToggleActive: () => void;
   onDelete: () => void;
   onManage: () => void;
+  onOpen: () => void;
 }) {
   const t = useDict();
   const {
@@ -904,7 +912,7 @@ function SortableProjectRow({
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
       <td className="px-2 py-2.5"><button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button></td>
-      <td className="px-3 py-2.5"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link><div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}</div></td>
+      <td className="px-3 py-2.5"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link><div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5"><StatusBadge value={health} /></td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
@@ -913,7 +921,7 @@ function SortableProjectRow({
       <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{nextDate ?? "—"}</td>
       <td className="px-3 py-2.5"><div className="flex justify-end gap-1">
         {project.dev_url && <Tooltip content={t.projects.development}><Button asChild size="icon-sm" variant="ghost"><a href={project.dev_url} target="_blank" rel="noreferrer" aria-label={t.projects.development}><ExternalLink /></a></Button></Tooltip>}
-        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
+        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
         <Tooltip content={t.projects.manage}><Button size="icon-sm" variant="ghost" onClick={onManage} aria-label={t.projects.manage}><Cpu /></Button></Tooltip>
         <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
         <Tooltip content={project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
@@ -939,6 +947,7 @@ function ProjectCard({
   onEdit,
   onToggleActive,
   onDelete,
+  onOpen,
   health,
   openTaskCount,
   organizationName,
@@ -1019,6 +1028,10 @@ function ProjectCard({
                 <Link
                   href={`/projects/${encodeURIComponent(project.slug)}`}
                   prefetch={false}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onOpen();
+                  }}
                   className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
                 >
                   <FolderKanban className="h-3 w-3" />

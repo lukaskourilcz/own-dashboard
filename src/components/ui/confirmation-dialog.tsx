@@ -52,7 +52,7 @@ export function ConfirmationProvider({ children }: { children: ReactNode }) {
     <ConfirmationContext.Provider value={confirm}>
       {children}
       <Dialog open={options !== null} onOpenChange={(open) => !open && finish(false)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="confirmation-dialog max-w-md">
           {options && (
             <>
               <DialogHeader>

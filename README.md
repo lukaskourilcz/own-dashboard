@@ -105,6 +105,7 @@ The relevant migrations are:
 3. `20260722150000_atomic_inbox_routing.sql` — route one owned Inbox item and mark it processed in a single `SECURITY INVOKER` transaction.
 4. `20260722190000_operational_workflow_extensions.sql` — subscription grouping/importance, project development links and communication history, plus the own-only VPS agent task queue and atomic claim RPC.
 5. `20260723065433_daily_focus_synced_preferences.sql` — GLOBAL task priority, daily focus sets/completion garden, synchronized UI preferences, and permanent owner-scoped Career deletion tombstones.
+6. `20260723082424_sync_preferences_project_tabs.sql` — reliable authenticated preference grants and own-only policies, synchronized project-workspace tab visibility, and repository-aware daily-focus selection.
 
 Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying all migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 

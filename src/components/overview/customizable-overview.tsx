@@ -55,6 +55,7 @@ import {
 import { useDashboardLayout } from "@/lib/use-dashboard-layout";
 import { useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+import { saveUserPreferences } from "@/lib/preference-client";
 
 // Widgets that mirror a hideable nav section — hidden in Settings ⇒ hidden on
 // the overview too. Overview-only widgets (today-hero, quick-add, kpi) have no
@@ -100,11 +101,7 @@ export function CustomizableOverview({
   const persistLayout = (next: readonly WidgetId[]) => {
     setLayout(next);
     if (!syncPreferences) return;
-    void fetch("/api/user/preferences", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ dashboard_layout: next }),
-    });
+    void saveUserPreferences({ dashboard_layout: next }).catch(() => undefined);
   };
 
   // Respect the Settings nav-visibility choices: drop widgets whose section

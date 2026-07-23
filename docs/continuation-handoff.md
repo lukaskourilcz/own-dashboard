@@ -6,7 +6,7 @@ Branch: `codex/daily-focus-active-projects`
 
 Previous implementation pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/56` (merged into `main`). Brand-media policy pull request: `https://github.com/lukaskourilcz/own-dashboard/pull/58` (merged into `main`).
 
-This is the restart-safe control point for the completed design and architecture overhaul. Start from the branch HEAD, read the files below, and do not repeat completed work or reset the repository.
+This is the restart-safe control point for the completed design and architecture overhaul. Start from the branch HEAD, read the files below, and do not repeat completed work or reset the repository. The latest follow-up fixes synchronized preference persistence, project-task focus selection, in-shell project navigation, project-table reset behavior, confirmation-dialog positioning, and configurable project-workspace tabs.
 
 The follow-up operational implementation is checkpointed at `74120df` and adds the Career table/sorting, subscription grouping/importance/renewal countdowns, a sortable Projects summary with project development links and client communication history, dedicated drag handles, and the Agents VPS task queue. Documentation, fixture, responsive containment, and validation coverage are checkpointed at `d4e4735`. If PR #56 is already merged, continue from `main`; otherwise continue from this branch and preserve both commits.
 
@@ -56,6 +56,10 @@ Do not stage, reset, revert, or rewrite them. Do not use `git add -A`. Inspect P
 - Career listings support selection and permanent owner-scoped deletion tombstones; the former Hide workflow is removed.
 - Empty notes are cleaned up after the editing grace period, every note has full-context copy, and uneven Links categories use masonry columns.
 - Destructive actions use the shared application confirmation dialog rather than browser-native delete popups.
+- Preference writes are serialized and the server loader no longer replaces a valid device cache with defaults when database sync is unavailable. The latest migration restores authenticated Data API grants/own-only preference policies and adds synchronized project-tab visibility.
+- Tasks groups both manual `project_id` work and repository-imported work under active projects. Refreshing NEEDED.md regenerates Home's daily seven; the database draw resolves imported tasks to active projects by repository and excludes unrelated manual work.
+- Active project links now open inside the persistent shell instead of triggering a full server render. Browser history restores project context, while the Projects parent and workspace back action always return to the full project table.
+- Project workspace sections can be shown or hidden from Settings; Overview remains mandatory. The branded confirmation dialog keeps Tailwind's single centering translation and uses opacity-only motion to prevent its opening shift.
 
 ## Completed engineering and agent architecture
 
@@ -72,15 +76,16 @@ Completed successfully at this checkpoint:
 
 - `npm run lint`
 - `npx tsc --noEmit`
-- `npm run test` — rerun after the daily-focus milestone; the last pre-build run passed 28 files and 247 tests
+- `npm run test` — 29 files and 249 tests passed
 - `npm run build` — optimized Next.js production build completed
-- `npm run test:e2e` — 43 passed, 31 intentional project skips, 0 failed
+- `npm run test:e2e` — 47 passed, 35 intentional project skips, 0 failed
 - axe — login, 17 representative desktop destinations, and the open mobile More dialog had no serious or critical A/AA violations
 - responsive runtime — 360, 430, 768, 1024, 1440, and 1728 px, including Czech and dark-mode cases, passed without document overflow
 - invoice print — dark-mode Czech invoice parsed as exactly one A4 PDF page and retained white print isolation
 - PWA — manifest, dynamic PNG icon, and maskable declaration passed
 - all canonical desktop destinations opened without console errors
 - Career mobile table containment, project Communication, Agents, and grouped subscription renewal assertions passed
+- preference reload, project-tab visibility, in-shell project navigation/table reset, project task grouping, and confirmation-dialog centering assertions passed
 - documentation links, deferred-media JSON, raw-color/enum/retired-scope searches, and `git diff --check` passed
 
 Rerun the exact commands if any code changes after this handoff; never convert discovery or interrupted execution into a pass claim.
@@ -100,7 +105,7 @@ The next agent must search current primary provider sources for at least three l
 
 ## External work that still requires owner systems
 
-- Back up the linked database and apply all five pending Supabase migrations, including `20260723065433_daily_focus_synced_preferences.sql`, through the repository's normal reviewed migration workflow.
+- Back up the linked database and apply all six pending Supabase migrations, including `20260723082424_sync_preferences_project_tabs.sql`, through the repository's normal reviewed migration workflow.
 - Configure `AGENT_RUNNER_TOKEN` and `DASHBOARD_OWNER_ID` only if the VPS queue should be consumed; validate with a disposable task first.
 - Exercise OAuth, GitHub, Google Calendar, GoCardless, Resend, PostHog, Sentry, and Anthropic against real configured provider accounts.
 - Research and select a safe low-cost/free media generator. Generate and approve only the manifest's high-value media.
