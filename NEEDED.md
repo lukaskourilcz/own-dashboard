@@ -35,3 +35,12 @@ The repository implementation is complete. The items below are the external acco
 ## Migration safety note
 
 The cleanup migration first copies Pulse, habits/streaks, books/reading, couples, invitations, and sharing preferences into the own-only `legacy_personal_archives` table, then drops the retired tables and partner-sharing function. After deployment, download the archive from **Settings → Data & export → Legacy** and retain it off-platform if needed. See `docs/migration-guide.md` for verification and rollback order.
+
+## Developer tooling
+
+- [ ] **Install and initialize RTK (`rtk-ai/rtk`)** — RTK could not be set up from the Claude Code web session because its GitHub download host is outside the session's network allowlist (`github.com/rtk-ai/rtk` and its release binaries return HTTP 403). Set it up locally at home with the commands below, then enable it for this repository following `rtk --help` / the RTK docs (the exact per-repo command isn't documented here because the tool wouldn't install in the sandbox). `[imp:2]` `[owner:me]`
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+rtk init --global
+```
