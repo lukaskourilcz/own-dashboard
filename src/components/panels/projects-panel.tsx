@@ -58,6 +58,8 @@ import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
+import { Markdown } from "@/components/ui/markdown";
+import { NEW_PROJECT_GUIDE } from "@/lib/new-project-guide";
 import { useDict } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
@@ -619,6 +621,17 @@ function ProjectsListPanel({
           </div>
         }
       />
+
+      {/* New-project standards — collapsible; how an agent should wire a repo
+          into OwnDashboard (the four root .md files + git workflow). */}
+      <details className="mb-4 rounded-lg border border-border bg-surface">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground focus-ring">
+          {t.projects.newProjectGuide}
+        </summary>
+        <div className="border-t border-border px-4 py-3">
+          <Markdown source={NEW_PROJECT_GUIDE} className="max-w-3xl" />
+        </div>
+      </details>
 
       {/* Totals + chart (full width — the form now lives in a dialog) */}
       {chartData.length > 0 && (

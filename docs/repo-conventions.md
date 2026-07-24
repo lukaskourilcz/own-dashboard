@@ -86,3 +86,17 @@ this spec:
   stale information, update what changed, or confirm each file is still accurate
   and on point (paying special attention to `NEEDED.md`, `about-project.md`,
   `scaling.md`, and `monetization.md`).
+
+## Git workflow (every session)
+
+Every repo's `CLAUDE.md` and `session-end` skill carry these rules:
+
+- **Commit frequently** in small, coherent steps — never batch a whole session
+  into one commit.
+- **At the end of every session, push and merge to `main`** so the change
+  redeploys immediately (these projects auto-deploy from `main` on Vercel).
+- **Delete the merged / old branch** (local and remote) after merging, to keep
+  the repo clean. Never leave stale branches behind.
+
+`newProject.md` (rendered in OwnDashboard's Projects card) is the onboarding
+version of this spec for brand-new repos.

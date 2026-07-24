@@ -2,6 +2,7 @@ type ProjectsStrings = {
   title: string;
   description: string;
   displayIn: string;
+  newProjectGuide: string;
 
   // Grand totals across all active projects.
   grandTotalMonthly: string;
@@ -114,6 +115,7 @@ type ProjectsStrings = {
 
 export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
   en: {
+    newProjectGuide: "New project guide — standards for wiring a repo into OwnDashboard",
     title: "Projects",
     description:
       "Monthly running costs, notes and crons across your active projects. Active repositories show up here automatically.",
@@ -223,6 +225,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     addFirstProject: "Add your first project using the form.",
   },
   cs: {
+    newProjectGuide: "Návod pro nový projekt — standardy pro napojení repozitáře na OwnDashboard",
     title: "Projekty",
     description:
       "Měsíční provozní náklady, poznámky a crony aktivních projektů. Aktivní repozitáře se sem přidají automaticky.",
