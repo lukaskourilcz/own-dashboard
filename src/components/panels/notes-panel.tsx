@@ -159,6 +159,10 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   const t = useDict();
   const locale = useDateLocale();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // True only right after the user taps the mobile back arrow: it suppresses the
+  // "auto-open the first note" default so the full list is shown instead. Opening
+  // any note clears it again.
+  const [wentBackToList, setWentBackToList] = useState(false);
   const [query, setQuery] = useState("");
   const [activeTagFilter, setActiveTagFilter] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -244,13 +248,12 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   );
   const visibleCount = pinnedFiltered.length + unpinnedFiltered.length;
 
-  // Only the user's explicit selection drives the detail view. We deliberately
-  // do NOT fall back to the first note: on the narrow (mobile) master-detail
-  // layout the back arrow clears the selection to return to the full list, and
-  // an auto-fallback would immediately reopen a note and defeat it. On desktop
-  // the list stays visible either way (lg:block), with a "select a note" state
-  // until one is opened.
-  const effectiveId = selectedId;
+  // Default to the first note so desktop opens it beside the list on entry.
+  // The mobile back arrow sets `wentBackToList`, which suppresses that default
+  // so the full list is shown (and clearing it never snaps back to a note).
+  const effectiveId = wentBackToList
+    ? selectedId
+    : selectedId ?? pinned[0]?.id ?? unpinned[0]?.id ?? null;
   const selected = effectiveId
     ? notes.find((n) => n.id === effectiveId) ?? null
     : null;
@@ -308,10 +311,21 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
     },
     onSuccess: (note) => {
       setNotes((prev) => [note, ...prev]);
-      setSelectedId(note.id);
+      openNote(note.id);
       void qc.invalidateQueries({ queryKey: qk.notes });
     },
   });
+
+  // Open a note in the detail pane (clearing the "back to list" state), or pass
+  // null to return to the full list (mobile back arrow).
+  function openNote(id: string) {
+    setSelectedId(id);
+    setWentBackToList(false);
+  }
+  function backToList() {
+    setSelectedId(null);
+    setWentBackToList(true);
+  }
 
   async function createNote(seedContent?: unknown, seedTitle?: string) {
     try {
@@ -763,7 +777,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                             key={n.id}
                             note={n}
                             isActive={n.id === effectiveId}
-                            onSelect={() => setSelectedId(n.id)}
+                            onSelect={() => openNote(n.id)}
                             onCopy={() => void copyNoteContext(n)}
                           />
                         ))}
@@ -784,7 +798,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                       key={n.id}
                       note={n}
                       isActive={n.id === effectiveId}
-                      onSelect={() => setSelectedId(n.id)}
+                      onSelect={() => openNote(n.id)}
                       onCopy={() => void copyNoteContext(n)}
                     />
                   ))}
@@ -806,7 +820,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
                 <button
                   type="button"
-                  onClick={() => setSelectedId(null)}
+                  onClick={backToList}
                   className="lg:hidden inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
                   aria-label={t.notes.back}
                 >
@@ -934,7 +948,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     setLinkPickerQuery("");
                     setLinkPickerOpen(true);
                   }}
-                  onNavigateToNote={(id) => setSelectedId(id)}
+                  onNavigateToNote={(id) => openNote(id)}
                   initialContent={
                     (Array.isArray(selected.content)
                       ? selected.content
