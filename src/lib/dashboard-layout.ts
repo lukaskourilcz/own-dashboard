@@ -15,6 +15,7 @@ export type WidgetId =
   | "quick-add"
   | "kpi"
   | "todos"
+  | "crons"
   | "work-attention"
   | "subscriptions"
   | "calendar"
@@ -26,6 +27,7 @@ export const WIDGET_IDS: readonly WidgetId[] = [
   "quick-add",
   "kpi",
   "todos",
+  "crons",
   "work-attention",
   "subscriptions",
   "calendar",
@@ -42,6 +44,7 @@ export const DEFAULT_LAYOUT: readonly WidgetId[] = [
   "todos",
   "kpi",
   "quick-add",
+  "crons",
   "work-attention",
   "subscriptions",
   "calendar",

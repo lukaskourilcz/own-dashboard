@@ -39,6 +39,7 @@ import {
   RotateCcw,
   Settings2,
   Sigma,
+  Timer,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }>
     "quick-add": { icon: Command, size: "full" },
     kpi: { icon: Sigma, size: "full" },
     todos: { icon: ListTodo, size: "full" },
+    crons: { icon: Timer, size: "full" },
     "work-attention": { icon: BriefcaseBusiness, size: "full" },
     subscriptions: { icon: CreditCard, size: "half" },
     calendar: { icon: CalendarDays, size: "half" },

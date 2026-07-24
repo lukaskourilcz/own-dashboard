@@ -26,6 +26,7 @@ import { KpiCards } from "@/components/overview/kpi-cards";
 import { QuickAdd } from "@/components/overview/quick-add";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
 import { DailyFocusPanel } from "@/components/overview/daily-focus";
+import { CronMonitorPanel } from "@/components/overview/cron-monitor";
 import { TodayHero } from "@/components/overview/today-hero";
 import { WorkAttention } from "@/components/overview/work-attention";
 import { WeekView } from "@/components/calendar/week-view";
@@ -304,6 +305,7 @@ export function DashboardShell(props: Props) {
             "quick-add": <QuickAdd setTodos={setTodos} setInboxItems={setInboxItems} onCalendarTitle={handleCalendarTitle} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
             todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} />,
+            crons: <CronMonitorPanel isPreview={props.isPreview} />,
             "work-attention": <WorkAttention opportunities={opportunities} onOpen={() => setTab("opportunities")} />,
             subscriptions: <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} compact />,
             calendar: <CalendarPanel compact />,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logCronRun } from "@/lib/cron-log";
 import { Resend } from "resend";
 import { brandConfig } from "@/lib/brand";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -161,6 +162,12 @@ export async function GET(request: Request) {
   // No-op until HEARTBEAT_URL is set. See NEEDED.md.
   await pingHeartbeat();
 
+  await logCronRun({
+    name: "Renewal warnings",
+    endpoint: "/api/cron/renewal-warnings",
+    source: "vercel",
+    detail: `scanned ${rows.length}, sent ${sent}`,
+  });
   return NextResponse.json({ ok: true, scanned: rows.length, sent });
 }
 

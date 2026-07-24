@@ -16,6 +16,21 @@ type DashboardStrings = {
   emptyDescription: string;
   widgetNames: Record<WidgetId, string>;
   widgetDescriptions: Record<WidgetId, string>;
+  crons: {
+    title: string;
+    today: string;
+    history: string;
+    emptyToday: string;
+    emptyDay: string;
+    prevDay: string;
+    nextDay: string;
+    endpointCol: string;
+    statusSuccess: string;
+    statusFailure: string;
+    statusRunning: string;
+    unavailable: string;
+    summary: (ok: number, fail: number) => string;
+  };
 };
 
 export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
@@ -38,6 +53,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       "quick-add": "Quick add",
       kpi: "Highlights",
       todos: "Tasks",
+      crons: "Crons",
       "work-attention": "Work attention",
       subscriptions: "Subscriptions",
       calendar: "Calendar",
@@ -48,10 +64,26 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       "quick-add": "Capture a task, event, or unprocessed item in one line.",
       kpi: "Your key numbers at a glance.",
       todos: "Your open tasks.",
+      crons: "Today's scheduled cron runs and a 14-day log history.",
       "work-attention": "Projects, opportunities, applications, and invoices that need action.",
       subscriptions: "Recurring spend overview.",
       calendar: "Add and view calendar events.",
       goals: "Recurring goals still due this period.",
+    },
+    crons: {
+      title: "Crons",
+      today: "Today",
+      history: "Log history",
+      emptyToday: "No cron runs recorded today.",
+      emptyDay: "No cron runs on this day.",
+      prevDay: "Previous day",
+      nextDay: "Next day",
+      endpointCol: "Endpoint",
+      statusSuccess: "Success",
+      statusFailure: "Failed",
+      statusRunning: "Running",
+      unavailable: "Cron history is unavailable.",
+      summary: (ok, fail) => `${ok} ok · ${fail} failed`,
     },
   },
   cs: {
@@ -73,6 +105,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       "quick-add": "Rychlé přidání",
       kpi: "Přehled",
       todos: "Úkoly",
+      crons: "Crony",
       "work-attention": "Pracovní pozornost",
       subscriptions: "Předplatná",
       calendar: "Kalendář",
@@ -83,10 +116,26 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       "quick-add": "Zachyťte úkol, událost nebo nezpracovanou položku jedním řádkem.",
       kpi: "Klíčová čísla na první pohled.",
       todos: "Vaše otevřené úkoly.",
+      crons: "Dnešní spuštěné crony a historie logů za 14 dní.",
       "work-attention": "Projekty, příležitosti, žádosti a faktury vyžadující akci.",
       subscriptions: "Přehled opakovaných výdajů.",
       calendar: "Přidávejte a prohlížejte události kalendáře.",
       goals: "Opakující se cíle k splnění v tomto období.",
+    },
+    crons: {
+      title: "Crony",
+      today: "Dnes",
+      history: "Historie logů",
+      emptyToday: "Dnes nebyl zaznamenán žádný běh cronu.",
+      emptyDay: "V tento den žádné běhy cronů.",
+      prevDay: "Předchozí den",
+      nextDay: "Další den",
+      endpointCol: "Endpoint",
+      statusSuccess: "Úspěch",
+      statusFailure: "Selhalo",
+      statusRunning: "Běží",
+      unavailable: "Historie cronů není dostupná.",
+      summary: (ok, fail) => `${ok} ok · ${fail} selhalo`,
     },
   },
 };

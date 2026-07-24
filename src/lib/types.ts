@@ -2,6 +2,18 @@ import type { TaskKind } from "./task-meta";
 
 export type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
+/** One recorded cron run, shown in the Home cron monitoring panels. */
+export type CronRun = {
+  id: string;
+  name: string;
+  endpoint: string;
+  status: "success" | "failure" | "running";
+  source: string;
+  detail: string;
+  fired_at: string;
+  cron_id: string | null;
+};
+
 export type Subscription = {
   id: string;
   user_id: string;

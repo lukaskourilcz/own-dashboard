@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logCronRun } from "@/lib/cron-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isGoCardlessConfigured } from "@/lib/gocardless";
 import { syncConnection } from "@/lib/bank-sync-server";
@@ -54,5 +55,11 @@ export async function GET(request: Request) {
     }
   }
 
+  await logCronRun({
+    name: "Bank sync",
+    endpoint: "/api/cron/bank-sync",
+    source: "vercel",
+    detail: `inserted ${inserted}, failed ${failed}`,
+  });
   return NextResponse.json({ ok: true, banks, inserted, failed });
 }

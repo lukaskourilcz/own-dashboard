@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logCronRun } from "@/lib/cron-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runJobScrape } from "@/lib/jobs/scrape";
 
@@ -37,5 +38,11 @@ export async function GET(request: Request) {
   }
 
   const summary = await runJobScrape(admin);
+  await logCronRun({
+    name: "Jobs scrape",
+    endpoint: "/api/cron/jobs-scrape",
+    source: "vercel",
+    status: summary.ok ? "success" : "failure",
+  });
   return NextResponse.json(summary, { status: summary.ok ? 200 : 500 });
 }
