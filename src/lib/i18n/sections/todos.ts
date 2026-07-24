@@ -1,3 +1,5 @@
+import type { TaskKind, TimeBucketId } from "@/lib/task-meta";
+
 type TodosStrings = {
   title: string;
   description: string;
@@ -78,8 +80,20 @@ type TodosStrings = {
   assigneeFilterLabel: string;
   assigneeMe: string;
   assigneeAi: string;
+  // Work-kind (category) + time-estimate labels, filters, and tags.
+  taskKindLabel: (kind: TaskKind) => string;
+  categoryFilterLabel: string;
+  categoryLabel: string;
+  categoryNone: string;
+  timeFilterLabel: string;
+  timeBucketLabel: (id: TimeBucketId) => string;
+  timeLabel: string;
+  timeNone: string;
+  timeMinutesUnit: string;
+  estimatedTimeLabel: (value: string) => string;
   filterEmptyTitle: string;
   filterEmptyDescription: (n: number) => string;
+  filtersEmpty: string;
   globalGroup: string;
   globalTask: string;
   dailyFocusTitle: string;
@@ -189,9 +203,27 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     assigneeFilterLabel: "For",
     assigneeMe: "Me",
     assigneeAi: "AI",
+    taskKindLabel: (kind) =>
+      ({
+        setup: "Setup",
+        deploy: "Deploy",
+        legal: "Legal",
+        content: "Content",
+        decision: "Decision",
+      })[kind],
+    categoryFilterLabel: "Category",
+    categoryLabel: "Category",
+    categoryNone: "No category",
+    timeFilterLabel: "Time",
+    timeBucketLabel: (id) => ({ q: "≤15m", h: "≤1h", half: "≤4h" })[id],
+    timeLabel: "Time estimate",
+    timeNone: "No estimate",
+    timeMinutesUnit: "min",
+    estimatedTimeLabel: (value) => `Est. ${value}`,
     filterEmptyTitle: "Nothing at this importance",
     filterEmptyDescription: (n) =>
       `No open tasks scored ${n} or higher. Lower the filter to see more.`,
+    filtersEmpty: "No tasks match the current filters.",
     globalGroup: "GLOBAL",
     globalTask: "Global task",
     dailyFocusTitle: "Today's seven",
@@ -328,9 +360,27 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     filterEmptyTitle: "Nic s touto důležitostí",
     filterEmptyDescription: (n) =>
       `Žádné otevřené úkoly s důležitostí ${n} a vyšší. Sniž filtr a uvidíš víc.`,
+    filtersEmpty: "Žádné úkoly neodpovídají zvoleným filtrům.",
     assigneeFilterLabel: "Pro",
     assigneeMe: "Já",
     assigneeAi: "AI",
+    taskKindLabel: (kind) =>
+      ({
+        setup: "Nastavení",
+        deploy: "Nasazení",
+        legal: "Právní",
+        content: "Obsah",
+        decision: "Rozhodnutí",
+      })[kind],
+    categoryFilterLabel: "Kategorie",
+    categoryLabel: "Kategorie",
+    categoryNone: "Bez kategorie",
+    timeFilterLabel: "Čas",
+    timeBucketLabel: (id) => ({ q: "≤15m", h: "≤1h", half: "≤4h" })[id],
+    timeLabel: "Odhad času",
+    timeNone: "Bez odhadu",
+    timeMinutesUnit: "min",
+    estimatedTimeLabel: (value) => `Odhad ${value}`,
     globalGroup: "GLOBÁLNÍ",
     globalTask: "Globální úkol",
     dailyFocusTitle: "Dnešní sedmička",

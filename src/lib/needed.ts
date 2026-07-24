@@ -67,6 +67,17 @@ export function extractAssignee(text: string | null | undefined): Assignee | nul
   return m ? (m[1].toLowerCase() as Assignee) : null;
 }
 
+/** A stored task's effective assignee: the `[owner:…]` marker on its NEEDED.md
+ * line, or "me" for hand-added tasks (no source line = the user's own work).
+ * Returns null for a GitHub task whose line carries no owner marker. */
+export function assigneeForTodo(
+  neededRaw: string | null | undefined,
+): Assignee | null {
+  const who = extractAssignee(neededRaw);
+  if (who) return who;
+  return neededRaw ? null : "me";
+}
+
 /** Pull the `[time:…]` marker out of a task line, returning whole minutes (or
  * null) and the line text with the marker removed. */
 export function extractTime(text: string): {

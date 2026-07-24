@@ -24,14 +24,15 @@ export function isTaskKind(value: unknown): value is TaskKind {
 }
 
 /**
- * Time filter buckets. A selection keeps tasks whose estimate is at most the
- * bucket's ceiling; "all" clears the filter. `id` is stable for state/URLs.
+ * Time filter buckets — cumulative ceilings ("tasks that fit in ≤ X"). A
+ * selection keeps tasks whose estimate is at most the bucket's ceiling; "all"
+ * clears the filter (and is the only view that includes longer tasks). `id` is
+ * stable for state/URLs.
  */
 export const TIME_BUCKETS = [
   { id: "q", maxMinutes: 15 },
   { id: "h", maxMinutes: 60 },
   { id: "half", maxMinutes: 240 },
-  { id: "long", maxMinutes: Number.POSITIVE_INFINITY },
 ] as const;
 
 export type TimeBucketId = (typeof TIME_BUCKETS)[number]["id"];

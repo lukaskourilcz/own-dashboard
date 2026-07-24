@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ChevronDown,
   ChevronRight,
+  Clock,
   ExternalLink,
   Flag,
   FolderKanban,
@@ -14,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Tag,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -48,7 +50,7 @@ import { commitFile, loadRepoFile } from "@/lib/github";
 import {
   NEEDED_FILE,
   removeNeededLine,
-  extractAssignee,
+  assigneeForTodo,
   type Assignee,
 } from "@/lib/needed";
 import {
@@ -56,6 +58,13 @@ import {
   diffNeededTodos,
   type NeededTodoRow,
 } from "@/lib/needed-sync";
+import { TaskTags } from "@/components/tasks/task-tags";
+import {
+  TASK_KINDS,
+  TIME_BUCKETS,
+  type TaskKind,
+  type TimeBucketId,
+} from "@/lib/task-meta";
 import type { Locale } from "date-fns";
 import type { Organization, Project, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -80,6 +89,8 @@ export function TodosPanel({
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [newImportance, setNewImportance] = useState("");
+  const [newMinutes, setNewMinutes] = useState("");
+  const [newKind, setNewKind] = useState<"" | TaskKind>("");
   const [projectId, setProjectId] = useState("");
   const [organizationId, setOrganizationId] = useState("");
   const [isGlobal, setIsGlobal] = useState(false);
@@ -91,6 +102,9 @@ export function TodosPanel({
   // Who the task is for: "all" | "me" | "ai" (from the NEEDED.md `[owner:…]`
   // marker, carried on the stored `needed_raw` line).
   const [assigneeFilter, setAssigneeFilter] = useState<"all" | Assignee>("all");
+  // Estimated-time ceiling ("all" = no filter) and work-kind category filter.
+  const [timeFilter, setTimeFilter] = useState<"all" | TimeBucketId>("all");
+  const [kindFilter, setKindFilter] = useState<"all" | TaskKind>("all");
   // How many tasks each category shows before "show all" (Settings; 0 = all).
   const { count: tasksPerCategory } = useTasksPerCategory();
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
@@ -107,6 +121,8 @@ export function TodosPanel({
           title: title.trim(),
           due_date: dueDate || null,
           importance: newImportance ? Number(newImportance) : null,
+          estimated_minutes: newMinutes ? Number(newMinutes) : null,
+          task_kind: newKind || null,
           is_global: isGlobal,
           project_id: isGlobal ? null : projectId || null,
           organization_id: organizationId || null,
@@ -122,6 +138,8 @@ export function TodosPanel({
       setTitle("");
       setDueDate("");
       setNewImportance("");
+      setNewMinutes("");
+      setNewKind("");
       setProjectId("");
       setOrganizationId("");
       setIsGlobal(false);
@@ -424,10 +442,28 @@ export function TodosPanel({
   // Hand-added tasks (no source line) count as "me" — they're the user's own.
   const passesAssignee = (td: Todo) => {
     if (assigneeFilter === "all") return true;
-    const who = extractAssignee(td.needed_raw) ?? (td.needed_raw ? null : "me");
-    return who === assigneeFilter;
+    return assigneeForTodo(td.needed_raw) === assigneeFilter;
   };
-  const openVisible = open.filter((td) => passesImportance(td) && passesAssignee(td));
+  // Time: keep tasks whose estimate fits within the chosen ceiling. Unestimated
+  // tasks are hidden while a time filter is active (like unscored + importance).
+  const passesTime = (td: Todo) => {
+    if (timeFilter === "all") return true;
+    const bucket = TIME_BUCKETS.find((b) => b.id === timeFilter);
+    return (
+      bucket != null &&
+      td.estimated_minutes != null &&
+      td.estimated_minutes <= bucket.maxMinutes
+    );
+  };
+  const passesKind = (td: Todo) =>
+    kindFilter === "all" || td.task_kind === kindFilter;
+  const openVisible = open.filter(
+    (td) =>
+      passesImportance(td) &&
+      passesAssignee(td) &&
+      passesTime(td) &&
+      passesKind(td),
+  );
   const hiddenByFilter = open.length - openVisible.length;
   const openGlobal = openVisible
     .filter((td) => td.is_global)
@@ -538,6 +574,8 @@ export function TodosPanel({
                 onChange={setMinImportance}
                 hidden={hiddenByFilter}
               />
+              <TimeFilter t={t} value={timeFilter} onChange={setTimeFilter} />
+              <CategoryFilter t={t} value={kindFilter} onChange={setKindFilter} />
               <AssigneeFilter t={t} value={assigneeFilter} onChange={setAssigneeFilter} />
             </div>
           )}
@@ -557,7 +595,7 @@ export function TodosPanel({
                 <EmptyState
                   icon={Flag}
                   title={t.todos.filterEmptyTitle}
-                  description={t.todos.filterEmptyDescription(minImportance)}
+                  description={t.todos.filtersEmpty}
                 />
               </CardContent>
             </Card>
@@ -674,6 +712,10 @@ export function TodosPanel({
         setDueDate={setDueDate}
         newImportance={newImportance}
         setNewImportance={setNewImportance}
+        newMinutes={newMinutes}
+        setNewMinutes={setNewMinutes}
+        newKind={newKind}
+        setNewKind={setNewKind}
         projectId={projectId}
         setProjectId={setProjectId}
         organizationId={organizationId}
@@ -814,14 +856,15 @@ function TaskSubcard({
         className="mt-0.5"
       />
       <div className="min-w-0 flex-1">
-        <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 break-words text-sm text-foreground">
-            {td.title}
-          </p>
-          {td.importance != null && (
-            <ImportanceBadge t={t} value={td.importance} />
-          )}
-        </div>
+        <p className="break-words text-sm text-foreground">{td.title}</p>
+        <TaskTags
+          t={t}
+          importance={td.importance}
+          kind={td.task_kind}
+          minutes={td.estimated_minutes}
+          assignee={assigneeForTodo(td.needed_raw)}
+          className="mt-1.5"
+        />
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
           {td.generated_at && (
             <span className="tabular">
@@ -939,7 +982,15 @@ function FinishedSection({
                 <p className="truncate text-sm text-foreground-subtle line-through">
                   {td.title}
                 </p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-foreground-subtle">
+                <TaskTags
+                  t={t}
+                  importance={td.importance}
+                  kind={td.task_kind}
+                  minutes={td.estimated_minutes}
+                  assignee={assigneeForTodo(td.needed_raw)}
+                  className="mt-1"
+                />
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-foreground-subtle">
                   {td.repo_name && <span className="truncate">{td.repo_name}</span>}
                   {td.due_date && (
                     <span className="tabular">
@@ -981,34 +1032,6 @@ function FinishedSection({
 }
 
 /* ------------------------------ Importance ------------------------------- */
-
-// Tailwind classes per score, warmer/stronger as importance climbs.
-const IMPORTANCE_STYLES: Record<number, string> = {
-  1: "bg-surface text-foreground-subtle border-border",
-  2: "bg-surface text-foreground-muted border-border",
-  3: "bg-primary/10 text-primary border-primary/20",
-  4: "bg-warning/10 text-warning border-warning/20",
-  5: "bg-destructive/10 text-destructive border-destructive/20",
-  6: "bg-warning/15 text-warning border-warning/30",
-};
-
-/** Small pill showing a task's 1–6 importance score. */
-function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
-  return (
-    <Tooltip content={t.todos.importanceOf(value)}>
-      <span
-        className={cn(
-          "inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular",
-          IMPORTANCE_STYLES[value] ?? IMPORTANCE_STYLES[1],
-        )}
-        aria-label={t.todos.importanceOf(value)}
-      >
-        <Flag className="h-2.5 w-2.5" />
-        {value}
-      </span>
-    </Tooltip>
-  );
-}
 
 /** Segmented "minimum importance" filter. 0 = all; 1–5 = at-least-N. */
 function ImportanceFilter({
@@ -1099,6 +1122,80 @@ function AssigneeFilter({
   );
 }
 
+/** Segmented time-ceiling filter: All / ≤15m / ≤1h / ≤4h. */
+function TimeFilter({
+  t,
+  value,
+  onChange,
+}: {
+  t: Dict;
+  value: "all" | TimeBucketId;
+  onChange: (v: "all" | TimeBucketId) => void;
+}) {
+  const options: { value: "all" | TimeBucketId; label: string }[] = [
+    { value: "all", label: t.todos.filterAll },
+    ...TIME_BUCKETS.map((b) => ({
+      value: b.id,
+      label: t.todos.timeBucketLabel(b.id),
+    })),
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
+        <Clock className="h-3.5 w-3.5" />
+        {t.todos.timeFilterLabel}
+      </span>
+      <div className="inline-flex overflow-hidden rounded-md border border-border">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            aria-pressed={value === o.value}
+            className={cn(
+              "px-2.5 py-1 text-xs font-medium tabular transition-colors border-l border-border first:border-l-0 focus-ring",
+              value === o.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface text-foreground-muted hover:bg-surface-hover",
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Work-kind (category) filter — a compact dropdown (All + the five kinds). */
+function CategoryFilter({
+  t,
+  value,
+  onChange,
+}: {
+  t: Dict;
+  value: "all" | TaskKind;
+  onChange: (v: "all" | TaskKind) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
+        <Tag className="h-3.5 w-3.5" />
+        {t.todos.categoryFilterLabel}
+      </span>
+      <SimpleSelect
+        aria-label={t.todos.categoryFilterLabel}
+        value={value}
+        onValueChange={(v) => onChange(v as "all" | TaskKind)}
+        options={[
+          { value: "all", label: t.todos.filterAll },
+          ...TASK_KINDS.map((k) => ({ value: k, label: t.todos.taskKindLabel(k) })),
+        ]}
+      />
+    </div>
+  );
+}
+
 /* ------------------------------ Add dialog ------------------------------- */
 
 /** Add-task form in a popup, opened by the header "+". Kept out of the page
@@ -1114,6 +1211,10 @@ function AddTaskDialog({
   setDueDate,
   newImportance,
   setNewImportance,
+  newMinutes,
+  setNewMinutes,
+  newKind,
+  setNewKind,
   projectId,
   setProjectId,
   organizationId,
@@ -1134,6 +1235,10 @@ function AddTaskDialog({
   setDueDate: (v: string) => void;
   newImportance: string;
   setNewImportance: (v: string) => void;
+  newMinutes: string;
+  setNewMinutes: (v: string) => void;
+  newKind: "" | TaskKind;
+  setNewKind: (v: "" | TaskKind) => void;
   projectId: string;
   setProjectId: (v: string) => void;
   organizationId: string;
@@ -1207,6 +1312,40 @@ function AddTaskDialog({
                     ...[5, 4, 3, 2, 1].map((n) => ({
                       value: String(n),
                       label: t.todos.importanceOption(n),
+                    })),
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="todo-add-time">{t.todos.timeLabel}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="todo-add-time"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    placeholder="30"
+                    value={newMinutes}
+                    onChange={(e) => setNewMinutes(e.target.value)}
+                  />
+                  <span className="shrink-0 text-xs text-foreground-subtle">
+                    {t.todos.timeMinutesUnit}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="todo-add-kind">{t.todos.categoryLabel}</Label>
+                <SimpleSelect
+                  id="todo-add-kind"
+                  value={newKind}
+                  onValueChange={(v) => setNewKind(v as "" | TaskKind)}
+                  options={[
+                    { value: "", label: t.todos.categoryNone },
+                    ...TASK_KINDS.map((k) => ({
+                      value: k,
+                      label: t.todos.taskKindLabel(k),
                     })),
                   ]}
                 />

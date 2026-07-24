@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip } from "@/components/ui/tooltip";
+import { TaskTags } from "@/components/tasks/task-tags";
+import { assigneeForTodo } from "@/lib/needed";
 import { createClient } from "@/lib/supabase/client";
 import { useDateLocale, useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
@@ -79,6 +81,12 @@ export function DailyFocusPanel({
 
   const doneByTodo = useMemo(
     () => new Map(todos.map((todo) => [todo.id, todo.done])),
+    [todos],
+  );
+  // Live todo per focus item — lets each row show the current category / time /
+  // owner tags (the snapshot only carries the importance).
+  const todoById = useMemo(
+    () => new Map(todos.map((todo) => [todo.id, todo])),
     [todos],
   );
   const previewData = useMemo<DailyFocus>(
@@ -215,15 +223,19 @@ export function DailyFocusPanel({
                     new Date(item.waiting_since),
                     { locale },
                   );
+                  const td = item.todo_id
+                    ? todoById.get(item.todo_id)
+                    : undefined;
                   return (
                     <li
                       key={item.id}
-                      className="flex min-h-12 items-center gap-3 px-4 py-2.5"
+                      className="flex min-h-12 items-start gap-3 px-4 py-2.5"
                     >
-                      <span className="w-5 shrink-0 text-center text-[11px] tabular text-foreground-subtle">
+                      <span className="mt-0.5 w-5 shrink-0 text-center text-[11px] tabular text-foreground-subtle">
                         {item.position}
                       </span>
                       <Checkbox
+                        className="mt-0.5"
                         checked={isDone}
                         disabled={isPreview || !item.todo_id || toggle.isPending}
                         onCheckedChange={() =>
@@ -235,7 +247,7 @@ export function DailyFocusPanel({
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            "truncate text-sm",
+                            "line-clamp-3 text-sm",
                             isDone && "text-foreground-subtle line-through",
                           )}
                         >
@@ -247,9 +259,21 @@ export function DailyFocusPanel({
                           )}
                           <span>{t.todos.waitingFor(waiting)}</span>
                         </p>
+                        <TaskTags
+                          t={t}
+                          importance={
+                            item.importance_snapshot === 6
+                              ? null
+                              : item.importance_snapshot
+                          }
+                          kind={td?.task_kind ?? null}
+                          minutes={td?.estimated_minutes ?? null}
+                          assignee={td ? assigneeForTodo(td.needed_raw) : null}
+                          className="mt-1"
+                        />
                       </div>
                       {item.importance_snapshot === 6 && (
-                        <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                        <span className="mt-0.5 shrink-0 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
                           {t.todos.globalGroup}
                         </span>
                       )}
