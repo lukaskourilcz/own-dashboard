@@ -409,6 +409,14 @@ function ProjectsListPanel({
     [projects],
   );
 
+  // The summary table lists active projects only. Projects marked inactive in
+  // Settings → Active projects are hidden here entirely (not shown dimmed) —
+  // reactivate them from that Settings card to bring them back.
+  const visibleProjects = useMemo(
+    () => ordered.filter((p) => p.is_active),
+    [ordered],
+  );
+
   // Drag-to-reorder. sort_order is an integer column, so we resequence the
   // whole list to 0..n-1 on drop (no fractional indexing) and persist the rows
   // that actually moved. Optimistic, with a snapshot rollback on failure.
@@ -421,11 +429,11 @@ function ProjectsListPanel({
 
   async function handleDragEnd(e: DragEndEvent) {
     if (!e.over || e.active.id === e.over.id) return;
-    const oldIndex = ordered.findIndex((p) => p.id === e.active.id);
-    const newIndex = ordered.findIndex((p) => p.id === e.over!.id);
+    const oldIndex = visibleProjects.findIndex((p) => p.id === e.active.id);
+    const newIndex = visibleProjects.findIndex((p) => p.id === e.over!.id);
     if (oldIndex < 0 || newIndex < 0) return;
 
-    const resequenced = arrayMove(ordered, oldIndex, newIndex);
+    const resequenced = arrayMove(visibleProjects, oldIndex, newIndex);
     const orderById = new Map(resequenced.map((p, i) => [p.id, i]));
     const changed = resequenced.filter((p, i) => p.sort_order !== i);
     if (changed.length === 0) return;
@@ -770,7 +778,7 @@ function ProjectsListPanel({
 
       {/* Dense summary table. Detailed operations remain available from each
           row and the canonical /projects/[slug] workspace. */}
-      {projects.length === 0 ? (
+      {visibleProjects.length === 0 ? (
         <div className="mt-4">
           <Card>
             <CardContent className="py-8">
@@ -795,7 +803,7 @@ function ProjectsListPanel({
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={ordered.map((p) => p.id)}
+            items={visibleProjects.map((p) => p.id)}
             strategy={verticalListSortingStrategy}
           >
             <Card className="mt-4 overflow-hidden p-0">
@@ -803,7 +811,7 @@ function ProjectsListPanel({
                 <table className="w-full min-w-[1040px] text-left text-sm">
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   <tbody className="divide-y divide-border">
-              {ordered.map((p) => {
+              {visibleProjects.map((p) => {
                 const projectTodos = todos.filter((item) => item.project_id === p.id || (!item.project_id && p.repo_full_name != null && item.repo_full_name === p.repo_full_name));
                 const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
                 const organization = organizations.find((item) => item.id === p.organization_id);
