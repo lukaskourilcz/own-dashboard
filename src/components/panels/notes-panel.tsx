@@ -244,8 +244,13 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   );
   const visibleCount = pinnedFiltered.length + unpinnedFiltered.length;
 
-  const effectiveId =
-    selectedId ?? pinned[0]?.id ?? unpinned[0]?.id ?? null;
+  // Only the user's explicit selection drives the detail view. We deliberately
+  // do NOT fall back to the first note: on the narrow (mobile) master-detail
+  // layout the back arrow clears the selection to return to the full list, and
+  // an auto-fallback would immediately reopen a note and defeat it. On desktop
+  // the list stays visible either way (lg:block), with a "select a note" state
+  // until one is opened.
+  const effectiveId = selectedId;
   const selected = effectiveId
     ? notes.find((n) => n.id === effectiveId) ?? null
     : null;
