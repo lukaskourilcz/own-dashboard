@@ -145,6 +145,7 @@ type ProjectsPanelProps = {
   onBackToProjects: () => void;
   todos: Todo[];
   notes: Note[];
+  setNotes: Updater<Note[]>;
   invoices: Invoice[];
   invoiceItems: InvoiceItem[];
   subscriptions: Subscription[];
@@ -174,6 +175,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       crons={props.crons.filter((item) => item.project_id === selected.id)}
       todos={props.todos}
       notes={props.notes}
+      setNotes={props.setNotes}
       invoices={props.invoices}
       invoiceItems={props.invoiceItems}
       subscriptions={props.subscriptions}

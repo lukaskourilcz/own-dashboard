@@ -80,6 +80,8 @@ const professionalEn = {
     projectWorkspace: "Project workspace",
     projectOverview: "Overview",
     projectTasks: "Tasks",
+    projectTasksNotes: "Tasks & Notes",
+    projectNotes: "Notes",
     projectActivity: "Activity",
     projectRepository: "Repository",
     projectOperations: "Operations",
@@ -130,6 +132,18 @@ const professionalEn = {
     linkedOrganization: "Linked organization",
     noLinkedOrganization: "No organization linked",
     noRelatedRecords: "No related records.",
+    tasksFromNeededInfo:
+      "Tasks are generated automatically from each repository's NEEDED.md file — the same source as the main Tasks section. Edit NEEDED.md in the repo (keep the [imp] / [owner] / [time] / [kind] markers) to change them.",
+    notesInfo:
+      "Notes you write here are linked to this project and also appear in the Notes section. New notes are saved automatically.",
+    costsInfo:
+      "Costs are entered per project: in Projects, open the project's Manage (gear) dialog and add lines under Costs. Recurring automations (crons) also count toward the monthly total.",
+    invoicesInfo:
+      "Invoices come from the Invoices section — set this project on an invoice there to have it appear here.",
+    subscriptionsInfo:
+      "Subscriptions come from the Subscriptions section — assign this project to a subscription there.",
+    transactionsInfo:
+      "Transactions come from Finances — assign this project to a transaction there.",
     recentActivity: "Recent activity",
     githubActivity: "Recent changes",
     githubActivityDescription: "Latest commits from the linked repository.",
@@ -298,6 +312,8 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
     projectWorkspace: "Projektový prostor",
     projectOverview: "Přehled",
     projectTasks: "Úkoly",
+    projectTasksNotes: "Úkoly & Poznámky",
+    projectNotes: "Poznámky",
     projectActivity: "Aktivita",
     projectRepository: "Repozitář",
     projectOperations: "Provoz",
@@ -348,6 +364,18 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
     linkedOrganization: "Propojená organizace",
     noLinkedOrganization: "Bez propojené organizace",
     noRelatedRecords: "Žádné související záznamy.",
+    tasksFromNeededInfo:
+      "Úkoly se generují automaticky ze souboru NEEDED.md v každém repozitáři — stejný zdroj jako hlavní sekce Úkoly. Změníš je úpravou NEEDED.md v repozitáři (ponech značky [imp] / [owner] / [time] / [kind]).",
+    notesInfo:
+      "Poznámky, které tu napíšeš, jsou propojené s tímto projektem a objeví se i v sekci Poznámky. Nové poznámky se ukládají automaticky.",
+    costsInfo:
+      "Náklady se zadávají u projektu: v sekci Projekty otevři u projektu dialog Spravovat (ozubené kolo) a přidej položky v části Náklady. Do měsíčního součtu se počítají i opakované automatizace (crony).",
+    invoicesInfo:
+      "Faktury pocházejí ze sekce Faktury — nastav u faktury tento projekt a objeví se zde.",
+    subscriptionsInfo:
+      "Předplatná pocházejí ze sekce Předplatná — přiřaď u předplatného tento projekt.",
+    transactionsInfo:
+      "Transakce pocházejí z Financí — přiřaď u transakce tento projekt.",
     recentActivity: "Nedávná aktivita",
     githubActivity: "Nedávné změny",
     githubActivityDescription: "Poslední commity z připojeného repozitáře.",

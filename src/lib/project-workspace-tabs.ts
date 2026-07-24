@@ -4,7 +4,6 @@ export const PROJECT_WORKSPACE_TABS = [
   "activity",
   "communication",
   "repository",
-  "operations",
   "finance",
   "knowledge",
   "scaling",

@@ -9,12 +9,13 @@ import {
   CircleDollarSign,
   ExternalLink,
   FileText,
+  Info,
   ListTodo,
-  ServerCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { GithubIcon } from "@/components/icons/github";
-import { CostsPanel } from "@/components/panels/costs-panel";
+import { NotesPanel } from "@/components/panels/notes-panel";
 import { ProjectCommunicationPanel } from "@/components/projects/project-communication-panel";
 import { ProjectGithubActivity } from "@/components/projects/project-github-activity";
 import { ProjectKnowledgePanel } from "@/components/projects/project-knowledge-panel";
@@ -73,6 +74,7 @@ type Props = {
   crons: Cron[];
   todos: Todo[];
   notes: Note[];
+  setNotes: Updater<Note[]>;
   invoices: Invoice[];
   invoiceItems: InvoiceItem[];
   subscriptions: Subscription[];
@@ -104,10 +106,6 @@ function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
   ).total;
 }
 
-function matchesProjectInbox(item: InboxItem, projectId: string): boolean {
-  return item.source_id === projectId || item.payload.project_id === projectId;
-}
-
 export function ProjectWorkspace(props: Props) {
   const { project, displayCurrency } = props;
   const t = useDict();
@@ -119,9 +117,15 @@ export function ProjectWorkspace(props: Props) {
   const [briefError, setBriefError] = useState(false);
   const [generating, setGenerating] = useState(false);
 
+  // Match repo-sourced tasks (from NEEDED.md) case-insensitively on the repo
+  // full name, mirroring the main Tasks section — GitHub casing and the stored
+  // project repo can differ, which otherwise left this subsection empty.
+  const projectRepoKey = project.repo_full_name?.toLocaleLowerCase() ?? null;
   const projectTodos = props.todos.filter((todo) =>
     todo.project_id === project.id ||
-    (!todo.project_id && project.repo_full_name != null && todo.repo_full_name === project.repo_full_name),
+    (!todo.project_id &&
+      projectRepoKey != null &&
+      todo.repo_full_name?.toLocaleLowerCase() === projectRepoKey),
   );
   const projectNotes = props.notes.filter((note) => note.project_id === project.id);
   const projectInvoices = props.invoices.filter((invoice) => invoice.project_id === project.id);
@@ -130,7 +134,6 @@ export function ProjectWorkspace(props: Props) {
   const projectOpportunities = props.opportunities.filter((opportunity) => opportunity.project_id === project.id);
   const projectDates = props.importantDates.filter((date) => date.project_id === project.id);
   const projectPrompts = props.prompts.filter((prompt) => prompt.project_id === project.id);
-  const projectInbox = props.inboxItems.filter((item) => matchesProjectInbox(item, project.id));
   const projectCommunications = props.communications.filter((item) => item.project_id === project.id);
   const organization = props.organizations.find((item) => item.id === project.organization_id);
   const monthlyCost = projectMonthlyIn(props.costs, props.crons, displayCurrency);
@@ -152,11 +155,10 @@ export function ProjectWorkspace(props: Props) {
 
   const tabLabels: Record<ProjectWorkspaceTab, string> = {
     overview: p.projectOverview,
-    tasks: p.projectTasks,
+    tasks: p.projectTasksNotes,
     activity: p.projectActivity,
     communication: p.projectCommunication,
     repository: p.projectRepository,
-    operations: p.projectOperations,
     finance: p.projectFinance,
     knowledge: p.projectKnowledge,
     scaling: p.projectScaling,
@@ -223,18 +225,17 @@ export function ProjectWorkspace(props: Props) {
       <AiProposalPanel label={p.projectCopilot} description={`${p.projectCopilotDescription} ${p.aiNotSaved}`}><div className="space-y-3"><Button onClick={generateBrief} disabled={generating}><Bot />{generating ? p.generatingBrief : p.generateBrief}</Button>{briefError && <p role="alert" className="text-sm text-destructive">{p.aiUnavailable}</p>}{brief && <><div className="grid gap-4 md:grid-cols-3"><AiResultGroup kind="facts" title={p.facts} items={brief.facts} /><AiResultGroup kind="risks" title={p.risks} items={brief.risks} /><AiResultGroup kind="suggestions" title={p.suggestions} items={brief.suggestions} /></div><div className="border-t border-border pt-3"><p className="text-[11px] text-foreground-muted">{brief.limited && p.limitedContext}</p><div className="mt-2 flex flex-wrap gap-1.5">{brief.sources.map((source) => <EntityBadge key={source}>{source}</EntityBadge>)}</div></div></>}</div></AiProposalPanel>
     </div>}
 
-    {tab === "tasks" && <div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.projectTasks} icon={ListTodo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><RecordCard title={p.relatedInbox} icon={BriefcaseBusiness} empty={p.noRelatedRecords} items={projectInbox.map((item) => ({ id: item.id, primary: item.title, secondary: statusLabel(item.status, lang) }))} /></div>}
+    {tab === "tasks" && <div className="space-y-4"><RecordCard title={p.projectTasks} icon={ListTodo} info={p.tasksFromNeededInfo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><div><div className="mb-2 flex items-center gap-1.5"><SectionLabel>{p.projectNotes}</SectionLabel><Tooltip content={p.notesInfo}><span className="inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip></div><NotesPanel notes={props.notes} setNotes={props.setNotes} projects={[project]} projectId={project.id} embedded /></div></div>}
     {tab === "activity" && <div className="space-y-4">{project.repo_full_name && <ProjectGithubActivity repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} />}<RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} /></div>}
     {tab === "communication" && <ProjectCommunicationPanel projectId={project.id} communications={projectCommunications} setCommunications={props.setCommunications} />}
     {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
-    {tab === "operations" && <div className="space-y-4"><RecordCard title={p.projectOperations} icon={ServerCog} empty={p.noRelatedRecords} items={props.crons.map((item) => ({ id: item.id, primary: item.name, secondary: `${item.schedule} · ${item.enabled ? p.open : p.operationalWarning}${item.last_run_at ? ` · ${item.last_run_at.slice(0, 10)}` : ""}` }))} />{project.repo_full_name && props.repositoryIntegrationEnabled && <CostsPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} />}</div>}
-    {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={t.nav.sections.invoices} icon={FileText} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectSubscriptions.map((item) => ({ id: item.id, primary: item.name, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /><RecordCard title={p.monthlyCost} icon={CircleDollarSign} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /></div></div>}
+    {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.monthlyCost} icon={CircleDollarSign} info={p.costsInfo} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.invoices} icon={FileText} info={p.invoicesInfo} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} info={p.subscriptionsInfo} empty={p.noRelatedRecords} items={projectSubscriptions.map((item) => ({ id: item.id, primary: item.name, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} info={p.transactionsInfo} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /></div></div>}
     {tab === "knowledge" && <div className="grid gap-4 lg:grid-cols-2"><ProjectKnowledgePanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} /><RecordCard title={t.nav.sections.notes} icon={FileText} empty={p.noRelatedRecords} items={projectNotes.map((item) => ({ id: item.id, primary: item.title, secondary: item.plain_text.slice(0, 120) }))} /><RecordCard title={t.nav.sections.prompts} icon={Bot} empty={p.noRelatedRecords} items={projectPrompts.map((item) => ({ id: item.id, primary: item.name, secondary: item.body.slice(0, 120) }))} /></div>}
     {tab === "scaling" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="scaling.md" fallbackFile="stack-and-scaling.md" title={p.projectScaling} description={p.scalingDescription} /></div>}
     {tab === "monetization" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="monetization.md" title={p.projectMonetization} description={p.monetizationDescription} /></div>}
   </div>;
 }
 
-function RecordCard({ title, icon: Icon, empty, items }: { title: string; icon: typeof Activity; empty: string; items: { id: string; primary: string; secondary?: string }[] }) {
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
+function RecordCard({ title, icon: Icon, empty, items, info }: { title: string; icon: typeof Activity; empty: string; items: { id: string; primary: string; secondary?: string }[]; info?: string }) {
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}{info && <Tooltip content={info}><span className="ml-0.5 inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip>}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
 }

@@ -102,6 +102,18 @@ type Props = {
   notes: Note[];
   setNotes: Updater<Note[]>;
   projects: Project[];
+  /**
+   * When set, the panel is scoped to a single project: only that project's
+   * notes are listed and new notes are created already linked to it. Used to
+   * embed the notes editor inside a project workspace tab.
+   */
+  projectId?: string;
+  /**
+   * Compact chrome for embedding inside another surface — hides the full page
+   * header (and the global, all-notes AI knowledge review) in favour of a slim
+   * action row.
+   */
+  embedded?: boolean;
 };
 
 function normalizeTag(raw: string): string {
@@ -134,7 +146,12 @@ function safeFilename(title: string): string {
     .slice(0, 60);
 }
 
-export function NotesPanel({ notes, setNotes, projects }: Props) {
+export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, embedded }: Props) {
+  // Scope to a single project's notes when embedded in a project workspace.
+  const notes = useMemo(
+    () => (projectId ? allNotes.filter((n) => n.project_id === projectId) : allNotes),
+    [allNotes, projectId],
+  );
   const supabase = useMemo(() => createClient(), []);
   const qc = useQueryClient();
   const toast = useToast();
@@ -277,6 +294,7 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
           content: vars.content,
           tags: [],
           sort_order: topSortOrder + 1,
+          ...(projectId ? { project_id: projectId } : {}),
         })
         .select()
         .single();
@@ -303,6 +321,25 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
         toast.err((err as Error)?.message ?? t.notes.couldNotCreateNote);
       }
       return null;
+    }
+  }
+
+  async function importMarkdownAsNote(md: string) {
+    try {
+      const { markdownToBlocks } = await import(
+        "@/components/notes/parse-markdown"
+      );
+      const blocks = await markdownToBlocks(md);
+      const title =
+        md
+          .split("\n")
+          .map((l) => l.replace(/^#+\s*/, "").trim())
+          .find((l) => l.length > 0)
+          ?.slice(0, 80) ?? t.notes.importedNote;
+      await createNote(blocks, title);
+      toast.ok(t.notes.importedAsNewNote);
+    } catch (err) {
+      toast.err((err as Error).message);
     }
   }
 
@@ -596,42 +633,33 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
 
   return (
     <div>
-      <PageHeader
-        title={t.notes.title}
-        description={t.notes.description}
-        action={
-          <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={reviewKnowledge} disabled={knowledgeBusy}>
-              <Bot className="h-3.5 w-3.5" />
-              {knowledgeBusy ? t.notes.knowledgeReviewing : t.notes.knowledgeReview}
-            </Button>
-            <ImportMarkdownButton
-              onCreate={async (md) => {
-                try {
-                  const { markdownToBlocks } = await import(
-                    "@/components/notes/parse-markdown"
-                  );
-                  const blocks = await markdownToBlocks(md);
-                  const title =
-                    md
-                      .split("\n")
-                      .map((l) => l.replace(/^#+\s*/, "").trim())
-                      .find((l) => l.length > 0)
-                      ?.slice(0, 80) ?? t.notes.importedNote;
-                  await createNote(blocks, title);
-                  toast.ok(t.notes.importedAsNewNote);
-                } catch (err) {
-                  toast.err((err as Error).message);
-                }
-              }}
-            />
-            <Button size="sm" onClick={() => createNote()}>
-              <Plus className="h-3.5 w-3.5" />
-              {t.notes.newNote}
-            </Button>
-          </div>
-        }
-      />
+      {embedded ? (
+        <div className="mb-3 flex items-center justify-end gap-1.5">
+          <ImportMarkdownButton onCreate={importMarkdownAsNote} />
+          <Button size="sm" onClick={() => createNote()}>
+            <Plus className="h-3.5 w-3.5" />
+            {t.notes.newNote}
+          </Button>
+        </div>
+      ) : (
+        <PageHeader
+          title={t.notes.title}
+          description={t.notes.description}
+          action={
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="outline" onClick={reviewKnowledge} disabled={knowledgeBusy}>
+                <Bot className="h-3.5 w-3.5" />
+                {knowledgeBusy ? t.notes.knowledgeReviewing : t.notes.knowledgeReview}
+              </Button>
+              <ImportMarkdownButton onCreate={importMarkdownAsNote} />
+              <Button size="sm" onClick={() => createNote()}>
+                <Plus className="h-3.5 w-3.5" />
+                {t.notes.newNote}
+              </Button>
+            </div>
+          }
+        />
+      )}
 
       {/* Tag filter row */}
       {allTags.length > 0 && (
@@ -795,16 +823,18 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
                         )}
                   </p>
                 </div>
-                <SimpleSelect
-                  value={selected.project_id ?? ""}
-                  aria-label={t.notes.linkedProject}
-                  onValueChange={(project_id) => projectLinkMutation.mutate({ id: selected.id, project_id })}
-                  className="hidden h-8 w-40 text-xs sm:flex"
-                  options={[
-                    { value: "", label: t.notes.noProject },
-                    ...projects.map((project) => ({ value: project.id, label: project.name })),
-                  ]}
-                />
+                {!embedded && (
+                  <SimpleSelect
+                    value={selected.project_id ?? ""}
+                    aria-label={t.notes.linkedProject}
+                    onValueChange={(project_id) => projectLinkMutation.mutate({ id: selected.id, project_id })}
+                    className="hidden h-8 w-40 text-xs sm:flex"
+                    options={[
+                      { value: "", label: t.notes.noProject },
+                      ...projects.map((project) => ({ value: project.id, label: project.name })),
+                    ]}
+                  />
+                )}
                 <Tooltip content={t.notes.copyAsMarkdown}>
                   <Button
                     size="icon-sm"

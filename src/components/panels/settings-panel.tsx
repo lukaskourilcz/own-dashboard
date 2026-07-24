@@ -244,7 +244,6 @@ export function SettingsPanel({
       activity: t.professional.projectActivity,
       communication: t.professional.projectCommunication,
       repository: t.professional.projectRepository,
-      operations: t.professional.projectOperations,
       finance: t.professional.projectFinance,
       knowledge: t.professional.projectKnowledge,
       scaling: t.professional.projectScaling,
