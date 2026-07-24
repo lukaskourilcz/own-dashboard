@@ -16,9 +16,10 @@ import {
   Plug,
   RotateCcw,
   Shield,
+  SlidersHorizontal,
   Sun,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -130,6 +131,9 @@ export function SettingsPanel({
   const { theme, setTheme } = useTheme();
   const [aiPrefs, setAiPrefs] = useState({ enabled: true, sensitive: false });
   const [renewalNotifications, setRenewalNotifications] = useState(true);
+  // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
+  // so the card isn't a wall of switches for projects that will never be active.
+  const [showInactive, setShowInactive] = useState(false);
   const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null }>>(null);
   const saveErrorShown = useRef(false);
   const savePreferences = (patch: Record<string, unknown>) => {
@@ -247,6 +251,27 @@ export function SettingsPanel({
     return labels[tab];
   };
 
+  const activeProjectsList = projects.filter((p) => p.is_active);
+  const inactiveProjectsList = projects.filter((p) => !p.is_active);
+  const projectRow = (project: Project) => (
+    <li
+      key={project.id}
+      className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
+    >
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{project.name}</p>
+        <p className="truncate font-mono text-[10px] text-foreground-subtle">
+          {project.repo_full_name ?? t.settings.projectWithoutRepository}
+        </p>
+      </div>
+      <Switch
+        checked={project.is_active}
+        onCheckedChange={() => void toggleProject(project)}
+        aria-label={project.name}
+      />
+    </li>
+  );
+
   return (
     <div>
       <PageHeader title={t.settings.title} description={t.settings.description} />
@@ -261,28 +286,91 @@ export function SettingsPanel({
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Language */}
-        <Card>
+        {/* Preferences — language, appearance, currency, task density, alerts */}
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
-              <Languages className="h-3 w-3" /> {t.settings.language}
+              <SlidersHorizontal className="h-3 w-3" /> {t.settings.preferences}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <p className="text-xs text-foreground-subtle">
-              {t.settings.languageDesc}
+              {t.settings.preferencesDesc}
             </p>
-            <Segmented
-              value={lang}
-              onChange={(language) => {
-                setLang(language);
-                savePreferences({ language });
-              }}
-              options={[
-                { value: "cs", label: t.settings.czech },
-                { value: "en", label: t.settings.english },
-              ]}
-            />
+            <PrefRow icon={Languages} label={t.settings.language}>
+              <Segmented
+                value={lang}
+                onChange={(language) => {
+                  setLang(language);
+                  savePreferences({ language });
+                }}
+                options={[
+                  { value: "cs", label: t.settings.czech },
+                  { value: "en", label: t.settings.english },
+                ]}
+              />
+            </PrefRow>
+            <PrefRow icon={Palette} label={t.settings.appearance}>
+              <Segmented
+                value={theme}
+                onChange={(next) => {
+                  setTheme(next);
+                  savePreferences({ theme: next });
+                }}
+                options={[
+                  { value: "light", label: t.settings.light, icon: Sun },
+                  { value: "dark", label: t.settings.dark, icon: Moon },
+                ]}
+              />
+            </PrefRow>
+            <PrefRow icon={Coins} label={t.settings.currency}>
+              <div className="inline-flex flex-wrap justify-end gap-1.5">
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      setCurrency(c);
+                      savePreferences({ display_currency: c });
+                    }}
+                    aria-pressed={currency === c}
+                    className={cn(
+                      "rounded-md border px-3 py-1.5 text-xs font-medium tabular transition-colors focus-ring",
+                      currency === c
+                        ? "border-foreground/40 bg-accent text-foreground"
+                        : "border-border text-foreground-muted hover:text-foreground hover:border-border-strong",
+                    )}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </PrefRow>
+            <PrefRow icon={ListTodo} label={t.settings.tasks}>
+              <Segmented
+                value={String(tasksPerCategory)}
+                onChange={(v) => {
+                  const tasks_per_category = Number(v);
+                  setTasksPerCategory(tasks_per_category);
+                  savePreferences({ tasks_per_category });
+                }}
+                options={TASKS_PER_CATEGORY_OPTIONS.map((n) => ({
+                  value: String(n),
+                  label: n === 0 ? t.settings.tasksAll : String(n),
+                }))}
+              />
+            </PrefRow>
+            <PrefRow
+              icon={Bell}
+              label={t.settings.renewalNotifications}
+              desc={t.settings.renewalNotificationsDesc}
+            >
+              <Switch
+                aria-label={t.settings.renewalNotifications}
+                checked={renewalNotifications}
+                onCheckedChange={patchRenewalNotifications}
+              />
+            </PrefRow>
           </CardContent>
         </Card>
 
@@ -324,67 +412,6 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        {/* Display currency */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <Coins className="h-3 w-3" /> {t.settings.currency}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-foreground-subtle">
-              {t.settings.currencyDesc}
-            </p>
-            <div className="inline-flex flex-wrap gap-1.5">
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => {
-                    setCurrency(c);
-                    savePreferences({ display_currency: c });
-                  }}
-                  aria-pressed={currency === c}
-                  className={cn(
-                    "rounded-md border px-3 py-1.5 text-xs font-medium tabular transition-colors focus-ring",
-                    currency === c
-                      ? "border-foreground/40 bg-accent text-foreground"
-                      : "border-border text-foreground-muted hover:text-foreground hover:border-border-strong",
-                  )}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <ListTodo className="h-3 w-3" /> {t.settings.tasks}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-foreground-subtle">
-              {t.settings.tasksDesc}
-            </p>
-            <Segmented
-              value={String(tasksPerCategory)}
-              onChange={(v) => {
-                const tasks_per_category = Number(v);
-                setTasksPerCategory(tasks_per_category);
-                savePreferences({ tasks_per_category });
-              }}
-              options={TASKS_PER_CATEGORY_OPTIONS.map((n) => ({
-                value: String(n),
-                label: n === 0 ? t.settings.tasksAll : String(n),
-              }))}
-            />
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
@@ -399,59 +426,35 @@ export function SettingsPanel({
               </p>
               <SectionLabel className="shrink-0">
                 {t.settings.activeProjectCount(
-                  projects.filter((project) => project.is_active).length,
+                  activeProjectsList.length,
                   projects.length,
                 )}
               </SectionLabel>
             </div>
-            <ul className="divide-y divide-border rounded-md border border-border">
-              {projects.map((project) => (
-                <li
-                  key={project.id}
-                  className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
+            {activeProjectsList.length > 0 && (
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {activeProjectsList.map(projectRow)}
+              </ul>
+            )}
+            {inactiveProjectsList.length > 0 && (
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowInactive((v) => !v)}
+                  aria-expanded={showInactive}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
-                      {project.name}
-                    </p>
-                    <p className="truncate font-mono text-[10px] text-foreground-subtle">
-                      {project.repo_full_name ??
-                        t.settings.projectWithoutRepository}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={project.is_active}
-                    onCheckedChange={() => void toggleProject(project)}
-                    aria-label={project.name}
-                  />
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Appearance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <Palette className="h-3 w-3" /> {t.settings.appearance}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-foreground-subtle">
-              {t.settings.appearanceDesc}
-            </p>
-            <Segmented
-              value={theme}
-              onChange={(theme) => {
-                setTheme(theme);
-                savePreferences({ theme });
-              }}
-              options={[
-                { value: "light", label: t.settings.light, icon: Sun },
-                { value: "dark", label: t.settings.dark, icon: Moon },
-              ]}
-            />
+                  {showInactive
+                    ? t.settings.hideInactiveProjects
+                    : t.settings.showInactiveProjects(inactiveProjectsList.length)}
+                </Button>
+                {showInactive && (
+                  <ul className="divide-y divide-border rounded-md border border-border">
+                    {inactiveProjectsList.map(projectRow)}
+                  </ul>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -560,11 +563,6 @@ export function SettingsPanel({
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Bell className="h-3 w-3" />{t.settings.notifications}</CardTitle></CardHeader>
-          <CardContent className="space-y-4"><p className="text-xs text-foreground-subtle">{t.settings.notificationsDesc}</p><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{t.settings.renewalNotifications}</p><p className="mt-1 text-xs text-foreground-subtle">{t.settings.renewalNotificationsDesc}</p></div><Switch aria-label={t.settings.renewalNotifications} checked={renewalNotifications} onCheckedChange={patchRenewalNotifications} /></div></CardContent>
-        </Card>
-
-        <Card>
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Plug className="h-3 w-3" />{t.settings.integrations}</CardTitle></CardHeader>
           <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; const value = !state ? "pending" : state.connected === true ? "connected" : state.connected === false ? "not_connected" : state.configured ? "configured" : "not_configured"; const status = !state ? "…" : state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><StatusBadge value={value} label={status} /></div>; })}</CardContent>
         </Card>
@@ -574,6 +572,33 @@ export function SettingsPanel({
           <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.dataExportDesc}</p><div className="flex flex-wrap gap-2">{[["/api/export/full", t.settings.exportFull], ["/api/export/financial", t.settings.exportFinancial], ["/api/export/professional", t.settings.exportProfessional], ["/api/export/knowledge", t.settings.exportKnowledge], ["/api/export/projects", t.settings.exportProjects], ["/api/export/notes", t.settings.exportNotes], ["/api/export/prompts", t.settings.exportPrompts], ["/api/export/career", t.settings.exportCareer], ["/api/export/financial?format=csv&table=transactions", t.settings.exportTransactionsCsv], ["/api/export/legacy", t.settings.exportLegacy]].map(([href, label]) => <Button key={href} variant="outline" size="sm" asChild><a href={href} download><Download />{label}</a></Button>)}</div></CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+/** A labeled row in the merged Preferences card: icon + label (+ optional
+ * description) on the left, the control on the right. */
+function PrefRow({
+  icon: Icon,
+  label,
+  desc,
+  children,
+}: {
+  icon: typeof Sun;
+  label: string;
+  desc?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+      <div className="min-w-0">
+        <p className="inline-flex items-center gap-1.5 text-sm font-medium">
+          <Icon className="h-3.5 w-3.5 text-foreground-muted" />
+          {label}
+        </p>
+        {desc && <p className="mt-0.5 text-xs text-foreground-subtle">{desc}</p>}
+      </div>
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }

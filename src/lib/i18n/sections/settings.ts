@@ -60,6 +60,10 @@ type SettingsStrings = {
   activeProjects: string;
   activeProjectsDesc: string;
   activeProjectCount: (active: number, total: number) => string;
+  showInactiveProjects: (n: number) => string;
+  hideInactiveProjects: string;
+  preferences: string;
+  preferencesDesc: string;
   projectWithoutRepository: string;
   projectUpdateFailed: string;
   preferenceSaveFailed: string;
@@ -135,6 +139,10 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     activeProjectsDesc:
       "Only active GitHub projects appear in navigation, selectors, daily focus, and operational tables. This selection is synchronized between devices.",
     activeProjectCount: (active, total) => `${active} of ${total} active`,
+    showInactiveProjects: (n) => `Show inactive (${n})`,
+    hideInactiveProjects: "Hide inactive",
+    preferences: "Preferences",
+    preferencesDesc: "Language, appearance, currency, task density, and alerts.",
     projectWithoutRepository: "No GitHub repository linked",
     projectUpdateFailed: "Could not update the active project.",
     preferenceSaveFailed: "Could not synchronize this setting.",
@@ -209,6 +217,10 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     activeProjectsDesc:
       "V navigaci, selektorech, denním výběru a provozních tabulkách se zobrazují jen aktivní GitHub projekty. Výběr se synchronizuje mezi zařízeními.",
     activeProjectCount: (active, total) => `${active} z ${total} aktivních`,
+    showInactiveProjects: (n) => `Zobrazit neaktivní (${n})`,
+    hideInactiveProjects: "Skrýt neaktivní",
+    preferences: "Předvolby",
+    preferencesDesc: "Jazyk, vzhled, měna, hustota úkolů a upozornění.",
     projectWithoutRepository: "Bez napojeného GitHub repozitáře",
     projectUpdateFailed: "Aktivní projekt se nepodařilo změnit.",
     preferenceSaveFailed: "Toto nastavení se nepodařilo synchronizovat.",
