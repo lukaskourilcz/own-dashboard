@@ -1,3 +1,5 @@
+import type { TaskKind } from "./task-meta";
+
 export type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
 export type Subscription = {
@@ -58,6 +60,12 @@ export type Todo = {
   generated_at: string | null;
   // Importance 1–6 (6 is reserved for GLOBAL tasks). NEEDED.md tasks use 1–5.
   importance: number | null;
+  // Estimated minutes to complete (from a `[time:N]` marker or set by hand).
+  // Null = unestimated. Powers the Time filter and the per-task time tag.
+  estimated_minutes?: number | null;
+  // Work kind (from a `[kind:…]` marker or set by hand) — one of the five
+  // TASK_KINDS. Null = unclassified. Powers the Category filter and tag.
+  task_kind?: TaskKind | null;
   // GLOBAL tasks are not project-scoped and the database always assigns
   // importance 6.
   is_global?: boolean;

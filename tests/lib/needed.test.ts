@@ -111,6 +111,46 @@ describe("parseNeeded", () => {
     expect(items[0].importance).toBe(2);
     expect(items[0].assignee).toBe("ai");
   });
+
+  it("parses a [time:N] marker (minutes/hours) and strips it", () => {
+    const items = parseNeeded(
+      "- [ ] Quick fix `[time:15m]`\n" +
+        "- [ ] Bigger job `[time:2h]`\n" +
+        "- [ ] Mixed `[time:1h30m]`\n" +
+        "- [ ] Bare `[time:45]`\n" +
+        "- [ ] No time here\n",
+      repo,
+      null,
+    );
+    expect(items.map((i) => i.estimatedMinutes)).toEqual([15, 120, 90, 45, null]);
+    expect(items[0].text).toBe("Quick fix");
+  });
+
+  it("parses a [kind:…] marker, validates it, and strips it", () => {
+    const items = parseNeeded(
+      "- [ ] Add a secret `[kind:setup]`\n" +
+        "- [ ] Choose a name `[kind:decision]`\n" +
+        "- [ ] Unknown kind `[kind:banana]`\n",
+      repo,
+      null,
+    );
+    expect(items[0].kind).toBe("setup");
+    expect(items[0].text).toBe("Add a secret");
+    expect(items[1].kind).toBe("decision");
+    // An unrecognised kind stays null (only the five valid kinds are matched).
+    expect(items[2].kind).toBeNull();
+  });
+
+  it("reads time and kind off a continuation line", () => {
+    const items = parseNeeded(
+      "- [ ] **Wrapped** — long line that\n  wraps. `[time:30m]` `[kind:deploy]`\n",
+      repo,
+      null,
+    );
+    expect(items[0].estimatedMinutes).toBe(30);
+    expect(items[0].kind).toBe("deploy");
+    expect(items[0].raw).toBe("- [ ] **Wrapped** — long line that");
+  });
 });
 
 describe("removeNeededLine", () => {

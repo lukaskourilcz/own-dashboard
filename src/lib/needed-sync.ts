@@ -1,6 +1,7 @@
 import { addDays, format } from "date-fns";
 import type { GithubRepo } from "./github";
 import { neededTodoItems } from "./needed";
+import type { TaskKind } from "./task-meta";
 import type { Todo } from "./types";
 
 /**
@@ -31,6 +32,10 @@ export type NeededTodoRow = {
   due_date: string;
   /** Importance 1–5 (5 = highest) from the task's `[imp:N]` marker, else null. */
   importance: number | null;
+  /** Estimated minutes from the task's `[time:N]` marker, else null. */
+  estimated_minutes: number | null;
+  /** Work kind from the task's `[kind:…]` marker, else null. */
+  task_kind: TaskKind | null;
 };
 
 /** Due date (date-only, yyyy-MM-dd) for a task generated at `generatedIso`. */
@@ -79,6 +84,8 @@ export function buildNeededRows(
     generated_at: nowIso,
     due_date: dueDate,
     importance: it.importance,
+    estimated_minutes: it.estimatedMinutes,
+    task_kind: it.kind,
   }));
 }
 

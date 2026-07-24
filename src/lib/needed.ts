@@ -1,4 +1,5 @@
 import type { GithubRepo } from "@/lib/github";
+import { isTaskKind, parseTimeToMinutes, type TaskKind } from "@/lib/task-meta";
 
 /** The file each repo exposes its open action-items in, read from the root. */
 export const NEEDED_FILE = "NEEDED.md";
@@ -19,6 +20,10 @@ export type NeededItem = {
   importance: number | null;
   /** Who does it, from an `[owner:me]` / `[owner:ai]` marker, else null. */
   assignee: Assignee | null;
+  /** Estimated minutes from a `[time:N]` marker (accepts 30/30m/2h/1h30m). */
+  estimatedMinutes: number | null;
+  /** Work kind from a `[kind:…]` marker, one of TASK_KINDS, else null. */
+  kind: TaskKind | null;
 };
 
 // A markdown list item: bullet or ordered, optional task-checkbox. Items already
@@ -32,6 +37,14 @@ const IMPORTANCE_RE = /`?\[imp:([1-5])\]`?/i;
 // An owner marker, e.g. `[owner:ai]` (optionally in backticks): who does the
 // task — "me" (the user) or "ai" (Claude can do it). Stripped from the title.
 const ASSIGNEE_RE = /`?\[owner:(me|ai)\]`?/i;
+
+// A time-estimate marker, e.g. `[time:30m]` / `[time:2h]` / `[time:90]`. The
+// value is parsed to whole minutes. One per task line; stripped from the title.
+const TIME_RE = /`?\[time:([^\]]+)\]`?/i;
+
+// A work-kind marker, e.g. `[kind:setup]`. One of the five TASK_KINDS. Stripped
+// from the visible title on parse (the kind is captured separately).
+const KIND_RE = /`?\[kind:(setup|deploy|legal|content|decision)\]`?/i;
 
 /** Pull the `[imp:N]` marker out of a task line, returning the score (or null)
  * and the line text with the marker removed. */
@@ -54,6 +67,27 @@ export function extractAssignee(text: string | null | undefined): Assignee | nul
   return m ? (m[1].toLowerCase() as Assignee) : null;
 }
 
+/** Pull the `[time:…]` marker out of a task line, returning whole minutes (or
+ * null) and the line text with the marker removed. */
+export function extractTime(text: string): {
+  minutes: number | null;
+  text: string;
+} {
+  const m = TIME_RE.exec(text);
+  if (!m) return { minutes: null, text };
+  const minutes = parseTimeToMinutes(m[1]);
+  const stripped = text.replace(TIME_RE, "").replace(/\s{2,}/g, " ").trim();
+  return { minutes, text: stripped };
+}
+
+/** The `[kind:…]` marker in a line, or null if absent/invalid. */
+export function extractKind(text: string | null | undefined): TaskKind | null {
+  if (!text) return null;
+  const m = KIND_RE.exec(text);
+  const value = m?.[1]?.toLowerCase();
+  return value && isTaskKind(value) ? value : null;
+}
+
 /** Parse a NEEDED.md into open action items — one per open markdown list line. */
 export function parseNeeded(
   content: string,
@@ -69,17 +103,29 @@ export function parseNeeded(
     if (!m) continue;
     const checkbox = m[2];
     if (checkbox && checkbox.toLowerCase() === "x") continue; // already done
-    const parsed = extractImportance(m[3].trim());
-    // Strip the owner marker from the visible title too (assignee is captured
-    // separately, below, and re-derived from `needed_raw` when filtering).
-    const text = parsed.text.replace(ASSIGNEE_RE, "").replace(/\s{2,}/g, " ").trim();
-    let importance = parsed.importance;
+    const impParsed = extractImportance(m[3].trim());
+    const timeParsed = extractTime(impParsed.text);
+    // Strip the owner and kind markers from the visible title too (both are
+    // captured separately; assignee is also re-derived from `needed_raw`).
+    const text = timeParsed.text
+      .replace(ASSIGNEE_RE, "")
+      .replace(KIND_RE, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    let importance = impParsed.importance;
+    let minutes = timeParsed.minutes;
     let assignee = extractAssignee(m[3]);
+    let kind = extractKind(m[3]);
     if (!text) continue;
-    // A task can wrap onto indented continuation lines; if its `[imp:N]` /
-    // `[owner:…]` marker sits on one of them, adopt it (needed_raw stays the
-    // item's own line, so completion-removal still targets a single line).
-    if (importance === null || assignee === null) {
+    // A task can wrap onto indented continuation lines; if any of its markers
+    // sit on one of them, adopt it (needed_raw stays the item's own line, so
+    // completion-removal still targets a single line).
+    if (
+      importance === null ||
+      assignee === null ||
+      minutes === null ||
+      kind === null
+    ) {
       for (let j = i + 1; j < lines.length; j++) {
         const cont = lines[j];
         if (cont.trim() === "") break; // blank line ends the item
@@ -89,8 +135,20 @@ export function parseNeeded(
           const found = extractImportance(cont);
           if (found.importance !== null) importance = found.importance;
         }
+        if (minutes === null) {
+          const found = extractTime(cont);
+          if (found.minutes !== null) minutes = found.minutes;
+        }
         if (assignee === null) assignee = extractAssignee(cont);
-        if (importance !== null && assignee !== null) break;
+        if (kind === null) kind = extractKind(cont);
+        if (
+          importance !== null &&
+          assignee !== null &&
+          minutes !== null &&
+          kind !== null
+        ) {
+          break;
+        }
       }
     }
     // De-dupe identical lines within one file so the key stays unique.
@@ -108,6 +166,8 @@ export function parseNeeded(
       raw,
       importance,
       assignee,
+      estimatedMinutes: minutes,
+      kind,
     });
   }
   return items;
@@ -122,6 +182,8 @@ export function cleanNeededText(s: string): string {
     .replace(/`([^`]+)`/g, "$1") // `code` → code
     .replace(/\[imp:[1-5]\]/gi, "") // any stray importance marker
     .replace(/\[owner:(?:me|ai)\]/gi, "") // any stray owner marker
+    .replace(/\[time:[^\]]+\]/gi, "") // any stray time marker
+    .replace(/\[kind:(?:setup|deploy|legal|content|decision)\]/gi, "") // stray kind
     .replace(/\s*→\s*§[\w.]+\s*$/, "") // trailing "→ §0.2"
     .replace(/\s+/g, " ")
     .trim();
