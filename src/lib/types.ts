@@ -328,6 +328,9 @@ export type Prompt = {
   body: string;
   created_at: string;
   updated_at: string;
+  // false = the owner's own prompt ("Mine"); true = a curated/scouted prompt
+  // shown under "Public". Defaults to false.
+  is_public?: boolean;
   project_id?: string | null;
   organization_id?: string | null;
   opportunity_id?: string | null;

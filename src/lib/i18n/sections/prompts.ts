@@ -40,6 +40,17 @@ type PromptsStrings = {
   noPromptsDescription: string;
   noMatches: string;
   noMatchesDescription: string;
+  // Mine / Public subsections + curated import
+  mineSection: string;
+  publicSection: string;
+  publicSectionDesc: string;
+  addCurated: string;
+  addingCurated: string;
+  curatedAdded: (n: number) => string;
+  curatedNoneNew: string;
+  publicEmpty: string;
+  makePublic: string;
+  makePublicHint: string;
 };
 
 export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
@@ -82,6 +93,16 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     noPromptsDescription: "Add a prompt to start building your library.",
     noMatches: "No matches",
     noMatchesDescription: "Try a different search.",
+    mineSection: "Mine",
+    publicSection: "Public",
+    publicSectionDesc: "Curated prompts scouted for your work — edit or delete like your own.",
+    addCurated: "Add curated prompts",
+    addingCurated: "Adding…",
+    curatedAdded: (n) => `Added ${n} curated prompt${n === 1 ? "" : "s"}.`,
+    curatedNoneNew: "All curated prompts are already in your library.",
+    publicEmpty: "No public prompts yet.",
+    makePublic: "Public prompt",
+    makePublicHint: "Show under Public instead of Mine.",
   },
   cs: {
     title: "Prompty",
@@ -122,5 +143,19 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     noPromptsDescription: "Přidej prompt a začni budovat svou knihovnu.",
     noMatches: "Žádné výsledky",
     noMatchesDescription: "Zkus jiné hledání.",
+    mineSection: "Moje",
+    publicSection: "Veřejné",
+    publicSectionDesc: "Doporučené prompty vybrané pro tvou práci — uprav nebo smaž jako vlastní.",
+    addCurated: "Přidat doporučené",
+    addingCurated: "Přidávám…",
+    curatedAdded: (n) => {
+      if (n === 1) return "Přidán 1 doporučený prompt.";
+      if (n >= 2 && n <= 4) return `Přidány ${n} doporučené prompty.`;
+      return `Přidáno ${n} doporučených promptů.`;
+    },
+    curatedNoneNew: "Všechny doporučené prompty už v knihovně máš.",
+    publicEmpty: "Zatím žádné veřejné prompty.",
+    makePublic: "Veřejný prompt",
+    makePublicHint: "Zobrazit v sekci Veřejné místo Moje.",
   },
 };

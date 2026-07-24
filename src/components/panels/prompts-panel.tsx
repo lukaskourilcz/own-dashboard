@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
@@ -17,6 +17,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -34,6 +36,7 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
+import { CURATED_PROMPTS } from "@/lib/curated-prompts";
 import type { Project, Prompt, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -52,11 +55,18 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Prompt | null>(null);
-  const [form, setForm] = useState<{ name: string; description: string; body: string; project_id: string }>({
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    body: string;
+    project_id: string;
+    is_public: boolean;
+  }>({
     name: "",
     description: "",
     body: "",
     project_id: "",
+    is_public: false,
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -71,7 +81,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
 
   function openCreate() {
     setEditing(null);
-    setForm({ name: "", description: "", body: "", project_id: "" });
+    setForm({ name: "", description: "", body: "", project_id: "", is_public: false });
     setFormError(null);
     setDialogOpen(true);
   }
@@ -83,6 +93,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
       description: p.description ?? "",
       body: p.body,
       project_id: p.project_id ?? "",
+      is_public: p.is_public ?? false,
     });
     setFormError(null);
     setDialogOpen(true);
@@ -91,12 +102,12 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
   // CREATE — non-optimistic: the insert returns the row, which we prepend and
   // then reconcile with the server via invalidate.
   const createMutation = useMutation({
-    mutationFn: async (vars: { name: string; description: string; body: string; project_id: string }) => {
+    mutationFn: async (vars: { name: string; description: string; body: string; project_id: string; is_public: boolean }) => {
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("prompts")
-        .insert({ user_id: userId, name: vars.name, description: vars.description, body: vars.body, project_id: vars.project_id || null })
+        .insert({ user_id: userId, name: vars.name, description: vars.description, body: vars.body, project_id: vars.project_id || null, is_public: vars.is_public })
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
@@ -117,7 +128,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
 
   // UPDATE — the update returns the row; replace it in the cache on success.
   const updateMutation = useMutation({
-    mutationFn: async (vars: { id: string; name: string; description: string; body: string; project_id: string }) => {
+    mutationFn: async (vars: { id: string; name: string; description: string; body: string; project_id: string; is_public: boolean }) => {
       const { data, error } = await supabase
         .from("prompts")
         .update({
@@ -125,6 +136,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
           description: vars.description,
           body: vars.body,
           project_id: vars.project_id || null,
+          is_public: vars.is_public,
           updated_at: new Date().toISOString(),
         })
         .eq("id", vars.id)
@@ -166,6 +178,49 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
     onSettled: () => qc.invalidateQueries({ queryKey: qk.prompts }),
   });
 
+  // Seed the curated "Public" prompts, skipping any already in the library (by
+  // name), so a repeat click never duplicates. Owned by the user, flagged public.
+  const addCuratedMutation = useMutation({
+    mutationFn: async () => {
+      const userId = await currentUserId(supabase);
+      if (!userId) throw new Error("no-user");
+      const have = new Set(prompts.map((p) => p.name.trim().toLowerCase()));
+      const toAdd = CURATED_PROMPTS.filter(
+        (c) => !have.has(c.name.trim().toLowerCase()),
+      );
+      if (toAdd.length === 0) return [] as Prompt[];
+      const { data, error } = await supabase
+        .from("prompts")
+        .insert(
+          toAdd.map((c) => ({
+            user_id: userId,
+            name: c.name,
+            description: c.description,
+            body: c.body,
+            is_public: true,
+          })),
+        )
+        .select();
+      if (error) throw error;
+      return (data ?? []) as Prompt[];
+    },
+    onSuccess: (rows) => {
+      if (rows.length === 0) {
+        toast.ok(t.prompts.curatedNoneNew);
+        return;
+      }
+      setPrompts((prev) => [...rows, ...prev]);
+      toast.ok(t.prompts.curatedAdded(rows.length));
+      void qc.invalidateQueries({ queryKey: qk.prompts });
+    },
+    onError: (e) =>
+      toast.err(
+        (e as Error)?.message === "no-user"
+          ? t.prompts.signInFirst
+          : t.prompts.couldNotSave,
+      ),
+  });
+
   const saving = createMutation.isPending || updateMutation.isPending;
 
   function submitForm(e: React.FormEvent) {
@@ -183,12 +238,12 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
     }
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, name, description, body, project_id: form.project_id },
+        { id: editing.id, name, description, body, project_id: form.project_id, is_public: form.is_public },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createMutation.mutate(
-        { name, description, body, project_id: form.project_id },
+        { name, description, body, project_id: form.project_id, is_public: form.is_public },
         { onSuccess: () => setDialogOpen(false) },
       );
     }
@@ -217,6 +272,35 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
       destructive: true,
     })) deleteMutation.mutate(p.id);
   }
+
+  const mineFiltered = filtered.filter((p) => !p.is_public);
+  const pubFiltered = filtered.filter((p) => p.is_public);
+  const searching = query.trim().length > 0;
+  const promptGrid = (list: Prompt[]) => (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {list.map((p) => (
+        <PromptCard
+          key={p.id}
+          prompt={p}
+          copied={copiedId === p.id}
+          onCopy={() => copyPrompt(p)}
+          onEdit={() => openEdit(p)}
+          onDelete={() => removePrompt(p)}
+        />
+      ))}
+    </div>
+  );
+  const addCuratedButton = (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => addCuratedMutation.mutate()}
+      disabled={addCuratedMutation.isPending}
+    >
+      <Sparkles className="h-3.5 w-3.5" />
+      {addCuratedMutation.isPending ? t.prompts.addingCurated : t.prompts.addCurated}
+    </Button>
+  );
 
   return (
     <div>
@@ -250,10 +334,13 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
             title={t.prompts.noPromptsYet}
             description={t.prompts.noPromptsDescription}
             action={
-              <Button size="sm" onClick={openCreate}>
-                <Plus className="h-3.5 w-3.5" />
-                {t.prompts.newPrompt}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button size="sm" onClick={openCreate}>
+                  <Plus className="h-3.5 w-3.5" />
+                  {t.prompts.newPrompt}
+                </Button>
+                {addCuratedButton}
+              </div>
             }
             className="py-16"
           />
@@ -266,17 +353,39 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
           className="py-16"
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
-            <PromptCard
-              key={p.id}
-              prompt={p}
-              copied={copiedId === p.id}
-              onCopy={() => copyPrompt(p)}
-              onEdit={() => openEdit(p)}
-              onDelete={() => removePrompt(p)}
-            />
-          ))}
+        <div className="space-y-8">
+          {(mineFiltered.length > 0 || !searching) && (
+            <PromptSection
+              icon={MessageSquareText}
+              title={t.prompts.mineSection}
+              count={mineFiltered.length}
+            >
+              {mineFiltered.length > 0 ? (
+                promptGrid(mineFiltered)
+              ) : (
+                <p className="text-sm text-foreground-subtle">
+                  {t.prompts.noPromptsDescription}
+                </p>
+              )}
+            </PromptSection>
+          )}
+          {(pubFiltered.length > 0 || !searching) && (
+            <PromptSection
+              icon={Sparkles}
+              title={t.prompts.publicSection}
+              desc={t.prompts.publicSectionDesc}
+              count={pubFiltered.length}
+              action={addCuratedButton}
+            >
+              {pubFiltered.length > 0 ? (
+                promptGrid(pubFiltered)
+              ) : (
+                <p className="text-sm text-foreground-subtle">
+                  {t.prompts.publicEmpty}
+                </p>
+              )}
+            </PromptSection>
+          )}
         </div>
       )}
 
@@ -338,6 +447,21 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
                   ]}
                 />
               </div>
+              <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface-inset px-3 py-2.5">
+                <div>
+                  <Label htmlFor="prompt-public">{t.prompts.makePublic}</Label>
+                  <p className="mt-0.5 text-[11px] text-foreground-subtle">
+                    {t.prompts.makePublicHint}
+                  </p>
+                </div>
+                <Switch
+                  id="prompt-public"
+                  checked={form.is_public}
+                  onCheckedChange={(is_public) =>
+                    setForm((f) => ({ ...f, is_public }))
+                  }
+                />
+              </div>
               {formError && (
                 <p className="text-xs text-destructive">{formError}</p>
               )}
@@ -360,6 +484,43 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/** A titled group of prompt cards (Mine / Public) with an optional description
+ * and header action (e.g. "Add curated prompts"). */
+function PromptSection({
+  icon: Icon,
+  title,
+  desc,
+  count,
+  action,
+  children,
+}: {
+  icon: typeof Sparkles;
+  title: string;
+  desc?: string;
+  count: number;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border pb-2">
+        <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <Icon className="h-3.5 w-3.5 text-foreground-muted" />
+          {title}
+        </h2>
+        <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+          {count}
+        </span>
+        {desc && (
+          <span className="text-xs text-foreground-subtle">{desc}</span>
+        )}
+        {action && <div className="ml-auto">{action}</div>}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -423,6 +584,12 @@ function PromptCard({
         {prompt.description?.trim() ? (
           <p className="line-clamp-3 text-[11px] leading-[15px] text-foreground-muted">
             {prompt.description}
+          </p>
+        ) : prompt.body?.trim() ? (
+          // No description yet — fall back to a short preview of the body so the
+          // card is never empty (the description can be added later).
+          <p className="line-clamp-3 text-[11px] leading-[15px] text-foreground-subtle">
+            {prompt.body.replace(/\s+/g, " ").trim()}
           </p>
         ) : (
           <p className="text-[11px] italic leading-[15px] text-foreground-subtle">
