@@ -27,7 +27,7 @@ The repository implementation is complete. The items below are the external acco
 - [ ] **Error monitoring:** configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and the deployment's Sentry auth token/release integration if desired. Verify captured context contains no private record bodies. `[imp:2]` `[owner:me]`
 - [ ] **Privacy-conscious analytics:** configure `NEXT_PUBLIC_POSTHOG_KEY` and optionally `NEXT_PUBLIC_POSTHOG_HOST`. The only repository feature flag currently referenced is `costs-filter`; no Tugedr kill-switch exists. Leave PostHog unset to disable the client SDK. `[imp:2]` `[owner:me]`
 - [ ] **Higher link-enrichment throughput:** add `JINA_API_KEY` only if the anonymous Jina Reader allowance is insufficient. `FIRECRAWL_API_KEY` is not used by this repository. `[imp:1]` `[owner:me]`
-- [ ] **Cron registry ingestion:** set `CRON_REGISTRY_TOKEN` only if an external system writes to the cron registry endpoint. `[imp:1]` `[owner:me]`
+- [ ] **Cron log ingestion (Home → Crons panel):** set `CRON_REGISTRY_TOKEN` and `DASHBOARD_OWNER_ID` server-side so external GitHub Actions crons can report runs to `POST /api/crons/log`. Then, in each repo with scheduled workflows (currently `aifirst` and `quorum`), add the Actions secrets `OWNDASHBOARD_CRON_URL` (this app's `/api/crons/log` URL) and `OWNDASHBOARD_CRON_TOKEN` (= `CRON_REGISTRY_TOKEN`). The app's own Vercel crons log automatically. `[imp:2]` `[owner:me]` `[time:15m]` `[kind:setup]`
 
 ## Brand and domain — wait for a confirmed replacement name
 
