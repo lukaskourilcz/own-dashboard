@@ -380,44 +380,6 @@ export function SettingsPanel({
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FolderKanban className="h-3 w-3" />
-              {t.settings.projectSections}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-foreground-subtle">
-              {t.settings.projectSectionsDesc}
-            </p>
-            <ul className="divide-y divide-border rounded-md border border-border">
-              {PROJECT_WORKSPACE_TABS.map((tab) => {
-                const alwaysVisible = tab === "overview";
-                return (
-                  <li
-                    key={tab}
-                    className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
-                  >
-                    <span className="text-sm font-medium">
-                      {projectTabLabel(tab)}
-                    </span>
-                    {alwaysVisible ? (
-                      <SectionLabel>{t.settings.alwaysVisible}</SectionLabel>
-                    ) : (
-                      <Switch
-                        checked={!hiddenProjectTabs.includes(tab)}
-                        onCheckedChange={() => toggleProjectTab(tab)}
-                        aria-label={projectTabLabel(tab)}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <FolderKanban className="h-3 w-3" />
               {t.settings.activeProjects}
             </CardTitle>
           </CardHeader>
@@ -457,6 +419,44 @@ export function SettingsPanel({
                 )}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-1.5">
+              <FolderKanban className="h-3 w-3" />
+              {t.settings.projectSections}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-foreground-subtle">
+              {t.settings.projectSectionsDesc}
+            </p>
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {PROJECT_WORKSPACE_TABS.map((tab) => {
+                const alwaysVisible = tab === "overview";
+                return (
+                  <li
+                    key={tab}
+                    className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
+                  >
+                    <span className="text-sm font-medium">
+                      {projectTabLabel(tab)}
+                    </span>
+                    {alwaysVisible ? (
+                      <SectionLabel>{t.settings.alwaysVisible}</SectionLabel>
+                    ) : (
+                      <Switch
+                        checked={!hiddenProjectTabs.includes(tab)}
+                        onCheckedChange={() => toggleProjectTab(tab)}
+                        aria-label={projectTabLabel(tab)}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           </CardContent>
         </Card>
 
