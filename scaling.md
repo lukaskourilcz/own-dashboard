@@ -1,17 +1,6 @@
-# OwnDashboard — stack, cost, and scaling
+# OwnDashboard — cost and scaling
 
-Personal professional operating system for projects, clients, career, money, planning, and knowledge. Pricing checked **2026-07-21**; taxes, domains, currency conversion, and any existing account-specific contracts are excluded.
-
-## Current production stack
-
-- Modified Next.js 16 and React 19 on Vercel
-- Supabase Postgres, Auth, Data API, and own-only RLS
-- Anthropic API for user-initiated contextual AI
-- Optional Upstash Redis rate limiting, Resend email, PostHog, and Sentry
-- Google Calendar, GitHub, and GoCardless Bank Account Data integrations
-- Three daily Vercel cron routes: bank sync, renewal warnings, and job scraping
-- Optional VPS workers consuming the indexed, own-only `agent_tasks` queue through authenticated claim/report endpoints
-- Own-only daily focus snapshots and synchronized UI preferences, including project-workspace tab visibility, in Supabase
+Personal professional operating system for projects, clients, career, money, planning, and knowledge. Pricing checked **2026-07-21**; taxes, domains, currency conversion, and any existing account-specific contracts are excluded. The technology stack is documented in `about-project.md`; this file covers cost and scaling only.
 
 ## What it costs now
 

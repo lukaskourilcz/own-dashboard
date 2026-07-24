@@ -19,12 +19,15 @@ import { cn } from "@/lib/utils";
 export function ProjectDocPanel({
   repoFullName,
   file,
+  fallbackFile,
   title,
   description,
   enabled = true,
 }: {
   repoFullName: string | null;
   file: string;
+  /** Legacy filename to read when `file` isn't found (e.g. during a rename). */
+  fallbackFile?: string;
   title: string;
   description: string;
   enabled?: boolean;
@@ -34,7 +37,14 @@ export function ProjectDocPanel({
   const [owner, repo] = repoFullName?.split("/") ?? [];
   const query = useQuery({
     queryKey: ["github", "project-doc", owner, repo, file],
-    queryFn: () => loadRepoFile(owner, repo, file),
+    queryFn: async () => {
+      const primary = await loadRepoFile(owner, repo, file);
+      if (primary.kind === "not-found" && fallbackFile) {
+        const legacy = await loadRepoFile(owner, repo, fallbackFile);
+        if (legacy.kind === "ok") return legacy;
+      }
+      return primary;
+    },
     enabled: enabled && Boolean(owner && repo),
     staleTime: 5 * 60_000,
   });

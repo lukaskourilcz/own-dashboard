@@ -51,7 +51,7 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     noActiveReposDesc:
       "Link a GitHub repository to this project to inspect its stack and scaling notes.",
     openRepositories: "Open project repository",
-    fileMissingTitle: "No stack-and-scaling.md yet",
+    fileMissingTitle: "No scaling.md yet",
     fileMissingDesc:
       "Add it to the repo root. Copy the prompt and run it in that repo with Claude Code.",
     copyPrompt: "Copy prompt",
@@ -64,7 +64,7 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     openRepo: "Open repo",
     filter: "Filter",
     filterTitle: "Filter repositories",
-    onlyWithFile: "Only repos with a stack-and-scaling.md file",
+    onlyWithFile: "Only repos with a scaling.md file",
     onlyWithFileHint:
       "Hide repositories that don't have the file in their root.",
     reposLabel: "Repositories",
@@ -95,7 +95,7 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     noActiveReposDesc:
       "Propoj s projektem GitHub repozitář a zobraz jeho stack a poznámky ke škálování.",
     openRepositories: "Otevřít repozitář projektu",
-    fileMissingTitle: "Zatím žádný stack-and-scaling.md",
+    fileMissingTitle: "Zatím žádný scaling.md",
     fileMissingDesc:
       "Přidej ho do rootu repa. Zkopíruj prompt a spusť ho v daném repu přes Claude Code.",
     copyPrompt: "Kopírovat prompt",
@@ -108,7 +108,7 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     openRepo: "Otevřít repo",
     filter: "Filtr",
     filterTitle: "Filtrovat repozitáře",
-    onlyWithFile: "Jen repozitáře se souborem stack-and-scaling.md",
+    onlyWithFile: "Jen repozitáře se souborem scaling.md",
     onlyWithFileHint: "Skryje repozitáře, které nemají soubor v rootu.",
     reposLabel: "Repozitáře",
     hasFile: "Má soubor",

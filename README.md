@@ -137,7 +137,7 @@ No generated brand media is currently shipped. The next media-production pass mu
 
 ## Deployment and owner actions
 
-The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md). Cost tiers and scaling triggers are documented in [stack-and-scaling.md](./stack-and-scaling.md).
+The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md). Cost tiers and scaling triggers are documented in [scaling.md](./scaling.md).
 
 ## More documentation
 

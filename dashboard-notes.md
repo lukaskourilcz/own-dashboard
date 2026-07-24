@@ -2,7 +2,7 @@
 
 > Historical implementation log. For the current product, rollout, architecture,
 > and outstanding owner actions use `README.md`, `DOCS.md`, `NEEDED.md`, and
-> `stack-and-scaling.md`; those files are authoritative when older entries below
+> `scaling.md`; those files are authoritative when older entries below
 > describe superseded navigation or setup steps.
 
 > **Status legend:** ~~struck-through~~ = done. Open bullets = still to do.

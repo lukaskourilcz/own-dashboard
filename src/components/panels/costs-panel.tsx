@@ -30,7 +30,7 @@ import { GithubIcon } from "@/components/icons/github";
 import { useDict } from "@/lib/i18n";
 import { useFeatureFlag, FLAGS } from "@/lib/feature-flags";
 import { connectGitHub } from "@/lib/github-auth";
-import { loadRepoFile, type GithubRepo } from "@/lib/github";
+import { type GithubRepo } from "@/lib/github";
 import { useReposQuery } from "@/lib/github-queries";
 import {
   readCostsHiddenRepos,
@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import {
   STACK_AND_SCALING_FILE,
   STACK_AND_SCALING_PROMPT,
+  loadScalingFile,
 } from "@/lib/stack-prompt";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
@@ -130,7 +131,7 @@ export function CostsPanel({
     queries: active.map((repo) => ({
       queryKey: ["github", "file", String(repo.id), STACK_AND_SCALING_FILE],
       queryFn: () =>
-        loadRepoFile(repo.owner, repo.name, STACK_AND_SCALING_FILE),
+        loadScalingFile(repo.owner, repo.name),
       staleTime: 5 * 60_000,
     })),
   });
@@ -439,7 +440,7 @@ function CostCard({ repo }: { repo: GithubRepo }) {
   const toast = useToast();
   const fileQuery = useQuery({
     queryKey: ["github", "file", String(repo.id), STACK_AND_SCALING_FILE],
-    queryFn: () => loadRepoFile(repo.owner, repo.name, STACK_AND_SCALING_FILE),
+    queryFn: () => loadScalingFile(repo.owner, repo.name),
     staleTime: 5 * 60_000,
   });
   const result = fileQuery.data;
