@@ -78,9 +78,16 @@ export function ProjectKnowledgePanel({
             {p.aboutProjectError}
           </p>
         ) : query.isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2" aria-live="polite">
-            <div className="h-28 animate-pulse rounded-md bg-skeleton" />
-            <div className="h-28 animate-pulse rounded-md bg-skeleton" />
+          <div
+            className="rounded-md border border-border bg-surface-inset p-4"
+            aria-live="polite"
+          >
+            <div className="space-y-2.5">
+              <div className="h-4 w-1/3 animate-pulse rounded bg-skeleton" />
+              <div className="h-3 w-full animate-pulse rounded bg-skeleton" />
+              <div className="h-3 w-11/12 animate-pulse rounded bg-skeleton" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-skeleton" />
+            </div>
           </div>
         ) : result?.kind === "ok" ? (
           result.content.trim() ? (

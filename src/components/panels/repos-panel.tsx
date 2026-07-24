@@ -328,13 +328,17 @@ export function ReposPanel({
         }
       />
 
-      {status === "loading" && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-[260px] w-full" />
-          ))}
-        </div>
-      )}
+      {status === "loading" &&
+        (repoFullName ? (
+          // Project workspace shows a single repo card — match it.
+          <Skeleton className="h-[260px] w-full" />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-[260px] w-full" />
+            ))}
+          </div>
+        ))}
 
       {status === "error" && (
         <EmptyState
