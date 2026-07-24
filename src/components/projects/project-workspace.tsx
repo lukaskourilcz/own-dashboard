@@ -18,6 +18,7 @@ import { CostsPanel } from "@/components/panels/costs-panel";
 import { ProjectCommunicationPanel } from "@/components/projects/project-communication-panel";
 import { ProjectGithubActivity } from "@/components/projects/project-github-activity";
 import { ProjectKnowledgePanel } from "@/components/projects/project-knowledge-panel";
+import { ProjectDocPanel } from "@/components/projects/project-doc-panel";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
@@ -157,6 +158,8 @@ export function ProjectWorkspace(props: Props) {
     operations: p.projectOperations,
     finance: p.projectFinance,
     knowledge: p.projectKnowledge,
+    scaling: p.projectScaling,
+    monetization: p.projectMonetization,
   };
   const tabs = PROJECT_WORKSPACE_TABS.filter(
     (item) => item === "overview" || !isProjectTabHidden(item),
@@ -225,6 +228,8 @@ export function ProjectWorkspace(props: Props) {
     {tab === "operations" && <div className="space-y-4"><RecordCard title={p.projectOperations} icon={ServerCog} empty={p.noRelatedRecords} items={props.crons.map((item) => ({ id: item.id, primary: item.name, secondary: `${item.schedule} · ${item.enabled ? p.open : p.operationalWarning}${item.last_run_at ? ` · ${item.last_run_at.slice(0, 10)}` : ""}` }))} />{project.repo_full_name && props.repositoryIntegrationEnabled && <CostsPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} />}</div>}
     {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={t.nav.sections.invoices} icon={FileText} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectSubscriptions.map((item) => ({ id: item.id, primary: item.name, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /><RecordCard title={p.monthlyCost} icon={CircleDollarSign} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /></div></div>}
     {tab === "knowledge" && <div className="grid gap-4 lg:grid-cols-2"><ProjectKnowledgePanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} /><RecordCard title={t.nav.sections.notes} icon={FileText} empty={p.noRelatedRecords} items={projectNotes.map((item) => ({ id: item.id, primary: item.title, secondary: item.plain_text.slice(0, 120) }))} /><RecordCard title={t.nav.sections.prompts} icon={Bot} empty={p.noRelatedRecords} items={projectPrompts.map((item) => ({ id: item.id, primary: item.name, secondary: item.body.slice(0, 120) }))} /></div>}
+    {tab === "scaling" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="scaling.md" title={p.projectScaling} description={p.scalingDescription} /></div>}
+    {tab === "monetization" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="monetization.md" title={p.projectMonetization} description={p.monetizationDescription} /></div>}
   </div>;
 }
 

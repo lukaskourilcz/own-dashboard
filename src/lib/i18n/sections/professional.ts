@@ -158,6 +158,16 @@ const professionalEn = {
       "Add the file with Tech stack and Third-party libraries sections, including one short description per item.",
     githubDisconnected: "GitHub is disconnected",
     aboutProjectError: "Could not read about-project.md from GitHub.",
+    projectScaling: "Scaling",
+    projectMonetization: "Monetization",
+    scalingDescription:
+      "Cost and scaling model read from scaling.md in the repository.",
+    monetizationDescription:
+      "Monetization options read from monetization.md in the repository.",
+    projectDocMissing: "This document isn't in the repository yet",
+    projectDocMissingDescription:
+      "Add the file to the repository root to see it rendered here.",
+    projectDocError: "Could not read this document from GitHub.",
     operationalWarning: "Operational warning",
     completed: "Completed",
     open: "Open",
@@ -355,6 +365,16 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
       "Přidej soubor se sekcemi Tech stack a Third-party libraries a krátkým popisem každé položky.",
     githubDisconnected: "GitHub není připojený",
     aboutProjectError: "Soubor about-project.md se z GitHubu nepodařilo načíst.",
+    projectScaling: "Škálování",
+    projectMonetization: "Monetizace",
+    scalingDescription:
+      "Model nákladů a škálování načtený ze souboru scaling.md v repozitáři.",
+    monetizationDescription:
+      "Možnosti monetizace načtené ze souboru monetization.md v repozitáři.",
+    projectDocMissing: "Tento dokument zatím v repozitáři není",
+    projectDocMissingDescription:
+      "Přidej soubor do kořene repozitáře, aby se zde vykreslil.",
+    projectDocError: "Dokument se z GitHubu nepodařilo načíst.",
     operationalWarning: "Provozní upozornění",
     completed: "Dokončeno",
     open: "Otevřeno",

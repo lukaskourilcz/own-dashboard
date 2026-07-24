@@ -247,6 +247,8 @@ export function SettingsPanel({
       operations: t.professional.projectOperations,
       finance: t.professional.projectFinance,
       knowledge: t.professional.projectKnowledge,
+      scaling: t.professional.projectScaling,
+      monetization: t.professional.projectMonetization,
     };
     return labels[tab];
   };

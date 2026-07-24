@@ -7,6 +7,8 @@ export const PROJECT_WORKSPACE_TABS = [
   "operations",
   "finance",
   "knowledge",
+  "scaling",
+  "monetization",
 ] as const;
 
 export type ProjectWorkspaceTab = (typeof PROJECT_WORKSPACE_TABS)[number];
