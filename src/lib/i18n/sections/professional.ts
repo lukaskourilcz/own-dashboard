@@ -168,6 +168,18 @@ const professionalEn = {
     projectDocMissingDescription:
       "Add the file to the repository root to see it rendered here.",
     projectDocError: "Could not read this document from GitHub.",
+    projectTraffic: "Traffic",
+    trafficDescription: "Visitors from Vercel Web Analytics.",
+    trafficVisitors: "Visitors",
+    trafficPageviews: "Page views",
+    trafficLast30: "Last 30 days",
+    trafficLifetime: "All time",
+    trafficUnconfigured:
+      "Set VERCEL_API_TOKEN (server-side) to show visitor data here.",
+    trafficNotFound:
+      "No Vercel project matches this repository, or Web Analytics is off for it.",
+    trafficLoading: "Loading traffic…",
+    trafficError: "Could not load Vercel analytics.",
     operationalWarning: "Operational warning",
     completed: "Completed",
     open: "Open",
@@ -375,6 +387,18 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
     projectDocMissingDescription:
       "Přidej soubor do kořene repozitáře, aby se zde vykreslil.",
     projectDocError: "Dokument se z GitHubu nepodařilo načíst.",
+    projectTraffic: "Návštěvnost",
+    trafficDescription: "Návštěvníci z Vercel Web Analytics.",
+    trafficVisitors: "Návštěvníci",
+    trafficPageviews: "Zobrazení stránek",
+    trafficLast30: "Posledních 30 dní",
+    trafficLifetime: "Celkem",
+    trafficUnconfigured:
+      "Pro zobrazení návštěvnosti nastav VERCEL_API_TOKEN (na serveru).",
+    trafficNotFound:
+      "Tomuto repozitáři neodpovídá žádný projekt na Vercelu, nebo pro něj není zapnutá Web Analytics.",
+    trafficLoading: "Načítám návštěvnost…",
+    trafficError: "Návštěvnost z Vercelu se nepodařilo načíst.",
     operationalWarning: "Provozní upozornění",
     completed: "Dokončeno",
     open: "Otevřeno",

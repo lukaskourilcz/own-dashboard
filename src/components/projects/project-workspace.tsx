@@ -19,6 +19,7 @@ import { ProjectCommunicationPanel } from "@/components/projects/project-communi
 import { ProjectGithubActivity } from "@/components/projects/project-github-activity";
 import { ProjectKnowledgePanel } from "@/components/projects/project-knowledge-panel";
 import { ProjectDocPanel } from "@/components/projects/project-doc-panel";
+import { ProjectTraffic } from "@/components/projects/project-traffic";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
@@ -217,6 +218,7 @@ export function ProjectWorkspace(props: Props) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
+        {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} />}
       </div>
       <AiProposalPanel label={p.projectCopilot} description={`${p.projectCopilotDescription} ${p.aiNotSaved}`}><div className="space-y-3"><Button onClick={generateBrief} disabled={generating}><Bot />{generating ? p.generatingBrief : p.generateBrief}</Button>{briefError && <p role="alert" className="text-sm text-destructive">{p.aiUnavailable}</p>}{brief && <><div className="grid gap-4 md:grid-cols-3"><AiResultGroup kind="facts" title={p.facts} items={brief.facts} /><AiResultGroup kind="risks" title={p.risks} items={brief.risks} /><AiResultGroup kind="suggestions" title={p.suggestions} items={brief.suggestions} /></div><div className="border-t border-border pt-3"><p className="text-[11px] text-foreground-muted">{brief.limited && p.limitedContext}</p><div className="mt-2 flex flex-wrap gap-1.5">{brief.sources.map((source) => <EntityBadge key={source}>{source}</EntityBadge>)}</div></div></>}</div></AiProposalPanel>
     </div>}
