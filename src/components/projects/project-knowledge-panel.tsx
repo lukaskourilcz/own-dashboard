@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Package, RefreshCw, Wrench } from "lucide-react";
+import { BookOpen, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ABOUT_PROJECT_FILE, parseAboutProject } from "@/lib/about-project";
+import { Markdown } from "@/components/ui/markdown";
+import { ABOUT_PROJECT_FILE } from "@/lib/about-project";
 import { loadRepoFile } from "@/lib/github";
 import { useDict } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -28,8 +29,6 @@ export function ProjectKnowledgePanel({
   });
 
   const result = query.data;
-  const knowledge =
-    result?.kind === "ok" ? parseAboutProject(result.content) : null;
 
   return (
     <Card className="lg:col-span-2">
@@ -83,67 +82,20 @@ export function ProjectKnowledgePanel({
             <div className="h-28 animate-pulse rounded-md bg-skeleton" />
             <div className="h-28 animate-pulse rounded-md bg-skeleton" />
           </div>
-        ) : knowledge ? (
-          <div className="space-y-4">
-            {knowledge.summary && (
-              <p className="max-w-3xl text-sm leading-6 text-foreground-muted">
-                {knowledge.summary}
-              </p>
-            )}
-            <div className="grid gap-3 md:grid-cols-2">
-              <KnowledgeList
-                title={p.techStack}
-                icon={Wrench}
-                empty={p.noTechStack}
-                items={knowledge.techStack}
-              />
-              <KnowledgeList
-                title={p.thirdPartyLibraries}
-                icon={Package}
-                empty={p.noThirdPartyLibraries}
-                items={knowledge.libraries}
-              />
+        ) : result?.kind === "ok" ? (
+          result.content.trim() ? (
+            <div className="rounded-md border border-border bg-surface-inset p-4">
+              <Markdown source={result.content} className="max-w-3xl" />
             </div>
-          </div>
+          ) : (
+            <EmptyState
+              icon={BookOpen}
+              title={p.aboutProjectMissing}
+              description={p.aboutProjectMissingDescription}
+            />
+          )
         ) : null}
       </CardContent>
     </Card>
-  );
-}
-
-function KnowledgeList({
-  title,
-  icon: Icon,
-  items,
-  empty,
-}: {
-  title: string;
-  icon: typeof Wrench;
-  items: { name: string; description: string }[];
-  empty: string;
-}) {
-  return (
-    <section className="rounded-md border border-border bg-surface-inset p-3">
-      <h3 className="flex items-center gap-2 text-sm font-semibold">
-        <Icon className="h-3.5 w-3.5" />
-        {title}
-      </h3>
-      {items.length === 0 ? (
-        <p className="mt-3 text-xs text-foreground-subtle">{empty}</p>
-      ) : (
-        <ul className="mt-2 divide-y divide-border">
-          {items.map((item) => (
-            <li key={`${item.name}-${item.description}`} className="py-2">
-              <p className="font-mono text-xs font-semibold">{item.name}</p>
-              {item.description && (
-                <p className="mt-0.5 text-xs leading-5 text-foreground-muted">
-                  {item.description}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }
