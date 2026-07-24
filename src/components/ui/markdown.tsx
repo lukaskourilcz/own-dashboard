@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
  * Minimal, dependency-free markdown renderer for trusted content (a file the
  * user authored in their own repo). It builds React elements — it never injects
  * raw HTML — so there is no XSS surface. Handles headings, ordered/unordered
- * lists, fenced code blocks, paragraphs, and inline bold / code / links.
+ * lists, fenced code blocks, GFM tables, paragraphs, and inline bold / code /
+ * links.
  */
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
@@ -56,6 +57,31 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   }
   if (last < text.length) nodes.push(text.slice(last));
   return nodes;
+}
+
+/** Split a `| a | b |` table row into trimmed cells (outer pipes stripped). */
+function splitTableRow(line: string): string[] {
+  let s = line.trim();
+  if (s.startsWith("|")) s = s.slice(1);
+  if (s.endsWith("|")) s = s.slice(0, -1);
+  return s.split("|").map((c) => c.trim());
+}
+
+/** A GFM separator row like `| --- | :--: | ---: |`. */
+function isTableSeparator(line: string): boolean {
+  if (!line.includes("|")) return false;
+  const cells = splitTableRow(line);
+  return cells.length > 0 && cells.every((c) => /^:?-+:?$/.test(c));
+}
+
+/** Column alignment from a separator cell (`:--` left, `--:` right, `:-:` centre). */
+function alignClass(sep: string): string {
+  const c = sep.trim();
+  const left = c.startsWith(":");
+  const right = c.endsWith(":");
+  if (left && right) return "text-center";
+  if (right) return "text-right";
+  return "text-left";
 }
 
 export function Markdown({
@@ -152,6 +178,62 @@ export function Markdown({
         >
           {items}
         </ol>,
+      );
+      continue;
+    }
+
+    // GFM table — a header row followed by a `---` separator row.
+    if (
+      line.includes("|") &&
+      i + 1 < lines.length &&
+      isTableSeparator(lines[i + 1])
+    ) {
+      const header = splitTableRow(line);
+      const aligns = splitTableRow(lines[i + 1]).map(alignClass);
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].trim() !== "" && lines[i].includes("|")) {
+        rows.push(splitTableRow(lines[i]));
+        i++;
+      }
+      const tk = key++;
+      blocks.push(
+        <div key={tk} className="overflow-x-auto">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr>
+                {header.map((cell, ci) => (
+                  <th
+                    key={ci}
+                    className={cn(
+                      "border-b border-border px-2 py-1.5 font-semibold text-foreground",
+                      aligns[ci] ?? "text-left",
+                    )}
+                  >
+                    {renderInline(cell, `th${tk}-${ci}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr key={ri}>
+                  {header.map((_, ci) => (
+                    <td
+                      key={ci}
+                      className={cn(
+                        "border-b border-border/60 px-2 py-1.5 align-top text-foreground-muted",
+                        aligns[ci] ?? "text-left",
+                      )}
+                    >
+                      {renderInline(row[ci] ?? "", `td${tk}-${ri}-${ci}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
       );
       continue;
     }
