@@ -28,7 +28,7 @@ Do not uppercase long labels. Czech diacritics must be tested in every font role
 
 ## Layout and density
 
-At `md` and above, the application sits inside a graphite desktop with 40 px padding and a 1360 px maximum window. The window is viewport-contained, 12 px rounded, and scrolls only its content region. Desktop sidebar is 224 px and the collapsed rail 64 px; the shared toolbar is 52 px. Content padding is 16 px narrow and 20–24 px desktop. Dense rows are 38 px desktop; ordinary rows are 46 px. Touch versions preserve at least 44 px targets. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px. Mobile removes desktop wallpaper/window framing and includes safe-area insets.
+At `md` and above, the application sits inside a graphite desktop with 20 px block padding and 30 px inline padding. The window fills that padded area at every width, so the graphite margin stays 20 px top and bottom and 30 px left and right rather than widening past a fixed maximum. The window is viewport-contained, 12 px rounded, and scrolls only its content region. Desktop sidebar is 224 px and the collapsed rail 64 px; the shared toolbar is 52 px. Content padding is 16 px narrow and 20–24 px desktop. Dense rows are 38 px desktop; ordinary rows are 46 px. Touch versions preserve at least 44 px targets. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px. Mobile removes desktop wallpaper/window framing and includes safe-area insets.
 
 Home and login may breathe. Work, Projects, Opportunities, Career, Money, and Invoices use medium-high density. Prefer section bands, aligned rows, split panes, and tables. Use cards only for summaries, self-contained objects, and elevated workflows. Avoid nested cards.
 
