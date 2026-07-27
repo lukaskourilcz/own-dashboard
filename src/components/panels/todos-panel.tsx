@@ -562,7 +562,7 @@ export function TodosPanel({
               </CardContent>
             </Card>
           ) : (
-            <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="columns-1 gap-4 lg:columns-2">
               {openGlobal.length > 0 && (
                 <TaskGroupCard
                   t={t}
@@ -733,7 +733,7 @@ function TaskGroupCard({
   const canExpand = limit > 0 && total > limit;
 
   return (
-    <Card className="overflow-hidden p-0">
+    <Card className="mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top">
       <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-2 py-2.5 pr-4">
         <button
           type="button"
@@ -749,7 +749,7 @@ function TaskGroupCard({
           )}
         </button>
         <div className="min-w-0 flex-1">{header}</div>
-        <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+        <span className="shrink-0 rounded-full bg-surface px-2 py-[3px] text-[10px] font-semibold tabular text-foreground-muted">
           {t.todos.repoTaskCount(total)}
         </span>
       </div>
@@ -815,7 +815,7 @@ function TaskSubcard({
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 break-words text-sm text-foreground">
+          <p className="line-clamp-3 min-w-0 flex-1 break-words text-sm leading-5 text-foreground">
             {td.title}
           </p>
           {td.importance != null && (
@@ -855,7 +855,7 @@ function TimeChip({ t, due }: { t: Dict; due: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-1.5 py-0.5 font-medium tabular",
+        "inline-flex items-center rounded-full px-[7px] py-[3px] font-medium tabular",
         left < 0
           ? "bg-destructive/10 text-destructive"
           : left <= 2
@@ -902,7 +902,7 @@ function FinishedSection({
           className="inline-flex items-center gap-2 text-sm font-semibold text-foreground focus-ring rounded"
         >
           {t.todos.finishedTitle}
-          <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular text-foreground-muted">
+          <span className="rounded-full bg-surface px-2 py-[3px] text-[10px] font-semibold tabular text-foreground-muted">
             {t.todos.finishedCount(items.length)}
           </span>
           <span className="text-[11px] font-normal text-foreground-subtle">
@@ -998,7 +998,7 @@ function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
     <Tooltip content={t.todos.importanceOf(value)}>
       <span
         className={cn(
-          "inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular",
+          "inline-flex shrink-0 items-center gap-0.5 rounded-full border px-[7px] py-[3px] text-[10px] font-semibold tabular",
           IMPORTANCE_STYLES[value] ?? IMPORTANCE_STYLES[1],
         )}
         aria-label={t.todos.importanceOf(value)}
@@ -1326,7 +1326,7 @@ function TodoList({
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
-                  "text-sm truncate transition-colors",
+                  "line-clamp-3 text-sm leading-5 transition-colors",
                   td.done && "line-through text-foreground-subtle",
                 )}
               >

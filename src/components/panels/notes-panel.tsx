@@ -646,7 +646,7 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
                 type="button"
                 onClick={() => toggleTagFilter(tag)}
                 className={cn(
-                  "text-[11px] font-medium rounded-full px-2 py-0.5 transition-colors border",
+                  "text-[11px] font-medium rounded-full px-2 py-[3px] transition-colors border",
                   on
                     ? "bg-foreground text-background border-foreground"
                     : "hover:opacity-90",
@@ -868,7 +868,7 @@ export function NotesPanel({ notes, setNotes, projects }: Props) {
                   return (
                     <span
                       key={tag}
-                      className="group inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 border"
+                      className="group inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-[3px] border"
                       style={{
                         background: c.bg,
                         color: c.text,
@@ -1168,7 +1168,7 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full border border-dashed border-border text-foreground-subtle hover:text-foreground hover:border-border-strong px-2 py-0.5 transition-colors focus-ring"
+          className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full border border-dashed border-border text-foreground-subtle hover:text-foreground hover:border-border-strong px-2 py-[3px] transition-colors focus-ring"
         >
           <Plus className="h-2.5 w-2.5" />
           {t.notes.addTag}

@@ -235,7 +235,7 @@ export function DailyFocusPanel({
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            "truncate text-sm",
+                            "line-clamp-3 text-sm leading-5",
                             isDone && "text-foreground-subtle line-through",
                           )}
                         >
@@ -249,7 +249,7 @@ export function DailyFocusPanel({
                         </p>
                       </div>
                       {item.importance_snapshot === 6 && (
-                        <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                        <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-[3px] text-[10px] font-semibold text-warning">
                           {t.todos.globalGroup}
                         </span>
                       )}

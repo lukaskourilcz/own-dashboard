@@ -194,6 +194,7 @@ export function ProjectWorkspace(props: Props) {
   return <div>
     <button type="button" onClick={props.onBackToProjects} className="mb-3 inline-flex items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground focus-ring"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</button>
     <PageHeader
+      className="mac-project-header"
       title={project.name}
       description={project.summary || p.projectWorkspace}
       eyebrow={organization?.name ?? p.projectWorkspace}

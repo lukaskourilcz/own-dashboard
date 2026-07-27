@@ -308,7 +308,7 @@ export function ReposPanel({
                   <ListFilter className="h-3.5 w-3.5" />
                   {t.github.filter}
                   {filterActive && (
-                    <span className="ml-0.5 rounded-full bg-primary px-1.5 text-[10px] font-semibold tabular text-primary-foreground">
+                    <span className="ml-0.5 rounded-full bg-primary px-[7px] py-[3px] text-[10px] font-semibold tabular text-primary-foreground">
                       {scoped.length}
                     </span>
                   )}
@@ -1183,7 +1183,7 @@ function Badge({
   label: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-[7px] py-[3px] text-[10px] font-medium text-foreground-muted">
       <Icon className="h-2.5 w-2.5" />
       {label}
     </span>

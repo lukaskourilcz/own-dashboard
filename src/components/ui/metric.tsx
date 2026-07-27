@@ -10,13 +10,19 @@ export function Metric({ label, value, detail, icon: Icon, tone = "default", cla
   className?: string;
 }) {
   return (
-    <div className={cn("border-l-2 px-3 py-2", tone === "attention" ? "border-warning" : tone === "risk" ? "border-risk" : "border-border-strong", className)}>
-      <div className="flex items-center gap-2 text-[11px] font-medium text-foreground-muted">
-        {Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}
-        <span>{label}</span>
+    <div className={cn("flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card", tone === "attention" ? "border-warning/35" : tone === "risk" ? "border-risk/35" : "", className)}>
+      {Icon && (
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-secondary text-[var(--section-accent,var(--mac-blue))]">
+          <Icon className="h-4 w-4" aria-hidden />
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+      <div className="truncate text-[11px] font-medium text-foreground-muted">
+        {label}
       </div>
-      <p className="mt-1 text-xl font-semibold tracking-[-0.02em] tabular text-foreground">{value}</p>
+      <p className="mt-0.5 text-[18px] font-bold leading-5 tracking-[-0.02em] tabular text-foreground">{value}</p>
       {detail && <p className="mt-0.5 text-[11px] text-foreground-subtle">{detail}</p>}
+      </div>
     </div>
   );
 }

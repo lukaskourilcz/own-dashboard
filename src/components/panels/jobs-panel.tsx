@@ -695,7 +695,7 @@ function OpenPositionsView({
           </p>
           <Card className="min-w-0 max-w-full overflow-hidden p-0">
             <div className="max-w-full overflow-x-auto overscroll-x-contain [contain:inline-size]">
-              <table className="w-full min-w-[1020px] text-left">
+              <table className="w-full min-w-[900px] text-left">
                 <thead className="border-b border-border bg-surface-secondary text-[11px] font-medium text-foreground-muted">
                   <tr>
                     <th scope="col" className="w-10 px-3 py-2.5">
@@ -802,7 +802,7 @@ function FitBadge({ match }: { match: JobMatch }) {
     <Tooltip content={tip}>
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular",
+          "inline-flex items-center gap-1 rounded-full border px-2 py-[3px] text-[10px] font-semibold tabular",
           FIT_TONE[match.level],
         )}
       >
@@ -818,7 +818,7 @@ function SkillChip({ label, kind }: { label: string; kind: "have" | "gap" }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium",
+        "inline-flex items-center rounded border px-[7px] py-[3px] text-[10px] font-medium",
         kind === "have"
           ? "border-success/30 bg-success/10 text-success"
           : "border-border bg-surface-muted text-foreground-muted line-through decoration-foreground-subtle/40",
@@ -885,14 +885,14 @@ function ListingRow({
           </a>
           <span
             className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+              "inline-flex items-center rounded-full border px-2 py-[3px] text-[10px] font-medium",
               ROLE_TONE[listing.role],
             )}
           >
             {roleLabel[listing.role]}
           </span>
           {applied && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-[3px] text-[10px] font-medium text-success">
               <Check className="h-2.5 w-2.5" />
               {t.jobs.appliedBadge}
             </span>

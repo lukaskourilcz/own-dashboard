@@ -32,22 +32,23 @@ No generated symbol exploration has been approved. The next pass must compare sa
 
 ## Color
 
-- Warm paper and stone create the light canvas and inset ledger surfaces.
-- Deep graphite and charcoal create dark canvas and surfaces.
-- Deep ink/cobalt defines primary action, selection, focus, and structural identity.
-- Amber is attention/follow-up, green is confirmed success/healthy, red is destructive/failed/overdue/high-risk, and blue-gray is information.
-- Status colors are semantic, paired with text and markers, and never decorative.
-- Purple-blue gradients, rainbow accents, neon, cyan glow, and saturated finance backgrounds are prohibited.
+- A graphite desktop frames the authenticated application as a private working window.
+- The light application canvas uses the macOS grouped-surface register: `#f5f5f7` through semantic tokens, white modules, quiet hairline borders, and translucent toolbar chrome.
+- The sidebar is dark translucent graphite with white icons and labels; selected rows use a restrained white overlay.
+- System blue defines primary action, selection, focus, and structural identity.
+- Orange is attention/follow-up, green is confirmed success/healthy, red is destructive/failed/overdue/high-risk, and teal/indigo/pink/purple identify professional domains.
+- Status colors remain semantic, paired with text and markers, and never decorative.
+- Gradients are limited to the desktop wallpaper, primary button, and avatar treatment. Purple-blue marketing gradients, rainbow accents, neon, cyan glow, and saturated finance backgrounds are prohibited.
 
 All implementation colors live in `src/app/globals.css`. Raw values are limited to fixed legal invoice output, third-party marks, and framework metadata that cannot consume CSS variables.
 
 ## Typography
 
-Geist Sans remains the interface family; Geist Mono remains the technical family. UI headings are compact and moderately scaled. Monospace is reserved for repository paths, invoice symbols, cron expressions, commands, and identifiers. Money, dates, rates, counts, and durations use tabular figures. Authenticated surfaces never use giant marketing typography.
+The authenticated interface uses the native system stack (`-apple-system`, BlinkMacSystemFont, then Geist/system fallbacks) to preserve the approved macOS register without adding a dependency. Geist Mono remains the technical family. UI headings are compact and moderately scaled. Monospace is reserved for repository paths, invoice symbols, cron expressions, commands, and identifiers. Money, dates, rates, counts, and durations use tabular figures. Authenticated surfaces never use giant marketing typography.
 
 ## Shape and surface
 
-Use modest 4/7/10/14 px radii. Borders establish hierarchy before shadows. Ordinary modules are flat. Shadows belong to dialogs, popovers, toasts, and floating mobile controls. Pills are reserved for tags/status. Avoid nested cards, blurred decorative panels, glass, and oversized rounding.
+Use 5/7/12/14 px radii. The desktop app window and ordinary modules use 12 px corners; compact controls use 7 px. Borders establish hierarchy before restrained shadows. Translucency is limited to the sidebar and toolbar where it communicates window structure. Pills are reserved for tags/status. Avoid nested cards, floating glass panels, and oversized rounding.
 
 ## Iconography
 

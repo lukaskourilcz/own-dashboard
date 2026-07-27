@@ -36,6 +36,7 @@ import {
   type SyncedUiPreferences,
 } from "@/components/preference-hydrator";
 import { MobileNav, Sidebar, type NavTab } from "@/components/nav/sidebar";
+import { AppToolbar } from "@/components/nav/app-toolbar";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmationProvider } from "@/components/ui/confirmation-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -285,6 +286,10 @@ export function DashboardShell(props: Props) {
     window.addEventListener("keydown", handler); return () => window.removeEventListener("keydown", handler);
   }, [setTab]);
   const focusQuickAdd = useCallback(() => document.getElementById("quick-add-input")?.focus(), []);
+  const selectedProjectName = useMemo(
+    () => projects.find((project) => project.id === selectedProjectId)?.name,
+    [projects, selectedProjectId],
+  );
   const financePanel = <FinancesPanel accounts={accounts} setAccounts={setAccounts} transactions={transactions} setTransactions={setTransactions} subscriptions={subscriptions} projects={activeProjects} projectCosts={projectCosts} crons={crons} displayCurrency={displayCurrency} />;
 
   return <MotionConfig reducedMotion="user"><TooltipProvider><ToastProvider><ConfirmationProvider>
@@ -294,9 +299,19 @@ export function DashboardShell(props: Props) {
     <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
     <MobileFab onClick={() => { setTab("home"); requestAnimationFrame(focusQuickAdd); }} />
     <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0">{t.nav.skipToContent}</a>
-    <div className="min-h-screen bg-background">
+    <div className="mac-desktop">
+      <div className="mac-window">
       <Sidebar tab={tab} setTab={setTab} projects={activeNavigationProjects} onOpenProject={openProject} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => isActionableNotification(item)).length} syncPreferences={!props.isPreview} />
-      <main id="main-content" className={cn("min-w-0 overflow-x-clip pb-20 transition-[padding] duration-200 ease-out md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}><div className="page-frame min-w-0 px-4 py-5 md:px-6 md:py-7 xl:px-8">
+      <main id="main-content" data-section={tab} className={cn("min-w-0 overflow-x-clip pb-20 transition-[padding] duration-200 ease-out md:h-full md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}>
+        <AppToolbar
+          tab={tab}
+          projectName={selectedProjectName}
+          onQuickAdd={() => {
+            setTab("home");
+            requestAnimationFrame(focusQuickAdd);
+          }}
+        />
+        <div className="mac-content mac-content-scroll min-w-0 px-4 py-4 md:px-6 md:py-5">
         <MobileNav tab={tab} setTab={setTab} />
         <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
@@ -330,6 +345,7 @@ export function DashboardShell(props: Props) {
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
         </motion.div></AnimatePresence>
       </div></main>
+      </div>
     </div>
   </ConfirmationProvider></ToastProvider></TooltipProvider></MotionConfig>;
 }

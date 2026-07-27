@@ -787,7 +787,7 @@ function ProjectsListPanel({
           >
             <Card className="mt-4 overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1040px] text-left text-sm">
+                <table className="w-full min-w-[900px] text-left">
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   <tbody className="divide-y divide-border">
               {ordered.map((p) => {
@@ -991,7 +991,7 @@ function ProjectCard({
               )}
               {synced && (
                 <Tooltip content={t.projects.syncedHint}>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted px-[7px] py-[3px] text-[10px] font-medium text-foreground-muted">
                     <GithubIcon className="h-2.5 w-2.5" />
                     {t.projects.synced}
                   </span>
@@ -1489,7 +1489,7 @@ function CronsSection({
         <div className="flex items-center gap-2">
           <SectionLabel>{t.projects.crons}</SectionLabel>
           {aiSpend > 0 && (
-            <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] text-foreground-muted tabular">
+            <span className="inline-flex items-center gap-1 rounded bg-accent px-[7px] py-[3px] text-[10px] text-foreground-muted tabular">
               <Cpu className="h-3 w-3" />
               {t.projects.aiSpendMonthly} {formatCurrency(aiSpend, displayCurrency)}
               {t.projects.perMo}

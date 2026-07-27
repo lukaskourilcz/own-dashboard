@@ -183,7 +183,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
               {t.github.needed.title}
             </span>
             {!loading && totalItems > 0 && (
-              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold tabular text-primary-foreground">
+              <span className="rounded-full bg-primary px-[7px] py-[3px] text-[10px] font-semibold tabular text-primary-foreground">
                 {totalItems}
               </span>
             )}

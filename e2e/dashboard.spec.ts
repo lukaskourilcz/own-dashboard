@@ -59,8 +59,19 @@ test.describe("dashboard sections", () => {
 
   test("home shows lifelike fixture content and no removed personal navigation", async ({ page }, testInfo) => {
     await gotoPreview(page);
-    // Greeting hero addresses the fixture user by first name.
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Jan");
+    // The window toolbar owns the screen title; the compact greeting remains
+    // a secondary heading inside the Home attention surface.
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Home" }),
+    ).toBeVisible();
+    if (testInfo.project.name === "desktop") {
+      await expect(page.locator(".mac-window")).toBeVisible();
+      await expect(page.locator(".mac-toolbar")).toBeVisible();
+      await expect(page.locator(".traffic-light")).toHaveCount(3);
+    }
+    await expect(page.getByRole("heading", { level: 2 }).first()).toContainText(
+      "Jan",
+    );
     // KPI + customize affordance present.
     await expect(
       page.getByRole("button", { name: "Customize" }),

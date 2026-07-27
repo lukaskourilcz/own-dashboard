@@ -119,7 +119,7 @@ export function TodayHero({
 
   return (
     <section
-      className="relative overflow-hidden rounded-lg border border-border bg-surface p-5 md:p-7"
+      className="relative overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-card md:p-5"
       suppressHydrationWarning
     >
       <div aria-hidden className="operational-grid pointer-events-none absolute inset-0 opacity-50" />
@@ -127,9 +127,9 @@ export function TodayHero({
       {/* greeting row */}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-lg font-bold tracking-[-0.015em] text-foreground">
             {greeting ? greeting.text : t.overview.welcome}, {firstName}
-          </h1>
+          </h2>
           <p className="mt-1 text-sm text-foreground-muted tabular">
             {now
               ? format(display, t.overview.dateFormat, { locale })
@@ -185,9 +185,10 @@ export function TodayHero({
       )}
 
       {/* three columns */}
-      <div className="mt-6 grid gap-6 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
         <Column
           icon={CalendarDays}
+          tone="red"
           label={t.overview.todaysEvents}
           empty={
             !calendar.ok
@@ -265,6 +266,7 @@ export function TodayHero({
 
         <Column
           icon={ListTodo}
+          tone="orange"
           label={t.overview.dueSoon}
           empty={t.overview.nothingDue}
           isEmpty={dueSoon.length === 0}
@@ -299,6 +301,7 @@ export function TodayHero({
 
         <Column
           icon={BriefcaseBusiness}
+          tone="teal"
           label={t.overview.followUps}
           empty={t.overview.noFollowUps}
           isEmpty={followUps.length === 0}
@@ -328,6 +331,7 @@ function Column({
   isEmpty,
   isError,
   relink,
+  tone = "blue",
 }: {
   icon: typeof Sun;
   label: string;
@@ -336,11 +340,20 @@ function Column({
   isEmpty?: boolean;
   isError?: boolean;
   relink?: React.ReactNode;
+  tone?: "blue" | "red" | "orange" | "teal";
 }) {
+  const toneClass = {
+    blue: "bg-[var(--mac-blue)]",
+    red: "bg-[var(--mac-red)]",
+    orange: "bg-[var(--mac-orange)]",
+    teal: "bg-[var(--mac-teal)]",
+  }[tone];
   return (
-    <div className="space-y-2.5">
-      <SectionLabel className="flex items-center gap-1.5">
-        <Icon className="h-3 w-3" />
+    <div className="min-w-0 space-y-2.5 rounded-lg bg-surface-secondary p-3.5">
+      <SectionLabel className="flex items-center gap-2 text-foreground">
+        <span className={cn("mac-icon-tile", toneClass)}>
+          <Icon />
+        </span>
         {label}
       </SectionLabel>
       {isEmpty || isError ? (

@@ -521,7 +521,7 @@ function PlanCard({
         plan.recurrence !== "none") && (
         <p className="text-[10px] text-foreground-subtle mt-1 flex flex-wrap items-center gap-1.5 tabular">
           {plan.recurrence !== "none" && (
-            <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-px font-medium text-primary">
+            <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-[7px] py-[3px] font-medium text-primary">
               <Repeat className="h-2 w-2" />
               {t.plans.recurrenceChip[plan.recurrence]}
             </span>
@@ -546,7 +546,7 @@ function PlanCard({
                 setEditingStatus(false);
               }}
               className={cn(
-                "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded",
+                "rounded px-[7px] py-[3px] text-[10px] font-medium uppercase tracking-wide",
                 s.tone,
               )}
             >
@@ -621,7 +621,7 @@ function TimelineRow({
         >
           <span className="truncate">{plan.title}</span>
           {plan.recurrence !== "none" && (
-            <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-1 py-px text-[10px] font-medium text-primary no-underline">
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-[7px] py-[3px] text-[10px] font-medium text-primary no-underline">
               <Repeat className="h-2 w-2" />
               {t.plans.recurrenceChip[plan.recurrence]}
             </span>
