@@ -28,14 +28,14 @@ Do not uppercase long labels. Czech diacritics must be tested in every font role
 
 ## Layout and density
 
-The maximum operational frame is 90 rem; reading/editor surfaces use 72 rem or less. Desktop sidebar is 15.5 rem and collapsed rail 4.25 rem. Dense rows are 40 px desktop; ordinary rows are 46 px. Touch versions preserve at least 44 px targets. Page padding is 16 px narrow, 24–32 px desktop. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px. Mobile fixed elements include safe-area insets.
+At `md` and above, the application sits inside a graphite desktop with 40 px padding and a 1360 px maximum window. The window is viewport-contained, 12 px rounded, and scrolls only its content region. Desktop sidebar is 224 px and the collapsed rail 64 px; the shared toolbar is 52 px. Content padding is 16 px narrow and 20–24 px desktop. Dense rows are 38 px desktop; ordinary rows are 46 px. Touch versions preserve at least 44 px targets. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px. Mobile removes desktop wallpaper/window framing and includes safe-area insets.
 
 Home and login may breathe. Work, Projects, Opportunities, Career, Money, and Invoices use medium-high density. Prefer section bands, aligned rows, split panes, and tables. Use cards only for summaries, self-contained objects, and elevated workflows. Avoid nested cards.
 
 ## Components
 
 - `PageHeader` supports regular and compact density plus an optional contextual eyebrow.
-- `Card` is a flat contained module; it no longer implies elevation.
+- `Card` is a compact white contained module with a hairline border, 12 px radius, 16–18 px padding, and one restrained surface shadow.
 - `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations.
 - `ConfirmationProvider` and `useConfirmation` are the only destructive-confirmation surface. Deletions use the branded Radix dialog with a named consequence and explicit destructive action; browser-native confirmation dialogs are reserved for non-destructive consent until migrated.
 - `StatusBadge` is the canonical label/marker/tone presentation for shared project, opportunity, organization, inbox, invoice, and health states.
@@ -53,7 +53,7 @@ New generic abstractions require two real consumers. Search before creating. Exi
 
 ## Tables, rows, and cards
 
-Transactions, invoices, listings, projects, references, and other comparable entities are rows/tables. Activity and notifications are chronological rows. Opportunities may use a board only when stage movement is the action; a dense list remains available. Cards summarize, contain a focused object, or elevate a workflow. A card inside a card is normally a signal to use a section line or inset band.
+Transactions, invoices, listings, projects, references, and other comparable entities are rows/tables. Desktop data text is 12–12.5 px and primary tables are sized to fit the 13-inch window content area before horizontal scrolling. Activity and notifications are chronological rows. Opportunities may use a board only when stage movement is the action; a dense list remains available. Static summary cards in one row share height. Dynamic category collections use masonry columns with `break-inside: avoid`. Task titles wrap to at most three lines. Cards summarize, contain a focused object, or elevate a workflow. A card inside a card is normally a signal to use a section line or inset band.
 
 Sortable containers expose one dedicated drag handle. Attach dnd-kit activator listeners and `touch-action: none` only to that handle; keep row/card text selectable and leave ordinary links and actions outside the drag target.
 

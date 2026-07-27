@@ -1,8 +1,8 @@
 # OwnDashboard visual QA
 
-Date: 2026-07-23
+Date: 2026-07-27
 
-Scope: private sign-in, authenticated shell, core professional workflows, project workspace, semantic design system, responsive navigation, accessibility states, and deferred-media seams.
+Scope: private sign-in, macOS-native authenticated shell, core professional workflows, project workspace, semantic design system, responsive navigation, accessibility states, and deferred-media seams.
 
 ## Method
 
@@ -29,12 +29,16 @@ The test suite also covers:
 The code review and static checks confirmed these design constraints:
 
 - one canonical sidebar/mobile/shortcut/command-palette navigation model;
+- a viewport-contained graphite desktop and 1360 px app window with 40 px outer spacing, three window controls, 224 px translucent sidebar, and 52 px toolbar;
 - a five-destination mobile hierarchy with all remaining areas in an accessible dialog;
 - safe-area-aware fixed navigation and a Quick Add control positioned above it;
 - semantic light/dark tokens for surfaces, statuses, charts, focus, and AI evidence;
 - tabular figures for money, dates, rates, and counts;
-- restrained radii and shadows, with elevation reserved for overlays;
-- no shipped gradients, sparkles, glass panels, generated UI, or decorative finance media;
+- compact 12 px modules, 22 px section-identity title tiles, 32 px KPI icon tiles, and 12–12.5 px data tables;
+- primary Projects and Career tables fit the 13-inch desktop content width before horizontal scrolling;
+- task titles wrap to three lines and dynamic Task/Link groups use masonry rather than forced equal-height rows;
+- every production badge/tag uses at least 3 px vertical and 7 px horizontal padding;
+- gradients are confined to the graphite desktop and primary button; there are no sparkles, floating glass panels, generated UI, or decorative finance media;
 - generated-media slots do not request missing files;
 - reduced-motion behavior remains active through CSS and the shared Motion configuration;
 - printed invoices retain fixed paper colors and print isolation.
@@ -45,6 +49,7 @@ The code review and static checks confirmed these design constraints:
 | --- | --- |
 | Responsive matrix | No document-level overflow at all six required widths |
 | Navigation | Desktop sidebar and mobile bottom navigation switch at the defined breakpoint |
+| macOS shell | Desktop Home exposes the contained app window, shared toolbar, and exactly three traffic-light controls |
 | Mobile hierarchy | More opens an accessible destination dialog and navigates to Opportunities |
 | Career table | Match/Remote/Location remain semantic and the wide table scrolls without widening the mobile page |
 | Operational workflows | Project Communication, the Agents queue, and subscription grouping/renewals render from deterministic fixtures |

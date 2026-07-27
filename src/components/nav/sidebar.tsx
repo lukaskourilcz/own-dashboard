@@ -32,7 +32,6 @@ import {
   Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -171,16 +170,16 @@ export function Sidebar({
           "relative flex items-center rounded-md text-sm transition-colors duration-150 focus-ring",
           collapsed
             ? "mx-auto h-9 w-9 justify-center"
-            : "w-full gap-2.5 px-2.5 py-1.5",
+            : "w-full gap-2 px-[9px] py-[5px]",
           active
-            ? "text-foreground"
-            : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
+            ? "font-medium text-[var(--sidebar-foreground)]"
+            : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-hover)]",
         )}
       >
         {active && (
           <motion.span
             layoutId="active-nav"
-            className="absolute inset-0 rounded-md bg-accent"
+            className="absolute inset-0 rounded-md bg-[var(--sidebar-selected)]"
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
           />
         )}
@@ -204,46 +203,42 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hidden md:flex md:flex-col md:border-r md:border-border md:bg-surface md:fixed md:inset-y-0 md:left-0 md:z-30",
+        "mac-sidebar hidden md:absolute md:inset-y-0 md:left-0 md:z-30 md:flex md:flex-col md:border-r",
         "transition-[width] duration-200 ease-out",
         collapsed ? "md:w-[var(--rail-width)]" : "md:w-[var(--sidebar-width)]",
       )}
     >
-      {/* brand */}
+      {/* macOS window chrome and rail control */}
       <div
         className={cn(
-          "flex h-14 items-center border-b border-border",
+          "flex h-[var(--toolbar-height)] items-center",
           collapsed ? "justify-center px-2" : "gap-2.5 px-4",
         )}
       >
         {collapsed ? (
-          // Collapsed: the logo doubles as the expand control, swapping to a
-          // panel icon on hover so it reads as interactive.
           <Tooltip content={t.nav.expand} side="right">
             <button
               type="button"
               onClick={toggleCollapsedAndSync}
               aria-label={t.nav.expand}
               aria-expanded={false}
-              className="group relative h-8 w-8 shrink-0 rounded-md text-primary-foreground flex items-center justify-center focus-ring"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--sidebar-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
             >
-              <BrandMark className="h-8 w-8 transition-opacity group-hover:opacity-0" />
-              <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+              <PanelLeftOpen className="h-4 w-4" />
             </button>
           </Tooltip>
         ) : (
           <>
-            <BrandMark className="h-8 w-8" />
-            <span className="text-sm font-semibold tracking-tight">
-              {t.nav.brand}
-            </span>
+            <span className="traffic-light h-3 w-3 rounded-full bg-[var(--traffic-close)]" aria-hidden />
+            <span className="traffic-light h-3 w-3 rounded-full bg-[var(--traffic-minimize)]" aria-hidden />
+            <span className="traffic-light h-3 w-3 rounded-full bg-[var(--traffic-zoom)]" aria-hidden />
             <Tooltip content={t.nav.collapse} side="right">
               <button
                 type="button"
                 onClick={toggleCollapsedAndSync}
                 aria-label={t.nav.collapse}
                 aria-expanded={true}
-                className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
+                className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
               >
                 <PanelLeftClose className="h-4 w-4" />
               </button>
@@ -257,8 +252,8 @@ export function Sidebar({
           stay legible in the 64px rail. */}
       <nav
         className={cn(
-          "flex-1 overflow-y-auto p-2",
-          collapsed ? "px-1.5 space-y-0.5" : "space-y-0.5",
+          "flex-1 overflow-y-auto pb-2 pt-1",
+          collapsed ? "px-1.5 space-y-0.5" : "px-2.5 space-y-px",
         )}
       >
         {PRIMARY_NAV_ITEMS.filter(isVisible).map(renderItem)}
@@ -266,9 +261,9 @@ export function Sidebar({
         {groups.map((g) => (
           <div key={g.id} className={cn(!collapsed && "pt-2")}>
             {collapsed ? (
-              <div className="my-1.5 mx-auto h-px w-6 bg-border" aria-hidden />
+              <div className="mx-auto my-1.5 h-px w-6 bg-[var(--sidebar-border)]" aria-hidden />
             ) : (
-              <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+              <p className="px-[9px] pb-[3px] text-[11px] font-semibold text-[var(--sidebar-muted)]">
                 {t.nav.groups[g.id]}
               </p>
             )}
@@ -279,7 +274,7 @@ export function Sidebar({
                   {!collapsed &&
                     item.value === "projects" &&
                     projects.length > 0 && (
-                      <ul className="ml-7 mt-1 space-y-0.5 border-l border-border pl-2">
+                      <ul className="ml-7 mt-1 space-y-px border-l border-[var(--sidebar-border)] pl-2">
                         {projects.map((project) => (
                           <li key={project.id}>
                             <a
@@ -289,7 +284,7 @@ export function Sidebar({
                                 event.preventDefault();
                                 onOpenProject(project);
                               }}
-                              className="block truncate rounded px-2 py-1 text-[11px] text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+                              className="block truncate rounded px-2 py-1 text-[11px] text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
                               title={project.name}
                             >
                               {project.name}
@@ -306,7 +301,7 @@ export function Sidebar({
       </nav>
 
       {/* user footer — identity on top, actions below */}
-      <div className="border-t border-border p-2 space-y-1.5">
+      <div className="space-y-1.5 border-t border-[var(--sidebar-border)] p-2.5">
         <div
           className={cn(
             "flex items-center py-1",
@@ -319,10 +314,10 @@ export function Sidebar({
               src={user.avatar_url}
               alt=""
               referrerPolicy="no-referrer"
-              className="h-7 w-7 rounded-full object-cover bg-surface-muted"
+              className="h-7 w-7 rounded-full bg-white/10 object-cover"
             />
           ) : (
-            <div className="h-7 w-7 rounded-full bg-surface-muted text-foreground-muted flex items-center justify-center text-[11px] font-medium">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-[11px] font-medium text-[var(--sidebar-foreground)]">
               {initials}
             </div>
           )}
@@ -331,7 +326,7 @@ export function Sidebar({
               <p className="text-xs font-medium truncate">
                 {user.name ?? user.email.split("@")[0]}
               </p>
-              <p className="text-[11px] text-foreground-subtle truncate">
+              <p className="truncate text-[11px] text-[var(--sidebar-muted)]">
                 {user.email}
               </p>
             </div>
@@ -349,7 +344,7 @@ export function Sidebar({
               type="button"
               onClick={() => setTab("inbox")}
               aria-label={t.nav.sections.inbox}
-              className="relative inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground focus-ring"
+              className="relative inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
             >
               <Bell className="h-3.5 w-3.5" />
               {unreadNotifications > 0 && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
@@ -363,8 +358,8 @@ export function Sidebar({
               className={cn(
                 "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
                 tab === "settings"
-                  ? "text-foreground bg-accent"
-                  : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
+                  ? "bg-[var(--sidebar-selected)] text-[var(--sidebar-foreground)]"
+                  : "text-[var(--sidebar-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)]",
               )}
             >
               <Settings className="h-3.5 w-3.5" />
@@ -378,7 +373,7 @@ export function Sidebar({
               <button
                 type="submit"
                 aria-label={t.nav.signOut}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>

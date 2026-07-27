@@ -129,7 +129,7 @@ function PricingBadge({ pricing }: { pricing: AiPricing }) {
   const t = useDict();
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-px text-[10px] font-medium whitespace-nowrap ${PRICING_TONE[pricing]}`}
+      className={`inline-flex shrink-0 items-center rounded-full border px-[7px] py-[3px] text-[10px] font-medium whitespace-nowrap ${PRICING_TONE[pricing]}`}
     >
       {t.ai.pricingLabel[pricing]}
     </span>

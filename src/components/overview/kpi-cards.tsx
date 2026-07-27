@@ -27,7 +27,7 @@ export function KpiCards({
   const activeProjects = projects.filter((project) => project.is_active && project.status !== "archived").length;
 
   return (
-    <div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-3">
+    <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
       <Kpi
         icon={Sigma}
         label={t.kpi.monthlyRecurring}

@@ -2,79 +2,104 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* OwnDashboard — operational cartography.
-   Warm paper and graphite establish a private work ledger; deep ink defines
-   structure and selection; amber is reserved for attention. Components use
-   semantic tokens only so a future approved rename can retain the system. */
+/* OwnDashboard — macOS-native operational cartography.
+   The graphite desktop, translucent navigation and compact system surfaces
+   are expressed exclusively through semantic tokens. */
 
 :root {
   /* surfaces */
-  --background: #f6f4ef;
-  --surface: #fcfbf8;
-  --surface-secondary: #f1eee7;
-  --surface-muted: #ebe7de;
-  --surface-inset: #efebe3;
-  --surface-hover: #e9e5dc;
-  --surface-selected: #e4ebf6;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-secondary: #f5f5f7;
+  --surface-muted: #eeeeef;
+  --surface-inset: #f5f5f7;
+  --surface-hover: #f0f0f2;
+  --surface-selected: #e8f2ff;
   --surface-elevated: #ffffff;
-  --overlay: rgba(15, 15, 16, 0.4);
+  --overlay: rgba(0, 0, 0, 0.38);
+  --toolbar: rgba(250, 250, 252, 0.85);
+  --sidebar: rgba(20, 20, 22, 0.82);
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-selected: rgba(255, 255, 255, 0.18);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-foreground: #ffffff;
+  --sidebar-muted: rgba(255, 255, 255, 0.56);
+  --desktop-wallpaper: linear-gradient(165deg, #2c2c2e 0%, #48484a 50%, #6e6e73 100%);
+  --primary-button: linear-gradient(180deg, #147fe8 0%, #0064d1 100%);
 
   /* foreground */
-  --foreground: #17191c;
+  --foreground: #1d1d1f;
   --foreground-muted: #565a60;
   --foreground-subtle: #62666b;
 
   /* borders */
-  --border: #ddd8cf;
-  --border-strong: #c7c0b5;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
 
-  --primary: #183b6b;
+  --primary: #0064d1;
   --primary-foreground: #ffffff;
-  --primary-hover: #112f59;
-  --brand: #24558f;
-  --brand-soft: #e4ebf6;
+  --primary-hover: #0064d1;
+  --brand: #0064d1;
+  --brand-soft: #e8f2ff;
 
   /* semantic, kept subtle */
-  --accent: #e4ebf6;
-  --accent-foreground: #17365f;
+  --accent: #e8f2ff;
+  --accent-foreground: #0056b3;
 
-  --information: #24558f;
-  --success: #1c6c43;
+  --information: #0064d1;
+  --success: #1f7a35;
   --warning: #9a550b;
   --risk: #a13b29;
   --destructive: #a52b2b;
-  --destructive-soft: #fef2f2;
-  --information-soft: #e8eef7;
-  --success-soft: #e7f1eb;
-  --warning-soft: #f7edda;
-  --risk-soft: #f6e8e3;
+  --destructive-soft: rgba(255, 59, 48, 0.12);
+  --information-soft: rgba(0, 122, 255, 0.11);
+  --success-soft: rgba(52, 199, 89, 0.13);
+  --warning-soft: rgba(255, 149, 0, 0.14);
+  --risk-soft: rgba(255, 59, 48, 0.12);
 
-  --skeleton: #e7e2d9;
-  --chart-1: #24558f;
-  --chart-2: #627890;
-  --chart-3: #b27620;
-  --chart-4: #397255;
-  --chart-5: #895b4d;
+  --skeleton: #e5e5e7;
+  --chart-1: #007aff;
+  --chart-2: #5856d6;
+  --chart-3: #ff9500;
+  --chart-4: #34c759;
+  --chart-5: #af52de;
 
-  --ai-fact: #24558f;
-  --ai-risk: #a13b29;
-  --ai-suggestion: #68743f;
-  --ai-evidence: #646b76;
+  --ai-fact: #007aff;
+  --ai-risk: #d70015;
+  --ai-suggestion: #5856d6;
+  --ai-evidence: #6e6e73;
 
-  --ring: rgba(36, 85, 143, 0.34);
+  --ring: rgba(0, 122, 255, 0.28);
+
+  /* macOS semantic accents */
+  --mac-blue: #007aff;
+  --mac-green: #34c759;
+  --mac-orange: #ff9500;
+  --mac-red: #ff3b30;
+  --mac-purple: #af52de;
+  --mac-indigo: #5856d6;
+  --mac-teal: #30b0c7;
+  --mac-pink: #ff2d55;
+  --mac-yellow: #ffcc00;
+  --mac-gray: #8e8e93;
+  --traffic-close: #ff5f57;
+  --traffic-minimize: #febc2e;
+  --traffic-zoom: #28c840;
 
   /* shape */
-  --radius-sm: 4px;
+  --radius-sm: 5px;
   --radius: 7px;
-  --radius-lg: 10px;
+  --radius-lg: 12px;
   --radius-xl: 14px;
 
   /* layout and density */
-  --page-max: 90rem;
+  --page-max: 85rem;
   --page-reading: 72rem;
-  --sidebar-width: 15.5rem;
-  --rail-width: 4.25rem;
-  --row-dense: 2.5rem;
+  --sidebar-width: 14rem;
+  --rail-width: 4rem;
+  --toolbar-height: 3.25rem;
+  --desktop-padding: 2.5rem;
+  --row-dense: 2.375rem;
   --row-regular: 2.875rem;
   --dialog-width: 32rem;
   --drawer-width: 30rem;
@@ -85,9 +110,10 @@
   --motion-deliberate: 240ms;
 
   /* shadow — barely there */
-  --shadow-sm: 0 1px 2px 0 rgba(15, 15, 16, 0.04);
-  --shadow: 0 1px 3px 0 rgba(15, 15, 16, 0.05), 0 1px 2px 0 rgba(15, 15, 16, 0.03);
-  --shadow-lg: 0 10px 30px -10px rgba(15, 15, 16, 0.12);
+  --shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 18px 48px -16px rgba(0, 0, 0, 0.34);
+  --shadow-window: 0 30px 80px -20px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(0, 0, 0, 0.16);
 
   /* motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -104,6 +130,11 @@
   --surface-selected: #1b2b40;
   --surface-elevated: #1c2024;
   --overlay: rgba(0, 0, 0, 0.6);
+  --toolbar: rgba(30, 30, 32, 0.9);
+  --sidebar: rgba(12, 12, 14, 0.9);
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-selected: rgba(255, 255, 255, 0.18);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
 
   --foreground: #f1f0ec;
   --foreground-muted: #b1b2b3;
@@ -217,10 +248,142 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, var(--font-sans), "Segoe UI", sans-serif;
+  font-size: 13px;
   line-height: 1.5;
   min-width: 320px;
+}
+
+.mac-desktop {
+  background: var(--background);
+}
+
+.mac-window {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.mac-toolbar {
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+.mac-sidebar {
+  color: var(--sidebar-foreground);
+  background: var(--sidebar);
+  border-color: var(--sidebar-border);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+}
+
+.traffic-light {
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.2);
+}
+
+.mac-content {
+  background: var(--background);
+}
+
+.mac-primary-button {
+  background: var(--primary-button);
+}
+
+.mac-icon-tile {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: white;
+  background: var(--section-accent, var(--mac-blue));
+}
+
+.mac-icon-tile > svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mac-card-title:not(:has(svg))::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--section-accent, var(--mac-blue));
+}
+
+.mac-content table {
+  font-size: 12.5px;
+}
+
+[data-section="home"] { --section-accent: var(--mac-blue); }
+[data-section="inbox"] { --section-accent: var(--mac-blue); }
+[data-section="work"] { --section-accent: var(--mac-indigo); }
+[data-section="projects"] { --section-accent: var(--mac-indigo); }
+[data-section="opportunities"] { --section-accent: var(--mac-teal); }
+[data-section="clients"] { --section-accent: var(--mac-purple); }
+[data-section="agents"] { --section-accent: var(--mac-gray); }
+[data-section="career"] { --section-accent: var(--mac-pink); }
+[data-section="invoices"] { --section-accent: var(--mac-orange); }
+[data-section="money"],
+[data-section="accounts"],
+[data-section="transactions"],
+[data-section="subscriptions"],
+[data-section="categories"] { --section-accent: var(--mac-green); }
+[data-section="tasks"] { --section-accent: var(--mac-orange); }
+[data-section="calendar"] { --section-accent: var(--mac-red); }
+[data-section="goals"] { --section-accent: var(--mac-purple); }
+[data-section="dates"] { --section-accent: var(--mac-pink); }
+[data-section="notes"] { --section-accent: var(--mac-yellow); }
+[data-section="prompts"] { --section-accent: var(--mac-indigo); }
+[data-section="links"] { --section-accent: var(--mac-teal); }
+[data-section="references"],
+[data-section="settings"] { --section-accent: var(--mac-gray); }
+
+@media (min-width: 768px) {
+  .mac-desktop {
+    box-sizing: border-box;
+    height: 100vh;
+    overflow: hidden;
+    padding: var(--desktop-padding);
+    background: var(--desktop-wallpaper);
+  }
+
+  .mac-window {
+    position: relative;
+    width: min(100%, var(--page-max));
+    height: 100%;
+    min-height: 0;
+    margin-inline: auto;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-window);
+  }
+
+  .mac-content-scroll {
+    height: calc(100vh - (var(--desktop-padding) * 2) - var(--toolbar-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mac-page-header {
+    min-height: 0;
+    margin-bottom: 0.875rem;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .mac-page-header > div:first-child {
+    display: none;
+  }
+
+  .mac-page-header.mac-project-header > div:first-child {
+    display: block;
+  }
 }
 
 button,
@@ -280,7 +443,7 @@ textarea {
 @utility focus-ring {
   outline: none;
   &:focus-visible {
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+    box-shadow: 0 0 0 3px var(--ring);
   }
 }
 

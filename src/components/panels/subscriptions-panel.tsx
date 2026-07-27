@@ -693,7 +693,7 @@ export function SubscriptionsPanel({
                       {days !== null && (
                         <span
                           className={cn(
-                            "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded shrink-0",
+                            "shrink-0 rounded px-[7px] py-[3px] text-[10px] font-medium uppercase tracking-wide",
                             days <= 0
                               ? "bg-destructive/10 text-destructive"
                               : soon

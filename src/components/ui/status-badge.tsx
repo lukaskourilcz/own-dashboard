@@ -18,7 +18,7 @@ export function StatusBadge({ value, label, tone, className }: { value: string; 
   const { lang } = useLang();
   const resolved = tone ?? statusTone(value);
   return (
-    <span className={cn("inline-flex min-h-6 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4", tones[resolved], className)}>
+    <span className={cn("inline-flex min-h-[22px] items-center gap-1.5 rounded-full border px-[7px] py-[3px] text-[11px] font-semibold leading-4", tones[resolved], className)}>
       <Circle className="h-1.5 w-1.5 fill-current" aria-hidden />
       <span>{label ?? statusLabel(value, lang)}</span>
     </span>
@@ -26,5 +26,5 @@ export function StatusBadge({ value, label, tone, className }: { value: string; 
 }
 
 export function EntityBadge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={cn("inline-flex min-h-6 items-center rounded-sm border border-border bg-surface-inset px-2 py-0.5 text-[11px] text-foreground-muted", className)}>{children}</span>;
+  return <span className={cn("inline-flex min-h-6 items-center rounded-sm border border-border bg-surface-inset px-2 py-[3px] text-[11px] text-foreground-muted", className)}>{children}</span>;
 }

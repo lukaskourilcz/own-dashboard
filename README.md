@@ -131,7 +131,7 @@ The deterministic `/dev-preview` harness drives the Playwright responsive matrix
 
 ## Product design and media
 
-OwnDashboard follows the documented **calm operational intelligence** thesis and **operational cartography** visual direction. Production UI uses semantic tokens, canonical localized statuses, one Lucide icon family, compact data presentation, and authentic application rendering. Generated UI, fabricated metrics, and filler illustration are prohibited.
+OwnDashboard follows the documented **calm operational intelligence** thesis through a **macOS-native operational cartography** visual direction. The authenticated product is framed as a private graphite desktop window with translucent navigation, compact toolbar, semantic system accents, dense tables, canonical localized statuses, one Lucide icon family, and authentic application rendering. Generated UI, fabricated metrics, and filler illustration are prohibited.
 
 No generated brand media is currently shipped. The next media-production pass must compare at least three current low-cost or free generators from primary provider sources and may use only a documented option with suitable output rights, privacy, formats, and no watermark. The login layout exposes its media seam, existing empty states remain complete without illustration, and the manifest records prompts and proposed destinations without referencing nonexistent files.
 

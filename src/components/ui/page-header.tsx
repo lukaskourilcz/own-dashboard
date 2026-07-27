@@ -17,15 +17,16 @@ export function PageHeader({
 }) {
   return (
     <div
+      data-page-header
       className={cn(
-        "flex flex-col gap-3 border-b border-border sm:flex-row sm:items-end sm:justify-between sm:gap-4",
+        "mac-page-header flex flex-col gap-3 border-b border-border sm:flex-row sm:items-end sm:justify-between sm:gap-4",
         density === "compact" ? "mb-4 pb-3" : "mb-6 pb-4",
         className,
       )}
     >
       <div className="min-w-0">
         {eyebrow && <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand">{eyebrow}</p>}
-        <h1 className="text-xl font-semibold tracking-[-0.018em] text-foreground sm:text-[1.375rem]">
+        <h1 className="text-xl font-semibold tracking-[-0.018em] text-foreground">
           {title}
         </h1>
         {description && (

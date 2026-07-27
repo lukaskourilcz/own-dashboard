@@ -247,7 +247,7 @@ export function DailyFocusPanel({
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            "line-clamp-3 text-sm",
+                            "line-clamp-3 text-sm leading-5",
                             isDone && "text-foreground-subtle line-through",
                           )}
                         >

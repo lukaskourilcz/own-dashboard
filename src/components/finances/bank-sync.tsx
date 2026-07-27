@@ -198,7 +198,7 @@ function ConnectionRow({
             : t.finances.bank.neverSynced}
         </p>
       </div>
-      <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium", tone)}>
+      <span className={cn("shrink-0 rounded-full px-2 py-[3px] text-[10px] font-medium", tone)}>
         {statusLabel}
       </span>
       <Tooltip content={t.finances.bank.disconnect}>

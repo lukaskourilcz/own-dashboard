@@ -326,7 +326,7 @@ function DueChip({ t, due }: { t: Dict; due: string }) {
     <Tooltip content={t.todos.timeLeft(left)}>
       <span
         className={cn(
-          "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular",
+          "shrink-0 rounded-full px-[7px] py-[3px] text-[10px] font-medium tabular",
           left < 0
             ? "bg-destructive/10 text-destructive"
             : left <= 2
