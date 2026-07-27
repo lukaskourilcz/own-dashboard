@@ -7,13 +7,14 @@ import { useDict } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
- * Marks `/guest` as a demo. It sits on the graphite desktop rather than inside
- * the app window, so the 1360 px window chrome stays exactly as an owner sees
+ * Marks `/guest` as a demo. It floats over the bottom of the app window rather
+ * than displacing anything, so the window chrome stays exactly as an owner sees
  * it — the tour shows the real product, and the strip explains the data.
  *
  * Fixed rather than in flow because `.mac-desktop` is a 100vh `overflow:
  * hidden` container on desktop; anything added to the flow would push the
- * window out of view.
+ * window out of view. The 20 px graphite margin is too thin to hold the strip,
+ * so it is offset past that margin and overlays the window instead.
  */
 export function GuestBanner({ className }: { className?: string }) {
   const t = useDict();
@@ -24,7 +25,7 @@ export function GuestBanner({ className }: { className?: string }) {
     <div
       className={cn(
         "fixed inset-x-0 bottom-3 z-50 flex justify-center px-3",
-        "md:bottom-[calc(var(--desktop-padding)/3)]",
+        "md:bottom-[calc(var(--desktop-padding-block)+0.75rem)]",
         className,
       )}
     >

@@ -29,7 +29,7 @@ The test suite also covers:
 The code review and static checks confirmed these design constraints:
 
 - one canonical sidebar/mobile/shortcut/command-palette navigation model;
-- a viewport-contained graphite desktop and 1360 px app window with 40 px outer spacing, three window controls, 224 px translucent sidebar, and 52 px toolbar;
+- a viewport-contained graphite desktop and an app window inset 20 px vertically and 30 px horizontally, three window controls, 224 px translucent sidebar, and 52 px toolbar;
 - a five-destination mobile hierarchy with all remaining areas in an accessible dialog;
 - safe-area-aware fixed navigation and a Quick Add control positioned above it;
 - semantic light/dark tokens for surfaces, statuses, charts, focus, and AI evidence;
