@@ -60,3 +60,6 @@ next-env.d.ts
 # notes-mcp tool (local MCP server)
 /tools/notes-mcp/node_modules
 !tools/notes-mcp/.env.example
+
+# claude code: ui-ux-pro-max search script bytecode
+__pycache__/
