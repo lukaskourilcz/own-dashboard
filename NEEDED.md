@@ -21,6 +21,19 @@ The repository implementation is complete. The items below are the external acco
 - [ ] **VPS agents:** set a long random `AGENT_RUNNER_TOKEN` and the owner's Supabase UUID as `DASHBOARD_OWNER_ID` in the deployed server environment and in the trusted VPS worker. Test claim/report with a disposable task before delegating real work; never expose the token to browser code or logs. `[imp:4]` `[owner:me]`
 - [ ] **Brand-media production:** compare at least three current low-cost or free generators using primary pricing, licensing, privacy, watermark, and format documentation. Select a safe provider, then resume from `docs/design/generated-media-manifest.json`; do not register, purchase, upload private data, or publish unreviewed output without explicit approval. This is a one-off design-production dependency, not a runtime application dependency. `[imp:2]` `[owner:me]`
 
+## Public guest tour and job-offer removal (2026-07-27)
+
+`/guest` renders the real dashboard against the demo fixtures with no session,
+and it is what the portfolio now links to. Career gained a source list, and
+listings the boards no longer carry are removed on the next check instead of
+after 45 days.
+
+- [ ] **Verify /guest in production** — open it signed out, in a private window, and confirm it renders instead of redirecting to `/login`. The middleware exempts the path, but this is the one behaviour the portfolio link depends on. Check `/guest?lang=en` too. `[imp:4]` `[owner:me]` `[time:15m]` `[kind:deploy]`
+- [ ] **Decide whether /guest should be indexed** — it is currently `index: true`, which suits a page linked from the portfolio. Switch it to `noindex` if you would rather it stay reachable but unlisted. `[imp:2]` `[owner:me]` `[time:15m]` `[kind:decision]`
+- [ ] **Watch the first real scrape after the removal change** — open Career → sources and read the removed counts per board. A board removing an implausible share of its listings in one run means its markup changed and the guard did not catch it; the fix is to mark that source incomplete in `src/lib/jobs/meta.ts`. `[imp:4]` `[owner:me]` `[time:30m]` `[kind:deploy]`
+- [ ] **Re-check the completeness flags if a board changes its API** — `complete: true` means one request returns the board's whole current set, which is what lets a missing offer be deleted without an HTTP check. If a board adds pagination or a result cap, that flag has to become `false` or live offers will be dropped. `[imp:3]` `[owner:me]` `[time:30m]` `[kind:decision]`
+- [ ] **Consider raising the refresh route's time limit** — `maxDuration` is 60s, and the liveness probes for partial sources are bounded to 150 URLs and 15s so they cannot starve the scrape. If the sources list shows removals lagging behind reality, raise the limit rather than loosening the bounds. `[imp:2]` `[owner:me]` `[time:20m]` `[kind:decision]`
+
 ## Optional production hardening
 
 - [ ] **Distributed AI rate limiting:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Without them, the app uses a best-effort in-memory limiter per server instance. `[imp:2]` `[owner:me]`
