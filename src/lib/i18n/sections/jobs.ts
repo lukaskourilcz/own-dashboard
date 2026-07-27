@@ -16,6 +16,22 @@ type JobsStrings = {
   refreshErr: string;
   refreshRateLimited: string;
   sourceErrors: string;
+  // Data sources
+  sourcesTitle: string;
+  sourcesDescription: string;
+  sourcesShow: string;
+  sourcesHide: string;
+  sourceKindJson: string;
+  sourceKindHtml: string;
+  sourceKindRss: string;
+  sourceFound: (n: number) => string;
+  sourceRemoved: (n: number) => string;
+  sourceComplete: string;
+  sourceCompleteHint: string;
+  sourcePartial: string;
+  sourcePartialHint: string;
+  sourceNoRun: string;
+  sourceOpen: string;
   // Filters
   searchPlaceholder: string;
   roleAll: string;
@@ -177,6 +193,24 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     refreshErr: "Could not check the job boards. Please try again.",
     refreshRateLimited: "Too many refreshes — try again in a few minutes.",
     sourceErrors: "Some boards failed on the last check",
+    sourcesTitle: "Where these offers come from",
+    sourcesDescription:
+      "Eight job boards are queried on every check. An offer disappears from this list as soon as the board that supplied it stops carrying it.",
+    sourcesShow: "Show sources",
+    sourcesHide: "Hide sources",
+    sourceKindJson: "JSON API",
+    sourceKindHtml: "HTML",
+    sourceKindRss: "RSS",
+    sourceFound: (n: number) => `${n} found`,
+    sourceRemoved: (n: number) => `${n} removed`,
+    sourceComplete: "Full board",
+    sourceCompleteHint:
+      "One request returns the whole board, so an offer missing from the response is removed straight away.",
+    sourcePartial: "Partial",
+    sourcePartialHint:
+      "This board is read page by page, so a missing offer is checked over HTTP first and removed only once its page is gone.",
+    sourceNoRun: "Not checked yet",
+    sourceOpen: "Open board",
     searchPlaceholder: "Search title, company, location…",
     roleAll: "All roles",
     roleFrontend: "Frontend",
@@ -341,6 +375,24 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     refreshErr: "Portály se nepodařilo zkontrolovat. Zkuste to znovu.",
     refreshRateLimited: "Příliš mnoho kontrol — zkuste to za pár minut.",
     sourceErrors: "Některé portály při poslední kontrole selhaly",
+    sourcesTitle: "Odkud nabídky pocházejí",
+    sourcesDescription:
+      "Při každé kontrole se dotazuje osm pracovních portálů. Nabídka ze seznamu zmizí, jakmile ji portál, který ji dodal, přestane nabízet.",
+    sourcesShow: "Zobrazit zdroje",
+    sourcesHide: "Skrýt zdroje",
+    sourceKindJson: "JSON API",
+    sourceKindHtml: "HTML",
+    sourceKindRss: "RSS",
+    sourceFound: (n: number) => `nalezeno ${n}`,
+    sourceRemoved: (n: number) => `odebráno ${n}`,
+    sourceComplete: "Celý portál",
+    sourceCompleteHint:
+      "Jeden dotaz vrátí celý portál, takže nabídka chybějící v odpovědi se odebere okamžitě.",
+    sourcePartial: "Částečný",
+    sourcePartialHint:
+      "Tento portál se čte po stránkách, takže se chybějící nabídka nejdřív ověří přes HTTP a odebere se až ve chvíli, kdy její stránka zmizí.",
+    sourceNoRun: "Zatím nezkontrolováno",
+    sourceOpen: "Otevřít portál",
     searchPlaceholder: "Hledat pozici, firmu, lokalitu…",
     roleAll: "Všechny role",
     roleFrontend: "Frontend",

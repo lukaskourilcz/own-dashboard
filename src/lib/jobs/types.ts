@@ -27,7 +27,13 @@ export type ScrapedJob = {
   postedAt: string | null;
 };
 
-export type SourceOutcome = { count: number; error?: string };
+export type SourceOutcome = {
+  /** Listings this source returned in the run. */
+  count: number;
+  /** Listings deleted because this source stopped returning them. */
+  pruned?: number;
+  error?: string;
+};
 
 export type ScrapeSummary = {
   startedAt: string;

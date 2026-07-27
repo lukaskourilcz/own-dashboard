@@ -1,5 +1,6 @@
 import { brandConfig } from "@/lib/brand";
 import { isEuropeFriendly, matchRole } from "./filter";
+import { jobSourceLabel } from "./meta";
 import type { ScrapedJob } from "./types";
 
 /**
@@ -701,17 +702,22 @@ async function fetchWeWorkRemotely(): Promise<ScrapedJob[]> {
 
 export type JobSource = {
   id: string;
+  /** Display label, read from the client-safe metadata so it lives in one place. */
   label: string;
   fetch: () => Promise<ScrapedJob[]>;
 };
 
+function source(id: string, fetch: () => Promise<ScrapedJob[]>): JobSource {
+  return { id, label: jobSourceLabel(id), fetch };
+}
+
 export const JOB_SOURCES: JobSource[] = [
-  { id: "startupjobs", label: "StartupJobs.cz", fetch: fetchStartupJobs },
-  { id: "jobscz", label: "Jobs.cz", fetch: fetchJobsCz },
-  { id: "pracecz", label: "Prace.cz", fetch: fetchPraceCz },
-  { id: "remoteok", label: "Remote OK", fetch: fetchRemoteOk },
-  { id: "remotive", label: "Remotive", fetch: fetchRemotive },
-  { id: "arbeitnow", label: "Arbeitnow", fetch: fetchArbeitnow },
-  { id: "jobicy", label: "Jobicy", fetch: fetchJobicy },
-  { id: "weworkremotely", label: "We Work Remotely", fetch: fetchWeWorkRemotely },
+  source("startupjobs", fetchStartupJobs),
+  source("jobscz", fetchJobsCz),
+  source("pracecz", fetchPraceCz),
+  source("remoteok", fetchRemoteOk),
+  source("remotive", fetchRemotive),
+  source("arbeitnow", fetchArbeitnow),
+  source("jobicy", fetchJobicy),
+  source("weworkremotely", fetchWeWorkRemotely),
 ];

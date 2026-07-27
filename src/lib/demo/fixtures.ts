@@ -472,7 +472,18 @@ export const jobLastRun: JobScrapeRun = {
   finished_at: TS,
   ok: true,
   inserted: 2,
-  refreshed: 0,
-  pruned: 0,
-  sources: { startupjobs: { count: 1 }, remotive: { count: 1 } },
+  refreshed: 14,
+  pruned: 3,
+  // Covers every branch the sources panel renders: healthy boards, boards that
+  // removed filled offers, and one that failed.
+  sources: {
+    startupjobs: { count: 6, pruned: 1 },
+    jobscz: { count: 4 },
+    pracecz: { count: 3, pruned: 1 },
+    remoteok: { count: 9, pruned: 1 },
+    remotive: { count: 5 },
+    arbeitnow: { count: 2 },
+    jobicy: { count: 0, error: "jobicy.com responded 503" },
+    weworkremotely: { count: 3 },
+  },
 };
