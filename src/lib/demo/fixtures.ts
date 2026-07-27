@@ -1,10 +1,14 @@
 /**
- * Deterministic fixture data for the /__preview dashboard harness (dev/E2E
- * only — see ./page.tsx). Dates are computed relative to "now" so the hero,
- * "due today", upcoming dates, and charts all populate with lifelike content.
+ * Deterministic demo data for the two fixture-backed dashboard surfaces:
+ * `/dev-preview` (development and E2E only) and `/guest` (the public read-only
+ * tour). Dates are computed relative to "now" so the hero, "due today",
+ * upcoming dates, and charts all populate with lifelike content.
  *
- * This file is never imported by the production app: the preview route 404s
- * in production and the middleware only exempts /__preview outside production.
+ * Every person, company, address and bank detail here is invented: "Jan Novák"
+ * and `example.com` are placeholders, "Acme s.r.o." is a stand-in client, and
+ * the IBAN is the documentation example value. The repository names are public
+ * GitHub repositories. Nothing in this file is owner data, which is what makes
+ * `/guest` safe to serve publicly — keep it that way when editing.
  */
 import type {
   Account,
@@ -468,7 +472,18 @@ export const jobLastRun: JobScrapeRun = {
   finished_at: TS,
   ok: true,
   inserted: 2,
-  refreshed: 0,
-  pruned: 0,
-  sources: { startupjobs: { count: 1 }, remotive: { count: 1 } },
+  refreshed: 14,
+  pruned: 3,
+  // Covers every branch the sources panel renders: healthy boards, boards that
+  // removed filled offers, and one that failed.
+  sources: {
+    startupjobs: { count: 6, pruned: 1 },
+    jobscz: { count: 4 },
+    pracecz: { count: 3, pruned: 1 },
+    remoteok: { count: 9, pruned: 1 },
+    remotive: { count: 5 },
+    arbeitnow: { count: 2 },
+    jobicy: { count: 0, error: "jobicy.com responded 503" },
+    weworkremotely: { count: 3 },
+  },
 };

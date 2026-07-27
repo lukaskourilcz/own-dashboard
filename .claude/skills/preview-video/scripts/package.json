@@ -1,1 +1,4 @@
-{ "type": "module" }
+{
+  "//": "Forces ESM for capture-preview.ts, which uses top-level await. Without this the module type is inherited from the repo root, and a CommonJS repo fails to transform the script.",
+  "type": "module"
+}

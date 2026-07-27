@@ -1,4 +1,7 @@
 import type { TaskKind } from "./task-meta";
+import type { SourceOutcome } from "./jobs/types";
+
+export type { SourceOutcome };
 
 export type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
@@ -625,7 +628,8 @@ export type JobScrapeRun = {
   inserted: number;
   refreshed: number;
   pruned: number;
-  sources: Record<string, { count: number; error?: string }>;
+  /** Per-source outcome of the run, keyed by scraper source id. */
+  sources: Record<string, SourceOutcome>;
 };
 
 // ---------------------------------------------------------------------------

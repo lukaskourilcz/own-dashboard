@@ -56,3 +56,27 @@ proxy):
 
 `--no-sandbox` is added automatically when the script runs as root (required by Chromium),
 and `--disable-quic` is always set to keep HTTP-proxy captures reliable.
+
+## Hand-off to the portfolio
+
+This recording is also the animated thumbnail for this project on
+lukaskouril.dev. After regenerating it, copy all three files into the portfolio
+repository:
+
+```
+media/preview.webm        →  nxt-portfolio/public/previews/personal-dashboard/preview.webm
+media/preview.mp4         →  nxt-portfolio/public/previews/personal-dashboard/preview.mp4
+media/preview-poster.png  →  nxt-portfolio/public/previews/personal-dashboard/preview-poster.png
+```
+
+The directory name is the portfolio work item's `id`, which is not always the
+repository name. Keep the three files together: the portfolio sets
+`preload="none"`, so the poster is the only thing shown until playback starts,
+and a stale poster is what reduced-motion visitors and search engines see.
+
+Budget for the portfolio homepage: webm under ~1 MB, mp4 under ~1.5 MB, poster
+under ~600 KB. Raise the webm CRF from 34 toward 38 if the clip runs over.
+
+Record only surfaces a logged-out visitor can reach, so no private data is
+filmed. See `nxt-portfolio/.claude/skills/preview-video/SKILL.md` for the full
+ingestion procedure.

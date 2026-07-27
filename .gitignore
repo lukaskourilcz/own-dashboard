@@ -46,12 +46,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code: share the SessionStart hook + project settings, ignore local overrides
+# claude code: share the SessionStart hook, project settings, skills, agents and
+# commands; ignore local overrides and per-session scratch
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
+!.claude/skills/
+!.claude/agents/
+!.claude/commands/
 .claude/settings.local.json
+.claude/observations/
 
 # notes-mcp tool (local MCP server)
 /tools/notes-mcp/node_modules
 !tools/notes-mcp/.env.example
+
+# claude code: ui-ux-pro-max search script bytecode
+__pycache__/

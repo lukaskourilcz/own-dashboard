@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion, MotionConfig } from "motion/react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
@@ -79,6 +80,12 @@ export default function LoginPage() {
           </Suspense>
           <p className="mt-4 text-[11px] leading-relaxed text-foreground-subtle">
             {t.login.calendarNotice}
+          </p>
+          <p className="mt-4 border-t border-border pt-4 text-[11px] leading-relaxed text-foreground-subtle">
+            <Link href="/guest" className="focus-ring font-medium text-foreground underline underline-offset-2">
+              {t.guest.label}
+            </Link>{" "}
+            {t.guest.description}
           </p>
         </div>
         </section>

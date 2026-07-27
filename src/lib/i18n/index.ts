@@ -24,6 +24,7 @@ import { shortcuts } from "./sections/shortcuts";
 import { dates } from "./sections/dates";
 import { calendar } from "./sections/calendar";
 import { github } from "./sections/github";
+import { guest } from "./sections/guest";
 import { projects } from "./sections/projects";
 import { ai } from "./sections/ai";
 import { costs } from "./sections/costs";
@@ -57,6 +58,7 @@ export const dictionaries = {
     dates: dates.en,
     calendar: calendar.en,
     github: github.en,
+    guest: guest.en,
     projects: projects.en,
     ai: ai.en,
     costs: costs.en,
@@ -87,6 +89,7 @@ export const dictionaries = {
     dates: dates.cs,
     calendar: calendar.cs,
     github: github.cs,
+    guest: guest.cs,
     projects: projects.cs,
     ai: ai.cs,
     costs: costs.cs,

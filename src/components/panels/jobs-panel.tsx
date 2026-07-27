@@ -56,6 +56,7 @@ import { qk } from "@/lib/queries/keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { useCvLinks } from "@/lib/use-prefs";
 import { jobSourceLabel } from "@/lib/jobs/meta";
+import { JobSources } from "@/components/panels/job-sources";
 import { compareByFit, matchListing, type JobMatch } from "@/lib/jobs/match";
 import { applicationStats } from "@/lib/jobs/stats";
 import { BUILTIN_TEMPLATES, fillTemplate } from "@/lib/jobs/template";
@@ -663,6 +664,8 @@ function OpenPositionsView({
           </Button>
         </div>
       </div>
+
+      <JobSources lastRun={lastRun} />
 
       {listings.length === 0 ? (
         <Card className="p-0">

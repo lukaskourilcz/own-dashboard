@@ -1,13 +1,19 @@
 {
-  "url": "http://localhost:3000/login",
-  "devServer": { "command": "npm run dev", "port": 3000 },
-  "viewport": { "width": 1280, "height": 800 },
+  "url": "http://localhost:3000/guest",
+  "devServer": null,
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
   "deviceScaleFactor": 2,
   "fps": 30,
   "scrollSeconds": "auto",
-  "holdFrames": 40,
-  "hideSelectors": [],
+  "holdFrames": 30,
+  "hideSelectors": [
+    "nextjs-portal"
+  ],
   "extraCss": "",
-  "waitAfterLoadMs": 1200,
-  "gif": false
+  "waitAfterLoadMs": 2500,
+  "gif": false,
+  "scrollSelector": ".mac-content-scroll"
 }

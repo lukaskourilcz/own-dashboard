@@ -10,6 +10,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // /guest is the public read-only tour: the real shell rendered against the
+  // demo fixtures, with no session and no owner data. Redirecting it to /login
+  // would defeat its only purpose, which is being reachable while logged out.
+  if (request.nextUrl.pathname.startsWith("/guest")) {
+    return NextResponse.next({ request });
+  }
+
   // API routes authenticate themselves — each one calls getUser() (returning
   // 401), verifies `Authorization: Bearer $CRON_SECRET` (the cron jobs), or is
   // intentionally public (the cron registry). Running the page-level
