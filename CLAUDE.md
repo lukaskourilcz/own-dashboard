@@ -35,6 +35,29 @@ Use these local skills when applicable:
 
 Narrow agents live in `.claude/agents/`; executable command playbooks live in `.claude/commands/`.
 
+## Shared skills
+
+Four skills in `.claude/skills/` are vendored verbatim from upstream and kept
+identical across every repository. Each carries an `UPSTREAM.md` with its
+source, pinned commit, and license — re-vendor rather than hand-editing them.
+
+- **`task-observer`** — invoke at the **start of every task-oriented session**,
+  before producing deliverables. It records corrections and workflow friction in
+  an observation log so they can become skill improvements later. Its log lives
+  outside the repo; `.claude/observations/` is git-ignored.
+- **`stop-slop`** — apply to every piece of prose that ships: documentation,
+  `NEEDED.md` entries, UI copy, commit bodies, and pull-request descriptions.
+- **`ui-ux-pro-max`** — consult before visual or interaction decisions. Query
+  the bundled database with
+  `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain>`
+  (domains: `ux`, `style`, `color`, `typography`, `product`, `chart`, `gsap`).
+  It is generic advice. **This repository's own design contract always wins**
+  where the two disagree — never let a generic recommendation override a
+  documented product invariant.
+- **`find-skills`** — use when a capability might already exist as an
+  installable skill instead of hand-rolling one. Its `npx skills` commands need
+  network access; fall back to working directly when that is unavailable.
+
 ## Validation and Git
 
 Run `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`, and `npm run test:e2e`; use `/dev-preview` for deterministic visual/axe checks. Report exact results only. During large work, inspect Git first, preserve unrelated changes, create coherent imperative commits, and never push unless explicitly requested. Definition of done includes business logic, RLS/privacy, responsive/a11y states, localization, tests/build, docs, media provenance/deferment, and a known clean implementation state.
