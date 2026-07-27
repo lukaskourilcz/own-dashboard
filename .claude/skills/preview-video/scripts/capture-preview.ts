@@ -10,6 +10,10 @@
  *   CAPTURE_INSECURE=1    ignore TLS certificate errors (only meaningful when
  *                         a MITM proxy above re-signs certificates)
  *   CAPTURE_EXTRA_ARGS    extra Chromium args, comma-separated
+ *   CAPTURE_EXECUTABLE_PATH
+ *                         launch this Chromium binary instead of the one the
+ *                         installed Playwright expects (useful when the browser
+ *                         build on disk does not match the Playwright version)
  */
 import { chromium } from 'playwright';
 import { spawn, execSync, type ChildProcess } from 'node:child_process';
@@ -68,6 +72,12 @@ if (process.env.CAPTURE_EXTRA_ARGS) launchArgs.push(...process.env.CAPTURE_EXTRA
 
 const browser = await chromium.launch({
   args: launchArgs,
+  // Use a browser that is already on disk when the installed Playwright wants a
+  // build this machine does not have (a sandbox with pre-baked browsers, or a
+  // repo pinned to a different Playwright than the image was built for).
+  ...(process.env.CAPTURE_EXECUTABLE_PATH
+    ? { executablePath: process.env.CAPTURE_EXECUTABLE_PATH }
+    : {}),
   ...(process.env.CAPTURE_PROXY_SERVER
     ? { proxy: { server: process.env.CAPTURE_PROXY_SERVER } }
     : {}),
