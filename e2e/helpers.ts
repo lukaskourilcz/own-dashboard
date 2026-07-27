@@ -36,6 +36,11 @@ export async function stubBackend(page: Page): Promise<void> {
     contentType: "application/json",
     body: JSON.stringify({ repos: [] }),
   }));
+  await page.route("**/api/github/activity**", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ items: [], connected: false }),
+  }));
   await page.route(/example\.supabase\.co/, (route) => {
     const url = route.request().url();
     const isCurrentUser = url.includes("/auth/v1/user");

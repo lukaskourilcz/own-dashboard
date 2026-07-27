@@ -123,11 +123,9 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     await page.goto("/dev-preview?project=aifirst");
     await expect(page.getByRole("heading", { level: 1, name: "aifirst" })).toBeVisible();
-    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Operations", "Finance", "Knowledge"]) {
+    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Knowledge", "Scaling", "Monetization"]) {
       await expect(page.getByRole("tab", { name: tab })).toBeVisible();
     }
-    await page.getByRole("tab", { name: "Operations" }).click();
-    await expect(page.getByText("Daily article generation")).toBeVisible();
     await page.getByRole("tab", { name: "Finance" }).click();
     await expect(page.getByText("Supabase", { exact: true })).toBeVisible();
     await page.getByRole("tab", { name: "Communication" }).click();
