@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
@@ -18,6 +18,7 @@ import {
   Tag,
   Trash2,
   UserRound,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -567,17 +568,18 @@ export function TodosPanel({
       />
       <div className="space-y-4">
           {open.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <ImportanceFilter
-                t={t}
-                value={minImportance}
-                onChange={setMinImportance}
-                hidden={hiddenByFilter}
-              />
-              <TimeFilter t={t} value={timeFilter} onChange={setTimeFilter} />
-              <CategoryFilter t={t} value={kindFilter} onChange={setKindFilter} />
-              <AssigneeFilter t={t} value={assigneeFilter} onChange={setAssigneeFilter} />
-            </div>
+            <TaskFilterBar
+              t={t}
+              importance={minImportance}
+              onImportanceChange={setMinImportance}
+              time={timeFilter}
+              onTimeChange={setTimeFilter}
+              kind={kindFilter}
+              onKindChange={setKindFilter}
+              assignee={assigneeFilter}
+              onAssigneeChange={setAssigneeFilter}
+              hidden={hiddenByFilter}
+            />
           )}
           {open.length === 0 ? (
             <Card>
@@ -1033,167 +1035,178 @@ function FinishedSection({
   );
 }
 
-/* ------------------------------ Importance ------------------------------- */
+/* -------------------------------- Filters -------------------------------- */
 
-/** Segmented "minimum importance" filter. 0 = all; 1–5 = at-least-N. */
-function ImportanceFilter({
-  t,
+/** Minimum-importance levels: 0 = all; 1–5 = at-least-N. */
+const IMPORTANCE_LEVELS = [0, 1, 2, 3, 4, 5];
+
+/**
+ * One labelled filter field. The label and its control stay on the same line
+ * at every width — the field is what wraps, never its own two halves — so each
+ * row of the bar reads as an aligned set of columns. The field grows to take a
+ * share of the free space on its row and hands that space to the control.
+ */
+function FilterField({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 grow items-center gap-2">
+      <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-medium text-foreground-muted">
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The segmented option group behind the importance, time, and assignee
+ * filters. Sized to the shared select height so every control in the bar lines
+ * up. It grows into the space its field is given; each caller passes the
+ * max-width at which its segments stop reading as a control.
+ */
+function SegmentedFilter<T extends string | number>({
+  label,
+  options,
   value,
   onChange,
+  className,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className={cn(
+        // No `overflow-hidden` here: it would clip the buttons' focus ring.
+        // The end segments round themselves instead.
+        "inline-flex h-11 min-w-0 grow rounded-md border border-border md:h-8",
+        className,
+      )}
+    >
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          aria-pressed={value === o.value}
+          className={cn(
+            // The buttons share the group's width, so the padding only sets
+            // their floor — kept tight on the narrowest screens so six
+            // importance segments still fit beside their label.
+            "flex-1 whitespace-nowrap border-l border-border px-1.5 text-xs font-medium tabular transition-colors first:border-l-0 first:rounded-l-[5px] last:rounded-r-[5px] focus-ring focus-visible:relative focus-visible:z-10 sm:px-2.5",
+            value === o.value
+              ? "bg-primary text-primary-foreground"
+              : "bg-surface text-foreground-muted hover:bg-surface-hover",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The task filter bar: a single full-width band whose fields share the whole
+ * content width instead of bunching at the left. Everything sits on one line
+ * while it fits; below that the fields wrap whole (`flex-wrap`) and each row
+ * fills the width again.
+ */
+function TaskFilterBar({
+  t,
+  importance,
+  onImportanceChange,
+  time,
+  onTimeChange,
+  kind,
+  onKindChange,
+  assignee,
+  onAssigneeChange,
   hidden,
 }: {
   t: Dict;
-  value: number;
-  onChange: (v: number) => void;
+  importance: number;
+  onImportanceChange: (v: number) => void;
+  time: "all" | TimeBucketId;
+  onTimeChange: (v: "all" | TimeBucketId) => void;
+  kind: "all" | TaskKind;
+  onKindChange: (v: "all" | TaskKind) => void;
+  assignee: "all" | Assignee;
+  onAssigneeChange: (v: "all" | Assignee) => void;
   hidden: number;
 }) {
-  const levels = [0, 1, 2, 3, 4, 5];
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
-        <Flag className="h-3.5 w-3.5" />
-        {t.todos.importanceFilterLabel}
-      </span>
-      <div className="inline-flex overflow-hidden rounded-md border border-border">
-        {levels.map((lvl) => (
-          <button
-            key={lvl}
-            type="button"
-            onClick={() => onChange(lvl)}
-            aria-pressed={value === lvl}
-            className={cn(
-              "px-2.5 py-1 text-xs font-medium tabular transition-colors border-l border-border first:border-l-0 focus-ring",
-              value === lvl
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface text-foreground-muted hover:bg-surface-hover",
-            )}
-          >
-            {lvl === 0 ? t.todos.filterAll : t.todos.filterMin(lvl)}
-          </button>
-        ))}
-      </div>
-      {value !== 0 && hidden > 0 && (
-        <span className="text-[11px] text-foreground-subtle tabular">
+    <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-secondary px-3 py-2">
+      <FilterField icon={Flag} label={t.todos.importanceFilterLabel}>
+        <SegmentedFilter
+          label={t.todos.importanceFilterLabel}
+          className="max-w-[40rem]"
+          value={importance}
+          onChange={onImportanceChange}
+          options={IMPORTANCE_LEVELS.map((lvl) => ({
+            value: lvl,
+            label: lvl === 0 ? t.todos.filterAll : t.todos.filterMin(lvl),
+          }))}
+        />
+      </FilterField>
+      <FilterField icon={Clock} label={t.todos.timeFilterLabel}>
+        <SegmentedFilter
+          label={t.todos.timeFilterLabel}
+          className="max-w-[26rem]"
+          value={time}
+          onChange={onTimeChange}
+          options={[
+            { value: "all" as const, label: t.todos.filterAll },
+            ...TIME_BUCKETS.map((b) => ({
+              value: b.id,
+              label: t.todos.timeBucketLabel(b.id),
+            })),
+          ]}
+        />
+      </FilterField>
+      <FilterField icon={Tag} label={t.todos.categoryFilterLabel}>
+        <SimpleSelect
+          aria-label={t.todos.categoryFilterLabel}
+          className="h-11 min-w-32 max-w-[22rem] md:h-8"
+          value={kind}
+          onValueChange={(v) => onKindChange(v as "all" | TaskKind)}
+          options={[
+            { value: "all", label: t.todos.filterAll },
+            ...TASK_KINDS.map((k) => ({ value: k, label: t.todos.taskKindLabel(k) })),
+          ]}
+        />
+      </FilterField>
+      <FilterField icon={UserRound} label={t.todos.assigneeFilterLabel}>
+        <SegmentedFilter
+          label={t.todos.assigneeFilterLabel}
+          className="max-w-[20rem]"
+          value={assignee}
+          onChange={onAssigneeChange}
+          options={[
+            { value: "all" as const, label: t.todos.filterAll },
+            { value: "me" as const, label: t.todos.assigneeMe },
+            { value: "ai" as const, label: t.todos.assigneeAi },
+          ]}
+        />
+      </FilterField>
+      {hidden > 0 && (
+        <span className="shrink-0 whitespace-nowrap text-[11px] tabular text-foreground-subtle">
           {t.todos.filterHidden(hidden)}
         </span>
       )}
-    </div>
-  );
-}
-
-/** Segmented "who does it" filter: all / me / AI, from the `[owner:…]` marker. */
-function AssigneeFilter({
-  t,
-  value,
-  onChange,
-}: {
-  t: Dict;
-  value: "all" | Assignee;
-  onChange: (v: "all" | Assignee) => void;
-}) {
-  const options: { value: "all" | Assignee; label: string }[] = [
-    { value: "all", label: t.todos.filterAll },
-    { value: "me", label: t.todos.assigneeMe },
-    { value: "ai", label: t.todos.assigneeAi },
-  ];
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
-        <UserRound className="h-3.5 w-3.5" />
-        {t.todos.assigneeFilterLabel}
-      </span>
-      <div className="inline-flex overflow-hidden rounded-md border border-border">
-        {options.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => onChange(o.value)}
-            aria-pressed={value === o.value}
-            className={cn(
-              "px-2.5 py-1 text-xs font-medium transition-colors border-l border-border first:border-l-0 focus-ring",
-              value === o.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface text-foreground-muted hover:bg-surface-hover",
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Segmented time-ceiling filter: All / ≤15m / ≤1h / ≤4h. */
-function TimeFilter({
-  t,
-  value,
-  onChange,
-}: {
-  t: Dict;
-  value: "all" | TimeBucketId;
-  onChange: (v: "all" | TimeBucketId) => void;
-}) {
-  const options: { value: "all" | TimeBucketId; label: string }[] = [
-    { value: "all", label: t.todos.filterAll },
-    ...TIME_BUCKETS.map((b) => ({
-      value: b.id,
-      label: t.todos.timeBucketLabel(b.id),
-    })),
-  ];
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
-        <Clock className="h-3.5 w-3.5" />
-        {t.todos.timeFilterLabel}
-      </span>
-      <div className="inline-flex overflow-hidden rounded-md border border-border">
-        {options.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => onChange(o.value)}
-            aria-pressed={value === o.value}
-            className={cn(
-              "px-2.5 py-1 text-xs font-medium tabular transition-colors border-l border-border first:border-l-0 focus-ring",
-              value === o.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface text-foreground-muted hover:bg-surface-hover",
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Work-kind (category) filter — a compact dropdown (All + the five kinds). */
-function CategoryFilter({
-  t,
-  value,
-  onChange,
-}: {
-  t: Dict;
-  value: "all" | TaskKind;
-  onChange: (v: "all" | TaskKind) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
-        <Tag className="h-3.5 w-3.5" />
-        {t.todos.categoryFilterLabel}
-      </span>
-      <SimpleSelect
-        aria-label={t.todos.categoryFilterLabel}
-        value={value}
-        onValueChange={(v) => onChange(v as "all" | TaskKind)}
-        options={[
-          { value: "all", label: t.todos.filterAll },
-          ...TASK_KINDS.map((k) => ({ value: k, label: t.todos.taskKindLabel(k) })),
-        ]}
-      />
     </div>
   );
 }
