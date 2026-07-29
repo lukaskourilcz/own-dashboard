@@ -29,7 +29,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   BriefcaseBusiness,
-  Command,
   CreditCard,
   GripVertical,
   LayoutDashboard,
@@ -59,8 +58,8 @@ import { cn } from "@/lib/utils";
 import { saveUserPreferences } from "@/lib/preference-client";
 
 // Widgets that mirror a hideable nav section — hidden in Settings ⇒ hidden on
-// the overview too. Overview-only widgets (today-hero, quick-add, kpi) have no
-// entry and always show.
+// the overview too. Overview-only widgets (today-hero, kpi) have no entry and
+// always show.
 const WIDGET_SECTION: Partial<Record<WidgetId, string>> = {
   todos: "tasks",
   "work-attention": "work",
@@ -74,7 +73,6 @@ const WIDGET_SECTION: Partial<Record<WidgetId, string>> = {
 const WIDGET_META: Record<WidgetId, { icon: LucideIcon; size: "full" | "half" }> =
   {
     "today-hero": { icon: LayoutDashboard, size: "full" },
-    "quick-add": { icon: Command, size: "full" },
     kpi: { icon: Sigma, size: "full" },
     todos: { icon: ListTodo, size: "full" },
     crons: { icon: Timer, size: "full" },

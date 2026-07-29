@@ -9,7 +9,6 @@ import { settings } from "./sections/settings";
 import { dashboard } from "./sections/dashboard";
 import { overview } from "./sections/overview";
 import { kpi } from "./sections/kpi";
-import { quickAdd } from "./sections/quickAdd";
 import { login } from "./sections/login";
 import { app } from "./sections/app";
 import { relink } from "./sections/relink";
@@ -43,7 +42,6 @@ export const dictionaries = {
     dashboard: dashboard.en,
     overview: overview.en,
     kpi: kpi.en,
-    quickAdd: quickAdd.en,
     login: login.en,
     app: app.en,
     relink: relink.en,
@@ -74,7 +72,6 @@ export const dictionaries = {
     dashboard: dashboard.cs,
     overview: overview.cs,
     kpi: kpi.cs,
-    quickAdd: quickAdd.cs,
     login: login.cs,
     app: app.cs,
     relink: relink.cs,

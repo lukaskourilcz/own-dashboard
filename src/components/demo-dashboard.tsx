@@ -83,7 +83,6 @@ export function DemoDashboard({
           "today-hero",
           "todos",
           "kpi",
-          "quick-add",
           "work-attention",
           "subscriptions",
           "calendar",

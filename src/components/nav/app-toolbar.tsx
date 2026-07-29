@@ -1,17 +1,15 @@
 "use client";
 
-import { Command, Plus, Search } from "lucide-react";
+import { Command, Search } from "lucide-react";
 import { useDict } from "@/lib/i18n";
 import type { NavTab } from "@/lib/nav-tabs";
 
 export function AppToolbar({
   tab,
   projectName,
-  onQuickAdd,
 }: {
   tab: NavTab;
   projectName?: string;
-  onQuickAdd: () => void;
 }) {
   const t = useDict();
   const title = t.nav.sections[tab];
@@ -59,14 +57,6 @@ export function AppToolbar({
         </kbd>
       </button>
 
-      <button
-        type="button"
-        onClick={onQuickAdd}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border-strong bg-surface px-2.5 text-xs font-semibold text-foreground shadow-soft transition-colors hover:bg-surface-hover focus-ring"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">{t.app.openQuickAdd}</span>
-      </button>
     </header>
   );
 }

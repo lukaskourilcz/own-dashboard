@@ -269,7 +269,7 @@ export function SubscriptionsPanel({
     };
     const userId = await currentUserId(supabase);
     if (!userId) {
-      setError(t.quickAdd.signInFirst);
+      setError(t.common.signInFirst);
       return;
     }
     if (form.id) {

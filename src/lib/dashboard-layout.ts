@@ -12,7 +12,6 @@
 
 export type WidgetId =
   | "today-hero"
-  | "quick-add"
   | "kpi"
   | "todos"
   | "crons"
@@ -24,7 +23,6 @@ export type WidgetId =
 /** Every widget the overview knows how to render, in canonical order. */
 export const WIDGET_IDS: readonly WidgetId[] = [
   "today-hero",
-  "quick-add",
   "kpi",
   "todos",
   "crons",
@@ -37,13 +35,12 @@ export const WIDGET_IDS: readonly WidgetId[] = [
 /**
  * The layout shown until the user customizes anything. Tasks sit right under
  * the greeting hero — the largest, first thing you act on — with the lighter
- * quick-add / KPI cards below.
+ * KPI cards below.
  */
 export const DEFAULT_LAYOUT: readonly WidgetId[] = [
   "today-hero",
   "todos",
   "kpi",
-  "quick-add",
   "crons",
   "work-attention",
   "subscriptions",

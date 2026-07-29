@@ -14,13 +14,9 @@ these tests assert that directly:
 | --- | --- | --- |
 | GitHub repos require auth | `GET /api/github/repos` | `401` (getUser) |
 | GitHub file read requires auth | `GET /api/github/file` | `401` (getUser) |
-| Quick-add requires auth | `POST /api/quick-add` | `401` (same-origin, then getUser) |
 | Cron endpoint requires auth | `GET /api/cron/renewal-warnings` | `403` (bad bearer, needs `CRON_SECRET` set) |
 
 Notes:
-- Quick-add sends a same-origin `Origin` header so it clears the CSRF gate
-  (`rejectCrossOrigin`) and reaches the `401`; drop it and it's a `403`
-  "Missing Origin header." instead.
 - The cron test asserts the `Bearer ${CRON_SECRET}` mismatch → `403`, which
   only applies when the running app has `CRON_SECRET` set. With it unset the
   route has no secret to check and this test doesn't apply.

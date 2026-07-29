@@ -1,5 +1,4 @@
 type AppStrings = {
-  quickAdd: string;
   installTitle: string;
   installBody: string;
   install: string;
@@ -11,7 +10,6 @@ type AppStrings = {
   noMatches: string;
   groupGoTo: string;
   groupActions: string;
-  openQuickAdd: string;
   switchToLight: string;
   switchToDark: string;
   switchToEnglish: string;
@@ -25,7 +23,6 @@ type AppStrings = {
 
 export const app: { en: AppStrings; cs: AppStrings } = {
   en: {
-    quickAdd: "Quick add",
     installTitle: `Install ${brandConfig.name}`,
     installBody: "Add to your home screen for one-tap access.",
     install: "Install",
@@ -36,7 +33,6 @@ export const app: { en: AppStrings; cs: AppStrings } = {
     noMatches: "No matches.",
     groupGoTo: "Go to",
     groupActions: "Actions",
-    openQuickAdd: "Open quick-add",
     switchToLight: "Switch to light mode",
     switchToDark: "Switch to dark mode",
     switchToEnglish: "Switch to English",
@@ -48,7 +44,6 @@ export const app: { en: AppStrings; cs: AppStrings } = {
     notFoundLogin: "Sign in",
   },
   cs: {
-    quickAdd: "Rychlé přidání",
     installTitle: `Nainstalovat ${brandConfig.name}`,
     installBody: "Přidejte na plochu pro přístup jedním klepnutím.",
     install: "Nainstalovat",
@@ -59,7 +54,6 @@ export const app: { en: AppStrings; cs: AppStrings } = {
     noMatches: "Žádné výsledky.",
     groupGoTo: "Přejít na",
     groupActions: "Akce",
-    openQuickAdd: "Otevřít rychlé přidání",
     switchToLight: "Přepnout na světlý režim",
     switchToDark: "Přepnout na tmavý režim",
     switchToEnglish: "Switch to English",

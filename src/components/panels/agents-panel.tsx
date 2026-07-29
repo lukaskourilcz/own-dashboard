@@ -49,7 +49,7 @@ export function AgentsPanel({ tasks, setTasks, projects }: Props) {
     setError(null);
     try {
       const userId = await currentUserId(supabase);
-      if (!userId) throw new Error(t.quickAdd.signInFirst);
+      if (!userId) throw new Error(t.common.signInFirst);
       const { data, error: insertError } = await supabase
         .from("agent_tasks")
         .insert({

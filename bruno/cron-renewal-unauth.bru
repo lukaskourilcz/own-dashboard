@@ -6,11 +6,12 @@ meta {
 
 get {
   url: {{baseUrl}}/api/cron/renewal-warnings
-  headers {
-    Authorization: Bearer wrong-secret
-  }
   body: none
   auth: none
+}
+
+headers {
+  Authorization: Bearer wrong-secret
 }
 
 assert {

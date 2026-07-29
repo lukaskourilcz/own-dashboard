@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Download, Plus, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { useDict } from "@/lib/i18n";
 
 type BeforeInstallPromptEvent = Event & {
@@ -12,7 +12,7 @@ type BeforeInstallPromptEvent = Event & {
 
 const INSTALL_DISMISSED_KEY = "dashboard.installDismissed";
 
-export function MobileFab({ onClick }: { onClick: () => void }) {
+export function MobileFab() {
   const t = useDict();
   const [installEvent, setInstallEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
@@ -88,17 +88,6 @@ export function MobileFab({ onClick }: { onClick: () => void }) {
 
   return (
     <>
-      {/* sticky add button — mobile only */}
-      <motion.button
-        type="button"
-        onClick={onClick}
-        whileTap={{ scale: 0.92 }}
-        aria-label={t.app.quickAdd}
-        className="fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated focus-ring md:hidden"
-      >
-        <Plus className="h-5 w-5" />
-      </motion.button>
-
       {/* install banner — mobile + desktop Chromium */}
       <AnimatePresence>
         {showInstall && (

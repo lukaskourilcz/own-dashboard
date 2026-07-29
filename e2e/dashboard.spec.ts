@@ -253,19 +253,6 @@ test.describe("dashboard sections", () => {
     await expect(figma).toContainText("in 120d");
   });
 
-  test("read-only AI search shows cited evidence after explicit consent", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
-    await page.route("**/api/quick-add", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ action: { kind: "search", question: "Which invoices are unpaid?" } }) }));
-    await page.route("**/api/ai/search", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ answer: { answer: "Invoice 2026-001 is issued and unpaid.", evidence: [{ claim: "The invoice is still issued.", sourceIds: ["invoices:inv1"] }], limitations: [] } }) }));
-    await gotoPreview(page);
-    page.once("dialog", (dialog) => dialog.accept());
-    const input = page.getByPlaceholder(/Add an action/);
-    await input.fill("Which invoices are unpaid?");
-    await input.press("Enter");
-    await expect(page.getByText("Invoice 2026-001 is issued and unpaid.")).toBeVisible();
-    await expect(page.getByText("invoices:inv1")).toBeVisible();
-  });
-
   test("Career and knowledge copilots render proposals without writing", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await page.route("**/api/ai/career-copilot", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ review: { summary: "Grounded fit.", evidence: [{ claim: "Project evidence matches React.", sourceIds: ["projects:proj-aifirst"] }], gaps: ["No employment metric."], suggestions: ["Verify the draft."], coverLetterDraft: "Evidence-bound draft", interviewQuestions: ["Describe a project trade-off."] } }) }));

@@ -527,7 +527,7 @@ function ProjectsListPanel({
         );
       } else {
         const userId = await currentUserId(supabase);
-        if (!userId) throw new Error(t.quickAdd.signInFirst);
+        if (!userId) throw new Error(t.common.signInFirst);
         const { data, error } = await supabase
           .from("projects")
           .insert({ ...payload, user_id: userId, sort_order: projects.length })
@@ -1182,7 +1182,7 @@ function CostsSection({
     setBusy(true);
     try {
       const userId = await currentUserId(supabase);
-      if (!userId) throw new Error(t.quickAdd.signInFirst);
+      if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("project_costs")
         .insert({
@@ -1447,7 +1447,7 @@ function CronsSection({
         setCrons((prev) => prev.map((c) => (c.id === form.id ? (data as Cron) : c)));
       } else {
         const userId = await currentUserId(supabase);
-        if (!userId) throw new Error(t.quickAdd.signInFirst);
+        if (!userId) throw new Error(t.common.signInFirst);
         const { data, error } = await supabase
           .from("crons")
           .insert({ ...payload, user_id: userId, project_id: project.id })

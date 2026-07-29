@@ -9,6 +9,7 @@ type CommonStrings = {
   none: string;
   optional: string;
   deletePermanentlyConfirm: string;
+  signInFirst: string;
 };
 
 export const common: { en: CommonStrings; cs: CommonStrings } = {
@@ -23,6 +24,7 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     none: "None",
     optional: "Optional",
     deletePermanentlyConfirm: "This item will be permanently deleted.",
+    signInFirst: "Sign in first.",
   },
   cs: {
     add: "Přidat",
@@ -35,5 +37,6 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     none: "Žádné",
     optional: "Volitelné",
     deletePermanentlyConfirm: "Tato položka bude nenávratně smazána.",
+    signInFirst: "Nejprve se přihlaste.",
   },
 };

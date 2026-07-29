@@ -47,7 +47,7 @@ export function ProjectCommunicationPanel({ projectId, communications, setCommun
     setError(null);
     try {
       const userId = await currentUserId(supabase);
-      if (!userId) throw new Error(t.quickAdd.signInFirst);
+      if (!userId) throw new Error(t.common.signInFirst);
       const { data, error: insertError } = await supabase.from("project_communications").insert({
         user_id: userId,
         project_id: projectId,

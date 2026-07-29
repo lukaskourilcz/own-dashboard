@@ -23,7 +23,6 @@ import { AgentsPanel } from "@/components/panels/agents-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
-import { QuickAdd } from "@/components/overview/quick-add";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
 import { DailyFocusPanel } from "@/components/overview/daily-focus";
 import { CronMonitorPanel } from "@/components/overview/cron-monitor";
@@ -173,7 +172,7 @@ export function DashboardShell(props: Props) {
   }, []);
   const { collapsed: navCollapsed } = useNavCollapsed();
   const [subscriptions, setSubscriptions] = useEntityStore(qk.subscriptions, props.initialSubscriptions, fetchSubscriptions, dataOptions("subscriptions"));
-  const [todos, setTodos] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
+  const [todos] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
   const [accounts, setAccounts] = useEntityStore(qk.accounts, props.initialAccounts, fetchAccounts, dataOptions("accounts"));
   const [transactions, setTransactions] = useEntityStore(qk.transactions, props.initialTransactions, fetchTransactions, dataOptions("transactions"));
   const [plans, setPlans] = useEntityStore(qk.plans, props.initialPlans, fetchPlans, dataOptions("plans"));
@@ -271,8 +270,6 @@ export function DashboardShell(props: Props) {
   const [todayCalendar] = useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
   const [weekCalendar] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useDisplayCurrency();
-  const [calendarPrefill, setCalendarPrefill] = useState<{ title: string; nonce: number } | null>(null);
-  const handleCalendarTitle = useCallback((title: string) => { setCalendarPrefill({ title, nonce: Date.now() }); setTab("calendar"); }, [setTab]);
 
   const lastG = useRef(0);
   useEffect(() => {
@@ -282,11 +279,9 @@ export function DashboardShell(props: Props) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "g") { lastG.current = Date.now(); return; }
       if (Date.now() - lastG.current < 1500 && TAB_CHORDS[event.key]) { setTab(TAB_CHORDS[event.key]); lastG.current = 0; event.preventDefault(); return; }
-      if (event.key === "n") { setTab("home"); requestAnimationFrame(() => document.getElementById("quick-add-input")?.focus()); event.preventDefault(); }
     };
     window.addEventListener("keydown", handler); return () => window.removeEventListener("keydown", handler);
   }, [setTab]);
-  const focusQuickAdd = useCallback(() => document.getElementById("quick-add-input")?.focus(), []);
   const selectedProjectName = useMemo(
     () => projects.find((project) => project.id === selectedProjectId)?.name,
     [projects, selectedProjectId],
@@ -297,8 +292,8 @@ export function DashboardShell(props: Props) {
     {!props.isPreview && (
       <PreferenceHydrator preferences={props.initialPreferences} />
     )}
-    <CommandPalette setTab={setTab} onFocusQuickAdd={focusQuickAdd} />
-    <MobileFab onClick={() => { setTab("home"); requestAnimationFrame(focusQuickAdd); }} />
+    <CommandPalette setTab={setTab} />
+    <MobileFab />
     <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0">{t.nav.skipToContent}</a>
     <div className="mac-desktop">
       <div className="mac-window">
@@ -307,17 +302,12 @@ export function DashboardShell(props: Props) {
         <AppToolbar
           tab={tab}
           projectName={selectedProjectName}
-          onQuickAdd={() => {
-            setTab("home");
-            requestAnimationFrame(focusQuickAdd);
-          }}
         />
         <div className="mac-content mac-content-scroll min-w-0 px-4 py-4 md:px-6 md:py-5">
         <MobileNav tab={tab} setTab={setTab} />
         <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} importantDates={importantDates} />,
-            "quick-add": <QuickAdd setTodos={setTodos} setInboxItems={setInboxItems} onCalendarTitle={handleCalendarTitle} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
             todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} />,
             crons: <CronMonitorPanel isPreview={props.isPreview} />,
@@ -337,7 +327,7 @@ export function DashboardShell(props: Props) {
           {(tab === "money" || tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
           {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}
           {tab === "tasks" && <TodosPanel todos={operationalTodos} projects={activeProjects} organizations={organizations} />}
-          {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel key={calendarPrefill?.nonce ?? "idle"} initialTitle={calendarPrefill?.title} /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
+          {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
           {tab === "goals" && <PlansPanel plans={plans} setPlans={setPlans} />}
           {tab === "dates" && <ImportantDatesPanel dates={importantDates} setDates={setImportantDates} userId={user.id} projects={activeProjects} organizations={organizations} />}
           {tab === "notes" && <NotesPanel notes={notes} setNotes={setNotes} projects={activeProjects} />}

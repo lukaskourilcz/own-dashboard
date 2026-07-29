@@ -45,10 +45,8 @@ type Action = {
 
 export function CommandPalette({
   setTab,
-  onFocusQuickAdd,
 }: {
   setTab: (t: NavTab) => void;
-  onFocusQuickAdd: () => void;
 }) {
   const { theme, toggle } = useTheme();
   const { lang, setLang } = useLang();
@@ -110,19 +108,6 @@ export function CommandPalette({
       { id: "go-references", label: s.references, group: "go", icon: Terminal, keywords: "references commands snippets cheatsheet", run: go("references") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
-        id: "act-quick-add",
-        label: t.app.openQuickAdd,
-        hint: "n",
-        group: "act",
-        icon: Search,
-        keywords: "add new rychlé přidání",
-        run: () => {
-          setTab("home");
-          close();
-          requestAnimationFrame(() => onFocusQuickAdd());
-        },
-      },
-      {
         id: "act-theme",
         label: theme === "dark" ? t.app.switchToLight : t.app.switchToDark,
         group: "act",
@@ -160,7 +145,7 @@ export function CommandPalette({
       },
     ];
     return list;
-  }, [setTab, onFocusQuickAdd, theme, toggle, lang, setLang, t]);
+  }, [setTab, theme, toggle, lang, setLang, t]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

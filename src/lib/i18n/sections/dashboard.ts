@@ -50,7 +50,6 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     emptyDescription: "Add a widget to get started.",
     widgetNames: {
       "today-hero": "Today",
-      "quick-add": "Quick add",
       kpi: "Highlights",
       todos: "Tasks",
       crons: "Crons",
@@ -61,7 +60,6 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     },
     widgetDescriptions: {
       "today-hero": "Greeting, today's events, and what needs attention.",
-      "quick-add": "Capture a task, event, or unprocessed item in one line.",
       kpi: "Your key numbers at a glance.",
       todos: "Your open tasks.",
       crons: "Today's scheduled cron runs and a 14-day log history.",
@@ -102,7 +100,6 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     emptyDescription: "Začněte přidáním widgetu.",
     widgetNames: {
       "today-hero": "Dnes",
-      "quick-add": "Rychlé přidání",
       kpi: "Přehled",
       todos: "Úkoly",
       crons: "Crony",
@@ -113,7 +110,6 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     },
     widgetDescriptions: {
       "today-hero": "Pozdrav, dnešní události a co vyžaduje pozornost.",
-      "quick-add": "Zachyťte úkol, událost nebo nezpracovanou položku jedním řádkem.",
       kpi: "Klíčová čísla na první pohled.",
       todos: "Vaše otevřené úkoly.",
       crons: "Dnešní spuštěné crony a historie logů za 14 dní.",
