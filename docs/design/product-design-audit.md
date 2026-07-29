@@ -22,7 +22,7 @@ The product must answer what needs attention, why, which records are connected, 
 
 | Journey | Current strength | Friction or risk | Design response |
 | --- | --- | --- | --- |
-| Daily operating | Real calendar, tasks, attention, Quick Add, configurable widgets | Equal-weight modules weaken the attention hierarchy | Lead with today and attention; demote passive totals; keep capture always reachable |
+| Daily operating | Real calendar, tasks, attention, configurable widgets | Equal-weight modules weaken the attention hierarchy | Lead with today and attention; demote passive totals; keep capture always reachable |
 | Inbox triage | Search/filter/status controls, notifications, deliberate Process action | Dense controls do not clearly distinguish source, destination, and lifecycle; processing spans client mutations | Make the non-atomic boundary explicit; use row hierarchy and state markers; preserve confirmation and query invalidation |
 | Work review | Explainable health and editable weekly review exist | Six equal metric cards and a single textarea flatten facts, risks, decisions, priorities, and follow-ups | Use an attention band, compact metrics, and structured editable review sections |
 | Projects | Canonical entity, ordering, GitHub and finance depth, scoped workspace | List and workspace use many repeated cards; status and relationships are visually weak | Use dense rows, relationship metadata, health signals, and one stable workspace header |
