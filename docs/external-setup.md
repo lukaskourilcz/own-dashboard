@@ -58,7 +58,7 @@ OwnDashboard reads GitHub Actions schedule metadata where available. It does not
 
 - Set `ANTHROPIC_API_KEY`.
 - Leave `ANTHROPIC_BASE_URL` unset for the official Anthropic API, or set it only for a verified compatible gateway.
-- Keep the defaults in `.env.example` or explicitly set `AI_INTENT_MODEL`, `AI_ENRICHMENT_MODEL`, and `AI_SYNTHESIS_MODEL` to supported model IDs.
+- Keep the defaults in `.env.example` or explicitly set `AI_ENRICHMENT_MODEL` and `AI_SYNTHESIS_MODEL` to supported model IDs.
 - Add `JINA_API_KEY` only when higher link-reader throughput is needed.
 - Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for rate limiting shared across serverless instances.
 - Configure provider spend limits and review provider retention terms before enabling sensitive AI context.

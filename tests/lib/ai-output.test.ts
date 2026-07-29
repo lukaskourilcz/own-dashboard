@@ -3,7 +3,6 @@ import {
   parseCareerCopilotOutput,
   parseKnowledgeReviewOutput,
   parseProjectBriefOutput,
-  parseSearchAnswerOutput,
 } from "@/lib/ai-output";
 
 describe("project brief model output", () => {
@@ -24,26 +23,6 @@ describe("project brief model output", () => {
 
 describe("source-grounded model output", () => {
   const sources = new Set(["projects:p1", "notes:n1", "job_listings:j1"]);
-
-  it("accepts cited read-only search answers", () => {
-    expect(parseSearchAnswerOutput({
-      answer: "Project one needs attention.",
-      evidence: [{ claim: "The project exists.", source_ids: ["projects:p1"] }],
-      limitations: [],
-    }, sources)).toEqual({
-      answer: "Project one needs attention.",
-      evidence: [{ claim: "The project exists.", sourceIds: ["projects:p1"] }],
-      limitations: [],
-    });
-  });
-
-  it("rejects citations that were not loaded from owned records", () => {
-    expect(parseSearchAnswerOutput({
-      answer: "Unsupported.",
-      evidence: [{ claim: "Invented.", source_ids: ["projects:other-user"] }],
-      limitations: [],
-    }, sources)).toBeNull();
-  });
 
   it("validates Career and knowledge proposal boundaries", () => {
     expect(parseCareerCopilotOutput({

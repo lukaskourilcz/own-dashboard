@@ -9,12 +9,6 @@ export type AiEvidence = {
   sourceIds: string[];
 };
 
-export type SearchAnswerOutput = {
-  answer: string;
-  evidence: AiEvidence[];
-  limitations: string[];
-};
-
 export type CareerCopilotOutput = {
   summary: string;
   evidence: AiEvidence[];
@@ -90,19 +84,6 @@ export function parseProjectBriefOutput(value: unknown): ProjectBriefOutput | nu
   return { facts, risks, suggestions };
 }
 
-
-export function parseSearchAnswerOutput(
-  value: unknown,
-  allowedSources: ReadonlySet<string>,
-): SearchAnswerOutput | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-  const answer = parseText(record.answer, 1200);
-  const evidence = parseEvidence(record.evidence, allowedSources);
-  const limitations = parseList(record.limitations);
-  if (!answer || !evidence || !limitations) return null;
-  return { answer, evidence, limitations };
-}
 
 export function parseCareerCopilotOutput(
   value: unknown,
