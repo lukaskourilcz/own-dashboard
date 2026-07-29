@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Bot, BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
+import { AlertTriangle, BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GithubIcon } from "@/components/icons/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +71,6 @@ export function WorkOverviewPanel({
     followUps: readReviewItem("followUps"),
     sources: readReviewItem("sources"),
   });
-  const [generating, setGenerating] = useState(false);
   const attention = useMemo(
     () => projects
       .filter((project) => project.is_active && project.status !== "archived")
@@ -140,27 +139,6 @@ export function WorkOverviewPanel({
     return reason;
   };
 
-  async function generateWeeklyBrief() {
-    if (!window.confirm(p.aiWeeklyConsent)) return;
-    setGenerating(true);
-    try {
-      const response = await fetch("/api/ai/weekly-brief", { method: "POST" });
-      if (!response.ok) throw new Error("unavailable");
-      const { brief } = await response.json() as { brief: { facts: string[]; risks: string[]; suggestions: string[]; sources: string[] } };
-      setReviewDraft((currentDraft) => ({
-        ...currentDraft,
-        facts: brief.facts.join("\n"),
-        risks: brief.risks.join("\n"),
-        priorities: brief.suggestions.join("\n"),
-        sources: brief.sources.join("\n"),
-      }));
-    } catch {
-      toast.err(p.aiUnavailable);
-    } finally {
-      setGenerating(false);
-    }
-  }
-
   return (
     <div>
       <PageHeader title={p.workTitle} description={p.workDescription} />
@@ -185,7 +163,6 @@ export function WorkOverviewPanel({
             <p className="text-xs text-foreground-muted">{p.weeklyReviewDescription}</p>
             <div className="grid gap-3 sm:grid-cols-2"><ReviewField label={p.facts} value={reviewDraft.facts} onChange={(facts) => setReviewDraft((old) => ({ ...old, facts }))} /><ReviewField label={p.risks} value={reviewDraft.risks} onChange={(risks) => setReviewDraft((old) => ({ ...old, risks }))} /><ReviewField label={p.decisions} value={reviewDraft.decisions} onChange={(decisions) => setReviewDraft((old) => ({ ...old, decisions }))} /><ReviewField label={p.priorities} value={reviewDraft.priorities} onChange={(priorities) => setReviewDraft((old) => ({ ...old, priorities }))} /><ReviewField label={p.followUpActions} value={reviewDraft.followUps} onChange={(followUps) => setReviewDraft((old) => ({ ...old, followUps }))} /><ReviewField label={p.sources} value={reviewDraft.sources} onChange={(sources) => setReviewDraft((old) => ({ ...old, sources }))} /></div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={generateWeeklyBrief} disabled={generating}><Bot />{generating ? p.generatingBrief : p.generateWeeklyBrief}</Button>
               <Button variant="outline" onClick={() => reviewMutation.mutate(false)} disabled={reviewMutation.isPending}>{p.saveReview}</Button>
               <Button onClick={() => reviewMutation.mutate(true)} disabled={reviewMutation.isPending}>{p.completeReview}</Button>
             </div>

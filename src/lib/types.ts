@@ -430,29 +430,6 @@ export type ProjectCommunication = {
   updated_at: string;
 };
 
-export type AgentTaskStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
-
-export type AgentTask = {
-  id: string;
-  user_id: string;
-  project_id: string | null;
-  title: string;
-  instructions: string;
-  agent_name: string | null;
-  priority: number;
-  status: AgentTaskStatus;
-  result: string | null;
-  claimed_at: string | null;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 // One monthly cost line for a project (Supabase, Vercel, AI API calls, …).
 // `amount` is the monthly figure in `currency`; yearly is derived (× 12).
 export type ProjectCost = {

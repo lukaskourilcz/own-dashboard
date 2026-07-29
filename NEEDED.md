@@ -10,7 +10,6 @@ The repository implementation is complete. The items below are the external acco
 
 ## Enable the product capabilities you want
 
-- [ ] **Contextual AI:** set `ANTHROPIC_API_KEY`. Optionally set `ANTHROPIC_BASE_URL` and the two centralized model overrides (`AI_ENRICHMENT_MODEL`, `AI_SYNTHESIS_MODEL`). Without a key, briefs, copilots, enrichment, and knowledge review do not run; link enrichment falls back to the anonymous Jina Reader for title and description only. `[imp:4]` `[owner:me]`
 - [ ] **Scheduled jobs:** set a strong `CRON_SECRET` in Vercel and verify the three schedules in `vercel.json` call bank sync at 06:00 UTC, renewal warnings at 07:00 UTC, and jobs scraping at 08:00 UTC. Add `HEARTBEAT_URL` if you want an external success monitor. `[imp:4]` `[owner:me]`
 - [ ] **Google Calendar:** enable the Google Calendar API, configure Google in Supabase Auth, add local/production redirect URLs, and set `GOOGLE_OAUTH_CLIENT_ID` plus `GOOGLE_OAUTH_CLIENT_SECRET` for server-side token refresh. `[imp:3]` `[owner:me]`
 - [ ] **GitHub project operations:** configure GitHub in Supabase Auth and the OAuth callback. Set `GITHUB_OAUTH_CLIENT_ID` plus `GITHUB_OAUTH_CLIENT_SECRET` if disconnect/revoke and expiring-token refresh are required. Confirm the OAuth grant covers only repositories the app should read or update. `[imp:3]` `[owner:me]`
@@ -18,7 +17,6 @@ The repository implementation is complete. The items below are the external acco
 - [ ] **Repository knowledge:** add `about-project.md` to every active project repository. Include a short opening summary plus `## Tech stack` and `## Third-party libraries` list sections; write each entry as `Name — what it does`. Use Project → Knowledge → Check current info to verify parsing. `[imp:3]` `[owner:me]`
 - [ ] **Renewal email:** verify a Resend sending domain, then set `RESEND_API_KEY` and `RESEND_FROM`. The in-app notification centre works without email. `[imp:3]` `[owner:me]`
 - [ ] **Bank sync:** create GoCardless Bank Account Data credentials and set `GOCARDLESS_SECRET_ID` plus `GOCARDLESS_SECRET_KEY`. Test the production callback and transaction deduplication. CSV statement import remains available without this integration. `[imp:3]` `[owner:me]`
-- [ ] **VPS agents:** set a long random `AGENT_RUNNER_TOKEN` and the owner's Supabase UUID as `DASHBOARD_OWNER_ID` in the deployed server environment and in the trusted VPS worker. Test claim/report with a disposable task before delegating real work; never expose the token to browser code or logs. `[imp:4]` `[owner:me]`
 - [ ] **Brand-media production:** compare at least three current low-cost or free generators using primary pricing, licensing, privacy, watermark, and format documentation. Select a safe provider, then resume from `docs/design/generated-media-manifest.json`; do not register, purchase, upload private data, or publish unreviewed output without explicit approval. This is a one-off design-production dependency, not a runtime application dependency. `[imp:2]` `[owner:me]`
 
 ## Public guest tour and job-offer removal (2026-07-27)
@@ -36,10 +34,10 @@ after 45 days.
 
 ## Optional production hardening
 
-- [ ] **Distributed AI rate limiting:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Without them, the app uses a best-effort in-memory limiter per server instance. `[imp:2]` `[owner:me]`
+- [ ] **Distributed rate limiting:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Without them, the app uses a best-effort in-memory limiter per server instance. `[imp:2]` `[owner:me]`
 - [ ] **Error monitoring:** configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and the deployment's Sentry auth token/release integration if desired. Verify captured context contains no private record bodies. `[imp:2]` `[owner:me]`
 - [ ] **Privacy-conscious analytics:** configure `NEXT_PUBLIC_POSTHOG_KEY` and optionally `NEXT_PUBLIC_POSTHOG_HOST`. The only repository feature flag currently referenced is `costs-filter`; no Tugedr kill-switch exists. Leave PostHog unset to disable the client SDK. `[imp:2]` `[owner:me]`
-- [ ] **Higher link-enrichment throughput:** add `JINA_API_KEY` only if the anonymous Jina Reader allowance is insufficient. `FIRECRAWL_API_KEY` is not used by this repository. `[imp:1]` `[owner:me]`
+- [ ] **Higher link-enrichment throughput:** add `JINA_API_KEY` only if the anonymous Jina Reader allowance is insufficient. `[imp:1]` `[owner:me]`
 - [ ] **Cron log ingestion (Home → Crons panel):** set `CRON_REGISTRY_TOKEN` and `DASHBOARD_OWNER_ID` server-side so external GitHub Actions crons can report runs to `POST /api/crons/log`. Then, in each repo with scheduled workflows (currently `aifirst` and `quorum`), add the Actions secrets `OWNDASHBOARD_CRON_URL` (this app's `/api/crons/log` URL) and `OWNDASHBOARD_CRON_TOKEN` (= `CRON_REGISTRY_TOKEN`). The app's own Vercel crons log automatically. `[imp:2]` `[owner:me]` `[time:15m]` `[kind:setup]`
 
 ## Brand and domain — wait for a confirmed replacement name

@@ -33,7 +33,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { format, formatDistanceToNow } from "date-fns";
 import {
-  Bot,
   Check,
   ChevronLeft,
   Clipboard,
@@ -171,36 +170,6 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   const lastSavedRef = useRef<Map<string, string>>(new Map());
   const editorHandleRef = useRef<NoteEditorHandle | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
-  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
-  const [knowledgeBusy, setKnowledgeBusy] = useState(false);
-  const [knowledgeError, setKnowledgeError] = useState(false);
-  const [knowledgeReview, setKnowledgeReview] = useState<{
-    summary: string;
-    proposals: { kind: string; title: string; reason: string; sourceIds: string[] }[];
-  } | null>(null);
-
-  async function reviewKnowledge() {
-    if (!window.confirm(t.notes.knowledgeConsent)) return;
-    setKnowledgeOpen(true);
-    setKnowledgeBusy(true);
-    setKnowledgeError(false);
-    setKnowledgeReview(null);
-    try {
-      const response = await fetch("/api/ai/knowledge-review", { method: "POST" });
-      if (response.status === 403) {
-        toast.err(t.notes.knowledgeNeedsSensitive);
-        setKnowledgeOpen(false);
-        return;
-      }
-      const data = await response.json().catch(() => null) as { review?: typeof knowledgeReview } | null;
-      if (!response.ok || !data?.review) throw new Error("unavailable");
-      setKnowledgeReview(data.review);
-    } catch {
-      setKnowledgeError(true);
-    } finally {
-      setKnowledgeBusy(false);
-    }
-  }
 
   // Pinned bucket first (drag-orderable), then everything else by sort_order
   // desc. sort_order was backfilled from updated_at, so first render matches
@@ -666,10 +635,6 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
           description={t.notes.description}
           action={
             <div className="flex items-center gap-1.5">
-              <Button size="sm" variant="outline" onClick={reviewKnowledge} disabled={knowledgeBusy}>
-                <Bot className="h-3.5 w-3.5" />
-                {knowledgeBusy ? t.notes.knowledgeReviewing : t.notes.knowledgeReview}
-              </Button>
               <ImportMarkdownButton onCreate={importMarkdownAsNote} />
               <Button size="sm" onClick={() => createNote()}>
                 <Plus className="h-3.5 w-3.5" />
@@ -979,15 +944,6 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
           onClose={() => setPublishOpen(false)}
         />
       )}
-
-      <Dialog open={knowledgeOpen} onOpenChange={setKnowledgeOpen}>
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Bot className="h-4 w-4" />{t.notes.knowledgeTitle}</DialogTitle><DialogDescription>{t.notes.knowledgeDescription}</DialogDescription></DialogHeader>
-          {knowledgeBusy && <p className="text-sm text-foreground-muted">{t.notes.knowledgeReviewing}</p>}
-          {knowledgeError && <p className="text-sm text-destructive">{t.notes.knowledgeFailed}</p>}
-          {knowledgeReview && <div className="space-y-3"><p className="text-sm text-foreground-muted">{knowledgeReview.summary}</p>{knowledgeReview.proposals.length === 0 ? <p className="text-sm text-foreground-muted">{t.notes.knowledgeEmpty}</p> : <ul className="space-y-2">{knowledgeReview.proposals.map((proposal) => <li key={`${proposal.kind}-${proposal.title}`} className="rounded-lg border border-border p-3"><div className="flex flex-wrap items-center gap-2"><SectionLabel>{t.notes.knowledgeKinds[proposal.kind as keyof typeof t.notes.knowledgeKinds] ?? proposal.kind}</SectionLabel><p className="font-medium">{proposal.title}</p></div><p className="mt-2 text-sm text-foreground-muted">{proposal.reason}</p><p className="mt-2 text-[10px] text-foreground-muted">{proposal.sourceIds.join(" · ")}</p></li>)}</ul>}<p className="text-xs text-foreground-subtle">{t.notes.knowledgeProposalNotice}</p></div>}
-        </DialogContent>
-      </Dialog>
 
       <NoteLinkPicker
         open={linkPickerOpen}

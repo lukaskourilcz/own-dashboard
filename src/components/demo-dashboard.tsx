@@ -54,7 +54,6 @@ export function DemoDashboard({
       initialProjects={f.projects}
       initialNavigationProjects={f.projects}
       initialProjectCommunications={f.projectCommunications}
-      initialAgentTasks={f.agentTasks}
       initialProjectCosts={f.projectCosts}
       initialCrons={f.crons}
       initialOrganizations={f.organizations}

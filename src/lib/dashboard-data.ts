@@ -28,7 +28,6 @@ export const DASHBOARD_DATA_KEYS = [
   "invoiceSettings",
   "projects",
   "projectCommunications",
-  "agentTasks",
   "projectCosts",
   "crons",
   "organizations",
@@ -95,7 +94,6 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "notifications",
   ],
   opportunities: ["projects", "organizations", "opportunities", "notifications"],
-  agents: ["agentTasks", "projects", "notifications"],
   clients: [
     "todos",
     "notes",

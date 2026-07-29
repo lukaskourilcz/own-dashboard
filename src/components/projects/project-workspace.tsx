@@ -25,7 +25,6 @@ import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Metric as OperationalMetric } from "@/components/ui/metric";
-import { AiProposalPanel, AiResultGroup } from "@/components/ui/ai-proposal";
 import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { useDict, useLang } from "@/lib/i18n";
 import { convert } from "@/lib/fx";
@@ -59,14 +58,6 @@ import type {
   Transaction,
   Updater,
 } from "@/lib/types";
-
-type ProjectBrief = {
-  facts: string[];
-  risks: string[];
-  suggestions: string[];
-  sources: string[];
-  limited: boolean;
-};
 
 type Props = {
   project: Project;
@@ -113,9 +104,6 @@ export function ProjectWorkspace(props: Props) {
   const p = t.professional;
   const [tab, setTab] = useState<ProjectWorkspaceTab>("overview");
   const { isProjectTabHidden } = useProjectTabVisibility();
-  const [brief, setBrief] = useState<ProjectBrief | null>(null);
-  const [briefError, setBriefError] = useState(false);
-  const [generating, setGenerating] = useState(false);
 
   // Match repo-sourced tasks (from NEEDED.md) case-insensitively on the repo
   // full name, mirroring the main Tasks section — GitHub casing and the stored
@@ -177,27 +165,6 @@ export function ProjectWorkspace(props: Props) {
     return reason;
   };
 
-  async function generateBrief() {
-    if (!window.confirm(p.aiProjectConsent)) return;
-    setGenerating(true);
-    setBriefError(false);
-    try {
-      const response = await fetch("/api/ai/project-copilot", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ project_id: project.id }),
-      });
-      if (!response.ok) throw new Error("brief unavailable");
-      const data = await response.json() as { brief?: ProjectBrief };
-      if (!data.brief) throw new Error("brief unavailable");
-      setBrief(data.brief);
-    } catch {
-      setBriefError(true);
-    } finally {
-      setGenerating(false);
-    }
-  }
-
   return <div>
     <button type="button" onClick={props.onBackToProjects} className="mb-3 inline-flex items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground focus-ring"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</button>
     <PageHeader
@@ -223,7 +190,6 @@ export function ProjectWorkspace(props: Props) {
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
         {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} />}
       </div>
-      <AiProposalPanel label={p.projectCopilot} description={`${p.projectCopilotDescription} ${p.aiNotSaved}`}><div className="space-y-3"><Button onClick={generateBrief} disabled={generating}><Bot />{generating ? p.generatingBrief : p.generateBrief}</Button>{briefError && <p role="alert" className="text-sm text-destructive">{p.aiUnavailable}</p>}{brief && <><div className="grid gap-4 md:grid-cols-3"><AiResultGroup kind="facts" title={p.facts} items={brief.facts} /><AiResultGroup kind="risks" title={p.risks} items={brief.risks} /><AiResultGroup kind="suggestions" title={p.suggestions} items={brief.suggestions} /></div><div className="border-t border-border pt-3"><p className="text-[11px] text-foreground-muted">{brief.limited && p.limitedContext}</p><div className="mt-2 flex flex-wrap gap-1.5">{brief.sources.map((source) => <EntityBadge key={source}>{source}</EntityBadge>)}</div></div></>}</div></AiProposalPanel>
     </div>}
 
     {tab === "tasks" && <div className="space-y-4"><RecordCard title={p.projectTasks} icon={ListTodo} info={p.tasksFromNeededInfo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><div><div className="mb-2 flex items-center gap-1.5"><SectionLabel>{p.projectNotes}</SectionLabel><Tooltip content={p.notesInfo}><span className="inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip></div><NotesPanel notes={props.notes} setNotes={props.setNotes} projects={[project]} projectId={project.id} embedded /></div></div>}

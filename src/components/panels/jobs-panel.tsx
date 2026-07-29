@@ -5,10 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertTriangle,
-  Bot,
   BriefcaseBusiness,
   Check,
-  Clipboard,
   ExternalLink,
   Files,
   FileText,
@@ -44,8 +42,6 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -153,7 +149,6 @@ export function JobsPanel({
 
   const [applyFor, setApplyFor] = useState<JobListing | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
-  const [copilotFor, setCopilotFor] = useState<JobListing | null>(null);
   const deletedListingIds = useMemo(
     () =>
       new Set(
@@ -254,7 +249,6 @@ export function JobsPanel({
             setApplyFor(l);
             setApplyOpen(true);
           }}
-          onCopilot={setCopilotFor}
         />
       ) : (
         <AppliedView
@@ -282,11 +276,6 @@ export function JobsPanel({
         setEvents={setEvents}
         userId={userId}
       />
-      <CareerCopilotDialog
-        key={copilotFor?.id ?? "none"}
-        listing={copilotFor}
-        onClose={() => setCopilotFor(null)}
-      />
     </div>
   );
 }
@@ -304,7 +293,6 @@ function OpenPositionsView({
   lastRun,
   userId,
   onApply,
-  onCopilot,
 }: {
   listings: JobListing[];
   userStates: JobUserState[];
@@ -314,7 +302,6 @@ function OpenPositionsView({
   lastRun: JobScrapeRun | null;
   userId: string;
   onApply: (l: JobListing) => void;
-  onCopilot: (l: JobListing) => void;
 }) {
   const t = useDict();
   const locale = useDateLocale();
@@ -748,7 +735,6 @@ function OpenPositionsView({
                   onShortlist={() => toggleState(l, "shortlisted")}
                   onDelete={() => void deleteListings([l])}
                   onApply={() => onApply(l)}
-                  onCopilot={() => onCopilot(l)}
                 />
               ))}
                 </tbody>
@@ -842,7 +828,6 @@ function ListingRow({
   onShortlist,
   onDelete,
   onApply,
-  onCopilot,
 }: {
   listing: JobListing;
   match: JobMatch | undefined;
@@ -853,7 +838,6 @@ function ListingRow({
   onShortlist: () => void;
   onDelete: () => void;
   onApply: () => void;
-  onCopilot: () => void;
 }) {
   const t = useDict();
   const locale = useDateLocale();
@@ -920,11 +904,6 @@ function ListingRow({
       <td className="px-3 py-3"><p className="text-xs text-foreground-muted">{jobSourceLabel(listing.source)}</p><p className="mt-1 whitespace-nowrap text-[11px] text-foreground-subtle">{seen}{listing.seniority ? ` · ${listing.seniority}` : ""}</p></td>
       <td className="px-4 py-3">
       <div className="flex shrink-0 items-center justify-end gap-0.5">
-        <Tooltip content={t.jobs.copilotAction}>
-          <button type="button" onClick={onCopilot} aria-label={t.jobs.copilotAction} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring">
-            <Bot className="h-3.5 w-3.5" />
-          </button>
-        </Tooltip>
         <Tooltip
           content={
             state === "shortlisted" ? t.jobs.unshortlist : t.jobs.shortlist
@@ -979,69 +958,6 @@ function ListingRow({
       </td>
     </tr>
   );
-}
-
-type CareerReview = {
-  summary: string;
-  evidence: { claim: string; sourceIds: string[] }[];
-  gaps: string[];
-  suggestions: string[];
-  coverLetterDraft: string;
-  interviewQuestions: string[];
-};
-
-function CareerCopilotDialog({ listing, onClose }: { listing: JobListing | null; onClose: () => void }) {
-  const t = useDict();
-  const toast = useToast();
-  const [review, setReview] = useState<CareerReview | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-
-  async function generate() {
-    if (!listing || !window.confirm(t.jobs.copilotConsent)) return;
-    setBusy(true);
-    setError(false);
-    try {
-      const response = await fetch("/api/ai/career-copilot", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ listing_id: listing.id }),
-      });
-      if (response.status === 403) {
-        toast.err(t.jobs.copilotNeedsSensitive);
-        return;
-      }
-      const data = await response.json().catch(() => null) as { review?: CareerReview } | null;
-      if (!response.ok || !data?.review) throw new Error("unavailable");
-      setReview(data.review);
-    } catch {
-      setError(true);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function copyDraft() {
-    if (!review) return;
-    try {
-      await navigator.clipboard.writeText(review.coverLetterDraft);
-      toast.ok(t.jobs.copilotCopied);
-    } catch {
-      toast.err(t.jobs.copilotCopyFailed);
-    }
-  }
-
-  return <Dialog open={Boolean(listing)} onOpenChange={(open) => { if (!open) onClose(); }}>
-    <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
-      <DialogHeader><DialogTitle className="flex items-center gap-2"><Bot className="h-4 w-4" />{t.jobs.copilotTitle}</DialogTitle><DialogDescription>{listing ? `${listing.title}${listing.company ? ` · ${listing.company}` : ""}` : t.jobs.copilotDescription}</DialogDescription></DialogHeader>
-      {!review && <div className="space-y-3"><p className="text-sm text-foreground-muted">{t.jobs.copilotDescription}</p><Button onClick={generate} disabled={busy}>{busy ? t.jobs.copilotGenerating : t.jobs.copilotGenerate}</Button>{error && <p className="text-sm text-destructive">{t.jobs.copilotFailed}</p>}</div>}
-      {review && <div className="space-y-4 text-sm"><p className="text-foreground-muted">{review.summary}</p><CareerList title={t.jobs.copilotEvidence} items={review.evidence.map((item) => `${item.claim} [${item.sourceIds.join(", ")}]`)} /><CareerList title={t.jobs.copilotGaps} items={review.gaps} /><CareerList title={t.jobs.copilotSuggestions} items={review.suggestions} /><div className="rounded-lg border border-border p-4"><div className="flex items-center justify-between gap-3"><p className="font-medium">{t.jobs.copilotDraft}</p><Button variant="outline" size="sm" onClick={copyDraft}><Clipboard className="h-3.5 w-3.5" />{t.jobs.copilotCopy}</Button></div><p className="mt-3 whitespace-pre-wrap text-foreground-muted">{review.coverLetterDraft}</p></div><CareerList title={t.jobs.copilotInterview} items={review.interviewQuestions} /><p className="text-xs text-foreground-subtle">{t.jobs.copilotProposalNotice}</p></div>}
-    </DialogContent>
-  </Dialog>;
-}
-
-function CareerList({ title, items }: { title: string; items: string[] }) {
-  return <div><p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">{title}</p>{items.length === 0 ? <p className="mt-1 text-foreground-muted">—</p> : <ul className="mt-1 list-disc space-y-1 pl-5">{items.map((item) => <li key={item}>{item}</li>)}</ul>}</div>;
 }
 
 /* ========================================================================= *

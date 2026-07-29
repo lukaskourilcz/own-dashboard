@@ -12,7 +12,6 @@
  */
 import type {
   Account,
-  AgentTask,
   AppNotification,
   ClientOpportunity,
   AiCategory,
@@ -187,24 +186,6 @@ export const projectCommunications: ProjectCommunication[] = [
     subject: "Launch scope",
     summary: "Confirmed the first release scope and the weekly review cadence.",
     next_action: "Send the revised launch checklist.",
-    created_at: TS,
-    updated_at: TS,
-  },
-];
-
-export const agentTasks: AgentTask[] = [
-  {
-    id: "agent-task-1",
-    user_id: UID,
-    project_id: "proj-dashboard",
-    title: "Validate the dashboard release",
-    instructions: "Run lint, TypeScript, unit tests, and report any failures without changing production data.",
-    agent_name: "codex-vps-1",
-    priority: 4,
-    status: "queued",
-    result: null,
-    claimed_at: null,
-    completed_at: null,
     created_at: TS,
     updated_at: TS,
   },

@@ -23,7 +23,6 @@ export const qk = {
   repoLinks: ["repoLinks"] as const,
   projects: ["projects"] as const,
   projectCommunications: ["projectCommunications"] as const,
-  agentTasks: ["agentTasks"] as const,
   projectCosts: ["projectCosts"] as const,
   crons: ["crons"] as const,
   aiLinks: ["aiLinks"] as const,

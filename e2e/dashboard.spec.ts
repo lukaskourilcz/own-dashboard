@@ -253,21 +253,4 @@ test.describe("dashboard sections", () => {
     await expect(figma).toContainText("in 120d");
   });
 
-  test("Career and knowledge copilots render proposals without writing", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
-    await page.route("**/api/ai/career-copilot", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ review: { summary: "Grounded fit.", evidence: [{ claim: "Project evidence matches React.", sourceIds: ["projects:proj-aifirst"] }], gaps: ["No employment metric."], suggestions: ["Verify the draft."], coverLetterDraft: "Evidence-bound draft", interviewQuestions: ["Describe a project trade-off."] } }) }));
-    await page.route("**/api/ai/knowledge-review", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ review: { summary: "One maintenance proposal.", proposals: [{ kind: "candidate_task", title: "Resolve analytics question", reason: "A note leaves it open.", sourceIds: ["notes:n1"] }] } }) }));
-    await gotoPreview(page);
-    const sidebar = page.locator("aside nav");
-    await sidebar.getByRole("button", { name: "Career" }).click();
-    page.once("dialog", (dialog) => dialog.accept());
-    await page.getByRole("button", { name: "Career copilot" }).first().click();
-    await page.getByRole("button", { name: "Generate evidence review" }).click();
-    await expect(page.getByText("Evidence-bound draft")).toBeVisible();
-    await page.getByRole("button", { name: "Close" }).click();
-    await sidebar.getByRole("button", { name: "Notes" }).click();
-    page.once("dialog", (dialog) => dialog.accept());
-    await page.getByRole("button", { name: "AI maintenance" }).click();
-    await expect(page.getByText("Resolve analytics question")).toBeVisible();
-  });
 });

@@ -54,16 +54,11 @@ The app requests profile/email plus Calendar access when Google is deliberately 
 
 OwnDashboard reads GitHub Actions schedule metadata where available. It does not trigger workflows or edit workflow cron files.
 
-## 5. Contextual AI and enrichment
+## 5. Link enrichment
 
-- Set `ANTHROPIC_API_KEY`.
-- Leave `ANTHROPIC_BASE_URL` unset for the official Anthropic API, or set it only for a verified compatible gateway.
-- Keep the defaults in `.env.example` or explicitly set `AI_ENRICHMENT_MODEL` and `AI_SYNTHESIS_MODEL` to supported model IDs.
+- The AI-links Auto-fill route uses Jina Reader (https://r.jina.ai) with no key by default.
 - Add `JINA_API_KEY` only when higher link-reader throughput is needed.
 - Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for rate limiting shared across serverless instances.
-- Configure provider spend limits and review provider retention terms before enabling sensitive AI context.
-
-`FIRECRAWL_API_KEY` is not read by the repository. Without Anthropic, deterministic `!todo`, `!inbox`, and `!cal` quick capture remains available, while AI search, briefs, copilots, enrichment, and knowledge review remain unavailable.
 
 ## 6. Scheduled jobs, email, and bank sync
 
@@ -82,40 +77,13 @@ For email, verify a Resend domain and set:
 
 For GoCardless Bank Account Data, set `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SECRET_KEY`, connect a bank, confirm the callback at `https://YOUR-DOMAIN/api/bank/callback`, run two syncs, and verify external transaction IDs prevent duplicates. Do not assume a universal free price; check the owner's GoCardless agreement. CSV import remains the offline fallback.
 
-## 7. VPS agent workers
-
-The Agents screen queues work; it does not execute commands in the browser or Vercel function. To let a trusted worker consume the queue, configure the same values on the deployed server and the VPS:
-
-- `AGENT_RUNNER_TOKEN`: a long random bearer token stored only server-side.
-- `DASHBOARD_OWNER_ID`: the owner's Supabase `auth.users.id` UUID.
-
-A worker identifies itself and claims one eligible task atomically:
-
-```bash
-curl -sS -X POST https://YOUR-DOMAIN/api/agents/claim \
-  -H "Authorization: Bearer $AGENT_RUNNER_TOKEN" \
-  -H "Content-Type: application/json" \
-  --data '{"agent_name":"codex-vps-1"}'
-```
-
-After executing the task in its own separately sandboxed runtime, the same named worker reports a terminal result:
-
-```bash
-curl -sS -X POST https://YOUR-DOMAIN/api/agents/report \
-  -H "Authorization: Bearer $AGENT_RUNNER_TOKEN" \
-  -H "Content-Type: application/json" \
-  --data '{"task_id":"TASK-UUID","agent_name":"codex-vps-1","status":"completed","result":"Validation passed."}'
-```
-
-Use `failed` instead of `completed` for unsuccessful execution. Do not log request headers, place the token in client-visible variables, or make the worker treat task text as an unsandboxed shell command. Start with a disposable task and verify another agent name cannot report its result.
-
-## 8. Analytics and monitoring
+## 7. Analytics and monitoring
 
 PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, configure a billing limit, and test the currently referenced `costs-filter` feature flag. There is no Tugedr feature-flag kill-switch in this repository.
 
 Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and a build-time `SENTRY_AUTH_TOKEN` when source-map upload is desired. Keep `sendDefaultPii` disabled and inspect real events for private record content before broad use.
 
-## 9. Post-deploy smoke test
+## 8. Post-deploy smoke test
 
 1. Sign in and confirm Home loads without fetching unrelated Career/transaction tables; navigate between sections and confirm destination data loads.
 2. Create an organization and a Tugedr opportunity, convert it with confirmation, and open `/projects/[slug]`.
@@ -123,14 +91,12 @@ Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_OR
 4. Open Career, compare the Match/Remote/Location columns, and exercise each sort option without changing source records.
 5. Open Subscriptions and Money; confirm every active subscription has a next-payment date/countdown, comparable services share an operational group, and importance is visible.
 6. Route, snooze, and dismiss Inbox/notification items.
-7. Generate a weekly brief/project copilot result, verify sources and proposals, and confirm nothing is written until a separate action.
-8. Create a Czech invoice, verify totals/QR/print output, and test deterministic PDF import review.
-9. Queue and complete one disposable VPS agent task; verify a different agent identity cannot report it.
-10. Download full, financial, professional, knowledge, and legacy exports; retain the legacy archive off-platform if needed.
-11. Exercise each enabled integration's connect, error, disconnect, and reauthorization state.
-12. Sign in as a second user and verify cross-user reads and relationship writes fail.
+7. Create a Czech invoice, verify totals/QR/print output, and test deterministic PDF import review.
+8. Download full, financial, professional, knowledge, and legacy exports; retain the legacy archive off-platform if needed.
+9. Exercise each enabled integration's connect, error, disconnect, and reauthorization state.
+10. Sign in as a second user and verify cross-user reads and relationship writes fail.
 
-## 10. Future brand, domain, and repository rename
+## 9. Future brand, domain, and repository rename
 
 OwnDashboard remains the temporary confirmed name. When a replacement name is approved, update `src/lib/brand.ts` first, then:
 

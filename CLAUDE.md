@@ -15,7 +15,7 @@ OwnDashboard is a bilingual, self-hosted, own-only professional operating system
 
 `src/app/[[...slug]]/page.tsx` is the authenticated, route-scoped server boundary; `src/components/dashboard-shell.tsx` is the persistent History API shell. Keep the canonical navigation model, `dashboardDataKeysForTab`, centralized query keys, `useEntityStore`, lazy destination fetchers, bounded results, invalidation, and project workspaces at `/projects/[id-or-slug]`. Preserve own-only RLS and related-foreign-record ownership, authenticated service-role boundaries, static FX, project/cron costs, invoice/VAT/QR/print correctness, direct Google Calendar behavior, GitHub/bank boundaries, legacy export, and contextual AI consent/bounded context/source validation/separate writes.
 
-Agents is a durable task queue, never a browser remote shell. Keep `AGENT_RUNNER_TOKEN` and the service role server-only, constrain workers to `DASHBOARD_OWNER_ID`, require stable agent identity, and preserve atomic `FOR UPDATE SKIP LOCKED` claims. Project communications stay owned and project-scoped. Subscription operational groups and importance are canonical; renewal dates remain explicit rather than inferred from live billing providers.
+Project communications stay owned and project-scoped. Subscription operational groups and importance are canonical; renewal dates remain explicit rather than inferred from live billing providers.
 
 ## Product and design rules
 

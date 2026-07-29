@@ -19,7 +19,6 @@ import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
 import { WorkOverviewPanel } from "@/components/panels/work-overview-panel";
-import { AgentsPanel } from "@/components/panels/agents-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
@@ -47,7 +46,6 @@ import { tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { useEntityStore } from "@/lib/queries/entities";
 import {
   fetchAccounts,
-  fetchAgentTasks,
   fetchAiCategories,
   fetchAiLinks,
   fetchCoverLetterTemplates,
@@ -88,7 +86,7 @@ import { cn } from "@/lib/utils";
 import { isActionableNotification } from "@/lib/notifications";
 import { useDict } from "@/lib/i18n";
 import type {
-  Account, AgentTask, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
+  Account, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
   ImportantDate, InboxItem, Invoice, InvoiceItem, InvoiceSettings,
   JobApplication, JobApplicationEvent, JobListing, JobScrapeRun, JobUserState,
   Note, Organization, Plan, Project, ProjectCommunication, ProjectCost, Prompt, ReferenceRow, RepoLink, RepoNote,
@@ -124,7 +122,6 @@ type Props = {
     "id" | "name" | "slug" | "is_active"
   >[];
   initialProjectCommunications: ProjectCommunication[];
-  initialAgentTasks: AgentTask[];
   initialProjectCosts: ProjectCost[];
   initialCrons: Cron[];
   initialOrganizations: Organization[];
@@ -253,7 +250,6 @@ export function DashboardShell(props: Props) {
     });
   }, [activeProjects, todos]);
   const [projectCommunications, setProjectCommunications] = useEntityStore(qk.projectCommunications, props.initialProjectCommunications, fetchProjectCommunications, dataOptions("projectCommunications"));
-  const [agentTasks, setAgentTasks] = useEntityStore(qk.agentTasks, props.initialAgentTasks, fetchAgentTasks, dataOptions("agentTasks"));
   const [projectCosts, setProjectCosts] = useEntityStore(qk.projectCosts, props.initialProjectCosts, fetchProjectCosts, dataOptions("projectCosts"));
   const [crons, setCrons] = useEntityStore(qk.crons, props.initialCrons, fetchCrons, dataOptions("crons"));
   const [organizations, setOrganizations] = useEntityStore(qk.organizations, props.initialOrganizations, fetchOrganizations, dataOptions("organizations"));
@@ -321,7 +317,6 @@ export function DashboardShell(props: Props) {
           {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} syncRepositories={!props.isPreview} />}
           {tab === "opportunities" && <OpportunitiesPanel opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
-          {tab === "agents" && <AgentsPanel tasks={agentTasks} setTasks={setAgentTasks} projects={activeProjects} />}
           {tab === "career" && <JobsPanel listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
           {tab === "invoices" && <InvoicesPanel invoices={invoices} setInvoices={setInvoices} items={invoiceItems} setItems={setInvoiceItems} settings={invoiceSettings} setSettings={setInvoiceSettings} userId={user.id} displayCurrency={displayCurrency} organizations={organizations} projects={activeProjects} />}
           {(tab === "money" || tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}

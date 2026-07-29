@@ -56,8 +56,6 @@ Projects use a sortable summary table with a dedicated non-text drag handle. Eac
 
 Career listings are rendered as a semantic, horizontally resilient table. Match is an explicit comparable column and users can sort by best/lowest match, remote availability, location, or discovery date. Rows support accessible bulk selection. Permanent deletion writes an owner-scoped `deleted` tombstone, so a shared scraped listing cannot reappear for that owner after refresh and one owner cannot mutate the global feed for another.
 
-Agents is an own-only queue, not a remote terminal. The browser creates durable `agent_tasks`; a VPS worker authenticates with a server-only bearer token, identifies itself, atomically claims one eligible queued task through `claim_agent_task`, and can report completion only for the row it currently owns. The worker endpoints are `/api/agents/claim` and `/api/agents/report`; service-role use is constrained by `DASHBOARD_OWNER_ID`, task id, agent name, and running status.
-
 Opportunities provide the Tugedr/referral/direct/inbound pipeline. After browser confirmation, the `convert_opportunity_to_project` security-invoker RPC locks the owned opportunity and atomically creates or links its organization, creates the project, preserves the opportunity currency as project revenue currency, and marks the opportunity won. A failure rolls back the whole conversion. Clients are organizations with connected projects, opportunities, invoices, tasks, notes, and dates. Career and Invoices reuse the established implementations.
 
 ### Money
@@ -111,15 +109,11 @@ Table-level CSV is available for non-full, non-legacy scopes through `?format=cs
 
 ## AI boundary
 
-AI is contextual rather than a global chat surface. AI link enrichment proposes metadata but the existing form remains the save boundary.
+The app has no LLM-backed AI. The only remaining "AI"-labelled route is `/api/ai-links/enrich`, which reads the URL the user submitted through Jina Reader (https://r.jina.ai) and returns page title + description for review — no model call, no owner-data context sent. Owner records (notes, projects, invoices, transactions, tasks, applications) are never sent to any external service.
 
-`/api/ai/project-copilot` loads only an authenticated, owned project's bounded related context and returns validated facts, risks, suggestions, and deterministic source identifiers. Notes and invoice metadata are excluded unless sensitive-context opt-in is enabled. `/api/ai/weekly-brief` requires that opt-in, reads a bounded multi-domain operating snapshot, and fills the editable weekly-review draft only after explicit consent. Saving or completing the review remains a separate user action.
+Invoice PDF extraction stays local to the browser and deterministic. The selected file is parsed with `pdf.js`, is not sent anywhere, and is not stored.
 
-`/api/ai/career-copilot` grounds one owned listing against bounded projects, notes, repository notes, applications, and events; it returns evidence, gaps, suggestions, a cover-letter draft, and interview questions without changing the application. `/api/ai/knowledge-review` returns maintenance proposals from bounded notes, prompts, AI links, projects, repository notes, and reference rows. Search, career, and knowledge workflows require an explicit browser confirmation, are rate-limited and read-only, validate every cited identifier against the server-loaded source set, and reject invalid structured model output.
-
-Invoice PDF extraction stays local to the browser and deterministic. The selected file is parsed with `pdf.js`, is not sent to an AI provider, and is not stored. A model fallback is intentionally omitted until secure temporary upload and provider-retention behavior can be guaranteed.
-
-AI enablement and sensitive-context opt-in live in `user_preferences`. Sensitive opt-in defaults off. Intent, enrichment, and synthesis model ids plus the compatible provider base URL are centralized in `src/lib/ai-config.ts`. See [AI and privacy](./docs/ai-and-privacy.md).
+See [AI and privacy](./docs/ai-and-privacy.md).
 
 ## Integration status
 

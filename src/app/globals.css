@@ -327,7 +327,6 @@ body {
 [data-section="projects"] { --section-accent: var(--mac-indigo); }
 [data-section="opportunities"] { --section-accent: var(--mac-teal); }
 [data-section="clients"] { --section-accent: var(--mac-purple); }
-[data-section="agents"] { --section-accent: var(--mac-gray); }
 [data-section="career"] { --section-accent: var(--mac-pink); }
 [data-section="invoices"] { --section-accent: var(--mac-orange); }
 [data-section="money"],
