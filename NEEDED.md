@@ -4,7 +4,6 @@ The repository implementation is complete. The items below are the external acco
 
 ## Required before the restructured app is used in production
 
-- [ ] **Back up Supabase and apply the six pending migrations** with `npx supabase db push --linked`; run `20260721165419_professional_restructure_core.sql`, then `20260721165421_remove_legacy_personal_scope.sql`, `20260722150000_atomic_inbox_routing.sql`, `20260722190000_operational_workflow_extensions.sql`, `20260723065433_daily_focus_synced_preferences.sql`, and `20260723082424_sync_preferences_project_tabs.sql`. The last migration restores authenticated preference grants/RLS, synchronizes project-workspace tab visibility, and makes the daily seven follow active project/repository assignments. Do **not** rerun `supabase/schema.sql` on an existing project. `[imp:5]` `[owner:me]`
 - [ ] **Verify the production deployment environment** has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; add `SUPABASE_SERVICE_ROLE_KEY` server-side if Google token refresh, bank sync, or other privileged server workflows are enabled. Never expose the service-role key as `NEXT_PUBLIC_*`. `[imp:5]` `[owner:me]`
 - [ ] **Deploy `main`, then run the post-deploy smoke test** in `docs/external-setup.md`: sign in, create and convert an opportunity, open a project workspace, link an invoice/subscription/task, process Inbox, export data, and verify a second account cannot read or link the first account's records. `[imp:4]` `[owner:me]`
 
@@ -43,10 +42,6 @@ after 45 days.
 ## Brand and domain — wait for a confirmed replacement name
 
 - [ ] When a final name is approved, update `src/lib/brand.ts`, then follow the manual rename checklist in `docs/external-setup.md` for Vercel, the domain, Supabase, Google/GitHub OAuth apps, PostHog, Sentry, Resend, cron monitors, and installed PWAs. OwnDashboard remains the deliberate temporary name; do not rename it to Takt. `[imp:1]` `[owner:me]`
-
-## Migration safety note
-
-The cleanup migration first copies Pulse, habits/streaks, books/reading, couples, invitations, and sharing preferences into the own-only `legacy_personal_archives` table, then drops the retired tables and partner-sharing function. After deployment, download the archive from **Settings → Data & export → Legacy** and retain it off-platform if needed. See `docs/migration-guide.md` for verification and rollback order.
 
 ## Developer tooling
 
