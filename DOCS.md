@@ -111,7 +111,7 @@ Table-level CSV is available for non-full, non-legacy scopes through `?format=cs
 
 ## AI boundary
 
-AI is contextual rather than a global chat surface. `/api/quick-add` returns a structured proposed action only. Task and inbox writes require user confirmation; calendar proposals open the existing prefilled form for review. It can also route an owned-record question to `/api/ai/search`, which requires sensitive-context opt-in and explicit consent, reads a bounded professional snapshot, and returns a read-only answer with validated source identifiers. AI link enrichment proposes metadata but the existing form remains the save boundary.
+AI is contextual rather than a global chat surface. AI link enrichment proposes metadata but the existing form remains the save boundary.
 
 `/api/ai/project-copilot` loads only an authenticated, owned project's bounded related context and returns validated facts, risks, suggestions, and deterministic source identifiers. Notes and invoice metadata are excluded unless sensitive-context opt-in is enabled. `/api/ai/weekly-brief` requires that opt-in, reads a bounded multi-domain operating snapshot, and fills the editable weekly-review draft only after explicit consent. Saving or completing the review remains a separate user action.
 
