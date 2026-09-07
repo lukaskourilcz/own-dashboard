@@ -12,7 +12,12 @@ import {
 } from "@/lib/jobs/availability";
 import { normalizeApifyJob } from "@/lib/jobs/apify";
 import { normalizeEmployerJob } from "@/lib/jobs/employer-sources";
-import { buildLetter, suggestEvidence } from "@/lib/jobs/letter-helper";
+import { CURATED_JOBS } from "@/lib/jobs/curated";
+import {
+  buildLetter,
+  suggestApplicationAngles,
+  suggestEvidence,
+} from "@/lib/jobs/letter-helper";
 import type { JobListing } from "@/lib/types";
 const candidate = {
   title: "Fullstack React engineer",
@@ -42,7 +47,6 @@ describe("personal career eligibility", () => {
       "React and Kotlin",
       "Angular or React",
       "Vue.js and TypeScript",
-      "React Native",
       "Python React",
       "React with C#",
     ])
@@ -70,6 +74,22 @@ describe("personal career eligibility", () => {
         description: "React and TypeScript. Go to the application page.",
       }),
     ).toBe(true));
+  it("accepts mixed React web and React Native roles but rejects mobile-only roles", () => {
+    expect(
+      isCareerRelevant({
+        ...candidate,
+        title: "React web developer",
+        description: "TypeScript, React web and React Native",
+      }),
+    ).toBe(true);
+    expect(
+      isCareerRelevant({
+        ...candidate,
+        title: "React Native developer",
+        description: "TypeScript and React Native mobile applications",
+      }),
+    ).toBe(false);
+  });
   it("rejects country-limited and unspecified remote eligibility", () => {
     for (const location of [
       "US only",
@@ -96,6 +116,12 @@ describe("availability boundary", () => {
     ])
       expect(isJobUrl(url)).toBe(false);
     expect(isJobUrl("https://jobs.lever.co/outreach/123")).toBe(true);
+    expect(
+      isJobUrl("https://cz.linkedin.com/jobs/view/react-developer-123"),
+    ).toBe(true);
+    expect(
+      isJobUrl("https://www.popronsystems.cz/kariera/react-vyvojar/"),
+    ).toBe(true);
   });
   it("detects soft closure, expired structured data and blocked responses", () => {
     expect(
@@ -125,6 +151,20 @@ describe("availability boundary", () => {
     expect(
       pageAvailability(200, "React Engineer Apply now", "React Engineer"),
     ).toBe("open");
+    expect(
+      pageAvailability(
+        200,
+        "React vývojář. Zaujala vás tato nabídka? Ozvěte se nám.",
+        "React vývojář",
+      ),
+    ).toBe("open");
+    expect(
+      pageAvailability(
+        200,
+        "Frontend Developer — Praha. Zažádat o pozici.",
+        "Frontend Developer",
+      ),
+    ).toBe("open");
     expect(pageAvailability(403, "", "React Engineer")).toBe("unknown");
   });
   it("keeps network failure distinct from closure", async () => {
@@ -137,6 +177,28 @@ describe("availability boundary", () => {
   });
 });
 describe("source normalization", () => {
+  it("keeps every owner-selected React lead inside the strict filter", () => {
+    expect(CURATED_JOBS).toHaveLength(8);
+    expect(CURATED_JOBS.every(isCareerRelevant)).toBe(true);
+    expect(CURATED_JOBS.every((job) => isJobUrl(job.url))).toBe(true);
+  });
+
+  it("continues to reject submitted roles built around Angular, Python, or Rails", () => {
+    for (const description of [
+      "Node.js and TypeScript with Angular and Ionic",
+      "Python web frameworks with HTML and CSS",
+      "Ruby on Rails 8 with Hotwire, Turbo and Stimulus",
+    ]) {
+      expect(
+        isCareerRelevant({
+          ...candidate,
+          title: "Full Stack Developer",
+          description,
+        }),
+      ).toBe(false);
+    }
+  });
+
   it("keeps original Apify observation time and drops closed jobs", () => {
     const row = {
       ...candidate,
@@ -196,5 +258,23 @@ describe("position-specific letter guidance", () => {
     expect(letter).not.toContain("EmbedIT");
     expect(letter).toContain("Zajímá mě váš produkt.");
     expect(letter).not.toContain("{{");
+  });
+  it("turns a payment role into specific finance evidence prompts", () => {
+    const angles = suggestApplicationAngles(
+      "Senior React and Next.js engineer for secure payment transactions",
+    );
+    expect(angles.map((angle) => angle.id)).toContain("financial-trust");
+    expect(angles.find((angle) => angle.id === "financial-trust")?.text.en).toContain(
+      "EmbedIT",
+    );
+  });
+
+  it("connects energy and IoT roles to Controlant operations", () => {
+    const angles = suggestApplicationAngles(
+      "TypeScript platform for energy meter telemetry and ESG reporting",
+    );
+    expect(
+      angles.find((angle) => angle.id === "regulated-operations")?.text.cs,
+    ).toContain("Controlant");
   });
 });

@@ -343,7 +343,7 @@ function OpenPositionsView({
     queryFn: async () => {
       if (isPreview) return true;
       const last = Date.parse(lastRun?.finished_at ?? "");
-      if (lastRun?.ok && lastRun.sources?.["ashby-apify"] && Number.isFinite(last) && Date.now() - last < 4 * 60 * 60 * 1000)
+      if (lastRun?.ok && lastRun.sources?.["ashby-apify"] && lastRun.sources?.curated && Number.isFinite(last) && Date.now() - last < 4 * 60 * 60 * 1000)
         return true;
       const response = await fetch("/api/jobs/refresh", { method: "POST" });
       if (response.ok) {

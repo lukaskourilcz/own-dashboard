@@ -1,5 +1,6 @@
 import { EMPLOYER_BOARDS, fetchEmployerBoard } from "./employer-sources";
 import { apifyTaskIds, fetchApifyTask } from "./apify";
+import { fetchCuratedJobs } from "./curated";
 import { brandConfig } from "@/lib/brand";
 import { isEuropeFriendly, isPrague, matchRole } from "./filter";
 import { jobSourceLabel } from "./meta";
@@ -715,6 +716,7 @@ function source(id: string, fetch: () => Promise<ScrapedJob[]>): JobSource {
 }
 
 export const JOB_SOURCES: JobSource[] = [
+  source("curated", fetchCuratedJobs),
   ...EMPLOYER_BOARDS.map(b => ({ id: b.id, label: b.name, fetch: () => fetchEmployerBoard(b) })),
   ...apifyTaskIds().map(id => ({ id: `apify-${id}`, label: `Apify ${id}`, fetch: () => fetchApifyTask(id) })),
   source("startupjobs", fetchStartupJobs),

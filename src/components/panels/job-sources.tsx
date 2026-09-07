@@ -27,6 +27,7 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
     json: t.jobs.sourceKindJson,
     html: t.jobs.sourceKindHtml,
     rss: t.jobs.sourceKindRss,
+    curated: lang === "cs" ? "Vlastní výběr" : "Selected",
   };
 
   return (

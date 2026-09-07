@@ -8,6 +8,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { useLang } from "@/lib/i18n";
 import {
   buildLetter,
+  suggestApplicationAngles,
   suggestEvidence,
   type LetterLanguage,
 } from "@/lib/jobs/letter-helper";
@@ -38,6 +39,10 @@ export function CareerLetterHelper({
   const [excludedSkills, setExcludedSkills] = useState<string[]>([]);
   const suggestions = useMemo(
     () => suggestEvidence(`${position} ${company} ${jobText}`),
+    [position, company, jobText],
+  );
+  const angles = useMemo(
+    () => suggestApplicationAngles(`${position} ${company} ${jobText}`),
     [position, company, jobText],
   );
   const match = useMemo(
@@ -117,6 +122,18 @@ export function CareerLetterHelper({
           ? "Doporučení vycházejí z klíčových slov a vašich skutečných zkušeností. Vyberte 1–3 nejrelevantnější příklady. Text se neposílá do AI."
           : "Suggestions use keywords and your actual experience. Choose the 1–3 most relevant examples. This text is not sent to AI."}
       </p>
+      {!!angles.length && (
+        <div className="rounded border border-border bg-surface p-3">
+          <h4 className="text-sm font-medium">
+            {cs ? "Úhel dopisu pro tuto pozici" : "Cover-letter angle for this role"}
+          </h4>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-foreground-muted">
+            {angles.map((angle) => (
+              <li key={angle.id}>{angle.text[language]}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="grid gap-3">
         {suggestions.map(({ evidence: e, domainMatch }) => (
           <label

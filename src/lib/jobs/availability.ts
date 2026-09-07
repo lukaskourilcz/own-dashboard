@@ -16,6 +16,8 @@ const HOSTS = [
   "jobs.eu.lever.co",
   "jobs.ashbyhq.com",
   "linkedin.com",
+  "cz.linkedin.com",
+  "popronsystems.cz",
 ];
 
 /** Only known public job hosts; no credentials, custom ports or redirects to arbitrary hosts. */
@@ -64,7 +66,7 @@ export function pageAvailability(
     words.filter((w) => text.toLowerCase().includes(w)).length / words.length >=
       0.8;
   const applicationSignal =
-    /"@type"\s*:\s*"JobPosting"|apply (?:now|for|to|here)|submit (?:your )?application|odpovědět|mám zájem|reagovat na|přihlásit se/i.test(
+    /"@type"\s*:\s*"JobPosting"|apply (?:now|for|to|here)|submit (?:your )?application|odpovědět|mám zájem|reagovat na|přihlásit se|zažádat|podat žádost|zaujala vás tato nabídka|ozvěte se(?: nám)?/i.test(
       html,
     );
   return matchesTitle && applicationSignal ? "open" : "unknown";

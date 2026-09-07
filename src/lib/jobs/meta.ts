@@ -3,7 +3,7 @@
 // its labels from here, so a board is described in exactly one place.
 
 /** How a board hands us its data. Shown in the panel's source list. */
-export type JobSourceKind = "json" | "html" | "rss";
+export type JobSourceKind = "json" | "html" | "rss" | "curated";
 
 export type JobSourceMeta = {
   /** Human label. */
@@ -27,6 +27,18 @@ export type JobSourceMeta = {
 };
 
 export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
+  curated: {
+    label: "Selected leads",
+    kind: "curated",
+    endpoint:
+      "https://github.com/lukaskourilcz/own-dashboard/blob/main/src/lib/jobs/curated.ts",
+    site: "https://www.linkedin.com/jobs/",
+    complete: true,
+    scope: {
+      en: "Owner-selected openings, with requirements retained for application guidance",
+      cs: "Vlastní výběr pozic s požadavky pro přípravu žádosti",
+    },
+  },
   'ashby-apify': {label:'Apify · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/apify', site:'https://apify.com/jobs', complete:false, scope:{en:'Direct employer feed, React roles in Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, React v Praze nebo na dálku z Česka'}},
   'ashby-rossum': {label:'Rossum · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/rossum.ai', site:'https://jobs.ashbyhq.com/rossum.ai', complete:false, scope:{en:'Direct employer feed with full descriptions',cs:'Přímý zdroj zaměstnavatele s plnými popisy'}},
   'lever-outreach': {label:'Outreach · Careers', kind:'json', endpoint:'https://api.lever.co/v0/postings/outreach?mode=json', site:'https://jobs.lever.co/outreach', complete:false, scope:{en:'Direct employer feed, Prague and eligible remote roles',cs:'Přímý zdroj zaměstnavatele, Praha a vhodná práce na dálku'}},

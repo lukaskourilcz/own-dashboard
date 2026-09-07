@@ -45,7 +45,7 @@ export function matchRole(title: string, extra?: string): JobRole | null {
     NEGATIVE.test(t) ||
     FOREIGN_LANG.test(t) ||
     FOREIGN_SYMBOLIC.test(t) ||
-    /\b(angular|vue(?:js)?|svelte|react\s+native|staff|principal|director|head\s+of)\b/i.test(
+    /\b(angular|vue(?:js)?|svelte|staff|principal|director|head\s+of)\b/i.test(
       t,
     )
   )
@@ -77,8 +77,12 @@ export type CareerCandidate = {
 export function isCareerRelevant(job: CareerCandidate): boolean {
   const text = `${job.title} ${job.tags.join(" ")} ${job.description ?? ""}`;
   if (!matchRole(job.title, text)) return false;
-  if (!/\b(react(?:\.js|js)?|next(?:\.js|js))\b/i.test(text)) return false;
-  if (/\b(angular|vue(?:\.js|js)?|svelte|react\s+native)\b/i.test(text))
+  // React Native may be a secondary part of a web role. Remove those words
+  // before checking for an independent React/Next.js web signal, so mobile-
+  // only roles stay out while owner-selected mixed web/mobile roles survive.
+  const webText = text.replace(/\breact\s+native\b/gi, " ");
+  if (!/\b(react(?:\.js|js)?|next(?:\.js|js))\b/i.test(webText)) return false;
+  if (/\b(angular|vue(?:\.js|js)?|svelte)\b/i.test(text))
     return false;
   if (
     job.tags.some((tag) => /^go$/i.test(tag)) ||

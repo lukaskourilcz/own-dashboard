@@ -8,6 +8,75 @@ export type Evidence = {
   paragraph: Record<LetterLanguage, string>;
 };
 
+export type ApplicationAngle = {
+  id: string;
+  match: RegExp;
+  text: Record<LetterLanguage, string>;
+};
+
+/** Practical prompts derived from a posting. They help the owner choose an
+ * argument; they never claim an achievement or generate a hiring prediction. */
+const APPLICATION_ANGLES: ApplicationAngle[] = [
+  {
+    id: "financial-trust",
+    match:
+      /fintech|payment|payroll|bank|financial|funds|transaction|fraud|aml|compliance|plateb|finanč/i,
+    text: {
+      en: "Lead with EmbedIT's online-banking frontend and BFF work. Add the Gibraltar customer-protection experience when the role discusses payments, fraud, AML, compliance, or customer trust.",
+      cs: "Začněte frontendem a BFF pro internetové bankovnictví v EmbedIT. Zkušenost z ochrany zákazníků na Gibraltaru přidejte tam, kde nabídka řeší platby, podvody, AML, compliance nebo důvěru klientů.",
+    },
+  },
+  {
+    id: "regulated-operations",
+    match:
+      /energy|utilities|meter|iot|telemetry|time.?series|esg|pharma|health|cold.?chain|energet|měřidl|farmac|zdravot/i,
+    text: {
+      en: "Use Controlant to show that you can interpret telemetry, investigate operational incidents, and communicate clearly when software decisions affect regulated real-world processes.",
+      cs: "Použijte Controlant jako důkaz práce s telemetrií, vyšetřováním provozních incidentů a srozumitelnou komunikací tam, kde software ovlivňuje regulovaný reálný provoz.",
+    },
+  },
+  {
+    id: "frontend-systems",
+    match:
+      /component system|component librar|design token|accessib|figma|tanstack|real.?time|websocket|sse|streaming|komponentov|přístupnost/i,
+    text: {
+      en: "Use Web Integrator for React and TypeScript ownership, reusable components, accessibility, design collaboration, and code quality. Name one concrete UI or architecture decision from your portfolio.",
+      cs: "Opřete se o Web Integrator: odpovědnost za React a TypeScript, znovupoužitelné komponenty, přístupnost, spolupráci s designem a kvalitu kódu. Uveďte jedno konkrétní UI nebo architektonické rozhodnutí z portfolia.",
+    },
+  },
+  {
+    id: "fullstack-ownership",
+    match:
+      /full.?stack|node(?:\.js)?|express|nestjs|postgres|mongodb|prisma|sql|api|database|end.to.end/i,
+    text: {
+      en: "Use Ersilia or Take a Break to prove end-to-end ownership across data modelling, APIs, validation, authentication or payments, and the React interface. Pick the project closest to the employer's product.",
+      cs: "Použijte Ersilii nebo Take a Break jako důkaz práce od datového modelu přes API, validaci, autentizaci či platby až po React rozhraní. Vyberte projekt nejbližší produktu zaměstnavatele.",
+    },
+  },
+  {
+    id: "reviewed-ai",
+    match:
+      /ai.?first|ai agent|coding agent|llm|rag|embedding|openai|gemini|claude|codex/i,
+    text: {
+      en: "Mention Ersilia's validated AI-assisted PDF processing and your agent workflow only with a concrete example of how you review output, test it, and remain responsible for the shipped result.",
+      cs: "Zmiňte validované zpracování PDF s pomocí AI v Ersilii a práci s agenty jen s konkrétním příkladem, jak výstup kontrolujete, testujete a přebíráte odpovědnost za nasazený výsledek.",
+    },
+  },
+  {
+    id: "product-ownership",
+    match:
+      /product thinking|product-oriented|product company|own(?:ership)?|from (?:planning|start) to|ship|iterate|small team|low-code/i,
+    text: {
+      en: "Choose one shipped feature and explain the user problem, your technical decision, the trade-off you made, and the result. Keep this more prominent than a list of technologies.",
+      cs: "Vyberte jednu nasazenou funkci a popište problém uživatele, své technické rozhodnutí, zvolený kompromis a výsledek. Dejte tomu větší prostor než seznamu technologií.",
+    },
+  },
+];
+
+export function suggestApplicationAngles(description: string) {
+  return APPLICATION_ANGLES.filter((angle) => angle.match.test(description));
+}
+
 // Public portfolio + explicitly supplied career context. These are editable
 // evidence suggestions, not invented achievements or generated hiring claims.
 export const CAREER_EVIDENCE: Evidence[] = [
