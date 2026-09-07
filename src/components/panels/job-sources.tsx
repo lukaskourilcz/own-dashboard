@@ -38,7 +38,9 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
         className="focus-ring flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <span className="min-w-0">
-          <span className="block text-xs font-semibold">{t.jobs.sourcesTitle}</span>
+          <span className="block text-xs font-semibold">
+            {t.jobs.sourcesTitle}
+          </span>
           <span className="mt-0.5 block text-[11px] leading-5 text-foreground-muted">
             {t.jobs.sourcesDescription}
           </span>
@@ -46,7 +48,10 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
         <span className="flex shrink-0 items-center gap-1 text-[11px] text-foreground-muted">
           {open ? t.jobs.sourcesHide : t.jobs.sourcesShow}
           <ChevronDown
-            className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
+            className={cn(
+              "h-3.5 w-3.5 transition-transform",
+              open && "rotate-180",
+            )}
             aria-hidden
           />
         </span>
@@ -54,6 +59,23 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
 
       {open && (
         <ul className="border-t border-border">
+          {Object.entries(outcomes)
+            .filter(([id]) => id.startsWith("apify-"))
+            .map(([id, outcome]) => (
+              <li key={id} className="border-b border-border px-4 py-3 text-sm">
+                <strong>Apify · {id.slice(6)}</strong>
+                <span className="ml-2">
+                  {outcome.error
+                    ? t.jobs.sourceErrors
+                    : t.jobs.sourceFound(outcome.count)}
+                </span>
+                <p className="text-foreground-muted">
+                  {lang === "cs"
+                    ? "Import hotové úlohy; placené běhy se nespouštějí."
+                    : "Completed task import; no paid runs are started."}
+                </p>
+              </li>
+            ))}
           {Object.entries(JOB_SOURCE_META).map(([id, meta]) => {
             const outcome = outcomes[id];
             return (
@@ -69,7 +91,10 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
                   className="focus-ring inline-flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline"
                 >
                   {meta.label}
-                  <ExternalLink className="h-3 w-3 text-foreground-subtle" aria-hidden />
+                  <ExternalLink
+                    className="h-3 w-3 text-foreground-subtle"
+                    aria-hidden
+                  />
                 </a>
 
                 <span className="rounded-sm border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-foreground-muted">
@@ -78,11 +103,15 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
 
                 <Tooltip
                   content={
-                    meta.complete ? t.jobs.sourceCompleteHint : t.jobs.sourcePartialHint
+                    meta.complete
+                      ? t.jobs.sourceCompleteHint
+                      : t.jobs.sourcePartialHint
                   }
                 >
                   <span className="rounded-sm bg-surface-inset px-1.5 py-0.5 text-[10px] text-foreground-muted">
-                    {meta.complete ? t.jobs.sourceComplete : t.jobs.sourcePartial}
+                    {meta.complete
+                      ? t.jobs.sourceComplete
+                      : t.jobs.sourcePartial}
                   </span>
                 </Tooltip>
 
@@ -100,17 +129,15 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
                 ) : outcome ? (
                   <span className="whitespace-nowrap text-[11px] tabular-nums text-foreground-muted">
                     {t.jobs.sourceFound(outcome.count)}
-                    {outcome.pruned ? ` · ${t.jobs.sourceRemoved(outcome.pruned)}` : ""}
+                    {outcome.pruned
+                      ? ` · ${t.jobs.sourceRemoved(outcome.pruned)}`
+                      : ""}
                   </span>
                 ) : (
                   <span className="whitespace-nowrap text-[11px] text-foreground-subtle">
                     {t.jobs.sourceNoRun}
                   </span>
                 )}
-
-                <code className="w-full break-all font-mono text-[10px] text-foreground-subtle">
-                  {meta.endpoint}
-                </code>
               </li>
             );
           })}

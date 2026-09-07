@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertTriangle,
@@ -70,11 +70,11 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const ROLE_TONE: Record<JobRole, string> = {
-  frontend: "bg-accent text-accent-foreground border-border-strong",
-  fullstack: "bg-success/10 text-success border-success/30",
-  software: "bg-surface-muted text-foreground-muted border-border",
-};
+import { isCareerRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { CareerCompanies } from "./career-companies";
+import { CareerLetterHelper } from "./career-letter-helper";
+import type { Availability } from "@/lib/jobs/availability";
+import type { LetterLanguage } from "@/lib/jobs/letter-helper";
 
 // Fit-level → badge tone. Warmer/greener = stronger match.
 const FIT_TONE: Record<JobMatch["level"], string> = {
@@ -97,6 +97,7 @@ const STATUSES: JobApplicationStatus[] = [
 ];
 
 type Props = {
+  isPreview?: boolean;
   listings: JobListing[];
   userStates: JobUserState[];
   setUserStates: Updater<JobUserState[]>;
@@ -116,6 +117,7 @@ function todayIso(): string {
 }
 
 export function JobsPanel({
+  isPreview = false,
   listings,
   userStates,
   setUserStates,
@@ -130,7 +132,14 @@ export function JobsPanel({
 }: Props) {
   const t = useDict();
   const { cs: cvCs, en: cvEn } = useCvLinks();
-  const [view, setView] = useState<"open" | "applied">("open");
+  const { lang } = useLang();
+  const [view, setView] = useState<
+    "open" | "applied" | "letters" | "companies"
+  >("open");
+  const relevantListings = useMemo(
+    () => listings.filter(isCareerRelevant),
+    [listings],
+  );
 
   // Listings the user already applied to, by listing id and by URL (manual
   // logs may match a scraped offer only by its link).
@@ -149,15 +158,6 @@ export function JobsPanel({
 
   const [applyFor, setApplyFor] = useState<JobListing | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
-  const deletedListingIds = useMemo(
-    () =>
-      new Set(
-        userStates
-          .filter((state) => state.state === "deleted")
-          .map((state) => state.listing_id),
-      ),
-    [userStates],
-  );
 
   return (
     <div className="min-w-0">
@@ -208,37 +208,57 @@ export function JobsPanel({
                 )}
               </div>
             )}
-            <div className="flex rounded-md border border-border bg-surface p-0.5">
-              {(["open", "applied"] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  className={cn(
-                    "rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring",
-                    view === v
-                      ? "bg-accent text-foreground"
-                      : "text-foreground-muted hover:text-foreground",
-                  )}
-                >
-                  {v === "open" ? t.jobs.openTab : t.jobs.appliedTab}
-                  <span className="ml-1.5 text-[10px] text-foreground-subtle tabular">
+            <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
+              {(["open", "applied", "letters", "companies"] as const).map(
+                (v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setView(v)}
+                    className={cn(
+                      "min-h-11 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-ring",
+                      view === v
+                        ? "bg-accent text-foreground"
+                        : "text-foreground-muted hover:text-foreground",
+                    )}
+                  >
                     {v === "open"
-                      ? listings.filter(
-                          (listing) => !deletedListingIds.has(listing.id),
-                        ).length
-                      : applications.length}
-                  </span>
-                </button>
-              ))}
+                      ? t.jobs.openTab
+                      : v === "applied"
+                        ? t.jobs.appliedTab
+                        : v === "letters"
+                          ? lang === "cs"
+                            ? "Dopisy"
+                            : "Cover letters"
+                          : lang === "cs"
+                            ? "Firmy v Praze"
+                            : "Prague companies"}
+                    {v === "applied" && (
+                      <span className="ml-2 text-sm text-foreground-muted">
+                        {applications.length}
+                      </span>
+                    )}
+                  </button>
+                ),
+              )}
             </div>
           </div>
         }
       />
 
-      {view === "open" ? (
+      {view === "companies" ? (
+        <CareerCompanies />
+      ) : view === "letters" ? (
+        <LetterWorkspace
+          templates={templates}
+          setTemplates={setTemplates}
+          userId={userId}
+          applications={applications}
+        />
+      ) : view === "open" ? (
         <OpenPositionsView
-          listings={listings}
+          isPreview={isPreview}
+          listings={relevantListings}
           userStates={userStates}
           setUserStates={setUserStates}
           appliedListingIds={appliedListingIds}
@@ -285,6 +305,7 @@ export function JobsPanel({
  * ========================================================================= */
 
 function OpenPositionsView({
+  isPreview,
   listings,
   userStates,
   setUserStates,
@@ -294,6 +315,7 @@ function OpenPositionsView({
   userId,
   onApply,
 }: {
+  isPreview: boolean;
   listings: JobListing[];
   userStates: JobUserState[];
   setUserStates: Updater<JobUserState[]>;
@@ -310,10 +332,90 @@ function OpenPositionsView({
   const supabase = createClient();
   const confirm = useConfirmation();
 
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [mobileDetail, setMobileDetail] = useState(false);
+  const [workplace, setWorkplace] = useState("all");
+  const [seniority, setSeniority] = useState("all");
+  const sourceSync = useQuery({
+    queryKey: [...qk.jobSourceSync, userId],
+    queryFn: async () => {
+      if (isPreview) return true;
+      const last = Date.parse(lastRun?.finished_at ?? "");
+      if (lastRun?.ok && lastRun.sources?.["ashby-apify"] && Number.isFinite(last) && Date.now() - last < 4 * 60 * 60 * 1000)
+        return true;
+      const response = await fetch("/api/jobs/refresh", { method: "POST" });
+      if (response.ok) {
+        await qc.invalidateQueries({ queryKey: qk.jobListings, exact: true });
+        await qc.invalidateQueries({ queryKey: qk.jobLastRun });
+      }
+      return response.ok;
+    },
+    retry: false,
+    staleTime: 4 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const availability = useQuery({
+    queryKey: [...qk.jobAvailability, userId],
+    queryFn: async () => {
+      if (isPreview)
+        return {
+          states: Object.fromEntries(
+            listings.map((l) => [l.id, "open" as const]),
+          ),
+          checkedAt: new Date().toISOString(),
+          candidates: listings.length,
+          remaining: 0,
+        };
+      const response = await fetch("/api/jobs/available", {
+        method: "POST",
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      return response.json() as Promise<{
+        states: Record<string, Availability>;
+        checkedAt: string;
+        candidates: number;
+        remaining: number;
+      }>;
+    },
+    enabled: !sourceSync.isPending,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+  });
+  const moreChecks = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/jobs/available", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkedIds: Object.keys(availability.data?.states ?? {}),
+        }),
+      });
+      if (!response.ok) throw new Error("Availability check failed");
+      return response.json() as Promise<NonNullable<typeof availability.data>>;
+    },
+    onSuccess: (result) =>
+      qc.setQueryData([...qk.jobAvailability, userId], {
+        ...result,
+        states: { ...availability.data?.states, ...result.states },
+      }),
+    onError: () =>
+      toast.err(
+        cs
+          ? "Další nabídky se nepodařilo ověřit."
+          : "Could not check the next listings.",
+      ),
+  });
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"all" | JobRole>("all");
   const [source, setSource] = useState<string>("all");
-  const [sortMode, setSortMode] = useState<"fit" | "fit-asc" | "newest" | "remote" | "location">("fit");
+  const [sortMode, setSortMode] = useState<
+    "fit" | "fit-asc" | "newest" | "remote" | "location"
+  >("fit");
   const [priorityOnly, setPriorityOnly] = useState(false);
   const [strongFitOnly, setStrongFitOnly] = useState(false);
   const [shortlistedOnly, setShortlistedOnly] = useState(false);
@@ -341,7 +443,18 @@ function OpenPositionsView({
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const seen = new Set<string>();
     const rows = listings.filter((l) => {
+      if (
+        sourceSync.isPending ||
+        availability.isFetching ||
+        availability.isError ||
+        availability.data?.states[l.id] !== "open"
+      )
+        return false;
+      if (workplace === "prague" && !isPrague(l.location)) return false;
+      if (workplace === "remote" && !l.remote) return false;
+      if (seniority !== "all" && careerSeniority(l) !== seniority) return false;
       const st = stateByListing.get(l.id)?.state;
       if (st === "deleted") return false;
       if (shortlistedOnly && st !== "shortlisted") return false;
@@ -352,6 +465,9 @@ function OpenPositionsView({
         const s = matchById.get(l.id)?.score;
         if (s == null || s < STRONG_FIT_MIN) return false;
       }
+      const duplicateKey = `${l.company?.trim().toLowerCase()}|${l.title.trim().toLowerCase()}|${l.location?.trim().toLowerCase()}`;
+      if (seen.has(duplicateKey)) return false;
+      seen.add(duplicateKey);
       if (!q) return true;
       return `${l.title}\n${l.company ?? ""}\n${l.location ?? ""}\n${l.tags.join(" ")}`
         .toLowerCase()
@@ -365,7 +481,9 @@ function OpenPositionsView({
         const sa = isShortlisted(a) ? 0 : 1;
         const sb = isShortlisted(b) ? 0 : 1;
         if (sa !== sb) return sa - sb;
-        return b.first_seen_at.localeCompare(a.first_seen_at);
+        return (b.posted_at ?? b.first_seen_at).localeCompare(
+          a.posted_at ?? a.first_seen_at,
+        );
       });
     }
     const empty: JobMatch = {
@@ -377,8 +495,16 @@ function OpenPositionsView({
     };
     const byFit = (a: JobListing, b: JobListing) =>
       compareByFit(
-        { listing: a, match: matchById.get(a.id) ?? empty, shortlisted: isShortlisted(a) },
-        { listing: b, match: matchById.get(b.id) ?? empty, shortlisted: isShortlisted(b) },
+        {
+          listing: a,
+          match: matchById.get(a.id) ?? empty,
+          shortlisted: isShortlisted(a),
+        },
+        {
+          listing: b,
+          match: matchById.get(b.id) ?? empty,
+          shortlisted: isShortlisted(b),
+        },
       );
     if (sortMode === "fit-asc") {
       return rows.sort((a, b) => {
@@ -388,10 +514,15 @@ function OpenPositionsView({
       });
     }
     if (sortMode === "remote") {
-      return rows.sort((a, b) => Number(b.remote) - Number(a.remote) || byFit(a, b));
+      return rows.sort(
+        (a, b) => Number(b.remote) - Number(a.remote) || byFit(a, b),
+      );
     }
     if (sortMode === "location") {
-      return rows.sort((a, b) => (a.location ?? "").localeCompare(b.location ?? "") || byFit(a, b));
+      return rows.sort(
+        (a, b) =>
+          (a.location ?? "").localeCompare(b.location ?? "") || byFit(a, b),
+      );
     }
     return rows.sort(byFit);
   }, [
@@ -405,6 +536,12 @@ function OpenPositionsView({
     priorityOnly,
     strongFitOnly,
     shortlistedOnly,
+    sourceSync.isPending,
+    availability.data,
+    availability.isFetching,
+    availability.isError,
+    workplace,
+    seniority,
   ]);
 
   // Set / replace / clear the per-listing triage state. Non-optimistic —
@@ -497,6 +634,7 @@ function OpenPositionsView({
   }
 
   async function refresh() {
+    if (isPreview) return;
     setRefreshing(true);
     try {
       const res = await fetch("/api/jobs/refresh", { method: "POST" });
@@ -530,12 +668,47 @@ function OpenPositionsView({
 
   return (
     <div className="min-w-0">
+      <div className="mb-4 border-l-2 border-primary pl-4 text-sm leading-relaxed">
+        <p className="font-medium">React · TypeScript · Next.js · Node.js</p>
+        <p className="text-foreground-muted">
+          {cs
+            ? "Frontend a fullstack. Praha nebo práce na dálku z Česka. Junior, medior i senior."
+            : "Frontend and fullstack. Prague or remote from Czechia. Junior, medior and senior."}
+        </p>
+      </div>
+      <div className="mb-4 flex flex-wrap gap-3">
+        <SimpleSelect
+          value={workplace}
+          onValueChange={setWorkplace}
+          className="w-full sm:w-48"
+          aria-label={cs ? "Místo práce" : "Work location"}
+          options={[
+            { value: "all", label: cs ? "Praha i remote" : "Prague + remote" },
+            { value: "prague", label: "Praha" },
+            { value: "remote", label: "Remote" },
+          ]}
+        />
+        <SimpleSelect
+          value={seniority}
+          onValueChange={setSeniority}
+          className="w-full sm:w-48"
+          aria-label={cs ? "Seniorita" : "Seniority"}
+          options={[
+            { value: "all", label: cs ? "Všechny úrovně" : "All levels" },
+            { value: "junior", label: "Junior" },
+            { value: "medior", label: "Medior" },
+            { value: "senior", label: "Senior" },
+            { value: "unspecified", label: cs ? "Neuvedeno" : "Not specified" },
+          ]}
+        />
+      </div>
       {/* toolbar */}
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative w-full max-w-xs">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
             <Input
+              aria-label={t.jobs.searchPlaceholder}
               placeholder={t.jobs.searchPlaceholder}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -652,8 +825,68 @@ function OpenPositionsView({
         </div>
       </div>
 
+      {(sourceSync.isError || sourceSync.data === false) && (
+        <p className="my-3 text-sm text-warning">
+          {cs
+            ? "Nové nabídky se nepodařilo načíst. Ověřuji dostupnost dříve uložených pozic."
+            : "New listings could not be fetched. Checking availability of previously saved positions."}
+        </p>
+      )}
       <JobSources lastRun={lastRun} />
 
+      <div className="my-4 text-sm" role="status">
+        {isPreview ? (
+          cs ? (
+            "Ukázková data. Dostupnost se zde neověřuje."
+          ) : (
+            "Demo data. Availability is not checked here."
+          )
+        ) : sourceSync.isPending ? (
+          cs ? (
+            "Načítám aktuální nabídky ze zdrojů…"
+          ) : (
+            "Fetching current listings from sources…"
+          )
+        ) : availability.isFetching ? (
+          cs ? (
+            "Ověřuji dostupnost nabídek…"
+          ) : (
+            "Checking listing availability…"
+          )
+        ) : availability.isError ? (
+          <span className="text-warning">
+            {cs
+              ? "Dostupnost se nepodařilo ověřit. Starší nabídky jsou skryté."
+              : "Availability could not be checked. Older listings are hidden."}{" "}
+            <Button
+              variant="outline"
+              onClick={() => void availability.refetch()}
+            >
+              {cs ? "Zkusit znovu" : "Try again"}
+            </Button>
+          </span>
+        ) : cs ? (
+          "Zobrazují se jen nabídky s ověřenou stránkou. Uzavřené, nedostupné a dosud neověřené nabídky jsou skryté."
+        ) : (
+          "Only listings with a verified page are shown. Closed, unavailable and unchecked listings are hidden."
+        )}
+      </div>
+      {!!availability.data?.remaining && !availability.isFetching && (
+        <Button
+          variant="outline"
+          className="mb-4"
+          disabled={moreChecks.isPending}
+          onClick={() => moreChecks.mutate()}
+        >
+          {moreChecks.isPending
+            ? cs
+              ? "Ověřuji…"
+              : "Checking…"
+            : cs
+              ? `Ověřit další nabídky (${availability.data.remaining})`
+              : `Check more listings (${availability.data.remaining})`}
+        </Button>
+      )}
       {listings.length === 0 ? (
         <Card className="p-0">
           <EmptyState
@@ -683,37 +916,8 @@ function OpenPositionsView({
           <p className="mb-2 text-[11px] text-foreground-subtle tabular">
             {visible.length} {t.jobs.listingsShown}
           </p>
-          <Card className="min-w-0 max-w-full overflow-hidden p-0">
-            <div className="max-w-full overflow-x-auto overscroll-x-contain [contain:inline-size]">
-              <table className="w-full min-w-[900px] text-left">
-                <thead className="border-b border-border bg-surface-secondary text-[11px] font-medium text-foreground-muted">
-                  <tr>
-                    <th scope="col" className="w-10 px-3 py-2.5">
-                      <Checkbox
-                        checked={
-                          visible.length > 0 &&
-                          visible.every((listing) => selected.has(listing.id))
-                        }
-                        onCheckedChange={(checked) =>
-                          setSelected(
-                            checked
-                              ? new Set(visible.map((listing) => listing.id))
-                              : new Set(),
-                          )
-                        }
-                        aria-label={t.jobs.selectAllListings}
-                      />
-                    </th>
-                    <th scope="col" className="px-4 py-2.5">{t.jobs.tablePosition}</th>
-                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableCompany}</th>
-                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableMatch}</th>
-                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableRemote}</th>
-                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableLocation}</th>
-                    <th scope="col" className="px-3 py-2.5">{t.jobs.tableSource}</th>
-                    <th scope="col" className="px-4 py-2.5 text-right"><span className="sr-only">{t.jobs.tableActions}</span></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(280px,2fr)_minmax(360px,3fr)]">
+            <div className="min-w-0 divide-y divide-border rounded-md border border-border bg-surface">
               {visible.map((l) => (
                 <ListingRow
                   key={l.id}
@@ -725,8 +929,8 @@ function OpenPositionsView({
                   }
                   selected={selected.has(l.id)}
                   onSelect={() =>
-                    setSelected((current) => {
-                      const next = new Set(current);
+                    setSelected((old) => {
+                      const next = new Set(old);
                       if (next.has(l.id)) next.delete(l.id);
                       else next.add(l.id);
                       return next;
@@ -735,12 +939,47 @@ function OpenPositionsView({
                   onShortlist={() => toggleState(l, "shortlisted")}
                   onDelete={() => void deleteListings([l])}
                   onApply={() => onApply(l)}
+                  onDetail={() => {
+                    setDetailId(l.id);
+                    if (window.matchMedia("(max-width: 1279px)").matches)
+                      setMobileDetail(true);
+                  }}
+                  active={(detailId ?? visible[0]?.id) === l.id}
                 />
               ))}
-                </tbody>
-              </table>
             </div>
-          </Card>
+            <div className="hidden min-w-0 xl:block">
+              {(() => {
+                const detail =
+                  visible.find((l) => l.id === detailId) ?? visible[0];
+                return detail ? (
+                  <CareerJobDetails
+                    listing={detail}
+                    onApply={() => onApply(detail)}
+                  />
+                ) : null;
+              })()}
+            </div>
+            <Dialog open={mobileDetail} onOpenChange={setMobileDetail}>
+              <DialogContent className="w-[calc(100%-2rem)] max-w-3xl">
+                <DialogTitle>
+                  {cs ? "Podrobnosti pozice" : "Position details"}
+                </DialogTitle>
+                {(() => {
+                  const detail = visible.find((l) => l.id === detailId);
+                  return detail ? (
+                    <CareerJobDetails
+                      listing={detail}
+                      onApply={() => {
+                        setMobileDetail(false);
+                        onApply(detail);
+                      }}
+                    />
+                  ) : null;
+                })()}
+              </DialogContent>
+            </Dialog>
+          </div>
         </>
       )}
     </div>
@@ -782,7 +1021,9 @@ function FilterToggle({
 function FitBadge({ match }: { match: JobMatch }) {
   const t = useDict();
   const label =
-    match.score === null ? t.jobs.fitUnknown : `${match.score}% ${t.jobs.fitSuffix}`;
+    match.score === null
+      ? t.jobs.fitUnknown
+      : `${match.score}% ${t.jobs.fitSuffix}`;
   const tip =
     match.score === null
       ? t.jobs.fitUnknownHint
@@ -828,6 +1069,8 @@ function ListingRow({
   onShortlist,
   onDelete,
   onApply,
+  onDetail,
+  active,
 }: {
   listing: JobListing;
   match: JobMatch | undefined;
@@ -838,125 +1081,75 @@ function ListingRow({
   onShortlist: () => void;
   onDelete: () => void;
   onApply: () => void;
+  onDetail: () => void;
+  active: boolean;
 }) {
   const t = useDict();
-  const locale = useDateLocale();
-  const roleLabel: Record<JobRole, string> = {
-    frontend: t.jobs.roleFrontend,
-    fullstack: t.jobs.roleFullstack,
-    software: t.jobs.roleSoftware,
-  };
-  const seen = formatDistanceToNow(new Date(listing.first_seen_at), {
-    addSuffix: true,
-    locale,
-  });
   return (
-    <tr className="group align-top transition-colors hover:bg-surface-hover">
-      <td className="w-10 px-3 py-3">
+    <article className={cn("min-w-0 p-4", active && "bg-accent/50")}>
+      <div className="flex items-start gap-3">
         <Checkbox
           checked={selected}
           onCheckedChange={onSelect}
           aria-label={listing.title}
         />
-      </td>
-      <td className="max-w-md px-4 py-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <a
-            href={listing.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="max-w-full truncate text-sm font-medium text-foreground hover:underline focus-ring rounded-sm"
-            title={listing.title}
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={onDetail}
+            aria-pressed={active}
+            className="focus-ring min-h-11 break-words text-left text-base font-semibold hover:underline"
           >
             {listing.title}
-          </a>
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full border px-2 py-[3px] text-[10px] font-medium",
-              ROLE_TONE[listing.role],
-            )}
-          >
-            {roleLabel[listing.role]}
-          </span>
-          {applied && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-[3px] text-[10px] font-medium text-success">
-              <Check className="h-2.5 w-2.5" />
-              {t.jobs.appliedBadge}
+          </button>
+          <p className="text-sm text-foreground-muted">
+            {listing.company} · {listing.location}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {match && <FitBadge match={match} />}
+            <span className="text-sm">
+              {listing.seniority ||
+                (careerSeniority(listing) === "unspecified"
+                  ? "—"
+                  : careerSeniority(listing))}
+              {listing.salary ? ` · ${listing.salary}` : ""}
             </span>
-          )}
-        </div>
-        {listing.salary && <p className="mt-1 text-xs text-foreground-muted">{listing.salary}</p>}
-        {match && (match.matched.length > 0 || match.missing.length > 0) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {match.matched.slice(0, 4).map((s) => (
-              <SkillChip key={s.name} label={s.name} kind="have" />
-            ))}
-            {match.missing.slice(0, 2).map((name) => (
-              <SkillChip key={name} label={name} kind="gap" />
-            ))}
           </div>
-        )}
-      </td>
-      <td className="px-3 py-3 text-sm text-foreground-muted">{listing.company || "—"}</td>
-      <td className="px-3 py-3">{match ? <FitBadge match={match} /> : "—"}</td>
-      <td className="px-3 py-3 text-xs font-medium text-foreground-muted">{listing.remote ? t.jobs.remoteYes : t.jobs.remoteNo}</td>
-      <td className="max-w-48 px-3 py-3 text-xs text-foreground-muted">{listing.location || "—"}</td>
-      <td className="px-3 py-3"><p className="text-xs text-foreground-muted">{jobSourceLabel(listing.source)}</p><p className="mt-1 whitespace-nowrap text-[11px] text-foreground-subtle">{seen}{listing.seniority ? ` · ${listing.seniority}` : ""}</p></td>
-      <td className="px-4 py-3">
-      <div className="flex shrink-0 items-center justify-end gap-0.5">
-        <Tooltip
-          content={
+          <p className="mt-2 text-sm text-foreground-muted">
+            {jobSourceLabel(listing.source)}
+            {applied ? ` · ${t.jobs.appliedBadge}` : ""}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onShortlist}
+          aria-pressed={state === "shortlisted"}
+          aria-label={
             state === "shortlisted" ? t.jobs.unshortlist : t.jobs.shortlist
           }
         >
-          <button
-            type="button"
-            onClick={onShortlist}
-            aria-label={
-              state === "shortlisted" ? t.jobs.unshortlist : t.jobs.shortlist
-            }
-            aria-pressed={state === "shortlisted"}
-            className={cn(
-              "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
-              state === "shortlisted"
-                ? "text-warning"
-                : "text-foreground-muted hover:bg-surface-hover hover:text-foreground",
-            )}
-          >
-            <Star
-              className="h-3.5 w-3.5"
-              fill={state === "shortlisted" ? "currentColor" : "none"}
-            />
-          </button>
-        </Tooltip>
-        <Tooltip content={t.jobs.deleteListing}>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={t.jobs.deleteListing}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </Tooltip>
-        <Tooltip content={t.jobs.openOriginal}>
-          <a
-            href={listing.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t.jobs.openOriginal}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </Tooltip>
-        <Button size="sm" className="ml-1 h-7" onClick={onApply}>
-          <Send className="h-3 w-3" />
+          <Star
+            className="h-4 w-4"
+            fill={state === "shortlisted" ? "currentColor" : "none"}
+          />
+          {t.jobs.shortlist}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onDelete}
+          aria-label={t.jobs.deleteListing}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+        <Button size="sm" className="ml-auto" onClick={onApply}>
           {t.jobs.applyAction}
         </Button>
       </div>
-      </td>
-    </tr>
+    </article>
   );
 }
 
@@ -1113,114 +1306,115 @@ function ApplyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-          <DialogTitle>
-            {listing ? t.jobs.applyTitle : t.jobs.logManualTitle}
-          </DialogTitle>
-          {listing && (
-            <p className="mt-1 truncate text-xs text-foreground-muted">
-              {[listing.title, listing.company].filter(Boolean).join(" — ")} (
-              {jobSourceLabel(listing.source)})
-            </p>
-          )}
-          {listing && <ApplyFitSummary listing={listing} />}
-          <form onSubmit={submit} className="mt-3 space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="job-app-title">{t.jobs.position}</Label>
-                <Input
-                  id="job-app-title"
-                  value={form.title}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, title: e.target.value }))
-                  }
-                  placeholder={t.jobs.positionPlaceholder}
-                  maxLength={200}
-                  autoFocus={!listing}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="job-app-company">{t.jobs.company}</Label>
-                <Input
-                  id="job-app-company"
-                  value={form.company}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, company: e.target.value }))
-                  }
-                  placeholder={t.jobs.companyPlaceholder}
-                  maxLength={200}
-                />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="job-app-url">{t.jobs.link}</Label>
-                <Input
-                  id="job-app-url"
-                  type="url"
-                  value={form.url}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, url: e.target.value }))
-                  }
-                  placeholder="https://…"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="job-app-date">{t.jobs.appliedOn}</Label>
-                <Input
-                  id="job-app-date"
-                  type="date"
-                  value={form.appliedOn}
-                  max={todayIso()}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, appliedOn: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-
-            <CoverLetterField
-              value={form.coverLetter}
-              onChange={(v) => setForm((f) => ({ ...f, coverLetter: v }))}
-              templates={templates}
-              setTemplates={setTemplates}
-              vars={{
-                position: form.title,
-                company: form.company,
-                source: listing ? jobSourceLabel(listing.source) : null,
-              }}
-              userId={userId}
-            />
-
+      <DialogContent className="w-[calc(100%-2rem)] max-w-5xl">
+        <DialogTitle>
+          {listing ? t.jobs.applyTitle : t.jobs.logManualTitle}
+        </DialogTitle>
+        {listing && (
+          <p className="mt-1 truncate text-xs text-foreground-muted">
+            {[listing.title, listing.company].filter(Boolean).join(" — ")} (
+            {jobSourceLabel(listing.source)})
+          </p>
+        )}
+        {listing && <ApplyFitSummary listing={listing} />}
+        <form onSubmit={submit} className="mt-3 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="job-app-notes">{t.jobs.notes}</Label>
-              <Textarea
-                id="job-app-notes"
-                value={form.notes}
+              <Label htmlFor="job-app-title">{t.jobs.position}</Label>
+              <Input
+                id="job-app-title"
+                value={form.title}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, notes: e.target.value }))
+                  setForm((f) => ({ ...f, title: e.target.value }))
                 }
-                placeholder={t.jobs.notesPlaceholder}
-                rows={2}
-                className="text-xs"
+                placeholder={t.jobs.positionPlaceholder}
+                maxLength={200}
+                autoFocus={!listing}
               />
             </div>
-
-            {formError && (
-              <p className="text-xs text-destructive">{formError}</p>
-            )}
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <DialogClose asChild>
-                <Button type="button" variant="ghost" size="sm">
-                  {t.jobs.cancel}
-                </Button>
-              </DialogClose>
-              <Button type="submit" size="sm" disabled={createMutation.isPending}>
-                <Check className="h-3.5 w-3.5" />
-                {createMutation.isPending ? t.jobs.saving : t.jobs.saveApplication}
-              </Button>
+            <div className="space-y-1.5">
+              <Label htmlFor="job-app-company">{t.jobs.company}</Label>
+              <Input
+                id="job-app-company"
+                value={form.company}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, company: e.target.value }))
+                }
+                placeholder={t.jobs.companyPlaceholder}
+                maxLength={200}
+              />
             </div>
-          </form>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="job-app-url">{t.jobs.link}</Label>
+              <Input
+                id="job-app-url"
+                type="url"
+                value={form.url}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, url: e.target.value }))
+                }
+                placeholder="https://…"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="job-app-date">{t.jobs.appliedOn}</Label>
+              <Input
+                id="job-app-date"
+                type="date"
+                value={form.appliedOn}
+                max={todayIso()}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, appliedOn: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          <CoverLetterField
+            description={listing?.description ?? undefined}
+            value={form.coverLetter}
+            onChange={(v) => setForm((f) => ({ ...f, coverLetter: v }))}
+            templates={templates}
+            setTemplates={setTemplates}
+            vars={{
+              position: form.title,
+              company: form.company,
+              source: listing ? jobSourceLabel(listing.source) : null,
+            }}
+            userId={userId}
+          />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="job-app-notes">{t.jobs.notes}</Label>
+            <Textarea
+              id="job-app-notes"
+              value={form.notes}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, notes: e.target.value }))
+              }
+              placeholder={t.jobs.notesPlaceholder}
+              rows={2}
+              className="text-xs"
+            />
+          </div>
+
+          {formError && <p className="text-xs text-destructive">{formError}</p>}
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" size="sm">
+                {t.jobs.cancel}
+              </Button>
+            </DialogClose>
+            <Button type="submit" size="sm" disabled={createMutation.isPending}>
+              <Check className="h-3.5 w-3.5" />
+              {createMutation.isPending
+                ? t.jobs.saving
+                : t.jobs.saveApplication}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
@@ -1238,17 +1432,25 @@ function CoverLetterField({
   vars,
   userId,
   id = "job-cover-letter",
+  description,
 }: {
   value: string;
   onChange: (v: string) => void;
   templates: CoverLetterTemplate[];
   setTemplates: Updater<CoverLetterTemplate[]>;
-  vars: { position?: string | null; company?: string | null; source?: string | null };
+  vars: {
+    position?: string | null;
+    company?: string | null;
+    source?: string | null;
+  };
   userId: string;
   id?: string;
+  description?: string;
 }) {
   const t = useDict();
   const { lang } = useLang();
+  const [letterLanguage, setLetterLanguage] = useState<LetterLanguage>(lang);
+  const [draftName, setDraftName] = useState("");
   const locale = useDateLocale();
   const toast = useToast();
   const qc = useQueryClient();
@@ -1259,7 +1461,7 @@ function CoverLetterField({
     let body: string | null = null;
     if (key.startsWith("builtin:")) {
       const tpl = BUILTIN_TEMPLATES.find((b) => `builtin:${b.id}` === key);
-      body = tpl ? tpl.body[lang] : null;
+      body = tpl ? tpl.body[letterLanguage] : null;
     } else {
       const tpl = templates.find((x) => `tpl:${x.id}` === key);
       body = tpl?.body ?? null;
@@ -1294,16 +1496,27 @@ function CoverLetterField({
 
   function saveAsTemplate() {
     if (!value.trim()) return;
-    const name = window.prompt(t.jobs.saveAsTemplateName)?.trim();
-    if (!name) return;
+    const name =
+      draftName.trim() ||
+      `[${letterLanguage.toUpperCase()}] ${vars.company || (lang === "cs" ? "Firma" : "Company")} · ${vars.position || (lang === "cs" ? "Dopis" : "Letter")} · ${new Date().toISOString().slice(0, 10)}`;
     saveTemplateMutation.mutate({ name, body: value });
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-4">
+      <CareerLetterHelper
+        key={description ?? id}
+        position={vars.position ?? ""}
+        company={vars.company ?? ""}
+        description={description}
+        value={value}
+        onChange={onChange}
+        language={letterLanguage}
+        onLanguageChange={setLetterLanguage}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Label htmlFor={id}>{t.jobs.coverLetter}</Label>
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <Select
             value=""
             onValueChange={(v) => {
@@ -1337,11 +1550,25 @@ function CoverLetterField({
               </SelectGroup>
             </SelectContent>
           </Select>
+          <Input
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            maxLength={150}
+            className="w-full sm:w-52"
+            aria-label={
+              lang === "cs" ? "Název uloženého dopisu" : "Saved letter name"
+            }
+            placeholder={
+              lang === "cs"
+                ? "Název dopisu (volitelné)"
+                : "Letter name (optional)"
+            }
+          />
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-7 text-[11px]"
+            className="min-h-11 text-sm"
             onClick={saveAsTemplate}
             disabled={!value.trim() || saveTemplateMutation.isPending}
           >
@@ -1356,8 +1583,33 @@ function CoverLetterField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={t.jobs.coverLetterPlaceholder}
         rows={9}
-        className="text-xs leading-relaxed"
+        className="text-base leading-relaxed"
       />
+      <div className="flex flex-wrap gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!value.trim()}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(value);
+              toast.ok(lang === "cs" ? "Dopis zkopírován" : "Letter copied");
+            } catch {
+              toast.err(
+                lang === "cs"
+                  ? "Kopírování selhalo. Vyberte text ručně."
+                  : "Copy failed. Select the text manually.",
+              );
+            }
+          }}
+        >
+          {lang === "cs" ? "Kopírovat dopis" : "Copy letter"}
+        </Button>
+        <span className="self-center text-sm text-foreground-muted">
+          {value.trim().split(/\s+/).filter(Boolean).length}{" "}
+          {lang === "cs" ? "slov" : "words"}
+        </span>
+      </div>
     </div>
   );
 }
@@ -1420,7 +1672,10 @@ function AppliedView({
         })
         .select()
         .single();
-      return { app: data as JobApplication, ev: (ev ?? null) as JobApplicationEvent | null };
+      return {
+        app: data as JobApplication,
+        ev: (ev ?? null) as JobApplicationEvent | null,
+      };
     },
     onSuccess: ({ app, ev }) => {
       setApplications((prev) => prev.map((a) => (a.id === app.id ? app : a)));
@@ -1459,13 +1714,16 @@ function AppliedView({
   });
 
   async function removeApplication(app: JobApplication) {
-    if (await confirm({
-      title: t.jobs.deleteApplication,
-      description: t.jobs.deleteApplicationConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) deleteMutation.mutate(app.id);
+    if (
+      await confirm({
+        title: t.jobs.deleteApplication,
+        description: t.jobs.deleteApplicationConfirm,
+        confirmLabel: t.common.delete,
+        cancelLabel: t.common.cancel,
+        destructive: true,
+      })
+    )
+      deleteMutation.mutate(app.id);
   }
 
   const statusLabel: Record<JobApplicationStatus, string> = {
@@ -1758,44 +2016,42 @@ function LetterDialog({
   return (
     <Dialog open={app !== null} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-xl">
-          <DialogTitle>
-            {t.jobs.coverLetter}
-          </DialogTitle>
-          {app && (
-            <p className="mt-1 truncate text-xs text-foreground-muted">
-              {[app.title, app.company].filter(Boolean).join(" — ")}
-            </p>
-          )}
-          <div className="mt-3 space-y-3">
-            <CoverLetterField
-              id="job-letter-editor"
-              value={letter}
-              onChange={setLetter}
-              templates={templates}
-              setTemplates={setTemplates}
-              vars={{
-                position: app?.title,
-                company: app?.company,
-                source: app?.source ? jobSourceLabel(app.source) : null,
-              }}
-              userId={userId}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <DialogClose asChild>
-                <Button type="button" variant="ghost" size="sm">
-                  {t.jobs.cancel}
-                </Button>
-              </DialogClose>
-              <Button
-                size="sm"
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-              >
-                <Check className="h-3.5 w-3.5" />
-                {saveMutation.isPending ? t.jobs.saving : t.jobs.save}
+        <DialogTitle>{t.jobs.coverLetter}</DialogTitle>
+        {app && (
+          <p className="mt-1 truncate text-xs text-foreground-muted">
+            {[app.title, app.company].filter(Boolean).join(" — ")}
+          </p>
+        )}
+        <div className="mt-3 space-y-3">
+          <CoverLetterField
+            id="job-letter-editor"
+            value={letter}
+            onChange={setLetter}
+            templates={templates}
+            setTemplates={setTemplates}
+            vars={{
+              position: app?.title,
+              company: app?.company,
+              source: app?.source ? jobSourceLabel(app.source) : null,
+            }}
+            userId={userId}
+          />
+          <div className="flex items-center justify-end gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" size="sm">
+                {t.jobs.cancel}
               </Button>
-            </div>
+            </DialogClose>
+            <Button
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+            >
+              <Check className="h-3.5 w-3.5" />
+              {saveMutation.isPending ? t.jobs.saving : t.jobs.save}
+            </Button>
           </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -1932,107 +2188,104 @@ function TemplatesDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl" showClose={false}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <DialogTitle>
-                {t.jobs.templatesTitle}
-              </DialogTitle>
-              <p className="mt-1 text-xs text-foreground-muted">
-                {t.jobs.templatesDescription}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <DialogTitle>{t.jobs.templatesTitle}</DialogTitle>
+            <p className="mt-1 text-xs text-foreground-muted">
+              {t.jobs.templatesDescription}
+            </p>
+          </div>
+          {!formOpen && (
+            <Button size="sm" onClick={openCreate}>
+              <Plus className="h-3.5 w-3.5" />
+              {t.jobs.newTemplate}
+            </Button>
+          )}
+        </div>
+
+        {formOpen ? (
+          <form onSubmit={submit} className="mt-4 space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="tpl-name">{t.jobs.templateName}</Label>
+              <Input
+                id="tpl-name"
+                value={form.name}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
+                placeholder={t.jobs.templateNamePlaceholder}
+                maxLength={120}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tpl-body">{t.jobs.templateBody}</Label>
+              <Textarea
+                id="tpl-body"
+                value={form.body}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, body: e.target.value }))
+                }
+                placeholder={t.jobs.templateBodyPlaceholder}
+                rows={10}
+                className="text-base leading-relaxed"
+              />
+              <p className="text-[11px] text-foreground-subtle">
+                {t.jobs.placeholdersHint}
               </p>
             </div>
-            {!formOpen && (
-              <Button size="sm" onClick={openCreate}>
-                <Plus className="h-3.5 w-3.5" />
-                {t.jobs.newTemplate}
-              </Button>
+            {formError && (
+              <p className="text-xs text-destructive">{formError}</p>
             )}
-          </div>
-
-          {formOpen ? (
-            <form onSubmit={submit} className="mt-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="tpl-name">{t.jobs.templateName}</Label>
-                <Input
-                  id="tpl-name"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, name: e.target.value }))
-                  }
-                  placeholder={t.jobs.templateNamePlaceholder}
-                  maxLength={120}
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="tpl-body">{t.jobs.templateBody}</Label>
-                <Textarea
-                  id="tpl-body"
-                  value={form.body}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, body: e.target.value }))
-                  }
-                  placeholder={t.jobs.templateBodyPlaceholder}
-                  rows={10}
-                  className="text-xs leading-relaxed"
-                />
-                <p className="text-[11px] text-foreground-subtle">
-                  {t.jobs.placeholdersHint}
-                </p>
-              </div>
-              {formError && (
-                <p className="text-xs text-destructive">{formError}</p>
-              )}
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={closeForm}
-                >
-                  {t.jobs.cancel}
-                </Button>
-                <Button type="submit" size="sm" disabled={saveMutation.isPending}>
-                  <Check className="h-3.5 w-3.5" />
-                  {saveMutation.isPending ? t.jobs.saving : t.jobs.save}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="mt-4">
-              {templates.length === 0 ? (
-                <p className="py-6 text-center text-xs text-foreground-muted">
-                  {t.jobs.noTemplatesYet}
-                </p>
-              ) : (
-                <ul className="divide-y divide-border rounded-md border border-border">
-                  {templates.map((tpl) => (
-                    <li
-                      key={tpl.id}
-                      className="flex items-center gap-2 px-3 py-2"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium">
-                          {tpl.name}
-                        </p>
-                        <p className="truncate text-[11px] text-foreground-subtle">
-                          {tpl.body.replace(/\s+/g, " ").slice(0, 90)}
-                        </p>
-                      </div>
-                      <Tooltip content={t.jobs.editTemplate}>
-                        <button
-                          type="button"
-                          onClick={() => openEdit(tpl)}
-                          aria-label={t.jobs.editTemplate}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                      </Tooltip>
-                      <Tooltip content={t.jobs.deleteTemplate}>
-                        <button
-                          type="button"
-                          onClick={() => void confirm({
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={closeForm}
+              >
+                {t.jobs.cancel}
+              </Button>
+              <Button type="submit" size="sm" disabled={saveMutation.isPending}>
+                <Check className="h-3.5 w-3.5" />
+                {saveMutation.isPending ? t.jobs.saving : t.jobs.save}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-4">
+            {templates.length === 0 ? (
+              <p className="py-6 text-center text-xs text-foreground-muted">
+                {t.jobs.noTemplatesYet}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {templates.map((tpl) => (
+                  <li
+                    key={tpl.id}
+                    className="flex items-center gap-2 px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium">{tpl.name}</p>
+                      <p className="truncate text-[11px] text-foreground-subtle">
+                        {tpl.body.replace(/\s+/g, " ").slice(0, 90)}
+                      </p>
+                    </div>
+                    <Tooltip content={t.jobs.editTemplate}>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(tpl)}
+                        aria-label={t.jobs.editTemplate}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content={t.jobs.deleteTemplate}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void confirm({
                             title: t.jobs.deleteTemplate,
                             description: t.jobs.deleteTemplateConfirm,
                             confirmLabel: t.common.delete,
@@ -2040,27 +2293,183 @@ function TemplatesDialog({
                             destructive: true,
                           }).then((approved) => {
                             if (approved) deleteMutation.mutate(tpl.id);
-                          })}
-                          aria-label={t.jobs.deleteTemplate}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </Tooltip>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="mt-4 flex justify-end">
-                <DialogClose asChild>
-                  <Button type="button" variant="ghost" size="sm">
-                    {t.jobs.cancel}
-                  </Button>
-                </DialogClose>
-              </div>
+                          })
+                        }
+                        aria-label={t.jobs.deleteTemplate}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </Tooltip>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-4 flex justify-end">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" size="sm">
+                  {t.jobs.cancel}
+                </Button>
+              </DialogClose>
             </div>
-          )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function LetterWorkspace({
+  templates,
+  setTemplates,
+  applications,
+  userId,
+}: {
+  templates: CoverLetterTemplate[];
+  setTemplates: Updater<CoverLetterTemplate[]>;
+  applications: JobApplication[];
+  userId: string;
+}) {
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const [position, setPosition] = useState("");
+  const [company, setCompany] = useState("");
+  const [letter, setLetter] = useState("");
+  return (
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(240px,1fr)]">
+      <section className="min-w-0 space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="space-y-2 text-sm">
+            <span>{cs ? "Pozice" : "Position"}</span>
+            <Input
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+            />
+          </label>
+          <label className="space-y-2 text-sm">
+            <span>{cs ? "Firma" : "Company"}</span>
+            <Input
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
+          </label>
+        </div>
+        <CoverLetterField
+          value={letter}
+          onChange={setLetter}
+          templates={templates}
+          setTemplates={setTemplates}
+          vars={{ position, company }}
+          userId={userId}
+        />
+        <p className="text-sm text-foreground-muted">
+          {cs
+            ? "Rozpracovaný dopis uložte jako pojmenovanou šablonu. Odeslaný dopis připojte k žádosti v sekci Přihlášky."
+            : "Save an unfinished letter as a named template. Record a sent letter with its application in Applications."}
+        </p>
+      </section>
+      <aside className="min-w-0 space-y-4">
+        <h2 className="text-base font-semibold">
+          {cs ? "Předchozí dopisy" : "Previous letters"}
+        </h2>
+        {applications
+          .filter((a) => a.cover_letter.trim())
+          .map((a) => (
+            <details key={a.id} className="border-b border-border pb-3">
+              <summary className="cursor-pointer break-words text-sm font-medium">
+                {a.company} · {a.title}
+                <span className="block text-foreground-muted">
+                  {a.applied_on}
+                </span>
+              </summary>
+              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                {a.cover_letter}
+              </p>
+              <Button
+                variant="outline"
+                className="mt-3"
+                onClick={() => {
+                  if (
+                    !letter.trim() ||
+                    window.confirm(
+                      cs
+                        ? "Nahradit aktuální návrh?"
+                        : "Replace the current draft?",
+                    )
+                  )
+                    setLetter(a.cover_letter);
+                }}
+              >
+                {cs ? "Použít jako základ" : "Use as starting point"}
+              </Button>
+            </details>
+          ))}
+        {!applications.some((a) => a.cover_letter.trim()) && (
+          <p className="text-sm text-foreground-muted">
+            {cs
+              ? "Uložené dopisy k žádostem se objeví zde."
+              : "Letters saved with applications will appear here."}
+          </p>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+function CareerJobDetails({
+  listing: detail,
+  onApply,
+}: {
+  listing: JobListing;
+  onApply: () => void;
+}) {
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const t = useDict();
+  return (
+    <section
+      className="min-w-0 rounded-md border border-border bg-surface p-5"
+      aria-label={cs ? "Podrobnosti pozice" : "Position details"}
+    >
+      <p className="mb-2 text-sm text-foreground-muted">
+        {detail.company} · {detail.location}
+      </p>
+      <h2 className="break-words text-xl font-semibold">{detail.title}</h2>
+      <p className="mt-2 text-sm text-foreground-muted">
+        {detail.salary || (cs ? "Mzda neuvedena" : "Salary not specified")}
+      </p>
+      <div className="my-4 flex flex-wrap gap-2">
+        <Button onClick={onApply}>
+          {cs ? "Připravit žádost" : "Prepare application"}
+        </Button>
+        <Button asChild variant="outline">
+          <a href={detail.url} target="_blank" rel="noopener noreferrer">
+            {t.jobs.openOriginal}
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </Button>
+      </div>
+      <ApplyFitSummary listing={detail} />
+      <p className="my-3 text-sm text-foreground-muted">
+        {cs
+          ? "Shoda technologií není pravděpodobnost přijetí. Ověřte požadovanou praxi a podmínky práce na dálku."
+          : "Technology overlap is not a hiring probability. Check experience requirements and remote eligibility."}
+      </p>
+      <h3 className="mb-2 font-medium">
+        {cs ? "Popis pozice" : "Job description"}
+      </h3>
+      <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
+        {detail.description ||
+          (cs
+            ? "Zdroj neposkytl popis. Otevřete inzerát a vložte text do průvodce dopisem."
+            : "This source did not provide a description. Open the posting and paste it into the letter helper.")}
+      </p>
+      <p className="mt-4 text-sm text-foreground-muted">
+        {jobSourceLabel(detail.source)} ·{" "}
+        {cs
+          ? "Dostupnost ověřena při načtení"
+          : "Availability checked on this visit"}
+      </p>
+    </section>
   );
 }

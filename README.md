@@ -11,7 +11,7 @@ It is deliberately a personal application—not a SaaS, team workspace, CRM, or 
 - **Projects** — a sortable portfolio table plus a workspace per project with overview, tasks, activity, client communication history, GitHub repository documents, development/production links, cron and operations metadata, finance, knowledge, and a project-scoped copilot.
 - **Agents** — an own-only task queue for explicit work delegated to authenticated workers running on the owner's VPS. The browser never receives the runner token and is not a remote shell.
 - **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking.
-- **Career** — a dense listing table sortable by match, remote availability, location, or discovery date; bulk selection and permanent owner-scoped deletion, shortlists, application history, cover-letter templates, follow-ups, and an evidence-grounded Career copilot.
+- **Career** — a React-focused Prague/remote job workspace with visit-time availability checks, employer feeds, a Prague company directory, and position-specific English/Czech letter guidance; bulk selection and permanent owner-scoped deletion, shortlists, application history, cover-letter templates, follow-ups, and an evidence-grounded Career copilot.
 - **Money and invoices** — accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions grouped by operational purpose and importance with renewal countdowns, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
 - **Planning** — GLOBAL priority-6 tasks, active-project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
 - **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup, reusable prompts, masonry-grouped enriched links, shortcuts, and structured references. Project Knowledge reads Tech stack and third-party library summaries from `about-project.md`.
@@ -151,3 +151,5 @@ The repository cannot safely configure external account secrets, OAuth consent s
 - [Brand-media opportunity audit](./docs/design/brand-media-opportunity-audit.md), [art direction](./docs/design/brand-media-art-direction.md), and [manifest](./docs/design/generated-media-manifest.json)
 - [Visual QA record](./docs/design/visual-qa.md)
 - [Future-agent control document](./CLAUDE.md)
+
+Career source research, operating limits and optional Apify setup: [Career workspace](docs/career-workspace.md).

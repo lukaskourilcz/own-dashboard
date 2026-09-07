@@ -7,6 +7,7 @@ export type JobRole = "frontend" | "fullstack" | "software";
 export type ScrapedJob = {
   /** Scraper source id, e.g. "startupjobs", "jobscz", "remoteok". */
   source: string;
+  observedAt?: string;
   /** The source's own id/slug — upsert key together with `source`. */
   externalId: string;
   title: string;

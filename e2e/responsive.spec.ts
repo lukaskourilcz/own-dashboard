@@ -48,7 +48,7 @@ test.describe("responsive chrome", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
   });
 
-  test("mobile Career keeps the data table inside its own scroller", async ({ page }, testInfo) => {
+  test("mobile Career opens readable job details without page overflow", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile", "mobile-only assertion");
     await gotoPreview(page);
     await page.getByRole("button", { name: "More", exact: true }).click();
@@ -59,7 +59,9 @@ test.describe("responsive chrome", () => {
       () => document.body.scrollWidth - document.body.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(1);
-    await expect(page.getByRole("columnheader", { name: "Match" })).toBeAttached();
+    await page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button", { name: "Prepare application", exact: true })).toBeVisible();
   });
 
   test("representative widths reflow without page overflow", async ({ page }, testInfo) => {

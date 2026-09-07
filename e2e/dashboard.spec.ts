@@ -222,14 +222,15 @@ test.describe("dashboard sections", () => {
     ).toBeLessThan(2);
   });
 
-  test("Career uses sortable operational columns and Agents exposes the VPS queue", async ({ page }, testInfo) => {
+  test("Career exposes job details and writing tools, and Agents exposes the VPS queue", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);
     const sidebar = page.locator("aside nav");
     await sidebar.getByRole("button", { name: "Career" }).click();
-    for (const heading of ["Position", "Company", "Match", "Remote", "Location", "Source / found"]) {
-      await expect(page.getByRole("columnheader", { name: heading })).toBeVisible();
-    }
+    await expect(page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cover letters", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Prague companies", exact: true })).toBeVisible();
     await page.getByLabel("Sort").click();
     await page.getByRole("option", { name: "Remote first" }).click();
     await page.getByLabel("Sort").click();

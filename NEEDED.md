@@ -51,3 +51,8 @@ after 45 days.
 curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 rtk init --global
 ```
+
+## Career workspace (7 September 2026)
+
+- Optional Apify imports: configure server-only `APIFY_TOKEN` and `APIFY_JOB_TASK_IDS`; supply completed saved tasks with full job descriptions. No Actor is started by the app. See `docs/career-workspace.md` for sources, schema expectations and costs.
+- Verify `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in production for source ingestion. These values were unavailable for verification in this workspace. Existing authenticated Supabase letter/template tables are reused; no new migration is needed.

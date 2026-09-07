@@ -80,9 +80,9 @@ describe("source completeness", () => {
     }
   });
 
-  it("marks whole-board feeds as complete", () => {
+  it("does not infer closure from a rolling feed", () => {
     for (const id of ["remoteok", "remotive", "arbeitnow", "weworkremotely"]) {
-      expect(JOB_SOURCE_META[id].complete).toBe(true);
+      expect(JOB_SOURCE_META[id].complete).toBe(false);
     }
   });
 

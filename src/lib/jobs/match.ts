@@ -85,6 +85,9 @@ export const MY_STACK: StackSkill[] = [
   { name: "Express.js", weight: 2, group: "backend & realtime", aliases: ["express", "express.js"] },
   { name: "Ably", weight: 1, group: "backend & realtime", aliases: ["ably"] },
   // data & auth
+  { name: "Supabase", weight: 2, group: "data & auth", aliases: ["supabase"] },
+  { name: "Redis", weight: 1, group: "data & auth", aliases: ["redis", "upstash"] },
+  { name: "Vercel", weight: 1, group: "tooling", aliases: ["vercel"] },
   { name: "PostgreSQL", weight: 2, group: "data & auth", aliases: ["postgresql", "postgres", "psql"] },
   { name: "MongoDB", weight: 2, group: "data & auth", aliases: ["mongodb", "mongo"] },
   { name: "Prisma", weight: 2, group: "data & auth", aliases: ["prisma"] },
@@ -139,7 +142,7 @@ export const GAP_TECHS: GapTech[] = [
   { name: "Azure", aliases: ["azure"] },
   { name: "Kubernetes", aliases: ["kubernetes", "k8s"] },
   { name: "Terraform", aliases: ["terraform"] },
-  { name: "Redis", aliases: ["redis"] },
+
   { name: "Kafka", aliases: ["kafka"] },
   { name: "Spring", aliases: ["spring boot", "spring"] },
   { name: "Sass", aliases: ["sass", "scss"] },
@@ -165,7 +168,7 @@ const GAP_MATCHERS = GAP_TECHS.map((g) => ({ tech: g, re: buildMatcher(g.aliases
 
 /** The searchable text for a listing: title + tags + seniority + the
  * scraped description snippet, lowercased. */
-export function listingHaystack(listing: JobListing): string {
+export function listingHaystack(listing: Pick<JobListing, "title" | "tags" | "seniority" | "description">): string {
   return [
     listing.title,
     listing.tags.join(" "),
@@ -181,7 +184,7 @@ export function listingHaystack(listing: JobListing): string {
  * posting's *detected* technology: matchedWeight / (matchedWeight +
  * gaps×MISSING_WEIGHT). A posting naming no known tech scores null.
  */
-export function matchListing(listing: JobListing): JobMatch {
+export function matchListing(listing: Pick<JobListing, "title" | "tags" | "seniority" | "description">): JobMatch {
   const hay = listingHaystack(listing);
 
   const matched = MY_MATCHERS.filter(({ re }) => re.test(hay)).map((m) => m.skill);

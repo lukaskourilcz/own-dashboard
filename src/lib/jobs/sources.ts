@@ -1,5 +1,7 @@
+import { EMPLOYER_BOARDS, fetchEmployerBoard } from "./employer-sources";
+import { apifyTaskIds, fetchApifyTask } from "./apify";
 import { brandConfig } from "@/lib/brand";
-import { isEuropeFriendly, matchRole } from "./filter";
+import { isEuropeFriendly, isPrague, matchRole } from "./filter";
 import { jobSourceLabel } from "./meta";
 import type { ScrapedJob } from "./types";
 
@@ -68,7 +70,7 @@ function clean(s: string | null | undefined): string | null {
 
 /** Longest description snippet we keep — enough for tech-stack matching
  * without bloating the row (matching only needs the keyword surface). */
-const DESC_CAP = 1500;
+const DESC_CAP = 12000;
 
 /**
  * Turn a source's HTML/description blob into a capped plain-text snippet:
@@ -146,7 +148,7 @@ export function normalizeStartupJobsItem(
   const title = clean(item.name);
   if (!title || item.id == null) return null;
   // Only remote-capable offers qualify; Czech board ⇒ European by location.
-  if (item.isRemote !== true) return null;
+  if (item.isRemote !== true && !isPrague(item.locations)) return null;
   const areas = [item.mainAreaName, ...(item.areaNames ?? [])]
     .filter(Boolean)
     .join(" ");
@@ -161,7 +163,7 @@ export function normalizeStartupJobsItem(
       ? item.url
       : `https://www.startupjobs.cz${item.url ?? `/nabidka/${item.id}`}`,
     location: clean(item.locations) ?? "Czechia",
-    remote: true,
+    remote: item.isRemote === true,
     role,
     salary: startupJobsSalary(item.salary),
     description: null, // list endpoint carries no body; title+tags drive fit
@@ -171,7 +173,7 @@ export function normalizeStartupJobsItem(
   };
 }
 
-const STARTUPJOBS_MAX_PAGES = 30;
+const STARTUPJOBS_MAX_PAGES = 12;
 
 async function fetchStartupJobs(): Promise<ScrapedJob[]> {
   const first = await getJson<StartupJobsPage>(
@@ -191,6 +193,7 @@ async function fetchStartupJobs(): Promise<ScrapedJob[]> {
         ),
       ),
     );
+    if (results.some(r=>r.status === "rejected")) throw new Error("StartupJobs pagination partially failed");
     for (const r of results) {
       if (r.status === "fulfilled") items.push(...(r.value.resultSet ?? []));
     }
@@ -209,13 +212,11 @@ async function fetchStartupJobs(): Promise<ScrapedJob[]> {
 
 // Query terms: tracked roles × remote markers (English + Czech).
 const CZ_ROLE_TERMS = [
-  "frontend",
-  "fullstack",
-  "full stack",
-  "software engineer",
-  "vývojář",
+  "React",
+  "Next.js",
+  "TypeScript",
 ];
-const CZ_REMOTE_MARKERS = ["remote", "z domova"];
+const CZ_REMOTE_MARKERS = ["remote", "Praha"];
 
 function czQueries(): string[] {
   return CZ_ROLE_TERMS.flatMap((role) =>
@@ -316,7 +317,7 @@ export function parseJobsCzCards(
       location,
       // The search query itself carried the remote marker, so every match
       // advertises remote work somewhere in the ad.
-      remote: true,
+      remote: /remote|z domova|home office/i.test(card),
       role,
       salary,
       description: null, // result cards carry no body text
@@ -338,6 +339,7 @@ async function fetchJobsCz(): Promise<ScrapedJob[]> {
       ),
     ),
   );
+  if (results.some(r=>r.status === "rejected")) throw new Error("Job search requests partially failed");
   for (const r of results) {
     if (r.status !== "fulfilled") continue;
     for (const job of parseJobsCzCards(r.value)) byId.set(job.externalId, job);
@@ -389,7 +391,7 @@ export function parsePraceCzCards(html: string): ScrapedJob[] {
       company,
       url: stripQuery(unescapeHtml(href), "https://www.prace.cz"),
       location,
-      remote: true,
+      remote: /remote|z domova|home office/i.test(card),
       role,
       salary,
       description: null, // result cards carry no body text
@@ -411,6 +413,7 @@ async function fetchPraceCz(): Promise<ScrapedJob[]> {
       ),
     ),
   );
+  if (results.some(r=>r.status === "rejected")) throw new Error("Job search requests partially failed");
   for (const r of results) {
     if (r.status !== "fulfilled") continue;
     for (const job of parsePraceCzCards(r.value)) byId.set(job.externalId, job);
@@ -712,6 +715,8 @@ function source(id: string, fetch: () => Promise<ScrapedJob[]>): JobSource {
 }
 
 export const JOB_SOURCES: JobSource[] = [
+  ...EMPLOYER_BOARDS.map(b => ({ id: b.id, label: b.name, fetch: () => fetchEmployerBoard(b) })),
+  ...apifyTaskIds().map(id => ({ id: `apify-${id}`, label: `Apify ${id}`, fetch: () => fetchApifyTask(id) })),
   source("startupjobs", fetchStartupJobs),
   source("jobscz", fetchJobsCz),
   source("pracecz", fetchPraceCz),

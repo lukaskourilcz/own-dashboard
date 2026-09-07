@@ -1,3 +1,4 @@
+import { isJobUrl } from "./availability";
 /**
  * Deciding which stored listings are gone.
  *
@@ -47,10 +48,11 @@ const PROBE_TIMEOUT_MS = 8_000;
  * Returns the status, or null when the request could not be completed at all.
  */
 export async function probeUrl(url: string): Promise<number | null> {
+  if (!isJobUrl(url)) return null;
   const request = (method: "HEAD" | "GET") =>
     fetch(url, {
       method,
-      redirect: "follow",
+      redirect: "manual",
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
       cache: "no-store",
       headers: {

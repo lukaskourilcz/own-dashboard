@@ -23,7 +23,7 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   const expected = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
-  if (expected && auth !== `Bearer ${expected}`) {
+  if (!expected || auth !== `Bearer ${expected}`) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 

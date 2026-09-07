@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+vi.mock("server-only", () => ({}));
+import { describe, it, expect, vi } from "vitest";
 import {
   normalizeArbeitnowItem,
   normalizeJobicyItem,
@@ -74,8 +75,9 @@ describe("normalizeStartupJobsItem", () => {
     expect(job!.seniority).toBe("medior, senior");
   });
 
-  it("drops on-site offers", () => {
-    expect(normalizeStartupJobsItem({ ...base, isRemote: false })).toBeNull();
+  it("accepts Prague office offers but excludes other office locations", () => {
+    expect(normalizeStartupJobsItem({ ...base, isRemote: false })?.remote).toBe(false);
+    expect(normalizeStartupJobsItem({ ...base, locations: "Brno", isRemote: false })).toBeNull();
   });
 
   it("drops non-matching roles", () => {
@@ -153,7 +155,7 @@ describe("parseJobsCzCards", () => {
     expect(j.location).toBe("Praha – Hostivař");
     expect(j.salary).toContain("Kč");
     expect(j.postedAt).toBe("2026-06-19T00:00:00.000Z");
-    expect(j.remote).toBe(true);
+    expect(j.remote).toBe(false);
   });
 
   it("returns nothing for empty html", () => {
