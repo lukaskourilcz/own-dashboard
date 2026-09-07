@@ -1,6 +1,7 @@
 import type { JobListing } from "@/lib/types";
 
 export type Availability = "open" | "closed" | "unknown";
+const LISTING_TIMEOUT_MS = 15_000;
 const HOSTS = [
   "startupjobs.cz",
   "jobs.cz",
@@ -80,7 +81,7 @@ export async function checkListing(job: JobListing): Promise<Availability> {
       const response = await fetch(url, {
         redirect: "manual",
         cache: "no-store",
-        signal: AbortSignal.timeout(4500),
+        signal: AbortSignal.timeout(LISTING_TIMEOUT_MS),
         headers: {
           accept: "text/html",
           "user-agent": "OwnDashboard Career availability check",
