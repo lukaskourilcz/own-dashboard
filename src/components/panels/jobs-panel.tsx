@@ -6,6 +6,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertTriangle,
   BriefcaseBusiness,
+  Bookmark,
   Check,
   ExternalLink,
   Files,
@@ -66,6 +67,7 @@ import type {
   JobScrapeRun,
   JobUserState,
   JobUserStateValue,
+  SavedJobPosition,
   Updater,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -101,6 +103,8 @@ type Props = {
   listings: JobListing[];
   userStates: JobUserState[];
   setUserStates: Updater<JobUserState[]>;
+  savedPositions: SavedJobPosition[];
+  setSavedPositions: Updater<SavedJobPosition[]>;
   applications: JobApplication[];
   setApplications: Updater<JobApplication[]>;
   events: JobApplicationEvent[];
@@ -121,6 +125,8 @@ export function JobsPanel({
   listings,
   userStates,
   setUserStates,
+  savedPositions,
+  setSavedPositions,
   applications,
   setApplications,
   events,
@@ -134,7 +140,7 @@ export function JobsPanel({
   const { cs: cvCs, en: cvEn } = useCvLinks();
   const { lang } = useLang();
   const [view, setView] = useState<
-    "open" | "applied" | "letters" | "companies"
+    "open" | "saved" | "applied" | "letters" | "companies"
   >("open");
   const relevantListings = useMemo(
     () => listings.filter(isCareerRelevant),
@@ -157,6 +163,7 @@ export function JobsPanel({
   );
 
   const [applyFor, setApplyFor] = useState<JobListing | null>(null);
+  const [savedFor, setSavedFor] = useState<SavedJobPosition | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
 
   return (
@@ -209,7 +216,7 @@ export function JobsPanel({
               </div>
             )}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
-              {(["open", "applied", "letters", "companies"] as const).map(
+              {(["open", "saved", "applied", "letters", "companies"] as const).map(
                 (v) => (
                   <button
                     key={v}
@@ -224,6 +231,8 @@ export function JobsPanel({
                   >
                     {v === "open"
                       ? t.jobs.openTab
+                      : v === "saved"
+                        ? t.jobs.savedTab
                       : v === "applied"
                         ? t.jobs.appliedTab
                         : v === "letters"
@@ -233,9 +242,9 @@ export function JobsPanel({
                           : lang === "cs"
                             ? "Firmy v Praze"
                             : "Prague companies"}
-                    {v === "applied" && (
+                    {(v === "saved" || v === "applied") && (
                       <span className="ml-2 text-sm text-foreground-muted">
-                        {applications.length}
+                        {v === "saved" ? savedPositions.length : applications.length}
                       </span>
                     )}
                   </button>
@@ -255,6 +264,17 @@ export function JobsPanel({
           userId={userId}
           applications={applications}
         />
+      ) : view === "saved" ? (
+        <SavedPositionsView
+          positions={savedPositions}
+          setPositions={setSavedPositions}
+          userId={userId}
+          onPrepare={(position, listing) => {
+            setSavedFor(position);
+            setApplyFor(listing);
+            setApplyOpen(true);
+          }}
+        />
       ) : view === "open" ? (
         <OpenPositionsView
           isPreview={isPreview}
@@ -265,10 +285,8 @@ export function JobsPanel({
           appliedUrls={appliedUrls}
           lastRun={lastRun}
           userId={userId}
-          onApply={(l) => {
-            setApplyFor(l);
-            setApplyOpen(true);
-          }}
+          savedPositions={savedPositions}
+          setSavedPositions={setSavedPositions}
         />
       ) : (
         <AppliedView
@@ -279,10 +297,6 @@ export function JobsPanel({
           templates={templates}
           setTemplates={setTemplates}
           userId={userId}
-          onLogManual={() => {
-            setApplyFor(null);
-            setApplyOpen(true);
-          }}
         />
       )}
 
@@ -295,6 +309,9 @@ export function JobsPanel({
         setApplications={setApplications}
         setEvents={setEvents}
         userId={userId}
+        savedPosition={savedFor}
+        setSavedPositions={setSavedPositions}
+        onApplied={() => setSavedFor(null)}
       />
     </div>
   );
@@ -313,7 +330,8 @@ function OpenPositionsView({
   appliedUrls,
   lastRun,
   userId,
-  onApply,
+  savedPositions,
+  setSavedPositions,
 }: {
   isPreview: boolean;
   listings: JobListing[];
@@ -323,7 +341,8 @@ function OpenPositionsView({
   appliedUrls: Set<string>;
   lastRun: JobScrapeRun | null;
   userId: string;
-  onApply: (l: JobListing) => void;
+  savedPositions: SavedJobPosition[];
+  setSavedPositions: Updater<SavedJobPosition[]>;
 }) {
   const t = useDict();
   const locale = useDateLocale();
@@ -331,6 +350,14 @@ function OpenPositionsView({
   const qc = useQueryClient();
   const supabase = createClient();
   const confirm = useConfirmation();
+  const savedListingIds = useMemo(
+    () => new Set(savedPositions.map((position) => position.listing_id).filter(Boolean)),
+    [savedPositions],
+  );
+  const savedUrls = useMemo(
+    () => new Set(savedPositions.map((position) => position.url)),
+    [savedPositions],
+  );
 
   const { lang } = useLang();
   const cs = lang === "cs";
@@ -591,6 +618,40 @@ function OpenPositionsView({
     const next = existing?.state === kind ? null : kind;
     stateMutation.mutate({ listing, next, existing });
   }
+
+  const saveMutation = useMutation({
+    mutationFn: async (listing: JobListing) => {
+      const { data, error } = await supabase
+        .from("saved_job_positions")
+        .upsert(
+          {
+            user_id: userId,
+            listing_id: listing.id,
+            title: listing.title,
+            company: listing.company,
+            url: listing.url,
+            source: listing.source,
+            location: listing.location,
+            description: listing.description,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,url" },
+        )
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as SavedJobPosition;
+    },
+    onSuccess: (position) => {
+      setSavedPositions((current) => [
+        position,
+        ...current.filter((row) => row.id !== position.id),
+      ]);
+      toast.ok(t.jobs.positionSaved);
+      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
+    },
+    onError: () => toast.err(t.jobs.couldNotSave),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (rows: JobListing[]) => {
@@ -927,6 +988,7 @@ function OpenPositionsView({
                   applied={
                     appliedListingIds.has(l.id) || appliedUrls.has(l.url)
                   }
+                  saved={savedListingIds.has(l.id) || savedUrls.has(l.url)}
                   selected={selected.has(l.id)}
                   onSelect={() =>
                     setSelected((old) => {
@@ -938,7 +1000,7 @@ function OpenPositionsView({
                   }
                   onShortlist={() => toggleState(l, "shortlisted")}
                   onDelete={() => void deleteListings([l])}
-                  onApply={() => onApply(l)}
+                  onApply={() => saveMutation.mutate(l)}
                   onDetail={() => {
                     setDetailId(l.id);
                     if (window.matchMedia("(max-width: 1279px)").matches)
@@ -955,7 +1017,8 @@ function OpenPositionsView({
                 return detail ? (
                   <CareerJobDetails
                     listing={detail}
-                    onApply={() => onApply(detail)}
+                    saved={savedListingIds.has(detail.id) || savedUrls.has(detail.url)}
+                    onApply={() => saveMutation.mutate(detail)}
                   />
                 ) : null;
               })()}
@@ -970,9 +1033,10 @@ function OpenPositionsView({
                   return detail ? (
                     <CareerJobDetails
                       listing={detail}
+                      saved={savedListingIds.has(detail.id) || savedUrls.has(detail.url)}
                       onApply={() => {
                         setMobileDetail(false);
-                        onApply(detail);
+                        saveMutation.mutate(detail);
                       }}
                     />
                   ) : null;
@@ -1064,6 +1128,7 @@ function ListingRow({
   match,
   state,
   applied,
+  saved,
   selected,
   onSelect,
   onShortlist,
@@ -1076,6 +1141,7 @@ function ListingRow({
   match: JobMatch | undefined;
   state: JobUserStateValue | undefined;
   applied: boolean;
+  saved: boolean;
   selected: boolean;
   onSelect: () => void;
   onShortlist: () => void;
@@ -1117,6 +1183,7 @@ function ListingRow({
           </div>
           <p className="mt-2 text-sm text-foreground-muted">
             {jobSourceLabel(listing.source)}
+            {saved ? ` · ${t.jobs.savedBadge}` : ""}
             {applied ? ` · ${t.jobs.appliedBadge}` : ""}
           </p>
         </div>
@@ -1145,16 +1212,180 @@ function ListingRow({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        <Button size="sm" className="ml-auto" onClick={onApply}>
-          {t.jobs.applyAction}
+        <Button size="sm" className="ml-auto" onClick={onApply} disabled={saved || applied}>
+          <Bookmark className="h-4 w-4" />
+          {saved ? t.jobs.savedBadge : t.jobs.savePosition}
         </Button>
       </div>
     </article>
   );
 }
 
+function savedToListing(position: SavedJobPosition): JobListing {
+  return {
+    id: position.listing_id ?? position.id,
+    source: position.source ?? "manual",
+    external_id: position.id,
+    title: position.title,
+    company: position.company,
+    url: position.url,
+    location: position.location,
+    role: "software",
+    remote: /remote|europe|worldwide/i.test(position.location ?? ""),
+    salary: null,
+    tags: [],
+    seniority: null,
+    description: position.description,
+    posted_at: null,
+    first_seen_at: position.saved_at,
+    last_seen_at: position.updated_at,
+  };
+}
+
+function SavedPositionsView({
+  positions,
+  setPositions,
+  userId,
+  onPrepare,
+}: {
+  positions: SavedJobPosition[];
+  setPositions: Updater<SavedJobPosition[]>;
+  userId: string;
+  onPrepare: (position: SavedJobPosition, listing: JobListing) => void;
+}) {
+  const t = useDict();
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const toast = useToast();
+  const locale = useDateLocale();
+  const qc = useQueryClient();
+  const supabase = createClient();
+  const [form, setForm] = useState({ url: "", title: "", company: "", location: "", description: "" });
+  const [showFields, setShowFields] = useState(false);
+
+  function importUrl(url: string) {
+    setShowFields(true);
+    enrich.mutate(url);
+  }
+
+  const enrich = useMutation({
+    mutationFn: async (url: string) => {
+      const response = await fetch("/api/jobs/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const result = (await response.json()) as Partial<typeof form> & { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "enrich-failed");
+      return result;
+    },
+    onSuccess: (result) => setForm((current) => ({ ...current, ...result })),
+    onError: () => toast.err(t.jobs.urlImportFailed),
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("saved_job_positions")
+        .upsert({
+          user_id: userId,
+          title: form.title.trim(),
+          company: form.company.trim() || null,
+          url: form.url.trim(),
+          source: "manual",
+          location: form.location.trim() || null,
+          description: form.description.trim() || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,url" })
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as SavedJobPosition;
+    },
+    onSuccess: (position) => {
+      setPositions((current) => [position, ...current.filter((row) => row.id !== position.id)]);
+      setForm({ url: "", title: "", company: "", location: "", description: "" });
+      setShowFields(false);
+      toast.ok(t.jobs.positionSaved);
+      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
+    },
+    onError: () => toast.err(t.jobs.couldNotSave),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("saved_job_positions").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      setPositions((current) => current.filter((position) => position.id !== id));
+      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
+    },
+    onError: () => toast.err(t.jobs.couldNotDelete),
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold">{t.jobs.saveByUrl}</h2>
+          <p className="mt-1 text-sm text-foreground-muted">{t.jobs.saveByUrlDescription}</p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            type="url"
+            value={form.url}
+            onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))}
+            onPaste={(event) => {
+              const url = event.clipboardData.getData("text").trim();
+              if (url) queueMicrotask(() => importUrl(url));
+            }}
+            placeholder="https://…"
+            aria-label={t.jobs.link}
+          />
+          <Button type="button" variant="outline" onClick={() => importUrl(form.url)} disabled={!form.url.trim() || enrich.isPending}>
+            {enrich.isPending ? t.jobs.importing : t.jobs.importFromUrl}
+          </Button>
+        </div>
+        {showFields && (
+          <div className="space-y-3 border-t border-border pt-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label htmlFor="saved-job-title">{t.jobs.position}</Label><Input id="saved-job-title" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} /></div>
+              <div className="space-y-1.5"><Label htmlFor="saved-job-company">{t.jobs.company}</Label><Input id="saved-job-company" value={form.company} onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))} /></div>
+            </div>
+            <div className="space-y-1.5"><Label htmlFor="saved-job-location">{cs ? "Lokalita" : "Location"}</Label><Input id="saved-job-location" value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} /></div>
+            <div className="space-y-1.5"><Label htmlFor="saved-job-description">{cs ? "Popis pozice" : "Job description"}</Label><Textarea id="saved-job-description" rows={6} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></div>
+            <div className="flex justify-end"><Button type="button" onClick={() => save.mutate()} disabled={!form.url.trim() || !form.title.trim() || save.isPending}><Bookmark className="h-4 w-4" />{t.jobs.savePosition}</Button></div>
+          </div>
+        )}
+      </Card>
+
+      {positions.length === 0 ? (
+        <EmptyState icon={Bookmark} title={t.jobs.noSavedPositions} description={t.jobs.noSavedPositionsDescription} className="py-16" />
+      ) : (
+        <div className="divide-y divide-border rounded-md border border-border bg-surface">
+          {positions.map((position) => (
+            <article key={position.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+              <div className="min-w-0 flex-1">
+                <a href={position.url} target="_blank" rel="noopener noreferrer" className="break-words text-base font-semibold hover:underline focus-ring rounded-sm">{position.title}</a>
+                <p className="mt-1 text-sm text-foreground-muted">{[position.company, position.location].filter(Boolean).join(" · ")}</p>
+                <p className="mt-1 text-xs text-foreground-subtle">{cs ? "Uloženo" : "Saved"} {formatDistanceToNow(new Date(position.saved_at), { addSuffix: true, locale })}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" size="sm" onClick={() => remove.mutate(position.id)} aria-label={cs ? "Odebrat uloženou pozici" : "Remove saved position"}><Trash2 className="h-4 w-4" /></Button>
+                <Button size="sm" onClick={() => onPrepare(position, savedToListing(position))}><FileText className="h-4 w-4" />{t.jobs.prepareApplication}</Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ========================================================================= *
- * Apply dialog — from a listing or as a manual log                          *
+ * Apply dialog — from a saved position or as a manual log                   *
  * ========================================================================= */
 
 /** Compact fit breakdown shown atop the apply dialog, so the cover letter can
@@ -1208,6 +1439,9 @@ function ApplyDialog({
   setApplications,
   setEvents,
   userId,
+  savedPosition,
+  setSavedPositions,
+  onApplied,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -1217,6 +1451,9 @@ function ApplyDialog({
   setApplications: Updater<JobApplication[]>;
   setEvents: Updater<JobApplicationEvent[]>;
   userId: string;
+  savedPosition: SavedJobPosition | null;
+  setSavedPositions: Updater<SavedJobPosition[]>;
+  onApplied: () => void;
 }) {
   const t = useDict();
   const toast = useToast();
@@ -1242,8 +1479,8 @@ function ApplyDialog({
       company: listing?.company ?? "",
       url: listing?.url ?? "",
       appliedOn: todayIso(),
-      coverLetter: "",
-      notes: "",
+      coverLetter: savedPosition?.cover_letter ?? "",
+      notes: savedPosition?.notes ?? "",
     });
     setFormError(null);
   }
@@ -1270,6 +1507,14 @@ function ApplyDialog({
         .single();
       if (error || !data) throw error ?? new Error("no-data");
       const app = data as JobApplication;
+      let savedRemoved = false;
+      if (savedPosition) {
+        const { error: savedDeleteError } = await supabase
+          .from("saved_job_positions")
+          .delete()
+          .eq("id", savedPosition.id);
+        savedRemoved = !savedDeleteError;
+      }
       // History trail. Best-effort: a failed event insert must not undo the
       // application itself.
       const { data: ev } = await supabase
@@ -1282,15 +1527,48 @@ function ApplyDialog({
         })
         .select()
         .single();
-      return { app, ev: (ev ?? null) as JobApplicationEvent | null };
+      return { app, ev: (ev ?? null) as JobApplicationEvent | null, savedRemoved };
     },
-    onSuccess: ({ app, ev }) => {
+    onSuccess: ({ app, ev, savedRemoved }) => {
       setApplications((prev) => [app, ...prev]);
       if (ev) setEvents((prev) => [ev, ...prev]);
+      if (savedPosition && savedRemoved) {
+        setSavedPositions((prev) => prev.filter((position) => position.id !== savedPosition.id));
+        void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
+      }
       toast.ok(t.jobs.applicationSaved);
       void qc.invalidateQueries({ queryKey: qk.jobApplications });
       void qc.invalidateQueries({ queryKey: qk.jobApplicationEvents });
       onOpenChange(false);
+      onApplied();
+    },
+    onError: () => toast.err(t.jobs.couldNotSave),
+  });
+
+  const saveDraftMutation = useMutation({
+    mutationFn: async () => {
+      if (!savedPosition) return null;
+      const { data, error } = await supabase
+        .from("saved_job_positions")
+        .update({
+          title: form.title.trim(),
+          company: form.company.trim() || null,
+          url: form.url.trim(),
+          cover_letter: form.coverLetter,
+          notes: form.notes.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", savedPosition.id)
+        .select()
+        .single();
+      if (error || !data) throw error ?? new Error("no-data");
+      return data as SavedJobPosition;
+    },
+    onSuccess: (position) => {
+      if (!position) return;
+      setSavedPositions((current) => current.map((row) => row.id === position.id ? position : row));
+      toast.ok(t.jobs.draftSaved);
+      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
     },
     onError: () => toast.err(t.jobs.couldNotSave),
   });
@@ -1407,6 +1685,11 @@ function ApplyDialog({
                 {t.jobs.cancel}
               </Button>
             </DialogClose>
+            {savedPosition && (
+              <Button type="button" variant="outline" size="sm" onClick={() => saveDraftMutation.mutate()} disabled={saveDraftMutation.isPending}>
+                {saveDraftMutation.isPending ? t.jobs.saving : t.jobs.saveDraft}
+              </Button>
+            )}
             <Button type="submit" size="sm" disabled={createMutation.isPending}>
               <Check className="h-3.5 w-3.5" />
               {createMutation.isPending
@@ -1626,7 +1909,6 @@ function AppliedView({
   templates,
   setTemplates,
   userId,
-  onLogManual,
 }: {
   applications: JobApplication[];
   setApplications: Updater<JobApplication[]>;
@@ -1635,7 +1917,6 @@ function AppliedView({
   templates: CoverLetterTemplate[];
   setTemplates: Updater<CoverLetterTemplate[]>;
   userId: string;
-  onLogManual: () => void;
 }) {
   const t = useDict();
   const toast = useToast();
@@ -1765,10 +2046,6 @@ function AppliedView({
           <Files className="h-3.5 w-3.5" />
           {t.jobs.manageTemplates}
         </Button>
-        <Button size="sm" onClick={onLogManual}>
-          <Plus className="h-3.5 w-3.5" />
-          {t.jobs.logManual}
-        </Button>
       </div>
 
       {applications.length === 0 ? (
@@ -1777,12 +2054,6 @@ function AppliedView({
             icon={Send}
             title={t.jobs.noApplicationsYet}
             description={t.jobs.noApplicationsDescription}
-            action={
-              <Button size="sm" onClick={onLogManual}>
-                <Plus className="h-3.5 w-3.5" />
-                {t.jobs.logManual}
-              </Button>
-            }
             className="py-16"
           />
         </Card>
@@ -2419,9 +2690,11 @@ function LetterWorkspace({
 function CareerJobDetails({
   listing: detail,
   onApply,
+  saved,
 }: {
   listing: JobListing;
   onApply: () => void;
+  saved: boolean;
 }) {
   const { lang } = useLang();
   const cs = lang === "cs";
@@ -2439,8 +2712,9 @@ function CareerJobDetails({
         {detail.salary || (cs ? "Mzda neuvedena" : "Salary not specified")}
       </p>
       <div className="my-4 flex flex-wrap gap-2">
-        <Button onClick={onApply}>
-          {cs ? "Připravit žádost" : "Prepare application"}
+        <Button onClick={onApply} disabled={saved}>
+          <Bookmark className="h-4 w-4" />
+          {saved ? t.jobs.savedBadge : t.jobs.savePosition}
         </Button>
         <Button asChild variant="outline">
           <a href={detail.url} target="_blank" rel="noopener noreferrer">

@@ -5,6 +5,8 @@
 1. Back up the Supabase database or create a point-in-time recovery marker on a paid project.
 2. From the current production UI, download any desired personal exports.
 3. Deploy application code and migrations in one coordinated release; do not expose the new shell against an unmigrated database.
+
+The Career Saved release adds `saved_job_positions` with own-only RLS, then seeds the eight owner-selected September positions only when the installation has exactly one authenticated owner. The seed aborts instead of writing when more than one account exists.
 4. Confirm `auth.users`, the historic OwnDashboard tables, and the latest `user_preferences` table exist.
 
 ## Apply

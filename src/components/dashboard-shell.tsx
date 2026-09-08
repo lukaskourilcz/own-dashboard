@@ -62,6 +62,7 @@ import {
   fetchJobLastRun,
   fetchJobListings,
   fetchJobUserStates,
+  fetchSavedJobPositions,
   fetchNotes,
   fetchNotifications,
   fetchOpportunities,
@@ -88,7 +89,7 @@ import { useDict } from "@/lib/i18n";
 import type {
   Account, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
   ImportantDate, InboxItem, Invoice, InvoiceItem, InvoiceSettings,
-  JobApplication, JobApplicationEvent, JobListing, JobScrapeRun, JobUserState,
+  JobApplication, JobApplicationEvent, JobListing, JobScrapeRun, JobUserState, SavedJobPosition,
   Note, Organization, Plan, Project, ProjectCommunication, ProjectCost, Prompt, ReferenceRow, RepoLink, RepoNote,
   Shortcut, Subscription, Todo, Transaction, WeeklyReview,
 } from "@/lib/types";
@@ -131,6 +132,7 @@ type Props = {
   initialWeeklyReviews: WeeklyReview[];
   initialJobListings: JobListing[];
   initialJobUserStates: JobUserState[];
+  initialSavedJobPositions: SavedJobPosition[];
   initialJobApplications: JobApplication[];
   initialJobApplicationEvents: JobApplicationEvent[];
   initialCoverLetterTemplates: CoverLetterTemplate[];
@@ -259,6 +261,7 @@ export function DashboardShell(props: Props) {
   const [weeklyReviews, setWeeklyReviews] = useEntityStore(qk.weeklyReviews, props.initialWeeklyReviews, fetchWeeklyReviews, dataOptions("weeklyReviews"));
   const [jobListings] = useEntityStore(qk.jobListings, props.initialJobListings, fetchJobListings, dataOptions("jobListings"));
   const [jobUserStates, setJobUserStates] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, fetchJobUserStates, dataOptions("jobUserStates"));
+  const [savedJobPositions, setSavedJobPositions] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
   const [jobApplications, setJobApplications] = useEntityStore(qk.jobApplications, props.initialJobApplications, fetchJobApplications, dataOptions("jobApplications"));
   const [jobApplicationEvents, setJobApplicationEvents] = useEntityStore(qk.jobApplicationEvents, props.initialJobApplicationEvents, fetchJobApplicationEvents, dataOptions("jobApplicationEvents"));
   const [coverLetterTemplates, setCoverLetterTemplates] = useEntityStore(qk.coverLetterTemplates, props.initialCoverLetterTemplates, fetchCoverLetterTemplates, dataOptions("coverLetterTemplates"));
@@ -317,7 +320,7 @@ export function DashboardShell(props: Props) {
           {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} syncRepositories={!props.isPreview} />}
           {tab === "opportunities" && <OpportunitiesPanel opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
-          {tab === "career" && <JobsPanel isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
+          {tab === "career" && <JobsPanel isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
           {tab === "invoices" && <InvoicesPanel invoices={invoices} setInvoices={setInvoices} items={invoiceItems} setItems={setInvoiceItems} settings={invoiceSettings} setSettings={setInvoiceSettings} userId={user.id} displayCurrency={displayCurrency} organizations={organizations} projects={activeProjects} />}
           {(tab === "money" || tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
           {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}

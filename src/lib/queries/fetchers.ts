@@ -18,6 +18,7 @@ import type {
   JobListing,
   JobScrapeRun,
   JobUserState,
+  SavedJobPosition,
   Note,
   Organization,
   InboxItem,
@@ -383,6 +384,16 @@ export async function fetchJobUserStates(): Promise<JobUserState[]> {
   const { data, error } = await supabase.from("job_user_state").select("*");
   if (error) throw error;
   return (data ?? []) as JobUserState[];
+}
+
+export async function fetchSavedJobPositions(): Promise<SavedJobPosition[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("saved_job_positions")
+    .select("*")
+    .order("saved_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as SavedJobPosition[];
 }
 
 export async function fetchJobApplications(): Promise<JobApplication[]> {

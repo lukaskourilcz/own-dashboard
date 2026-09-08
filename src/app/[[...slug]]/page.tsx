@@ -27,7 +27,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
     invoiceSettingsRes, projectsRes, projectCommunicationsRes, projectCostsRes, cronsRes,
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
-    jobListingsRes, jobUserStatesRes, jobApplicationsRes,
+    jobListingsRes, jobUserStatesRes, savedJobPositionsRes, jobApplicationsRes,
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
     todayCalendar, weekCalendar, prefs, navigationProjectsRes,
   ] = await Promise.all([
@@ -59,6 +59,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("weeklyReviews", () => supabase.from("weekly_reviews").select("*").eq("user_id", user.id).order("week_start", { ascending: false }).limit(12)),
     loadWhen("jobListings", () => supabase.from("job_listings").select("*").order("first_seen_at", { ascending: false }).limit(500)),
     loadWhen("jobUserStates", () => supabase.from("job_user_state").select("*").eq("user_id", user.id)),
+    loadWhen("savedJobPositions", () => supabase.from("saved_job_positions").select("*").eq("user_id", user.id).order("saved_at", { ascending: false })),
     loadWhen("jobApplications", () => supabase.from("job_applications").select("*").eq("user_id", user.id).order("applied_on", { ascending: false })),
     loadWhen("jobApplicationEvents", () => supabase.from("job_application_events").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000)),
     loadWhen("coverLetterTemplates", () => supabase.from("cover_letter_templates").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
@@ -114,6 +115,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialWeeklyReviews={weeklyReviewsRes?.data ?? []}
     initialJobListings={jobListingsRes?.data ?? []}
     initialJobUserStates={jobUserStatesRes?.data ?? []}
+    initialSavedJobPositions={savedJobPositionsRes?.data ?? []}
     initialJobApplications={jobApplicationsRes?.data ?? []}
     initialJobApplicationEvents={jobApplicationEventsRes?.data ?? []}
     initialCoverLetterTemplates={coverLetterTemplatesRes?.data ?? []}

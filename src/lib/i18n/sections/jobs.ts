@@ -3,6 +3,7 @@ type JobsStrings = {
   description: string;
   // Sub-tabs
   openTab: string;
+  savedTab: string;
   appliedTab: string;
   // CV quick-links
   cvCzech: string;
@@ -59,6 +60,19 @@ type JobsStrings = {
   // Listing cards
   remoteBadge: string;
   appliedBadge: string;
+  savedBadge: string;
+  savePosition: string;
+  positionSaved: string;
+  saveByUrl: string;
+  saveByUrlDescription: string;
+  importFromUrl: string;
+  importing: string;
+  urlImportFailed: string;
+  noSavedPositions: string;
+  noSavedPositionsDescription: string;
+  prepareApplication: string;
+  saveDraft: string;
+  draftSaved: string;
   applyAction: string;
   openOriginal: string;
   shortlist: string;
@@ -165,6 +179,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     description:
       "React opportunities in Prague and remote from Czechia. Build and track each application.",
     openTab: "Open positions",
+    savedTab: "Saved",
     appliedTab: "Applied",
     cvCzech: "Open Czech CV",
     cvEnglish: "Open English CV",
@@ -221,6 +236,19 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     fitGaps: "Gaps",
     remoteBadge: "Remote",
     appliedBadge: "Applied",
+    savedBadge: "Saved",
+    savePosition: "Save position",
+    positionSaved: "Position saved.",
+    saveByUrl: "Save a position from a link",
+    saveByUrlDescription: "Paste a job URL. The title, company and description will be filled when the page allows it; you can correct every field before saving.",
+    importFromUrl: "Fill from URL",
+    importing: "Reading page…",
+    urlImportFailed: "The page could not be read. Enter the position details manually.",
+    noSavedPositions: "No saved positions",
+    noSavedPositionsDescription: "Save a position from Open positions or paste its URL above.",
+    prepareApplication: "Prepare application",
+    saveDraft: "Save draft",
+    draftSaved: "Application draft saved.",
     applyAction: "Prepare letter",
     openOriginal: "Open the original posting",
     shortlist: "Shortlist",
@@ -330,6 +358,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     description:
       "React pozice v Praze a na dálku z Česka. Připravte a sledujte každou žádost.",
     openTab: "Otevřené pozice",
+    savedTab: "Uložené",
     appliedTab: "Odeslané přihlášky",
     cvCzech: "Otevřít české CV",
     cvEnglish: "Otevřít anglické CV",
@@ -386,6 +415,19 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     fitGaps: "Chybí",
     remoteBadge: "Remote",
     appliedBadge: "Přihlášeno",
+    savedBadge: "Uloženo",
+    savePosition: "Uložit pozici",
+    positionSaved: "Pozice byla uložena.",
+    saveByUrl: "Uložit pozici z odkazu",
+    saveByUrlDescription: "Vložte URL inzerátu. Pokud to stránka dovolí, doplní se název, firma a popis; před uložením můžete všechna pole upravit.",
+    importFromUrl: "Doplnit z URL",
+    importing: "Načítám stránku…",
+    urlImportFailed: "Stránku se nepodařilo načíst. Vyplňte údaje o pozici ručně.",
+    noSavedPositions: "Žádné uložené pozice",
+    noSavedPositionsDescription: "Uložte pozici z otevřených nabídek nebo vložte její URL výše.",
+    prepareApplication: "Připravit přihlášku",
+    saveDraft: "Uložit koncept",
+    draftSaved: "Koncept přihlášky byl uložen.",
     applyAction: "Připravit dopis",
     openOriginal: "Otevřít původní inzerát",
     shortlist: "Přidat do oblíbených",

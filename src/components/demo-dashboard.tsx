@@ -63,6 +63,7 @@ export function DemoDashboard({
       initialWeeklyReviews={f.weeklyReviews}
       initialJobListings={f.jobListings}
       initialJobUserStates={f.jobUserStates}
+      initialSavedJobPositions={[]}
       initialJobApplications={f.jobApplications}
       initialJobApplicationEvents={f.jobApplicationEvents}
       initialCoverLetterTemplates={f.coverLetterTemplates}

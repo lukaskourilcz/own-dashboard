@@ -38,6 +38,7 @@ export const qk = {
   jobAvailability: ["jobListings", "availability"] as const,
   jobSourceSync: ["career-source-sync"] as const,
   jobUserStates: ["jobUserStates"] as const,
+  savedJobPositions: ["savedJobPositions"] as const,
   jobApplications: ["jobApplications"] as const,
   jobApplicationEvents: ["jobApplicationEvents"] as const,
   coverLetterTemplates: ["coverLetterTemplates"] as const,

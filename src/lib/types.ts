@@ -549,6 +549,22 @@ export type JobUserState = {
   created_at: string;
 };
 
+export type SavedJobPosition = {
+  id: string;
+  user_id: string;
+  listing_id: string | null;
+  title: string;
+  company: string | null;
+  url: string;
+  source: string | null;
+  location: string | null;
+  description: string | null;
+  cover_letter: string;
+  notes: string | null;
+  saved_at: string;
+  updated_at: string;
+};
+
 export type JobApplicationStatus =
   | "applied"
   | "interviewing"

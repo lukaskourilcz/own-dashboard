@@ -8,6 +8,8 @@ The previous implementation explicitly classified Angular and Vue as frontend ma
 
 The new flow preserves the existing catch-all route, route-scoped query state, shortlists, deletion tombstones, application snapshots, history and own-only letter/template persistence. It adds:
 
+- A separate Saved stage between discovery and application. Saving snapshots the listing; pasting a URL reads available page metadata into editable fields. Cover-letter drafts and notes stay with the saved position. Confirming that the application was sent creates the application/history row and removes the saved position.
+
 - A React requirement at ingestion and display boundaries. Explicit Angular, Vue, Svelte, React Native and off-stack language requirements are excluded conservatively. JavaScript never matches Java. Generic React software titles can qualify; backend-only titles and staff/principal/head roles do not.
 - Prague office/hybrid jobs alongside explicit Czechia, EU/Europe/EMEA and worldwide remote locations. Remote-only country restrictions and unspecified locations fail closed. Junior/medior/senior filters include an unspecified category. Matching is keyword evidence, not a hiring probability or a guarantee of employment eligibility.
 - A job list and detail pane; narrow screens open selected details in a dialog. Filters cover source, role, work location, level, search, shortlist and technology overlap. Duplicate company/title/location entries are collapsed in the visible list.
