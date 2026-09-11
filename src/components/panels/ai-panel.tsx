@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
-  ExternalLink,
   Pencil,
   Plus,
   Search,
@@ -36,7 +35,8 @@ import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import type { AiCategory, AiLink, AiPricing, Updater } from "@/lib/types";
 
-const UNCATEGORIZED = "__uncategorized__";
+import { LinkLibraryCard, PricingDot } from "./link-library-card";
+import { filterLibrary, resourceKey, UNCATEGORIZED_LINKS as UNCATEGORIZED, type PricingFilter, type LinkSort } from "@/lib/link-library";
 
 /** Normalize a user-typed link: add https:// when no scheme is present, then
  * validate. Returns the canonical href, or null when it isn't a valid URL. */
@@ -48,92 +48,11 @@ function normalizeUrl(raw: string): string | null {
     : `https://${trimmed}`;
   try {
     const u = new URL(withScheme);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (!resourceKey(u.href)) return null;
     return u.href;
   } catch {
     return null;
   }
-}
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
-
-/** A favicon URL for the link's host, served by Google's favicon proxy so we
- * get a normalized 64px icon for almost any site. Null when the URL can't be
- * parsed, in which case the avatar falls back to a colored letter tile. */
-function faviconUrl(url: string): string | null {
-  try {
-    const host = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
-  } catch {
-    return null;
-  }
-}
-
-/** Stable hue in [0, 360) derived from a seed string, so a given site always
- * gets the same fallback color. */
-function hueFrom(seed: string): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) % 360;
-  }
-  return h;
-}
-
-/** Link icon: the site's favicon when it loads, otherwise a colored circle
- * seeded from the host with the title's initial. */
-function LinkAvatar({ url, title }: { url: string; title: string }) {
-  const [failed, setFailed] = useState(false);
-  const src = failed ? null : faviconUrl(url);
-
-  if (src) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt=""
-        referrerPolicy="no-referrer"
-        loading="lazy"
-        onError={() => setFailed(true)}
-        className="mt-0.5 h-6 w-6 shrink-0 rounded-md bg-surface-muted object-contain p-0.5"
-      />
-    );
-  }
-
-  const hue = hueFrom(hostOf(url) || title);
-  const letter = (title.trim()[0] ?? "?").toUpperCase();
-  return (
-    <div
-      aria-hidden
-      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-      style={{ backgroundColor: `hsl(${hue} 55% 45%)` }}
-    >
-      {letter}
-    </div>
-  );
-}
-
-/** Colored cost-tier pill: free = green, freemium = yellow, paid = red. */
-const PRICING_TONE: Record<AiPricing, string> = {
-  free: "bg-success/10 text-success border-success/30",
-  freemium: "bg-warning/10 text-warning border-warning/30",
-  paid: "bg-destructive/10 text-destructive border-destructive/30",
-};
-
-function PricingBadge({ pricing }: { pricing: AiPricing }) {
-  const t = useDict();
-  return (
-    <span
-      className={`inline-flex shrink-0 items-center rounded-full border px-[7px] py-[3px] text-[10px] font-medium whitespace-nowrap ${PRICING_TONE[pricing]}`}
-    >
-      {t.ai.pricingLabel[pricing]}
-    </span>
-  );
 }
 
 type Props = {
@@ -172,6 +91,17 @@ export function AiPanel({
   const confirm = useConfirmation();
 
   const [query, setQuery] = useState("");
+  const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sort, setSort] = useState<LinkSort>("name");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const toggleDetails = (id: string) => setExpandedIds(previous => {
+    const next = new Set(previous);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); };
+  const hasUnknownPricing = aiLinks.some(link => !link.pricing);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AiLink | null>(null);
   const [form, setForm] = useState<LinkForm>(emptyForm);
@@ -187,13 +117,7 @@ export function AiPanel({
 
   // Filter first, then bucket the survivors by category so search collapses
   // empty sections automatically.
-  const visibleLinks = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return aiLinks;
-    return aiLinks.filter((l) =>
-      `${l.title}\n${l.url}\n${l.description ?? ""}`.toLowerCase().includes(q),
-    );
-  }, [aiLinks, query]);
+  const visibleLinks = useMemo(() => filterLibrary(aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, AiLink[]>();
@@ -209,7 +133,7 @@ export function AiPanel({
     return map;
   }, [visibleLinks, categoryIds]);
 
-  const searching = query.trim().length > 0;
+  const searching = query.trim().length > 0 || pricingFilter !== "all" || categoryFilter !== "all";
   const uncategorized = byCategory.get(UNCATEGORIZED) ?? [];
   const isEmpty = aiLinks.length === 0 && aiCategories.length === 0;
   const noResults =
@@ -426,6 +350,10 @@ export function AiPanel({
       setFormError(t.ai.urlInvalid);
       return;
     }
+    if (aiLinks.some(link => link.id !== editing?.id && resourceKey(link.url) === resourceKey(url))) {
+      setFormError(t.ai.duplicateLink);
+      return;
+    }
     const description = form.description.trim() || null;
     const category_id = form.categoryId || null;
     const pricing = form.pricing || null;
@@ -495,6 +423,11 @@ export function AiPanel({
         }
       />
 
+      <div aria-label={t.ai.pricingLegend} className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground-muted">
+        <span className="font-medium">{t.ai.pricingLegend}</span>
+        {(["free", "freemium", "paid"] as const).map(pricing => <span key={pricing} className="inline-flex items-center gap-1.5"><PricingDot pricing={pricing} />{t.ai.pricingLabel[pricing]}</span>)}
+        {hasUnknownPricing && <span className="inline-flex items-center gap-1.5"><PricingDot pricing={null} />{t.ai.pricingUnknown}</span>}
+      </div>
       {isEmpty ? (
         <Card className="p-0">
           <EmptyState
@@ -512,40 +445,31 @@ export function AiPanel({
         </Card>
       ) : (
         <>
-          {/* Toolbar: search + add-category */}
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            {aiLinks.length > 0 ? (
-              <div className="relative max-w-xs flex-1">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
-                <Input
-                  placeholder={t.ai.searchPlaceholder}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="h-9 pl-8 text-sm"
-                />
-              </div>
-            ) : (
-              <p className="text-xs text-foreground-subtle">{t.ai.manageHint}</p>
-            )}
-            <form onSubmit={addCategory} className="flex items-center gap-1.5">
-              <Input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder={t.ai.addCategoryPlaceholder}
-                className="h-9 w-48 text-sm"
-                maxLength={40}
-              />
-              <Button
-                type="submit"
-                variant="outline"
-                size="sm"
-                disabled={!newCategory.trim() || createCategory.isPending}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {t.ai.add}
-              </Button>
-            </form>
+          <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_auto_auto]">
+            <div className="relative min-w-0">
+              <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
+              <Input aria-label={t.ai.searchPlaceholder} placeholder={t.ai.searchPlaceholder} value={query} onChange={e => setQuery(e.target.value)} className="pl-8" />
+            </div>
+            <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...aiCategories.map(cat => ({value:cat.id,label:`${cat.name} (${aiLinks.filter(link => link.category_id === cat.id).length})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
+            <SimpleSelect aria-label={t.ai.pricing} value={pricingFilter} onValueChange={value => setPricingFilter(value as PricingFilter)} options={[{value:"all",label:t.ai.allPricing}, ...(["free","freemium","paid"] as const).map(value => ({value,label:t.ai.pricingLabel[value]})), {value:"unknown",label:t.ai.pricingUnknown}]} />
+            <SimpleSelect aria-label={t.ai.sort} value={sort} onValueChange={value => setSort(value as LinkSort)} options={[{value:"name",label:t.ai.sortName},{value:"newest",label:t.ai.sortNewest}]} />
           </div>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <p role="status" className="text-xs text-foreground-muted">{t.ai.resultCount(visibleLinks.length,aiLinks.length)}</p>
+            <div className="flex flex-wrap gap-2">
+              {searching && <Button variant="ghost" size="sm" onClick={resetFilters}>{t.ai.clearFilters}</Button>}
+              <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set(visibleLinks.map(link => link.id)))} disabled={!visibleLinks.length}>{t.ai.expandAll}</Button>
+              <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set())} disabled={!expandedIds.size}>{t.ai.collapseAll}</Button>
+            </div>
+          </div>
+          <details className="mb-4 rounded-lg border border-border bg-surface px-3">
+            <summary className="focus-ring cursor-pointer py-3 text-xs font-medium">{t.ai.manageCategories}</summary>
+            <form onSubmit={addCategory} className="flex max-w-md items-center gap-2 pb-3">
+              <Input aria-label={t.ai.addCategory} value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder={t.ai.addCategoryPlaceholder} className="min-w-0 flex-1" maxLength={40} />
+              <Button type="submit" variant="outline" size="sm" disabled={!newCategory.trim() || createCategory.isPending}><Plus className="h-3.5 w-3.5" />{t.ai.add}</Button>
+            </form>
+            <p className="pb-3 text-xs text-foreground-muted">{t.ai.manageHint}</p>
+          </details>
 
           {noResults ? (
             <EmptyState
@@ -555,11 +479,11 @@ export function AiPanel({
               className="py-16"
             />
           ) : (
-            <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
+            <div className="columns-1 gap-4 lg:columns-2 2xl:columns-3">
               {aiCategories.map((cat) => {
                   const links = byCategory.get(cat.id) ?? [];
                   // While searching, hide categories that have no matches.
-                  if (searching && links.length === 0) return null;
+                  if ((searching && links.length === 0) || (categoryFilter !== "all" && categoryFilter !== cat.id)) return null;
                   return (
                     <CategoryGroup
                       key={cat.id}
@@ -583,9 +507,11 @@ export function AiPanel({
                         <EmptyRow text={t.ai.categoryEmpty} />
                       ) : (
                         links.map((l) => (
-                          <LinkRow
+                          <LinkLibraryCard
                             key={l.id}
                             link={l}
+                            expanded={expandedIds.has(l.id)}
+                            onToggle={() => toggleDetails(l.id)}
                             onEdit={() => openEdit(l)}
                             onDelete={() => removeLink(l)}
                           />
@@ -598,9 +524,11 @@ export function AiPanel({
                 {uncategorized.length > 0 && (
                   <CategoryGroup name={t.ai.uncategorized} count={uncategorized.length} muted>
                     {uncategorized.map((l) => (
-                      <LinkRow
+                      <LinkLibraryCard
                         key={l.id}
                         link={l}
+                            expanded={expandedIds.has(l.id)}
+                            onToggle={() => toggleDetails(l.id)}
                         onEdit={() => openEdit(l)}
                         onDelete={() => removeLink(l)}
                       />
@@ -661,7 +589,7 @@ function CategoryGroup({
         {renaming ? (
           <input
             autoFocus
-            aria-label={t.ai.renameCategory}
+            aria-label={`${t.ai.renameCategory}: ${name}`}
             value={renameValue}
             onChange={(e) => onRenameChange?.(e.target.value)}
             onBlur={onCommitRename}
@@ -691,8 +619,8 @@ function CategoryGroup({
               <button
                 type="button"
                 onClick={onStartRename}
-                aria-label={t.ai.renameCategory}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+                aria-label={`${t.ai.renameCategory}: ${name}`}
+                className="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
               >
                 <Pencil className="h-3 w-3" />
               </button>
@@ -701,8 +629,8 @@ function CategoryGroup({
               <button
                 type="button"
                 onClick={onDelete}
-                aria-label={t.ai.deleteCategory}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+                aria-label={`${t.ai.deleteCategory}: ${name}`}
+                className="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -720,71 +648,6 @@ function EmptyRow({ text }: { text: string }) {
     <p className="px-3 py-2.5 text-xs italic text-foreground-subtle">{text}</p>
   );
 }
-
-function LinkRow({
-  link,
-  onEdit,
-  onDelete,
-}: {
-  link: AiLink;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  const t = useDict();
-  return (
-    <div className="group flex items-start justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-surface-hover/50">
-      <div className="flex min-w-0 items-start gap-2.5">
-        <LinkAvatar url={link.url} title={link.title} />
-        <div className="min-w-0">
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-foreground hover:underline"
-          >
-            {link.title}
-            <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
-          </a>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <p className="truncate text-[11px] text-foreground-subtle">
-              {hostOf(link.url)}
-            </p>
-            {link.pricing && <PricingBadge pricing={link.pricing} />}
-          </div>
-          {link.description && (
-            <p className="mt-1 text-xs text-foreground-muted">
-              {link.description}
-            </p>
-          )}
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-        <Tooltip content={t.ai.edit}>
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label={t.ai.edit}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-        </Tooltip>
-        <Tooltip content={t.ai.deleteLink}>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={t.ai.deleteLink}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </Tooltip>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------------- */
 
 function LinkDialog({
   open,

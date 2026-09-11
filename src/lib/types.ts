@@ -491,8 +491,8 @@ export type SpendCategory = {
   created_at: string;
 };
 
-// Cost tier of an AI link, rendered as a colored badge: free = green,
-// freemium (free tier + paid) = yellow, paid = red. Null = no badge.
+// Resource pricing: green = free, yellow = free + paid, red = paid only.
+// Null keeps an unverified hollow marker rather than guessing a price.
 export type AiPricing = "free" | "freemium" | "paid";
 
 export type AiLink = {

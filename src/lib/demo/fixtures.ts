@@ -264,7 +264,7 @@ export const aiCategories: AiCategory[] = [
 export const aiLinks: AiLink[] = [
   { id: "al1", user_id: UID, category_id: "ac1", title: "Midjourney", url: "https://www.midjourney.com", description: "AI image generation for moodboards and concepts.", pricing: "paid", created_at: TS, updated_at: TS },
   { id: "al2", user_id: UID, category_id: "ac2", title: "Have I Been Pwned", url: "https://haveibeenpwned.com", description: "Check if credentials appeared in a breach.", pricing: "free", created_at: TS, updated_at: TS },
-  { id: "al3", user_id: UID, category_id: null, title: "Hugging Face", url: "https://huggingface.co", description: "Open models, datasets, and demos.", pricing: "freemium", created_at: TS, updated_at: TS },
+  { id: "al3", user_id: UID, category_id: null, title: "Hugging Face", url: "https://huggingface.co", description: "Open models, datasets, and demos.\n\nExample library note: compare a small prototype with the production requirements before adopting a new service, including the expected traffic, maintenance work, accessibility and the time needed to move away from it later.\n\nPricing: the free offering has limits, while compute and other services may be billed separately.\n\nExample reference: https://example.com/resources/a-long-reference-path-for-checking-readable-expanded-library-cards-on-narrow-screens", pricing: "freemium", created_at: TS, updated_at: TS },
 ];
 
 export const importantDates: ImportantDate[] = [

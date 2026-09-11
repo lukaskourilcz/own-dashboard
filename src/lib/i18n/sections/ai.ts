@@ -1,6 +1,22 @@
 type AiStrings = {
   title: string;
   description: string;
+  pricingLegend: string;
+  pricingUnknown: string;
+  allCategories: string;
+  allPricing: string;
+  sort: string;
+  sortName: string;
+  sortNewest: string;
+  clearFilters: string;
+  expandAll: string;
+  collapseAll: string;
+  expandDetails: string;
+  collapseDetails: string;
+  manageCategories: string;
+  noDescription: string;
+  duplicateLink: string;
+  resultCount: (visible: number, total: number) => string;
   // Toolbar
   addLink: string;
   addCategory: string;
@@ -70,7 +86,23 @@ type AiStrings = {
 export const ai: { en: AiStrings; cs: AiStrings } = {
   en: {
     title: "Links",
-    description: "Useful professional sites and tools, organized your way.",
+    pricingLegend: "Pricing guide",
+    pricingUnknown: "Pricing unverified",
+    allCategories: "All categories",
+    allPricing: "All pricing",
+    sort: "Sort links",
+    sortName: "Name A–Z",
+    sortNewest: "Newest first",
+    clearFilters: "Clear filters",
+    expandAll: "Expand all",
+    collapseAll: "Collapse all",
+    expandDetails: "Show details",
+    collapseDetails: "Hide details",
+    manageCategories: "Manage categories",
+    noDescription: "Add a note about when to use this resource.",
+    duplicateLink: "This URL is already in your library. Edit the existing link instead.",
+    resultCount: (visible,total) => `${visible} of ${total} resources`,
+    description: "Resources for building, designing and growing your projects. Expand a link for notes and sources.",
     addLink: "Add link",
     addCategory: "Add category",
     addCategoryPlaceholder: "Add category",
@@ -88,8 +120,8 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
       `Delete the "${name}" category? Its links move to Uncategorized.`,
     categoryEmpty: "No links here yet.",
     manageHint: "Create categories like DESIGN, SECURITY, IDEAS to group links.",
-    newLinkTitle: "Add AI link",
-    editLinkTitle: "Edit AI link",
+    newLinkTitle: "Add link",
+    editLinkTitle: "Edit link",
     name: "Name",
     namePlaceholder: "e.g. Midjourney",
     url: "URL",
@@ -100,9 +132,9 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     pricing: "Pricing",
     pricingNone: "Not set",
     pricingLabel: {
-      free: "Free",
+      free: "Fully free",
       freemium: "Free tier + paid",
-      paid: "Paid",
+      paid: "Paid only",
     },
     autoFill: "Auto-fill",
     autoFillHint: "Read the page and fill in the title, description, category and pricing.",
@@ -130,14 +162,30 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     categoryCreated: "Category created.",
     categoryRenamed: "Category renamed.",
     categoryDeleted: "Category deleted.",
-    noLinksYet: "No AI links yet",
+    noLinksYet: "No links yet",
     noLinksDescription: "Add a link to start your collection.",
     noMatches: "No matches",
     noMatchesDescription: "Try a different search.",
   },
   cs: {
     title: "Odkazy",
-    description: "Užitečné profesní weby a nástroje uspořádané po vašem.",
+    pricingLegend: "Legenda cen",
+    pricingUnknown: "Cena neověřena",
+    allCategories: "Všechny kategorie",
+    allPricing: "Všechny ceny",
+    sort: "Řazení odkazů",
+    sortName: "Název A–Z",
+    sortNewest: "Nejnovější",
+    clearFilters: "Zrušit filtry",
+    expandAll: "Rozbalit vše",
+    collapseAll: "Sbalit vše",
+    expandDetails: "Zobrazit podrobnosti",
+    collapseDetails: "Skrýt podrobnosti",
+    manageCategories: "Správa kategorií",
+    noDescription: "Doplňte poznámku, kdy se tento zdroj hodí.",
+    duplicateLink: "Tuto URL už máte v knihovně. Upravte existující odkaz.",
+    resultCount: (visible,total) => `${visible} z ${total} zdrojů`,
+    description: "Zdroje pro vývoj, design a růst projektů. Rozbalením odkazu zobrazíte poznámky a zdroje.",
     addLink: "Přidat odkaz",
     addCategory: "Přidat kategorii",
     addCategoryPlaceholder: "Přidat kategorii",
@@ -155,8 +203,8 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
       `Smazat kategorii „${name}“? Její odkazy se přesunou do Bez kategorie.`,
     categoryEmpty: "Zatím tu nejsou žádné odkazy.",
     manageHint: "Vytvoř kategorie jako DESIGN, SECURITY, IDEAS pro seskupení odkazů.",
-    newLinkTitle: "Přidat AI odkaz",
-    editLinkTitle: "Upravit AI odkaz",
+    newLinkTitle: "Přidat odkaz",
+    editLinkTitle: "Upravit odkaz",
     name: "Název",
     namePlaceholder: "např. Midjourney",
     url: "URL",
@@ -167,9 +215,9 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     pricing: "Cena",
     pricingNone: "Neuvedeno",
     pricingLabel: {
-      free: "Zdarma",
-      freemium: "Free tier + placené",
-      paid: "Placené",
+      free: "Plně zdarma",
+      freemium: "Zdarma i placené tarify",
+      paid: "Pouze placené",
     },
     autoFill: "Doplnit",
     autoFillHint: "Načte stránku a doplní název, popis, kategorii a cenu.",
@@ -197,7 +245,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     categoryCreated: "Kategorie vytvořena.",
     categoryRenamed: "Kategorie přejmenována.",
     categoryDeleted: "Kategorie smazána.",
-    noLinksYet: "Zatím žádné AI odkazy",
+    noLinksYet: "Zatím žádné odkazy",
     noLinksDescription: "Přidej odkaz a začni svou sbírku.",
     noMatches: "Žádné výsledky",
     noMatchesDescription: "Zkus jiné hledání.",

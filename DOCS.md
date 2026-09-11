@@ -146,3 +146,7 @@ Future coding agents start with `AGENTS.md` and `CLAUDE.md`, then use the narrow
 ## Career application pipeline
 
 The owner-scoped company directory, Google Drive letter links, prepared queue, atomic sent transition and response metrics are described in [Career pipeline](docs/career-pipeline.md). The additive migration is `20260911080040_career_directory_and_application_pipeline.sql`.
+
+## Resource library
+
+The Links section provides categorized resources with compact expandable cards, pricing dots and a visible legend, combined search/category/pricing filters, and existing edit/delete actions. Storage, pricing boundaries, URL handling and verification are described in [Resource library](docs/link-library.md).
