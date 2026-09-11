@@ -7,7 +7,7 @@ type Scope = (typeof SCOPES)[number];
 
 const TABLES: Record<Exclude<Scope, "legacy" | "full">, string[]> = {
   financial: ["accounts", "bank_connections", "transactions", "subscriptions", "invoices", "invoice_items", "invoice_settings", "project_costs", "spend_categories", "transaction_category_rules"],
-  professional: ["organizations", "client_opportunities", "projects", "project_costs", "crons", "todos", "plans", "important_dates", "career_companies", "saved_job_positions", "job_applications", "job_user_state", "job_application_events", "cover_letter_templates", "weekly_reviews", "inbox_items", "notifications", "notification_log"],
+  professional: ["organizations", "client_opportunities", "freelance_platforms", "opportunity_events", "projects", "project_costs", "crons", "todos", "plans", "important_dates", "career_companies", "saved_job_positions", "job_applications", "job_user_state", "job_application_events", "cover_letter_templates", "weekly_reviews", "inbox_items", "notifications", "notification_log"],
   knowledge: ["notes", "prompts", "ai_links", "ai_categories", "shortcuts", "reference_rows", "repo_notes", "repo_links"],
   projects: ["projects", "project_costs", "crons", "todos", "notes", "prompts", "important_dates", "subscriptions", "transactions", "invoices"],
   notes: ["notes"],

@@ -53,7 +53,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("projectCosts", () => supabase.from("project_costs").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("crons", () => supabase.from("crons").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
     loadWhen("organizations", () => supabase.from("organizations").select("*").eq("user_id", user.id).order("name", { ascending: true })),
-    loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })),
+    loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)),
     loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
     loadWhen("notifications", () => supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)),
     loadWhen("weeklyReviews", () => supabase.from("weekly_reviews").select("*").eq("user_id", user.id).order("week_start", { ascending: false }).limit(12)),

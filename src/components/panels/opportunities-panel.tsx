@@ -1,7 +1,10 @@
 "use client";
 
+import { FreelancePlatforms, useFreelancePlatforms } from "./freelance-platforms";
+import { OpportunityDetail } from "./opportunity-detail";
+import { httpsUrl, opportunityMetrics, PREVIEW_PLATFORMS } from "@/lib/freelance";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,7 +47,11 @@ export function OpportunitiesPanel({
   organizations,
   setOrganizations,
   setProjects,
+  userId,
+  isPreview = false,
 }: {
+  userId: string;
+  isPreview?: boolean;
   opportunities: ClientOpportunity[];
   setOpportunities: Updater<ClientOpportunity[]>;
   organizations: Organization[];
@@ -54,6 +61,18 @@ export function OpportunitiesPanel({
   const t = useDict();
   const p = t.professional;
   const { lang } = useLang();
+  const cs = lang === "cs";
+  const [section, setSection] = useState<"pipeline" | "platforms">("pipeline");
+  const [detail, setDetail] = useState<ClientOpportunity | null>(null);
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const platformQuery = useFreelancePlatforms(userId, isPreview);
+  const platforms = isPreview ? PREVIEW_PLATFORMS : platformQuery.data ?? [];
+  const metricQuery = useQuery({queryKey:[...qk.opportunityMetrics,userId,platformFilter], enabled:!isPreview, queryFn:async()=>{
+    const {data,error} = await createClient().rpc("freelance_opportunity_metrics",{p_platform_id:platformFilter === "all" ? null : platformFilter});
+    if(error) throw error;
+    return data as ReturnType<typeof opportunityMetrics>;
+  }});
+  const metrics = isPreview ? opportunityMetrics(opportunities,platformFilter) : metricQuery.data;
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
@@ -77,6 +96,7 @@ export function OpportunitiesPanel({
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      if (isPreview) throw new Error("preview");
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("Not authenticated");
       const { data, error } = await supabase.from("client_opportunities").insert({
@@ -99,6 +119,7 @@ export function OpportunitiesPanel({
       setOpportunities((old) => [item, ...old]);
       setForm(emptyForm);
       setShowForm(false);
+      setDetail(item);
       void qc.invalidateQueries({ queryKey: qk.opportunities });
     },
     onError: () => toast.err(p.couldNotSave),
@@ -129,7 +150,7 @@ export function OpportunitiesPanel({
       if (error) throw error;
       return id;
     },
-    onSuccess: (id) => setOpportunities((old) => old.filter((x) => x.id !== id)),
+    onSuccess: (id) => { setOpportunities((old) => old.filter((x) => x.id !== id)); void qc.invalidateQueries({queryKey:qk.opportunities}); },
     onError: () => toast.err(p.couldNotSave),
   });
 
@@ -176,6 +197,7 @@ export function OpportunitiesPanel({
   const visible = opportunities.filter((item) =>
     (filter === "open" ? !terminal.has(item.status) : item.status === filter) &&
     (sourceFilter === "all" || item.source === sourceFilter) &&
+    (platformFilter === "all" || item.platform_id === platformFilter) &&
     (!query || `${item.title} ${item.description ?? ""}`.toLocaleLowerCase().includes(query)),
   );
   const organizationOptions = [{ value: "", label: p.noOrganization }, ...organizations.map((x) => ({ value: x.id, label: x.name }))];
@@ -183,27 +205,36 @@ export function OpportunitiesPanel({
 
   return (
     <div>
-      <PageHeader title={p.opportunitiesTitle} description={p.opportunitiesDescription} action={<Button onClick={() => setShowForm((x) => !x)}><Plus />{p.newOpportunity}</Button>} />
+      <PageHeader title={p.opportunitiesTitle} description={p.opportunitiesDescription} action={<Button onClick={() => { setSection("pipeline"); setShowForm((x) => !x); }}><Plus />{p.newOpportunity}</Button>} />
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={cs ? "Zobrazení příležitostí" : "Opportunity views"}><Button variant={section === "pipeline" ? "default" : "outline"} aria-pressed={section === "pipeline"} onClick={() => setSection("pipeline")}>{cs ? "Zakázky" : "Projects"}</Button><Button variant={section === "platforms" ? "default" : "outline"} aria-pressed={section === "platforms"} onClick={() => setSection("platforms")}>{cs ? "Platformy a profily" : "Platforms & profiles"}</Button></div>
+      {section === "platforms" ? <FreelancePlatforms userId={userId} isPreview={isPreview} /> : <>
+      <div className="mb-4 flex flex-wrap items-end gap-3"><SimpleSelect className="w-full sm:w-64" aria-label={cs ? "Filtrovat platformu" : "Filter platform"} value={platformFilter} onValueChange={setPlatformFilter} options={[{value:"all",label:cs ? "Všechny platformy" : "All platforms"},...platforms.map(row=>({value:row.id,label:row.name}))]} /><dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">{[[cs ? "Uloženo" : "Saved",metrics?.saved ?? "—"],[cs ? "Odesláno" : "Submitted",metrics?.submitted ?? "—"],[cs ? "Odpovědi" : "Replies",metrics?.replies ?? "—"],[cs ? "Získáno z odeslaných" : "Won from submissions",metrics?.won ?? "—"],[cs ? "Míra odpovědí" : "Response rate",metrics?.responseRate == null ? "—" : `${metrics.responseRate}%`]].map(([label,value])=><div key={label}><dt className="text-xs text-foreground-muted">{label}</dt><dd className="font-semibold tabular-nums">{value}</dd></div>)}</dl></div>
+      {!isPreview && metricQuery.isPending && <p role="status" className="mb-2 text-sm">{cs ? "Načítám statistiky…" : "Loading statistics…"}</p>}
+      {metricQuery.isError && <div role="alert" className="mb-3"><p>{cs ? "Statistiky se nepodařilo načíst." : "Could not load statistics."}</p><Button variant="outline" onClick={()=>metricQuery.refetch()}>{cs ? "Zkusit znovu" : "Retry"}</Button></div>}
+      {opportunities.length >= 1000 && <p className="mb-3 text-sm">{cs ? "Přehled a hledání zahrnují 1 000 nejnovějších zakázek; statistiky počítají celou historii." : "The list and search cover the latest 1,000 projects; statistics cover the full history."}</p>}
+      <p className="mb-4 text-xs text-foreground-muted">{cs ? "Statistiky zahrnují celou historii vybrané platformy a vycházejí ze skutečného data odeslání a první odpovědi klienta. Otevřením detailu připravíte odpověď i další postup." : "Statistics cover the selected platform’s full history and use actual submission and first client reply dates. Open a project to prepare your proposal and next steps."}</p>
       {showForm && <Card className="mb-4"><CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2"><Label>{p.title}</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+        <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="opp-new-title">{p.title}</Label><Input id="opp-new-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
         <div className="space-y-1.5"><Label>{p.source}</Label><SimpleSelect aria-label={p.source} value={form.source} onValueChange={(source) => setForm({ ...form, source: source as OpportunitySource })} options={SOURCES.map((source) => ({ value: source, label: statusLabel(source, lang) }))} /></div>
         <div className="space-y-1.5"><Label>{p.organization}</Label><SimpleSelect aria-label={p.organization} value={form.organization_id} onValueChange={(organization_id) => setForm({ ...form, organization_id })} options={organizationOptions} /></div>
-        <div className="space-y-1.5 sm:col-span-2"><Label>{p.description}</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-        <div className="space-y-1.5"><Label>{p.sourceUrl}</Label><Input type="url" value={form.source_url} onChange={(e) => setForm({ ...form, source_url: e.target.value })} /></div>
-        <div className="space-y-1.5"><Label>{p.deadline}</Label><Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></div>
-        <div className="space-y-1.5 sm:col-span-2"><Label>{p.followUp}</Label><Input type="datetime-local" value={form.next_follow_up_at} onChange={(e) => setForm({ ...form, next_follow_up_at: e.target.value })} /></div>
-        <div className="grid grid-cols-3 gap-2 sm:col-span-2"><Input type="number" min="0" placeholder="Min" value={form.budget_min} onChange={(e) => setForm({ ...form, budget_min: e.target.value })} /><Input type="number" min="0" placeholder="Max" value={form.budget_max} onChange={(e) => setForm({ ...form, budget_max: e.target.value })} /><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} /></div>
-        <Button className="sm:col-span-2" onClick={() => createMutation.mutate()} disabled={!form.title.trim() || createMutation.isPending}>{p.create}</Button>
+        <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="opp-new-description">{p.description}</Label><Textarea id="opp-new-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+        <div className="space-y-1.5"><Label htmlFor="opp-new-source_url">{p.sourceUrl}</Label><Input id="opp-new-source_url" type="url" value={form.source_url} onChange={(e) => setForm({ ...form, source_url: e.target.value })} /></div>
+        <div className="space-y-1.5"><Label htmlFor="opp-new-deadline">{p.deadline}</Label><Input id="opp-new-deadline" type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></div>
+        <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="opp-new-next_follow_up_at">{p.followUp}</Label><Input id="opp-new-next_follow_up_at" type="datetime-local" value={form.next_follow_up_at} onChange={(e) => setForm({ ...form, next_follow_up_at: e.target.value })} /></div>
+        <div className="grid grid-cols-3 gap-2 sm:col-span-2"><Input type="number" min="0" aria-label={cs ? "Minimální rozpočet" : "Minimum budget"} placeholder="Min" value={form.budget_min} onChange={(e) => setForm({ ...form, budget_min: e.target.value })} /><Input type="number" min="0" aria-label={cs ? "Maximální rozpočet" : "Maximum budget"} placeholder="Max" value={form.budget_max} onChange={(e) => setForm({ ...form, budget_max: e.target.value })} /><Input aria-label={cs ? "Měna" : "Currency"} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} /></div>
+        <Button className="sm:col-span-2" onClick={() => createMutation.mutate()} disabled={!form.title.trim() || createMutation.isPending || isPreview || (!!form.source_url && !httpsUrl(form.source_url)) || (form.budget_min !== "" && Number(form.budget_min) < 0) || (form.budget_max !== "" && Number(form.budget_max) < Number(form.budget_min))}>{p.create}</Button>
       </CardContent></Card>}
       <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-3"><Input aria-label={p.searchOpportunities} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchOpportunities} /><SimpleSelect aria-label={p.openOpportunities} value={filter} onValueChange={(value) => setFilter(value as OpportunityStatus | "open")} options={[{ value: "open", label: p.openOpportunities }, ...STATUSES.map((status) => ({ value: status, label: statusLabel(status, lang) }))]} /><SimpleSelect aria-label={p.allOpportunitySources} value={sourceFilter} onValueChange={(value) => setSourceFilter(value as OpportunitySource | "all")} options={[{ value: "all", label: p.allOpportunitySources }, ...SOURCES.map((source) => ({ value: source, label: statusLabel(source, lang) }))]} /></div>
       {visible.length === 0 ? <EmptyState title={p.pipelineEmpty} icon={Plus} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">
         {visible.map((item) => <article key={item.id} className="grid gap-3 border-b border-border p-3 last:border-0 md:grid-cols-[minmax(0,1.4fr)_minmax(11rem,.7fr)_minmax(12rem,.8fr)_auto] md:items-center">
-          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{item.title}</h2><StatusBadge value={item.status} /><EntityBadge>{statusLabel(item.source, lang)}</EntityBadge></div>{item.description && <p className="mt-1 line-clamp-2 text-xs text-foreground-muted">{item.description}</p>}<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">{item.budget_min != null && <span className="tabular">{item.budget_min.toLocaleString()}–{(item.budget_max ?? item.budget_min).toLocaleString()} {item.currency}</span>}{item.deadline && <span className="tabular">{p.deadline}: {item.deadline}</span>}{item.next_follow_up_at && <span className="tabular text-warning">{p.followUp}: {item.next_follow_up_at.slice(0, 10)}</span>}{item.source_url && <a className="inline-flex items-center gap-1 underline" href={item.source_url} target="_blank" rel="noreferrer">{p.openSource}<ExternalLink className="h-3 w-3" /></a>}</div></div>
-          <SimpleSelect aria-label={`${p.status}: ${item.title}`} value={item.status} onValueChange={(status) => statusMutation.mutate({ id: item.id, status: status as OpportunityStatus })} options={STATUSES.map((status) => ({ value: status, label: statusLabel(status, lang) }))} />
-          <SimpleSelect aria-label={`${p.organization}: ${item.title}`} value={item.organization_id ?? ""} onValueChange={(organization_id) => organizationMutation.mutate({ id: item.id, organization_id })} options={organizationOptions} />
-          <div className="flex items-center gap-1 md:justify-end"><Button variant="outline" size="sm" onClick={() => { setConverting(item); setConversionOrganizationName(""); }} disabled={Boolean(item.project_id) || convertMutation.isPending}>{item.project_id ? p.converted : p.convertToProject}</Button><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${item.title}`} onClick={() => void removeOpportunity(item.id)}><Trash2 /></Button></div>
+          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-semibold"><button className="focus-ring text-left hover:underline" onClick={()=>setDetail(item)}>{item.title}</button></h2><StatusBadge value={item.status} /><EntityBadge>{platforms.find(row=>row.id===item.platform_id)?.name ?? statusLabel(item.source, lang)}</EntityBadge>{item.remote_scope && <span className="text-xs text-foreground-muted">{({worldwide:cs ? "Odkudkoliv" : "Worldwide",europe:cs ? "Evropa" : "Europe",czechia:cs ? "Česko" : "Czechia",restricted:cs ? "Omezené země" : "Restricted countries",unknown:cs ? "Remote ověřit" : "Verify remote",onsite:cs ? "Na místě" : "Onsite"})[item.remote_scope]}</span>}</div>{item.description && <p className="mt-1 line-clamp-2 text-xs text-foreground-muted">{item.description}</p>}<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">{item.budget_min != null && <span className="tabular">{item.budget_min.toLocaleString()}–{(item.budget_max ?? item.budget_min).toLocaleString()} {item.currency} {({hourly:cs ? "/ hod" : "/ hour",daily:cs ? "/ den" : "/ day",monthly:cs ? "/ měsíc" : "/ month",fixed:cs ? "celkem" : "fixed",unknown:""})[item.rate_type ?? "unknown"]}</span>}{item.deadline && <span className="tabular">{p.deadline}: {item.deadline}</span>}{item.next_follow_up_at && <span className="tabular text-warning">{p.followUp}: {item.next_follow_up_at.slice(0, 10)}</span>}{httpsUrl(item.source_url) && <a className="inline-flex items-center gap-1 underline" href={httpsUrl(item.source_url)} target="_blank" rel="noreferrer">{p.openSource}<ExternalLink className="h-3 w-3" /></a>}</div></div>
+          <SimpleSelect aria-label={`${p.status}: ${item.title}`} value={item.status} disabled={isPreview} onValueChange={(status) => { if (status === "proposal_sent" && !item.submitted_on) setDetail({...item,status:"proposal_sent"}); else statusMutation.mutate({ id: item.id, status: status as OpportunityStatus }); }} options={STATUSES.map((status) => ({ value: status, label: statusLabel(status, lang) }))} />
+          <SimpleSelect aria-label={`${p.organization}: ${item.title}`} disabled={isPreview} value={item.organization_id ?? ""} onValueChange={(organization_id) => organizationMutation.mutate({ id: item.id, organization_id })} options={organizationOptions} />
+          <div className="flex flex-wrap items-center gap-1 md:justify-end"><Button variant="outline" size="sm" onClick={()=>setDetail(item)}>{cs ? "Detail a odpověď" : "Details & proposal"}</Button><Button variant="outline" size="sm" onClick={() => { setConverting(item); setConversionOrganizationName(""); }} disabled={isPreview || Boolean(item.project_id) || convertMutation.isPending}>{item.project_id ? p.converted : p.convertToProject}</Button><Button variant="ghost" size="icon-sm" disabled={isPreview} aria-label={`${p.delete}: ${item.title}`} onClick={() => void removeOpportunity(item.id)}><Trash2 /></Button></div>
         </article>)}
       </div>}
+      </>}
+      {detail && <OpportunityDetail key={detail.id} item={detail} userId={userId} isPreview={isPreview} onClose={()=>setDetail(null)} onSaved={updated=>setOpportunities(old=>old.map(row=>row.id===updated.id ? updated : row))} />}
       <Dialog open={Boolean(converting)} onOpenChange={(next) => { if (!next) { setConverting(null); setConversionOrganizationName(""); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{p.conversionReviewTitle}</DialogTitle><DialogDescription>{p.conversionReviewBody}</DialogDescription></DialogHeader>

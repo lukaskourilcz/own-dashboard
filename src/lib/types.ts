@@ -720,6 +720,16 @@ export type OpportunityStatus =
   | "archived";
 
 export type ClientOpportunity = {
+  platform_id?: string | null;
+  remote_scope?: "worldwide" | "europe" | "czechia" | "restricted" | "unknown" | "onsite";
+  eligibility?: "verified" | "needs_review" | "not_suitable";
+  stack?: string[];
+  match_notes?: string;
+  proposal_text?: string;
+  proposal_url?: string | null;
+  submitted_on?: string | null;
+  responded_on?: string | null;
+  checked_on?: string | null;
   id: string;
   user_id: string;
   organization_id: string | null;

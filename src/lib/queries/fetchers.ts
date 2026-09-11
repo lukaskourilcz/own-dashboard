@@ -164,7 +164,7 @@ export async function fetchOpportunities(): Promise<ClientOpportunity[]> {
   const { data, error } = await supabase
     .from("client_opportunities")
     .select("*")
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false }).limit(1000);
   if (error) throw error;
   return (data ?? []) as ClientOpportunity[];
 }

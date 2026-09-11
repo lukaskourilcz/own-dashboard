@@ -44,3 +44,10 @@ The archive is intentionally retained by the new product. Do not drop it until e
 ## Local validation
 
 If Docker is available, run `npx supabase db reset`. Without Docker, execute `supabase/schema.sql` and all migrations against an isolated Postgres database with `ON_ERROR_STOP=1`. Never validate destructive migrations against a personal development database containing irreplaceable rows.
+## Freelance directory and proposal tracking — 2026-09-11
+
+Apply `20260911102058_freelance_opportunities.sql`, `20260911103455_freelance_metrics.sql` and `20260911104131_freelance_resources.sql` before deploying the freelance UI. These additive migrations create the owner-scoped platform directory, optional opportunity fields, immutable client-readable transition history, full-cohort metrics RPC and an HTTPS resource-folder link. Existing opportunities and conversion RPCs are preserved. Profile research and account-specific texts are private runtime data and are not migration seeds.
+
+The metrics function uses the authenticated owner and optional platform filter, independently of the bounded opportunity list; actual dates determine submission/reply counts. The trigger has a fixed search path and writes history without granting authenticated clients direct event mutation. Verify a second user sees neither records nor history, cannot attach another owner's platform, and cannot call event-writing functions directly. A rolled-back date/status change should produce one corresponding history event.
+
+Application rollback can deploy the previous version while retaining the additive schema and private drafts; do not drop populated tables merely to roll back the UI.
