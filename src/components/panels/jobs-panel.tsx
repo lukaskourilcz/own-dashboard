@@ -74,15 +74,17 @@ import { cn } from "@/lib/utils";
 
 import { isCareerRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
 import { CareerCompanies } from "./career-companies";
+import { CareerProgressDialog } from "./career-progress-dialog";
+import { isGoogleLetterUrl, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
 import { CareerLetterHelper } from "./career-letter-helper";
 import type { Availability } from "@/lib/jobs/availability";
 import type { LetterLanguage } from "@/lib/jobs/letter-helper";
 
 // Fit-level → badge tone. Warmer/greener = stronger match.
 const FIT_TONE: Record<JobMatch["level"], string> = {
-  strong: "bg-success/10 text-success border-success/30",
+  strong: "bg-success/10 text-foreground border-success/30",
   good: "bg-primary/10 text-primary border-primary/25",
-  partial: "bg-warning/10 text-warning border-warning/25",
+  partial: "bg-warning/10 text-foreground border-warning/25",
   weak: "bg-surface-muted text-foreground-muted border-border",
   unknown: "bg-surface text-foreground-subtle border-border",
 };
@@ -140,7 +142,7 @@ export function JobsPanel({
   const { cs: cvCs, en: cvEn } = useCvLinks();
   const { lang } = useLang();
   const [view, setView] = useState<
-    "open" | "saved" | "applied" | "letters" | "companies"
+    "open" | "saved" | "ready" | "applied" | "letters" | "companies"
   >("open");
   const relevantListings = useMemo(
     () => listings.filter(isCareerRelevant),
@@ -216,7 +218,7 @@ export function JobsPanel({
               </div>
             )}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
-              {(["open", "saved", "applied", "letters", "companies"] as const).map(
+              {(["open", "saved", "ready", "applied", "letters", "companies"] as const).map(
                 (v) => (
                   <button
                     key={v}
@@ -233,6 +235,8 @@ export function JobsPanel({
                       ? t.jobs.openTab
                       : v === "saved"
                         ? t.jobs.savedTab
+                      : v === "ready"
+                        ? lang === "cs" ? "Přihlášky k odeslání" : "Applications to send"
                       : v === "applied"
                         ? t.jobs.appliedTab
                         : v === "letters"
@@ -240,11 +244,11 @@ export function JobsPanel({
                             ? "Dopisy"
                             : "Cover letters"
                           : lang === "cs"
-                            ? "Firmy v Praze"
-                            : "Prague companies"}
-                    {(v === "saved" || v === "applied") && (
+                            ? "Kariérní odkazy"
+                            : "Career links"}
+                    {(v === "saved" || v === "ready" || v === "applied") && (
                       <span className="ml-2 text-sm text-foreground-muted">
-                        {v === "saved" ? savedPositions.length : applications.length}
+                        {v === "applied" ? applications.length : savedPositions.filter(row => v === "ready" ? !!row.cover_letter_url : !row.cover_letter_url).length}
                       </span>
                     )}
                   </button>
@@ -256,7 +260,7 @@ export function JobsPanel({
       />
 
       {view === "companies" ? (
-        <CareerCompanies />
+        <CareerCompanies userId={userId} isPreview={isPreview} />
       ) : view === "letters" ? (
         <LetterWorkspace
           templates={templates}
@@ -264,9 +268,11 @@ export function JobsPanel({
           userId={userId}
           applications={applications}
         />
-      ) : view === "saved" ? (
+      ) : view === "saved" || view === "ready" ? (
         <SavedPositionsView
-          positions={savedPositions}
+          key={view}
+          readyOnly={view === "ready"}
+          positions={savedPositions.filter(row => view === "ready" ? !!row.cover_letter_url : !row.cover_letter_url)}
           setPositions={setSavedPositions}
           userId={userId}
           onPrepare={(position, listing) => {
@@ -1114,7 +1120,7 @@ function SkillChip({ label, kind }: { label: string; kind: "have" | "gap" }) {
       className={cn(
         "inline-flex items-center rounded border px-[7px] py-[3px] text-[10px] font-medium",
         kind === "have"
-          ? "border-success/30 bg-success/10 text-success"
+          ? "border-success/30 bg-success/10 text-foreground"
           : "border-border bg-surface-muted text-foreground-muted line-through decoration-foreground-subtle/40",
       )}
     >
@@ -1243,11 +1249,13 @@ function savedToListing(position: SavedJobPosition): JobListing {
 }
 
 function SavedPositionsView({
+  readyOnly,
   positions,
   setPositions,
   userId,
   onPrepare,
 }: {
+  readyOnly: boolean;
   positions: SavedJobPosition[];
   setPositions: Updater<SavedJobPosition[]>;
   userId: string;
@@ -1262,6 +1270,8 @@ function SavedPositionsView({
   const supabase = createClient();
   const [form, setForm] = useState({ url: "", title: "", company: "", location: "", description: "" });
   const [showFields, setShowFields] = useState(false);
+  const [search, setSearch] = useState("");
+  const visible = positions.filter(row => `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
 
   function importUrl(url: string) {
     setShowFields(true);
@@ -1327,7 +1337,7 @@ function SavedPositionsView({
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-3">
+      {!readyOnly && <Card className="space-y-3">
         <div>
           <h2 className="text-base font-semibold">{t.jobs.saveByUrl}</h2>
           <p className="mt-1 text-sm text-foreground-muted">{t.jobs.saveByUrlDescription}</p>
@@ -1359,22 +1369,27 @@ function SavedPositionsView({
             <div className="flex justify-end"><Button type="button" onClick={() => save.mutate()} disabled={!form.url.trim() || !form.title.trim() || save.isPending}><Bookmark className="h-4 w-4" />{t.jobs.savePosition}</Button></div>
           </div>
         )}
-      </Card>
+      </Card>}
+      <Input value={search} onChange={event=>setSearch(event.target.value)} aria-label={cs?"Hledat přihlášku":"Search applications"} placeholder={cs?"Firma nebo pozice":"Company or position"} className="max-w-sm"/>
 
-      {positions.length === 0 ? (
+      {visible.length === 0 ? (
         <EmptyState icon={Bookmark} title={t.jobs.noSavedPositions} description={t.jobs.noSavedPositionsDescription} className="py-16" />
       ) : (
         <div className="divide-y divide-border rounded-md border border-border bg-surface">
-          {positions.map((position) => (
-            <article key={position.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+          {visible.map((position) => (
+            <article key={position.id} className="flex flex-col gap-3 p-4">
               <div className="min-w-0 flex-1">
                 <a href={position.url} target="_blank" rel="noopener noreferrer" className="break-words text-base font-semibold hover:underline focus-ring rounded-sm">{position.title}</a>
                 <p className="mt-1 text-sm text-foreground-muted">{[position.company, position.location].filter(Boolean).join(" · ")}</p>
+                <p className="mt-1 text-sm text-foreground-muted">{readinessLabel(position.readiness,cs)}</p>
+                {position.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground-muted">{position.notes}</p>}
                 <p className="mt-1 text-xs text-foreground-subtle">{cs ? "Uloženo" : "Saved"} {formatDistanceToNow(new Date(position.saved_at), { addSuffix: true, locale })}</p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline" size="sm"><a href={position.url} target="_blank" rel="noopener noreferrer">{cs?"Inzerát":"Job posting"}<ExternalLink className="h-4 w-4"/></a></Button>
+                {position.cover_letter_url && isGoogleLetterUrl(position.cover_letter_url) && <Button asChild variant="outline" size="sm"><a href={position.cover_letter_url} target="_blank" rel="noopener noreferrer">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}<ExternalLink className="h-4 w-4"/></a></Button>}
                 <Button variant="ghost" size="sm" onClick={() => remove.mutate(position.id)} aria-label={cs ? "Odebrat uloženou pozici" : "Remove saved position"}><Trash2 className="h-4 w-4" /></Button>
-                <Button size="sm" onClick={() => onPrepare(position, savedToListing(position))}><FileText className="h-4 w-4" />{t.jobs.prepareApplication}</Button>
+                <Button size="sm" onClick={() => onPrepare(position, savedToListing(position))}><FileText className="h-4 w-4" />{readyOnly ? (cs?"Zkontrolovat / označit odeslání":"Review / mark as sent") : t.jobs.prepareApplication}</Button>
               </div>
             </article>
           ))}
@@ -1437,7 +1452,6 @@ function ApplyDialog({
   templates,
   setTemplates,
   setApplications,
-  setEvents,
   userId,
   savedPosition,
   setSavedPositions,
@@ -1456,6 +1470,8 @@ function ApplyDialog({
   onApplied: () => void;
 }) {
   const t = useDict();
+  const cs = useLang().lang === "cs";
+  const [requestId, setRequestId] = useState("");
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
@@ -1466,6 +1482,8 @@ function ApplyDialog({
     url: "",
     appliedOn: todayIso(),
     coverLetter: "",
+    coverLetterUrl: "",
+    readiness: "draft",
     notes: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
@@ -1474,12 +1492,15 @@ function ApplyDialog({
   const seedKey = listing?.id ?? "manual";
   if (open && seededFor !== seedKey) {
     setSeededFor(seedKey);
+    setRequestId(savedPosition?.id ?? crypto.randomUUID());
     setForm({
       title: listing?.title ?? "",
       company: listing?.company ?? "",
       url: listing?.url ?? "",
       appliedOn: todayIso(),
       coverLetter: savedPosition?.cover_letter ?? "",
+      coverLetterUrl: savedPosition?.cover_letter_url ?? "",
+      readiness: savedPosition?.readiness ?? "draft",
       notes: savedPosition?.notes ?? "",
     });
     setFormError(null);
@@ -1488,50 +1509,24 @@ function ApplyDialog({
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const title = form.title.trim();
-      const { data, error } = await supabase
-        .from("job_applications")
-        .insert({
-          user_id: userId,
-          listing_id: listing?.id ?? null,
-          title,
-          company: form.company.trim() || null,
-          url: form.url.trim() || null,
-          source: listing?.source ?? null,
-          location: listing?.location ?? null,
+      if (!isGoogleLetterUrl(form.coverLetterUrl)) throw new Error("Invalid Google Drive URL");
+      const { data, error } = await supabase.rpc("record_job_application", {
+        p_request_id: requestId, p_saved_id: savedPosition?.id ?? null,
+        p_payload: {
+          title: form.title.trim(), company: form.company.trim(), url: form.url.trim(),
+          listing_id: savedPosition ? savedPosition.listing_id : listing?.id ?? null,
+          source: listing?.source ?? "manual", location: listing?.location ?? null,
           cover_letter: form.coverLetter,
-          applied_on: form.appliedOn || todayIso(),
-          notes: form.notes.trim() || null,
-        })
-        .select()
-        .single();
+          cover_letter_url: form.coverLetterUrl.trim() || null,
+          applied_on: form.appliedOn, notes: form.notes.trim(),
+        },
+      });
       if (error || !data) throw error ?? new Error("no-data");
-      const app = data as JobApplication;
-      let savedRemoved = false;
-      if (savedPosition) {
-        const { error: savedDeleteError } = await supabase
-          .from("saved_job_positions")
-          .delete()
-          .eq("id", savedPosition.id);
-        savedRemoved = !savedDeleteError;
-      }
-      // History trail. Best-effort: a failed event insert must not undo the
-      // application itself.
-      const { data: ev } = await supabase
-        .from("job_application_events")
-        .insert({
-          user_id: userId,
-          application_id: app.id,
-          kind: "applied",
-          detail: null,
-        })
-        .select()
-        .single();
-      return { app, ev: (ev ?? null) as JobApplicationEvent | null, savedRemoved };
+      return { app: data as JobApplication, savedRemoved: !!savedPosition };
     },
-    onSuccess: ({ app, ev, savedRemoved }) => {
-      setApplications((prev) => [app, ...prev]);
-      if (ev) setEvents((prev) => [ev, ...prev]);
+    onSuccess: ({ app, savedRemoved }) => {
+      setApplications((prev) => [app, ...prev.filter(row => row.id !== app.id)]);
+
       if (savedPosition && savedRemoved) {
         setSavedPositions((prev) => prev.filter((position) => position.id !== savedPosition.id));
         void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
@@ -1548,6 +1543,7 @@ function ApplyDialog({
   const saveDraftMutation = useMutation({
     mutationFn: async () => {
       if (!savedPosition) return null;
+      if (!isGoogleLetterUrl(form.coverLetterUrl)) throw new Error("Invalid Google Drive URL");
       const { data, error } = await supabase
         .from("saved_job_positions")
         .update({
@@ -1555,6 +1551,8 @@ function ApplyDialog({
           company: form.company.trim() || null,
           url: form.url.trim(),
           cover_letter: form.coverLetter,
+          cover_letter_url: form.coverLetterUrl.trim() || null,
+          readiness: form.readiness,
           notes: form.notes.trim() || null,
           updated_at: new Date().toISOString(),
         })
@@ -1577,6 +1575,10 @@ function ApplyDialog({
     e.preventDefault();
     if (!form.title.trim()) {
       setFormError(t.jobs.positionRequired);
+      return;
+    }
+    if (!isGoogleLetterUrl(form.coverLetterUrl)) {
+      setFormError(cs ? "Vložte odkaz na dokument na Google Drive." : "Enter a Google Drive document link.");
       return;
     }
     createMutation.mutate();
@@ -1650,6 +1652,10 @@ function ApplyDialog({
             </div>
           </div>
 
+          <div className="space-y-1.5"><Label htmlFor="cover-letter-drive">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}</Label><Input id="cover-letter-drive" type="url" value={form.coverLetterUrl} onChange={event=>setForm(current=>({...current,coverLetterUrl:event.target.value}))} placeholder="https://docs.google.com/document/d/…"/>
+          {form.coverLetterUrl && isGoogleLetterUrl(form.coverLetterUrl) && <a className="inline-flex min-h-11 items-center text-sm underline focus-ring" href={form.coverLetterUrl} target="_blank" rel="noopener noreferrer">{cs?"Otevřít dokument":"Open document"}</a>}</div>
+          {savedPosition && <SimpleSelect value={form.readiness} onValueChange={readiness=>setForm(current=>({...current,readiness}))} aria-label={cs?"Připravenost přihlášky":"Application readiness"} options={["draft","ready","needs_review"].map(value=>({value,label:readinessLabel(value,cs)}))}/>}
+          <p className="text-sm text-foreground-muted">{cs?"Po odeslání přihlášky na webu firmy zde potvrďte datum. Tlačítko níže pouze uloží záznam o odeslání.":"After applying on the employer website, confirm the date here. The button below only records that you sent the application."}</p>
           <CoverLetterField
             description={listing?.description ?? undefined}
             value={form.coverLetter}
@@ -1919,12 +1925,19 @@ function AppliedView({
   userId: string;
 }) {
   const t = useDict();
+  const cs = useLang().lang === "cs";
+  const [search, setSearch] = useState("");
+  const [since, setSince] = useState("");
+  const [responseFilter, setResponseFilter] = useState("all");
+  const [progressFor, setProgressFor] = useState<JobApplication | null>(null);
+  const cohort = useMemo(()=>applications.filter(row=>(!since || row.applied_on >= since) && `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())),[applications,since,search]);
+  const visible = cohort.filter(row=>responseFilter === "all" || (responseFilter === "responded" ? !!row.responded_on : !row.responded_on));
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
   const confirm = useConfirmation();
 
-  const stats = useMemo(() => applicationStats(applications), [applications]);
+  const stats = useMemo(() => applicationStats(cohort), [cohort]);
   const [letterFor, setLetterFor] = useState<JobApplication | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
 
@@ -1933,34 +1946,17 @@ function AppliedView({
       app: JobApplication;
       status: JobApplicationStatus;
     }) => {
-      const { data, error } = await supabase
-        .from("job_applications")
-        .update({
-          status: vars.status,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", vars.app.id)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc("update_job_application_progress", {
+        p_id: vars.app.id, p_status: vars.status, p_responded_on: vars.app.responded_on ?? null,
+        p_response_kind: vars.app.response_kind ?? null, p_follow_up_at: vars.app.next_follow_up_at ?? null,
+        p_notes: vars.app.notes ?? "",
+      });
       if (error || !data) throw error ?? new Error("no-data");
-      const { data: ev } = await supabase
-        .from("job_application_events")
-        .insert({
-          user_id: userId,
-          application_id: vars.app.id,
-          kind: "status",
-          detail: vars.status,
-        })
-        .select()
-        .single();
-      return {
-        app: data as JobApplication,
-        ev: (ev ?? null) as JobApplicationEvent | null,
-      };
+      return { app: data as JobApplication };
     },
-    onSuccess: ({ app, ev }) => {
+    onSuccess: ({ app }) => {
       setApplications((prev) => prev.map((a) => (a.id === app.id ? app : a)));
-      if (ev) setEvents((prev) => [ev, ...prev]);
+
       toast.ok(t.jobs.statusUpdated);
       void qc.invalidateQueries({ queryKey: qk.jobApplications });
       void qc.invalidateQueries({ queryKey: qk.jobApplicationEvents });
@@ -2025,6 +2021,10 @@ function AppliedView({
             [t.jobs.statsLast7, stats.last7],
             [t.jobs.statsLast30, stats.last30],
             [t.jobs.statsActive, stats.active],
+            [cs?"Odpovědi":"Responses", stats.responses],
+            [cs?"Podíl odpovědí":"Response rate", stats.responseRate === null ? "—" : `${stats.responseRate}%`],
+            [cs?"Medián dnů do odpovědi":"Median days to response", stats.medianResponseDays ?? "—"],
+            [cs?"K připomenutí":"Follow-ups due", stats.overdueFollowUps],
           ] as const
         ).map(([label, value]) => (
           <Card key={label} className="px-4 py-3">
@@ -2036,6 +2036,10 @@ function AppliedView({
         ))}
       </div>
 
+      <p className="mb-3 text-sm text-foreground-muted">{cs?"Statistiky vycházejí z vybraného období a hledání. Podíl odpovědí počítá přihlášky se zaznamenanou skutečnou odpovědí; u čerstvých přihlášek může být zatím nižší.":"Metrics use the selected period and search. Response rate counts applications with a recorded substantive response; recent applications have had less time to receive one."}</p>
+      <div className="mb-4 flex flex-wrap items-end gap-3"><Input value={search} onChange={event=>setSearch(event.target.value)} className="max-w-sm" aria-label={cs?"Hledat odeslané přihlášky":"Search sent applications"} placeholder={cs?"Firma nebo pozice":"Company or position"}/>
+      <div><Label htmlFor="applications-since">{cs?"Odesláno od":"Applied since"}</Label><Input id="applications-since" type="date" value={since} onChange={event=>setSince(event.target.value)}/></div>
+      <SimpleSelect value={responseFilter} onValueChange={setResponseFilter} aria-label={cs?"Filtrovat odpovědi":"Filter responses"} options={[{value:"all",label:cs?"Všechny přihlášky":"All applications"},{value:"responded",label:cs?"S odpovědí":"With response"},{value:"waiting",label:cs?"Bez odpovědi":"Without response"}]}/></div>
       {/* toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <Button
@@ -2048,7 +2052,7 @@ function AppliedView({
         </Button>
       </div>
 
-      {applications.length === 0 ? (
+      {visible.length === 0 ? (
         <Card className="p-0">
           <EmptyState
             icon={Send}
@@ -2060,13 +2064,14 @@ function AppliedView({
       ) : (
         <Card className="p-0 overflow-hidden">
           <ul className="divide-y divide-border">
-            {applications.map((app) => (
+            {visible.map((app) => (
               <ApplicationRow
                 key={app.id}
                 app={app}
                 events={events.filter((e) => e.application_id === app.id)}
                 statusLabel={statusLabel}
                 onStatus={(status) => statusMutation.mutate({ app, status })}
+                onProgress={() => setProgressFor(app)}
                 onLetter={() => setLetterFor(app)}
                 onDelete={() => removeApplication(app)}
               />
@@ -2075,6 +2080,7 @@ function AppliedView({
         </Card>
       )}
 
+      {progressFor && <CareerProgressDialog key={progressFor.id} app={progressFor} onClose={()=>setProgressFor(null)} setApplications={setApplications}/>}
       <LetterDialog
         app={letterFor}
         onClose={() => setLetterFor(null)}
@@ -2099,6 +2105,7 @@ function ApplicationRow({
   events,
   statusLabel,
   onStatus,
+  onProgress,
   onLetter,
   onDelete,
 }: {
@@ -2106,10 +2113,12 @@ function ApplicationRow({
   events: JobApplicationEvent[];
   statusLabel: Record<JobApplicationStatus, string>;
   onStatus: (s: JobApplicationStatus) => void;
+  onProgress: () => void;
   onLetter: () => void;
   onDelete: () => void;
 }) {
   const t = useDict();
+  const cs = useLang().lang === "cs";
   const locale = useDateLocale();
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -2195,6 +2204,12 @@ function ApplicationRow({
         </div>
       </div>
 
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {app.cover_letter_url && isGoogleLetterUrl(app.cover_letter_url) && <Button asChild size="sm" variant="outline"><a href={app.cover_letter_url} target="_blank" rel="noopener noreferrer">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}<ExternalLink className="h-4 w-4"/></a></Button>}
+        <Button size="sm" variant="outline" onClick={onProgress}>{cs?"Odpověď / další postup":"Response / follow-up"}</Button>
+        <span className="text-sm text-foreground-muted">{app.responded_on ? `${cs?"První odpověď":"First response"}: ${format(new Date(`${app.responded_on}T00:00:00`),"PP",{locale})}` : cs?"Zatím bez zaznamenané odpovědi":"No response recorded yet"}</span>
+        {app.next_follow_up_at && <span className="text-sm text-foreground-muted">{cs?"Připomenout":"Follow up"}: {format(new Date(app.next_follow_up_at),"PP",{locale})}</span>}
+      </div>
       {historyOpen && (
         <ul className="mt-2 space-y-1 border-l-2 border-border pl-3">
           {events.length === 0 && (
@@ -2211,7 +2226,7 @@ function ApplicationRow({
                         e.detail ??
                         ""
                       }`
-                    : `${t.jobs.eventNote}: ${e.detail ?? ""}`}
+                    : `${t.jobs.eventNote}: ${progressEventLabel(e.detail, cs)}`}
               </span>{" "}
               · {format(new Date(e.created_at), "PPp", { locale })}
             </li>

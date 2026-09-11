@@ -31,6 +31,13 @@ export function watchConsole(page: Page): string[] {
  * fixture harness never surfaces a network error.
  */
 export async function stubBackend(page: Page): Promise<void> {
+  // External favicons are decorative and must not make fixture tests depend
+  // on Google's network availability.
+  await page.route("https://www.google.com/s2/favicons?**", route => route.fulfill({
+    status: 200,
+    contentType: "image/gif",
+    body: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64"),
+  }));
   await page.route("**/api/github/repos", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",

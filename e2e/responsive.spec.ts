@@ -2,30 +2,25 @@ import { test, expect } from "@playwright/test";
 import { gotoPreview } from "./helpers";
 
 test.describe("responsive chrome", () => {
-  test("desktop: sidebar visible, mobile FAB hidden", async ({
+  test("desktop: sidebar visible, mobile navigation hidden", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "desktop-only assertion");
     await gotoPreview(page);
     await expect(page.locator("aside")).toBeVisible();
     await expect(page.getByTestId("mobile-nav")).toBeHidden();
-    await expect(page.getByRole("button", { name: "Quick add" })).toBeHidden();
   });
 
-  test("mobile: bottom nav + FAB visible, sidebar hidden", async ({
+  test("mobile: primary navigation visible, sidebar hidden", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile", "mobile-only assertion");
     await gotoPreview(page);
     await expect(page.locator("aside")).toBeHidden();
     await expect(page.getByTestId("mobile-nav")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Quick add" })).toBeVisible();
-
-    const navBox = await page.getByTestId("mobile-nav").boundingBox();
-    const fabBox = await page.getByRole("button", { name: "Quick add" }).boundingBox();
-    expect(navBox).not.toBeNull();
-    expect(fabBox).not.toBeNull();
-    expect(fabBox!.y + fabBox!.height).toBeLessThanOrEqual(navBox!.y);
+    for (const name of ["Home", "Inbox", "Work overview", "Projects", "More"]) {
+      await expect(page.getByTestId("mobile-nav").getByRole("button", { name, exact: true })).toBeVisible();
+    }
 
     // No horizontal overflow on a 393px-wide device.
     const overflow = await page.evaluate(
@@ -45,7 +40,7 @@ test.describe("responsive chrome", () => {
     await expect(dialog.getByRole("button", { name: "Opportunities", exact: true })).toBeVisible();
     await dialog.getByRole("button", { name: "Opportunities", exact: true }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
+    await expect(page.locator("header").getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
   });
 
   test("mobile Career opens readable job details without page overflow", async ({ page }, testInfo) => {
@@ -54,14 +49,14 @@ test.describe("responsive chrome", () => {
     await page.getByRole("button", { name: "More", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "All areas" });
     await dialog.getByRole("button", { name: "Career", exact: true }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Career" })).toBeVisible();
+    await expect(page.locator("header").getByRole("heading", { level: 1, name: "Career" })).toBeVisible();
     const overflow = await page.evaluate(
       () => document.body.scrollWidth - document.body.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(1);
     await page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog").getByRole("button", { name: "Prepare application", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button", { name: "Save position", exact: true })).toBeVisible();
   });
 
   test("representative widths reflow without page overflow", async ({ page }, testInfo) => {

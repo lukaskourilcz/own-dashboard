@@ -4,6 +4,10 @@ import type { JobApplication, JobApplicationStatus } from "@/lib/types";
 // so tests can pin `now`.
 
 export type ApplicationStats = {
+  responses: number;
+  responseRate: number | null;
+  medianResponseDays: number | null;
+  overdueFollowUps: number;
   total: number;
   last7: number;
   last30: number;
@@ -27,6 +31,8 @@ export function applicationStats(
   const byStatus = { ...EMPTY_BY_STATUS };
   let last7 = 0;
   let last30 = 0;
+  const responseDays: number[] = [];
+  let overdueFollowUps = 0;
 
   const DAY = 24 * 60 * 60 * 1000;
   const nowMs = now.getTime();
@@ -38,11 +44,20 @@ export function applicationStats(
     const applied = Date.parse(`${app.applied_on}T00:00:00Z`);
     if (Number.isNaN(applied)) continue;
     const age = nowMs - applied;
-    if (age <= 7 * DAY) last7++;
-    if (age <= 30 * DAY) last30++;
+    if (age >= 0 && age <= 7 * DAY) last7++;
+    if (age >= 0 && age <= 30 * DAY) last30++;
+    const responded = app.responded_on ? Date.parse(`${app.responded_on}T00:00:00Z`) : NaN;
+    if (app.response_kind && responded >= applied && responded <= nowMs) responseDays.push((responded-applied)/DAY);
+    if ((app.status === "applied" || app.status === "interviewing") && app.next_follow_up_at && Date.parse(app.next_follow_up_at) <= nowMs) overdueFollowUps++;
   }
+  responseDays.sort((a,b)=>a-b);
+  const middle = Math.floor(responseDays.length/2);
 
   return {
+    responses: responseDays.length,
+    responseRate: apps.length ? Math.round(responseDays.length/apps.length*100) : null,
+    medianResponseDays: !responseDays.length ? null : responseDays.length%2 ? responseDays[middle] : (responseDays[middle-1]+responseDays[middle])/2,
+    overdueFollowUps,
     total: apps.length,
     last7,
     last30,

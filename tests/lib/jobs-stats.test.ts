@@ -74,6 +74,31 @@ describe("applicationStats", () => {
     expect(s.active).toBe(3);
   });
 
+  it("counts explicit replies independently of stage and uses the median response time", () => {
+    const s = applicationStats([
+      { ...app("2026-05-01"), responded_on: "2026-05-03", response_kind: "positive" },
+      { ...app("2026-05-01", "rejected"), responded_on: "2026-05-07", response_kind: "negative" },
+      app("2026-05-01", "interviewing"),
+      { ...app("2026-05-01"), responded_on: "2026-05-09", response_kind: "neutral" },
+    ], NOW);
+    expect(s.responses).toBe(3);
+    expect(s.responseRate).toBe(75);
+    expect(s.medianResponseDays).toBe(6);
+    expect(applicationStats([], NOW).responseRate).toBeNull();
+  });
+
+  it("excludes future/invalid response dates and closed follow-ups", () => {
+    const s = applicationStats([
+      { ...app("2026-05-01"), responded_on: "2026-05-20", response_kind: "positive", next_follow_up_at: "2026-05-10T09:00:00Z" },
+      { ...app("2026-05-01", "rejected"), next_follow_up_at: "2026-05-10T09:00:00Z" },
+      { ...app("2026-05-01"), responded_on: "2026-04-20", response_kind: "neutral" },
+      app("2026-05-20"),
+    ], NOW);
+    expect(s.responses).toBe(0);
+    expect(s.overdueFollowUps).toBe(1);
+    expect(s.last7).toBe(0);
+  });
+
   it("ignores malformed dates without crashing", () => {
     const bad = app("not-a-date");
     const s = applicationStats([bad, app("2026-05-12")], NOW);

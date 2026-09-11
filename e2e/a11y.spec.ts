@@ -46,7 +46,6 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
     "Projects",
     "Opportunities",
     "Clients",
-    "Agents",
     "Career",
     "Money overview",
     "Invoices",

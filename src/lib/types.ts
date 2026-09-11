@@ -550,6 +550,8 @@ export type JobUserState = {
 };
 
 export type SavedJobPosition = {
+  cover_letter_url?: string | null;
+  readiness?: "draft" | "ready" | "needs_review";
   id: string;
   user_id: string;
   listing_id: string | null;
@@ -573,6 +575,10 @@ export type JobApplicationStatus =
   | "withdrawn";
 
 export type JobApplication = {
+  cover_letter_url?: string | null;
+  request_id?: string | null;
+  responded_on?: string | null;
+  response_kind?: "positive" | "negative" | "neutral" | null;
   id: string;
   user_id: string;
   // Soft link to the scraped listing; null once the listing is pruned. The

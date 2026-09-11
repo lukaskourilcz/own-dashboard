@@ -33,7 +33,7 @@ export default defineConfig({
     // Compile once, then run the same production server used after deployment.
     // NEXT_E2E exposes fixture-only /dev-preview for this build and nowhere
     // else; ordinary production builds retain the route's 404 guard.
-    command: `npm run build && npx next start -p ${PORT}`,
+    command: `npm run build && npx next start -H 127.0.0.1 -p ${PORT}`,
     url: `${BASE_URL}/dev-preview`,
     reuseExistingServer: !process.env.CI,
     // The production build is the server setup step, not an individual test.

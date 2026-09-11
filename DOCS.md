@@ -140,3 +140,7 @@ Future coding agents start with `AGENTS.md` and `CLAUDE.md`, then use the narrow
 - Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login and auth errors, contextual AI proposal flows, mobile destination access, Career table containment/sorting, project Communication, Agents, subscription classification/renewals, and axe accessibility scans.
 - Responsive coverage explicitly checks 360, 430, 768, 1024, 1440, and 1728 px, with a Czech narrow view and a dark 1024 px view.
 - Production build is a required verification step because the shell spans server/client boundaries and lazy chart/editor bundles.
+
+## Career application pipeline
+
+The owner-scoped company directory, Google Drive letter links, prepared queue, atomic sent transition and response metrics are described in [Career pipeline](docs/career-pipeline.md). The additive migration is `20260911080040_career_directory_and_application_pipeline.sql`.

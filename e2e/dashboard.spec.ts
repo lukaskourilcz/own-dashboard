@@ -9,7 +9,6 @@ const TABS = [
   "Projects",
   "Opportunities",
   "Clients",
-  "Agents",
   "Career",
   "Invoices",
   "Money overview",
@@ -222,7 +221,7 @@ test.describe("dashboard sections", () => {
     ).toBeLessThan(2);
   });
 
-  test("Career exposes job details and writing tools, and Agents exposes the VPS queue", async ({ page }, testInfo) => {
+  test("Career exposes job details and writing tools", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);
     const sidebar = page.locator("aside nav");
@@ -230,14 +229,11 @@ test.describe("dashboard sections", () => {
     await expect(page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Cover letters", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Prague companies", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Career links", exact: true })).toBeVisible();
     await page.getByLabel("Sort").click();
     await page.getByRole("option", { name: "Remote first" }).click();
     await page.getByLabel("Sort").click();
     await page.getByRole("option", { name: "Location A–Z" }).click();
-    await sidebar.getByRole("button", { name: "Agents" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
-    await expect(page.getByText("Validate the dashboard release")).toBeVisible();
   });
 
   test("Subscriptions group comparable services and show every renewal", async ({ page }, testInfo) => {

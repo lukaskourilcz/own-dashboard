@@ -97,3 +97,21 @@ No generated artwork was produced. There are therefore no shipped files to inspe
 3. Capture authentic `/dev-preview` screenshots only after functional assertions and axe pass.
 4. Recheck both languages, both themes, long labels and values, zoom/reflow, focus order, dialog escape/focus return, and invoice print preview whenever shared layout or typography changes.
 5. Keep `NEXT_E2E` confined to local/CI test processes. Never configure it in a deployed environment.
+
+## Career application pipeline — 2026-09-11
+
+The Career change adds a prepared-application list with posting and Google Drive links, a sent transition, response/follow-up editing, and cohort statistics. Only fictitious fixture records are used in preview screenshots; imported company research and real letters remain in the owner's database and Drive.
+
+Visual review found that a horizontal action group at 1024 px squeezed the role title into a narrow column even though the page passed the overflow check. Prepared rows now keep their actions below the company and role at every width. Small positive-fit badges and matched-skill chips use the foreground text token to fix the contrast violations found by axe.
+
+The new E2E coverage exercises both document links, the manual sent transition and its stable request ID, response entry and the resulting response rate, plus Czech prepared rows at 360, 430, 768, 1024, 1440 and 1728 px. The 1024 px case uses dark mode. Existing navigation tests were updated to reflect the already-removed Agents destination and Quick Add control, and mobile heading assertions are scoped to the shell header.
+
+The test backend returns the persisted application after each mutation so cache invalidation can be checked through a realistic read-after-write flow. Database rollback checks separately cover the real RPC, retry idempotency, history and ownership; the preview does not verify a signed-in production session or Google account permissions.
+
+No new media was generated. Broader manual zoom/keyboard audits and every disconnected/error state were not repeated for this feature; the existing automated navigation, accessibility, responsive, PWA and invoice suites remain the release checks.
+
+The completed full run recorded 45 passes, 33 intentional project skips and two failures in existing tests: external Google favicon requests failed, and the mobile posting-detail test still expected the former “Prepare application” action. The fixture harness now serves a local transparent favicon response, and the detail assertion checks the current “Save position” action. The two affected checks are rerun separately after those test-only corrections.
+
+All new Career checks passed in the full run, including the desktop/mobile sent-and-response flow and the six-width Czech/axe matrix. Authentic screenshots of the prepared rows, the corrected 1024 px dark layout and the desktop/mobile response statistics were visually inspected.
+
+Final verification: `npm run lint` and `npx tsc --noEmit` passed; `npm run test` passed all 276 tests in 30 files; the production build passed. `npm run test:e2e -- --last-failed` then passed both corrected checks. Across the full run and that targeted rerun, all 47 executed E2E checks passed, with 33 deliberate desktop/mobile project skips and no unresolved failure. The entire suite was not repeated after these two test-only corrections.

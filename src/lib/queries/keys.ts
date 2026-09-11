@@ -35,6 +35,7 @@ export const qk = {
   invoiceItems: ["invoiceItems"] as const,
   invoiceSettings: ["invoiceSettings"] as const,
   jobListings: ["jobListings"] as const,
+  careerCompanies: ["careerCompanies"] as const,
   jobAvailability: ["jobListings", "availability"] as const,
   jobSourceSync: ["career-source-sync"] as const,
   jobUserStates: ["jobUserStates"] as const,

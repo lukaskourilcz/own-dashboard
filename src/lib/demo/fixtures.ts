@@ -23,6 +23,7 @@ import type {
   InvoiceItem,
   InvoiceSettings,
   JobApplication,
+  SavedJobPosition,
   JobApplicationEvent,
   JobListing,
   JobScrapeRun,
@@ -405,6 +406,15 @@ export const jobListings: JobListing[] = [
 ];
 
 export const jobUserStates: JobUserState[] = [];
+
+export const savedJobPositions: SavedJobPosition[] = [{
+  id: "00000000-0000-4000-8000-000000000099", user_id: UID, listing_id: null,
+  title: "Frontend Engineer", company: "Example Studio", url: "https://example.com/careers/frontend",
+  source: "manual", location: "Remote, Europe", description: "Build accessible React applications.",
+  cover_letter: "Hello Example Studio team, this is a fictional preview letter.",
+  cover_letter_url: "https://docs.google.com/document/d/example-preview-only/edit",
+  readiness: "needs_review", notes: "Preview only. Check the posting before sending.", saved_at: TS, updated_at: TS,
+}];
 
 export const jobApplications: JobApplication[] = [
   {
