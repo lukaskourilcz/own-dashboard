@@ -12,7 +12,7 @@ The export dialog previews JSON or Markdown and offers Copy all and download. It
 
 The migration and owner-authorized research import were applied to the live database on 2026-09-15. A supplemental visual-review import on 2026-09-16 brought the verified total to 169 links and 17 ideas, all with ratings, rationales, project relevance and sources. All original 119 IDs, titles, URLs, descriptions and categories were preserved. No generated research or private repository inventory is committed. The import snapshot and coverage ledger are in the local ignored observations directory.
 
-Application code requires a separate deployment. Until then the previous interface may show Ideas among ordinary links because it does not recognize the new record type. This task did not push or deploy.
+The integrated application uses main’s expandable resource cards for both Links and Ideas. Before this code is deployed, the previous interface may show Ideas among ordinary links because it does not recognize the new record type. The initial delivery stayed local; the owner subsequently authorized merging into main and triggering deployment.
 
 ## Evidence limits
 

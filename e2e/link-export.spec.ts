@@ -100,11 +100,11 @@ test("creates an Idea below Links and exposes review evidence", async ({ page },
   await form.getByRole("button", { name: "Create", exact: true }).click();
   await expect(form).not.toBeVisible();
   const ideas = page.locator('section[aria-labelledby="ideas-heading"]');
-  await ideas.getByRole("button", { name: "Expand details: Check editor and export licensing separately", exact: true }).click();
+  await ideas.getByRole("button", { name: "Show details: Check editor and export licensing separately", exact: true }).click();
   await expect(ideas.getByText("Usefulness: 5/5")).toBeVisible();
   await ideas.getByText("Projects that benefit", { exact: true }).click();
   await expect(ideas.getByText("Record rights and costs before using generated media.", { exact: false })).toBeVisible();
   await ideas.getByText("Sources", { exact: true }).click();
-  await expect(ideas.getByRole("link", { name: "https://www.rive.app/pricing", exact: true })).toBeVisible();
+  await expect(ideas.locator("details").getByRole("link", { name: "https://www.rive.app/pricing", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

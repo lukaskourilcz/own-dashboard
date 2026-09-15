@@ -148,3 +148,14 @@ The new UI uses the existing `/dev-preview` shell, semantic components and deter
 - Live database probes ran with the authenticated role and rolled back: non-owner reads returned no rows, spoofed-owner writes and unowned-category writes were rejected, and owner reads returned all 174 imported records.
 
 Private research evidence, exports and per-post coverage remain outside Git under `.claude/observations/reel-research/`. Production sign-in and a deployed Ideas/export interface were not tested; this task did not deploy application code.
+
+## Main integration — 2026-09-16
+
+Integrated the Ideas/export feature with main's newer searchable expandable resource cards. Both sections share pricing/category/search filters, sorting and expand/collapse controls; card details retain ratings, rationale, repository relevance and sources. Existing Career work remains intact.
+
+- Lint and TypeScript passed; 33 unit-test files / 284 tests passed.
+- Combined library/export browser checks: 9 passed, 1 intentionally skipped duplicate mobile matrix. Covered six widths, EN/CS, keyboard controls, axe, Idea creation, export pricing/copy/download and clipboard denial.
+- Updated selectors for the combined search label, expandable Idea cards and distinct source links. The initial selector failures were corrected before the passing run.
+- A local dependency symlink was rejected by Turbopack; a local dependency copy resolved setup. Both the E2E production build and ordinary production build passed.
+- Previous full-suite limitations remain documented above; the full suite was not rerun for this integration.
+- User explicitly authorized a main push and redeployment in the follow-up.
