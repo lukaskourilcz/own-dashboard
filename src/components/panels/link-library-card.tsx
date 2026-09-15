@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
+import { linkDescription } from "@/lib/link-export";
 import { resourceKey } from "@/lib/link-library";
 import type { AiLink, AiPricing } from "@/lib/types";
 
@@ -50,7 +51,18 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete }: 
     </div>
     <div id={`link-details-${link.id}`} hidden={!expanded} className="space-y-2 border-t border-border/60 bg-surface-muted/30 px-3 py-3 text-xs text-foreground-muted">
       <p className="flex items-center gap-2"><PricingDot pricing={link.pricing} />{link.pricing ? t.ai.pricingLabel[link.pricing] : t.ai.pricingUnknown}</p>
-      <p className="whitespace-pre-line [overflow-wrap:anywhere]">{(link.description || t.ai.noDescription).split(/(https?:\/\/[^\s]+)/g).map((part,index) => /^https?:\/\//.test(part) && resourceKey(part) ? <a key={index} href={part} target="_blank" rel="noreferrer" className="focus-ring rounded underline">{part}</a> : part)}</p>
+      <p className="whitespace-pre-line [overflow-wrap:anywhere]">{(linkDescription(link) || t.ai.noDescription).split(/(https?:\/\/[^\s]+)/g).map((part,index) => /^https?:\/\//.test(part) && resourceKey(part) ? <a key={index} href={part} target="_blank" rel="noreferrer" className="focus-ring rounded underline">{part}</a> : part)}</p>
+          {link.usefulness_rating != null && <p className="mt-2 text-xs font-medium">{t.ai.rating}: {link.usefulness_rating}/5</p>}
+          {link.rating_rationale && <p className="mt-1 text-xs text-foreground-muted">{link.rating_rationale}</p>}
+          {!!link.project_relevance?.length && <details className="mt-2 text-xs">
+            <summary className="cursor-pointer focus-ring">{t.ai.relevance}</summary>
+            <ul className="mt-1 space-y-1 break-words">{link.project_relevance.map((p) => <li key={p.repository}><strong>{p.repository}</strong>: {p.reason}</li>)}</ul>
+          </details>}
+          {link.pricing_evidence && <details className="mt-2 text-xs"><summary className="cursor-pointer focus-ring">{t.ai.pricingEvidence}</summary><p className="mt-1 break-words text-foreground-muted">{link.pricing_evidence}</p></details>}
+          {!!link.source_urls?.length && <details className="mt-2 text-xs">
+            <summary className="cursor-pointer focus-ring">{t.ai.sources}</summary>
+            <ul className="mt-1 space-y-1 break-all">{link.source_urls.filter((url) => /^https?:\/\//i.test(url)).map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer" className="underline">{url}</a></li>)}</ul>
+          </details>}
       <a href={safeUrl} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 rounded text-foreground underline [overflow-wrap:anywhere] sm:min-h-8">{link.url}<ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>
     </div>
   </article>;

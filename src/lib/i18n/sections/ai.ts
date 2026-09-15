@@ -1,4 +1,29 @@
 type AiStrings = {
+  exportTitle: string;
+  exportHint: string;
+  exportFormat: string;
+  exportFree: string;
+  exportFreemium: string;
+  exportAll: string;
+  exportPreview: string;
+  exportDownload: string;
+  exportCopy: string;
+  exportCopied: string;
+  exportCopyFailed: string;
+  ideasTitle: string;
+  editIdeaTitle: string;
+  ideaEmpty: string;
+  pricingEvidence: string;
+  unknownPricing: string;
+  ideasHint: string;
+  addIdea: string;
+  rating: string;
+  relevance: string;
+  sources: string;
+  recordType: string;
+  linkType: string;
+  ideaType: string;
+  exportCount: (count: number) => string;
   title: string;
   description: string;
   pricingLegend: string;
@@ -85,6 +110,32 @@ type AiStrings = {
 
 export const ai: { en: AiStrings; cs: AiStrings } = {
   en: {
+    exportTitle: "Copy to JSON / Markdown",
+    exportHint: "Export all links and ideas matching the pricing filter. Unknown prices appear only in All.",
+    exportFormat: "Format",
+    exportFree: "Free only",
+    exportFreemium: "Free + partially paid (freemium)",
+    exportAll: "All",
+    exportPreview: "Preview",
+    exportDownload: "Download file",
+    exportCopy: "Copy all content",
+    exportCopied: "Copied to clipboard.",
+    exportCopyFailed: "Could not copy. Select the preview text and copy it manually.",
+    ideasTitle: "Ideas",
+    editIdeaTitle: "Edit idea",
+    ideaEmpty: "No ideas here yet. Add advice and its source to get started.",
+    pricingEvidence: "Pricing evidence",
+    unknownPricing: "Price unverified",
+    ideasHint: "Practical advice, grouped by topic, with sources and project relevance.",
+    addIdea: "Add idea",
+    rating: "Usefulness",
+    relevance: "Projects that benefit",
+    sources: "Sources",
+    recordType: "Type",
+    linkType: "Link",
+    ideaType: "Idea",
+    exportCount: (count) => `${count} items`,
+
     title: "Links",
     pricingLegend: "Pricing guide",
     pricingUnknown: "Pricing unverified",
@@ -107,7 +158,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     addCategory: "Add category",
     addCategoryPlaceholder: "Add category",
     add: "Add",
-    searchPlaceholder: "Search links…",
+    searchPlaceholder: "Search links and ideas…",
     colSite: "Site",
     colDescription: "Description",
     colActions: "Actions",
@@ -168,6 +219,32 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     noMatchesDescription: "Try a different search.",
   },
   cs: {
+    exportTitle: "Kopírovat do JSON / Markdown",
+    exportHint: "Export všech odkazů a nápadů podle ceny. Neznámé ceny se zobrazí jen ve Vše.",
+    exportFormat: "Formát",
+    exportFree: "Pouze zdarma",
+    exportFreemium: "Zdarma + částečně placené",
+    exportAll: "Vše",
+    exportPreview: "Náhled",
+    exportDownload: "Stáhnout soubor",
+    exportCopy: "Kopírovat celý obsah",
+    exportCopied: "Zkopírováno do schránky.",
+    exportCopyFailed: "Kopírování se nezdařilo. Označte text náhledu a zkopírujte jej ručně.",
+    ideasTitle: "Nápady",
+    editIdeaTitle: "Upravit nápad",
+    ideaEmpty: "Zatím tu nejsou žádné nápady. Přidejte radu a její zdroj.",
+    pricingEvidence: "Podklady k ceně",
+    unknownPricing: "Cena neověřena",
+    ideasHint: "Praktické rady podle tématu, se zdroji a využitím v projektech.",
+    addIdea: "Přidat nápad",
+    rating: "Užitečnost",
+    relevance: "Využití v projektech",
+    sources: "Zdroje",
+    recordType: "Typ",
+    linkType: "Odkaz",
+    ideaType: "Nápad",
+    exportCount: (count) => `${count} položek`,
+
     title: "Odkazy",
     pricingLegend: "Legenda cen",
     pricingUnknown: "Cena neověřena",
@@ -190,7 +267,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     addCategory: "Přidat kategorii",
     addCategoryPlaceholder: "Přidat kategorii",
     add: "Přidat",
-    searchPlaceholder: "Hledat odkazy…",
+    searchPlaceholder: "Hledat odkazy a nápady…",
     colSite: "Web",
     colDescription: "Popis",
     colActions: "Akce",

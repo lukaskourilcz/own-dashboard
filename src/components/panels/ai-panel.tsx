@@ -1,5 +1,6 @@
 "use client";
 
+import { LinkExportDialog } from "./link-export-dialog";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -63,6 +64,7 @@ type Props = {
 };
 
 type LinkForm = {
+  recordType: "link" | "idea";
   title: string;
   url: string;
   description: string;
@@ -71,6 +73,7 @@ type LinkForm = {
 };
 
 const emptyForm: LinkForm = {
+  recordType: "link",
   title: "",
   url: "",
   description: "",
@@ -117,7 +120,9 @@ export function AiPanel({
 
   // Filter first, then bucket the survivors by category so search collapses
   // empty sections automatically.
-  const visibleLinks = useMemo(() => filterLibrary(aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
+  const visibleLinks = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type !== "idea"), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
+
+  const ideas = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type === "idea"), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, AiLink[]>();
@@ -137,7 +142,7 @@ export function AiPanel({
   const uncategorized = byCategory.get(UNCATEGORIZED) ?? [];
   const isEmpty = aiLinks.length === 0 && aiCategories.length === 0;
   const noResults =
-    searching && visibleLinks.length === 0 && aiLinks.length > 0;
+    searching && visibleLinks.length === 0 && ideas.length === 0 && aiLinks.length > 0;
 
   /* ---- link mutations ------------------------------------------------ */
 
@@ -174,6 +179,7 @@ export function AiPanel({
       description: string | null;
       category_id: string | null;
       pricing: AiPricing | null;
+      record_type: "link" | "idea";
     }) => {
       const { data, error } = await supabase
         .from("ai_links")
@@ -183,6 +189,7 @@ export function AiPanel({
           description: vars.description,
           category_id: vars.category_id,
           pricing: vars.pricing,
+          record_type: vars.record_type,
           updated_at: new Date().toISOString(),
         })
         .eq("id", vars.id)
@@ -312,9 +319,9 @@ export function AiPanel({
 
   /* ---- handlers ------------------------------------------------------ */
 
-  function openCreate() {
+  function openCreate(recordType: "link" | "idea" = "link") {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, recordType });
     setFormError(null);
     setDialogOpen(true);
   }
@@ -322,6 +329,7 @@ export function AiPanel({
   function openEdit(l: AiLink) {
     setEditing(l);
     setForm({
+      recordType: l.record_type ?? "link",
       title: l.title,
       url: l.url,
       description: l.description ?? "",
@@ -350,7 +358,7 @@ export function AiPanel({
       setFormError(t.ai.urlInvalid);
       return;
     }
-    if (aiLinks.some(link => link.id !== editing?.id && resourceKey(link.url) === resourceKey(url))) {
+    if (aiLinks.some(link => link.id !== editing?.id && (link.record_type ?? "link") === form.recordType && (form.recordType === "link" || link.title === title) && resourceKey(link.url) === resourceKey(url))) {
       setFormError(t.ai.duplicateLink);
       return;
     }
@@ -359,12 +367,12 @@ export function AiPanel({
     const pricing = form.pricing || null;
     if (editing) {
       updateLink.mutate(
-        { id: editing.id, title, url, description, category_id, pricing },
+        { id: editing.id, title, url, description, category_id, pricing, record_type: form.recordType },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
       createLink.mutate(
-        { title, url, description, category_id, pricing },
+        { title, url, description, category_id, pricing, record_type: form.recordType },
         { onSuccess: () => setDialogOpen(false) },
       );
     }
@@ -416,10 +424,13 @@ export function AiPanel({
         title={t.ai.title}
         description={t.ai.description}
         action={
-          <Button size="sm" onClick={openCreate}>
+          <div className="flex flex-wrap gap-2">
+          <LinkExportDialog links={aiLinks} categories={aiCategories} />
+          <Button size="sm" onClick={() => openCreate() }>
             <Plus className="h-3.5 w-3.5" />
             {t.ai.addLink}
           </Button>
+          </div>
         }
       />
 
@@ -435,7 +446,7 @@ export function AiPanel({
             title={t.ai.noLinksYet}
             description={t.ai.noLinksDescription}
             action={
-              <Button size="sm" onClick={openCreate}>
+              <Button size="sm" onClick={() => openCreate() }>
                 <Plus className="h-3.5 w-3.5" />
                 {t.ai.addLink}
               </Button>
@@ -455,10 +466,10 @@ export function AiPanel({
             <SimpleSelect aria-label={t.ai.sort} value={sort} onValueChange={value => setSort(value as LinkSort)} options={[{value:"name",label:t.ai.sortName},{value:"newest",label:t.ai.sortNewest}]} />
           </div>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <p role="status" className="text-xs text-foreground-muted">{t.ai.resultCount(visibleLinks.length,aiLinks.length)}</p>
+            <p role="status" className="text-xs text-foreground-muted">{t.ai.resultCount(visibleLinks.length + ideas.length,aiLinks.length)}</p>
             <div className="flex flex-wrap gap-2">
               {searching && <Button variant="ghost" size="sm" onClick={resetFilters}>{t.ai.clearFilters}</Button>}
-              <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set(visibleLinks.map(link => link.id)))} disabled={!visibleLinks.length}>{t.ai.expandAll}</Button>
+              <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set([...visibleLinks, ...ideas].map(link => link.id)))} disabled={!visibleLinks.length && !ideas.length}>{t.ai.expandAll}</Button>
               <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set())} disabled={!expandedIds.size}>{t.ai.collapseAll}</Button>
             </div>
           </div>
@@ -483,7 +494,7 @@ export function AiPanel({
               {aiCategories.map((cat) => {
                   const links = byCategory.get(cat.id) ?? [];
                   // While searching, hide categories that have no matches.
-                  if ((searching && links.length === 0) || (categoryFilter !== "all" && categoryFilter !== cat.id)) return null;
+                  if ((links.length === 0 && (searching || aiLinks.some(link => link.category_id === cat.id && link.record_type === "idea"))) || (categoryFilter !== "all" && categoryFilter !== cat.id)) return null;
                   return (
                     <CategoryGroup
                       key={cat.id}
@@ -539,6 +550,32 @@ export function AiPanel({
           )}
         </>
       )}
+
+      <section className="mt-8 border-t border-border pt-5" aria-labelledby="ideas-heading">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div><h2 id="ideas-heading" className="text-base font-semibold">{t.ai.ideasTitle}</h2>
+          <p className="text-xs text-foreground-muted">{t.ai.ideasHint}</p></div>
+          <Button variant="outline" size="sm" onClick={() => openCreate("idea")}>{t.ai.addIdea}</Button>
+        </div>
+        <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
+          {[...aiCategories, { id: UNCATEGORIZED, name: t.ai.uncategorized }].map((category) => {
+            const rows = ideas.filter((idea) => (idea.category_id && categoryIds.has(idea.category_id) ? idea.category_id : UNCATEGORIZED) === category.id);
+            return rows.length ? <CategoryGroup key={category.id} name={category.name} count={rows.length}
+              muted={category.id === UNCATEGORIZED}
+              renaming={renamingId === category.id}
+              renameValue={renameValue}
+              onRenameChange={setRenameValue}
+              onStartRename={() => { setRenamingId(category.id); setRenameValue(category.name); }}
+              onCommitRename={commitRename}
+              onCancelRename={() => { setRenamingId(null); setRenameValue(""); }}
+              onDelete={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) removeCategory(existing); }}
+            >
+              {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} />)}
+            </CategoryGroup> : null;
+          })}
+        </div>
+        {ideas.length === 0 && <p className="text-xs text-foreground-muted">{searching ? t.ai.noMatches : t.ai.ideaEmpty}</p>}
+      </section>
 
       <LinkDialog
         open={dialogOpen}
@@ -719,7 +756,7 @@ function LinkDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {editing ? t.ai.editLinkTitle : t.ai.newLinkTitle}
+            {form.recordType === "idea" ? (editing ? t.ai.editIdeaTitle : t.ai.addIdea) : (editing ? t.ai.editLinkTitle : t.ai.newLinkTitle)}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="mt-3 space-y-3">
@@ -735,6 +772,10 @@ function LinkDialog({
                 autoFocus
                 maxLength={120}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ai-record-type">{t.ai.recordType}</Label>
+              <SimpleSelect id="ai-record-type" value={form.recordType} onValueChange={(v) => setForm((f) => ({ ...f, recordType: v as LinkForm["recordType"] }))} options={[{ value: "link", label: t.ai.linkType }, { value: "idea", label: t.ai.ideaType }]} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ai-url">{t.ai.url}</Label>

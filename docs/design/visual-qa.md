@@ -132,3 +132,19 @@ Visual inspection of all six initial widths found that the sidebar left too litt
 `npm run lint`, `npx tsc --noEmit`, `npm run test` (280 tests in 32 files) and the ordinary production `npm run build` passed. The full `npm run test:e2e` run passed 49 checks with 35 intentional project skips; after the tablet breakpoint and longer fixture were added, `npm run test:e2e -- e2e/link-library.spec.ts` passed the six-width check with one intentional mobile-project skip. The whole E2E suite was not repeated after that bounded layout correction. An intermediate lint invocation raced with Playwright clearing its output directory and failed with ENOENT; the final lint run completed successfully after the browser run.
 
 Read-only authenticated database transactions verified that the owner can read 119 links and 19 categories, while unrelated claims read zero of either. All 36 new entries have dated source notes and all category references belong to the owner. The existing own-only policies remain enabled. These checks verify stored data and fixture behavior, not a signed-in production browser session or subscription entitlements on third-party sites. Pricing remains a dated manual assessment, and three older entries retain an explicit unverified marker.
+
+## Links / Ideas review and export — 2026-09-15
+
+The new UI uses the existing `/dev-preview` shell, semantic components and deterministic fixtures. No generated media was added.
+
+- `npm run test`: 28 files, 259 tests passed, including four export/legacy-description tests.
+- `npm run lint`: passed. Generated Playwright reports and test artifacts are now excluded from source linting.
+- `npx tsc --noEmit`: passed after using the same Axe/Playwright type bridge as the existing accessibility suite (the lockfile contains two Playwright core versions).
+- `npm run build`: passed; the targeted browser run also rebuilt the production-backed fixture server.
+- Full `npm run test:e2e`: 45 passed, 33 skipped, 4 failed. Three failures waited for the removed Agents navigation; one expected the absent mobile Quick Add button. These tests and the corresponding shell were unchanged in this feature diff. A clean-baseline browser rerun was not performed, so these are not claimed as experimentally proven baseline failures. They remain release-suite limitations.
+- Targeted `npm run test:e2e -- e2e/link-export.spec.ts`: 8 passed. Idea creation used a mocked authenticated backend, verified `record_type=idea`, placement below Links, rating, expandable relevance and source links. Targeted export checks passed on desktop and mobile: exact pricing selection, JSON/Markdown preview, copied content, download filename, clipboard denial with manual fallback, Escape and trigger focus return, and zero axe violations in the dialog.
+- Czech dark-mode export passed overflow checks at 360, 430, 768, 1024, 1440 and 1728 px. The captured authentic 1728 px dialog screenshot was visually inspected: readable controls, contained preview and visible actions.
+- The existing full suite also passed its responsive-width matrix and Czech A4 invoice checks. No changes were made to invoice or shared navigation behavior.
+- Live database probes ran with the authenticated role and rolled back: non-owner reads returned no rows, spoofed-owner writes and unowned-category writes were rejected, and owner reads returned all 174 imported records.
+
+Private research evidence, exports and per-post coverage remain outside Git under `.claude/observations/reel-research/`. Production sign-in and a deployed Ideas/export interface were not tested; this task did not deploy application code.

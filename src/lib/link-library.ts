@@ -23,7 +23,7 @@ export function filterLibrary(links: AiLink[], categories: AiCategory[], query: 
     const group = link.category_id && names.has(link.category_id) ? link.category_id : UNCATEGORIZED_LINKS;
     if (category !== "all" && group !== category) return false;
     if (pricing !== "all" && (link.pricing ?? "unknown") !== pricing) return false;
-    const text = searchable(`${link.title} ${link.url} ${link.description ?? ""} ${names.get(group) ?? ""}`);
+    const text = searchable(`${link.title} ${link.url} ${link.description ?? ""} ${names.get(group) ?? ""} ${link.rating_rationale ?? ""} ${(link.project_relevance ?? []).map(project => `${project.repository} ${project.reason}`).join(" ")}`);
     return words.every(word => text.includes(word));
   }).sort((a,b) => sort === "newest" ? b.created_at.localeCompare(a.created_at) || a.title.localeCompare(b.title) : a.title.localeCompare(b.title));
 }

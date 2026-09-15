@@ -496,6 +496,13 @@ export type SpendCategory = {
 export type AiPricing = "free" | "freemium" | "paid";
 
 export type AiLink = {
+  record_type?: "link" | "idea";
+  usefulness_rating?: number | null;
+  rating_rationale?: string | null;
+  project_relevance?: { repository: string; reason: string }[];
+  source_urls?: string[];
+  pricing_evidence?: string | null;
+  reviewed_at?: string | null;
   id: string;
   user_id: string;
   // Null = "Uncategorized". On category delete the FK nulls out, so a link is
