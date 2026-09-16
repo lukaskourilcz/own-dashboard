@@ -30,6 +30,8 @@ export const DASHBOARD_DATA_KEYS = [
   "projectCommunications",
   "projectCosts",
   "crons",
+  "subscriptionAllocations",
+  "competitors",
   "organizations",
   "opportunities",
   "inboxItems",
@@ -47,6 +49,37 @@ export const DASHBOARD_DATA_KEYS = [
 ] as const;
 
 export type DashboardDataKey = (typeof DASHBOARD_DATA_KEYS)[number];
+
+/**
+ * A project workspace (reached from Projects or Works) renders every related
+ * record, including the subscription allocations behind its Finance tab, the
+ * competitor research behind its Competition tab and the scored resource
+ * library behind its Links tab.
+ */
+const PROJECT_WORKSPACE_DATA: readonly DashboardDataKey[] = [
+  "subscriptions",
+  "subscriptionAllocations",
+  "todos",
+  "transactions",
+  "notes",
+  "prompts",
+  "repoNotes",
+  "repoLinks",
+  "aiLinks",
+  "aiCategories",
+  "importantDates",
+  "invoices",
+  "invoiceItems",
+  "projects",
+  "projectCommunications",
+  "projectCosts",
+  "crons",
+  "competitors",
+  "organizations",
+  "opportunities",
+  "inboxItems",
+  "notifications",
+];
 
 const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   home: [
@@ -74,26 +107,9 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "weeklyReviews",
     "jobApplications",
   ],
-  projects: [
-    "subscriptions",
-    "todos",
-    "transactions",
-    "notes",
-    "prompts",
-    "repoNotes",
-    "repoLinks",
-    "importantDates",
-    "invoices",
-    "invoiceItems",
-    "projects",
-    "projectCommunications",
-    "projectCosts",
-    "crons",
-    "organizations",
-    "opportunities",
-    "inboxItems",
-    "notifications",
-  ],
+  projects: PROJECT_WORKSPACE_DATA,
+  works: PROJECT_WORKSPACE_DATA,
+  competition: ["projects", "competitors", "notifications"],
   opportunities: ["projects", "organizations", "opportunities", "notifications"],
   clients: [
     "todos",
@@ -119,6 +135,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   invoices: ["invoices", "invoiceItems", "invoiceSettings", "projects", "organizations", "notifications"],
   money: [
     "subscriptions",
+    "subscriptionAllocations",
     "accounts",
     "transactions",
     "projects",
@@ -126,10 +143,10 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "crons",
     "notifications",
   ],
-  accounts: ["subscriptions", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
-  transactions: ["subscriptions", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
-  subscriptions: ["subscriptions", "projects", "notifications"],
-  categories: ["subscriptions", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
+  accounts: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
+  transactions: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
+  subscriptions: ["subscriptions", "subscriptionAllocations", "projects", "notifications"],
+  categories: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
   tasks: ["todos", "projects", "organizations", "notifications"],
   calendar: ["notifications", "weekCalendar"],
   goals: ["plans", "notifications"],

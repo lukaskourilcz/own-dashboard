@@ -24,6 +24,7 @@ import type {
   InboxItem,
   AppNotification,
   WeeklyReview,
+  Competitor,
   Cron,
   Plan,
   Project,
@@ -36,6 +37,7 @@ import type {
   Shortcut,
   SpendCategory,
   Subscription,
+  SubscriptionAllocation,
   Todo,
   Transaction,
 } from "@/lib/types";
@@ -310,6 +312,27 @@ export async function fetchCrons(): Promise<Cron[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Cron[];
+}
+
+export async function fetchSubscriptionAllocations(): Promise<SubscriptionAllocation[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("subscription_allocations")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as SubscriptionAllocation[];
+}
+
+export async function fetchCompetitors(): Promise<Competitor[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("competitors")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Competitor[];
 }
 
 export async function fetchAiLinks(): Promise<AiLink[]> {

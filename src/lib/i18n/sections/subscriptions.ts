@@ -1,4 +1,4 @@
-type Cycle = "monthly" | "yearly" | "weekly";
+type Cycle = "monthly" | "yearly" | "weekly" | "quarterly";
 type Group = "development" | "entertainment" | "business" | "infrastructure" | "productivity" | "finance" | "other";
 type Importance = "essential" | "useful" | "optional";
 
@@ -84,7 +84,7 @@ export const subscriptions: {
     amountPlaceholder: "9.99",
     currency: "Currency",
     billingCycle: "Billing cycle",
-    cycle: { monthly: "Monthly", yearly: "Yearly", weekly: "Weekly" },
+    cycle: { monthly: "Monthly", yearly: "Yearly", weekly: "Weekly", quarterly: "Quarterly" },
     category: "Category",
     categoryPlaceholder: "Entertainment",
     categoryGroup: "Spending group",
@@ -145,7 +145,7 @@ export const subscriptions: {
     amountPlaceholder: "9.99",
     currency: "Měna",
     billingCycle: "Fakturační cyklus",
-    cycle: { monthly: "Měsíčně", yearly: "Ročně", weekly: "Týdně" },
+    cycle: { monthly: "Měsíčně", yearly: "Ročně", weekly: "Týdně", quarterly: "Čtvrtletně" },
     category: "Kategorie",
     categoryPlaceholder: "Zábava",
     categoryGroup: "Skupina výdajů",

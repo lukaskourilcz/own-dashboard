@@ -23,7 +23,7 @@ export type Subscription = {
   name: string;
   amount: number;
   currency: string;
-  billing_cycle: "monthly" | "yearly" | "weekly";
+  billing_cycle: SubscriptionBillingCycle;
   category: string | null;
   category_group?: SubscriptionCategoryGroup;
   importance?: SubscriptionImportance;
@@ -32,6 +32,29 @@ export type Subscription = {
   created_at: string;
   updated_at: string;
   project_id?: string | null;
+  // Vendor lifecycle taken from invoices: first billing date, the date billing
+  // stopped (null while running), the plan name and where to manage it.
+  started_on?: string | null;
+  ended_on?: string | null;
+  plan?: string | null;
+  vendor_url?: string | null;
+  notes?: string;
+};
+
+export type SubscriptionBillingCycle = "monthly" | "yearly" | "weekly" | "quarterly";
+
+// One shared subscription split across projects. Shares are fractions of the
+// subscription's normalized monthly amount; whatever is not allocated stays
+// unallocated overhead instead of being guessed onto a project.
+export type SubscriptionAllocation = {
+  id: string;
+  user_id: string;
+  subscription_id: string;
+  project_id: string;
+  share: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type SubscriptionCategoryGroup =
@@ -147,6 +170,9 @@ export type Transaction = {
   project_id?: string | null;
   organization_id?: string | null;
   invoice_id?: string | null;
+  // The subscription this payment settled; the paid amount then follows that
+  // subscription's project allocation in development finance.
+  subscription_id?: string | null;
 };
 
 // A keyword → category rule. When a transaction's note contains `match`
@@ -413,6 +439,47 @@ export type Project = {
   status?: "planned" | "active" | "on_hold" | "completed" | "archived";
   revenue?: number;
   revenue_currency?: string;
+  // "project" = own product portfolio, "work" = client engagement, "other" =
+  // a synced repository with no dashboard role. Undefined (pre-migration rows)
+  // reads as "project".
+  scope?: ProjectScope;
+  // Owning project of a venture subsection (Design Lab and GoVIRAL live under
+  // the quorum repository). Null for top-level projects.
+  parent_id?: string | null;
+  // Stable key into the code-level registry in src/lib/portfolio.ts.
+  portfolio_key?: string | null;
+};
+
+export type ProjectScope = "project" | "work" | "other";
+
+// ---------------------------------------------------------------------------
+// Competitors — owner-authored competition research per project: what the
+// competitor does well, how it shows up on social media, how it charges and
+// what to take from it. Own-only RLS with project ownership checks.
+// ---------------------------------------------------------------------------
+
+export type CompetitorCategory = "direct" | "indirect" | "inspiration";
+
+export type Competitor = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  name: string;
+  url: string | null;
+  summary: string;
+  category: CompetitorCategory;
+  useful_features: string[];
+  social_content: string;
+  pricing_model: string;
+  lessons: string;
+  relevance_score: number | null;
+  score_rationale: string;
+  social_links: string[];
+  source_urls: string[];
+  reviewed_at: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ProjectCommunication = {

@@ -9,6 +9,7 @@ export function isActive(sub: Subscription): boolean {
 
 export function toMonthly(sub: Subscription): number {
   if (sub.billing_cycle === "yearly") return sub.amount / 12;
+  if (sub.billing_cycle === "quarterly") return sub.amount / 3;
   if (sub.billing_cycle === "weekly") return (sub.amount * 52) / 12;
   return sub.amount;
 }

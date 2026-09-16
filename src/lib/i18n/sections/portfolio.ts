@@ -1,0 +1,372 @@
+type PortfolioStrings = {
+  groups: { internal: string; products: string; boardless: string; other: string };
+  coreProject: string;
+  subsection: string;
+  subsectionOf: (parent: string) => string;
+  otherProjects: (n: number) => string;
+  otherProjectsHint: string;
+  projectsDescription: string;
+  worksTitle: string;
+  worksDescription: string;
+  addWork: string;
+  editWork: string;
+  noWorks: string;
+  addFirstWork: string;
+  workRepoHint: string;
+  pickRepo: string;
+  typeRepo: string;
+  clientColumn: string;
+  backToWorks: string;
+  competitionTitle: string;
+  competitionDescription: string;
+  addCompetitor: string;
+  editCompetitor: string;
+  deleteCompetitor: string;
+  deleteCompetitorConfirm: string;
+  noCompetitors: string;
+  noCompetitorsHint: string;
+  noCompetitorsForProject: string;
+  competitorName: string;
+  competitorUrl: string;
+  competitorSummary: string;
+  competitorCategory: string;
+  categories: { direct: string; indirect: string; inspiration: string };
+  usefulFeatures: string;
+  usefulFeaturesHint: string;
+  socialContent: string;
+  pricingModel: string;
+  lessons: string;
+  relevanceScore: string;
+  scoreRationale: string;
+  socialLinks: string;
+  sourceUrls: string;
+  oneUrlPerLine: string;
+  reviewedAt: string;
+  project: string;
+  allProjects: string;
+  allCategories: string;
+  searchCompetitors: string;
+  competitorsCount: (n: number) => string;
+  nameAndProjectRequired: string;
+  notScored: string;
+  projectLinksTab: string;
+  projectCompetitionTab: string;
+  topLinks: string;
+  topIdeas: string;
+  linksDescription: string;
+  noProjectLinks: string;
+  noProjectIdeas: string;
+  openLibrary: string;
+  score: string;
+  visit: string;
+  finance: {
+    title: string;
+    description: string;
+    recurringMonthly: string;
+    recurringYearly: string;
+    paidLastMonths: (n: number) => string;
+    projectsShare: string;
+    worksShare: string;
+    unallocated: string;
+    unallocatedHint: string;
+    timelineTitle: string;
+    timelineHint: string;
+    committed: string;
+    paid: string;
+    byProjectTitle: string;
+    byVendorTitle: string;
+    projectColumn: string;
+    scopeColumn: string;
+    monthlyColumn: string;
+    yearlyColumn: string;
+    oneOffColumn: string;
+    paidColumn: string;
+    shareColumn: string;
+    vendorColumn: string;
+    planColumn: string;
+    amountColumn: string;
+    startedColumn: string;
+    endsColumn: string;
+    nextColumn: string;
+    allocationColumn: string;
+    noDevSpend: string;
+    noDevSpendHint: string;
+    scope: { project: string; work: string; other: string };
+    recentTransactions: string;
+    noRecentTransactions: string;
+    running: string;
+    ended: string;
+    manageSubscriptions: string;
+    settles: (name: string) => string;
+    allocationsHint: string;
+    unallocatedShort: string;
+    manualCosts: string;
+  };
+  subscription: {
+    startedOn: string;
+    endedOn: string;
+    plan: string;
+    planPlaceholder: string;
+    vendorUrl: string;
+    notes: string;
+    notesPlaceholder: string;
+    allocations: string;
+    allocationsHint: string;
+    addAllocation: string;
+    removeAllocation: string;
+    share: string;
+    allocated: (percent: number) => string;
+    overAllocated: string;
+    quarterly: string;
+    lifecycle: (started: string, ended: string | null) => string;
+  };
+};
+
+export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
+  en: {
+    groups: { internal: "OwnDashboard", products: "Products", boardless: "BoardlessAI ventures", other: "Other active projects" },
+    coreProject: "Core project",
+    subsection: "Subsection",
+    subsectionOf: (parent) => `Part of ${parent}`,
+    otherProjects: (n) => `Other active projects (${n})`,
+    otherProjectsHint: "Repositories synced from GitHub that are not part of the daily portfolio. Deactivate them in Settings → Active projects to hide them from tasks too.",
+    projectsDescription: "The eight things being built every day, grouped by what they are. Costs, competitors and scored resources live inside each workspace.",
+    worksTitle: "Works",
+    worksDescription: "Client engagements tracked by repository. Each work keeps its own costs, invoices, communication and knowledge.",
+    addWork: "Add work",
+    editWork: "Edit work",
+    noWorks: "No client works yet",
+    addFirstWork: "Add a client repository such as gym-plzen or paris-claire to track it here.",
+    workRepoHint: "Pick one of your GitHub repositories or type owner/name.",
+    pickRepo: "Pick a repository",
+    typeRepo: "Or type owner/name",
+    clientColumn: "Client",
+    backToWorks: "All works",
+    competitionTitle: "Competition",
+    competitionDescription: "Who else solves the same problem for each project: their most useful features, how they show up on social media, how they charge, and what to take from it.",
+    addCompetitor: "Add competitor",
+    editCompetitor: "Edit competitor",
+    deleteCompetitor: "Delete competitor",
+    deleteCompetitorConfirm: "Delete this competitor and its research notes?",
+    noCompetitors: "No competitors recorded yet",
+    noCompetitorsHint: "Add the products you keep comparing against. Each entry belongs to one project.",
+    noCompetitorsForProject: "No competitors recorded for this project.",
+    competitorName: "Name",
+    competitorUrl: "Website",
+    competitorSummary: "What it is",
+    competitorCategory: "Type",
+    categories: { direct: "Direct", indirect: "Indirect", inspiration: "Inspiration" },
+    usefulFeatures: "Most useful features",
+    usefulFeaturesHint: "One feature per line.",
+    socialContent: "Social media content",
+    pricingModel: "Pricing model",
+    lessons: "What to learn from it",
+    relevanceScore: "Relevance",
+    scoreRationale: "Why this score",
+    socialLinks: "Social profiles",
+    sourceUrls: "Sources",
+    oneUrlPerLine: "One URL per line.",
+    reviewedAt: "Reviewed on",
+    project: "Project",
+    allProjects: "All projects",
+    allCategories: "All types",
+    searchCompetitors: "Search competitors…",
+    competitorsCount: (n) => `${n} ${n === 1 ? "competitor" : "competitors"}`,
+    nameAndProjectRequired: "A name and a project are required.",
+    notScored: "Not scored",
+    projectLinksTab: "Links & Ideas",
+    projectCompetitionTab: "Competition",
+    topLinks: "Most useful links",
+    topIdeas: "Ideas worth applying",
+    linksDescription: "Records in the Library whose research marks this project as relevant, best usefulness score first.",
+    noProjectLinks: "No links are marked relevant for this project yet.",
+    noProjectIdeas: "No ideas are marked relevant for this project yet.",
+    openLibrary: "Open the Library",
+    score: "Score",
+    visit: "Visit",
+    finance: {
+      title: "Development finance",
+      description: "What building and running the projects costs: AI tools, hosting, data services and design tooling. Personal spend stays out.",
+      recurringMonthly: "Recurring per month",
+      recurringYearly: "Recurring per year",
+      paidLastMonths: (n) => `Paid in the last ${n} months`,
+      projectsShare: "Projects",
+      worksShare: "Works",
+      unallocated: "Unallocated",
+      unallocatedHint: "Shared subscriptions without a project split. Allocate them in Subscriptions to move this amount onto projects.",
+      timelineTitle: "Monthly development spend",
+      timelineHint: "Committed = subscriptions active in that month, normalized to monthly. Paid = invoices and one-off purchases recorded as transactions.",
+      committed: "Committed",
+      paid: "Paid",
+      byProjectTitle: "By project",
+      byVendorTitle: "By vendor",
+      projectColumn: "Project",
+      scopeColumn: "Scope",
+      monthlyColumn: "Monthly",
+      yearlyColumn: "Yearly",
+      oneOffColumn: "One-off (12 mo)",
+      paidColumn: "Paid (12 mo)",
+      shareColumn: "Share",
+      vendorColumn: "Vendor",
+      planColumn: "Plan",
+      amountColumn: "Amount",
+      startedColumn: "Since",
+      endsColumn: "Ends",
+      nextColumn: "Next billing",
+      allocationColumn: "Allocated to",
+      noDevSpend: "No development spend recorded",
+      noDevSpendHint: "Mark a subscription's group as Development or allocate it to a project, and link paid invoices as transactions.",
+      scope: { project: "Project", work: "Work", other: "Other" },
+      recentTransactions: "Development payments",
+      noRecentTransactions: "No development payments in this window.",
+      running: "Running",
+      ended: "Ended",
+      manageSubscriptions: "Manage subscriptions",
+      settles: (name) => `Settles ${name}`,
+      allocationsHint: "Allocated shares follow the subscription; paid invoices inherit the same split.",
+      unallocatedShort: "Unallocated",
+      manualCosts: "Manual cost lines and automations",
+    },
+    subscription: {
+      startedOn: "Started on",
+      endedOn: "Ended on",
+      plan: "Plan",
+      planPlaceholder: "Pro, Max 20x, Starter…",
+      vendorUrl: "Billing page",
+      notes: "Notes",
+      notesPlaceholder: "Invoice numbers, payment issues, what it is used for…",
+      allocations: "Project allocation",
+      allocationsHint: "Split the monthly amount across projects. Whatever is left stays unallocated.",
+      addAllocation: "Add project share",
+      removeAllocation: "Remove share",
+      share: "Share %",
+      allocated: (percent) => `${percent}% allocated`,
+      overAllocated: "Shares add up to more than 100%.",
+      quarterly: "Quarterly",
+      lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `since ${started}`),
+    },
+  },
+  cs: {
+    groups: { internal: "OwnDashboard", products: "Produkty", boardless: "Ventures BoardlessAI", other: "Ostatní aktivní projekty" },
+    coreProject: "Hlavní projekt",
+    subsection: "Podsekce",
+    subsectionOf: (parent) => `Součást ${parent}`,
+    otherProjects: (n) => `Ostatní aktivní projekty (${n})`,
+    otherProjectsHint: "Repozitáře synchronizované z GitHubu, které nepatří do denního portfolia. V Nastavení → Aktivní projekty je lze deaktivovat, aby zmizely i z úkolů.",
+    projectsDescription: "Osm věcí, na kterých se pracuje každý den, seskupených podle toho, čím jsou. Náklady, konkurence a ohodnocené zdroje jsou uvnitř každého pracovního prostoru.",
+    worksTitle: "Zakázky",
+    worksDescription: "Klientské zakázky sledované podle repozitáře. Každá zakázka má vlastní náklady, faktury, komunikaci a znalosti.",
+    addWork: "Přidat zakázku",
+    editWork: "Upravit zakázku",
+    noWorks: "Zatím žádné klientské zakázky",
+    addFirstWork: "Přidejte klientský repozitář jako gym-plzen nebo paris-claire a sledujte ho tady.",
+    workRepoHint: "Vyberte jeden ze svých repozitářů na GitHubu nebo napište owner/name.",
+    pickRepo: "Vybrat repozitář",
+    typeRepo: "Nebo napište owner/name",
+    clientColumn: "Klient",
+    backToWorks: "Všechny zakázky",
+    competitionTitle: "Konkurence",
+    competitionDescription: "Kdo další řeší stejný problém u každého projektu: jejich nejužitečnější funkce, jak vystupují na sociálních sítích, jak účtují a co si z toho vzít.",
+    addCompetitor: "Přidat konkurenta",
+    editCompetitor: "Upravit konkurenta",
+    deleteCompetitor: "Smazat konkurenta",
+    deleteCompetitorConfirm: "Smazat tohoto konkurenta včetně poznámek z rešerše?",
+    noCompetitors: "Zatím žádní konkurenti",
+    noCompetitorsHint: "Přidejte produkty, se kterými se porovnáváte. Každý záznam patří jednomu projektu.",
+    noCompetitorsForProject: "U tohoto projektu nejsou zaznamenaní žádní konkurenti.",
+    competitorName: "Název",
+    competitorUrl: "Web",
+    competitorSummary: "Co to je",
+    competitorCategory: "Typ",
+    categories: { direct: "Přímý", indirect: "Nepřímý", inspiration: "Inspirace" },
+    usefulFeatures: "Nejužitečnější funkce",
+    usefulFeaturesHint: "Jedna funkce na řádek.",
+    socialContent: "Obsah na sociálních sítích",
+    pricingModel: "Cenový model",
+    lessons: "Co se z toho naučit",
+    relevanceScore: "Relevance",
+    scoreRationale: "Proč toto hodnocení",
+    socialLinks: "Sociální profily",
+    sourceUrls: "Zdroje",
+    oneUrlPerLine: "Jedna URL na řádek.",
+    reviewedAt: "Ověřeno dne",
+    project: "Projekt",
+    allProjects: "Všechny projekty",
+    allCategories: "Všechny typy",
+    searchCompetitors: "Hledat konkurenty…",
+    competitorsCount: (n) => `${n} ${n === 1 ? "konkurent" : n < 5 ? "konkurenti" : "konkurentů"}`,
+    nameAndProjectRequired: "Název a projekt jsou povinné.",
+    notScored: "Bez hodnocení",
+    projectLinksTab: "Odkazy a nápady",
+    projectCompetitionTab: "Konkurence",
+    topLinks: "Nejužitečnější odkazy",
+    topIdeas: "Nápady k použití",
+    linksDescription: "Záznamy z Knihovny, u kterých rešerše označila tento projekt jako relevantní, seřazené podle užitečnosti.",
+    noProjectLinks: "Pro tento projekt zatím nejsou označené žádné odkazy.",
+    noProjectIdeas: "Pro tento projekt zatím nejsou označené žádné nápady.",
+    openLibrary: "Otevřít Knihovnu",
+    score: "Hodnocení",
+    visit: "Otevřít",
+    finance: {
+      title: "Finance vývoje",
+      description: "Kolik stojí stavba a provoz projektů: AI nástroje, hosting, datové služby a designové nástroje. Osobní výdaje sem nepatří.",
+      recurringMonthly: "Opakované měsíčně",
+      recurringYearly: "Opakované ročně",
+      paidLastMonths: (n) => `Zaplaceno za posledních ${n} měsíců`,
+      projectsShare: "Projekty",
+      worksShare: "Zakázky",
+      unallocated: "Nepřiřazeno",
+      unallocatedHint: "Sdílená předplatná bez rozdělení na projekty. Rozdělte je v Předplatných, aby se částka přesunula na projekty.",
+      timelineTitle: "Měsíční výdaje na vývoj",
+      timelineHint: "Závazky = předplatná aktivní v daném měsíci přepočtená na měsíc. Zaplaceno = faktury a jednorázové nákupy zaznamenané jako transakce.",
+      committed: "Závazky",
+      paid: "Zaplaceno",
+      byProjectTitle: "Podle projektu",
+      byVendorTitle: "Podle dodavatele",
+      projectColumn: "Projekt",
+      scopeColumn: "Typ",
+      monthlyColumn: "Měsíčně",
+      yearlyColumn: "Ročně",
+      oneOffColumn: "Jednorázově (12 měs.)",
+      paidColumn: "Zaplaceno (12 měs.)",
+      shareColumn: "Podíl",
+      vendorColumn: "Dodavatel",
+      planColumn: "Plán",
+      amountColumn: "Částka",
+      startedColumn: "Od",
+      endsColumn: "Konec",
+      nextColumn: "Další platba",
+      allocationColumn: "Přiřazeno",
+      noDevSpend: "Žádné výdaje na vývoj",
+      noDevSpendHint: "Označte skupinu předplatného jako Vývoj nebo ho přiřaďte projektu a zaplacené faktury zapište jako transakce.",
+      scope: { project: "Projekt", work: "Zakázka", other: "Ostatní" },
+      recentTransactions: "Platby za vývoj",
+      noRecentTransactions: "V tomto období nejsou žádné platby za vývoj.",
+      running: "Běží",
+      ended: "Ukončeno",
+      manageSubscriptions: "Spravovat předplatná",
+      settles: (name) => `Hradí ${name}`,
+      allocationsHint: "Přiřazené podíly se řídí předplatným; zaplacené faktury dědí stejné rozdělení.",
+      unallocatedShort: "Nepřiřazeno",
+      manualCosts: "Ruční nákladové položky a automatizace",
+    },
+    subscription: {
+      startedOn: "Začátek",
+      endedOn: "Konec",
+      plan: "Plán",
+      planPlaceholder: "Pro, Max 20x, Starter…",
+      vendorUrl: "Stránka fakturace",
+      notes: "Poznámky",
+      notesPlaceholder: "Čísla faktur, problémy s platbou, k čemu se používá…",
+      allocations: "Rozdělení na projekty",
+      allocationsHint: "Rozdělte měsíční částku mezi projekty. Zbytek zůstane nepřiřazený.",
+      addAllocation: "Přidat podíl projektu",
+      removeAllocation: "Odebrat podíl",
+      share: "Podíl %",
+      allocated: (percent) => `přiřazeno ${percent} %`,
+      overAllocated: "Podíly dávají dohromady víc než 100 %.",
+      quarterly: "Čtvrtletně",
+      lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `od ${started}`),
+    },
+  },
+};

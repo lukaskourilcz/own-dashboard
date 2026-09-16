@@ -30,6 +30,7 @@ import { costs } from "./sections/costs";
 import { jobs } from "./sections/jobs";
 import { categories } from "./sections/categories";
 import { professional } from "./sections/professional";
+import { portfolio } from "./sections/portfolio";
 
 export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
 
@@ -62,6 +63,7 @@ export const dictionaries = {
     jobs: jobs.en,
     categories: categories.en,
     professional: professional.en,
+    portfolio: portfolio.en,
   },
   cs: {
     common: common.cs,
@@ -91,6 +93,7 @@ export const dictionaries = {
     jobs: jobs.cs,
     categories: categories.cs,
     professional: professional.cs,
+    portfolio: portfolio.cs,
   },
 };
 

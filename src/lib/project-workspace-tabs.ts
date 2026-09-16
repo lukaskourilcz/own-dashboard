@@ -5,6 +5,8 @@ export const PROJECT_WORKSPACE_TABS = [
   "communication",
   "repository",
   "finance",
+  "links",
+  "competition",
   "knowledge",
   "scaling",
   "monetization",

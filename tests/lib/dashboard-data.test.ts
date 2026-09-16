@@ -30,6 +30,15 @@ describe("dashboard route data boundaries", () => {
     }
   });
 
+  it("loads competitors and allocations where the new sections render them", () => {
+    expect(dashboardDataKeysForTab("competition").has("competitors")).toBe(true);
+    expect(dashboardDataKeysForTab("competition").has("transactions")).toBe(false);
+    expect(dashboardDataKeysForTab("works").has("competitors")).toBe(true);
+    expect(dashboardDataKeysForTab("projects").has("aiLinks")).toBe(true);
+    expect(dashboardDataKeysForTab("money").has("subscriptionAllocations")).toBe(true);
+    expect(dashboardDataKeysForTab("home").has("competitors")).toBe(false);
+  });
+
   it("keeps the notification bell available on every destination", () => {
     for (const tab of NAV_TABS) {
       expect(tabNeedsDashboardData(tab, "notifications"), tab).toBe(true);

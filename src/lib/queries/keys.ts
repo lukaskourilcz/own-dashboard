@@ -28,6 +28,8 @@ export const qk = {
   projectCommunications: ["projectCommunications"] as const,
   projectCosts: ["projectCosts"] as const,
   crons: ["crons"] as const,
+  subscriptionAllocations: ["subscriptionAllocations"] as const,
+  competitors: ["competitors"] as const,
   aiLinks: ["aiLinks"] as const,
   aiCategories: ["aiCategories"] as const,
   spendCategories: ["spendCategories"] as const,
