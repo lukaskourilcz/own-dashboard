@@ -16,6 +16,7 @@ import type {
   ClientOpportunity,
   AiCategory,
   AiLink,
+  AiLinkProject,
   CoverLetterTemplate,
   Cron,
   ImportantDate,
@@ -264,7 +265,16 @@ export const aiCategories: AiCategory[] = [
 export const aiLinks: AiLink[] = [
   { id: "al1", user_id: UID, category_id: "ac1", title: "Midjourney", url: "https://www.midjourney.com", description: "AI image generation for moodboards and concepts.", pricing: "paid", created_at: TS, updated_at: TS },
   { id: "al2", user_id: UID, category_id: "ac2", title: "Have I Been Pwned", url: "https://haveibeenpwned.com", description: "Check if credentials appeared in a breach.", pricing: "free", created_at: TS, updated_at: TS },
+  { id: "al4", user_id: UID, category_id: "ac3", record_type: "idea", title: "Cap sponsor placements per issue", url: "https://example.com/ideas/sponsor-cap", description: "Limit paid placements to a fixed number of slots per edition so the reading promise stays intact.", pricing: "free", usefulness_rating: 4, rating_rationale: "Protects the product while keeping a clear sponsor offer.", project_relevance: [{ repository: "aifirst", reason: "The magazine already has sponsor slots; the cap makes the offer honest." }], source_urls: ["https://www.therundown.ai/advertise-with-us"], created_at: TS, updated_at: TS },
   { id: "al3", user_id: UID, category_id: null, title: "Hugging Face", url: "https://huggingface.co", description: "Open models, datasets, and demos.\n\nExample library note: compare a small prototype with the production requirements before adopting a new service, including the expected traffic, maintenance work, accessibility and the time needed to move away from it later.\n\nPricing: the free offering has limits, while compute and other services may be billed separately.\n\nExample reference: https://example.com/resources/a-long-reference-path-for-checking-readable-expanded-library-cards-on-narrow-screens", pricing: "freemium", created_at: TS, updated_at: TS },
+];
+
+// Which library records each demo project used or plans to use. The Links
+// section reads the same rows for its "connected" tag and filter.
+export const aiLinkProjects: AiLinkProject[] = [
+  { id: "alp1", user_id: UID, link_id: "al3", project_id: "proj-aifirst", status: "used", note: "", created_at: TS, updated_at: TS },
+  { id: "alp2", user_id: UID, link_id: "al4", project_id: "proj-aifirst", status: "planned", note: "", created_at: TS, updated_at: TS },
+  { id: "alp3", user_id: UID, link_id: "al2", project_id: "proj-dashboard", status: "used", note: "", created_at: TS, updated_at: TS },
 ];
 
 export const importantDates: ImportantDate[] = [

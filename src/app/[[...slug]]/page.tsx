@@ -23,7 +23,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
 
   const [
     subscriptionsRes, todosRes, accountsRes, transactionsRes, plansRes,
-    notesRes, promptsRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, shortcutsRes,
+    notesRes, promptsRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, aiLinkProjectsRes, shortcutsRes,
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
     invoiceSettingsRes, projectsRes, projectCommunicationsRes, projectCostsRes, cronsRes,
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
@@ -42,6 +42,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("repoLinks", () => supabase.from("repo_links").select("*").eq("user_id", user.id)),
     loadWhen("aiLinks", () => supabase.from("ai_links").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("aiCategories", () => supabase.from("ai_categories").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
+    loadWhen("aiLinkProjects", () => supabase.from("ai_link_projects").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
     loadWhen("shortcuts", () => supabase.from("shortcuts").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("referenceRows", () => supabase.from("reference_rows").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("importantDates", () => supabase.from("important_dates").select("*").eq("user_id", user.id).order("the_date", { ascending: true })),
@@ -97,6 +98,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialRepoLinks={repoLinksRes?.data ?? []}
     initialAiLinks={aiLinksRes?.data ?? []}
     initialAiCategories={aiCategoriesRes?.data ?? []}
+    initialAiLinkProjects={aiLinkProjectsRes?.data ?? []}
     initialShortcuts={shortcutsRes?.data ?? []}
     initialReferenceRows={referenceRowsRes?.data ?? []}
     initialImportantDates={importantDatesRes?.data ?? []}

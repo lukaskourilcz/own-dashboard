@@ -402,6 +402,8 @@ export type Project = {
   repo_full_name: string | null;
   url: string | null;
   dev_url?: string | null;
+  // Google Drive link to the project video, when one has been recorded.
+  video_url?: string | null;
   notes: string;
   color: string | null;
   sort_order: number;
@@ -494,6 +496,21 @@ export type SpendCategory = {
 // Resource pricing: green = free, yellow = free + paid, red = paid only.
 // Null keeps an unverified hollow marker rather than guessing a price.
 export type AiPricing = "free" | "freemium" | "paid";
+
+// A reference between a library record (link or idea) and a project: "used in"
+// records what a project actually took from the library, "planned" what it
+// intends to. One row per pair; the library card and the project workspace
+// read the same rows.
+export type AiLinkProject = {
+  id: string;
+  user_id: string;
+  link_id: string;
+  project_id: string;
+  status: "planned" | "used";
+  note: string;
+  created_at: string;
+  updated_at: string;
+};
 
 export type AiLink = {
   record_type?: "link" | "idea";

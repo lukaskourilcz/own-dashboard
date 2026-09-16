@@ -5,6 +5,7 @@ import type {
   Account,
   AiCategory,
   AiLink,
+  AiLinkProject,
   BankConnection,
   ClientOpportunity,
   CategoryRule,
@@ -320,6 +321,16 @@ export async function fetchAiLinks(): Promise<AiLink[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as AiLink[];
+}
+
+export async function fetchAiLinkProjects(): Promise<AiLinkProject[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("ai_link_projects")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as AiLinkProject[];
 }
 
 export async function fetchAiCategories(): Promise<AiCategory[]> {

@@ -51,6 +51,18 @@ type PromptsStrings = {
   publicEmpty: string;
   makePublic: string;
   makePublicHint: string;
+  // From ideas subsection
+  ideasSection: string;
+  ideasSectionDesc: string;
+  ideasEmpty: string;
+  ideasAllAdded: string;
+  addIdeaPrompt: string;
+  addAllIdeaPrompts: string;
+  ideaPromptAdded: string;
+  ideaPromptsAdded: (n: number) => string;
+  ideaPromptFor: (project: string) => string;
+  ideaPromptNoProject: string;
+  previewPrompt: string;
 };
 
 export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
@@ -103,6 +115,17 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     publicEmpty: "No public prompts yet.",
     makePublic: "Public prompt",
     makePublicHint: "Show under Public instead of Mine.",
+    ideasSection: "From ideas",
+    ideasSectionDesc: "Prompts drafted from the Ideas in your library. Each one is built from the idea's own fields; add it to Mine and edit it there.",
+    ideasEmpty: "No ideas in the library yet. Add an idea under Links and it will appear here.",
+    ideasAllAdded: "Every idea already has a prompt.",
+    addIdeaPrompt: "Add to Mine",
+    addAllIdeaPrompts: "Add all",
+    ideaPromptAdded: "Prompt added.",
+    ideaPromptsAdded: (n) => `Added ${n} prompt${n === 1 ? "" : "s"} from ideas.`,
+    ideaPromptFor: (project) => `For ${project}`,
+    ideaPromptNoProject: "No matching project",
+    previewPrompt: "Preview",
   },
   cs: {
     title: "Prompty",
@@ -157,5 +180,20 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     publicEmpty: "Zatím žádné veřejné prompty.",
     makePublic: "Veřejný prompt",
     makePublicHint: "Zobrazit v sekci Veřejné místo Moje.",
+    ideasSection: "Z nápadů",
+    ideasSectionDesc: "Prompty sestavené z nápadů v knihovně. Každý vychází jen z polí nápadu; přidej ho do Moje a tam ho uprav.",
+    ideasEmpty: "V knihovně zatím nejsou žádné nápady. Přidej nápad v sekci Odkazy a objeví se tady.",
+    ideasAllAdded: "Každý nápad už má svůj prompt.",
+    addIdeaPrompt: "Přidat do Moje",
+    addAllIdeaPrompts: "Přidat vše",
+    ideaPromptAdded: "Prompt přidán.",
+    ideaPromptsAdded: (n) => {
+      if (n === 1) return "Přidán 1 prompt z nápadů.";
+      if (n >= 2 && n <= 4) return `Přidány ${n} prompty z nápadů.`;
+      return `Přidáno ${n} promptů z nápadů.`;
+    },
+    ideaPromptFor: (project) => `Pro ${project}`,
+    ideaPromptNoProject: "Bez odpovídajícího projektu",
+    previewPrompt: "Náhled",
   },
 };

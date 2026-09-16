@@ -79,6 +79,8 @@ import {
   projectMonthlyIn,
 } from "@/lib/projects";
 import type {
+  AiLink,
+  AiLinkProject,
   ClientOpportunity,
   Cron,
   ImportantDate,
@@ -120,6 +122,7 @@ type ProjectForm = {
   repo_full_name: string;
   url: string;
   dev_url: string;
+  video_url: string;
 };
 
 const emptyProjectForm: ProjectForm = {
@@ -128,6 +131,7 @@ const emptyProjectForm: ProjectForm = {
   repo_full_name: "",
   url: "",
   dev_url: "",
+  video_url: "",
 };
 
 type ProjectsPanelProps = {
@@ -161,6 +165,9 @@ type ProjectsPanelProps = {
   setRepoLinks: Updater<RepoLink[]>;
   communications: ProjectCommunication[];
   setCommunications: Updater<ProjectCommunication[]>;
+  aiLinks: AiLink[];
+  references: AiLinkProject[];
+  setReferences: Updater<AiLinkProject[]>;
   syncRepositories?: boolean;
 };
 
@@ -191,6 +198,9 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       setRepoLinks={props.setRepoLinks}
       communications={props.communications}
       setCommunications={props.setCommunications}
+      aiLinks={props.aiLinks}
+      references={props.references}
+      setReferences={props.setReferences}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
       onBackToProjects={props.onBackToProjects}
@@ -511,6 +521,7 @@ function ProjectsListPanel({
       repo_full_name: form.repo_full_name.trim() || null,
       url: form.url.trim() || null,
       dev_url: form.dev_url.trim() || null,
+      video_url: form.video_url.trim() || null,
     };
     setSaving(true);
     try {
@@ -595,6 +606,7 @@ function ProjectsListPanel({
       repo_full_name: p.repo_full_name ?? "",
       url: p.url ?? "",
       dev_url: p.dev_url ?? "",
+      video_url: p.video_url ?? "",
     });
     setError(null);
     setFormOpen(true);
@@ -760,6 +772,16 @@ function ProjectsListPanel({
                 onChange={(e) => setForm({ ...form, dev_url: e.target.value })}
                 placeholder={t.projects.devUrlPlaceholder}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-video-url">{t.projects.videoUrl}</Label>
+              <Input
+                id="proj-video-url"
+                value={form.video_url}
+                onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+                placeholder={t.projects.videoUrlPlaceholder}
+              />
+              <p className="text-xs text-foreground-subtle">{t.projects.videoUrlHint}</p>
             </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
             <div className="flex justify-end gap-2 pt-1">

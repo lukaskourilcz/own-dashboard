@@ -246,6 +246,7 @@ export function SettingsPanel({
       repository: t.professional.projectRepository,
       finance: t.professional.projectFinance,
       knowledge: t.professional.projectKnowledge,
+      references: t.professional.projectReferences,
       scaling: t.professional.projectScaling,
       monetization: t.professional.projectMonetization,
     };

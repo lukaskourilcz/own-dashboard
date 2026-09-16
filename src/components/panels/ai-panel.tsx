@@ -34,7 +34,9 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
-import type { AiCategory, AiLink, AiPricing, Updater } from "@/lib/types";
+import { connectedLinkIds, matchesConnection, referencesForLink, type ConnectionFilter } from "@/lib/link-references";
+import { useLinkReferences } from "@/lib/use-link-references";
+import type { AiCategory, AiLink, AiLinkProject, AiPricing, Project, Updater } from "@/lib/types";
 
 import { LinkLibraryCard, PricingDot } from "./link-library-card";
 import { filterLibrary, resourceKey, UNCATEGORIZED_LINKS as UNCATEGORIZED, type PricingFilter, type LinkSort } from "@/lib/link-library";
@@ -61,6 +63,9 @@ type Props = {
   setAiLinks: Updater<AiLink[]>;
   aiCategories: AiCategory[];
   setAiCategories: Updater<AiCategory[]>;
+  references: AiLinkProject[];
+  setReferences: Updater<AiLinkProject[]>;
+  projects: Project[];
 };
 
 type LinkForm = {
@@ -86,6 +91,9 @@ export function AiPanel({
   setAiLinks,
   aiCategories,
   setAiCategories,
+  references,
+  setReferences,
+  projects,
 }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -96,6 +104,7 @@ export function AiPanel({
   const [query, setQuery] = useState("");
   const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [connectionFilter, setConnectionFilter] = useState<ConnectionFilter>("all");
   const [sort, setSort] = useState<LinkSort>("name");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const toggleDetails = (id: string) => setExpandedIds(previous => {
@@ -103,7 +112,16 @@ export function AiPanel({
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
-  const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); };
+  const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); setConnectionFilter("all"); };
+  const { connect, disconnect, setStatus } = useLinkReferences(references, setReferences);
+  const connected = useMemo(() => connectedLinkIds(references), [references]);
+  const referenceProps = (link: AiLink) => ({
+    references: referencesForLink(link.id, references, projects),
+    projects,
+    onConnect: (projectId: string, status: AiLinkProject["status"]) => void connect(link.id, projectId, status),
+    onDisconnect: (id: string) => void disconnect(id),
+    onSetStatus: (id: string, status: AiLinkProject["status"]) => void setStatus(id, status),
+  });
   const hasUnknownPricing = aiLinks.some(link => !link.pricing);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AiLink | null>(null);
@@ -120,9 +138,9 @@ export function AiPanel({
 
   // Filter first, then bucket the survivors by category so search collapses
   // empty sections automatically.
-  const visibleLinks = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type !== "idea"), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
+  const visibleLinks = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type !== "idea"), aiCategories, query, pricingFilter, categoryFilter, sort).filter(link => matchesConnection(link.id, connectionFilter, connected)), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort, connectionFilter, connected]);
 
-  const ideas = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type === "idea"), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
+  const ideas = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type === "idea"), aiCategories, query, pricingFilter, categoryFilter, sort).filter(link => matchesConnection(link.id, connectionFilter, connected)), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort, connectionFilter, connected]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, AiLink[]>();
@@ -138,7 +156,7 @@ export function AiPanel({
     return map;
   }, [visibleLinks, categoryIds]);
 
-  const searching = query.trim().length > 0 || pricingFilter !== "all" || categoryFilter !== "all";
+  const searching = query.trim().length > 0 || pricingFilter !== "all" || categoryFilter !== "all" || connectionFilter !== "all";
   const uncategorized = byCategory.get(UNCATEGORIZED) ?? [];
   const isEmpty = aiLinks.length === 0 && aiCategories.length === 0;
   const noResults =
@@ -456,13 +474,14 @@ export function AiPanel({
         </Card>
       ) : (
         <>
-          <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_auto_auto]">
+          <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_auto_auto_auto]">
             <div className="relative min-w-0">
               <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
               <Input aria-label={t.ai.searchPlaceholder} placeholder={t.ai.searchPlaceholder} value={query} onChange={e => setQuery(e.target.value)} className="pl-8" />
             </div>
             <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...aiCategories.map(cat => ({value:cat.id,label:`${cat.name} (${aiLinks.filter(link => link.category_id === cat.id).length})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
             <SimpleSelect aria-label={t.ai.pricing} value={pricingFilter} onValueChange={value => setPricingFilter(value as PricingFilter)} options={[{value:"all",label:t.ai.allPricing}, ...(["free","freemium","paid"] as const).map(value => ({value,label:t.ai.pricingLabel[value]})), {value:"unknown",label:t.ai.pricingUnknown}]} />
+            <SimpleSelect aria-label={t.ai.connected} value={connectionFilter} onValueChange={value => setConnectionFilter(value as ConnectionFilter)} options={[{value:"all",label:t.ai.connectionAll},{value:"connected",label:`${t.ai.connectionConnected} (${connected.size})`},{value:"unconnected",label:t.ai.connectionUnconnected}]} />
             <SimpleSelect aria-label={t.ai.sort} value={sort} onValueChange={value => setSort(value as LinkSort)} options={[{value:"name",label:t.ai.sortName},{value:"newest",label:t.ai.sortNewest}]} />
           </div>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -525,6 +544,7 @@ export function AiPanel({
                             onToggle={() => toggleDetails(l.id)}
                             onEdit={() => openEdit(l)}
                             onDelete={() => removeLink(l)}
+                            {...referenceProps(l)}
                           />
                         ))
                       )}
@@ -538,10 +558,11 @@ export function AiPanel({
                       <LinkLibraryCard
                         key={l.id}
                         link={l}
-                            expanded={expandedIds.has(l.id)}
-                            onToggle={() => toggleDetails(l.id)}
+                        expanded={expandedIds.has(l.id)}
+                        onToggle={() => toggleDetails(l.id)}
                         onEdit={() => openEdit(l)}
                         onDelete={() => removeLink(l)}
+                        {...referenceProps(l)}
                       />
                     ))}
                   </CategoryGroup>
@@ -573,7 +594,7 @@ export function AiPanel({
               onCancelRename={() => { setRenamingId(null); setRenameValue(""); }}
               onDelete={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) removeCategory(existing); }}
             >
-              {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} />)}
+              {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} {...referenceProps(idea)} />)}
             </CategoryGroup> : null;
           })}
         </div>

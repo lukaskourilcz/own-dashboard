@@ -116,6 +116,18 @@ type AiStrings = {
   categoryNameRequired: string;
   signInFirst: string;
   couldNotSave: string;
+  // Project references
+  connected: string;
+  connectedTo: (n: number) => string;
+  connectionAll: string;
+  connectionConnected: string;
+  connectionUnconnected: string;
+  connectToProject: string;
+  chooseProject: string;
+  connectionAdded: string;
+  connectionRemoved: string;
+  couldNotConnect: string;
+  noProjectsToConnect: string;
   couldNotDelete: string;
   linkCreated: string;
   linkSaved: string;
@@ -250,6 +262,17 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     categoryNameRequired: "Category name is required.",
     signInFirst: "Sign in first.",
     couldNotSave: "Could not save the link. Please try again.",
+    connected: "Connected",
+    connectedTo: (n) => n === 1 ? "Connected to 1 project" : `Connected to ${n} projects`,
+    connectionAll: "All",
+    connectionConnected: "Connected",
+    connectionUnconnected: "Not connected",
+    connectToProject: "Connect to a project",
+    chooseProject: "Choose a project",
+    connectionAdded: "Connected to the project.",
+    connectionRemoved: "Connection removed.",
+    couldNotConnect: "Could not update the connection. Please try again.",
+    noProjectsToConnect: "Every project is already connected.",
     couldNotDelete: "Could not delete that. Please try again.",
     linkCreated: "Link added.",
     linkSaved: "Link saved.",
@@ -381,6 +404,20 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     categoryNameRequired: "Název kategorie je povinný.",
     signInFirst: "Nejprve se přihlaste.",
     couldNotSave: "Odkaz se nepodařilo uložit. Zkuste to znovu.",
+    connected: "Připojeno",
+    connectedTo: (n) => {
+      if (n === 1) return "Připojeno k 1 projektu";
+      return `Připojeno k ${n} projektům`;
+    },
+    connectionAll: "Vše",
+    connectionConnected: "Připojené",
+    connectionUnconnected: "Nepřipojené",
+    connectToProject: "Připojit k projektu",
+    chooseProject: "Vybrat projekt",
+    connectionAdded: "Připojeno k projektu.",
+    connectionRemoved: "Propojení odebráno.",
+    couldNotConnect: "Propojení se nepodařilo změnit. Zkuste to znovu.",
+    noProjectsToConnect: "Všechny projekty už jsou připojené.",
     couldNotDelete: "Nepodařilo se to smazat. Zkuste to znovu.",
     linkCreated: "Odkaz přidán.",
     linkSaved: "Odkaz uložen.",

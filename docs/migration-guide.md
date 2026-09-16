@@ -51,3 +51,9 @@ Apply `20260911102058_freelance_opportunities.sql`, `20260911103455_freelance_me
 The metrics function uses the authenticated owner and optional platform filter, independently of the bounded opportunity list; actual dates determine submission/reply counts. The trigger has a fixed search path and writes history without granting authenticated clients direct event mutation. Verify a second user sees neither records nor history, cannot attach another owner's platform, and cannot call event-writing functions directly. A rolled-back date/status change should produce one corresponding history event.
 
 Application rollback can deploy the previous version while retaining the additive schema and private drafts; do not drop populated tables merely to roll back the UI.
+
+## Link references and project video — 2026-09-16
+
+Apply `20260916190000_link_project_references.sql` before deploying the References tab, the Links connection filter and the project video action. The migration adds the own-only `ai_link_projects` table (one row per link and project, status `planned` or `used`, insert policy that also checks ownership of the referenced link and project) and a nullable `projects.video_url` column constrained to Google Drive or Google Docs HTTPS links. Both changes are additive; the previous application ignores them.
+
+Verify that a second user cannot read the rows, cannot insert a reference pointing at another owner's link or project, and that deleting a link or a project removes its references. Application rollback can redeploy the previous version and keep the table.

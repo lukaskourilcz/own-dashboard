@@ -6,6 +6,7 @@ export const PROJECT_WORKSPACE_TABS = [
   "repository",
   "finance",
   "knowledge",
+  "references",
   "scaling",
   "monetization",
 ] as const;

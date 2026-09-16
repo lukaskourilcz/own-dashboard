@@ -28,6 +28,9 @@ type ProjectsStrings = {
   urlPlaceholder: string;
   devUrl: string;
   devUrlPlaceholder: string;
+  videoUrl: string;
+  videoUrlPlaceholder: string;
+  videoUrlHint: string;
   nameRequired: string;
   slugRequired: string;
 
@@ -143,6 +146,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     urlPlaceholder: "https://…",
     devUrl: "Development URL",
     devUrlPlaceholder: "https://dev.example.com or http://localhost:3000",
+    videoUrl: "Project video",
+    videoUrlPlaceholder: "https://drive.google.com/file/d/…/view",
+    videoUrlHint: "A Google Drive link to the preview or launch video. The file stays in Drive; only the link is stored.",
     nameRequired: "Name is required.",
     slugRequired: "Slug is required.",
 
@@ -254,6 +260,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     urlPlaceholder: "https://…",
     devUrl: "Vývojová URL",
     devUrlPlaceholder: "https://dev.example.com nebo http://localhost:3000",
+    videoUrl: "Video projektu",
+    videoUrlPlaceholder: "https://drive.google.com/file/d/…/view",
+    videoUrlHint: "Odkaz na Google Drive s ukázkovým nebo launchovým videem. Soubor zůstává na Drivu, ukládá se jen odkaz.",
     nameRequired: "Název je povinný.",
     slugRequired: "Identifikátor je povinný.",
 

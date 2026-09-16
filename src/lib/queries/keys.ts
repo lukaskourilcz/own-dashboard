@@ -30,6 +30,7 @@ export const qk = {
   crons: ["crons"] as const,
   aiLinks: ["aiLinks"] as const,
   aiCategories: ["aiCategories"] as const,
+  aiLinkProjects: ["aiLinkProjects"] as const,
   spendCategories: ["spendCategories"] as const,
   shortcuts: ["shortcuts"] as const,
   referenceRows: ["referenceRows"] as const,

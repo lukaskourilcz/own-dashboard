@@ -13,6 +13,7 @@ import {
 import {
   Check,
   Copy,
+  Lightbulb,
   MessageSquareText,
   Pencil,
   Plus,
@@ -37,16 +38,20 @@ import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import { CURATED_PROMPTS } from "@/lib/curated-prompts";
-import type { Project, Prompt, Updater } from "@/lib/types";
+import { ideaPromptDrafts, type IdeaPromptDraft } from "@/lib/idea-prompts";
+import { EntityBadge } from "@/components/ui/status-badge";
+import type { AiLink, Project, Prompt, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Props = {
   prompts: Prompt[];
   setPrompts: Updater<Prompt[]>;
   projects: Project[];
+  /** The library; only records of type "idea" feed the From ideas subsection. */
+  aiLinks: AiLink[];
 };
 
-export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
+export function PromptsPanel({ prompts, setPrompts, projects, aiLinks }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -78,6 +83,19 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
       `${p.name}\n${p.description}\n${p.body}`.toLowerCase().includes(q),
     );
   }, [prompts, query]);
+
+  // Ideas from the library that have no prompt of the same name yet. Adding a
+  // draft inserts a prompt with that name, so the draft drops out on its own.
+  const ideaCount = useMemo(() => aiLinks.filter((link) => link.record_type === "idea").length, [aiLinks]);
+  const ideaDrafts = useMemo(
+    () => ideaPromptDrafts(aiLinks, projects, prompts.map((p) => p.name)),
+    [aiLinks, projects, prompts],
+  );
+  const ideaFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return ideaDrafts;
+    return ideaDrafts.filter((d) => `${d.name}\n${d.description}\n${d.body}`.toLowerCase().includes(q));
+  }, [ideaDrafts, query]);
 
   function openCreate() {
     setEditing(null);
@@ -221,6 +239,41 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
       ),
   });
 
+  // Idea drafts become ordinary prompts under Mine, linked to the project the
+  // idea's relevance resolved to. One insert for one or for all.
+  const addIdeaPromptsMutation = useMutation({
+    mutationFn: async (drafts: IdeaPromptDraft[]) => {
+      const userId = await currentUserId(supabase);
+      if (!userId) throw new Error("no-user");
+      if (drafts.length === 0) return [] as Prompt[];
+      const { data, error } = await supabase
+        .from("prompts")
+        .insert(drafts.map((draft) => ({
+          user_id: userId,
+          name: draft.name,
+          description: draft.description,
+          body: draft.body,
+          project_id: draft.project?.id ?? null,
+          is_public: false,
+        })))
+        .select();
+      if (error) throw error;
+      return (data ?? []) as Prompt[];
+    },
+    onSuccess: (rows) => {
+      if (rows.length === 0) return;
+      setPrompts((prev) => [...rows, ...prev]);
+      toast.ok(rows.length === 1 ? t.prompts.ideaPromptAdded : t.prompts.ideaPromptsAdded(rows.length));
+      void qc.invalidateQueries({ queryKey: qk.prompts });
+    },
+    onError: (e) =>
+      toast.err(
+        (e as Error)?.message === "no-user"
+          ? t.prompts.signInFirst
+          : t.prompts.couldNotSave,
+      ),
+  });
+
   const saving = createMutation.isPending || updateMutation.isPending;
 
   function submitForm(e: React.FormEvent) {
@@ -302,6 +355,43 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
     </Button>
   );
 
+  const ideasSection = (ideaCount > 0 || !searching) && (ideaFiltered.length > 0 || !searching) && (
+    <PromptSection
+      icon={Lightbulb}
+      title={t.prompts.ideasSection}
+      desc={t.prompts.ideasSectionDesc}
+      count={ideaFiltered.length}
+      action={ideaFiltered.length > 1 ? (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => addIdeaPromptsMutation.mutate(ideaFiltered)}
+          disabled={addIdeaPromptsMutation.isPending}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {addIdeaPromptsMutation.isPending ? t.prompts.addingCurated : t.prompts.addAllIdeaPrompts}
+        </Button>
+      ) : undefined}
+    >
+      {ideaFiltered.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {ideaFiltered.map((draft) => (
+            <IdeaDraftCard
+              key={draft.ideaId}
+              draft={draft}
+              adding={addIdeaPromptsMutation.isPending}
+              onAdd={() => addIdeaPromptsMutation.mutate([draft])}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-foreground-subtle">
+          {ideaCount === 0 ? t.prompts.ideasEmpty : t.prompts.ideasAllAdded}
+        </p>
+      )}
+    </PromptSection>
+  );
+
   return (
     <div>
       <PageHeader
@@ -315,7 +405,7 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
         }
       />
 
-      {prompts.length > 0 && (
+      {(prompts.length > 0 || ideaDrafts.length > 0) && (
         <div className="relative mb-4 max-w-sm">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
           <Input
@@ -386,7 +476,11 @@ export function PromptsPanel({ prompts, setPrompts, projects }: Props) {
               )}
             </PromptSection>
           )}
+          {ideasSection}
         </div>
+      )}
+      {(prompts.length === 0 || (searching && filtered.length === 0)) && ideasSection && (
+        <div className="mt-8">{ideasSection}</div>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -521,6 +615,30 @@ function PromptSection({
       </div>
       {children}
     </section>
+  );
+}
+
+/** One idea draft: name, where it would be filed, a collapsible preview of
+ * the generated body, and the add action. Nothing is stored until added. */
+function IdeaDraftCard({ draft, adding, onAdd }: { draft: IdeaPromptDraft; adding: boolean; onAdd: () => void }) {
+  const t = useDict();
+  const [open, setOpen] = useState(false);
+  const previewId = `idea-draft-${draft.ideaId}`;
+  return (
+    <article className="flex flex-col rounded-lg border border-border bg-surface p-3" data-idea-draft={draft.ideaId}>
+      <h3 className="text-sm font-semibold [overflow-wrap:anywhere]">{draft.name}</h3>
+      {draft.description && <p className="mt-1 text-xs text-foreground-muted [overflow-wrap:anywhere]">{draft.description}</p>}
+      <p className="mt-2">
+        {draft.project
+          ? <EntityBadge>{t.prompts.ideaPromptFor(draft.project.name)}</EntityBadge>
+          : <span className="text-xs text-foreground-subtle">{t.prompts.ideaPromptNoProject}</span>}
+      </p>
+      <pre id={previewId} hidden={!open} className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-border/60 bg-surface-muted/40 p-2 text-[11px] leading-relaxed text-foreground-muted [overflow-wrap:anywhere]">{draft.body}</pre>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button type="button" size="sm" variant="ghost" aria-expanded={open} aria-controls={previewId} onClick={() => setOpen((value) => !value)}>{t.prompts.previewPrompt}</Button>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd} disabled={adding}><Plus className="h-3.5 w-3.5" />{t.prompts.addIdeaPrompt}</Button>
+      </div>
+    </article>
   );
 }
 

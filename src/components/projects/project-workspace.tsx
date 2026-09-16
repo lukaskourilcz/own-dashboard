@@ -11,6 +11,7 @@ import {
   FileText,
   Info,
   ListTodo,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -20,6 +21,7 @@ import { ProjectCommunicationPanel } from "@/components/projects/project-communi
 import { ProjectGithubActivity } from "@/components/projects/project-github-activity";
 import { ProjectKnowledgePanel } from "@/components/projects/project-knowledge-panel";
 import { ProjectDocPanel } from "@/components/projects/project-doc-panel";
+import { ProjectReferencesPanel } from "@/components/projects/project-references-panel";
 import { ProjectTraffic } from "@/components/projects/project-traffic";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +32,7 @@ import { useDict, useLang } from "@/lib/i18n";
 import { convert } from "@/lib/fx";
 import { computeTotals } from "@/lib/invoices";
 import { assessProjectHealth } from "@/lib/project-health";
+import { referencesForProject } from "@/lib/link-references";
 import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -39,6 +42,8 @@ import {
 } from "@/lib/project-workspace-tabs";
 import { useProjectTabVisibility } from "@/lib/use-prefs";
 import type {
+  AiLink,
+  AiLinkProject,
   ClientOpportunity,
   Cron,
   ImportantDate,
@@ -81,6 +86,9 @@ type Props = {
   setRepoLinks: Updater<RepoLink[]>;
   communications: ProjectCommunication[];
   setCommunications: Updater<ProjectCommunication[]>;
+  aiLinks: AiLink[];
+  references: AiLinkProject[];
+  setReferences: Updater<AiLinkProject[]>;
   displayCurrency: string;
   repositoryIntegrationEnabled: boolean;
   onBackToProjects: () => void;
@@ -123,6 +131,7 @@ export function ProjectWorkspace(props: Props) {
   const projectDates = props.importantDates.filter((date) => date.project_id === project.id);
   const projectPrompts = props.prompts.filter((prompt) => prompt.project_id === project.id);
   const projectCommunications = props.communications.filter((item) => item.project_id === project.id);
+  const projectReferences = referencesForProject(project.id, props.references, props.aiLinks);
   const organization = props.organizations.find((item) => item.id === project.organization_id);
   const monthlyCost = projectMonthlyIn(props.costs, props.crons, displayCurrency);
   const annualCost = monthlyCost * 12;
@@ -149,6 +158,7 @@ export function ProjectWorkspace(props: Props) {
     repository: p.projectRepository,
     finance: p.projectFinance,
     knowledge: p.projectKnowledge,
+    references: p.projectReferences,
     scaling: p.projectScaling,
     monetization: p.projectMonetization,
   };
@@ -172,7 +182,7 @@ export function ProjectWorkspace(props: Props) {
       title={project.name}
       description={project.summary || p.projectWorkspace}
       eyebrow={organization?.name ?? p.projectWorkspace}
-      action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
+      action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.video_url && <Button size="sm" variant="outline" asChild><a href={project.video_url} target="_blank" rel="noreferrer"><Video />{p.projectVideo}</a></Button>}{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
     />
     <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1" role="tablist" aria-label={p.projectWorkspace}>
       {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
@@ -186,7 +196,7 @@ export function ProjectWorkspace(props: Props) {
         <OperationalMetric label={p.outstandingAmount} value={formatCurrency(outstanding, displayCurrency)} icon={BriefcaseBusiness} tone={outstanding > 0 ? "attention" : "default"} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectReferences.length > 0 && <div><SectionLabel>{p.projectReferences}</SectionLabel><p className="mt-1 flex flex-wrap gap-1">{projectReferences.slice(0, 6).map((item) => <EntityBadge key={item.id}>{item.link.title}</EntityBadge>)}{projectReferences.length > 6 && <EntityBadge>+{projectReferences.length - 6}</EntityBadge>}</p></div>}{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
         {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} />}
       </div>
@@ -198,6 +208,7 @@ export function ProjectWorkspace(props: Props) {
     {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
     {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.monthlyCost} icon={CircleDollarSign} info={p.costsInfo} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.invoices} icon={FileText} info={p.invoicesInfo} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} info={p.subscriptionsInfo} empty={p.noRelatedRecords} items={projectSubscriptions.map((item) => ({ id: item.id, primary: item.name, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} info={p.transactionsInfo} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /></div></div>}
     {tab === "knowledge" && <div className="grid gap-4 lg:grid-cols-2"><ProjectKnowledgePanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} /><RecordCard title={t.nav.sections.notes} icon={FileText} empty={p.noRelatedRecords} items={projectNotes.map((item) => ({ id: item.id, primary: item.title, secondary: item.plain_text.slice(0, 120) }))} /><RecordCard title={t.nav.sections.prompts} icon={Bot} empty={p.noRelatedRecords} items={projectPrompts.map((item) => ({ id: item.id, primary: item.name, secondary: item.body.slice(0, 120) }))} /></div>}
+    {tab === "references" && <ProjectReferencesPanel project={project} aiLinks={props.aiLinks} references={props.references} setReferences={props.setReferences} />}
     {tab === "scaling" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="scaling.md" fallbackFile="stack-and-scaling.md" title={p.projectScaling} description={p.scalingDescription} /></div>}
     {tab === "monetization" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="monetization.md" title={p.projectMonetization} description={p.monetizationDescription} /></div>}
   </div>;
