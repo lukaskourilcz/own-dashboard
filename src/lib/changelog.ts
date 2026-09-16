@@ -63,19 +63,28 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "Portfolio registry and Works",
         summary:
           "The daily projects are materialized from a code-level registry, so a repository shows up in Projects even when the GitHub allow-list predates it. Projects carry a scope, a parent and a portfolio key, and client repositories open as Works with the same workspace.",
-        media: null,
+        media: {
+          path: "media/changelog/2026-09-16-works.png",
+          alt: "The Works table listing the client repository gym-plzen with its client Acme s.r.o., a healthy status, the linked GitHub repository, its monthly cost and its open-task count.",
+        },
       },
       {
         title: "Competition",
         summary:
           "Each project keeps its competitors with a score, useful features, social content, pricing model and the lessons taken from them, editable in a dialog and reachable from a project workspace tab.",
-        media: null,
+        media: {
+          path: "media/changelog/2026-09-16-competition.png",
+          alt: "Competition grouped by project, with filters for project, type and review date, a count of two competitors of which one needs a refresh, and TLDR AI under aifirst marked direct, scored 5 of 5 and reviewed on 2026-09-13.",
+        },
       },
       {
         title: "Development finance in the Money overview",
         summary:
           "Money reports recurring commitments, paid invoices, the unallocated remainder and a twelve-month timeline. A subscription is split across projects by share and a paid invoice inherits that split, so nothing has to be guessed.",
-        media: null,
+        media: {
+          path: "media/changelog/2026-09-16-development-finance.png",
+          alt: "Development finance in the Money overview: 2 806,05 Kč recurring per month, split 80% to Projects, 15% to Works and 4% unallocated, a warning that two subscription amounts are unchecked against an invoice, and a twelve-month committed-versus-paid bar chart above by-project and by-vendor donuts.",
+        },
       },
       {
         title: "Reviewed Ideas and pricing-filtered link exports",
@@ -123,7 +132,10 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "Match scoring and tailored letters",
         summary:
           "Career was redesigned around an explicit, comparable match score per listing and application letters written for the specific position, with selected leads and letter guidance alongside them.",
-        media: null,
+        media: {
+          path: "media/changelog/2026-09-07-career-matching.png",
+          alt: "Career's open positions beside one listing's detail: a senior React role at Ecomail.cz scored 88% stack overlap, the six matched skills listed, GraphQL named as the single gap, and the note that overlap is not a hiring probability.",
+        },
       },
       {
         title: "A saved stage before applying",

@@ -113,7 +113,7 @@ Three entries are seeded from real commits. There is nothing to deploy — the
 changelog is repository content, not owner data — but two things need a person.
 
 - [ ] **Write the next entry** — add a dated `ChangelogEntry` to `src/lib/changelog.ts` for what landed since 2026-09-16, regenerate `CHANGELOG.md` and let the test confirm the two match. At least one entry every two weeks; only work that actually shipped. `[imp:2]` `[owner:ai]` `[time:30m]` `[kind:content]`
-- [ ] **Capture the screenshots** — run `npx playwright install chromium`, then `CHANGELOG_CAPTURE=1 npx playwright test e2e/changelog-capture.spec.ts --project=desktop`, and point each `ChangelogFeature.media` at the committed file. Every feature currently ships with `media: null` because no browser binary was available; the captures are real `/dev-preview` screenshots, never stand-ins. `[imp:2]` `[owner:me]` `[time:30m]` `[kind:content]`
+- [x] **Capture the screenshots** — four `/dev-preview` captures are committed under `media/changelog/` and wired to their features: Works, Competition, Development finance and Career match scoring. The remaining `media: null` features are the deferred state, not a gap. An element screenshot does not scroll, so each image stops at the fold of the 808 px scroll area. `[imp:2]` `[owner:me]` `[time:30m]` `[kind:content]`
 
 ## Invoice payment matching (17 September 2026)
 

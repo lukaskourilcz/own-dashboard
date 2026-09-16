@@ -15,16 +15,78 @@ import { gotoPreview } from "./helpers";
  * the file and regenerate `CHANGELOG.md`. Conditions are documented in
  * `media/changelog/README.md`; `gotoPreview` is what fixes language, theme and
  * reduced motion, so captures stay comparable between entries.
+ *
+ * The waits below are the whole point of this file. A green test with a useless
+ * image is the failure mode here, not a red one, so each capture waits on
+ * something the screenshot actually depends on:
+ *
+ * - `AppToolbar` renders an `h1` for every tab and sits above the
+ *   `AnimatePresence`, so a visible toolbar heading proves the tab changed and
+ *   nothing about the panel below it.
+ * - The panel's own `PageHeader` identifies the panel, but at this viewport the
+ *   macOS layout hides its title block (`globals.css`:
+ *   `.mac-page-header > div:first-child { display: none }`) because the toolbar
+ *   already carries the title. So the heading is matched by text, not by
+ *   visibility, and a control only that panel renders is what proves the panel
+ *   painted.
+ * - Two panel titles differ from their sidebar entry: the Money overview tab's
+ *   panel is headed "Development finance".
+ * - `dev-finance-panel.tsx` loads its charts through `next/dynamic` with
+ *   `ssr: false` behind a `Skeleton`, and recharts animates on mount through
+ *   `requestAnimationFrame`, which neither `prefers-reduced-motion` nor
+ *   `MotionConfig` touches. That capture therefore waits for the chart surfaces
+ *   to exist, for every skeleton to be gone, and then for the mount animation
+ *   to finish. The wait belongs here, in the opt-in spec, not in product code.
  */
 
 const OUTPUT_DIR = "media/changelog";
 
-/** One capture: a sidebar destination and the card to frame inside it. */
+/**
+ * How long recharts needs to settle. Its default `animationDuration` is
+ * 1500 ms; the margin absorbs a slow first paint of the lazy chunk.
+ */
+const CHART_SETTLE_MS = 2_000;
+
+/**
+ * One capture: the sidebar destination, the panel's own `PageHeader` title
+ * (which is not always the sidebar label), a control only that panel renders,
+ * an optional disclosure to open first, and whether the panel draws charts that
+ * have to settle before the shutter.
+ */
 const CAPTURES = [
-  { file: "2026-09-16-works.png", tab: "Works", heading: "Works" },
-  { file: "2026-09-16-competition.png", tab: "Competition", heading: "Competition" },
-  { file: "2026-09-16-development-finance.png", tab: "Money overview", heading: "Money overview" },
-  { file: "2026-09-07-career-matching.png", tab: "Career", heading: "Career" },
+  {
+    file: "2026-09-16-works.png",
+    tab: "Works",
+    panelHeading: "Works",
+    control: "Add work",
+    // The fixtures' one client repository sits in the collapsed "other" group,
+    // so the default Works table is an empty header row. Opening the
+    // disclosure is ordinary use of the real UI and is what puts the feature in
+    // the frame.
+    reveal: "Other active projects (1)",
+    charts: false,
+  },
+  {
+    file: "2026-09-16-competition.png",
+    tab: "Competition",
+    panelHeading: "Competition",
+    control: "Add competitor",
+    charts: false,
+  },
+  {
+    file: "2026-09-16-development-finance.png",
+    tab: "Money overview",
+    panelHeading: "Development finance",
+    control: "Manage subscriptions",
+    charts: true,
+  },
+  {
+    file: "2026-09-07-career-matching.png",
+    tab: "Career",
+    panelHeading: "Career",
+    control: "Open positions",
+    charts: false,
+  },
 ] as const;
 
 test.describe("changelog captures", () => {
@@ -41,9 +103,33 @@ test.describe("changelog captures", () => {
       );
 
       await gotoPreview(page);
-      await page.locator("aside").locator("nav").getByRole("button", { name: capture.tab, exact: true }).click();
-      const title = page.getByRole("heading", { level: 1, name: capture.heading }).first();
-      await expect(title).toBeVisible();
+      // `aside` alone is ambiguous — jobs-panel.tsx renders a second one — so
+      // match the sidebar by its own class.
+      await page
+        .locator("aside.mac-sidebar")
+        .locator("nav")
+        .getByRole("button", { name: capture.tab, exact: true })
+        .click();
+
+      // Identity: which panel is mounted, read from its hidden own heading.
+      await expect(page.locator("[data-page-header] h1")).toHaveText(capture.panelHeading);
+      // Paint: a control only this panel renders, below the AnimatePresence.
+      await expect(
+        page.locator("#main-content").getByRole("button", { name: capture.control, exact: true }),
+      ).toBeVisible();
+
+      if ("reveal" in capture) {
+        await page
+          .locator("#main-content")
+          .getByRole("button", { name: capture.reveal, exact: true })
+          .click();
+      }
+
+      if (capture.charts) {
+        await expect(page.locator("#main-content svg.recharts-surface").first()).toBeVisible();
+        await expect(page.locator("#main-content .animate-pulse")).toHaveCount(0);
+        await page.waitForTimeout(CHART_SETTLE_MS);
+      }
 
       mkdirSync(OUTPUT_DIR, { recursive: true });
       await page.locator("#main-content").screenshot({ path: `${OUTPUT_DIR}/${capture.file}` });
