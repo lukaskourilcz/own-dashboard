@@ -238,6 +238,17 @@ test.describe("dashboard sections", () => {
     await page.getByRole("option", { name: "Location A–Z" }).click();
   });
 
+  test("the weekly review lists what shipped since the last completed review", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Work overview", exact: true }).click();
+    // The fixture review closed the week of 2026-09-07, so the two changelog
+    // entries published after it are the ones the block should name.
+    await expect(page.getByText("Shipped since last review")).toBeVisible();
+    await expect(page.getByText("Works, Competition and development finance")).toBeVisible();
+    await expect(page.getByText("2026-09-16")).toBeVisible();
+  });
+
   test("Subscriptions group comparable services and show every renewal", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);

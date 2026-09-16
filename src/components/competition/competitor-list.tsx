@@ -5,6 +5,7 @@ import { ChevronDown, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
+import { competitorReviewState, sortCompetitors } from "@/lib/competition";
 import { resourceKey } from "@/lib/link-library";
 import { cn } from "@/lib/utils";
 import type { Competitor, CompetitorCategory } from "@/lib/types";
@@ -52,14 +53,17 @@ function LinkList({ urls }: { urls: string[] }) {
   );
 }
 
-export function CompetitorRow({ competitor, onEdit, onDelete }: {
+export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
   competitor: Competitor;
+  /** Hydration-safe clock from the owning panel; null before hydration, when no freshness is shown. */
+  now: Date | null;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const t = useDict();
   const p = t.portfolio;
   const [expanded, setExpanded] = useState(false);
+  const review = now ? competitorReviewState(competitor.reviewed_at, now) : null;
   const safeUrl = competitor.url && resourceKey(competitor.url) ? competitor.url : null;
   const detailsId = `competitor-${competitor.id}`;
   return (
@@ -85,6 +89,13 @@ export function CompetitorRow({ competitor, onEdit, onDelete }: {
               </a>
             )}
             <ScoreDots score={competitor.relevance_score} label={p.relevanceScore} />
+            {/* Freshness sits beside the date it judges, on the wrapping metadata
+                row rather than the title row, so a narrow screen wraps it instead
+                of crushing the competitor's name between two badges. */}
+            {review && review !== "fresh" && (
+              <StatusBadge value={`review-${review}`} label={review === "never" ? p.reviewNever : p.reviewStale} tone="warning" />
+            )}
+            {competitor.reviewed_at && <span className="tabular">{p.reviewedAt} {competitor.reviewed_at}</span>}
             {competitor.pricing_model && <span className="hidden truncate sm:inline">{competitor.pricing_model.length > 90 ? `${competitor.pricing_model.slice(0, 90)}…` : competitor.pricing_model}</span>}
           </div>
         </div>
@@ -133,7 +144,7 @@ export function CompetitorRow({ competitor, onEdit, onDelete }: {
         {competitor.score_rationale && <p><span className="font-medium text-foreground">{p.scoreRationale}:</span> {competitor.score_rationale}</p>}
         {competitor.source_urls.length > 0 && (
           <details>
-            <summary className="focus-ring cursor-pointer rounded">{p.sourceUrls}{competitor.reviewed_at ? ` · ${p.reviewedAt} ${competitor.reviewed_at}` : ""}</summary>
+            <summary className="focus-ring cursor-pointer rounded">{p.sourceUrls}</summary>
             <LinkList urls={competitor.source_urls} />
           </details>
         )}
@@ -142,16 +153,10 @@ export function CompetitorRow({ competitor, onEdit, onDelete }: {
   );
 }
 
-export function sortCompetitors(list: Competitor[]): Competitor[] {
-  return [...list].sort((a, b) =>
-    (b.relevance_score ?? 0) - (a.relevance_score ?? 0)
-    || a.sort_order - b.sort_order
-    || a.name.localeCompare(b.name),
-  );
-}
-
-export function CompetitorList({ competitors, onEdit, onDelete, empty }: {
+export function CompetitorList({ competitors, now, onEdit, onDelete, empty }: {
   competitors: Competitor[];
+  /** Resolved once per panel with `useNow()` and handed down, so a long list opens one clock subscription, not one per row. */
+  now: Date | null;
   onEdit: (competitor: Competitor) => void;
   onDelete: (competitor: Competitor) => void;
   empty: string;
@@ -160,7 +165,7 @@ export function CompetitorList({ competitors, onEdit, onDelete, empty }: {
   return (
     <ul className="divide-y divide-border">
       {sortCompetitors(competitors).map((competitor) => (
-        <CompetitorRow key={competitor.id} competitor={competitor} onEdit={() => onEdit(competitor)} onDelete={() => onDelete(competitor)} />
+        <CompetitorRow key={competitor.id} competitor={competitor} now={now} onEdit={() => onEdit(competitor)} onDelete={() => onDelete(competitor)} />
       ))}
     </ul>
   );

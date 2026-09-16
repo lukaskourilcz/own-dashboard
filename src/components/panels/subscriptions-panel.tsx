@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import {
+  BadgeCheck,
   CalendarClock,
   CreditCard,
   PauseCircle,
@@ -40,7 +41,8 @@ import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
 import { Textarea } from "@/components/ui/textarea";
-import { subscriptionShares } from "@/lib/dev-finance";
+import { amountConfirmationAfterEdit, isAmountConfirmed, isDevelopmentSubscription, subscriptionShares } from "@/lib/dev-finance";
+import { todayKey } from "@/lib/date-keys";
 import type { Project, Subscription, SubscriptionAllocation, SubscriptionBillingCycle, SubscriptionCategoryGroup, SubscriptionImportance, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the donut only when this panel renders.
@@ -198,6 +200,7 @@ export function SubscriptionsPanel({
     plan: string | null;
     vendor_url: string | null;
     notes: string;
+    amount_confirmed_on: string | null;
   };
 
   // Allocation rows are replaced as a set: rows that vanished are deleted,
@@ -307,6 +310,30 @@ export function SubscriptionsPanel({
     onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
   });
 
+  // Confirming an amount is one fact about one row, so it writes only that
+  // column and behaves like the active toggle: optimistic, rolled back on
+  // error, reconciled by an invalidate.
+  const confirmAmountMutation = useMutation({
+    mutationFn: async (vars: { sub: Subscription; next: string | null }) => {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ amount_confirmed_on: vars.next, updated_at: new Date().toISOString() })
+        .eq("id", vars.sub.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ sub, next }) => {
+      await qc.cancelQueries({ queryKey: qk.subscriptions });
+      const prev = qc.getQueryData<Subscription[]>(qk.subscriptions);
+      setSubs((old) => old.map((s) => (s.id === sub.id ? { ...s, amount_confirmed_on: next } : s)));
+      return { prev };
+    },
+    onError: (e, _vars, ctx) => {
+      if (ctx?.prev) setSubs(ctx.prev);
+      setError((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
+  });
+
   const saving = createMutation.isPending || updateMutation.isPending;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -340,6 +367,12 @@ export function SubscriptionsPanel({
       plan: form.plan.trim() || null,
       vendor_url: form.vendor_url.trim() || null,
       notes: form.notes.trim(),
+      // A confirmation vouches for one figure. Editing the amount, the currency
+      // or the cycle retires it rather than letting it cover a new number.
+      amount_confirmed_on: amountConfirmationAfterEdit(
+        form.id ? subs.find((s) => s.id === form.id) ?? null : null,
+        { amount: Number(form.amount), currency: form.currency, billing_cycle: form.billing_cycle },
+      ),
     };
     const userId = await currentUserId(supabase);
     if (!userId) {
@@ -368,6 +401,11 @@ export function SubscriptionsPanel({
     toggleMutation.mutate({ sub, next });
   }
 
+  function toggleAmountConfirmed(sub: Subscription) {
+    setError(null);
+    confirmAmountMutation.mutate({ sub, next: isAmountConfirmed(sub) ? null : todayKey() });
+  }
+
   function startEdit(sub: Subscription) {
     setForm({
       id: sub.id,
@@ -392,6 +430,9 @@ export function SubscriptionsPanel({
   }
 
   const allocatedPercent = Math.round(allocationFractions(form.allocations).reduce((sum, row) => sum + row.share, 0) * 100);
+  // The editor says out loud what saving a changed figure will cost: the
+  // confirmation that currently stands behind it.
+  const editingConfirmed = Boolean(form.id) && isAmountConfirmed(subs.find((s) => s.id === form.id) ?? { amount_confirmed_on: null });
   const allocationLabel = (sub: Subscription) => {
     const shares = subscriptionShares(sub, allocations).filter((slice) => slice.projectId);
     if (shares.length === 0) return null;
@@ -590,6 +631,9 @@ export function SubscriptionsPanel({
                     { value: "weekly", label: t.subscriptions.cycle.weekly },
                   ]}
                 />
+                {editingConfirmed && (
+                  <p className="text-[11px] text-foreground-subtle">{t.portfolio.subscription.confirmationResets}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="sub-category">{t.subscriptions.category}</Label>
@@ -966,9 +1010,31 @@ export function SubscriptionsPanel({
                           {allocationLabel(s) && (
                             <p className="text-[11px] text-foreground-subtle">{allocationLabel(s)}</p>
                           )}
+                          {/* Whether this figure was read from an invoice. The
+                              unconfirmed marker is limited to running
+                              development subscriptions, which is exactly the set
+                              the Money overview counts. */}
+                          {isAmountConfirmed(s) ? (
+                            <p className="text-[11px] text-foreground-subtle tabular">{t.portfolio.finance.amountConfirmed(s.amount_confirmed_on!)}</p>
+                          ) : active && isDevelopmentSubscription(s, allocations) ? (
+                            <p className="text-[11px] text-warning">{t.portfolio.finance.amountUnconfirmed}</p>
+                          ) : null}
+                          {s.notes && (
+                            <p className="break-words text-[11px] text-foreground-subtle">{s.notes}</p>
+                          )}
                           </div>
                         </div>
-                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                          <Tooltip content={isAmountConfirmed(s) ? t.portfolio.finance.unconfirmAmount : t.portfolio.finance.confirmAmount}>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => toggleAmountConfirmed(s)}
+                              aria-label={isAmountConfirmed(s) ? t.portfolio.finance.unconfirmAmount : t.portfolio.finance.confirmAmount}
+                            >
+                              <BadgeCheck className={cn("h-3.5 w-3.5", isAmountConfirmed(s) ? "text-success" : "text-foreground-subtle")} />
+                            </Button>
+                          </Tooltip>
                           <Tooltip content={t.common.edit}>
                             <Button
                               size="icon-sm"

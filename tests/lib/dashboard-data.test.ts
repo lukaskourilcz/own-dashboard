@@ -39,6 +39,19 @@ describe("dashboard route data boundaries", () => {
     expect(dashboardDataKeysForTab("home").has("competitors")).toBe(false);
   });
 
+  it("loads invoices only where payments are matched against them", () => {
+    for (const tab of ["accounts", "transactions", "categories"] as const) {
+      expect(dashboardDataKeysForTab(tab).has("invoices"), tab).toBe(true);
+      expect(dashboardDataKeysForTab(tab).has("invoiceItems"), tab).toBe(true);
+    }
+    // The Money overview renders development finance only, so it needs neither.
+    expect(dashboardDataKeysForTab("money").has("invoices")).toBe(false);
+    expect(dashboardDataKeysForTab("money").has("invoiceItems")).toBe(false);
+    // The invoice list names the payment that settled a paid invoice.
+    expect(dashboardDataKeysForTab("invoices").has("transactions")).toBe(true);
+    expect(dashboardDataKeysForTab("home").has("invoices")).toBe(false);
+  });
+
   it("keeps the notification bell available on every destination", () => {
     for (const tab of NAV_TABS) {
       expect(tabNeedsDashboardData(tab, "notifications"), tab).toBe(true);

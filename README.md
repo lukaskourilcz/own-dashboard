@@ -10,11 +10,11 @@ It is deliberately a personal application—not a SaaS, team workspace, CRM, or 
 - **Work** — portfolio overview, explainable project health, weekly reviews, project workspaces, client opportunities, organizations/clients, Career, and the canonical invoice workflow.
 - **Projects** — the daily portfolio (OwnDashboard, DNESKAi, LINKA, StudyShark + devShark, BoardlessAI with its Design Lab and GoVIRAL subsections) materialized from a code-level registry, grouped in a sortable table, plus a workspace per project with overview, tasks, activity, client communication history, GitHub repository documents, development/production links, cron and operations metadata, finance, scored Links & Ideas, Competition, and knowledge.
 - **Works** — client engagements tracked by repository (gym-plzen, paris-claire, umyjemefasadu) with the same workspace.
-- **Competition** — per-project competitor research: most useful features, social-media content, pricing model, lessons and a relevance score.
+- **Competition** — per-project competitor research: most useful features, social-media content, pricing model, lessons, a relevance score and a review date that is marked as needing a refresh once it is 90 days old.
 - **Agents** — an own-only task queue for explicit work delegated to authenticated workers running on the owner's VPS. The browser never receives the runner token and is not a remote shell.
 - **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking.
 - **Career** — a React-focused Prague/remote job workspace with visit-time availability checks, employer feeds, an owner-scoped company directory in Supabase, and position-specific English/Czech letter guidance; saved positions with URL import and persistent drafts, prepared applications with Google Drive letters, sent dates and response statistics, application history, cover-letter templates, follow-ups, and permanent owner-scoped deletion.
-- **Money and invoices** — a development-finance overview (recurring tooling and hosting spend split between projects, works and unallocated overhead, per-project and per-vendor breakdowns, a committed-versus-paid timeline), accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions with lifecycle dates and project allocations, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
+- **Money and invoices** — a development-finance overview (recurring tooling and hosting spend split between projects, works and unallocated overhead, per-project and per-vendor breakdowns, a committed-versus-paid timeline), accounts, CSV/GoCardless bank imports, staged transaction rules that file a payment by description, account, amount, date or direction and can be applied retroactively, deterministic pairing of incoming payments with issued invoices by variable symbol and amount with the leftovers listed and linkable by hand, subscriptions with lifecycle dates and project allocations, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
 - **Planning** — GLOBAL priority-6 tasks, active-project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
 - **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup, reusable prompts, masonry-grouped enriched links, shortcuts, and structured references. Project Knowledge reads Tech stack and third-party library summaries from `about-project.md`.
 - **Settings** — database-synchronized appearance, navigation, task density, CV links, active GitHub projects, integrations, notification controls, AI/privacy consent, own-only exports, legacy archive download, and account controls.
@@ -28,7 +28,7 @@ AI is contextual rather than a standalone chatbot. The Anthropic integration sup
 - Server routes authenticate the user and load only owned records relevant to the initiated workflow.
 - Financial, invoice, calendar, career, repository-document, client, subscription, and private-note context requires explicit initiation; the most sensitive workflows also respect the Settings opt-in.
 - Model output is schema-validated and presented as fact/risk/suggestion or a proposal.
-- AI never autonomously deletes records, sends invoices, marks payments, disconnects integrations, triggers crons, or writes GitHub workflows.
+- AI never autonomously deletes records, sends invoices, marks payments, disconnects integrations, triggers crons, or writes GitHub workflows. Invoices are marked paid by the deterministic payment matcher in `src/lib/payment-matching.ts` — a variable symbol and an amount, no model anywhere in that path — or by hand.
 - Application writes require a separate user confirmation and server-side authorization.
 - Prompt/response contents and private record values are not sent to PostHog event properties.
 
@@ -145,6 +145,7 @@ The repository cannot safely configure external account secrets, OAuth consent s
 ## More documentation
 
 - [Architecture and product reference](./DOCS.md)
+- [Changelog — what shipped, by date](./CHANGELOG.md)
 - [External services, callbacks, and rename checklist](./docs/external-setup.md)
 - [Migration and rollback](./docs/migration-guide.md)
 - [Portfolio, Works, Competition and development finance](./docs/portfolio-competition-finance.md)

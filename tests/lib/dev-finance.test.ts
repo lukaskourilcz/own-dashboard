@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  amountConfirmationAfterEdit,
+  isAmountConfirmed,
   isDevelopmentSubscription,
   isDevelopmentTransaction,
   monthKeys,
@@ -105,6 +107,34 @@ describe("subscription shares", () => {
   });
 });
 
+describe("amount confirmation", () => {
+  it("reads a confirmation only from a well-formed date", () => {
+    expect(isAmountConfirmed(sub({}))).toBe(false);
+    expect(isAmountConfirmed(sub({ amount_confirmed_on: null }))).toBe(false);
+    expect(isAmountConfirmed(sub({ amount_confirmed_on: "" }))).toBe(false);
+    expect(isAmountConfirmed(sub({ amount_confirmed_on: "yesterday" }))).toBe(false);
+    expect(isAmountConfirmed(sub({ amount_confirmed_on: "2026-09-16" }))).toBe(true);
+  });
+
+  it("keeps a confirmation across edits that leave the figure alone", () => {
+    const previous = sub({ amount: 20, currency: "USD", billing_cycle: "monthly", amount_confirmed_on: "2026-09-16" });
+    expect(amountConfirmationAfterEdit(previous, { amount: 20, currency: "USD", billing_cycle: "monthly" })).toBe("2026-09-16");
+  });
+
+  it("drops it when the amount, the currency or the cycle moves", () => {
+    const previous = sub({ amount: 20, currency: "USD", billing_cycle: "monthly", amount_confirmed_on: "2026-09-16" });
+    expect(amountConfirmationAfterEdit(previous, { amount: 22.99, currency: "USD", billing_cycle: "monthly" })).toBeNull();
+    expect(amountConfirmationAfterEdit(previous, { amount: 20, currency: "EUR", billing_cycle: "monthly" })).toBeNull();
+    expect(amountConfirmationAfterEdit(previous, { amount: 20, currency: "USD", billing_cycle: "yearly" })).toBeNull();
+  });
+
+  it("never invents a confirmation for a new or unconfirmed subscription", () => {
+    expect(amountConfirmationAfterEdit(null, { amount: 20, currency: "USD", billing_cycle: "monthly" })).toBeNull();
+    const unconfirmed = sub({ amount: 20, currency: "USD", billing_cycle: "monthly" });
+    expect(amountConfirmationAfterEdit(unconfirmed, { amount: 20, currency: "USD", billing_cycle: "monthly" })).toBeNull();
+  });
+});
+
 describe("months", () => {
   it("builds a trailing window of month keys", () => {
     expect(monthKeys(3, NOW)).toEqual(["2026-07", "2026-08", "2026-09"]);
@@ -160,6 +190,45 @@ describe("summarizeDevFinance", () => {
     expect(dash.oneOffTotal).toBeCloseTo(10, 5);
     expect(summary.paidLastMonths).toBeCloseTo(24.2 + 65.48 + 10, 5);
     expect(summary.developmentTransactions.map((item) => item.id)).toEqual(["2", "3", "1", "5"]);
+  });
+
+  it("reports the running spend whose figure nobody has checked", () => {
+    // Vercel $20 is confirmed, Mobbin $45 quarterly ($15/mo) is not, and the
+    // personal Netflix row is outside development entirely.
+    const withConfirmation = summarizeDevFinance({
+      subscriptions: subscriptions.map((item) => (item.id === "vercel" ? { ...item, amount_confirmed_on: "2026-09-10" } : item)),
+      allocations,
+      transactions,
+      projects,
+      projectCosts: [],
+      crons: [],
+      currency: "USD",
+      now: NOW,
+      months: 12,
+    });
+    expect(withConfirmation.unconfirmedCount).toBe(1);
+    expect(withConfirmation.unconfirmedMonthly).toBeCloseTo(15, 5);
+  });
+
+  it("counts every running development subscription while none is confirmed", () => {
+    expect(summary.unconfirmedCount).toBe(2);
+    expect(summary.unconfirmedMonthly).toBeCloseTo(35, 5);
+  });
+
+  it("leaves an ended subscription out of the unconfirmed figure", () => {
+    const ended = summarizeDevFinance({
+      subscriptions: [...subscriptions, sub({ id: "canva", name: "Canva", amount: 100, is_active: false })],
+      allocations,
+      transactions,
+      projects,
+      projectCosts: [],
+      crons: [],
+      currency: "USD",
+      now: NOW,
+      months: 12,
+    });
+    expect(ended.unconfirmedCount).toBe(2);
+    expect(ended.unconfirmedMonthly).toBeCloseTo(35, 5);
   });
 
   it("builds a committed vs paid timeline", () => {

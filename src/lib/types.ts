@@ -1,7 +1,9 @@
 import type { TaskKind } from "./task-meta";
 import type { SourceOutcome } from "./jobs/types";
+import type { VatVerificationStatus } from "./tax-registry";
 
 export type { SourceOutcome };
+export type { VatVerificationStatus };
 
 export type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
@@ -39,6 +41,10 @@ export type Subscription = {
   plan?: string | null;
   vendor_url?: string | null;
   notes?: string;
+  // Date the amount, currency and billing cycle were last checked against the
+  // vendor's own invoice. Null means nobody has checked; the editor clears it
+  // whenever the figure changes.
+  amount_confirmed_on?: string | null;
 };
 
 export type SubscriptionBillingCycle = "monthly" | "yearly" | "weekly" | "quarterly";
@@ -173,10 +179,20 @@ export type Transaction = {
   // The subscription this payment settled; the paid amount then follows that
   // subscription's project allocation in development finance.
   subscription_id?: string | null;
+  // Czech payment reference (variabilní symbol), digits only. Captured at
+  // ingest when the bank sends one; src/lib/payment-matching.ts falls back to
+  // parsing `note` for rows synced before the column existed.
+  variable_symbol?: string | null;
+  // When and how this payment was paired with `invoice_id`: "auto" for the
+  // deterministic matcher, "manual" for the owner linking it by hand.
+  matched_at?: string | null;
+  match_source?: "auto" | "manual" | null;
 };
 
 // A keyword → category rule. When a transaction's note contains `match`
 // (case-insensitively), it's auto-filed under `category` on import/sync.
+// Superseded by TransactionRule below; kept for the legacy table, which is
+// still exported and is the rollback path.
 export type CategoryRule = {
   id: string;
   user_id: string;
@@ -184,6 +200,24 @@ export type CategoryRule = {
   category: string;
   created_at: string;
 };
+
+// Staged, specificity-ranked transaction rules. The engine that evaluates them
+// owns the shapes (src/lib/transaction-rules.ts) because bank sync, CSV import,
+// the apply route and the unit tests all share it; they are re-exported here so
+// the rest of the app keeps importing entity types from one place.
+export type {
+  OwnedIds,
+  RuleActionKey,
+  RuleActions,
+  RuleCondition,
+  RuleConditionValue,
+  RuleField,
+  RuleOp,
+  RuleStage,
+  RuleTarget,
+  TransactionRule,
+  TransactionRuleSet,
+} from "./transaction-rules";
 
 // A linked bank (a GoCardless "requisition"). Owned rows are readable by the
 // user; the /api/bank routes write them via the service role.
@@ -770,6 +804,15 @@ export type Organization = {
   vat_id: string | null;
   notes: string;
   status: "active" | "inactive" | "archived";
+  /** When the legal name and address were last filled from the ARES register. */
+  ares_verified_at: string | null;
+  /** Cached VIES verdict; see src/lib/tax-registry.ts. */
+  vat_verification_status: VatVerificationStatus;
+  vat_verified_at: string | null;
+  /** Normalized VAT id the cached verdict belongs to. */
+  vat_verified_id: string | null;
+  vat_verified_name: string | null;
+  vat_verified_address: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -23,6 +23,11 @@ import type {
  * Allocation rule — a subscription's normalized monthly amount is split by the
  * recorded shares. The remainder (1 − Σ shares) is reported as unallocated
  * overhead rather than distributed by guesswork.
+ *
+ * Confirmation rule — a figure is exact only once somebody has compared it with
+ * the vendor's own invoice. `amount_confirmed_on` records that date, and the
+ * summary reports how much of the recurring total has never been compared,
+ * rather than presenting an inferred amount as a measured one.
  */
 
 export const DEVELOPMENT_CATEGORIES = new Set(["development", "dev", "vývoj", "vyvoj", "software", "hosting", "ai tools", "ai"]);
@@ -36,6 +41,48 @@ export function isDevelopmentTransaction(tx: Transaction): boolean {
   if (tx.kind !== "expense") return false;
   if (tx.subscription_id || tx.project_id) return true;
   return DEVELOPMENT_CATEGORIES.has((tx.category ?? "").trim().toLowerCase());
+}
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The three fields a confirmation vouches for. */
+export type AmountFigure = Pick<Subscription, "amount" | "currency" | "billing_cycle">;
+
+/**
+ * Whether this subscription's figure has been checked against a vendor invoice.
+ *
+ * `amount_confirmed_on` is a Postgres `date`, so it is validated by shape and
+ * never parsed into a `Date`: reading it as a timestamp would make the answer
+ * depend on the reader's timezone, and the only question here is whether a date
+ * was recorded at all. A missing, empty or malformed value is unconfirmed,
+ * which is the honest reading of "we do not know when this was checked".
+ */
+export function isAmountConfirmed(sub: Pick<Subscription, "amount_confirmed_on">): boolean {
+  return DATE_ONLY.test(sub.amount_confirmed_on ?? "");
+}
+
+/**
+ * The confirmation date an edited subscription should keep.
+ *
+ * A confirmation says "on this date I compared this amount with the invoice".
+ * Change the amount, the currency or the billing cycle and that sentence is
+ * about a figure that no longer exists, so the confirmation is dropped rather
+ * than carried onto a number nobody checked. Everything else — renaming the
+ * vendor, moving the renewal date, editing the notes — leaves it standing.
+ *
+ * A new subscription is never born confirmed: typing an amount is not checking
+ * it.
+ */
+export function amountConfirmationAfterEdit(
+  previous: (AmountFigure & Pick<Subscription, "amount_confirmed_on">) | null | undefined,
+  next: AmountFigure,
+): string | null {
+  if (!previous || !isAmountConfirmed(previous)) return null;
+  const sameFigure =
+    Number(previous.amount) === Number(next.amount)
+    && previous.currency === next.currency
+    && previous.billing_cycle === next.billing_cycle;
+  return sameFigure ? previous.amount_confirmed_on ?? null : null;
 }
 
 export type ShareSlice = { projectId: string | null; share: number };
@@ -100,6 +147,10 @@ export type DevFinanceSummary = {
   recurringMonthly: number;
   recurringYearly: number;
   unallocatedMonthly: number;
+  /** Recurring monthly spend whose figure has never been checked against an invoice. */
+  unconfirmedMonthly: number;
+  /** How many running development subscriptions carry such a figure. */
+  unconfirmedCount: number;
   projectsMonthly: number;
   worksMonthly: number;
   paidLastMonths: number;
@@ -212,10 +263,16 @@ export function summarizeDevFinance({
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value);
 
+  // Only running subscriptions are reported: an ended vendor's figure no longer
+  // moves the recurring total, so asking the owner to go and check it is noise.
+  const unconfirmed = activeDevSubs.filter((sub) => !isAmountConfirmed(sub));
+
   return {
     recurringMonthly,
     recurringYearly: recurringMonthly * 12,
     unallocatedMonthly: unallocated,
+    unconfirmedMonthly: unconfirmed.reduce((sum, sub) => sum + toMonthlyIn(sub, currency), 0),
+    unconfirmedCount: unconfirmed.length,
     projectsMonthly: scopeMonthly("project"),
     worksMonthly: scopeMonthly("work"),
     paidLastMonths: paidTotal,

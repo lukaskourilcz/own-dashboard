@@ -11,8 +11,11 @@ import { SimpleSelect } from "@/components/ui/select";
 import { EntityBadge } from "@/components/ui/status-badge";
 import { CompetitorList } from "@/components/competition/competitor-list";
 import { CompetitorDialog, competitorToForm, emptyCompetitorForm, useDeleteCompetitor, type CompetitorForm } from "@/components/competition/competitor-dialog";
+import { parseDateOnly, todayKey } from "@/lib/date-keys";
 import { useDict, useLang } from "@/lib/i18n";
+import { isCompetitorReviewStale, staleCompetitorCount } from "@/lib/competition";
 import { childProjects, groupPortfolio, portfolioEntryFor, projectScope } from "@/lib/portfolio";
+import { useNow } from "@/lib/use-now";
 import type { Competitor, CompetitorCategory, Project, Updater } from "@/lib/types";
 
 const searchable = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase();
@@ -33,9 +36,18 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
   const [query, setQuery] = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | CompetitorCategory>("all");
+  const [reviewFilter, setReviewFilter] = useState<"all" | "stale">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<CompetitorForm>(emptyCompetitorForm());
   const remove = useDeleteCompetitor(setCompetitors);
+  // One clock for the whole panel: every row reads freshness from this prop
+  // instead of subscribing itself. Null until hydration, so the server and the
+  // first client render agree and no badge flashes in. The 30-second tick is
+  // collapsed to the calendar day, because a 90-day marker only ever moves at
+  // local midnight and the filter memo should not rerun twice a minute.
+  const tick = useNow();
+  const dayKey = tick ? todayKey(tick) : null;
+  const now = useMemo(() => (dayKey ? parseDateOnly(dayKey) : null), [dayKey]);
 
   // Portfolio projects first (with their subsections), then any other project
   // that already has research attached, so nothing recorded is unreachable.
@@ -60,11 +72,12 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
     return competitors.filter((item) => {
       if (projectFilter !== "all" && item.project_id !== projectFilter) return false;
       if (categoryFilter !== "all" && item.category !== categoryFilter) return false;
+      if (reviewFilter === "stale" && !(now && isCompetitorReviewStale(item, now))) return false;
       if (words.length === 0) return true;
       const text = searchable([item.name, item.summary, item.pricing_model, item.lessons, item.social_content, ...item.useful_features].join(" "));
       return words.every((word) => text.includes(word));
     });
-  }, [competitors, query, projectFilter, categoryFilter]);
+  }, [competitors, query, projectFilter, categoryFilter, reviewFilter, now]);
 
   const byProject = useMemo(() => {
     const map = new Map<string, Competitor[]>();
@@ -85,7 +98,11 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
     setDialogOpen(true);
   };
 
-  const filtering = query.trim() !== "" || projectFilter !== "all" || categoryFilter !== "all";
+  // Counted over the rows actually on screen, so the two toolbar numbers
+  // always describe the same set rather than inviting a subtraction that is
+  // wrong the moment a filter is active.
+  const staleTotal = now ? staleCompetitorCount(visible, now) : 0;
+  const filtering = query.trim() !== "" || projectFilter !== "all" || categoryFilter !== "all" || reviewFilter !== "all";
   const groupsToRender = orderedProjects.filter((project) => byProject.has(project.id) || (!filtering && projectScope(project) === "project"));
 
   return (
@@ -96,15 +113,18 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
         action={<Button size="sm" onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>}
       />
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative min-w-0 flex-1 sm:min-w-[14rem]">
           <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-subtle" />
           <Input aria-label={p.searchCompetitors} placeholder={p.searchCompetitors} value={query} onChange={(event) => setQuery(event.target.value)} className="pl-8" />
         </div>
         <SimpleSelect aria-label={p.project} value={projectFilter} onValueChange={setProjectFilter} className="sm:w-56" options={[{ value: "all", label: p.allProjects }, ...orderedProjects.map((project) => ({ value: project.id, label: project.parent_id ? `↳ ${project.name}` : project.name }))]} />
         <SimpleSelect aria-label={p.competitorCategory} value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as "all" | CompetitorCategory)} className="sm:w-40" options={[{ value: "all", label: p.allCategories }, ...(["direct", "indirect", "inspiration"] as CompetitorCategory[]).map((value) => ({ value, label: p.categories[value] }))]} />
-        <span className="text-xs tabular text-foreground-subtle">{p.competitorsCount(visible.length)}</span>
+        <SimpleSelect aria-label={p.reviewFilter} value={reviewFilter} onValueChange={(value) => setReviewFilter(value as "all" | "stale")} className="sm:w-44" options={[{ value: "all", label: p.allReviews }, { value: "stale", label: p.staleOnly }]} />
+        <span className="text-xs tabular text-foreground-subtle">{p.competitorsCount(visible.length)}{staleTotal > 0 ? ` · ${p.staleCount(staleTotal)}` : ""}</span>
       </div>
+
+      {staleTotal > 0 && <p className="mb-4 text-xs text-foreground-muted">{p.reviewStaleHint}</p>}
 
       {competitors.length === 0 ? (
         <Card><CardContent className="py-8"><EmptyState icon={Swords} title={p.noCompetitors} description={p.noCompetitorsHint} action={<Button size="sm" onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>} /></CardContent></Card>
@@ -114,6 +134,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
             const entry = portfolioEntryFor(project);
             const parent = project.parent_id ? projects.find((item) => item.id === project.parent_id) : undefined;
             const list = byProject.get(project.id) ?? [];
+            const groupStale = now ? staleCompetitorCount(list, now) : 0;
             return (
               <Card key={project.id} className="overflow-hidden p-0">
                 <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b border-border">
@@ -125,11 +146,11 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
                     {entry && <p className="mt-0.5 text-xs text-foreground-muted">{entry.summary[lang]}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <SectionLabel>{p.competitorsCount(list.length)}</SectionLabel>
+                    <SectionLabel>{p.competitorsCount(list.length)}{groupStale > 0 ? ` · ${p.staleCount(groupStale)}` : ""}</SectionLabel>
                     <Button size="sm" variant="outline" onClick={() => openNew(project.id)} aria-label={`${p.addCompetitor}: ${project.name}`}><Plus className="h-3.5 w-3.5" /></Button>
                   </div>
                 </CardHeader>
-                <CompetitorList competitors={list} onEdit={openEdit} onDelete={remove} empty={p.noCompetitorsForProject} />
+                <CompetitorList competitors={list} now={now} onEdit={openEdit} onDelete={remove} empty={p.noCompetitorsForProject} />
               </Card>
             );
           })}

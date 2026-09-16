@@ -132,7 +132,12 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "coverLetterTemplates",
     "jobLastRun",
   ],
-  invoices: ["invoices", "invoiceItems", "invoiceSettings", "projects", "organizations", "notifications"],
+  // "transactions" so a paid invoice can name the bank payment that settled it.
+  invoices: ["invoices", "invoiceItems", "invoiceSettings", "transactions", "projects", "organizations", "notifications"],
+  // The Money overview renders development finance only, so it carries no
+  // invoices; its child routes below do, because the unmatched-payments card
+  // measures an incoming payment against the invoice it is meant to settle and
+  // an invoice has no total column to read instead.
   money: [
     "subscriptions",
     "subscriptionAllocations",
@@ -143,10 +148,10 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "crons",
     "notifications",
   ],
-  accounts: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
-  transactions: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
+  accounts: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "invoices", "invoiceItems", "projects", "projectCosts", "crons", "notifications"],
+  transactions: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "invoices", "invoiceItems", "projects", "projectCosts", "crons", "notifications"],
   subscriptions: ["subscriptions", "subscriptionAllocations", "projects", "notifications"],
-  categories: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "projects", "projectCosts", "crons", "notifications"],
+  categories: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "invoices", "invoiceItems", "projects", "projectCosts", "crons", "notifications"],
   tasks: ["todos", "projects", "organizations", "notifications"],
   calendar: ["notifications", "weekCalendar"],
   goals: ["plans", "notifications"],

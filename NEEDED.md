@@ -40,7 +40,15 @@ The migration was applied to the linked project and the owner's live data was lo
 - [ ] **Confirm the Apify plan tier** — the 2026-09-15 invoice was $22.99; the record is named "Usage plan" until the console confirms the tier. `[imp:2]` `[owner:me]` `[time:10m]` `[kind:setup]`
 - [ ] **Add the GitHub repository allow-list entry for phone-app** (Settings → Repositories) if you also want its NEEDED.md tasks and commits; the project row itself no longer depends on it. `[imp:2]` `[owner:me]` `[time:5m]` `[kind:setup]`
 - [ ] **Review the imported competitors, links and ideas** in Competition and each project's Links & Ideas tab; every record carries sources and a review date, and unverified prices are marked in the text. `[imp:3]` `[owner:me]` `[time:45m]` `[kind:content]`
+- [ ] **Refresh the competitor reviews before 15 December 2026** — every imported record is dated 2026-09-16, so all of them flip to "needs refresh" on the same day. Competition → Review → Needs refresh lists them; check what changed and save a new review date per record. `[imp:3]` `[owner:me]` `[time:60m]` `[kind:content]`
+- [ ] **Merge the duplicate library categories** — Links → Manage categories names the pairs whose titles read the same; the merge control on each category header moves its records and deletes the emptied category. The category rows live only in the linked Supabase project, so no agent can see or run this. `[imp:2]` `[owner:me]` `[time:20m]` `[kind:content]`
+- [ ] **Decide whether devShark becomes its own registry entry** — it is a sibling product inside `react-express-app`, and splitting it means a new `PORTFOLIO` row plus moving the competitors, link relevance markers and subscription allocations that currently hang off the shared project row. Worth it only when devShark needs its own competition and finance. `[imp:2]` `[owner:me]` `[time:15m]` `[kind:decision]`
+- [ ] **Decide whether Works carry the client's competitors** — a work already has a Competition tab and appears on `/competition` once something is recorded; what is missing is an empty card inviting it. Say yes and it is a one-condition change in `src/components/panels/competition-panel.tsx`. `[imp:2]` `[owner:me]` `[time:10m]` `[kind:decision]`
 - [ ] **Set VERCEL_API_TOKEN** if you want per-project Vercel usage instead of the equal split. `[imp:2]` `[owner:me]` `[time:15m]` `[kind:setup]`
+- [ ] **Confirm the Claude Max 20x App Store amounts for June and July** — 6,199 CZK each came from Apple's price notice, not from the invoice PDFs. Open the App Store purchase history, then confirm the amount on the row in Subscriptions. `[imp:3]` `[owner:me]` `[time:15m]` `[kind:content]`
+- [ ] **Confirm the UptimeRobot start date** — `started_on` was inferred from the monthly cycle, not read from a first invoice. `[imp:1]` `[owner:me]` `[time:10m]` `[kind:content]`
+- [ ] **Decide whether the lukaskouril.dev domain stays unallocated** — it is personal brand, so the Money overview reports it under Unallocated. Allocate it to a project if that is wrong. `[imp:1]` `[owner:me]` `[time:5m]` `[kind:decision]`
+- [ ] **Work through the unconfirmed amounts in Money → Development finance** — every subscription starts unconfirmed. Open Subscriptions, compare each amount with the vendor's invoice and press the check icon on the row. The figure under the recurring total drops as you go. `[imp:3]` `[owner:me]` `[time:40m]` `[kind:content]`
 
 ## Optional production hardening
 
@@ -67,3 +75,48 @@ rtk init --global
 
 - Optional Apify imports: configure server-only `APIFY_TOKEN` and `APIFY_JOB_TASK_IDS`; supply completed saved tasks with full job descriptions. No Actor is started by the app. See `docs/career-workspace.md` for sources, schema expectations and costs.
 - Verify `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in production for source ingestion. These values were unavailable for verification in this workspace. Existing authenticated Supabase letter/template tables are reused; no new migration is needed.
+
+## Organization tax registries (16 September 2026)
+
+"Fill from ARES" and the VIES VAT check are live in Clients, and the invoice
+buyer block shows the stored verdict. Both registries are free public services,
+so there is nothing to sign up for — only the migration and one real check.
+
+- [ ] **Apply the organization registry migration** — run `supabase/migrations/20260916140000_organization_registry_verification.sql` against the linked Supabase project. Until it runs, the new organization columns do not exist and every VAT check fails to save. `[imp:4]` `[owner:me]` `[time:15m]` `[kind:deploy]`
+- [ ] **Check one real client end to end** — open Clients, fill a new organization from a real IČO, verify its DIČ, and confirm the verdict, the date and any VIES name difference show on the organization and on a new invoice. `[imp:3]` `[owner:me]` `[time:15m]` `[kind:deploy]`
+- [ ] **Decide what a verified VAT id should do to an invoice** — the dashboard shows the check and applies no VAT logic. Applying reverse charge (zero VAT plus the "daň odvede zákazník" note) is a tax decision, not a code decision; say what you want before it is built. `[imp:2]` `[owner:me]` `[time:30m]` `[kind:decision]`
+
+## Transaction rules (16 September 2026)
+
+Money now has a rule editor: staged conditions on description, account, amount,
+date or direction that set the category, project, subscription or description,
+applied on every bank sync, every CSV import and retroactively on request. The
+old single-keyword auto-categories are gone from the UI; their rows are copied
+into the new table by the migration and the old table is kept as the rollback
+path.
+
+- [ ] **Apply the transaction rules migration** — run `supabase/migrations/20260916160000_transaction_rules.sql` against the linked Supabase project. Until it runs, the rule card shows a load error and bank sync files nothing automatically. `[imp:4]` `[owner:me]` `[time:15m]` `[kind:deploy]`
+- [ ] **Check the backfilled keyword rules** — after the migration, open Money → Transaction rules and confirm each old auto-category came across as one "Description contains …" rule. Delete the ones you no longer want before running an apply. `[imp:3]` `[owner:me]` `[time:15m]` `[kind:content]`
+- [ ] **Decide when the legacy table can go** — `transaction_category_rules` is still read by nothing and still exported. Once the new rules have run for a while, say the word and it can be dropped in its own migration. `[imp:1]` `[owner:me]` `[time:10m]` `[kind:decision]`
+
+## Changelog (16 September 2026)
+
+`CHANGELOG.md` is generated from `src/lib/changelog.ts`, and the Work overview's
+weekly review lists the entries published since the last review you completed.
+Three entries are seeded from real commits. There is nothing to deploy — the
+changelog is repository content, not owner data — but two things need a person.
+
+- [ ] **Write the next entry** — add a dated `ChangelogEntry` to `src/lib/changelog.ts` for what landed since 2026-09-16, regenerate `CHANGELOG.md` and let the test confirm the two match. At least one entry every two weeks; only work that actually shipped. `[imp:2]` `[owner:ai]` `[time:30m]` `[kind:content]`
+- [ ] **Capture the screenshots** — run `npx playwright install chromium`, then `CHANGELOG_CAPTURE=1 npx playwright test e2e/changelog-capture.spec.ts --project=desktop`, and point each `ChangelogFeature.media` at the committed file. Every feature currently ships with `media: null` because no browser binary was available; the captures are real `/dev-preview` screenshots, never stand-ins. `[imp:2]` `[owner:me]` `[time:30m]` `[kind:content]`
+
+## Invoice payment matching (17 September 2026)
+
+Incoming payments are now paired with issued invoices by variable symbol and
+amount — deterministically, with no model involved — and the leftovers are
+listed on the Money child routes with a reason each and a manual link. The
+matcher runs from `/api/cron/payment-match`, and "Match now" runs the same check
+on demand.
+
+- [ ] **Apply the payment-matching migration** — run `supabase/migrations/20260917090000_invoice_payment_matching.sql` against the linked Supabase project. Until it runs, `transactions.variable_symbol`, `matched_at` and `match_source` do not exist and every match fails to save. `[imp:4]` `[owner:me]` `[time:15m]` `[kind:deploy]`
+- [ ] **Decide the matching cadence** — the job is registered daily at 06:30 UTC because Vercel Hobby runs a cron at most once a day and `vercel.json` already declares more jobs than that allows. The matcher is idempotent, so on a paid plan change the schedule to `0 * * * *` and nothing else has to change. `[imp:3]` `[owner:me]` `[time:15m]` `[kind:decision]`
+- [ ] **Check one real payment end to end** — issue an invoice, pay it from a linked account or import the statement row, and confirm the invoice turns paid on the day the money arrived and the payment leaves the unmatched list. Only a real Czech bank shows whether your bank sends the variable symbol structured or only inside the message. `[imp:3]` `[owner:me]` `[time:30m]` `[kind:deploy]`

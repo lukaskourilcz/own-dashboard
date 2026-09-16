@@ -35,9 +35,20 @@ as their parent.
 
 `/works` lists `scope = 'work'` projects: client repositories such as `gym-plzen`,
 `paris-claire` and `umyjemefasadu`. The add dialog offers the GitHub repository list (or a
-typed `owner/name`) and an organization link. Inactive works stay visible, dimmed, because
-a finished client project still carries invoices and knowledge. Opening a work keeps the
-Works destination highlighted; the URL stays the canonical project workspace.
+typed `owner/name`) and an organization link. The typed field is not restricted to the
+saved `visible_repo_ids`, so a client repository created after that allow-list was saved is
+added here without touching Settings → Repositories; the allow-list only decides whether
+the repository's own documents, tasks and commits are synced. Inactive works stay visible,
+dimmed, because a finished client project still carries invoices and knowledge. Opening a
+work keeps the Works destination highlighted; the URL stays the canonical project
+workspace.
+
+Every work already has a Competition tab in its workspace, and a work that has competitors
+recorded is listed on `/competition` like any other project. What works do not get is an
+empty Competition card on `/competition` when nothing is recorded, because the unfiltered
+grouping only opens cards for `scope = 'project'` rows. Whether client engagements should
+routinely carry the client's competitors is an open owner decision recorded in `NEEDED.md`,
+not a structural limit — `competitors` RLS checks project ownership only.
 
 ## Competition
 
@@ -47,6 +58,24 @@ to learn from it, a 1–5 relevance score with rationale, social profiles, sourc
 review date. `/competition` groups every competitor by portfolio project; each project
 workspace has a Competition tab with the same list and dialog. Own-only RLS with a
 project ownership check.
+
+### Review freshness
+
+Research ages, so `src/lib/competition.ts` reads `reviewed_at` against a 90-day marker
+(`COMPETITOR_REVIEW_STALE_DAYS`). A review 90 days old or older is `stale`; a missing or
+unreadable date is `never`, which is a different thing and gets its own label. Both states
+show a text-labelled warning badge next to the competitor's type, so the cue is never
+colour alone, and the review date itself now sits in the visible metadata row instead of
+inside the collapsed Sources disclosure. A "Review" filter next to the project and type
+filters narrows the list to the rows that need a refresh, and the toolbar and each card
+header append the count when it is above zero.
+
+Nothing expires and nothing is hidden: the marker is a reminder that a competitor's
+pricing page and feature list may have moved since the note was written. Freshness is
+computed from `useNow()` resolved once per panel and handed down as a prop — never per
+row — and collapsed to the calendar day, because a 90-day boundary only moves at local
+midnight. `reviewed_at` is a Postgres `date`, so it is compared through `daysUntilDate`,
+which parses `yyyy-MM-dd` in local time rather than as UTC midnight.
 
 ## Links and ideas per project
 
@@ -76,9 +105,32 @@ OpenAI, Apple). Each imported transaction carries `external_id = gmail:<message 
 re-import cannot duplicate it. Amounts inferred rather than read (the App Store Claude
 Max months) are flagged in the subscription notes.
 
+### Confirmed amounts
+
+**Implemented.** `subscriptions.amount_confirmed_on` (migration
+`20260917120000_subscription_amount_confirmation.sql`) is the date the owner last compared
+a subscription's amount, currency and billing cycle with the vendor's own invoice. Null
+means nobody has compared them, which is where every row starts — the column is not
+back-filled, because only the owner knows which figures they have checked.
+
+The confirmation covers one figure. `amountConfirmationAfterEdit` in
+`src/lib/dev-finance.ts` clears it whenever the amount, currency or billing cycle changes,
+so a date can never vouch for a number it was not given for. Renaming a vendor or editing
+its notes leaves it standing, and a newly created subscription is never born confirmed.
+
+The reader shows this twice. Money → Development finance sums the running development
+subscriptions with no confirmation into `unconfirmedMonthly`/`unconfirmedCount`, printed
+under the recurring total and explained above the by-vendor table; the same table prints
+each subscription's note under the vendor name, so a caveat the import recorded is read
+where the amount is read. Subscriptions carries the control: the check icon on a row
+stamps today's date or clears it, and the editor warns before a figure change retires a
+confirmation. An ended subscription is left out of the figure — its amount no longer moves
+the recurring total.
+
 ## Validation
 
-Unit tests: `tests/lib/portfolio.test.ts` and `tests/lib/dev-finance.test.ts`, plus the
-navigation, data-boundary and subscription tests. Browser tests: the dashboard section
+Unit tests: `tests/lib/portfolio.test.ts`, `tests/lib/competition.test.ts` and
+`tests/lib/dev-finance.test.ts`, plus the navigation, data-boundary and subscription
+tests. `tests/lib/link-library.test.ts` covers the category merge. Browser tests: the dashboard section
 walk includes Works and Competition, and the project workspace check includes the Links &
 Ideas and Competition tabs.

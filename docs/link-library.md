@@ -6,7 +6,9 @@ The `/links` route uses the existing owner-scoped `ai_links` and `ai_categories`
 
 Cards start collapsed, with the favicon or an initial fallback, name, domain link, pricing dot and visible edit/delete buttons. A keyboard-operable disclosure reveals the description, source URLs and full destination. Category groups use one column below 1024 px, two from 1024 px and three from 1536 px, keeping the desktop sidebar from squeezing tablet cards.
 
-Search combines words across titles, URLs, descriptions and category names, with Czech accent normalization. Category and pricing filters combine with search, and names or creation dates determine ordering within each category. The toolbar exposes matching/total counts, clear filters and expand/collapse controls. Category creation sits in a native disclosure, while rename/delete controls remain on the group headers.
+Search combines words across titles, URLs, descriptions and category names, with Czech accent normalization. Category and pricing filters combine with search, and names or creation dates determine ordering within each category. The toolbar exposes matching/total counts, clear filters and expand/collapse controls. Category creation sits in a native disclosure, while rename, merge and delete controls remain on the group headers.
+
+Merge collapses one category into another. The dialog lists every other category plus Uncategorized, states how many records will move, and says in words what happens: the records move first, then the emptied category is deleted. `planCategoryMerge` in `src/lib/link-library.ts` is the pure planner behind both the optimistic update and the test. `duplicateCategoryCandidates` pairs categories whose names collapse to the same key once accents, case, separators and an English trailing plural are removed, marks those headers and preselects the partner in the dialog. It is a suggestion the owner confirms, never an automatic move, and it derives every pair from the loaded rows rather than from a fixed list of names.
 
 ## Pricing
 

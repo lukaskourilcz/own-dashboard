@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
+  GitMerge,
   Pencil,
   Plus,
   Search,
@@ -34,10 +35,11 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import type { AiCategory, AiLink, AiPricing, Updater } from "@/lib/types";
 
 import { LinkLibraryCard, PricingDot } from "./link-library-card";
-import { filterLibrary, resourceKey, UNCATEGORIZED_LINKS as UNCATEGORIZED, type PricingFilter, type LinkSort } from "@/lib/link-library";
+import { duplicateCategoryCandidates, filterLibrary, planCategoryMerge, resourceKey, UNCATEGORIZED_LINKS as UNCATEGORIZED, type PricingFilter, type LinkSort } from "@/lib/link-library";
 
 /** Normalize a user-typed link: add https:// when no scheme is present, then
  * validate. Returns the canonical href, or null when it isn't a valid URL. */
@@ -112,6 +114,8 @@ export function AiPanel({
   const [newCategory, setNewCategory] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [mergeSource, setMergeSource] = useState<AiCategory | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string>(UNCATEGORIZED);
 
   const categoryIds = useMemo(
     () => new Set(aiCategories.map((c) => c.id)),
@@ -317,6 +321,44 @@ export function AiPanel({
     },
   });
 
+  // Collapse one category into another: move every record it owns, then drop
+  // the now-empty category. The move runs first, so a failed delete leaves the
+  // records readable under a category that still exists rather than orphaned.
+  const mergeCategory = useMutation({
+    mutationFn: async (vars: { sourceId: string; targetId: string | null }) => {
+      const moved = await supabase
+        .from("ai_links")
+        .update({ category_id: vars.targetId })
+        .eq("category_id", vars.sourceId);
+      if (moved.error) throw moved.error;
+      const removed = await supabase
+        .from("ai_categories")
+        .delete()
+        .eq("id", vars.sourceId);
+      if (removed.error) throw removed.error;
+    },
+    onMutate: async ({ sourceId, targetId }) => {
+      await qc.cancelQueries({ queryKey: qk.aiCategories });
+      await qc.cancelQueries({ queryKey: qk.aiLinks });
+      const prevCats = qc.getQueryData<AiCategory[]>(qk.aiCategories);
+      const prevLinks = qc.getQueryData<AiLink[]>(qk.aiLinks);
+      const moving = new Set(planCategoryMerge(aiLinks, sourceId, targetId));
+      setAiLinks((old) => old.map((l) => (moving.has(l.id) ? { ...l, category_id: targetId } : l)));
+      setAiCategories((old) => old.filter((c) => c.id !== sourceId));
+      return { prevCats, prevLinks };
+    },
+    onSuccess: () => toast.ok(t.ai.categoryMerged),
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prevCats) setAiCategories(ctx.prevCats);
+      if (ctx?.prevLinks) setAiLinks(ctx.prevLinks);
+      toast.err(t.ai.couldNotMerge);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.aiCategories });
+      void qc.invalidateQueries({ queryKey: qk.aiLinks });
+    },
+  });
+
   /* ---- handlers ------------------------------------------------------ */
 
   function openCreate(recordType: "link" | "idea" = "link") {
@@ -394,6 +436,35 @@ export function AiPanel({
     }
     setRenamingId(null);
     setRenameValue("");
+  }
+
+  // Name pairs that read as one topic. A suggestion for the merge dialog, never
+  // an automatic move: only the owner knows whether two similar names are one
+  // category or a distinction worth keeping.
+  const duplicateCategories = useMemo(() => duplicateCategoryCandidates(aiCategories), [aiCategories]);
+
+  function suggestedMergeTarget(source: AiCategory): string | null {
+    const pair = duplicateCategories.find(([keep, duplicate]) => keep.id === source.id || duplicate.id === source.id);
+    if (!pair) return null;
+    return pair[0].id === source.id ? pair[1].id : pair[0].id;
+  }
+
+  function openMerge(category: AiCategory) {
+    setMergeSource(category);
+    setMergeTargetId(
+      suggestedMergeTarget(category)
+      ?? aiCategories.find((c) => c.id !== category.id)?.id
+      ?? UNCATEGORIZED,
+    );
+  }
+
+  function submitMerge(e: React.FormEvent) {
+    e.preventDefault();
+    if (!mergeSource) return;
+    mergeCategory.mutate(
+      { sourceId: mergeSource.id, targetId: mergeTargetId === UNCATEGORIZED ? null : mergeTargetId },
+      { onSuccess: () => setMergeSource(null) },
+    );
   }
 
   async function removeCategory(c: AiCategory) {
@@ -480,6 +551,11 @@ export function AiPanel({
               <Button type="submit" variant="outline" size="sm" disabled={!newCategory.trim() || createCategory.isPending}><Plus className="h-3.5 w-3.5" />{t.ai.add}</Button>
             </form>
             <p className="pb-3 text-xs text-foreground-muted">{t.ai.manageHint}</p>
+            {duplicateCategories.length > 0 && (
+              <p className="pb-3 text-xs text-foreground-muted">
+                {t.ai.duplicateCategoryHint(duplicateCategories.map(([keep, duplicate]) => `${keep.name} / ${duplicate.name}`).join(", "))}
+              </p>
+            )}
           </details>
 
           {noResults ? (
@@ -513,6 +589,8 @@ export function AiPanel({
                         setRenameValue("");
                       }}
                       onDelete={() => removeCategory(cat)}
+                      onMerge={() => openMerge(cat)}
+                      mergeSuggested={suggestedMergeTarget(cat) !== null}
                     >
                       {links.length === 0 ? (
                         <EmptyRow text={t.ai.categoryEmpty} />
@@ -572,6 +650,8 @@ export function AiPanel({
               onCommitRename={commitRename}
               onCancelRename={() => { setRenamingId(null); setRenameValue(""); }}
               onDelete={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) removeCategory(existing); }}
+              onMerge={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) openMerge(existing); }}
+              mergeSuggested={duplicateCategories.some(([keep, duplicate]) => keep.id === category.id || duplicate.id === category.id)}
             >
               {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} />)}
             </CategoryGroup> : null;
@@ -579,6 +659,18 @@ export function AiPanel({
         </div>
         {ideas.length === 0 && <p className="text-xs text-foreground-muted">{searching ? t.ai.noMatches : t.ai.ideaEmpty}</p>}
       </section>
+
+      <MergeCategoryDialog
+        source={mergeSource}
+        onClose={() => setMergeSource(null)}
+        categories={aiCategories}
+        targetId={mergeTargetId}
+        setTargetId={setMergeTargetId}
+        suggestedTargetId={mergeSource ? suggestedMergeTarget(mergeSource) : null}
+        movingCount={planCategoryMerge(aiLinks, mergeSource?.id ?? "", mergeTargetId === UNCATEGORIZED ? null : mergeTargetId).length}
+        merging={mergeCategory.isPending}
+        onSubmit={submitMerge}
+      />
 
       <LinkDialog
         open={dialogOpen}
@@ -608,6 +700,8 @@ function CategoryGroup({
   onCommitRename,
   onCancelRename,
   onDelete,
+  onMerge,
+  mergeSuggested,
   children,
 }: {
   name: string;
@@ -620,6 +714,9 @@ function CategoryGroup({
   onCommitRename?: () => void;
   onCancelRename?: () => void;
   onDelete?: () => void;
+  onMerge?: () => void;
+  /** This category's name reads the same as another one's, so merging is offered first. */
+  mergeSuggested?: boolean;
   children: React.ReactNode;
 }) {
   const t = useDict();
@@ -665,6 +762,21 @@ function CategoryGroup({
                 <Pencil className="h-3 w-3" />
               </button>
             </Tooltip>
+            {onMerge && (
+              <Tooltip content={mergeSuggested ? `${t.ai.mergeCategory} · ${t.ai.suggestedMerge}` : t.ai.mergeCategory}>
+                <button
+                  type="button"
+                  onClick={onMerge}
+                  aria-label={`${t.ai.mergeCategory}: ${name}`}
+                  className={cn(
+                    "inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded transition-colors hover:bg-surface-hover hover:text-foreground focus-ring",
+                    mergeSuggested ? "text-warning" : "text-foreground-subtle",
+                  )}
+                >
+                  <GitMerge className="h-3 w-3" />
+                </button>
+              </Tooltip>
+            )}
             <Tooltip content={t.ai.deleteCategory}>
               <button
                 type="button"
@@ -680,6 +792,76 @@ function CategoryGroup({
       </div>
       <div className="divide-y divide-border/60">{children}</div>
     </Card>
+  );
+}
+
+/**
+ * Collapse one category into another. The destination list is every other
+ * category plus Uncategorized, so a category can always be emptied even when it
+ * is the only one left. The count under the select is what will actually move,
+ * recomputed from the same pure planner the mutation uses.
+ */
+function MergeCategoryDialog({
+  source,
+  onClose,
+  categories,
+  targetId,
+  setTargetId,
+  suggestedTargetId,
+  movingCount,
+  merging,
+  onSubmit,
+}: {
+  source: AiCategory | null;
+  onClose: () => void;
+  categories: AiCategory[];
+  targetId: string;
+  setTargetId: (value: string) => void;
+  suggestedTargetId: string | null;
+  movingCount: number;
+  merging: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+}) {
+  const t = useDict();
+  const targetName =
+    targetId === UNCATEGORIZED
+      ? t.ai.uncategorized
+      : categories.find((c) => c.id === targetId)?.name ?? t.ai.uncategorized;
+  return (
+    <Dialog open={source !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t.ai.mergeCategoryTitle(source?.name ?? "")}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="mt-3 space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="ai-merge-target">{t.ai.mergeCategoryInto}</Label>
+            <SimpleSelect
+              id="ai-merge-target"
+              value={targetId}
+              onValueChange={setTargetId}
+              options={[
+                ...categories
+                  .filter((c) => c.id !== source?.id)
+                  .map((c) => ({ value: c.id, label: c.id === suggestedTargetId ? `${c.name} · ${t.ai.suggestedMerge}` : c.name })),
+                { value: UNCATEGORIZED, label: t.ai.uncategorized },
+              ]}
+            />
+            <p className="text-xs text-foreground-muted">{t.ai.mergeCategoryRecords(movingCount)}</p>
+          </div>
+          <p className="text-xs text-foreground-muted">{t.ai.mergeCategoryConfirm(source?.name ?? "", targetName)}</p>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" size="sm">{t.ai.cancel}</Button>
+            </DialogClose>
+            <Button type="submit" size="sm" disabled={merging}>
+              <GitMerge className="h-3.5 w-3.5" />
+              {merging ? t.ai.saving : t.ai.mergeCategoryAction}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

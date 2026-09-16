@@ -13,6 +13,7 @@ import { Metric } from "@/components/ui/metric";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
+import { CHANGELOG, entriesSince, previousCompletedReviewDate } from "@/lib/changelog";
 import { assessProjectHealth } from "@/lib/project-health";
 import { useCrossProjectActivityQuery } from "@/lib/github-queries";
 import { qk } from "@/lib/queries/keys";
@@ -71,6 +72,12 @@ export function WorkOverviewPanel({
     followUps: readReviewItem("followUps"),
     sources: readReviewItem("sources"),
   });
+  // The window the "shipped" block covers: everything published after the last
+  // review that was actually completed. Null means there is none to measure
+  // from — the first review, or one older than the twelve weeks the loader
+  // fetches — and the newest entries are shown instead.
+  const shippedSince = useMemo(() => previousCompletedReviewDate(reviews, weekStart), [reviews, weekStart]);
+  const shipped = useMemo(() => entriesSince(CHANGELOG, shippedSince), [shippedSince]);
   const attention = useMemo(
     () => projects
       .filter((project) => project.is_active && project.status !== "archived")
@@ -162,6 +169,29 @@ export function WorkOverviewPanel({
           <CardContent className="space-y-3">
             <p className="text-xs text-foreground-muted">{p.weeklyReviewDescription}</p>
             <div className="grid gap-3 sm:grid-cols-2"><ReviewField label={p.facts} value={reviewDraft.facts} onChange={(facts) => setReviewDraft((old) => ({ ...old, facts }))} /><ReviewField label={p.risks} value={reviewDraft.risks} onChange={(risks) => setReviewDraft((old) => ({ ...old, risks }))} /><ReviewField label={p.decisions} value={reviewDraft.decisions} onChange={(decisions) => setReviewDraft((old) => ({ ...old, decisions }))} /><ReviewField label={p.priorities} value={reviewDraft.priorities} onChange={(priorities) => setReviewDraft((old) => ({ ...old, priorities }))} /><ReviewField label={p.followUpActions} value={reviewDraft.followUps} onChange={(followUps) => setReviewDraft((old) => ({ ...old, followUps }))} /><ReviewField label={p.sources} value={reviewDraft.sources} onChange={(sources) => setReviewDraft((old) => ({ ...old, sources }))} /></div>
+            <div className="space-y-1.5 border-t border-border pt-3">
+              <SectionLabel>{p.shippedSinceReview}</SectionLabel>
+              <p className="text-xs text-foreground-muted">{shippedSince ? p.shippedSinceReviewDescription : p.shippedLatest}</p>
+              {shipped.length === 0 ? (
+                <p className="text-sm text-foreground-muted">{p.shippedEmpty}</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {shipped.map((entry) => (
+                    <li key={entry.date} className="py-2">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="min-w-0 text-sm font-medium">{entry.title}</p>
+                        <span className="shrink-0 text-xs tabular text-foreground-muted">{entry.date}</span>
+                      </div>
+                      <ul className="mt-1 space-y-0.5">
+                        {entry.features.map((feature) => (
+                          <li key={feature.title} className="text-xs text-foreground-muted">{feature.title}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => reviewMutation.mutate(false)} disabled={reviewMutation.isPending}>{p.saveReview}</Button>
               <Button onClick={() => reviewMutation.mutate(true)} disabled={reviewMutation.isPending}>{p.completeReview}</Button>

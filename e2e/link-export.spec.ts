@@ -21,7 +21,7 @@ test("exports exact pricing selection, Markdown, clipboard and download", async 
   const dialog = page.getByRole("dialog");
   const preview = dialog.getByLabel("Preview", { exact: true });
   const all = JSON.parse(await preview.inputValue());
-  expect(all.items).toHaveLength(3);
+  expect(all.items).toHaveLength(4);
   await dialog.getByLabel("Include", { exact: true }).click();
   await page.getByRole("option", { name: "Selected categories", exact: true }).click();
   await dialog.getByRole("checkbox", { name: /SECURITY/ }).click();
@@ -38,7 +38,7 @@ test("exports exact pricing selection, Markdown, clipboard and download", async 
   expect(JSON.parse(await preview.inputValue()).items.map((x: {title:string}) => x.title)).toEqual(["Have I Been Pwned"]);
   await dialog.getByLabel("Pricing", { exact: true }).click();
   await page.getByRole("option", { name: "Free + partially paid (freemium)", exact: true }).click();
-  expect(JSON.parse(await preview.inputValue()).items).toHaveLength(2);
+  expect(JSON.parse(await preview.inputValue()).items).toHaveLength(3);
   await dialog.getByLabel("Format", { exact: true }).click();
   await page.getByRole("option", { name: "Markdown", exact: true }).click();
   const markdown = await preview.inputValue();

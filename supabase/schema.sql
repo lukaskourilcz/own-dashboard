@@ -1872,3 +1872,123 @@ create policy "crons update own" on public.crons
 drop policy if exists "crons delete own" on public.crons;
 create policy "crons delete own" on public.crons
   for delete using (auth.uid() = user_id);
+
+-- =============================================================
+-- Transaction rules — staged, specificity-ranked categorization
+-- (migration 20260916160000_transaction_rules.sql)
+--
+-- Supersedes public.transaction_category_rules above: a rule carries a list of
+-- conditions (field / operator / value) and a set of actions (category,
+-- subscription, project, note), runs in a 'pre' / 'default' / 'post' stage and
+-- is ranked least-specific first inside its stage so a narrow rule overwrites a
+-- broad one. Applied on bank sync, CSV import and retroactive apply.
+--
+-- conditions/actions are jsonb because their shape is owner-authored;
+-- src/lib/transaction-rules.ts parses both defensively and drops malformed
+-- entries. Action ids are not foreign keys — a rule is a template, and the
+-- transactions insert/update policies reject a foreign id when it is applied.
+-- The legacy keyword table is kept as the rollback path and export scope.
+-- =============================================================
+create table if not exists public.transaction_rules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null default '',
+  stage text not null default 'default'
+    check (stage in ('pre', 'default', 'post')),
+  conditions jsonb not null default '[]'::jsonb,
+  actions jsonb not null default '{}'::jsonb,
+  sort_order integer not null default 0,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists transaction_rules_user_idx
+  on public.transaction_rules (user_id, stage, sort_order, created_at);
+
+alter table public.transaction_rules enable row level security;
+grant select, insert, update, delete on public.transaction_rules to authenticated;
+grant all on public.transaction_rules to service_role;
+
+drop policy if exists "transaction_rules select own" on public.transaction_rules;
+create policy "transaction_rules select own" on public.transaction_rules
+  for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists "transaction_rules insert own" on public.transaction_rules;
+create policy "transaction_rules insert own" on public.transaction_rules
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+
+drop policy if exists "transaction_rules update own" on public.transaction_rules;
+create policy "transaction_rules update own" on public.transaction_rules
+  for update to authenticated using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+drop policy if exists "transaction_rules delete own" on public.transaction_rules;
+create policy "transaction_rules delete own" on public.transaction_rules
+  for delete to authenticated using ((select auth.uid()) = user_id);
+
+create or replace function public.tg_transaction_rules_touch()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists transaction_rules_touch on public.transaction_rules;
+create trigger transaction_rules_touch
+  before update on public.transaction_rules
+  for each row execute function public.tg_transaction_rules_touch();
+
+comment on table public.transaction_rules is 'Owner-authored transaction rules: staged, specificity-ranked conditions and actions applied on bank sync, CSV import and retroactive apply.';
+
+-- =============================================================
+-- Invoice payment matching — variable symbol on the bank side
+-- (migration 20260917090000_invoice_payment_matching.sql)
+--
+-- `transactions.invoice_id` already existed and its insert/update policies
+-- already verify the invoice's owner; nothing wrote it. These three columns are
+-- what the deterministic matcher needs: the Czech payment reference carried by
+-- the payment, when the link happened and whether it was the matcher ('auto')
+-- or the owner linking a leftover by hand ('manual').
+--
+-- No policy changes: no new foreign reference is introduced.
+-- =============================================================
+alter table public.transactions
+  add column if not exists variable_symbol text
+    check (variable_symbol is null or variable_symbol ~ '^[0-9]{1,10}$'),
+  add column if not exists matched_at timestamptz,
+  add column if not exists match_source text
+    check (match_source is null or match_source in ('auto', 'manual'));
+
+create index if not exists transactions_unmatched_income_idx
+  on public.transactions (user_id, occurred_on desc)
+  where kind = 'income' and invoice_id is null;
+
+create index if not exists transactions_invoice_idx
+  on public.transactions (user_id, invoice_id)
+  where invoice_id is not null;
+
+comment on column public.transactions.variable_symbol is 'Czech payment reference (variabilní symbol), digits only, max 10. Captured at ingest; the matcher falls back to parsing note.';
+comment on column public.transactions.matched_at is 'When this payment was linked to an invoice. Null for rows filed before payment matching existed.';
+comment on column public.transactions.match_source is 'How the invoice link happened: auto (deterministic matcher) or manual (owner linked it).';
+
+-- =============================================================
+-- Development finance — confirmed subscription amounts
+-- (migration 20260917120000_subscription_amount_confirmation.sql)
+--
+-- Which subscription figures were read from a vendor invoice and which were
+-- inferred from a renewal notice. Null means "never confirmed", which is the
+-- honest state of every row that predates the column; nothing is back-filled.
+-- The application clears the date when the amount, currency or billing cycle
+-- changes, so a confirmation only ever vouches for the figure it was given for.
+--
+-- No policy changes: no new foreign reference is introduced.
+-- =============================================================
+alter table public.subscriptions
+  add column if not exists amount_confirmed_on date;
+
+comment on column public.subscriptions.amount_confirmed_on is 'Date the owner last confirmed this subscription''s amount, currency and billing cycle against the vendor invoice. Null = never confirmed; cleared by the application when the figure changes.';

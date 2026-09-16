@@ -16,7 +16,7 @@ import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import { CHART_COLORS } from "@/lib/chart-colors";
-import { summarizeDevFinance, subscriptionShares } from "@/lib/dev-finance";
+import { isAmountConfirmed, summarizeDevFinance, subscriptionShares } from "@/lib/dev-finance";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { useDateLocale, useDict } from "@/lib/i18n";
 import { projectScope } from "@/lib/portfolio";
@@ -112,6 +112,9 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
                 <div className="flex items-center gap-1.5 text-foreground-muted"><CircleDollarSign className="h-3.5 w-3.5" /><SectionLabel>{f.recurringMonthly}</SectionLabel></div>
                 <p className="mt-1.5 text-4xl font-semibold tracking-tight tabular text-foreground sm:text-5xl">{formatCurrency(summary.recurringMonthly, displayCurrency)}</p>
                 <p className="mt-1 text-xs tabular text-foreground-subtle">{f.recurringYearly}: {formatCurrency(summary.recurringYearly, displayCurrency)} · {f.paidLastMonths(MONTHS)}: {formatCurrency(summary.paidLastMonths, displayCurrency)}</p>
+                {summary.unconfirmedCount > 0 && (
+                  <p className="mt-1 max-w-prose text-xs text-warning">{f.unconfirmedAmounts(formatCurrency(summary.unconfirmedMonthly, displayCurrency), summary.unconfirmedCount)}</p>
+                )}
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 <Metric label={f.projectsShare} value={formatCurrency(summary.projectsMonthly, displayCurrency)} detail={shareOf(summary.projectsMonthly)} icon={FolderKanban} />
@@ -202,7 +205,10 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
           </Card>
 
           <Card className="overflow-hidden p-0">
-            <CardHeader className="border-b border-border"><CardTitle>{f.byVendorTitle}</CardTitle></CardHeader>
+            <CardHeader className="border-b border-border">
+              <CardTitle>{f.byVendorTitle}</CardTitle>
+              {summary.unconfirmedCount > 0 && <p className="max-w-prose text-xs text-foreground-muted">{f.unconfirmedAmountsHint}</p>}
+            </CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left">
                 <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted">
@@ -220,12 +226,27 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
                 <tbody className="divide-y divide-border">
                   {[...summary.developmentSubscriptions].sort((a, b) => Number(isActive(b)) - Number(isActive(a)) || toMonthlyIn(b, displayCurrency) - toMonthlyIn(a, displayCurrency)).map((sub) => {
                     const active = isActive(sub);
+                    const confirmed = isAmountConfirmed(sub);
                     const shares = subscriptionShares(sub, allocations).filter((slice) => slice.projectId && projectById.has(slice.projectId));
                     return (
                       <tr key={sub.id} className={active ? "hover:bg-surface-hover" : "opacity-60 hover:bg-surface-hover"}>
-                        <td className="px-3 py-2.5"><div className="flex items-center gap-2"><SubscriptionIcon name={sub.name} size={26} /><span className="text-sm font-medium">{sub.name}</span></div></td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-start gap-2">
+                            <SubscriptionIcon name={sub.name} size={26} />
+                            <div className="min-w-0">
+                              <span className="text-sm font-medium">{sub.name}</span>
+                              {/* The caveat the import recorded, read where the figure is read. */}
+                              {sub.notes && <span className="mt-0.5 block max-w-[22rem] text-[11px] text-foreground-subtle">{sub.notes}</span>}
+                            </div>
+                          </div>
+                        </td>
                         <td className="px-3 py-2.5 text-xs text-foreground-muted">{sub.plan ?? "—"}</td>
-                        <td className="px-3 py-2.5 text-right text-xs tabular text-foreground-muted">{formatCurrency(sub.amount, sub.currency)} · {cycleLabel(sub)}</td>
+                        <td className="px-3 py-2.5 text-right text-xs tabular text-foreground-muted">
+                          {formatCurrency(sub.amount, sub.currency)} · {cycleLabel(sub)}
+                          {confirmed
+                            ? <span className="mt-0.5 block text-[11px] text-foreground-subtle">{f.amountConfirmed(sub.amount_confirmed_on!)}</span>
+                            : active && <span className="mt-0.5 block text-[11px] text-warning">{f.amountUnconfirmed}</span>}
+                        </td>
                         <td className="px-3 py-2.5 text-right tabular">{formatCurrency(toMonthlyIn(sub, displayCurrency), displayCurrency)}</td>
                         <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{sub.started_on ?? "—"}{sub.ended_on ? ` – ${sub.ended_on}` : ""}</td>
                         <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{active ? sub.next_billing_date ?? "—" : sub.ended_on ?? "—"}</td>

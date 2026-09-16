@@ -77,9 +77,9 @@ export const subscriptions: Subscription[] = [
   { id: "s2", user_id: UID, name: "Spotify", amount: 169, currency: "CZK", billing_cycle: "monthly", category: "Music", category_group: "entertainment", importance: "optional", next_billing_date: ymd(3), is_active: true, created_at: TS, updated_at: TS },
   { id: "s3", user_id: UID, name: "iCloud+", amount: 25, currency: "CZK", billing_cycle: "monthly", category: "Storage", category_group: "infrastructure", importance: "essential", next_billing_date: ymd(20), is_active: true, created_at: TS, updated_at: TS },
   { id: "s4", user_id: UID, name: "Figma", amount: 1440, currency: "CZK", billing_cycle: "yearly", category: "Work", category_group: "development", importance: "useful", next_billing_date: ymd(120), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-245), plan: "Professional", notes: "" },
-  { id: "s5", user_id: UID, name: "Vercel", amount: 20, currency: "USD", billing_cycle: "monthly", category: "Hosting", category_group: "development", importance: "essential", next_billing_date: ymd(12), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-60), plan: "Pro", vendor_url: "https://vercel.com", notes: "Shared by every deployed project." },
-  { id: "s6", user_id: UID, name: "Supabase", amount: 25, currency: "USD", billing_cycle: "monthly", category: "Database", category_group: "development", importance: "essential", next_billing_date: ymd(12), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-60), plan: "Pro", notes: "" },
-  { id: "s7", user_id: UID, name: "Mobbin", amount: 45, currency: "USD", billing_cycle: "quarterly", category: "Design research", category_group: "development", importance: "useful", next_billing_date: ymd(70), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-20), plan: "Pro", notes: "" },
+  { id: "s5", user_id: UID, name: "Vercel", amount: 20, currency: "USD", billing_cycle: "monthly", category: "Hosting", category_group: "development", importance: "essential", next_billing_date: ymd(12), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-60), plan: "Pro", vendor_url: "https://vercel.com", notes: "Shared by every deployed project.", amount_confirmed_on: ymd(-18) },
+  { id: "s6", user_id: UID, name: "Supabase", amount: 25, currency: "USD", billing_cycle: "monthly", category: "Database", category_group: "development", importance: "essential", next_billing_date: ymd(12), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-60), plan: "Pro", notes: "", amount_confirmed_on: ymd(-47) },
+  { id: "s7", user_id: UID, name: "Mobbin", amount: 45, currency: "USD", billing_cycle: "quarterly", category: "Design research", category_group: "development", importance: "useful", next_billing_date: ymd(70), is_active: true, created_at: TS, updated_at: TS, started_on: ymd(-20), plan: "Pro", notes: "Quarterly invoice; the amount comes from the renewal notice, not from the receipt." },
   { id: "s8", user_id: UID, name: "UptimeRobot", amount: 9.68, currency: "EUR", billing_cycle: "monthly", category: "Monitoring", category_group: "development", importance: "optional", next_billing_date: null, is_active: false, created_at: TS, updated_at: TS, started_on: ymd(-120), ended_on: ymd(-19), plan: "Solo", notes: "Downgraded to the free plan." },
 ];
 
@@ -137,6 +137,11 @@ export const transactions: Transaction[] = [
   { id: "tx8", user_id: UID, account_id: "a1", kind: "expense", amount: 65.48, currency: "USD", category: "Development", note: "Vercel Pro + usage invoice", occurred_on: ymd(-18), external_id: null, created_at: TS, subscription_id: "s5" },
   { id: "tx9", user_id: UID, account_id: "a1", kind: "expense", amount: 25, currency: "USD", category: "Development", note: "Supabase Pro invoice", occurred_on: ymd(-47), external_id: null, created_at: TS, subscription_id: "s6" },
   { id: "tx10", user_id: UID, account_id: "a1", kind: "expense", amount: 10, currency: "USD", category: "Development", note: "fal.ai credit top-up", occurred_on: ymd(-30), external_id: null, created_at: TS, project_id: "proj-quorum" },
+  // Two leftovers for the unmatched-payments card, each a real reason rather
+  // than a filler row: the first quotes invoice 2026001 but is 85 CZK short of
+  // its 38 115 CZK total, the second quotes a symbol no open invoice asks for.
+  { id: "tx11", user_id: UID, account_id: "a1", kind: "income", amount: 38030, currency: "CZK", category: null, note: "Platba VS 2026001", occurred_on: ymd(-2), external_id: null, created_at: TS, variable_symbol: "2026001" },
+  { id: "tx12", user_id: UID, account_id: "a1", kind: "income", amount: 12000, currency: "CZK", category: null, note: "Úhrada VS 2025044", occurred_on: ymd(-1), external_id: null, created_at: TS, variable_symbol: "2025044" },
 ];
 
 export const plans: Plan[] = [
@@ -296,7 +301,9 @@ export const competitors: Competitor[] = [
     category: "inspiration", useful_features: ["Growth percentage per topic", "Category filters", "Weekly trend email"],
     social_content: "Weekly newsletter plus short trend threads on X.", pricing_model: "Free browse; Pro from $39 per month.", lessons: "Show a growth number next to every trend, not just a name.",
     relevance_score: 4, score_rationale: "Trend scoring is the part GoVIRAL wants.", social_links: [], source_urls: ["https://explodingtopics.com/pro"],
-    reviewed_at: ymd(-3), sort_order: 0, created_at: TS, updated_at: TS,
+    // Deliberately past the 90-day freshness marker so the preview shows one
+    // fresh and one "needs refresh" competitor without adding a row.
+    reviewed_at: ymd(-200), sort_order: 0, created_at: TS, updated_at: TS,
   },
 ];
 
@@ -424,7 +431,7 @@ export const invoices: Invoice[] = [
     issue_date: ymd(-7), due_date: ymd(7), taxable_supply_date: ymd(-7), payment_method: "bank",
     currency: "CZK", status: "issued", paid_on: null, round_total: true,
     buyer_name: "Acme s.r.o.", buyer_address: "Hlavní 1", buyer_city: "Brno", buyer_zip: "602 00",
-    buyer_country: "CZ", buyer_ico: "87654321", buyer_dic: "CZ87654321",
+    buyer_country: "CZ", buyer_ico: "12345679", buyer_dic: "CZ12345679",
     supplier_name: "Jan Novák", supplier_address: "Korunní 12", supplier_city: "Praha", supplier_zip: "120 00",
     supplier_country: "CZ", supplier_ico: "12345678", supplier_dic: "CZ12345678", supplier_is_vat_payer: true,
     bank_account: "123456789/0100", iban: "CZ6508000000192000145399", note: null,
@@ -462,8 +469,13 @@ export const organizations: Organization[] = [{
   id: "org-acme", user_id: UID, name: "Acme s.r.o.", type: "client",
   website: "https://example.com", logo_url: null, email: "hello@example.com",
   phone: null, address: null, city: "Prague", zip: null, country: "CZ",
-  company_id: "87654321", vat_id: "CZ87654321", notes: "Retained product client.",
-  status: "active", created_at: TS, updated_at: TS,
+  // A checksum-valid placeholder IČO so the preview shows the registry actions
+  // in their normal state rather than the invalid-number warning.
+  company_id: "12345679", vat_id: "CZ12345679", notes: "Retained product client.",
+  status: "active", ares_verified_at: TS, vat_verification_status: "valid",
+  vat_verified_at: TS, vat_verified_id: "CZ12345679", vat_verified_name: "Acme s.r.o.",
+  vat_verified_address: "Na Příkopě 1, 110 00 Praha 1",
+  created_at: TS, updated_at: TS,
 }];
 
 export const opportunities: ClientOpportunity[] = [{
@@ -483,7 +495,26 @@ export const inboxItems: InboxItem[] = [{
   processed_at: null, created_at: TS, updated_at: TS,
 }];
 
-export const weeklyReviews: WeeklyReview[] = [];
+/**
+ * One completed review, dated so the Work overview's "Shipped since last
+ * review" block has a window to measure from. The week is a fixed date rather
+ * than a relative one because the changelog it is compared against carries
+ * fixed dates too — a relative week would drift past the newest entry and turn
+ * the block into its empty state.
+ */
+export const weeklyReviews: WeeklyReview[] = [{
+  id: "review-1", user_id: UID, week_start: "2026-09-07", status: "completed",
+  items: {
+    facts: ["Acme portal discovery finished", "Two invoices issued"],
+    risks: ["Acme decision slipping past the deadline"],
+    decisions: ["Keep the portal scope to self-service"],
+    priorities: ["Send the Acme proposal follow-up"],
+    followUps: ["Confirm the Acme contact for September"],
+    sources: ["Discovery notes"],
+  },
+  summary: "Send the Acme proposal follow-up",
+  completed_at: TS, created_at: TS, updated_at: TS,
+}];
 
 export const notifications: AppNotification[] = [{
   id: "notice-1", user_id: UID, kind: "follow_up_due", source_type: "client_opportunity",

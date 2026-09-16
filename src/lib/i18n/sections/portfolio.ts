@@ -42,6 +42,13 @@ type PortfolioStrings = {
   sourceUrls: string;
   oneUrlPerLine: string;
   reviewedAt: string;
+  reviewStale: string;
+  reviewNever: string;
+  reviewStaleHint: string;
+  reviewFilter: string;
+  allReviews: string;
+  staleOnly: string;
+  staleCount: (n: number) => string;
   project: string;
   allProjects: string;
   allCategories: string;
@@ -86,7 +93,6 @@ type PortfolioStrings = {
     planColumn: string;
     amountColumn: string;
     startedColumn: string;
-    endsColumn: string;
     nextColumn: string;
     allocationColumn: string;
     noDevSpend: string;
@@ -101,6 +107,12 @@ type PortfolioStrings = {
     allocationsHint: string;
     unallocatedShort: string;
     manualCosts: string;
+    amountConfirmed: (date: string) => string;
+    amountUnconfirmed: string;
+    confirmAmount: string;
+    unconfirmAmount: string;
+    unconfirmedAmounts: (amount: string, count: number) => string;
+    unconfirmedAmountsHint: string;
   };
   subscription: {
     startedOn: string;
@@ -119,6 +131,7 @@ type PortfolioStrings = {
     overAllocated: string;
     quarterly: string;
     lifecycle: (started: string, ended: string | null) => string;
+    confirmationResets: string;
   };
 };
 
@@ -167,6 +180,13 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     sourceUrls: "Sources",
     oneUrlPerLine: "One URL per line.",
     reviewedAt: "Reviewed on",
+    reviewStale: "Needs refresh",
+    reviewNever: "Never reviewed",
+    reviewStaleHint: "Marked when the last review is 90 days old or older. Open the competitor, check what changed and save a new review date.",
+    reviewFilter: "Review",
+    allReviews: "Any review date",
+    staleOnly: "Needs refresh",
+    staleCount: (n) => `${n} ${n === 1 ? "needs a refresh" : "need a refresh"}`,
     project: "Project",
     allProjects: "All projects",
     allCategories: "All types",
@@ -211,7 +231,6 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       planColumn: "Plan",
       amountColumn: "Amount",
       startedColumn: "Since",
-      endsColumn: "Ends",
       nextColumn: "Next billing",
       allocationColumn: "Allocated to",
       noDevSpend: "No development spend recorded",
@@ -226,6 +245,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       allocationsHint: "Allocated shares follow the subscription; paid invoices inherit the same split.",
       unallocatedShort: "Unallocated",
       manualCosts: "Manual cost lines and automations",
+      amountConfirmed: (date) => `Amount confirmed ${date}`,
+      amountUnconfirmed: "Amount not confirmed",
+      confirmAmount: "Confirm the amount against the invoice",
+      unconfirmAmount: "Mark the amount as not confirmed",
+      unconfirmedAmounts: (amount, count) =>
+        `${amount} per month across ${count} ${count === 1 ? "subscription" : "subscriptions"} whose amount has not been checked against an invoice.`,
+      unconfirmedAmountsHint:
+        "An amount taken from a renewal notice or a price change is an estimate until somebody opens the invoice. Confirm it in Subscriptions; changing the figure later clears the confirmation.",
     },
     subscription: {
       startedOn: "Started on",
@@ -244,6 +271,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       overAllocated: "Shares add up to more than 100%.",
       quarterly: "Quarterly",
       lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `since ${started}`),
+      confirmationResets: "Changing the amount, currency or billing cycle clears the confirmation.",
     },
   },
   cs: {
@@ -290,6 +318,13 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     sourceUrls: "Zdroje",
     oneUrlPerLine: "Jedna URL na řádek.",
     reviewedAt: "Ověřeno dne",
+    reviewStale: "K ověření",
+    reviewNever: "Neověřeno",
+    reviewStaleHint: "Označí se, když je poslední ověření staré 90 dní a víc. Otevřete konkurenta, zkontrolujte, co se změnilo, a uložte nové datum ověření.",
+    reviewFilter: "Ověření",
+    allReviews: "Jakékoli ověření",
+    staleOnly: "K ověření",
+    staleCount: (n) => `${n} ${n === 1 ? "čeká na ověření" : n < 5 ? "čekají na ověření" : "čeká na ověření"}`,
     project: "Projekt",
     allProjects: "Všechny projekty",
     allCategories: "Všechny typy",
@@ -334,7 +369,6 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       planColumn: "Plán",
       amountColumn: "Částka",
       startedColumn: "Od",
-      endsColumn: "Konec",
       nextColumn: "Další platba",
       allocationColumn: "Přiřazeno",
       noDevSpend: "Žádné výdaje na vývoj",
@@ -349,6 +383,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       allocationsHint: "Přiřazené podíly se řídí předplatným; zaplacené faktury dědí stejné rozdělení.",
       unallocatedShort: "Nepřiřazeno",
       manualCosts: "Ruční nákladové položky a automatizace",
+      amountConfirmed: (date) => `Částka ověřena ${date}`,
+      amountUnconfirmed: "Částka neověřena",
+      confirmAmount: "Ověřit částku proti faktuře",
+      unconfirmAmount: "Označit částku jako neověřenou",
+      unconfirmedAmounts: (amount, count) =>
+        `${amount} měsíčně u ${count} ${count === 1 ? "předplatného" : "předplatných"}, kde částka nebyla porovnána s fakturou.`,
+      unconfirmedAmountsHint:
+        "Částka převzatá z oznámení o obnovení nebo ze změny ceny je odhad, dokud se neotevře faktura. Ověřte ji v Předplatných; pozdější změna částky ověření zruší.",
     },
     subscription: {
       startedOn: "Začátek",
@@ -367,6 +409,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       overAllocated: "Podíly dávají dohromady víc než 100 %.",
       quarterly: "Čtvrtletně",
       lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `od ${started}`),
+      confirmationResets: "Změna částky, měny nebo fakturačního období ověření zruší.",
     },
   },
 };

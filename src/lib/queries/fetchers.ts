@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
 import type {
   Account,
   AiCategory,
@@ -139,6 +140,23 @@ export async function fetchCategoryRules(): Promise<CategoryRule[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as CategoryRule[];
+}
+
+/**
+ * The owner's transaction rules. `conditions`/`actions` are jsonb, so every row
+ * goes through the engine's parser; rows it refuses are counted as `dropped`
+ * and reported in the editor instead of disappearing silently.
+ */
+export async function fetchTransactionRules(): Promise<TransactionRuleSet> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("transaction_rules")
+    .select("*")
+    .order("stage", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return parseRules(data ?? []);
 }
 
 export async function fetchPlans(): Promise<Plan[]> {
