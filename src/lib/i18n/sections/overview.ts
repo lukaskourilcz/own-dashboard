@@ -18,6 +18,8 @@ type OverviewStrings = {
   // Compact day count on a task chip, e.g. "3d". Negative n = overdue.
   daysTag: (n: number) => string;
   followUps: string;
+  followUpOpportunity: string;
+  followUpCareer: string;
   nothingScheduled: string;
   nothingDue: string;
   noFollowUps: string;
@@ -51,7 +53,9 @@ export const overview: { en: OverviewStrings; cs: OverviewStrings } = {
     dueToday: "Due today",
     dueSoon: "Due soon",
     daysTag: (n) => (n < 0 ? `${-n}d late` : n === 0 ? "today" : `${n}d`),
-    followUps: "Opportunity follow-ups",
+    followUps: "Follow-ups",
+    followUpOpportunity: "Deal",
+    followUpCareer: "Job",
     nothingScheduled: "Nothing scheduled.",
     nothingDue: "Nothing due.",
     noFollowUps: "No follow-ups scheduled.",
@@ -83,7 +87,9 @@ export const overview: { en: OverviewStrings; cs: OverviewStrings } = {
     dueToday: "Termín dnes",
     dueSoon: "Blíží se termín",
     daysTag: (n) => (n < 0 ? `${-n} d po` : n === 0 ? "dnes" : `za ${n} d`),
-    followUps: "Follow-upy příležitostí",
+    followUps: "Follow-upy",
+    followUpOpportunity: "Zakázka",
+    followUpCareer: "Práce",
     nothingScheduled: "Nic naplánováno.",
     nothingDue: "Žádný termín.",
     noFollowUps: "Žádné naplánované follow-upy.",

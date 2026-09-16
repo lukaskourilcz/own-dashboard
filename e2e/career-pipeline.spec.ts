@@ -42,7 +42,7 @@ test("prepared applications expose posting and Drive links and record a sent sna
   await page.getByRole("option", { name: "Interest / invitation", exact: true }).click();
   const sent = payload!.p_payload as Record<string, unknown>;
   await progress.getByLabel("First response date").fill(sent.applied_on as string);
-  await progress.getByLabel("Notes, contact and next step").fill("Interview invitation received; arrange a time.");
+  await progress.getByLabel("Notes and next step").fill("Interview invitation received; arrange a time.");
   let responsePayload: Record<string, unknown> | undefined;
   await page.route("**/rest/v1/rpc/update_job_application_progress", async route => {
     responsePayload = route.request().postDataJSON();

@@ -1,3 +1,4 @@
+import { dueFollowUps } from "@/lib/jobs/board";
 import type { JobApplication, JobApplicationStatus } from "@/lib/types";
 
 // Aggregations for the "Applied" overview strip. Pure and clock-injected
@@ -32,7 +33,9 @@ export function applicationStats(
   let last7 = 0;
   let last30 = 0;
   const responseDays: number[] = [];
-  let overdueFollowUps = 0;
+  // Derived from the board helper so the strip and the stage board can never
+  // disagree about which follow-ups are due.
+  const overdueFollowUps = dueFollowUps(apps, now).length;
 
   const DAY = 24 * 60 * 60 * 1000;
   const nowMs = now.getTime();
@@ -48,7 +51,6 @@ export function applicationStats(
     if (age >= 0 && age <= 30 * DAY) last30++;
     const responded = app.responded_on ? Date.parse(`${app.responded_on}T00:00:00Z`) : NaN;
     if (app.response_kind && responded >= applied && responded <= nowMs) responseDays.push((responded-applied)/DAY);
-    if ((app.status === "applied" || app.status === "interviewing") && app.next_follow_up_at && Date.parse(app.next_follow_up_at) <= nowMs) overdueFollowUps++;
   }
   responseDays.sort((a,b)=>a-b);
   const middle = Math.floor(responseDays.length/2);

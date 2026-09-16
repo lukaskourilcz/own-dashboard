@@ -73,6 +73,7 @@ import type {
 import { cn } from "@/lib/utils";
 
 import { isCareerRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { CareerBoard } from "./career-board";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
 import { isGoogleLetterUrl, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
@@ -298,10 +299,16 @@ export function JobsPanel({
         <AppliedView
           applications={applications}
           setApplications={setApplications}
+          savedPositions={savedPositions}
           events={events}
           setEvents={setEvents}
           templates={templates}
           setTemplates={setTemplates}
+          onPrepare={(position) => {
+            setSavedFor(position);
+            setApplyFor(savedToListing(position));
+            setApplyOpen(true);
+          }}
           userId={userId}
         />
       )}
@@ -1910,28 +1917,37 @@ function CoverLetterField({
 function AppliedView({
   applications,
   setApplications,
+  savedPositions,
   events,
   setEvents,
   templates,
   setTemplates,
+  onPrepare,
   userId,
 }: {
   applications: JobApplication[];
   setApplications: Updater<JobApplication[]>;
+  savedPositions: SavedJobPosition[];
   events: JobApplicationEvent[];
   setEvents: Updater<JobApplicationEvent[]>;
   templates: CoverLetterTemplate[];
   setTemplates: Updater<CoverLetterTemplate[]>;
+  onPrepare: (position: SavedJobPosition) => void;
   userId: string;
 }) {
   const t = useDict();
   const cs = useLang().lang === "cs";
   const [search, setSearch] = useState("");
   const [since, setSince] = useState("");
+  const [layout, setLayout] = useState<"list" | "board">("list");
   const [responseFilter, setResponseFilter] = useState("all");
   const [progressFor, setProgressFor] = useState<JobApplication | null>(null);
   const cohort = useMemo(()=>applications.filter(row=>(!since || row.applied_on >= since) && `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())),[applications,since,search]);
   const visible = cohort.filter(row=>responseFilter === "all" || (responseFilter === "responded" ? !!row.responded_on : !row.responded_on));
+  // The board's "Saved" column holds positions that have no application yet, so
+  // the applied-date and response filters cannot apply to them; the search box
+  // still does.
+  const visibleSaved = useMemo(()=>savedPositions.filter(row=>`${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())),[savedPositions,search]);
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
@@ -2042,6 +2058,22 @@ function AppliedView({
       <SimpleSelect value={responseFilter} onValueChange={setResponseFilter} aria-label={cs?"Filtrovat odpovědi":"Filter responses"} options={[{value:"all",label:cs?"Všechny přihlášky":"All applications"},{value:"responded",label:cs?"S odpovědí":"With response"},{value:"waiting",label:cs?"Bez odpovědi":"Without response"}]}/></div>
       {/* toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <div role="group" aria-label={t.jobs.layoutLabel} className="flex rounded-md border border-border bg-surface p-0.5">
+          {([["list", t.jobs.listView], ["board", t.jobs.boardView]] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setLayout(value)}
+              aria-pressed={layout === value}
+              className={cn(
+                "min-h-11 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-ring",
+                layout === value ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <Button
           size="sm"
           variant="outline"
@@ -2052,7 +2084,17 @@ function AppliedView({
         </Button>
       </div>
 
-      {visible.length === 0 ? (
+      {layout === "board" ? (
+        <CareerBoard
+          applications={visible}
+          savedPositions={visibleSaved}
+          statusLabel={statusLabel}
+          statuses={STATUSES}
+          onStatus={(app, status) => statusMutation.mutate({ app, status })}
+          onProgress={(app) => setProgressFor(app)}
+          onPrepare={onPrepare}
+        />
+      ) : visible.length === 0 ? (
         <Card className="p-0">
           <EmptyState
             icon={Send}
@@ -2232,6 +2274,19 @@ function ApplicationRow({
             </li>
           ))}
         </ul>
+      )}
+
+      {(app.contact_name || app.contact_email) && (
+        <p className="mt-2 break-words text-[11px] text-foreground-muted">
+          {t.jobs.contactLabel}:{" "}
+          {app.contact_name}
+          {app.contact_name && app.contact_email ? " · " : null}
+          {app.contact_email && (
+            <a href={`mailto:${app.contact_email}`} className="hover:underline focus-ring rounded-sm">
+              {app.contact_email}
+            </a>
+          )}
+        </p>
       )}
 
       {app.notes && (
