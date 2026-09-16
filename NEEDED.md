@@ -56,3 +56,16 @@ rtk init --global
 
 - Optional Apify imports: configure server-only `APIFY_TOKEN` and `APIFY_JOB_TASK_IDS`; supply completed saved tasks with full job descriptions. No Actor is started by the app. See `docs/career-workspace.md` for sources, schema expectations and costs.
 - Verify `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in production for source ingestion. These values were unavailable for verification in this workspace. Existing authenticated Supabase letter/template tables are reused; no new migration is needed.
+
+## Library references, idea prompts and project videos (2026-09-16)
+
+Links and Ideas can now be connected to projects (`ai_link_projects`, applied to
+the live database on 2026-09-16), Prompts drafts prompts from Ideas without a
+model, and a project can carry a Google Drive video link. Blacksmith and the
+brag video skill were added to the live library. The Drive folder
+"OwnDashboard project videos" exists and is empty: the connector available to
+the agent only accepts file bytes inline, which is not workable for video.
+
+- [ ] **Put the project videos in Drive** — drag `media/preview.mp4` from aifirst, own-dashboard, react-express-app and quorum (and any `media/brag.mp4` the branch carries) into the "OwnDashboard project videos" folder, then paste each file's share link into the project's *Project video* field (Projects → edit). `[imp:3]` `[owner:me]` `[time:10m]` `[kind:content]`
+- [ ] **Decide the reference backfill** — the library has 173 links and 17 ideas and none is connected yet. Either connect them by hand from the Links section as they get used, or ask an agent to propose connections from each idea's *project relevance* field for you to confirm. `[imp:2]` `[owner:me]` `[time:20m]` `[kind:decision]`
+- [ ] **Render brag videos locally** if the branch does not already carry them — the skill needs Chrome and FFmpeg on the machine (`npx hyperframes doctor` lists what is missing); the agent sandbox could install both but has no file path into Drive. `[imp:2]` `[owner:me]` `[time:45m]` `[kind:content]`
