@@ -1,0 +1,31 @@
+meta {
+  name: Payment-match cron requires auth
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/cron/payment-match
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer wrong-secret
+}
+
+assert {
+  res.status: eq 403
+}
+
+settings {
+  followRedirects: false
+}
+
+docs {
+  The payment matcher marks invoices paid, so an unauthenticated caller must
+  never reach it. Same gate as the other cron routes: a wrong or absent bearer
+  returns 403 when CRON_SECRET is set in the app's env. With CRON_SECRET unset
+  the route has no secret to check and this assertion does not apply (see
+  bruno/README.md and Local.bru).
+}

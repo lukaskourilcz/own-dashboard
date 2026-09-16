@@ -10,17 +10,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  ArrowRight,
   Building2,
   Landmark,
   Plus,
   RefreshCw,
   Search,
-  Tag,
-  Trash2,
   Unlink,
   Upload,
-  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,15 +27,25 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
-import { fetchBankConnections, fetchCategoryRules } from "@/lib/queries/fetchers";
+import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
 import { parseBankCsv, type ParseResult } from "@/lib/bank-csv";
-import { categorizeNote } from "@/lib/category-rules";
-import type { BankConnection, CategoryRule, Transaction } from "@/lib/types";
+import { applyRulesToRow, usableRules } from "@/lib/transaction-rules";
+import type { BankConnection, Project, Subscription, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Institution = { id: string; name: string; bic: string | null; logo: string | null };
 
-export function BankSync({ transactions }: { transactions: Transaction[] }) {
+export function BankSync({
+  transactions,
+  projects,
+  subscriptions,
+}: {
+  transactions: Transaction[];
+  /** Used only to keep a rule action from writing a relationship the owner no
+   * longer has, which the transactions RLS policies would reject outright. */
+  projects: Project[];
+  subscriptions: Subscription[];
+}) {
   const t = useDict();
   const qc = useQueryClient();
   const toast = useToast();
@@ -147,9 +153,11 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
           </ul>
         )}
 
-        <CsvImport transactions={transactions} />
-
-        <CategoryRules transactions={transactions} />
+        <CsvImport
+          transactions={transactions}
+          projects={projects}
+          subscriptions={subscriptions}
+        />
       </CardContent>
 
       <BankPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} />
@@ -219,7 +227,15 @@ function ConnectionRow({
 
 /* -------------------------------- CSV import ------------------------------ */
 
-function CsvImport({ transactions }: { transactions: Transaction[] }) {
+function CsvImport({
+  transactions,
+  projects,
+  subscriptions,
+}: {
+  transactions: Transaction[];
+  projects: Project[];
+  subscriptions: Subscription[];
+}) {
   const t = useDict();
   const supabase = createClient();
   const qc = useQueryClient();
@@ -227,9 +243,12 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  // The same rule engine the sync and the retroactive apply use, so an imported
+  // row lands in the category the editor's preview promised.
   const rulesQuery = useQuery({
-    queryKey: qk.categoryRules,
-    queryFn: fetchCategoryRules,
+    queryKey: qk.transactionRules,
+    queryFn: fetchTransactionRules,
+    retry: false,
   });
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -259,18 +278,31 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
       if (fresh.length === 0) {
         return { added: 0, dup: parsed.rows.length };
       }
-      const rules = rulesQuery.data ?? [];
-      const payload = fresh.map((r) => ({
-        user_id: userId,
-        account_id: null,
-        kind: r.kind,
-        amount: r.amount,
-        currency: r.currency,
-        category: categorizeNote(r.note, rules),
-        note: r.note,
-        occurred_on: r.occurred_on,
-        external_id: r.external_id,
-      }));
+      const rules = usableRules(rulesQuery.data?.rules ?? []);
+      const owned = {
+        projectIds: new Set(projects.map((p) => p.id)),
+        subscriptionIds: new Set(subscriptions.map((s) => s.id)),
+      };
+      const payload = fresh.map((r) =>
+        applyRulesToRow(
+          {
+            user_id: userId,
+            account_id: null,
+            kind: r.kind,
+            amount: r.amount,
+            currency: r.currency,
+            category: null as string | null,
+            note: r.note,
+            occurred_on: r.occurred_on,
+            external_id: r.external_id,
+            // Carried through so the payment matcher can pair an imported
+            // statement row with an open invoice.
+            variable_symbol: r.variable_symbol,
+          },
+          rules,
+          owned,
+        ),
+      );
       const { data, error } = await supabase
         .from("transactions")
         .upsert(payload, {
@@ -349,149 +381,6 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ----------------------------- category rules ----------------------------- */
-
-function CategoryRules({ transactions }: { transactions: Transaction[] }) {
-  const t = useDict();
-  const supabase = createClient();
-  const qc = useQueryClient();
-  const toast = useToast();
-  const [match, setMatch] = useState("");
-  const [category, setCategory] = useState("");
-
-  const rulesQuery = useQuery({
-    queryKey: qk.categoryRules,
-    queryFn: fetchCategoryRules,
-  });
-  const rules = rulesQuery.data ?? [];
-
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const { error } = await supabase.from("transaction_category_rules").insert({
-        user_id: userId,
-        match: match.trim(),
-        category: category.trim(),
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setMatch("");
-      setCategory("");
-      void qc.invalidateQueries({ queryKey: qk.categoryRules });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("transaction_category_rules")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.categoryRules }),
-  });
-
-  // Back-fill: run the rules over every still-uncategorized transaction.
-  const applyMutation = useMutation({
-    mutationFn: async () => {
-      const byCategory = new Map<string, string[]>();
-      for (const tx of transactions) {
-        if (tx.category) continue;
-        const cat = categorizeNote(tx.note, rules);
-        if (!cat) continue;
-        const ids = byCategory.get(cat) ?? byCategory.set(cat, []).get(cat)!;
-        ids.push(tx.id);
-      }
-      let count = 0;
-      for (const [cat, ids] of byCategory) {
-        const { error } = await supabase
-          .from("transactions")
-          .update({ category: cat })
-          .in("id", ids);
-        if (!error) count += ids.length;
-      }
-      return count;
-    },
-    onSuccess: (count) => {
-      toast.ok(count > 0 ? t.finances.bank.applyDone(count) : t.finances.bank.applyNothing);
-      if (count > 0) void qc.invalidateQueries({ queryKey: qk.transactions });
-    },
-  });
-
-  function addRule(e: React.FormEvent) {
-    e.preventDefault();
-    if (match.trim() && category.trim()) addMutation.mutate();
-  }
-
-  return (
-    <div className="rounded-lg border border-dashed border-border-strong bg-surface-muted/30 p-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
-          <Tag className="h-3.5 w-3.5 text-foreground-muted" />
-          {t.finances.bank.rulesTitle}
-        </span>
-        {rules.length > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => applyMutation.mutate()}
-            disabled={applyMutation.isPending}
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-            {t.finances.bank.applyToUncategorized}
-          </Button>
-        )}
-      </div>
-      <p className="mt-1 text-[11px] text-foreground-subtle">{t.finances.bank.rulesHint}</p>
-
-      {rules.length > 0 && (
-        <ul className="mt-3 space-y-1">
-          {rules.map((r: CategoryRule) => (
-            <li
-              key={r.id}
-              className="group flex items-center gap-2 rounded-md bg-surface px-2.5 py-1.5 text-xs"
-            >
-              <span className="truncate font-medium text-foreground">{r.match}</span>
-              <ArrowRight className="h-3 w-3 shrink-0 text-foreground-subtle" />
-              <span className="truncate text-foreground-muted">{r.category}</span>
-              <button
-                type="button"
-                onClick={() => deleteMutation.mutate(r.id)}
-                aria-label={t.common.delete}
-                className="ml-auto shrink-0 rounded p-1 text-foreground-subtle opacity-0 transition-opacity hover:text-destructive focus-ring group-hover:opacity-100"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <form onSubmit={addRule} className="mt-3 flex flex-wrap gap-2">
-        <Input
-          value={match}
-          onChange={(e) => setMatch(e.target.value)}
-          placeholder={t.finances.bank.ruleMatchPlaceholder}
-          className="h-8 min-w-0 flex-1 text-xs"
-        />
-        <Input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          placeholder={t.finances.bank.ruleCategoryPlaceholder}
-          className="h-8 min-w-0 flex-1 text-xs"
-        />
-        <Button type="submit" size="sm" variant="outline" disabled={addMutation.isPending}>
-          <Plus className="h-3.5 w-3.5" />
-          {t.finances.bank.addRule}
-        </Button>
-      </form>
     </div>
   );
 }

@@ -8,7 +8,12 @@ import {
   mapTransaction,
   type Balance,
 } from "@/lib/gocardless";
-import { categorizeNote, type Rule } from "@/lib/category-rules";
+import {
+  applyRulesToRow,
+  parseRules,
+  usableRules,
+  type OwnedIds,
+} from "@/lib/transaction-rules";
 import type { BankConnection } from "@/lib/types";
 
 /** GoCardless requisition status codes → our connection status. */
@@ -31,6 +36,25 @@ function pickBalance(balances: Balance[]): { amount: number; currency: string } 
   const amount = Number(chosen.balanceAmount.amount);
   if (!Number.isFinite(amount)) return null;
   return { amount, currency: chosen.balanceAmount.currency };
+}
+
+/**
+ * The owner's own project and subscription ids. A rule action may name either,
+ * and the transactions insert/update policies verify the row belongs to the
+ * same owner — so an id that is not in these sets is dropped before the write
+ * rather than turning into a rejected insert.
+ */
+async function ownedIds(admin: SupabaseClient, userId: string): Promise<OwnedIds> {
+  const [projects, subscriptions] = await Promise.all([
+    admin.from("projects").select("id").eq("user_id", userId),
+    admin.from("subscriptions").select("id").eq("user_id", userId),
+  ]);
+  const ids = (rows: { id: string }[] | null) =>
+    new Set<string>((rows ?? []).map((row) => row.id));
+  return {
+    projectIds: ids(projects.data as { id: string }[] | null),
+    subscriptionIds: ids(subscriptions.data as { id: string }[] | null),
+  };
 }
 
 export type SyncResult = {
@@ -73,13 +97,22 @@ export async function syncConnection(
     (existingRows ?? []).map((r: { external_id: string }) => r.external_id),
   );
 
-  // Auto-category rules — applied to each new transaction's note.
+  // Transaction rules — the same staged, specificity-ranked engine the editor
+  // and the retroactive apply route use, so a synced row is filed exactly as
+  // the preview said it would be.
   const { data: ruleRows } = await admin
-    .from("transaction_category_rules")
-    .select("match, category")
+    .from("transaction_rules")
+    .select("*")
     .eq("user_id", conn.user_id)
+    .order("stage", { ascending: true })
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
-  const rules = (ruleRows ?? []) as Rule[];
+  const rules = usableRules(parseRules(ruleRows ?? []).rules);
+
+  // A rule action naming a project or subscription the owner no longer has
+  // would be rejected by the transactions insert policy, so unknown ids are
+  // dropped before the row is built.
+  const owned = await ownedIds(admin, conn.user_id);
 
   let inserted = 0;
   let accountsLinked = 0;
@@ -138,7 +171,7 @@ export async function syncConnection(
       .map((tx) => mapTransaction(tx, conn.user_id, accountId))
       .filter((r): r is NonNullable<typeof r> => r !== null && !!r.occurred_on)
       .filter((r) => !seen.has(r.external_id))
-      .map((r) => ({ ...r, category: categorizeNote(r.note, rules) }));
+      .map((r) => applyRulesToRow(r, rules, owned));
 
     // Guard against duplicates within this batch too.
     const batch: typeof rows = [];

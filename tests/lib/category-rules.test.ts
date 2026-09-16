@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { categorizeNote } from "../../src/lib/category-rules";
+import {
+  categorizeNote,
+  legacyRuleToTransactionRule,
+} from "../../src/lib/category-rules";
 
 const rules = [
   { match: "albert", category: "Groceries" },
@@ -33,5 +36,21 @@ describe("categorizeNote", () => {
 
   it("ignores blank rule patterns", () => {
     expect(categorizeNote("anything", [{ match: "  ", category: "X" }])).toBeNull();
+  });
+});
+
+describe("legacyRuleToTransactionRule", () => {
+  it("turns a keyword rule into one 'note contains' rule in the default stage", () => {
+    const converted = legacyRuleToTransactionRule({ match: " Albert ", category: "Groceries" }, 3);
+    expect(converted.stage).toBe("default");
+    expect(converted.conditions).toEqual([
+      { field: "note", op: "contains", value: "Albert" },
+    ]);
+    expect(converted.actions).toEqual({ category: "Groceries" });
+    expect(converted.sort_order).toBe(3);
+  });
+
+  it("disables a blank keyword so it cannot capture everything", () => {
+    expect(legacyRuleToTransactionRule({ match: "  ", category: "X" }, 0).enabled).toBe(false);
   });
 });

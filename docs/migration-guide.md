@@ -51,3 +51,81 @@ Apply `20260911102058_freelance_opportunities.sql`, `20260911103455_freelance_me
 The metrics function uses the authenticated owner and optional platform filter, independently of the bounded opportunity list; actual dates determine submission/reply counts. The trigger has a fixed search path and writes history without granting authenticated clients direct event mutation. Verify a second user sees neither records nor history, cannot attach another owner's platform, and cannot call event-writing functions directly. A rolled-back date/status change should produce one corresponding history event.
 
 Application rollback can deploy the previous version while retaining the additive schema and private drafts; do not drop populated tables merely to roll back the UI.
+
+## Transaction rules — 2026-09-16
+
+Apply `20260916160000_transaction_rules.sql` before deploying the Money rule
+editor. It is additive: it creates `transaction_rules` (owner-authored `conditions`
+and `actions` as jsonb, a `pre`/`default`/`post` stage, a sort order, an enabled
+flag and an `updated_at` trigger) with own-only RLS, explicit `authenticated`
+grants and four CRUD policies, then copies every `transaction_category_rules`
+row in as one `note contains …` rule. The legacy table is not dropped — it stays
+in the financial export and is the rollback path.
+
+### Verify
+
+Confirm `transaction_rules` exists, RLS is on and all four policies target
+`authenticated`. Confirm the backfill produced exactly one rule per legacy row,
+with `conditions` as a single `note` / `contains` entry and `actions` carrying
+that row's category. Re-running the migration must not duplicate them.
+
+Sign in as two users and verify neither can select, insert, update or delete the
+other's rules. Save a rule whose action names a project or subscription
+belonging to the other user, then apply it: the id is dropped before the write
+by `src/lib/transaction-rules.ts`, and even if it were not, the `transactions`
+insert/update policies from `20260916120000_portfolio_works_competition_finance.sql`
+reject the relationship.
+
+Write a deliberately malformed rule directly in SQL — an unknown `field`, a
+`regex` value that cannot compile, `actions` set to a JSON array — and confirm
+the Money card still renders and reports the row as unreadable instead of
+failing. Then check the three write paths agree: run a bank sync, import a CSV
+statement, and press "Apply to matching transactions", and confirm the same
+transaction is filed the same way by all three.
+
+### Rollback
+
+Application rollback can deploy the previous version while keeping the new
+table; the old code reads `transaction_category_rules`, whose rows were never
+modified. Do not drop `transaction_rules` to roll back the UI — the owner's rules
+are not recoverable from the legacy table, which only holds keyword matches.
+
+## Invoice payment matching — 2026-09-17
+
+Apply `20260917090000_invoice_payment_matching.sql` before deploying the
+unmatched-payments card or enabling the `/api/cron/payment-match` schedule.
+Until it runs, every matching write fails on a missing column.
+
+It is additive and adds no table, policy, grant or function: three columns on
+`public.transactions` — `variable_symbol` (digits only, at most ten, constrained
+by a check), `matched_at` and `match_source` (`auto` or `manual`) — plus a
+partial index for the unmatched-income scan and one for the invoice→payment
+lookup. `transactions.invoice_id` and the insert/update policies that verify the
+referenced invoice's owner already exist, so no relationship check changes.
+
+### Verify
+
+Confirm the three columns exist, that `variable_symbol` rejects a non-numeric
+value and that `match_source` rejects anything but `auto` or `manual`. Confirm
+both partial indexes are present and that the four own-only `transactions`
+policies are unchanged.
+
+Sign in as two users. Attempt to link user A's payment to user B's invoice
+through `POST /api/money/payment-match` with `mode: "link"`: the route resolves
+neither record for the caller and answers 404, and the transactions update
+policy would reject the write regardless.
+
+Issue an invoice, add an incoming transaction quoting its variable symbol for
+the exact amount, and run the matcher. The invoice becomes `paid` with `paid_on`
+equal to the payment's `occurred_on`, not today. Run it again: nothing changes,
+because the payment now carries `invoice_id`. Add a second payment with the same
+symbol and confirm it stays in the unmatched list as a duplicate rather than
+paying the invoice twice. Repeat with a payment three crowns short and with one
+in another currency, and confirm both stay unmatched with their own reason.
+
+### Rollback
+
+Application rollback can deploy the previous version while keeping the columns;
+nothing older reads them, and the links already written stay valid because
+`invoice_id` predates this feature. Remove the `/api/cron/payment-match` entry
+from `vercel.json` to stop the unattended runs without touching the schema.

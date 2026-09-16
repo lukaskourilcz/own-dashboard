@@ -1,4 +1,5 @@
 import "server-only";
+import { extractVariableSymbol, normalizeSymbol } from "@/lib/payment-matching";
 
 /**
  * GoCardless Bank Account Data (formerly Nordigen) — read-only account &
@@ -198,6 +199,12 @@ export type GcTransaction = {
   transactionAmount: { amount: string; currency: string };
   remittanceInformationUnstructured?: string;
   remittanceInformationUnstructuredArray?: string[];
+  // Czech banks put the variable symbol here, either as a structured reference
+  // or inside the free-text additional information. Both are optional in the
+  // PSD2 schema, so nothing downstream may assume one is present.
+  remittanceInformationStructured?: string;
+  additionalInformation?: string;
+  endToEndId?: string;
   creditorName?: string;
   debtorName?: string;
 };
@@ -231,6 +238,7 @@ export function mapTransaction(
   note: string | null;
   occurred_on: string;
   external_id: string;
+  variable_symbol: string | null;
 } | null {
   const raw = Number(tx.transactionAmount?.amount);
   if (!Number.isFinite(raw)) return null;
@@ -257,5 +265,31 @@ export function mapTransaction(
     note: note ? note.slice(0, 500) : null,
     occurred_on: (tx.bookingDate ?? tx.valueDate ?? "").slice(0, 10),
     external_id: id,
+    variable_symbol: variableSymbol(tx),
   };
+}
+
+/**
+ * The Czech variable symbol carried by a payment. A structured reference that
+ * is nothing but digits is the symbol itself; anything else is scanned for a
+ * "VS …" form. Null when the bank sent neither, which is normal — the matcher
+ * then reads the note.
+ */
+function variableSymbol(tx: GcTransaction): string | null {
+  const structured = (tx.remittanceInformationStructured ?? "").trim();
+  if (/^\d{1,10}$/.test(structured)) return structured;
+  const texts = [
+    structured,
+    tx.remittanceInformationUnstructured ?? "",
+    tx.remittanceInformationUnstructuredArray?.join(" ") ?? "",
+    tx.additionalInformation ?? "",
+    tx.endToEndId ?? "",
+  ];
+  for (const text of texts) {
+    const found = extractVariableSymbol(text);
+    if (found) return found;
+  }
+  // An end-to-end id that is only digits is a reference too.
+  const endToEnd = (tx.endToEndId ?? "").trim();
+  return /^\d{1,10}$/.test(endToEnd) ? normalizeSymbol(endToEnd) : null;
 }

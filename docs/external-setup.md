@@ -60,13 +60,35 @@ OwnDashboard reads GitHub Actions schedule metadata where available. It does not
 - Add `JINA_API_KEY` only when higher link-reader throughput is needed.
 - Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for rate limiting shared across serverless instances.
 
-## 6. Scheduled jobs, email, and bank sync
+## 6. Tax registries (ARES and VIES)
+
+- Both are credential-free public government services. There is no account, no API key and no environment variable to set; the feature works as soon as the migration is applied.
+- `/api/registry/ares` reads `https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{ico}`. `/api/registry/vies` posts to `https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number`.
+- Both routes reject cross-origin requests, require a signed-in user, and are rate-limited to 20 requests per minute per user. They read only — the organization row is written by the browser under own-only RLS.
+- The only data that leaves the deployment is the registration number or VAT number being checked. No owner record, note, invoice or personal detail is sent.
+- VIES forwards each question to the member state that issued the number, and those national services go down routinely. An outage answers `status: "unavailable"`, which is shown to the user and never overwrites a verdict that still stands for the same number.
+- Run `supabase/migrations/20260916140000_organization_registry_verification.sql` before using the feature; until then the new organization columns do not exist.
+
+## 7. Scheduled jobs, email, and bank sync
 
 Set a strong `CRON_SECRET`. Vercel's `vercel.json` contains:
 
 - `/api/cron/bank-sync` at 06:00 UTC daily
+- `/api/cron/payment-match` at 06:30 UTC daily
 - `/api/cron/renewal-warnings` at 07:00 UTC daily
 - `/api/cron/jobs-scrape` at 08:00 UTC daily
+
+`payment-match` runs half an hour after the bank sync so it sees that morning's
+payments. It is deliberately scheduled daily rather than hourly: Vercel Hobby
+runs a cron at most once a day, and this file already declares more jobs than
+that plan allows. The matcher itself has no cadence of its own — it is
+idempotent and safe to run as often as the plan permits, so on a paid plan
+change the schedule to `0 * * * *` and nothing else has to change. Until then,
+"Match now" on the Money child routes runs the same check on demand.
+
+Run `supabase/migrations/20260917090000_invoice_payment_matching.sql` before the
+first run; until then `transactions.variable_symbol`, `matched_at` and
+`match_source` do not exist and every matching write fails.
 
 Verify the deployment sends the expected Bearer authorization. Add `HEARTBEAT_URL` for renewal-job success pings. `CRON_REGISTRY_TOKEN` is needed only if an external system writes registry metadata.
 
@@ -77,16 +99,16 @@ For email, verify a Resend domain and set:
 
 For GoCardless Bank Account Data, set `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SECRET_KEY`, connect a bank, confirm the callback at `https://YOUR-DOMAIN/api/bank/callback`, run two syncs, and verify external transaction IDs prevent duplicates. Do not assume a universal free price; check the owner's GoCardless agreement. CSV import remains the offline fallback.
 
-## 7. Analytics and monitoring
+## 8. Analytics and monitoring
 
 PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, configure a billing limit, and test the currently referenced `costs-filter` feature flag. There is no Tugedr feature-flag kill-switch in this repository.
 
 Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and a build-time `SENTRY_AUTH_TOKEN` when source-map upload is desired. Keep `sendDefaultPii` disabled and inspect real events for private record content before broad use.
 
-## 8. Post-deploy smoke test
+## 9. Post-deploy smoke test
 
 1. Sign in and confirm Home loads without fetching unrelated Career/transaction tables; navigate between sections and confirm destination data loads.
-2. Create an organization and a Tugedr opportunity, convert it with confirmation, and open `/projects/[slug]`.
+2. Create an organization and a Tugedr opportunity, convert it with confirmation, and open `/projects/[slug]`. Fill the organization from ARES with a real IČO, check its VAT number against VIES, and confirm the verdict and its date appear on the organization and on the invoice buyer block.
 3. Link a task, subscription, transaction, professional date, prompt, note, and invoice to the project; add a communication entry and verify every record appears only in the selected workspace. Verify separate production and development links open the intended destinations.
 4. Open Career, compare the Match/Remote/Location columns, and exercise each sort option without changing source records.
 5. Open Subscriptions and Money; confirm every active subscription has a next-payment date/countdown, comparable services share an operational group, and importance is visible.
@@ -96,7 +118,7 @@ Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_OR
 9. Exercise each enabled integration's connect, error, disconnect, and reauthorization state.
 10. Sign in as a second user and verify cross-user reads and relationship writes fail.
 
-## 9. Future brand, domain, and repository rename
+## 10. Future brand, domain, and repository rename
 
 OwnDashboard remains the temporary confirmed name. When a replacement name is approved, update `src/lib/brand.ts` first, then:
 
