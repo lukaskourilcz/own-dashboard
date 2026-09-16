@@ -13,6 +13,8 @@ import { NotesPanel } from "@/components/panels/notes-panel";
 import { OpportunitiesPanel } from "@/components/panels/opportunities-panel";
 import { PlansPanel } from "@/components/panels/plans-panel";
 import { ProjectsPanel } from "@/components/panels/projects-panel";
+import { CompetitionPanel } from "@/components/panels/competition-panel";
+import { DevFinancePanel } from "@/components/panels/dev-finance-panel";
 import { PromptsPanel } from "@/components/panels/prompts-panel";
 import { SettingsPanel } from "@/components/panels/settings-panel";
 import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
@@ -48,7 +50,9 @@ import {
   fetchAccounts,
   fetchAiCategories,
   fetchAiLinks,
+  fetchCompetitors,
   fetchCoverLetterTemplates,
+  fetchSubscriptionAllocations,
   fetchTodayCalendar,
   fetchWeekCalendar,
   fetchCrons,
@@ -87,11 +91,11 @@ import { cn } from "@/lib/utils";
 import { isActionableNotification } from "@/lib/notifications";
 import { useDict } from "@/lib/i18n";
 import type {
-  Account, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
+  Account, AiCategory, AiLink, AppNotification, ClientOpportunity, Competitor, CoverLetterTemplate, Cron,
   ImportantDate, InboxItem, Invoice, InvoiceItem, InvoiceSettings,
   JobApplication, JobApplicationEvent, JobListing, JobScrapeRun, JobUserState, SavedJobPosition,
   Note, Organization, Plan, Project, ProjectCommunication, ProjectCost, Prompt, ReferenceRow, RepoLink, RepoNote,
-  Shortcut, Subscription, Todo, Transaction, WeeklyReview,
+  Shortcut, Subscription, SubscriptionAllocation, Todo, Transaction, WeeklyReview,
 } from "@/lib/types";
 
 type Props = {
@@ -125,6 +129,8 @@ type Props = {
   initialProjectCommunications: ProjectCommunication[];
   initialProjectCosts: ProjectCost[];
   initialCrons: Cron[];
+  initialSubscriptionAllocations: SubscriptionAllocation[];
+  initialCompetitors: Competitor[];
   initialOrganizations: Organization[];
   initialOpportunities: ClientOpportunity[];
   initialInboxItems: InboxItem[];
@@ -146,7 +152,7 @@ type Props = {
 
 const TAB_CHORDS: Record<string, NavTab> = {
   h: "home", i: "inbox", w: "work", p: "projects", o: "opportunities",
-  c: "clients", j: "career", f: "invoices", m: "money", a: "accounts",
+  c: "clients", k: "works", q: "competition", j: "career", f: "invoices", m: "money", a: "accounts",
   x: "transactions", s: "subscriptions", t: "tasks", l: "calendar",
   g: "goals", d: "dates", n: "notes", r: "references",
 };
@@ -154,7 +160,12 @@ const TAB_CHORDS: Record<string, NavTab> = {
 export function DashboardShell(props: Props) {
   const { user } = props;
   const t = useDict();
-  const [tab, setTabState] = useState<NavTab>(props.initialTab);
+  const [tab, setTabState] = useState<NavTab>(() =>
+    props.initialTab === "projects" && props.initialProjectId
+      && props.initialProjects.find((project) => project.id === props.initialProjectId)?.scope === "work"
+      ? "works"
+      : props.initialTab,
+  );
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     props.initialProjectId ?? null,
   );
@@ -193,8 +204,10 @@ export function DashboardShell(props: Props) {
     [projects],
   );
   const openProject = useCallback(
-    (project: Pick<Project, "id" | "slug">) => {
-      setTabState("projects");
+    (project: Pick<Project, "id" | "slug"> & { scope?: Project["scope"] }) => {
+      // A client work keeps the Works destination highlighted; the URL stays
+      // the canonical /projects/[slug] workspace either way.
+      setTabState(project.scope === "work" ? "works" : "projects");
       setSelectedProjectId(project.id);
       const path = `/projects/${encodeURIComponent(project.slug)}`;
       if (window.location.pathname !== path) {
@@ -216,11 +229,11 @@ export function DashboardShell(props: Props) {
           // Keep the raw segment; the canonical server boundary handles
           // malformed/unknown direct routes as 404.
         }
-        setSelectedProjectId(
-          projects.find(
-            (project) => project.id === key || project.slug === key,
-          )?.id ?? null,
+        const match = projects.find(
+          (project) => project.id === key || project.slug === key,
         );
+        if (match?.scope === "work") setTabState("works");
+        setSelectedProjectId(match?.id ?? null);
       } else {
         setSelectedProjectId(null);
       }
@@ -254,6 +267,8 @@ export function DashboardShell(props: Props) {
   const [projectCommunications, setProjectCommunications] = useEntityStore(qk.projectCommunications, props.initialProjectCommunications, fetchProjectCommunications, dataOptions("projectCommunications"));
   const [projectCosts, setProjectCosts] = useEntityStore(qk.projectCosts, props.initialProjectCosts, fetchProjectCosts, dataOptions("projectCosts"));
   const [crons, setCrons] = useEntityStore(qk.crons, props.initialCrons, fetchCrons, dataOptions("crons"));
+  const [subscriptionAllocations, setSubscriptionAllocations] = useEntityStore(qk.subscriptionAllocations, props.initialSubscriptionAllocations, fetchSubscriptionAllocations, dataOptions("subscriptionAllocations"));
+  const [competitors, setCompetitors] = useEntityStore(qk.competitors, props.initialCompetitors, fetchCompetitors, dataOptions("competitors"));
   const [organizations, setOrganizations] = useEntityStore(qk.organizations, props.initialOrganizations, fetchOrganizations, dataOptions("organizations"));
   const [opportunities, setOpportunities] = useEntityStore(qk.opportunities, props.initialOpportunities, fetchOpportunities, dataOptions("opportunities"));
   const [inboxItems, setInboxItems] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));
@@ -317,13 +332,15 @@ export function DashboardShell(props: Props) {
           } satisfies Record<WidgetId, React.ReactNode>} />}
           {tab === "inbox" && <InboxPanel items={inboxItems} setItems={setInboxItems} notifications={notifications} setNotifications={setNotifications} />}
           {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} />}
-          {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} syncRepositories={!props.isPreview} />}
+          {(tab === "projects" || tab === "works") && <ProjectsPanel scope={tab === "works" ? "work" : "project"} projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab(tab)} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} subscriptionAllocations={subscriptionAllocations} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} competitors={competitors} setCompetitors={setCompetitors} aiLinks={aiLinks} onOpenLibrary={() => setTab("links")} syncRepositories={!props.isPreview} isPreview={props.isPreview} />}
+          {tab === "competition" && <CompetitionPanel projects={projects} competitors={competitors} setCompetitors={setCompetitors} onOpenProject={openProject} />}
           {tab === "opportunities" && <OpportunitiesPanel userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
           {tab === "career" && <JobsPanel isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
           {tab === "invoices" && <InvoicesPanel invoices={invoices} setInvoices={setInvoices} items={invoiceItems} setItems={setInvoiceItems} settings={invoiceSettings} setSettings={setInvoiceSettings} userId={user.id} displayCurrency={displayCurrency} organizations={organizations} projects={activeProjects} />}
-          {(tab === "money" || tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
-          {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}
+          {tab === "money" && <DevFinancePanel subscriptions={subscriptions} allocations={subscriptionAllocations} transactions={transactions} projects={projects} projectCosts={projectCosts} crons={crons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} onOpenSubscriptions={() => setTab("subscriptions")} onOpenProject={openProject} />}
+          {(tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
+          {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} allocations={subscriptionAllocations} setAllocations={setSubscriptionAllocations} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}
           {tab === "tasks" && <TodosPanel todos={operationalTodos} projects={activeProjects} organizations={organizations} />}
           {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
           {tab === "goals" && <PlansPanel plans={plans} setPlans={setPlans} />}

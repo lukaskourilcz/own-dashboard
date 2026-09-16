@@ -245,10 +245,12 @@ export function SettingsPanel({
       communication: t.professional.projectCommunication,
       repository: t.professional.projectRepository,
       finance: t.professional.projectFinance,
+      links: t.portfolio.projectLinksTab,
+      competition: t.portfolio.projectCompetitionTab,
       knowledge: t.professional.projectKnowledge,
       scaling: t.professional.projectScaling,
       monetization: t.professional.projectMonetization,
-    };
+    } satisfies Record<ProjectWorkspaceTab, string>;
     return labels[tab];
   };
 

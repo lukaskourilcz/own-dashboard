@@ -26,6 +26,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     notesRes, promptsRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, shortcutsRes,
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
     invoiceSettingsRes, projectsRes, projectCommunicationsRes, projectCostsRes, cronsRes,
+    subscriptionAllocationsRes, competitorsRes,
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
     jobListingsRes, jobUserStatesRes, savedJobPositionsRes, jobApplicationsRes,
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
@@ -52,6 +53,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("projectCommunications", () => supabase.from("project_communications").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(500)),
     loadWhen("projectCosts", () => supabase.from("project_costs").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("crons", () => supabase.from("crons").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
+    loadWhen("subscriptionAllocations", () => supabase.from("subscription_allocations").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
+    loadWhen("competitors", () => supabase.from("competitors").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(1000)),
     loadWhen("organizations", () => supabase.from("organizations").select("*").eq("user_id", user.id).order("name", { ascending: true })),
     loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)),
     loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
@@ -108,6 +111,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialProjectCommunications={projectCommunicationsRes?.data ?? []}
     initialProjectCosts={projectCostsRes?.data ?? []}
     initialCrons={cronsRes?.data ?? []}
+    initialSubscriptionAllocations={subscriptionAllocationsRes?.data ?? []}
+    initialCompetitors={competitorsRes?.data ?? []}
     initialOrganizations={organizationsRes?.data ?? []}
     initialOpportunities={opportunitiesRes?.data ?? []}
     initialInboxItems={inboxItemsRes?.data ?? []}

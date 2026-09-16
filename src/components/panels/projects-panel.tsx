@@ -69,6 +69,17 @@ import {
   readRepoFilter,
 } from "@/lib/use-prefs";
 import { cronSeedsForRepo } from "@/lib/project-cron-seeds";
+import {
+  KNOWN_WORKS,
+  childProjects,
+  groupPortfolio,
+  planPortfolioSync,
+  planWorksSync,
+  portfolioEntryFor,
+  projectScope,
+  type PortfolioCategory,
+} from "@/lib/portfolio";
+import { useLang } from "@/lib/i18n";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
 import type { GithubRepo } from "@/lib/github";
 import {
@@ -79,7 +90,9 @@ import {
   projectMonthlyIn,
 } from "@/lib/projects";
 import type {
+  AiLink,
   ClientOpportunity,
+  Competitor,
   Cron,
   ImportantDate,
   InboxItem,
@@ -94,6 +107,7 @@ import type {
   RepoLink,
   RepoNote,
   Subscription,
+  SubscriptionAllocation,
   Todo,
   Transaction,
   Updater,
@@ -120,6 +134,7 @@ type ProjectForm = {
   repo_full_name: string;
   url: string;
   dev_url: string;
+  organization_id: string;
 };
 
 const emptyProjectForm: ProjectForm = {
@@ -128,9 +143,12 @@ const emptyProjectForm: ProjectForm = {
   repo_full_name: "",
   url: "",
   dev_url: "",
+  organization_id: "",
 };
 
 type ProjectsPanelProps = {
+  /** "project" renders the daily portfolio; "work" renders client engagements. */
+  scope?: "project" | "work";
   projects: Project[];
   setProjects: Updater<Project[]>;
   costs: ProjectCost[];
@@ -149,6 +167,7 @@ type ProjectsPanelProps = {
   invoices: Invoice[];
   invoiceItems: InvoiceItem[];
   subscriptions: Subscription[];
+  subscriptionAllocations: SubscriptionAllocation[];
   transactions: Transaction[];
   organizations: Organization[];
   opportunities: ClientOpportunity[];
@@ -161,7 +180,13 @@ type ProjectsPanelProps = {
   setRepoLinks: Updater<RepoLink[]>;
   communications: ProjectCommunication[];
   setCommunications: Updater<ProjectCommunication[]>;
+  competitors: Competitor[];
+  setCompetitors: Updater<Competitor[]>;
+  aiLinks: AiLink[];
+  onOpenLibrary: () => void;
   syncRepositories?: boolean;
+  /** Fixture previews never write; the registry sync is skipped there. */
+  isPreview?: boolean;
 };
 
 export function ProjectsPanel(props: ProjectsPanelProps) {
@@ -171,6 +196,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
   if (selected) {
     return <ProjectWorkspace
       project={selected}
+      allProjects={props.projects}
       costs={props.costs.filter((item) => item.project_id === selected.id)}
       crons={props.crons.filter((item) => item.project_id === selected.id)}
       todos={props.todos}
@@ -179,6 +205,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       invoices={props.invoices}
       invoiceItems={props.invoiceItems}
       subscriptions={props.subscriptions}
+      subscriptionAllocations={props.subscriptionAllocations}
       transactions={props.transactions}
       organizations={props.organizations}
       opportunities={props.opportunities}
@@ -191,8 +218,14 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       setRepoLinks={props.setRepoLinks}
       communications={props.communications}
       setCommunications={props.setCommunications}
+      competitors={props.competitors}
+      setCompetitors={props.setCompetitors}
+      aiLinks={props.aiLinks}
+      onOpenLibrary={props.onOpenLibrary}
+      onOpenProject={props.onOpenProject}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
+      backLabel={props.scope === "work" ? undefined : undefined}
       onBackToProjects={props.onBackToProjects}
     />;
   }
@@ -200,6 +233,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
 }
 
 function ProjectsListPanel({
+  scope = "project",
   projects,
   setProjects,
   costs,
@@ -210,6 +244,7 @@ function ProjectsListPanel({
   setDisplayCurrency,
   initialVisibleIds = [],
   syncRepositories = true,
+  isPreview = false,
   todos,
   organizations,
   importantDates,
@@ -218,8 +253,12 @@ function ProjectsListPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const { lang } = useLang();
+  const pf = t.portfolio;
+  const isWorks = scope === "work";
   const toast = useToast();
   const confirm = useConfirmation();
+  const [otherOpen, setOtherOpen] = useState(false);
   const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +298,15 @@ function ProjectsListPanel({
     () => new Set(activeRepos.map((r) => r.full_name.toLowerCase())),
     [activeRepos],
   );
+
+  // Works can be picked straight from the GitHub repository list, falling back
+  // to the known client repositories when GitHub is disconnected.
+  const repoChoices = useMemo(() => {
+    const names = new Set<string>();
+    if (reposData?.kind === "ok") for (const repo of reposData.repos) names.add(repo.full_name);
+    for (const work of KNOWN_WORKS) names.add(work.repo);
+    return [...names].sort().map((name) => ({ value: name, label: name }));
+  }, [reposData]);
 
   // Guard rails so the sync effect never double-inserts across re-renders /
   // StrictMode: repo full names we've started creating, and project ids we've
@@ -377,6 +425,77 @@ function ProjectsListPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRepos, projectRepoNames]);
 
+  // --- Registry → Projects / Works --------------------------------------
+  // The code-level registry materializes the daily portfolio (and the known
+  // client repositories) whether or not GitHub is connected, so a repository
+  // outside the saved allow-list — phone-app — still gets its row. Only rows
+  // that are missing or carry the wrong scope/key/parent are written; a
+  // subsection waits until its parent exists on the next pass.
+  const registrySyncing = useRef(false);
+  useEffect(() => {
+    if (isPreview || registrySyncing.current) return;
+    const steps = isWorks ? planWorksSync(projects) : planPortfolioSync(projects);
+    if (steps.length === 0) return;
+    registrySyncing.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const userId = await currentUserId(supabase);
+        if (!userId) return;
+        const usedSlugs = new Set(projects.map((p) => p.slug));
+        let sortBase = projects.length;
+        for (const step of steps) {
+          if (step.kind === "update") {
+            const { data, error } = await supabase
+              .from("projects")
+              .update({ ...step.patch, updated_at: new Date().toISOString() })
+              .eq("id", step.project.id)
+              .select()
+              .single();
+            if (error || !data || cancelled) continue;
+            const updated = data as Project;
+            setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+            continue;
+          }
+          let slug = step.entry.slug;
+          if (usedSlugs.has(slug)) {
+            let n = 2;
+            while (usedSlugs.has(`${slug}-${n}`)) n++;
+            slug = `${slug}-${n}`;
+          }
+          usedSlugs.add(slug);
+          const { data, error } = await supabase
+            .from("projects")
+            .insert({
+              user_id: userId,
+              name: step.entry.name,
+              slug,
+              repo_full_name: step.entry.repo,
+              url: step.entry.url ?? null,
+              summary: step.entry.summary[lang],
+              sort_order: sortBase++,
+              is_active: true,
+              scope: isWorks ? "work" : "project",
+              parent_id: step.parentId,
+              portfolio_key: isWorks ? null : step.entry.key,
+            })
+            .select()
+            .single();
+          if (error || !data || cancelled) continue;
+          setProjects((prev) => [...prev, data as Project]);
+        }
+        if (!cancelled) void qc.invalidateQueries({ queryKey: qk.projects });
+      } finally {
+        registrySyncing.current = false;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Planned from the current rows; re-run when they change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, isWorks, isPreview]);
+
   const costsByProject = useMemo(() => {
     const map = new Map<string, ProjectCost[]>();
     for (const c of costs) {
@@ -397,27 +516,38 @@ function ProjectsListPanel({
     return map;
   }, [crons]);
 
-  const active = projects.filter((p) => p.is_active);
+  const inScope = useMemo(
+    () => projects.filter((p) => (isWorks ? projectScope(p) === "work" : projectScope(p) === "project")),
+    [projects, isWorks],
+  );
+  const active = inScope.filter((p) => p.is_active);
 
   // Manual order — the card list is driven purely by sort_order (drag updates
   // it), with created_at as a stable tie-breaker for equal orders.
   const ordered = useMemo(
     () =>
-      [...projects].sort(
+      [...inScope].sort(
         (a, b) =>
           a.sort_order - b.sort_order ||
           a.created_at.localeCompare(b.created_at),
       ),
-    [projects],
+    [inScope],
   );
 
-  // The summary table lists active projects only. Projects marked inactive in
-  // Settings → Active projects are hidden here entirely (not shown dimmed) —
-  // reactivate them from that Settings card to bring them back.
+  // The Projects table lists active portfolio projects only; Projects marked
+  // inactive in Settings → Active projects are hidden here entirely —
+  // reactivate them from that Settings card to bring them back. Works keep
+  // inactive engagements visible (dimmed) because a finished client project
+  // still carries invoices and knowledge.
   const visibleProjects = useMemo(
-    () => ordered.filter((p) => p.is_active),
-    [ordered],
+    () => (isWorks ? ordered.filter((p) => !p.parent_id) : ordered.filter((p) => p.is_active && !p.parent_id)),
+    [ordered, isWorks],
   );
+  // Registry groups: OwnDashboard, Products, BoardlessAI ventures, then any
+  // other synced repository, which stays collapsed so the daily eight lead.
+  const groups = useMemo(() => groupPortfolio(visibleProjects), [visibleProjects]);
+  const otherCount = groups.find((group) => group.category === "other")?.projects.length ?? 0;
+  const groupLabel = (category: PortfolioCategory | "other") => pf.groups[category];
 
   // Drag-to-reorder. sort_order is an integer column, so we resequence the
   // whole list to 0..n-1 on drop (no fractional indexing) and persist the rows
@@ -511,6 +641,7 @@ function ProjectsListPanel({
       repo_full_name: form.repo_full_name.trim() || null,
       url: form.url.trim() || null,
       dev_url: form.dev_url.trim() || null,
+      organization_id: form.organization_id || null,
     };
     setSaving(true);
     try {
@@ -530,7 +661,7 @@ function ProjectsListPanel({
         if (!userId) throw new Error(t.common.signInFirst);
         const { data, error } = await supabase
           .from("projects")
-          .insert({ ...payload, user_id: userId, sort_order: projects.length })
+          .insert({ ...payload, user_id: userId, sort_order: projects.length, scope })
           .select()
           .single();
         if (error) throw error;
@@ -595,6 +726,7 @@ function ProjectsListPanel({
       repo_full_name: p.repo_full_name ?? "",
       url: p.url ?? "",
       dev_url: p.dev_url ?? "",
+      organization_id: p.organization_id ?? "",
     });
     setError(null);
     setFormOpen(true);
@@ -603,8 +735,8 @@ function ProjectsListPanel({
   return (
     <div>
       <PageHeader
-        title={t.projects.title}
-        description={t.projects.description}
+        title={isWorks ? pf.worksTitle : t.projects.title}
+        description={isWorks ? pf.worksDescription : pf.projectsDescription}
         action={
           <div className="inline-flex items-center gap-2">
             {setDisplayCurrency && (
@@ -626,7 +758,7 @@ function ProjectsListPanel({
             )}
             <Button size="sm" onClick={openNewProject}>
               <Plus className="h-3.5 w-3.5" />
-              {t.projects.addProject}
+              {isWorks ? pf.addWork : t.projects.addProject}
             </Button>
           </div>
         }
@@ -634,14 +766,14 @@ function ProjectsListPanel({
 
       {/* New-project standards — collapsible; how an agent should wire a repo
           into OwnDashboard (the four root .md files + git workflow). */}
-      <details className="mb-4 rounded-lg border border-border bg-surface">
+      {!isWorks && <details className="mb-4 rounded-lg border border-border bg-surface">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground focus-ring">
           {t.projects.newProjectGuide}
         </summary>
         <div className="border-t border-border px-4 py-3">
           <Markdown source={NEW_PROJECT_GUIDE} className="max-w-3xl" />
         </div>
-      </details>
+      </details>}
 
       {/* Totals + chart (full width — the form now lives in a dialog) */}
       {chartData.length > 0 && (
@@ -704,7 +836,7 @@ function ProjectsListPanel({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {form.id ? t.projects.editProject : t.projects.addProject}
+              {form.id ? (isWorks ? pf.editWork : t.projects.editProject) : isWorks ? pf.addWork : t.projects.addProject}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submitProject} className="space-y-3">
@@ -734,15 +866,35 @@ function ProjectsListPanel({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="proj-repo">{t.projects.repo}</Label>
+              {isWorks && repoChoices.length > 0 && (
+                <SimpleSelect
+                  aria-label={pf.pickRepo}
+                  value={repoChoices.some((choice) => choice.value === form.repo_full_name) ? form.repo_full_name : ""}
+                  onValueChange={(repo_full_name) => setForm({ ...form, repo_full_name, name: form.name || repo_full_name.split("/")[1] || form.name, slug: form.slug || slugify(repo_full_name.split("/")[1] ?? "") })}
+                  options={[{ value: "", label: pf.pickRepo }, ...repoChoices]}
+                />
+              )}
               <Input
                 id="proj-repo"
                 value={form.repo_full_name}
                 onChange={(e) =>
                   setForm({ ...form, repo_full_name: e.target.value })
                 }
-                placeholder={t.projects.repoPlaceholder}
+                placeholder={isWorks ? "owner/name" : t.projects.repoPlaceholder}
               />
+              {isWorks && <p className="text-[11px] text-foreground-subtle">{pf.workRepoHint}</p>}
             </div>
+            {isWorks && (
+              <div className="space-y-1.5">
+                <Label htmlFor="proj-organization">{pf.clientColumn}</Label>
+                <SimpleSelect
+                  id="proj-organization"
+                  value={form.organization_id}
+                  onValueChange={(organization_id) => setForm({ ...form, organization_id })}
+                  options={[{ value: "", label: t.projects.tableClient + ": —" }, ...organizations.map((organization) => ({ value: organization.id, label: organization.name }))]}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="proj-url">{t.projects.url}</Label>
               <Input
@@ -786,12 +938,12 @@ function ProjectsListPanel({
             <CardContent className="py-8">
               <EmptyState
                 icon={FolderKanban}
-                title={t.projects.noProjects}
-                description={t.projects.addFirstProject}
+                title={isWorks ? pf.noWorks : t.projects.noProjects}
+                description={isWorks ? pf.addFirstWork : t.projects.addFirstProject}
                 action={
                   <Button size="sm" onClick={openNewProject}>
                     <Plus className="h-3.5 w-3.5" />
-                    {t.projects.addProject}
+                    {isWorks ? pf.addWork : t.projects.addProject}
                   </Button>
                 }
               />
@@ -813,26 +965,50 @@ function ProjectsListPanel({
                 <table className="w-full min-w-[900px] text-left">
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   <tbody className="divide-y divide-border">
-              {visibleProjects.map((p) => {
-                const projectTodos = todos.filter((item) => item.project_id === p.id || (!item.project_id && p.repo_full_name != null && item.repo_full_name === p.repo_full_name));
-                const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
-                const organization = organizations.find((item) => item.id === p.organization_id);
-                return <SortableProjectRow
-                  key={p.id}
-                  project={p}
-                  monthlyCost={projectMonthlyIn(costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], displayCurrency)}
-                  displayCurrency={displayCurrency}
-                  synced={!!p.repo_full_name && activeRepoNames.has(p.repo_full_name.toLowerCase())}
-                  onEdit={() => startEditProject(p)}
-                  onToggleActive={() => toggleProjectActive(p)}
-                  onDelete={() => deleteProject(p)}
-                  onManage={() => setManageProjectId(p.id)}
-                  onOpen={() => onOpenProject(p)}
-                  health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
-                  openTaskCount={projectTodos.filter((item) => !item.done).length}
-                  organizationName={organization?.name}
-                  nextDate={projectDates[0]?.the_date}
-                />
+              {groups.map((group) => {
+                const collapsed = group.category === "other" && !otherOpen;
+                const rows = collapsed ? [] : group.projects.flatMap((p) => [p, ...childProjects(projects, p.id).filter((child) => child.is_active)]);
+                return [
+                  (!isWorks || group.category === "other") && (
+                    <tr key={`group-${group.category}`} className="bg-surface-secondary/60">
+                      <td colSpan={9} className="px-3 py-1.5">
+                        {group.category === "other" ? (
+                          <button type="button" aria-expanded={otherOpen} onClick={() => setOtherOpen((open) => !open)} className="focus-ring inline-flex items-center gap-1.5 rounded text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+                            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform motion-reduce:transition-none", otherOpen ? "" : "-rotate-90")} />
+                            {pf.otherProjects(otherCount)}
+                          </button>
+                        ) : (
+                          <SectionLabel>{groupLabel(group.category)}</SectionLabel>
+                        )}
+                        {group.category === "other" && otherOpen && <p className="mt-1 text-[11px] font-normal text-foreground-subtle">{pf.otherProjectsHint}</p>}
+                      </td>
+                    </tr>
+                  ),
+                  ...rows.map((p) => {
+                    const projectTodos = todos.filter((item) => item.project_id === p.id || (!item.project_id && p.repo_full_name != null && item.repo_full_name === p.repo_full_name));
+                    const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
+                    const organization = organizations.find((item) => item.id === p.organization_id);
+                    const entry = portfolioEntryFor(p);
+                    return <SortableProjectRow
+                      key={p.id}
+                      project={p}
+                      subsection={!!p.parent_id}
+                      summary={p.summary || entry?.summary[lang]}
+                      monthlyCost={projectMonthlyIn(costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], displayCurrency)}
+                      displayCurrency={displayCurrency}
+                      synced={!!p.repo_full_name && activeRepoNames.has(p.repo_full_name.toLowerCase())}
+                      onEdit={() => startEditProject(p)}
+                      onToggleActive={() => toggleProjectActive(p)}
+                      onDelete={() => deleteProject(p)}
+                      onManage={() => setManageProjectId(p.id)}
+                      onOpen={() => onOpenProject(p)}
+                      health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
+                      openTaskCount={projectTodos.filter((item) => !item.done).length}
+                      organizationName={organization?.name}
+                      nextDate={projectDates[0]?.the_date}
+                    />;
+                  }),
+                ];
               })}
                   </tbody>
                 </table>
@@ -887,6 +1063,8 @@ type ProjectCardProps = {
 
 function SortableProjectRow({
   project,
+  subsection = false,
+  summary,
   monthlyCost,
   displayCurrency,
   synced,
@@ -901,6 +1079,8 @@ function SortableProjectRow({
   onOpen,
 }: {
   project: Project;
+  subsection?: boolean;
+  summary?: string;
   monthlyCost: number;
   displayCurrency: string;
   synced: boolean;
@@ -934,8 +1114,8 @@ function SortableProjectRow({
       style={style}
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
-      <td className="px-2 py-2.5"><button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button></td>
-      <td className="px-3 py-2.5"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link><div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}</div></td>
+      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
+      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5"><StatusBadge value={health} /></td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>

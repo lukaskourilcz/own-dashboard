@@ -324,7 +324,9 @@ body {
 [data-section="home"] { --section-accent: var(--mac-blue); }
 [data-section="inbox"] { --section-accent: var(--mac-blue); }
 [data-section="work"] { --section-accent: var(--mac-indigo); }
-[data-section="projects"] { --section-accent: var(--mac-indigo); }
+[data-section="projects"],
+[data-section="works"] { --section-accent: var(--mac-indigo); }
+[data-section="competition"] { --section-accent: var(--mac-orange); }
 [data-section="opportunities"] { --section-accent: var(--mac-teal); }
 [data-section="clients"] { --section-accent: var(--mac-purple); }
 [data-section="career"] { --section-accent: var(--mac-pink); }

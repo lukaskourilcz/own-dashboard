@@ -7,6 +7,8 @@ const TABS = [
   "Inbox",
   "Work overview",
   "Projects",
+  "Works",
+  "Competition",
   "Opportunities",
   "Clients",
   "Career",
@@ -122,7 +124,7 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     await page.goto("/dev-preview?project=aifirst");
     await expect(page.getByRole("heading", { level: 1, name: "aifirst" })).toBeVisible();
-    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Knowledge", "Scaling", "Monetization"]) {
+    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Links & Ideas", "Competition", "Knowledge", "Scaling", "Monetization"]) {
       await expect(page.getByRole("tab", { name: tab })).toBeVisible();
     }
     await page.getByRole("tab", { name: "Finance" }).click();
