@@ -57,4 +57,6 @@ export const qk = {
   calendarList: ["calendar", "list"] as const,
   calendarToday: ["calendar", "events", "today"] as const,
   calendarWeek: ["calendar", "events", "week"] as const,
+  calendarLastWeek: ["calendar", "events", "last-week"] as const,
+  weeklyFocusRecap: ["weeklyReviews", "focus-recap"] as const,
 } satisfies Record<string, QueryKey>;

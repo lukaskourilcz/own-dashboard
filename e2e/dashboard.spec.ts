@@ -249,6 +249,45 @@ test.describe("dashboard sections", () => {
     await expect(page.getByText("2026-09-16")).toBeVisible();
   });
 
+  test("weekly planning walks five steps from last week's time to next week's objectives", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    const errors = watchConsole(page);
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Work overview", exact: true }).click();
+
+    await expect(page.getByText("Weekly planning", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 3, name: "Time by channel" })).toBeVisible();
+    // The fixture week names the client, a project and neither, so all three
+    // channels are rendered from real classification rather than placeholders.
+    await expect(page.getByText("Client work", { exact: true })).toBeVisible();
+    await expect(page.getByText("Own projects", { exact: true })).toBeVisible();
+    await expect(page.getByText("Admin and other", { exact: true })).toBeVisible();
+
+    const next = page.getByRole("button", { name: "Next", exact: true });
+    const back = page.getByRole("button", { name: "Back", exact: true });
+    await expect(back).toBeDisabled();
+
+    for (const heading of [
+      "What you finished",
+      "Carry forward",
+      "Next week's objectives",
+      "Week summary",
+    ]) {
+      await next.click();
+      await expect(page.getByRole("heading", { level: 3, name: heading })).toBeVisible();
+    }
+    await expect(next).toBeDisabled();
+
+    // Mutations are disabled in the public preview, so the flow reads without
+    // writing.
+    await expect(page.getByRole("button", { name: "Complete week", exact: true })).toBeDisabled();
+
+    await back.click();
+    await expect(page.getByRole("heading", { level: 3, name: "Next week's objectives" })).toBeVisible();
+
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+
   test("Subscriptions group comparable services and show every renewal", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);

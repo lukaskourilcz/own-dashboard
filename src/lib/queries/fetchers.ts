@@ -44,7 +44,7 @@ import type {
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
 
-async function fetchCalendarWindow(window: "today" | "week"): Promise<EventsResult> {
+async function fetchCalendarWindow(window: "today" | "week" | "last-week"): Promise<EventsResult> {
   const response = await fetch(`/api/calendar/events?window=${window}`, {
     signal: AbortSignal.timeout(15_000),
   });
@@ -59,6 +59,11 @@ export function fetchTodayCalendar(): Promise<EventsResult> {
 
 export function fetchWeekCalendar(): Promise<EventsResult> {
   return fetchCalendarWindow("week");
+}
+
+/** The finished week the weekly planning flow measures time against. */
+export function fetchLastWeekCalendar(): Promise<EventsResult> {
+  return fetchCalendarWindow("last-week");
 }
 
 /**

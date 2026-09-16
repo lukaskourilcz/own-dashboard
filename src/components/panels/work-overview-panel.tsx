@@ -1,34 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { GithubIcon } from "@/components/icons/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader, SectionLabel } from "@/components/ui/page-header";
-import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/ui/page-header";
 import { Metric } from "@/components/ui/metric";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { useToast } from "@/components/ui/toast";
+import { WeeklyPlanningFlow } from "@/components/work/weekly-planning";
 import { useDict } from "@/lib/i18n";
 import { CHANGELOG, entriesSince, previousCompletedReviewDate } from "@/lib/changelog";
+import { mondayKey } from "@/lib/date-keys";
 import { assessProjectHealth } from "@/lib/project-health";
 import { useCrossProjectActivityQuery } from "@/lib/github-queries";
-import { qk } from "@/lib/queries/keys";
-import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
+import { dueFollowUps } from "@/lib/jobs/board";
+import type { EventsResult } from "@/lib/calendar";
 import type { ClientOpportunity, Cron, ImportantDate, Invoice, JobApplication, Organization, Project, ProjectCost, Todo, Updater, WeeklyReview } from "@/lib/types";
 
 const CLOSED = new Set(["won", "lost", "expired", "archived"]);
-
-function mondayKey(now = new Date()): string {
-  const date = new Date(now);
-  const day = date.getDay() || 7;
-  date.setDate(date.getDate() - day + 1);
-  return date.toISOString().slice(0, 10);
-}
 
 export function WorkOverviewPanel({
   projects,
@@ -42,6 +32,8 @@ export function WorkOverviewPanel({
   crons,
   reviews,
   setReviews,
+  lastWeekCalendar,
+  isPreview,
 }: {
   projects: Project[];
   opportunities: ClientOpportunity[];
@@ -54,24 +46,12 @@ export function WorkOverviewPanel({
   crons: Cron[];
   reviews: WeeklyReview[];
   setReviews: Updater<WeeklyReview[]>;
+  lastWeekCalendar: EventsResult;
+  isPreview?: boolean;
 }) {
   const t = useDict();
   const p = t.professional;
-  const supabase = createClient();
-  const qc = useQueryClient();
-  const toast = useToast();
   const weekStart = mondayKey();
-  const current = reviews.find((review) => review.week_start === weekStart);
-  const currentItems = current?.items ?? {};
-  const readReviewItem = (key: string, fallback = "") => Array.isArray(currentItems[key]) ? (currentItems[key] as string[]).join("\n") : fallback;
-  const [reviewDraft, setReviewDraft] = useState({
-    facts: readReviewItem("facts"),
-    risks: readReviewItem("risks"),
-    decisions: readReviewItem("decisions"),
-    priorities: readReviewItem("priorities", current?.summary ?? ""),
-    followUps: readReviewItem("followUps"),
-    sources: readReviewItem("sources"),
-  });
   // The window the "shipped" block covers: everything published after the last
   // review that was actually completed. Null means there is none to measure
   // from — the first review, or one older than the twelve weeks the loader
@@ -85,38 +65,12 @@ export function WorkOverviewPanel({
       .filter(({ result }) => result.health !== "healthy"),
     [projects, todos, costs, crons],
   );
-  const dueFollowUps = opportunities.filter((item) =>
+  const dueOpportunityFollowUps = opportunities.filter((item) =>
     !CLOSED.has(item.status) && item.next_follow_up_at && new Date(item.next_follow_up_at) <= new Date(),
   ).length;
-
-  const reviewMutation = useMutation({
-    mutationFn: async (complete: boolean) => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("Not authenticated");
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from("weekly_reviews")
-        .upsert({
-          user_id: userId,
-          week_start: weekStart,
-          summary: reviewDraft.priorities.trim(),
-          items: Object.fromEntries(Object.entries(reviewDraft).map(([key, value]) => [key, value.split("\n").map((item) => item.trim()).filter(Boolean)])),
-          status: complete ? "completed" : "draft",
-          completed_at: complete ? now : null,
-          updated_at: now,
-        }, { onConflict: "user_id,week_start" })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as WeeklyReview;
-    },
-    onSuccess: (review) => {
-      setReviews((old) => [review, ...old.filter((item) => item.id !== review.id && item.week_start !== review.week_start)]);
-      void qc.invalidateQueries({ queryKey: qk.weeklyReviews });
-      toast.ok(p.saved);
-    },
-    onError: () => toast.err(p.couldNotSave),
-  });
+  // Applications whose follow-up date has arrived, derived with the same rule
+  // the Career board and its "Follow-ups due" metric use.
+  const careerFollowUps = useMemo(() => dueFollowUps(jobApplications), [jobApplications]);
 
   const projectRepos = projects
     .filter((x) => x.is_active && x.status !== "archived" && x.repo_full_name)
@@ -128,7 +82,7 @@ export function WorkOverviewPanel({
   const metrics = [
     { label: p.activeProjects, value: projects.filter((x) => x.is_active && x.status !== "archived").length, icon: FolderKanban },
     { label: p.openOpportunities, value: opportunities.filter((x) => !CLOSED.has(x.status)).length, icon: BriefcaseBusiness },
-    { label: p.followUps, value: dueFollowUps, icon: AlertTriangle },
+    { label: p.followUps, value: dueOpportunityFollowUps, icon: AlertTriangle },
     { label: p.unpaidInvoices, value: invoices.filter((x) => x.status === "issued").length, icon: CircleDollarSign },
     { label: p.clientsTitle, value: organizations.filter((x) => x.status === "active").length, icon: BriefcaseBusiness },
     { label: p.currentApplications, value: jobApplications.filter((x) => !["rejected", "withdrawn"].includes(x.status)).length, icon: BriefcaseBusiness },
@@ -164,13 +118,19 @@ export function WorkOverviewPanel({
             ))}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader><CardTitle>{p.weeklyReview}</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-foreground-muted">{p.weeklyReviewDescription}</p>
-            <div className="grid gap-3 sm:grid-cols-2"><ReviewField label={p.facts} value={reviewDraft.facts} onChange={(facts) => setReviewDraft((old) => ({ ...old, facts }))} /><ReviewField label={p.risks} value={reviewDraft.risks} onChange={(risks) => setReviewDraft((old) => ({ ...old, risks }))} /><ReviewField label={p.decisions} value={reviewDraft.decisions} onChange={(decisions) => setReviewDraft((old) => ({ ...old, decisions }))} /><ReviewField label={p.priorities} value={reviewDraft.priorities} onChange={(priorities) => setReviewDraft((old) => ({ ...old, priorities }))} /><ReviewField label={p.followUpActions} value={reviewDraft.followUps} onChange={(followUps) => setReviewDraft((old) => ({ ...old, followUps }))} /><ReviewField label={p.sources} value={reviewDraft.sources} onChange={(sources) => setReviewDraft((old) => ({ ...old, sources }))} /></div>
-            <div className="space-y-1.5 border-t border-border pt-3">
-              <SectionLabel>{p.shippedSinceReview}</SectionLabel>
+        <div className="space-y-4">
+          <WeeklyPlanningFlow
+            reviews={reviews}
+            setReviews={setReviews}
+            projects={projects}
+            organizations={organizations}
+            todos={todos}
+            lastWeekCalendar={lastWeekCalendar}
+            isPreview={isPreview}
+          />
+          <Card>
+            <CardHeader><CardTitle>{p.shippedSinceReview}</CardTitle></CardHeader>
+            <CardContent className="space-y-1.5">
               <p className="text-xs text-foreground-muted">{shippedSince ? p.shippedSinceReviewDescription : p.shippedLatest}</p>
               {shipped.length === 0 ? (
                 <p className="text-sm text-foreground-muted">{p.shippedEmpty}</p>
@@ -191,15 +151,28 @@ export function WorkOverviewPanel({
                   ))}
                 </ul>
               )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => reviewMutation.mutate(false)} disabled={reviewMutation.isPending}>{p.saveReview}</Button>
-              <Button onClick={() => reviewMutation.mutate(true)} disabled={reviewMutation.isPending}>{p.completeReview}</Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Card className={careerFollowUps.length > 0 ? "border-l-2 border-l-warning" : undefined}>
+          <CardHeader><CardTitle>{p.careerFollowUps}</CardTitle></CardHeader>
+          <CardContent>
+            {careerFollowUps.length === 0 ? <p className="text-sm text-foreground-muted">{p.careerFollowUpsEmpty}</p> : (
+              <ul className="divide-y divide-border">
+                {careerFollowUps.slice(0, 6).map((item) => (
+                  <li key={item.id}>
+                    <Link href="/career" prefetch={false} className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.company ? `${item.title} · ${item.company}` : item.title}</span>
+                      <span className="shrink-0 text-xs tabular text-foreground-muted">{p.careerFollowUpDue} {item.next_follow_up_at?.slice(0, 10)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
         <Card><CardHeader><CardTitle>{p.pipeline}</CardTitle></CardHeader><CardContent>{opportunities.filter((item) => !CLOSED.has(item.status)).length === 0 ? <p className="text-sm text-foreground-muted">{p.pipelineEmpty}</p> : <ul className="divide-y divide-border">{opportunities.filter((item) => !CLOSED.has(item.status)).slice(0, 6).map((item) => <li key={item.id}><Link href="/opportunities" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><StatusBadge value={item.status} /></Link></li>)}</ul>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
       </div>
@@ -252,6 +225,3 @@ export function WorkOverviewPanel({
   );
 }
 
-function ReviewField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <label className="space-y-1.5"><SectionLabel>{label}</SectionLabel><Textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder="—" rows={3} className="min-h-20" /></label>;
-}

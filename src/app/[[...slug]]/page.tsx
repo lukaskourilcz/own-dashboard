@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
+import { fetchLastWeekEvents, fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
 import { dashboardDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { createClient } from "@/lib/supabase/server";
@@ -30,7 +30,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
     jobListingsRes, jobUserStatesRes, savedJobPositionsRes, jobApplicationsRes,
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
-    todayCalendar, weekCalendar, prefs, navigationProjectsRes,
+    todayCalendar, weekCalendar, lastWeekCalendar, prefs, navigationProjectsRes,
   ] = await Promise.all([
     loadWhen("subscriptions", () => supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("todos", () => supabase.from("todos").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
@@ -69,6 +69,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("jobLastRun", () => supabase.from("job_scrape_runs").select("*").order("started_at", { ascending: false }).limit(1).maybeSingle()),
     loadWhen("todayCalendar", fetchTodayWindowEvents),
     loadWhen("weekCalendar", fetchUpcomingWeekEvents),
+    loadWhen("lastWeekCalendar", fetchLastWeekEvents),
     loadUserPreferences(user.id),
     supabase
       .from("projects")
@@ -127,6 +128,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialJobLastRun={jobLastRunRes?.data ?? null}
     todayCalendar={todayCalendar ?? { ok: true, events: [] }}
     weekCalendar={weekCalendar ?? { ok: true, events: [] }}
+    lastWeekCalendar={lastWeekCalendar ?? { ok: true, events: [] }}
     selectedCalendarIds={prefs.selected_calendar_ids}
     repoVisibleIds={prefs.visible_repo_ids}
     initialPreferences={{
