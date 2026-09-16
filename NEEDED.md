@@ -62,10 +62,15 @@ rtk init --global
 Links and Ideas can now be connected to projects (`ai_link_projects`, applied to
 the live database on 2026-09-16), Prompts drafts prompts from Ideas without a
 model, and a project can carry a Google Drive video link. Blacksmith and the
-brag video skill were added to the live library. The Drive folder
-"OwnDashboard project videos" exists and is empty: the connector available to
-the agent only accepts file bytes inline, which is not workable for video.
+brag video skill were added to the live library. Every project repository now
+carries a rendered `media/brag.mp4` beside its older `media/preview.mp4`.
 
-- [ ] **Put the project videos in Drive** — drag `media/preview.mp4` from aifirst, own-dashboard, react-express-app and quorum (and any `media/brag.mp4` the branch carries) into the "OwnDashboard project videos" folder, then paste each file's share link into the project's *Project video* field (Projects → edit). `[imp:3]` `[owner:me]` `[time:10m]` `[kind:content]`
+The Drive folder "OwnDashboard project videos" holds one file: a note listing
+the ten videos and a direct download link for each. The videos themselves are
+not there, because the Drive connector available to an agent only accepts file
+contents inline as base64, and a 1.2 MB video is about 1.6 million characters
+in a single call.
+
+- [ ] **Put the project videos in Drive** — open the folder, read the note in it, download the ten files it links and drop them in. Then paste each file's share link into the matching project's *Project video* field (Projects → edit). https://drive.google.com/drive/folders/1f3iBfsIBYy8Qr6DRD_aNSOLjgCCscHNt `[imp:3]` `[owner:me]` `[time:10m]` `[kind:content]`
+- [ ] **Watch the five brag videos and say whether they are publishable** — first cuts, 20 to 25 seconds each, typographic, built from each repository's own documents with no invented metrics and no mocked-up interface footage. They are committed but have been shown to nobody. `[imp:3]` `[owner:me]` `[time:15m]` `[kind:content]`
 - [ ] **Decide the reference backfill** — the library has 173 links and 17 ideas and none is connected yet. Either connect them by hand from the Links section as they get used, or ask an agent to propose connections from each idea's *project relevance* field for you to confirm. `[imp:2]` `[owner:me]` `[time:20m]` `[kind:decision]`
-- [ ] **Render brag videos locally** if the branch does not already carry them — the skill needs Chrome and FFmpeg on the machine (`npx hyperframes doctor` lists what is missing); the agent sandbox could install both but has no file path into Drive. `[imp:2]` `[owner:me]` `[time:45m]` `[kind:content]`

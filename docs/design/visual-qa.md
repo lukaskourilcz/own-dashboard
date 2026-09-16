@@ -171,3 +171,29 @@ Links and Ideas now use separate export dialogs. The targeted browser suite cove
 - `npx playwright test e2e/link-export.spec.ts`: 8 passed across desktop and mobile.
 - The Czech dark export dialog passed document-overflow checks at 360, 430, 768, 1024, 1440 and 1728 px with no axe violations.
 - The live owner collection contains 171 links and 17 ideas in 37 link categories and 10 idea categories, with no uncategorized records. The code test harness continues to use synthetic fixtures rather than owner data.
+
+## Project references, idea prompts and project video — 2026-09-16
+
+Library records connect to projects through `ai_link_projects`. Links shows a
+connected tag and an All / Connected / Not connected filter, the expanded card
+carries the per-project status toggle and a connect control, the project
+workspace gains a References tab, Prompts gains a From ideas subsection, and a
+project can carry a Google Drive video link.
+
+- `npm run lint`: passed.
+- `npx tsc --noEmit`: passed.
+- `npm run test`: 34 files, 292 tests passed.
+- `npm run build`: passed.
+- `npm run test:e2e`: 57 passed, 35 skipped, exit 0. The skips are the suite's
+  own desktop/mobile matrix exclusions, not failures.
+- Screenshots were read at 1440 px in English and at Pixel 5 width in Czech for
+  Links, Prompts and the project References tab. Neither Czech view produced
+  horizontal page overflow (`documentElement.scrollWidth <= clientWidth`).
+- One defect was found and fixed during the pass: the connect selects rendered
+  an empty trigger because Radix maps the empty value to a private sentinel, so
+  the placeholder never painted. Both selects now carry the prompt as their
+  first option.
+- Not exercised here: a real signed-in write to `ai_link_projects`. The e2e
+  harness stubs Supabase, so the insert, delete and status update paths are
+  covered by the unit tests and the applied row-level security policy, not by a
+  live round trip.
