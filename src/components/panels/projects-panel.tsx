@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 import {
   DndContext,
   KeyboardSensor,
@@ -22,7 +23,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  AlertTriangle,
+  Check,
   ChevronDown,
+  CircleDashed,
   Clock,
   ExternalLink,
   FolderKanban,
@@ -60,7 +64,7 @@ import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
 import { NEW_PROJECT_GUIDE } from "@/lib/new-project-guide";
-import { useDict } from "@/lib/i18n";
+import { useDateLocale, useDict } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
@@ -81,6 +85,10 @@ import {
 } from "@/lib/portfolio";
 import { useLang } from "@/lib/i18n";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
+import {
+  cronHeartbeatState,
+  type CronHeartbeatState,
+} from "@/lib/cron-heartbeat";
 import type { GithubRepo } from "@/lib/github";
 import {
   costMonthlyIn,
@@ -1560,6 +1568,7 @@ type CronForm = {
   schedule: string;
   endpoint: string;
   description: string;
+  heartbeat_url: string;
   is_ai_call: boolean;
   cost_per_run: string;
   currency: string;
@@ -1572,11 +1581,77 @@ function emptyCronForm(currency: string): CronForm {
     schedule: "0 6 * * *",
     endpoint: "",
     description: "",
+    heartbeat_url: "",
     is_ai_call: false,
     cost_per_run: "",
     currency,
     runs_per_month: "30",
   };
+}
+
+/**
+ * Freshness of one cron, from its own schedule and last recorded success. The
+ * state carries an icon and a word as well as a colour, so it never depends on
+ * colour alone.
+ */
+function HeartbeatPill({ cron }: { cron: Cron }) {
+  const t = useDict();
+  const locale = useDateLocale();
+  const { state, lastSuccessAt } = cronHeartbeatState(cron);
+  const map: Record<
+    CronHeartbeatState,
+    { label: string; cls: string; Icon: typeof Check }
+  > = {
+    ok: {
+      label: t.projects.heartbeatOk,
+      cls: "border-success/30 bg-success/10 text-success",
+      Icon: Check,
+    },
+    late: {
+      label: t.projects.heartbeatLate,
+      cls: "border-warning/30 bg-warning/10 text-warning",
+      Icon: Clock,
+    },
+    stale: {
+      label: t.projects.heartbeatStale,
+      cls: "border-destructive/30 bg-destructive/10 text-destructive",
+      Icon: AlertTriangle,
+    },
+    never: {
+      label: t.projects.heartbeatNever,
+      cls: "border-border bg-surface-muted text-foreground-muted",
+      Icon: Clock,
+    },
+    unmonitored: {
+      label: t.projects.heartbeatUnmonitored,
+      cls: "border-border bg-surface-muted text-foreground-muted",
+      Icon: CircleDashed,
+    },
+  };
+  const entry = map[state];
+  const detail = lastSuccessAt
+    ? t.projects.heartbeatLastSuccess(
+        formatDistanceToNow(lastSuccessAt, { addSuffix: true, locale }),
+      )
+    : state === "unmonitored"
+      ? t.projects.heartbeatUnmonitoredHint
+      : t.projects.heartbeatNoSuccess;
+  return (
+    <Tooltip content={detail}>
+      {/* Focusable so the detail is reachable by keyboard, not hover only. */}
+      <span
+        tabIndex={0}
+        className={cn(
+          "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          entry.cls,
+        )}
+      >
+        <entry.Icon className="h-2.5 w-2.5" aria-hidden />
+        {entry.label}
+      </span>
+    </Tooltip>
+  );
 }
 
 function CronsSection({
@@ -1610,6 +1685,7 @@ function CronsSection({
       schedule: form.schedule.trim() || "0 6 * * *",
       endpoint: form.endpoint.trim(),
       description: form.description.trim(),
+      heartbeat_url: form.heartbeat_url.trim(),
       is_ai_call: form.is_ai_call,
       cost_per_run: form.is_ai_call ? Number(form.cost_per_run || 0) : 0,
       currency: form.currency,
@@ -1678,6 +1754,7 @@ function CronsSection({
       schedule: c.schedule,
       endpoint: c.endpoint,
       description: c.description,
+      heartbeat_url: c.heartbeat_url ?? "",
       is_ai_call: c.is_ai_call,
       cost_per_run: String(c.cost_per_run),
       currency: c.currency,
@@ -1745,6 +1822,7 @@ function CronsSection({
                       : ""}
                   </p>
                 </div>
+                {c.enabled && <HeartbeatPill cron={c} />}
                 <Tooltip content={c.enabled ? t.projects.disable : t.projects.enable}>
                   <span>
                     <Switch
@@ -1820,6 +1898,29 @@ function CronsSection({
               placeholder={t.projects.cronDescriptionPlaceholder}
               className="h-8 text-sm"
             />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs" htmlFor={`heartbeat-${project.id}`}>
+              {t.projects.heartbeatUrl}
+            </Label>
+            <Input
+              id={`heartbeat-${project.id}`}
+              type="url"
+              inputMode="url"
+              value={form.heartbeat_url}
+              onChange={(e) =>
+                setForm({ ...form, heartbeat_url: e.target.value })
+              }
+              placeholder={t.projects.heartbeatUrlPlaceholder}
+              className="h-8 text-sm font-mono"
+              aria-describedby={`heartbeat-hint-${project.id}`}
+            />
+            <p
+              id={`heartbeat-hint-${project.id}`}
+              className="text-[11px] text-foreground-subtle"
+            >
+              {t.projects.heartbeatHint}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Switch

@@ -13,6 +13,11 @@ import { logCronRun, type CronRunSource, type CronRunStatus } from "@/lib/cron-l
  *
  * Guarded by CRON_REGISTRY_TOKEN (same secret as the read registry). The run is
  * attributed to DASHBOARD_OWNER_ID. No-ops with 503 until both are configured.
+ *
+ * A successful run also stamps the owning cron's `last_success_at` and pushes
+ * its stored heartbeat URL. The owning row is found by `cron_id`, or by the
+ * reported `endpoint` when no id is sent — so a caller that wants the heartbeat
+ * has to identify its cron one of those two ways.
  */
 export const dynamic = "force-dynamic";
 

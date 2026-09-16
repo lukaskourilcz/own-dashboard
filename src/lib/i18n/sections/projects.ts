@@ -108,6 +108,19 @@ type ProjectsStrings = {
   lastRun: string;
   never: string;
 
+  // Heartbeat monitoring.
+  heartbeatUrl: string;
+  heartbeatUrlPlaceholder: string;
+  heartbeatHint: string;
+  heartbeatOk: string;
+  heartbeatLate: string;
+  heartbeatStale: string;
+  heartbeatNever: string;
+  heartbeatUnmonitored: string;
+  heartbeatLastSuccess: (when: string) => string;
+  heartbeatNoSuccess: string;
+  heartbeatUnmonitoredHint: string;
+
   // Empty state.
   noProjects: string;
   addFirstProject: string;
@@ -221,6 +234,20 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     lastRun: "last run",
     never: "never",
 
+    heartbeatUrl: "Heartbeat URL",
+    heartbeatUrlPlaceholder: "https://uptime.example.com/api/push/aBc123",
+    heartbeatHint:
+      "Push-monitor URL, called only after a successful run. Leave empty to leave this cron unmonitored.",
+    heartbeatOk: "On time",
+    heartbeatLate: "Late",
+    heartbeatStale: "Not reporting",
+    heartbeatNever: "No run yet",
+    heartbeatUnmonitored: "Unmonitored",
+    heartbeatLastSuccess: (when) => `Last success ${when}`,
+    heartbeatNoSuccess: "No successful run recorded yet.",
+    heartbeatUnmonitoredHint:
+      "Add a heartbeat URL to be told when this cron stops running.",
+
     noProjects: "No projects yet",
     addFirstProject: "Add your first project using the form.",
   },
@@ -332,6 +359,20 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     deleteCronConfirm: "Smazat tento cron?",
     lastRun: "poslední běh",
     never: "nikdy",
+
+    heartbeatUrl: "URL pro heartbeat",
+    heartbeatUrlPlaceholder: "https://uptime.example.com/api/push/aBc123",
+    heartbeatHint:
+      "Adresa push monitoru, volá se až po úspěšném běhu. Prázdné pole znamená, že cron nikdo nehlídá.",
+    heartbeatOk: "Včas",
+    heartbeatLate: "Zpoždění",
+    heartbeatStale: "Nehlásí se",
+    heartbeatNever: "Zatím bez běhu",
+    heartbeatUnmonitored: "Bez hlídání",
+    heartbeatLastSuccess: (when) => `Poslední úspěch ${when}`,
+    heartbeatNoSuccess: "Zatím není zaznamenaný žádný úspěšný běh.",
+    heartbeatUnmonitoredHint:
+      "Doplňte adresu heartbeatu, ať se dozvíte, že cron přestal běhat.",
 
     noProjects: "Zatím žádné projekty",
     addFirstProject: "Přidejte první projekt pomocí formuláře.",

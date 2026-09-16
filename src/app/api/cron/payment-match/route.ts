@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logCronRun } from "@/lib/cron-log";
+import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runPaymentMatching } from "@/lib/payment-matching-server";
 
@@ -68,6 +69,8 @@ export async function GET(request: Request) {
     }
   }
 
+  // Only a pass where every owner completed pings the monitor.
+  if (failed === 0) await pingHeartbeat(heartbeatUrlForJob("payment-match"));
   await logCronRun({
     name: "Payment matching",
     endpoint: "/api/cron/payment-match",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logCronRun } from "@/lib/cron-log";
+import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { Resend } from "resend";
 import { brandConfig } from "@/lib/brand";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -156,11 +157,12 @@ export async function GET(request: Request) {
     }
   }
 
-  // Uptime heartbeat (Better Stack / UptimeRobot). Fires only after a
-  // successful run, so a failed/never-invoked cron sends no ping and the
-  // monitor alerts you — this daily job is otherwise invisible when it breaks.
-  // No-op until HEARTBEAT_URL is set. See NEEDED.md.
-  await pingHeartbeat();
+  // Uptime heartbeat (Uptime Kuma / Better Stack / UptimeRobot). Fires only
+  // after a successful run, so a failed/never-invoked cron sends no ping and
+  // the monitor alerts you — this daily job is otherwise invisible when it
+  // breaks. No-op until HEARTBEAT_URL_RENEWAL_WARNINGS or the shared
+  // HEARTBEAT_URL is set. See NEEDED.md.
+  await pingHeartbeat(heartbeatUrlForJob("renewal-warnings"));
 
   await logCronRun({
     name: "Renewal warnings",
@@ -169,14 +171,4 @@ export async function GET(request: Request) {
     detail: `scanned ${rows.length}, sent ${sent}`,
   });
   return NextResponse.json({ ok: true, scanned: rows.length, sent });
-}
-
-async function pingHeartbeat(): Promise<void> {
-  const url = process.env.HEARTBEAT_URL;
-  if (!url) return;
-  try {
-    await fetch(url, { signal: AbortSignal.timeout(10_000) });
-  } catch {
-    // Heartbeat is best-effort; never let it affect the cron's own result.
-  }
 }
