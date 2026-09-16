@@ -109,10 +109,10 @@ path.
 
 `CHANGELOG.md` is generated from `src/lib/changelog.ts`, and the Work overview's
 weekly review lists the entries published since the last review you completed.
-Three entries are seeded from real commits. There is nothing to deploy — the
-changelog is repository content, not owner data — but two things need a person.
+Four entries are written from real commits. There is nothing to deploy — the
+changelog is repository content, not owner data — but one date needs a person.
 
-- [ ] **Write the next entry** — add a dated `ChangelogEntry` to `src/lib/changelog.ts` for what landed since 2026-09-16, regenerate `CHANGELOG.md` and let the test confirm the two match. At least one entry every two weeks; only work that actually shipped. `[imp:2]` `[owner:ai]` `[time:30m]` `[kind:content]`
+- [ ] **Set the release entry's date to the merge day** — the entry covering issues #64 to #73 is dated 2026-09-17 because the test forbids two entries on one date and the existing entry already owns 2026-09-16. Change it to the day the branch actually merges, regenerate `CHANGELOG.md` and re-run `npx vitest run tests/lib/changelog.test.ts`. `[imp:2]` `[owner:me]` `[time:10m]` `[kind:content]`
 - [x] **Capture the screenshots** — four `/dev-preview` captures are committed under `media/changelog/` and wired to their features: Works, Competition, Development finance and Career match scoring. The remaining `media: null` features are the deferred state, not a gap. An element screenshot does not scroll, so each image stops at the fold of the 808 px scroll area. `[imp:2]` `[owner:me]` `[time:30m]` `[kind:content]`
 
 ## Invoice payment matching (17 September 2026)
