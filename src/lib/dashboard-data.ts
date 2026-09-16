@@ -46,6 +46,7 @@ export const DASHBOARD_DATA_KEYS = [
   "jobLastRun",
   "todayCalendar",
   "weekCalendar",
+  "lastWeekCalendar",
 ] as const;
 
 export type DashboardDataKey = (typeof DASHBOARD_DATA_KEYS)[number];
@@ -89,6 +90,11 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "importantDates",
     "projects",
     "opportunities",
+    // The hero's follow-up column covers both pipelines: a client opportunity
+    // and a job application both have a date you promised yourself. The
+    // scraped listings and their user state stay out — Home shows what is due,
+    // not the job board.
+    "jobApplications",
     "inboxItems",
     "notifications",
     "todayCalendar",
@@ -106,6 +112,9 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "notifications",
     "weeklyReviews",
     "jobApplications",
+    // Weekly planning measures last week's calendar time by channel; no other
+    // destination reads a finished week.
+    "lastWeekCalendar",
   ],
   projects: PROJECT_WORKSPACE_DATA,
   works: PROJECT_WORKSPACE_DATA,

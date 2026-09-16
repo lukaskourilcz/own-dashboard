@@ -9,7 +9,16 @@ describe("dashboard route data boundaries", () => {
     expect(keys.has("todayCalendar")).toBe(true);
     expect(keys.has("transactions")).toBe(false);
     expect(keys.has("jobListings")).toBe(false);
+    expect(keys.has("jobUserStates")).toBe(false);
     expect(keys.has("weekCalendar")).toBe(false);
+  });
+
+  it("loads job applications on Home for the follow-up column only", () => {
+    // The hero merges opportunity and career follow-ups; neither the scraped
+    // board nor the application history belongs on Home.
+    expect(dashboardDataKeysForTab("home").has("jobApplications")).toBe(true);
+    expect(dashboardDataKeysForTab("home").has("jobApplicationEvents")).toBe(false);
+    expect(dashboardDataKeysForTab("home").has("savedJobPositions")).toBe(false);
   });
 
   it("loads the relationships required by a project workspace", () => {
@@ -50,6 +59,13 @@ describe("dashboard route data boundaries", () => {
     // The invoice list names the payment that settled a paid invoice.
     expect(dashboardDataKeysForTab("invoices").has("transactions")).toBe(true);
     expect(dashboardDataKeysForTab("home").has("invoices")).toBe(false);
+  });
+
+  it("loads last week's calendar only where weekly planning measures it", () => {
+    expect(dashboardDataKeysForTab("work").has("lastWeekCalendar")).toBe(true);
+    expect(dashboardDataKeysForTab("work").has("weeklyReviews")).toBe(true);
+    expect(dashboardDataKeysForTab("home").has("lastWeekCalendar")).toBe(false);
+    expect(dashboardDataKeysForTab("calendar").has("lastWeekCalendar")).toBe(false);
   });
 
   it("keeps the notification bell available on every destination", () => {

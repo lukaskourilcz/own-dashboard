@@ -224,12 +224,24 @@ export type {
 export type BankConnection = {
   id: string;
   user_id: string;
+  /** Which adapter owns this connection. `src/lib/bank/registry.ts` resolves it;
+   *  an unregistered value fails closed rather than defaulting to GoCardless. */
   provider: string;
-  requisition_id: string;
-  institution_id: string;
+  /** GoCardless requisition id. Null for providers with no redirect flow. */
+  requisition_id: string | null;
+  institution_id: string | null;
   institution_name: string | null;
+  /** Provider-neutral connection handle. Backfilled from `requisition_id`. */
+  provider_ref: string | null;
   reference: string;
   status: "created" | "linked" | "expired" | "error";
+  /** When the bank consent lapses (PSD2 is 90 days). Null when the provider
+   *  states no expiry, as with a Fio token — never guessed. */
+  consent_expires_at: string | null;
+  /** Short, non-sensitive reason the last sync failed. Null when healthy. */
+  last_error: string | null;
+  /** Provider-specific incremental cursor, currently the last synced day. */
+  sync_cursor: string | null;
   last_synced_at: string | null;
   created_at: string;
   updated_at: string;
@@ -562,6 +574,10 @@ export type Cron = {
   runs_per_month: number;
   enabled: boolean;
   last_run_at: string | null;
+  // Push-monitor URL pinged only after a successful run, and the timestamp of
+  // that last success. Empty/null means unmonitored, which is the default.
+  heartbeat_url: string;
+  last_success_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -705,6 +721,11 @@ export type JobApplication = {
   updated_at: string;
   organization_id?: string | null;
   next_follow_up_at?: string | null;
+  // Added by 20260917190000_job_application_contacts.sql. The keys are absent —
+  // not null — until that migration runs, which is how the progress dialog
+  // knows whether it can offer the fields.
+  contact_name?: string | null;
+  contact_email?: string | null;
 };
 
 export type JobApplicationEventKind = "applied" | "status" | "note";
@@ -914,4 +935,17 @@ export type WeeklyReview = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * One objective for a week, stored inside `weekly_reviews.items.objectives`.
+ * `carriedFrom` records where an objective came from when it was carried over
+ * from the previous week — the id of the objective or of the unfinished daily
+ * focus item — so the same item is never carried twice.
+ */
+export type WeeklyObjective = {
+  id: string;
+  text: string;
+  done: boolean;
+  carriedFrom?: string;
 };

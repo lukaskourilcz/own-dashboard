@@ -48,6 +48,7 @@ import type {
   WeeklyReview,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
+import { parseDateOnly, previousMondayKey } from "@/lib/date-keys";
 
 const UID = "preview-user";
 const NOW = new Date();
@@ -365,7 +366,11 @@ export const crons: Cron[] = [
     currency: "USD",
     runs_per_month: 30,
     enabled: true,
-    last_run_at: null,
+    last_run_at: at(6, 2),
+    // Invented push-monitor URL; the demo cron reports on time so the tour
+    // shows the healthy heartbeat state rather than an alarm.
+    heartbeat_url: "https://uptime.example.com/api/push/demo",
+    last_success_at: at(6, 2),
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
   },
@@ -462,6 +467,30 @@ export const weekCalendar: EventsResult = {
   ],
 };
 
+/**
+ * Last week's calendar for the weekly planning flow, anchored on the previous
+ * Monday rather than on a fixed date so the preview always has a finished week
+ * to measure. One event names the fixture client, one names a fixture project
+ * and one names neither, so each channel is non-zero and the unmatched count is
+ * honest rather than decorative.
+ */
+function lastWeekAt(dayOffset: number, hour: number, minute = 0): string {
+  const day = parseDateOnly(previousMondayKey(NOW));
+  day.setDate(day.getDate() + dayOffset);
+  day.setHours(hour, minute, 0, 0);
+  return day.toISOString();
+}
+
+export const lastWeekCalendar: EventsResult = {
+  ok: true,
+  events: [
+    { id: "lw1", summary: "Acme portal review", start: { dateTime: lastWeekAt(0, 10) }, end: { dateTime: lastWeekAt(0, 11, 30) } },
+    { id: "lw2", summary: "aifirst release check", start: { dateTime: lastWeekAt(1, 9) }, end: { dateTime: lastWeekAt(1, 10) } },
+    { id: "lw3", summary: "Invoices and inbox", start: { dateTime: lastWeekAt(2, 8, 30) }, end: { dateTime: lastWeekAt(2, 9, 15) } },
+    { id: "lw4", summary: "Conference", start: { date: previousMondayKey(NOW) }, end: { date: previousMondayKey(NOW) } },
+  ],
+};
+
 export const selectedCalendarIds = ["primary"];
 export const repoVisibleIds: string[] = [];
 
@@ -511,6 +540,10 @@ export const weeklyReviews: WeeklyReview[] = [{
     priorities: ["Send the Acme proposal follow-up"],
     followUps: ["Confirm the Acme contact for September"],
     sources: ["Discovery notes"],
+    objectives: [
+      { id: "obj-1", text: "Send the Acme proposal follow-up", done: true },
+      { id: "obj-2", text: "Finish the invoice VAT review", done: false },
+    ],
   },
   summary: "Send the Acme proposal follow-up",
   completed_at: TS, created_at: TS, updated_at: TS,
@@ -588,6 +621,90 @@ export const jobApplications: JobApplication[] = [
     status: "applied",
     applied_on: ymd(0),
     notes: null,
+    contact_name: null,
+    contact_email: null,
+    created_at: TS,
+    updated_at: TS,
+  },
+  // One fictional row per remaining stage board column, plus an overdue
+  // follow-up, so the preview shows every column and the due state.
+  {
+    id: "app-2",
+    user_id: UID,
+    listing_id: null,
+    title: "Senior React Engineer",
+    company: "Harbour Systems",
+    url: "https://example.com/careers/senior-react",
+    source: "manual",
+    location: "Prague",
+    cover_letter: "Dear Example Studio team, …",
+    status: "applied",
+    applied_on: ymd(-18),
+    notes: "Preview only. Asked about the team size; no answer yet.",
+    contact_name: null,
+    contact_email: null,
+    next_follow_up_at: `${ymd(-3)}T09:00:00Z`,
+    created_at: TS,
+    updated_at: TS,
+  },
+  {
+    id: "app-3",
+    user_id: UID,
+    listing_id: null,
+    title: "Frontend Engineer",
+    company: "Northwind Labs",
+    url: null,
+    source: "manual",
+    location: "Remote, Europe",
+    cover_letter: "",
+    status: "interviewing",
+    applied_on: ymd(-25),
+    notes: "Preview only. Second round scheduled.",
+    contact_name: "Preview Recruiter",
+    contact_email: "careers@example.com",
+    responded_on: ymd(-20),
+    response_kind: "positive",
+    next_follow_up_at: `${ymd(6)}T09:00:00Z`,
+    created_at: TS,
+    updated_at: TS,
+  },
+  {
+    id: "app-4",
+    user_id: UID,
+    listing_id: null,
+    title: "Product Engineer",
+    company: "Meridian Tools",
+    url: null,
+    source: "manual",
+    location: "Prague",
+    cover_letter: "",
+    status: "offer",
+    applied_on: ymd(-40),
+    notes: null,
+    contact_name: null,
+    contact_email: null,
+    responded_on: ymd(-31),
+    response_kind: "positive",
+    created_at: TS,
+    updated_at: TS,
+  },
+  {
+    id: "app-5",
+    user_id: UID,
+    listing_id: null,
+    title: "Fullstack Developer",
+    company: "Atlas Retail",
+    url: null,
+    source: "manual",
+    location: "Brno",
+    cover_letter: "",
+    status: "rejected",
+    applied_on: ymd(-52),
+    notes: null,
+    contact_name: null,
+    contact_email: null,
+    responded_on: ymd(-44),
+    response_kind: "negative",
     created_at: TS,
     updated_at: TS,
   },
@@ -602,6 +719,13 @@ export const jobApplicationEvents: JobApplicationEvent[] = [
     detail: null,
     created_at: TS,
   },
+  { id: "appev-2", user_id: UID, application_id: "app-2", kind: "applied", detail: null, created_at: TS },
+  { id: "appev-3", user_id: UID, application_id: "app-3", kind: "applied", detail: null, created_at: TS },
+  { id: "appev-4", user_id: UID, application_id: "app-3", kind: "status", detail: "interviewing", created_at: TS },
+  { id: "appev-5", user_id: UID, application_id: "app-4", kind: "applied", detail: null, created_at: TS },
+  { id: "appev-6", user_id: UID, application_id: "app-4", kind: "status", detail: "offer", created_at: TS },
+  { id: "appev-7", user_id: UID, application_id: "app-5", kind: "applied", detail: null, created_at: TS },
+  { id: "appev-8", user_id: UID, application_id: "app-5", kind: "status", detail: "rejected", created_at: TS },
 ];
 
 export const coverLetterTemplates: CoverLetterTemplate[] = [

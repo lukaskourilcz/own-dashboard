@@ -72,6 +72,7 @@ export function DemoDashboard({
       initialJobLastRun={f.jobLastRun}
       todayCalendar={f.todayCalendar}
       weekCalendar={f.weekCalendar}
+      lastWeekCalendar={f.lastWeekCalendar}
       selectedCalendarIds={f.selectedCalendarIds}
       repoVisibleIds={f.repoVisibleIds}
       initialPreferences={{

@@ -1,13 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  getAccountBalances,
-  getAccountDetails,
-  getAccountTransactions,
-  getRequisition,
-  mapTransaction,
-  type Balance,
-} from "@/lib/gocardless";
+import { getProvider } from "@/lib/bank/registry";
+import { bindTransaction, type ProviderConsent } from "@/lib/bank/provider";
 import {
   applyRulesToRow,
   parseRules,
@@ -15,28 +9,6 @@ import {
   type OwnedIds,
 } from "@/lib/transaction-rules";
 import type { BankConnection } from "@/lib/types";
-
-/** GoCardless requisition status codes → our connection status. */
-function mapStatus(code: string): BankConnection["status"] {
-  if (code === "LN") return "linked";
-  if (code === "EX" || code === "SU") return "expired";
-  if (code === "CR" || code === "GC" || code === "UA" || code === "GA" || code === "SA")
-    return "created";
-  return "error";
-}
-
-/** Pick the most "current balance"-like figure from a GoCardless balances list. */
-function pickBalance(balances: Balance[]): { amount: number; currency: string } | null {
-  if (!balances?.length) return null;
-  const order = ["closingBooked", "interimBooked", "interimAvailable", "expected"];
-  const chosen =
-    order
-      .map((t) => balances.find((b) => b.balanceType === t))
-      .find(Boolean) ?? balances[0];
-  const amount = Number(chosen.balanceAmount.amount);
-  if (!Number.isFinite(amount)) return null;
-  return { amount, currency: chosen.balanceAmount.currency };
-}
 
 /**
  * The owner's own project and subscription ids. A rule action may name either,
@@ -64,10 +36,29 @@ export type SyncResult = {
 };
 
 /**
- * Pull balances + transactions for one linked bank connection and fold them
- * into the accounts / transactions tables. Idempotent: accounts are keyed by
- * external_ref (the GoCardless account id) and transactions by external_id, so
- * re-syncing only ever inserts genuinely new rows.
+ * A provider outage is not a lapsed consent. `expired` and `created` are states
+ * the bank itself reports and are persisted, because they need the owner to act.
+ * `error` on a connection that was linked is recorded as `last_error` only: a
+ * timeout must not drop the row out of the cron's `status = 'linked'` pool and
+ * turn a bad minute into a permanent stop.
+ */
+function nextStatus(
+  previous: BankConnection["status"],
+  consent: ProviderConsent,
+): BankConnection["status"] {
+  if (consent.status === "error" && previous === "linked") return "linked";
+  return consent.status;
+}
+
+/**
+ * Pull balances + transactions for one bank connection and fold them into the
+ * accounts / transactions tables. Idempotent: accounts are keyed by
+ * external_ref and transactions by external_id, so re-syncing only ever inserts
+ * genuinely new rows.
+ *
+ * Provider-neutral since issue #64 — everything bank-specific lives behind the
+ * adapter resolved from `conn.provider`, and an unregistered provider throws
+ * rather than being treated as GoCardless.
  *
  * `admin` must be the service-role client — it writes rows for the user and
  * updates the connection's status/last_synced_at.
@@ -76,17 +67,67 @@ export async function syncConnection(
   admin: SupabaseClient,
   conn: BankConnection,
 ): Promise<SyncResult> {
-  const req = await getRequisition(conn.requisition_id);
-  const status = mapStatus(req.status);
+  const provider = getProvider(conn.provider);
 
-  if (status !== "linked") {
+  let consent: ProviderConsent;
+  try {
+    consent = await provider.getConsent(conn);
+  } catch (error) {
     await admin
       .from("bank_connections")
-      .update({ status })
+      .update({ last_error: describeError(error) })
+      .eq("id", conn.id);
+    throw error;
+  }
+
+  const status = nextStatus(conn.status, consent);
+  if (consent.status !== "linked") {
+    await admin
+      .from("bank_connections")
+      .update({
+        status,
+        consent_expires_at: consent.expiresAt,
+        last_error: consent.error,
+      })
       .eq("id", conn.id);
     return { inserted: 0, accountsLinked: 0, status };
   }
 
+  try {
+    const result = await pullConnection(admin, conn, provider);
+    await admin
+      .from("bank_connections")
+      .update({
+        status: "linked",
+        consent_expires_at: consent.expiresAt,
+        last_error: null,
+        sync_cursor: new Date().toISOString().slice(0, 10),
+        last_synced_at: new Date().toISOString(),
+      })
+      .eq("id", conn.id);
+    return result;
+  } catch (error) {
+    await admin
+      .from("bank_connections")
+      .update({ last_error: describeError(error) })
+      .eq("id", conn.id);
+    throw error;
+  }
+}
+
+/** A short, non-sensitive reason for the connection row. Provider errors can
+ *  carry a URL with a token in it, so only the error's name and a truncated
+ *  message are kept, never a request URL. */
+function describeError(error: unknown): string {
+  const raw = error instanceof Error ? `${error.name}: ${error.message}` : "sync failed";
+  return raw.replace(/https?:\/\/\S+/g, "[url]").slice(0, 200);
+}
+
+async function pullConnection(
+  admin: SupabaseClient,
+  conn: BankConnection,
+  provider: ReturnType<typeof getProvider>,
+): Promise<SyncResult> {
   // Existing dedupe key set for this user — cheap at personal scale.
   const { data: existingRows } = await admin
     .from("transactions")
@@ -117,35 +158,24 @@ export async function syncConnection(
   let inserted = 0;
   let accountsLinked = 0;
 
-  for (const gcAccountId of req.accounts ?? []) {
+  for (const account of await provider.listAccounts(conn)) {
     accountsLinked++;
 
     // Resolve (or create) our local account row for this bank account.
-    const details = await getAccountDetails(gcAccountId).catch(() => null);
-    const balances = await getAccountBalances(gcAccountId).catch(() => null);
-    const bal = balances ? pickBalance(balances.balances) : null;
-    const currency =
-      bal?.currency ?? details?.account?.currency ?? "EUR";
-    const name =
-      details?.account?.name ??
-      details?.account?.product ??
-      conn.institution_name ??
-      "Bank account";
-
-    const { data: acct } = await admin
+    const { data: existing } = await admin
       .from("accounts")
       .select("id")
       .eq("user_id", conn.user_id)
-      .eq("external_ref", gcAccountId)
+      .eq("external_ref", account.accountRef)
       .maybeSingle();
 
-    let accountId: string | null = acct?.id ?? null;
+    let accountId: string | null = existing?.id ?? null;
     if (accountId) {
       await admin
         .from("accounts")
         .update({
-          balance: bal?.amount ?? 0,
-          currency,
+          balance: account.balance ?? 0,
+          currency: account.currency,
           updated_at: new Date().toISOString(),
         })
         .eq("id", accountId);
@@ -154,10 +184,10 @@ export async function syncConnection(
         .from("accounts")
         .insert({
           user_id: conn.user_id,
-          name,
-          balance: bal?.amount ?? 0,
-          currency,
-          external_ref: gcAccountId,
+          name: account.name,
+          balance: account.balance ?? 0,
+          currency: account.currency,
+          external_ref: account.accountRef,
         })
         .select("id")
         .single();
@@ -165,20 +195,28 @@ export async function syncConnection(
     }
 
     // Pull transactions and insert only the ones we haven't seen before.
-    const txRes = await getAccountTransactions(gcAccountId).catch(() => null);
-    const booked = txRes?.transactions?.booked ?? [];
-    const rows = booked
-      .map((tx) => mapTransaction(tx, conn.user_id, accountId))
-      .filter((r): r is NonNullable<typeof r> => r !== null && !!r.occurred_on)
-      .filter((r) => !seen.has(r.external_id))
-      .map((r) => applyRulesToRow(r, rules, owned));
+    const provided = await provider.fetchTransactions(
+      conn,
+      account.accountRef,
+      conn.sync_cursor,
+    );
+    const rows = provided
+      .filter((tx) => Boolean(tx.occurred_on))
+      .filter((tx) => !seen.has(tx.external_id))
+      .map((tx) =>
+        applyRulesToRow(
+          bindTransaction(tx, conn.user_id, accountId),
+          rules,
+          owned,
+        ),
+      );
 
     // Guard against duplicates within this batch too.
     const batch: typeof rows = [];
-    for (const r of rows) {
-      if (seen.has(r.external_id)) continue;
-      seen.add(r.external_id);
-      batch.push(r);
+    for (const row of rows) {
+      if (seen.has(row.external_id)) continue;
+      seen.add(row.external_id);
+      batch.push(row);
     }
 
     if (batch.length) {
@@ -187,10 +225,25 @@ export async function syncConnection(
     }
   }
 
-  await admin
-    .from("bank_connections")
-    .update({ status: "linked", last_synced_at: new Date().toISOString() })
-    .eq("id", conn.id);
-
   return { inserted, accountsLinked, status: "linked" };
+}
+
+/**
+ * Sync exactly one connection the caller owns. This is what the per-connection
+ * "Sync" button calls; the ownership filter is part of the query rather than a
+ * check afterwards, so another owner's id simply resolves to nothing.
+ */
+export async function syncConnectionById(
+  admin: SupabaseClient,
+  userId: string,
+  connectionId: string,
+): Promise<SyncResult | null> {
+  const { data } = await admin
+    .from("bank_connections")
+    .select("*")
+    .eq("id", connectionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return null;
+  return syncConnection(admin, data as BankConnection);
 }

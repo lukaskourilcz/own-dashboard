@@ -129,3 +129,123 @@ Application rollback can deploy the previous version while keeping the columns;
 nothing older reads them, and the links already written stay valid because
 `invoice_id` predates this feature. Remove the `/api/cron/payment-match` entry
 from `vercel.json` to stop the unattended runs without touching the schema.
+
+## Cron heartbeats — 2026-09-17
+
+Apply `20260917150000_cron_heartbeats.sql` before deploying the heartbeat state
+in the cron list or the `/api/webhooks/uptime-kuma` receiver. Until it runs, the
+cron form's save fails on a missing column and the run log's success stamp is a
+no-op.
+
+It is additive: `heartbeat_url` (`text not null default ''`) and
+`last_success_at` (`timestamptz`) on `public.crons`, plus two partial indexes —
+one over the monitored rows, one over `(user_id, endpoint)` for resolving a run
+to its cron. No policy, grant or function changes; the four own-only `crons`
+policies already cover both columns.
+
+### Verify
+
+Confirm both columns exist and that an existing cron reads `heartbeat_url = ''`
+and `last_success_at = null`, which is the unmonitored state the UI reports.
+Save a push URL from the cron form and confirm it round-trips.
+
+Sign in as two users. Confirm user A cannot read or update user B's cron, and
+that `GET /api/crons/registry` returns `monitored` as a boolean and never the
+URL itself — the push URL is a credential.
+
+POST a success to `/api/crons/log` with the cron's `cron_id`, and confirm
+`last_success_at` moves and the stored URL receives one request. POST a failure
+and confirm neither happens. Leave the cron un-run past three of its own
+scheduled intervals and confirm the list badge reads Not reporting and the
+project health explains it.
+
+With `UPTIME_KUMA_WEBHOOK_TOKEN` and `DASHBOARD_OWNER_ID` set, POST a Kuma down
+body to `/api/webhooks/uptime-kuma`: one notification appears, a repeat while it
+is open adds none, and an up event dismisses it and posts one recovery. Without
+the token the route answers 503, and with a wrong one 403.
+
+### Rollback
+
+Deploy the previous application version and keep the columns; nothing older
+reads them. Clearing a `heartbeat_url` stops that cron's pings without a schema
+change, and unsetting `UPTIME_KUMA_WEBHOOK_TOKEN` turns the receiver off.
+
+## Bank provider abstraction — 2026-09-17
+
+Apply `20260917180000_bank_provider_abstraction.sql` before deploying the
+provider registry. Until it runs, `/api/bank/connect`, `/api/bank/credentials`
+and every sync write fail on a missing column or a missing table.
+
+It is additive. `bank_connections.requisition_id` and `institution_id` lose their
+NOT NULL (a token provider has neither), and the table gains `provider_ref`,
+`consent_expires_at`, `last_error` and `sync_cursor`. `provider_ref` is
+backfilled from `requisition_id`, and the GoCardless path keeps writing both, so
+existing connections behave exactly as before. A check constraint pins `provider`
+to the three registered ids, which is the same guard
+`src/lib/bank/registry.ts` applies in the application.
+
+The new `public.bank_provider_credentials` table holds a per-user provider
+secret — today the Fio API token. It mirrors the `github_tokens` boundary: RLS
+enabled, no policy at all, every grant revoked from `anon` and `authenticated`,
+`service_role` only.
+
+### Verify
+
+Confirm the four new columns exist and that every pre-existing GoCardless row has
+`provider = 'gocardless'` and a `provider_ref` equal to its `requisition_id`.
+Insert a row with `provider = 'nordigen'` directly in SQL and confirm the check
+constraint rejects it.
+
+Sign in and run a sync. An existing GoCardless connection must still import the
+same transactions and must not re-insert anything it already holds — the dedupe
+keys did not change and GoCardless account refs stay unprefixed.
+
+Store a Fio token from Finances → Connect bank → Fio banka. Confirm
+`GET /api/bank/credentials` answers `{"stored":{"fio":true}}` and never the
+value, that `GET /api/integrations/status` reports the provider rows as booleans
+only, and that the new connection's imported rows carry `fio:`-prefixed
+`external_id`s. Sign in as a second user and confirm neither user can select
+anything from `bank_provider_credentials` with their own session.
+
+Press the per-connection sync button on one bank and confirm only that bank is
+pulled. Set `consent_expires_at` into the past on a linked row and run
+`/api/cron/bank-sync`: the row must come back `expired` before any pull happens.
+
+### Rollback
+
+Deploy the previous application version and keep the columns; the old code reads
+`requisition_id` and ignores the rest. Do not restore the NOT NULL constraints
+while any non-GoCardless connection exists. Dropping
+`bank_provider_credentials` deletes the stored Fio token, which then has to be
+pasted again.
+
+## Job application contacts — 2026-09-17
+
+`20260917190000_job_application_contacts.sql` adds `contact_name` and
+`contact_email` to `public.job_applications`. Columns only: no table, no
+policy, no grant and no function. The four own-only `job_applications` policies
+already cover new columns, so RLS is unchanged and the progress RPC keeps its
+existing six-argument signature.
+
+Both columns are nullable and checked, not verified: the name is bounded to
+200 trimmed characters and the address only has to look like one. Nothing in
+the application ever sends mail to either value.
+
+### Verify
+
+Confirm both columns exist and accept `null`. Insert a contact name of 201
+characters and an address without an `@` and confirm each check rejects it.
+Open Career → Applied → any card → **Response / follow-up**, fill the two
+contact fields, save, and confirm the values come back on the card after a
+reload. Sign in as a second account and confirm it cannot select or update the
+first account's application.
+
+Before the migration runs, PostgREST omits both keys, and the dialog says the
+fields need the migration instead of offering inputs that cannot save. That is
+the intended degraded state, so it is worth seeing once on an unmigrated copy.
+
+### Rollback
+
+Deploy the previous application version and keep the columns; the old code
+never selects them by name. Dropping the two columns discards any contact
+already entered — the notes field does not receive a copy.

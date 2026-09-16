@@ -1,4 +1,5 @@
 import "server-only";
+import type { ProviderTransaction } from "@/lib/bank/provider";
 import { extractVariableSymbol, normalizeSymbol } from "@/lib/payment-matching";
 
 /**
@@ -120,6 +121,8 @@ export type Requisition = {
   reference: string;
   accounts: string[];
   link: string;
+  /** End-user agreement id, when the requisition was created with one. */
+  agreement?: string;
 };
 
 export function createRequisition(input: {
@@ -147,6 +150,28 @@ export function deleteRequisition(id: string): Promise<void> {
   return api<void>(`/requisitions/${encodeURIComponent(id)}/`, {
     method: "DELETE",
   });
+}
+
+/**
+ * The end-user agreement behind a requisition. This is the only place the
+ * 90-day PSD2 consent window is stated as data: `accepted` plus
+ * `access_valid_for_days` is the lapse date. A requisition created without an
+ * explicit agreement has no id here, and the expiry then stays unknown rather
+ * than being guessed.
+ */
+export type EndUserAgreement = {
+  id: string;
+  created: string;
+  institution_id: string;
+  max_historical_days?: number;
+  access_valid_for_days?: number;
+  accepted?: string | null;
+};
+
+export function getEndUserAgreement(id: string): Promise<EndUserAgreement> {
+  return api<EndUserAgreement>(
+    `/agreements/enduser/${encodeURIComponent(id)}/`,
+  );
 }
 
 /* ------------------------------- accounts ------------------------------- */
@@ -220,26 +245,12 @@ export function getAccountTransactions(
 /* --------------------------- mapping to our rows -------------------------- */
 
 /**
- * Normalise a GoCardless booked transaction into our transactions-row shape.
- * Amount sign decides income vs expense; we store the absolute value (the DB
- * enforces amount >= 0). A stable external_id dedupes across re-syncs.
+ * Normalise a GoCardless booked transaction into the provider-neutral row the
+ * sync inserts. Amount sign decides income vs expense; we store the absolute
+ * value (the DB enforces amount >= 0). A stable external_id dedupes across
+ * re-syncs. Ownership is bound by the sync, never here.
  */
-export function mapTransaction(
-  tx: GcTransaction,
-  userId: string,
-  accountId: string | null,
-): {
-  user_id: string;
-  account_id: string | null;
-  kind: "income" | "expense";
-  amount: number;
-  currency: string;
-  category: string | null;
-  note: string | null;
-  occurred_on: string;
-  external_id: string;
-  variable_symbol: string | null;
-} | null {
+export function mapTransaction(tx: GcTransaction): ProviderTransaction | null {
   const raw = Number(tx.transactionAmount?.amount);
   if (!Number.isFinite(raw)) return null;
   const id =
@@ -256,8 +267,6 @@ export function mapTransaction(
     tx.debtorName ??
     null;
   return {
-    user_id: userId,
-    account_id: accountId,
     kind: raw < 0 ? "expense" : "income",
     amount: Math.abs(raw),
     currency: tx.transactionAmount.currency,

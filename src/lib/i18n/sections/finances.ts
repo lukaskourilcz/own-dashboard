@@ -113,6 +113,23 @@ type BankStrings = {
   importErr: string;
   csvParseErr: string;
   nothingToImport: string;
+  // Provider choice, per-connection sync and consent expiry (issue #64).
+  providerStep: string;
+  providerStepDesc: string;
+  providerNotConfigured: string;
+  providerBack: string;
+  serverSideOnly: string;
+  fioTitle: string;
+  fioHint: string;
+  fioPlaceholder: string;
+  fioSave: string;
+  fioSaving: string;
+  fioSaved: string;
+  fioErr: string;
+  fioStored: string;
+  syncThis: string;
+  consentExpires: (date: string) => string;
+  consentExpired: string;
 };
 
 // The transaction rule editor (src/components/finances/transaction-rules.tsx).
@@ -275,6 +292,25 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importErr: "Import failed. Please try again.",
       csvParseErr: "Couldn't read that file.",
       nothingToImport: "No new transactions to import.",
+      providerStep: "How do you want to connect?",
+      providerStepDesc:
+        "Pick the service that reads your account. Each one is set up differently.",
+      providerNotConfigured: "Not set up on this server.",
+      providerBack: "Back",
+      serverSideOnly:
+        "The token is stored on the server and is never sent back to this page.",
+      fioTitle: "Fio API token",
+      fioHint:
+        "Generate a read-only token in Fio internet banking (Settings → API), then paste it here.",
+      fioPlaceholder: "Paste the token",
+      fioSave: "Save token",
+      fioSaving: "Saving…",
+      fioSaved: "Token saved — syncing…",
+      fioErr: "That token was not accepted.",
+      fioStored: "A token is already stored.",
+      syncThis: "Sync this bank",
+      consentExpires: (date) => `consent expires ${date}`,
+      consentExpired: "Consent expired — reconnect to keep syncing.",
     },
     rules: {
       title: "Transaction rules",
@@ -485,6 +521,25 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importErr: "Import selhal. Zkus to znovu.",
       csvParseErr: "Soubor se nepodařilo přečíst.",
       nothingToImport: "Žádné nové transakce k importu.",
+      providerStep: "Jak se chceš připojit?",
+      providerStepDesc:
+        "Vyber službu, která bude číst tvůj účet. Každá se nastavuje jinak.",
+      providerNotConfigured: "Na tomhle serveru není nastavené.",
+      providerBack: "Zpět",
+      serverSideOnly:
+        "Token se ukládá na serveru a na tuhle stránku se nikdy nevrací.",
+      fioTitle: "API token Fio banky",
+      fioHint:
+        "Ve Fio internetovém bankovnictví vytvoř token jen pro čtení (Nastavení → API) a vlož ho sem.",
+      fioPlaceholder: "Vlož token",
+      fioSave: "Uložit token",
+      fioSaving: "Ukládám…",
+      fioSaved: "Token uložen — synchronizuji…",
+      fioErr: "Token nebyl přijat.",
+      fioStored: "Token už je uložený.",
+      syncThis: "Synchronizovat tuhle banku",
+      consentExpires: (date) => `souhlas platí do ${date}`,
+      consentExpired: "Souhlas vypršel — pro další synchronizaci se připoj znovu.",
     },
     rules: {
       title: "Pravidla pro transakce",

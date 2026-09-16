@@ -18,7 +18,7 @@ knowledge, integrations, notifications, and contextual AI.
 - **Anthropic Claude** — contextual AI (intent, enrichment, synthesis) over bounded, consented context.
 - **Google** — OAuth sign-in and direct Google Calendar event creation.
 - **GitHub** — OAuth sign-in and repository/commit data for project tracking.
-- **GoCardless** — bank account sync feeding money and invoice records.
+- **GoCardless / Fio banka / Enable Banking** — interchangeable bank-sync providers behind one adapter interface, feeding money and invoice records.
 - **Resend** — transactional email for renewal warnings and notifications.
 - **Upstash Redis** — rate limiting and lightweight caching.
 - **PostHog** — consent-based, EU-hosted product analytics.

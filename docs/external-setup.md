@@ -90,7 +90,89 @@ Run `supabase/migrations/20260917090000_invoice_payment_matching.sql` before the
 first run; until then `transactions.variable_symbol`, `matched_at` and
 `match_source` do not exist and every matching write fails.
 
-Verify the deployment sends the expected Bearer authorization. Add `HEARTBEAT_URL` for renewal-job success pings. `CRON_REGISTRY_TOKEN` is needed only if an external system writes registry metadata.
+### Bank providers
+
+Bank sync is provider-agnostic. `src/lib/bank/registry.ts` holds one adapter per
+provider and every route asks the registry, so configuring one provider is
+enough and none of them is required — CSV statement import works with all three
+unset.
+
+Run `supabase/migrations/20260917180000_bank_provider_abstraction.sql` first.
+Until it runs, `bank_connections.provider_ref`, `consent_expires_at`,
+`last_error` and `sync_cursor` do not exist and neither does
+`bank_provider_credentials`, so every connection write fails.
+
+**GoCardless Bank Account Data** — set `GOCARDLESS_SECRET_ID` and
+`GOCARDLESS_SECRET_KEY`, then connect a bank from Finances. GoCardless has
+closed Bank Account Data to new signups, so this path only works for an account
+that already exists.
+
+**Fio banka** — no environment variable. In Fio internet banking create an API
+token limited to reading one account, then paste it into Finances → Connect bank
+→ Fio banka. It is stored in `bank_provider_credentials`, which is service-role
+only, and is never returned to the browser. Fio rejects a second call on the
+same token within 30 seconds, so one sync makes one upstream request. A Fio
+token does not expire; revoke it in internet banking when you are done with it.
+
+**Enable Banking** — register an application at enablebanking.com, generate an
+RSA key pair, upload the public key, and set the issued application id as
+`ENABLE_BANKING_APPLICATION_ID` with the private key as
+`ENABLE_BANKING_PRIVATE_KEY`. The adapter is registered and signs the RS256
+assertion their API expects, but its request flow has not been executed against
+a real application, so it reports itself as not set up and every data call fails
+with a typed error rather than guessing at an endpoint. Finish and verify that
+flow before relying on it.
+
+### Renewing a bank consent
+
+A PSD2 consent lasts 90 days. The connection row stores `consent_expires_at`
+whenever the provider states one, the bank card shows the date beside the status,
+and the daily cron marks a connection expired the morning the date passes rather
+than waiting for a sync to fail. Reconnecting the bank from Finances is what
+renews it; a Fio token has no expiry and shows no date.
+
+Verify the deployment sends the expected Bearer authorization. `CRON_REGISTRY_TOKEN` is needed only if an external system writes registry metadata.
+
+### Heartbeat monitoring
+
+A cron that stops being invoked reports nothing, so nothing in this app can
+notice on its own. Each job therefore pushes to an external monitor after a
+successful run, and the monitor's missed-ping alert is what makes the silence
+visible.
+
+Set the push URL per job — `HEARTBEAT_URL_BANK_SYNC`,
+`HEARTBEAT_URL_PAYMENT_MATCH`, `HEARTBEAT_URL_RENEWAL_WARNINGS`,
+`HEARTBEAT_URL_JOBS_SCRAPE` — or set the shared `HEARTBEAT_URL` for all of them.
+Every variable is optional; unset means that job is unmonitored, and nothing is
+pinged. A failed run never pings, which is the whole point.
+
+Project crons carry their own push URL in the cron form (Projects → a project →
+Crons → Heartbeat URL). The server stamps `last_success_at` and pings that URL
+when a run reports success through `/api/crons/log` with a `cron_id`, or with an
+`endpoint` matching the cron's own. The cron row then shows On time, Late or Not
+reporting beside its cost, derived from its schedule — that part works with no
+external service at all.
+
+[Uptime Kuma](https://github.com/louislam/uptime-kuma) (self-hosted, MIT) is the
+reference monitor:
+
+1. Run it on the VPS behind TLS and create the admin account.
+2. Add one **Push** monitor per job, set its heartbeat interval to the job's
+   schedule, and copy the generated push URL into the matching environment
+   variable or cron field.
+3. Add a **Webhook** notification pointing at
+   `https://YOUR-DOMAIN/api/webhooks/uptime-kuma`, with an
+   `Authorization: Bearer <UPTIME_KUMA_WEBHOOK_TOKEN>` header, and attach it to
+   those monitors.
+4. Set `UPTIME_KUMA_WEBHOOK_TOKEN` and `DASHBOARD_OWNER_ID` in the deployment.
+   Without both, the route answers 503 and records nothing.
+
+A down event then opens one notification per monitor in the Inbox action centre
+and logs a failed run in the Home cron monitor; a recovery dismisses that open
+alert and posts one recovery notice. Confirm the payload against your own
+instance after the first alert: the receiver reads `monitor.name`,
+`monitor.id` and `heartbeat.status`, ignores anything else, and answers 200 to a
+body it cannot use so Kuma does not retry.
 
 For email, verify a Resend domain and set:
 
