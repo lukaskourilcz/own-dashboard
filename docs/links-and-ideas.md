@@ -4,13 +4,15 @@ Links stores tools and references; Ideas appears immediately below it and stores
 
 A review can include a 1–5 usefulness score, rationale, repository-specific relevance, source URLs, pricing evidence and review date. These are advisory research metadata, not authorization or project foreign keys. Original descriptions remain stored; a legacy leading `N/5 ·` is hidden when a structured score supersedes it.
 
-The export dialog previews JSON or Markdown and offers Copy all and download. It includes both Links and Ideas independently of the page search. Filters are exact: Free includes `free`; Free + freemium includes `free` and `freemium`; All also includes paid and unknown prices. Unknown prices are never inferred to be free. Export fields omit the owner identifier. Clipboard denial leaves selectable preview text.
+Links and Ideas have separate export dialogs. Each dialog can include all records, selected categories, or individual records, then apply a price filter. JSON supports a detailed flat list, compact flat list, or category-grouped structure; Markdown uses the same selected records. Price filters distinguish free, freemium-only, paid, and unknown records, while the combined free + freemium option remains available. Unknown prices are never inferred to be free. Export fields omit the owner identifier. Clipboard denial leaves selectable preview text.
+
+Idea rows use the idea or goal as their primary label. Instagram and other source URLs appear inside the expanded summary with the observed subject, practical benefit, project relevance, and evidence. They do not replace the idea label.
 
 ## Migration and rollout
 
 `20260915210805_link_ideas_and_relevance.sql` adds optional metadata and a required defaulted record type. Insert/update policies additionally require an owned category. Existing read/delete policies and RLS remain active.
 
-The migration and owner-authorized research import were applied to the live database on 2026-09-15. A supplemental visual-review import on 2026-09-16 brought the verified total to 169 links and 17 ideas, all with ratings, rationales, project relevance and sources. All original 119 IDs, titles, URLs, descriptions and categories were preserved. No generated research or private repository inventory is committed. The import snapshot and coverage ledger are in the local ignored observations directory.
+The migration and owner-authorized research import were applied to the live database on 2026-09-15. A supplemental visual-review import on 2026-09-16 brought the collection to 169 links and 17 ideas. The owner then added Google Pics and WhichAI.dev and replaced the broad mixed categories with 37 focused link categories and 10 focused idea categories. The current verified total is 171 links and 17 ideas; every record has a category. Existing records keep their IDs, titles, URLs and descriptions. No generated research or private repository inventory is committed. The import snapshot and coverage ledger are in the local ignored observations directory.
 
 The integrated application uses main’s expandable resource cards for both Links and Ideas. Before this code is deployed, the previous interface may show Ideas among ordinary links because it does not recognize the new record type. The initial delivery stayed local; the owner subsequently authorized merging into main and triggering deployment.
 
@@ -20,4 +22,4 @@ Instagram Saved did not expose save dates, so the requested monthly boundary can
 
 ## Validation
 
-Export unit tests cover pricing, missing metadata, Unicode, source/relevance retention, legacy descriptions and owner omission. Browser tests cover desktop/mobile copy, download, filtering, keyboard dismissal/focus return, clipboard denial and dialog accessibility. Exact execution results and known suite failures are recorded in `docs/design/visual-qa.md`.
+Export unit tests cover scope, category and item selection, pricing, JSON structures, missing metadata, Unicode, source/relevance retention, legacy descriptions and owner omission. Browser tests cover desktop/mobile copy, download, filtering, keyboard dismissal/focus return, clipboard denial and dialog accessibility. Exact execution results and known suite failures are recorded in `docs/design/visual-qa.md`.

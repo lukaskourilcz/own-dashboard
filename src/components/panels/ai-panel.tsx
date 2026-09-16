@@ -425,7 +425,7 @@ export function AiPanel({
         description={t.ai.description}
         action={
           <div className="flex flex-wrap gap-2">
-          <LinkExportDialog links={aiLinks} categories={aiCategories} />
+          <LinkExportDialog links={aiLinks} categories={aiCategories} scope="link" />
           <Button size="sm" onClick={() => openCreate() }>
             <Plus className="h-3.5 w-3.5" />
             {t.ai.addLink}
@@ -555,7 +555,10 @@ export function AiPanel({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div><h2 id="ideas-heading" className="text-base font-semibold">{t.ai.ideasTitle}</h2>
           <p className="text-xs text-foreground-muted">{t.ai.ideasHint}</p></div>
-          <Button variant="outline" size="sm" onClick={() => openCreate("idea")}>{t.ai.addIdea}</Button>
+          <div className="flex flex-wrap gap-2">
+            <LinkExportDialog links={aiLinks} categories={aiCategories} scope="idea" />
+            <Button variant="outline" size="sm" onClick={() => openCreate("idea")}>{t.ai.addIdea}</Button>
+          </div>
         </div>
         <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
           {[...aiCategories, { id: UNCATEGORIZED, name: t.ai.uncategorized }].map((category) => {

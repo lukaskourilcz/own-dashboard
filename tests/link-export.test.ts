@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLinkExport, linkExportMarkdown, selectExportLinks, linkDescription } from "@/lib/link-export";
+import { buildLinkExport, linkExportMarkdown, selectExportLinks, linkDescription, shapeLinkExport, UNCATEGORIZED_EXPORT } from "@/lib/link-export";
 import type { AiLink } from "@/lib/types";
 
 const row = (id: string, pricing: AiLink["pricing"]): AiLink => ({
@@ -13,6 +13,17 @@ describe("link export", () => {
     expect(selectExportLinks(links, "free").map((l) => l.id)).toEqual(["free"]);
     expect(selectExportLinks(links, "freemium").map((l) => l.id)).toEqual(["free", "limited"]);
     expect(selectExportLinks(links, "all")).toHaveLength(4);
+  });
+  it("selects one record type, categories or explicit items before applying pricing", () => {
+    const scoped = [
+      { ...row("link-a", "free"), category_id: "design" },
+      { ...row("idea-a", "free"), record_type: "idea" as const, category_id: "design" },
+      { ...row("idea-b", "paid"), record_type: "idea" as const },
+    ];
+    expect(selectExportLinks(scoped, "all", "", { scope: "idea" }).map((item) => item.id)).toEqual(["idea-a", "idea-b"]);
+    expect(selectExportLinks(scoped, "all", "", { scope: "idea", selection: "categories", categoryIds: ["design"] }).map((item) => item.id)).toEqual(["idea-a"]);
+    expect(selectExportLinks(scoped, "paid", "", { scope: "idea", selection: "categories", categoryIds: [UNCATEGORIZED_EXPORT] }).map((item) => item.id)).toEqual(["idea-b"]);
+    expect(selectExportLinks(scoped, "all", "", { selection: "items", itemIds: ["link-a", "idea-b"] }).map((item) => item.id)).toEqual(["link-a", "idea-b"]);
   });
   it("exports complete review metadata without owner identifiers", () => {
     const idea = { ...row("Idea [review]", "free"), record_type: "idea" as const,
@@ -41,5 +52,12 @@ describe("link export", () => {
     expect(buildLinkExport([row("legacy", null)], [], "all").items[0]).toMatchObject({ type: "link", usefulnessRating: null, sources: [] });
     expect(buildLinkExport([row("paid", "paid")], [], "free").items).toEqual([]);
     expect(linkExportMarkdown(buildLinkExport([], [], "all"))).toContain("# Links & ideas");
+  });
+  it("offers detailed, compact and category-grouped JSON structures", () => {
+    const categories = [{ id: "design", user_id: "private-owner", name: "Design", sort_order: 1, created_at: "2026-09-15" }];
+    const data = buildLinkExport([{ ...row("a", "free"), category_id: "design" }, row("b", null)], categories, "all", "", { scope: "link" });
+    expect(shapeLinkExport(data, "detailed")).toBe(data);
+    expect(shapeLinkExport(data, "compact")).toMatchObject({ scope: "link", items: [{ title: "a", category: "Design" }, { title: "b", category: null }] });
+    expect(shapeLinkExport(data, "grouped")).toMatchObject({ categories: [{ category: "Design" }, { category: "Uncategorized" }] });
   });
 });

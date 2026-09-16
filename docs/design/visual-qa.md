@@ -159,3 +159,15 @@ Integrated the Ideas/export feature with main's newer searchable expandable reso
 - A local dependency symlink was rejected by Turbopack; a local dependency copy resolved setup. Both the E2E production build and ordinary production build passed.
 - Previous full-suite limitations remain documented above; the full suite was not rerun for this integration.
 - User explicitly authorized a main push and redeployment in the follow-up.
+
+## Focused taxonomy and export controls — 2026-09-16
+
+Links and Ideas now use separate export dialogs. The targeted browser suite covered all-record, selected-category and individual-record selection; free, combined free/freemium and exact price filters; detailed, compact and category-grouped JSON; Markdown; clipboard and download; clipboard denial; Escape/focus return; and dialog axe scans. Ideas render their goal as the row label and expose the observed Reel subject, benefit, project relevance and original source after expansion.
+
+- `npm run lint`: passed.
+- `npx tsc --noEmit`: passed.
+- `npm run test`: 33 files, 286 tests passed.
+- `npm run build`: passed.
+- `npx playwright test e2e/link-export.spec.ts`: 8 passed across desktop and mobile.
+- The Czech dark export dialog passed document-overflow checks at 360, 430, 768, 1024, 1440 and 1728 px with no axe violations.
+- The live owner collection contains 171 links and 17 ideas in 37 link categories and 10 idea categories, with no uncategorized records. The code test harness continues to use synthetic fixtures rather than owner data.

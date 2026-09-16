@@ -1,10 +1,27 @@
 type AiStrings = {
   exportTitle: string;
+  exportLinksTitle: string;
+  exportIdeasTitle: string;
   exportHint: string;
   exportFormat: string;
+  exportSelection: string;
+  exportSelectionAll: string;
+  exportSelectionCategories: string;
+  exportSelectionLinks: string;
+  exportSelectionIdeas: string;
+  exportChooseCategories: string;
+  exportChooseLinks: string;
+  exportChooseIdeas: string;
   exportFree: string;
   exportFreemium: string;
+  exportFreemiumOnly: string;
+  exportPaid: string;
+  exportUnknown: string;
   exportAll: string;
+  exportShape: string;
+  exportShapeDetailed: string;
+  exportShapeCompact: string;
+  exportShapeGrouped: string;
   exportPreview: string;
   exportDownload: string;
   exportCopy: string;
@@ -20,6 +37,11 @@ type AiStrings = {
   rating: string;
   relevance: string;
   sources: string;
+  ideaSummary: string;
+  ideaBenefit: string;
+  originalReels: string;
+  reel: string;
+  source: string;
   recordType: string;
   linkType: string;
   ideaType: string;
@@ -111,11 +133,28 @@ type AiStrings = {
 export const ai: { en: AiStrings; cs: AiStrings } = {
   en: {
     exportTitle: "Copy to JSON / Markdown",
-    exportHint: "Export all links and ideas matching the pricing filter. Unknown prices appear only in All.",
+    exportLinksTitle: "Copy links to JSON / Markdown",
+    exportIdeasTitle: "Copy ideas to JSON / Markdown",
+    exportHint: "Choose all records, selected categories or individual records, then apply an optional pricing filter.",
     exportFormat: "Format",
+    exportSelection: "Include",
+    exportSelectionAll: "All categories",
+    exportSelectionCategories: "Selected categories",
+    exportSelectionLinks: "Selected links",
+    exportSelectionIdeas: "Selected ideas",
+    exportChooseCategories: "Choose categories",
+    exportChooseLinks: "Choose links",
+    exportChooseIdeas: "Choose ideas",
     exportFree: "Free only",
     exportFreemium: "Free + partially paid (freemium)",
+    exportFreemiumOnly: "Freemium only",
+    exportPaid: "Paid only",
+    exportUnknown: "Pricing unverified",
     exportAll: "All",
+    exportShape: "JSON structure",
+    exportShapeDetailed: "Detailed flat list",
+    exportShapeCompact: "Compact flat list",
+    exportShapeGrouped: "Grouped by category",
     exportPreview: "Preview",
     exportDownload: "Download file",
     exportCopy: "Copy all content",
@@ -131,6 +170,11 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     rating: "Usefulness",
     relevance: "Projects that benefit",
     sources: "Sources",
+    ideaSummary: "What the Reel was about",
+    ideaBenefit: "Why this idea is useful",
+    originalReels: "Original source or Reel",
+    reel: "Reel",
+    source: "Source",
     recordType: "Type",
     linkType: "Link",
     ideaType: "Idea",
@@ -220,11 +264,28 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
   },
   cs: {
     exportTitle: "Kopírovat do JSON / Markdown",
-    exportHint: "Export všech odkazů a nápadů podle ceny. Neznámé ceny se zobrazí jen ve Vše.",
+    exportLinksTitle: "Kopírovat odkazy do JSON / Markdown",
+    exportIdeasTitle: "Kopírovat nápady do JSON / Markdown",
+    exportHint: "Vyberte všechny záznamy, konkrétní kategorie nebo jednotlivé položky a případně je omezte podle ceny.",
     exportFormat: "Formát",
+    exportSelection: "Zahrnout",
+    exportSelectionAll: "Všechny kategorie",
+    exportSelectionCategories: "Vybrané kategorie",
+    exportSelectionLinks: "Vybrané odkazy",
+    exportSelectionIdeas: "Vybrané nápady",
+    exportChooseCategories: "Vybrat kategorie",
+    exportChooseLinks: "Vybrat odkazy",
+    exportChooseIdeas: "Vybrat nápady",
     exportFree: "Pouze zdarma",
     exportFreemium: "Zdarma + částečně placené",
+    exportFreemiumOnly: "Pouze freemium",
+    exportPaid: "Pouze placené",
+    exportUnknown: "Cena neověřena",
     exportAll: "Vše",
+    exportShape: "Struktura JSON",
+    exportShapeDetailed: "Podrobný plochý seznam",
+    exportShapeCompact: "Stručný plochý seznam",
+    exportShapeGrouped: "Seskupit podle kategorií",
     exportPreview: "Náhled",
     exportDownload: "Stáhnout soubor",
     exportCopy: "Kopírovat celý obsah",
@@ -240,6 +301,11 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     rating: "Užitečnost",
     relevance: "Využití v projektech",
     sources: "Zdroje",
+    ideaSummary: "O čem Reel byl",
+    ideaBenefit: "Proč je nápad užitečný",
+    originalReels: "Původní zdroj nebo Reel",
+    reel: "Reel",
+    source: "Zdroj",
     recordType: "Typ",
     linkType: "Odkaz",
     ideaType: "Nápad",
