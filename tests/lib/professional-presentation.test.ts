@@ -10,11 +10,25 @@ describe("professional status presentation", () => {
     expect(statusLabel("planned", "en")).toBe("Planned");
   });
 
+  it("labels the VAT verification states in both locales", () => {
+    expect(statusLabel("vat_valid", "en")).toBe("VAT valid");
+    expect(statusLabel("vat_valid", "cs")).toBe("DIČ platné");
+    expect(statusLabel("vat_unavailable", "cs")).toBe("Ověření nedostupné");
+    expect(statusLabel("vat_unchecked", "en")).toBe("VAT unchecked");
+  });
+
   it("uses semantic tones consistently", () => {
     expect(statusTone("won")).toBe("success");
     expect(statusTone("proposal_sent")).toBe("warning");
     expect(statusTone("overdue")).toBe("risk");
     expect(statusTone("lost")).toBe("destructive");
+  });
+
+  it("separates an invalid VAT id from a registry that did not answer", () => {
+    expect(statusTone("vat_valid")).toBe("success");
+    expect(statusTone("vat_invalid")).toBe("destructive");
+    expect(statusTone("vat_unavailable")).toBe("warning");
+    expect(statusTone("vat_unchecked")).toBe("neutral");
   });
 });
 

@@ -33,6 +33,8 @@ import {
   VAT_RATES,
 } from "@/lib/invoices";
 import { cn, formatCurrency } from "@/lib/utils";
+import { vatNameMismatch, vatStatusOf } from "@/lib/tax-registry";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useDict } from "@/lib/i18n";
 import type { ParsedInvoice } from "@/lib/invoice-parser";
 import type {
@@ -410,6 +412,11 @@ export function InvoiceForm({
 
   const supplier = init.supplierSnapshot ?? settingsSnapshot(settings);
   const hasSupplier = Boolean(supplier.supplier_name.trim());
+
+  // Read-only: the linked organization's stored VIES verdict, shown beside the
+  // buyer's VAT number so the state of the check is known before the invoice is
+  // issued. Verifying happens in Clients; nothing here changes VAT rates.
+  const buyerOrganization = organizations.find((item) => item.id === organizationId) ?? null;
 
   const parsed = items.map((it) => ({
     quantity: Number(it.quantity) || 0,
@@ -797,6 +804,31 @@ export function InvoiceForm({
                 }
               />
             </div>
+            {buyerOrganization && buyerOrganization.vat_id && (
+              <div className="space-y-1.5 rounded-md border border-border bg-surface-inset p-3 sm:col-span-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+                    {t.invoices.buyerVatVerification}
+                  </span>
+                  <StatusBadge value={`vat_${vatStatusOf(buyerOrganization)}`} />
+                  {buyerOrganization.vat_verified_at && (
+                    <span className="text-xs tabular text-foreground-muted">
+                      {buyerOrganization.vat_verified_at.slice(0, 10)}
+                    </span>
+                  )}
+                </div>
+                {vatStatusOf(buyerOrganization) === "unchecked" && (
+                  <p className="text-xs text-foreground-muted">
+                    {t.invoices.buyerVatUnverified}
+                  </p>
+                )}
+                {vatNameMismatch(buyer.buyer_name, buyerOrganization.vat_verified_name) && (
+                  <p className="text-xs text-warning">
+                    {t.invoices.buyerVatNameMismatch}: {buyerOrganization.vat_verified_name}
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

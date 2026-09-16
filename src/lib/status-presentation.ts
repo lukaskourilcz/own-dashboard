@@ -14,6 +14,7 @@ const labels = {
     idea: "Idea", done: "Done", dropped: "Dropped", income: "Income", expense: "Expense", inactive: "Inactive",
     manual: "Manual", quick_add: "Quick Add", notification: "Notification", transaction: "Transaction",
     connected: "Connected", configured: "Configured", not_connected: "Not connected", not_configured: "Not configured",
+    vat_valid: "VAT valid", vat_invalid: "VAT invalid", vat_unavailable: "VAT check unavailable", vat_unchecked: "VAT unchecked",
   },
   cs: {
     discovered: "Objeveno", shortlisted: "Ve výběru", contacted: "Kontaktováno", proposal_sent: "Nabídka odeslána",
@@ -26,6 +27,7 @@ const labels = {
     idea: "Nápad", done: "Hotovo", dropped: "Ukončeno", income: "Příjem", expense: "Výdaj", inactive: "Neaktivní",
     manual: "Ruční", quick_add: "Rychlé přidání", notification: "Oznámení", transaction: "Transakce",
     connected: "Připojeno", configured: "Nastaveno", not_connected: "Nepřipojeno", not_configured: "Nenastaveno",
+    vat_valid: "DIČ platné", vat_invalid: "DIČ neplatné", vat_unavailable: "Ověření nedostupné", vat_unchecked: "DIČ neověřeno",
   },
 } as const;
 
@@ -34,10 +36,10 @@ export function statusLabel(value: string, lang: Lang): string {
 }
 
 export function statusTone(value: string): StatusTone {
-  if (["won", "paid", "completed", "done", "offer", "healthy", "active", "processed", "connected"].includes(value)) return "success";
-  if (["lost", "cancelled", "dismissed", "rejected"].includes(value)) return "destructive";
+  if (["won", "paid", "completed", "done", "offer", "healthy", "active", "processed", "connected", "vat_valid"].includes(value)) return "success";
+  if (["lost", "cancelled", "dismissed", "rejected", "vat_invalid"].includes(value)) return "destructive";
   if (["overdue", "expired", "at_risk"].includes(value)) return "risk";
-  if (["proposal_sent", "negotiating", "on_hold", "attention", "snoozed", "interviewing", "not_connected"].includes(value)) return "warning";
+  if (["proposal_sent", "negotiating", "on_hold", "attention", "snoozed", "interviewing", "not_connected", "vat_unavailable"].includes(value)) return "warning";
   if (["shortlisted", "contacted", "issued", "planned", "planning", "applied", "configured"].includes(value)) return "information";
   return "neutral";
 }
