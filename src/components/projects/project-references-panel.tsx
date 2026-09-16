@@ -67,7 +67,7 @@ export function ProjectReferencesPanel({ project, aiLinks, references, setRefere
           <span className="text-xs font-medium">{p.connectReference}</span>
           {available.length === 0
             ? <p className="text-xs text-foreground-subtle">{aiLinks.length === 0 ? t.ai.noLinksYet : p.allReferencesConnected}</p>
-            : <SimpleSelect aria-label={p.chooseReference} value={linkId} onValueChange={setLinkId} placeholder={p.chooseReference} options={available.map((link) => ({ value: link.id, label: `${link.record_type === "idea" ? p.referenceIdea : p.referenceLink} · ${link.title}` }))} className="h-9 text-sm" />}
+            : <SimpleSelect aria-label={p.chooseReference} value={linkId} onValueChange={setLinkId} options={[{ value: "", label: p.chooseReference }, ...available.map((link) => ({ value: link.id, label: `${link.record_type === "idea" ? p.referenceIdea : p.referenceLink} · ${link.title}` }))]} className="h-9 text-sm" />}
         </div>
         {available.length > 0 && <>
           <SimpleSelect aria-label={p.referenceStatus} value={status} onValueChange={(value) => setStatusDraft(value as ReferenceStatus)} options={[{ value: "used", label: p.referenceUsed }, { value: "planned", label: p.referencePlanned }]} className="h-9 w-auto text-sm" />

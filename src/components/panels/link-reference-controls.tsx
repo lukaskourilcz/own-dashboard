@@ -42,7 +42,7 @@ export function LinkReferenceControls({ linkTitle, references, projects, onConne
     {available.length === 0
       ? <p className="text-foreground-subtle">{projects.length === 0 ? p.noRelatedRecords : t.ai.noProjectsToConnect}</p>
       : <form className="flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); if (!projectId) return; onConnect(projectId, status); setProjectId(""); }}>
-        <SimpleSelect aria-label={`${t.ai.connectToProject}: ${linkTitle}`} value={projectId} onValueChange={setProjectId} placeholder={t.ai.chooseProject} options={available.map((project) => ({ value: project.id, label: project.name }))} className="h-8 min-w-[10rem] flex-1 text-xs" />
+        <SimpleSelect aria-label={`${t.ai.connectToProject}: ${linkTitle}`} value={projectId} onValueChange={setProjectId} options={[{ value: "", label: t.ai.chooseProject }, ...available.map((project) => ({ value: project.id, label: project.name }))]} className="h-8 min-w-[10rem] flex-1 text-xs" />
         <SimpleSelect aria-label={p.referenceStatus} value={status} onValueChange={(value) => setStatus(value as ReferenceStatus)} options={[{ value: "used", label: p.referenceUsed }, { value: "planned", label: p.referencePlanned }]} className="h-8 w-auto text-xs" />
         <Button type="submit" size="sm" variant="outline" disabled={!projectId}><Plus className="h-3.5 w-3.5" />{p.connectReferenceAction}</Button>
       </form>}
