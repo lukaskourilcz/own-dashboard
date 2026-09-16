@@ -52,7 +52,7 @@ Inbox is a triage queue, not a second task list. Manual captures and integration
 
 Work overview summarizes active projects, open opportunities, due follow-ups, issued invoices, explainable project-health warnings, and the current weekly review. Health is a transparent heuristic based on on-hold status, overdue linked tasks, disabled crons, and costs without recorded revenue.
 
-Projects use a sortable summary table with a dedicated non-text drag handle. Each project has a canonical workspace with Overview, Tasks, Activity, Communication, Repository, Operations, Finance, and Knowledge tabs. Communication records are project-owned timeline entries with channel, direction, contact, summary, and next action. Projects may store separate production and development URLs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
+Projects use a sortable summary table with a dedicated non-text drag handle, grouped by the code-level portfolio registry (`src/lib/portfolio.ts`): OwnDashboard, Products, BoardlessAI ventures, then other active projects collapsed. Registry entries are materialized without GitHub; venture subsections nest under their repository project through `parent_id`. Works (`scope = 'work'`) and Competition (`competitors`) are separate destinations documented in [Portfolio, Works, Competition and development finance](docs/portfolio-competition-finance.md). Each project has a canonical workspace with Overview, Tasks, Activity, Communication, Repository, Operations, Finance, and Knowledge tabs. Communication records are project-owned timeline entries with channel, direction, contact, summary, and next action. Projects may store separate production and development URLs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
 
 Career listings are rendered as a semantic, horizontally resilient table. Match is an explicit comparable column and users can sort by best/lowest match, remote availability, location, or discovery date. Rows support accessible bulk selection. Permanent deletion writes an owner-scoped `deleted` tombstone, so a shared scraped listing cannot reappear for that owner after refresh and one owner cannot mutate the global feed for another.
 
@@ -62,7 +62,7 @@ Opportunities also includes an own-only freelance platform directory, editable p
 
 ### Money
 
-Money preserves accounts, transactions, bank synchronization, subscriptions, categories, charts, and project infrastructure costs. Subscriptions retain a custom detail category and add a canonical operational group (`development`, `entertainment`, `business`, `infrastructure`, `productivity`, `finance`, or `other`) plus an importance level. Active records require a next billing date in the UI; every recurring-spend view shows the date and remaining/overdue days. Canonical child routes currently open the same integrated financial workspace so no mature functionality is duplicated.
+The Money overview shows development finance only: subscriptions in the Development group or with a project allocation, transactions linked to a subscription, a project or a development category, split between projects, works and unallocated overhead. Accounts, transactions, bank synchronization, categories and charts remain on their child routes. Subscriptions retain a custom detail category and add a canonical operational group (`development`, `entertainment`, `business`, `infrastructure`, `productivity`, `finance`, or `other`) plus an importance level. Active records require a next billing date in the UI; every recurring-spend view shows the date and remaining/overdue days. Canonical child routes currently open the same integrated financial workspace so no mature functionality is duplicated.
 
 ### Planning and Library
 
@@ -92,6 +92,8 @@ The cleanup migration snapshots retired rows per user into `legacy_personal_arch
 `20260723082424_sync_preferences_project_tabs.sql` makes those preferences reliably available to authenticated Data API callers with explicit own-only select/insert/update policies and grants. It adds `hidden_project_tabs`, which Settings synchronizes across devices, and updates the daily-focus RPC so imported NEEDED.md tasks resolve to their active project by repository when `project_id` is not populated. Client preference writes are serialized to preserve rapid toggle order; a failed server load no longer overwrites a valid device cache with defaults.
 
 Project workspace navigation remains inside the persistent dashboard shell. Opening an active project updates History API state without forcing a new server render, browser back/forward restores the selected project, and choosing the canonical Projects destination clears the selection and restores the project table.
+
+`20260916120000_portfolio_works_competition_finance.sql` adds `projects.scope`, `parent_id` and `portfolio_key` (with a parent ownership check in the insert/update policies), subscription lifecycle columns and the quarterly cycle, `subscription_allocations` and `competitors` (own-only RLS, foreign ownership checks), and `transactions.subscription_id` checked by the transaction policies.
 
 ## Exports
 

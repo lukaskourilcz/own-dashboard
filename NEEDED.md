@@ -31,6 +31,17 @@ after 45 days.
 - [ ] **Re-check the completeness flags if a board changes its API** — `complete: true` means one request returns the board's whole current set, which is what lets a missing offer be deleted without an HTTP check. If a board adds pagination or a result cap, that flag has to become `false` or live offers will be dropped. `[imp:3]` `[owner:me]` `[time:30m]` `[kind:decision]`
 - [ ] **Consider raising the refresh route's time limit** — `maxDuration` is 60s, and the liveness probes for partial sources are bounded to 150 URLs and 15s so they cannot starve the scrape. If the sources list shows removals lagging behind reality, raise the limit rather than loosening the bounds. `[imp:2]` `[owner:me]` `[time:20m]` `[kind:decision]`
 
+## Portfolio, Works, Competition and development finance (2026-09-16)
+
+The migration was applied to the linked project and the owner's live data was loaded from Gmail receipts and the research run. What still needs the owner:
+
+- [ ] **Check the subscription allocations** in Subscriptions — Vercel is split equally across the eight deployed repositories, Supabase across the four projects with a database, Claude Max by where coding time goes. Adjust the shares; the Money overview follows them. `[imp:3]` `[owner:me]` `[time:20m]` `[kind:decision]`
+- [ ] **Confirm Canva Pro is still active** — four payment failures between 2026-08-20 and 2026-08-28 and no successful invoice since 2026-07-20. Mark it ended if Canva cancelled it. `[imp:2]` `[owner:me]` `[time:10m]` `[kind:decision]`
+- [ ] **Confirm the Apify plan tier** — the 2026-09-15 invoice was $22.99; the record is named "Usage plan" until the console confirms the tier. `[imp:2]` `[owner:me]` `[time:10m]` `[kind:setup]`
+- [ ] **Add the GitHub repository allow-list entry for phone-app** (Settings → Repositories) if you also want its NEEDED.md tasks and commits; the project row itself no longer depends on it. `[imp:2]` `[owner:me]` `[time:5m]` `[kind:setup]`
+- [ ] **Review the imported competitors, links and ideas** in Competition and each project's Links & Ideas tab; every record carries sources and a review date, and unverified prices are marked in the text. `[imp:3]` `[owner:me]` `[time:45m]` `[kind:content]`
+- [ ] **Set VERCEL_API_TOKEN** if you want per-project Vercel usage instead of the equal split. `[imp:2]` `[owner:me]` `[time:15m]` `[kind:setup]`
+
 ## Optional production hardening
 
 - [ ] **Distributed rate limiting:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Without them, the app uses a best-effort in-memory limiter per server instance. `[imp:2]` `[owner:me]`
