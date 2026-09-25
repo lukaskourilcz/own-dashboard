@@ -5,10 +5,14 @@ The repository implementation is complete. The items below are the external acco
 ## Kickoff 2026-09-25 · prompts, links, projects, tools
 
 `KICKOFF-25-9-2026.md` at the repository root is the programme; issues #75–#83 are the steps.
-Owner parts:
+Owner parts, in this order:
 
-- [ ] **Run the two backfill scripts** — after #75 (`projects.repo_id` from the GitHub API) and #78 (`project_links` from `ai_links.project_relevance`) land, run them with your token as their issue describes and review the result in the UI. [imp:3] [owner:me] [time:20m] [kind:setup]
-- [ ] **Rename the repositories on GitHub after #75 is live** — `react-express-app → devShark`, `aifirst → DNESKAi`, `quorum → boardlessAI`; the auto-sync then updates the three projects' `repo_full_name` instead of duplicating them. The full order is in quorum's kickoff. [imp:4] [owner:me] [time:30m] [kind:setup]
+- [ ] **Apply the six kickoff migrations** — `npx supabase db push --linked` applies `20260925090000_project_repository_identity`, `…090100_project_engagement_and_names` (renames aifirst, react-express-app and quorum to DNESKAi, devShark and boardlessAI; marks gym-plzen and paris-claire as freelance), `…090200_fix_hidden_project_tabs_check`, `…090300_project_links`, `…090400_prompt_kinds_and_links` and `…090500_tools`. Deploy the matching code in the same release. Verification steps per migration are in `docs/migration-guide.md`. [imp:5] [owner:me] [time:20m] [kind:deploy]
+- [ ] **Backfill repository ids** — from your machine, with `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GITHUB_TOKEN` and `DASHBOARD_OWNER_ID` set: `node scripts/backfill-project-repo-ids.mjs` (dry run), then `node scripts/backfill-project-repo-ids.mjs --apply`. Opening Projects with GitHub connected also fills ids for repositories in the active list. [imp:4] [owner:me] [time:10m] [kind:setup]
+- [ ] **Backfill project links** — with the same variables except the GitHub token: `node scripts/backfill-project-links.mjs`, review the planned relations and the unresolved list, then re-run with `--apply`. Check a few project workspaces' Links sections afterwards. [imp:3] [owner:me] [time:15m] [kind:setup]
+- [ ] **Rename the repositories on GitHub after the id backfill** — `react-express-app → devShark`, `aifirst → DNESKAi`, `quorum → boardlessAI`; the auto-sync then updates the three projects' `repo_full_name` and remembers the old names instead of duplicating them. Update local remotes, Vercel Git links and Actions secrets as `docs/external-setup.md` §9 describes. The full order is in quorum's kickoff. [imp:4] [owner:me] [time:30m] [kind:setup]
+- [ ] **Point external cron-registry callers at the new slug when convenient** — `GET /api/crons/registry?project=aifirst` keeps working through the earlier slug; `?project=dneskai` is the canonical form. [imp:1] [owner:me] [time:10m] [kind:setup]
+- [ ] **Decide what Opportunities shows before the check** — it now shows only when it was last loaded in this browser session and the opportunity and platform counts from then. Say if stored counts should be visible without pressing the button. [imp:2] [owner:me] [time:5m] [kind:decision]
 
 ## Required before the restructured app is used in production
 

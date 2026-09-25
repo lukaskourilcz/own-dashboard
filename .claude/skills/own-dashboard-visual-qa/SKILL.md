@@ -6,7 +6,7 @@ description: Run evidence-based visual, responsive, interaction, localization, a
 # OwnDashboard visual QA
 
 1. Read `docs/design/design-system.md`, `docs/design/brand-system.md`, `e2e/helpers.ts`, and the target tests. Use deterministic `/dev-preview`; never use private data in screenshots.
-2. Start or reuse the local app. Inspect login, Home, Inbox, Work, Projects, a project workspace, Opportunities, Clients, Career, Invoices, Money, Tasks, Calendar, Notes, Settings, not-found, and relevant dialogs/states.
+2. Start or reuse the local app. Inspect login, Home, Work, Projects (own group, freelance divider), a project workspace (Links section), Opportunities and Career (before and after **Check for new offers**), Clients, Invoices, Money, Tasks, Calendar, Notes, Prompts (copy preview), Tools, Links, Settings, Inbox and References by URL (`/dev-preview?tab=inbox`), not-found, and relevant dialogs/states.
 3. Exercise 360, 430, 768, 1024, 1440, and 1728 px. Check navigation hierarchy, safe areas, overflow, sticky surfaces, scrollable tabs, filters, tables, charts, forms, drawers/dialogs, long Czech copy, long names, and large currency values.
 4. Check light/dark, EN/CS, reduced motion, loading, initial/filtered empty, error, disconnected, disabled, archived, permission, and reauthorization states.
 5. Run axe and manual keyboard checks: skip link, visible focus, logical order, sidebar, mobile More sheet, command palette, chords, dialog trap/Escape, form labels/errors, live announcements, table semantics, non-color status, touch targets, zoom/reflow, and meaningful/decorative image treatment.

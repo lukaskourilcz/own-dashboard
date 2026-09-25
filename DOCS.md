@@ -14,7 +14,12 @@ Project ──────┬─ Tasks          Opportunity ── Tasks / Notes
               ├─ Client communication
               ├─ Costs / Crons
               ├─ Transactions / Subscriptions / Invoices
-              └─ Dates / Prompts
+              ├─ Dates / Prompts
+              └─ Library links (project_links: uses | reference | tool)
+
+Prompt ── Library links (prompt_links)
+Tool ── one library link ── Projects (project_links, role tool)
+     └─ optional Subscription (monthly cost)
 
 Inbox item ── confirmed routing ── Task | Note | Opportunity | Project
                                   Organization | Job application | Date
@@ -46,13 +51,19 @@ Home shows the daily operating context: calendar, deadlines, opportunity follow-
 
 ### Inbox
 
+Inbox and References are hidden from every navigation surface (`HIDDEN_NAV_TABS` in `src/lib/nav-tabs.ts`): the sidebar, the mobile bar and More sheet, the command palette, the `g` chords, Settings and Home widgets. Their routes still render at `/inbox` and `/references` with a short note, and their tables, RPCs and exports are unchanged. Notifications load only on the Inbox route; there is no sidebar bell.
+
 Inbox is a triage queue, not a second task list. Manual captures and integration events land as `inbox_items`; notification records are visible in the same action center and through the sidebar unread indicator. Notifications support safe source links, mark-read, snooze, and dismiss actions. Inbox search, source/status/destination filters, snooze, dismiss, restore, source links, and bulk dismiss support deliberate triage. A user chooses the destination and clicks Process; only then does the `route_inbox_item` `SECURITY INVOKER` RPC create or update the destination and mark the item processed in one transaction. Retries return the recorded route instead of creating duplicates. Valid relationship identifiers in an item's payload are carried into routed records and are rechecked by RLS.
 
 ### Work
 
 Work overview summarizes active projects, open opportunities, due follow-ups, issued invoices, explainable project-health warnings, and the current weekly review. Health is a transparent heuristic based on on-hold status, overdue linked tasks, disabled crons, and costs without recorded revenue.
 
-Projects use a sortable summary table with a dedicated non-text drag handle. Each project has a canonical workspace with Overview, Tasks, Activity, Communication, Repository, Operations, Finance, and Knowledge tabs. Communication records are project-owned timeline entries with channel, direction, contact, summary, and next action. Projects may store separate production and development URLs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
+Projects use a sortable summary table with a dedicated non-text drag handle. `projects.engagement` separates the owner's own products (`own`) from freelance work the owner was hired for (`client`); the table and the sidebar list own projects first, then a hairline "Freelance — hired" divider and the client projects. Reordering works within a group while `sort_order` stays one sequence. Each project has a canonical workspace with Overview, Tasks, Activity, Communication, Repository, Finance, Knowledge, Scaling and Monetization tabs. Overview lists the library links the project uses (`project_links`), each with a role and a note on how it helps, added through the shared library picker. Knowledge lists every prompt by kind and copies it with this project filled in.
+
+Projects match GitHub repositories by the numeric repository id (`projects.repo_id`) and fall back to the current or a previous name (`previous_repo_full_names`). The auto-sync writes a renamed repository's new full name onto the existing project and records the old one; before it would create a project, it looks unresolved old names up on GitHub, which redirects renamed repositories. `taskBelongsToProject` in `src/lib/project-match.ts` is the one task-to-project rule, mirrored by the daily-focus RPC. Earlier slugs (`previous_slugs`) keep renamed project URLs and cron-registry calls working. Communication records are project-owned timeline entries with channel, direction, contact, summary, and next action. Projects may store separate production and development URLs. Revenue has an explicit currency and workspace finance converts revenue, costs, subscriptions, transactions, and invoices through the single deterministic static FX table.
+
+Career and Opportunities load nothing on entry. Each opens with one button, **Check for new offers / Zkontrolovat nové nabídky**; Career's press refreshes the job boards through `/api/jobs/refresh` and re-verifies which listings are open, and both then load their on-demand records (`ON_DEMAND_TAB_DATA` in `src/lib/dashboard-data.ts`). The loaded state lasts for the page session, nothing refetches on focus, remount or a timer, and the next press refreshes. The Opportunities gate shows when it was last loaded in this browser session and the counts from then. There is no scheduled job scrape.
 
 Career listings are rendered as a semantic, horizontally resilient table. Match is an explicit comparable column and users can sort by best/lowest match, remote availability, location, or discovery date. Rows support accessible bulk selection. Permanent deletion writes an owner-scoped `deleted` tombstone, so a shared scraped listing cannot reappear for that owner after refresh and one owner cannot mutate the global feed for another.
 
@@ -66,7 +77,11 @@ Money preserves accounts, transactions, bank synchronization, subscriptions, cat
 
 ### Planning and Library
 
-Planning preserves Tasks, Google Calendar, Goals (the renamed plans system), and own-only professional Dates. Tasks distinguish GLOBAL work from active-project work and exclude inactive-project tasks from operational surfaces. Library preserves Notes, Prompts, Links (the broadened link catalogue), and References. Empty notes older than the editing grace period are removed automatically; every note exposes full-context copy. Link categories use masonry columns so unequal groups do not create empty grid rows. Project Knowledge parses `about-project.md` into Tech stack and third-party library lists and can explicitly recheck GitHub.
+Planning preserves Tasks, Google Calendar, Goals (the renamed plans system), and own-only professional Dates. Tasks distinguish GLOBAL work from active-project work and exclude inactive-project tasks from operational surfaces. Library holds Notes, Prompts, Tools and Links; References remains reachable by URL only.
+
+Each prompt has a kind: design, audit, competition, UX and UI, analysis, documentation, new project, SEO, marketing or other. The Prompts page groups them in that order, with filter chips and a Public badge. Each prompt lists the library links an agent should open (`prompt_links`, with a note per link). Copying opens a preview built by `composePromptCopy` in `src/lib/prompt-composer.ts`: the `{{project.name}}`, `{{project.repo}}`, `{{project.url}}` and `{{project.dev_url}}` placeholders are expanded for the chosen project, a Project block follows, and "Links to consult" lists the prompt's links plus the project's links whose category fits the kind (all of them when the prompt has none). Without a project the placeholders stay and the Project block is omitted. No model is called.
+
+Tools is the curated in-use subset of Links: a `tools` row names a library link as a tool with what it does, a status (in use, trial, retired) and an optional subscription for its monthly cost. How it helps each project is a `project_links` row with role `tool`, so the note also appears in that project's Links section. Link cards show "Used by" project chips, a Tool badge and an "Add to project" action. Empty notes older than the editing grace period are removed automatically; every note exposes full-context copy. Link categories use masonry columns so unequal groups do not create empty grid rows. Project Knowledge parses `about-project.md` into Tech stack and third-party library lists and can explicitly recheck GitHub.
 
 ## Database and RLS
 
@@ -90,6 +105,8 @@ The cleanup migration snapshots retired rows per user into `legacy_personal_arch
 `20260723065433_daily_focus_synced_preferences.sql` extends task importance to 6, enforces GLOBAL task scope in a trigger, and adds own-only `daily_focus_sets` plus snapshot items. The `create_daily_focus_set` RPC is `SECURITY INVOKER`, uses an owner/date advisory transaction lock, excludes inactive projects, and preserves historical titles if a task is later removed. The same migration stores language, theme, currency, navigation visibility/order, task density, and CV links in `user_preferences`, and migrates Career `hidden` state into durable owner-scoped `deleted` tombstones.
 
 `20260723082424_sync_preferences_project_tabs.sql` makes those preferences reliably available to authenticated Data API callers with explicit own-only select/insert/update policies and grants. It adds `hidden_project_tabs`, which Settings synchronizes across devices, and updates the daily-focus RPC so imported NEEDED.md tasks resolve to their active project by repository when `project_id` is not populated. Client preference writes are serialized to preserve rapid toggle order; a failed server load no longer overwrites a valid device cache with defaults.
+
+The 2026-09-25 migrations add `projects.repo_id`, `previous_repo_full_names`, `engagement` and `previous_slugs`; correct the `hidden_project_tabs` check to the current workspace tabs; and create `project_links`, `prompt_links` (with `prompts.kind`) and `tools`. Each new table has explicit authenticated grants and own-only RLS whose insert and update checks require that every referenced project, prompt, link and subscription belongs to the caller; deleting a parent cascades to its relations. See [the migration guide](docs/migration-guide.md).
 
 Project workspace navigation remains inside the persistent dashboard shell. Opening an active project updates History API state without forcing a new server render, browser back/forward restores the selected project, and choosing the canonical Projects destination clears the selection and restores the project table.
 
@@ -137,9 +154,9 @@ Future coding agents start with `AGENTS.md` and `CLAUDE.md`, then use the narrow
 
 ## Testing
 
-- Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, and strict AI-output and citation validation.
-- Vitest also guards the atomic Inbox-routing migration, localized presentation labels, and local documentation links.
-- Playwright navigates every professional section and the nested project workspace, checks removed navigation, exercises stale preference repair, responsive behavior, customization, login and auth errors, contextual AI proposal flows, mobile destination access, Career table containment/sorting, project Communication, Agents, subscription classification/renewals, and axe accessibility scans.
+- Vitest covers existing financial/date/invoice/job utilities plus canonical navigation repair, project-health behavior, repository matching and rename planning, own/freelance grouping, project and prompt links, the prompt copy composer, curated prompts, Tools grouping and cost, and the on-demand data boundary.
+- Vitest also guards the atomic Inbox-routing migration, the migration contracts (RLS and check constraints), localized presentation labels, and local documentation links.
+- Playwright navigates every visible section and the nested project workspace, checks removed and hidden navigation, exercises stale preference repair, responsive behavior, customization, login and auth errors, mobile destination access, the freelance divider, project links, prompt grouping and copy preview, Tools, the Career and Opportunities check button, Career table containment/sorting, project Communication, subscription classification/renewals, and axe accessibility scans.
 - Responsive coverage explicitly checks 360, 430, 768, 1024, 1440, and 1728 px, with a Czech narrow view and a dark 1024 px view.
 - Production build is a required verification step because the shell spans server/client boundaries and lazy chart/editor bundles.
 
@@ -149,4 +166,4 @@ The owner-scoped company directory, Google Drive letter links, prepared queue, a
 
 ## Resource library
 
-The Links section provides categorized resources with compact expandable cards, pricing dots and a visible legend, combined search/category/pricing filters, and existing edit/delete actions. Storage, pricing boundaries, URL handling and verification are described in [Resource library](docs/link-library.md).
+The Links section provides categorized resources with compact expandable cards, pricing dots and a visible legend, combined search/category/pricing/project filters, "Used by" project chips, and existing edit/delete actions. Storage, pricing boundaries, URL handling and verification are described in [Resource library](docs/link-library.md).

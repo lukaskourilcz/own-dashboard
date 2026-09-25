@@ -89,13 +89,14 @@ Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_OR
 1. Sign in and confirm Home loads without fetching unrelated Career/transaction tables; navigate between sections and confirm destination data loads.
 2. Create an organization and a Tugedr opportunity, convert it with confirmation, and open `/projects/[slug]`.
 3. Link a task, subscription, transaction, professional date, prompt, note, and invoice to the project; add a communication entry and verify every record appears only in the selected workspace. Verify separate production and development links open the intended destinations.
-4. Open Career, compare the Match/Remote/Location columns, and exercise each sort option without changing source records.
+4. Open Career and confirm nothing loads until **Check for new offers** is pressed; then compare the Match/Remote/Location columns and exercise each sort option without changing source records. Repeat the press check on Opportunities.
 5. Open Subscriptions and Money; confirm every active subscription has a next-payment date/countdown, comparable services share an operational group, and importance is visible.
-6. Route, snooze, and dismiss Inbox/notification items.
-7. Create a Czech invoice, verify totals/QR/print output, and test deterministic PDF import review.
-8. Download full, financial, professional, knowledge, and legacy exports; retain the legacy archive off-platform if needed.
-9. Exercise each enabled integration's connect, error, disconnect, and reauthorization state.
-10. Sign in as a second user and verify cross-user reads and relationship writes fail.
+6. Open `/inbox` by URL (it is hidden from navigation) and route, snooze, and dismiss Inbox/notification items.
+7. Open `/projects/aifirst` and confirm it redirects to `/projects/dneskai`; add a library link to a project and a tool with a project note, and copy a prompt with that project.
+8. Create a Czech invoice, verify totals/QR/print output, and test deterministic PDF import review.
+9. Download full, financial, professional, knowledge, and legacy exports; retain the legacy archive off-platform if needed.
+10. Exercise each enabled integration's connect, error, disconnect, and reauthorization state.
+11. Sign in as a second user and verify cross-user reads and relationship writes fail, including project links, prompt links and tools.
 
 ## 9. Future brand, domain, and repository rename
 

@@ -6,31 +6,21 @@ It is deliberately a personal application—not a SaaS, team workspace, CRM, or 
 
 ## Product areas
 
-- **Home and Inbox** — an attention-focused daily surface with a priority-first randomized seven-task focus, a 49-day completion garden, task waiting age, quick capture, unclassified input, notifications, and deliberate conversion into professional records.
+- **Home** — an attention-focused daily surface with a priority-first randomized seven-task focus, a 49-day completion garden and task waiting age. Inbox (capture, notifications, routing into records) and References are hidden from navigation and still open at `/inbox` and `/references`.
 - **Work** — portfolio overview, explainable project health, weekly reviews, project workspaces, client opportunities, organizations/clients, Career, and the canonical invoice workflow.
-- **Projects** — a sortable portfolio table plus a workspace per project with overview, tasks, activity, client communication history, GitHub repository documents, development/production links, cron and operations metadata, finance, knowledge, and a project-scoped copilot.
-- **Agents** — an own-only task queue for explicit work delegated to authenticated workers running on the owner's VPS. The browser never receives the runner token and is not a remote shell.
-- **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking.
-- **Career** — a React-focused Prague/remote job workspace with visit-time availability checks, employer feeds, an owner-scoped company directory in Supabase, and position-specific English/Czech letter guidance; saved positions with URL import and persistent drafts, prepared applications with Google Drive letters, sent dates and response statistics, application history, cover-letter templates, follow-ups, and permanent owner-scoped deletion.
+- **Projects** — a sortable portfolio table with the owner's own products first and freelance client work behind a "Freelance — hired" divider, plus a workspace per project with overview, the library links the project uses, tasks, activity, client communication history, GitHub repository documents, development/production links, crons, finance, knowledge, scaling and monetization. Projects match GitHub repositories by id, so a repository rename updates the project instead of duplicating it; renamed projects keep their earlier slugs as redirects.
+- **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking. Opportunities loads nothing until **Check for new offers** is pressed.
+- **Career** — a React-focused Prague/remote job workspace that loads nothing until **Check for new offers / Zkontrolovat nové nabídky** is pressed; the press refreshes employer feeds and job boards and checks which listings are still open. It keeps an owner-scoped company directory, position-specific English/Czech letter guidance, saved positions with URL import and persistent drafts, prepared applications with Google Drive letters, sent dates and response statistics, application history, cover-letter templates, follow-ups, and permanent owner-scoped deletion.
 - **Money and invoices** — accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions grouped by operational purpose and importance with renewal countdowns, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
 - **Planning** — GLOBAL priority-6 tasks, active-project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
-- **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup, reusable prompts, masonry-grouped enriched links, shortcuts, and structured references. Project Knowledge reads Tech stack and third-party library summaries from `about-project.md`.
+- **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup; prompts grouped by the kind of job (design, audit, competition, UX and UI, analysis, documentation, new project, SEO, marketing) with the links an agent should open and a copy preview that fills in a project and its links; Tools, the library links really in use with what each does and how it helps each project; and masonry-grouped enriched links showing which projects use them. Project Knowledge reads Tech stack and third-party library summaries from `about-project.md`.
 - **Settings** — database-synchronized appearance, navigation, task density, CV links, active GitHub projects, integrations, notification controls, AI/privacy consent, own-only exports, legacy archive download, and account controls.
 
 Pulse, habits/streaks, books/reading, and couples mode are retired. The cleanup migration archives their rows before removal, restores strict own-only policies, and keeps the archive downloadable from Settings → Data & export.
 
 ## AI and safety boundaries
 
-AI is contextual rather than a standalone chatbot. The Anthropic integration supports intent routing, owned-record search, weekly operating briefs, project and Career copilots, link enrichment, and knowledge-maintenance proposals.
-
-- Server routes authenticate the user and load only owned records relevant to the initiated workflow.
-- Financial, invoice, calendar, career, repository-document, client, subscription, and private-note context requires explicit initiation; the most sensitive workflows also respect the Settings opt-in.
-- Model output is schema-validated and presented as fact/risk/suggestion or a proposal.
-- AI never autonomously deletes records, sends invoices, marks payments, disconnects integrations, triggers crons, or writes GitHub workflows.
-- Application writes require a separate user confirmation and server-side authorization.
-- Prompt/response contents and private record values are not sent to PostHog event properties.
-
-See [AI and privacy](./docs/ai-and-privacy.md) for the exact boundaries.
+OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md).
 
 ## Architecture and stack
 
@@ -40,7 +30,7 @@ See [AI and privacy](./docs/ai-and-privacy.md) for the exact boundaries.
 | Data/auth | Supabase Postgres and Auth via `@supabase/ssr`/`supabase-js`; explicit Data API grants and own-only RLS |
 | Client data | TanStack React Query 5 with centralized keys, route-scoped server seeds, lazy destination fetches, bounded stale times, invalidation, cancellation, and optimistic updates where reversible |
 | UI | Radix primitives, Lucide, Recharts, BlockNote, date-fns, QRCode |
-| AI/extraction | Anthropic SDK with centralized Haiku/Sonnet-class model roles; pdf.js deterministic extraction first; optional Jina Reader enrichment |
+| Extraction | pdf.js deterministic invoice extraction in the browser; optional Jina Reader link enrichment |
 | Operations | Vercel functions/crons, optional Upstash rate limiting, Resend email, PostHog analytics/flags, Sentry monitoring |
 | Integrations | Google Calendar OAuth, GitHub OAuth/repository files and commits, GoCardless Bank Account Data |
 | Quality | ESLint, TypeScript, Vitest, Playwright, axe accessibility checks |
@@ -51,15 +41,15 @@ The authenticated dashboard uses one canonical catch-all route and interactive s
 
 ```text
 Home
-Inbox
-Work: Overview · Projects · Opportunities · Clients · Agents · Career · Invoices
+Work: Overview · Projects · Opportunities · Clients · Career · Invoices
 Money: Overview · Accounts · Transactions · Subscriptions · Categories
 Planning: Tasks · Calendar · Goals · Dates
-Library: Notes · Prompts · Links · References
+Library: Notes · Prompts · Tools · Links
 Settings
+Hidden from navigation, open by URL: /inbox · /references
 ```
 
-Project workspaces use `/projects/[id-or-slug]`. Meaningful old bookmarks redirect:
+Project workspaces use `/projects/[id-or-slug]`; an earlier slug (for example `/projects/aifirst`) redirects to the current one. Meaningful old bookmarks redirect:
 
 - `/overview` → `/`
 - `/todos` → `/tasks`
@@ -106,6 +96,8 @@ The relevant migrations are:
 4. `20260722190000_operational_workflow_extensions.sql` — subscription grouping/importance, project development links and communication history, plus the own-only VPS agent task queue and atomic claim RPC.
 5. `20260723065433_daily_focus_synced_preferences.sql` — GLOBAL task priority, daily focus sets/completion garden, synchronized UI preferences, and permanent owner-scoped Career deletion tombstones.
 6. `20260723082424_sync_preferences_project_tabs.sql` — reliable authenticated preference grants and own-only policies, synchronized project-workspace tab visibility, and repository-aware daily-focus selection.
+
+Later migrations add the prompt, Career, freelance and link-library features. The 2026-09-25 set adds repository ids for projects, own/freelance engagement with the DNESKAi / devShark / boardlessAI renames, the corrected project-tab check, `project_links`, prompt kinds with `prompt_links`, and `tools`; each has an entry with verification steps in the migration guide.
 
 Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying all migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
