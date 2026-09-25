@@ -4,7 +4,10 @@ import {
   isAmountConfirmed,
   isDevelopmentSubscription,
   isDevelopmentTransaction,
+  isRunningSubscription,
   monthKeys,
+  projectSubscriptionShares,
+  sharesMonthly,
   staleAllocationIds,
   subscriptionActiveInMonth,
   subscriptionShares,
@@ -242,6 +245,42 @@ describe("summarizeDevFinance", () => {
     expect(july.paid).toBeCloseTo(24.2, 5);
     expect(september.committed).toBeCloseTo(35, 5);
     expect(summary.timeline).toHaveLength(12);
+  });
+});
+
+describe("one monthly subscription cost per project", () => {
+  const projects = [
+    project({ id: "dneskai", name: "DNESKAi", engagement: "own" }),
+    project({ id: "devshark", name: "devShark", engagement: "own" }),
+  ];
+  const vercel = sub({ id: "vercel", name: "Vercel Pro", amount: 20 });
+  const allocations = [allocation("vercel", "dneskai", 0.5), allocation("vercel", "devshark", 0.5)];
+  const cancelled = { ...vercel, is_active: false, ended_on: "2026-09-10" };
+
+  it("counts a running subscription's share and drops it once cancelled", () => {
+    const running = projectSubscriptionShares([vercel], allocations, "USD", NOW);
+    expect(sharesMonthly(running.get("dneskai"))).toBeCloseTo(10, 5);
+    const ended = projectSubscriptionShares([cancelled], allocations, "USD", NOW);
+    expect(sharesMonthly(ended.get("dneskai"))).toBe(0);
+    expect(ended.size).toBe(0);
+  });
+
+  it("agrees with the Money overview for every project, before and after a cancellation", () => {
+    for (const subscriptions of [[vercel], [cancelled]]) {
+      const summary = summarizeDevFinance({ subscriptions, allocations, transactions: [], projects, projectCosts: [], crons: [], currency: "USD", now: NOW });
+      const shares = projectSubscriptionShares(subscriptions, allocations, "USD", NOW);
+      for (const row of summary.byProject) {
+        expect(sharesMonthly(shares.get(row.project.id))).toBeCloseTo(row.recurringMonthly - row.costLinesMonthly, 5);
+      }
+    }
+  });
+
+  it("stops counting a subscription whose end date has passed even if it is still switched on", () => {
+    expect(isRunningSubscription(sub({ ended_on: "2026-09-15" }), NOW)).toBe(false);
+    expect(isRunningSubscription(sub({ ended_on: "2026-09-16" }), NOW)).toBe(true);
+    expect(isRunningSubscription(sub({ ended_on: "2026-10-01" }), NOW)).toBe(true);
+    expect(isRunningSubscription(sub({ ended_on: null }), NOW)).toBe(true);
+    expect(isRunningSubscription(sub({ is_active: false }), NOW)).toBe(false);
   });
 });
 

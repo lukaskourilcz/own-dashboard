@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -81,6 +81,7 @@ import {
   type ProjectRepoUpdate,
 } from "@/lib/project-match";
 import { childProjects, planPortfolioSync, portfolioEntryFor } from "@/lib/portfolio";
+import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
 import {
   cronHeartbeatState,
@@ -263,6 +264,8 @@ function ProjectsListPanel({
   todos,
   organizations,
   importantDates,
+  subscriptions,
+  subscriptionAllocations,
   onOpenProject,
   setProjectLinks,
 }: ProjectsPanelProps) {
@@ -665,37 +668,35 @@ function ProjectsListPanel({
     }
   }
 
+  // A project's monthly cost: its cost lines and crons plus its share of the
+  // running development subscriptions, by the rule the Money overview and the
+  // project workspace use, so all three show the same figure.
+  const subscriptionMonthly = useMemo(() => {
+    const shares = projectSubscriptionShares(subscriptions, subscriptionAllocations, displayCurrency);
+    return new Map([...shares].map(([projectId, list]) => [projectId, sharesMonthly(list)]));
+  }, [subscriptions, subscriptionAllocations, displayCurrency]);
+  const monthlyOf = useCallback(
+    (project: Project) =>
+      projectMonthlyIn(
+        costsByProject.get(project.id) ?? [],
+        cronsByProject.get(project.id) ?? [],
+        displayCurrency,
+      ) + (subscriptionMonthly.get(project.id) ?? 0),
+    [costsByProject, cronsByProject, subscriptionMonthly, displayCurrency],
+  );
+
   const chartData = useMemo(
     () =>
       active
-        .map((p) => ({
-          name: p.name,
-          value: Number(
-            projectMonthlyIn(
-              costsByProject.get(p.id) ?? [],
-              cronsByProject.get(p.id) ?? [],
-              displayCurrency,
-            ).toFixed(2),
-          ),
-        }))
+        .map((p) => ({ name: p.name, value: Number(monthlyOf(p).toFixed(2)) }))
         .filter((d) => d.value > 0)
         .sort((a, b) => b.value - a.value),
-    [active, costsByProject, cronsByProject, displayCurrency],
+    [active, monthlyOf],
   );
 
   const grandMonthly = useMemo(
-    () =>
-      active.reduce(
-        (acc, p) =>
-          acc +
-          projectMonthlyIn(
-            costsByProject.get(p.id) ?? [],
-            cronsByProject.get(p.id) ?? [],
-            displayCurrency,
-          ),
-        0,
-      ),
-    [active, costsByProject, cronsByProject, displayCurrency],
+    () => active.reduce((acc, p) => acc + monthlyOf(p), 0),
+    [active, monthlyOf],
   );
   const grandYearly = grandMonthly * 12;
 
@@ -1071,7 +1072,7 @@ function ProjectsListPanel({
                   project={p}
                   subsection={!!p.parent_id && projectIds.has(p.parent_id)}
                   summary={p.summary || portfolioEntryFor(p)?.summary[lang]}
-                  monthlyCost={projectMonthlyIn(costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], displayCurrency)}
+                  monthlyCost={monthlyOf(p)}
                   displayCurrency={displayCurrency}
                   synced={isSynced(p)}
                   onEdit={() => startEditProject(p)}
@@ -1101,7 +1102,7 @@ function ProjectsListPanel({
             const project = ordered.find((item) => item.id === manageProjectId)!;
             const projectTodos = todos.filter((item) => taskBelongsToProject(item, project));
             const projectDates = importantDates.filter((item) => item.project_id === project.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
-            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
+            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1117,6 +1118,8 @@ type ProjectCardProps = {
   project: Project;
   costs: ProjectCost[];
   crons: Cron[];
+  /** The project's share of running development subscriptions, per month. */
+  subscriptionMonthly?: number;
   setCosts: Updater<ProjectCost[]>;
   setCrons: Updater<Cron[]>;
   setProjects: Updater<Project[]>;
@@ -1215,6 +1218,7 @@ function ProjectCard({
   project,
   costs,
   crons,
+  subscriptionMonthly = 0,
   setCosts,
   setCrons,
   setProjects,
@@ -1239,7 +1243,7 @@ function ProjectCard({
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
 }) {
   const t = useDict();
-  const monthly = projectMonthlyIn(costs, crons, displayCurrency);
+  const monthly = projectMonthlyIn(costs, crons, displayCurrency) + subscriptionMonthly;
   const yearly = monthly * 12;
 
   return (

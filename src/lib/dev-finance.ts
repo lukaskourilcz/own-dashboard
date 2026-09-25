@@ -1,3 +1,4 @@
+import { todayKey } from "@/lib/date-keys";
 import { convert } from "@/lib/fx";
 import { isActive, toMonthlyIn } from "@/lib/subscriptions";
 import { projectEngagement, projectMonthlyIn } from "@/lib/projects";
@@ -116,6 +117,59 @@ export function staleAllocationIds(
   return startedWith.filter((row) => !keep.has(row.project_id)).map((row) => row.id);
 }
 
+/**
+ * Whether a subscription is still being billed: switched on, and its end date,
+ * if it has one, not yet passed. A row switched off, or one whose `ended_on`
+ * lies before today, is cancelled and costs nothing any more.
+ */
+export function isRunningSubscription(sub: Subscription, now: Date = new Date()): boolean {
+  if (!isActive(sub)) return false;
+  const ended = sub.ended_on ?? "";
+  return !DATE_ONLY.test(ended) || ended >= todayKey(now);
+}
+
+/** One running development subscription's part of one project. */
+export type ProjectSubscriptionShare = {
+  subscription: Subscription;
+  share: number;
+  /** The share's monthly amount in the requested currency. */
+  monthly: number;
+};
+
+/**
+ * The running development subscriptions each project carries, keyed by project
+ * id, with what its share costs per month in `currency`. The Money overview, a
+ * project workspace and the Projects list all take their subscription figure
+ * from this rule, so a project shows one monthly cost wherever it appears and a
+ * cancelled subscription stops counting in all three at once.
+ */
+export function projectSubscriptionShares(
+  subscriptions: Subscription[],
+  allocations: SubscriptionAllocation[],
+  currency: string,
+  now: Date = new Date(),
+): Map<string, ProjectSubscriptionShare[]> {
+  const byProject = new Map<string, ProjectSubscriptionShare[]>();
+  for (const subscription of subscriptions) {
+    if (!isDevelopmentSubscription(subscription, allocations)) continue;
+    if (!isRunningSubscription(subscription, now)) continue;
+    const monthly = toMonthlyIn(subscription, currency);
+    for (const slice of subscriptionShares(subscription, allocations)) {
+      if (!slice.projectId) continue;
+      const entry = { subscription, share: slice.share, monthly: monthly * slice.share };
+      const list = byProject.get(slice.projectId);
+      if (list) list.push(entry);
+      else byProject.set(slice.projectId, [entry]);
+    }
+  }
+  return byProject;
+}
+
+/** The monthly total of a project's subscription shares; none is zero. */
+export function sharesMonthly(shares: readonly ProjectSubscriptionShare[] | undefined): number {
+  return (shares ?? []).reduce((sum, item) => sum + item.monthly, 0);
+}
+
 /** Month key (`yyyy-MM`) helpers without a timezone surprise: keys are compared lexically. */
 export function monthKeyOf(date: string): string {
   return date.slice(0, 7);
@@ -199,7 +253,7 @@ export function summarizeDevFinance({
   months?: number;
 }): DevFinanceSummary {
   const devSubs = subscriptions.filter((sub) => isDevelopmentSubscription(sub, allocations));
-  const activeDevSubs = devSubs.filter(isActive);
+  const activeDevSubs = devSubs.filter((sub) => isRunningSubscription(sub, now));
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const recurringByProject = new Map<string, number>();
   let unallocated = 0;
