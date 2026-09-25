@@ -8,7 +8,8 @@ const NAME_RE = /^[A-Za-z0-9._-]+$/;
 /**
  * Read a single text file from a repo via the GitHub Contents API.
  * GET /api/github/file?owner=&repo=&path=  → { content, html_url }.
- * Used by the "App costs & scaling" cards to load stack-and-scaling.md.
+ * Used by loadRepoFile for NEEDED.md, about-project.md, scaling.md and other
+ * repository documents.
  */
 export async function GET(request: Request) {
   // Self-authenticate: this route is reachable without the page-level session

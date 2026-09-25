@@ -5,7 +5,7 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 
 /**
- * PostHog analytics + feature flags + session replay. Entirely opt-in: with no
+ * PostHog analytics + session replay. Entirely opt-in: with no
  * NEXT_PUBLIC_POSTHOG_KEY it renders children untouched and never loads the SDK,
  * so installs without PostHog pay zero cost (same pattern as Sentry here).
  *
@@ -35,7 +35,7 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Without a key we never mount the provider — children render exactly as
-  // before, and useFeatureFlag() falls back to its default-on behaviour.
+  // before.
   if (!KEY) return <>{children}</>;
   return <PHProvider client={posthog}>{children}</PHProvider>;
 }

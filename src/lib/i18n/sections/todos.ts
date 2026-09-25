@@ -28,10 +28,6 @@ type TodosStrings = {
   personalGroup: string;
   // Overview "tasks by category" card.
   byCategory: string;
-  remainingLabel: string;
-  totalOpen: (n: number) => string;
-  moreTasks: (n: number) => string;
-  openAll: string;
   categoryClear: string;
   // NEEDED.md task cards
   refresh: string;
@@ -141,10 +137,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     otherCategory: "Other",
     personalGroup: "Manual tasks",
     byCategory: "By category",
-    remainingLabel: "left",
-    totalOpen: (n) => (n === 1 ? "1 task open" : `${n} tasks open`),
-    moreTasks: (n) => `+${n} more`,
-    openAll: "Open all",
     categoryClear: "All done",
     refresh: "Refresh",
     refreshHint:
@@ -280,14 +272,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     otherCategory: "Ostatní",
     personalGroup: "Ruční úkoly",
     byCategory: "Podle kategorie",
-    remainingLabel: "zbývá",
-    totalOpen: (n) => {
-      if (n === 1) return "1 otevřený úkol";
-      if (n >= 2 && n <= 4) return `${n} otevřené úkoly`;
-      return `${n} otevřených úkolů`;
-    },
-    moreTasks: (n) => `+${n} dalších`,
-    openAll: "Zobrazit vše",
     categoryClear: "Hotovo",
     refresh: "Obnovit",
     refreshHint:

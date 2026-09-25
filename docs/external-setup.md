@@ -184,7 +184,7 @@ For GoCardless Bank Account Data, set `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SEC
 
 ## 8. Analytics and monitoring
 
-PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, and configure a billing limit. No reachable code reads a PostHog feature flag, and there is no Tugedr feature-flag kill-switch in this repository.
+PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, and configure a billing limit. No code reads a PostHog feature flag, and there is no Tugedr feature-flag kill-switch in this repository.
 
 Vercel Web Analytics on a project's Overview needs a server-only `VERCEL_API_TOKEN`, plus `VERCEL_TEAM_ID` when the Vercel projects belong to a team, and Web Analytics enabled on each Vercel project. The card finds a Vercel project by its linked repository and says when the token is missing.
 
