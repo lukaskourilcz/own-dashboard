@@ -2,6 +2,10 @@
 
 The repository implementation is complete. The items below are the external account, secret, migration, and rollout steps that still require the repository owner. They are intentionally not performed by application code. This file is also imported into OwnDashboard Tasks: only `- [ ]` lines are imported, and every open item carries `[imp:N]` `[owner:me]` `[time:…]` `[kind:…]`.
 
+## Cleanup sweep 2026-09-25 · branches
+
+- [ ] **Delete the four settled remote branches** — every remote branch except `main` is merged or superseded (#86), but the agent session's git proxy refuses branch deletion and tag pushes. Run: `git fetch origin && git tag archive/claude/busy-carson-lc5ise origin/claude/busy-carson-lc5ise && git push origin archive/claude/busy-carson-lc5ise && git push origin --delete claude/busy-carson-lc5ise claude/elegant-cori-h9cdgb claude/gifted-albattani-p8suag claude/odkazy-free-links-export-44ptwg`. The tag keeps busy-carson's unique commits reachable. [imp:2] [owner:me] [time:5m] [kind:setup]
+
 ## Kickoff 2026-09-25 · prompts, links, projects, tools
 
 Issues #75–#83 delivered the kickoff programme (its `KICKOFF-25-9-2026.md` was removed once they closed). Owner parts, in this order:
