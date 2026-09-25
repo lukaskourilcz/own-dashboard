@@ -19,7 +19,7 @@ export const login: { en: LoginStrings; cs: LoginStrings } = {
     tagline: brandConfig.description.en,
     connectedAreas: "Projects · Opportunities · Clients · Career · Money · Planning · Knowledge",
     trustTitle: "Your system, your data",
-    trustBody: "One owner. Explicit integrations. Contextual AI only when you start it.",
+    trustBody: "One owner. Explicit integrations. No AI model calls.",
     authError: "Sign-in could not be completed. Try again or review the configured OAuth callback.",
     continueWithGoogle: "Continue with Google",
     calendarNotice:
@@ -32,7 +32,7 @@ export const login: { en: LoginStrings; cs: LoginStrings } = {
     tagline: brandConfig.description.cs,
     connectedAreas: "Projekty · Příležitosti · Klienti · Kariéra · Peníze · Plánování · Znalosti",
     trustTitle: "Váš systém, vaše data",
-    trustBody: "Jeden vlastník. Výslovné integrace. Kontextová AI pouze na váš pokyn.",
+    trustBody: "Jeden vlastník. Výslovné integrace. Žádná volání AI modelů.",
     authError: "Přihlášení se nepodařilo dokončit. Zkuste to znovu nebo zkontrolujte nastavené OAuth přesměrování.",
     continueWithGoogle: "Pokračovat přes Google",
     calendarNotice:

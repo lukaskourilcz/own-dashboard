@@ -18,7 +18,7 @@ The product must answer what needs attention, why, which records are connected, 
 - `src/components/dashboard-shell.tsx` is the persistent client shell. Its History API navigation, back/forward handling, shared navigation model, lazy React Query fetchers, centralized keys, and `useEntityStore` compatibility are deliberate.
 - `/projects/[id-or-slug]` is the only supported nested dashboard route. Unknown and cross-user project identifiers remain 404.
 - Supabase own-only RLS, related-record ownership checks, explicit Data API grants, service-role isolation, and the `SECURITY INVOKER` opportunity-conversion RPC are non-negotiable.
-- Static FX, Czech VAT calculations, QR Platba, PDF import review, A4 print isolation, Google Calendar as the direct event source, and explicit AI consent/evidence validation are business behavior, not styling details.
+- Static FX, Czech VAT calculations, QR Platba, PDF import review, A4 print isolation, and Google Calendar as the direct event source are business behavior, not styling details.
 
 ## Journey assessment
 
@@ -33,7 +33,7 @@ The product must answer what needs attention, why, which records are connected, 
 | Career | Mature listing/application/evidence logic | Large monolithic surface and uneven visual separation | Reinforce listing, shortlist, application, draft, evidence, and gap layers without changing truth rules |
 | Money and invoices | Deterministic finance model and mature Czech invoice workflow | Dense functionality shares generic card language; some raw color utilities bypass tokens | Ledger-first rows and tables; semantic status; keep legal paper output fixed |
 | Planning and Library | Broad mature functionality with project relationships | Local patterns vary across large panels; long content and mobile density vary | Shared headers, filters, rows, values, system states, and relationship cues |
-| Settings | Real integration/privacy/export controls | Long single panel lacks a clear settings taxonomy | Appearance, Navigation, Integrations, Notifications, AI & privacy, Data & export, Account |
+| Settings | Real integration/privacy/export controls | Long single panel lacks a clear settings taxonomy | Appearance, Navigation, Integrations, Notifications, Data & export, Account |
 
 ## Visual audit
 

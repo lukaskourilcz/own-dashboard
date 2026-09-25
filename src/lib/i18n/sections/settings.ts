@@ -20,14 +20,6 @@ type SettingsStrings = {
   cvEnglish: string;
   cvPlaceholder: string;
   resetNavigation: string;
-  ai: string;
-  aiDesc: string;
-  aiEnabled: string;
-  aiSensitive: string;
-  aiSensitiveDesc: string;
-  aiModels: string;
-  aiDataCategories: string;
-  aiWrites: string;
   notifications: string;
   renewalNotifications: string;
   renewalNotificationsDesc: string;
@@ -93,14 +85,6 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     cvEnglish: "🇬🇧 English CV",
     cvPlaceholder: "https://docs.google.com/document/d/…",
     resetNavigation: "Reset navigation",
-    ai: "AI & privacy",
-    aiDesc: "AI is contextual and opt-in. Model output is previewed before any write.",
-    aiEnabled: "Enable contextual AI",
-    aiSensitive: "Allow sensitive context",
-    aiSensitiveDesc: "Off by default. Only enable when you intentionally want financial or private text included.",
-    aiModels: "Fast models classify short captures; synthesis models create bounded, source-backed briefs and proposals. Model identifiers are configured on the server.",
-    aiDataCategories: "Sensitive workflows may send selected project, task, cost, invoice metadata, career, note, repository-document, client, subscription, and date records after confirmation.",
-    aiWrites: "AI output is a preview. Database writes always require a separate confirmation; destructive and external actions are unsupported.",
     notifications: "Notifications",
     renewalNotifications: "Subscription renewal warnings",
     renewalNotificationsDesc: "Allow scheduled email warnings for active subscriptions renewing today or in three days.",
@@ -167,14 +151,6 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     cvEnglish: "🇬🇧 Anglické CV",
     cvPlaceholder: "https://docs.google.com/document/d/…",
     resetNavigation: "Obnovit navigaci",
-    ai: "AI a soukromí",
-    aiDesc: "AI je kontextová a volitelná. Před každým zápisem se zobrazí náhled.",
-    aiEnabled: "Povolit kontextovou AI",
-    aiSensitive: "Povolit citlivý kontext",
-    aiSensitiveDesc: "Ve výchozím stavu vypnuto. Zapněte jen tehdy, když chcete vědomě zahrnout finanční nebo soukromý text.",
-    aiModels: "Rychlé modely třídí krátké záznamy; syntetizační modely vytvářejí omezené, zdroji podložené přehledy a návrhy. Identifikátory modelů se nastavují na serveru.",
-    aiDataCategories: "Citlivé postupy mohou po potvrzení odeslat vybrané záznamy projektů, úkolů, nákladů, metadat faktur, kariéry, poznámek, dokumentů repozitáře, klientů, předplatných a termínů.",
-    aiWrites: "Výstup AI je náhled. Zápis do databáze vždy vyžaduje samostatné potvrzení; destruktivní a externí akce nejsou podporovány.",
     notifications: "Oznámení",
     renewalNotifications: "Upozornění na obnovení předplatného",
     renewalNotificationsDesc: "Povolte plánované e-mailové upozornění pro aktivní předplatná obnovovaná dnes nebo za tři dny.",

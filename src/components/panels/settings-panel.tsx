@@ -2,7 +2,6 @@
 
 import {
   Bell,
-  Bot,
   Coins,
   Download,
   FileText,
@@ -129,7 +128,6 @@ export function SettingsPanel({
   } = useNavVisibility();
   const { order, setOrder, reset: resetOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
-  const [aiPrefs, setAiPrefs] = useState({ enabled: true, sensitive: false });
   const [renewalNotifications, setRenewalNotifications] = useState(true);
   // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
   // so the card isn't a wall of switches for projects that will never be active.
@@ -150,7 +148,6 @@ export function SettingsPanel({
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (data) {
-          setAiPrefs({ enabled: data.ai_enabled ?? true, sensitive: data.ai_sensitive_opt_in ?? false });
           setRenewalNotifications(data.notifications_renewals ?? true);
         }
       });
@@ -161,13 +158,6 @@ export function SettingsPanel({
       .then((res) => res.ok ? res.json() : null)
       .then((data) => { if (data) setIntegrations(data); });
   }, [syncPreferences]);
-  const patchAiPrefs = (patch: { enabled?: boolean; sensitive?: boolean }) => {
-    const next = { ...aiPrefs, ...patch };
-    setAiPrefs(next);
-    if (syncPreferences) {
-      savePreferences({ ai_enabled: next.enabled, ai_sensitive_opt_in: next.sensitive });
-    }
-  };
   const patchRenewalNotifications = (notifications_renewals: boolean) => {
     setRenewalNotifications(notifications_renewals);
     if (syncPreferences) {
@@ -557,11 +547,6 @@ export function SettingsPanel({
               savePreferences({ hidden_navigation: [], navigation_order: [] });
             }}><RotateCcw />{t.settings.resetNavigation}</Button>
           </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Bot className="h-3 w-3" />{t.settings.ai}</CardTitle></CardHeader>
-          <CardContent className="space-y-4"><p className="text-xs text-foreground-subtle">{t.settings.aiDesc}</p><div className="space-y-1 text-xs text-foreground-subtle"><p>{t.settings.aiModels}</p><p>{t.settings.aiDataCategories}</p><p>{t.settings.aiWrites}</p></div><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium">{t.settings.aiEnabled}</span><Switch aria-label={t.settings.aiEnabled} checked={aiPrefs.enabled} onCheckedChange={(enabled) => patchAiPrefs({ enabled })} /></div><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{t.settings.aiSensitive}</p><p className="mt-1 text-xs text-foreground-subtle">{t.settings.aiSensitiveDesc}</p></div><Switch aria-label={t.settings.aiSensitive} checked={aiPrefs.sensitive} disabled={!aiPrefs.enabled} onCheckedChange={(sensitive) => patchAiPrefs({ sensitive })} /></div></CardContent>
         </Card>
 
         <Card>
