@@ -1,7 +1,7 @@
 #!/bin/bash
-# SessionStart hook for Claude Code on the web. Installs Node dependencies and
-# ensures the Playwright browser is present so lint, unit tests (vitest), and
-# the E2E suite (@playwright/test) can run in remote sessions.
+# SessionStart hook for Claude Code on the web. Installs Node dependencies so
+# lint, unit tests (vitest), and the E2E suite (@playwright/test) can run in
+# remote sessions.
 #
 # Runs synchronously: the session waits for this to finish, so dependencies are
 # guaranteed ready before the agent runs anything.
@@ -21,7 +21,6 @@ cd "$REPO_DIR"
 # container state.
 npm install --no-audit --no-fund
 
-# Playwright browser for the E2E suite. The web environment provisions browsers
-# at $PLAYWRIGHT_BROWSERS_PATH, so this is normally a no-op; tolerate a blocked
-# download rather than failing the whole hook.
-npx playwright install chromium || true
+# Playwright's browser: in the Claude Code cloud environment it is preinstalled
+# at $PLAYWRIGHT_BROWSERS_PATH (chromium-1194, the build Playwright 1.56.1
+# expects) and `playwright install` is disabled, so nothing is installed here.

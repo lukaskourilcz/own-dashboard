@@ -18,6 +18,12 @@ npx playwright install chromium   # only if no browser is installed yet
 CHANGELOG_CAPTURE=1 npx playwright test e2e/changelog-capture.spec.ts --project=desktop
 ```
 
+Skip the install line in the Claude Code cloud environment. The browser is
+preinstalled at `/opt/pw-browsers` (`PLAYWRIGHT_BROWSERS_PATH`), and
+`npx playwright install` is disabled there. `npx playwright install --dry-run
+chromium` prints the revision directory the installed Playwright expects; for
+`@playwright/test` 1.56.1 that is `chromium-1194`, which is present.
+
 `e2e/changelog-capture.spec.ts` is the list of captures. Add a case there, run
 the command, look at the PNG, then point the matching `ChangelogFeature.media`
 at the file, write the alt text from what the image shows, and regenerate

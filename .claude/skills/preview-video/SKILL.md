@@ -5,18 +5,22 @@ description: Regenerate the animated scroll preview video for this project (medi
 
 # Preview Video — animated scroll capture
 
-Generates a smooth-scroll recording of the deployed project (Refero-style) and saves it to `media/`.
+Generates a smooth-scroll recording of the signed-out guest tour (`/guest`, fixture data only) and saves it to `media/`.
 
 ## Prerequisites
 
 - `ffmpeg` available on PATH (`ffmpeg -version`)
-- Playwright Chromium installed: `npx playwright install chromium` (once per machine)
+- Playwright Chromium. In the Claude Code cloud environment the browser is preinstalled
+  (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`, `chromium-1194`, the build Playwright 1.56.1
+  expects) and `npx playwright install` is disabled, so skip this step there. Elsewhere
+  install it once per machine with `npx playwright install chromium`.
 
 ## Steps
 
 1. Open `preview.config.json` in this skill folder and verify `url` is still correct.
-   For local capture set `devServer` (e.g. `{ "command": "npm run dev", "port": 3000 }`)
-   and point `url` to `http://localhost:<port>`.
+   It points at `http://localhost:3000/guest` with `devServer: null`, so start
+   `npm run dev` first, or set `devServer` to `{ "command": "npm run dev", "port": 3000 }`
+   and let the script start it.
 2. From the repo root run:
    `npx -y tsx .claude/skills/preview-video/scripts/capture-preview.ts`
 3. QA: open `media/preview-poster.png` and 2–3 frames from the temp dir printed by the
@@ -53,6 +57,8 @@ proxy):
 - `CAPTURE_INSECURE=1` — ignore TLS certificate errors. Only meaningful together with a
   re-signing MITM proxy; never needed for a direct connection.
 - `CAPTURE_EXTRA_ARGS` — extra comma-separated Chromium flags.
+- `CAPTURE_EXECUTABLE_PATH` — launch this Chromium binary instead of the one Playwright
+  expects, for a machine whose browser build does not match the Playwright version.
 
 `--no-sandbox` is added automatically when the script runs as root (required by Chromium),
 and `--disable-quic` is always set to keep HTTP-proxy captures reliable.
