@@ -41,7 +41,7 @@ import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
 import { Textarea } from "@/components/ui/textarea";
-import { amountConfirmationAfterEdit, isAmountConfirmed, isDevelopmentSubscription, subscriptionShares } from "@/lib/dev-finance";
+import { amountConfirmationAfterEdit, isAmountConfirmed, isDevelopmentSubscription, staleAllocationIds, subscriptionShares } from "@/lib/dev-finance";
 import { todayKey } from "@/lib/date-keys";
 import type { Project, Subscription, SubscriptionAllocation, SubscriptionBillingCycle, SubscriptionCategoryGroup, SubscriptionImportance, Updater } from "@/lib/types";
 
@@ -71,6 +71,8 @@ type FormState = {
   vendor_url: string;
   notes: string;
   allocations: AllocationRow[];
+  /** The stored allocation rows the form opened with; a save deletes only from these. */
+  loadedAllocations: Pick<SubscriptionAllocation, "id" | "project_id">[];
 };
 
 const emptyForm: FormState = {
@@ -89,6 +91,7 @@ const emptyForm: FormState = {
   vendor_url: "",
   notes: "",
   allocations: [],
+  loadedAllocations: [],
 };
 
 /** Percent shares typed in the form → fractions; blank or invalid rows are dropped. */
@@ -129,6 +132,7 @@ export function SubscriptionsPanel({
   projects = [],
   allocations = [],
   setAllocations,
+  allocationsReady = true,
   compact = false,
 }: {
   subs: Subscription[];
@@ -138,6 +142,9 @@ export function SubscriptionsPanel({
   projects?: Project[];
   allocations?: SubscriptionAllocation[];
   setAllocations?: Updater<SubscriptionAllocation[]>;
+  /** False while `allocations` is still the placeholder of a tab reached
+   *  client-side; editing waits for the real rows. */
+  allocationsReady?: boolean;
   compact?: boolean;
 }) {
   const supabase = createClient();
@@ -203,15 +210,22 @@ export function SubscriptionsPanel({
     amount_confirmed_on: string | null;
   };
 
-  // Allocation rows are replaced as a set: rows that vanished are deleted,
-  // the rest upserted on (subscription, project). The cache mirrors the result.
-  async function syncAllocations(subscriptionId: string, userId: string, rows: { project_id: string; share: number }[]) {
+  // Allocation rows are replaced as a set: rows the form opened with and no
+  // longer lists are deleted, the rest upserted on (subscription, project). The
+  // deletions come from the form's own starting rows, never from the live
+  // list, so rows that arrived after the form opened are left alone. The cache
+  // mirrors the result.
+  async function syncAllocations(
+    subscriptionId: string,
+    userId: string,
+    rows: { project_id: string; share: number }[],
+    startedWith: FormState["loadedAllocations"],
+  ) {
     if (!setAllocations) return;
-    const existing = allocations.filter((allocation) => allocation.subscription_id === subscriptionId);
     const keep = new Set(rows.map((row) => row.project_id));
-    const stale = existing.filter((allocation) => !keep.has(allocation.project_id));
-    if (stale.length > 0) {
-      const { error } = await supabase.from("subscription_allocations").delete().in("id", stale.map((allocation) => allocation.id));
+    const staleIds = new Set(staleAllocationIds(startedWith, rows));
+    if (staleIds.size > 0) {
+      const { error } = await supabase.from("subscription_allocations").delete().in("id", [...staleIds]);
       if (error) throw error;
     }
     let upserted: SubscriptionAllocation[] = [];
@@ -223,19 +237,26 @@ export function SubscriptionsPanel({
       if (error) throw error;
       upserted = (data ?? []) as SubscriptionAllocation[];
     }
-    setAllocations((prev) => [...prev.filter((allocation) => allocation.subscription_id !== subscriptionId), ...upserted]);
+    setAllocations((prev) => [
+      ...prev.filter(
+        (allocation) =>
+          !staleIds.has(allocation.id)
+          && !(allocation.subscription_id === subscriptionId && keep.has(allocation.project_id)),
+      ),
+      ...upserted,
+    ]);
     void qc.invalidateQueries({ queryKey: qk.subscriptionAllocations });
   }
 
   const createMutation = useMutation({
-    mutationFn: async (vars: { payload: SubPayload; userId: string; rows: { project_id: string; share: number }[] }) => {
+    mutationFn: async (vars: { payload: SubPayload; userId: string; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
       const { data, error } = await supabase
         .from("subscriptions")
         .insert({ ...vars.payload, user_id: vars.userId })
         .select()
         .single();
       if (error) throw error;
-      await syncAllocations((data as Subscription).id, vars.userId, vars.rows);
+      await syncAllocations((data as Subscription).id, vars.userId, vars.rows, vars.startedWith);
       return data as Subscription;
     },
     onSuccess: (sub) => {
@@ -250,7 +271,7 @@ export function SubscriptionsPanel({
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (vars: { id: string; payload: SubPayload; userId: string; rows: { project_id: string; share: number }[] }) => {
+    mutationFn: async (vars: { id: string; payload: SubPayload; userId: string; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
       const { data, error } = await supabase
         .from("subscriptions")
         .update({ ...vars.payload, updated_at: new Date().toISOString() })
@@ -258,7 +279,7 @@ export function SubscriptionsPanel({
         .select()
         .single();
       if (error) throw error;
-      await syncAllocations(vars.id, vars.userId, vars.rows);
+      await syncAllocations(vars.id, vars.userId, vars.rows, vars.startedWith);
       return data as Subscription;
     },
     onSuccess: (sub) => {
@@ -380,9 +401,9 @@ export function SubscriptionsPanel({
       return;
     }
     if (form.id) {
-      updateMutation.mutate({ id: form.id, payload, userId, rows });
+      updateMutation.mutate({ id: form.id, payload, userId, rows, startedWith: form.loadedAllocations });
     } else {
-      createMutation.mutate({ payload, userId, rows });
+      createMutation.mutate({ payload, userId, rows, startedWith: [] });
     }
   }
 
@@ -407,6 +428,7 @@ export function SubscriptionsPanel({
   }
 
   function startEdit(sub: Subscription) {
+    const loaded = allocations.filter((allocation) => allocation.subscription_id === sub.id);
     setForm({
       id: sub.id,
       name: sub.name,
@@ -423,9 +445,8 @@ export function SubscriptionsPanel({
       plan: sub.plan ?? "",
       vendor_url: sub.vendor_url ?? "",
       notes: sub.notes ?? "",
-      allocations: allocations
-        .filter((allocation) => allocation.subscription_id === sub.id)
-        .map((allocation) => ({ project_id: allocation.project_id, share: String(Math.round(allocation.share * 1000) / 10) })),
+      allocations: loaded.map((allocation) => ({ project_id: allocation.project_id, share: String(Math.round(allocation.share * 1000) / 10) })),
+      loadedAllocations: loaded.map(({ id, project_id }) => ({ id, project_id })),
     });
   }
 
@@ -1040,6 +1061,9 @@ export function SubscriptionsPanel({
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => startEdit(s)}
+                              // The editor shows this subscription's project
+                              // split, which has to have loaded first.
+                              disabled={!allocationsReady}
                               aria-label={t.common.edit}
                             >
                               <Pencil className="h-3.5 w-3.5" />

@@ -5,6 +5,7 @@ import {
   isDevelopmentSubscription,
   isDevelopmentTransaction,
   monthKeys,
+  staleAllocationIds,
   subscriptionActiveInMonth,
   subscriptionShares,
   summarizeDevFinance,
@@ -241,5 +242,23 @@ describe("summarizeDevFinance", () => {
     expect(july.paid).toBeCloseTo(24.2, 5);
     expect(september.committed).toBeCloseTo(35, 5);
     expect(summary.timeline).toHaveLength(12);
+  });
+});
+
+describe("staleAllocationIds", () => {
+  it("deletes only rows the form opened with and no longer lists", () => {
+    const opened = [
+      { id: "a1", project_id: "dneskai" },
+      { id: "a2", project_id: "devshark" },
+    ];
+    expect(staleAllocationIds(opened, [{ project_id: "dneskai" }])).toEqual(["a2"]);
+    expect(staleAllocationIds(opened, [{ project_id: "dneskai" }, { project_id: "devshark" }])).toEqual([]);
+  });
+
+  it("deletes nothing when the form opened before the allocations loaded", () => {
+    // The editor showed no rows because none had arrived; saving it must not
+    // read as "remove every allocation".
+    expect(staleAllocationIds([], [])).toEqual([]);
+    expect(staleAllocationIds([], [{ project_id: "dneskai" }])).toEqual([]);
   });
 });

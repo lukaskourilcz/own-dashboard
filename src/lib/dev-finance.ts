@@ -102,6 +102,20 @@ export function subscriptionShares(sub: Subscription, allocations: SubscriptionA
   return slices;
 }
 
+/**
+ * Which stored allocation rows an edit removed: the rows the form opened with
+ * whose project is no longer in it. The form's starting rows are the only
+ * evidence of what the owner saw, so a row that loaded after the form opened
+ * is never deleted by a save that could not have shown it.
+ */
+export function staleAllocationIds(
+  startedWith: readonly Pick<SubscriptionAllocation, "id" | "project_id">[],
+  kept: readonly { project_id: string }[],
+): string[] {
+  const keep = new Set(kept.map((row) => row.project_id));
+  return startedWith.filter((row) => !keep.has(row.project_id)).map((row) => row.id);
+}
+
 /** Month key (`yyyy-MM`) helpers without a timezone surprise: keys are compared lexically. */
 export function monthKeyOf(date: string): string {
   return date.slice(0, 7);
