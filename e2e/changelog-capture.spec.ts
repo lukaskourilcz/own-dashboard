@@ -49,9 +49,9 @@ const CHART_SETTLE_MS = 2_000;
 
 /**
  * One capture: the sidebar destination, the panel's own `PageHeader` title
- * (which is not always the sidebar label), a control only that panel renders,
- * an optional disclosure to open first, and whether the panel draws charts that
- * have to settle before the shutter.
+ * (which is not always the sidebar label), an optional button that loads a
+ * panel which waits to be asked, a control only that panel renders, and
+ * whether the panel draws charts that have to settle before the shutter.
  */
 const CAPTURES = [
   {
@@ -122,13 +122,6 @@ test.describe("changelog captures", () => {
       await expect(
         page.locator("#main-content").getByRole("button", { name: capture.control, exact: true }),
       ).toBeVisible();
-
-      if ("reveal" in capture) {
-        await page
-          .locator("#main-content")
-          .getByRole("button", { name: capture.reveal, exact: true })
-          .click();
-      }
 
       if (capture.charts) {
         await expect(page.locator("#main-content svg.recharts-surface").first()).toBeVisible();
