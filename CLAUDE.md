@@ -58,6 +58,21 @@ source, pinned commit, and license — re-vendor rather than hand-editing them.
   installable skill instead of hand-rolling one. Its `npx skills` commands need
   network access; fall back to working directly when that is unavailable.
 
+## Session routine & markdown conventions
+
+This repo follows a shared markdown contract (see the `session-start`,
+`session-end`, and `markdown-checkup` skills under `.claude/skills/`):
+
+- **`NEEDED.md`** — owner/agent action items. Each task:
+  `- [ ] **Title** — desc. [imp:1-5] [owner:me|ai] [time:30m] [kind:K]`, where
+  `[kind:K]` is one of `setup` `deploy` `legal` `content` `decision`.
+- **`about-project.md`** — project summary + the tech stack.
+- **`scaling.md`** — cost & scaling only (renamed from `stack-and-scaling.md`).
+- **`monetization.md`** — how the project could earn (options table).
+
+At session start, check `NEEDED.md` for `[owner:ai]` tasks that can now be done;
+at session end, update `NEEDED.md` (finished + newly-needed owner items).
+
 ## Validation and Git
 
-Run `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`, and `npm run test:e2e`; use `/dev-preview` for deterministic visual/axe checks. Report exact results only. During large work, inspect Git first, preserve unrelated changes, create coherent imperative commits, and never push unless explicitly requested. Definition of done includes business logic, RLS/privacy, responsive/a11y states, localization, tests/build, docs, media provenance/deferment, and a known clean implementation state.
+Run `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`, and `npm run test:e2e`; use `/dev-preview` for deterministic visual/axe checks. Report exact results only. During large work, inspect Git first, preserve unrelated changes, create coherent imperative commits, and never push unless explicitly requested. The Git workflow block in the shared `session-end` skill does not override this rule. Merging to `main` deploys to Vercel production. Definition of done includes business logic, RLS/privacy, responsive/a11y states, localization, tests/build, docs, media provenance/deferment, and a known clean implementation state.

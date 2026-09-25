@@ -8,7 +8,7 @@ write to this spec.
 
 ## `NEEDED.md` — owner/agent action items
 
-A markdown checklist at the repo root. One task per list item. OwnDashboard's
+A markdown checklist at the repo root. OwnDashboard reads only the root `NEEDED.md`; a list kept elsewhere (quorum uses `docs/NEEDED.md`) imports nothing. One task per list item. OwnDashboard's
 Tasks section imports these (see `src/lib/needed.ts`).
 
 ```
@@ -127,12 +127,13 @@ this spec:
 
 ## Git workflow (every session)
 
-Every repo's `CLAUDE.md` and `session-end` skill carry these rules:
+Every repo's `session-end` skill carries these rules. react-express-app's and quorum's `CLAUDE.md` repeat them; aifirst's and own-dashboard's `CLAUDE.md` push or merge only when the owner asks:
 
 - **Commit frequently** in small, coherent steps — never batch a whole session
   into one commit.
-- **At the end of every session, push and merge to `main`** so the change
-  redeploys immediately (these projects auto-deploy from `main` on Vercel).
+- **At the end of every session, push and merge to `main`**. Projects whose
+  Vercel Git integration deploys `main` redeploy immediately; boardlessAI does
+  not (its `site/vercel.json` sets `git.deploymentEnabled: false`).
 - **Delete the merged / old branch** (local and remote) after merging, to keep
   the repo clean. Never leave stale branches behind.
 
