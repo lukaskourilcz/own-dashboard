@@ -16,6 +16,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
+import { useReturnFocus } from "@/lib/use-return-focus";
 import { composePromptCopy } from "@/lib/prompt-composer";
 import { promptKind } from "@/lib/prompt-kinds";
 import { projectComposerLinks, promptComposerLinks } from "@/lib/prompt-links";
@@ -71,6 +72,7 @@ export function PromptCopyDialog({
   const toast = useToast();
   const [choice, setChoice] = useState<{ promptId: string; projectId: string } | null>(null);
   const [status, setStatus] = useState("");
+  const returnFocus = useReturnFocus(open && prompt !== null);
 
   const projectId = useMemo(() => {
     if (!prompt) return "";
@@ -112,7 +114,7 @@ export function PromptCopyDialog({
         if (!next) setStatus("");
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{prompt ? t.copyTitle(prompt.name) : t.copy}</DialogTitle>
           <DialogDescription>{t.copyDescription}</DialogDescription>

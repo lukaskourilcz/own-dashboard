@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { SimpleSelect } from "@/components/ui/select";
 import { PricingDot } from "@/components/panels/link-library-card";
 import { useDict } from "@/lib/i18n";
+import { useReturnFocus } from "@/lib/use-return-focus";
 import { filterLibrary, UNCATEGORIZED_LINKS } from "@/lib/link-library";
 import type { AiCategory, AiLink } from "@/lib/types";
 
@@ -62,6 +63,7 @@ export function LinkPickerDialog({
   const [limit, setLimit] = useState(LINK_PICKER_PAGE);
   const [selected, setSelected] = useState<string[]>(() => initialSelectedIds ?? []);
   const [busy, setBusy] = useState(false);
+  const returnFocus = useReturnFocus(open);
 
   const available = useMemo(
     () =>
@@ -119,7 +121,7 @@ export function LinkPickerDialog({
         if (!next) reset();
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-xl">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-xl" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{title ?? t.ai.pickerTitle}</DialogTitle>
           <DialogDescription>

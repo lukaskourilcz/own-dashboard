@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useDict } from "@/lib/i18n";
+import { useReturnFocus } from "@/lib/use-return-focus";
 import { PROJECT_LINK_ROLES } from "@/lib/project-links";
 import type { Project, ProjectLinkRole } from "@/lib/types";
 
@@ -43,6 +44,7 @@ export function AddToProjectDialog({
   const [role, setRole] = useState<ProjectLinkRole>(fixedRole ?? "uses");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const returnFocus = useReturnFocus(open);
   const selectedProject = projects.some((project) => project.id === projectId)
     ? projectId
     : projects[0]?.id ?? "";
@@ -68,7 +70,7 @@ export function AddToProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{`${t.ai.addToProject}: ${linkTitle}`}</DialogTitle>
           <DialogDescription>{t.ai.addToProjectDescription}</DialogDescription>

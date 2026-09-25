@@ -19,6 +19,7 @@ test("prompts are grouped by kind and copy with the project and its links", asyn
   await openPrompts(page, testInfo.project.name === "mobile");
 
   const main = page.locator("#main-content");
+  await expect(main.getByRole("heading", { level: 2, name: /^Audit/ })).toBeVisible();
   const headings = await main.getByRole("heading", { level: 2 }).allTextContents();
   expect(headings.map((text) => text.replace(/\d+ prompts?$/, "").trim())).toEqual([
     "Audit",
