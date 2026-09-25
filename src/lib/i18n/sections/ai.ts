@@ -81,6 +81,16 @@ type AiStrings = {
   renameCategory: string;
   deleteCategory: string;
   deleteCategoryConfirm: (name: string) => string;
+  mergeCategory: string;
+  mergeCategoryTitle: (name: string) => string;
+  mergeCategoryInto: string;
+  mergeCategoryConfirm: (from: string, to: string) => string;
+  mergeCategoryAction: string;
+  mergeCategoryRecords: (n: number) => string;
+  categoryMerged: string;
+  couldNotMerge: string;
+  duplicateCategoryHint: (pairs: string) => string;
+  suggestedMerge: string;
   categoryEmpty: string;
   manageHint: string;
   // Link dialog / form
@@ -237,6 +247,17 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     deleteCategory: "Delete category",
     deleteCategoryConfirm: (name) =>
       `Delete the "${name}" category? Its links move to Uncategorized.`,
+    mergeCategory: "Merge category",
+    mergeCategoryTitle: (name) => `Merge "${name}" into another category`,
+    mergeCategoryInto: "Move its records into",
+    mergeCategoryConfirm: (from, to) =>
+      `Everything in "${from}" moves to "${to}", then "${from}" is deleted. Nothing else changes.`,
+    mergeCategoryAction: "Merge",
+    mergeCategoryRecords: (n) => `${n} ${n === 1 ? "record moves" : "records move"}`,
+    categoryMerged: "Categories merged.",
+    couldNotMerge: "Could not merge those categories. Please try again.",
+    duplicateCategoryHint: (pairs) => `These names read as the same category: ${pairs}. Merge from a category header.`,
+    suggestedMerge: "Suggested",
     categoryEmpty: "No links here yet.",
     manageHint: "Create categories like DESIGN, SECURITY, IDEAS to group links.",
     newLinkTitle: "Add link",
@@ -392,6 +413,17 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     deleteCategory: "Smazat kategorii",
     deleteCategoryConfirm: (name) =>
       `Smazat kategorii „${name}“? Její odkazy se přesunou do Bez kategorie.`,
+    mergeCategory: "Sloučit kategorii",
+    mergeCategoryTitle: (name) => `Sloučit „${name}“ do jiné kategorie`,
+    mergeCategoryInto: "Přesunout záznamy do",
+    mergeCategoryConfirm: (from, to) =>
+      `Vše z „${from}“ se přesune do „${to}“ a kategorie „${from}“ se smaže. Nic dalšího se nezmění.`,
+    mergeCategoryAction: "Sloučit",
+    mergeCategoryRecords: (n) => `přesune se ${n} ${n === 1 ? "záznam" : n < 5 ? "záznamy" : "záznamů"}`,
+    categoryMerged: "Kategorie sloučeny.",
+    couldNotMerge: "Kategorie se nepodařilo sloučit. Zkuste to znovu.",
+    duplicateCategoryHint: (pairs) => `Tyto názvy znamenají totéž: ${pairs}. Sloučit je můžete v hlavičce kategorie.`,
+    suggestedMerge: "Doporučeno",
     categoryEmpty: "Zatím tu nejsou žádné odkazy.",
     manageHint: "Vytvoř kategorie jako DESIGN, SECURITY, IDEAS pro seskupení odkazů.",
     newLinkTitle: "Přidat odkaz",

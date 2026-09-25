@@ -6,6 +6,7 @@ describe("professional navigation", () => {
   it("uses canonical professional routes", () => {
     expect(tabToPath("home")).toBe("/");
     expect(tabToPath("opportunities")).toBe("/opportunities");
+    expect(tabToPath("competition")).toBe("/competition");
     expect(isNavTab("books")).toBe(false);
     expect(isNavTab("streaks")).toBe(false);
     expect(isNavTab("couple")).toBe(false);
@@ -15,6 +16,7 @@ describe("professional navigation", () => {
     expect(isNavPathSegment("github")).toBe(true);
     expect(tabFromSlug(["github"])).toBe("projects");
     expect(tabFromSlug(["tugedr"])).toBe("opportunities");
+    expect(tabFromSlug(["works"])).toBe("projects");
     expect(isNavPathSegment("books")).toBe(false);
     expect(isNavPathSegment("streaks")).toBe(false);
   });

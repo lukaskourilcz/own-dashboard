@@ -153,6 +153,23 @@ type JobsStrings = {
   eventApplied: string;
   eventStatus: string;
   eventNote: string;
+  // Stage board
+  layoutLabel: string;
+  listView: string;
+  boardView: string;
+  boardRegion: string;
+  boardHint: string;
+  boardColumnClosed: string;
+  boardColumnEmpty: string;
+  boardMoveCard: (title: string) => string;
+  boardSavedNotDraggable: string;
+  followUpDue: string;
+  followUpOn: string;
+  contactLabel: string;
+  contactName: string;
+  contactEmail: string;
+  contactMigrationPending: string;
+  contactSaveFailed: string;
   // Templates manager
   manageTemplates: string;
   templatesTitle: string;
@@ -336,6 +353,24 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     eventApplied: "Applied",
     eventStatus: "Status →",
     eventNote: "Note",
+    layoutLabel: "Layout",
+    listView: "List",
+    boardView: "Board",
+    boardRegion: "Application stages",
+    boardHint:
+      "Drag a card to another stage, or use the stage menu on the card. A saved position becomes an application through Review / mark as sent, which records the real date you applied.",
+    boardColumnClosed: "Closed",
+    boardColumnEmpty: "Nothing at this stage.",
+    boardMoveCard: (title: string) => `Move ${title} to another stage`,
+    boardSavedNotDraggable: "Not sent yet",
+    followUpDue: "Follow-up due",
+    followUpOn: "Follow up",
+    contactLabel: "Contact at the company",
+    contactName: "Contact name",
+    contactEmail: "Contact email",
+    contactMigrationPending:
+      "Contact fields appear once supabase/migrations/20260916141348_job_application_contacts.sql has been applied.",
+    contactSaveFailed: "The stage and notes were saved; the contact could not be.",
     manageTemplates: "Templates",
     templatesTitle: "Cover letter templates",
     templatesDescription:
@@ -517,6 +552,24 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     eventApplied: "Přihlášeno",
     eventStatus: "Stav →",
     eventNote: "Poznámka",
+    layoutLabel: "Zobrazení",
+    listView: "Seznam",
+    boardView: "Tabule",
+    boardRegion: "Fáze přihlášek",
+    boardHint:
+      "Kartu přetáhněte do jiné fáze, nebo použijte nabídku fáze přímo na kartě. Z uložené pozice se přihláška stane přes Zkontrolovat / označit odeslání, kde se zapíše skutečné datum odeslání.",
+    boardColumnClosed: "Uzavřeno",
+    boardColumnEmpty: "V této fázi zatím nic není.",
+    boardMoveCard: (title: string) => `Přesunout ${title} do jiné fáze`,
+    boardSavedNotDraggable: "Zatím neodesláno",
+    followUpDue: "Připomenout teď",
+    followUpOn: "Připomenout",
+    contactLabel: "Kontakt ve firmě",
+    contactName: "Jméno kontaktu",
+    contactEmail: "E-mail kontaktu",
+    contactMigrationPending:
+      "Pole kontaktu se objeví, až bude nasazena migrace supabase/migrations/20260916141348_job_application_contacts.sql.",
+    contactSaveFailed: "Fáze a poznámky se uložily, kontakt se uložit nepodařilo.",
     manageTemplates: "Šablony",
     templatesTitle: "Šablony motivačních dopisů",
     templatesDescription:

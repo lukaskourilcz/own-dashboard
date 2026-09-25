@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
 import type {
   Account,
   AiCategory,
@@ -24,6 +25,7 @@ import type {
   InboxItem,
   AppNotification,
   WeeklyReview,
+  Competitor,
   Cron,
   Plan,
   Project,
@@ -38,13 +40,14 @@ import type {
   Shortcut,
   SpendCategory,
   Subscription,
+  SubscriptionAllocation,
   Todo,
   Tool,
   Transaction,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
 
-async function fetchCalendarWindow(window: "today" | "week"): Promise<EventsResult> {
+async function fetchCalendarWindow(window: "today" | "week" | "last-week"): Promise<EventsResult> {
   const response = await fetch(`/api/calendar/events?window=${window}`, {
     signal: AbortSignal.timeout(15_000),
   });
@@ -59,6 +62,11 @@ export function fetchTodayCalendar(): Promise<EventsResult> {
 
 export function fetchWeekCalendar(): Promise<EventsResult> {
   return fetchCalendarWindow("week");
+}
+
+/** The finished week the weekly planning flow measures time against. */
+export function fetchLastWeekCalendar(): Promise<EventsResult> {
+  return fetchCalendarWindow("last-week");
 }
 
 /**
@@ -140,6 +148,23 @@ export async function fetchCategoryRules(): Promise<CategoryRule[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as CategoryRule[];
+}
+
+/**
+ * The owner's transaction rules. `conditions`/`actions` are jsonb, so every row
+ * goes through the engine's parser; rows it refuses are counted as `dropped`
+ * and reported in the editor instead of disappearing silently.
+ */
+export async function fetchTransactionRules(): Promise<TransactionRuleSet> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("transaction_rules")
+    .select("*")
+    .order("stage", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return parseRules(data ?? []);
 }
 
 export async function fetchPlans(): Promise<Plan[]> {
@@ -325,6 +350,27 @@ export async function fetchCrons(): Promise<Cron[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Cron[];
+}
+
+export async function fetchSubscriptionAllocations(): Promise<SubscriptionAllocation[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("subscription_allocations")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as SubscriptionAllocation[];
+}
+
+export async function fetchCompetitors(): Promise<Competitor[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("competitors")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Competitor[];
 }
 
 export async function fetchAiLinks(): Promise<AiLink[]> {

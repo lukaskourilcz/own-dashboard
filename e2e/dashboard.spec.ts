@@ -6,6 +6,7 @@ const TABS = [
   "Home",
   "Work overview",
   "Projects",
+  "Competition",
   "Opportunities",
   "Clients",
   "Career",
@@ -122,7 +123,7 @@ test.describe("dashboard sections", () => {
     // The pre-rename slug still resolves to the DNESKAi workspace.
     await page.goto("/dev-preview?project=aifirst");
     await expect(page.getByRole("heading", { level: 1, name: "DNESKAi" })).toBeVisible();
-    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Knowledge", "Scaling", "Monetization"]) {
+    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Competition", "Knowledge", "Scaling", "Monetization"]) {
       await expect(page.getByRole("tab", { name: tab })).toBeVisible();
     }
     await page.getByRole("tab", { name: "Finance" }).click();
@@ -213,19 +214,24 @@ test.describe("dashboard sections", () => {
     const table = page.getByRole("table");
     await expect(table.getByRole("row", { name: "Freelance — hired" })).toHaveCount(1);
     const names = await table.locator("tbody tr td:nth-child(2) a").allTextContents();
+    // The boardlessAI ventures follow their parent as subsections.
     expect(names).toEqual([
       "DNESKAi",
       "own-dashboard",
       "devShark",
       "boardlessAI",
+      "Design Lab",
+      "GoVIRAL",
+      "LINKA",
       "Acme customer portal",
       "Harbor Bakery website",
     ]);
+    await expect(table.getByRole("row", { name: /Design Lab/ }).getByRole("button", { name: "Drag to reorder" })).toHaveCount(0);
     // Keyboard order follows the visual order: the divider row sits between
     // the last own project and the first freelance project.
     const rows = await table.locator("tbody tr").allTextContents();
     const divider = rows.findIndex((text) => text.includes("Freelance — hired"));
-    expect(rows[divider - 1]).toContain("boardlessAI");
+    expect(rows[divider - 1]).toContain("LINKA");
     expect(rows[divider + 1]).toContain("Acme customer portal");
     // The wide table scrolls inside its card; the page itself never widens.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -327,6 +333,56 @@ test.describe("dashboard sections", () => {
     await page.getByRole("option", { name: "Remote first" }).click();
     await page.getByLabel("Sort").click();
     await page.getByRole("option", { name: "Location A–Z" }).click();
+  });
+
+  test("the weekly review lists what shipped since the last completed review", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Work overview", exact: true }).click();
+    // The fixture review closed the week of 2026-09-07, so the two newest
+    // changelog entries published after it are the ones the block should name.
+    await expect(page.getByText("Shipped since last review")).toBeVisible();
+    await expect(page.getByText("Tools, project links, Competition, payment matching and weekly planning")).toBeVisible();
+    await expect(page.getByText("2026-09-25")).toBeVisible();
+  });
+
+  test("weekly planning walks five steps from last week's time to next week's objectives", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    const errors = watchConsole(page);
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Work overview", exact: true }).click();
+
+    await expect(page.getByText("Weekly planning", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 3, name: "Time by channel" })).toBeVisible();
+    // The fixture week names the client, a project and neither, so all three
+    // channels are rendered from real classification rather than placeholders.
+    await expect(page.getByText("Client work", { exact: true })).toBeVisible();
+    await expect(page.getByText("Own projects", { exact: true })).toBeVisible();
+    await expect(page.getByText("Admin and other", { exact: true })).toBeVisible();
+
+    const next = page.getByRole("button", { name: "Next", exact: true });
+    const back = page.getByRole("button", { name: "Back", exact: true });
+    await expect(back).toBeDisabled();
+
+    for (const heading of [
+      "What you finished",
+      "Carry forward",
+      "Next week's objectives",
+      "Week summary",
+    ]) {
+      await next.click();
+      await expect(page.getByRole("heading", { level: 3, name: heading })).toBeVisible();
+    }
+    await expect(next).toBeDisabled();
+
+    // Mutations are disabled in the public preview, so the flow reads without
+    // writing.
+    await expect(page.getByRole("button", { name: "Complete week", exact: true })).toBeDisabled();
+
+    await back.click();
+    await expect(page.getByRole("heading", { level: 3, name: "Next week's objectives" })).toBeVisible();
+
+    expect(errors, errors.join("\n")).toEqual([]);
   });
 
   test("Subscriptions group comparable services and show every renewal", async ({ page }, testInfo) => {

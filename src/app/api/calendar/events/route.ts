@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
+import {
+  fetchLastWeekEvents,
+  fetchTodayWindowEvents,
+  fetchUpcomingWeekEvents,
+} from "@/lib/calendar-server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -10,12 +14,14 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const window = request.nextUrl.searchParams.get("window");
-  if (window !== "today" && window !== "week") {
+  if (window !== "today" && window !== "week" && window !== "last-week") {
     return NextResponse.json({ error: "Unsupported calendar window." }, { status: 400 });
   }
 
   const result = window === "today"
     ? await fetchTodayWindowEvents()
-    : await fetchUpcomingWeekEvents();
+    : window === "week"
+      ? await fetchUpcomingWeekEvents()
+      : await fetchLastWeekEvents();
   return NextResponse.json(result);
 }

@@ -171,3 +171,25 @@ Links and Ideas now use separate export dialogs. The targeted browser suite cove
 - `npx playwright test e2e/link-export.spec.ts`: 8 passed across desktop and mobile.
 - The Czech dark export dialog passed document-overflow checks at 360, 430, 768, 1024, 1440 and 1728 px with no axe violations.
 - The live owner collection contains 171 links and 17 ideas in 37 link categories and 10 idea categories, with no uncategorized records. The code test harness continues to use synthetic fixtures rather than owner data.
+
+## Career stage board — 2026-09-17
+
+Applied gained a board layout beside its list, and the follow-up date it shows
+now also appears on the Work overview and in the Home hero.
+
+- `npx tsc --noEmit`: passed.
+- `npm run lint`: passed.
+- `npm run test`: 45 files, 505 tests passed, including the new
+  `tests/lib/jobs-board.test.ts`.
+- `npm run build` and `npm run test:e2e` were **not run in this session** — they
+  are executed centrally for this change. `e2e/career-board.spec.ts` is written
+  and covers the five column headings and their counts, the saved column's
+  review button, the due follow-up cue, the payload a stage change posts, plus
+  a Czech width matrix at 360, 430, 768, 1024, 1440 and 1728 px with
+  document-overflow and axe `wcag2a`/`wcag2aa`/`wcag21aa` scans. Its screenshots
+  and axe results are therefore not yet recorded here; this entry will be
+  incomplete until that run reports.
+- Design decisions made without a browser: the board is the only horizontal
+  scroller on the page and is labelled and focusable, each column is a heading
+  rather than a landmark so the board does not bury the page's real ones, and
+  the overdue follow-up carries the word "due" as well as the warning tone.

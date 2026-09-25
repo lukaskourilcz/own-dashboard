@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/cron/renewal-warnings", "schedule": "0 7 * * *" },
-    { "path": "/api/cron/bank-sync", "schedule": "0 6 * * *" }
+    { "path": "/api/cron/bank-sync", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/payment-match", "schedule": "30 6 * * *" }
   ]
 }

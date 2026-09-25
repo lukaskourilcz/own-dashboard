@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   PROJECT_WORKSPACE_TABS,
@@ -13,12 +13,22 @@ const sql = readFileSync(
   "utf8",
 );
 
-// The latest migration that defines the hidden_project_tabs check.
-const tabCheckSql = readFileSync(
-  new URL(
-    "../../supabase/migrations/20260925090200_fix_hidden_project_tabs_check.sql",
-    import.meta.url,
-  ),
+// The latest migration that defines the hidden_project_tabs check: every
+// migration that adds a workspace tab has to recreate it.
+const migrationsDir = new URL("../../supabase/migrations/", import.meta.url);
+const tabCheckMigrations = readdirSync(migrationsDir)
+  .filter((file) => file.endsWith(".sql"))
+  .sort()
+  .filter((file) =>
+    /add constraint user_preferences_hidden_project_tabs_check/i.test(
+      readFileSync(new URL(file, migrationsDir), "utf8"),
+    ),
+  );
+const latestTabCheck = tabCheckMigrations[tabCheckMigrations.length - 1]!;
+const tabCheckSql = readFileSync(new URL(latestTabCheck, migrationsDir), "utf8");
+// The migration that first dropped the removed "operations" id from stored rows.
+const tabCleanupSql = readFileSync(
+  new URL("20260925090200_fix_hidden_project_tabs_check.sql", migrationsDir),
   "utf8",
 );
 
@@ -54,11 +64,13 @@ describe("synchronized user preferences", () => {
   });
 
   it("constrains hidden project tabs to exactly the workspace tabs", () => {
+    expect(latestTabCheck).toBe("20260925200200_project_competition_tab.sql");
     expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_WORKSPACE_TABS]);
     expect(checkedTabs(tabCheckSql)).not.toContain("operations");
+    expect(checkedTabs(tabCheckSql)).toContain("competition");
     // Rows holding a removed id are cleaned before the stricter check applies.
-    expect(tabCheckSql.indexOf("update public.user_preferences")).toBeLessThan(
-      tabCheckSql.indexOf("add constraint user_preferences_hidden_project_tabs_check"),
+    expect(tabCleanupSql.indexOf("update public.user_preferences")).toBeLessThan(
+      tabCleanupSql.indexOf("add constraint user_preferences_hidden_project_tabs_check"),
     );
   });
 });

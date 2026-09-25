@@ -41,9 +41,13 @@ import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { BankSync } from "@/components/finances/bank-sync";
+import { PaymentMatches } from "@/components/finances/payment-matches";
+import { TransactionRules } from "@/components/finances/transaction-rules";
 import type {
   Account,
   Cron,
+  Invoice,
+  InvoiceItem,
   Project,
   ProjectCost,
   Subscription,
@@ -134,6 +138,8 @@ export function FinancesPanel({
   projects,
   projectCosts,
   crons,
+  invoices,
+  invoiceItems,
   displayCurrency,
 }: {
   accounts: Account[];
@@ -144,6 +150,10 @@ export function FinancesPanel({
   projects: Project[];
   projectCosts: ProjectCost[];
   crons: Cron[];
+  /** Read-only here: the unmatched-payments card measures payments against the
+   * invoices they are meant to settle, and writes through its own API route. */
+  invoices: Invoice[];
+  invoiceItems: InvoiceItem[];
   displayCurrency: string;
 }) {
   const supabase = createClient();
@@ -434,7 +444,25 @@ export function FinancesPanel({
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Bank sync + CSV import — pull real balances/transactions in. */}
-        <BankSync transactions={transactions} />
+        <BankSync
+          transactions={transactions}
+          projects={projects}
+          subscriptions={subscriptions}
+        />
+
+        {/* Incoming payments that settled no invoice, with a manual link. */}
+        <PaymentMatches
+          transactions={transactions}
+          invoices={invoices}
+          invoiceItems={invoiceItems}
+        />
+
+        {/* Staged rules applied on sync, on import and retroactively. */}
+        <TransactionRules
+          transactions={transactions}
+          projects={projects}
+          subscriptions={subscriptions}
+        />
 
         {/* Accounts (net worth now lives in the hero above) */}
         <Card className="lg:col-span-1">

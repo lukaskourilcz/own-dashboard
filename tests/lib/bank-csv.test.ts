@@ -91,6 +91,27 @@ describe("parseBankCsv", () => {
     expect(errors[0]).toMatch(/date and amount/i);
   });
 
+  it("reads a Czech variable-symbol column so the payment matcher can use it", () => {
+    const csv = [
+      "Datum;Částka;Měna;Variabilní symbol;Zpráva pro příjemce",
+      "12.09.2026;38 115,00;CZK;2026001;Úhrada faktury",
+    ].join("\n");
+    const { rows, columns, errors } = parseBankCsv(csv);
+    expect(errors).toEqual([]);
+    expect(columns.variableSymbol).toBe("Variabilní symbol");
+    expect(rows[0]).toMatchObject({
+      kind: "income",
+      amount: 38115,
+      variable_symbol: "2026001",
+    });
+  });
+
+  it("leaves the symbol null when the statement has no column for it", () => {
+    const { rows, columns } = parseBankCsv("Datum,Částka,Popis\n17.07.2026,-10,Kafe");
+    expect(columns.variableSymbol).toBeNull();
+    expect(rows[0].variable_symbol).toBeNull();
+  });
+
   it("tolerates a BOM and CRLF line endings", () => {
     const csv = "﻿Datum;Částka\r\n17.07.2026;-5\r\n";
     const { rows, errors } = parseBankCsv(csv);

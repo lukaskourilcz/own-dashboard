@@ -134,7 +134,7 @@ export function SettingsPanel({
   // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
   // so the card isn't a wall of switches for projects that will never be active.
   const [showInactive, setShowInactive] = useState(false);
-  const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null }>>(null);
+  const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null; providers?: { id: string; label: string; configured: boolean; connected: boolean }[] }>>(null);
   const saveErrorShown = useRef(false);
   const savePreferences = (patch: Record<string, unknown>) => {
     if (!syncPreferences) return;
@@ -245,10 +245,11 @@ export function SettingsPanel({
       communication: t.professional.projectCommunication,
       repository: t.professional.projectRepository,
       finance: t.professional.projectFinance,
+      competition: t.portfolio.projectCompetitionTab,
       knowledge: t.professional.projectKnowledge,
       scaling: t.professional.projectScaling,
       monetization: t.professional.projectMonetization,
-    };
+    } satisfies Record<ProjectWorkspaceTab, string>;
     return labels[tab];
   };
 
@@ -565,7 +566,18 @@ export function SettingsPanel({
 
         <Card>
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Plug className="h-3 w-3" />{t.settings.integrations}</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; const value = !state ? "pending" : state.connected === true ? "connected" : state.connected === false ? "not_connected" : state.configured ? "configured" : "not_configured"; const status = !state ? "…" : state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><StatusBadge value={value} label={status} /></div>; })}</CardContent>
+          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; const value = !state ? "pending" : state.connected === true ? "connected" : state.connected === false ? "not_connected" : state.configured ? "configured" : "not_configured"; const status = !state ? "…" : state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><StatusBadge value={value} label={status} /></div>; })}
+            {/* Bank sync is the one integration with several providers behind it, so it names each one and its own state. Booleans only — the endpoint carries no token or secret. */}
+            <p className="text-xs text-foreground-subtle">{t.settings.bankProviderNote}</p>
+            {(integrations?.bank?.providers ?? []).map((provider) => (
+              <div key={provider.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+                <p className="text-sm font-medium">{t.settings.bankSync}: {provider.label}</p>
+                <StatusBadge
+                  value={provider.connected ? "connected" : provider.configured ? "configured" : "not_configured"}
+                  label={provider.connected ? t.settings.connected : provider.configured ? t.settings.configured : t.settings.notConfigured}
+                />
+              </div>
+            ))}</CardContent>
         </Card>
 
         <Card>

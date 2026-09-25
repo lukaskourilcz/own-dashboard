@@ -29,6 +29,8 @@ export const qk = {
   projectCommunications: ["projectCommunications"] as const,
   projectCosts: ["projectCosts"] as const,
   crons: ["crons"] as const,
+  subscriptionAllocations: ["subscriptionAllocations"] as const,
+  competitors: ["competitors"] as const,
   aiLinks: ["aiLinks"] as const,
   aiCategories: ["aiCategories"] as const,
   projectLinks: ["projectLinks"] as const,
@@ -52,9 +54,12 @@ export const qk = {
   jobLastRun: ["jobLastRun"] as const,
   bankConnections: ["bankConnections"] as const,
   categoryRules: ["categoryRules"] as const,
+  transactionRules: ["transactionRules"] as const,
   // Network-backed.
   repos: ["github", "repos"] as const,
   calendarList: ["calendar", "list"] as const,
   calendarToday: ["calendar", "events", "today"] as const,
   calendarWeek: ["calendar", "events", "week"] as const,
+  calendarLastWeek: ["calendar", "events", "last-week"] as const,
+  weeklyFocusRecap: ["weeklyReviews", "focus-recap"] as const,
 } satisfies Record<string, QueryKey>;

@@ -7,11 +7,12 @@ It is deliberately a personal application—not a SaaS, team workspace, CRM, or 
 ## Product areas
 
 - **Home** — an attention-focused daily surface with a priority-first randomized seven-task focus, a 49-day completion garden and task waiting age. Inbox (capture, notifications, routing into records) and References are hidden from navigation and still open at `/inbox` and `/references`.
-- **Work** — portfolio overview, explainable project health, weekly reviews, project workspaces, client opportunities, organizations/clients, Career, and the canonical invoice workflow.
-- **Projects** — a sortable portfolio table with the owner's own products first and freelance client work behind a "Freelance — hired" divider, plus a workspace per project with overview, the library links the project uses, tasks, activity, client communication history, GitHub repository documents, development/production links, crons, finance, knowledge, scaling and monetization. Projects match GitHub repositories by id, so a repository rename updates the project instead of duplicating it; renamed projects keep their earlier slugs as redirects.
+- **Work** — portfolio overview, explainable project health, guided weekly planning (last week's calendar time by client, own-project and admin channel, finished focus tasks, carry-forward, next week's objectives, a summary), project workspaces, client opportunities, organizations/clients with ARES fill and VIES VAT checks, Career, and the canonical invoice workflow.
+- **Projects** — a sortable portfolio table with the owner's own products first and freelance client work behind a "Freelance — hired" divider, plus a workspace per project with overview, the library links the project uses, tasks, activity, client communication history, GitHub repository documents, development/production links, crons with heartbeat freshness, finance with shared-subscription allocations, competition, knowledge, scaling and monetization. The daily projects come from a code-level registry, so they exist without GitHub, and the boardlessAI ventures Design Lab and GoVIRAL are listed under their parent. Projects match GitHub repositories by id, so a repository rename updates the project instead of duplicating it; renamed projects keep their earlier slugs as redirects.
+- **Competition** — per-project competitor research: most useful features, social-media content, pricing model, lessons, a relevance score and a review date that is marked as needing a refresh once it is 90 days old.
 - **Opportunities and clients** — a manual pipeline for Tugedr, referral, direct, inbound, and existing-client leads; won opportunities convert transactionally into linked organizations and projects only after confirmation. Tugedr is a client-opportunity source, never Pulse or mood tracking. Opportunities loads nothing until **Check for new offers** is pressed.
-- **Career** — a React-focused Prague/remote job workspace that loads nothing until **Check for new offers / Zkontrolovat nové nabídky** is pressed; the press refreshes employer feeds and job boards and checks which listings are still open. It keeps an owner-scoped company directory, position-specific English/Czech letter guidance, saved positions with URL import and persistent drafts, prepared applications with Google Drive letters, sent dates and response statistics, application history, cover-letter templates, follow-ups, and permanent owner-scoped deletion.
-- **Money and invoices** — accounts, CSV/GoCardless bank imports, transaction categories/rules, subscriptions grouped by operational purpose and importance with renewal countdowns, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
+- **Career** — a React-focused Prague/remote job workspace that loads nothing until **Check for new offers / Zkontrolovat nové nabídky** is pressed; the press refreshes employer feeds and job boards and checks which listings are still open. It keeps an owner-scoped company directory, position-specific English/Czech letter guidance, saved positions with URL import and persistent drafts, prepared applications with Google Drive letters, sent dates and response statistics, application history, cover-letter templates, a stage board with contacts and follow-up dates, and permanent owner-scoped deletion.
+- **Money and invoices** — a development-finance overview (recurring tooling and hosting spend split between own projects, client projects and unallocated overhead, per-project and per-vendor breakdowns, a committed-versus-paid timeline, and how much rests on amounts not yet checked against an invoice), accounts, CSV import and bank sync behind one provider interface (GoCardless, Fio, Enable Banking), staged transaction rules that file a payment by description, account, amount, date or direction and can be applied retroactively, deterministic pairing of incoming payments with issued invoices by variable symbol and amount, subscriptions grouped by operational purpose and importance with lifecycle dates, renewal countdowns and project allocations, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
 - **Planning** — GLOBAL priority-6 tasks, active-project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
 - **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup; prompts grouped by the kind of job (design, audit, competition, UX and UI, analysis, documentation, new project, SEO, marketing) with the links an agent should open and a copy preview that fills in a project and its links; Tools, the library links really in use with what each does and how it helps each project; and masonry-grouped enriched links showing which projects use them. Project Knowledge reads Tech stack and third-party library summaries from `about-project.md`.
 - **Settings** — database-synchronized appearance, navigation, task density, CV links, active GitHub projects, integrations, notification controls, AI/privacy consent, own-only exports, legacy archive download, and account controls.
@@ -20,7 +21,7 @@ Pulse, habits/streaks, books/reading, and couples mode are retired. The cleanup 
 
 ## AI and safety boundaries
 
-OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md).
+OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md). Invoices are marked paid by the deterministic payment matcher in `src/lib/payment-matching.ts`, which compares a variable symbol and an amount, or by hand.
 
 ## Architecture and stack
 
@@ -32,7 +33,7 @@ OwnDashboard makes no model calls. Link enrichment reads the submitted URL throu
 | UI | Radix primitives, Lucide, Recharts, BlockNote, date-fns, QRCode |
 | Extraction | pdf.js deterministic invoice extraction in the browser; optional Jina Reader link enrichment |
 | Operations | Vercel functions/crons, optional Upstash rate limiting, Resend email, PostHog analytics/flags, Sentry monitoring |
-| Integrations | Google Calendar OAuth, GitHub OAuth/repository files and commits, GoCardless Bank Account Data |
+| Integrations | Google Calendar OAuth, GitHub OAuth/repository files and commits, bank sync through GoCardless, Fio banka or Enable Banking |
 | Quality | ESLint, TypeScript, Vitest, Playwright, axe accessibility checks |
 
 The authenticated dashboard uses one canonical catch-all route and interactive shell to preserve navigation state. The server now seeds only the entities required by the requested destination; moving within the shell enables the corresponding React Query fetchers on demand. Google Calendar windows follow the same model through an authenticated, bounded endpoint. Supabase RLS remains the final data boundary, including ownership checks on related project and organization IDs.
@@ -41,7 +42,7 @@ The authenticated dashboard uses one canonical catch-all route and interactive s
 
 ```text
 Home
-Work: Overview · Projects · Opportunities · Clients · Career · Invoices
+Work: Overview · Projects · Competition · Opportunities · Clients · Career · Invoices
 Money: Overview · Accounts · Transactions · Subscriptions · Categories
 Planning: Tasks · Calendar · Goals · Dates
 Library: Notes · Prompts · Tools · Links
@@ -109,14 +110,27 @@ The migrations, in the order they run:
 15. `20260911103455_freelance_metrics.sql` — the `freelance_opportunity_metrics` RPC.
 16. `20260911104131_freelance_resources.sql` — `freelance_platforms.resources_url`.
 17. `20260915210805_link_ideas_and_relevance.sql` — record type, rating, pricing evidence and project relevance on library links.
-18. `20260925090000_project_repository_identity.sql` — `projects.repo_id`, earlier repository names, and repository-id matching in `create_daily_focus_set`.
-19. `20260925090100_project_engagement_and_names.sql` — own versus client projects, `previous_slugs`, and the DNESKAi / devShark / boardlessAI renames.
-20. `20260925090200_fix_hidden_project_tabs_check.sql` — the corrected project-tab check on `user_preferences.hidden_project_tabs`.
-21. `20260925090300_project_links.sql` — `project_links`.
-22. `20260925090400_prompt_kinds_and_links.sql` — `prompts.kind` and `prompt_links`.
-23. `20260925090500_tools.sql` — `tools`.
+18. `20260916094243_portfolio_works_competition_finance.sql` — project subsections (`parent_id`) and registry keys (`portfolio_key`), subscription lifecycle fields and the quarterly cycle, subscription allocations, transaction-to-subscription links, competitor research, and the since-dropped `projects.scope`.
+19. `20260916125652_organization_registry_verification.sql` — ARES fill provenance and the cached VIES verdict on organizations.
+20. `20260916125708_subscription_amount_confirmation.sql` — `subscriptions.amount_confirmed_on`.
+21. `20260916125718_invoice_payment_matching.sql` — variable symbol, match time and match source on transactions, for pairing payments with invoices.
+22. `20260916125742_transaction_rules.sql` — staged, specificity-ranked `transaction_rules`, backfilled from the legacy keyword rules.
+23. `20260916135326_cron_heartbeats.sql` — per-cron push-monitor URL and last-success timestamp, so a scheduled job that stops running is visible instead of silent.
+24. `20260916141348_job_application_contacts.sql` — contact name and address on job applications.
+25. `20260916141837_bank_provider_abstraction.sql` — provider-neutral bank connections and service-role-only `bank_provider_credentials`.
+26. `20260916195556_link_project_references.sql` — `ai_link_projects` and `projects.video_url` from the archived busy-carson line; superseded by `project_links` and dropped again below.
+27. `20260925090000_project_repository_identity.sql` — `projects.repo_id`, earlier repository names, and repository-id matching in `create_daily_focus_set`.
+28. `20260925090100_project_engagement_and_names.sql` — own versus client projects, `previous_slugs`, and the DNESKAi / devShark / boardlessAI renames.
+29. `20260925090200_fix_hidden_project_tabs_check.sql` — the corrected project-tab check on `user_preferences.hidden_project_tabs`.
+30. `20260925090300_project_links.sql` — `project_links`.
+31. `20260925090400_prompt_kinds_and_links.sql` — `prompts.kind` and `prompt_links`.
+32. `20260925090500_tools.sql` — `tools`.
+33. `20260925200000_fix_project_parent_policies.sql` — the corrected parent-ownership check in the `projects` insert and update policies.
+34. `20260925200100_project_engagement_replaces_scope.sql` — drops `projects.scope`; `engagement` is the one own-versus-client field.
+35. `20260925200200_project_competition_tab.sql` — adds `competition` to the `user_preferences.hidden_project_tabs` check.
+36. `20260925200300_drop_link_project_references.sql` — guarded drop of the unused `ai_link_projects` and `projects.video_url`.
 
-The freelance set (14–16) and each 2026-09-25 migration (18–23) have an entry with verification steps in the migration guide.
+The freelance set (14–16), each 2026-09-16 migration (18–26) and each 2026-09-25 migration (27–36) have an entry with verification steps in the migration guide. Migrations 18–32 are applied in production; 33–36 are the pending ones.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
@@ -153,8 +167,10 @@ The repository cannot safely configure external account secrets, OAuth consent s
 ## More documentation
 
 - [Architecture and product reference](./DOCS.md)
+- [Changelog — what shipped, by date](./CHANGELOG.md)
 - [External services, callbacks, and rename checklist](./docs/external-setup.md)
 - [Migration and rollback](./docs/migration-guide.md)
+- [Portfolio, Competition and development finance](./docs/portfolio-competition-finance.md)
 - [AI and privacy](./docs/ai-and-privacy.md)
 - [Product design audit](./docs/design/product-design-audit.md)
 - [Reference research](./docs/design/reference-research.md)

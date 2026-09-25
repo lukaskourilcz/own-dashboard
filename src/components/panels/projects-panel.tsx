@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 import {
   DndContext,
   KeyboardSensor,
@@ -22,7 +23,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  AlertTriangle,
+  Check,
   ChevronDown,
+  CircleDashed,
   Clock,
   ExternalLink,
   FolderKanban,
@@ -60,7 +64,7 @@ import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
 import { NEW_PROJECT_GUIDE } from "@/lib/new-project-guide";
-import { useDict } from "@/lib/i18n";
+import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
@@ -76,7 +80,12 @@ import {
   unresolvedRepositoryProjects,
   type ProjectRepoUpdate,
 } from "@/lib/project-match";
+import { childProjects, planPortfolioSync, portfolioEntryFor } from "@/lib/portfolio";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
+import {
+  cronHeartbeatState,
+  type CronHeartbeatState,
+} from "@/lib/cron-heartbeat";
 import { lookupRepoIdentity, type GithubRepo } from "@/lib/github";
 import {
   costMonthlyIn,
@@ -91,6 +100,7 @@ import type {
   AiCategory,
   AiLink,
   ClientOpportunity,
+  Competitor,
   Cron,
   ImportantDate,
   InboxItem,
@@ -108,6 +118,7 @@ import type {
   RepoLink,
   RepoNote,
   Subscription,
+  SubscriptionAllocation,
   Todo,
   Transaction,
   Updater,
@@ -135,6 +146,7 @@ type ProjectForm = {
   url: string;
   dev_url: string;
   engagement: ProjectEngagement;
+  organization_id: string;
 };
 
 const emptyProjectForm: ProjectForm = {
@@ -144,6 +156,7 @@ const emptyProjectForm: ProjectForm = {
   url: "",
   dev_url: "",
   engagement: "own",
+  organization_id: "",
 };
 
 type ProjectsPanelProps = {
@@ -165,6 +178,7 @@ type ProjectsPanelProps = {
   invoices: Invoice[];
   invoiceItems: InvoiceItem[];
   subscriptions: Subscription[];
+  subscriptionAllocations: SubscriptionAllocation[];
   transactions: Transaction[];
   organizations: Organization[];
   opportunities: ClientOpportunity[];
@@ -182,7 +196,11 @@ type ProjectsPanelProps = {
   projectLinks: ProjectLink[];
   setProjectLinks: Updater<ProjectLink[]>;
   promptLinks: PromptLink[];
+  competitors: Competitor[];
+  setCompetitors: Updater<Competitor[]>;
   syncRepositories?: boolean;
+  /** Fixture previews never write; the registry sync is skipped there. */
+  isPreview?: boolean;
 };
 
 export function ProjectsPanel(props: ProjectsPanelProps) {
@@ -192,6 +210,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
   if (selected) {
     return <ProjectWorkspace
       project={selected}
+      allProjects={props.projects}
       costs={props.costs.filter((item) => item.project_id === selected.id)}
       crons={props.crons.filter((item) => item.project_id === selected.id)}
       todos={props.todos}
@@ -200,6 +219,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       invoices={props.invoices}
       invoiceItems={props.invoiceItems}
       subscriptions={props.subscriptions}
+      subscriptionAllocations={props.subscriptionAllocations}
       transactions={props.transactions}
       organizations={props.organizations}
       opportunities={props.opportunities}
@@ -217,6 +237,9 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       projectLinks={props.projectLinks}
       setProjectLinks={props.setProjectLinks}
       promptLinks={props.promptLinks}
+      competitors={props.competitors}
+      setCompetitors={props.setCompetitors}
+      onOpenProject={props.onOpenProject}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
       onBackToProjects={props.onBackToProjects}
@@ -236,6 +259,7 @@ function ProjectsListPanel({
   setDisplayCurrency,
   initialVisibleIds = [],
   syncRepositories = true,
+  isPreview = false,
   todos,
   organizations,
   importantDates,
@@ -245,6 +269,7 @@ function ProjectsListPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const { lang } = useLang();
   const toast = useToast();
   const confirm = useConfirmation();
   const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
@@ -453,6 +478,81 @@ function ProjectsListPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRepos, projects]);
 
+  // --- Registry → Projects ------------------------------------------------
+  // The code-level registry (src/lib/portfolio.ts) materializes the daily
+  // portfolio whether or not GitHub is connected, so a repository outside the
+  // saved allow-list still gets its row and a venture subsection becomes a
+  // child of its repository project. Only rows that are missing, or that lack
+  // their registry key or parent, are written; a row's name, slug and
+  // engagement are never changed here. A subsection waits for its parent.
+  const registrySyncing = useRef(false);
+  useEffect(() => {
+    if (isPreview || registrySyncing.current) return;
+    // Plan only against loaded projects, as the repository sync does: an
+    // unfetched placeholder list would make every registry entry look missing.
+    if (!qc.getQueryState(qk.projects)?.dataUpdatedAt) return;
+    const steps = planPortfolioSync(projects);
+    if (steps.length === 0) return;
+    registrySyncing.current = true;
+    (async () => {
+      let changed = false;
+      try {
+        const userId = await currentUserId(supabase);
+        if (!userId) return;
+        const usedSlugs = new Set(projects.flatMap((p) => [p.slug, ...(p.previous_slugs ?? [])]));
+        let sortBase = projects.length;
+        for (const step of steps) {
+          if (step.kind === "update") {
+            const { data, error } = await supabase
+              .from("projects")
+              .update({ ...step.patch, updated_at: new Date().toISOString() })
+              .eq("id", step.project.id)
+              .select()
+              .single();
+            if (error || !data) continue;
+            const updated = data as Project;
+            changed = true;
+            setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+            continue;
+          }
+          let slug = step.entry.slug;
+          if (usedSlugs.has(slug)) {
+            let n = 2;
+            while (usedSlugs.has(`${slug}-${n}`)) n++;
+            slug = `${slug}-${n}`;
+          }
+          usedSlugs.add(slug);
+          const { data, error } = await supabase
+            .from("projects")
+            .insert({
+              user_id: userId,
+              name: step.entry.name,
+              slug,
+              repo_full_name: step.entry.repo,
+              url: step.entry.url ?? null,
+              summary: step.entry.summary[lang],
+              sort_order: sortBase++,
+              is_active: true,
+              parent_id: step.parentId,
+              portfolio_key: step.entry.key,
+            })
+            .select()
+            .single();
+          if (error || !data) continue;
+          changed = true;
+          setProjects((prev) => [...prev, data as Project]);
+        }
+      } finally {
+        registrySyncing.current = false;
+        // Cache writes above go to the shared query client, so they stay
+        // valid even if this panel unmounted meanwhile.
+        if (changed) void qc.invalidateQueries({ queryKey: qk.projects });
+      }
+    })();
+    // Planned from the current rows; re-run when they change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, isPreview]);
+
   const costsByProject = useMemo(() => {
     const map = new Map<string, ProjectCost[]>();
     for (const c of costs) {
@@ -492,9 +592,16 @@ function ProjectsListPanel({
   // reactivate them from that Settings card to bring them back.
   // Own products first, then freelance client work behind a divider. The
   // grouping sits on top of the single sort_order sequence.
+  // A venture subsection (Design Lab, GoVIRAL) is listed under its parent
+  // project instead of on its own row, and keeps its place when the parent
+  // is dragged.
+  const projectIds = useMemo(() => new Set(projects.map((p) => p.id)), [projects]);
   const projectGroups = useMemo(
-    () => groupProjectsByEngagement(ordered.filter((p) => p.is_active)),
-    [ordered],
+    () =>
+      groupProjectsByEngagement(
+        ordered.filter((p) => p.is_active && !(p.parent_id && projectIds.has(p.parent_id))),
+      ),
+    [ordered, projectIds],
   );
   const visibleProjects = useMemo(
     () => [...projectGroups.own, ...projectGroups.client],
@@ -605,6 +712,7 @@ function ProjectsListPanel({
       url: form.url.trim() || null,
       dev_url: form.dev_url.trim() || null,
       engagement: form.engagement,
+      organization_id: form.organization_id || null,
     };
     setSaving(true);
     try {
@@ -692,6 +800,7 @@ function ProjectsListPanel({
       url: p.url ?? "",
       dev_url: p.dev_url ?? "",
       engagement: projectEngagement(p),
+      organization_id: p.organization_id ?? "",
     });
     setError(null);
     setFormOpen(true);
@@ -863,6 +972,20 @@ function ProjectsListPanel({
                 ]}
               />
             </div>
+            {(form.engagement === "client" || form.organization_id !== "") && (
+              <div className="space-y-1.5">
+                <Label htmlFor="proj-organization">{t.projects.tableClient}</Label>
+                <SimpleSelect
+                  id="proj-organization"
+                  value={form.organization_id}
+                  onValueChange={(organization_id) => setForm({ ...form, organization_id })}
+                  options={[
+                    { value: "", label: t.professional.noLinkedOrganization },
+                    ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
+                  ]}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="proj-dev-url">{t.projects.devUrl}</Label>
               <Input
@@ -939,13 +1062,15 @@ function ProjectsListPanel({
                   </th>
                 </tr>
               )}
-              {projectGroups[group].map((p) => {
+              {projectGroups[group].flatMap((top) => [top, ...childProjects(projects, top.id).filter((child) => child.is_active)]).map((p) => {
                 const projectTodos = todos.filter((item) => taskBelongsToProject(item, p));
                 const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
                 const organization = organizations.find((item) => item.id === p.organization_id);
                 return <SortableProjectRow
                   key={p.id}
                   project={p}
+                  subsection={!!p.parent_id && projectIds.has(p.parent_id)}
+                  summary={p.summary || portfolioEntryFor(p)?.summary[lang]}
                   monthlyCost={projectMonthlyIn(costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], displayCurrency)}
                   displayCurrency={displayCurrency}
                   synced={isSynced(p)}
@@ -1014,6 +1139,8 @@ type ProjectCardProps = {
 
 function SortableProjectRow({
   project,
+  subsection = false,
+  summary,
   monthlyCost,
   displayCurrency,
   synced,
@@ -1028,6 +1155,9 @@ function SortableProjectRow({
   onOpen,
 }: {
   project: Project;
+  /** A venture subsection rendered under its parent; it has no drag handle. */
+  subsection?: boolean;
+  summary?: string;
   monthlyCost: number;
   displayCurrency: string;
   synced: boolean;
@@ -1061,8 +1191,8 @@ function SortableProjectRow({
       style={style}
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
-      <td className="px-2 py-2.5"><button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button></td>
-      <td className="px-3 py-2.5"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link><div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}</div></td>
+      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
+      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5"><StatusBadge value={health} /></td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
@@ -1507,6 +1637,7 @@ type CronForm = {
   schedule: string;
   endpoint: string;
   description: string;
+  heartbeat_url: string;
   is_ai_call: boolean;
   cost_per_run: string;
   currency: string;
@@ -1519,11 +1650,77 @@ function emptyCronForm(currency: string): CronForm {
     schedule: "0 6 * * *",
     endpoint: "",
     description: "",
+    heartbeat_url: "",
     is_ai_call: false,
     cost_per_run: "",
     currency,
     runs_per_month: "30",
   };
+}
+
+/**
+ * Freshness of one cron, from its own schedule and last recorded success. The
+ * state carries an icon and a word as well as a colour, so it never depends on
+ * colour alone.
+ */
+function HeartbeatPill({ cron }: { cron: Cron }) {
+  const t = useDict();
+  const locale = useDateLocale();
+  const { state, lastSuccessAt } = cronHeartbeatState(cron);
+  const map: Record<
+    CronHeartbeatState,
+    { label: string; cls: string; Icon: typeof Check }
+  > = {
+    ok: {
+      label: t.projects.heartbeatOk,
+      cls: "border-success/30 bg-success/10 text-success",
+      Icon: Check,
+    },
+    late: {
+      label: t.projects.heartbeatLate,
+      cls: "border-warning/30 bg-warning/10 text-warning",
+      Icon: Clock,
+    },
+    stale: {
+      label: t.projects.heartbeatStale,
+      cls: "border-destructive/30 bg-destructive/10 text-destructive",
+      Icon: AlertTriangle,
+    },
+    never: {
+      label: t.projects.heartbeatNever,
+      cls: "border-border bg-surface-muted text-foreground-muted",
+      Icon: Clock,
+    },
+    unmonitored: {
+      label: t.projects.heartbeatUnmonitored,
+      cls: "border-border bg-surface-muted text-foreground-muted",
+      Icon: CircleDashed,
+    },
+  };
+  const entry = map[state];
+  const detail = lastSuccessAt
+    ? t.projects.heartbeatLastSuccess(
+        formatDistanceToNow(lastSuccessAt, { addSuffix: true, locale }),
+      )
+    : state === "unmonitored"
+      ? t.projects.heartbeatUnmonitoredHint
+      : t.projects.heartbeatNoSuccess;
+  return (
+    <Tooltip content={detail}>
+      {/* Focusable so the detail is reachable by keyboard, not hover only. */}
+      <span
+        tabIndex={0}
+        className={cn(
+          "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          entry.cls,
+        )}
+      >
+        <entry.Icon className="h-2.5 w-2.5" aria-hidden />
+        {entry.label}
+      </span>
+    </Tooltip>
+  );
 }
 
 function CronsSection({
@@ -1557,6 +1754,7 @@ function CronsSection({
       schedule: form.schedule.trim() || "0 6 * * *",
       endpoint: form.endpoint.trim(),
       description: form.description.trim(),
+      heartbeat_url: form.heartbeat_url.trim(),
       is_ai_call: form.is_ai_call,
       cost_per_run: form.is_ai_call ? Number(form.cost_per_run || 0) : 0,
       currency: form.currency,
@@ -1625,6 +1823,7 @@ function CronsSection({
       schedule: c.schedule,
       endpoint: c.endpoint,
       description: c.description,
+      heartbeat_url: c.heartbeat_url ?? "",
       is_ai_call: c.is_ai_call,
       cost_per_run: String(c.cost_per_run),
       currency: c.currency,
@@ -1692,6 +1891,7 @@ function CronsSection({
                       : ""}
                   </p>
                 </div>
+                {c.enabled && <HeartbeatPill cron={c} />}
                 <Tooltip content={c.enabled ? t.projects.disable : t.projects.enable}>
                   <span>
                     <Switch
@@ -1767,6 +1967,29 @@ function CronsSection({
               placeholder={t.projects.cronDescriptionPlaceholder}
               className="h-8 text-sm"
             />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs" htmlFor={`heartbeat-${project.id}`}>
+              {t.projects.heartbeatUrl}
+            </Label>
+            <Input
+              id={`heartbeat-${project.id}`}
+              type="url"
+              inputMode="url"
+              value={form.heartbeat_url}
+              onChange={(e) =>
+                setForm({ ...form, heartbeat_url: e.target.value })
+              }
+              placeholder={t.projects.heartbeatUrlPlaceholder}
+              className="h-8 text-sm font-mono"
+              aria-describedby={`heartbeat-hint-${project.id}`}
+            />
+            <p
+              id={`heartbeat-hint-${project.id}`}
+              className="text-[11px] text-foreground-subtle"
+            >
+              {t.projects.heartbeatHint}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Switch

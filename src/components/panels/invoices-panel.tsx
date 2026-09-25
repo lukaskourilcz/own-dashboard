@@ -40,6 +40,7 @@ import type {
   InvoiceSettings,
   Organization,
   Project,
+  Transaction,
   Updater,
 } from "@/lib/types";
 
@@ -67,6 +68,7 @@ export function InvoicesPanel({
   displayCurrency,
   organizations,
   projects,
+  transactions,
 }: {
   invoices: Invoice[];
   setInvoices: Updater<Invoice[]>;
@@ -78,6 +80,8 @@ export function InvoicesPanel({
   displayCurrency: string;
   organizations: Organization[];
   projects: Project[];
+  /** Read-only: the bank payment that settled a paid invoice, when there is one. */
+  transactions: Transaction[];
 }) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -122,6 +126,16 @@ export function InvoicesPanel({
       setDragging(false);
     }
   }
+
+  // The payment that settled each invoice, so a paid row can say whether the
+  // matcher found it or the owner linked it by hand.
+  const paymentByInvoice = useMemo(() => {
+    const map = new Map<string, Transaction>();
+    for (const tx of transactions) {
+      if (tx.invoice_id) map.set(tx.invoice_id, tx);
+    }
+    return map;
+  }, [transactions]);
 
   // Per-invoice total (in the invoice's own currency) + a display-currency
   // conversion for the summary tiles.
@@ -447,6 +461,7 @@ export function InvoicesPanel({
               {invoices.map((inv) => {
                 const eff = effectiveStatus(inv);
                 const own = totalsById.get(inv.id)?.own ?? 0;
+                const payment = paymentByInvoice.get(inv.id);
                 return (
                   <li
                     key={inv.id}
@@ -472,6 +487,13 @@ export function InvoicesPanel({
                           {t.invoices.issuedOn} {fmtDate(inv.issue_date)} ·{" "}
                           {t.invoices.dueOn} {fmtDate(inv.due_date)}
                         </p>
+                        {payment && (
+                          <p className="text-[11px] text-foreground-subtle tabular">
+                            {payment.match_source === "manual"
+                              ? t.invoices.matchedManual(fmtDate(payment.occurred_on))
+                              : t.invoices.matchedAuto(fmtDate(payment.occurred_on))}
+                          </p>
+                        )}
                       </div>
                     </button>
                     <div className="flex items-center gap-3 shrink-0">

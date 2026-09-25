@@ -50,6 +50,7 @@ type SettingsStrings = {
   exportTransactionsCsv: string;
   integrations: string;
   integrationsDesc: string;
+  bankProviderNote: string;
   connected: string;
   notConnected: string;
   configured: string;
@@ -128,6 +129,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     exportTransactionsCsv: "Transactions CSV",
     integrations: "Integrations",
     integrationsDesc: "Connection state only. Credentials and provider tokens are never exposed here.",
+    bankProviderNote: "Bank sync can use more than one provider. A provider token you supply is stored server-side and read only while a sync runs.",
     connected: "Connected",
     notConnected: "Not connected",
     configured: "Configured",
@@ -206,6 +208,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     exportTransactionsCsv: "Transakce CSV",
     integrations: "Integrace",
     integrationsDesc: "Zobrazuje se pouze stav připojení. Přihlašovací údaje ani tokeny poskytovatelů se zde nikdy neodhalují.",
+    bankProviderNote: "Napojení banky může používat víc poskytovatelů. Token, který zadáš, se ukládá na serveru a čte se jen během synchronizace.",
     connected: "Připojeno",
     notConnected: "Nepřipojeno",
     configured: "Nakonfigurováno",

@@ -16,7 +16,8 @@ import { daysUntilDate, todayKey } from "@/lib/date-keys";
 import { useNow } from "@/lib/use-now";
 import { nextUpcoming } from "@/lib/important-dates";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
-import type { ClientOpportunity, ImportantDate, Todo } from "@/lib/types";
+import { dueFollowUps } from "@/lib/jobs/board";
+import type { ClientOpportunity, ImportantDate, JobApplication, Todo } from "@/lib/types";
 import {
   eventDateKey,
   eventEnd,
@@ -34,6 +35,7 @@ type Props = {
   calendar: EventsResult;
   todos: Todo[];
   opportunities: ClientOpportunity[];
+  jobApplications: JobApplication[];
   importantDates: ImportantDate[];
 };
 
@@ -58,6 +60,7 @@ export function TodayHero({
   calendar,
   todos,
   opportunities,
+  jobApplications,
   importantDates,
 }: Props) {
   const t = useDict();
@@ -108,9 +111,29 @@ export function TodayHero({
       .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
   }, [todos, now]);
 
-  const followUps = useMemo(() => opportunities
-    .filter((item) => !["won", "lost", "expired", "archived"].includes(item.status) && item.next_follow_up_at)
-    .sort((a, b) => (a.next_follow_up_at ?? "").localeCompare(b.next_follow_up_at ?? "")), [opportunities]);
+  // One column for both pipelines: a client opportunity and a job application
+  // both carry a date the owner promised themselves. Career rows are the ones
+  // already due — the board is where the future ones live — so the column never
+  // becomes a second task list.
+  const followUps = useMemo(() => {
+    const rows = [
+      ...opportunities
+        .filter((item) => !["won", "lost", "expired", "archived"].includes(item.status) && item.next_follow_up_at)
+        .map((item) => ({
+          id: `opportunity-${item.id}`,
+          title: item.title,
+          at: item.next_follow_up_at ?? "",
+          source: "opportunities" as const,
+        })),
+      ...dueFollowUps(jobApplications, now ?? new Date(0)).map((item) => ({
+        id: `application-${item.id}`,
+        title: item.company ? `${item.title} · ${item.company}` : item.title,
+        at: item.next_follow_up_at ?? "",
+        source: "career" as const,
+      })),
+    ];
+    return rows.sort((a, b) => a.at.localeCompare(b.at));
+  }, [opportunities, jobApplications, now]);
 
   const upcoming = useMemo(
     () => (now ? nextUpcoming(importantDates, now) : null),
@@ -309,9 +332,12 @@ export function TodayHero({
           <ul className="space-y-1.5">
             {followUps.slice(0, 4).map((item) => (
               <li key={item.id} className="flex items-center gap-2 text-sm">
+                <span className="shrink-0 rounded-sm border border-border bg-surface-inset px-1.5 py-[1px] text-[10px] uppercase tracking-wider text-foreground-muted">
+                  {item.source === "career" ? t.overview.followUpCareer : t.overview.followUpOpportunity}
+                </span>
                 <span className="flex-1 truncate text-foreground">{item.title}</span>
                 <span className="text-[11px] text-foreground-subtle tabular shrink-0">
-                  {item.next_follow_up_at?.slice(0, 10)}
+                  {item.at.slice(0, 10)}
                 </span>
               </li>
             ))}

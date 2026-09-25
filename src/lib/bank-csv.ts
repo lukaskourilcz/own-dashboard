@@ -16,13 +16,23 @@ export type ParsedTxRow = {
   currency: string;
   note: string | null;
   external_id: string; // "csv:<hash>" — deterministic, for dedupe
+  // Czech payment reference (variabilní symbol), digits only, when the
+  // statement carries a column for it. Null otherwise — the payment matcher
+  // then falls back to reading the note.
+  variable_symbol: string | null;
 };
 
 export type ParseResult = {
   rows: ParsedTxRow[];
   errors: string[];
   /** Which header cells were matched, for a friendlier "we read X as date" UI. */
-  columns: { date: string | null; amount: string | null; currency: string | null; note: string | null };
+  columns: {
+    date: string | null;
+    amount: string | null;
+    currency: string | null;
+    note: string | null;
+    variableSymbol: string | null;
+  };
 };
 
 /** Strip diacritics + lowercase, so "Částka" and "castka" both match. */
@@ -54,6 +64,12 @@ const HEADERS = {
     "value",
   ],
   currency: ["mena", "currency", "ccy"],
+  variableSymbol: [
+    "variabilni symbol",
+    "vs prijemce",
+    "variable symbol",
+    "vs",
+  ],
   note: [
     "nazev protiuctu",
     "zprava pro prijemce",
@@ -144,6 +160,12 @@ function hash(input: string): string {
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 
+/** Digits only, capped at the ten a Czech variable symbol may carry. */
+function symbolDigits(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  return digits.length > 0 ? digits : null;
+}
+
 function findColumn(header: string[], aliases: readonly string[]): number {
   const normed = header.map(norm);
   for (const alias of aliases) {
@@ -173,7 +195,7 @@ export function parseBankCsv(
     return {
       rows: [],
       errors: ["The file has no data rows."],
-      columns: { date: null, amount: null, currency: null, note: null },
+      columns: { date: null, amount: null, currency: null, note: null, variableSymbol: null },
     };
   }
 
@@ -183,12 +205,14 @@ export function parseBankCsv(
   const iAmount = findColumn(header, HEADERS.amount);
   const iCurrency = findColumn(header, HEADERS.currency);
   const iNote = findColumn(header, HEADERS.note);
+  const iVs = findColumn(header, HEADERS.variableSymbol);
 
   const columns = {
     date: iDate >= 0 ? header[iDate] : null,
     amount: iAmount >= 0 ? header[iAmount] : null,
     currency: iCurrency >= 0 ? header[iCurrency] : null,
     note: iNote >= 0 ? header[iNote] : null,
+    variableSymbol: iVs >= 0 ? header[iVs] : null,
   };
 
   if (iDate < 0 || iAmount < 0) {
@@ -221,6 +245,7 @@ export function parseBankCsv(
       currency: currency.toUpperCase().slice(0, 3),
       note: note ? note.slice(0, 500) : null,
       external_id,
+      variable_symbol: iVs >= 0 ? symbolDigits(cells[iVs] ?? "") : null,
     });
   }
 

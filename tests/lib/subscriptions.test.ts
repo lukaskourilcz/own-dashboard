@@ -38,6 +38,9 @@ describe("toMonthly", () => {
   it("divides yearly billing by 12", () => {
     expect(toMonthly(sub({ amount: 120, billing_cycle: "yearly" }))).toBe(10);
   });
+  it("divides quarterly billing by 3", () => {
+    expect(toMonthly(sub({ amount: 45, billing_cycle: "quarterly" }))).toBe(15);
+  });
   it("scales weekly billing by 52/12", () => {
     expect(toMonthly(sub({ amount: 12, billing_cycle: "weekly" }))).toBeCloseTo(
       52,

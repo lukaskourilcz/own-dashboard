@@ -62,7 +62,7 @@ export async function GET(request: Request) {
   const { data: cronRows, error: cronErr } = await admin
     .from("crons")
     .select(
-      "id, project_id, name, schedule, description, endpoint, is_ai_call, cost_per_run, currency, runs_per_month, enabled, last_run_at",
+      "id, project_id, name, schedule, description, endpoint, is_ai_call, cost_per_run, currency, runs_per_month, enabled, last_run_at, heartbeat_url, last_success_at",
     )
     .in("project_id", ids)
     .eq("enabled", true);
@@ -90,6 +90,10 @@ export async function GET(request: Request) {
       ? Number(c.cost_per_run) * Number(c.runs_per_month)
       : 0,
     lastRunAt: c.last_run_at,
+    lastSuccessAt: c.last_success_at,
+    // Whether a push monitor is configured, never which one: the push URL is a
+    // credential and this endpoint is readable by every consumer of the token.
+    monitored: String(c.heartbeat_url ?? "").trim() !== "",
   }));
 
   return NextResponse.json(

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import {
+  BadgeCheck,
   CalendarClock,
   CreditCard,
   PauseCircle,
@@ -39,7 +40,10 @@ import { SUPPORTED_CURRENCIES, convert } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
-import type { Project, Subscription, SubscriptionCategoryGroup, SubscriptionImportance, Updater } from "@/lib/types";
+import { Textarea } from "@/components/ui/textarea";
+import { amountConfirmationAfterEdit, isAmountConfirmed, isDevelopmentSubscription, subscriptionShares } from "@/lib/dev-finance";
+import { todayKey } from "@/lib/date-keys";
+import type { Project, Subscription, SubscriptionAllocation, SubscriptionBillingCycle, SubscriptionCategoryGroup, SubscriptionImportance, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the donut only when this panel renders.
 const CategoryDonut = dynamic(
@@ -48,17 +52,25 @@ const CategoryDonut = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-full w-full" /> },
 );
 
+type AllocationRow = { project_id: string; share: string };
+
 type FormState = {
   id?: string;
   name: string;
   amount: string;
   currency: string;
-  billing_cycle: "monthly" | "yearly" | "weekly";
+  billing_cycle: SubscriptionBillingCycle;
   category: string;
   category_group: SubscriptionCategoryGroup;
   importance: SubscriptionImportance;
   next_billing_date: string;
   project_id: string;
+  started_on: string;
+  ended_on: string;
+  plan: string;
+  vendor_url: string;
+  notes: string;
+  allocations: AllocationRow[];
 };
 
 const emptyForm: FormState = {
@@ -71,7 +83,26 @@ const emptyForm: FormState = {
   importance: "useful",
   next_billing_date: "",
   project_id: "",
+  started_on: "",
+  ended_on: "",
+  plan: "",
+  vendor_url: "",
+  notes: "",
+  allocations: [],
 };
+
+/** Percent shares typed in the form → fractions; blank or invalid rows are dropped. */
+function allocationFractions(rows: AllocationRow[]): { project_id: string; share: number }[] {
+  const seen = new Set<string>();
+  const result: { project_id: string; share: number }[] = [];
+  for (const row of rows) {
+    const share = Number(row.share) / 100;
+    if (!row.project_id || !Number.isFinite(share) || share <= 0 || seen.has(row.project_id)) continue;
+    seen.add(row.project_id);
+    result.push({ project_id: row.project_id, share: Math.min(share, 1) });
+  }
+  return result;
+}
 
 function renewalDistance(
   days: number | null,
@@ -96,6 +127,8 @@ export function SubscriptionsPanel({
   displayCurrency,
   setDisplayCurrency,
   projects = [],
+  allocations = [],
+  setAllocations,
   compact = false,
 }: {
   subs: Subscription[];
@@ -103,6 +136,8 @@ export function SubscriptionsPanel({
   displayCurrency: string;
   setDisplayCurrency?: (next: string) => void;
   projects?: Project[];
+  allocations?: SubscriptionAllocation[];
+  setAllocations?: Updater<SubscriptionAllocation[]>;
   compact?: boolean;
 }) {
   const supabase = createClient();
@@ -160,16 +195,47 @@ export function SubscriptionsPanel({
     importance: SubscriptionImportance;
     next_billing_date: string | null;
     project_id: string | null;
+    started_on: string | null;
+    ended_on: string | null;
+    plan: string | null;
+    vendor_url: string | null;
+    notes: string;
+    amount_confirmed_on: string | null;
   };
 
+  // Allocation rows are replaced as a set: rows that vanished are deleted,
+  // the rest upserted on (subscription, project). The cache mirrors the result.
+  async function syncAllocations(subscriptionId: string, userId: string, rows: { project_id: string; share: number }[]) {
+    if (!setAllocations) return;
+    const existing = allocations.filter((allocation) => allocation.subscription_id === subscriptionId);
+    const keep = new Set(rows.map((row) => row.project_id));
+    const stale = existing.filter((allocation) => !keep.has(allocation.project_id));
+    if (stale.length > 0) {
+      const { error } = await supabase.from("subscription_allocations").delete().in("id", stale.map((allocation) => allocation.id));
+      if (error) throw error;
+    }
+    let upserted: SubscriptionAllocation[] = [];
+    if (rows.length > 0) {
+      const { data, error } = await supabase
+        .from("subscription_allocations")
+        .upsert(rows.map((row) => ({ user_id: userId, subscription_id: subscriptionId, project_id: row.project_id, share: row.share, updated_at: new Date().toISOString() })), { onConflict: "subscription_id,project_id" })
+        .select();
+      if (error) throw error;
+      upserted = (data ?? []) as SubscriptionAllocation[];
+    }
+    setAllocations((prev) => [...prev.filter((allocation) => allocation.subscription_id !== subscriptionId), ...upserted]);
+    void qc.invalidateQueries({ queryKey: qk.subscriptionAllocations });
+  }
+
   const createMutation = useMutation({
-    mutationFn: async (vars: { payload: SubPayload; userId: string }) => {
+    mutationFn: async (vars: { payload: SubPayload; userId: string; rows: { project_id: string; share: number }[] }) => {
       const { data, error } = await supabase
         .from("subscriptions")
         .insert({ ...vars.payload, user_id: vars.userId })
         .select()
         .single();
       if (error) throw error;
+      await syncAllocations((data as Subscription).id, vars.userId, vars.rows);
       return data as Subscription;
     },
     onSuccess: (sub) => {
@@ -184,7 +250,7 @@ export function SubscriptionsPanel({
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (vars: { id: string; payload: SubPayload }) => {
+    mutationFn: async (vars: { id: string; payload: SubPayload; userId: string; rows: { project_id: string; share: number }[] }) => {
       const { data, error } = await supabase
         .from("subscriptions")
         .update({ ...vars.payload, updated_at: new Date().toISOString() })
@@ -192,6 +258,7 @@ export function SubscriptionsPanel({
         .select()
         .single();
       if (error) throw error;
+      await syncAllocations(vars.id, vars.userId, vars.rows);
       return data as Subscription;
     },
     onSuccess: (sub) => {
@@ -243,6 +310,30 @@ export function SubscriptionsPanel({
     onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
   });
 
+  // Confirming an amount is one fact about one row, so it writes only that
+  // column and behaves like the active toggle: optimistic, rolled back on
+  // error, reconciled by an invalidate.
+  const confirmAmountMutation = useMutation({
+    mutationFn: async (vars: { sub: Subscription; next: string | null }) => {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ amount_confirmed_on: vars.next, updated_at: new Date().toISOString() })
+        .eq("id", vars.sub.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ sub, next }) => {
+      await qc.cancelQueries({ queryKey: qk.subscriptions });
+      const prev = qc.getQueryData<Subscription[]>(qk.subscriptions);
+      setSubs((old) => old.map((s) => (s.id === sub.id ? { ...s, amount_confirmed_on: next } : s)));
+      return { prev };
+    },
+    onError: (e, _vars, ctx) => {
+      if (ctx?.prev) setSubs(ctx.prev);
+      setError((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
+  });
+
   const saving = createMutation.isPending || updateMutation.isPending;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -256,6 +347,11 @@ export function SubscriptionsPanel({
       setError(t.subscriptions.renewalRequired);
       return;
     }
+    const rows = allocationFractions(form.allocations);
+    if (rows.reduce((sum, row) => sum + row.share, 0) > 1.0001) {
+      setError(t.portfolio.subscription.overAllocated);
+      return;
+    }
     const payload: SubPayload = {
       name: form.name.trim(),
       amount: Number(form.amount),
@@ -266,6 +362,17 @@ export function SubscriptionsPanel({
       importance: form.importance,
       next_billing_date: form.next_billing_date || null,
       project_id: form.project_id || null,
+      started_on: form.started_on || null,
+      ended_on: form.ended_on || null,
+      plan: form.plan.trim() || null,
+      vendor_url: form.vendor_url.trim() || null,
+      notes: form.notes.trim(),
+      // A confirmation vouches for one figure. Editing the amount, the currency
+      // or the cycle retires it rather than letting it cover a new number.
+      amount_confirmed_on: amountConfirmationAfterEdit(
+        form.id ? subs.find((s) => s.id === form.id) ?? null : null,
+        { amount: Number(form.amount), currency: form.currency, billing_cycle: form.billing_cycle },
+      ),
     };
     const userId = await currentUserId(supabase);
     if (!userId) {
@@ -273,9 +380,9 @@ export function SubscriptionsPanel({
       return;
     }
     if (form.id) {
-      updateMutation.mutate({ id: form.id, payload });
+      updateMutation.mutate({ id: form.id, payload, userId, rows });
     } else {
-      createMutation.mutate({ payload, userId });
+      createMutation.mutate({ payload, userId, rows });
     }
   }
 
@@ -294,6 +401,11 @@ export function SubscriptionsPanel({
     toggleMutation.mutate({ sub, next });
   }
 
+  function toggleAmountConfirmed(sub: Subscription) {
+    setError(null);
+    confirmAmountMutation.mutate({ sub, next: isAmountConfirmed(sub) ? null : todayKey() });
+  }
+
   function startEdit(sub: Subscription) {
     setForm({
       id: sub.id,
@@ -306,8 +418,28 @@ export function SubscriptionsPanel({
       importance: sub.importance ?? "useful",
       next_billing_date: sub.next_billing_date ?? "",
       project_id: sub.project_id ?? "",
+      started_on: sub.started_on ?? "",
+      ended_on: sub.ended_on ?? "",
+      plan: sub.plan ?? "",
+      vendor_url: sub.vendor_url ?? "",
+      notes: sub.notes ?? "",
+      allocations: allocations
+        .filter((allocation) => allocation.subscription_id === sub.id)
+        .map((allocation) => ({ project_id: allocation.project_id, share: String(Math.round(allocation.share * 1000) / 10) })),
     });
   }
+
+  const allocatedPercent = Math.round(allocationFractions(form.allocations).reduce((sum, row) => sum + row.share, 0) * 100);
+  // The editor says out loud what saving a changed figure will cost: the
+  // confirmation that currently stands behind it.
+  const editingConfirmed = Boolean(form.id) && isAmountConfirmed(subs.find((s) => s.id === form.id) ?? { amount_confirmed_on: null });
+  const allocationLabel = (sub: Subscription) => {
+    const shares = subscriptionShares(sub, allocations).filter((slice) => slice.projectId);
+    if (shares.length === 0) return null;
+    return shares
+      .map((slice) => `${projects.find((project) => project.id === slice.projectId)?.name ?? t.subscriptions.project} ${Math.round(slice.share * 100)}%`)
+      .join(" · ");
+  };
 
   if (compact) {
     // Always a detailed breakdown: every active service with its brand mark,
@@ -357,17 +489,20 @@ export function SubscriptionsPanel({
                   return (
                     <li
                       key={s.id}
-                      className={cn(
-                        "flex items-center gap-3 px-2 py-2",
-                        !active && "opacity-55",
-                      )}
+                      className="flex items-center gap-3 px-2 py-2"
                     >
-                      <SubscriptionIcon name={s.name} size={30} />
+                      <span
+                        className={cn("shrink-0", !active && "opacity-55")}
+                      >
+                        <SubscriptionIcon name={s.name} size={30} />
+                      </span>
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            "truncate text-sm font-medium text-foreground",
-                            !active && "line-through",
+                            "truncate text-sm font-medium",
+                            active
+                              ? "text-foreground"
+                              : "text-foreground-muted line-through",
                           )}
                         >
                           {s.name}
@@ -380,7 +515,12 @@ export function SubscriptionsPanel({
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-medium tabular text-foreground">
+                        <p
+                          className={cn(
+                            "text-sm font-medium tabular",
+                            active ? "text-foreground" : "text-foreground-muted",
+                          )}
+                        >
                           {formatCurrency(s.amount, s.currency)}
                         </p>
                         {s.billing_cycle !== "monthly" && (
@@ -486,10 +626,14 @@ export function SubscriptionsPanel({
                   }
                   options={[
                     { value: "monthly", label: t.subscriptions.cycle.monthly },
+                    { value: "quarterly", label: t.subscriptions.cycle.quarterly },
                     { value: "yearly", label: t.subscriptions.cycle.yearly },
                     { value: "weekly", label: t.subscriptions.cycle.weekly },
                   ]}
                 />
+                {editingConfirmed && (
+                  <p className="text-[11px] text-foreground-subtle">{t.portfolio.subscription.confirmationResets}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="sub-category">{t.subscriptions.category}</Label>
@@ -534,6 +678,65 @@ export function SubscriptionsPanel({
                   ]}
                 />
               </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-started">{t.portfolio.subscription.startedOn}</Label>
+                  <Input id="sub-started" type="date" value={form.started_on} onChange={(e) => setForm({ ...form, started_on: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-ended">{t.portfolio.subscription.endedOn}</Label>
+                  <Input id="sub-ended" type="date" value={form.ended_on} onChange={(e) => setForm({ ...form, ended_on: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-plan">{t.portfolio.subscription.plan}</Label>
+                  <Input id="sub-plan" value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })} placeholder={t.portfolio.subscription.planPlaceholder} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-vendor-url">{t.portfolio.subscription.vendorUrl}</Label>
+                  <Input id="sub-vendor-url" inputMode="url" value={form.vendor_url} onChange={(e) => setForm({ ...form, vendor_url: e.target.value })} placeholder="https://" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sub-notes">{t.portfolio.subscription.notes}</Label>
+                <Textarea id="sub-notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder={t.portfolio.subscription.notesPlaceholder} />
+              </div>
+              {setAllocations && (
+                <fieldset className="space-y-2 rounded-md border border-border p-2.5">
+                  <legend className="px-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{t.portfolio.subscription.allocations}</legend>
+                  <p className="text-[11px] text-foreground-subtle">{t.portfolio.subscription.allocationsHint}</p>
+                  {form.allocations.map((row, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <SimpleSelect
+                        aria-label={t.subscriptions.project}
+                        value={row.project_id}
+                        onValueChange={(project_id) => setForm({ ...form, allocations: form.allocations.map((item, i) => (i === index ? { ...item, project_id } : item)) })}
+                        className="min-w-0 flex-1"
+                        options={projects.map((project) => ({ value: project.id, label: project.name }))}
+                      />
+                      <Input
+                        aria-label={t.portfolio.subscription.share}
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.1"
+                        className="w-20"
+                        value={row.share}
+                        onChange={(e) => setForm({ ...form, allocations: form.allocations.map((item, i) => (i === index ? { ...item, share: e.target.value } : item)) })}
+                      />
+                      <Button type="button" size="icon-sm" variant="ghost" aria-label={t.portfolio.subscription.removeAllocation} onClick={() => setForm({ ...form, allocations: form.allocations.filter((_, i) => i !== index) })}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, allocations: [...form.allocations, { project_id: projects[0]?.id ?? "", share: "" }] })} disabled={projects.length === 0}>
+                      <Plus className="h-3.5 w-3.5" />
+                      {t.portfolio.subscription.addAllocation}
+                    </Button>
+                    <span className={cn("text-[11px] tabular", allocatedPercent > 100 ? "text-destructive" : "text-foreground-subtle")}>{t.portfolio.subscription.allocated(allocatedPercent)}</span>
+                  </div>
+                </fieldset>
+              )}
               {error && (
                 <p className="text-xs text-destructive">{error}</p>
               )}
@@ -801,10 +1004,37 @@ export function SubscriptionsPanel({
                                 displayCurrency,
                               ),
                             )}
+                            {s.plan ? ` · ${s.plan}` : ""}
+                            {s.started_on ? ` · ${t.portfolio.subscription.lifecycle(s.started_on, s.ended_on ?? null)}` : ""}
                           </p>
+                          {allocationLabel(s) && (
+                            <p className="text-[11px] text-foreground-subtle">{allocationLabel(s)}</p>
+                          )}
+                          {/* Whether this figure was read from an invoice. The
+                              unconfirmed marker is limited to running
+                              development subscriptions, which is exactly the set
+                              the Money overview counts. */}
+                          {isAmountConfirmed(s) ? (
+                            <p className="text-[11px] text-foreground-subtle tabular">{t.portfolio.finance.amountConfirmed(s.amount_confirmed_on!)}</p>
+                          ) : active && isDevelopmentSubscription(s, allocations) ? (
+                            <p className="text-[11px] text-warning">{t.portfolio.finance.amountUnconfirmed}</p>
+                          ) : null}
+                          {s.notes && (
+                            <p className="break-words text-[11px] text-foreground-subtle">{s.notes}</p>
+                          )}
                           </div>
                         </div>
-                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                          <Tooltip content={isAmountConfirmed(s) ? t.portfolio.finance.unconfirmAmount : t.portfolio.finance.confirmAmount}>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => toggleAmountConfirmed(s)}
+                              aria-label={isAmountConfirmed(s) ? t.portfolio.finance.unconfirmAmount : t.portfolio.finance.confirmAmount}
+                            >
+                              <BadgeCheck className={cn("h-3.5 w-3.5", isAmountConfirmed(s) ? "text-success" : "text-foreground-subtle")} />
+                            </Button>
+                          </Tooltip>
                           <Tooltip content={t.common.edit}>
                             <Button
                               size="icon-sm"

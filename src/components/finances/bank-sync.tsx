@@ -10,17 +10,15 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  ArrowRight,
+  ArrowLeft,
   Building2,
+  KeyRound,
   Landmark,
   Plus,
   RefreshCw,
   Search,
-  Tag,
-  Trash2,
   Unlink,
   Upload,
-  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,15 +29,45 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
-import { fetchBankConnections, fetchCategoryRules } from "@/lib/queries/fetchers";
+import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
 import { parseBankCsv, type ParseResult } from "@/lib/bank-csv";
-import { categorizeNote } from "@/lib/category-rules";
-import type { BankConnection, CategoryRule, Transaction } from "@/lib/types";
+import { applyRulesToRow, usableRules } from "@/lib/transaction-rules";
+import type { BankConnection, Project, Subscription, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Institution = { id: string; name: string; bic: string | null; logo: string | null };
 
-export function BankSync({ transactions }: { transactions: Transaction[] }) {
+type ProviderState = {
+  id: string;
+  label: string;
+  configured: boolean;
+  connected: boolean;
+  /** False for a token provider such as Fio, which has no bank list and no
+   *  redirect — it is configured in this dialog instead. */
+  supportsInstitutionPicker: boolean;
+};
+
+/** Which providers this server can actually use. Comes from the same
+ *  authenticated status endpoint Settings reads, which reports booleans only —
+ *  no token or secret value is ever part of this shape. */
+async function fetchBankProviders(): Promise<ProviderState[]> {
+  const res = await fetch("/api/integrations/status", { cache: "no-store" });
+  if (!res.ok) throw new Error(String(res.status));
+  const json = (await res.json()) as { bank?: { providers?: ProviderState[] } };
+  return json.bank?.providers ?? [];
+}
+
+export function BankSync({
+  transactions,
+  projects,
+  subscriptions,
+}: {
+  transactions: Transaction[];
+  /** Used only to keep a rule action from writing a relationship the owner no
+   * longer has, which the transactions RLS policies would reject outright. */
+  projects: Project[];
+  subscriptions: Subscription[];
+}) {
   const t = useDict();
   const qc = useQueryClient();
   const toast = useToast();
@@ -51,10 +79,20 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
   });
   const connections = connectionsQuery.data ?? [];
 
-  // Pull the latest balances + transactions from every linked bank.
+  // Pull the latest balances + transactions. With a connection id it syncs that
+  // one bank, without it every bank the owner has. `variables` is what keeps the
+  // spinner on the row that was actually pressed.
   const syncMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/bank/sync", { method: "POST" });
+    mutationFn: async (connectionId?: string) => {
+      const res = await fetch("/api/bank/sync", {
+        method: "POST",
+        ...(connectionId
+          ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ connectionId }),
+            }
+          : {}),
+      });
       if (!res.ok) throw new Error(String(res.status));
       return (await res.json()) as { inserted: number };
     },
@@ -94,12 +132,14 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
     if (outcome === "linked") {
       toast.ok(t.finances.bank.linkedToast);
       void qc.invalidateQueries({ queryKey: qk.bankConnections });
-      syncMutation.mutate();
+      syncMutation.mutate(undefined);
     } else if (outcome === "error") {
       toast.err(t.finances.bank.linkErrToast);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const syncingAll = syncMutation.isPending && syncMutation.variables === undefined;
 
   return (
     <Card className="lg:col-span-3">
@@ -117,11 +157,13 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => syncMutation.mutate()}
+              onClick={() => syncMutation.mutate(undefined)}
               disabled={syncMutation.isPending}
             >
-              <RefreshCw className={cn("h-3.5 w-3.5", syncMutation.isPending && "animate-spin")} />
-              {syncMutation.isPending ? t.finances.bank.syncing : t.finances.bank.syncNow}
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", syncingAll && "animate-spin")}
+              />
+              {syncingAll ? t.finances.bank.syncing : t.finances.bank.syncNow}
             </Button>
           )}
           <Button size="sm" onClick={() => setPickerOpen(true)}>
@@ -137,6 +179,10 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
               <ConnectionRow
                 key={c.id}
                 conn={c}
+                onSync={() => syncMutation.mutate(c.id)}
+                syncing={
+                  syncMutation.isPending && syncMutation.variables === c.id
+                }
                 onDisconnect={() => {
                   if (window.confirm(t.finances.bank.disconnectConfirm))
                     disconnectMutation.mutate(c.id);
@@ -147,9 +193,11 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
           </ul>
         )}
 
-        <CsvImport transactions={transactions} />
-
-        <CategoryRules transactions={transactions} />
+        <CsvImport
+          transactions={transactions}
+          projects={projects}
+          subscriptions={subscriptions}
+        />
       </CardContent>
 
       <BankPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} />
@@ -161,10 +209,14 @@ export function BankSync({ transactions }: { transactions: Transaction[] }) {
 
 function ConnectionRow({
   conn,
+  onSync,
+  syncing,
   onDisconnect,
   disconnecting,
 }: {
   conn: BankConnection;
+  onSync: () => void;
+  syncing: boolean;
   onDisconnect: () => void;
   disconnecting: boolean;
 }) {
@@ -183,6 +235,9 @@ function ConnectionRow({
       : conn.status === "error" || conn.status === "expired"
         ? "bg-destructive/10 text-destructive"
         : "bg-warning/10 text-warning";
+  // Only ever rendered from a value the provider actually stated; a provider
+  // with no expiry (a Fio token) simply shows nothing here.
+  const expiresOn = conn.consent_expires_at?.slice(0, 10) ?? null;
   return (
     <li className="group flex items-center gap-3 px-2 py-2.5">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-muted text-foreground-muted">
@@ -190,17 +245,36 @@ function ConnectionRow({
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">
-          {conn.institution_name ?? conn.institution_id}
+          {conn.institution_name ?? conn.institution_id ?? conn.provider}
         </p>
         <p className="text-[11px] text-foreground-subtle tabular">
           {conn.last_synced_at
             ? t.finances.bank.lastSynced(conn.last_synced_at.slice(0, 10))
             : t.finances.bank.neverSynced}
+          {expiresOn ? ` · ${t.finances.bank.consentExpires(expiresOn)}` : ""}
         </p>
+        {conn.status === "expired" ? (
+          <p className="text-[11px] text-destructive">
+            {t.finances.bank.consentExpired}
+          </p>
+        ) : conn.last_error ? (
+          <p className="truncate text-[11px] text-destructive">{conn.last_error}</p>
+        ) : null}
       </div>
       <span className={cn("shrink-0 rounded-full px-2 py-[3px] text-[10px] font-medium", tone)}>
         {statusLabel}
       </span>
+      <Tooltip content={t.finances.bank.syncThis}>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={onSync}
+          disabled={syncing}
+          aria-label={t.finances.bank.syncThis}
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+        </Button>
+      </Tooltip>
       <Tooltip content={t.finances.bank.disconnect}>
         <Button
           size="icon-sm"
@@ -208,7 +282,7 @@ function ConnectionRow({
           onClick={onDisconnect}
           disabled={disconnecting}
           aria-label={t.finances.bank.disconnect}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Unlink className="h-3.5 w-3.5 text-destructive" />
         </Button>
@@ -219,7 +293,15 @@ function ConnectionRow({
 
 /* -------------------------------- CSV import ------------------------------ */
 
-function CsvImport({ transactions }: { transactions: Transaction[] }) {
+function CsvImport({
+  transactions,
+  projects,
+  subscriptions,
+}: {
+  transactions: Transaction[];
+  projects: Project[];
+  subscriptions: Subscription[];
+}) {
   const t = useDict();
   const supabase = createClient();
   const qc = useQueryClient();
@@ -227,9 +309,12 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  // The same rule engine the sync and the retroactive apply use, so an imported
+  // row lands in the category the editor's preview promised.
   const rulesQuery = useQuery({
-    queryKey: qk.categoryRules,
-    queryFn: fetchCategoryRules,
+    queryKey: qk.transactionRules,
+    queryFn: fetchTransactionRules,
+    retry: false,
   });
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -259,18 +344,31 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
       if (fresh.length === 0) {
         return { added: 0, dup: parsed.rows.length };
       }
-      const rules = rulesQuery.data ?? [];
-      const payload = fresh.map((r) => ({
-        user_id: userId,
-        account_id: null,
-        kind: r.kind,
-        amount: r.amount,
-        currency: r.currency,
-        category: categorizeNote(r.note, rules),
-        note: r.note,
-        occurred_on: r.occurred_on,
-        external_id: r.external_id,
-      }));
+      const rules = usableRules(rulesQuery.data?.rules ?? []);
+      const owned = {
+        projectIds: new Set(projects.map((p) => p.id)),
+        subscriptionIds: new Set(subscriptions.map((s) => s.id)),
+      };
+      const payload = fresh.map((r) =>
+        applyRulesToRow(
+          {
+            user_id: userId,
+            account_id: null,
+            kind: r.kind,
+            amount: r.amount,
+            currency: r.currency,
+            category: null as string | null,
+            note: r.note,
+            occurred_on: r.occurred_on,
+            external_id: r.external_id,
+            // Carried through so the payment matcher can pair an imported
+            // statement row with an open invoice.
+            variable_symbol: r.variable_symbol,
+          },
+          rules,
+          owned,
+        ),
+      );
       const { data, error } = await supabase
         .from("transactions")
         .upsert(payload, {
@@ -353,149 +451,6 @@ function CsvImport({ transactions }: { transactions: Transaction[] }) {
   );
 }
 
-/* ----------------------------- category rules ----------------------------- */
-
-function CategoryRules({ transactions }: { transactions: Transaction[] }) {
-  const t = useDict();
-  const supabase = createClient();
-  const qc = useQueryClient();
-  const toast = useToast();
-  const [match, setMatch] = useState("");
-  const [category, setCategory] = useState("");
-
-  const rulesQuery = useQuery({
-    queryKey: qk.categoryRules,
-    queryFn: fetchCategoryRules,
-  });
-  const rules = rulesQuery.data ?? [];
-
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const { error } = await supabase.from("transaction_category_rules").insert({
-        user_id: userId,
-        match: match.trim(),
-        category: category.trim(),
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setMatch("");
-      setCategory("");
-      void qc.invalidateQueries({ queryKey: qk.categoryRules });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("transaction_category_rules")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.categoryRules }),
-  });
-
-  // Back-fill: run the rules over every still-uncategorized transaction.
-  const applyMutation = useMutation({
-    mutationFn: async () => {
-      const byCategory = new Map<string, string[]>();
-      for (const tx of transactions) {
-        if (tx.category) continue;
-        const cat = categorizeNote(tx.note, rules);
-        if (!cat) continue;
-        const ids = byCategory.get(cat) ?? byCategory.set(cat, []).get(cat)!;
-        ids.push(tx.id);
-      }
-      let count = 0;
-      for (const [cat, ids] of byCategory) {
-        const { error } = await supabase
-          .from("transactions")
-          .update({ category: cat })
-          .in("id", ids);
-        if (!error) count += ids.length;
-      }
-      return count;
-    },
-    onSuccess: (count) => {
-      toast.ok(count > 0 ? t.finances.bank.applyDone(count) : t.finances.bank.applyNothing);
-      if (count > 0) void qc.invalidateQueries({ queryKey: qk.transactions });
-    },
-  });
-
-  function addRule(e: React.FormEvent) {
-    e.preventDefault();
-    if (match.trim() && category.trim()) addMutation.mutate();
-  }
-
-  return (
-    <div className="rounded-lg border border-dashed border-border-strong bg-surface-muted/30 p-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
-          <Tag className="h-3.5 w-3.5 text-foreground-muted" />
-          {t.finances.bank.rulesTitle}
-        </span>
-        {rules.length > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => applyMutation.mutate()}
-            disabled={applyMutation.isPending}
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-            {t.finances.bank.applyToUncategorized}
-          </Button>
-        )}
-      </div>
-      <p className="mt-1 text-[11px] text-foreground-subtle">{t.finances.bank.rulesHint}</p>
-
-      {rules.length > 0 && (
-        <ul className="mt-3 space-y-1">
-          {rules.map((r: CategoryRule) => (
-            <li
-              key={r.id}
-              className="group flex items-center gap-2 rounded-md bg-surface px-2.5 py-1.5 text-xs"
-            >
-              <span className="truncate font-medium text-foreground">{r.match}</span>
-              <ArrowRight className="h-3 w-3 shrink-0 text-foreground-subtle" />
-              <span className="truncate text-foreground-muted">{r.category}</span>
-              <button
-                type="button"
-                onClick={() => deleteMutation.mutate(r.id)}
-                aria-label={t.common.delete}
-                className="ml-auto shrink-0 rounded p-1 text-foreground-subtle opacity-0 transition-opacity hover:text-destructive focus-ring group-hover:opacity-100"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <form onSubmit={addRule} className="mt-3 flex flex-wrap gap-2">
-        <Input
-          value={match}
-          onChange={(e) => setMatch(e.target.value)}
-          placeholder={t.finances.bank.ruleMatchPlaceholder}
-          className="h-8 min-w-0 flex-1 text-xs"
-        />
-        <Input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          placeholder={t.finances.bank.ruleCategoryPlaceholder}
-          className="h-8 min-w-0 flex-1 text-xs"
-        />
-        <Button type="submit" size="sm" variant="outline" disabled={addMutation.isPending}>
-          <Plus className="h-3.5 w-3.5" />
-          {t.finances.bank.addRule}
-        </Button>
-      </form>
-    </div>
-  );
-}
-
 /* ------------------------------ bank picker ------------------------------- */
 
 function BankPickerDialog({
@@ -506,16 +461,27 @@ function BankPickerDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const t = useDict();
+  const qc = useQueryClient();
   const toast = useToast();
+  const [step, setStep] = useState<"provider" | "institutions" | "token">("provider");
+  const [providerId, setProviderId] = useState("gocardless");
   const [query, setQuery] = useState("");
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [notConfigured, setNotConfigured] = useState(false);
 
-  const institutionsQuery = useQuery({
-    queryKey: ["bank", "institutions", "cz"],
+  const providersQuery = useQuery({
+    queryKey: ["bank", "providers"],
     enabled: open,
+    queryFn: fetchBankProviders,
+  });
+
+  const institutionsQuery = useQuery({
+    queryKey: ["bank", "institutions", providerId, "cz"],
+    enabled: open && step === "institutions",
     queryFn: async () => {
-      const res = await fetch("/api/bank/institutions?country=cz");
+      const res = await fetch(
+        `/api/bank/institutions?country=cz&provider=${encodeURIComponent(providerId)}`,
+      );
       if (res.status === 503) {
         setNotConfigured(true);
         return [] as Institution[];
@@ -539,7 +505,11 @@ function BankPickerDialog({
       const res = await fetch("/api/bank/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ institutionId: inst.id, institutionName: inst.name }),
+        body: JSON.stringify({
+          provider: providerId,
+          institutionId: inst.id,
+          institutionName: inst.name,
+        }),
       });
       if (res.status === 503) {
         setNotConfigured(true);
@@ -554,15 +524,117 @@ function BankPickerDialog({
     }
   }
 
+  function choose(provider: ProviderState) {
+    setProviderId(provider.id);
+    if (!provider.supportsInstitutionPicker) {
+      setStep("token");
+      return;
+    }
+    setNotConfigured(!provider.configured);
+    setStep("institutions");
+  }
+
+  const chosen =
+    (providersQuery.data ?? []).find((provider) => provider.id === providerId) ??
+    null;
+  const heading =
+    step === "provider"
+      ? t.finances.bank.providerStep
+      : step === "token"
+        ? (chosen?.label ?? t.finances.bank.fioTitle)
+        : t.finances.bank.pickBank;
+  const description =
+    step === "provider"
+      ? t.finances.bank.providerStepDesc
+      : step === "token"
+        ? t.finances.bank.fioHint
+        : t.finances.bank.pickBankDesc;
+
+  // Closing is what resets the flow, so reopening always starts at the provider
+  // step and a previous choice never decides the next one.
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setStep("provider");
+      setQuery("");
+      setNotConfigured(false);
+      setConnectingId(null);
+      setProviderId("gocardless");
+    }
+    onOpenChange(next);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-w-md flex-col">
         <DialogHeader>
-          <DialogTitle>{t.finances.bank.pickBank}</DialogTitle>
-          <DialogDescription>{t.finances.bank.pickBankDesc}</DialogDescription>
+          <DialogTitle>{heading}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-          {notConfigured ? (
+        {step !== "provider" && (
+          <div className="mt-3">
+            <Button size="sm" variant="ghost" onClick={() => setStep("provider")}>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              {t.finances.bank.providerBack}
+            </Button>
+          </div>
+        )}
+
+        {step === "provider" && (
+          <ul className="mt-4 space-y-1">
+            {(providersQuery.data ?? []).map((provider) => {
+              // A token provider is always reachable — this dialog is where it
+              // gets configured. Everything else needs server-side credentials.
+              const usable = provider.configured || !provider.supportsInstitutionPicker;
+              return (
+                <li key={provider.id}>
+                  <button
+                    type="button"
+                    onClick={() => choose(provider)}
+                    disabled={!usable}
+                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-surface-muted">
+                      {!provider.supportsInstitutionPicker ? (
+                        <KeyRound className="h-3.5 w-3.5 text-foreground-muted" />
+                      ) : (
+                        <Building2 className="h-3.5 w-3.5 text-foreground-muted" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm">{provider.label}</span>
+                      {!usable && (
+                        <span className="block text-[11px] text-foreground-subtle">
+                          {t.finances.bank.providerNotConfigured}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            {providersQuery.isError && (
+              <li className="py-8 text-center text-xs text-destructive">
+                {t.finances.bank.loadBanksErr}
+              </li>
+            )}
+          </ul>
+        )}
+
+        {step === "token" && (
+          <FioTokenForm
+            onSaved={() => {
+              void qc.invalidateQueries({ queryKey: qk.bankConnections });
+              void qc.invalidateQueries({ queryKey: qk.transactions });
+              void qc.invalidateQueries({ queryKey: qk.accounts });
+              void providersQuery.refetch();
+              handleOpenChange(false);
+            }}
+          />
+        )}
+
+        {step === "institutions" &&
+          (notConfigured ? (
             <p className="mt-4 rounded-md border border-border bg-surface-muted/40 p-3 text-xs text-foreground-muted">
               {t.finances.bank.notConfigured}
             </p>
@@ -622,8 +694,106 @@ function BankPickerDialog({
                 )}
               </div>
             </>
-          )}
+          ))}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ------------------------------ Fio token form ---------------------------- */
+
+/**
+ * The Fio API token. It is posted to the server and never read back: the GET
+ * beside it reports presence as a boolean, which is all this form needs to say
+ * a token is already stored.
+ */
+function FioTokenForm({ onSaved }: { onSaved: () => void }) {
+  const t = useDict();
+  const toast = useToast();
+  const [token, setToken] = useState("");
+
+  const storedQuery = useQuery({
+    queryKey: ["bank", "credentials"],
+    queryFn: async () => {
+      const res = await fetch("/api/bank/credentials", { cache: "no-store" });
+      if (!res.ok) throw new Error(String(res.status));
+      const json = (await res.json()) as { stored?: Record<string, boolean> };
+      return Boolean(json.stored?.fio);
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (value: string) => {
+      const res = await fetch("/api/bank/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: "fio", token: value }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const { connectionId } = (await res.json()) as {
+        connectionId: string | null;
+      };
+      // Saving proves nothing on its own; the first sync is what shows whether
+      // Fio accepts the token, so it runs immediately.
+      if (connectionId) {
+        await fetch("/api/bank/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ connectionId }),
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.ok(t.finances.bank.fioSaved);
+      setToken("");
+      onSaved();
+    },
+    onError: () => toast.err(t.finances.bank.fioErr),
+  });
+
+  return (
+    <form
+      className="mt-4 space-y-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const value = token.trim();
+        if (value.length < 16) {
+          toast.err(t.finances.bank.fioErr);
+          return;
+        }
+        saveMutation.mutate(value);
+      }}
+    >
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium" htmlFor="fio-token">
+          {t.finances.bank.fioTitle}
+        </label>
+        <Input
+          id="fio-token"
+          type="password"
+          autoComplete="off"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          placeholder={t.finances.bank.fioPlaceholder}
+        />
+        <p className="text-[11px] text-foreground-subtle">
+          {t.finances.bank.serverSideOnly}
+        </p>
+        {storedQuery.data === true && (
+          <p className="text-[11px] text-foreground-subtle">
+            {t.finances.bank.fioStored}
+          </p>
+        )}
+      </div>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={saveMutation.isPending || token.trim().length === 0}
+      >
+        {saveMutation.isPending
+          ? t.finances.bank.fioSaving
+          : t.finances.bank.fioSave}
+      </Button>
+    </form>
   );
 }

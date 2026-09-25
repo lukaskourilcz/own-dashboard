@@ -16,6 +16,45 @@ export function resourceKey(value: string): string | null {
   } catch { return null; }
 }
 
+/**
+ * Ids of the records a merge would move. Pure, so the optimistic update in the
+ * panel and the assertion in the test both ask the same function. Merging a
+ * category into itself moves nothing; `null` as the target means Uncategorized.
+ */
+export function planCategoryMerge(links: AiLink[], sourceId: string, targetId: string | null): string[] {
+  if (!sourceId || sourceId === targetId) return [];
+  return links.filter(link => link.category_id === sourceId).map(link => link.id);
+}
+
+/**
+ * Comparison key for category names: accents, case, separators and an English
+ * trailing plural all collapse. The trailing "s" is only dropped when four
+ * letters survive, so `CSS` stays `css` rather than colliding with `CS`.
+ */
+function categoryKey(name: string): string {
+  const flat = searchable(name).replace(/[^a-z0-9]/g, "");
+  return flat.endsWith("s") && flat.length - 1 >= 4 ? flat.slice(0, -1) : flat;
+}
+
+/**
+ * Category pairs whose names read as the same thing, as `[keep, duplicate]`
+ * in the order the categories were loaded. A suggestion for the merge control,
+ * never an automatic action: only the owner knows whether two similar names
+ * are one topic.
+ */
+export function duplicateCategoryCandidates(categories: AiCategory[]): [AiCategory, AiCategory][] {
+  const firstByKey = new Map<string, AiCategory>();
+  const pairs: [AiCategory, AiCategory][] = [];
+  for (const category of categories) {
+    const key = categoryKey(category.name);
+    if (!key) continue;
+    const first = firstByKey.get(key);
+    if (first) pairs.push([first, category]);
+    else firstByKey.set(key, category);
+  }
+  return pairs;
+}
+
 export function filterLibrary(links: AiLink[], categories: AiCategory[], query: string, pricing: PricingFilter, category: string, sort: LinkSort) {
   const names = new Map(categories.map(item => [item.id, item.name]));
   const words = searchable(query).trim().split(/\s+/).filter(Boolean);

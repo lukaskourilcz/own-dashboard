@@ -15,11 +15,12 @@ these tests assert that directly:
 | GitHub repos require auth | `GET /api/github/repos` | `401` (getUser) |
 | GitHub file read requires auth | `GET /api/github/file` | `401` (getUser) |
 | Cron endpoint requires auth | `GET /api/cron/renewal-warnings` | `403` (bad bearer, needs `CRON_SECRET` set) |
+| Payment-match cron requires auth | `GET /api/cron/payment-match` | `403` (bad bearer, needs `CRON_SECRET` set) |
 
 Notes:
-- The cron test asserts the `Bearer ${CRON_SECRET}` mismatch → `403`, which
+- The cron tests assert the `Bearer ${CRON_SECRET}` mismatch → `403`, which
   only applies when the running app has `CRON_SECRET` set. With it unset the
-  route has no secret to check and this test doesn't apply.
+  route has no secret to check and these tests don't apply.
 
 ## Run
 

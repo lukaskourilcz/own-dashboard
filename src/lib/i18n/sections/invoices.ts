@@ -27,6 +27,10 @@ type InvoicesStrings = {
   duplicate: string;
   markPaid: string;
   markUnpaid: string;
+  // Shown on a paid invoice that a bank payment settled, so the list says who
+  // marked it: the matcher, or the owner.
+  matchedAuto: (date: string) => string;
+  matchedManual: (date: string) => string;
   delete: string;
   print: string;
   back: string;
@@ -93,6 +97,9 @@ type InvoicesStrings = {
   fieldCountry: string;
   fieldIco: string;
   fieldDic: string;
+  buyerVatVerification: string;
+  buyerVatNameMismatch: string;
+  buyerVatUnverified: string;
   linkedOrganization: string;
   linkedProject: string;
   noLinkedOrganization: string;
@@ -198,6 +205,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     duplicate: "Duplicate",
     markPaid: "Mark as paid",
     markUnpaid: "Mark as unpaid",
+    matchedAuto: (date) => `Matched to a payment on ${date}`,
+    matchedManual: (date) => `Linked to a payment on ${date}`,
     delete: "Delete",
     print: "Print",
     back: "Back to list",
@@ -263,6 +272,9 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     fieldCountry: "Country",
     fieldIco: "Reg. No.",
     fieldDic: "VAT No.",
+    buyerVatVerification: "VAT check",
+    buyerVatNameMismatch: "VIES reports a different registered name",
+    buyerVatUnverified: "Verify it on the organization in Clients.",
     linkedOrganization: "Linked organization",
     linkedProject: "Linked project",
     noLinkedOrganization: "No linked organization",
@@ -369,6 +381,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     duplicate: "Duplikovat",
     markPaid: "Označit jako uhrazenou",
     markUnpaid: "Zrušit úhradu",
+    matchedAuto: (date) => `Spárováno s platbou z ${date}`,
+    matchedManual: (date) => `Přiřazeno k platbě z ${date}`,
     delete: "Smazat",
     print: "Tisk",
     back: "Zpět na seznam",
@@ -434,6 +448,9 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     fieldCountry: "Země",
     fieldIco: "IČO",
     fieldDic: "DIČ",
+    buyerVatVerification: "Ověření DIČ",
+    buyerVatNameMismatch: "VIES uvádí jiný registrovaný název",
+    buyerVatUnverified: "Ověřte ho u organizace v Klientech.",
     linkedOrganization: "Propojená organizace",
     linkedProject: "Propojený projekt",
     noLinkedOrganization: "Bez propojené organizace",

@@ -62,6 +62,8 @@ export function DemoDashboard({
       initialProjectCommunications={f.projectCommunications}
       initialProjectCosts={f.projectCosts}
       initialCrons={f.crons}
+      initialSubscriptionAllocations={f.subscriptionAllocations}
+      initialCompetitors={f.competitors}
       initialOrganizations={f.organizations}
       initialOpportunities={f.opportunities}
       initialInboxItems={f.inboxItems}
@@ -76,6 +78,7 @@ export function DemoDashboard({
       initialJobLastRun={f.jobLastRun}
       todayCalendar={f.todayCalendar}
       weekCalendar={f.weekCalendar}
+      lastWeekCalendar={f.lastWeekCalendar}
       selectedCalendarIds={f.selectedCalendarIds}
       repoVisibleIds={f.repoVisibleIds}
       initialPreferences={{

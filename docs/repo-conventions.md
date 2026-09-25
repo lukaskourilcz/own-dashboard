@@ -73,6 +73,44 @@ a one-line recommendation.
 Keep it honest: mark options that don't realistically apply, and don't present
 speculative numbers as facts.
 
+## `CHANGELOG.md` — dated shipped entries
+
+Repo root, newest entry first. One entry per release, published at least every
+two weeks; shipping more often is fine, letting more than two weeks pass is not.
+In OwnDashboard the entries are typed in `src/lib/changelog.ts` and the markdown
+is generated from it, so a repo that renders its changelog anywhere should keep
+one of the two generated from the other rather than editing both by hand.
+
+```
+## 2026-09-16 — Reviewed Ideas and pricing-filtered link exports
+
+### Shipped
+
+- **Feature title** — what it does now, in the reader's terms.
+- **Second feature** — one more thing that landed the same week.
+
+### Fixes
+
+- One line per correction too small to be a feature.
+```
+
+Rules:
+
+- **Date** is `YYYY-MM-DD`, the day the work landed on `main`. Dates are unique
+  and strictly descending.
+- **Title** names the release the way the owner would describe it, not a version
+  number.
+- **`### Shipped`** is required and never empty. **`### Fixes`** is omitted
+  entirely when there is nothing to list.
+- **One screenshot per feature at most.** A feature that has a capture adds a
+  standard markdown image on its own indented line directly under the bullet,
+  with the alt text describing what the capture shows and the destination
+  pointing at `media/changelog/<entry-date>-<feature-slug>.png`. The capture is
+  an authentic screenshot of the real UI (`/dev-preview` against the demo
+  fixtures in OwnDashboard) — never a placeholder, a mockup or generated UI. A
+  feature whose capture has not been taken yet simply ships without an image.
+- **Only work that actually landed.** A changelog is not a roadmap.
+
 ## Per-repo skills
 
 Each repo carries these under `.claude/skills/<name>/SKILL.md`, all written to

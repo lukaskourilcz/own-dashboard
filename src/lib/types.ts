@@ -1,8 +1,10 @@
 import type { TaskKind } from "./task-meta";
 import type { SourceOutcome } from "./jobs/types";
 import type { PromptKind } from "./prompt-kinds";
+import type { VatVerificationStatus } from "./tax-registry";
 
 export type { SourceOutcome };
+export type { VatVerificationStatus };
 
 export type Updater<T> = (next: T | ((prev: T) => T)) => void;
 
@@ -24,7 +26,7 @@ export type Subscription = {
   name: string;
   amount: number;
   currency: string;
-  billing_cycle: "monthly" | "yearly" | "weekly";
+  billing_cycle: SubscriptionBillingCycle;
   category: string | null;
   category_group?: SubscriptionCategoryGroup;
   importance?: SubscriptionImportance;
@@ -33,6 +35,33 @@ export type Subscription = {
   created_at: string;
   updated_at: string;
   project_id?: string | null;
+  // Vendor lifecycle taken from invoices: first billing date, the date billing
+  // stopped (null while running), the plan name and where to manage it.
+  started_on?: string | null;
+  ended_on?: string | null;
+  plan?: string | null;
+  vendor_url?: string | null;
+  notes?: string;
+  // Date the amount, currency and billing cycle were last checked against the
+  // vendor's own invoice. Null means nobody has checked; the editor clears it
+  // whenever the figure changes.
+  amount_confirmed_on?: string | null;
+};
+
+export type SubscriptionBillingCycle = "monthly" | "yearly" | "weekly" | "quarterly";
+
+// One shared subscription split across projects. Shares are fractions of the
+// subscription's normalized monthly amount; whatever is not allocated stays
+// unallocated overhead instead of being guessed onto a project.
+export type SubscriptionAllocation = {
+  id: string;
+  user_id: string;
+  subscription_id: string;
+  project_id: string;
+  share: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type SubscriptionCategoryGroup =
@@ -148,10 +177,23 @@ export type Transaction = {
   project_id?: string | null;
   organization_id?: string | null;
   invoice_id?: string | null;
+  // The subscription this payment settled; the paid amount then follows that
+  // subscription's project allocation in development finance.
+  subscription_id?: string | null;
+  // Czech payment reference (variabilní symbol), digits only. Captured at
+  // ingest when the bank sends one; src/lib/payment-matching.ts falls back to
+  // parsing `note` for rows synced before the column existed.
+  variable_symbol?: string | null;
+  // When and how this payment was paired with `invoice_id`: "auto" for the
+  // deterministic matcher, "manual" for the owner linking it by hand.
+  matched_at?: string | null;
+  match_source?: "auto" | "manual" | null;
 };
 
 // A keyword → category rule. When a transaction's note contains `match`
 // (case-insensitively), it's auto-filed under `category` on import/sync.
+// Superseded by TransactionRule below; kept for the legacy table, which is
+// still exported and is the rollback path.
 export type CategoryRule = {
   id: string;
   user_id: string;
@@ -160,17 +202,47 @@ export type CategoryRule = {
   created_at: string;
 };
 
+// Staged, specificity-ranked transaction rules. The engine that evaluates them
+// owns the shapes (src/lib/transaction-rules.ts) because bank sync, CSV import,
+// the apply route and the unit tests all share it; they are re-exported here so
+// the rest of the app keeps importing entity types from one place.
+export type {
+  OwnedIds,
+  RuleActionKey,
+  RuleActions,
+  RuleCondition,
+  RuleConditionValue,
+  RuleField,
+  RuleOp,
+  RuleStage,
+  RuleTarget,
+  TransactionRule,
+  TransactionRuleSet,
+} from "./transaction-rules";
+
 // A linked bank (a GoCardless "requisition"). Owned rows are readable by the
 // user; the /api/bank routes write them via the service role.
 export type BankConnection = {
   id: string;
   user_id: string;
+  /** Which adapter owns this connection. `src/lib/bank/registry.ts` resolves it;
+   *  an unregistered value fails closed rather than defaulting to GoCardless. */
   provider: string;
-  requisition_id: string;
-  institution_id: string;
+  /** GoCardless requisition id. Null for providers with no redirect flow. */
+  requisition_id: string | null;
+  institution_id: string | null;
   institution_name: string | null;
+  /** Provider-neutral connection handle. Backfilled from `requisition_id`. */
+  provider_ref: string | null;
   reference: string;
   status: "created" | "linked" | "expired" | "error";
+  /** When the bank consent lapses (PSD2 is 90 days). Null when the provider
+   *  states no expiry, as with a Fio token — never guessed. */
+  consent_expires_at: string | null;
+  /** Short, non-sensitive reason the last sync failed. Null when healthy. */
+  last_error: string | null;
+  /** Provider-specific incremental cursor, currently the last synced day. */
+  sync_cursor: string | null;
   last_synced_at: string | null;
   created_at: string;
   updated_at: string;
@@ -440,6 +512,41 @@ export type Project = {
   status?: "planned" | "active" | "on_hold" | "completed" | "archived";
   revenue?: number;
   revenue_currency?: string;
+  // Owning project of a venture subsection (Design Lab and GoVIRAL live under
+  // the boardlessAI repository). Null for top-level projects.
+  parent_id?: string | null;
+  // Stable key into the code-level registry in src/lib/portfolio.ts.
+  portfolio_key?: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// Competitors — owner-authored competition research per project: what the
+// competitor does well, how it shows up on social media, how it charges and
+// what to take from it. Own-only RLS with project ownership checks.
+// ---------------------------------------------------------------------------
+
+export type CompetitorCategory = "direct" | "indirect" | "inspiration";
+
+export type Competitor = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  name: string;
+  url: string | null;
+  summary: string;
+  category: CompetitorCategory;
+  useful_features: string[];
+  social_content: string;
+  pricing_model: string;
+  lessons: string;
+  relevance_score: number | null;
+  score_rationale: string;
+  social_links: string[];
+  source_urls: string[];
+  reviewed_at: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ProjectCommunication = {
@@ -488,6 +595,10 @@ export type Cron = {
   runs_per_month: number;
   enabled: boolean;
   last_run_at: string | null;
+  // Push-monitor URL pinged only after a successful run, and the timestamp of
+  // that last success. Empty/null means unmonitored, which is the default.
+  heartbeat_url: string;
+  last_success_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -666,6 +777,11 @@ export type JobApplication = {
   updated_at: string;
   organization_id?: string | null;
   next_follow_up_at?: string | null;
+  // Added by 20260916141348_job_application_contacts.sql. The keys are absent —
+  // not null — until that migration runs, which is how the progress dialog
+  // knows whether it can offer the fields.
+  contact_name?: string | null;
+  contact_email?: string | null;
 };
 
 export type JobApplicationEventKind = "applied" | "status" | "note";
@@ -765,6 +881,15 @@ export type Organization = {
   vat_id: string | null;
   notes: string;
   status: "active" | "inactive" | "archived";
+  /** When the legal name and address were last filled from the ARES register. */
+  ares_verified_at: string | null;
+  /** Cached VIES verdict; see src/lib/tax-registry.ts. */
+  vat_verification_status: VatVerificationStatus;
+  vat_verified_at: string | null;
+  /** Normalized VAT id the cached verdict belongs to. */
+  vat_verified_id: string | null;
+  vat_verified_name: string | null;
+  vat_verified_address: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -866,4 +991,17 @@ export type WeeklyReview = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * One objective for a week, stored inside `weekly_reviews.items.objectives`.
+ * `carriedFrom` records where an objective came from when it was carried over
+ * from the previous week — the id of the objective or of the unfinished daily
+ * focus item — so the same item is never carried twice.
+ */
+export type WeeklyObjective = {
+  id: string;
+  text: string;
+  done: boolean;
+  carriedFrom?: string;
 };

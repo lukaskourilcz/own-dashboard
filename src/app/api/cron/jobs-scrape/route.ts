@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logCronRun } from "@/lib/cron-log";
+import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runJobScrape } from "@/lib/jobs/scrape";
 
@@ -38,6 +39,8 @@ export async function GET(request: Request) {
   }
 
   const summary = await runJobScrape(admin);
+  // Only a clean pass pings; a failed scrape lets the monitor notice.
+  if (summary.ok) await pingHeartbeat(heartbeatUrlForJob("jobs-scrape"));
   await logCronRun({
     name: "Jobs scrape",
     endpoint: "/api/cron/jobs-scrape",

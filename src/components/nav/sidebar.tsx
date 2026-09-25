@@ -23,6 +23,7 @@ import {
   PanelLeftOpen,
   Receipt,
   Settings,
+  Swords,
   Tags,
   Target,
   Terminal,
@@ -76,6 +77,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { value: "work", icon: BriefcaseBusiness },
       { value: "projects", icon: FolderKanban },
+      { value: "competition", icon: Swords },
       { value: "opportunities", icon: FolderInput },
       { value: "clients", icon: Users },
       { value: "career", icon: Network },

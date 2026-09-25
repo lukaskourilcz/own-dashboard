@@ -6,6 +6,7 @@ export const NAV_TABS = [
   "inbox",
   "work",
   "projects",
+  "competition",
   "opportunities",
   "clients",
   "career",
@@ -56,6 +57,8 @@ export const LEGACY_ROUTE_ALIASES = {
   "ai-links": "links",
   shortcuts: "references",
   tugedr: "opportunities",
+  // Client work is listed in Projects behind the freelance divider.
+  works: "projects",
 } as const satisfies Record<string, NavTab>;
 
 export function isNavTab(value: string | undefined | null): value is NavTab {
