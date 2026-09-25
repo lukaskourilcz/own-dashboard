@@ -7,8 +7,11 @@
  * Every person, company, address and bank detail here is invented: "Jan Novák"
  * and `example.com` are placeholders, "Acme s.r.o." is a stand-in client, and
  * the IBAN is the documentation example value. The repository names are public
- * GitHub repositories. Nothing in this file is owner data, which is what makes
- * `/guest` safe to serve publicly — keep it that way when editing.
+ * GitHub repositories; a private repository, or the registry entry of a
+ * product the owner has not announced, never belongs here. Each project
+ * carries its own invented summary because the preview does not fall back to
+ * the portfolio registry. Nothing in this file is owner data, which is what
+ * makes `/guest` safe to serve publicly — keep it that way when editing.
  */
 import type {
   Account,
@@ -185,6 +188,7 @@ export const projects: Project[] = [
     id: "proj-dneskai",
     user_id: "u1",
     name: "DNESKAi",
+    summary: "Daily reader for the AI and technology news that mattered.",
     slug: "dneskai",
     previous_slugs: ["aifirst"],
     repo_full_name: "lukaskourilcz/aifirst",
@@ -204,6 +208,7 @@ export const projects: Project[] = [
     id: "proj-dashboard",
     user_id: "u1",
     name: "own-dashboard",
+    summary: "The operating dashboard this tour shows.",
     slug: "own-dashboard",
     repo_full_name: "lukaskourilcz/own-dashboard",
     repo_id: 1001,
@@ -222,6 +227,7 @@ export const projects: Project[] = [
     id: "proj-devshark",
     user_id: "u1",
     name: "devShark",
+    summary: "Developer-learning product with coding tasks graded on the server.",
     slug: "devshark",
     previous_slugs: ["react-express-app"],
     repo_full_name: "lukaskourilcz/react-express-app",
@@ -241,6 +247,7 @@ export const projects: Project[] = [
     id: "proj-boardlessai",
     user_id: "u1",
     name: "boardlessAI",
+    summary: "Agent council that runs a small venture portfolio in git.",
     slug: "boardlessai",
     previous_slugs: ["quorum"],
     repo_full_name: "lukaskourilcz/quorum",
@@ -261,6 +268,7 @@ export const projects: Project[] = [
     id: "proj-design-lab",
     user_id: "u1",
     name: "Design Lab",
+    summary: "Layout renderer for the portfolio magazines' carousels and covers.",
     slug: "design-lab",
     repo_full_name: null,
     engagement: "own",
@@ -278,6 +286,7 @@ export const projects: Project[] = [
     id: "proj-goviral",
     user_id: "u1",
     name: "GoVIRAL",
+    summary: "Weekly trend brief for the portfolio's ventures.",
     slug: "goviral",
     repo_full_name: null,
     engagement: "own",
@@ -291,14 +300,16 @@ export const projects: Project[] = [
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
   },
+  // An invented own product with no registry key and no repository: the
+  // public tour shows no project the owner has not published.
   {
-    id: "proj-phone",
+    id: "proj-recipe-box",
     user_id: "u1",
-    name: "LINKA",
-    slug: "phone-app",
-    repo_full_name: "lukaskourilcz/phone-app",
+    name: "Recipe box app",
+    slug: "recipe-box",
+    repo_full_name: null,
     engagement: "own",
-    portfolio_key: "phone-app",
+    summary: "Offline recipe collection with weekly shopping lists.",
     url: null,
     notes: "",
     color: null,
@@ -312,6 +323,7 @@ export const projects: Project[] = [
     id: "proj-acme-portal",
     user_id: "u1",
     name: "Acme customer portal",
+    summary: "Customer portal for Acme's service team.",
     slug: "acme-portal",
     repo_full_name: null,
     engagement: "client",
@@ -328,6 +340,7 @@ export const projects: Project[] = [
     id: "proj-harbor-bakery",
     user_id: "u1",
     name: "Harbor Bakery website",
+    summary: "Ordering website for a neighbourhood bakery.",
     slug: "harbor-bakery",
     repo_full_name: null,
     engagement: "client",

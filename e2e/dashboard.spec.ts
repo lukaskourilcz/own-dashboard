@@ -222,7 +222,7 @@ test.describe("dashboard sections", () => {
       "boardlessAI",
       "Design Lab",
       "GoVIRAL",
-      "LINKA",
+      "Recipe box app",
       "Acme customer portal",
       "Harbor Bakery website",
     ]);
@@ -231,7 +231,7 @@ test.describe("dashboard sections", () => {
     // the last own project and the first freelance project.
     const rows = await table.locator("tbody tr").allTextContents();
     const divider = rows.findIndex((text) => text.includes("Freelance — hired"));
-    expect(rows[divider - 1]).toContain("LINKA");
+    expect(rows[divider - 1]).toContain("Recipe box app");
     expect(rows[divider + 1]).toContain("Acme customer portal");
     // The wide table scrolls inside its card; the page itself never widens.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

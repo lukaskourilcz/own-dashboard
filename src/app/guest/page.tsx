@@ -13,9 +13,11 @@ import { brandConfig } from "@/lib/brand";
  * session and without reaching any owner data. The middleware exempts this
  * path from the login redirect.
  *
- * Everything the page shows is invented (see `src/lib/demo/fixtures.ts`).
- * Writes are not wired: `DemoDashboard` passes `isPreview`, and own-only RLS
- * would reject an anonymous write regardless.
+ * Every record the page shows is invented (see `src/lib/demo/fixtures.ts`).
+ * Some project names and repositories are the owner's public ones; their
+ * summaries come from the fixtures, never from the portfolio registry, and no
+ * private repository appears. Writes are not wired: `DemoDashboard` passes
+ * `isPreview`, and own-only RLS would reject an anonymous write regardless.
  *
  * This is also the surface recorded for the portfolio thumbnail, which is why
  * it must stay logged-out reachable. See

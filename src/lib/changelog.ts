@@ -66,7 +66,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         media: {
           path: "media/changelog/2026-09-25-projects.png",
           alt:
-            "Projects: the sidebar lists DNESKAi, own-dashboard, devShark, boardlessAI, Design Lab, GoVIRAL and LINKA, then a \"Freelance — hired\" divider above Acme customer portal and Harbor Bakery website; the page shows the monthly cost donut and a table that opens with DNESKAi, own-dashboard, devShark and boardlessAI, each with its registry summary and repository.",
+            "Projects: the sidebar lists DNESKAi, own-dashboard, devShark, boardlessAI, Design Lab, GoVIRAL and Recipe box app, then a \"Freelance — hired\" divider above Acme customer portal and Harbor Bakery website; the page shows the monthly cost donut and a table that opens with DNESKAi, own-dashboard, devShark and boardlessAI, each with its summary and repository.",
         },
       },
       {

@@ -80,7 +80,7 @@ import {
   unresolvedRepositoryProjects,
   type ProjectRepoUpdate,
 } from "@/lib/project-match";
-import { childProjects, planPortfolioSync, portfolioEntryFor } from "@/lib/portfolio";
+import { childProjects, planPortfolioSync, projectSummary } from "@/lib/portfolio";
 import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
 import {
@@ -244,6 +244,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
       onBackToProjects={props.onBackToProjects}
+      isPreview={props.isPreview}
     />;
   }
   return <ProjectsListPanel {...props} />;
@@ -1071,7 +1072,7 @@ function ProjectsListPanel({
                   key={p.id}
                   project={p}
                   subsection={!!p.parent_id && projectIds.has(p.parent_id)}
-                  summary={p.summary || portfolioEntryFor(p)?.summary[lang]}
+                  summary={projectSummary(p, lang, { preview: isPreview })}
                   monthlyCost={monthlyOf(p)}
                   displayCurrency={displayCurrency}
                   synced={isSynced(p)}

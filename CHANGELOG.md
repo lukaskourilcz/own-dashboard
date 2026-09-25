@@ -15,7 +15,7 @@ placeholder or generated screenshot.
 
 - **Own and freelance projects** — Projects lists the owner's own products first and freelance client work behind a "Freelance — hired" divider, from one field, `projects.engagement`. DNESKAi, devShark and boardlessAI carry their new names while their earlier slugs keep old links working, and a GitHub repository is matched by its id, so a rename updates the project instead of adding a second one.
 
-  ![Projects: the sidebar lists DNESKAi, own-dashboard, devShark, boardlessAI, Design Lab, GoVIRAL and LINKA, then a "Freelance — hired" divider above Acme customer portal and Harbor Bakery website; the page shows the monthly cost donut and a table that opens with DNESKAi, own-dashboard, devShark and boardlessAI, each with its registry summary and repository.](media/changelog/2026-09-25-projects.png)
+  ![Projects: the sidebar lists DNESKAi, own-dashboard, devShark, boardlessAI, Design Lab, GoVIRAL and Recipe box app, then a "Freelance — hired" divider above Acme customer portal and Harbor Bakery website; the page shows the monthly cost donut and a table that opens with DNESKAi, own-dashboard, devShark and boardlessAI, each with its summary and repository.](media/changelog/2026-09-25-projects.png)
 
 - **Portfolio registry and venture subsections** — The daily projects are materialized from a code-level registry, so a repository shows up in Projects even when the GitHub allow-list predates it. Design Lab and GoVIRAL are rows of their own under boardlessAI, each with its own workspace, and the registry never renames a project or changes its engagement.
 

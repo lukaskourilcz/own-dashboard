@@ -64,9 +64,13 @@ export const PORTFOLIO: PortfolioEntry[] = [
     repo: "lukaskourilcz/phone-app",
     category: "products",
     slug: "phone-app",
+    // The repository is private and the product unannounced, so its
+    // description lives only in the owner's own `projects.summary` row, not in
+    // this public source file. NEEDED.md asks the owner whether the entry may
+    // stay here at all.
     summary: {
-      en: "Czech 18+ companion platform with fictional AI personas: chat with memory, voice notes, calls, photos, relationship levels and memberships.",
-      cs: "Česká 18+ platforma s fiktivními AI společnicemi: chat s pamětí, hlasovky, hovory, fotky, vztahové úrovně a členství.",
+      en: "Private product in development.",
+      cs: "Soukromý produkt ve vývoji.",
     },
   },
   {
@@ -152,6 +156,21 @@ export function portfolioEntryFor(
     if (entry) return entry;
   }
   return undefined;
+}
+
+/**
+ * The summary a project shows: its own, else its registry entry's. A public
+ * preview never falls back to the registry, so the guest tour shows only what
+ * its invented fixtures say and never the owner's portfolio descriptions.
+ */
+export function projectSummary(
+  project: Pick<Project, "summary" | "portfolio_key" | "repo_full_name" | "parent_id"> & Partial<Pick<Project, "previous_repo_full_names">>,
+  lang: "en" | "cs",
+  { preview = false }: { preview?: boolean } = {},
+): string | undefined {
+  if (project.summary) return project.summary;
+  if (preview) return undefined;
+  return portfolioEntryFor(project)?.summary[lang];
 }
 
 /** A project the registry knows: one of the daily projects or a venture subsection. */

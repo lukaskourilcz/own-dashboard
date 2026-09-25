@@ -31,7 +31,7 @@ import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { useDict, useLang } from "@/lib/i18n";
 import { convert } from "@/lib/fx";
 import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
-import { childProjects, portfolioEntryFor } from "@/lib/portfolio";
+import { childProjects, portfolioEntryFor, projectSummary } from "@/lib/portfolio";
 import { computeTotals } from "@/lib/invoices";
 import { assessProjectHealth } from "@/lib/project-health";
 import { taskBelongsToProject } from "@/lib/project-match";
@@ -105,6 +105,8 @@ type Props = {
   displayCurrency: string;
   repositoryIntegrationEnabled: boolean;
   onBackToProjects: () => void;
+  /** The public tour: registry descriptions are not shown there. */
+  isPreview?: boolean;
 };
 
 function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
@@ -194,7 +196,7 @@ export function ProjectWorkspace(props: Props) {
     <PageHeader
       className="mac-project-header"
       title={project.name}
-      description={project.summary || registryEntry?.summary[lang] || p.projectWorkspace}
+      description={projectSummary(project, lang, { preview: props.isPreview }) || p.projectWorkspace}
       eyebrow={parentProject ? t.portfolio.subsectionOf(parentProject.name) : organization?.name ?? (registryEntry ? t.portfolio.coreProject : p.projectWorkspace)}
       action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
     />
@@ -213,7 +215,7 @@ export function ProjectWorkspace(props: Props) {
         <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
         {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} />}
-        {subsections.length > 0 && <Card><CardHeader><CardTitle>{t.portfolio.subsection}</CardTitle></CardHeader><CardContent><ul className="divide-y divide-border">{subsections.map((child) => <li key={child.id} className="flex items-center justify-between gap-3 py-2"><button type="button" onClick={() => props.onOpenProject(child)} className="focus-ring rounded text-sm font-medium hover:underline">{child.name}</button><span className="text-xs text-foreground-muted">{portfolioEntryFor(child)?.summary[lang]}</span></li>)}</ul></CardContent></Card>}
+        {subsections.length > 0 && <Card><CardHeader><CardTitle>{t.portfolio.subsection}</CardTitle></CardHeader><CardContent><ul className="divide-y divide-border">{subsections.map((child) => <li key={child.id} className="flex items-center justify-between gap-3 py-2"><button type="button" onClick={() => props.onOpenProject(child)} className="focus-ring rounded text-sm font-medium hover:underline">{child.name}</button><span className="text-xs text-foreground-muted">{projectSummary(child, lang, { preview: props.isPreview })}</span></li>)}</ul></CardContent></Card>}
       </div>
       <ProjectLinksSection project={project} aiLinks={props.aiLinks} aiCategories={props.aiCategories} projectLinks={props.projectLinks} setProjectLinks={props.setProjectLinks} />
     </div>}
