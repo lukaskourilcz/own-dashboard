@@ -15,6 +15,8 @@ import * as bankSync from "@/app/api/cron/bank-sync/route";
 import * as jobsScrape from "@/app/api/cron/jobs-scrape/route";
 import * as paymentMatch from "@/app/api/cron/payment-match/route";
 import * as renewalWarnings from "@/app/api/cron/renewal-warnings/route";
+import * as cronLog from "@/app/api/crons/log/route";
+import * as cronRegistry from "@/app/api/crons/registry/route";
 
 const cronDir = new URL("../../src/app/api/cron/", import.meta.url);
 const cronRoutes = readdirSync(cronDir, { withFileTypes: true })
@@ -118,4 +120,80 @@ describe("/api/cron routes", () => {
       expect(outcome).not.toBe(403);
     },
   );
+});
+
+describe("/api/crons registry and log", () => {
+  const saved = {
+    token: process.env.CRON_REGISTRY_TOKEN,
+    owner: process.env.DASHBOARD_OWNER_ID,
+  };
+  beforeEach(() => {
+    delete process.env.CRON_REGISTRY_TOKEN;
+    delete process.env.DASHBOARD_OWNER_ID;
+  });
+  afterEach(() => {
+    for (const [key, value] of [
+      ["CRON_REGISTRY_TOKEN", saved.token],
+      ["DASHBOARD_OWNER_ID", saved.owner],
+    ] as const) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  const registry = (query: string, authorization?: string) =>
+    cronRegistry.GET(
+      new Request(`https://example.test/api/crons/registry${query}`, {
+        headers: authorization ? { authorization } : undefined,
+      }),
+    );
+  const log = (authorization?: string) =>
+    cronLog.POST(
+      new Request("https://example.test/api/crons/log", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(authorization ? { authorization } : {}),
+        },
+        body: JSON.stringify({ name: "Daily sentinel", status: "success" }),
+      }),
+    );
+
+  it("registry answers 503 while CRON_REGISTRY_TOKEN is unset", async () => {
+    expect((await registry("?project=dneskai")).status).toBe(503);
+    expect((await registry("")).status).toBe(503);
+  });
+
+  it("registry refuses a wrong token and the old ?token= form", async () => {
+    process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    expect((await registry("?project=dneskai")).status).toBe(403);
+    expect((await registry("?project=dneskai", "Bearer wrong")).status).toBe(403);
+    expect((await registry("?project=dneskai&token=registry-token")).status).toBe(403);
+  });
+
+  it("registry serves the right token privately", async () => {
+    process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    const res = await registry("?project=dneskai", "Bearer registry-token");
+    // The admin stand-in throws, which the route answers as an empty registry.
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ project: "dneskai", crons: [] });
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("log answers 503 until both the token and the owner are set", async () => {
+    expect((await log("Bearer x")).status).toBe(503);
+    process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    expect((await log("Bearer registry-token")).status).toBe(503);
+  });
+
+  it("log refuses a wrong token and accepts the right one", async () => {
+    process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
+    expect((await log()).status).toBe(403);
+    expect((await log("Bearer wrong")).status).toBe(403);
+    expect((await log("registry-token")).status).toBe(403);
+    const res = await log("Bearer registry-token");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
 });

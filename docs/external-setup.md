@@ -132,7 +132,7 @@ and the daily cron marks a connection expired the morning the date passes rather
 than waiting for a sync to fail. Reconnecting the bank from Finances is what
 renews it; a Fio token has no expiry and shows no date.
 
-Every `/api/cron/*` route answers 403 until `CRON_SECRET` is set, Vercel's own scheduled calls included, so no bank pull, matching run or renewal email happens without it and no anonymous caller can start one. After setting it, confirm in the Vercel cron log that the scheduled calls return 200. Once `CRON_REGISTRY_TOKEN` is set, the read-only `/api/crons/registry` requires it, and `/api/crons/log` accepts runs only when it and `DASHBOARD_OWNER_ID` are both set. `DASHBOARD_OWNER_ID` also attributes the app's own cron runs in `cron_runs`.
+Every `/api/cron/*` route answers 403 until `CRON_SECRET` is set, Vercel's own scheduled calls included, so no bank pull, matching run or renewal email happens without it and no anonymous caller can start one. After setting it, confirm in the Vercel cron log that the scheduled calls return 200. `/api/crons/registry` and `/api/crons/log` answer 503 until `CRON_REGISTRY_TOKEN` is set and 403 to any other `Authorization: Bearer` token; the log also needs `DASHBOARD_OWNER_ID`. Nothing calls either today, so leave the token unset until a consumer or a reporter exists. `DASHBOARD_OWNER_ID` also attributes the app's own cron runs in `cron_runs`.
 
 ### Heartbeat monitoring
 

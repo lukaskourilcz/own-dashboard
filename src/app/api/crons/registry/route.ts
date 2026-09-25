@@ -1,35 +1,44 @@
 import { NextResponse } from "next/server";
+import { bearerMatches } from "@/lib/cron-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Read-only cron registry for external consumers (e.g. the aifirst site,
- * which wants to know its own schedules and per-run AI costs).
+ * Read-only cron registry for external consumers. Projects shows this URL for
+ * them; no repository calls it today (the last reporter went in quorum
+ * 627515fd, 2026-08-06).
  *
  *   GET /api/crons/registry?project=<slug>
+ *   Authorization: Bearer <CRON_REGISTRY_TOKEN>
  *
  * Returns the *enabled* crons for the project(s) with that slug, including the
- * cost metadata every AI-API-call cron carries. Schedules and costs aren't
- * secret, so this is an open read — but if CRON_REGISTRY_TOKEN is set, callers
- * must send it as `Authorization: Bearer <token>` (or `?token=`). The dashboard
- * owns the registry; only the "own"-scoped rows exist, so a slug maps to one
- * owner's project in practice.
+ * cost metadata every AI-API-call cron carries. The dashboard owns the
+ * registry; only the "own"-scoped rows exist, so a slug maps to one owner's
+ * project in practice.
  *
- * No-ops gracefully (empty list) when the service role key is missing so a
- * fresh deploy doesn't 500.
+ * Fails closed: 503 until CRON_REGISTRY_TOKEN is set, 403 for any other
+ * token. The token travels only in the header, never in the query string,
+ * where request logs would keep it. Answers an empty list when the service
+ * role key is missing so a fresh deploy doesn't 500.
  */
 export const dynamic = "force-dynamic";
+
+// An authenticated answer must never sit in a shared cache, where a caller
+// without the token could be served it.
+const PRIVATE = { "Cache-Control": "private, no-store" };
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const slug = url.searchParams.get("project")?.trim();
 
   const expected = process.env.CRON_REGISTRY_TOKEN;
-  if (expected) {
-    const header = request.headers.get("authorization");
-    const token = header?.replace(/^Bearer\s+/i, "") ?? url.searchParams.get("token");
-    if (token !== expected) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    }
+  if (!expected?.trim()) {
+    return NextResponse.json(
+      { error: "Cron registry is not configured." },
+      { status: 503 },
+    );
+  }
+  if (!bearerMatches(request.headers.get("authorization"), expected)) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
   let admin;
@@ -37,7 +46,10 @@ export async function GET(request: Request) {
     admin = createAdminClient();
   } catch {
     // Service role not configured yet — behave as an empty registry.
-    return NextResponse.json({ project: slug ?? null, crons: [] });
+    return NextResponse.json(
+      { project: slug ?? null, crons: [] },
+      { headers: PRIVATE },
+    );
   }
 
   let projectQuery = admin.from("projects").select("id, slug, name");
@@ -56,7 +68,10 @@ export async function GET(request: Request) {
   }
   const ids = (projectRows ?? []).map((p) => p.id as string);
   if (ids.length === 0) {
-    return NextResponse.json({ project: slug ?? null, crons: [] });
+    return NextResponse.json(
+      { project: slug ?? null, crons: [] },
+      { headers: PRIVATE },
+    );
   }
 
   const { data: cronRows, error: cronErr } = await admin
@@ -98,6 +113,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json(
     { project: slug ?? null, count: crons.length, crons },
-    { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
+    { headers: PRIVATE },
   );
 }

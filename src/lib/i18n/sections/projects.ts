@@ -213,7 +213,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     crons: "Crons",
     cronsHint:
       "Scheduled jobs for this project. AI-API-call crons carry their cost.",
-    registryHint: (url) => `The site can read the enabled set at ${url}`,
+    registryHint: (url) =>
+      `External sites can read the enabled set at ${url} with the CRON_REGISTRY_TOKEN bearer token.`,
     addCron: "Add cron",
     editCron: "Edit cron",
     cronName: "Name",
@@ -343,7 +344,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     crons: "Crony",
     cronsHint:
       "Naplánované úlohy projektu. Crony s voláním AI API nesou svoje náklady.",
-    registryHint: (url) => `Stránka může načíst povolené crony na ${url}`,
+    registryHint: (url) =>
+      `Externí weby mohou povolené crony načíst na ${url} s bearer tokenem CRON_REGISTRY_TOKEN.`,
     addCron: "Přidat cron",
     editCron: "Upravit cron",
     cronName: "Název",

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { bearerMatches } from "@/lib/cron-auth";
 import { logCronRun, type CronRunSource, type CronRunStatus } from "@/lib/cron-log";
 
 /**
- * Ingestion endpoint for external cron runs — chiefly the linked repos' GitHub
- * Actions schedules, which POST here at the end of a run so the Home monitoring
- * panels can show them.
+ * Ingestion endpoint for external cron runs, such as a linked repository's
+ * GitHub Actions schedule, which POSTs here at the end of a run so the Home
+ * monitoring panels can show it. No repository posts here today: quorum
+ * 627515fd (2026-08-06) removed the reporter from quorum and aifirst.
  *
  *   POST /api/crons/log
  *   Authorization: Bearer <CRON_REGISTRY_TOKEN>
@@ -26,15 +28,13 @@ const SOURCES: CronRunSource[] = ["app", "vercel", "github_actions", "external"]
 
 export async function POST(request: Request) {
   const expected = process.env.CRON_REGISTRY_TOKEN;
-  if (!expected || !process.env.DASHBOARD_OWNER_ID) {
+  if (!expected?.trim() || !process.env.DASHBOARD_OWNER_ID) {
     return NextResponse.json(
       { error: "Cron logging is not configured." },
       { status: 503 },
     );
   }
-  const header = request.headers.get("authorization");
-  const token = header?.replace(/^Bearer\s+/i, "");
-  if (token !== expected) {
+  if (!bearerMatches(request.headers.get("authorization"), expected)) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 

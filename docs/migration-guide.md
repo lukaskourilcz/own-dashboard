@@ -230,7 +230,8 @@ and `last_success_at = null`, which is the unmonitored state the UI reports.
 Save a push URL from the cron form and confirm it round-trips.
 
 Sign in as two users. Confirm user A cannot read or update user B's cron, and
-that `GET /api/crons/registry` returns `monitored` as a boolean and never the
+that `GET /api/crons/registry` (with the `CRON_REGISTRY_TOKEN` bearer token)
+returns `monitored` as a boolean and never the
 URL itself — the push URL is a credential.
 
 POST a success to `/api/crons/log` with the cron's `cron_id`, and confirm
