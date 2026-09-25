@@ -3,6 +3,7 @@ import {
   parseUptimeKumaEvent,
   type UptimeKumaPayload,
 } from "@/lib/cron-heartbeat";
+import { bearerMatches } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,15 +17,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * email the owner may not read.
  *
  *   POST /api/webhooks/uptime-kuma
- *   Authorization: Bearer <UPTIME_KUMA_WEBHOOK_TOKEN>    (or ?token=)
+ *   Authorization: Bearer <UPTIME_KUMA_WEBHOOK_TOKEN>
  *   { "heartbeat": { "status": 0|1, "time": "...", "msg": "..." },
  *     "monitor": { "id": 3, "name": "Bank sync" }, "msg": "..." }
  *
  * The body shape is Kuma's, not ours, so every field is optional here and an
  * unusable payload is answered 200 rather than retried into a storm. Auth is
- * the shared token only: Kuma is a server-to-server caller with no Origin
- * header, exactly like the GitHub Actions cron-log endpoint, so the CSRF check
- * would reject every legitimate call.
+ * the shared token only, in the Authorization header (Kuma's webhook
+ * notification sends it through its additional-headers field): Kuma is a
+ * server-to-server caller with no Origin header, exactly like the cron-log
+ * endpoint, so the CSRF check would reject every legitimate call. A `?token=`
+ * query form is refused, because request logs keep the query string.
  *
  * No-ops with 503 until both UPTIME_KUMA_WEBHOOK_TOKEN and DASHBOARD_OWNER_ID
  * are configured, so a deploy without a monitoring stack still boots.
@@ -37,17 +40,14 @@ const UP_KIND = "cron_heartbeat_up";
 export async function POST(request: Request) {
   const expected = process.env.UPTIME_KUMA_WEBHOOK_TOKEN;
   const owner = process.env.DASHBOARD_OWNER_ID;
-  if (!expected || !owner) {
+  if (!expected?.trim() || !owner) {
     return NextResponse.json(
       { error: "Heartbeat monitoring is not configured." },
       { status: 503 },
     );
   }
 
-  const url = new URL(request.url);
-  const header = request.headers.get("authorization");
-  const token = header?.replace(/^Bearer\s+/i, "") ?? url.searchParams.get("token");
-  if (token !== expected) {
+  if (!bearerMatches(request.headers.get("authorization"), expected)) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 

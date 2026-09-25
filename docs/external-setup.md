@@ -162,9 +162,11 @@ reference monitor:
    schedule, and copy the generated push URL into the matching environment
    variable or cron field.
 3. Add a **Webhook** notification pointing at
-   `https://YOUR-DOMAIN/api/webhooks/uptime-kuma`, with an
-   `Authorization: Bearer <UPTIME_KUMA_WEBHOOK_TOKEN>` header, and attach it to
-   those monitors.
+   `https://YOUR-DOMAIN/api/webhooks/uptime-kuma`, put
+   `{"Authorization": "Bearer <UPTIME_KUMA_WEBHOOK_TOKEN>"}` in its additional
+   headers, and attach it to those monitors. The route reads the token from
+   that header only and refuses a `?token=` query string, which request logs
+   would keep.
 4. Set `UPTIME_KUMA_WEBHOOK_TOKEN` and `DASHBOARD_OWNER_ID` in the deployment.
    Without both, the route answers 503 and records nothing.
 

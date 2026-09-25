@@ -17,6 +17,7 @@ import * as paymentMatch from "@/app/api/cron/payment-match/route";
 import * as renewalWarnings from "@/app/api/cron/renewal-warnings/route";
 import * as cronLog from "@/app/api/crons/log/route";
 import * as cronRegistry from "@/app/api/crons/registry/route";
+import * as uptimeKuma from "@/app/api/webhooks/uptime-kuma/route";
 
 const cronDir = new URL("../../src/app/api/cron/", import.meta.url);
 const cronRoutes = readdirSync(cronDir, { withFileTypes: true })
@@ -195,5 +196,62 @@ describe("/api/crons registry and log", () => {
     const res = await log("Bearer registry-token");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
+  });
+});
+
+describe("/api/webhooks/uptime-kuma", () => {
+  const saved = {
+    token: process.env.UPTIME_KUMA_WEBHOOK_TOKEN,
+    owner: process.env.DASHBOARD_OWNER_ID,
+  };
+  beforeEach(() => {
+    delete process.env.UPTIME_KUMA_WEBHOOK_TOKEN;
+    process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
+  });
+  afterEach(() => {
+    for (const [key, value] of [
+      ["UPTIME_KUMA_WEBHOOK_TOKEN", saved.token],
+      ["DASHBOARD_OWNER_ID", saved.owner],
+    ] as const) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  const post = (query: string, authorization?: string) =>
+    uptimeKuma.POST(
+      new Request(`https://example.test/api/webhooks/uptime-kuma${query}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(authorization ? { authorization } : {}),
+        },
+        body: JSON.stringify({
+          heartbeat: { status: 0, msg: "No heartbeat" },
+          monitor: { id: 3, name: "Bank sync" },
+        }),
+      }),
+    );
+
+  it("answers 503 while the token is unset or blank", async () => {
+    expect((await post("", "Bearer x")).status).toBe(503);
+    process.env.UPTIME_KUMA_WEBHOOK_TOKEN = "   ";
+    expect((await post("", "Bearer    ")).status).toBe(503);
+  });
+
+  it("refuses the ?token= form, a bare token and a wrong bearer", async () => {
+    process.env.UPTIME_KUMA_WEBHOOK_TOKEN = "kuma-token";
+    expect((await post("?token=kuma-token")).status).toBe(403);
+    expect((await post("", "kuma-token")).status).toBe(403);
+    expect((await post("", "Bearer wrong")).status).toBe(403);
+    expect((await post("?token=kuma-token", "Bearer wrong")).status).toBe(403);
+  });
+
+  it("lets the right bearer through to the event", async () => {
+    process.env.UPTIME_KUMA_WEBHOOK_TOKEN = "kuma-token";
+    const res = await post("", "Bearer kuma-token");
+    // Past the gate the service-role stand-in throws, which the route
+    // answers as "not configured".
+    expect(res.status).toBe(503);
   });
 });
