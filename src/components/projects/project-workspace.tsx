@@ -21,6 +21,7 @@ import { ProjectGithubActivity } from "@/components/projects/project-github-acti
 import { ProjectKnowledgePanel } from "@/components/projects/project-knowledge-panel";
 import { ProjectDocPanel } from "@/components/projects/project-doc-panel";
 import { ProjectTraffic } from "@/components/projects/project-traffic";
+import { ProjectLinksSection } from "@/components/projects/project-links-section";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
@@ -40,6 +41,8 @@ import {
 } from "@/lib/project-workspace-tabs";
 import { useProjectTabVisibility } from "@/lib/use-prefs";
 import type {
+  AiCategory,
+  AiLink,
   ClientOpportunity,
   Cron,
   ImportantDate,
@@ -51,6 +54,7 @@ import type {
   Project,
   ProjectCommunication,
   ProjectCost,
+  ProjectLink,
   Prompt,
   RepoLink,
   RepoNote,
@@ -82,6 +86,10 @@ type Props = {
   setRepoLinks: Updater<RepoLink[]>;
   communications: ProjectCommunication[];
   setCommunications: Updater<ProjectCommunication[]>;
+  aiLinks: AiLink[];
+  aiCategories: AiCategory[];
+  projectLinks: ProjectLink[];
+  setProjectLinks: Updater<ProjectLink[]>;
   displayCurrency: string;
   repositoryIntegrationEnabled: boolean;
   onBackToProjects: () => void;
@@ -186,6 +194,7 @@ export function ProjectWorkspace(props: Props) {
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
         {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} />}
       </div>
+      <ProjectLinksSection project={project} aiLinks={props.aiLinks} aiCategories={props.aiCategories} projectLinks={props.projectLinks} setProjectLinks={props.setProjectLinks} />
     </div>}
 
     {tab === "tasks" && <div className="space-y-4"><RecordCard title={p.projectTasks} icon={ListTodo} info={p.tasksFromNeededInfo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><div><div className="mb-2 flex items-center gap-1.5"><SectionLabel>{p.projectNotes}</SectionLabel><Tooltip content={p.notesInfo}><span className="inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip></div><NotesPanel notes={props.notes} setNotes={props.setNotes} projects={[project]} projectId={project.id} embedded /></div></div>}

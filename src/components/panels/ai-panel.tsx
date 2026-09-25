@@ -34,7 +34,10 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
-import type { AiCategory, AiLink, AiPricing, Updater } from "@/lib/types";
+import type { AiCategory, AiLink, AiPricing, Project, ProjectLink, Updater } from "@/lib/types";
+import { linkIdsUsedByProject, nextProjectLinkOrder, projectsUsingLink } from "@/lib/project-links";
+import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
+import { useProjectLinkMutations } from "@/components/links/use-project-links";
 
 import { LinkLibraryCard, PricingDot } from "./link-library-card";
 import { filterLibrary, resourceKey, UNCATEGORIZED_LINKS as UNCATEGORIZED, type PricingFilter, type LinkSort } from "@/lib/link-library";
@@ -61,6 +64,9 @@ type Props = {
   setAiLinks: Updater<AiLink[]>;
   aiCategories: AiCategory[];
   setAiCategories: Updater<AiCategory[]>;
+  projectLinks: ProjectLink[];
+  setProjectLinks: Updater<ProjectLink[]>;
+  projects: Project[];
 };
 
 type LinkForm = {
@@ -86,6 +92,9 @@ export function AiPanel({
   setAiLinks,
   aiCategories,
   setAiCategories,
+  projectLinks,
+  setProjectLinks,
+  projects,
 }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -97,13 +106,23 @@ export function AiPanel({
   const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sort, setSort] = useState<LinkSort>("name");
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [addToProjectLink, setAddToProjectLink] = useState<AiLink | null>(null);
+  const relationMutations = useProjectLinkMutations(setProjectLinks);
+  const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
+  const projectIdsWithLinks = useMemo(() => new Set(projectLinks.map((relation) => relation.project_id)), [projectLinks]);
+  const projectLinkIds = useMemo(() => linkIdsUsedByProject(projectFilter, projectLinks), [projectFilter, projectLinks]);
+  const toolLinkIds = useMemo(() => new Set(projectLinks.filter((relation) => relation.role === "tool").map((relation) => relation.ai_link_id)), [projectLinks]);
+  const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
+  const usedByFor = (link: AiLink) =>
+    projectsUsingLink(link.id, projectLinks, projects).map(({ project }) => ({ id: project.id, name: project.name }));
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const toggleDetails = (id: string) => setExpandedIds(previous => {
     const next = new Set(previous);
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
-  const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); };
+  const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); setProjectFilter("all"); };
   const hasUnknownPricing = aiLinks.some(link => !link.pricing);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AiLink | null>(null);
@@ -120,9 +139,9 @@ export function AiPanel({
 
   // Filter first, then bucket the survivors by category so search collapses
   // empty sections automatically.
-  const visibleLinks = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type !== "idea"), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
+  const visibleLinks = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type !== "idea" && (!projectLinkIds || projectLinkIds.has(link.id))), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort, projectLinkIds]);
 
-  const ideas = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type === "idea"), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort]);
+  const ideas = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type === "idea" && (!projectLinkIds || projectLinkIds.has(link.id))), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort, projectLinkIds]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, AiLink[]>();
@@ -138,7 +157,7 @@ export function AiPanel({
     return map;
   }, [visibleLinks, categoryIds]);
 
-  const searching = query.trim().length > 0 || pricingFilter !== "all" || categoryFilter !== "all";
+  const searching = query.trim().length > 0 || pricingFilter !== "all" || categoryFilter !== "all" || projectFilter !== "all";
   const uncategorized = byCategory.get(UNCATEGORIZED) ?? [];
   const isEmpty = aiLinks.length === 0 && aiCategories.length === 0;
   const noResults =
@@ -219,15 +238,22 @@ export function AiPanel({
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: qk.aiLinks });
       const prev = qc.getQueryData<AiLink[]>(qk.aiLinks);
+      const prevRelations = qc.getQueryData<ProjectLink[]>(qk.projectLinks);
       setAiLinks((old) => old.filter((l) => l.id !== id));
-      return { prev };
+      // project_links rows cascade in the database; mirror that locally.
+      setProjectLinks((old) => old.filter((relation) => relation.ai_link_id !== id));
+      return { prev, prevRelations };
     },
     onSuccess: () => toast.ok(t.ai.linkDeleted),
     onError: (_e, _id, ctx) => {
       if (ctx?.prev) setAiLinks(ctx.prev);
+      if (ctx?.prevRelations) setProjectLinks(ctx.prevRelations);
       toast.err(t.ai.couldNotDelete);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.aiLinks }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.aiLinks });
+      void qc.invalidateQueries({ queryKey: qk.projectLinks });
+    },
   });
 
   /* ---- category mutations -------------------------------------------- */
@@ -425,7 +451,7 @@ export function AiPanel({
         description={t.ai.description}
         action={
           <div className="flex flex-wrap gap-2">
-          <LinkExportDialog links={aiLinks} categories={aiCategories} scope="link" />
+          <LinkExportDialog links={aiLinks} categories={aiCategories} scope="link" relations={exportRelations} />
           <Button size="sm" onClick={() => openCreate() }>
             <Plus className="h-3.5 w-3.5" />
             {t.ai.addLink}
@@ -456,7 +482,7 @@ export function AiPanel({
         </Card>
       ) : (
         <>
-          <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_auto_auto]">
+          <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_auto_auto_auto]">
             <div className="relative min-w-0">
               <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
               <Input aria-label={t.ai.searchPlaceholder} placeholder={t.ai.searchPlaceholder} value={query} onChange={e => setQuery(e.target.value)} className="pl-8" />
@@ -464,6 +490,7 @@ export function AiPanel({
             <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...aiCategories.map(cat => ({value:cat.id,label:`${cat.name} (${aiLinks.filter(link => link.category_id === cat.id).length})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
             <SimpleSelect aria-label={t.ai.pricing} value={pricingFilter} onValueChange={value => setPricingFilter(value as PricingFilter)} options={[{value:"all",label:t.ai.allPricing}, ...(["free","freemium","paid"] as const).map(value => ({value,label:t.ai.pricingLabel[value]})), {value:"unknown",label:t.ai.pricingUnknown}]} />
             <SimpleSelect aria-label={t.ai.sort} value={sort} onValueChange={value => setSort(value as LinkSort)} options={[{value:"name",label:t.ai.sortName},{value:"newest",label:t.ai.sortNewest}]} />
+            {projectIdsWithLinks.size > 0 && <SimpleSelect aria-label={t.ai.projectFilterLabel} value={projectFilter} onValueChange={setProjectFilter} options={[{value:"all",label:t.ai.allProjects}, ...projects.filter(project => projectIdsWithLinks.has(project.id)).map(project => ({value:project.id,label:project.name}))]} />}
           </div>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p role="status" className="text-xs text-foreground-muted">{t.ai.resultCount(visibleLinks.length + ideas.length,aiLinks.length)}</p>
@@ -525,6 +552,9 @@ export function AiPanel({
                             onToggle={() => toggleDetails(l.id)}
                             onEdit={() => openEdit(l)}
                             onDelete={() => removeLink(l)}
+                            usedBy={usedByFor(l)}
+                            isTool={toolLinkIds.has(l.id)}
+                            onAddToProject={() => setAddToProjectLink(l)}
                           />
                         ))
                       )}
@@ -538,10 +568,13 @@ export function AiPanel({
                       <LinkLibraryCard
                         key={l.id}
                         link={l}
-                            expanded={expandedIds.has(l.id)}
-                            onToggle={() => toggleDetails(l.id)}
+                        expanded={expandedIds.has(l.id)}
+                        onToggle={() => toggleDetails(l.id)}
                         onEdit={() => openEdit(l)}
                         onDelete={() => removeLink(l)}
+                        usedBy={usedByFor(l)}
+                        isTool={toolLinkIds.has(l.id)}
+                        onAddToProject={() => setAddToProjectLink(l)}
                       />
                     ))}
                   </CategoryGroup>
@@ -556,7 +589,7 @@ export function AiPanel({
           <div><h2 id="ideas-heading" className="text-base font-semibold">{t.ai.ideasTitle}</h2>
           <p className="text-xs text-foreground-muted">{t.ai.ideasHint}</p></div>
           <div className="flex flex-wrap gap-2">
-            <LinkExportDialog links={aiLinks} categories={aiCategories} scope="idea" />
+            <LinkExportDialog links={aiLinks} categories={aiCategories} scope="idea" relations={exportRelations} />
             <Button variant="outline" size="sm" onClick={() => openCreate("idea")}>{t.ai.addIdea}</Button>
           </div>
         </div>
@@ -573,12 +606,30 @@ export function AiPanel({
               onCancelRename={() => { setRenamingId(null); setRenameValue(""); }}
               onDelete={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) removeCategory(existing); }}
             >
-              {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} />)}
+              {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} usedBy={usedByFor(idea)} onAddToProject={() => setAddToProjectLink(idea)} />)}
             </CategoryGroup> : null;
           })}
         </div>
         {ideas.length === 0 && <p className="text-xs text-foreground-muted">{searching ? t.ai.noMatches : t.ai.ideaEmpty}</p>}
       </section>
+
+      <AddToProjectDialog
+        open={addToProjectLink !== null}
+        onOpenChange={(open) => !open && setAddToProjectLink(null)}
+        linkTitle={addToProjectLink?.title ?? ""}
+        projects={addToProjectLink ? activeProjects.filter((project) => !projectLinks.some((relation) => relation.project_id === project.id && relation.ai_link_id === addToProjectLink.id)) : []}
+        onSave={async ({ projectId, role, note }) => {
+          if (!addToProjectLink) return false;
+          const saved = await relationMutations.upsert([{
+            project_id: projectId,
+            ai_link_id: addToProjectLink.id,
+            role,
+            note,
+            sort_order: nextProjectLinkOrder(projectId, projectLinks),
+          }]);
+          return saved !== null;
+        }}
+      />
 
       <LinkDialog
         open={dialogOpen}

@@ -13,6 +13,7 @@ import {
   linkExportMarkdown,
   shapeLinkExport,
   UNCATEGORIZED_EXPORT,
+  type LinkExportRelations,
   type LinkExportScope,
   type LinkExportSelection,
   type LinkExportShape,
@@ -20,7 +21,7 @@ import {
 } from "@/lib/link-export";
 import type { AiCategory, AiLink } from "@/lib/types";
 
-export function LinkExportDialog({ links, categories, scope }: { links: AiLink[]; categories: AiCategory[]; scope: Exclude<LinkExportScope, "all"> }) {
+export function LinkExportDialog({ links, categories, scope, relations }: { links: AiLink[]; categories: AiCategory[]; scope: Exclude<LinkExportScope, "all">; relations?: LinkExportRelations }) {
   const t = useDict().ai;
   const [open, setOpen] = useState(false);
   const [format, setFormat] = useState("json");
@@ -43,7 +44,8 @@ export function LinkExportDialog({ links, categories, scope }: { links: AiLink[]
     selection,
     categoryIds: [...categoryIds],
     itemIds: [...itemIds],
-  }), [links, categories, pricing, scope, selection, categoryIds, itemIds]);
+    relations,
+  }), [links, categories, pricing, scope, selection, categoryIds, itemIds, relations]);
   const content = format === "json" ? JSON.stringify(shapeLinkExport(data, shape), null, 2) : linkExportMarkdown(data);
   const triggerLabel = scope === "idea" ? t.exportIdeasTitle : t.exportLinksTitle;
 

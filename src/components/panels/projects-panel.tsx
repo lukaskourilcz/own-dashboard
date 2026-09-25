@@ -88,6 +88,8 @@ import {
   projectMonthlyIn,
 } from "@/lib/projects";
 import type {
+  AiCategory,
+  AiLink,
   ClientOpportunity,
   Cron,
   ImportantDate,
@@ -100,6 +102,7 @@ import type {
   ProjectCommunication,
   ProjectCost,
   ProjectEngagement,
+  ProjectLink,
   Prompt,
   RepoLink,
   RepoNote,
@@ -173,6 +176,10 @@ type ProjectsPanelProps = {
   setRepoLinks: Updater<RepoLink[]>;
   communications: ProjectCommunication[];
   setCommunications: Updater<ProjectCommunication[]>;
+  aiLinks: AiLink[];
+  aiCategories: AiCategory[];
+  projectLinks: ProjectLink[];
+  setProjectLinks: Updater<ProjectLink[]>;
   syncRepositories?: boolean;
 };
 
@@ -203,6 +210,10 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       setRepoLinks={props.setRepoLinks}
       communications={props.communications}
       setCommunications={props.setCommunications}
+      aiLinks={props.aiLinks}
+      aiCategories={props.aiCategories}
+      projectLinks={props.projectLinks}
+      setProjectLinks={props.setProjectLinks}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
       onBackToProjects={props.onBackToProjects}
@@ -226,6 +237,7 @@ function ProjectsListPanel({
   organizations,
   importantDates,
   onOpenProject,
+  setProjectLinks,
 }: ProjectsPanelProps) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -662,6 +674,8 @@ function ProjectsListPanel({
     // Costs and crons cascade-delete in the DB; drop them from the cache too.
     setCosts((prev) => prev.filter((c) => c.project_id !== p.id));
     setCrons((prev) => prev.filter((c) => c.project_id !== p.id));
+    setProjectLinks((prev) => prev.filter((relation) => relation.project_id !== p.id));
+    void qc.invalidateQueries({ queryKey: qk.projectLinks });
     if (form.id === p.id) setForm(emptyProjectForm);
     void qc.invalidateQueries({ queryKey: qk.projects });
   }

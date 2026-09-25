@@ -29,6 +29,7 @@ import type {
   Project,
   ProjectCommunication,
   ProjectCost,
+  ProjectLink,
   Prompt,
   ReferenceRow,
   RepoLink,
@@ -331,6 +332,18 @@ export async function fetchAiCategories(): Promise<AiCategory[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as AiCategory[];
+}
+
+export async function fetchProjectLinks(): Promise<ProjectLink[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("project_links")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(2000);
+  if (error) throw error;
+  return (data ?? []) as ProjectLink[];
 }
 
 export async function fetchSpendCategories(): Promise<SpendCategory[]> {

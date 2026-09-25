@@ -48,6 +48,7 @@ export function DemoDashboard({
       initialRepoLinks={f.repoLinks}
       initialAiLinks={f.aiLinks}
       initialAiCategories={f.aiCategories}
+      initialProjectLinks={f.projectLinks}
       initialShortcuts={f.shortcuts}
       initialReferenceRows={f.referenceRows}
       initialImportantDates={f.importantDates}

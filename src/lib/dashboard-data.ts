@@ -20,6 +20,7 @@ export const DASHBOARD_DATA_KEYS = [
   "repoLinks",
   "aiLinks",
   "aiCategories",
+  "projectLinks",
   "shortcuts",
   "referenceRows",
   "importantDates",
@@ -89,6 +90,9 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "organizations",
     "opportunities",
     "inboxItems",
+    "aiLinks",
+    "aiCategories",
+    "projectLinks",
   ],
   opportunities: ["projects", "organizations", "opportunities"],
   clients: [
@@ -129,7 +133,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   dates: ["importantDates", "projects", "organizations"],
   notes: ["notes", "projects", "organizations", "opportunities", "jobApplications"],
   prompts: ["prompts", "projects"],
-  links: ["aiLinks", "aiCategories"],
+  links: ["aiLinks", "aiCategories", "projectLinks", "projects"],
   references: ["shortcuts", "referenceRows"],
   settings: ["projects"],
 };

@@ -1,4 +1,4 @@
-import type { AiCategory, AiLink } from "@/lib/types";
+import type { AiCategory, AiLink, Project, ProjectLink } from "@/lib/types";
 
 /** Older descriptions embedded a score; the structured review supersedes it. */
 export function linkDescription(link: AiLink) {
@@ -12,11 +12,18 @@ export type LinkExportScope = "link" | "idea" | "all";
 export type LinkExportSelection = "all" | "categories" | "items";
 export type LinkExportShape = "detailed" | "compact" | "grouped";
 
+export type LinkExportRelations = {
+  projectLinks: ProjectLink[];
+  projects: Pick<Project, "id" | "name" | "slug">[];
+};
+
 export type LinkExportOptions = {
   scope?: LinkExportScope;
   selection?: LinkExportSelection;
   categoryIds?: string[];
   itemIds?: string[];
+  /** project_links rows; each item lists the projects that use it. */
+  relations?: LinkExportRelations;
 };
 
 function matchesPricing(link: AiLink, pricing: LinkPricingFilter) {
@@ -62,8 +69,18 @@ export function buildLinkExport(
   const names = new Map(categories.map((category) => [category.id, category.name]));
   const scope = options.scope ?? "all";
   const selection = options.selection ?? "all";
+  const projectsById = new Map((options.relations?.projects ?? []).map((project) => [project.id, project]));
+  const usedBy = (linkId: string) =>
+    (options.relations?.projectLinks ?? [])
+      .filter((relation) => relation.ai_link_id === linkId && projectsById.has(relation.project_id))
+      .map((relation) => {
+        const project = projectsById.get(relation.project_id)!;
+        return { project: project.name, slug: project.slug, role: relation.role, note: relation.note };
+      })
+      .sort((a, b) => a.project.localeCompare(b.project));
   return {
-    version: 2,
+    // 3 adds `usedBy`: the projects that use each link (project_links).
+    version: 3,
     scope,
     selection,
     pricingFilter: pricing,
@@ -82,6 +99,7 @@ export function buildLinkExport(
       sources: link.source_urls ?? [],
       pricingEvidence: link.pricing_evidence ?? null,
       reviewedAt: link.reviewed_at ?? null,
+      usedBy: usedBy(link.id),
     })),
   };
 }
@@ -129,6 +147,7 @@ export function linkExportMarkdown(data: LinkExportData) {
       "Usefulness: " + (l.usefulnessRating == null ? "Not rated" : l.usefulnessRating + "/5"), "",
       l.description ?? "", "",
       ...(l.ratingRationale ? ["Benefit: " + l.ratingRationale, ""] : []),
+      ...(l.usedBy.length ? ["Used by:", ...l.usedBy.map((u) => "- " + escapeMd(u.project) + " (" + u.role + ")" + (u.note ? ": " + u.note : "")), ""] : []),
       ...l.projectRelevance.map((p) => "- " + escapeMd(p.repository) + ": " + p.reason),
       ...(l.sources.length ? ["", "Sources:", ...l.sources.map((s) => "- " + s)] : []),
       ...(l.pricingEvidence ? ["", "Pricing evidence: " + l.pricingEvidence] : []),

@@ -4,6 +4,12 @@ Links stores tools and references; Ideas appears immediately below it and stores
 
 A review can include a 1–5 usefulness score, rationale, repository-specific relevance, source URLs, pricing evidence and review date. These are advisory research metadata, not authorization or project foreign keys. Original descriptions remain stored; a legacy leading `N/5 ·` is hidden when a structured score supersedes it.
 
+## Links used by projects
+
+`project_links` records which library links a project really uses: one row per project and link, with a role (`uses`, `reference` or `tool`) and a note on how the link helps that project. Both parents must belong to the owner, and deleting a link or a project deletes its relations. Each link card shows "Used by" chips (three, then a count) and an "Add to project" action; the toolbar filters the library to one project's links. Every project workspace lists its links on the Overview tab, where the owner adds links from a searchable picker (pages of 50), edits the note inline, and opens, copies or removes each link. The Link and Idea exports are `version: 3` and list the using projects under `usedBy`.
+
+`ai_links.project_relevance` is deprecated. It stays readable for now; `node scripts/backfill-project-links.mjs --apply` copies each `{repository, reason}` into a `project_links` row with the reason as note, resolving the repository by current or previous name, slug or project name and listing anything it cannot resolve.
+
 Links and Ideas have separate export dialogs. Each dialog can include all records, selected categories, or individual records, then apply a price filter. JSON supports a detailed flat list, compact flat list, or category-grouped structure; Markdown uses the same selected records. Price filters distinguish free, freemium-only, paid, and unknown records, while the combined free + freemium option remains available. Unknown prices are never inferred to be free. Export fields omit the owner identifier. Clipboard denial leaves selectable preview text.
 
 Idea rows use the idea or goal as their primary label. Instagram and other source URLs appear inside the expanded summary with the observed subject, practical benefit, project relevance, and evidence. They do not replace the idea label.

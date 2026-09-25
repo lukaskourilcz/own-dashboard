@@ -128,6 +128,30 @@ type AiStrings = {
   noLinksDescription: string;
   noMatches: string;
   noMatchesDescription: string;
+  usedBy: string;
+  usedByMore: (n: number) => string;
+  addToProject: string;
+  addToProjectDescription: string;
+  project: string;
+  allProjects: string;
+  relationNote: string;
+  relationNotePlaceholder: string;
+  relationRole: string;
+  roleLabel: Record<"uses" | "reference" | "tool", string>;
+  relationAdded: string;
+  relationSaved: string;
+  relationRemoved: string;
+  relationFailed: string;
+  allProjectsLinked: string;
+  pickerTitle: string;
+  pickerDescription: string;
+  pickerSingleDescription: string;
+  pickerAdd: (n: number) => string;
+  pickerEmpty: string;
+  pickerShowMore: (shown: number, total: number) => string;
+  pickerResults: (n: number) => string;
+  toolBadge: string;
+  projectFilterLabel: string;
 };
 
 export const ai: { en: AiStrings; cs: AiStrings } = {
@@ -261,6 +285,30 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     noLinksDescription: "Add a link to start your collection.",
     noMatches: "No matches",
     noMatchesDescription: "Try a different search.",
+    usedBy: "Used by",
+    usedByMore: (n) => `+${n} more`,
+    addToProject: "Add to project",
+    addToProjectDescription: "Record that a project uses this link and how it helps.",
+    project: "Project",
+    allProjects: "All projects",
+    relationNote: "How it helps",
+    relationNotePlaceholder: "What this project uses it for\u2026",
+    relationRole: "Role",
+    roleLabel: { uses: "Uses", reference: "Reference", tool: "Tool" },
+    relationAdded: "Added to the project.",
+    relationSaved: "Saved.",
+    relationRemoved: "Removed from the project.",
+    relationFailed: "Could not update the project links.",
+    allProjectsLinked: "Every active project already uses this link.",
+    pickerTitle: "Add links",
+    pickerDescription: "Search the library and choose one or more links.",
+    pickerSingleDescription: "Search the library and choose one link.",
+    pickerAdd: (n) => (n > 0 ? `Add ${n}` : "Add"),
+    pickerEmpty: "No library links match.",
+    pickerShowMore: (shown, total) => `Show more (${shown} of ${total})`,
+    pickerResults: (n) => `${n} link${n === 1 ? "" : "s"}`,
+    toolBadge: "Tool",
+    projectFilterLabel: "Used by project",
   },
   cs: {
     exportTitle: "Kopírovat do JSON / Markdown",
@@ -392,5 +440,29 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     noLinksDescription: "Přidej odkaz a začni svou sbírku.",
     noMatches: "Žádné výsledky",
     noMatchesDescription: "Zkus jiné hledání.",
+    usedBy: "Pou\u017e\u00edv\u00e1",
+    usedByMore: (n) => `+${n} další`,
+    addToProject: "P\u0159idat k projektu",
+    addToProjectDescription: "Zaznamenejte, \u017ee projekt odkaz pou\u017e\u00edv\u00e1 a jak mu pom\u00e1h\u00e1.",
+    project: "Projekt",
+    allProjects: "V\u0161echny projekty",
+    relationNote: "Jak pom\u00e1h\u00e1",
+    relationNotePlaceholder: "K \u010demu ho projekt pou\u017e\u00edv\u00e1\u2026",
+    relationRole: "Role",
+    roleLabel: { uses: "Používá", reference: "Reference", tool: "Nástroj" },
+    relationAdded: "P\u0159id\u00e1no k projektu.",
+    relationSaved: "Ulo\u017eeno.",
+    relationRemoved: "Odebr\u00e1no z projektu.",
+    relationFailed: "Odkazy projektu se nepoda\u0159ilo upravit.",
+    allProjectsLinked: "V\u0161echny aktivn\u00ed projekty u\u017e tento odkaz pou\u017e\u00edvaj\u00ed.",
+    pickerTitle: "P\u0159idat odkazy",
+    pickerDescription: "Vyhledejte v knihovn\u011b a vyberte jeden nebo v\u00edce odkaz\u016f.",
+    pickerSingleDescription: "Vyhledejte v knihovn\u011b a vyberte jeden odkaz.",
+    pickerAdd: (n) => (n > 0 ? `Přidat ${n}` : "Přidat"),
+    pickerEmpty: "\u017d\u00e1dn\u00fd odkaz z knihovny neodpov\u00edd\u00e1.",
+    pickerShowMore: (shown, total) => `Zobrazit další (${shown} z ${total})`,
+    pickerResults: (n) => `${n} ${n === 1 ? "odkaz" : n < 5 ? "odkazy" : "odkazů"}`,
+    toolBadge: "N\u00e1stroj",
+    projectFilterLabel: "Pou\u017e\u00edv\u00e1 projekt",
   },
 };

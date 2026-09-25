@@ -527,6 +527,23 @@ export type AiLink = {
   updated_at: string;
 };
 
+// A library link a project really uses. role "tool" rows carry the Tools
+// section's per-project note on how the tool helps. Own-only RLS with
+// ownership checks on both the project and the link.
+export type ProjectLinkRole = "uses" | "reference" | "tool";
+
+export type ProjectLink = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  ai_link_id: string;
+  role: ProjectLinkRole;
+  note: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 // ---------------------------------------------------------------------------
 // Jobs — daily-scraped remote-friendly European job listings (global rows,
 // written by the cron with the service role) plus the user's application

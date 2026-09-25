@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ExternalLink, Lightbulb, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ExternalLink, FolderPlus, Lightbulb, Pencil, Trash2 } from "lucide-react";
+import { EntityBadge } from "@/components/ui/status-badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
 import { linkDescription } from "@/lib/link-export";
 import { resourceKey } from "@/lib/link-library";
+import { chipOverflow } from "@/lib/project-links";
 import type { AiLink, AiPricing } from "@/lib/types";
 
 function hostOf(url: string) {
@@ -28,10 +30,16 @@ export function PricingDot({ pricing }: { pricing: AiPricing | null }) {
   return <span role="img" aria-label={label} title={label} className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-foreground/30 ${pricing ? color[pricing] : "bg-transparent"}`} />;
 }
 
-export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete }: {
+export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete, usedBy = [], isTool = false, onAddToProject }: {
   link: AiLink; expanded: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void;
+  /** Projects that use this link (project_links), shown as chips. */
+  usedBy?: { id: string; name: string }[];
+  /** The link is in the Tools section. */
+  isTool?: boolean;
+  onAddToProject?: () => void;
 }) {
   const t = useDict();
+  const chips = chipOverflow(usedBy);
   const safeUrl = resourceKey(link.url) ? link.url : undefined;
   const isIdea = link.record_type === "idea";
   const sourceUrls = (link.source_urls ?? []).filter((url) => /^https?:\/\//i.test(url));
@@ -46,6 +54,16 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete }: 
           <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 text-foreground-muted transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} />
         </button>
         {!isIdea && <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${t.ai.visit}: ${link.title}`} title={link.url} className="focus-ring ml-8 flex min-h-7 min-w-0 items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground hover:underline sm:min-h-5"><span className="truncate">{hostOf(link.url)}</span><ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>}
+        {(usedBy.length > 0 || isTool) && <div className="ml-8 mt-1 flex min-w-0 flex-wrap items-center gap-1 text-[11px] text-foreground-muted">
+          {isTool && <EntityBadge className="min-h-5 py-0">{t.ai.toolBadge}</EntityBadge>}
+          {usedBy.length > 0 && <>
+            <span>{t.ai.usedBy}</span>
+            <ul className="flex min-w-0 flex-wrap items-center gap-1" aria-label={`${t.ai.usedBy}: ${link.title}`}>
+              {chips.shown.map((project) => <li key={project.id}><EntityBadge className="min-h-5 max-w-40 truncate py-0">{project.name}</EntityBadge></li>)}
+              {chips.hidden > 0 && <li><span className="px-1">{t.ai.usedByMore(chips.hidden)}</span></li>}
+            </ul>
+          </>}
+        </div>}
       </div>
       <PricingDot pricing={link.pricing} />
       <div className="flex shrink-0">
@@ -72,6 +90,8 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete }: 
             <ul className="mt-1 space-y-1 break-all">{sourceUrls.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer" className="underline">{url}</a></li>)}</ul>
           </details>)}
       {!isIdea && <a href={safeUrl} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 rounded text-foreground underline [overflow-wrap:anywhere] sm:min-h-8">{link.url}<ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>}
+      {usedBy.length > 0 && <p className="text-xs"><span className="font-medium text-foreground">{t.ai.usedBy}:</span> {usedBy.map((project) => project.name).join(", ")}</p>}
+      {onAddToProject && <button type="button" onClick={onAddToProject} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded text-xs font-medium text-foreground underline sm:min-h-8"><FolderPlus aria-hidden="true" className="h-3.5 w-3.5" />{t.ai.addToProject}</button>}
     </div>
   </article>;
 }
