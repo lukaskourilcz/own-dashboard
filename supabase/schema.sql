@@ -1,8 +1,19 @@
 -- OwnDashboard historic baseline schema.
--- Fresh installations run this once, then every file in supabase/migrations
--- in timestamp order. Existing installations must not re-run this baseline.
+-- Fresh installations run this once, create the one owner account in
+-- Supabase Auth, then run every file in supabase/migrations in timestamp
+-- order. 20260908063200_seed_owner_saved_positions.sql raises an exception
+-- unless auth.users holds exactly one row. Existing installations must not
+-- re-run this baseline.
 -- The migrations archive and remove the retired personal/couples tables below;
 -- they remain here only so a fresh database can execute the same safe upgrade.
+--
+-- This file is frozen at the schema the first migration
+-- (20260721165419_professional_restructure_core.sql) was written against.
+-- Never copy a migration's objects back into it. A copied block runs before
+-- the migrations it depends on and collides with the migration that owns it:
+-- the saved_job_positions copy stopped every fresh install at that
+-- migration's first bare create policy. Every schema change is a new file in
+-- supabase/migrations.
 
 -- =============================================================
 -- Subscriptions
@@ -1054,7 +1065,6 @@ create table if not exists public.prompts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
-  description text not null default '',
   body text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -1080,15 +1090,6 @@ create policy "prompts update own" on public.prompts
 drop policy if exists "prompts delete own" on public.prompts;
 create policy "prompts delete own" on public.prompts
   for delete using (auth.uid() = user_id);
-
--- The kind of job a prompt does; the Prompts page groups by it.
-alter table public.prompts
-  add column if not exists kind text not null default 'other';
-alter table public.prompts
-  drop constraint if exists prompts_kind_check;
-alter table public.prompts
-  add constraint prompts_kind_check
-  check (kind in ('design', 'audit', 'competition', 'ux-ui', 'analysis', 'documentation', 'new-project', 'seo', 'marketing', 'other'));
 
 -- =============================================================
 -- Repo notes — quick notes attached to a GitHub repo (keyed by numeric id,
@@ -1477,40 +1478,6 @@ drop policy if exists "job_user_state delete own" on public.job_user_state;
 create policy "job_user_state delete own" on public.job_user_state
   for delete using (auth.uid() = user_id);
 
-create table if not exists public.saved_job_positions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  listing_id uuid references public.job_listings(id) on delete set null,
-  title text not null,
-  company text,
-  url text not null,
-  source text,
-  location text,
-  description text,
-  cover_letter text not null default '',
-  notes text,
-  saved_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id, url)
-);
-
-create index if not exists saved_job_positions_user_saved_idx
-  on public.saved_job_positions (user_id, saved_at desc);
-
-alter table public.saved_job_positions enable row level security;
-grant select, insert, update, delete on public.saved_job_positions to authenticated;
-grant select, insert, update, delete on public.saved_job_positions to service_role;
-
-create policy "saved_job_positions select own" on public.saved_job_positions
-  for select to authenticated using ((select auth.uid()) = user_id);
-create policy "saved_job_positions insert own" on public.saved_job_positions
-  for insert to authenticated with check ((select auth.uid()) = user_id);
-create policy "saved_job_positions update own" on public.saved_job_positions
-  for update to authenticated using ((select auth.uid()) = user_id)
-  with check ((select auth.uid()) = user_id);
-create policy "saved_job_positions delete own" on public.saved_job_positions
-  for delete to authenticated using ((select auth.uid()) = user_id);
-
 -- One row per application the user submitted. Job fields are SNAPSHOTTED
 -- from the listing at apply time (listing_id is only a soft link, nulled
 -- when the listing is pruned) so the history stays intact even after the
@@ -1777,31 +1744,6 @@ create table if not exists public.projects (
 create index if not exists projects_user_idx
   on public.projects (user_id, sort_order, created_at);
 
--- GitHub repository identity: the numeric id survives renames, and the earlier
--- names keep NEEDED.md tasks imported under an old name attached.
-alter table public.projects
-  add column if not exists repo_id bigint,
-  add column if not exists previous_repo_full_names text[] not null default '{}';
-
-create unique index if not exists projects_user_repo_id_key
-  on public.projects (user_id, repo_id)
-  where repo_id is not null;
-
--- Own products versus freelance client work, and earlier slugs that still
--- resolve (renamed project URLs and cron registry calls).
-alter table public.projects
-  add column if not exists engagement text not null default 'own',
-  add column if not exists previous_slugs text[] not null default '{}';
-
-alter table public.projects
-  drop constraint if exists projects_engagement_check;
-alter table public.projects
-  add constraint projects_engagement_check
-  check (engagement in ('own', 'client'));
-
-create index if not exists projects_previous_slugs_idx
-  on public.projects using gin (previous_slugs);
-
 alter table public.projects enable row level security;
 
 drop policy if exists "projects select own" on public.projects;
@@ -1906,141 +1848,3 @@ create policy "crons update own" on public.crons
 drop policy if exists "crons delete own" on public.crons;
 create policy "crons delete own" on public.crons
   for delete using (auth.uid() = user_id);
-
--- Links a project really uses (role uses | reference | tool) with a note on
--- how each helps that project. Both parents must belong to the owner.
-create table if not exists public.project_links (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  project_id uuid not null references public.projects(id) on delete cascade,
-  ai_link_id uuid not null references public.ai_links(id) on delete cascade,
-  role text not null default 'uses' check (role in ('uses', 'reference', 'tool')),
-  note text not null default '',
-  sort_order integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (project_id, ai_link_id)
-);
-
-create index if not exists project_links_user_idx
-  on public.project_links (user_id, project_id, sort_order);
-create index if not exists project_links_link_idx
-  on public.project_links (ai_link_id);
-
-alter table public.project_links enable row level security;
-grant select, insert, update, delete on public.project_links to authenticated;
-grant select, insert, update, delete on public.project_links to service_role;
-
-drop policy if exists "project_links select own" on public.project_links;
-create policy "project_links select own" on public.project_links
-  for select to authenticated using ((select auth.uid()) = user_id);
-drop policy if exists "project_links insert own" on public.project_links;
-create policy "project_links insert own" on public.project_links
-  for insert to authenticated with check (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.projects p where p.id = project_id and p.user_id = (select auth.uid()))
-    and exists (select 1 from public.ai_links l where l.id = ai_link_id and l.user_id = (select auth.uid()))
-  );
-drop policy if exists "project_links update own" on public.project_links;
-create policy "project_links update own" on public.project_links
-  for update to authenticated using ((select auth.uid()) = user_id)
-  with check (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.projects p where p.id = project_id and p.user_id = (select auth.uid()))
-    and exists (select 1 from public.ai_links l where l.id = ai_link_id and l.user_id = (select auth.uid()))
-  );
-drop policy if exists "project_links delete own" on public.project_links;
-create policy "project_links delete own" on public.project_links
-  for delete to authenticated using ((select auth.uid()) = user_id);
-
--- Library links a prompt tells an agent to open, with a per-link note. Both
--- the prompt and the link must belong to the owner.
-create table if not exists public.prompt_links (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  prompt_id uuid not null references public.prompts(id) on delete cascade,
-  ai_link_id uuid not null references public.ai_links(id) on delete cascade,
-  note text not null default '',
-  sort_order integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (prompt_id, ai_link_id)
-);
-
-create index if not exists prompt_links_user_idx
-  on public.prompt_links (user_id, prompt_id, sort_order);
-create index if not exists prompt_links_link_idx
-  on public.prompt_links (ai_link_id);
-
-alter table public.prompt_links enable row level security;
-grant select, insert, update, delete on public.prompt_links to authenticated;
-grant select, insert, update, delete on public.prompt_links to service_role;
-
-drop policy if exists "prompt_links select own" on public.prompt_links;
-create policy "prompt_links select own" on public.prompt_links
-  for select to authenticated using ((select auth.uid()) = user_id);
-drop policy if exists "prompt_links insert own" on public.prompt_links;
-create policy "prompt_links insert own" on public.prompt_links
-  for insert to authenticated with check (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.prompts pr where pr.id = prompt_id and pr.user_id = (select auth.uid()))
-    and exists (select 1 from public.ai_links l where l.id = ai_link_id and l.user_id = (select auth.uid()))
-  );
-drop policy if exists "prompt_links update own" on public.prompt_links;
-create policy "prompt_links update own" on public.prompt_links
-  for update to authenticated using ((select auth.uid()) = user_id)
-  with check (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.prompts pr where pr.id = prompt_id and pr.user_id = (select auth.uid()))
-    and exists (select 1 from public.ai_links l where l.id = ai_link_id and l.user_id = (select auth.uid()))
-  );
-drop policy if exists "prompt_links delete own" on public.prompt_links;
-create policy "prompt_links delete own" on public.prompt_links
-  for delete to authenticated using ((select auth.uid()) = user_id);
-
--- Tools actually in use: a library link, what it does, a status and an
--- optional subscription for its monthly cost. Per-project notes live in
--- project_links (role = 'tool').
-create table if not exists public.tools (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  ai_link_id uuid not null references public.ai_links(id) on delete cascade,
-  name text,
-  what_it_does text not null,
-  status text not null default 'in_use' check (status in ('in_use', 'trial', 'retired')),
-  subscription_id uuid references public.subscriptions(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id, ai_link_id)
-);
-
-create index if not exists tools_user_status_idx
-  on public.tools (user_id, status);
-create index if not exists tools_subscription_idx
-  on public.tools (subscription_id);
-
-alter table public.tools enable row level security;
-grant select, insert, update, delete on public.tools to authenticated;
-grant select, insert, update, delete on public.tools to service_role;
-
-drop policy if exists "tools select own" on public.tools;
-create policy "tools select own" on public.tools
-  for select to authenticated using ((select auth.uid()) = user_id);
-drop policy if exists "tools insert own" on public.tools;
-create policy "tools insert own" on public.tools
-  for insert to authenticated with check (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.ai_links l where l.id = ai_link_id and l.user_id = (select auth.uid()))
-    and (subscription_id is null or exists (select 1 from public.subscriptions s where s.id = subscription_id and s.user_id = (select auth.uid())))
-  );
-drop policy if exists "tools update own" on public.tools;
-create policy "tools update own" on public.tools
-  for update to authenticated using ((select auth.uid()) = user_id)
-  with check (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.ai_links l where l.id = ai_link_id and l.user_id = (select auth.uid()))
-    and (subscription_id is null or exists (select 1 from public.subscriptions s where s.id = subscription_id and s.user_id = (select auth.uid())))
-  );
-drop policy if exists "tools delete own" on public.tools;
-create policy "tools delete own" on public.tools
-  for delete to authenticated using ((select auth.uid()) = user_id);
