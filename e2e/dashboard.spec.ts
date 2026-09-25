@@ -180,12 +180,12 @@ test.describe("dashboard sections", () => {
       await expect(input).toBeHidden();
 
       // `g r` and `g i` no longer navigate.
-      await page.locator("#main-content").click({ position: { x: 5, y: 5 } });
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await page.keyboard.press("g");
       await page.keyboard.press("r");
       await page.keyboard.press("g");
       await page.keyboard.press("i");
-      await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
+      await expect(page.locator("header").getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
 
       // Settings lists neither section.
       await sidebar.getByRole("button", { name: "Settings" }).click();
@@ -195,10 +195,10 @@ test.describe("dashboard sections", () => {
 
     // Both routes still render, with a note that they are hidden.
     await page.goto("/dev-preview?tab=inbox");
-    await expect(page.getByRole("heading", { level: 1, name: "Inbox" })).toBeVisible();
+    await expect(page.locator("header").getByRole("heading", { level: 1, name: "Inbox" })).toBeVisible();
     await expect(page.getByText("Hidden from navigation.", { exact: false })).toBeVisible();
     await page.goto("/dev-preview?tab=references");
-    await expect(page.getByRole("heading", { level: 1, name: "References" })).toBeVisible();
+    await expect(page.locator("header").getByRole("heading", { level: 1, name: "References" })).toBeVisible();
     await expect(page.getByText("Hidden from navigation.", { exact: false })).toBeVisible();
   });
 
