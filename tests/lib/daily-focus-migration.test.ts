@@ -1,9 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+const read = (file: string) =>
+  readFileSync(
+    new URL(`../../supabase/migrations/${file}`, import.meta.url),
+    "utf8",
+  );
+
 const sql = [
   "20260723065433_daily_focus_synced_preferences.sql",
   "20260723082424_sync_preferences_project_tabs.sql",
+  "20260925090000_project_repository_identity.sql",
 ]
   .map((file) =>
     readFileSync(
@@ -32,5 +39,17 @@ describe("daily focus migration contract", () => {
     expect(sql).toMatch(/daily_focus_sets enable row level security/i);
     expect(sql).toMatch(/daily_focus_items enable row level security/i);
     expect(sql.match(/\(select auth\.uid\(\)\) = user_id/g)?.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it("resolves imported tasks by repository id and previous names", () => {
+    const latest = read("20260925090000_project_repository_identity.sql");
+    expect(latest).toMatch(/add column if not exists repo_id bigint/i);
+    expect(latest).toMatch(/previous_repo_full_names text\[\] not null default '\{\}'/i);
+    expect(latest).toMatch(/create unique index if not exists projects_user_repo_id_key[\s\S]+where repo_id is not null/i);
+    expect(latest).toMatch(/t\.repo_id = project\.repo_id::text/i);
+    expect(latest).toMatch(/unnest\(project\.previous_repo_full_names\)/i);
+    expect(latest).toMatch(/lower\(project\.repo_full_name\) = lower\(t\.repo_full_name\)/i);
+    expect(latest).toMatch(/security invoker/i);
+    expect(latest).toMatch(/revoke all on function public\.create_daily_focus_set\(boolean\) from anon/i);
   });
 });

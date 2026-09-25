@@ -73,6 +73,25 @@ export async function loadReposResult(): Promise<LoadReposResult> {
   }
 }
 
+/** Resolve an owner/name (current or pre-rename) to the repository's id and
+ * current full name. Null when GitHub is disconnected or the name is unknown. */
+export async function lookupRepoIdentity(
+  fullName: string,
+): Promise<{ id: number; full_name: string } | null> {
+  try {
+    const res = await fetch(
+      `/api/github/repos/lookup?repo=${encodeURIComponent(fullName)}`,
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { id?: unknown; full_name?: unknown };
+    return typeof json.id === "number" && typeof json.full_name === "string"
+      ? { id: json.id, full_name: json.full_name }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export type CommitInput = {
   owner: string;
   repo: string;

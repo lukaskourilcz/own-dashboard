@@ -48,6 +48,7 @@ import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
 import { useReposQuery } from "@/lib/github-queries";
 import { commitFile, loadRepoFile } from "@/lib/github";
+import { findProjectForTask } from "@/lib/project-match";
 import {
   NEEDED_FILE,
   removeNeededLine,
@@ -470,17 +471,7 @@ export function TodosPanel({
     .filter((td) => td.is_global)
     .sort(byImportanceThenDue);
 
-  const projectById = new Map(projects.map((project) => [project.id, project]));
-  const projectByRepo = new Map(
-    projects
-      .filter((project) => project.repo_full_name)
-      .map((project) => [project.repo_full_name!.toLowerCase(), project]),
-  );
-  const projectForTodo = (todo: Todo) =>
-    (todo.project_id ? projectById.get(todo.project_id) : undefined) ??
-    (todo.repo_full_name
-      ? projectByRepo.get(todo.repo_full_name.toLowerCase())
-      : undefined);
+  const projectForTodo = (todo: Todo) => findProjectForTask(todo, projects);
 
   const taskGroupMap = new Map<
     string,

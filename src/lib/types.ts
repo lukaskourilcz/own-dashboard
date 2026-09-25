@@ -397,9 +397,13 @@ export type Project = {
   id: string;
   user_id: string;
   name: string;
-  // Stable handle used by the cron registry API (e.g. "aifirst").
+  // Stable handle used by the cron registry API (e.g. "dneskai").
   slug: string;
   repo_full_name: string | null;
+  // GitHub repository id. Stable across renames; the primary repository match.
+  repo_id?: number | null;
+  // Earlier owner/name values of the linked repository, oldest first.
+  previous_repo_full_names?: string[];
   url: string | null;
   dev_url?: string | null;
   notes: string;

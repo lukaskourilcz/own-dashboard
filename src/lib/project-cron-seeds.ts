@@ -2,11 +2,13 @@
  * Known scheduled jobs for specific repos, so a repo-backed project can wire up
  * its crons automatically instead of the user re-entering them by hand.
  *
- * Keyed by `repo_full_name` (lowercased). Each entry mirrors a `schedule: cron:`
- * block in that repo's `.github/workflows/*.yml`. When the Projects panel
- * materializes a project for one of these repos, it seeds these crons against
- * the new project (see `projects-panel.tsx`). `cost_per_run` is intentionally
- * left to the user — we know the schedule, not the per-run price.
+ * Keyed by the project slug, which is ours and stable. A GitHub repository
+ * rename changes `repo_full_name` but never the slug, so a renamed repository
+ * keeps its seeds. Each entry mirrors a `schedule: cron:` block in that repo's
+ * `.github/workflows/*.yml`. When the Projects panel links a project to its
+ * repository, it seeds these crons against the project (see
+ * `projects-panel.tsx`). `cost_per_run` is intentionally left to the user — we
+ * know the schedule, not the per-run price.
  */
 
 export type CronSeed = {
@@ -21,10 +23,10 @@ export type CronSeed = {
   runs_per_month: number;
 };
 
-export const REPO_CRON_SEEDS: Record<string, CronSeed[]> = {
+export const PROJECT_CRON_SEEDS: Record<string, CronSeed[]> = {
   // aifirst — a daily/weekly content pipeline driven by GitHub Actions.
   // Derived from .github/workflows/daily.yml and weekly.yml.
-  "lukaskourilcz/aifirst": [
+  aifirst: [
     {
       name: "Denní generování článku",
       schedule: "0 6 * * *",
@@ -46,8 +48,7 @@ export const REPO_CRON_SEEDS: Record<string, CronSeed[]> = {
   ],
 };
 
-/** Cron seeds for a repo, matched case-insensitively by full name. */
-export function cronSeedsForRepo(repoFullName: string | null): CronSeed[] {
-  if (!repoFullName) return [];
-  return REPO_CRON_SEEDS[repoFullName.toLowerCase()] ?? [];
+/** Cron seeds for a project, matched by its slug. */
+export function cronSeedsForProject(project: { slug: string }): CronSeed[] {
+  return PROJECT_CRON_SEEDS[project.slug.toLowerCase()] ?? [];
 }

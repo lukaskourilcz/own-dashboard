@@ -44,6 +44,7 @@ import { tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-da
 import type { WidgetId } from "@/lib/dashboard-layout";
 import { tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { useEntityStore } from "@/lib/queries/entities";
+import { taskBelongsToProject } from "@/lib/project-match";
 import {
   fetchAccounts,
   fetchAiCategories,
@@ -237,16 +238,11 @@ export function DashboardShell(props: Props) {
   );
   const operationalTodos = useMemo(() => {
     const activeIds = new Set(activeProjects.map((project) => project.id));
-    const activeRepos = new Set(
-      activeProjects
-        .map((project) => project.repo_full_name?.toLocaleLowerCase())
-        .filter((value): value is string => Boolean(value)),
-    );
     return todos.filter((todo) => {
       if (todo.is_global) return true;
       if (todo.project_id) return activeIds.has(todo.project_id);
-      if (todo.repo_full_name) {
-        return activeRepos.has(todo.repo_full_name.toLocaleLowerCase());
+      if (todo.repo_full_name || todo.repo_id) {
+        return activeProjects.some((project) => taskBelongsToProject(todo, project));
       }
       return true;
     });

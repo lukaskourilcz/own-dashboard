@@ -109,3 +109,21 @@ OwnDashboard remains the temporary confirmed name. When a replacement name is ap
 - Ask installed-PWA users to reinstall/refresh after deployment so the new manifest name and icons replace cached metadata.
 
 Do not rename the product to Takt; that name was explicitly rejected.
+
+### Renaming a project repository
+
+Projects are matched to GitHub by the numeric repository id (`projects.repo_id`), which survives a rename. Before renaming a repository on GitHub:
+
+1. Apply `20260925090000_project_repository_identity.sql`.
+2. Fill `repo_id` for existing projects. Either open Projects once while GitHub is connected (the auto-sync writes the id for every project whose repository is in the active list), or run the backfill with your own token:
+
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… GITHUB_TOKEN=… DASHBOARD_OWNER_ID=… \
+     node scripts/backfill-project-repo-ids.mjs          # dry run
+   node scripts/backfill-project-repo-ids.mjs --apply    # same variables, writes
+   ```
+
+3. Rename the repository on GitHub, then update the local `origin` remote, the Vercel Git link and any Actions secrets that name the repository.
+4. Open Projects. The auto-sync finds the repository by id, writes the new `repo_full_name` and appends the old one to `previous_repo_full_names`. Tasks imported under the old name, crons, costs and communications stay on the same project; no second project is created. If the id was never stored, the sync looks the old name up on GitHub (which redirects renamed repositories) before it would create anything.
+
+The project's display name and slug do not follow the repository name; change them in the project form. Cron seeds are keyed by slug, so a repository rename never loses them.

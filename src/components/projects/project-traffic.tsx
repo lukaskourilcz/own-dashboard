@@ -17,8 +17,10 @@ type TrafficResponse =
       daily: { date: string; pageviews: number; visitors: number }[];
     };
 
-async function loadTraffic(repo: string): Promise<TrafficResponse> {
-  const res = await fetch(`/api/vercel/analytics?repo=${encodeURIComponent(repo)}`, {
+async function loadTraffic(repo: string, repoId: number | null): Promise<TrafficResponse> {
+  const params = new URLSearchParams({ repo });
+  if (repoId != null) params.set("repoId", String(repoId));
+  const res = await fetch(`/api/vercel/analytics?${params.toString()}`, {
     cache: "no-store",
   });
   if (!res.ok) return { kind: "error" };
@@ -70,15 +72,18 @@ function Metric({ icon: Icon, label, value }: { icon: typeof Users; label: strin
 
 export function ProjectTraffic({
   repoFullName,
+  repoId = null,
   enabled = true,
 }: {
   repoFullName: string;
+  /** GitHub repository id; matches the Vercel project across renames. */
+  repoId?: number | null;
   enabled?: boolean;
 }) {
   const p = useDict().professional;
   const query = useQuery({
-    queryKey: ["vercel", "traffic", repoFullName],
-    queryFn: () => loadTraffic(repoFullName),
+    queryKey: ["vercel", "traffic", repoFullName, repoId],
+    queryFn: () => loadTraffic(repoFullName, repoId),
     enabled,
     staleTime: 5 * 60_000,
   });

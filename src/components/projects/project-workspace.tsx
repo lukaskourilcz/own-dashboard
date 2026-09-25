@@ -30,6 +30,7 @@ import { useDict, useLang } from "@/lib/i18n";
 import { convert } from "@/lib/fx";
 import { computeTotals } from "@/lib/invoices";
 import { assessProjectHealth } from "@/lib/project-health";
+import { taskBelongsToProject } from "@/lib/project-match";
 import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -105,15 +106,10 @@ export function ProjectWorkspace(props: Props) {
   const [tab, setTab] = useState<ProjectWorkspaceTab>("overview");
   const { isProjectTabHidden } = useProjectTabVisibility();
 
-  // Match repo-sourced tasks (from NEEDED.md) case-insensitively on the repo
-  // full name, mirroring the main Tasks section — GitHub casing and the stored
-  // project repo can differ, which otherwise left this subsection empty.
-  const projectRepoKey = project.repo_full_name?.toLocaleLowerCase() ?? null;
+  // Repo-sourced tasks (from NEEDED.md) resolve through the shared matcher:
+  // repository id first, then the current or any previous repository name.
   const projectTodos = props.todos.filter((todo) =>
-    todo.project_id === project.id ||
-    (!todo.project_id &&
-      projectRepoKey != null &&
-      todo.repo_full_name?.toLocaleLowerCase() === projectRepoKey),
+    taskBelongsToProject(todo, project),
   );
   const projectNotes = props.notes.filter((note) => note.project_id === project.id);
   const projectInvoices = props.invoices.filter((invoice) => invoice.project_id === project.id);
@@ -188,7 +184,7 @@ export function ProjectWorkspace(props: Props) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
-        {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} />}
+        {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} />}
       </div>
     </div>}
 

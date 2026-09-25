@@ -1768,6 +1768,16 @@ create table if not exists public.projects (
 create index if not exists projects_user_idx
   on public.projects (user_id, sort_order, created_at);
 
+-- GitHub repository identity: the numeric id survives renames, and the earlier
+-- names keep NEEDED.md tasks imported under an old name attached.
+alter table public.projects
+  add column if not exists repo_id bigint,
+  add column if not exists previous_repo_full_names text[] not null default '{}';
+
+create unique index if not exists projects_user_repo_id_key
+  on public.projects (user_id, repo_id)
+  where repo_id is not null;
+
 alter table public.projects enable row level security;
 
 drop policy if exists "projects select own" on public.projects;

@@ -68,9 +68,16 @@ import { useReposQuery } from "@/lib/github-queries";
 import {
   readRepoFilter,
 } from "@/lib/use-prefs";
-import { cronSeedsForRepo } from "@/lib/project-cron-seeds";
+import { cronSeedsForProject } from "@/lib/project-cron-seeds";
+import {
+  planRepositorySync,
+  repositoryIdentityUpdate,
+  taskBelongsToProject,
+  unresolvedRepositoryProjects,
+  type ProjectRepoUpdate,
+} from "@/lib/project-match";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
-import type { GithubRepo } from "@/lib/github";
+import { lookupRepoIdentity, type GithubRepo } from "@/lib/github";
 import {
   costMonthlyIn,
   cronMonthlyIn,
@@ -243,34 +250,36 @@ function ProjectsListPanel({
     return repos.filter((r) => set.has(String(r.id)));
   }, [reposData, visibleIds]);
 
-  // repo_full_name (lowercased) of every project that already has one, so we can
-  // tell which active repos still need a project — and flag synced project cards.
-  const projectRepoNames = useMemo(() => {
-    const set = new Set<string>();
-    for (const p of projects) {
-      if (p.repo_full_name) set.add(p.repo_full_name.toLowerCase());
-    }
-    return set;
-  }, [projects]);
-
   // Full names of the currently-active repos, so a card can show it is synced
   // from GitHub (rather than being a manually added project).
   const activeRepoNames = useMemo(
     () => new Set(activeRepos.map((r) => r.full_name.toLowerCase())),
     [activeRepos],
   );
+  const activeRepoIds = useMemo(
+    () => new Set(activeRepos.map((r) => r.id)),
+    [activeRepos],
+  );
+  const isSynced = (project: Project) =>
+    (project.repo_id != null && activeRepoIds.has(Number(project.repo_id))) ||
+    (!!project.repo_full_name &&
+      activeRepoNames.has(project.repo_full_name.toLowerCase()));
 
-  // Guard rails so the sync effect never double-inserts across re-renders /
-  // StrictMode: repo full names we've started creating, and project ids we've
-  // already seeded crons for this mount.
-  const creatingRepos = useRef<Set<string>>(new Set());
+  // Guard rails so the sync effect never double-writes across re-renders /
+  // StrictMode: repository ids we've started creating or linking, project ids
+  // we've already seeded crons for, and names we've already looked up.
+  const creatingRepos = useRef<Set<number>>(new Set());
+  const updatingProjects = useRef<Set<string>>(new Set());
   const seededProjectIds = useRef<Set<string>>(new Set());
+  const lookedUpProjects = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    let cancelled = false;
+    // Plan only against loaded projects: an unfetched placeholder list would
+    // make every repository look missing.
+    if (!qc.getQueryState(qk.projects)?.dataUpdatedAt) return;
 
     async function seedCronsFor(project: Project) {
-      const seeds = cronSeedsForRepo(project.repo_full_name);
+      const seeds = cronSeedsForProject(project);
       if (seeds.length === 0 || seededProjectIds.current.has(project.id)) return;
       seededProjectIds.current.add(project.id);
       const userId = await currentUserId(supabase);
@@ -293,89 +302,136 @@ function ProjectsListPanel({
         seededProjectIds.current.delete(project.id);
         return;
       }
-      if (!cancelled) setCrons((prev) => [...prev, ...(data as Cron[])]);
+      setCrons((prev) => [...prev, ...(data as Cron[])]);
+    }
+
+    // Write the repository id/name the plan decided on. A rename changes
+    // repo_full_name only; the project's name, slug and every related row
+    // (tasks, crons, costs, communications) stay attached to the same id.
+    async function applyUpdate(project: Project, update: ProjectRepoUpdate) {
+      if (updatingProjects.current.has(project.id)) return project;
+      updatingProjects.current.add(project.id);
+      const { data, error } = await supabase
+        .from("projects")
+        .update({ ...update, updated_at: new Date().toISOString() })
+        .eq("id", project.id)
+        .select()
+        .single();
+      updatingProjects.current.delete(project.id);
+      if (error || !data) return project;
+      const saved = data as Project;
+      setProjects((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+      return saved;
     }
 
     async function sync() {
-      // Backfill crons for repos whose project already exists but is still
-      // cron-less (e.g. it was created before its workflows were known).
-      for (const repo of activeRepos) {
-        const match = projects.find(
-          (p) =>
-            p.repo_full_name?.toLowerCase() === repo.full_name.toLowerCase(),
+      let current: Project[] = projects;
+      let changed = false;
+      const replace = (saved: Project) => {
+        current = current.map((p) => (p.id === saved.id ? saved : p));
+      };
+
+      let plan = planRepositorySync(activeRepos, current);
+      for (const { project, update } of plan.updates) {
+        replace(await applyUpdate(project, update));
+        changed = true;
+      }
+
+      // Before creating anything, resolve projects that still carry only a
+      // repository name: GitHub redirects a renamed repository's old name, so
+      // the id turns the would-be duplicate into an update of that project.
+      if (plan.missing.length > 0) {
+        const unresolved = unresolvedRepositoryProjects(plan, current).filter(
+          (project) => !lookedUpProjects.current.has(project.id),
         );
-        if (
-          match &&
-          cronSeedsForRepo(repo.full_name).length > 0 &&
-          !crons.some((c) => c.project_id === match.id) &&
-          !seededProjectIds.current.has(match.id)
-        ) {
-          await seedCronsFor(match);
-        }
-      }
-
-      // Create a project for each active repo that doesn't have one yet.
-      const missing = activeRepos.filter(
-        (r) =>
-          !projectRepoNames.has(r.full_name.toLowerCase()) &&
-          !creatingRepos.current.has(r.full_name.toLowerCase()),
-      );
-      if (missing.length === 0) return;
-
-      const userId = await currentUserId(supabase);
-      if (!userId) return;
-
-      // Allocate unique slugs against existing ones and within this batch.
-      const usedSlugs = new Set(projects.map((p) => p.slug));
-      let sortBase = projects.length;
-
-      for (const repo of missing) {
-        const key = repo.full_name.toLowerCase();
-        creatingRepos.current.add(key);
-        let slug = slugify(repo.name) || slugify(repo.full_name) || "project";
-        if (usedSlugs.has(slug)) {
-          let n = 2;
-          while (usedSlugs.has(`${slug}-${n}`)) n++;
-          slug = `${slug}-${n}`;
-        }
-        usedSlugs.add(slug);
-        try {
-          const { data, error } = await supabase
-            .from("projects")
-            .insert({
-              user_id: userId,
-              name: repo.name,
-              slug,
-              repo_full_name: repo.full_name,
-              url: null,
-              sort_order: sortBase++,
-              is_active: true,
-            })
-            .select()
-            .single();
-          if (error || !data) {
-            // A concurrent create (another tab/device) may have won the slug —
-            // let the query reconcile instead of surfacing an error.
-            creatingRepos.current.delete(key);
-            continue;
+        for (const project of unresolved) {
+          lookedUpProjects.current.add(project.id);
+          const identity = await lookupRepoIdentity(project.repo_full_name!);
+          if (!identity) continue;
+          const update = repositoryIdentityUpdate(project, identity);
+          if (update) {
+            replace(await applyUpdate(project, update));
+            changed = true;
           }
-          const created = data as Project;
-          if (!cancelled) setProjects((prev) => [...prev, created]);
-          await seedCronsFor(created);
-        } catch {
-          creatingRepos.current.delete(key);
+        }
+        plan = planRepositorySync(activeRepos, current);
+      }
+
+      // Seed crons for linked projects that are still cron-less (e.g. created
+      // before their workflows were known).
+      for (const { project } of plan.linked) {
+        if (
+          cronSeedsForProject(project).length > 0 &&
+          !crons.some((c) => c.project_id === project.id) &&
+          !seededProjectIds.current.has(project.id)
+        ) {
+          await seedCronsFor(project);
         }
       }
-      if (!cancelled) void qc.invalidateQueries({ queryKey: qk.projects });
+
+      // Create a project for each active repo that has none at all.
+      const missing = plan.missing.filter(
+        (repo) => !creatingRepos.current.has(repo.id),
+      );
+      if (missing.length > 0) {
+        const userId = await currentUserId(supabase);
+        if (userId) {
+          // Allocate unique slugs against existing ones and within this batch.
+          const usedSlugs = new Set(current.map((p) => p.slug));
+          let sortBase = current.length;
+          for (const repoIdentity of missing) {
+            const repo = activeRepos.find((r) => r.id === repoIdentity.id);
+            if (!repo) continue;
+            creatingRepos.current.add(repo.id);
+            let slug = slugify(repo.name) || slugify(repo.full_name) || "project";
+            if (usedSlugs.has(slug)) {
+              let n = 2;
+              while (usedSlugs.has(`${slug}-${n}`)) n++;
+              slug = `${slug}-${n}`;
+            }
+            usedSlugs.add(slug);
+            try {
+              const { data, error } = await supabase
+                .from("projects")
+                .insert({
+                  user_id: userId,
+                  name: repo.name,
+                  slug,
+                  repo_full_name: repo.full_name,
+                  repo_id: repo.id,
+                  url: null,
+                  sort_order: sortBase++,
+                  is_active: true,
+                })
+                .select()
+                .single();
+              if (error || !data) {
+                // A concurrent create (another tab/device) may have won the
+                // slug or repository id — let the query reconcile instead of
+                // surfacing an error.
+                creatingRepos.current.delete(repo.id);
+                continue;
+              }
+              const created = data as Project;
+              changed = true;
+              setProjects((prev) => [...prev, created]);
+              await seedCronsFor(created);
+            } catch {
+              creatingRepos.current.delete(repo.id);
+            }
+          }
+        }
+      }
+      // Cache writes above go to the shared query client, so they stay valid
+      // even if this panel unmounted meanwhile.
+      if (changed) void qc.invalidateQueries({ queryKey: qk.projects });
     }
 
     void sync();
-    return () => {
-      cancelled = true;
-    };
-    // Re-run when the active repo set or the existing projects change.
+    // Re-run when the active repo set or the loaded projects change. Writes
+    // already in flight are skipped by the guards above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRepos, projectRepoNames]);
+  }, [activeRepos, projects]);
 
   const costsByProject = useMemo(() => {
     const map = new Map<string, ProjectCost[]>();
@@ -814,7 +870,7 @@ function ProjectsListPanel({
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   <tbody className="divide-y divide-border">
               {visibleProjects.map((p) => {
-                const projectTodos = todos.filter((item) => item.project_id === p.id || (!item.project_id && p.repo_full_name != null && item.repo_full_name === p.repo_full_name));
+                const projectTodos = todos.filter((item) => taskBelongsToProject(item, p));
                 const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
                 const organization = organizations.find((item) => item.id === p.organization_id);
                 return <SortableProjectRow
@@ -822,7 +878,7 @@ function ProjectsListPanel({
                   project={p}
                   monthlyCost={projectMonthlyIn(costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], displayCurrency)}
                   displayCurrency={displayCurrency}
-                  synced={!!p.repo_full_name && activeRepoNames.has(p.repo_full_name.toLowerCase())}
+                  synced={isSynced(p)}
                   onEdit={() => startEditProject(p)}
                   onToggleActive={() => toggleProjectActive(p)}
                   onDelete={() => deleteProject(p)}
@@ -847,9 +903,9 @@ function ProjectsListPanel({
           <DialogHeader><DialogTitle>{t.projects.manage}</DialogTitle></DialogHeader>
           {ordered.find((project) => project.id === manageProjectId) && (() => {
             const project = ordered.find((item) => item.id === manageProjectId)!;
-            const projectTodos = todos.filter((item) => item.project_id === project.id || (!item.project_id && project.repo_full_name != null && item.repo_full_name === project.repo_full_name));
+            const projectTodos = todos.filter((item) => taskBelongsToProject(item, project));
             const projectDates = importantDates.filter((item) => item.project_id === project.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
-            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={!!project.repo_full_name && activeRepoNames.has(project.repo_full_name.toLowerCase())} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
+            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
           })()}
         </DialogContent>
       </Dialog>

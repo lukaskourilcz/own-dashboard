@@ -34,7 +34,7 @@ export type ProjectTraffic =
 type VercelProject = {
   id: string;
   name: string;
-  link?: { type?: string; org?: string; repo?: string } | null;
+  link?: { type?: string; org?: string; repo?: string; repoId?: number } | null;
 };
 
 // Best-effort in-memory cache of the project list (per server instance).
@@ -72,14 +72,22 @@ async function listProjects(token: string): Promise<VercelProject[] | null> {
   return json.projects;
 }
 
-/** Find the Vercel project whose linked git repo matches `owner/name`. */
+/**
+ * Find the Vercel project linked to a repository: by the GitHub repository id
+ * when Vercel returns it (stable across renames), then by `owner/name`, then
+ * by a Vercel project named like the repository.
+ */
 function matchProject(
   projects: VercelProject[],
   repoFullName: string,
+  repoId?: number | null,
 ): VercelProject | null {
   const target = repoFullName.toLowerCase();
   const name = target.split("/")[1] ?? target;
   return (
+    (repoId != null
+      ? projects.find((p) => p.link?.repoId != null && Number(p.link.repoId) === repoId)
+      : undefined) ??
     projects.find((p) => {
       const link = p.link;
       if (link?.org && link?.repo) {
@@ -99,13 +107,14 @@ function ymd(d: Date): string {
 
 export async function getProjectTraffic(
   repoFullName: string,
+  repoId?: number | null,
 ): Promise<ProjectTraffic> {
   const token = process.env.VERCEL_API_TOKEN;
   if (!token) return { kind: "unconfigured" };
 
   const projects = await listProjects(token);
   if (!projects) return { kind: "error" };
-  const project = matchProject(projects, repoFullName);
+  const project = matchProject(projects, repoFullName, repoId);
   if (!project) return { kind: "not-found" };
 
   const team = teamParam();
