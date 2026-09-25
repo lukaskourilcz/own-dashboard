@@ -2,6 +2,8 @@
 
 Status: authoritative baseline for the July 2026 design overhaul. Repository code remains the source of truth for behavior.
 
+> Note (2026-07-29, `5d32e6b`): Agents and every model-backed AI feature were removed. The Agents sentence under Product and audience and the AI mentions below are historical.
+
 ## Product and audience
 
 OwnDashboard is a private, bilingual, self-hosted operating system for one technically capable professional. It joins delivery, client acquisition, organizations, Career, invoices, costs, banking, planning, and reusable knowledge without pretending to be a team SaaS, CRM, accounting suite, or lifestyle tracker. The high-frequency loop is Home → capture → Inbox triage → canonical record. The other defining loops are opportunity → organization → project → invoice; project → tasks/repository/operations/finance/knowledge; and listing → evidence-grounded application.
@@ -32,7 +34,6 @@ The product must answer what needs attention, why, which records are connected, 
 | Money and invoices | Deterministic finance model and mature Czech invoice workflow | Dense functionality shares generic card language; some raw color utilities bypass tokens | Ledger-first rows and tables; semantic status; keep legal paper output fixed |
 | Planning and Library | Broad mature functionality with project relationships | Local patterns vary across large panels; long content and mobile density vary | Shared headers, filters, rows, values, system states, and relationship cues |
 | Settings | Real integration/privacy/export controls | Long single panel lacks a clear settings taxonomy | Appearance, Navigation, Integrations, Notifications, AI & privacy, Data & export, Account |
-| Contextual AI | Bounded sources, strict parsing, validated citations, separate writes | Some output is rendered as ordinary cards or merged into plain text | A subordinate AI proposal language with facts, risks, suggestions, sources, limitations, and consent |
 
 ## Visual audit
 
@@ -63,7 +64,7 @@ Responsive hotspots are the opportunity/client grids, project workspace tabs, fi
 
 ## Reuse and consolidation map
 
-Reuse `PageHeader`, `SectionLabel`, `Card`, `Button`, `Input`, `Textarea`, `SimpleSelect`, Radix `Dialog`, `Tooltip`, `Toast`, and `EmptyState`. Extend rather than replace them. Add focused operational primitives only where multiple production consumers exist: `StatusBadge`, `EntityBadge`/relationship link, compact metrics, structured rows/data table, and AI proposal/evidence panels. Keep invoice status semantics compatible with the existing invoice component while moving shared tone rules to the canonical status layer.
+Reuse `PageHeader`, `SectionLabel`, `Card`, `Button`, `Input`, `Textarea`, `SimpleSelect`, Radix `Dialog`, `Tooltip`, `Toast`, and `EmptyState`. Extend rather than replace them. Add focused operational primitives only where multiple production consumers exist: `StatusBadge`, `EntityBadge`/relationship link, compact metrics, structured rows/data table. Keep invoice status semantics compatible with the existing invoice component while moving shared tone rules to the canonical status layer.
 
 Large panels contain valuable business logic and should be migrated incrementally rather than rewritten: Projects, Career, Notes, Tasks, Finance, Subscriptions, and References. Their mutations, filters, imports, calculations, and scoping are higher risk than their markup.
 

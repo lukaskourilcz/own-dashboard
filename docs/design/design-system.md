@@ -41,7 +41,6 @@ Home and login may breathe. Work, Projects, Opportunities, Career, Money, and In
 - `StatusBadge` is the canonical label/marker/tone presentation for shared project, opportunity, organization, inbox, invoice, and health states.
 - `EntityBadge` shows relationships without pretending they are statuses.
 - `Metric` creates compact border-led measures instead of repeating equal cards.
-- `AiProposalPanel` and `AiResultGroup` distinguish facts, risks, suggestions, and evidence without sparkles, gradients, bot mascots, or implied writes.
 - `BrandMark` is the name-independent shell/auth/icon placement contract.
 - `DailyFocusPanel` is an operational execution surface: it snapshots at most seven active-project or GLOBAL tasks, exposes waiting age, and uses the 49-day completion garden as professional task history rather than lifestyle gamification.
 
@@ -75,7 +74,7 @@ Target WCAG 2.2 AA. Preserve visible focus, logical focus order, Radix focus tra
 
 ## UX writing and states
 
-State the count, condition, consequence, and next action. Initial-empty and filtered-empty are different states. Also cover loading, error, offline/unavailable integration, reauthorization, disabled, permission failure, success, destructive confirmation, missing relationship, archived, long content, mobile, and reduced motion. AI proposals always state data scope, limitations, sources, and that nothing is saved until a separate action.
+State the count, condition, consequence, and next action. Initial-empty and filtered-empty are different states. Also cover loading, error, offline/unavailable integration, reauthorization, disabled, permission failure, success, destructive confirmation, missing relationship, archived, long content, mobile, and reduced motion.
 
 ## Anti-AI-slop review
 

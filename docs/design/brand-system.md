@@ -20,7 +20,7 @@ OwnDashboard is not a team SaaS, public productivity product, full CRM, accounti
 
 ## Voice
 
-Copy is direct, specific, calm, short, honest about limits, and action-oriented. State the condition and consequence: “3 opportunities need a follow-up,” “GitHub access needs to be reconnected,” “AI will read the selected project records,” and “Create project after review.” Avoid “unlock,” “supercharge,” “seamless,” “revolutionary,” “magical,” and unqualified “smart.”
+Copy is direct, specific, calm, short, honest about limits, and action-oriented. State the condition and consequence: “3 opportunities need a follow-up,” “GitHub access needs to be reconnected,” “2 links saved to this project,” and “Create project after review.” Avoid “unlock,” “supercharge,” “seamless,” “revolutionary,” “magical,” and unqualified “smart.”
 
 English and Czech must express the same meaning and consequence, not merely fit the same character count. Generated images never carry essential copy.
 

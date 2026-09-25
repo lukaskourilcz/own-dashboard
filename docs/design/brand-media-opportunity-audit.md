@@ -12,10 +12,9 @@ Generated media may establish a small brand atmosphere around authentic OwnDashb
 | PWA icon and favicon exploration | High value, follows mark | Derive from the selected mark; maintain monochrome and mask-safe behavior. Current dynamic `src/app/icon.tsx` remains valid. |
 | Login desktop/mobile stills | High value, pending provider | A text-free connected-work composition behind `data-brand-media-slot="login-hero"` in `src/app/login/page.tsx`; sign-in and trust copy remain real HTML. |
 | Login ambient loop/poster | Potentially useful, not yet justified | Only if an approved still materially benefits from subtle motion; must have static poster and reduced-motion fallback. |
-| Inbox, Opportunities, Projects, Clients empty states | High value, pending provider | A small coherent family; only use where the state is truly empty and never behind dense data. Existing `EmptyState` remains complete without images. |
+| Opportunities, Projects, Clients empty states | High value, pending provider | A small coherent family; only use where the state is truly empty and never behind dense data. Existing `EmptyState` remains complete without images. |
 | Open Graph / README presentation | High value, pending provider | Composite a real `/dev-preview` screenshot deterministically over an abstract brand background; never redraw UI or invent metrics. |
 | Integration disconnected state | Potentially useful, rejected for now | Existing status, copy, and actions communicate the state without decorative media. |
-| AI limited-context explanation | Potentially useful, rejected for now | Prefer a deterministic semantic source diagram; no brain, bot, glow, or unverified claim. |
 | Project workspace texture | Unnecessary | Dense project context does not benefit from decorative texture. |
 | Documentation diagrams | Unnecessary for current scope | Prefer deterministic Mermaid/SVG; generated framing adds no operational evidence. |
 | Social graphics / future public loop | Unnecessary now | OwnDashboard has no marketing funnel or current announcement requirement. |
