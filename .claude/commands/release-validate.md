@@ -1,7 +1,7 @@
 # /release-validate
 
 1. Read the release skill; inspect branch, status, staged/unstaged diffs, untracked files, and recent commits.
-2. Audit scope, secrets, docs links, migrations, RLS-sensitive flows, static FX, invoices/print, AI consent/evidence, PWA, deferred media, removed scope, and Tugedr terminology.
+2. Audit scope, secrets, docs links, migrations, RLS-sensitive flows, static FX, invoices/print, the no-model-call boundary, PWA, deferred media, removed scope, and Tugedr terminology.
 3. Run `npm run lint`.
 4. Run `npx tsc --noEmit`.
 5. Run `npm run test`.

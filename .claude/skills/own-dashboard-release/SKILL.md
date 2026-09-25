@@ -1,13 +1,13 @@
 ---
 name: own-dashboard-release
-description: Validate and hand off an OwnDashboard release or large implementation. Use before committing or reporting completion when changes can affect product behavior, design, Supabase/RLS, invoices, AI consent, PWA, integrations, responsive UI, documentation, migrations, or generated media.
+description: Validate and hand off an OwnDashboard release or large implementation. Use before committing or reporting completion when changes can affect product behavior, design, Supabase/RLS, invoices, PWA, integrations, responsive UI, documentation, migrations, or generated media.
 ---
 
 # OwnDashboard release
 
 1. Inspect `git branch --show-current`, `git status --short`, unstaged/staged diffs, and recent commits. Preserve unrelated work; stage exact paths/hunks; never commit secrets, caches, `.env`, or unavailable-media outputs.
 2. Review the diff against `AGENTS.md`, `CLAUDE.md`, `DOCS.md`, design docs, migration docs, and the applicable product/design/media skills. Search for old branding, Takt, restored personal scope, Tugedr/Pulse confusion, raw enums, arbitrary colors/radii, duplicate statuses, dead assets, fake UI, and broken links.
-3. Validate Supabase ownership/RLS, service-role boundaries, route-scoped loading, query invalidation, static FX, project scoping, AI consent/sources/writes, exports, migration ordering, and unknown/cross-user 404 behavior.
+3. Validate Supabase ownership/RLS, service-role boundaries, route-scoped loading, query invalidation, static FX, project scoping, the no-model-call boundary, exports, migration ordering, and unknown/cross-user 404 behavior.
 4. Validate Czech invoices separately: calculations, VAT, rounding, dates/symbols, QR Platba, import review, A4 print isolation, and dark-mode independence.
 5. Run exact commands: `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`, and `npm run test:e2e`. Run targeted checks during repair. Never call a hanging/interrupted/unrun command successful.
 6. Run `/dev-preview` visual/accessibility checks from the visual-QA skill, verify PWA metadata/icons/install affordance, and inspect media sizes/usage/fallbacks. Verify the media workflow researched at least three current low-cost/free providers from primary sources and recorded provider, cost/license, privacy, watermark, format, and provenance evidence before any generated asset ships.
