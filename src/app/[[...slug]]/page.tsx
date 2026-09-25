@@ -24,7 +24,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
 
   const [
     subscriptionsRes, todosRes, accountsRes, transactionsRes, plansRes,
-    notesRes, promptsRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, projectLinksRes, shortcutsRes,
+    notesRes, promptsRes, promptLinksRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, projectLinksRes, shortcutsRes,
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
     invoiceSettingsRes, projectsRes, projectCommunicationsRes, projectCostsRes, cronsRes,
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
@@ -39,6 +39,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("plans", () => supabase.from("plans").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("notes", () => supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })),
     loadWhen("prompts", () => supabase.from("prompts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
+    loadWhen("promptLinks", () => supabase.from("prompt_links").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(2000)),
     loadWhen("repoNotes", () => supabase.from("repo_notes").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true })),
     loadWhen("repoLinks", () => supabase.from("repo_links").select("*").eq("user_id", user.id)),
     loadWhen("aiLinks", () => supabase.from("ai_links").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
@@ -101,6 +102,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialPlans={plansRes?.data ?? []}
     initialNotes={notesRes?.data ?? []}
     initialPrompts={promptsRes?.data ?? []}
+    initialPromptLinks={promptLinksRes?.data ?? []}
     initialRepoNotes={repoNotesRes?.data ?? []}
     initialRepoLinks={repoLinksRes?.data ?? []}
     initialAiLinks={aiLinksRes?.data ?? []}

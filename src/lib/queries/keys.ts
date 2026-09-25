@@ -22,6 +22,7 @@ export const qk = {
   weeklyReviews: ["weeklyReviews"] as const,
   notes: ["notes"] as const,
   prompts: ["prompts"] as const,
+  promptLinks: ["promptLinks"] as const,
   repoNotes: ["repoNotes"] as const,
   repoLinks: ["repoLinks"] as const,
   projects: ["projects"] as const,

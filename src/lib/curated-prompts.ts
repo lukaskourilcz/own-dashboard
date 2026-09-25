@@ -1,160 +1,174 @@
+import type { PromptKind } from "@/lib/prompt-kinds";
+
 /**
- * A curated library of genuinely useful, reusable prompts for this owner's
- * work (software engineering + freelancing). These are NOT the owner's own
- * prompts — they're scouted, general-purpose templates surfaced under the
- * "Public" subsection of the Prompts page. Placeholders use [square brackets].
+ * Curated, universal prompts: one or two for each kind of job. They are not
+ * the owner's own prompts; "Add curated prompts" inserts them as the owner's
+ * rows flagged `is_public`, de-duplicated by name so a repeat click never
+ * creates copies. Edit or delete them like any prompt.
  *
- * They're seeded on demand (the owner clicks "Add curated prompts"), inserted
- * as their own rows with is_public = true, and de-duplicated by name so a
- * repeat click never creates copies. Edit or delete them like any prompt.
- *
- * Informed by widely-shared prompt patterns for developers and freelancers
- * (targeted, single-purpose prompts with explicit inputs, outputs, and
- * constraints), then rewritten for this library.
+ * Each body uses the project placeholders the copy action expands —
+ * {{project.name}}, {{project.repo}}, {{project.url}}, {{project.dev_url}} —
+ * and relies on the "Links to consult" block the copy action appends.
+ * `suggestedCategories` are library category words used to pre-select links
+ * in the editor's link picker.
  */
 export type CuratedPrompt = {
   name: string;
+  kind: Exclude<PromptKind, "other">;
   description: string;
   body: string;
+  suggestedCategories: string[];
 };
 
 export const CURATED_PROMPTS: CuratedPrompt[] = [
   {
-    name: "Senior code review",
-    description:
-      "Review a diff like a senior engineer — ranked findings with file/line and severity.",
-    body: `Act as a senior engineer reviewing a pull request. Review the code below for correctness bugs, security issues, and maintainability problems.
+    name: "Design direction",
+    kind: "design",
+    description: "Propose a visual direction for a project, grounded in its audience and the linked references.",
+    suggestedCategories: ["design", "fonts", "colors", "icons", "inspiration"],
+    body: `You are a product designer working on {{project.name}} ({{project.url}}). The code is in {{project.repo}}.
 
-Rank your findings from most to least important. Cite each with a file/line reference and a severity (blocker / major / minor / nit), and show a concrete fix. Call out anything you are unsure about rather than guessing.
+1. Read the repository's design documents and the live site. Summarise who the product serves and what it must feel like, in five bullet points.
+2. Open every link under "Links to consult" and note which fonts, colours, icon sets or references fit that brief and why.
+3. Propose one visual direction: typography scale, colour tokens with contrast ratios, spacing, radius and elevation rules, and two component examples.
+4. List what to change first, in order, with the files you would touch.
 
-\`\`\`
-[paste the diff or code]
-\`\`\``,
+Keep existing brand rules unless you say exactly why one should change. Do not invent screenshots or UI that does not exist.`,
   },
   {
-    name: "Root-cause a bug",
-    description:
-      "Turn an error + stack trace + code into ranked root causes, a repro, a fix diff, and a test.",
-    body: `You are a debugging assistant. Given the error, stack trace, and code below, produce:
-1. The most likely root causes, ranked, with your reasoning.
-2. The minimal steps to reproduce.
-3. A fix, as a diff.
-4. A test that would have caught this bug.
+    name: "Design review of one screen",
+    kind: "design",
+    description: "Critique one screen against the project's own design system and the linked references.",
+    suggestedCategories: ["design", "ui", "inspiration"],
+    body: `Review one screen of {{project.name}} (development build: {{project.dev_url}}).
 
-Error: [error message]
-Stack trace:
-[trace]
-Code:
-[relevant snippet]`,
+Screen: [route or screenshot]
+
+Compare it with the project's design system in {{project.repo}} and with the references under "Links to consult". Report hierarchy, alignment, spacing, typography, colour and state problems, each with the exact element, why it matters and a concrete fix. Rank the findings by user impact. Say "none" for areas that are fine rather than padding the list.`,
   },
   {
-    name: "Refactor without changing behavior",
-    description:
-      "Improve readability/maintainability with characterization tests first, then a diff.",
-    body: `Refactor the module below for readability and maintainability WITHOUT changing its observable behavior.
+    name: "Project audit",
+    kind: "audit",
+    description: "Audit security, performance, accessibility and maintainability with ranked, evidenced findings.",
+    suggestedCategories: ["security", "performance", "accessibility", "testing", "monitoring"],
+    body: `Audit {{project.name}}. Repository: {{project.repo}}. Production: {{project.url}}.
 
-First, note where test coverage is weak and add characterization tests that pin the current behavior. Then give the refactor as a diff and explain each change in one line. Do not introduce new dependencies unless you justify them.
+Cover security (auth, secrets, input handling, dependency risk), performance (bundle size, slow queries, caching), accessibility (WCAG 2.2 AA) and maintainability (tests, duplication, dead code). Use the tools under "Links to consult" where they apply and cite what each one reported.
 
-[paste the code]`,
+For every finding give: area, severity (blocker / major / minor), evidence (file and line, or tool output), and the smallest fix. Separate verified findings from suspicions. Finish with the five changes that remove the most risk.`,
   },
   {
-    name: "Explain unfamiliar code",
-    description:
-      "Onboard-style walkthrough of a snippet: what it does, control flow, risks, edge cases.",
-    body: `Explain the code below as if you were onboarding a new teammate. Cover:
-- what it does, in one sentence;
-- the control flow, step by step;
-- any non-obvious decisions and why they might be there;
-- risks, edge cases, and failure modes.
+    name: "Pre-release check",
+    kind: "audit",
+    description: "Go/no-go checklist before shipping, with the exact commands and results.",
+    suggestedCategories: ["testing", "monitoring", "hosting", "security"],
+    body: `Prepare a go/no-go release check for {{project.name}} ({{project.repo}}).
 
-End with the three questions you would ask the original author.
+Run or list the project's own validation commands (lint, type check, unit tests, build, end-to-end tests) and report each exact result. Check migrations, environment variables, error monitoring and rollback steps. Use the services under "Links to consult" to confirm hosting and monitoring are configured.
 
-[paste the code]`,
+Answer with GO or NO-GO first, then the blockers, then everything that passed. Never report a check as passing unless it ran.`,
   },
   {
-    name: "Compare design approaches",
-    description:
-      "Get 2–3 viable architectures with trade-offs and a justified recommendation.",
-    body: `I need to design: [describe the feature or problem].
-Constraints: [stack, scale, deadline, team size, anything fixed].
+    name: "Competitor scan",
+    kind: "competition",
+    description: "Map direct and indirect competitors and where the project can win.",
+    suggestedCategories: ["competition", "market", "research", "ideas"],
+    body: `Research the competition for {{project.name}} ({{project.url}}).
 
-Propose 2–3 genuinely different, viable approaches. For each: a one-paragraph summary, the key trade-offs, rough effort, and the main failure modes. Then recommend one and justify the choice against the constraints. Note what you'd need to validate before committing.`,
+1. From the site and repository README, state the product's audience and core promise in two sentences.
+2. Find five direct and five indirect alternatives. Start from the links under "Links to consult"; add others only with a source URL.
+3. For each: audience, pricing, strongest feature, visible weakness, and the evidence URL.
+4. Say where {{project.name}} can realistically win and what it should not try to match.
+
+Mark anything you could not verify. Do not estimate market sizes without a cited source.`,
   },
   {
-    name: "Write thorough tests",
-    description:
-      "Generate happy-path, boundary, error, and async edge-case tests with rationale.",
-    body: `Write thorough tests for the function below using [test framework].
+    name: "UX and UI review",
+    kind: "ux-ui",
+    description: "Walk the main user flow and report usability and accessibility problems.",
+    suggestedCategories: ["ux", "ui", "accessibility", "design"],
+    body: `Walk through the main user flow of {{project.name}} on {{project.dev_url}} (production: {{project.url}}).
 
-Cover the happy path, boundary values, error/invalid inputs, and any concurrency or async edge cases. For each test, add a one-line comment saying what regression it protects against. Prefer clear, independent tests over clever ones.
+Flow: [describe the task a user is trying to finish]
 
-[paste the function]`,
+At 360, 768 and 1280 px, and with the keyboard only, report where the user hesitates, loses context or cannot continue. Check empty, loading, error and long-content states, focus order, target sizes, contrast and reduced motion. Use the guidelines under "Links to consult".
+
+For each problem: step, what happens, why it hurts, and a concrete fix. Rank by how many users it blocks.`,
   },
   {
-    name: "Commit + PR description",
-    description:
-      "Draft an imperative commit message and a structured PR description from a change.",
-    body: `From the change described below, write:
-1. A commit message: an imperative subject ≤72 chars, a blank line, then a short body explaining WHY (not just what).
-2. A PR description with sections: Summary, Changes, Testing, Risks / rollout.
+    name: "Project analysis",
+    kind: "analysis",
+    description: "Explain how the project works, where it is fragile and what to improve first.",
+    suggestedCategories: ["analytics", "data", "performance", "research"],
+    body: `Analyse {{project.name}} from its repository {{project.repo}}.
 
-Change: [describe the change, or paste the diff]`,
+Describe the architecture in ten lines or fewer: entry points, data flow, storage, external services and scheduled jobs. Then list the three most fragile areas with evidence (files, missing tests, complex modules) and the three cheapest improvements with the biggest effect. Use the analytics and monitoring links under "Links to consult" for real usage or error data, and say when you had none.`,
   },
   {
-    name: "SQL query + plan",
-    description:
-      "Get a correct, efficient SQL query with the query plan and index/pitfall notes.",
-    body: `Given the schema and goal below, write a correct and efficient SQL query.
+    name: "Documentation pass",
+    kind: "documentation",
+    description: "Bring README and docs in line with the code, removing what is stale.",
+    suggestedCategories: ["documentation", "docs", "writing"],
+    body: `Update the documentation of {{project.name}} ({{project.repo}}) to match the code as it is today.
 
-Explain the query plan in plain English, name any index that would materially help, and flag correctness pitfalls (nulls, duplicates, timezones, off-by-one on ranges). Target [Postgres].
+1. List every statement in README and docs that the code contradicts, with file and line.
+2. Rewrite those passages: plain sentences, exact commands, no marketing language.
+3. Add what a new contributor needs and cannot find: setup, environment variables, test commands, deployment and the URLs {{project.url}} and {{project.dev_url}}.
+4. Check every relative link resolves.
 
-Schema:
-[tables + relevant columns]
-Goal: [what the result set should contain]`,
+Follow the writing guides under "Links to consult". Return the changes as a diff.`,
   },
   {
-    name: "Client proposal email",
-    description:
-      "Write a concise, confident proposal email framed around the client's outcome.",
-    body: `Write a concise, professional proposal email to [client name] for [scope of work].
+    name: "New project from an idea",
+    kind: "new-project",
+    description: "Turn an idea into a scoped first version with stack, data model and a build plan.",
+    suggestedCategories: ["ideas", "starter", "hosting", "database", "templates"],
+    body: `Turn this idea into a first version I can build.
 
-Frame it around the outcome they get, not the tasks. Include: the outcome, a clear scope with what's in and out, a timeline, and a price of [amount / currency]. Warm and confident, no filler. End with one clear next step. Keep it under 200 words.`,
+Idea: [one paragraph]
+
+1. Restate the problem, the user and the one job the first version must do.
+2. Pick a stack, preferring the services under "Links to consult"; say why each fits and what it costs at small scale.
+3. Sketch the data model and the three main screens.
+4. Write a build plan as ordered, testable steps, each small enough for one working session.
+5. List what is out of scope for the first version.
+
+If it becomes a project like {{project.name}}, reuse its conventions from {{project.repo}}.`,
   },
   {
-    name: "Overdue invoice follow-up",
-    description:
-      "Polite-but-firm reminder for an unpaid invoice with a simple path to pay.",
-    body: `Write a short, polite but firm follow-up for an overdue invoice.
+    name: "SEO check",
+    kind: "seo",
+    description: "Check indexing, metadata, structured data and Core Web Vitals, with fixes.",
+    suggestedCategories: ["seo", "search", "performance"],
+    body: `Run an SEO check of {{project.name}} at {{project.url}}. The code is in {{project.repo}}.
 
-Client: [name]
-Amount: [amount / currency]
-Due date: [date]
-This is reminder #[n].
+Check indexing and sitemap, robots rules, titles and descriptions, canonical and hreflang tags, structured data, internal links, image alt text and Core Web Vitals. Use the tools under "Links to consult" and quote what each reported.
 
-Restate the amount and due date, keep a friendly tone, avoid guilt-tripping, and give one simple way to pay. Offer to resend the invoice if it was missed.`,
+Report each issue with the affected URLs, the evidence and the fix in code. Rank by expected search impact. Do not promise rankings or traffic numbers.`,
   },
   {
-    name: "Handle scope creep",
-    description:
-      "Friendly reply that holds the line and offers the extra work as a priced add-on.",
-    body: `A client has asked for [out-of-scope request], which is beyond our agreed scope of [agreed scope].
+    name: "Marketing plan",
+    kind: "marketing",
+    description: "A four-week plan with channels, messages and measurable goals.",
+    suggestedCategories: ["marketing", "social", "email", "seo"],
+    body: `Draft a four-week marketing plan for {{project.name}} ({{project.url}}).
 
-Write a friendly reply that: acknowledges the request positively, explains it falls outside the current scope (without sounding defensive), and offers to do it as a small add-on with a quick estimate or as part of the next phase. Keep the relationship warm.`,
+1. State the audience and the one message that should reach them.
+2. Choose at most three channels, preferring the services under "Links to consult", and say why each fits.
+3. For each week: what to publish, where, and the measurable goal.
+4. Name the metric that decides whether to continue after four weeks.
+
+Use only claims the product can support today. No paid spend unless I approve it.`,
   },
   {
-    name: "Learn a topic fast",
-    description:
-      "A 5-minute mental model of a new topic tailored to what you already know.",
-    body: `Teach me [topic] for someone who already knows [related background you have].
+    name: "Launch announcement",
+    kind: "marketing",
+    description: "Write a short, factual launch post adapted to each channel.",
+    suggestedCategories: ["marketing", "social", "writing"],
+    body: `Write a launch announcement for {{project.name}} ({{project.url}}).
 
-Give me: a 5-minute mental model, the 20% of concepts that cover 80% of real use, one tiny hands-on example I can try immediately, and the 3 mistakes beginners make. Skip history and marketing. Be concrete.`,
-  },
-  {
-    name: "Plan before coding",
-    description:
-      "Have the model interview you to surface requirements and edge cases before you build.",
-    body: `I'm about to implement: [feature].
+What changed: [release notes or summary]
 
-Before I write any code, interview me: ask the clarifying questions a senior engineer would ask about requirements, data, edge cases, error handling, and constraints. Ask them a few at a time. When you have enough, summarize the agreed plan as a short, ordered checklist I can implement against.`,
+Produce one version per channel from "Links to consult" (for example a changelog entry, a LinkedIn post and a short post), each within that channel's usual length. Lead with what the user can now do, not with the technology. Keep every claim checkable against the release notes.`,
   },
 ];

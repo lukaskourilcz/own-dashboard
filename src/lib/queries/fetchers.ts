@@ -31,6 +31,7 @@ import type {
   ProjectCost,
   ProjectLink,
   Prompt,
+  PromptLink,
   ReferenceRow,
   RepoLink,
   RepoNote,
@@ -261,6 +262,18 @@ export async function fetchPrompts(): Promise<Prompt[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Prompt[];
+}
+
+export async function fetchPromptLinks(): Promise<PromptLink[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("prompt_links")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(2000);
+  if (error) throw error;
+  return (data ?? []) as PromptLink[];
 }
 
 export async function fetchRepoNotes(): Promise<RepoNote[]> {

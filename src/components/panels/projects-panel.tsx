@@ -104,6 +104,7 @@ import type {
   ProjectEngagement,
   ProjectLink,
   Prompt,
+  PromptLink,
   RepoLink,
   RepoNote,
   Subscription,
@@ -180,6 +181,7 @@ type ProjectsPanelProps = {
   aiCategories: AiCategory[];
   projectLinks: ProjectLink[];
   setProjectLinks: Updater<ProjectLink[]>;
+  promptLinks: PromptLink[];
   syncRepositories?: boolean;
 };
 
@@ -214,6 +216,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       aiCategories={props.aiCategories}
       projectLinks={props.projectLinks}
       setProjectLinks={props.setProjectLinks}
+      promptLinks={props.promptLinks}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
       onBackToProjects={props.onBackToProjects}

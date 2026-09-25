@@ -38,6 +38,7 @@ export function LinkPickerDialog({
   multiple = true,
   title,
   description,
+  initialSelectedIds,
   onConfirm,
 }: {
   open: boolean;
@@ -50,13 +51,16 @@ export function LinkPickerDialog({
   multiple?: boolean;
   title?: string;
   description?: string;
+  /** Pre-selected links (for example the suggestions for a prompt's kind).
+   * Read when the picker mounts; remount it with a new `key` to reset. */
+  initialSelectedIds?: string[];
   onConfirm: (ids: string[]) => void | Promise<void>;
 }) {
   const t = useDict();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [limit, setLimit] = useState(LINK_PICKER_PAGE);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(() => initialSelectedIds ?? []);
   const [busy, setBusy] = useState(false);
 
   const available = useMemo(

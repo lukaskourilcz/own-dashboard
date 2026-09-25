@@ -1,5 +1,6 @@
 import type { TaskKind } from "./task-meta";
 import type { SourceOutcome } from "./jobs/types";
+import type { PromptKind } from "./prompt-kinds";
 
 export type { SourceOutcome };
 
@@ -343,12 +344,27 @@ export type Prompt = {
   body: string;
   created_at: string;
   updated_at: string;
-  // false = the owner's own prompt ("Mine"); true = a curated/scouted prompt
-  // shown under "Public". Defaults to false.
+  // false = the owner's own prompt; true = a curated/scouted prompt, shown
+  // with a "Public" badge. Defaults to false.
   is_public?: boolean;
+  // Kind of job (design, audit, SEO, …); the Prompts page groups by it.
+  kind?: PromptKind;
+  // Default project for the copy action; prompts stay universal.
   project_id?: string | null;
   organization_id?: string | null;
   opportunity_id?: string | null;
+};
+
+// A library link a prompt tells an agent to open, with a per-link note.
+export type PromptLink = {
+  id: string;
+  user_id: string;
+  prompt_id: string;
+  ai_link_id: string;
+  note: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 // ---------------------------------------------------------------------------

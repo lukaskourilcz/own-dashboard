@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview } from "./helpers";
+import { gotoPreview, signInFixtureUser } from "./helpers";
 import { projectLinks } from "../src/lib/demo/fixtures";
 
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]["page"];
@@ -29,6 +29,7 @@ async function echoProjectLinkWrites(page: Page) {
 
 test("a project workspace lists the links it uses and adds one from the library", async ({ page }, testInfo) => {
   await gotoPreview(page);
+  await signInFixtureUser(page);
   await echoProjectLinkWrites(page);
   await page.goto("/dev-preview?project=dneskai");
   const section = page.getByRole("list", { name: "Links" });

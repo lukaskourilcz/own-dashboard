@@ -88,3 +88,22 @@ export async function gotoPreview(
   await stubBackend(page);
   await page.goto("/dev-preview");
 }
+
+/**
+ * Give the fixture preview a signed-in Supabase session cookie so client
+ * writes reach the (stubbed) REST API instead of stopping at "sign in first".
+ * Pair it with a page.route() that answers the specific table.
+ */
+export async function signInFixtureUser(page: Page): Promise<void> {
+  const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+  const token = [
+    Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
+    Buffer.from(JSON.stringify({ sub: "u1", exp: expiresAt })).toString("base64url"),
+    "test",
+  ].join(".");
+  await page.context().addCookies([{
+    name: "sb-example-auth-token",
+    value: "base64-" + Buffer.from(JSON.stringify({ access_token: token, refresh_token: "fixture-refresh", token_type: "bearer", expires_at: expiresAt, expires_in: 3600, user: { id: "u1" } })).toString("base64url"),
+    url: "http://localhost:3939",
+  }]);
+}

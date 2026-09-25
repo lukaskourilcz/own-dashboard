@@ -44,6 +44,7 @@ export function DemoDashboard({
       initialPlans={f.plans}
       initialNotes={f.notes}
       initialPrompts={f.prompts}
+      initialPromptLinks={f.promptLinks}
       initialRepoNotes={f.repoNotes}
       initialRepoLinks={f.repoLinks}
       initialAiLinks={f.aiLinks}

@@ -36,6 +36,7 @@ import type {
   ProjectCost,
   ProjectLink,
   Prompt,
+  PromptLink,
   ReferenceRow,
   RepoLink,
   RepoNote,
@@ -135,9 +136,17 @@ export const notes: Note[] = [
 ];
 
 export const prompts: Prompt[] = [
-  { id: "pr1", user_id: UID, name: "Code review", description: "Reviews a pull request for correctness, security, and clarity.", body: "Review this pull request for correctness, security, and clarity. Flag risky changes and suggest concrete fixes with short examples.", created_at: TS, updated_at: TS },
-  { id: "pr2", user_id: UID, name: "Commit message", description: "Writes a conventional-commit message from the staged diff.", body: "Write a concise conventional-commit message for the staged diff. Imperative mood, a short subject, then a body explaining why.", created_at: TS, updated_at: TS },
-  { id: "pr3", user_id: UID, name: "Explain code", description: "Explains a function step by step and lists its edge cases.", body: "Explain what this function does step by step, then list its edge cases and one way it could break.", created_at: TS, updated_at: TS },
+  { id: "pr1", user_id: UID, kind: "audit", name: "Code review", description: "Reviews a pull request for correctness, security, and clarity.", body: "Review this pull request for correctness, security, and clarity. Flag risky changes and suggest concrete fixes with short examples.", created_at: TS, updated_at: TS },
+  { id: "pr2", user_id: UID, kind: "documentation", name: "Commit message", description: "Writes a conventional-commit message from the staged diff.", body: "Write a concise conventional-commit message for the staged diff. Imperative mood, a short subject, then a body explaining why.", created_at: TS, updated_at: TS },
+  { id: "pr3", user_id: UID, kind: "analysis", name: "Explain code", description: "Explains a function step by step and lists its edge cases.", body: "Explain what this function does step by step, then list its edge cases and one way it could break.", created_at: TS, updated_at: TS },
+  { id: "pr4", user_id: UID, kind: "seo", project_id: "proj-dneskai", is_public: true, name: "SEO check", description: "Checks indexing, metadata, structured data and Core Web Vitals.", body: "Run an SEO check of {{project.name}} at {{project.url}}. The code is in {{project.repo}}.\n\nCheck indexing, titles, structured data and Core Web Vitals. Use the tools under \"Links to consult\" and quote what each reported.", created_at: TS, updated_at: TS },
+  { id: "pr5", user_id: UID, kind: "marketing", is_public: true, name: "Launch announcement", description: "Writes a short, factual launch post for each channel.", body: "Write a launch announcement for {{project.name}} ({{project.url}}). Lead with what the user can now do.", created_at: TS, updated_at: TS },
+];
+
+// The links a prompt tells an agent to open.
+export const promptLinks: PromptLink[] = [
+  { id: "prl1", user_id: UID, prompt_id: "pr4", ai_link_id: "al7", note: "Run it on the Today page first.", sort_order: 0, created_at: TS, updated_at: TS },
+  { id: "prl2", user_id: UID, prompt_id: "pr1", ai_link_id: "al2", note: "Check leaked credentials.", sort_order: 0, created_at: TS, updated_at: TS },
 ];
 
 // Repo notes attach to live GitHub repos, which aren't available in the
