@@ -219,7 +219,7 @@ test.describe("dashboard sections", () => {
       "devShark",
       "boardlessAI",
       "Acme customer portal",
-      "Example Studio website",
+      "Harbor Bakery website",
     ]);
     // Keyboard order follows the visual order: the divider row sits between
     // the last own project and the first freelance project.
@@ -230,7 +230,7 @@ test.describe("dashboard sections", () => {
     if (testInfo.project.name === "desktop") {
       const sidebar = page.locator("aside");
       await expect(sidebar.getByText("Freelance — hired")).toBeVisible();
-      await expect(sidebar.getByRole("link", { name: "Example Studio website" })).toBeVisible();
+      await expect(sidebar.getByRole("link", { name: "Harbor Bakery website" })).toBeVisible();
     }
   });
 

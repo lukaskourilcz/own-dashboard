@@ -245,10 +245,10 @@ export const projects: Project[] = [
     updated_at: "2025-01-01T00:00:00Z",
   },
   {
-    id: "proj-example-studio",
+    id: "proj-harbor-bakery",
     user_id: "u1",
-    name: "Example Studio website",
-    slug: "example-studio",
+    name: "Harbor Bakery website",
+    slug: "harbor-bakery",
     repo_full_name: null,
     engagement: "client",
     url: null,

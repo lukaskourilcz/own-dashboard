@@ -16,7 +16,12 @@ function watchDataRequests(page: Page): string[] {
 
 async function open(page: Page, mobile: boolean, name: string) {
   if (mobile) {
-    await page.getByTestId("mobile-nav").getByRole("button", { name: /^(More|Více)$/ }).click();
+    const bar = page.getByTestId("mobile-nav");
+    if (await bar.getByRole("button", { name, exact: true }).count()) {
+      await bar.getByRole("button", { name, exact: true }).click();
+      return;
+    }
+    await bar.getByRole("button", { name: /^(More|Více)$/ }).click();
     await page.getByRole("dialog").getByRole("button", { name, exact: true }).click();
   } else {
     await page.locator("aside nav").getByRole("button", { name, exact: true }).click();
@@ -59,8 +64,8 @@ test("Opportunities loads nothing until pressed and remembers the last load", as
   await expect(page.getByRole("button", { name: "Acme customer portal", exact: true })).toBeVisible();
   await expect(page.getByText(/^Naposledy načteno: .* · Příležitosti: 1 · Platformy: \d+$/)).toBeVisible();
 
-  // A reload asks again, but the gate shows when and what was last loaded.
-  await page.reload();
+  // A new page load asks again, but the gate shows when and what was last loaded.
+  await page.goto("/dev-preview");
   await open(page, testInfo.project.name === "mobile", "Příležitosti");
   await expect(page.getByText(/^Naposledy načteno: .* · Příležitosti: 1 · Platformy: \d+$/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Zkontrolovat nové nabídky", exact: true })).toBeVisible();
