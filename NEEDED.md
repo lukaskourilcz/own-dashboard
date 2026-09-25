@@ -4,8 +4,7 @@ The repository implementation is complete. The items below are the external acco
 
 ## Kickoff 2026-09-25 · prompts, links, projects, tools
 
-`KICKOFF-25-9-2026.md` at the repository root is the programme; issues #75–#83 are the steps.
-Owner parts, in this order:
+Issues #75–#83 delivered the kickoff programme (its `KICKOFF-25-9-2026.md` was removed once they closed). Owner parts, in this order:
 
 - [x] **Apply the six kickoff migrations** — applied 2026-09-25 through the Supabase connector, one at a time and each verbatim from its file, after checks against the live schema. The daily-focus function signature and the `todos` repository columns matched, and no stored hidden tab was outside the new list. `main` went out at `8115276`, and that production deployment is READY. [imp:5] [owner:me] [time:20m] [kind:deploy]
 - [x] **Backfill repository ids** — done 2026-09-25 for the four repositories being renamed: quorum `1309668143`, aifirst `1236398773`, react-express-app `1136996139`, own-dashboard `1235308023`. The other 44 fill themselves when Projects syncs with GitHub connected; `scripts/backfill-project-repo-ids.mjs` still covers them all if you want it now. [imp:4] [owner:me] [time:10m] [kind:setup]
