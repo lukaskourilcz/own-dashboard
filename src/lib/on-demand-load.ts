@@ -29,7 +29,7 @@ export function recordLastLoad(scope: string, counts: Record<string, number>): v
   for (const listener of listeners) listener();
 }
 
-export function parseLastLoad(raw: string | null): LastLoad | null {
+function parseLastLoad(raw: string | null): LastLoad | null {
   if (!raw) return null;
   try {
     const value = JSON.parse(raw) as Partial<LastLoad>;

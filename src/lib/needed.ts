@@ -99,7 +99,7 @@ const KIND_RE = /`?\[kind:(setup|deploy|legal|content|decision)\]`?/i;
 
 /** Pull the `[imp:N]` marker out of a task line, returning the score (or null)
  * and the line text with the marker removed. */
-export function extractImportance(text: string): {
+function extractImportance(text: string): {
   importance: number | null;
   text: string;
 } {
@@ -112,7 +112,7 @@ export function extractImportance(text: string): {
 
 /** The `[owner:me|ai]` marker in a line, or null if absent. Used both on parse
  * and to derive a stored task's assignee from its `needed_raw` line. */
-export function extractAssignee(text: string | null | undefined): Assignee | null {
+function extractAssignee(text: string | null | undefined): Assignee | null {
   if (!text) return null;
   const m = ASSIGNEE_RE.exec(text);
   return m ? (m[1].toLowerCase() as Assignee) : null;
@@ -131,7 +131,7 @@ export function assigneeForTodo(
 
 /** Pull the `[time:…]` marker out of a task line, returning whole minutes (or
  * null) and the line text with the marker removed. */
-export function extractTime(text: string): {
+function extractTime(text: string): {
   minutes: number | null;
   text: string;
 } {
@@ -143,7 +143,7 @@ export function extractTime(text: string): {
 }
 
 /** The `[kind:…]` marker in a line, or null if absent/invalid. */
-export function extractKind(text: string | null | undefined): TaskKind | null {
+function extractKind(text: string | null | undefined): TaskKind | null {
   if (!text) return null;
   const m = KIND_RE.exec(text);
   const value = m?.[1]?.toLowerCase();
@@ -237,7 +237,7 @@ export function parseNeeded(
 
 /** Light markdown → plain text for a task title: unwrap links, bold and code,
  * drop trailing "→ §x.y" cross-refs, collapse whitespace. */
-export function cleanNeededText(s: string): string {
+function cleanNeededText(s: string): string {
   return s
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // [text](url) → text
     .replace(/\*\*([^*]+)\*\*/g, "$1") // **bold** → bold

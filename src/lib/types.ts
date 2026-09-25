@@ -77,7 +77,7 @@ export type SubscriptionImportance = "essential" | "useful" | "optional";
 
 // Where a task came from. "github" = generated from a repo's NEEDED.md (carries
 // the repo_* + needed_raw context below); null/"manual" = added by hand.
-export type TodoSource = "github" | "manual";
+type TodoSource = "github" | "manual";
 
 export type Todo = {
   id: string;
@@ -776,7 +776,7 @@ export type JobApplication = {
   contact_email?: string | null;
 };
 
-export type JobApplicationEventKind = "applied" | "status" | "note";
+type JobApplicationEventKind = "applied" | "status" | "note";
 
 export type JobApplicationEvent = {
   id: string;

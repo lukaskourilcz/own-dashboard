@@ -163,7 +163,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
  * offers" (Zkontrolovat nové nabídky). Until then the destination makes no
  * request of its own; afterwards nothing refetches until the next press.
  */
-export const ON_DEMAND_TAB_DATA: Partial<Record<NavTab, readonly DashboardDataKey[]>> = {
+const ON_DEMAND_TAB_DATA: Partial<Record<NavTab, readonly DashboardDataKey[]>> = {
   career: [
     "jobListings",
     "jobUserStates",

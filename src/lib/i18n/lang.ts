@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 export type Lang = "cs" | "en";
 
 // The app ships Czech-first; English is opt-in via Settings.
-export const DEFAULT_LANG: Lang = "cs";
+const DEFAULT_LANG: Lang = "cs";
 
 const listeners = new Set<() => void>();
 

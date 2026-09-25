@@ -9,7 +9,7 @@
  * date formats ("1 234,56", "17.07.2026").
  */
 
-export type ParsedTxRow = {
+type ParsedTxRow = {
   occurred_on: string; // yyyy-MM-dd
   kind: "income" | "expense";
   amount: number; // absolute value, always >= 0

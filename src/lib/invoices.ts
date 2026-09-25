@@ -152,7 +152,7 @@ function ibanCheckDigits(countryCode: string, bban: string): string {
 }
 
 /** Normalise an IBAN: strip spaces, upper-case. */
-export function normalizeIban(iban: string): string {
+function normalizeIban(iban: string): string {
   return iban.replace(/\s+/g, "").toUpperCase();
 }
 

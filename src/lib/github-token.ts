@@ -88,7 +88,7 @@ export async function storeGitHubTokens(args: {
  * refresh_token on file) we refresh under a per-user advisory lock, exactly
  * like the Google flow, to avoid racing a refresh_token rotation.
  */
-export async function getGitHubAccessToken(
+async function getGitHubAccessToken(
   opts: { force?: boolean } = {},
 ): Promise<string | null> {
   const supabase = await createUserClient();

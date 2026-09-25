@@ -56,7 +56,7 @@ async function getAccessToken(): Promise<string> {
   return json.access;
 }
 
-export class GoCardlessError extends Error {
+class GoCardlessError extends Error {
   status: number;
   constructor(message: string, status: number) {
     super(message);

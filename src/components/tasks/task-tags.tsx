@@ -40,7 +40,7 @@ const chipBase =
   "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium tabular";
 
 /** Small pill showing a task's 1–6 importance score. */
-export function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
+function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
   return (
     <Tooltip content={t.todos.importanceOf(value)}>
       <span
@@ -59,7 +59,7 @@ export function ImportanceBadge({ t, value }: { t: Dict; value: number }) {
 }
 
 /** Work-kind (category) pill — neutral chip with the kind's icon + label. */
-export function TaskKindBadge({ t, kind }: { t: Dict; kind: TaskKind }) {
+function TaskKindBadge({ t, kind }: { t: Dict; kind: TaskKind }) {
   const Icon = KIND_ICON[kind];
   const label = t.todos.taskKindLabel(kind);
   return (
@@ -74,7 +74,7 @@ export function TaskKindBadge({ t, kind }: { t: Dict; kind: TaskKind }) {
 }
 
 /** Estimated-time pill. */
-export function TaskTimeBadge({ t, minutes }: { t: Dict; minutes: number }) {
+function TaskTimeBadge({ t, minutes }: { t: Dict; minutes: number }) {
   const value = formatMinutes(minutes);
   if (!value) return null;
   return (
@@ -89,7 +89,7 @@ export function TaskTimeBadge({ t, minutes }: { t: Dict; minutes: number }) {
 }
 
 /** Assignee pill — AI-doable tasks get a subtle tint so they stand out. */
-export function AssigneeBadge({ t, assignee }: { t: Dict; assignee: Assignee }) {
+function AssigneeBadge({ t, assignee }: { t: Dict; assignee: Assignee }) {
   const ai = assignee === "ai";
   return (
     <span

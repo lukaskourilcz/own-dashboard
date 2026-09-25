@@ -73,7 +73,7 @@ export function pageAvailability(
   return matchesTitle && applicationSignal ? "open" : "unknown";
 }
 
-export async function checkListing(job: JobListing): Promise<Availability> {
+async function checkListing(job: JobListing): Promise<Availability> {
   let url = job.url;
   try {
     for (let redirects = 0; redirects < 4; redirects++) {

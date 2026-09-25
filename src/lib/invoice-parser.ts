@@ -3,7 +3,7 @@
 // can use to prefill a new invoice. Everything here is pure and unit-tested;
 // the extraction (pdf.js) lives separately because it needs the browser.
 
-export type ParsedParty = {
+type ParsedParty = {
   name?: string;
   ico?: string;
   dic?: string;

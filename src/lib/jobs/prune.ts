@@ -18,7 +18,7 @@ import { isJobUrl } from "./availability";
 /** Statuses that prove the posting is gone rather than merely unreachable. */
 const GONE_STATUSES = new Set([404, 410]);
 
-export type LivenessProbe = (url: string) => Promise<number | null>;
+type LivenessProbe = (url: string) => Promise<number | null>;
 
 export type LivenessOptions = {
   /** Concurrent requests. Boards are third parties, so stay polite. */
@@ -47,7 +47,7 @@ const PROBE_TIMEOUT_MS = 8_000;
  * HEAD the posting, falling back to GET when a board rejects HEAD (405/501).
  * Returns the status, or null when the request could not be completed at all.
  */
-export async function probeUrl(url: string): Promise<number | null> {
+async function probeUrl(url: string): Promise<number | null> {
   if (!isJobUrl(url)) return null;
   const request = (method: "HEAD" | "GET") =>
     fetch(url, {

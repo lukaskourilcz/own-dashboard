@@ -21,7 +21,7 @@ import { filterLibrary, UNCATEGORIZED_LINKS } from "@/lib/link-library";
 import type { AiCategory, AiLink } from "@/lib/types";
 
 /** The picker shows the library in pages of this size. */
-export const LINK_PICKER_PAGE = 50;
+const LINK_PICKER_PAGE = 50;
 
 /**
  * Library picker shared by the project workspace, the prompt editor and the

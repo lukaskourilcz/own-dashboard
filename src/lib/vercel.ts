@@ -16,8 +16,8 @@ import "server-only";
 const API = "https://api.vercel.com";
 const DAY = 24 * 60 * 60 * 1000;
 
-export type TrafficTotals = { pageviews: number; visitors: number };
-export type TrafficDay = { date: string; pageviews: number; visitors: number };
+type TrafficTotals = { pageviews: number; visitors: number };
+type TrafficDay = { date: string; pageviews: number; visitors: number };
 
 export type ProjectTraffic =
   | { kind: "unconfigured" } // no VERCEL_API_TOKEN set

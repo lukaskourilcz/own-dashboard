@@ -78,7 +78,7 @@ const DESC_CAP = 12000;
  * drop script/style, replace tags with spaces, decode entities, collapse
  * whitespace, and truncate. Returns null when nothing usable remains.
  */
-export function htmlToText(html: string | null | undefined, cap = DESC_CAP): string | null {
+function htmlToText(html: string | null | undefined, cap = DESC_CAP): string | null {
   if (!html) return null;
   const text = unescapeHtml(
     html

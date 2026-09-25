@@ -23,7 +23,7 @@ export type CronSeed = {
   runs_per_month: number;
 };
 
-export const PROJECT_CRON_SEEDS: Record<string, CronSeed[]> = {
+const PROJECT_CRON_SEEDS: Record<string, CronSeed[]> = {
   // DNESKAi (repository aifirst) — a daily/weekly content pipeline driven by
   // GitHub Actions. Derived from .github/workflows/daily.yml and weekly.yml.
   dneskai: [

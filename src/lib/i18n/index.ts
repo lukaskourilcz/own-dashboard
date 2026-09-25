@@ -35,7 +35,7 @@ import { portfolio } from "./sections/portfolio";
 
 export { useLang, type Lang } from "./lang";
 
-export const dictionaries = {
+const dictionaries = {
   en: {
     common: common.en,
     nav: nav.en,
@@ -108,7 +108,7 @@ export function useDict(): Dict {
   return dictionaries[lang];
 }
 
-export function dateLocale(lang: Lang): Locale {
+function dateLocale(lang: Lang): Locale {
   return lang === "cs" ? csLocale : enUS;
 }
 

@@ -159,7 +159,7 @@ export async function loadRepoFile(
 }
 
 /** A single commit surfaced by GET /api/github/commits. */
-export type GithubCommit = {
+type GithubCommit = {
   sha: string;
   shortSha: string;
   message: string;
@@ -170,7 +170,7 @@ export type GithubCommit = {
 
 /** Additions/deletions over a recent window (best-effort; may be null while
  * GitHub is still computing repository statistics). */
-export type GithubCodeVolume = {
+type GithubCodeVolume = {
   additions: number;
   deletions: number;
   weeks: number;
@@ -203,7 +203,7 @@ export async function loadProjectCommits(
 }
 
 /** One commit in the cross-project feed (GET /api/github/activity). */
-export type CrossProjectCommit = {
+type CrossProjectCommit = {
   projectId: string;
   projectName: string;
   projectSlug: string;

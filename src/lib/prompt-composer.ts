@@ -32,7 +32,7 @@ export type ComposerLink = {
 };
 
 /** Stand-in for a project value that is not set. */
-export const MISSING_VALUE = "—";
+const MISSING_VALUE = "—";
 
 /** Expand the four `{{project.*}}` placeholders. Without a project the body
  * is returned unchanged, placeholders included. */

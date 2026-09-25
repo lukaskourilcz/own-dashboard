@@ -1,5 +1,5 @@
 export type LetterLanguage = "en" | "cs";
-export type Evidence = {
+type Evidence = {
   id: string;
   employer: string;
   domain: RegExp;
@@ -8,7 +8,7 @@ export type Evidence = {
   paragraph: Record<LetterLanguage, string>;
 };
 
-export type ApplicationAngle = {
+type ApplicationAngle = {
   id: string;
   match: RegExp;
   text: Record<LetterLanguage, string>;
@@ -79,7 +79,7 @@ export function suggestApplicationAngles(description: string) {
 
 // Public portfolio + explicitly supplied career context. These are editable
 // evidence suggestions, not invented achievements or generated hiring claims.
-export const CAREER_EVIDENCE: Evidence[] = [
+const CAREER_EVIDENCE: Evidence[] = [
   {
     id: "embedit",
     employer: "EmbedIT",

@@ -33,7 +33,7 @@ export function promptKind(prompt: Pick<Prompt, "kind">): PromptKind {
  * names are the owner's own, in English or Czech, so the match is by whole
  * word after lowercasing and removing diacritics (see `categoryMatchesKind`).
  */
-export const PROMPT_KIND_CATEGORY_WORDS: Record<PromptKind, readonly string[]> = {
+const PROMPT_KIND_CATEGORY_WORDS: Record<PromptKind, readonly string[]> = {
   design: ["design", "ui", "fonts", "font", "typography", "color", "colors", "icons", "icon", "illustration", "images", "graphics", "grafika", "barvy", "ikony", "pisma"],
   audit: ["security", "performance", "accessibility", "a11y", "testing", "quality", "audit", "monitoring", "bezpecnost", "vykon", "pristupnost", "testovani"],
   competition: ["competition", "competitors", "market", "research", "ideas", "inspiration", "konkurence", "trh", "inspirace", "napady"],

@@ -23,7 +23,7 @@ import {
 // Display currency — what every total/chart is converted into.
 // ---------------------------------------------------------------------------
 
-export const DEFAULT_DISPLAY_CURRENCY = "CZK";
+const DEFAULT_DISPLAY_CURRENCY = "CZK";
 
 const CURRENCY_KEY = "displayCurrency";
 const currencyListeners = new Set<() => void>();
@@ -348,7 +348,7 @@ export function useNavCollapsed(): {
 // the "show all / show less" control. 0 means "show all". Defaults to 5.
 // ---------------------------------------------------------------------------
 
-export const DEFAULT_TASKS_PER_CATEGORY = 5;
+const DEFAULT_TASKS_PER_CATEGORY = 5;
 /** Selectable values in Settings; 0 = show all. */
 export const TASKS_PER_CATEGORY_OPTIONS = [3, 5, 10, 0] as const;
 

@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 
-export type GcalEventTime = {
+type GcalEventTime = {
   dateTime?: string;
   date?: string;
   timeZone?: string;

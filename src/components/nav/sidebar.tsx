@@ -60,8 +60,8 @@ type NavItem = {
 type NavGroupId = "work" | "money" | "planning" | "library";
 type NavGroup = { id: NavGroupId; items: NavItem[] };
 
-export const HOME_ITEM: NavItem = { value: "home", icon: LayoutDashboard };
-export const INBOX_ITEM: NavItem = { value: "inbox", icon: Inbox };
+const HOME_ITEM: NavItem = { value: "home", icon: LayoutDashboard };
+const INBOX_ITEM: NavItem = { value: "inbox", icon: Inbox };
 const isNavigable = (item: NavItem) => !isHiddenNavTab(item.value);
 // Pinned items above the groups. Inbox is hidden from navigation
 // (HIDDEN_NAV_TABS) and stays reachable by URL.

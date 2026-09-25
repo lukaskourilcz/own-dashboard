@@ -87,7 +87,7 @@ export async function storeGoogleTokens(args: {
  * Pass { force: true } to ignore the cached access_token (e.g. after a 401
  * from Google indicates the cached token went stale before its stamped expiry).
  */
-export async function getGoogleAccessToken(
+async function getGoogleAccessToken(
   opts: { force?: boolean } = {},
 ): Promise<string | null> {
   const supabase = await createUserClient();

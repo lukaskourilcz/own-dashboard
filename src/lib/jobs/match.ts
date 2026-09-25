@@ -13,7 +13,7 @@ import type { JobListing, JobRole } from "@/lib/types";
 /** One technology Lukáš knows. `weight` is its scoring signal (higher =
  * more differentiating); generic universals (git, html) sit low, niche
  * differentiators (React, TypeScript, Node) sit high. */
-export type StackSkill = {
+type StackSkill = {
   name: string;
   weight: number;
   group: string;
@@ -22,7 +22,7 @@ export type StackSkill = {
 };
 
 /** A tech a posting asks for that Lukáš does NOT have — a gap. */
-export type GapTech = {
+type GapTech = {
   name: string;
   aliases: string[];
 };
@@ -43,7 +43,7 @@ export type JobMatch = {
 
 /** Frontend & fullstack are the roles Lukáš actually applies to, so they
  * always sort ahead of generic "software" in the default "best fit" order. */
-export const ROLE_PRIORITY: Record<JobRole, number> = {
+const ROLE_PRIORITY: Record<JobRole, number> = {
   frontend: 0,
   fullstack: 0,
   software: 1,
@@ -64,7 +64,7 @@ const PARTIAL = 25;
  * supporting/generic. Deliberately omits git/github/gitlab (every job uses
  * them — matching them would inflate every score meaninglessly).
  */
-export const MY_STACK: StackSkill[] = [
+const MY_STACK: StackSkill[] = [
   // languages
   { name: "TypeScript", weight: 3, group: "languages", aliases: ["typescript", "ts"] },
   { name: "JavaScript", weight: 2, group: "languages", aliases: ["javascript", "js", "es6", "ecmascript"] },
@@ -120,7 +120,7 @@ export const MY_STACK: StackSkill[] = [
  * surfaces the gaps that make a role a worse fit (and feeds the
  * "learn next" insight).
  */
-export const GAP_TECHS: GapTech[] = [
+const GAP_TECHS: GapTech[] = [
   { name: "Vue", aliases: ["vue", "vuejs", "vue.js"] },
   { name: "Angular", aliases: ["angular"] },
   { name: "Svelte", aliases: ["svelte", "sveltekit"] },
