@@ -16,6 +16,7 @@ import { assessProjectHealth } from "@/lib/project-health";
 import { useCrossProjectActivityQuery } from "@/lib/github-queries";
 import { dueFollowUps } from "@/lib/jobs/board";
 import type { EventsResult } from "@/lib/calendar";
+import type { EntityStatus } from "@/lib/queries/entities";
 import type { ClientOpportunity, Cron, ImportantDate, Invoice, JobApplication, Organization, Project, ProjectCost, Todo, Updater, WeeklyReview } from "@/lib/types";
 
 const CLOSED = new Set(["won", "lost", "expired", "archived"]);
@@ -32,7 +33,9 @@ export function WorkOverviewPanel({
   crons,
   reviews,
   setReviews,
+  reviewsStatus,
   lastWeekCalendar,
+  lastWeekCalendarStatus,
   isPreview,
 }: {
   projects: Project[];
@@ -46,7 +49,9 @@ export function WorkOverviewPanel({
   crons: Cron[];
   reviews: WeeklyReview[];
   setReviews: Updater<WeeklyReview[]>;
+  reviewsStatus?: EntityStatus;
   lastWeekCalendar: EventsResult;
+  lastWeekCalendarStatus?: EntityStatus;
   isPreview?: boolean;
 }) {
   const t = useDict();
@@ -122,10 +127,12 @@ export function WorkOverviewPanel({
           <WeeklyPlanningFlow
             reviews={reviews}
             setReviews={setReviews}
+            reviewsStatus={reviewsStatus}
             projects={projects}
             organizations={organizations}
             todos={todos}
             lastWeekCalendar={lastWeekCalendar}
+            lastWeekCalendarStatus={lastWeekCalendarStatus}
             isPreview={isPreview}
           />
           <Card>

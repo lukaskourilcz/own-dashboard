@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/toast";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { mondayKey, previousMondayKey, weekRange } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
+import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
@@ -67,6 +68,21 @@ const CHANNEL_COLOR: Record<WorkChannel, string> = {
   admin: CHART_COLORS[2],
 };
 
+type PlanningProps = {
+  reviews: WeeklyReview[];
+  setReviews: Updater<WeeklyReview[]>;
+  projects: Project[];
+  organizations: Organization[];
+  todos: Todo[];
+  lastWeekCalendar: EventsResult;
+  isPreview?: boolean;
+};
+
+type EditedField = "summary" | "objectives" | LegacyReviewKey;
+
+const LOADED: EntityStatus = { ready: true, failed: false };
+const CALENDAR_UNREADABLE: EventsResult = { ok: false, reason: "error" };
+
 /**
  * The guided weekly planning flow.
  *
@@ -78,8 +94,72 @@ const CHANNEL_COLOR: Record<WorkChannel, string> = {
  *
  * Only aggregates are written — minutes per channel and counts. Calendar titles
  * classify a block and are then discarded.
+ *
+ * The steps mount only once the stored reviews have loaded and last week's
+ * calendar has loaded or failed. They seed their state from the stored review
+ * when they mount, and a tab reached client-side starts from an empty
+ * placeholder: mounted early, the first "Next" would save that emptiness over
+ * the week's real plan.
  */
 export function WeeklyPlanningFlow({
+  reviewsStatus = LOADED,
+  lastWeekCalendarStatus = LOADED,
+  lastWeekCalendar,
+  ...props
+}: PlanningProps & {
+  reviewsStatus?: EntityStatus;
+  lastWeekCalendarStatus?: EntityStatus;
+}) {
+  const calendarSettled = lastWeekCalendarStatus.ready || lastWeekCalendarStatus.failed;
+  if (!reviewsStatus.ready || !calendarSettled) {
+    return <PlanningPending failed={reviewsStatus.failed} />;
+  }
+  return (
+    <PlanningSteps
+      {...props}
+      // A calendar read that gave up is shown as unreadable, never as an
+      // empty week whose zero minutes would then be saved.
+      lastWeekCalendar={lastWeekCalendarStatus.ready ? lastWeekCalendar : CALENDAR_UNREADABLE}
+    />
+  );
+}
+
+function PlanningPending({ failed }: { failed: boolean }) {
+  const t = useDict();
+  const p = t.professional;
+  const qc = useQueryClient();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{p.weeklyPlanning}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-foreground-muted">{p.weeklyPlanningDescription}</p>
+        {failed ? (
+          <div role="alert" className="space-y-2">
+            <p className="text-sm text-foreground-muted">{p.planningLoadFailed}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void qc.invalidateQueries({ queryKey: qk.weeklyReviews, exact: true });
+                void qc.invalidateQueries({ queryKey: qk.calendarLastWeek, exact: true });
+              }}
+            >
+              {p.planningRetry}
+            </Button>
+          </div>
+        ) : (
+          <p role="status" className="text-sm text-foreground-muted">
+            {t.common.loading}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PlanningSteps({
   reviews,
   setReviews,
   projects,
@@ -87,15 +167,7 @@ export function WeeklyPlanningFlow({
   todos,
   lastWeekCalendar,
   isPreview = false,
-}: {
-  reviews: WeeklyReview[];
-  setReviews: Updater<WeeklyReview[]>;
-  projects: Project[];
-  organizations: Organization[];
-  todos: Todo[];
-  lastWeekCalendar: EventsResult;
-  isPreview?: boolean;
-}) {
+}: PlanningProps) {
   const t = useDict();
   const p = t.professional;
   const supabase = createClient();
@@ -107,6 +179,11 @@ export function WeeklyPlanningFlow({
   const current = reviews.find((review) => review.week_start === weekStart);
   const previous = reviews.find((review) => review.week_start === previousWeek);
   const storedItems = current?.items ?? {};
+  // What the owner changed since the steps mounted. A save writes only these
+  // fields and carries every other one over from the stored review as it is
+  // at save time, so a list nobody touched is never replaced.
+  const edited = useRef(new Set<EditedField>());
+  const markEdited = (field: EditedField) => edited.current.add(field);
 
   const [step, setStep] = useState<WeeklyPlanningStep>(() => readStep(storedItems));
   const [objectives, setObjectives] = useState<WeeklyObjective[]>(() =>
@@ -220,27 +297,29 @@ export function WeeklyPlanningFlow({
         mode === "complete" ? "completed" : mode === "draft" ? "draft" : current?.status ?? "draft";
       const completedAt =
         mode === "complete" ? now : mode === "draft" ? null : current?.completed_at ?? null;
+      const changed = edited.current;
       const { data, error } = await supabase
         .from("weekly_reviews")
         .upsert(
           {
             user_id: userId,
             week_start: weekStart,
-            summary: summary.trim(),
+            summary: changed.has("summary") ? summary.trim() : current?.summary ?? "",
             items: writeReviewItems(storedItems, {
-              ...(Object.fromEntries(
-                LEGACY_REVIEW_KEYS.map((key) => [
+              ...Object.fromEntries(
+                LEGACY_REVIEW_KEYS.filter((key) => changed.has(key)).map((key) => [
                   key,
                   legacy[key].split("\n").map((line) => line.trim()).filter(Boolean),
                 ]),
-              ) as Record<LegacyReviewKey, string[]>),
-              objectives: nextObjectives,
+              ),
+              ...(changed.has("objectives") ? { objectives: nextObjectives } : {}),
               timeByChannel: {
                 minutes: time.minutes,
                 unmatchedEvents: time.unmatchedEvents,
                 source: lastWeekCalendar.ok ? "google" : "unavailable",
               },
-              focusRecap: recap,
+              // A recap is only as good as the read behind it.
+              ...(focusQuery.isSuccess ? { focusRecap: recap } : {}),
               step: atStep,
             }),
             status,
@@ -277,7 +356,10 @@ export function WeeklyPlanningFlow({
     // Leaving the carry step is what turns the kept items into objectives, so
     // stepping back and forward again never duplicates them.
     const merged = step === "carry" ? mergeCarriedObjectives(objectives, kept) : objectives;
-    if (merged !== objectives) setObjectives(merged);
+    if (merged !== objectives) {
+      markEdited("objectives");
+      setObjectives(merged);
+    }
     const target = nextStep(step);
     setStep(target);
     persist("auto", target, merged);
@@ -288,6 +370,7 @@ export function WeeklyPlanningFlow({
   const addObjective = () => {
     const text = draftObjective.trim();
     if (!text) return;
+    markEdited("objectives");
     setObjectives((old) => [
       ...old,
       { id: `objective-${Date.now()}-${old.length}`, text, done: false },
@@ -410,15 +493,16 @@ export function WeeklyPlanningFlow({
                       <Checkbox
                         checked={objective.done}
                         aria-label={`${p.objectiveDone}: ${objective.text}`}
-                        onCheckedChange={(checked) =>
+                        onCheckedChange={(checked) => {
+                          markEdited("objectives");
                           setObjectives((old) =>
                             old.map((entry) =>
                               entry.id === objective.id
                                 ? { ...entry, done: checked === true }
                                 : entry,
                             ),
-                          )
-                        }
+                          );
+                        }}
                       />
                       <span className="min-w-0 flex-1 text-sm">
                         {objective.text}
@@ -432,11 +516,12 @@ export function WeeklyPlanningFlow({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`${p.removeObjective}: ${objective.text}`}
-                        onClick={() =>
+                        onClick={() => {
+                          markEdited("objectives");
                           setObjectives((old) =>
                             old.filter((entry) => entry.id !== objective.id),
-                          )
-                        }
+                          );
+                        }}
                       >
                         <X />
                       </Button>
@@ -477,7 +562,10 @@ export function WeeklyPlanningFlow({
                   value={summary}
                   rows={4}
                   placeholder={p.summaryPlaceholder}
-                  onChange={(event) => setSummary(event.target.value)}
+                  onChange={(event) => {
+                    markEdited("summary");
+                    setSummary(event.target.value);
+                  }}
                 />
               </label>
               <details className="border-t border-border pt-3">
@@ -501,9 +589,10 @@ export function WeeklyPlanningFlow({
                         value={legacy[key]}
                         rows={3}
                         className="min-h-20"
-                        onChange={(event) =>
-                          setLegacy((old) => ({ ...old, [key]: event.target.value }))
-                        }
+                        onChange={(event) => {
+                          markEdited(key);
+                          setLegacy((old) => ({ ...old, [key]: event.target.value }));
+                        }}
                       />
                     </label>
                   ))}

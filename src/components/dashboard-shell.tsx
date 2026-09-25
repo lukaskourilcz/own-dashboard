@@ -279,7 +279,7 @@ export function DashboardShell(props: Props) {
   const [opportunities, setOpportunities] = useEntityStore(qk.opportunities, props.initialOpportunities, fetchOpportunities, dataOptions("opportunities"));
   const [inboxItems, setInboxItems] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));
   const [notifications, setNotifications] = useEntityStore(qk.notifications, props.initialNotifications, fetchNotifications, dataOptions("notifications"));
-  const [weeklyReviews, setWeeklyReviews] = useEntityStore(qk.weeklyReviews, props.initialWeeklyReviews, fetchWeeklyReviews, dataOptions("weeklyReviews"));
+  const [weeklyReviews, setWeeklyReviews, weeklyReviewsStatus] = useEntityStore(qk.weeklyReviews, props.initialWeeklyReviews, fetchWeeklyReviews, dataOptions("weeklyReviews"));
   const [jobListings] = useEntityStore(qk.jobListings, props.initialJobListings, fetchJobListings, dataOptions("jobListings"));
   const [jobUserStates, setJobUserStates] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, fetchJobUserStates, dataOptions("jobUserStates"));
   const [savedJobPositions, setSavedJobPositions] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
@@ -289,7 +289,7 @@ export function DashboardShell(props: Props) {
   const [jobLastRun] = useEntityStore<JobScrapeRun | null>(qk.jobLastRun, props.initialJobLastRun, fetchJobLastRun, dataOptions("jobLastRun"));
   const [todayCalendar] = useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
   const [weekCalendar] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
-  const [lastWeekCalendar] = useEntityStore(qk.calendarLastWeek, props.lastWeekCalendar, fetchLastWeekCalendar, dataOptions("lastWeekCalendar"));
+  const [lastWeekCalendar, , lastWeekCalendarStatus] = useEntityStore(qk.calendarLastWeek, props.lastWeekCalendar, fetchLastWeekCalendar, dataOptions("lastWeekCalendar"));
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useDisplayCurrency();
 
   // "Check for new offers": fetch the destination's on-demand data now, then
@@ -366,7 +366,7 @@ export function DashboardShell(props: Props) {
             goals: <RecurringPlans plans={plans} setPlans={setPlans} />,
           } satisfies Record<WidgetId, React.ReactNode>} />}
           {tab === "inbox" && <InboxPanel items={inboxItems} setItems={setInboxItems} notifications={notifications} setNotifications={setNotifications} />}
-          {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} lastWeekCalendar={lastWeekCalendar} isPreview={props.isPreview} />}
+          {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} reviewsStatus={weeklyReviewsStatus} lastWeekCalendar={lastWeekCalendar} lastWeekCalendarStatus={lastWeekCalendarStatus} isPreview={props.isPreview} />}
           {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} subscriptionAllocations={subscriptionAllocations} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} promptLinks={promptLinks} competitors={competitors} setCompetitors={setCompetitors} syncRepositories={!props.isPreview} isPreview={props.isPreview} />}
           {tab === "competition" && <CompetitionPanel projects={projects} competitors={competitors} setCompetitors={setCompetitors} onOpenProject={openProject} />}
           {tab === "opportunities" && <OpportunitiesPanel activated={activatedTabs.has("opportunities")} onActivate={() => activateTab("opportunities")} userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
