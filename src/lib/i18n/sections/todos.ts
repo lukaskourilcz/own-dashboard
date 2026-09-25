@@ -33,6 +33,8 @@ type TodosStrings = {
   refreshDisconnected: string;
   refreshNoRepos: string;
   refreshErr: string;
+  // Repositories with no NEEDED.md at the root or in docs/, joined by commas.
+  refreshMissing: (repos: string) => string;
   showAllCount: (n: number) => string;
   showLess: string;
   collapseGroup: string;
@@ -54,6 +56,7 @@ type TodosStrings = {
   clearFromNeededDone: (n: number) => string;
   clearFromNeededNone: string;
   clearFromNeededErr: string;
+  clearFromNeededMissing: (repos: string) => string;
   clearingFromNeeded: string;
   finishedCommitMessage: (n: number) => string;
   // Importance scoring + filter
@@ -134,6 +137,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshDisconnected: "Reconnect GitHub to refresh tasks.",
     refreshNoRepos: "Connect GitHub to sync tasks from NEEDED.md.",
     refreshErr: "Couldn't refresh tasks. Please try again.",
+    refreshMissing: (repos) =>
+      `No NEEDED.md at the root or in docs/ of ${repos}. Their tasks were kept.`,
     showAllCount: (n) => `Show all ${n}`,
     showLess: "Show less",
     collapseGroup: "Collapse",
@@ -163,6 +168,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       `Removed ${n} finished task${n === 1 ? "" : "s"} from NEEDED.md.`,
     clearFromNeededNone: "No finished NEEDED tasks to remove.",
     clearFromNeededErr: "Couldn't update NEEDED.md. Please try again.",
+    clearFromNeededMissing: (repos) =>
+      `No NEEDED.md at the root or in docs/ of ${repos}. Their finished tasks were cleared without a commit.`,
     clearingFromNeeded: "Removing…",
     finishedCommitMessage: (n) =>
       `chore: remove ${n} finished task${n === 1 ? "" : "s"} from NEEDED.md`,
@@ -259,6 +266,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshDisconnected: "Pro obnovení úkolů znovu připoj GitHub.",
     refreshNoRepos: "Připoj GitHub pro synchronizaci úkolů z NEEDED.md.",
     refreshErr: "Úkoly se nepodařilo obnovit. Zkus to znovu.",
+    refreshMissing: (repos) =>
+      `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich úkoly zůstaly.`,
     showAllCount: (n) => `Zobrazit vše (${n})`,
     showLess: "Zobrazit méně",
     collapseGroup: "Sbalit",
@@ -298,6 +307,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     },
     clearFromNeededNone: "Žádné hotové NEEDED úkoly k odebrání.",
     clearFromNeededErr: "NEEDED.md se nepodařilo aktualizovat. Zkus to znovu.",
+    clearFromNeededMissing: (repos) =>
+      `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich hotové úkoly se vyčistily bez commitu.`,
     clearingFromNeeded: "Odebírám…",
     finishedCommitMessage: (n) =>
       `chore: odebrání ${n} hotových úkolů z NEEDED.md`,

@@ -8,7 +8,7 @@ write to this spec.
 
 ## `NEEDED.md` — owner/agent action items
 
-A markdown checklist at the repo root. OwnDashboard reads the root `NEEDED.md` and falls back to `docs/NEEDED.md`, where quorum keeps its list; check-offs commit to whichever file it read. A repository with neither file keeps the tasks it already imported, because a missing file is not an empty list. One task per list item. OwnDashboard's
+A markdown checklist at the repo root. OwnDashboard reads the root `NEEDED.md` and falls back to `docs/NEEDED.md`, where quorum keeps its list; check-offs commit to whichever file it read. A repository with neither file keeps the open tasks it already imported, because a missing file is not an empty list, and Refresh names it. **Delete from NEEDED.md** clears that repository's finished tasks without a commit, since their lines left with the file, and names it too. One task per list item. OwnDashboard's
 Tasks section imports these (see `src/lib/needed.ts`).
 
 ```

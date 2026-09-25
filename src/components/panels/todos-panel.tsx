@@ -213,7 +213,7 @@ export function TodosPanel({
       if (!userId) throw new Error("disconnected");
 
       const nowIso = new Date().toISOString();
-      const { scanned, freshRows } = await scanNeededRepos(
+      const { scanned, freshRows, missing } = await scanNeededRepos(
         userId,
         reposData.repos,
         nowIso,
@@ -246,15 +246,19 @@ export function TodosPanel({
       return {
         added: toInsert.length,
         removed: toDeleteIds.length,
+        missing,
         dailyFocusUpdated: focusResponse.ok,
       };
     },
-    onSuccess: async ({ added, removed, dailyFocusUpdated }) => {
+    onSuccess: async ({ added, removed, missing, dailyFocusUpdated }) => {
       toast.ok(
         added === 0 && removed === 0
           ? t.todos.refreshNothing
           : t.todos.refreshDone(added, removed),
       );
+      // A repository that lost its NEEDED.md keeps its tasks; say which, so
+      // the rows that stay are explained.
+      if (missing.length > 0) toast.info(t.todos.refreshMissing(missing.join(", ")));
       await qc.invalidateQueries({ queryKey: qk.todos });
       await qc.invalidateQueries({ queryKey: qk.dailyFocus });
       if (!dailyFocusUpdated) toast.err(t.todos.dailyFocusRefreshErr);
@@ -273,11 +277,12 @@ export function TodosPanel({
 
   // Delete finished NEEDED tasks from their repos' NEEDED.md (one commit per
   // repo, to the path the file was found at), then clear the finished rows.
-  // Repos whose file is unavailable or whose commit fails keep their rows so
-  // the action can be retried.
+  // Repos whose file failed to load or whose commit fails keep their rows so
+  // the action can be retried; a repo with no NEEDED.md left has nothing to
+  // edit, so its finished rows are cleared and it is named in a notice.
   const clearFinished = useMutation({
     mutationFn: async () => {
-      const idsToDelete = await removeFinishedFromNeeded(
+      const { cleared: idsToDelete, missing } = await removeFinishedFromNeeded(
         todos,
         ({ owner, repo, path, content, count }) =>
           commitFile({
@@ -296,14 +301,15 @@ export function TodosPanel({
           .in("id", idsToDelete);
         if (error) throw error;
       }
-      return { removed: idsToDelete.length };
+      return { removed: idsToDelete.length, missing };
     },
-    onSuccess: ({ removed }) => {
+    onSuccess: ({ removed, missing }) => {
       toast.ok(
         removed === 0
           ? t.todos.clearFromNeededNone
           : t.todos.clearFromNeededDone(removed),
       );
+      if (missing.length > 0) toast.info(t.todos.clearFromNeededMissing(missing.join(", ")));
       void qc.invalidateQueries({ queryKey: qk.todos });
       void qc.invalidateQueries({ queryKey: qk.dailyFocus });
       // Drop cached NEEDED file contents so the Repos checklist reflects it.

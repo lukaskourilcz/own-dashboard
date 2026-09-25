@@ -189,19 +189,31 @@ export type NeededCommit = (input: {
   count: number;
 }) => Promise<CommitOutcome>;
 
+/** What "Delete from NEEDED.md" did. */
+export type FinishedRemoval = {
+  /** Finished rows that may now be deleted. */
+  cleared: string[];
+  /** Repositories with no NEEDED.md at any known path. Their finished rows
+   *  are in `cleared` too: the lines left with the file, so nothing was
+   *  committed there. */
+  missing: string[];
+};
+
 /**
  * Remove finished GitHub tasks' lines from their repositories' NEEDED.md (one
- * commit per repository, to the path the file was found at) and return the
- * ids of the rows that may now be deleted. A repository whose file cannot be
- * read, was found at no path, or whose commit fails keeps its rows, so the
- * action can be retried and no line survives in a file the dashboard no
- * longer tracks. A disconnected token aborts with Error("disconnected").
+ * commit per repository, to the path the file was found at) and report the
+ * rows that may now be deleted. A repository whose file cannot be read right
+ * now, or whose commit fails, keeps its rows, so the action can be retried and
+ * no line survives in a file the dashboard still tracks. A repository with no
+ * file at any known path has nothing left to edit: its finished rows are
+ * cleared and it is named in `missing`, so the owner learns why no commit
+ * happened. A disconnected token aborts with Error("disconnected").
  */
 export async function removeFinishedFromNeeded(
   todos: Todo[],
   commit: NeededCommit,
   load: NeededFileLoader = loadNeededFile,
-): Promise<string[]> {
+): Promise<FinishedRemoval> {
   const byRepo = new Map<string, Todo[]>();
   for (const td of todos) {
     if (
@@ -220,11 +232,17 @@ export async function removeFinishedFromNeeded(
   }
 
   const cleared: string[] = [];
+  const missing: string[] = [];
   for (const tasks of byRepo.values()) {
     const owner = tasks[0].repo_owner!;
     const name = tasks[0].repo_name!;
     const res = await load(owner, name);
     if (res.kind === "disconnected") throw new Error("disconnected");
+    if (res.kind === "not-found") {
+      missing.push(`${owner}/${name}`);
+      cleared.push(...tasks.map((td) => td.id));
+      continue;
+    }
     if (res.kind !== "ok") continue;
 
     let content = res.content;
@@ -247,5 +265,5 @@ export async function removeFinishedFromNeeded(
     }
     cleared.push(...tasks.map((td) => td.id));
   }
-  return cleared;
+  return { cleared, missing };
 }
