@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { parseNeeded, removeNeededLine } from "@/lib/needed";
-import type { GithubRepo } from "@/lib/github";
+import {
+  loadNeededFile,
+  NEEDED_FILE_PATHS,
+  parseNeeded,
+  removeNeededLine,
+} from "@/lib/needed";
+import type { GithubRepo, RepoFileResult } from "@/lib/github";
 
 const repo = {
   id: 42,
@@ -177,5 +182,71 @@ describe("removeNeededLine", () => {
     const item = parseNeeded(md, repo, null).find((i) => i.text === "remove me")!;
     const { next } = removeNeededLine(md, item.raw);
     expect(parseNeeded(next, repo, null).map((i) => i.text)).toEqual(["keep me"]);
+  });
+});
+
+describe("loadNeededFile", () => {
+  /** A fake GitHub file reader: path → result, recording every path read. */
+  function reader(files: Record<string, RepoFileResult>) {
+    const calls: string[] = [];
+    const load = async (_owner: string, _repo: string, path: string) => {
+      calls.push(path);
+      return files[path] ?? ({ kind: "not-found" } as const);
+    };
+    return { load, calls };
+  }
+  const ok = (content: string): RepoFileResult => ({
+    kind: "ok",
+    content,
+    htmlUrl: `https://github.com/me/r/blob/main/${content}`,
+  });
+
+  it("tries the root first, then docs/", () => {
+    expect(NEEDED_FILE_PATHS).toEqual(["NEEDED.md", "docs/NEEDED.md"]);
+  });
+
+  it("returns the root file without reading docs/", async () => {
+    const { load, calls } = reader({ "NEEDED.md": ok("root") });
+    const res = await loadNeededFile("me", "r", load);
+    expect(res).toMatchObject({ kind: "ok", path: "NEEDED.md", content: "root" });
+    expect(calls).toEqual(["NEEDED.md"]);
+  });
+
+  it("falls back to docs/NEEDED.md when the root has none (quorum)", async () => {
+    const { load, calls } = reader({ "docs/NEEDED.md": ok("docs") });
+    const res = await loadNeededFile("me", "quorum", load);
+    expect(res).toMatchObject({
+      kind: "ok",
+      path: "docs/NEEDED.md",
+      content: "docs",
+    });
+    expect(calls).toEqual(["NEEDED.md", "docs/NEEDED.md"]);
+  });
+
+  it("reports not-found only when no path has the file", async () => {
+    const { load, calls } = reader({});
+    expect(await loadNeededFile("me", "r", load)).toEqual({ kind: "not-found" });
+    expect(calls).toEqual(["NEEDED.md", "docs/NEEDED.md"]);
+  });
+
+  it("does not look further after a transient error on the root", async () => {
+    const { load, calls } = reader({
+      "NEEDED.md": { kind: "error" },
+      "docs/NEEDED.md": ok("docs"),
+    });
+    expect(await loadNeededFile("me", "r", load)).toEqual({ kind: "error" });
+    expect(calls).toEqual(["NEEDED.md"]);
+  });
+
+  it("passes a disconnected token straight through", async () => {
+    const { load } = reader({ "NEEDED.md": { kind: "disconnected" } });
+    expect(await loadNeededFile("me", "r", load)).toEqual({
+      kind: "disconnected",
+    });
+  });
+
+  it("reports an error on docs/ after a root 404 as an error", async () => {
+    const { load } = reader({ "docs/NEEDED.md": { kind: "error" } });
+    expect(await loadNeededFile("me", "r", load)).toEqual({ kind: "error" });
   });
 });

@@ -1,8 +1,59 @@
-import type { GithubRepo } from "@/lib/github";
+import {
+  loadRepoFile,
+  type GithubRepo,
+  type RepoFileResult,
+} from "@/lib/github";
 import { isTaskKind, parseTimeToMinutes, type TaskKind } from "@/lib/task-meta";
 
-/** The file each repo exposes its open action-items in, read from the root. */
-export const NEEDED_FILE = "NEEDED.md";
+/**
+ * Where a repository keeps its open action items, tried in this order. The
+ * root is the convention; quorum moved its list to `docs/NEEDED.md` on
+ * 2026-08-08, and a root-only reader imported nothing from it.
+ */
+export const NEEDED_FILE_PATHS = ["NEEDED.md", "docs/NEEDED.md"] as const;
+export type NeededFilePath = (typeof NEEDED_FILE_PATHS)[number];
+
+/**
+ * A repository's NEEDED.md as read from GitHub, with the path it was found
+ * at so a check-off commits to the same file. `not-found` means no candidate
+ * path holds the file: the list is unavailable, not empty, so no caller may
+ * read it as "every task is done".
+ */
+export type NeededFileResult =
+  | {
+      kind: "ok";
+      path: NeededFilePath;
+      content: string;
+      htmlUrl: string | null;
+    }
+  | { kind: "not-found" }
+  | { kind: "disconnected" }
+  | { kind: "error" };
+
+/**
+ * Read a repository's NEEDED.md from the first path in NEEDED_FILE_PATHS that
+ * has one. Only a 404 moves on to the next path; a disconnected token or any
+ * other failure is returned at once, so a transient error on the root file is
+ * never mistaken for a list kept elsewhere.
+ */
+export async function loadNeededFile(
+  owner: string,
+  repo: string,
+  load: (
+    owner: string,
+    repo: string,
+    path: string,
+  ) => Promise<RepoFileResult> = loadRepoFile,
+): Promise<NeededFileResult> {
+  for (const path of NEEDED_FILE_PATHS) {
+    const res = await load(owner, repo, path);
+    if (res.kind === "ok") {
+      return { kind: "ok", path, content: res.content, htmlUrl: res.htmlUrl };
+    }
+    if (res.kind !== "not-found") return res;
+  }
+  return { kind: "not-found" };
+}
 
 /** Who a task is for: the user ("me") or something Claude/AI can do ("ai"). */
 export type Assignee = "me" | "ai";

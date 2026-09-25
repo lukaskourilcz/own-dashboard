@@ -47,18 +47,13 @@ import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
 import { useReposQuery } from "@/lib/github-queries";
-import { commitFile, loadRepoFile } from "@/lib/github";
+import { commitFile } from "@/lib/github";
 import { findProjectForTask } from "@/lib/project-match";
+import { assigneeForTodo, type Assignee } from "@/lib/needed";
 import {
-  NEEDED_FILE,
-  removeNeededLine,
-  assigneeForTodo,
-  type Assignee,
-} from "@/lib/needed";
-import {
-  buildNeededRows,
   diffNeededTodos,
-  type NeededTodoRow,
+  removeFinishedFromNeeded,
+  scanNeededRepos,
 } from "@/lib/needed-sync";
 import { TaskTags } from "@/components/tasks/task-tags";
 import {
@@ -202,9 +197,10 @@ export function TodosPanel({
       ]),
   });
 
-  // Refresh: re-scan every repo's NEEDED.md, add newly-listed tasks and drop
-  // open GitHub tasks whose source line is gone. A repo whose file failed to
-  // load (transient error) is left untouched so nothing is lost on a blip.
+  // Refresh: re-scan every repo's NEEDED.md (root, then docs/), add newly
+  // listed tasks and drop open GitHub tasks whose source line is gone. A repo
+  // whose file failed to load or was found at no path keeps its tasks: a
+  // missing file is unavailable, not an empty list.
   const refresh = useMutation({
     mutationFn: async () => {
       const reposData = reposQuery.data;
@@ -217,22 +213,11 @@ export function TodosPanel({
       if (!userId) throw new Error("disconnected");
 
       const nowIso = new Date().toISOString();
-      const scanned = new Set<string>();
-      const freshRows: NeededTodoRow[] = [];
-      for (const repo of reposData.repos) {
-        const res = await loadRepoFile(repo.owner, repo.name, NEEDED_FILE);
-        if (res.kind === "disconnected") throw new Error("disconnected");
-        if (res.kind === "ok") {
-          scanned.add(String(repo.id));
-          freshRows.push(
-            ...buildNeededRows(userId, repo, res.content, res.htmlUrl, nowIso),
-          );
-        } else if (res.kind === "not-found") {
-          // No NEEDED.md anymore → its open tasks are stale, allow cleanup.
-          scanned.add(String(repo.id));
-        }
-        // "error" → skip: don't touch this repo's tasks on a transient failure.
-      }
+      const { scanned, freshRows } = await scanNeededRepos(
+        userId,
+        reposData.repos,
+        nowIso,
+      );
 
       const { data: existing } = await supabase
         .from("todos")
@@ -287,62 +272,22 @@ export function TodosPanel({
   });
 
   // Delete finished NEEDED tasks from their repos' NEEDED.md (one commit per
-  // repo), then clear the finished rows. Repos whose commit fails keep their
-  // rows so the action can be retried.
+  // repo, to the path the file was found at), then clear the finished rows.
+  // Repos whose file is unavailable or whose commit fails keep their rows so
+  // the action can be retried.
   const clearFinished = useMutation({
     mutationFn: async () => {
-      const finished = todos.filter(
-        (td) =>
-          td.done &&
-          td.source === "github" &&
-          td.needed_raw &&
-          td.repo_owner &&
-          td.repo_name,
-      );
-      if (finished.length === 0) return { removed: 0 };
-
-      const byRepo = new Map<string, Todo[]>();
-      for (const td of finished) {
-        const key = td.repo_id ?? `${td.repo_owner}/${td.repo_name}`;
-        const arr = byRepo.get(key);
-        if (arr) arr.push(td);
-        else byRepo.set(key, [td]);
-      }
-
-      const idsToDelete: string[] = [];
-      for (const tasks of byRepo.values()) {
-        const first = tasks[0];
-        const owner = first.repo_owner!;
-        const name = first.repo_name!;
-        const res = await loadRepoFile(owner, name, NEEDED_FILE);
-        if (res.kind === "disconnected") throw new Error("disconnected");
-        if (res.kind === "not-found") {
-          // File already gone — the lines are gone with it; just clear rows.
-          idsToDelete.push(...tasks.map((x) => x.id));
-          continue;
-        }
-        if (res.kind !== "ok") continue; // transient — keep rows, retry later
-
-        let content = res.content;
-        for (const td of tasks) {
-          const { next, removed } = removeNeededLine(content, td.needed_raw!);
-          if (removed) content = next;
-        }
-        if (content !== res.content) {
-          const outcome = await commitFile({
+      const idsToDelete = await removeFinishedFromNeeded(
+        todos,
+        ({ owner, repo, path, content, count }) =>
+          commitFile({
             owner,
-            repo: name,
-            path: NEEDED_FILE,
+            repo,
+            path,
             content,
-            message: t.todos.finishedCommitMessage(tasks.length),
-          });
-          if (!outcome.ok) {
-            if (outcome.status === 401) throw new Error("disconnected");
-            continue; // commit failed — keep rows
-          }
-        }
-        idsToDelete.push(...tasks.map((x) => x.id));
-      }
+            message: t.todos.finishedCommitMessage(count),
+          }),
+      );
 
       if (idsToDelete.length) {
         const { error } = await supabase

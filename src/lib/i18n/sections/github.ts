@@ -111,7 +111,7 @@ type GithubStrings = {
     openFile: string;
     checkOff: string;
     itemsCount: (n: number) => string;
-    removedFrom: (repo: string) => string;
+    removedFrom: (repo: string, path: string) => string;
     updateErr: string;
     commitMessage: (text: string) => string;
     createTodos: string;
@@ -234,7 +234,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       openFile: "Open NEEDED.md",
       checkOff: "Check off & remove from NEEDED.md",
       itemsCount: (n) => (n === 1 ? "1 item" : `${n} items`),
-      removedFrom: (repo) => `Removed from ${repo}/NEEDED.md.`,
+      removedFrom: (repo, path) => `Removed from ${repo}/${path}.`,
       updateErr: "Could not update NEEDED.md.",
       commitMessage: (text) => `chore: check off NEEDED item — ${text}`,
       createTodos: "Add to Tasks",
@@ -361,7 +361,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
         if (n >= 2 && n <= 4) return `${n} položky`;
         return `${n} položek`;
       },
-      removedFrom: (repo) => `Odebráno z ${repo}/NEEDED.md.`,
+      removedFrom: (repo, path) => `Odebráno z ${repo}/${path}.`,
       updateErr: "Nepodařilo se aktualizovat NEEDED.md.",
       commitMessage: (text) => `chore: odškrtnutí NEEDED položky — ${text}`,
       createTodos: "Přidat do úkolů",

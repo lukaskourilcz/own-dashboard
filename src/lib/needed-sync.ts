@@ -1,6 +1,12 @@
 import { addDays, format } from "date-fns";
-import type { GithubRepo } from "./github";
-import { neededTodoItems } from "./needed";
+import type { CommitOutcome, GithubRepo } from "./github";
+import {
+  loadNeededFile,
+  neededTodoItems,
+  removeNeededLine,
+  type NeededFileResult,
+  type NeededFilePath,
+} from "./needed";
 import type { TaskKind } from "./task-meta";
 import type { Todo } from "./types";
 
@@ -124,4 +130,122 @@ export function diffNeededTodos(
   );
 
   return { toInsert, toDeleteIds };
+}
+
+/** Reads one repository's NEEDED.md; `loadNeededFile` in the app. */
+export type NeededFileLoader = (
+  owner: string,
+  repo: string,
+) => Promise<NeededFileResult>;
+
+/** What a Refresh learned from every repository's NEEDED.md. */
+export type NeededScan = {
+  /** Repositories whose file was read. Only their open tasks may be dropped. */
+  scanned: Set<string>;
+  /** Candidate task rows from every file that was read. */
+  freshRows: NeededTodoRow[];
+  /** Repositories with no NEEDED.md at any known path. Their tasks are kept. */
+  missing: string[];
+};
+
+/**
+ * Read every repository's NEEDED.md for a Refresh. A repository joins
+ * `scanned`, and so becomes eligible for stale-task cleanup, only when its
+ * file was actually read. A file found at no path is unavailable, not empty:
+ * treating a 404 as "no open tasks" is how a Refresh once deleted every open
+ * quorum task after quorum moved its list to docs/. A transient error skips
+ * the repository the same way. A disconnected token aborts the whole scan.
+ */
+export async function scanNeededRepos(
+  userId: string,
+  repos: GithubRepo[],
+  nowIso: string,
+  load: NeededFileLoader = loadNeededFile,
+): Promise<NeededScan> {
+  const scanned = new Set<string>();
+  const freshRows: NeededTodoRow[] = [];
+  const missing: string[] = [];
+  for (const repo of repos) {
+    const res = await load(repo.owner, repo.name);
+    if (res.kind === "disconnected") throw new Error("disconnected");
+    if (res.kind === "ok") {
+      scanned.add(String(repo.id));
+      freshRows.push(
+        ...buildNeededRows(userId, repo, res.content, res.htmlUrl, nowIso),
+      );
+    } else if (res.kind === "not-found") {
+      missing.push(repo.full_name);
+    }
+  }
+  return { scanned, freshRows, missing };
+}
+
+/** Commits new NEEDED.md content; `commitFile` in the app. */
+export type NeededCommit = (input: {
+  owner: string;
+  repo: string;
+  path: NeededFilePath;
+  content: string;
+  count: number;
+}) => Promise<CommitOutcome>;
+
+/**
+ * Remove finished GitHub tasks' lines from their repositories' NEEDED.md (one
+ * commit per repository, to the path the file was found at) and return the
+ * ids of the rows that may now be deleted. A repository whose file cannot be
+ * read, was found at no path, or whose commit fails keeps its rows, so the
+ * action can be retried and no line survives in a file the dashboard no
+ * longer tracks. A disconnected token aborts with Error("disconnected").
+ */
+export async function removeFinishedFromNeeded(
+  todos: Todo[],
+  commit: NeededCommit,
+  load: NeededFileLoader = loadNeededFile,
+): Promise<string[]> {
+  const byRepo = new Map<string, Todo[]>();
+  for (const td of todos) {
+    if (
+      !td.done ||
+      td.source !== "github" ||
+      !td.needed_raw ||
+      !td.repo_owner ||
+      !td.repo_name
+    ) {
+      continue;
+    }
+    const key = td.repo_id ?? `${td.repo_owner}/${td.repo_name}`;
+    const group = byRepo.get(key);
+    if (group) group.push(td);
+    else byRepo.set(key, [td]);
+  }
+
+  const cleared: string[] = [];
+  for (const tasks of byRepo.values()) {
+    const owner = tasks[0].repo_owner!;
+    const name = tasks[0].repo_name!;
+    const res = await load(owner, name);
+    if (res.kind === "disconnected") throw new Error("disconnected");
+    if (res.kind !== "ok") continue;
+
+    let content = res.content;
+    for (const td of tasks) {
+      const { next, removed } = removeNeededLine(content, td.needed_raw!);
+      if (removed) content = next;
+    }
+    if (content !== res.content) {
+      const outcome = await commit({
+        owner,
+        repo: name,
+        path: res.path,
+        content,
+        count: tasks.length,
+      });
+      if (!outcome.ok) {
+        if (outcome.status === 401) throw new Error("disconnected");
+        continue;
+      }
+    }
+    cleared.push(...tasks.map((td) => td.id));
+  }
+  return cleared;
 }

@@ -4,8 +4,12 @@ import {
   diffNeededTodos,
   dueDateFromGenerated,
   neededKey,
+  removeFinishedFromNeeded,
+  scanNeededRepos,
   TASK_TIMER_DAYS,
+  type NeededCommit,
 } from "@/lib/needed-sync";
+import type { NeededFileResult } from "@/lib/needed";
 import type { GithubRepo } from "@/lib/github";
 import type { Todo } from "@/lib/types";
 
@@ -159,5 +163,145 @@ describe("neededKey", () => {
   it("keys on the source line, falling back to the title", () => {
     expect(neededKey("42", "- [ ] A", "A")).toBe("42::- [ ] A");
     expect(neededKey("42", null, "A Title")).toBe("42::a title");
+  });
+});
+
+// The Tasks panel's Refresh and "Delete from NEEDED.md" paths, driven through
+// the same helpers the panel calls, against a fake GitHub.
+describe("Tasks refresh across NEEDED.md locations", () => {
+  const repoOf = (id: number, name: string) =>
+    ({
+      id,
+      name,
+      full_name: `me/${name}`,
+      owner: "me",
+      html_url: `https://github.com/me/${name}`,
+    }) as GithubRepo;
+  const rootRepo = repoOf(1, "react-express-app");
+  const docsRepo = repoOf(2, "quorum");
+  const goneRepo = repoOf(3, "archived-notes");
+  const flakyRepo = repoOf(4, "flaky");
+
+  const files: Record<string, NeededFileResult> = {
+    "react-express-app": {
+      kind: "ok",
+      path: "NEEDED.md",
+      content: "- [ ] Root task `[imp:3]`",
+      htmlUrl: null,
+    },
+    quorum: {
+      kind: "ok",
+      path: "docs/NEEDED.md",
+      content: "- [ ] Kept quorum task\n- [ ] New quorum task `[owner:ai]`",
+      htmlUrl: null,
+    },
+    "archived-notes": { kind: "not-found" },
+    flaky: { kind: "error" },
+  };
+  const load = async (_owner: string, repo: string) => files[repo];
+
+  const imported = (repo: GithubRepo, id: string, raw: string, done = false) =>
+    todo({
+      id,
+      done,
+      source: "github",
+      repo_id: String(repo.id),
+      repo_owner: "me",
+      repo_name: repo.name,
+      needed_raw: raw,
+      title: raw.replace("- [ ] ", ""),
+    });
+
+  it("imports a docs/NEEDED.md list and keeps tasks whose file is missing", async () => {
+    const scan = await scanNeededRepos(
+      "u",
+      [rootRepo, docsRepo, goneRepo, flakyRepo],
+      "2026-09-25T00:00:00.000Z",
+      load,
+    );
+    expect([...scan.scanned].sort()).toEqual(["1", "2"]);
+    expect(scan.missing).toEqual(["me/archived-notes"]);
+    expect(scan.freshRows.map((r) => r.needed_raw)).toEqual([
+      "- [ ] Root task `[imp:3]`",
+      "- [ ] Kept quorum task",
+      "- [ ] New quorum task `[owner:ai]`",
+    ]);
+
+    const existing = [
+      imported(docsRepo, "q-kept", "- [ ] Kept quorum task"),
+      imported(docsRepo, "q-stale", "- [ ] Quorum task that was removed"),
+      imported(goneRepo, "gone-open", "- [ ] Task in a file that 404s"),
+      imported(flakyRepo, "flaky-open", "- [ ] Task behind a 500"),
+    ];
+    const { toInsert, toDeleteIds } = diffNeededTodos(
+      scan.scanned,
+      scan.freshRows,
+      existing,
+    );
+    // Only the quorum line that left docs/NEEDED.md goes; the 404 and the
+    // transient error cost nothing.
+    expect(toDeleteIds).toEqual(["q-stale"]);
+    expect(toInsert.map((r) => r.needed_raw)).toEqual([
+      "- [ ] Root task `[imp:3]`",
+      "- [ ] New quorum task `[owner:ai]`",
+    ]);
+  });
+
+  it("aborts the scan when GitHub is disconnected", async () => {
+    await expect(
+      scanNeededRepos("u", [rootRepo], "2026-09-25T00:00:00.000Z", async () => ({
+        kind: "disconnected",
+      })),
+    ).rejects.toThrow("disconnected");
+  });
+
+  it("commits finished-task removals to the path the file was found at", async () => {
+    const commits: Parameters<NeededCommit>[0][] = [];
+    const commit: NeededCommit = async (input) => {
+      commits.push(input);
+      return { ok: true, result: {} as never };
+    };
+    const cleared = await removeFinishedFromNeeded(
+      [
+        imported(docsRepo, "q-done", "- [ ] Kept quorum task", true),
+        imported(docsRepo, "q-open", "- [ ] New quorum task `[owner:ai]`"),
+        imported(goneRepo, "gone-done", "- [ ] Task in a file that 404s", true),
+        imported(flakyRepo, "flaky-done", "- [ ] Task behind a 500", true),
+      ],
+      commit,
+      load,
+    );
+    expect(commits).toEqual([
+      {
+        owner: "me",
+        repo: "quorum",
+        path: "docs/NEEDED.md",
+        content: "- [ ] New quorum task `[owner:ai]`",
+        count: 1,
+      },
+    ]);
+    // Open tasks are never cleared; a missing or unreadable file keeps its rows.
+    expect(cleared).toEqual(["q-done"]);
+  });
+
+  it("keeps the rows when the commit fails", async () => {
+    const cleared = await removeFinishedFromNeeded(
+      [imported(rootRepo, "r-done", "- [ ] Root task `[imp:3]`", true)],
+      async () => ({ ok: false, status: 409, error: "conflict" }),
+      load,
+    );
+    expect(cleared).toEqual([]);
+  });
+
+  it("clears rows whose line is already gone without committing", async () => {
+    const commit = async () => {
+      throw new Error("should not commit");
+    };
+    const cleared = await removeFinishedFromNeeded(
+      [imported(rootRepo, "r-old", "- [ ] Already removed upstream", true)],
+      commit,
+      load,
+    );
+    expect(cleared).toEqual(["r-old"]);
   });
 });

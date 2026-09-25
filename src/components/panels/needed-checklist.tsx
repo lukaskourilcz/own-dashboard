@@ -18,23 +18,21 @@ import { useDict } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
+import { commitFile, type GithubRepo } from "@/lib/github";
 import {
-  commitFile,
-  loadRepoFile,
-  type GithubRepo,
-  type RepoFileResult,
-} from "@/lib/github";
-import {
-  NEEDED_FILE,
+  loadNeededFile,
   parseNeeded,
   removeNeededLine,
+  type NeededFileResult,
   type NeededItem,
 } from "@/lib/needed";
 import { buildNeededRows, neededKey } from "@/lib/needed-sync";
 import type { Todo } from "@/lib/types";
 
+// Under ["github", "file"] so the Tasks panel's clear-finished invalidation
+// reaches it. The file may live at NEEDED.md or docs/NEEDED.md.
 function fileQueryKey(repoId: string) {
-  return ["github", "file", repoId, NEEDED_FILE] as const;
+  return ["github", "file", repoId, "needed"] as const;
 }
 
 export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
@@ -43,11 +41,11 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   const qc = useQueryClient();
   const supabase = createClient();
 
-  // Sync every repo's NEEDED.md. Same cache key as elsewhere, 5-min freshness.
+  // Sync every repo's NEEDED.md (root, then docs/), 5-min freshness.
   const results = useQueries({
     queries: repos.map((repo) => ({
       queryKey: fileQueryKey(String(repo.id)),
-      queryFn: () => loadRepoFile(repo.owner, repo.name, NEEDED_FILE),
+      queryFn: () => loadNeededFile(repo.owner, repo.name),
       staleTime: 5 * 60_000,
     })),
   });
@@ -142,7 +140,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
 
   const checkOff = useMutation({
     mutationFn: async (item: NeededItem) => {
-      const cached = qc.getQueryData<RepoFileResult>(
+      const cached = qc.getQueryData<NeededFileResult>(
         fileQueryKey(item.repoId),
       );
       if (!cached || cached.kind !== "ok") throw new Error("stale");
@@ -151,15 +149,15 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
       const outcome = await commitFile({
         owner: item.owner,
         repo: item.repo,
-        path: NEEDED_FILE,
+        path: cached.path,
         content: next,
         message: t.github.needed.commitMessage(item.text.slice(0, 64)),
       });
       if (!outcome.ok) throw outcome;
-      return item;
+      return { item, path: cached.path };
     },
-    onSuccess: (item) => {
-      toast.ok(t.github.needed.removedFrom(item.repo));
+    onSuccess: ({ item, path }) => {
+      toast.ok(t.github.needed.removedFrom(item.repo, path));
       void qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) });
     },
     onError: (e) => {
