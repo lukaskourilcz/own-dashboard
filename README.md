@@ -82,13 +82,15 @@ All optional AI, OAuth, cron, email, bank, rate-limit, analytics, and monitoring
 
 3. Prepare the database.
 
+For a new database, run `supabase/schema.sql` once, create the one owner account in Supabase Auth, then apply every migration in timestamp order. The owner account has to exist before `20260908063200_seed_owner_saved_positions.sql`, which refuses to run unless `auth.users` holds exactly one row. `npx supabase db reset` cannot build this schema: it applies only `supabase/migrations`, and the first migration alters tables that only the baseline creates. The exact commands are in [Fresh install](./docs/migration-guide.md#fresh-install).
+
 For an existing installation, link the intended Supabase project and push migrations in timestamp order:
 
 ```bash
 npx supabase db push --linked
 ```
 
-The relevant migrations are:
+The migrations, in the order they run:
 
 1. `20260721165419_professional_restructure_core.sql` — professional entities, relationships, explicit grants/indexes, transaction-safe opportunity conversion, and own-only relationship policies.
 2. `20260721165421_remove_legacy_personal_scope.sql` — archive legacy data, restore own-only reads, then remove retired personal tables and sharing infrastructure.
@@ -96,10 +98,27 @@ The relevant migrations are:
 4. `20260722190000_operational_workflow_extensions.sql` — subscription grouping/importance, project development links and communication history, plus the own-only VPS agent task queue and atomic claim RPC.
 5. `20260723065433_daily_focus_synced_preferences.sql` — GLOBAL task priority, daily focus sets/completion garden, synchronized UI preferences, and permanent owner-scoped Career deletion tombstones.
 6. `20260723082424_sync_preferences_project_tabs.sql` — reliable authenticated preference grants and own-only policies, synchronized project-workspace tab visibility, and repository-aware daily-focus selection.
+7. `20260723120000_prompts_description.sql` — a short description on each prompt.
+8. `20260724090000_task_time_and_kind.sql` — estimated minutes and a work kind on tasks.
+9. `20260724100000_prompts_visibility.sql` — `prompts.is_public`, separating the owner's prompts from curated ones.
+10. `20260724110000_cron_runs.sql` — the `cron_runs` log and its two-week purge function.
+11. `20260908062146_add_saved_job_positions.sql` — `saved_job_positions` with own-only RLS.
+12. `20260908063200_seed_owner_saved_positions.sql` — seeds eight saved positions for the single owner and raises an exception when `auth.users` does not hold exactly one row.
+13. `20260911080040_career_directory_and_application_pipeline.sql` — `career_companies`, application readiness and response tracking, and the application RPCs.
+14. `20260911102058_freelance_opportunities.sql` — `freelance_platforms`, freelance fields on opportunities, and the `opportunity_events` history written by a trigger.
+15. `20260911103455_freelance_metrics.sql` — the `freelance_opportunity_metrics` RPC.
+16. `20260911104131_freelance_resources.sql` — `freelance_platforms.resources_url`.
+17. `20260915210805_link_ideas_and_relevance.sql` — record type, rating, pricing evidence and project relevance on library links.
+18. `20260925090000_project_repository_identity.sql` — `projects.repo_id`, earlier repository names, and repository-id matching in `create_daily_focus_set`.
+19. `20260925090100_project_engagement_and_names.sql` — own versus client projects, `previous_slugs`, and the DNESKAi / devShark / boardlessAI renames.
+20. `20260925090200_fix_hidden_project_tabs_check.sql` — the corrected project-tab check on `user_preferences.hidden_project_tabs`.
+21. `20260925090300_project_links.sql` — `project_links`.
+22. `20260925090400_prompt_kinds_and_links.sql` — `prompts.kind` and `prompt_links`.
+23. `20260925090500_tools.sql` — `tools`.
 
-Later migrations add the prompt, Career, freelance and link-library features. The 2026-09-25 set adds repository ids for projects, own/freelance engagement with the DNESKAi / devShark / boardlessAI renames, the corrected project-tab check, `project_links`, prompt kinds with `prompt_links`, and `tools`; each has an entry with verification steps in the migration guide.
+The freelance set (14–16) and each 2026-09-25 migration (18–23) have an entry with verification steps in the migration guide.
 
-Do not rerun `supabase/schema.sql` on an existing project and do not apply the cleanup migration alone. For a new local instance, initialize the historic base schema before applying all migrations. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
+Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
 4. Start the app:
 

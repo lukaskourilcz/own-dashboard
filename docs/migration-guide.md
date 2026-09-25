@@ -41,9 +41,57 @@ Application rollback and data rollback are separate:
 
 The archive is intentionally retained by the new product. Do not drop it until every user has had an export window and the product owner has approved permanent deletion.
 
+## Fresh install
+
+`supabase/schema.sql` is the historic baseline: the schema the first migration was written against. It still contains the retired personal tables, because `20260721165421_remove_legacy_personal_scope.sql` archives and drops them with a bare `drop table`, and it is the only file that creates `projects`, `crons`, `job_applications`, `bank_connections` and the other tables the first migration alters. The migrations cannot run without it.
+
+`npx supabase db reset` does not work here. It needs Docker and a local stack, and it applies only `supabase/migrations`, never the baseline, so the first migration stops with `relation "public.projects" does not exist`. The repository has no `supabase/config.toml` for that stack either.
+
+1. Start from an empty Supabase project, or, for local validation, an isolated Postgres database that has stand-ins for the Supabase `auth` schema (`auth.users`, `auth.uid()`) and the `anon`, `authenticated` and `service_role` roles.
+2. Run the baseline once:
+
+   ```bash
+   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql
+   ```
+
+3. Create the one owner account in Supabase Auth: sign in to the app once, or add the user in the Supabase dashboard. `20260908063200_seed_owner_saved_positions.sql` raises `Expected one OwnDashboard owner; refusing to seed saved positions` unless `auth.users` holds exactly one row.
+4. Apply every migration in timestamp order. The Supabase CLI records each version in `supabase_migrations.schema_migrations`, so a later `db push` knows what already ran:
+
+   ```bash
+   npx supabase db push --db-url "$DATABASE_URL"
+   ```
+
+   Plain psql gives the same schema without the history table, which is enough for a throwaway validation database:
+
+   ```bash
+   for f in supabase/migrations/*.sql; do
+     psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f" || { echo "failed: $f"; break; }
+   done
+   ```
+
+This procedure was run on 2026-09-25 against PostgreSQL 16 with a local Supabase stand-in: two fresh databases installed all 23 migrations with exit 0 through psql, and a third through `npx supabase db push --db-url` (CLI 2.118.0, append `?sslmode=disable` for a local server without TLS). All three produced the same `public` schema.
+
+Never copy a migration's objects back into `supabase/schema.sql`. A copied block runs before the migrations it depends on and collides with the migration that owns it; the copy of `saved_job_positions` made every fresh install stop at that migration's first `create policy`.
+
+## Existing install
+
+Never re-run `supabase/schema.sql` on an existing database. Link the project and let the CLI apply only what its history lacks:
+
+```bash
+npx supabase link --project-ref <project-ref>
+npx supabase migration list --linked
+npx supabase db push --linked --dry-run
+npx supabase db push --linked
+```
+
+`db push` refuses to run when the remote history holds versions that `supabase/migrations` does not. Compare the two columns of `migration list` first; `NEEDED.md` lists the known mismatches on the production project and the `migration repair` commands that align them.
+
+Do not re-run a single migration by hand. Most are one-shot: a second run stops at its first bare `create table`, `create policy` or `create function`. The idempotent ones are not safe out of order either. Re-running `20260723082424_sync_preferences_project_tabs.sql` on a current database reinstalls the older `create_daily_focus_set` without the repository-id match from `20260925090000`, and re-running `20260915210805_link_ideas_and_relevance.sql` restores the superseded comment on `ai_links.project_relevance`.
+
 ## Local validation
 
-If Docker is available, run `npx supabase db reset`. Without Docker, execute `supabase/schema.sql` and all migrations against an isolated Postgres database with `ON_ERROR_STOP=1`. Never validate destructive migrations against a personal development database containing irreplaceable rows.
+Validate against an isolated Postgres database with `ON_ERROR_STOP=1`, following [Fresh install](#fresh-install). Never validate destructive migrations against a personal development database containing irreplaceable rows, and never against production.
+
 ## Freelance directory and proposal tracking — 2026-09-11
 
 Apply `20260911102058_freelance_opportunities.sql`, `20260911103455_freelance_metrics.sql` and `20260911104131_freelance_resources.sql` before deploying the freelance UI. These additive migrations create the owner-scoped platform directory, optional opportunity fields, immutable client-readable transition history, full-cohort metrics RPC and an HTTPS resource-folder link. Existing opportunities and conversion RPCs are preserved. Profile research and account-specific texts are private runtime data and are not migration seeds.
