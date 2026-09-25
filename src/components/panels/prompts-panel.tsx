@@ -619,6 +619,7 @@ export function PromptsPanel({
                             type="button"
                             size="icon-sm"
                             variant="ghost"
+                            className="h-11 w-11 sm:h-7 sm:w-7"
                             aria-label={`${t.prompts.removeLink}: ${link.title}`}
                             onClick={() => setForm((f) => ({ ...f, links: f.links.filter((item) => item.ai_link_id !== draft.ai_link_id) }))}
                           >

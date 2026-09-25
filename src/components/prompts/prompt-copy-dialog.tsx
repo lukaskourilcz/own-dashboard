@@ -114,7 +114,7 @@ export function PromptCopyDialog({
         if (!next) setStatus("");
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl" onCloseAutoFocus={returnFocus}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-3 sm:max-w-2xl" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{prompt ? t.copyTitle(prompt.name) : t.copy}</DialogTitle>
           <DialogDescription>{t.copyDescription}</DialogDescription>

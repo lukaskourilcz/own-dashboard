@@ -121,7 +121,7 @@ export function LinkPickerDialog({
         if (!next) reset();
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-xl" onCloseAutoFocus={returnFocus}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-3 sm:max-w-xl" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{title ?? t.ai.pickerTitle}</DialogTitle>
           <DialogDescription>

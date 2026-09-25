@@ -72,7 +72,7 @@ export function ProjectPromptsCard({
                       </div>
                       {prompt.project_id === project.id && <EntityBadge className="min-h-5 py-0">{t.prompts.defaultProject}</EntityBadge>}
                       <Tooltip content={t.prompts.copyWithContext}>
-                        <Button size="icon-sm" variant="ghost" onClick={() => setCopying(prompt)} aria-label={`${t.prompts.copyWithContext}: ${prompt.name}`}>
+                        <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => setCopying(prompt)} aria-label={`${t.prompts.copyWithContext}: ${prompt.name}`}>
                           <Copy />
                         </Button>
                       </Tooltip>

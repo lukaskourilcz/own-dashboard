@@ -196,7 +196,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     sourceErrors: "Some boards failed on the last check",
     sourcesTitle: "Where these offers come from",
     sourcesDescription:
-      "Job boards and direct employer feeds. Availability is checked on each visit; uncertain results stay hidden.",
+      "Job boards and direct employer feeds. Availability is checked each time you check for new offers; uncertain results stay hidden.",
     sourcesShow: "Show sources",
     sourcesHide: "Hide sources",
     sourceKindJson: "JSON API",
@@ -378,7 +378,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     sourceErrors: "Některé portály při poslední kontrole selhaly",
     sourcesTitle: "Odkud nabídky pocházejí",
     sourcesDescription:
-      "Pracovní portály a přímé zdroje zaměstnavatelů. Dostupnost se ověřuje při každé návštěvě; nejisté výsledky zůstávají skryté.",
+      "Pracovní portály a přímé zdroje zaměstnavatelů. Dostupnost se ověřuje při každé kontrole nových nabídek; nejisté výsledky zůstávají skryté.",
     sourcesShow: "Zobrazit zdroje",
     sourcesHide: "Skrýt zdroje",
     sourceKindJson: "JSON API",

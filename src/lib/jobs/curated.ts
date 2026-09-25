@@ -5,7 +5,7 @@ import type { ScrapedJob } from "./types";
  *
  * These summaries keep the requirements needed for matching and letter
  * guidance without copying whole third-party job advertisements. The normal
- * visit-time availability check still decides whether a row is shown.
+ * availability check run by "Check for new offers" still decides whether a row is shown.
  */
 export const CURATED_JOBS: ScrapedJob[] = [
   {

@@ -148,14 +148,14 @@ export function ProjectLinksSection({
                     </div>
                     <div className="flex shrink-0">
                       <Tooltip content={p.openLinkUrl}>
-                        <Button asChild size="icon-sm" variant="ghost">
+                        <Button asChild size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost">
                           <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${p.openLinkUrl}: ${link.title}`}>
                             <ExternalLink />
                           </a>
                         </Button>
                       </Tooltip>
                       <Tooltip content={p.copyLinkUrl}>
-                        <Button size="icon-sm" variant="ghost" onClick={() => void copy(link.url)} aria-label={`${p.copyLinkUrl}: ${link.title}`}>
+                        <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => void copy(link.url)} aria-label={`${p.copyLinkUrl}: ${link.title}`}>
                           <Copy />
                         </Button>
                       </Tooltip>
@@ -163,7 +163,7 @@ export function ProjectLinksSection({
                         <>
                           <Tooltip content={p.editLinkNote}>
                             <Button
-                              size="icon-sm"
+                              size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7"
                               variant="ghost"
                               onClick={() => {
                                 setDraft(relation.note);
@@ -176,7 +176,7 @@ export function ProjectLinksSection({
                           </Tooltip>
                           <Tooltip content={p.removeProjectLink}>
                             <Button
-                              size="icon-sm"
+                              size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7"
                               variant="ghost"
                               onClick={() => void remove([relation.id])}
                               aria-label={`${p.removeProjectLink}: ${link.title}`}

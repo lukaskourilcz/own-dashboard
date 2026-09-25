@@ -326,16 +326,16 @@ export function ToolsPanel({
                           <div className="flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5">
                             {safeUrl && (
                               <Tooltip content={tt.openLink}>
-                                <Button asChild size="icon-sm" variant="ghost">
+                                <Button asChild size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost">
                                   <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${tt.openLink}: ${name}`}><ExternalLink /></a>
                                 </Button>
                               </Tooltip>
                             )}
                             <Tooltip content={tt.showInLibrary}>
-                              <Button size="icon-sm" variant="ghost" onClick={() => onShowInLibrary(tool.ai_link_id)} aria-label={`${tt.showInLibrary}: ${name}`}><Library /></Button>
+                              <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => onShowInLibrary(tool.ai_link_id)} aria-label={`${tt.showInLibrary}: ${name}`}><Library /></Button>
                             </Tooltip>
                             <Tooltip content={t.common.edit}>
-                              <Button size="icon-sm" variant="ghost" onClick={() => startEdit(tool)} aria-label={`${t.common.edit}: ${name}`}><Pencil /></Button>
+                              <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => startEdit(tool)} aria-label={`${t.common.edit}: ${name}`}><Pencil /></Button>
                             </Tooltip>
                             <div className="ml-auto">
                               {tool.status === "retired" ? (
@@ -437,7 +437,7 @@ export function ToolsPanel({
                         />
                       </div>
                       <Tooltip content={tt.removeProject(label)}>
-                        <Button type="button" size="icon-sm" variant="ghost" className="mt-5" aria-label={tt.removeProject(label)} onClick={() => setForm({ ...form, usage: form.usage.filter((item) => item.project_id !== row.project_id) })}>
+                        <Button type="button" size="icon-sm" variant="ghost" className="h-11 w-11 sm:h-7 sm:w-7 mt-5" aria-label={tt.removeProject(label)} onClick={() => setForm({ ...form, usage: form.usage.filter((item) => item.project_id !== row.project_id) })}>
                           <X />
                         </Button>
                       </Tooltip>
