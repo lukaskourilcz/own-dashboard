@@ -227,6 +227,8 @@ test.describe("dashboard sections", () => {
     const divider = rows.findIndex((text) => text.includes("Freelance — hired"));
     expect(rows[divider - 1]).toContain("boardlessAI");
     expect(rows[divider + 1]).toContain("Acme customer portal");
+    // The wide table scrolls inside its card; the page itself never widens.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     if (testInfo.project.name === "desktop") {
       const sidebar = page.locator("aside");
       await expect(sidebar.getByText("Freelance — hired")).toBeVisible();

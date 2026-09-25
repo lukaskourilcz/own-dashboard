@@ -25,7 +25,8 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     categories: ["productivity", "business", "finance"],
     shortcuts: [
-      { name: "Inbox", short_name: "Inbox", url: "/inbox" },
+      // Inbox is hidden from navigation (HIDDEN_NAV_TABS); Tasks takes its slot.
+      { name: "Tasks", short_name: "Tasks", url: "/tasks" },
       { name: "Projects", short_name: "Projects", url: "/projects" },
       { name: "Quick capture", short_name: "Capture", url: "/?capture=1" },
     ],

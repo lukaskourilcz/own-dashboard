@@ -916,7 +916,9 @@ function ProjectsListPanel({
           onDragEnd={handleDragEnd}
         >
             <Card className="mt-4 overflow-hidden p-0">
-              <div className="overflow-x-auto">
+              {/* relative: contains the sr-only header labels, which are
+                  absolutely positioned and would otherwise widen the page. */}
+              <div className="relative overflow-x-auto">
                 <table className="w-full min-w-[900px] text-left">
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   {(["own", "client"] as const).map((group) => projectGroups[group].length === 0 ? null : (
