@@ -5,8 +5,6 @@
 1. Back up the Supabase database or create a point-in-time recovery marker on a paid project.
 2. From the current production UI, download any desired personal exports.
 3. Deploy application code and migrations in one coordinated release; do not expose the new shell against an unmigrated database.
-
-The Career Saved release adds `saved_job_positions` with own-only RLS, then seeds the eight owner-selected September positions only when the installation has exactly one authenticated owner. The seed aborts instead of writing when more than one account exists.
 4. Confirm `auth.users`, the historic OwnDashboard tables, and the latest `user_preferences` table exist.
 
 ## Apply
@@ -27,7 +25,7 @@ Confirm all new tables have RLS enabled and own-only policies for `authenticated
 
 Sign in as two separate users and verify neither can read or attach relationships to the other's organization/project/opportunity. As the first user, convert an opportunity both with a selected organization and with a new organization name; verify each project/opportunity/organization link and the `won` status. Route an Inbox item successfully, repeat the request to verify idempotency, and force a destination failure to verify neither the destination nor Inbox status changes. Verify the second user cannot route the first user's item. Force an opportunity-conversion failure in a disposable database and verify the transaction leaves no partial project or organization.
 
-Create project communication and agent task rows as user A, then verify user B cannot select, update, delete, or relate to either. With the service role, call `claim_agent_task` concurrently and verify only one caller receives a queued row. Confirm `anon` and `authenticated` cannot execute that RPC. Verify the claim/report HTTP flow rejects missing/wrong tokens, another agent name, a non-running task, and a task outside `DASHBOARD_OWNER_ID`.
+Create project communication and agent task rows as user A, then verify user B cannot select, update, delete, or relate to either. With the service role, call `claim_agent_task` concurrently and verify only one caller receives a queued row. Confirm `anon` and `authenticated` cannot execute that RPC. The Agents routes that consumed the queue were removed in `5d32e6b`; the table and RPC remain unused.
 
 Create a GLOBAL task and verify its importance is forced to 6 and its project is cleared. Call `create_daily_focus_set(false)` twice and verify the same set is returned; call it with `true` and verify a new generation is created with no more than seven owner tasks from active projects. Include a NEEDED.md task without `project_id` whose repository matches an active project and verify it is eligible; verify unassigned manual and inactive-project tasks are not. Complete all seven and verify the current date is marked complete. Change language, theme, navigation order, task density, CV links, hidden project tabs, and active projects, then sign in on another device and verify they hydrate from the database. Delete a Career listing and verify it remains absent after a scrape refresh.
 
@@ -96,6 +94,18 @@ Do not re-run a single migration by hand. Most are one-shot: a second run stops 
 
 Validate against an isolated Postgres database with `ON_ERROR_STOP=1`, following [Fresh install](#fresh-install). Never validate destructive migrations against a personal development database containing irreplaceable rows, and never against production.
 
+## Prompts, tasks and cron runs — 2026-07-23/24
+
+`20260723120000_prompts_description.sql` adds `prompts.description`. `20260724090000_task_time_and_kind.sql` adds `todos.estimated_minutes` and `todos.task_kind` (`setup`, `deploy`, `legal`, `content` or `decision`), which the NEEDED.md import fills from the `[time:]` and `[kind:]` markers. `20260724100000_prompts_visibility.sql` adds `prompts.is_public`, which separates the owner's prompts from the curated ones. `20260724110000_cron_runs.sql` adds the own-only `cron_runs` log behind the Home cron panels and `purge_old_cron_runs()`, which deletes runs older than 14 days. The migration schedules that purge only when `pg_cron` is installed.
+
+## Saved Career positions — 2026-09-08
+
+Apply `20260908062146_add_saved_job_positions.sql`, then `20260908063200_seed_owner_saved_positions.sql`. The first adds `saved_job_positions` with own-only RLS. The second seeds the eight owner-selected September positions only when `auth.users` holds exactly one account and raises an exception otherwise.
+
+## Career directory and application pipeline — 2026-09-11
+
+Apply `20260911080040_career_directory_and_application_pipeline.sql`. [Career pipeline](career-pipeline.md) lists its tables, RPCs and checks.
+
 ## Freelance directory and proposal tracking — 2026-09-11
 
 Apply `20260911102058_freelance_opportunities.sql`, `20260911103455_freelance_metrics.sql` and `20260911104131_freelance_resources.sql` before deploying the freelance UI. These additive migrations create the owner-scoped platform directory, optional opportunity fields, immutable client-readable transition history, full-cohort metrics RPC and an HTTPS resource-folder link. Existing opportunities and conversion RPCs are preserved. Profile research and account-specific texts are private runtime data and are not migration seeds.
@@ -103,6 +113,10 @@ Apply `20260911102058_freelance_opportunities.sql`, `20260911103455_freelance_me
 The metrics function uses the authenticated owner and optional platform filter, independently of the bounded opportunity list; actual dates determine submission/reply counts. The trigger has a fixed search path and writes history without granting authenticated clients direct event mutation. Verify a second user sees neither records nor history, cannot attach another owner's platform, and cannot call event-writing functions directly. A rolled-back date/status change should produce one corresponding history event.
 
 Application rollback can deploy the previous version while retaining the additive schema and private drafts; do not drop populated tables merely to roll back the UI.
+
+## Link ideas and relevance — 2026-09-15
+
+Apply `20260915210805_link_ideas_and_relevance.sql`. [Links and Ideas](links-and-ideas.md) describes the new columns and the category check on inserts and updates.
 
 ## Portfolio, Competition and development finance — 2026-09-16
 
@@ -324,7 +338,7 @@ pasted again.
 
 Apply `20260925090000_project_repository_identity.sql`. It adds `projects.repo_id bigint` with a unique partial index per owner, `projects.previous_repo_full_names text[]`, and replaces `create_daily_focus_set` so an imported task resolves to its project by explicit `project_id`, then by repository id, then by the current or any previous repository name. The function stays `SECURITY INVOKER`, keeps `search_path = ''` and is executable by `authenticated` only.
 
-After applying, fill the ids with `node scripts/backfill-project-repo-ids.mjs --apply` (see [external setup §9](external-setup.md#renaming-a-project-repository)) or by opening Projects with GitHub connected. Verify that a second owner cannot read or update the new columns on the first owner's projects, and that renaming a repository in a disposable account updates the existing project instead of adding one.
+After applying, fill the ids with `node scripts/backfill-project-repo-ids.mjs --apply` (see [external setup §10](external-setup.md#renaming-a-project-repository)) or by opening Projects with GitHub connected. Verify that a second owner cannot read or update the new columns on the first owner's projects, and that renaming a repository in a disposable account updates the existing project instead of adding one.
 
 ## Own and freelance projects, DNESKAi / devShark / boardlessAI — 2026-09-25
 

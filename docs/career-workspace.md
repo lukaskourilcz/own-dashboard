@@ -1,6 +1,6 @@
 # Career workspace
 
-Updated 7 September 2026. Scope: a personal React frontend/fullstack search for Prague and remote work from Czechia, plus an English/Czech application-writing workspace.
+Updated 25 September 2026. Scope: a personal React frontend/fullstack search for Prague and remote work from Czechia, plus an English/Czech application-writing workspace.
 
 ## Review and changes
 
@@ -17,7 +17,7 @@ The new flow preserves the existing catch-all route, route-scoped query state, s
 - A separate authenticated, CSRF-checked availability request on each press. Employer APIs verify published listings; other sources get bounded page checks. Closed/expired pages, redirects to generic pages, blocked pages and unverified results are hidden. A 200 response alone does not prove availability.
 - English/Czech letter language independent of interface language. Paste the full posting, inspect matched skills and gaps, choose experience evidence, add a specific motivation sentence and build an editable draft. Copy and save named letters/templates, or record the exact sent letter with its application. This helper runs locally and makes no AI call.
 - Fintech/banking prompts prioritize EmbedIT and Entain/Gibraltar; pharma/health prompts prioritize Controlant and Ersilia. Suggestions are based on keywords and user-confirmed experience, not semantic understanding. Operational experience is described separately from engineering work. Every claim remains editable.
-- A searchable directory of 26 official employer career pages with Prague teams. Directory membership is not a claim of a current relevant vacancy.
+- A searchable owner-scoped company directory (`career_companies`, see [Career pipeline](career-pipeline.md)); the 26 researched official career pages in `src/lib/jobs/companies.ts` fill the preview. Directory membership is not a claim of a current relevant vacancy.
 
 ## Research and sources
 
@@ -52,7 +52,7 @@ Research findings:
 
 Inspected Mobbin images: [Glassdoor search/details](https://mobbin.com/screens/29c1d205-4f0e-4231-8499-8e9765dc31ed), [Mercor opportunities](https://mobbin.com/screens/db3c0878-3d38-4b6c-a469-c9c776872bef), [WRITER contextual suggestions](https://mobbin.com/screens/6865de54-3229-4b76-9e85-fc4a3499dd15), and [Grammarly review panel](https://mobbin.com/screens/b727d76e-6475-4a20-a8bd-d0ad05569b30). Applied persistent job context and reviewable writing suggestions within the existing dashboard's semantic theme.
 
-The directory lives in `src/lib/jobs/companies.ts` and links to the researched official career destinations. Qest's company stack includes React alongside unrelated technologies, showing why company-level technology evidence cannot qualify every vacancy. Ackee and Salsita had career pages with no current vacancies during research; persistent pages are not proof of an opening.
+The researched list in `src/lib/jobs/companies.ts` links to the official career destinations. Qest's company stack includes React alongside unrelated technologies, showing why company-level technology evidence cannot qualify every vacancy. Ackee and Salsita had career pages with no current vacancies during research; persistent pages are not proof of an opening.
 
 ## Availability and operating limits
 
@@ -60,15 +60,6 @@ Availability is a best-effort snapshot, not a promise that a vacancy remains ope
 
 The availability endpoint reads at most 500 stored candidates and probes at most 100 non-employer pages per request, with a time budget. A “Check more listings” action continues with unchecked candidates. Unchecked results stay hidden; failed checks do not delete application history. Provider outages may temporarily produce an empty list. A source that serves an obsolete ad with no closure signal can still look open. The employer directory remains usable during outages.
 
-Existing Supabase tables are reused; no new migration is required. Draft/template saving is explicit, not automatic. Application records save a snapshot that survives listing pruning. There is no automated submission or email sending.
+The Saved stage adds `saved_job_positions` (`20260908062146`, with the one-owner seed `20260908063200`); letters and templates reuse existing tables. Draft/template saving is explicit, not automatic. Application records save a snapshot that survives listing pruning. There is no automated submission or email sending.
 
-The deployed Supabase credentials and Apify task configuration were unavailable in this workspace. No live owner data was read or modified for verification. Production configuration and actual saved-letter round trips require a signed-in production session. The cron now rejects requests when `CRON_SECRET` is missing instead of accepting unauthenticated execution.
-
-## Release validation
-
-- `npm run lint`: passed.
-- `npx tsc --noEmit`: passed.
-- `npm run test`: 265 tests passed across 28 files, including filtering, source normalization, availability classification and industry-specific letter evidence.
-- `npm run build`: passed with placeholder public Supabase values; this verifies compilation, not the production database connection.
-- Live adapter follow-up: Apify returned three matching fullstack positions; Rossum and Outreach returned no positions passing the strict filter. These counts are a point-in-time observation, not an expected minimum.
-- Existing desktop/mobile Career assertions were updated for the redesign. Browser/E2E tests were not executed in this session. No visual or live persistence validation is claimed.
+The deployed Supabase credentials and Apify task configuration were unavailable in this workspace. No live owner data was read or modified for verification. Production configuration and actual saved-letter round trips require a signed-in production session. The manual `/api/cron/jobs-scrape` route rejects requests when `CRON_SECRET` is missing.

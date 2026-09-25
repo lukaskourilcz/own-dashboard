@@ -18,7 +18,7 @@ These steps require the owner's provider accounts, billing access, secrets, or p
 npx supabase db push --linked
 ```
 
-Do not rerun `supabase/schema.sql` on an existing installation and do not run the cleanup migration alone. `20260721165421_remove_legacy_personal_scope.sql` first writes every owner's retired personal records to `legacy_personal_archives`, then removes Pulse, habits, books, couple tables, and partner sharing. `20260722150000_atomic_inbox_routing.sql` adds the own-scoped Inbox transaction boundary; `20260722190000_operational_workflow_extensions.sql` adds subscription classification, project communication history, development URLs, and the VPS agent task queue; `20260723065433_daily_focus_synced_preferences.sql` adds GLOBAL tasks, daily focus history, synchronized UI preferences, and durable owner Career deletions; `20260723082424_sync_preferences_project_tabs.sql` restores explicit preference grants/RLS, adds synchronized project-workspace tab visibility, and aligns daily-focus task assignment with active repositories. Follow `docs/migration-guide.md` for verification and rollback.
+Do not rerun `supabase/schema.sql` on an existing installation and do not run the cleanup migration alone. `20260721165421_remove_legacy_personal_scope.sql` first writes every owner's retired personal records to `legacy_personal_archives`, then removes Pulse, habits, books, couple tables, and partner sharing. `20260722150000_atomic_inbox_routing.sql` adds the own-scoped Inbox transaction boundary; `20260722190000_operational_workflow_extensions.sql` adds subscription classification, project communication history, development URLs, and the VPS agent task queue (unused since `5d32e6b` removed Agents); `20260723065433_daily_focus_synced_preferences.sql` adds GLOBAL tasks, daily focus history, synchronized UI preferences, and durable owner Career deletions; `20260723082424_sync_preferences_project_tabs.sql` restores explicit preference grants/RLS, adds synchronized project-workspace tab visibility, and aligns daily-focus task assignment with active repositories. Later migrations and their checks are listed in `docs/migration-guide.md`, which also covers verification and rollback.
 
 Set these deployment variables:
 
@@ -52,7 +52,7 @@ The app requests profile/email plus Calendar access when Google is deliberately 
 4. Grant only the repository access needed for repository discovery, Markdown reads, NEEDED.md synchronization, and confirmed file commits.
 5. Link GitHub in Settings, activate a repository as a project, inspect documents, then perform a disposable confirmed Markdown commit.
 
-OwnDashboard reads GitHub Actions schedule metadata where available. It does not trigger workflows or edit workflow cron files.
+OwnDashboard does not read GitHub Actions. Known schedules are seeded from `src/lib/project-cron-seeds.ts` when a project is linked to its repository; the app never triggers workflows or edits workflow cron files.
 
 ## 5. Link enrichment
 
@@ -132,7 +132,7 @@ and the daily cron marks a connection expired the morning the date passes rather
 than waiting for a sync to fail. Reconnecting the bank from Finances is what
 renews it; a Fio token has no expiry and shows no date.
 
-Verify the deployment sends the expected Bearer authorization. `CRON_REGISTRY_TOKEN` is needed only if an external system writes registry metadata.
+Until `CRON_SECRET` is set, `/api/cron/bank-sync`, `/api/cron/payment-match` and `/api/cron/renewal-warnings` accept unauthenticated requests: anyone can start a matching run, and a bank pull or renewal email once those providers are configured. `/api/cron/jobs-scrape` rejects every request until then. After setting it, confirm in the Vercel cron log that the scheduled calls return 200. Once `CRON_REGISTRY_TOKEN` is set, the read-only `/api/crons/registry` requires it, and `/api/crons/log` accepts runs only when it and `DASHBOARD_OWNER_ID` are both set. `DASHBOARD_OWNER_ID` also attributes the app's own cron runs in `cron_runs`.
 
 ### Heartbeat monitoring
 
@@ -184,7 +184,9 @@ For GoCardless Bank Account Data, set `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SEC
 
 ## 8. Analytics and monitoring
 
-PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, configure a billing limit, and test the currently referenced `costs-filter` feature flag. There is no Tugedr feature-flag kill-switch in this repository.
+PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, and configure a billing limit. No reachable code reads a PostHog feature flag, and there is no Tugedr feature-flag kill-switch in this repository.
+
+Vercel Web Analytics on a project's Overview needs a server-only `VERCEL_API_TOKEN`, plus `VERCEL_TEAM_ID` when the Vercel projects belong to a team, and Web Analytics enabled on each Vercel project. The card finds a Vercel project by its linked repository and says when the token is missing.
 
 Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and a build-time `SENTRY_AUTH_TOKEN` when source-map upload is desired. Keep `sendDefaultPii` disabled and inspect real events for private record content before broad use.
 

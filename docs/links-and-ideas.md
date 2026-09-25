@@ -20,11 +20,11 @@ Idea rows use the idea or goal as their primary label. Instagram and other sourc
 
 `20260915210805_link_ideas_and_relevance.sql` adds optional metadata and a required defaulted record type. Insert/update policies additionally require an owned category. Existing read/delete policies and RLS remain active.
 
-The migration and owner-authorized research import were applied to the live database on 2026-09-15. A supplemental visual-review import on 2026-09-16 brought the collection to 169 links and 17 ideas. The owner then added Google Pics and WhichAI.dev and replaced the broad mixed categories with 37 focused link categories and 10 focused idea categories. The current verified total is 171 links and 17 ideas; every record has a category. Existing records keep their IDs, titles, URLs and descriptions. No generated research or private repository inventory is committed. The import snapshot and coverage ledger are in the local ignored observations directory.
+The migration and owner-authorized research import were applied to the live database on 2026-09-15. A supplemental visual-review import on 2026-09-16 brought the collection to 169 links and 17 ideas. The owner then added Google Pics and WhichAI.dev and replaced the broad mixed categories with 37 focused link categories and 10 focused idea categories. The total verified on 2026-09-16 was 171 links and 17 ideas; on 2026-09-25 the live library held 279 links and 73 ideas, every record with a category. Existing records keep their IDs, titles, URLs and descriptions. No generated research or private repository inventory is committed. The import snapshot and coverage ledger are in the local ignored observations directory.
 
 The category rows live only in the owner's Supabase project, so this repository holds no list of them and no count that a merge could silently invalidate. Collapsing categories that read as duplicates is therefore an owner action in the running app: the Links section offers a merge control on every category header, and flags name pairs that differ only by accents, case, separators or an English plural. Which of them are genuinely one topic is a judgement the tooling does not make.
 
-The integrated application uses main’s expandable resource cards for both Links and Ideas. Before this code is deployed, the previous interface may show Ideas among ordinary links because it does not recognize the new record type. The initial delivery stayed local; the owner subsequently authorized merging into main and triggering deployment.
+Links and Ideas both use the expandable resource cards.
 
 ## Evidence limits
 
