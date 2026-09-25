@@ -4,7 +4,7 @@ This document defines production rules. `src/app/globals.css` is the token sourc
 
 ## Token architecture
 
-Surface tokens: background, primary surface, secondary band, muted surface, inset surface, hover, selected, elevated, overlay, and skeleton. Content tokens: foreground, muted, subtle. Structure tokens: border, strong border, brand, brand-soft, primary action, focus. Semantic tokens: information, success, warning, risk, destructive and corresponding soft surfaces. Data tokens: five deterministic chart series. AI tokens: fact, risk, suggestion, evidence.
+Surface tokens: background, primary surface, secondary band, muted surface, inset surface, hover, selected, elevated, overlay, and skeleton. Content tokens: foreground, muted, subtle. Structure tokens: border, strong border, brand, brand-soft, primary action, focus. Semantic tokens: information, success, warning, risk, destructive and corresponding soft surfaces. Data tokens: five deterministic chart series.
 
 Never introduce a raw hex or framework color utility in a production component when a semantic token exists. Fixed invoice paper colors, QR output, and third-party brand marks are explicit exceptions.
 

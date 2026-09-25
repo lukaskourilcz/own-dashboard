@@ -64,11 +64,6 @@
   --chart-4: #34c759;
   --chart-5: #af52de;
 
-  --ai-fact: #007aff;
-  --ai-risk: #d70015;
-  --ai-suggestion: #5856d6;
-  --ai-evidence: #6e6e73;
-
   --ring: rgba(0, 122, 255, 0.28);
 
   /* macOS semantic accents */
@@ -171,11 +166,6 @@
   --chart-4: #70bf8f;
   --chart-5: #d69d8c;
 
-  --ai-fact: #8db4e5;
-  --ai-risk: #e58a73;
-  --ai-suggestion: #b7c77d;
-  --ai-evidence: #aeb5bd;
-
   --ring: rgba(141, 180, 229, 0.4);
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -221,10 +211,6 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-ai-fact: var(--ai-fact);
-  --color-ai-risk: var(--ai-risk);
-  --color-ai-suggestion: var(--ai-suggestion);
-  --color-ai-evidence: var(--ai-evidence);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius);
