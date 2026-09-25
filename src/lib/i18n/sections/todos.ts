@@ -16,19 +16,14 @@ type TodosStrings = {
   organization: string;
   noProject: string;
   noOrganization: string;
-  allTasks: string;
   nothingOnPlate: string;
   nothingOnPlateDescription: string;
   quickAddPlaceholder: string;
   due: (date: string) => string;
   // date-fns format pattern for due dates; the locale object is applied separately.
   dueDateFormat: string;
-  otherCategory: string;
   // Personal (hand-added) tasks group heading in the repo-card layout.
   personalGroup: string;
-  // Overview "tasks by category" card.
-  byCategory: string;
-  categoryClear: string;
   // NEEDED.md task cards
   refresh: string;
   refreshHint: string;
@@ -38,8 +33,6 @@ type TodosStrings = {
   refreshDisconnected: string;
   refreshNoRepos: string;
   refreshErr: string;
-  neededBadge: string;
-  openNeeded: string;
   showAllCount: (n: number) => string;
   showLess: string;
   collapseGroup: string;
@@ -54,7 +47,6 @@ type TodosStrings = {
   finishedCount: (n: number) => string;
   finishedShow: string;
   finishedHide: string;
-  finishedEmpty: string;
   reopen: string;
   clearFromNeeded: string;
   clearFromNeededHint: string;
@@ -84,11 +76,9 @@ type TodosStrings = {
   timeFilterLabel: string;
   timeBucketLabel: (id: TimeBucketId) => string;
   timeLabel: string;
-  timeNone: string;
   timeMinutesUnit: string;
   estimatedTimeLabel: (value: string) => string;
   filterEmptyTitle: string;
-  filterEmptyDescription: (n: number) => string;
   filtersEmpty: string;
   globalGroup: string;
   globalTask: string;
@@ -128,16 +118,12 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     organization: "Organization",
     noProject: "No project",
     noOrganization: "No organization",
-    allTasks: "All tasks",
     nothingOnPlate: "Nothing on your plate",
     nothingOnPlateDescription: "Add a task on the left to get started.",
     quickAddPlaceholder: "Add a task…",
     due: (date) => `due ${date}`,
     dueDateFormat: "d MMM",
-    otherCategory: "Other",
     personalGroup: "Manual tasks",
-    byCategory: "By category",
-    categoryClear: "All done",
     refresh: "Refresh",
     refreshHint:
       "Re-scan every repo's NEEDED.md — add new tasks and drop ones no longer listed.",
@@ -148,8 +134,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshDisconnected: "Reconnect GitHub to refresh tasks.",
     refreshNoRepos: "Connect GitHub to sync tasks from NEEDED.md.",
     refreshErr: "Couldn't refresh tasks. Please try again.",
-    neededBadge: "NEEDED",
-    openNeeded: "Open NEEDED.md",
     showAllCount: (n) => `Show all ${n}`,
     showLess: "Show less",
     collapseGroup: "Collapse",
@@ -169,7 +153,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     finishedCount: (n) => (n === 1 ? "1 done" : `${n} done`),
     finishedShow: "Show finished",
     finishedHide: "Hide finished",
-    finishedEmpty: "No finished tasks yet.",
     reopen: "Reopen",
     clearFromNeeded: "Delete from NEEDED.md",
     clearFromNeededHint:
@@ -209,12 +192,9 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     timeFilterLabel: "Time",
     timeBucketLabel: (id) => ({ q: "≤15m", h: "≤1h", half: "≤4h" })[id],
     timeLabel: "Time estimate",
-    timeNone: "No estimate",
     timeMinutesUnit: "min",
     estimatedTimeLabel: (value) => `Est. ${value}`,
     filterEmptyTitle: "Nothing at this importance",
-    filterEmptyDescription: (n) =>
-      `No open tasks scored ${n} or higher. Lower the filter to see more.`,
     filtersEmpty: "No tasks match the current filters.",
     globalGroup: "GLOBAL",
     globalTask: "Global task",
@@ -263,16 +243,12 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     organization: "Organizace",
     noProject: "Bez projektu",
     noOrganization: "Bez organizace",
-    allTasks: "Všechny úkoly",
     nothingOnPlate: "Nemáš nic na práci",
     nothingOnPlateDescription: "Přidej úkol vlevo a začni.",
     quickAddPlaceholder: "Přidat úkol…",
     due: (date) => `termín ${date}`,
     dueDateFormat: "d. MMM",
-    otherCategory: "Ostatní",
     personalGroup: "Ruční úkoly",
-    byCategory: "Podle kategorie",
-    categoryClear: "Hotovo",
     refresh: "Obnovit",
     refreshHint:
       "Znovu projde NEEDED.md všech repozitářů — přidá nové úkoly a odebere ty, které už tam nejsou.",
@@ -283,8 +259,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshDisconnected: "Pro obnovení úkolů znovu připoj GitHub.",
     refreshNoRepos: "Připoj GitHub pro synchronizaci úkolů z NEEDED.md.",
     refreshErr: "Úkoly se nepodařilo obnovit. Zkus to znovu.",
-    neededBadge: "NEEDED",
-    openNeeded: "Otevřít NEEDED.md",
     showAllCount: (n) => `Zobrazit vše (${n})`,
     showLess: "Zobrazit méně",
     collapseGroup: "Sbalit",
@@ -311,7 +285,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     },
     finishedShow: "Zobrazit hotové",
     finishedHide: "Skrýt hotové",
-    finishedEmpty: "Zatím žádné hotové úkoly.",
     reopen: "Znovu otevřít",
     clearFromNeeded: "Smazat z NEEDED.md",
     clearFromNeededHint:
@@ -342,8 +315,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       return `${n} skrytých`;
     },
     filterEmptyTitle: "Nic s touto důležitostí",
-    filterEmptyDescription: (n) =>
-      `Žádné otevřené úkoly s důležitostí ${n} a vyšší. Sniž filtr a uvidíš víc.`,
     filtersEmpty: "Žádné úkoly neodpovídají zvoleným filtrům.",
     assigneeFilterLabel: "Pro",
     assigneeMe: "Já",
@@ -362,7 +333,6 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     timeFilterLabel: "Čas",
     timeBucketLabel: (id) => ({ q: "≤15m", h: "≤1h", half: "≤4h" })[id],
     timeLabel: "Odhad času",
-    timeNone: "Bez odhadu",
     timeMinutesUnit: "min",
     estimatedTimeLabel: (value) => `Odhad ${value}`,
     globalGroup: "GLOBÁLNÍ",

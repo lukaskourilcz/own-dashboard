@@ -13,7 +13,6 @@ type OverviewStrings = {
   inHoursMinutes: (h: number, m: number) => string;
   noTitle: string;
   todaysEvents: string;
-  dueToday: string;
   dueSoon: string;
   // Compact day count on a task chip, e.g. "3d". Negative n = overdue.
   daysTag: (n: number) => string;
@@ -50,7 +49,6 @@ export const overview: { en: OverviewStrings; cs: OverviewStrings } = {
     inHoursMinutes: (h, m) => `in ${h}h ${m}m`,
     noTitle: "(no title)",
     todaysEvents: "Today's events",
-    dueToday: "Due today",
     dueSoon: "Due soon",
     daysTag: (n) => (n < 0 ? `${-n}d late` : n === 0 ? "today" : `${n}d`),
     followUps: "Follow-ups",
@@ -84,7 +82,6 @@ export const overview: { en: OverviewStrings; cs: OverviewStrings } = {
     inHoursMinutes: (h, m) => `za ${h} h ${m} min`,
     noTitle: "(bez názvu)",
     todaysEvents: "Dnešní události",
-    dueToday: "Termín dnes",
     dueSoon: "Blíží se termín",
     daysTag: (n) => (n < 0 ? `${-n} d po` : n === 0 ? "dnes" : `za ${n} d`),
     followUps: "Follow-upy",

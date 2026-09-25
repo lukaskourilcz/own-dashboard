@@ -12,7 +12,6 @@ type NavStrings = {
   settings: string;
   collapse: string;
   expand: string;
-  disconnectGoogle: string;
   disconnectConfirm: string;
   disconnectOk: string;
   disconnectErr: string;
@@ -61,7 +60,6 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     settings: "Settings",
     collapse: "Collapse sidebar",
     expand: "Expand sidebar",
-    disconnectGoogle: "Disconnect Google",
     disconnectConfirm: "Disconnect Google? Calendar features will need a re-link.",
     disconnectOk: "Google disconnected.",
     disconnectErr: "Could not disconnect Google.",
@@ -108,7 +106,6 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     settings: "Nastavení",
     collapse: "Sbalit panel",
     expand: "Rozbalit panel",
-    disconnectGoogle: "Odpojit Google",
     disconnectConfirm: "Odpojit Google? Funkce kalendáře budou vyžadovat opětovné propojení.",
     disconnectOk: "Google odpojen.",
     disconnectErr: "Nepodařilo se odpojit Google.",

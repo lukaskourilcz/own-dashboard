@@ -42,15 +42,11 @@ type PromptsStrings = {
   noPromptsDescription: string;
   noMatches: string;
   noMatchesDescription: string;
-  // Mine / Public subsections + curated import
-  mineSection: string;
-  publicSection: string;
-  publicSectionDesc: string;
+  // Curated import, public sharing, kinds and links
   addCurated: string;
   addingCurated: string;
   curatedAdded: (n: number) => string;
   curatedNoneNew: string;
-  publicEmpty: string;
   makePublic: string;
   makePublicHint: string;
   kind: string;
@@ -78,8 +74,6 @@ type PromptsStrings = {
   copyAction: string;
   couldNotCopyManual: string;
   linksSaveFailed: string;
-  curatedSection: string;
-  curatedHint: string;
   groupCount: (n: number) => string;
   workspacePromptsInfo: string;
 };
@@ -124,14 +118,10 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     noPromptsDescription: "Add a prompt to start building your library.",
     noMatches: "No matches",
     noMatchesDescription: "Try a different search.",
-    mineSection: "Mine",
-    publicSection: "Public",
-    publicSectionDesc: "Curated prompts scouted for your work — edit or delete like your own.",
     addCurated: "Add curated prompts",
     addingCurated: "Adding…",
     curatedAdded: (n) => `Added ${n} curated prompt${n === 1 ? "" : "s"}.`,
     curatedNoneNew: "All curated prompts are already in your library.",
-    publicEmpty: "No public prompts yet.",
     makePublic: "Public prompt",
     makePublicHint: "Marks a curated or shared prompt with a Public badge.",
     kind: "Kind of job",
@@ -159,8 +149,6 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     copyAction: "Copy",
     couldNotCopyManual: "Could not copy. Select the preview text and copy it manually.",
     linksSaveFailed: "The prompt was saved, but its links could not be updated.",
-    curatedSection: "Curated prompts",
-    curatedHint: "Universal prompts for each kind of job. Adding them skips names already in your library.",
     groupCount: (n) => `${n} prompt${n === 1 ? "" : "s"}`,
     workspacePromptsInfo: "Every prompt, grouped by kind. Copying fills in this project and its links.",
   },
@@ -203,9 +191,6 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     noPromptsDescription: "Přidej prompt a začni budovat svou knihovnu.",
     noMatches: "Žádné výsledky",
     noMatchesDescription: "Zkus jiné hledání.",
-    mineSection: "Moje",
-    publicSection: "Veřejné",
-    publicSectionDesc: "Doporučené prompty vybrané pro tvou práci — uprav nebo smaž jako vlastní.",
     addCurated: "Přidat doporučené",
     addingCurated: "Přidávám…",
     curatedAdded: (n) => {
@@ -214,7 +199,6 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
       return `Přidáno ${n} doporučených promptů.`;
     },
     curatedNoneNew: "Všechny doporučené prompty už v knihovně máš.",
-    publicEmpty: "Zatím žádné veřejné prompty.",
     makePublic: "Veřejný prompt",
     makePublicHint: "Označí vybraný nebo sdílený prompt štítkem Veřejný.",
     kind: "Druh práce",
@@ -242,8 +226,6 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     copyAction: "Kopírovat",
     couldNotCopyManual: "Kopírování se nezdařilo. Označte text náhledu a zkopírujte ho ručně.",
     linksSaveFailed: "Prompt se uložil, ale jeho odkazy se nepodařilo upravit.",
-    curatedSection: "Vybrané prompty",
-    curatedHint: "Univerzální prompty pro každý druh práce. Přidání přeskočí názvy, které už v knihovně máte.",
     groupCount: (n) => `${n} ${n === 1 ? "prompt" : n < 5 ? "prompty" : "promptů"}`,
     workspacePromptsInfo: "Všechny prompty podle druhu. Kopírování doplní tento projekt a jeho odkazy.",
   },

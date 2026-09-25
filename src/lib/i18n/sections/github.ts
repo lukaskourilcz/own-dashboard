@@ -74,13 +74,11 @@ type GithubStrings = {
   doneEditing: string;
   deleteNote: string;
   deleteNoteConfirm: string;
-  autosaving: string;
   saved: string;
   saveNotes: string;
   savingNotes: string;
   notesNothing: string;
   notesCommitMessage: string;
-  notesTargetHint: (path: string) => string;
   notesSavedFile: (path: string) => string;
   notesSavedCleared: (path: string) => string;
   notesPushErr: string;
@@ -92,7 +90,6 @@ type GithubStrings = {
   linkPlaceholder: string;
   linkRemove: string;
   linkInvalid: string;
-  linkOpen: string;
   noteSaveErr: string;
   noteDeleted: string;
   noteDeleteErr: string;
@@ -108,7 +105,6 @@ type GithubStrings = {
     allClear: string;
     allClearDesc: string;
     reconnect: string;
-    openFile: string;
     checkOff: string;
     itemsCount: (n: number) => string;
     removedFrom: (repo: string, path: string) => string;
@@ -195,13 +191,11 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     doneEditing: "Done",
     deleteNote: "Delete note",
     deleteNoteConfirm: "Delete this note?",
-    autosaving: "Saving…",
     saved: "Saved",
     saveNotes: "Save to GitHub",
     savingNotes: "Saving…",
     notesNothing: "Write a note before saving.",
     notesCommitMessage: "Update project notes",
-    notesTargetHint: (path) => `Saves to ${path}`,
     notesSavedFile: (path) => `Saved to ${path} on GitHub.`,
     notesSavedCleared: (path) =>
       `${path} created on GitHub — notes cleared from the project workspace.`,
@@ -215,7 +209,6 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     linkPlaceholder: "https://your-site.com",
     linkRemove: "Remove",
     linkInvalid: "Enter a valid URL.",
-    linkOpen: "Open link",
     noteSaveErr: "Couldn't save your note — check your connection.",
     noteDeleted: "Note deleted.",
     noteDeleteErr: "Couldn't delete the note. Please try again.",
@@ -231,7 +224,6 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       allClear: "All clear",
       allClearDesc: "No open NEEDED items across your repositories.",
       reconnect: "Reconnect GitHub to sync NEEDED files.",
-      openFile: "Open NEEDED.md",
       checkOff: "Check off & remove from NEEDED.md",
       itemsCount: (n) => (n === 1 ? "1 item" : `${n} items`),
       removedFrom: (repo, path) => `Removed from ${repo}/${path}.`,
@@ -318,13 +310,11 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     doneEditing: "Hotovo",
     deleteNote: "Smazat poznámku",
     deleteNoteConfirm: "Smazat tuto poznámku?",
-    autosaving: "Ukládání…",
     saved: "Uloženo",
     saveNotes: "Uložit na GitHub",
     savingNotes: "Ukládání…",
     notesNothing: "Před uložením napiš poznámku.",
     notesCommitMessage: "Aktualizace poznámek projektu",
-    notesTargetHint: (path) => `Uloží se do ${path}`,
     notesSavedFile: (path) => `Uloženo do ${path} na GitHubu.`,
     notesSavedCleared: (path) =>
       `${path} vytvořen na GitHubu — poznámky z prostoru projektu smazány.`,
@@ -338,7 +328,6 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     linkPlaceholder: "https://tvuj-web.cz",
     linkRemove: "Odebrat",
     linkInvalid: "Zadej platnou URL.",
-    linkOpen: "Otevřít odkaz",
     noteSaveErr: "Poznámku se nepodařilo uložit — zkontroluj připojení.",
     noteDeleted: "Poznámka smazána.",
     noteDeleteErr: "Poznámku se nepodařilo smazat. Zkuste to znovu.",
@@ -354,7 +343,6 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       allClear: "Hotovo",
       allClearDesc: "Žádné otevřené NEEDED položky v repozitářích.",
       reconnect: "Připoj znovu GitHub pro synchronizaci NEEDED souborů.",
-      openFile: "Otevřít NEEDED.md",
       checkOff: "Odškrtnout a odebrat z NEEDED.md",
       itemsCount: (n) => {
         if (n === 1) return "1 položka";

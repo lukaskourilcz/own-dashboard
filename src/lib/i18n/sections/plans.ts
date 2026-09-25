@@ -16,8 +16,6 @@ type PlansStrings = {
   recurrenceLabel: Record<PlanRecurrence, string>;
   /** Short cadence chip shown on a plan card (no "One-off" for none). */
   recurrenceChip: Record<Exclude<PlanRecurrence, "none">, string>;
-  /** "this week" / "this fortnight" / "this month" — the active window. */
-  periodLabel: Record<Exclude<PlanRecurrence, "none">, string>;
   // Dashboard recurring-plans widget.
   recurringTitle: string;
   recurringEmpty: string;
@@ -81,11 +79,6 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
       biweekly: "Biweekly",
       monthly: "Monthly",
     },
-    periodLabel: {
-      weekly: "this week",
-      biweekly: "this fortnight",
-      monthly: "this month",
-    },
     recurringTitle: "Recurring plans",
     recurringEmpty: "No recurring plans",
     recurringEmptyHint:
@@ -147,11 +140,6 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
       weekly: "Týdně",
       biweekly: "Co 14 dní",
       monthly: "Měsíčně",
-    },
-    periodLabel: {
-      weekly: "tento týden",
-      biweekly: "tento čtrnáctidenní cyklus",
-      monthly: "tento měsíc",
     },
     recurringTitle: "Opakující se plány",
     recurringEmpty: "Žádné opakující se plány",

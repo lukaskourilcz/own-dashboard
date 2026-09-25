@@ -19,7 +19,6 @@ type FinancesStrings = {
   amountPlaceholder: string;
   ccy: string;
   category: string;
-  categoryPlaceholder: string;
   date: string;
   account: string;
   project: string;
@@ -101,7 +100,6 @@ type BankStrings = {
   statusCreated: string;
   statusExpired: string;
   statusError: string;
-  connectedTitle: string;
   importTitle: string;
   csvHint: string;
   chooseFile: string;
@@ -228,7 +226,6 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     amountPlaceholder: "12.50",
     ccy: "CCY",
     category: "Category",
-    categoryPlaceholder: "Groceries",
     date: "Date",
     account: "Account",
     project: "Project",
@@ -274,7 +271,6 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       statusCreated: "Pending",
       statusExpired: "Expired",
       statusError: "Error",
-      connectedTitle: "Connected banks",
       importTitle: "Import from CSV",
       csvHint:
         "Export a statement from internet banking (CSV) and drop it here.",
@@ -449,7 +445,6 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     amountPlaceholder: "12.50",
     ccy: "Měna",
     category: "Kategorie",
-    categoryPlaceholder: "Potraviny",
     date: "Datum",
     account: "Účet",
     project: "Projekt",
@@ -498,7 +493,6 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       statusCreated: "Čeká na potvrzení",
       statusExpired: "Vypršelo",
       statusError: "Chyba",
-      connectedTitle: "Připojené banky",
       importTitle: "Import z CSV",
       csvHint:
         "Exportuj výpis z internetového bankovnictví (CSV) a nahraj ho sem.",

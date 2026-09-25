@@ -11,7 +11,6 @@ type JobsStrings = {
   // Header / refresh
   lastChecked: string;
   never: string;
-  checkNow: string;
   checking: string;
   refreshOk: string;
   refreshErr: string;
@@ -58,7 +57,6 @@ type JobsStrings = {
   fitYouHave: string;
   fitGaps: string;
   // Listing cards
-  remoteBadge: string;
   appliedBadge: string;
   savedBadge: string;
   savePosition: string;
@@ -73,7 +71,6 @@ type JobsStrings = {
   prepareApplication: string;
   saveDraft: string;
   draftSaved: string;
-  applyAction: string;
   openOriginal: string;
   shortlist: string;
   unshortlist: string;
@@ -82,28 +79,16 @@ type JobsStrings = {
   deleteListingsTitle: string;
   deleteListingsDescription: (count: number) => string;
   selectedListings: (count: number) => string;
-  selectAllListings: string;
   listingDeleted: string;
-  firstSeen: string;
-  posted: string;
   noListingsYet: string;
   noListingsDescription: string;
   noMatches: string;
   noMatchesDescription: string;
   listingsShown: string;
-  tablePosition: string;
-  tableCompany: string;
-  tableMatch: string;
-  tableRemote: string;
-  tableLocation: string;
-  tableSource: string;
   tableActions: string;
-  remoteYes: string;
-  remoteNo: string;
   // Apply dialog / application form
   applyTitle: string;
   logManualTitle: string;
-  logManual: string;
   position: string;
   positionPlaceholder: string;
   company: string;
@@ -117,7 +102,6 @@ type JobsStrings = {
   savedTemplatesGroup: string;
   overwriteLetterConfirm: string;
   saveAsTemplate: string;
-  saveAsTemplateName: string;
   notes: string;
   notesPlaceholder: string;
   saveApplication: string;
@@ -205,7 +189,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     cvEnglish: "Open English CV",
     lastChecked: "Last checked",
     never: "never",
-    checkNow: "Check now",
     checking: "Checking…",
     refreshOk: "Job boards checked.",
     refreshErr: "Could not check the job boards. Please try again.",
@@ -254,7 +237,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       } for this role.`,
     fitYouHave: "You have",
     fitGaps: "Gaps",
-    remoteBadge: "Remote",
     appliedBadge: "Applied",
     savedBadge: "Saved",
     savePosition: "Save position",
@@ -269,7 +251,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     prepareApplication: "Prepare application",
     saveDraft: "Save draft",
     draftSaved: "Application draft saved.",
-    applyAction: "Prepare letter",
     openOriginal: "Open the original posting",
     shortlist: "Shortlist",
     unshortlist: "Remove from shortlist",
@@ -279,28 +260,16 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     deleteListingsDescription: (count) =>
       `${count} selected position${count === 1 ? "" : "s"} will be permanently removed from your feed and will not return after another check.`,
     selectedListings: (count) => `${count} selected`,
-    selectAllListings: "Select all visible rows",
     listingDeleted: "Selected positions were deleted.",
-    firstSeen: "Found",
-    posted: "Posted",
     noListingsYet: "No open positions yet",
     noListingsDescription:
       "The daily check runs at 10:00 (Prague time). Use “Check now” to fetch the boards immediately.",
     noMatches: "Nothing matches",
     noMatchesDescription: "Try different filters or clear the search.",
     listingsShown: "positions",
-    tablePosition: "Position",
-    tableCompany: "Company",
-    tableMatch: "Match",
-    tableRemote: "Remote",
-    tableLocation: "Location",
-    tableSource: "Source / found",
     tableActions: "Actions",
-    remoteYes: "Yes",
-    remoteNo: "No",
     applyTitle: "Prepare this application",
     logManualTitle: "Log an application",
-    logManual: "Log application",
     position: "Position",
     positionPlaceholder: "e.g. Senior Frontend Engineer",
     company: "Company",
@@ -316,7 +285,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     overwriteLetterConfirm:
       "Replace the current cover letter with the template?",
     saveAsTemplate: "Save letter / template",
-    saveAsTemplateName: "Template name:",
     notes: "Notes",
     notesPlaceholder: "Contact person, salary discussed, next steps…",
     saveApplication: "Record sent application",
@@ -405,7 +373,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     cvEnglish: "Otevřít anglické CV",
     lastChecked: "Naposledy zkontrolováno",
     never: "nikdy",
-    checkNow: "Zkontrolovat teď",
     checking: "Kontroluji…",
     refreshOk: "Pracovní portály zkontrolovány.",
     refreshErr: "Portály se nepodařilo zkontrolovat. Zkuste to znovu.",
@@ -454,7 +421,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       }.`,
     fitYouHave: "Umíš",
     fitGaps: "Chybí",
-    remoteBadge: "Remote",
     appliedBadge: "Přihlášeno",
     savedBadge: "Uloženo",
     savePosition: "Uložit pozici",
@@ -469,7 +435,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     prepareApplication: "Připravit přihlášku",
     saveDraft: "Uložit koncept",
     draftSaved: "Koncept přihlášky byl uložen.",
-    applyAction: "Připravit dopis",
     openOriginal: "Otevřít původní inzerát",
     shortlist: "Přidat do oblíbených",
     unshortlist: "Odebrat z oblíbených",
@@ -479,28 +444,16 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     deleteListingsDescription: (count) =>
       `${count} vybraných pozic bude trvale odebráno z tvého přehledu a nevrátí se ani po další kontrole.`,
     selectedListings: (count) => `Vybráno: ${count}`,
-    selectAllListings: "Vybrat všechny viditelné řádky",
     listingDeleted: "Vybrané pozice byly smazány.",
-    firstSeen: "Nalezeno",
-    posted: "Zveřejněno",
     noListingsYet: "Zatím žádné otevřené pozice",
     noListingsDescription:
       "Denní kontrola běží v 10:00. Tlačítkem „Zkontrolovat teď“ načtete portály okamžitě.",
     noMatches: "Nic neodpovídá",
     noMatchesDescription: "Zkuste jiné filtry nebo smažte hledání.",
     listingsShown: "pozic",
-    tablePosition: "Pozice",
-    tableCompany: "Firma",
-    tableMatch: "Shoda",
-    tableRemote: "Remote",
-    tableLocation: "Lokalita",
-    tableSource: "Zdroj / nalezeno",
     tableActions: "Akce",
-    remoteYes: "Ano",
-    remoteNo: "Ne",
     applyTitle: "Připravit žádost",
     logManualTitle: "Zaznamenat přihlášku",
-    logManual: "Zaznamenat přihlášku",
     position: "Pozice",
     positionPlaceholder: "např. Senior Frontend Engineer",
     company: "Firma",
@@ -515,7 +468,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     savedTemplatesGroup: "Vaše šablony",
     overwriteLetterConfirm: "Nahradit aktuální motivační dopis šablonou?",
     saveAsTemplate: "Uložit dopis / šablonu",
-    saveAsTemplateName: "Název šablony:",
     notes: "Poznámky",
     notesPlaceholder: "Kontaktní osoba, mzda, další kroky…",
     saveApplication: "Zaznamenat odeslanou žádost",

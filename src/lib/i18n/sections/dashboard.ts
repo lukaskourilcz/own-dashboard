@@ -24,7 +24,6 @@ type DashboardStrings = {
     emptyDay: string;
     prevDay: string;
     nextDay: string;
-    endpointCol: string;
     statusSuccess: string;
     statusFailure: string;
     statusRunning: string;
@@ -76,7 +75,6 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       emptyDay: "No cron runs on this day.",
       prevDay: "Previous day",
       nextDay: "Next day",
-      endpointCol: "Endpoint",
       statusSuccess: "Success",
       statusFailure: "Failed",
       statusRunning: "Running",
@@ -126,7 +124,6 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       emptyDay: "V tento den žádné běhy cronů.",
       prevDay: "Předchozí den",
       nextDay: "Další den",
-      endpointCol: "Endpoint",
       statusSuccess: "Úspěch",
       statusFailure: "Selhalo",
       statusRunning: "Běží",

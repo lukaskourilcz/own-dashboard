@@ -6,7 +6,6 @@ type CostsStrings = {
   overviewTotal: string;
   overviewProjects: string;
   overviewSubscriptions: string;
-  overviewUncategorized: string;
   overviewEmpty: string;
   overviewPerMo: string;
   overviewPerYr: string;
@@ -20,7 +19,6 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     overviewTotal: "All costs",
     overviewProjects: "Projects",
     overviewSubscriptions: "Subscriptions",
-    overviewUncategorized: "Other",
     overviewEmpty: "Add project costs or subscriptions to see the breakdown.",
     overviewPerMo: "/mo",
     overviewPerYr: "/yr",
@@ -32,7 +30,6 @@ export const costs: { en: CostsStrings; cs: CostsStrings } = {
     overviewTotal: "Všechny náklady",
     overviewProjects: "Projekty",
     overviewSubscriptions: "Předplatná",
-    overviewUncategorized: "Ostatní",
     overviewEmpty: "Přidej náklady projektů nebo předplatná a uvidíš rozpad.",
     overviewPerMo: "/měs",
     overviewPerYr: "/rok",

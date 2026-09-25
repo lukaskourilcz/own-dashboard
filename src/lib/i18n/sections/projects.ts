@@ -6,7 +6,6 @@ type ProjectsStrings = {
 
   // Grand totals across all active projects.
   grandTotalMonthly: string;
-  grandTotalYearly: string;
   perMo: string;
   perYr: (yearly: string) => string;
   perMonth: string;
@@ -82,15 +81,12 @@ type ProjectsStrings = {
 
   // Crons.
   crons: string;
-  cronsHint: string;
   registryHint: (url: string) => string;
   addCron: string;
-  editCron: string;
   cronName: string;
   cronNamePlaceholder: string;
   schedule: string;
   schedulePlaceholder: string;
-  scheduleHint: string;
   endpoint: string;
   endpointPlaceholder: string;
   cronDescription: string;
@@ -99,8 +95,6 @@ type ProjectsStrings = {
   aiCallHint: string;
   costPerRun: string;
   runsPerMonth: string;
-  estMonthly: string;
-  estMonthlyLabel: string;
   aiSpendMonthly: string;
   enabled: string;
   disabled: string;
@@ -139,7 +133,6 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     displayIn: "Display in",
 
     grandTotalMonthly: "Total monthly",
-    grandTotalYearly: "Total yearly",
     perMo: "/mo",
     perYr: (yearly) => `${yearly}/yr`,
     perMonth: "per month",
@@ -211,17 +204,13 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     saving: "Saving…",
 
     crons: "Crons",
-    cronsHint:
-      "Scheduled jobs for this project. AI-API-call crons carry their cost.",
     registryHint: (url) =>
       `External sites can read the enabled set at ${url} with the CRON_REGISTRY_TOKEN bearer token.`,
     addCron: "Add cron",
-    editCron: "Edit cron",
     cronName: "Name",
     cronNamePlaceholder: "Daily article generation",
     schedule: "Schedule",
     schedulePlaceholder: "0 6 * * *",
-    scheduleHint: "Standard 5-field cron expression.",
     endpoint: "Endpoint",
     endpointPlaceholder: "/api/cron/generate-daily",
     cronDescription: "Description",
@@ -230,8 +219,6 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     aiCallHint: "Costs money per run",
     costPerRun: "Cost / run",
     runsPerMonth: "Runs / month",
-    estMonthly: "Est. monthly",
-    estMonthlyLabel: "est. monthly",
     aiSpendMonthly: "AI cron spend",
     enabled: "enabled",
     disabled: "disabled",
@@ -268,7 +255,6 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     displayIn: "Zobrazit v",
 
     grandTotalMonthly: "Celkem měsíčně",
-    grandTotalYearly: "Celkem ročně",
     perMo: "/měs",
     perYr: (yearly) => `${yearly}/rok`,
     perMonth: "měsíčně",
@@ -342,17 +328,13 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     saving: "Ukládám…",
 
     crons: "Crony",
-    cronsHint:
-      "Naplánované úlohy projektu. Crony s voláním AI API nesou svoje náklady.",
     registryHint: (url) =>
       `Externí weby mohou povolené crony načíst na ${url} s bearer tokenem CRON_REGISTRY_TOKEN.`,
     addCron: "Přidat cron",
-    editCron: "Upravit cron",
     cronName: "Název",
     cronNamePlaceholder: "Denní generování článku",
     schedule: "Plán",
     schedulePlaceholder: "0 6 * * *",
-    scheduleHint: "Standardní pětipolní cron výraz.",
     endpoint: "Endpoint",
     endpointPlaceholder: "/api/cron/generate-daily",
     cronDescription: "Popis",
@@ -361,8 +343,6 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     aiCallHint: "Stojí peníze za každé spuštění",
     costPerRun: "Cena / spuštění",
     runsPerMonth: "Spuštění / měsíc",
-    estMonthly: "Odhad měsíčně",
-    estMonthlyLabel: "odhad měsíčně",
     aiSpendMonthly: "Náklady AI cronů",
     enabled: "povoleno",
     disabled: "zakázáno",

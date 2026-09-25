@@ -2,13 +2,10 @@ type SettingsStrings = {
   title: string;
   description: string;
   language: string;
-  languageDesc: string;
   english: string;
   czech: string;
   currency: string;
-  currencyDesc: string;
   appearance: string;
-  appearanceDesc: string;
   light: string;
   dark: string;
   navigation: string;
@@ -16,7 +13,6 @@ type SettingsStrings = {
   alwaysVisible: string;
   reorder: string;
   tasks: string;
-  tasksDesc: string;
   tasksAll: string;
   cv: string;
   cvDesc: string;
@@ -33,7 +29,6 @@ type SettingsStrings = {
   aiDataCategories: string;
   aiWrites: string;
   notifications: string;
-  notificationsDesc: string;
   renewalNotifications: string;
   renewalNotificationsDesc: string;
   dataExport: string;
@@ -78,13 +73,10 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     title: "Settings",
     description: "Personalize your dashboard.",
     language: "Language",
-    languageDesc: "Choose the language for the whole app.",
     english: "English",
     czech: "Čeština",
     currency: "Display currency",
-    currencyDesc: "All totals and charts are converted into this currency.",
     appearance: "Appearance",
-    appearanceDesc: "Switch between light and dark mode.",
     light: "Light",
     dark: "Dark",
     navigation: "Navigation sections",
@@ -93,8 +85,6 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     alwaysVisible: "Always visible",
     reorder: "Drag to reorder",
     tasks: "Tasks",
-    tasksDesc:
-      "How many tasks each category shows before “show all”.",
     tasksAll: "All",
     cv: "CV links",
     cvDesc:
@@ -112,7 +102,6 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     aiDataCategories: "Sensitive workflows may send selected project, task, cost, invoice metadata, career, note, repository-document, client, subscription, and date records after confirmation.",
     aiWrites: "AI output is a preview. Database writes always require a separate confirmation; destructive and external actions are unsupported.",
     notifications: "Notifications",
-    notificationsDesc: "Choose only the notification types currently supported by the app.",
     renewalNotifications: "Subscription renewal warnings",
     renewalNotificationsDesc: "Allow scheduled email warnings for active subscriptions renewing today or in three days.",
     dataExport: "Data & export",
@@ -158,13 +147,10 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     title: "Nastavení",
     description: "Přizpůsobte si svůj přehled.",
     language: "Jazyk",
-    languageDesc: "Vyberte jazyk pro celou aplikaci.",
     english: "English",
     czech: "Čeština",
     currency: "Zobrazená měna",
-    currencyDesc: "Všechny součty a grafy se převádějí do této měny.",
     appearance: "Vzhled",
-    appearanceDesc: "Přepínejte mezi světlým a tmavým režimem.",
     light: "Světlý",
     dark: "Tmavý",
     navigation: "Sekce navigace",
@@ -173,7 +159,6 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     alwaysVisible: "Vždy viditelné",
     reorder: "Přetáhni pro změnu pořadí",
     tasks: "Úkoly",
-    tasksDesc: "Kolik úkolů každá kategorie zobrazí před „zobrazit vše“.",
     tasksAll: "Vše",
     cv: "Odkazy na CV",
     cvDesc:
@@ -191,7 +176,6 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     aiDataCategories: "Citlivé postupy mohou po potvrzení odeslat vybrané záznamy projektů, úkolů, nákladů, metadat faktur, kariéry, poznámek, dokumentů repozitáře, klientů, předplatných a termínů.",
     aiWrites: "Výstup AI je náhled. Zápis do databáze vždy vyžaduje samostatné potvrzení; destruktivní a externí akce nejsou podporovány.",
     notifications: "Oznámení",
-    notificationsDesc: "Vyberte pouze typy oznámení, které aplikace aktuálně podporuje.",
     renewalNotifications: "Upozornění na obnovení předplatného",
     renewalNotificationsDesc: "Povolte plánované e-mailové upozornění pro aktivní předplatná obnovovaná dnes nebo za tři dny.",
     dataExport: "Data a export",

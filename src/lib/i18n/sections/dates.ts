@@ -20,7 +20,6 @@ type DatesStrings = {
   noDatesYet: string;
   noDatesYetDescription: string;
   everyMonth: string;
-  turning: (n: number) => string;
   yearlyLabel: string;
   oneOff: string;
   titleAndDateRequired: string;
@@ -62,7 +61,6 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
     noDatesYetDescription:
       "Add a contract deadline, project launch, interview, renewal, or professional milestone.",
     everyMonth: "every month",
-    turning: (n) => `turning ${n}`,
     yearlyLabel: "yearly",
     oneOff: "one-off",
     titleAndDateRequired: "Title and date are required.",
@@ -100,7 +98,6 @@ export const dates: { en: DatesStrings; cs: DatesStrings } = {
     noDatesYetDescription:
       "Přidejte termín smlouvy, spuštění projektu, pohovor, obnovu nebo profesní milník.",
     everyMonth: "každý měsíc",
-    turning: (n) => `bude mu ${n}`,
     yearlyLabel: "ročně",
     oneOff: "jednorázové",
     titleAndDateRequired: "Název a datum jsou povinné.",

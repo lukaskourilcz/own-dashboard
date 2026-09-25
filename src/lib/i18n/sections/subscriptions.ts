@@ -21,7 +21,6 @@ type SubscriptionsStrings = {
   billingCycle: string;
   cycle: Record<Cycle, string>;
   category: string;
-  categoryPlaceholder: string;
   categoryGroup: string;
   group: Record<Group, string>;
   importance: string;
@@ -86,7 +85,6 @@ export const subscriptions: {
     billingCycle: "Billing cycle",
     cycle: { monthly: "Monthly", yearly: "Yearly", weekly: "Weekly", quarterly: "Quarterly" },
     category: "Category",
-    categoryPlaceholder: "Entertainment",
     categoryGroup: "Spending group",
     group: { development: "Development", entertainment: "Entertainment", business: "Business / self-employment", infrastructure: "Infrastructure", productivity: "Productivity", finance: "Finance", other: "Other" },
     importance: "Importance",
@@ -147,7 +145,6 @@ export const subscriptions: {
     billingCycle: "Fakturační cyklus",
     cycle: { monthly: "Měsíčně", yearly: "Ročně", weekly: "Týdně", quarterly: "Čtvrtletně" },
     category: "Kategorie",
-    categoryPlaceholder: "Zábava",
     categoryGroup: "Skupina výdajů",
     group: { development: "Vývoj", entertainment: "Zábava", business: "Podnikání / OSVČ", infrastructure: "Infrastruktura", productivity: "Produktivita", finance: "Finance", other: "Ostatní" },
     importance: "Důležitost",

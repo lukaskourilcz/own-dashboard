@@ -55,11 +55,9 @@ type InvoicesStrings = {
   ibanLabel: string;
   thDescription: string;
   thQuantity: string;
-  thUnit: string;
   thUnitPrice: string;
   thVat: string;
   thLineTotal: string;
-  vatRecapTitle: string;
   recapRate: string;
   recapBase: string;
   recapVat: string;
@@ -86,7 +84,6 @@ type InvoicesStrings = {
   sectionItems: string;
   sectionSummary: string;
   sectionNote: string;
-  supplierFromSettings: string;
   supplierMissing: string;
   editSupplier: string;
   fieldName: string;
@@ -113,7 +110,6 @@ type InvoicesStrings = {
   fieldPaymentMethod: string;
   fieldCurrency: string;
   paymentMethod: PaymentLabels;
-  itemDescription: string;
   itemDescriptionPlaceholder: string;
   itemQuantity: string;
   itemUnit: string;
@@ -124,7 +120,6 @@ type InvoicesStrings = {
   removeItem: string;
   roundTotalToggle: string;
   notePlaceholder: string;
-  footerNoteLabel: string;
 
   // Import (PDF)
   formImportTitle: string;
@@ -136,7 +131,6 @@ type InvoicesStrings = {
   parsing: string;
   parseFailed: string;
   notPdf: string;
-  importButton: string;
 
   // Settings
   settingsTitle: string;
@@ -230,11 +224,9 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     ibanLabel: "IBAN",
     thDescription: "Description",
     thQuantity: "Qty",
-    thUnit: "Unit",
     thUnitPrice: "Unit price",
     thVat: "VAT",
     thLineTotal: "Total",
-    vatRecapTitle: "VAT summary",
     recapRate: "Rate",
     recapBase: "Base",
     recapVat: "VAT",
@@ -261,7 +253,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     sectionItems: "Line items",
     sectionSummary: "Summary",
     sectionNote: "Note",
-    supplierFromSettings: "Taken from your invoicing settings.",
     supplierMissing: "Fill in your supplier details in invoicing settings.",
     editSupplier: "Edit supplier",
     fieldName: "Name / company",
@@ -292,7 +283,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
       cash: "Cash",
       card: "Card",
     },
-    itemDescription: "Description",
     itemDescriptionPlaceholder: "Web work, consulting…",
     itemQuantity: "Qty",
     itemUnit: "Unit",
@@ -303,7 +293,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     removeItem: "Remove item",
     roundTotalToggle: "Round total to whole crowns",
     notePlaceholder: "Optional note shown on the invoice",
-    footerNoteLabel: "Footer",
 
     formImportTitle: "Invoice from PDF",
     importedHint:
@@ -316,7 +305,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     parseFailed:
       "Couldn't read that PDF. Try another file or fill the invoice in manually.",
     notPdf: "Please drop a PDF file.",
-    importButton: "Import from PDF",
 
     settingsTitle: "Invoicing settings",
     settingsDesc: "Supplier details and defaults for new invoices.",
@@ -406,11 +394,9 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     ibanLabel: "IBAN",
     thDescription: "Popis",
     thQuantity: "Množství",
-    thUnit: "MJ",
     thUnitPrice: "Cena za MJ",
     thVat: "DPH",
     thLineTotal: "Celkem",
-    vatRecapTitle: "Rekapitulace DPH",
     recapRate: "Sazba",
     recapBase: "Základ",
     recapVat: "DPH",
@@ -437,7 +423,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     sectionItems: "Položky",
     sectionSummary: "Souhrn",
     sectionNote: "Poznámka",
-    supplierFromSettings: "Údaje se přebírají z nastavení fakturace.",
     supplierMissing: "Vyplňte údaje dodavatele v nastavení fakturace.",
     editSupplier: "Upravit dodavatele",
     fieldName: "Jméno / název firmy",
@@ -468,7 +453,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
       cash: "Hotově",
       card: "Platební kartou",
     },
-    itemDescription: "Popis",
     itemDescriptionPlaceholder: "Webové práce, konzultace…",
     itemQuantity: "Množství",
     itemUnit: "MJ",
@@ -479,7 +463,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     removeItem: "Odebrat položku",
     roundTotalToggle: "Zaokrouhlit na celé koruny",
     notePlaceholder: "Volitelná poznámka na faktuře",
-    footerNoteLabel: "Patička",
 
     formImportTitle: "Faktura z PDF",
     importedHint:
@@ -492,7 +475,6 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     parseFailed:
       "PDF se nepodařilo načíst. Zkuste jiný soubor nebo fakturu vyplňte ručně.",
     notPdf: "Přetáhněte prosím soubor PDF.",
-    importButton: "Importovat z PDF",
 
     settingsTitle: "Nastavení fakturace",
     settingsDesc: "Údaje dodavatele a výchozí hodnoty pro nové faktury.",

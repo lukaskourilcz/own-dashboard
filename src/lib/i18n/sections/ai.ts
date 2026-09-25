@@ -1,5 +1,4 @@
 type AiStrings = {
-  exportTitle: string;
   exportLinksTitle: string;
   exportIdeasTitle: string;
   exportHint: string;
@@ -31,7 +30,6 @@ type AiStrings = {
   editIdeaTitle: string;
   ideaEmpty: string;
   pricingEvidence: string;
-  unknownPricing: string;
   ideasHint: string;
   addIdea: string;
   rating: string;
@@ -71,9 +69,7 @@ type AiStrings = {
   add: string;
   searchPlaceholder: string;
   // Table columns
-  colSite: string;
   colDescription: string;
-  colActions: string;
   open: string;
   visit: string;
   // Categories
@@ -123,7 +119,6 @@ type AiStrings = {
   nameRequired: string;
   urlRequired: string;
   urlInvalid: string;
-  categoryNameRequired: string;
   signInFirst: string;
   couldNotSave: string;
   couldNotDelete: string;
@@ -166,7 +161,6 @@ type AiStrings = {
 
 export const ai: { en: AiStrings; cs: AiStrings } = {
   en: {
-    exportTitle: "Copy to JSON / Markdown",
     exportLinksTitle: "Copy links to JSON / Markdown",
     exportIdeasTitle: "Copy ideas to JSON / Markdown",
     exportHint: "Choose all records, selected categories or individual records, then apply an optional pricing filter.",
@@ -198,7 +192,6 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     editIdeaTitle: "Edit idea",
     ideaEmpty: "No ideas here yet. Add advice and its source to get started.",
     pricingEvidence: "Pricing evidence",
-    unknownPricing: "Price unverified",
     ideasHint: "Practical advice, grouped by topic, with sources and project relevance.",
     addIdea: "Add idea",
     rating: "Usefulness",
@@ -237,9 +230,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     addCategoryPlaceholder: "Add category",
     add: "Add",
     searchPlaceholder: "Search links and ideas…",
-    colSite: "Site",
     colDescription: "Description",
-    colActions: "Actions",
     open: "Open link",
     visit: "Visit",
     uncategorized: "Uncategorized",
@@ -292,7 +283,6 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     nameRequired: "Name is required.",
     urlRequired: "URL is required.",
     urlInvalid: "Enter a valid URL (https://…).",
-    categoryNameRequired: "Category name is required.",
     signInFirst: "Sign in first.",
     couldNotSave: "Could not save the link. Please try again.",
     couldNotDelete: "Could not delete that. Please try again.",
@@ -332,7 +322,6 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     projectFilterLabel: "Used by project",
   },
   cs: {
-    exportTitle: "Kopírovat do JSON / Markdown",
     exportLinksTitle: "Kopírovat odkazy do JSON / Markdown",
     exportIdeasTitle: "Kopírovat nápady do JSON / Markdown",
     exportHint: "Vyberte všechny záznamy, konkrétní kategorie nebo jednotlivé položky a případně je omezte podle ceny.",
@@ -364,7 +353,6 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     editIdeaTitle: "Upravit nápad",
     ideaEmpty: "Zatím tu nejsou žádné nápady. Přidejte radu a její zdroj.",
     pricingEvidence: "Podklady k ceně",
-    unknownPricing: "Cena neověřena",
     ideasHint: "Praktické rady podle tématu, se zdroji a využitím v projektech.",
     addIdea: "Přidat nápad",
     rating: "Užitečnost",
@@ -403,9 +391,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     addCategoryPlaceholder: "Přidat kategorii",
     add: "Přidat",
     searchPlaceholder: "Hledat odkazy a nápady…",
-    colSite: "Web",
     colDescription: "Popis",
-    colActions: "Akce",
     open: "Otevřít odkaz",
     visit: "Otevřít",
     uncategorized: "Bez kategorie",
@@ -458,7 +444,6 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     nameRequired: "Název je povinný.",
     urlRequired: "URL je povinná.",
     urlInvalid: "Zadej platnou URL (https://…).",
-    categoryNameRequired: "Název kategorie je povinný.",
     signInFirst: "Nejprve se přihlaste.",
     couldNotSave: "Odkaz se nepodařilo uložit. Zkuste to znovu.",
     couldNotDelete: "Nepodařilo se to smazat. Zkuste to znovu.",
