@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rejectUnlessCron } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
 import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -20,16 +21,14 @@ export const dynamic = "force-dynamic";
  * Idempotent — a linked payment carries `invoice_id`, so a re-run does not see
  * it again and cannot pay the same invoice twice.
  *
- * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. Owners are
+ * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`; every other
+ * call gets 403, and so does every call while CRON_SECRET is unset. Owners are
  * every user who currently has an issued bank invoice, so the job costs nothing
  * for an account with an empty receivables list.
  */
 export async function GET(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
+  const rejected = rejectUnlessCron(request);
+  if (rejected) return rejected;
 
   let admin: ReturnType<typeof createAdminClient>;
   try {

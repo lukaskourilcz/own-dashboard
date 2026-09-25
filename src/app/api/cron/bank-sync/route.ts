@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rejectUnlessCron } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
 import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -20,16 +21,14 @@ export const maxDuration = 60;
  * failed sync days later. And availability is decided per connection by its own
  * provider, so an install with no GoCardless credentials still syncs Fio.
  *
- * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. No-ops
- * gracefully when no provider is configured, so the deploy survives before
- * secrets are set.
+ * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`; every
+ * other call gets 403, and so does every call while CRON_SECRET is unset. A
+ * connection whose provider has no credentials is skipped, so the job is
+ * harmless before those secrets exist.
  */
 export async function GET(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
+  const rejected = rejectUnlessCron(request);
+  if (rejected) return rejected;
 
   const admin = createAdminClient();
 

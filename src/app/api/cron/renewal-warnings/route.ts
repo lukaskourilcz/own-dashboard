@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rejectUnlessCron } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
 import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { Resend } from "resend";
@@ -13,18 +14,15 @@ import { formatCurrency } from "@/lib/utils";
  * spam.
  *
  * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}` where
- * CRON_SECRET is whatever you set in the project env. Reject anything else.
+ * CRON_SECRET is whatever you set in the project env. Every other call gets
+ * 403, and so does every call while CRON_SECRET is unset.
  *
- * No-op gracefully when env vars are missing — letting the deploy survive
+ * Sends nothing while RESEND_API_KEY is missing, so the deploy survives
  * before Resend is configured.
  */
 export async function GET(request: Request) {
-  // Auth: only run when called by Vercel Cron (or with the right secret).
-  const expected = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
+  const rejected = rejectUnlessCron(request);
+  if (rejected) return rejected;
 
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {

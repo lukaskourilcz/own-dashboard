@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
+import { rejectUnlessCron } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
 import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runJobScrape } from "@/lib/jobs/scrape";
 
 /**
- * Daily job-board scrape (Vercel Cron, 08:00 UTC = 10:00 Prague in summer /
- * 09:00 in winter — the requested "10 AM UTC+2" slot). Pulls remote-friendly
- * European frontend/fullstack/software-engineering openings from every
- * configured source into `job_listings` for the Jobs section.
+ * Manual, authenticated job-board scrape. No schedule has called it since #81
+ * made Career load on demand; Career's "Check for new offers" button uses
+ * /api/jobs/refresh. Pulls remote-friendly European frontend, fullstack and
+ * software-engineering openings from every configured source into
+ * `job_listings`.
  *
- * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`; reject
- * anything else once the secret is configured (mirrors renewal-warnings).
+ * Auth: `Authorization: Bearer ${CRON_SECRET}`, like every /api/cron route.
+ * Every other call gets 403, and so does every call while CRON_SECRET is
+ * unset.
  *
  * No-ops gracefully when the service-role key is missing so a fresh deploy
  * without env vars still boots.
@@ -22,11 +25,8 @@ import { runJobScrape } from "@/lib/jobs/scrape";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (!expected || auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
+  const rejected = rejectUnlessCron(request);
+  if (rejected) return rejected;
 
   let admin;
   try {
