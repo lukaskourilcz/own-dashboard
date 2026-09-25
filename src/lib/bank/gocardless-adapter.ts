@@ -123,15 +123,17 @@ export const gocardlessProvider: BankProvider = {
     return accounts;
   },
 
+  // Every pull reads the whole window the consent allows, as it did before
+  // the provider interface: a bank can book a payment days after it happened,
+  // and a `date_from` at the last sync day would skip it for good. The dedupe
+  // on `external_id` makes the repeat free, so the sync cursor is not read.
+  // A failed pull throws: `syncConnection` then records `last_error` and
+  // keeps the cursor. Returning an empty list would look like a quiet day.
   async fetchTransactions(
     _conn: BankConnection,
     accountRef: string,
-    since: string | null,
   ): Promise<ProviderTransaction[]> {
-    const response = await getAccountTransactions(
-      accountRef,
-      since ?? undefined,
-    ).catch(() => null);
+    const response = await getAccountTransactions(accountRef);
     const booked = response?.transactions?.booked ?? [];
     return booked
       .map((tx) => mapTransaction(tx))
