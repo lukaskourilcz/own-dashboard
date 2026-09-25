@@ -5,8 +5,10 @@ merge kept `projects.engagement` and dropped `projects.scope`, folded the Works 
 into Projects behind the freelance divider, dropped the Links & Ideas workspace tab in
 favour of `project_links`, renamed the migration files to the versions production
 recorded, and fixed the parent check in the `projects` policies. The `schema.sql`
-question below was settled by #85. The table under "Per issue" is the state on
-2026-09-16.
+question below was settled by #85. The #73 captures were taken (`0aae79a`, retaken
+after the merge as `media/changelog/2026-09-25-*.png`) and the release entry is in
+`src/lib/changelog.ts` and `CHANGELOG.md` (`7a26c47`, then the 2026-09-25 entry).
+The table under "Per issue" is the state on 2026-09-16, with #73 updated.
 
 Written at the end of the session of 2026-09-16. Branch: `claude/elegant-cori-h9cdgb`.
 Every issue below has a long comment on GitHub with the file-level detail; this
@@ -71,12 +73,12 @@ it as it is — a fresh install currently needs both files and neither is comple
 | #70 | partial | Cron heartbeats ship. The VPS agent-task half has no feature to attach to — the agents panel was removed in `5d32e6b` and only an orphaned table survives. Needs Uptime Kuma self-hosted before any of it monitors anything. |
 | #71 | open | The eight verification checks are yours: they live in vendor consoles and Apple invoice PDFs, not in this repository. The confirmation surface is how you work the list. |
 | #72 | partial | devShark as its own registry row also forks live data; client projects carrying competitors is one condition; the merges need judgement about which names are one topic. |
-| #73 | partial | The per-feature screenshots. Playwright now runs in this environment, so `CHANGELOG_CAPTURE=1 npx playwright test e2e/changelog-capture.spec.ts --project=desktop` is a real next step — expect to correct one or two locators on the first run. |
+| #73 | done | The captures and the release entry landed. Retake a capture with `CHANGELOG_CAPTURE=1 npx playwright test e2e/changelog-capture.spec.ts --project=desktop` when its screen changes. |
 
 ## Where to pick up
 
-1. Settle the `schema.sql` question above. It touches four issues and gets worse with every migration.
-2. Take the #73 captures — it is the one item that was blocked purely on tooling and is not any more.
-3. Write the release entry in `src/lib/changelog.ts` and regenerate `CHANGELOG.md`. Four lanes each declined to touch it while the others were editing the tree, so it is owed for everything above.
+The three steps once listed here are done: #85 settled the `schema.sql` question,
+and the #73 captures and the release entry landed. The table above and
+`NEEDED.md` hold what remains.
 
 Nothing in this repository is waiting on another agent.
