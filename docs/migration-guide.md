@@ -384,3 +384,15 @@ Apply `20260925200200_project_competition_tab.sql`. It recreates the `user_prefe
 ### Removing the unused link references
 
 Apply `20260925200300_drop_link_project_references.sql`. It drops `ai_link_projects` and `projects.video_url` from `20260916195556`. It is guarded: when either holds data it raises `Refusing to drop the link-reference schema` and drops nothing. Production had no `ai_link_projects` row and no `video_url` value when it was written. Move any rows into `project_links` first if the guard fires. To undo the drop, recreate the empty table and column from the statements in `20260916195556_link_project_references.sql`; no data is lost, because the guard only lets the drop run when there is none.
+
+## Cron-run purge grants — 2026-09-25
+
+Apply `20260925210000_restrict_purge_old_cron_runs.sql` after the four integration migrations above. `20260724110000_cron_runs.sql` revoked `purge_old_cron_runs()` from `PUBLIC` only, and Supabase's default privileges had already granted `EXECUTE` on it directly to `anon`, `authenticated` and `service_role`. Because the function is `SECURITY DEFINER`, anyone could call `/rest/v1/rpc/purge_old_cron_runs` and delete cron runs older than 14 days as the owner; the security advisor reports it as lints 0028 and 0029. The migration revokes the function from `public`, `anon` and `authenticated` and grants it to `service_role`. The `pg_cron` job runs it as the owner and keeps working.
+
+### Verify
+
+`select proacl from pg_proc where oid = 'public.purge_old_cron_runs()'::regprocedure` returns `{postgres=X/postgres,service_role=X/postgres}`. As `anon` or `authenticated`, `select public.purge_old_cron_runs()` fails with `permission denied for function purge_old_cron_runs`; as `service_role` it deletes only runs older than 14 days. The security advisor no longer lists the function. Running the file twice changes nothing.
+
+### Rollback
+
+Nothing reads the function through the API, so there is nothing to roll back. To restore the old grants, `grant execute on function public.purge_old_cron_runs() to anon, authenticated;`, which reopens the advisor finding.

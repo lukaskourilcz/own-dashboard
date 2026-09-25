@@ -129,8 +129,9 @@ The migrations, in the order they run:
 34. `20260925200100_project_engagement_replaces_scope.sql` — drops `projects.scope`; `engagement` is the one own-versus-client field.
 35. `20260925200200_project_competition_tab.sql` — adds `competition` to the `user_preferences.hidden_project_tabs` check.
 36. `20260925200300_drop_link_project_references.sql` — guarded drop of the unused `ai_link_projects` and `projects.video_url`.
+37. `20260925210000_restrict_purge_old_cron_runs.sql` — takes `purge_old_cron_runs()` away from `anon` and `authenticated`, leaving it to `service_role` and the scheduler.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. Migrations 18–32 are applied in production; 33–36 are the pending ones.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. Migrations 18–32 are applied in production; 33–37 are the pending ones.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 

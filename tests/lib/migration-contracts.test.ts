@@ -72,3 +72,38 @@ describe("2026-09-25 integration migrations", () => {
     expect(sql).toMatch(/to_regclass\('public\.ai_link_projects'\)/);
   });
 });
+
+describe("SECURITY DEFINER functions", () => {
+  // Supabase's default privileges grant EXECUTE on every new function in
+  // public directly to anon, authenticated and service_role. A revoke from
+  // PUBLIC alone leaves those grants, which is how purge_old_cron_runs() stayed
+  // callable by anyone until 20260925210000.
+  const definers = migrationFiles.flatMap((file) =>
+    [...code(file).matchAll(/create\s+(?:or\s+replace\s+)?function\s+public\.(\w+)\s*\(([\s\S]*?)\bas\s+\$/gi)]
+      .filter((match) => /\bsecurity\s+definer\b/i.test(match[2]))
+      .map((match) => ({ file, name: match[1] })),
+  );
+
+  it("are found in the migrations", () => {
+    expect(definers.map((d) => d.name)).toEqual(
+      expect.arrayContaining(["purge_old_cron_runs", "audit_freelance_opportunity"]),
+    );
+  });
+
+  it("are revoked from anon and authenticated by the same or a later migration", () => {
+    for (const { file, name } of definers) {
+      const revoked = new Set<string>();
+      for (const later of migrationFiles.filter((other) => other >= file)) {
+        const revokes = code(later).matchAll(
+          new RegExp(`revoke\\s+(?:all|execute)\\s+on\\s+function\\s+public\\.${name}\\b[^;]*?\\bfrom\\b([^;]*);`, "gi"),
+        );
+        for (const revoke of revokes) {
+          for (const role of revoke[1].split(",")) revoked.add(role.trim().toLowerCase());
+        }
+      }
+      expect([...revoked], `${name} (${file})`).toEqual(
+        expect.arrayContaining(["anon", "authenticated"]),
+      );
+    }
+  });
+});
