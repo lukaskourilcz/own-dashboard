@@ -13,6 +13,22 @@ const sql = readFileSync(
   "utf8",
 );
 
+// The latest migration that defines the hidden_project_tabs check.
+const tabCheckSql = readFileSync(
+  new URL(
+    "../../supabase/migrations/20260925090200_fix_hidden_project_tabs_check.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+function checkedTabs(source: string): string[] {
+  const constraint = source.match(
+    /add constraint user_preferences_hidden_project_tabs_check[\s\S]+?array\[([\s\S]+?)\]::text\[\]/i,
+  );
+  return [...(constraint?.[1] ?? "").matchAll(/'([^']+)'/g)].map((match) => match[1]!);
+}
+
 describe("synchronized user preferences", () => {
   it("normalizes project tab visibility to canonical tabs", () => {
     expect(
@@ -34,6 +50,15 @@ describe("synchronized user preferences", () => {
     );
     expect(sql).toMatch(
       /grant select, insert, update on public\.user_preferences to authenticated/i,
+    );
+  });
+
+  it("constrains hidden project tabs to exactly the workspace tabs", () => {
+    expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_WORKSPACE_TABS]);
+    expect(checkedTabs(tabCheckSql)).not.toContain("operations");
+    // Rows holding a removed id are cleaned before the stricter check applies.
+    expect(tabCheckSql.indexOf("update public.user_preferences")).toBeLessThan(
+      tabCheckSql.indexOf("add constraint user_preferences_hidden_project_tabs_check"),
     );
   });
 });
