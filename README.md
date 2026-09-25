@@ -14,7 +14,7 @@ It is deliberately a personal application—not a SaaS, team workspace, CRM, or 
 - **Career** — a React-focused Prague/remote job workspace that loads nothing until **Check for new offers / Zkontrolovat nové nabídky** is pressed; the press refreshes employer feeds and job boards and checks which listings are still open. It keeps an owner-scoped company directory, position-specific English/Czech letter guidance, saved positions with URL import and persistent drafts, prepared applications with Google Drive letters, sent dates and response statistics, application history, cover-letter templates, a stage board with contacts and follow-up dates, and permanent owner-scoped deletion.
 - **Money and invoices** — a development-finance overview (recurring tooling and hosting spend split between own projects, client projects and unallocated overhead, per-project and per-vendor breakdowns, a committed-versus-paid timeline, and how much rests on amounts not yet checked against an invoice), accounts, CSV import and bank sync behind one provider interface (GoCardless, Fio, Enable Banking), staged transaction rules that file a payment by description, account, amount, date or direction and can be applied retroactively, deterministic pairing of incoming payments with issued invoices by variable symbol and amount, subscriptions grouped by operational purpose and importance with lifecycle dates, renewal countdowns and project allocations, project costs, static FX summaries, Czech VAT-aware invoices, QR Platba, print output, and deterministic PDF text extraction with a review form.
 - **Planning** — GLOBAL priority-6 tasks, active-project/client-linked tasks, Google Calendar agenda and event creation, professional goals, and project/organization-linked deadlines, launches, renewals, interviews, and milestones.
-- **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup; prompts grouped by the kind of job (design, audit, competition, UX and UI, analysis, documentation, new project, SEO, marketing) with the links an agent should open and a copy preview that fills in a project and its links; Tools, the library links really in use with what each does and how it helps each project; and masonry-grouped enriched links showing which projects use them. Project Knowledge reads Tech stack and third-party library summaries from `about-project.md`.
+- **Library** — BlockNote notes with full-context copy and automatic stale-empty cleanup; prompts grouped by the kind of job (design, audit, competition, UX and UI, analysis, documentation, new project, SEO, marketing) with the links an agent should open and a copy preview that fills in a project and its links; Tools, the library links really in use with what each does and how it helps each project; and masonry-grouped enriched links showing which projects use them. Project Knowledge renders the linked repository's `about-project.md` as formatted Markdown.
 - **Settings** — database-synchronized appearance, navigation, task density, CV links, active GitHub projects, integrations, notification controls, AI/privacy consent, own-only exports, legacy archive download, and account controls.
 
 Pulse, habits/streaks, books/reading, and couples mode are retired. The cleanup migration archives their rows before removal, restores strict own-only policies, and keeps the archive downloadable from Settings → Data & export.
@@ -79,7 +79,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR-PUBLISHABLE-OR-ANON-KEY
 ```
 
-All optional AI, OAuth, cron, email, bank, rate-limit, analytics, and monitoring variables are documented inline in `.env.example` and in [External setup](./docs/external-setup.md).
+`.env.example` lists the optional variables: OAuth, cron, heartbeat, email, bank, rate limiting, analytics, monitoring, Vercel Web Analytics and Apify. [External setup](./docs/external-setup.md) covers each provider account, and [Career workspace](./docs/career-workspace.md) covers the Apify import.
 
 3. Prepare the database.
 
@@ -130,7 +130,7 @@ The migrations, in the order they run:
 35. `20260925200200_project_competition_tab.sql` — adds `competition` to the `user_preferences.hidden_project_tabs` check.
 36. `20260925200300_drop_link_project_references.sql` — guarded drop of the unused `ai_link_projects` and `projects.video_url`.
 
-The freelance set (14–16), each 2026-09-16 migration (18–26) and each 2026-09-25 migration (27–36) have an entry with verification steps in the migration guide. Migrations 18–32 are applied in production; 33–36 are the pending ones.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. Migrations 18–32 are applied in production; 33–36 are the pending ones.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 

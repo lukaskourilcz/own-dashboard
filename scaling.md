@@ -1,12 +1,12 @@
 # OwnDashboard — cost & scaling
 
-Self-hosted, own-only tool on Vercel + Supabase with pay-as-you-go AI. The stack is in `about-project.md`; prices checked 2026-07-21.
+Self-hosted, own-only tool on Vercel + Supabase. It makes no model calls. The stack is in `about-project.md`; prices checked 2026-07-21.
 
 ## What it costs
 
-- **Personal, free tiers:** ~$0/month + AI usage (Vercel Hobby, Supabase Free).
-- **Always-on personal:** ~$25–40/month (Supabase Pro $25; light AI).
-- AI is the only real variable — usually a few dollars. Set provider budget alerts rather than trusting an estimate.
+- **Personal, free tiers:** ~$0/month (Vercel Hobby, Supabase Free).
+- **Always-on personal:** ~$25/month (Supabase Pro $25).
+- Nothing is priced per use by default: there is no model usage, and the optional services below stay on their free tiers.
 - Job-board refreshes run only when the owner presses **Check for new offers** in Career (no daily scrape cron), so function time and outbound requests scale with use, not with the calendar.
 
 ## When to scale
@@ -16,4 +16,4 @@ Self-hosted, own-only tool on Vercel + Supabase with pay-as-you-go AI. The stack
 
 ## Keep costs down
 
-Set budget alerts on Anthropic and each provider; stay on free tiers until a real limit is hit.
+Set budget alerts on each provider that has a paid tier; stay on free tiers until a real limit is hit.

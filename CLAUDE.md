@@ -2,7 +2,7 @@
 
 # OwnDashboard control document
 
-OwnDashboard is a bilingual, self-hosted, own-only professional operating system for one software engineer/freelancer. It connects projects, client opportunities, organizations, VPS agent tasks, Career, Czech invoices, money, planning, knowledge, integrations, notifications, weekly reviews, and contextual AI. Tugedr is a client-opportunity source. Pulse, lifestyle habits/streaks, books/reading, couples, partner data, and general lifestyle tracking are retired and must not return. The Home completion garden is professional seven-task execution history backed by `daily_focus_*`; it must never reuse or restore the retired personal `streaks` model. Keep the temporary name OwnDashboard centralized in `src/lib/brand.ts`; never rename it to Takt.
+OwnDashboard is a bilingual, self-hosted, own-only professional operating system for one software engineer/freelancer. It connects projects, client opportunities, organizations, Career, Czech invoices, money, planning, knowledge (notes, prompts, tools and the link library), integrations, notifications, and weekly reviews. It makes no model calls. Tugedr is a client-opportunity source. Pulse, lifestyle habits/streaks, books/reading, couples, partner data, and general lifestyle tracking are retired and must not return. The Home completion garden is professional seven-task execution history backed by `daily_focus_*`; it must never reuse or restore the retired personal `streaks` model. Keep the temporary name OwnDashboard centralized in `src/lib/brand.ts`; never rename it to Takt.
 
 ## Read before changing
 
@@ -13,7 +13,7 @@ OwnDashboard is a bilingual, self-hosted, own-only professional operating system
 
 ## Non-negotiable architecture
 
-`src/app/[[...slug]]/page.tsx` is the authenticated, route-scoped server boundary; `src/components/dashboard-shell.tsx` is the persistent History API shell. Keep the canonical navigation model, `dashboardDataKeysForTab`, centralized query keys, `useEntityStore`, lazy destination fetchers, bounded results, invalidation, and project workspaces at `/projects/[id-or-slug]`. Preserve own-only RLS and related-foreign-record ownership, authenticated service-role boundaries, static FX, project/cron costs, invoice/VAT/QR/print correctness, direct Google Calendar behavior, GitHub/bank boundaries, legacy export, and contextual AI consent/bounded context/source validation/separate writes.
+`src/app/[[...slug]]/page.tsx` is the authenticated, route-scoped server boundary; `src/components/dashboard-shell.tsx` is the persistent History API shell. Keep the canonical navigation model, `dashboardDataKeysForTab`, centralized query keys, `useEntityStore`, lazy destination fetchers, bounded results, invalidation, and project workspaces at `/projects/[id-or-slug]`. Preserve own-only RLS and related-foreign-record ownership, authenticated service-role boundaries, static FX, project/cron costs, invoice/VAT/QR/print correctness, direct Google Calendar behavior, GitHub/bank boundaries, legacy export, and the no-model-call boundary: link enrichment sends only the submitted URL to Jina Reader (`docs/ai-and-privacy.md`).
 
 Project communications stay owned and project-scoped. Subscription operational groups and importance are canonical; renewal dates remain explicit rather than inferred from live billing providers.
 
