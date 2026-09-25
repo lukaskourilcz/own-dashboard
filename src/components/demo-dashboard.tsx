@@ -2,6 +2,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { DASHBOARD_DATA_KEYS } from "@/lib/dashboard-data";
 import type { Lang } from "@/lib/i18n";
 import * as f from "@/lib/demo/fixtures";
+import { resolveProjectRef } from "@/lib/projects";
 
 /**
  * The real `DashboardShell` wired to the deterministic demo fixtures.
@@ -23,9 +24,7 @@ export function DemoDashboard({
   projectRef?: string;
   language?: Lang;
 }) {
-  const project = projectRef
-    ? f.projects.find((item) => item.id === projectRef || item.slug === projectRef)
-    : undefined;
+  const project = projectRef ? resolveProjectRef(f.projects, projectRef) : undefined;
 
   return (
     <DashboardShell

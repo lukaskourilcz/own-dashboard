@@ -45,6 +45,7 @@ import type { WidgetId } from "@/lib/dashboard-layout";
 import { tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { useEntityStore } from "@/lib/queries/entities";
 import { taskBelongsToProject } from "@/lib/project-match";
+import { resolveProjectRef } from "@/lib/projects";
 import {
   fetchAccounts,
   fetchAiCategories,
@@ -121,7 +122,7 @@ type Props = {
   initialProjects: Project[];
   initialNavigationProjects: Pick<
     Project,
-    "id" | "name" | "slug" | "is_active"
+    "id" | "name" | "slug" | "is_active" | "engagement"
   >[];
   initialProjectCommunications: ProjectCommunication[];
   initialProjectCosts: ProjectCost[];
@@ -217,11 +218,7 @@ export function DashboardShell(props: Props) {
           // Keep the raw segment; the canonical server boundary handles
           // malformed/unknown direct routes as 404.
         }
-        setSelectedProjectId(
-          projects.find(
-            (project) => project.id === key || project.slug === key,
-          )?.id ?? null,
-        );
+        setSelectedProjectId(resolveProjectRef(projects, key)?.id ?? null);
       } else {
         setSelectedProjectId(null);
       }

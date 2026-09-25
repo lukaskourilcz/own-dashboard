@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
 import { dashboardDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
+import { resolveProjectRef } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
 
@@ -69,17 +70,23 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadUserPreferences(user.id),
     supabase
       .from("projects")
-      .select("id, name, slug, is_active")
+      .select("id, name, slug, is_active, engagement")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .limit(50),
   ]);
 
-  const requestedProject = slug?.[0] === "projects" && slug[1]
-    ? (projectsRes?.data ?? []).find((project) => project.id === slug[1] || project.slug === slug[1])
+  const requestedRef = slug?.[0] === "projects" && slug[1] ? slug[1] : null;
+  const requestedProject = requestedRef
+    ? resolveProjectRef(projectsRes?.data ?? [], requestedRef)
     : null;
-  if (slug?.[0] === "projects" && slug[1] && !requestedProject) notFound();
+  if (requestedRef && !requestedProject) notFound();
+  // An earlier slug (e.g. /projects/aifirst after the DNESKAi rename) resolves
+  // to the project and redirects to its canonical URL.
+  if (requestedRef && requestedProject && requestedRef !== requestedProject.id && requestedRef !== requestedProject.slug) {
+    redirect(`/projects/${encodeURIComponent(requestedProject.slug)}`);
+  }
 
   return <DashboardShell
     initialTab={initialTab}

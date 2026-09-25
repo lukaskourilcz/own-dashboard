@@ -28,6 +28,10 @@ type ProjectsStrings = {
   urlPlaceholder: string;
   devUrl: string;
   devUrlPlaceholder: string;
+  engagement: string;
+  engagementOwn: string;
+  engagementClient: string;
+  freelanceDivider: string;
   nameRequired: string;
   slugRequired: string;
 
@@ -133,9 +137,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     addProject: "Add project",
     editProject: "Edit project",
     name: "Name",
-    namePlaceholder: "aifirst",
+    namePlaceholder: "DNESKAi",
     slug: "Slug",
-    slugPlaceholder: "aifirst",
+    slugPlaceholder: "dneskai",
     slugHint: "Stable handle used by the cron registry API.",
     repo: "Repository",
     repoPlaceholder: "owner/repo",
@@ -143,6 +147,10 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     urlPlaceholder: "https://…",
     devUrl: "Development URL",
     devUrlPlaceholder: "https://dev.example.com or http://localhost:3000",
+    engagement: "Engagement",
+    engagementOwn: "Own",
+    engagementClient: "Freelance (hired)",
+    freelanceDivider: "Freelance — hired",
     nameRequired: "Name is required.",
     slugRequired: "Slug is required.",
 
@@ -244,9 +252,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     addProject: "Přidat projekt",
     editProject: "Upravit projekt",
     name: "Název",
-    namePlaceholder: "aifirst",
+    namePlaceholder: "DNESKAi",
     slug: "Identifikátor",
-    slugPlaceholder: "aifirst",
+    slugPlaceholder: "dneskai",
     slugHint: "Stabilní klíč používaný API registrem cronů.",
     repo: "Repozitář",
     repoPlaceholder: "owner/repo",
@@ -254,6 +262,10 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     urlPlaceholder: "https://…",
     devUrl: "Vývojová URL",
     devUrlPlaceholder: "https://dev.example.com nebo http://localhost:3000",
+    engagement: "Typ spolupráce",
+    engagementOwn: "Vlastní",
+    engagementClient: "Freelance (najatý)",
+    freelanceDivider: "Freelance — najatý",
     nameRequired: "Název je povinný.",
     slugRequired: "Identifikátor je povinný.",
 

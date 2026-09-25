@@ -24,9 +24,9 @@ export type CronSeed = {
 };
 
 export const PROJECT_CRON_SEEDS: Record<string, CronSeed[]> = {
-  // aifirst — a daily/weekly content pipeline driven by GitHub Actions.
-  // Derived from .github/workflows/daily.yml and weekly.yml.
-  aifirst: [
+  // DNESKAi (repository aifirst) — a daily/weekly content pipeline driven by
+  // GitHub Actions. Derived from .github/workflows/daily.yml and weekly.yml.
+  dneskai: [
     {
       name: "Denní generování článku",
       schedule: "0 6 * * *",
@@ -48,7 +48,14 @@ export const PROJECT_CRON_SEEDS: Record<string, CronSeed[]> = {
   ],
 };
 
-/** Cron seeds for a project, matched by its slug. */
-export function cronSeedsForProject(project: { slug: string }): CronSeed[] {
-  return PROJECT_CRON_SEEDS[project.slug.toLowerCase()] ?? [];
+/** Cron seeds for a project, matched by its slug or an earlier slug. */
+export function cronSeedsForProject(project: {
+  slug: string;
+  previous_slugs?: string[];
+}): CronSeed[] {
+  for (const slug of [project.slug, ...(project.previous_slugs ?? [])]) {
+    const seeds = PROJECT_CRON_SEEDS[slug.toLowerCase()];
+    if (seeds) return seeds;
+  }
+  return [];
 }

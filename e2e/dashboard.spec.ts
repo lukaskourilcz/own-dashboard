@@ -90,7 +90,7 @@ test.describe("dashboard sections", () => {
     const sidebar = page.locator("aside");
     if (testInfo.project.name === "desktop") {
       await expect(
-        sidebar.getByRole("link", { name: "aifirst", exact: true }),
+        sidebar.getByRole("link", { name: "DNESKAi", exact: true }),
       ).toBeVisible();
       await expect(
         sidebar.getByRole("link", { name: "own-dashboard", exact: true }),
@@ -120,8 +120,9 @@ test.describe("dashboard sections", () => {
   test("project workspace exposes the unified project context", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);
+    // The pre-rename slug still resolves to the DNESKAi workspace.
     await page.goto("/dev-preview?project=aifirst");
-    await expect(page.getByRole("heading", { level: 1, name: "aifirst" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "DNESKAi" })).toBeVisible();
     for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Knowledge", "Scaling", "Monetization"]) {
       await expect(page.getByRole("tab", { name: tab })).toBeVisible();
     }
@@ -137,11 +138,11 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     const sidebar = page.locator("aside");
 
-    await sidebar.getByRole("link", { name: "aifirst", exact: true }).click();
+    await sidebar.getByRole("link", { name: "DNESKAi", exact: true }).click();
     await expect(
-      page.getByRole("heading", { level: 1, name: "aifirst" }),
+      page.getByRole("heading", { level: 1, name: "DNESKAi" }),
     ).toBeVisible();
-    await expect(page).toHaveURL(/\/projects\/aifirst$/);
+    await expect(page).toHaveURL(/\/projects\/dneskai$/);
 
     await sidebar.getByRole("button", { name: "Projects", exact: true }).click();
     await expect(
@@ -149,6 +150,44 @@ test.describe("dashboard sections", () => {
     ).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "Project" })).toBeVisible();
     await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test("Projects lists own work first and freelance projects behind a divider", async ({ page }, testInfo) => {
+    await gotoPreview(page);
+    if (testInfo.project.name === "mobile") {
+      await page.getByTestId("mobile-nav").getByRole("button", { name: "Projects", exact: true }).click();
+    } else {
+      await page.locator("aside nav").getByRole("button", { name: "Projects", exact: true }).click();
+    }
+    const table = page.getByRole("table");
+    await expect(table.getByRole("rowheader", { name: "Freelance — hired" })).toHaveCount(1);
+    const names = await table.locator("tbody tr td:nth-child(2) a").allTextContents();
+    expect(names).toEqual([
+      "DNESKAi",
+      "own-dashboard",
+      "devShark",
+      "boardlessAI",
+      "Acme customer portal",
+      "Example Studio website",
+    ]);
+    // Keyboard order follows the visual order: the divider row sits between
+    // the last own project and the first freelance project.
+    const rows = await table.locator("tbody tr").allTextContents();
+    const divider = rows.findIndex((text) => text.includes("Freelance — hired"));
+    expect(rows[divider - 1]).toContain("boardlessAI");
+    expect(rows[divider + 1]).toContain("Acme customer portal");
+    if (testInfo.project.name === "desktop") {
+      const sidebar = page.locator("aside");
+      await expect(sidebar.getByText("Freelance — hired")).toBeVisible();
+      await expect(sidebar.getByRole("link", { name: "Example Studio website" })).toBeVisible();
+    }
+  });
+
+  test("Czech Projects shows the freelance divider", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page, { lang: "cs" });
+    await page.locator("aside nav").getByRole("button", { name: "Projekty", exact: true }).click();
+    await expect(page.getByRole("table").getByRole("rowheader", { name: "Freelance — najatý" })).toBeVisible();
   });
 
   test("navigation and project-tab visibility survive a refresh", async ({ page }, testInfo) => {
@@ -171,7 +210,7 @@ test.describe("dashboard sections", () => {
     ).toHaveCount(0);
     await page
       .locator("aside")
-      .getByRole("link", { name: "aifirst", exact: true })
+      .getByRole("link", { name: "DNESKAi", exact: true })
       .click();
     await expect(
       page.getByRole("tab", { name: "Communication", exact: true }),
@@ -184,7 +223,7 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     await page.locator("aside nav").getByRole("button", { name: "Tasks" }).click();
     const main = page.locator("#main-content");
-    await expect(main.getByText("aifirst", { exact: true }).first()).toBeVisible();
+    await expect(main.getByText("DNESKAi", { exact: true }).first()).toBeVisible();
     await expect(
       main.getByText("own-dashboard", { exact: true }).first(),
     ).toBeVisible();

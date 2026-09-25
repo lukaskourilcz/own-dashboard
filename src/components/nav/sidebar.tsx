@@ -42,11 +42,14 @@ import {
   sortByNavOrder,
 } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+import { groupProjectsByEngagement } from "@/lib/projects";
 import { saveUserPreferences } from "@/lib/preference-client";
 import type { NavTab } from "@/lib/nav-tabs";
 import type { Project } from "@/lib/types";
 
 export type { NavTab };
+
+type SidebarProject = Pick<Project, "id" | "name" | "slug" | "is_active" | "engagement">;
 
 type NavItem = {
   value: Exclude<NavTab, "settings">;
@@ -126,10 +129,10 @@ export function Sidebar({
   tab: NavTab;
   setTab: (t: NavTab) => void;
   user: { name: string | null; email: string; avatar_url?: string | null };
-  projects?: Pick<Project, "id" | "name" | "slug" | "is_active">[];
+  projects?: SidebarProject[];
   unreadNotifications?: number;
   syncPreferences?: boolean;
-  onOpenProject?: (project: Pick<Project, "id" | "name" | "slug" | "is_active">) => void;
+  onOpenProject?: (project: SidebarProject) => void;
 }) {
   const t = useDict();
   const { isHidden } = useNavVisibility();
@@ -153,6 +156,24 @@ export function Sidebar({
   })).filter((g) => g.items.length > 0);
 
   const initials = (user.name?.trim() || user.email).slice(0, 2).toUpperCase();
+  // Own projects first; freelance client work after a hairline divider.
+  const projectGroups = groupProjectsByEngagement(projects);
+  const renderProjectLink = (project: SidebarProject) => (
+    <li key={project.id}>
+      <a
+        href={`/projects/${encodeURIComponent(project.slug)}`}
+        onClick={(event) => {
+          if (!onOpenProject) return;
+          event.preventDefault();
+          onOpenProject(project);
+        }}
+        className="block truncate rounded px-2 py-1 text-[11px] text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
+        title={project.name}
+      >
+        {project.name}
+      </a>
+    </li>
+  );
 
   const renderItem = (it: NavItem) => {
     const active = tab === it.value;
@@ -272,24 +293,24 @@ export function Sidebar({
                   {!collapsed &&
                     item.value === "projects" &&
                     projects.length > 0 && (
-                      <ul className="ml-7 mt-1 space-y-px border-l border-[var(--sidebar-border)] pl-2">
-                        {projects.map((project) => (
-                          <li key={project.id}>
-                            <a
-                              href={`/projects/${encodeURIComponent(project.slug)}`}
-                              onClick={(event) => {
-                                if (!onOpenProject) return;
-                                event.preventDefault();
-                                onOpenProject(project);
-                              }}
-                              className="block truncate rounded px-2 py-1 text-[11px] text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
-                              title={project.name}
+                      <div className="ml-7 mt-1 border-l border-[var(--sidebar-border)] pl-2">
+                        <ul className="space-y-px">
+                          {projectGroups.own.map(renderProjectLink)}
+                        </ul>
+                        {projectGroups.client.length > 0 && (
+                          <>
+                            <p
+                              id="sidebar-freelance-projects"
+                              className="mx-2 mt-1.5 border-t border-[var(--sidebar-border)] pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--sidebar-muted)]"
                             >
-                              {project.name}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
+                              {t.projects.freelanceDivider}
+                            </p>
+                            <ul className="space-y-px" aria-labelledby="sidebar-freelance-projects">
+                              {projectGroups.client.map(renderProjectLink)}
+                            </ul>
+                          </>
+                        )}
+                      </div>
                     )}
                 </div>
               ))}

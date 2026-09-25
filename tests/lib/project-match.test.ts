@@ -176,7 +176,9 @@ describe("planRepositorySync", () => {
 
 describe("cron seeds", () => {
   it("are keyed by the project slug, not the repository name", () => {
-    expect(cronSeedsForProject({ slug: "aifirst" }).length).toBeGreaterThan(0);
+    expect(cronSeedsForProject({ slug: "dneskai" }).length).toBeGreaterThan(0);
+    // A project still on its pre-rename slug keeps the seeds through previous_slugs.
+    expect(cronSeedsForProject({ slug: "other", previous_slugs: ["dneskai"] }).length).toBeGreaterThan(0);
     expect(cronSeedsForProject({ slug: "lukaskourilcz/aifirst" })).toEqual([]);
   });
 });

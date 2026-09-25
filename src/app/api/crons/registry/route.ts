@@ -42,7 +42,15 @@ export async function GET(request: Request) {
 
   let projectQuery = admin.from("projects").select("id, slug, name");
   if (slug) projectQuery = projectQuery.eq("slug", slug);
-  const { data: projectRows, error: projErr } = await projectQuery;
+  let { data: projectRows, error: projErr } = await projectQuery;
+  // A renamed project keeps answering to its earlier slug (e.g. aifirst →
+  // dneskai), so existing consumers keep their registry URL.
+  if (!projErr && slug && (projectRows ?? []).length === 0) {
+    ({ data: projectRows, error: projErr } = await admin
+      .from("projects")
+      .select("id, slug, name")
+      .contains("previous_slugs", [slug]));
+  }
   if (projErr) {
     return NextResponse.json({ error: projErr.message }, { status: 500 });
   }

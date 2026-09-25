@@ -1778,6 +1778,21 @@ create unique index if not exists projects_user_repo_id_key
   on public.projects (user_id, repo_id)
   where repo_id is not null;
 
+-- Own products versus freelance client work, and earlier slugs that still
+-- resolve (renamed project URLs and cron registry calls).
+alter table public.projects
+  add column if not exists engagement text not null default 'own',
+  add column if not exists previous_slugs text[] not null default '{}';
+
+alter table public.projects
+  drop constraint if exists projects_engagement_check;
+alter table public.projects
+  add constraint projects_engagement_check
+  check (engagement in ('own', 'client'));
+
+create index if not exists projects_previous_slugs_idx
+  on public.projects using gin (previous_slugs);
+
 alter table public.projects enable row level security;
 
 drop policy if exists "projects select own" on public.projects;

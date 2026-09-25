@@ -83,6 +83,8 @@ import {
   cronMonthlyIn,
   cronsMonthlyIn,
   costsMonthlyIn,
+  groupProjectsByEngagement,
+  projectEngagement,
   projectMonthlyIn,
 } from "@/lib/projects";
 import type {
@@ -97,6 +99,7 @@ import type {
   Project,
   ProjectCommunication,
   ProjectCost,
+  ProjectEngagement,
   Prompt,
   RepoLink,
   RepoNote,
@@ -127,6 +130,7 @@ type ProjectForm = {
   repo_full_name: string;
   url: string;
   dev_url: string;
+  engagement: ProjectEngagement;
 };
 
 const emptyProjectForm: ProjectForm = {
@@ -135,6 +139,7 @@ const emptyProjectForm: ProjectForm = {
   repo_full_name: "",
   url: "",
   dev_url: "",
+  engagement: "own",
 };
 
 type ProjectsPanelProps = {
@@ -470,9 +475,15 @@ function ProjectsListPanel({
   // The summary table lists active projects only. Projects marked inactive in
   // Settings → Active projects are hidden here entirely (not shown dimmed) —
   // reactivate them from that Settings card to bring them back.
-  const visibleProjects = useMemo(
-    () => ordered.filter((p) => p.is_active),
+  // Own products first, then freelance client work behind a divider. The
+  // grouping sits on top of the single sort_order sequence.
+  const projectGroups = useMemo(
+    () => groupProjectsByEngagement(ordered.filter((p) => p.is_active)),
     [ordered],
+  );
+  const visibleProjects = useMemo(
+    () => [...projectGroups.own, ...projectGroups.client],
+    [projectGroups],
   );
 
   // Drag-to-reorder. sort_order is an integer column, so we resequence the
@@ -487,11 +498,22 @@ function ProjectsListPanel({
 
   async function handleDragEnd(e: DragEndEvent) {
     if (!e.over || e.active.id === e.over.id) return;
-    const oldIndex = visibleProjects.findIndex((p) => p.id === e.active.id);
-    const newIndex = visibleProjects.findIndex((p) => p.id === e.over!.id);
+    // Reordering works within a group; own and client projects never swap.
+    const activeProject = visibleProjects.find((p) => p.id === e.active.id);
+    const overProject = visibleProjects.find((p) => p.id === e.over!.id);
+    if (!activeProject || !overProject) return;
+    const group = projectEngagement(activeProject);
+    if (projectEngagement(overProject) !== group) return;
+    const groupItems = projectGroups[group];
+    const oldIndex = groupItems.findIndex((p) => p.id === activeProject.id);
+    const newIndex = groupItems.findIndex((p) => p.id === overProject.id);
     if (oldIndex < 0 || newIndex < 0) return;
 
-    const resequenced = arrayMove(visibleProjects, oldIndex, newIndex);
+    const moved = arrayMove(groupItems, oldIndex, newIndex);
+    const resequenced =
+      group === "own"
+        ? [...moved, ...projectGroups.client]
+        : [...projectGroups.own, ...moved];
     const orderById = new Map(resequenced.map((p, i) => [p.id, i]));
     const changed = resequenced.filter((p, i) => p.sort_order !== i);
     if (changed.length === 0) return;
@@ -567,6 +589,7 @@ function ProjectsListPanel({
       repo_full_name: form.repo_full_name.trim() || null,
       url: form.url.trim() || null,
       dev_url: form.dev_url.trim() || null,
+      engagement: form.engagement,
     };
     setSaving(true);
     try {
@@ -651,6 +674,7 @@ function ProjectsListPanel({
       repo_full_name: p.repo_full_name ?? "",
       url: p.url ?? "",
       dev_url: p.dev_url ?? "",
+      engagement: projectEngagement(p),
     });
     setError(null);
     setFormOpen(true);
@@ -809,6 +833,20 @@ function ProjectsListPanel({
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="proj-engagement">{t.projects.engagement}</Label>
+              <SimpleSelect
+                id="proj-engagement"
+                value={form.engagement}
+                onValueChange={(value) =>
+                  setForm({ ...form, engagement: value === "client" ? "client" : "own" })
+                }
+                options={[
+                  { value: "own", label: t.projects.engagementOwn },
+                  { value: "client", label: t.projects.engagementClient },
+                ]}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="proj-dev-url">{t.projects.devUrl}</Label>
               <Input
                 id="proj-dev-url"
@@ -860,16 +898,29 @@ function ProjectsListPanel({
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext
-            items={visibleProjects.map((p) => p.id)}
-            strategy={verticalListSortingStrategy}
-          >
             <Card className="mt-4 overflow-hidden p-0">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-left">
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
-                  <tbody className="divide-y divide-border">
-              {visibleProjects.map((p) => {
+                  {(["own", "client"] as const).map((group) => projectGroups[group].length === 0 ? null : (
+                  <SortableContext
+                    key={group}
+                    items={projectGroups[group].map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                  <tbody className="divide-y divide-border border-t border-border first-of-type:border-t-0">
+              {group === "client" && (
+                <tr>
+                  <th
+                    scope="rowgroup"
+                    colSpan={9}
+                    className="bg-surface px-3 pb-1.5 pt-4 text-left text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle"
+                  >
+                    {t.projects.freelanceDivider}
+                  </th>
+                </tr>
+              )}
+              {projectGroups[group].map((p) => {
                 const projectTodos = todos.filter((item) => taskBelongsToProject(item, p));
                 const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
                 const organization = organizations.find((item) => item.id === p.organization_id);
@@ -891,10 +942,11 @@ function ProjectsListPanel({
                 />
               })}
                   </tbody>
+                  </SortableContext>
+                  ))}
                 </table>
               </div>
             </Card>
-          </SortableContext>
         </DndContext>
       )}
 

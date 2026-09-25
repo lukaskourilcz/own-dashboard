@@ -393,6 +393,8 @@ export type RepoLink = {
 // projects like aifirst) a set of managed crons. Own-only RLS.
 // ---------------------------------------------------------------------------
 
+export type ProjectEngagement = "own" | "client";
+
 export type Project = {
   id: string;
   user_id: string;
@@ -404,6 +406,11 @@ export type Project = {
   repo_id?: number | null;
   // Earlier owner/name values of the linked repository, oldest first.
   previous_repo_full_names?: string[];
+  // "own" = the owner's product; "client" = freelance work the owner was
+  // hired for. Client projects are listed last, behind a divider.
+  engagement?: ProjectEngagement;
+  // Earlier slugs that still resolve to this project (URLs, cron registry).
+  previous_slugs?: string[];
   url: string | null;
   dev_url?: string | null;
   notes: string;
