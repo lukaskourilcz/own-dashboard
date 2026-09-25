@@ -24,8 +24,8 @@ settings {
 
 docs {
   The payment matcher marks invoices paid, so an unauthenticated caller must
-  never reach it. Same gate as the other cron routes: a wrong or absent bearer
-  returns 403 when CRON_SECRET is set in the app's env. With CRON_SECRET unset
-  the route has no secret to check and this assertion does not apply (see
-  bruno/README.md and Local.bru).
+  never reach it. Same gate as the other cron routes, rejectUnlessCron: a
+  wrong or absent bearer returns 403, and with CRON_SECRET unset or blank
+  every call does, so this assertion holds on any deployment (see
+  bruno/README.md).
 }

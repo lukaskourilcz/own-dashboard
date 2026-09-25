@@ -26,8 +26,7 @@ docs {
   Cron routes are exempt from the page-level session redirect (Vercel Cron
   carries `Authorization: Bearer ${CRON_SECRET}` but no session cookie — the
   old redirect silently bounced the daily job to /login). The handler gates
-  itself: a wrong/absent bearer returns 403 when CRON_SECRET is set in the
-  app's env. NOTE: this assertion requires the running app to have CRON_SECRET
-  set; with it unset the route has no secret to check and this test does not
-  apply (see bruno/README.md and Local.bru).
+  itself through rejectUnlessCron: a wrong or absent bearer returns 403,
+  and with CRON_SECRET unset or blank every call does, so this assertion
+  holds on any deployment (see bruno/README.md).
 }

@@ -14,13 +14,14 @@ these tests assert that directly:
 | --- | --- | --- |
 | GitHub repos require auth | `GET /api/github/repos` | `401` (getUser) |
 | GitHub file read requires auth | `GET /api/github/file` | `401` (getUser) |
-| Cron endpoint requires auth | `GET /api/cron/renewal-warnings` | `403` (bad bearer, needs `CRON_SECRET` set) |
-| Payment-match cron requires auth | `GET /api/cron/payment-match` | `403` (bad bearer, needs `CRON_SECRET` set) |
+| Cron endpoint requires auth | `GET /api/cron/renewal-warnings` | `403` (wrong bearer) |
+| Payment-match cron requires auth | `GET /api/cron/payment-match` | `403` (wrong bearer) |
 
 Notes:
-- The cron tests assert the `Bearer ${CRON_SECRET}` mismatch → `403`, which
-  only applies when the running app has `CRON_SECRET` set. With it unset the
-  route has no secret to check and these tests don't apply.
+- The cron tests assert that a wrong bearer gets `403`. That holds whether or
+  not the running app has `CRON_SECRET` set: every `/api/cron/*` route calls
+  `rejectUnlessCron` (`src/lib/cron-auth.ts`) first, which fails closed and
+  refuses every call while the secret is unset or blank.
 
 ## Run
 

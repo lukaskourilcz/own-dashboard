@@ -32,7 +32,7 @@ OwnDashboard makes no model calls. Link enrichment reads the submitted URL throu
 | Client data | TanStack React Query 5 with centralized keys, route-scoped server seeds, lazy destination fetches, bounded stale times, invalidation, cancellation, and optimistic updates where reversible |
 | UI | Radix primitives, Lucide, Recharts, BlockNote, date-fns, QRCode |
 | Extraction | pdf.js deterministic invoice extraction in the browser; optional Jina Reader link enrichment |
-| Operations | Vercel functions/crons, optional Upstash rate limiting, Resend email, PostHog analytics/flags, Sentry monitoring |
+| Operations | Vercel functions/crons, optional Upstash rate limiting, Resend email, PostHog analytics, Sentry monitoring |
 | Integrations | Google Calendar OAuth, GitHub OAuth/repository files and commits, bank sync through GoCardless, Fio banka or Enable Banking |
 | Quality | ESLint, TypeScript, Vitest, Playwright, axe accessibility checks |
 
@@ -61,6 +61,7 @@ Project workspaces use `/projects/[id-or-slug]`; an earlier slug (for example `/
 - `/ai`, `/ai-links` → `/links`
 - `/shortcuts` → `/references`
 - `/tugedr` → `/opportunities`
+- `/works` → `/projects`
 
 Removed personal destinations such as `/streaks`, `/books`, and `/couple` return 404. Stale stored navigation preferences are normalized and cannot resurrect removed sections.
 
