@@ -2,6 +2,14 @@
 
 The repository implementation is complete. The items below are the external account, secret, migration, and rollout steps that still require the repository owner. They are intentionally not performed by application code. This file is also imported into OwnDashboard Tasks; keep the `[imp:N]` and `[owner:me]` markers.
 
+## Kickoff 2026-09-25 · prompts, links, projects, tools
+
+`KICKOFF-25-9-2026.md` at the repository root is the programme; issues #75–#83 are the steps.
+Owner parts:
+
+- [ ] **Run the two backfill scripts** — after #75 (`projects.repo_id` from the GitHub API) and #78 (`project_links` from `ai_links.project_relevance`) land, run them with your token as their issue describes and review the result in the UI. [imp:3] [owner:me] [time:20m] [kind:setup]
+- [ ] **Rename the repositories on GitHub after #75 is live** — `react-express-app → devShark`, `aifirst → DNESKAi`, `quorum → boardlessAI`; the auto-sync then updates the three projects' `repo_full_name` instead of duplicating them. The full order is in quorum's kickoff. [imp:4] [owner:me] [time:30m] [kind:setup]
+
 ## Required before the restructured app is used in production
 
 - [ ] **Verify the production deployment environment** has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; add `SUPABASE_SERVICE_ROLE_KEY` server-side if Google token refresh, bank sync, or other privileged server workflows are enabled. Never expose the service-role key as `NEXT_PUBLIC_*`. `[imp:5]` `[owner:me]`
