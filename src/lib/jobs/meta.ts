@@ -141,11 +141,6 @@ export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
   },
 };
 
-/** Human labels keyed by scraper source id. */
-export const JOB_SOURCE_LABELS: Record<string, string> = Object.fromEntries(
-  Object.entries(JOB_SOURCE_META).map(([id, meta]) => [id, meta.label]),
-);
-
 export function jobSourceLabel(source: string): string {
   return JOB_SOURCE_META[source]?.label ?? source;
 }

@@ -3,8 +3,6 @@
 import { Toaster, toast } from "sonner";
 import { useTheme } from "@/lib/use-theme";
 
-export type ToastTone = "ok" | "err" | "info";
-
 type ToastApi = {
   ok: (message: string) => void;
   err: (message: string) => void;

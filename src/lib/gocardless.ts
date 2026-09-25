@@ -176,19 +176,6 @@ export function getEndUserAgreement(id: string): Promise<EndUserAgreement> {
 
 /* ------------------------------- accounts ------------------------------- */
 
-export type AccountMeta = {
-  id: string;
-  iban?: string;
-  institution_id?: string;
-  currency?: string;
-  ownerName?: string;
-  name?: string;
-};
-
-export function getAccountMeta(id: string): Promise<AccountMeta> {
-  return api<AccountMeta>(`/accounts/${encodeURIComponent(id)}/`);
-}
-
 export type AccountDetails = {
   account?: {
     iban?: string;

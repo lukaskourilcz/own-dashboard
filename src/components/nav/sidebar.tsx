@@ -122,14 +122,6 @@ export const NAV_GROUPS: NavGroup[] = ALL_NAV_GROUPS.map((group) => ({
   items: group.items.filter(isNavigable),
 })).filter((group) => group.items.length > 0);
 
-// Flat, ordered list (overview first, then every group in order). Kept as the
-// single source of truth for consumers that don't care about grouping — the
-// Settings visibility list and the mobile bottom bar.
-export const NAV_ITEMS: NavItem[] = [
-  ...PRIMARY_NAV_ITEMS,
-  ...NAV_GROUPS.flatMap((g) => g.items),
-];
-
 export function Sidebar({
   tab,
   setTab,

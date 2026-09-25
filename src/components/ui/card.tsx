@@ -47,33 +47,9 @@ export function CardTitle({
   );
 }
 
-export function CardDescription({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("text-sm text-foreground-muted", className)}
-      {...props}
-    />
-  );
-}
-
 export function CardContent({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("px-4 pb-4 sm:px-[18px] sm:pb-4", className)} {...props} />;
-}
-
-export function CardFooter({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("flex items-center px-5 pb-5 pt-3 border-t border-border", className)}
-      {...props}
-    />
-  );
 }

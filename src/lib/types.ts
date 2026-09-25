@@ -271,14 +271,6 @@ export type Plan = {
   updated_at: string;
 };
 
-export type Profile = {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  updated_at: string;
-};
-
 export type Note = {
   id: string;
   user_id: string;

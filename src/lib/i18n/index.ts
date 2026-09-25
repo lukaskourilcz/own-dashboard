@@ -33,7 +33,7 @@ import { professional } from "./sections/professional";
 import { tools } from "./sections/tools";
 import { portfolio } from "./sections/portfolio";
 
-export { useLang, DEFAULT_LANG, LANGS, type Lang } from "./lang";
+export { useLang, type Lang } from "./lang";
 
 export const dictionaries = {
   en: {

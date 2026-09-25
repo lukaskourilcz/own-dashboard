@@ -10,7 +10,6 @@ const RATES_IN_USD: Record<string, number> = {
 };
 
 export const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "CZK", "CAD"] as const;
-export type Currency = (typeof SUPPORTED_CURRENCIES)[number];
 
 /** Device-local key for the last-good live snapshot, so reloads start from
  * live rates instead of the stale hardcoded fallback. */

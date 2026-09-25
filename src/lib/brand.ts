@@ -18,5 +18,3 @@ export const brandConfig = {
     cs: "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti.",
   },
 } as const;
-
-export type BrandLocale = keyof typeof brandConfig.description;

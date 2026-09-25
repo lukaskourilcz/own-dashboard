@@ -16,20 +16,6 @@ export function parseDateOnly(yyyyMmDd: string): Date {
   return new Date(`${yyyyMmDd}T00:00:00`);
 }
 
-export function consecutiveDaysEndingOn(
-  dates: Iterable<string>,
-  end: Date = new Date(),
-): number {
-  const set = dates instanceof Set ? dates : new Set(dates);
-  let count = 0;
-  let cursor = end;
-  while (set.has(format(cursor, "yyyy-MM-dd"))) {
-    count++;
-    cursor = subDays(cursor, 1);
-  }
-  return count;
-}
-
 /**
  * The Monday of the week a date falls in, as a `yyyy-MM-dd` key. This is the
  * `week_start` column of `weekly_reviews`, so it is formatted in local time —
