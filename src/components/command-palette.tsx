@@ -22,6 +22,7 @@ import {
   Sun,
   Target,
   Wallet,
+  Wrench,
 } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
 import { useDict, useLang } from "@/lib/i18n";
@@ -99,6 +100,7 @@ export function CommandPalette({
       { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "important deadlines dates termíny", run: go("dates") },
       { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes writing drafts poznámky g n", run: go("notes") },
       { id: "go-prompts", label: s.prompts, group: "go", icon: MessageSquareText, keywords: "prompts snippets templates clipboard copy library prompty g m", run: go("prompts") },
+      { id: "go-tools", label: s.tools, group: "go", icon: Wrench, keywords: "tools services stack nástroje g k", run: go("tools") },
       { id: "go-links", label: s.links, group: "go", icon: FileText, keywords: "links tools sites odkazy", run: go("links") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {

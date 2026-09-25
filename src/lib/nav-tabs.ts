@@ -21,6 +21,7 @@ export const NAV_TABS = [
   "dates",
   "notes",
   "prompts",
+  "tools",
   "links",
   "references",
   "settings",

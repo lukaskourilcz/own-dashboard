@@ -560,6 +560,24 @@ export type ProjectLink = {
   updated_at: string;
 };
 
+// A library link the owner really uses, with what it does, its status and an
+// optional subscription for its monthly cost. Per-project notes are
+// project_links rows with role "tool". Own-only RLS.
+export type ToolStatus = "in_use" | "trial" | "retired";
+
+export type Tool = {
+  id: string;
+  user_id: string;
+  ai_link_id: string;
+  // Display name; null uses the link's title.
+  name: string | null;
+  what_it_does: string;
+  status: ToolStatus;
+  subscription_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 // ---------------------------------------------------------------------------
 // Jobs — daily-scraped remote-friendly European job listings (global rows,
 // written by the cron with the service role) plus the user's application

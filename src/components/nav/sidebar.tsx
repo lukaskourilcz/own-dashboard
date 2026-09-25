@@ -28,6 +28,7 @@ import {
   Terminal,
   Users,
   Wallet,
+  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -105,6 +106,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { value: "notes", icon: FileText },
       { value: "prompts", icon: MessageSquareText },
+      { value: "tools", icon: Wrench },
       { value: "links", icon: Network },
       { value: "references", icon: Terminal },
     ],

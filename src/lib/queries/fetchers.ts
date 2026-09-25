@@ -39,6 +39,7 @@ import type {
   SpendCategory,
   Subscription,
   Todo,
+  Tool,
   Transaction,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
@@ -357,6 +358,17 @@ export async function fetchProjectLinks(): Promise<ProjectLink[]> {
     .limit(2000);
   if (error) throw error;
   return (data ?? []) as ProjectLink[];
+}
+
+export async function fetchTools(): Promise<Tool[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("tools")
+    .select("*")
+    .order("created_at", { ascending: true })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []) as Tool[];
 }
 
 export async function fetchSpendCategories(): Promise<SpendCategory[]> {

@@ -43,6 +43,7 @@ import type {
   Shortcut,
   Subscription,
   Todo,
+  Tool,
   Transaction,
   InboxItem,
   WeeklyReview,
@@ -356,6 +357,7 @@ export const aiLinks: AiLink[] = [
   { id: "al5", user_id: UID, category_id: "ac6", title: "Supabase", url: "https://supabase.com", description: "Postgres, Auth and row-level security as a managed service.", pricing: "freemium", created_at: TS, updated_at: TS },
   { id: "al6", user_id: UID, category_id: "ac5", title: "Google Search Console", url: "https://search.google.com/search-console", description: "Indexing, search queries and structured-data reports for a site.", pricing: "free", created_at: TS, updated_at: TS },
   { id: "al7", user_id: UID, category_id: "ac5", title: "PageSpeed Insights", url: "https://pagespeed.web.dev", description: "Core Web Vitals and Lighthouse checks for one URL.", pricing: "free", created_at: TS, updated_at: TS },
+  { id: "al8", user_id: UID, category_id: "ac1", title: "Figma", url: "https://www.figma.com", description: "Interface design and prototyping.", pricing: "freemium", created_at: TS, updated_at: TS },
   { id: "al3", user_id: UID, category_id: null, title: "Hugging Face", url: "https://huggingface.co", description: "Open models, datasets, and demos.\n\nExample library note: compare a small prototype with the production requirements before adopting a new service, including the expected traffic, maintenance work, accessibility and the time needed to move away from it later.\n\nPricing: the free offering has limits, while compute and other services may be billed separately.\n\nExample reference: https://example.com/resources/a-long-reference-path-for-checking-readable-expanded-library-cards-on-narrow-screens", pricing: "freemium", created_at: TS, updated_at: TS },
 ];
 
@@ -367,6 +369,14 @@ export const projectLinks: ProjectLink[] = [
   { id: "pl3", user_id: UID, project_id: "proj-dneskai", ai_link_id: "al4", role: "tool", note: "Hosts the static magazine.", sort_order: 2, created_at: TS, updated_at: TS },
   { id: "pl4", user_id: UID, project_id: "proj-devshark", ai_link_id: "al4", role: "tool", note: "Hosts the React client and the twelve API handlers.", sort_order: 0, created_at: TS, updated_at: TS },
   { id: "pl5", user_id: UID, project_id: "proj-dashboard", ai_link_id: "al5", role: "tool", note: "Stores every record behind own-only RLS.", sort_order: 0, created_at: TS, updated_at: TS },
+];
+
+// Three tools: two in use across projects, one on trial with a
+// subscription that supplies its monthly cost.
+export const tools: Tool[] = [
+  { id: "tool-vercel", user_id: UID, ai_link_id: "al4", name: null, what_it_does: "Builds and hosts the web apps with preview deployments.", status: "in_use", subscription_id: null, created_at: TS, updated_at: TS },
+  { id: "tool-supabase", user_id: UID, ai_link_id: "al5", name: null, what_it_does: "Postgres database, Auth and row-level security.", status: "in_use", subscription_id: null, created_at: TS, updated_at: TS },
+  { id: "tool-figma", user_id: UID, ai_link_id: "al8", name: null, what_it_does: "Screen designs and design-system components.", status: "trial", subscription_id: "s4", created_at: TS, updated_at: TS },
 ];
 
 export const importantDates: ImportantDate[] = [

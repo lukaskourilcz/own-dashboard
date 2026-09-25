@@ -33,9 +33,11 @@ export function useProjectLinkMutations(setProjectLinks: Updater<ProjectLink[]>)
     [qc],
   );
 
-  /** Insert or update by (project, link); returns the saved rows. */
+  /** Insert or update by (project, link); returns the saved rows. Pass
+   * `silent` when the caller reports the outcome itself. */
   const upsert = useCallback(
-    async (rows: NewProjectLink[], message = t.ai.relationAdded): Promise<ProjectLink[] | null> => {
+    async (rows: NewProjectLink[], options: { message?: string; silent?: boolean } = {}): Promise<ProjectLink[] | null> => {
+      const message = options.message ?? t.ai.relationAdded;
       if (rows.length === 0) return [];
       const supabase = createClient();
       const userId = await currentUserId(supabase);
@@ -73,7 +75,7 @@ export function useProjectLinkMutations(setProjectLinks: Updater<ProjectLink[]>)
         ),
         ...saved,
       ]);
-      toast.ok(message);
+      if (!options.silent) toast.ok(message);
       settle();
       return saved;
     },
@@ -104,7 +106,7 @@ export function useProjectLinkMutations(setProjectLinks: Updater<ProjectLink[]>)
   );
 
   const remove = useCallback(
-    async (ids: string[]) => {
+    async (ids: string[], options: { silent?: boolean } = {}) => {
       if (ids.length === 0) return true;
       let snapshot: ProjectLink[] = [];
       const removed = new Set(ids);
@@ -118,7 +120,7 @@ export function useProjectLinkMutations(setProjectLinks: Updater<ProjectLink[]>)
         toast.err(t.ai.relationFailed);
         return false;
       }
-      toast.ok(t.ai.relationRemoved);
+      if (!options.silent) toast.ok(t.ai.relationRemoved);
       settle();
       return true;
     },

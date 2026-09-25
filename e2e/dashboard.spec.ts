@@ -21,6 +21,7 @@ const TABS = [
   "Dates",
   "Notes",
   "Prompts",
+  "Tools",
   "Links",
 ] as const;
 

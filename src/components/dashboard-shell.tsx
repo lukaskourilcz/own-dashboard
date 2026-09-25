@@ -18,6 +18,7 @@ import { SettingsPanel } from "@/components/panels/settings-panel";
 import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
 import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
 import { TodosPanel } from "@/components/panels/todos-panel";
+import { ToolsPanel } from "@/components/panels/tools-panel";
 import { WorkOverviewPanel } from "@/components/panels/work-overview-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
@@ -82,6 +83,7 @@ import {
   fetchShortcuts,
   fetchSubscriptions,
   fetchTodos,
+  fetchTools,
   fetchTransactions,
   fetchWeeklyReviews,
 } from "@/lib/queries/fetchers";
@@ -94,7 +96,7 @@ import type {
   ImportantDate, InboxItem, Invoice, InvoiceItem, InvoiceSettings,
   JobApplication, JobApplicationEvent, JobListing, JobScrapeRun, JobUserState, SavedJobPosition,
   Note, Organization, Plan, Project, ProjectCommunication, ProjectCost, ProjectLink, Prompt, PromptLink, ReferenceRow, RepoLink, RepoNote,
-  Shortcut, Subscription, Todo, Transaction, WeeklyReview,
+  Shortcut, Subscription, Todo, Tool, Transaction, WeeklyReview,
 } from "@/lib/types";
 
 type Props = {
@@ -116,6 +118,7 @@ type Props = {
   initialAiLinks: AiLink[];
   initialAiCategories: AiCategory[];
   initialProjectLinks: ProjectLink[];
+  initialTools: Tool[];
   initialShortcuts: Shortcut[];
   initialReferenceRows: ReferenceRow[];
   initialImportantDates: ImportantDate[];
@@ -155,7 +158,7 @@ const TAB_CHORDS: Record<string, NavTab> = {
   h: "home", w: "work", p: "projects", o: "opportunities",
   c: "clients", j: "career", f: "invoices", m: "money", a: "accounts",
   x: "transactions", s: "subscriptions", t: "tasks", l: "calendar",
-  g: "goals", d: "dates", n: "notes",
+  g: "goals", d: "dates", n: "notes", k: "tools",
 };
 
 export function DashboardShell(props: Props) {
@@ -190,6 +193,9 @@ export function DashboardShell(props: Props) {
   const [aiLinks, setAiLinks] = useEntityStore(qk.aiLinks, props.initialAiLinks, fetchAiLinks, dataOptions("aiLinks"));
   const [aiCategories, setAiCategories] = useEntityStore(qk.aiCategories, props.initialAiCategories, fetchAiCategories, dataOptions("aiCategories"));
   const [projectLinks, setProjectLinks] = useEntityStore(qk.projectLinks, props.initialProjectLinks, fetchProjectLinks, dataOptions("projectLinks"));
+  const [tools, setTools] = useEntityStore(qk.tools, props.initialTools, fetchTools, dataOptions("tools"));
+  // A Tools card's "Show in Links" opens the library at that link's card.
+  const [focusLinkId, setFocusLinkId] = useState<string | null>(null);
   const [shortcuts, setShortcuts] = useEntityStore(qk.shortcuts, props.initialShortcuts, fetchShortcuts, dataOptions("shortcuts"));
   const [referenceRows, setReferenceRows] = useEntityStore(qk.referenceRows, props.initialReferenceRows, fetchReferenceRows, dataOptions("referenceRows"));
   const [importantDates, setImportantDates] = useEntityStore(qk.importantDates, props.initialImportantDates, fetchImportantDates, dataOptions("importantDates"));
@@ -331,7 +337,8 @@ export function DashboardShell(props: Props) {
           {tab === "dates" && <ImportantDatesPanel dates={importantDates} setDates={setImportantDates} userId={user.id} projects={activeProjects} organizations={organizations} />}
           {tab === "notes" && <NotesPanel notes={notes} setNotes={setNotes} projects={activeProjects} />}
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} promptLinks={promptLinks} setPromptLinks={setPromptLinks} projects={activeProjects} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} />}
-          {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} />}
+          {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} />}
+          {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} tools={tools} focusLinkId={focusLinkId} onFocusHandled={() => setFocusLinkId(null)} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
         </motion.div></AnimatePresence>

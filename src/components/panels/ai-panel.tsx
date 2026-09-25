@@ -1,7 +1,7 @@
 "use client";
 
 import { LinkExportDialog } from "./link-export-dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -34,7 +34,7 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
-import type { AiCategory, AiLink, AiPricing, Project, ProjectLink, Updater } from "@/lib/types";
+import type { AiCategory, AiLink, AiPricing, Project, ProjectLink, Tool, Updater } from "@/lib/types";
 import { linkIdsUsedByProject, nextProjectLinkOrder, projectsUsingLink } from "@/lib/project-links";
 import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
@@ -67,6 +67,11 @@ type Props = {
   projectLinks: ProjectLink[];
   setProjectLinks: Updater<ProjectLink[]>;
   projects: Project[];
+  /** Tools section rows; their links carry a "Tool" badge. */
+  tools?: Tool[];
+  /** Open with this link's card expanded and focused (from Tools). */
+  focusLinkId?: string | null;
+  onFocusHandled?: () => void;
 };
 
 type LinkForm = {
@@ -95,6 +100,9 @@ export function AiPanel({
   projectLinks,
   setProjectLinks,
   projects,
+  tools = [],
+  focusLinkId = null,
+  onFocusHandled,
 }: Props) {
   const supabase = createClient();
   const qc = useQueryClient();
@@ -112,11 +120,24 @@ export function AiPanel({
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
   const projectIdsWithLinks = useMemo(() => new Set(projectLinks.map((relation) => relation.project_id)), [projectLinks]);
   const projectLinkIds = useMemo(() => linkIdsUsedByProject(projectFilter, projectLinks), [projectFilter, projectLinks]);
-  const toolLinkIds = useMemo(() => new Set(projectLinks.filter((relation) => relation.role === "tool").map((relation) => relation.ai_link_id)), [projectLinks]);
+  const toolLinkIds = useMemo(() => new Set(tools.map((tool) => tool.ai_link_id)), [tools]);
   const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
   const usedByFor = (link: AiLink) =>
     projectsUsingLink(link.id, projectLinks, projects).map(({ project }) => ({ id: project.id, name: project.name }));
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(focusLinkId ? [focusLinkId] : []));
+  // Arriving from a Tools card: bring that link's card into view and focus
+  // its disclosure. The panel mounts fresh on navigation, so the expanded
+  // state above already includes it.
+  useEffect(() => {
+    if (!focusLinkId) return;
+    const frame = window.requestAnimationFrame(() => {
+      const toggle = document.querySelector<HTMLElement>(`[data-link-card="${CSS.escape(focusLinkId)}"] button[aria-controls]`);
+      toggle?.scrollIntoView({ block: "center" });
+      toggle?.focus();
+      onFocusHandled?.();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusLinkId, onFocusHandled]);
   const toggleDetails = (id: string) => setExpandedIds(previous => {
     const next = new Set(previous);
     if (next.has(id)) next.delete(id); else next.add(id);

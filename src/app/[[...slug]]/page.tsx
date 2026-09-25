@@ -24,7 +24,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
 
   const [
     subscriptionsRes, todosRes, accountsRes, transactionsRes, plansRes,
-    notesRes, promptsRes, promptLinksRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, projectLinksRes, shortcutsRes,
+    notesRes, promptsRes, promptLinksRes, repoNotesRes, repoLinksRes, aiLinksRes, aiCategoriesRes, projectLinksRes, toolsRes, shortcutsRes,
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
     invoiceSettingsRes, projectsRes, projectCommunicationsRes, projectCostsRes, cronsRes,
     organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
@@ -45,6 +45,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     loadWhen("aiLinks", () => supabase.from("ai_links").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("aiCategories", () => supabase.from("ai_categories").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("projectLinks", () => supabase.from("project_links").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(2000)),
+    loadWhen("tools", () => supabase.from("tools").select("*").eq("user_id", user.id).order("created_at", { ascending: true }).limit(500)),
     loadWhen("shortcuts", () => supabase.from("shortcuts").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("referenceRows", () => supabase.from("reference_rows").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("importantDates", () => supabase.from("important_dates").select("*").eq("user_id", user.id).order("the_date", { ascending: true })),
@@ -108,6 +109,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     initialAiLinks={aiLinksRes?.data ?? []}
     initialAiCategories={aiCategoriesRes?.data ?? []}
     initialProjectLinks={projectLinksRes?.data ?? []}
+    initialTools={toolsRes?.data ?? []}
     initialShortcuts={shortcutsRes?.data ?? []}
     initialReferenceRows={referenceRowsRes?.data ?? []}
     initialImportantDates={importantDatesRes?.data ?? []}

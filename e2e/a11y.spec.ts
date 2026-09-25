@@ -52,6 +52,9 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
     "Subscriptions",
     "Goals",
     "Dates",
+    "Prompts",
+    "Tools",
+    "Links",
     "Settings",
   ] as const;
 
