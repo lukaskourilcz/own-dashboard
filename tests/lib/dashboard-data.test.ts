@@ -30,9 +30,10 @@ describe("dashboard route data boundaries", () => {
     }
   });
 
-  it("keeps the notification bell available on every destination", () => {
+  it("loads notifications only for the Inbox", () => {
     for (const tab of NAV_TABS) {
-      expect(tabNeedsDashboardData(tab, "notifications"), tab).toBe(true);
+      expect(tabNeedsDashboardData(tab, "notifications"), tab).toBe(tab === "inbox");
     }
+    expect(dashboardDataKeysForTab("home").has("inboxItems")).toBe(false);
   });
 });

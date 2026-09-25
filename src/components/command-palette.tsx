@@ -9,7 +9,6 @@ import {
   FileText,
   FolderKanban,
   Gift,
-  Inbox,
   LayoutDashboard,
   Languages,
   ListTodo,
@@ -22,7 +21,6 @@ import {
   Settings,
   Sun,
   Target,
-  Terminal,
   Wallet,
 } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
@@ -84,7 +82,6 @@ export function CommandPalette({
     const s = t.nav.sections;
     const list: Action[] = [
       { id: "go-home", label: s.home, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g h", run: go("home") },
-      { id: "go-inbox", label: s.inbox, group: "go", icon: Inbox, keywords: "capture triage zachytit", run: go("inbox") },
       { id: "go-work", label: s.work, group: "go", icon: BriefcaseBusiness, keywords: "work overview delivery práce", run: go("work") },
       { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
       { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "pipeline leads tugedr opportunities příležitosti", run: go("opportunities") },
@@ -103,7 +100,6 @@ export function CommandPalette({
       { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes writing drafts poznámky g n", run: go("notes") },
       { id: "go-prompts", label: s.prompts, group: "go", icon: MessageSquareText, keywords: "prompts snippets templates clipboard copy library prompty g m", run: go("prompts") },
       { id: "go-links", label: s.links, group: "go", icon: FileText, keywords: "links tools sites odkazy", run: go("links") },
-      { id: "go-references", label: s.references, group: "go", icon: Terminal, keywords: "references commands snippets cheatsheet", run: go("references") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-theme",

@@ -57,7 +57,7 @@ import {
 } from "@/lib/use-prefs";
 import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
-import { HOME_ITEM, INBOX_ITEM, NAV_GROUPS } from "@/components/nav/sidebar";
+import { NAV_GROUPS, PRIMARY_NAV_ITEMS } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Project, Updater } from "@/lib/types";
@@ -509,7 +509,7 @@ export function SettingsPanel({
               {t.settings.navigationDesc}
             </p>
 
-            {[HOME_ITEM, INBOX_ITEM].map((item) => <div key={item.value} className="flex items-center justify-between gap-3 px-2 py-2.5"><div className="flex min-w-0 items-center gap-2.5 pl-[26px]"><item.icon className="h-4 w-4 shrink-0 text-foreground-muted" /><span className="truncate text-sm font-medium">{t.nav.sections[item.value]}</span></div><SectionLabel className="shrink-0">{t.settings.alwaysVisible}</SectionLabel></div>)}
+            {PRIMARY_NAV_ITEMS.map((item) => <div key={item.value} className="flex items-center justify-between gap-3 px-2 py-2.5"><div className="flex min-w-0 items-center gap-2.5 pl-[26px]"><item.icon className="h-4 w-4 shrink-0 text-foreground-muted" /><span className="truncate text-sm font-medium">{t.nav.sections[item.value]}</span></div><SectionLabel className="shrink-0">{t.settings.alwaysVisible}</SectionLabel></div>)}
 
             {NAV_GROUPS.map((g) => {
               const items = sortByNavOrder(g.items, order);

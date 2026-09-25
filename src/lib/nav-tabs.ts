@@ -28,6 +28,18 @@ export const NAV_TABS = [
 
 export type NavTab = (typeof NAV_TABS)[number];
 
+/**
+ * Sections kept out of every navigation surface (sidebar, mobile bar, More
+ * sheet, command palette, keyboard chords, Settings, Home widgets). This is a
+ * product decision, not a preference: the routes still render by URL and
+ * their data is kept.
+ */
+export const HIDDEN_NAV_TABS = ["inbox", "references"] as const satisfies readonly NavTab[];
+
+export function isHiddenNavTab(tab: string): boolean {
+  return (HIDDEN_NAV_TABS as readonly string[]).includes(tab);
+}
+
 /** Old bookmarks that still have a meaningful professional destination. */
 export const LEGACY_ROUTE_ALIASES = {
   overview: "home",

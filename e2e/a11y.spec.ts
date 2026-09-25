@@ -52,7 +52,6 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
     "Subscriptions",
     "Goals",
     "Dates",
-    "Inbox",
     "Settings",
   ] as const;
 
@@ -67,6 +66,18 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
       // Wait out both the initial Home entrance and subsequent tab transition
       // (AnimatePresence mode="wait" plays an exit then an enter) so axe never
       // samples content while parent opacity is still below 1.
+      await page.waitForTimeout(600);
+      const serious = await scan(page);
+      expect(JSON.stringify(summarize(serious), null, 2)).toBe("[]");
+    });
+  }
+
+  // Hidden from navigation, still reachable by URL.
+  for (const tab of ["inbox", "references"] as const) {
+    test(`dashboard – ${tab} by URL`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name === "mobile", "scan once on desktop");
+      await gotoPreview(page);
+      await page.goto(`/dev-preview?tab=${tab}`);
       await page.waitForTimeout(600);
       const serious = await scan(page);
       expect(JSON.stringify(summarize(serious), null, 2)).toBe("[]");

@@ -1,6 +1,7 @@
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DASHBOARD_DATA_KEYS } from "@/lib/dashboard-data";
 import type { Lang } from "@/lib/i18n";
+import type { NavTab } from "@/lib/nav-tabs";
 import * as f from "@/lib/demo/fixtures";
 import { resolveProjectRef } from "@/lib/projects";
 
@@ -18,10 +19,13 @@ import { resolveProjectRef } from "@/lib/projects";
  */
 export function DemoDashboard({
   projectRef,
+  initialTab,
   language = "cs",
 }: {
   /** Opens a project workspace directly, by fixture id or slug. */
   projectRef?: string;
+  /** Opens a destination directly, as its URL would. */
+  initialTab?: NavTab;
   language?: Lang;
 }) {
   const project = projectRef ? resolveProjectRef(f.projects, projectRef) : undefined;
@@ -30,7 +34,7 @@ export function DemoDashboard({
     <DashboardShell
       isPreview
       user={f.user}
-      initialTab={project ? "projects" : "home"}
+      initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialDataKeys={[...DASHBOARD_DATA_KEYS]}
       initialSubscriptions={f.subscriptions}

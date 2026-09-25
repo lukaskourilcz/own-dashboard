@@ -23,6 +23,7 @@ type NavStrings = {
   allAreas: string;
   allAreasDescription: string;
   skipToContent: string;
+  hiddenFromNavigation: string;
 };
 
 export const nav: { en: NavStrings; cs: NavStrings } = {
@@ -69,6 +70,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     allAreas: "All areas",
     allAreasDescription: "Open any visible OwnDashboard destination.",
     skipToContent: "Skip to content",
+    hiddenFromNavigation: "Hidden from navigation. This section stays available at its URL.",
   },
   cs: {
     brand: brandConfig.name,
@@ -113,5 +115,6 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     allAreas: "Všechny sekce",
     allAreasDescription: "Otevřete libovolnou viditelnou část OwnDashboardu.",
     skipToContent: "Přejít na obsah",
+    hiddenFromNavigation: "Skryto z navigace. Sekce zůstává dostupná přes svou adresu URL.",
   },
 };

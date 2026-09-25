@@ -18,7 +18,7 @@ test.describe("responsive chrome", () => {
     await gotoPreview(page);
     await expect(page.locator("aside")).toBeHidden();
     await expect(page.getByTestId("mobile-nav")).toBeVisible();
-    for (const name of ["Home", "Inbox", "Work overview", "Projects", "More"]) {
+    for (const name of ["Home", "Work overview", "Projects", "Tasks", "More"]) {
       await expect(page.getByTestId("mobile-nav").getByRole("button", { name, exact: true })).toBeVisible();
     }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isDashboardSlug, isNavPathSegment, isNavTab, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
+import { HIDDEN_NAV_TABS, isDashboardSlug, isHiddenNavTab, isNavPathSegment, isNavTab, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { normalizeNavPreferenceIds } from "@/lib/use-prefs";
 
 describe("professional navigation", () => {
@@ -21,6 +21,18 @@ describe("professional navigation", () => {
 
   it("repairs stale local navigation preferences", () => {
     expect(normalizeNavPreferenceIds(["todos", "github", "books", "couple", "inbox", "projects", "projects"])).toEqual(["tasks", "projects"]);
+    // Hidden sections are not navigation preferences.
+    expect(normalizeNavPreferenceIds(["references", "shortcuts", "links"])).toEqual(["links"]);
+  });
+
+  it("hides Inbox and References from navigation but keeps their routes", () => {
+    expect([...HIDDEN_NAV_TABS]).toEqual(["inbox", "references"]);
+    expect(isHiddenNavTab("inbox")).toBe(true);
+    expect(isHiddenNavTab("references")).toBe(true);
+    expect(isHiddenNavTab("links")).toBe(false);
+    expect(isDashboardSlug(["inbox"])).toBe(true);
+    expect(isDashboardSlug(["references"])).toBe(true);
+    expect(tabFromSlug(["shortcuts"])).toBe("references");
   });
 
   it("allows only canonical nested project workspaces", () => {

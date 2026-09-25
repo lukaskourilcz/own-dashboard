@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DemoDashboard } from "@/components/demo-dashboard";
+import { isNavTab } from "@/lib/nav-tabs";
 
 /**
  * Dev/E2E-only harness: renders the real DashboardShell with deterministic
@@ -15,10 +16,12 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function PreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string }>;
+  searchParams: Promise<{ project?: string; tab?: string }>;
 }) {
   if (process.env.NODE_ENV === "production" && process.env.NEXT_E2E !== "1") notFound();
-  const { project } = await searchParams;
+  const { project, tab } = await searchParams;
 
-  return <DemoDashboard projectRef={project} />;
+  // `?tab=` opens a destination directly, the fixture equivalent of visiting
+  // its URL — used for sections hidden from navigation (Inbox, References).
+  return <DemoDashboard projectRef={project} initialTab={isNavTab(tab) ? tab : undefined} />;
 }

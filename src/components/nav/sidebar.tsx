@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import {
-  Bell,
   BriefcaseBusiness,
   CalendarDays,
   CircleDollarSign,
@@ -44,7 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 import { groupProjectsByEngagement } from "@/lib/projects";
 import { saveUserPreferences } from "@/lib/preference-client";
-import type { NavTab } from "@/lib/nav-tabs";
+import { isHiddenNavTab, type NavTab } from "@/lib/nav-tabs";
 import type { Project } from "@/lib/types";
 
 export type { NavTab };
@@ -61,13 +60,16 @@ type NavGroup = { id: NavGroupId; items: NavItem[] };
 
 export const HOME_ITEM: NavItem = { value: "home", icon: LayoutDashboard };
 export const INBOX_ITEM: NavItem = { value: "inbox", icon: Inbox };
-export const PRIMARY_NAV_ITEMS: NavItem[] = [HOME_ITEM, INBOX_ITEM];
+const isNavigable = (item: NavItem) => !isHiddenNavTab(item.value);
+// Pinned items above the groups. Inbox is hidden from navigation
+// (HIDDEN_NAV_TABS) and stays reachable by URL.
+export const PRIMARY_NAV_ITEMS: NavItem[] = [HOME_ITEM, INBOX_ITEM].filter(isNavigable);
 
 // The rest of the sections, bucketed into a handful of intent-based groups so
 // the rail reads as a short list of categories instead of a wall of ~19 links.
 // Order matters (within a group and across groups). "settings" lives outside
 // these groups — it has its own always-visible affordance in the footer.
-export const NAV_GROUPS: NavGroup[] = [
+const ALL_NAV_GROUPS: NavGroup[] = [
   {
     id: "work",
     items: [
@@ -109,6 +111,13 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+// Hidden sections (HIDDEN_NAV_TABS) are removed here, so every consumer of the
+// groups — sidebar, More sheet, Settings — leaves them out.
+export const NAV_GROUPS: NavGroup[] = ALL_NAV_GROUPS.map((group) => ({
+  ...group,
+  items: group.items.filter(isNavigable),
+})).filter((group) => group.items.length > 0);
+
 // Flat, ordered list (overview first, then every group in order). Kept as the
 // single source of truth for consumers that don't care about grouping — the
 // Settings visibility list and the mobile bottom bar.
@@ -122,7 +131,6 @@ export function Sidebar({
   setTab,
   user,
   projects = [],
-  unreadNotifications = 0,
   syncPreferences = true,
   onOpenProject,
 }: {
@@ -130,7 +138,6 @@ export function Sidebar({
   setTab: (t: NavTab) => void;
   user: { name: string | null; email: string; avatar_url?: string | null };
   projects?: SidebarProject[];
-  unreadNotifications?: number;
   syncPreferences?: boolean;
   onOpenProject?: (project: SidebarProject) => void;
 }) {
@@ -358,17 +365,6 @@ export function Sidebar({
             collapsed ? "flex-col" : "px-0.5",
           )}
         >
-          <Tooltip content={t.nav.sections.inbox} side={collapsed ? "right" : "top"}>
-            <button
-              type="button"
-              onClick={() => setTab("inbox")}
-              aria-label={t.nav.sections.inbox}
-              className="relative inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
-            >
-              <Bell className="h-3.5 w-3.5" />
-              {unreadNotifications > 0 && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
-            </button>
-          </Tooltip>
           <Tooltip content={t.nav.settings} side={collapsed ? "right" : "top"}>
             <button
               type="button"
@@ -416,7 +412,9 @@ export function MobileNav({
   const [moreOpen, setMoreOpen] = useState(false);
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
-  const primaryValues: NavTab[] = ["home", "inbox", "work", "projects"];
+  // Four pinned destinations plus More. Inbox is hidden from navigation, so
+  // Tasks takes its place in the bar.
+  const primaryValues: NavTab[] = ["home", "work", "projects", "tasks"];
   const allItems = [...PRIMARY_NAV_ITEMS, ...NAV_GROUPS.flatMap((g) => sortByNavOrder(g.items, order))];
   const primaryItems = allItems.filter((item) => primaryValues.includes(item.value) && !isHidden(item.value));
   const secondaryGroups = NAV_GROUPS.map((group) => ({

@@ -42,7 +42,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { EventsResult } from "@/lib/calendar";
 import { tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-data";
 import type { WidgetId } from "@/lib/dashboard-layout";
-import { tabFromPath, tabToPath } from "@/lib/nav-tabs";
+import { isHiddenNavTab, tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { useEntityStore } from "@/lib/queries/entities";
 import { taskBelongsToProject } from "@/lib/project-match";
 import { resolveProjectRef } from "@/lib/projects";
@@ -86,7 +86,6 @@ import {
 import { qk } from "@/lib/queries/keys";
 import { useDisplayCurrency, useNavCollapsed } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
-import { isActionableNotification } from "@/lib/notifications";
 import { useDict } from "@/lib/i18n";
 import type {
   Account, AiCategory, AiLink, AppNotification, ClientOpportunity, CoverLetterTemplate, Cron,
@@ -146,11 +145,13 @@ type Props = {
   initialPreferences: SyncedUiPreferences;
 };
 
+// `g` then a letter. Inbox and References are hidden from navigation, so
+// they have no chord (`g i` and `g r` do nothing).
 const TAB_CHORDS: Record<string, NavTab> = {
-  h: "home", i: "inbox", w: "work", p: "projects", o: "opportunities",
+  h: "home", w: "work", p: "projects", o: "opportunities",
   c: "clients", j: "career", f: "invoices", m: "money", a: "accounts",
   x: "transactions", s: "subscriptions", t: "tasks", l: "calendar",
-  g: "goals", d: "dates", n: "notes", r: "references",
+  g: "goals", d: "dates", n: "notes",
 };
 
 export function DashboardShell(props: Props) {
@@ -289,7 +290,7 @@ export function DashboardShell(props: Props) {
     <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0">{t.nav.skipToContent}</a>
     <div className="mac-desktop">
       <div className="mac-window">
-      <Sidebar tab={tab} setTab={setTab} projects={activeNavigationProjects} onOpenProject={openProject} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} unreadNotifications={notifications.filter((item) => isActionableNotification(item)).length} syncPreferences={!props.isPreview} />
+      <Sidebar tab={tab} setTab={setTab} projects={activeNavigationProjects} onOpenProject={openProject} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} syncPreferences={!props.isPreview} />
       <main id="main-content" data-section={tab} className={cn("min-w-0 overflow-x-clip pb-20 transition-[padding] duration-200 ease-out md:h-full md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}>
         <AppToolbar
           tab={tab}
@@ -298,6 +299,7 @@ export function DashboardShell(props: Props) {
         <div className="mac-content mac-content-scroll min-w-0 px-4 py-4 md:px-6 md:py-5">
         <MobileNav tab={tab} setTab={setTab} />
         <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
+          {isHiddenNavTab(tab) && <p className="mb-3 text-xs text-foreground-subtle">{t.nav.hiddenFromNavigation}</p>}
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} importantDates={importantDates} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,

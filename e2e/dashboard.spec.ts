@@ -4,7 +4,6 @@ import { gotoPreview, watchConsole } from "./helpers";
 // Section labels in English (gotoPreview forces lang=en).
 const TABS = [
   "Home",
-  "Inbox",
   "Work overview",
   "Projects",
   "Opportunities",
@@ -23,7 +22,6 @@ const TABS = [
   "Notes",
   "Prompts",
   "Links",
-  "References",
 ] as const;
 
 test.describe("dashboard sections", () => {
@@ -152,6 +150,58 @@ test.describe("dashboard sections", () => {
     await expect(page).toHaveURL(/\/projects$/);
   });
 
+  test("Inbox and References are hidden from navigation but open by URL", async ({ page }, testInfo) => {
+    await gotoPreview(page);
+    if (testInfo.project.name === "mobile") {
+      const bar = page.getByTestId("mobile-nav");
+      await expect(bar.getByRole("button", { name: "Inbox", exact: true })).toHaveCount(0);
+      await bar.getByRole("button", { name: "More", exact: true }).click();
+      const sheet = page.getByRole("dialog", { name: "All areas" });
+      await expect(sheet.getByRole("button", { name: "Links", exact: true })).toBeVisible();
+      await expect(sheet.getByRole("button", { name: "Inbox", exact: true })).toHaveCount(0);
+      await expect(sheet.getByRole("button", { name: "References", exact: true })).toHaveCount(0);
+      await page.keyboard.press("Escape");
+    } else {
+      const sidebar = page.locator("aside");
+      await expect(sidebar.getByRole("button", { name: "Inbox", exact: true })).toHaveCount(0);
+      await expect(sidebar.getByRole("button", { name: "References", exact: true })).toHaveCount(0);
+
+      // The command palette offers neither destination.
+      await page.keyboard.press("Control+k");
+      const input = page.getByPlaceholder("Type a command or search…");
+      await expect(input).toBeVisible();
+      await input.fill("Links");
+      await expect(page.getByRole("button", { name: "Links", exact: true }).last()).toBeVisible();
+      await input.fill("Inbox");
+      await expect(page.getByRole("dialog").getByRole("button", { name: "Inbox", exact: true })).toHaveCount(0);
+      await input.fill("References");
+      await expect(page.getByRole("dialog").getByRole("button", { name: "References", exact: true })).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      await expect(input).toBeHidden();
+
+      // `g r` and `g i` no longer navigate.
+      await page.locator("#main-content").click({ position: { x: 5, y: 5 } });
+      await page.keyboard.press("g");
+      await page.keyboard.press("r");
+      await page.keyboard.press("g");
+      await page.keyboard.press("i");
+      await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
+
+      // Settings lists neither section.
+      await sidebar.getByRole("button", { name: "Settings" }).click();
+      await expect(page.getByRole("switch", { name: "References", exact: true })).toHaveCount(0);
+      await expect(page.locator("#main-content").getByText("Inbox", { exact: true })).toHaveCount(0);
+    }
+
+    // Both routes still render, with a note that they are hidden.
+    await page.goto("/dev-preview?tab=inbox");
+    await expect(page.getByRole("heading", { level: 1, name: "Inbox" })).toBeVisible();
+    await expect(page.getByText("Hidden from navigation.", { exact: false })).toBeVisible();
+    await page.goto("/dev-preview?tab=references");
+    await expect(page.getByRole("heading", { level: 1, name: "References" })).toBeVisible();
+    await expect(page.getByText("Hidden from navigation.", { exact: false })).toBeVisible();
+  });
+
   test("Projects lists own work first and freelance projects behind a divider", async ({ page }, testInfo) => {
     await gotoPreview(page);
     if (testInfo.project.name === "mobile") {
@@ -160,7 +210,7 @@ test.describe("dashboard sections", () => {
       await page.locator("aside nav").getByRole("button", { name: "Projects", exact: true }).click();
     }
     const table = page.getByRole("table");
-    await expect(table.getByRole("rowheader", { name: "Freelance — hired" })).toHaveCount(1);
+    await expect(table.getByRole("row", { name: "Freelance — hired" })).toHaveCount(1);
     const names = await table.locator("tbody tr td:nth-child(2) a").allTextContents();
     expect(names).toEqual([
       "DNESKAi",
@@ -187,7 +237,7 @@ test.describe("dashboard sections", () => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page, { lang: "cs" });
     await page.locator("aside nav").getByRole("button", { name: "Projekty", exact: true }).click();
-    await expect(page.getByRole("table").getByRole("rowheader", { name: "Freelance — najatý" })).toBeVisible();
+    await expect(page.getByRole("table").getByRole("row", { name: "Freelance — najatý" })).toBeVisible();
   });
 
   test("navigation and project-tab visibility survive a refresh", async ({ page }, testInfo) => {

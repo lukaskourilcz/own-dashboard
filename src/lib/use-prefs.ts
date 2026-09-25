@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import {
   LEGACY_ROUTE_ALIASES,
   NAV_TABS,
+  isHiddenNavTab,
   type NavTab,
 } from "@/lib/nav-tabs";
 import {
@@ -79,8 +80,10 @@ const navListeners = new Set<() => void>();
 const EMPTY_HIDDEN: readonly string[] = Object.freeze([]);
 let hiddenCache: readonly string[] | null = null;
 
+// Sections a preference may hide or reorder. Home and Settings are always
+// shown; HIDDEN_NAV_TABS never appear in navigation, so they are not options.
 const PREFERENCE_NAV_IDS = new Set<string>(
-  NAV_TABS.filter((id) => id !== "home" && id !== "inbox" && id !== "settings"),
+  NAV_TABS.filter((id) => id !== "home" && id !== "settings" && !isHiddenNavTab(id)),
 );
 
 /** Map meaningful legacy ids and discard removed/unknown sections. */
