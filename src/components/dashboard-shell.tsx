@@ -41,7 +41,8 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmationProvider } from "@/components/ui/confirmation-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { EventsResult } from "@/lib/calendar";
-import { tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-data";
+import { onDemandDataKeys, tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-data";
+import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import type { WidgetId } from "@/lib/dashboard-layout";
 import { isHiddenNavTab, tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { useEntityStore } from "@/lib/queries/entities";
@@ -169,10 +170,14 @@ export function DashboardShell(props: Props) {
     props.initialProjectId ?? null,
   );
   const seededData = useMemo(() => new Set(props.initialDataKeys), [props.initialDataKeys]);
+  // Career and Opportunities load their data only after "Check for new
+  // offers". The flag lives for this page session; a reload asks again.
+  const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: tabNeedsDashboardData(tab, key),
-  }), [seededData, tab]);
+    enabled: tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    onDemand: onDemandDataKeys(tab).includes(key),
+  }), [seededData, tab, activatedTabs]);
   const setTab = useCallback((next: NavTab) => {
     setTabState(next);
     setSelectedProjectId(null);
@@ -276,6 +281,33 @@ export function DashboardShell(props: Props) {
   const [weekCalendar] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useDisplayCurrency();
 
+  // "Check for new offers": fetch the destination's on-demand data now, then
+  // mark it active so its stores read from the fresh cache. The fixture
+  // preview already holds every record, so it only flips the flag.
+  const qc = useQueryClient();
+  const activateTab = useCallback(async (target: NavTab) => {
+    if (!props.isPreview) {
+      const loaders: Partial<Record<DashboardDataKey, [QueryKey, () => Promise<unknown>]>> = {
+        jobListings: [qk.jobListings, fetchJobListings],
+        jobUserStates: [qk.jobUserStates, fetchJobUserStates],
+        savedJobPositions: [qk.savedJobPositions, fetchSavedJobPositions],
+        jobApplications: [qk.jobApplications, fetchJobApplications],
+        jobApplicationEvents: [qk.jobApplicationEvents, fetchJobApplicationEvents],
+        coverLetterTemplates: [qk.coverLetterTemplates, fetchCoverLetterTemplates],
+        projects: [qk.projects, fetchProjects],
+        organizations: [qk.organizations, fetchOrganizations],
+        opportunities: [qk.opportunities, fetchOpportunities],
+      };
+      await Promise.all(onDemandDataKeys(target).map((key) => {
+        const loader = loaders[key];
+        return loader
+          ? qc.fetchQuery({ queryKey: loader[0], queryFn: loader[1], staleTime: 0 }).catch(() => undefined)
+          : undefined;
+      }));
+    }
+    setActivatedTabs((previous) => (previous.has(target) ? previous : new Set(previous).add(target)));
+  }, [props.isPreview, qc]);
+
   const lastG = useRef(0);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -325,9 +357,9 @@ export function DashboardShell(props: Props) {
           {tab === "inbox" && <InboxPanel items={inboxItems} setItems={setInboxItems} notifications={notifications} setNotifications={setNotifications} />}
           {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} />}
           {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} promptLinks={promptLinks} syncRepositories={!props.isPreview} />}
-          {tab === "opportunities" && <OpportunitiesPanel userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
+          {tab === "opportunities" && <OpportunitiesPanel activated={activatedTabs.has("opportunities")} onActivate={() => activateTab("opportunities")} userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
-          {tab === "career" && <JobsPanel isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
+          {tab === "career" && <JobsPanel activated={activatedTabs.has("career")} onActivate={() => activateTab("career")} isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
           {tab === "invoices" && <InvoicesPanel invoices={invoices} setInvoices={setInvoices} items={invoiceItems} setItems={setInvoiceItems} settings={invoiceSettings} setSettings={setInvoiceSettings} userId={user.id} displayCurrency={displayCurrency} organizations={organizations} projects={activeProjects} />}
           {(tab === "money" || tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
           {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}

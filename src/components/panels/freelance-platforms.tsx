@@ -13,13 +13,20 @@ import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { httpsUrl, PREVIEW_PLATFORMS, type FreelancePlatform } from "@/lib/freelance";
 
-export function useFreelancePlatforms(userId: string, isPreview: boolean) {
-  return useQuery({ queryKey: [...qk.freelancePlatforms, userId], enabled: !isPreview && Boolean(userId), staleTime: 60_000,
-    queryFn: async ({ signal }) => {
-      const { data, error } = await createClient().from("freelance_platforms").select("*").eq("user_id", userId).order("name").limit(500).abortSignal(signal);
-      if (error) throw error;
-      return data as FreelancePlatform[];
-    },
+export async function fetchFreelancePlatforms(userId: string, signal?: AbortSignal): Promise<FreelancePlatform[]> {
+  let request = createClient().from("freelance_platforms").select("*").eq("user_id", userId).order("name").limit(500);
+  if (signal) request = request.abortSignal(signal);
+  const { data, error } = await request;
+  if (error) throw error;
+  return data as FreelancePlatform[];
+}
+
+/** The platform directory. Opportunities loads it only after "Check for new
+ * offers"; it then stays cached until the next press or a write. */
+export function useFreelancePlatforms(userId: string, isPreview: boolean, enabled = true) {
+  return useQuery({ queryKey: [...qk.freelancePlatforms, userId], enabled: enabled && !isPreview && Boolean(userId),
+    staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false,
+    queryFn: ({ signal }) => fetchFreelancePlatforms(userId, signal),
   });
 }
 

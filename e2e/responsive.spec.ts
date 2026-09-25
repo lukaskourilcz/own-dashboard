@@ -50,6 +50,7 @@ test.describe("responsive chrome", () => {
     const dialog = page.getByRole("dialog", { name: "All areas" });
     await dialog.getByRole("button", { name: "Career", exact: true }).click();
     await expect(page.locator("header").getByRole("heading", { level: 1, name: "Career" })).toBeVisible();
+    await page.getByRole("button", { name: "Check for new offers", exact: true }).click();
     const overflow = await page.evaluate(
       () => document.body.scrollWidth - document.body.clientWidth,
     );

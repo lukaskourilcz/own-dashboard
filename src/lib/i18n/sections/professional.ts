@@ -221,6 +221,12 @@ const professionalEn = {
     openLinkUrl: "Open link",
     linkUrlCopied: "URL copied.",
     linkCopyFailed: "Could not copy. Select the URL and copy it manually.",
+    opportunitiesGateTitle: "Opportunities load when you ask",
+    opportunitiesGateDescription: "Nothing is fetched until you check. Checking loads the pipeline, the platform directory and response metrics.",
+    lastLoaded: "Last loaded",
+    notLoadedThisSession: "Not loaded in this session yet.",
+    opportunitiesCountLabel: "Opportunities",
+    platformsCountLabel: "Platforms",
 };
 
 type ProfessionalStrings = {
@@ -455,5 +461,11 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
     openLinkUrl: "Otevřít odkaz",
     linkUrlCopied: "URL zkopírována.",
     linkCopyFailed: "Kopírování se nezdařilo. Označte URL a zkopírujte ji ručně.",
+    opportunitiesGateTitle: "Příležitosti se načtou, až o to požádáte",
+    opportunitiesGateDescription: "Dokud nezkontrolujete, nic se nenačítá. Kontrola načte pipeline, katalog platforem a metriky odpovědí.",
+    lastLoaded: "Naposledy načteno",
+    notLoadedThisSession: "V této relaci zatím nenačteno.",
+    opportunitiesCountLabel: "Příležitosti",
+    platformsCountLabel: "Platformy",
   },
 };

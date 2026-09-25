@@ -316,6 +316,7 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     const sidebar = page.locator("aside nav");
     await sidebar.getByRole("button", { name: "Career" }).click();
+    await page.getByRole("button", { name: "Check for new offers", exact: true }).click();
     await expect(page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Cover letters", exact: true })).toBeVisible();

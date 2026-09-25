@@ -4,6 +4,8 @@ Career now stores the company directory in Supabase and connects saved positions
 
 ## Workflow
 
+Career loads nothing until **Check for new offers / Zkontrolovat nové nabídky** is pressed; the saved, prepared and sent lists below appear after that press and stay loaded for the rest of the page session.
+
 1. Save a position or open an imported one. Attach its Google Docs or Drive file URL and review the posting, letter and eligibility notes. Readiness is explicit: draft, ready or needs review.
 2. Open **Applications to send / Přihlášky k odeslání**. The list includes every saved position with a letter link, including visibly marked items needing review. Search by company or role.
 3. Apply through the employer's own site. Return to the review dialog, choose the actual date and select **Record sent application**. This records an action the owner has already taken; it does not contact an employer.

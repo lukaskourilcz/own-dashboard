@@ -171,6 +171,9 @@ type JobsStrings = {
   noTemplatesYet: string;
   nameRequired: string;
   bodyRequired: string;
+  checkOffers: string;
+  gateTitle: string;
+  gateDescription: string;
 };
 
 export const jobs: { en: JobsStrings; cs: JobsStrings } = {
@@ -352,6 +355,9 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noTemplatesYet: "No saved templates yet — the starter templates below are always available.",
     nameRequired: "Name is required.",
     bodyRequired: "Template text is required.",
+    checkOffers: "Check for new offers",
+    gateTitle: "Career loads when you ask",
+    gateDescription: "Nothing is fetched until you check. Checking refreshes the job boards, verifies which listings are still open and loads your saved positions, applications and letters.",
   },
   cs: {
     title: "Kariéra",
@@ -531,6 +537,9 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
       "Zatím žádné uložené šablony — výchozí šablony níže jsou k dispozici vždy.",
     nameRequired: "Název je povinný.",
     bodyRequired: "Text šablony je povinný.",
+    checkOffers: "Zkontrolovat nové nabídky",
+    gateTitle: "Kariéra se načte, až o to požádáte",
+    gateDescription: "Dokud nezkontrolujete, nic se nenačítá. Kontrola obnoví pracovní portály, ověří, které nabídky jsou stále otevřené, a načte uložené pozice, přihlášky a dopisy.",
   },
 };
 

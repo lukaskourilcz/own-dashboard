@@ -12,6 +12,7 @@ test("opportunity profiles and proposal review work in both languages and suppor
       await page.getByRole("button",{name:cs ? "Více" : "More",exact:true}).click();
       await page.getByRole("dialog").getByRole("button",{name:cs ? "Příležitosti" : "Opportunities",exact:true}).click();
     } else await page.locator("aside").getByRole("button",{name:cs ? "Příležitosti" : "Opportunities",exact:true}).click();
+    await page.getByRole("button",{name:cs ? "Zkontrolovat nové nabídky" : "Check for new offers",exact:true}).click();
     await page.getByRole("button",{name:cs ? "Detail a odpověď" : "Details & proposal",exact:true}).click();
     const detail = page.getByRole("dialog");
     await expect(detail.getByLabel(cs ? "Návrh odpovědi klientovi" : "Proposal draft")).toBeVisible();

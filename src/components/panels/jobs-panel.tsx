@@ -22,7 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -101,6 +101,10 @@ const STATUSES: JobApplicationStatus[] = [
 ];
 
 type Props = {
+  /** True once "Check for new offers" ran in this page session. */
+  activated: boolean;
+  /** Fetch Career's on-demand data and mark it active. */
+  onActivate: () => Promise<void>;
   isPreview?: boolean;
   listings: JobListing[];
   userStates: JobUserState[];
@@ -123,6 +127,8 @@ function todayIso(): string {
 }
 
 export function JobsPanel({
+  activated,
+  onActivate,
   isPreview = false,
   listings,
   userStates,
@@ -167,6 +173,60 @@ export function JobsPanel({
   const [applyFor, setApplyFor] = useState<JobListing | null>(null);
   const [savedFor, setSavedFor] = useState<SavedJobPosition | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
+  const qc = useQueryClient();
+  const toast = useToast();
+  const locale = useDateLocale();
+  const [checking, setChecking] = useState(false);
+
+  // The only way Career fetches: refresh the job boards (rate limit
+  // unchanged), then load the on-demand records and re-verify which
+  // listings are still open. Nothing refetches on its own afterwards.
+  async function checkOffers() {
+    setChecking(true);
+    try {
+      if (!isPreview) {
+        const response = await fetch("/api/jobs/refresh", { method: "POST" }).catch(() => null);
+        if (response?.status === 429) toast.err(t.jobs.refreshRateLimited);
+        else if (!response?.ok) toast.err(t.jobs.refreshErr);
+        else toast.ok(t.jobs.refreshOk);
+      }
+      await onActivate();
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: qk.jobLastRun }),
+        qc.invalidateQueries({ queryKey: qk.jobAvailability }),
+      ]);
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  if (!activated) {
+    const lastRunAt = lastRun?.finished_at ?? lastRun?.started_at ?? null;
+    return (
+      <div className="min-w-0">
+        <PageHeader title={t.jobs.title} description={t.jobs.description} />
+        <Card>
+          <CardContent className="space-y-3 py-5">
+            <h2 className="text-sm font-semibold">{t.jobs.gateTitle}</h2>
+            <p className="max-w-2xl text-sm text-foreground-muted">{t.jobs.gateDescription}</p>
+            <p className="text-xs text-foreground-muted">
+              {t.jobs.lastChecked}:{" "}
+              {lastRunAt
+                ? formatDistanceToNow(new Date(lastRunAt), { addSuffix: true, locale })
+                : t.jobs.never}
+            </p>
+            <Button onClick={() => void checkOffers()} disabled={checking}>
+              <RefreshCw className={cn("h-3.5 w-3.5", checking && "animate-spin")} />
+              {checking ? t.jobs.checking : t.jobs.checkOffers}
+            </Button>
+          </CardContent>
+        </Card>
+        <div className="mt-4">
+          <JobSources lastRun={lastRun} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-w-0">
@@ -293,6 +353,8 @@ export function JobsPanel({
           userId={userId}
           savedPositions={savedPositions}
           setSavedPositions={setSavedPositions}
+          checking={checking}
+          onCheck={checkOffers}
         />
       ) : (
         <AppliedView
@@ -338,7 +400,11 @@ function OpenPositionsView({
   userId,
   savedPositions,
   setSavedPositions,
+  checking,
+  onCheck,
 }: {
+  checking: boolean;
+  onCheck: () => Promise<void>;
   isPreview: boolean;
   listings: JobListing[];
   userStates: JobUserState[];
@@ -371,24 +437,9 @@ function OpenPositionsView({
   const [mobileDetail, setMobileDetail] = useState(false);
   const [workplace, setWorkplace] = useState("all");
   const [seniority, setSeniority] = useState("all");
-  const sourceSync = useQuery({
-    queryKey: [...qk.jobSourceSync, userId],
-    queryFn: async () => {
-      if (isPreview) return true;
-      const last = Date.parse(lastRun?.finished_at ?? "");
-      if (lastRun?.ok && lastRun.sources?.["ashby-apify"] && lastRun.sources?.curated && Number.isFinite(last) && Date.now() - last < 4 * 60 * 60 * 1000)
-        return true;
-      const response = await fetch("/api/jobs/refresh", { method: "POST" });
-      if (response.ok) {
-        await qc.invalidateQueries({ queryKey: qk.jobListings, exact: true });
-        await qc.invalidateQueries({ queryKey: qk.jobLastRun });
-      }
-      return response.ok;
-    },
-    retry: false,
-    staleTime: 4 * 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+  // Availability of listings is verified once per "Check for new offers"
+  // press (the check invalidates this key); it never refetches on mount,
+  // focus or an interval.
   const availability = useQuery({
     queryKey: [...qk.jobAvailability, userId],
     queryFn: async () => {
@@ -413,10 +464,10 @@ function OpenPositionsView({
         remaining: number;
       }>;
     },
-    enabled: !sourceSync.isPending,
     retry: false,
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
   const moreChecks = useMutation({
@@ -452,7 +503,6 @@ function OpenPositionsView({
   const [priorityOnly, setPriorityOnly] = useState(false);
   const [strongFitOnly, setStrongFitOnly] = useState(false);
   const [shortlistedOnly, setShortlistedOnly] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   const stateByListing = useMemo(() => {
@@ -479,7 +529,6 @@ function OpenPositionsView({
     const seen = new Set<string>();
     const rows = listings.filter((l) => {
       if (
-        sourceSync.isPending ||
         availability.isFetching ||
         availability.isError ||
         availability.data?.states[l.id] !== "open"
@@ -569,7 +618,6 @@ function OpenPositionsView({
     priorityOnly,
     strongFitOnly,
     shortlistedOnly,
-    sourceSync.isPending,
     availability.data,
     availability.isFetching,
     availability.isError,
@@ -698,34 +746,6 @@ function OpenPositionsView({
       destructive: true,
     });
     if (approved) deleteMutation.mutate(rows);
-  }
-
-  async function refresh() {
-    if (isPreview) return;
-    setRefreshing(true);
-    try {
-      const res = await fetch("/api/jobs/refresh", { method: "POST" });
-      if (res.status === 429) {
-        toast.err(t.jobs.refreshRateLimited);
-        return;
-      }
-      if (!res.ok) {
-        toast.err(t.jobs.refreshErr);
-        return;
-      }
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: qk.jobListings }),
-        qc.invalidateQueries({ queryKey: qk.jobLastRun }),
-        // Re-pull owner state; permanent deletion tombstones must survive
-        // scraper refreshes and continue excluding those listings.
-        qc.invalidateQueries({ queryKey: qk.jobUserStates }),
-      ]);
-      toast.ok(t.jobs.refreshOk);
-    } catch {
-      toast.err(t.jobs.refreshErr);
-    } finally {
-      setRefreshing(false);
-    }
   }
 
   const lastRunAt = lastRun?.finished_at ?? lastRun?.started_at ?? null;
@@ -881,24 +901,17 @@ function OpenPositionsView({
           <Button
             size="sm"
             variant="outline"
-            onClick={refresh}
-            disabled={refreshing}
+            onClick={() => void onCheck()}
+            disabled={checking}
           >
             <RefreshCw
-              className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
+              className={cn("h-3.5 w-3.5", checking && "animate-spin")}
             />
-            {refreshing ? t.jobs.checking : t.jobs.checkNow}
+            {checking ? t.jobs.checking : t.jobs.checkOffers}
           </Button>
         </div>
       </div>
 
-      {(sourceSync.isError || sourceSync.data === false) && (
-        <p className="my-3 text-sm text-warning">
-          {cs
-            ? "Nové nabídky se nepodařilo načíst. Ověřuji dostupnost dříve uložených pozic."
-            : "New listings could not be fetched. Checking availability of previously saved positions."}
-        </p>
-      )}
       <JobSources lastRun={lastRun} />
 
       <div className="my-4 text-sm" role="status">
@@ -908,7 +921,7 @@ function OpenPositionsView({
           ) : (
             "Demo data. Availability is not checked here."
           )
-        ) : sourceSync.isPending ? (
+        ) : checking ? (
           cs ? (
             "Načítám aktuální nabídky ze zdrojů…"
           ) : (
@@ -961,11 +974,11 @@ function OpenPositionsView({
             title={t.jobs.noListingsYet}
             description={t.jobs.noListingsDescription}
             action={
-              <Button size="sm" onClick={refresh} disabled={refreshing}>
+              <Button size="sm" onClick={() => void onCheck()} disabled={checking}>
                 <RefreshCw
-                  className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
+                  className={cn("h-3.5 w-3.5", checking && "animate-spin")}
                 />
-                {refreshing ? t.jobs.checking : t.jobs.checkNow}
+                {checking ? t.jobs.checking : t.jobs.checkOffers}
               </Button>
             }
             className="py-16"

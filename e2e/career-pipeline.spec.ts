@@ -8,6 +8,7 @@ test("prepared applications expose posting and Drive links and record a sent sna
     await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("dialog", { name: "All areas" }).getByRole("button", { name: "Career", exact: true }).click();
   } else await page.locator("aside").getByRole("button", { name: "Career", exact: true }).click();
+  await page.getByRole("button", { name: "Check for new offers", exact: true }).click();
   await page.getByRole("button", { name: /Applications to send/ }).click();
   await expect(page.getByText("Example Studio", { exact: false })).toBeVisible();
   await expect(page.getByRole("link", { name: "Cover letter on Google Drive" })).toHaveAttribute("href", "https://docs.google.com/document/d/example-preview-only/edit");
@@ -74,6 +75,7 @@ test("Czech prepared applications reflow across the supported widths", async ({ 
       await page.getByRole("button", { name: "Více", exact: true }).click();
       await page.getByRole("dialog").getByRole("button", { name: "Kariéra", exact: true }).click();
     } else await page.locator("aside").getByRole("button", { name: "Kariéra", exact: true }).click();
+    await page.getByRole("button", { name: "Zkontrolovat nové nabídky", exact: true }).click();
     await page.getByRole("button", { name: /Přihlášky k odeslání/ }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), `${width}px`).toBeLessThanOrEqual(1);
     await expect(page.getByRole("link", { name: "Dopis na Google Drive" })).toBeVisible();

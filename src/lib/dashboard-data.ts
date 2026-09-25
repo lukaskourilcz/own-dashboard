@@ -97,7 +97,8 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "projectLinks",
     "promptLinks",
   ],
-  opportunities: ["projects", "organizations", "opportunities"],
+  // Opportunities and Career load nothing on entry; see ON_DEMAND_TAB_DATA.
+  opportunities: [],
   clients: [
     "todos",
     "notes",
@@ -108,15 +109,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "organizations",
     "opportunities",
   ],
-  career: [
-    "jobListings",
-    "jobUserStates",
-    "savedJobPositions",
-    "jobApplications",
-    "jobApplicationEvents",
-    "coverLetterTemplates",
-    "jobLastRun",
-  ],
+  career: ["jobLastRun"],
   invoices: ["invoices", "invoiceItems", "invoiceSettings", "projects", "organizations"],
   money: [
     "subscriptions",
@@ -142,10 +135,36 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   settings: ["projects"],
 };
 
+/**
+ * Data a destination loads only after the owner presses "Check for new
+ * offers" (Zkontrolovat nové nabídky). Until then the destination makes no
+ * request of its own; afterwards nothing refetches until the next press.
+ */
+export const ON_DEMAND_TAB_DATA: Partial<Record<NavTab, readonly DashboardDataKey[]>> = {
+  career: [
+    "jobListings",
+    "jobUserStates",
+    "savedJobPositions",
+    "jobApplications",
+    "jobApplicationEvents",
+    "coverLetterTemplates",
+  ],
+  opportunities: ["projects", "organizations", "opportunities"],
+};
+
 export function dashboardDataKeysForTab(tab: NavTab): ReadonlySet<DashboardDataKey> {
   return new Set(TAB_DATA[tab]);
 }
 
-export function tabNeedsDashboardData(tab: NavTab, key: DashboardDataKey): boolean {
-  return TAB_DATA[tab].includes(key);
+export function onDemandDataKeys(tab: NavTab): readonly DashboardDataKey[] {
+  return ON_DEMAND_TAB_DATA[tab] ?? [];
+}
+
+/** Whether `key` is loaded for `tab`: always, or once the owner asked. */
+export function tabNeedsDashboardData(
+  tab: NavTab,
+  key: DashboardDataKey,
+  activated = false,
+): boolean {
+  return TAB_DATA[tab].includes(key) || (activated && onDemandDataKeys(tab).includes(key));
 }

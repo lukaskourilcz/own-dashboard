@@ -1,11 +1,12 @@
 "use client";
 
-import { FreelancePlatforms, useFreelancePlatforms } from "./freelance-platforms";
+import { FreelancePlatforms, fetchFreelancePlatforms, useFreelancePlatforms } from "./freelance-platforms";
 import { OpportunityDetail } from "./opportunity-detail";
 import { httpsUrl, opportunityMetrics, PREVIEW_PLATFORMS } from "@/lib/freelance";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,7 +19,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { useDict, useLang } from "@/lib/i18n";
+import { useDateLocale, useDict, useLang } from "@/lib/i18n";
+import { recordLastLoad, useLastLoad } from "@/lib/on-demand-load";
+import { cn } from "@/lib/utils";
 import { statusLabel } from "@/lib/status-presentation";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
@@ -42,6 +45,8 @@ const emptyForm = {
 };
 
 export function OpportunitiesPanel({
+  activated,
+  onActivate,
   opportunities,
   setOpportunities,
   organizations,
@@ -50,6 +55,10 @@ export function OpportunitiesPanel({
   userId,
   isPreview = false,
 }: {
+  /** True once "Check for new offers" ran in this page session. */
+  activated: boolean;
+  /** Fetch the pipeline records and mark Opportunities active. */
+  onActivate: () => Promise<void>;
   userId: string;
   isPreview?: boolean;
   opportunities: ClientOpportunity[];
@@ -65,9 +74,9 @@ export function OpportunitiesPanel({
   const [section, setSection] = useState<"pipeline" | "platforms">("pipeline");
   const [detail, setDetail] = useState<ClientOpportunity | null>(null);
   const [platformFilter, setPlatformFilter] = useState("all");
-  const platformQuery = useFreelancePlatforms(userId, isPreview);
+  const platformQuery = useFreelancePlatforms(userId, isPreview, activated);
   const platforms = isPreview ? PREVIEW_PLATFORMS : platformQuery.data ?? [];
-  const metricQuery = useQuery({queryKey:[...qk.opportunityMetrics,userId,platformFilter], enabled:!isPreview, queryFn:async()=>{
+  const metricQuery = useQuery({queryKey:[...qk.opportunityMetrics,userId,platformFilter], enabled:!isPreview && activated, staleTime:Infinity, gcTime:Infinity, refetchOnWindowFocus:false, queryFn:async()=>{
     const {data,error} = await createClient().rpc("freelance_opportunity_metrics",{p_platform_id:platformFilter === "all" ? null : platformFilter});
     if(error) throw error;
     return data as ReturnType<typeof opportunityMetrics>;
@@ -192,6 +201,53 @@ export function OpportunitiesPanel({
     onError: () => toast.err(p.couldNotSave),
   });
 
+  const locale = useDateLocale();
+  const lastLoad = useLastLoad("opportunities");
+  const [checking, setChecking] = useState(false);
+  // The only way Opportunities fetches: the pipeline, the platform directory
+  // and the metrics, on each press. Nothing refetches on focus or a timer.
+  async function checkOffers() {
+    setChecking(true);
+    try {
+      await onActivate();
+      const platformRows = isPreview
+        ? PREVIEW_PLATFORMS
+        : await qc.fetchQuery({ queryKey: [...qk.freelancePlatforms, userId], queryFn: () => fetchFreelancePlatforms(userId), staleTime: 0 }).catch(() => []);
+      await qc.invalidateQueries({ queryKey: qk.opportunityMetrics });
+      recordLastLoad("opportunities", {
+        opportunities: (qc.getQueryData<ClientOpportunity[]>(qk.opportunities) ?? opportunities).length,
+        platforms: platformRows.length,
+      });
+    } finally {
+      setChecking(false);
+    }
+  }
+  const lastLoadLine = lastLoad
+    ? `${p.lastLoaded}: ${formatDistanceToNow(new Date(lastLoad.at), { addSuffix: true, locale })} · ${p.opportunitiesCountLabel}: ${lastLoad.counts.opportunities ?? 0} · ${p.platformsCountLabel}: ${lastLoad.counts.platforms ?? 0}`
+    : p.notLoadedThisSession;
+  const checkButton = (
+    <Button variant={activated ? "outline" : "default"} onClick={() => void checkOffers()} disabled={checking}>
+      <RefreshCw className={cn("h-3.5 w-3.5", checking && "animate-spin")} />
+      {checking ? t.jobs.checking : t.jobs.checkOffers}
+    </Button>
+  );
+
+  if (!activated) {
+    return (
+      <div>
+        <PageHeader title={p.opportunitiesTitle} description={p.opportunitiesDescription} />
+        <Card>
+          <CardContent className="space-y-3 py-5">
+            <h2 className="text-sm font-semibold">{p.opportunitiesGateTitle}</h2>
+            <p className="max-w-2xl text-sm text-foreground-muted">{p.opportunitiesGateDescription}</p>
+            <p className="text-xs tabular text-foreground-muted">{lastLoadLine}</p>
+            {checkButton}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const terminal = new Set<OpportunityStatus>(["won", "lost", "expired", "archived"]);
   const query = search.trim().toLocaleLowerCase();
   const visible = opportunities.filter((item) =>
@@ -205,7 +261,8 @@ export function OpportunitiesPanel({
 
   return (
     <div>
-      <PageHeader title={p.opportunitiesTitle} description={p.opportunitiesDescription} action={<Button onClick={() => { setSection("pipeline"); setShowForm((x) => !x); }}><Plus />{p.newOpportunity}</Button>} />
+      <PageHeader title={p.opportunitiesTitle} description={p.opportunitiesDescription} action={<div className="flex flex-wrap gap-2">{checkButton}<Button onClick={() => { setSection("pipeline"); setShowForm((x) => !x); }}><Plus />{p.newOpportunity}</Button></div>} />
+      <p className="-mt-2 mb-4 text-xs tabular text-foreground-muted">{lastLoadLine}</p>
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={cs ? "Zobrazení příležitostí" : "Opportunity views"}><Button variant={section === "pipeline" ? "default" : "outline"} aria-pressed={section === "pipeline"} onClick={() => setSection("pipeline")}>{cs ? "Zakázky" : "Projects"}</Button><Button variant={section === "platforms" ? "default" : "outline"} aria-pressed={section === "platforms"} onClick={() => setSection("platforms")}>{cs ? "Platformy a profily" : "Platforms & profiles"}</Button></div>
       {section === "platforms" ? <FreelancePlatforms userId={userId} isPreview={isPreview} /> : <>
       <div className="mb-4 flex flex-wrap items-end gap-3"><SimpleSelect className="w-full sm:w-64" aria-label={cs ? "Filtrovat platformu" : "Filter platform"} value={platformFilter} onValueChange={setPlatformFilter} options={[{value:"all",label:cs ? "Všechny platformy" : "All platforms"},...platforms.map(row=>({value:row.id,label:row.name}))]} /><dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">{[[cs ? "Uloženo" : "Saved",metrics?.saved ?? "—"],[cs ? "Odesláno" : "Submitted",metrics?.submitted ?? "—"],[cs ? "Odpovědi" : "Replies",metrics?.replies ?? "—"],[cs ? "Získáno z odeslaných" : "Won from submissions",metrics?.won ?? "—"],[cs ? "Míra odpovědí" : "Response rate",metrics?.responseRate == null ? "—" : `${metrics.responseRate}%`]].map(([label,value])=><div key={label}><dt className="text-xs text-foreground-muted">{label}</dt><dd className="font-semibold tabular-nums">{value}</dd></div>)}</dl></div>

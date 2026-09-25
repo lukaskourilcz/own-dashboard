@@ -66,7 +66,8 @@ Set a strong `CRON_SECRET`. Vercel's `vercel.json` contains:
 
 - `/api/cron/bank-sync` at 06:00 UTC daily
 - `/api/cron/renewal-warnings` at 07:00 UTC daily
-- `/api/cron/jobs-scrape` at 08:00 UTC daily
+
+Job boards are no longer scraped on a schedule. Career refreshes them only when the owner presses **Check for new offers**; `/api/cron/jobs-scrape` remains for an authenticated manual run.
 
 Verify the deployment sends the expected Bearer authorization. Add `HEARTBEAT_URL` for renewal-job success pings. `CRON_REGISTRY_TOKEN` is needed only if an external system writes registry metadata.
 

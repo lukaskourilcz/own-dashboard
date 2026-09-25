@@ -19,7 +19,13 @@ export function useEntityStore<T>(
   key: QueryKey,
   initialData: T,
   queryFn?: () => Promise<T> | T,
-  options?: { enabled?: boolean; seeded?: boolean },
+  options?: {
+    enabled?: boolean;
+    seeded?: boolean;
+    /** On-demand data (Career, Opportunities) never goes stale by itself:
+     * only the owner's "Check for new offers" fetches it again. */
+    onDemand?: boolean;
+  },
 ): [T, Updater<T>] {
   const qc = useQueryClient();
   const seeded = options?.seeded ?? true;
@@ -32,7 +38,8 @@ export function useEntityStore<T>(
     // immediately while preserving server-seeded data for five minutes.
     initialDataUpdatedAt: seeded ? undefined : 0,
     enabled: options?.enabled ?? true,
-    staleTime: 5 * 60 * 1000,
+    staleTime: options?.onDemand ? Infinity : 5 * 60 * 1000,
+    refetchOnWindowFocus: options?.onDemand ? false : undefined,
     gcTime: Infinity,
   });
 
