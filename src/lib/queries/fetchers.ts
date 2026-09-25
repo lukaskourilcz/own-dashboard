@@ -1,5 +1,6 @@
 "use client";
 
+import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
 import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
 import type {
@@ -47,8 +48,12 @@ import type {
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
 
-async function fetchCalendarWindow(window: "today" | "week" | "last-week"): Promise<EventsResult> {
-  const response = await fetch(`/api/calendar/events?window=${window}`, {
+async function fetchCalendarWindow(
+  window: "today" | "week" | "last-week",
+  extra?: Record<string, string>,
+): Promise<EventsResult> {
+  const query = new URLSearchParams({ window, ...extra });
+  const response = await fetch(`/api/calendar/events?${query}`, {
     signal: AbortSignal.timeout(15_000),
   });
   const data = (await response.json().catch(() => null)) as EventsResult | null;
@@ -64,9 +69,17 @@ export function fetchWeekCalendar(): Promise<EventsResult> {
   return fetchCalendarWindow("week");
 }
 
-/** The finished week the weekly planning flow measures time against. */
+/**
+ * The finished week the weekly planning flow measures time against, as the
+ * two instants of Monday 00:00 in this browser's timezone. The flow clips
+ * events to the same `weekRange`, so the fetched and the summed week agree.
+ */
 export function fetchLastWeekCalendar(): Promise<EventsResult> {
-  return fetchCalendarWindow("last-week");
+  const { start, endExclusive } = weekRange(previousMondayKey());
+  return fetchCalendarWindow("last-week", {
+    start: start.toISOString(),
+    end: endExclusive.toISOString(),
+  });
 }
 
 /**

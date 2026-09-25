@@ -179,6 +179,18 @@ export function dashboardDataKeysForTab(tab: NavTab): ReadonlySet<DashboardDataK
   return new Set(TAB_DATA[tab]);
 }
 
+/**
+ * Data the browser always fetches itself, even for the destination the server
+ * renders. Last week's calendar is the owner's own Monday-to-Monday, and the
+ * server's clock (UTC on Vercel) cannot know where that starts.
+ */
+const CLIENT_ONLY_DATA_KEYS: ReadonlySet<DashboardDataKey> = new Set(["lastWeekCalendar"]);
+
+/** What the server loads and seeds for a destination: its data minus the client-only keys. */
+export function serverDataKeysForTab(tab: NavTab): ReadonlySet<DashboardDataKey> {
+  return new Set(TAB_DATA[tab].filter((key) => !CLIENT_ONLY_DATA_KEYS.has(key)));
+}
+
 export function onDemandDataKeys(tab: NavTab): readonly DashboardDataKey[] {
   return ON_DEMAND_TAB_DATA[tab] ?? [];
 }

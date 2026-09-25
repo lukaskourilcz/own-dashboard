@@ -1,5 +1,4 @@
 import "server-only";
-import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { fetchWithGoogleAuth } from "@/lib/google-token";
 import { createClient as createUserClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
@@ -122,13 +121,15 @@ export async function fetchUpcomingWeekEvents(): Promise<EventsResult> {
 }
 
 /**
- * The finished week that the weekly planning flow reviews: Monday 00:00 to the
- * following Monday 00:00, local to the server. It reuses the same window
- * fetcher as the forward-looking reads, so calendar selection, tolerance of a
- * single broken calendar and the `no-token` / `unauthorized` reasons behave
- * exactly as they do everywhere else.
+ * The finished week that the weekly planning flow reviews, for the window the
+ * browser sent (see `parseLastWeekWindow` in `calendar.ts`). It reuses the same window fetcher
+ * as the forward-looking reads, so calendar selection, tolerance of a single
+ * broken calendar and the `no-token` / `unauthorized` reasons behave exactly
+ * as they do everywhere else.
  */
-export async function fetchLastWeekEvents(weekStartKey?: string): Promise<EventsResult> {
-  const { start, endExclusive } = weekRange(weekStartKey ?? previousMondayKey());
-  return fetchWindow(start, endExclusive, 250);
+export async function fetchLastWeekEvents(range: {
+  start: Date;
+  endExclusive: Date;
+}): Promise<EventsResult> {
+  return fetchWindow(range.start, range.endExclusive, 250);
 }

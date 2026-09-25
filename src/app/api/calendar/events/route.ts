@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { parseLastWeekWindow } from "@/lib/calendar";
 import {
   fetchLastWeekEvents,
   fetchTodayWindowEvents,
@@ -18,10 +19,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unsupported calendar window." }, { status: 400 });
   }
 
+  if (window === "last-week") {
+    // Last week is the browser's week: it sends the two instants.
+    const range = parseLastWeekWindow(
+      request.nextUrl.searchParams.get("start"),
+      request.nextUrl.searchParams.get("end"),
+    );
+    if (!range) {
+      return NextResponse.json({ error: "Unsupported calendar window." }, { status: 400 });
+    }
+    return NextResponse.json(await fetchLastWeekEvents(range));
+  }
+
   const result = window === "today"
     ? await fetchTodayWindowEvents()
-    : window === "week"
-      ? await fetchUpcomingWeekEvents()
-      : await fetchLastWeekEvents();
+    : await fetchUpcomingWeekEvents();
   return NextResponse.json(result);
 }

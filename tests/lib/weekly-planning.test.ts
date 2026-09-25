@@ -18,7 +18,7 @@ import {
   summarizeTimeByChannel,
   writeReviewItems,
 } from "@/lib/weekly-planning";
-import type { GcalEvent } from "@/lib/calendar";
+import { parseLastWeekWindow, type GcalEvent } from "@/lib/calendar";
 import type { Organization, Project, Todo, WeeklyReview } from "@/lib/types";
 
 const WEEK = "2026-09-07";
@@ -476,5 +476,28 @@ describe("focus recap", () => {
       "2026-09-08/2",
     ]);
     expect(summarizeFocusWeek(sets)).toEqual({ completed: 1, total: 3, days: 2 });
+  });
+});
+
+describe("parseLastWeekWindow", () => {
+  it("accepts the browser's Monday-to-Monday, including a week that changes clocks", () => {
+    const week = weekRange(previousMondayKey(new Date(2026, 8, 30)));
+    expect(parseLastWeekWindow(week.start.toISOString(), week.endExclusive.toISOString())).toEqual(week);
+    // Prague's week of the October clock change is 169 hours long.
+    expect(
+      parseLastWeekWindow("2026-10-18T22:00:00.000Z", "2026-10-25T23:00:00.000Z"),
+    ).toEqual({
+      start: new Date("2026-10-18T22:00:00.000Z"),
+      endExclusive: new Date("2026-10-25T23:00:00.000Z"),
+    });
+  });
+
+  it("refuses a missing, unreadable, reversed or oversized window", () => {
+    expect(parseLastWeekWindow(null, "2026-09-14T00:00:00.000Z")).toBeNull();
+    expect(parseLastWeekWindow("2026-09-07T00:00:00.000Z", null)).toBeNull();
+    expect(parseLastWeekWindow("last monday", "2026-09-14T00:00:00.000Z")).toBeNull();
+    expect(parseLastWeekWindow("2026-09-14T00:00:00.000Z", "2026-09-07T00:00:00.000Z")).toBeNull();
+    expect(parseLastWeekWindow("2026-09-07T00:00:00.000Z", "2026-09-07T00:00:00.000Z")).toBeNull();
+    expect(parseLastWeekWindow("2026-08-01T00:00:00.000Z", "2026-09-14T00:00:00.000Z")).toBeNull();
   });
 });

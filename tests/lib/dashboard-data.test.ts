@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { dashboardDataKeysForTab, onDemandDataKeys, tabNeedsDashboardData } from "@/lib/dashboard-data";
+import { dashboardDataKeysForTab, onDemandDataKeys, serverDataKeysForTab, tabNeedsDashboardData } from "@/lib/dashboard-data";
 import { NAV_TABS } from "@/lib/nav-tabs";
 
 describe("dashboard route data boundaries", () => {
@@ -68,6 +68,16 @@ describe("dashboard route data boundaries", () => {
     expect(dashboardDataKeysForTab("work").has("weeklyReviews")).toBe(true);
     expect(dashboardDataKeysForTab("home").has("lastWeekCalendar")).toBe(false);
     expect(dashboardDataKeysForTab("calendar").has("lastWeekCalendar")).toBe(false);
+  });
+
+  it("never loads last week's calendar on the server, whose clock is not the owner's", () => {
+    expect(serverDataKeysForTab("work").has("lastWeekCalendar")).toBe(false);
+    expect(serverDataKeysForTab("work").has("weeklyReviews")).toBe(true);
+    for (const tab of NAV_TABS) {
+      const server = serverDataKeysForTab(tab);
+      for (const key of server) expect(dashboardDataKeysForTab(tab).has(key), `${tab}:${key}`).toBe(true);
+      expect(server.has("lastWeekCalendar"), tab).toBe(false);
+    }
   });
 
   it("loads notifications only for the Inbox", () => {
