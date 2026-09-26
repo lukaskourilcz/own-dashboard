@@ -50,8 +50,11 @@ finance".
 
 An element screenshot does not scroll, and the scroll area is about 808 px tall
 at this viewport, so anything below that fold is out of frame. A feature whose
-evidence sits further down needs its own narrower capture rather than a taller
-one.
+evidence sits further down names the element to scroll into frame first
+(`scrollTo`, with `scrollBlock` when it should be centred), as the Tools and
+Settings captures of 2026-09-26 do, rather than taking a taller capture. A
+panel that repeats its buttons on every row is identified by a named group
+(`controlRole: "group"`) instead of a button.
 
 ## Naming
 

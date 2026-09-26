@@ -56,6 +56,43 @@ export const SHIPPED_ENTRY_LIMIT = 2;
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-09-26",
+    title: "IG TIPS, Tools from the repositories and the Own or Freelance switch",
+    features: [
+      {
+        title: "IG TIPS",
+        summary:
+          "The tips saved from Instagram Reels and from research left Links for a Library section of their own, grouped by topic: content ideas, formats and editing, platforms and reach, growth and retention, pricing and monetization, research and testing, design and web, AI cost, quality and safety, and operations and career. A card has no icon and says in two to four plain sentences what the tip is and how to use it; the research notes, the sources and the projects it helps sit under Details. Topic chips and search narrow the list, and a link still moves into IG TIPS from its editor.",
+        media: {
+          path: "media/changelog/2026-09-26-ig-tips.png",
+          alt:
+            "IG TIPS: a search field, topic chips for All topics, Content ideas, Formats & editing, Platforms & reach, Growth & retention and Ungrouped, and a count of 5 of 5 tips. Under Content ideas, the card \"Plan a month of posts around two topics\" explains the tip in three sentences, names an Instagram Reel as its source and own-dashboard as its project, and ends with Details, Open original, Edit and Delete as plain text; the Formats & editing group follows with a longer tip from example.com.",
+        },
+      },
+      {
+        title: "Tools fill themselves from the repositories",
+        summary:
+          "Tools reads each active project's `about-project.md`, its Tech stack and Third-party libraries, or the runtime dependencies in `package.json` when that file lists nothing, through the server-side GitHub connection. Every tool appears once with the projects that use it and is marked as detected, and a tool the owner added by hand gains a line naming those repositories instead of a second entry. A repository that cannot be read says why. Nothing is stored and no model is called.",
+        media: {
+          path: "media/changelog/2026-09-26-tools.png",
+          alt:
+            "Found in repositories, 8 tools read from 4 of 9 active projects. Next.js is listed once for DNESKAi, own-dashboard and boardlessAI and marked auto-detected from package.json and about-project.md; React, Resend, Sentry, sharp, Stripe, TanStack Query and Vite follow, each with the projects that list it. The Check the repositories again button is disabled in the preview.",
+        },
+      },
+      {
+        title: "Own or Freelance from Settings",
+        summary:
+          "Settings → Active projects gives every active project an Own or Freelance control beside its switch. A change moves the project across the Freelance divider in the sidebar, in the Projects table and in the Money split at once, without a reload, and a failed save puts it back and says so.",
+        media: {
+          path: "media/changelog/2026-09-26-settings-engagement.png",
+          alt:
+            "Settings, Active projects: nine of nine projects active, each row with an Own or Freelance control and a switch. DNESKAi, own-dashboard, devShark, boardlessAI, Design Lab, GoVIRAL and Recipe box app are Own; Acme customer portal and Harbor Bakery website are Freelance, and the sidebar lists those two under a Freelance divider.",
+        },
+      },
+    ],
+    fixes: ["The freelance divider reads \"Freelance\" instead of \"Freelance — hired\"."],
+  },
+  {
     date: "2026-09-25",
     title: "Tools, project links, Competition, payment matching and weekly planning",
     features: [

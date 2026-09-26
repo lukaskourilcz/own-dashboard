@@ -50,10 +50,54 @@ const CHART_SETTLE_MS = 2_000;
 /**
  * One capture: the sidebar destination, the panel's own `PageHeader` title
  * (which is not always the sidebar label), an optional button that loads a
- * panel which waits to be asked, a control only that panel renders, and
- * whether the panel draws charts that have to settle before the shutter.
+ * panel which waits to be asked, a control only that panel renders (a button,
+ * or a named group when the panel repeats its buttons per row), an optional
+ * element to scroll to when the evidence sits below the fold, and whether the
+ * panel draws charts that have to settle before the shutter.
  */
-const CAPTURES = [
+const CAPTURES: readonly {
+  file: string;
+  tab: string;
+  /** Settings sits in the sidebar footer, outside its `nav`. */
+  footerTab?: boolean;
+  panelHeading: string;
+  activate?: string;
+  control: string;
+  controlRole?: "button" | "group";
+  scrollTo?: string;
+  scrollBlock?: "start" | "center";
+  charts: boolean;
+}[] = [
+  {
+    file: "2026-09-26-ig-tips.png",
+    tab: "IG TIPS",
+    panelHeading: "IG TIPS",
+    control: "Add tip",
+    charts: false,
+  },
+  {
+    file: "2026-09-26-tools.png",
+    tab: "Tools",
+    panelHeading: "Tools",
+    // The detected list sits below the hand-added tools.
+    control: "Check the repositories again",
+    scrollTo: 'section[aria-labelledby="tools-detected"]',
+    charts: false,
+  },
+  {
+    file: "2026-09-26-settings-engagement.png",
+    tab: "Settings",
+    footerTab: true,
+    panelHeading: "Settings",
+    // Every active project row has its own Own/Freelance group.
+    control: "Own or Freelance: Recipe box app",
+    controlRole: "group",
+    // Centre the list so the card title, both explanations and every
+    // active project, own and freelance, are in frame.
+    scrollTo: "ul:has(> li[data-settings-project])",
+    scrollBlock: "center",
+    charts: false,
+  },
   {
     file: "2026-09-25-projects.png",
     tab: "Projects",
@@ -86,7 +130,7 @@ const CAPTURES = [
     control: "Open positions",
     charts: false,
   },
-] as const;
+];
 
 test.describe("changelog captures", () => {
   test.skip(
@@ -104,24 +148,29 @@ test.describe("changelog captures", () => {
       await gotoPreview(page);
       // `aside` alone is ambiguous — jobs-panel.tsx renders a second one — so
       // match the sidebar by its own class.
-      await page
-        .locator("aside.mac-sidebar")
-        .locator("nav")
+      const sidebar = page.locator("aside.mac-sidebar");
+      await (capture.footerTab ? sidebar : sidebar.locator("nav"))
         .getByRole("button", { name: capture.tab, exact: true })
         .click();
 
       // Identity: which panel is mounted, read from its hidden own heading.
       await expect(page.locator("[data-page-header] h1")).toHaveText(capture.panelHeading);
-      if ("activate" in capture) {
+      if (capture.activate) {
         await page
           .locator("#main-content")
           .getByRole("button", { name: capture.activate, exact: true })
           .click();
       }
       // Paint: a control only this panel renders, below the AnimatePresence.
-      await expect(
-        page.locator("#main-content").getByRole("button", { name: capture.control, exact: true }),
-      ).toBeVisible();
+      const control = page
+        .locator("#main-content")
+        .getByRole(capture.controlRole ?? "button", { name: capture.control, exact: true });
+      await expect(control).toBeVisible();
+      if (capture.scrollTo) {
+        const block = capture.scrollBlock ?? "start";
+        await page.locator(capture.scrollTo).evaluate((element, position) => element.scrollIntoView({ block: position }), block);
+        await expect(control).toBeInViewport();
+      }
 
       if (capture.charts) {
         await expect(page.locator("#main-content svg.recharts-surface").first()).toBeVisible();
