@@ -627,6 +627,11 @@ export type AiPricing = "free" | "freemium" | "paid";
 
 export type AiLink = {
   record_type?: "link" | "idea";
+  // IG TIPS (record_type "idea"): the topic group (TIP_GROUPS in
+  // src/lib/ig-tips.ts, null = ungrouped) and the plain summary its card
+  // shows. The description keeps the research notes behind the tip.
+  tip_group?: string | null;
+  tip_summary?: string | null;
   usefulness_rating?: number | null;
   rating_rationale?: string | null;
   project_relevance?: { repository: string; reason: string }[];

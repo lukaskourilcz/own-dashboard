@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { TIP_GROUPS } from "@/lib/ig-tips";
 
 const migrationsDir = new URL("../../supabase/migrations/", import.meta.url);
 const migrationFiles = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort();
@@ -70,6 +71,25 @@ describe("2026-09-25 integration migrations", () => {
     expect(guard).toBeLessThan(sql.indexOf("drop table if exists public.ai_link_projects"));
     expect(guard).toBeLessThan(sql.indexOf("drop column if exists video_url"));
     expect(sql).toMatch(/to_regclass\('public\.ai_link_projects'\)/);
+  });
+});
+
+describe("IG TIPS migration", () => {
+  const sql = code("20260926140000_ig_tips.sql");
+
+  it("adds only two nullable ai_links columns and their checks", () => {
+    expect(sql).toMatch(/add column if not exists tip_group text,/);
+    expect(sql).toMatch(/add column if not exists tip_summary text;/);
+    expect(sql).not.toMatch(/not null/i);
+    expect(sql).not.toMatch(/\b(update|insert|delete)\s/i);
+    expect(sql).not.toMatch(/create (table|policy|function)|grant |alter policy/i);
+    expect(sql).toMatch(/char_length\(tip_summary\) <= 2000/);
+  });
+
+  it("allows exactly the groups the IG TIPS page shows", () => {
+    const listed = /tip_group in \(([^)]*)\)/.exec(sql)?.[1] ?? "";
+    const groups = [...listed.matchAll(/'([a-z]+)'/g)].map((match) => match[1]);
+    expect(groups).toEqual([...TIP_GROUPS]);
   });
 });
 

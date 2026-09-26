@@ -396,3 +396,17 @@ Apply `20260925210000_restrict_purge_old_cron_runs.sql` after the four integrati
 ### Rollback
 
 Nothing reads the function through the API, so there is nothing to roll back. To restore the old grants, `grant execute on function public.purge_old_cron_runs() to anon, authenticated;`, which reopens the advisor finding.
+
+## IG TIPS — 2026-09-26
+
+Apply `20260926140000_ig_tips.sql`. It adds two nullable columns to `ai_links`: `tip_group`, one of `content`, `formats`, `reach`, `growth`, `monetization`, `research`, `design`, `ai` and `operations` (null means ungrouped), and `tip_summary`, at most 2,000 characters. Each has a check. The migration writes no row and changes no table, policy, grant or function; the four own-only `ai_links` policies cover the new columns. Until a tip has a summary its card shows the stored description, and until it has a group it sits under Ungrouped, so the application works before the content arrives.
+
+The groups and summaries of the owner's existing tips are data, not schema. They arrive as a separate file of `UPDATE` statements keyed by row id, applied after the migration and kept outside this repository like the research imports. `description` is left as it is: it stays the research notes behind each tip.
+
+### Verify
+
+`select column_name, is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'ai_links' and column_name like 'tip\_%'` lists both columns as nullable. Setting `tip_group = 'other'` fails with `ai_links_tip_group_check`, and a 2,001-character summary fails with `ai_links_tip_summary_length_check`. A second owner still cannot read or update the first owner's tips. Running the file a second time changes nothing.
+
+### Rollback
+
+`alter table public.ai_links drop column if exists tip_summary, drop column if exists tip_group;` removes the groups and summaries. The tips keep their titles, URLs, descriptions, categories and project links.
