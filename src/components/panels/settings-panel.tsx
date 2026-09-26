@@ -36,10 +36,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -59,7 +61,10 @@ import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { NAV_GROUPS, PRIMARY_NAV_ITEMS } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import type { Project, Updater } from "@/lib/types";
+import { projectEngagement } from "@/lib/projects";
+import type { EntityStatus } from "@/lib/queries/entities";
+import { qk } from "@/lib/queries/keys";
+import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { saveUserPreferences } from "@/lib/preference-client";
 import {
@@ -73,23 +78,35 @@ function Segmented<T extends string>({
   value,
   options,
   onChange,
+  label,
+  disabled = false,
 }: {
   value: T;
   options: { value: T; label: string; icon?: typeof Sun }[];
   onChange: (v: T) => void;
+  /** Names the group for assistive technology when no visible label does. */
+  label?: string;
+  disabled?: boolean;
 }) {
   return (
-    <div className="inline-flex p-0.5 rounded-md bg-surface-muted">
+    <div
+      role={label ? "group" : undefined}
+      aria-label={label}
+      className="inline-flex p-0.5 rounded-md bg-surface-muted"
+    >
       {options.map((o) => {
         const active = value === o.value;
         return (
           <button
             key={o.value}
             type="button"
-            onClick={() => onChange(o.value)}
+            onClick={() => {
+              if (!active) onChange(o.value);
+            }}
             aria-pressed={active}
+            disabled={disabled}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring",
+              "inline-flex min-h-11 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0",
               active
                 ? "bg-surface text-foreground shadow-soft"
                 : "text-foreground-muted hover:text-foreground",
@@ -107,17 +124,23 @@ function Segmented<T extends string>({
 export function SettingsPanel({
   projects = [],
   setProjects = () => undefined,
+  projectsStatus = { ready: true, failed: false },
   syncPreferences = true,
   preferencesSyncAvailable = true,
 }: {
   projects?: Project[];
   setProjects?: Updater<Project[]>;
+  /** Whether `projects` holds loaded records yet (see `useEntityStore`). */
+  projectsStatus?: EntityStatus;
   syncPreferences?: boolean;
   preferencesSyncAvailable?: boolean;
 }) {
   const t = useDict();
   const toast = useToast();
+  const qc = useQueryClient();
   const supabase = createClient();
+  // Projects whose own/freelance change is still being written.
+  const [savingEngagement, setSavingEngagement] = useState<ReadonlySet<string>>(() => new Set());
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
   const {
@@ -186,6 +209,37 @@ export function SettingsPanel({
       toast.err(t.settings.projectUpdateFailed);
     }
   };
+  // Own or freelance: `projects.engagement` is the one field every grouping
+  // reads (sidebar divider, Projects table, Money), so the shared projects
+  // store updates first and every surface moves the project at once. The
+  // write goes through the owner's own session; RLS checks the row.
+  const setEngagement = async (project: Project, engagement: ProjectEngagement) => {
+    const previous = projectEngagement(project);
+    if (previous === engagement || savingEngagement.has(project.id)) return;
+    setSavingEngagement((current) => new Set(current).add(project.id));
+    setProjects((current) =>
+      current.map((item) => (item.id === project.id ? { ...item, engagement } : item)),
+    );
+    const { error } = await supabase
+      .from("projects")
+      .update({ engagement, updated_at: new Date().toISOString() })
+      .eq("id", project.id);
+    setSavingEngagement((current) => {
+      const next = new Set(current);
+      next.delete(project.id);
+      return next;
+    });
+    if (error) {
+      setProjects((current) =>
+        current.map((item) => (item.id === project.id ? { ...item, engagement: previous } : item)),
+      );
+      toast.err(t.settings.engagementUpdateFailed(project.name));
+      return;
+    }
+    toast.ok(t.settings.engagementSaved(project.name, engagement));
+    // The fixture preview has no database to refetch from.
+    if (syncPreferences) void qc.invalidateQueries({ queryKey: qk.projects });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -245,24 +299,49 @@ export function SettingsPanel({
 
   const activeProjectsList = projects.filter((p) => p.is_active);
   const inactiveProjectsList = projects.filter((p) => !p.is_active);
-  const projectRow = (project: Project) => (
-    <li
-      key={project.id}
-      className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
-    >
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{project.name}</p>
-        <p className="truncate font-mono text-[10px] text-foreground-subtle">
-          {project.repo_full_name ?? t.settings.projectWithoutRepository}
-        </p>
-      </div>
-      <Switch
-        checked={project.is_active}
-        onCheckedChange={() => void toggleProject(project)}
-        aria-label={project.name}
-      />
-    </li>
-  );
+  // Active projects are the ones in the sidebar, so they carry the own or
+  // freelance choice that places them above or below its divider.
+  const projectRow = (project: Project) => {
+    const saving = savingEngagement.has(project.id);
+    return (
+      <li
+        key={project.id}
+        data-settings-project={project.slug}
+        className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2"
+      >
+        <div className="min-w-0 flex-1 basis-40">
+          <p className="truncate text-sm font-medium">{project.name}</p>
+          <p className="truncate font-mono text-[10px] text-foreground-subtle">
+            {project.repo_full_name ?? t.settings.projectWithoutRepository}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {project.is_active && (
+            <>
+              {saving && (
+                <span className="text-[11px] text-foreground-muted">{t.settings.engagementSaving}</span>
+              )}
+              <Segmented
+                label={t.settings.engagementFor(project.name)}
+                value={projectEngagement(project)}
+                disabled={saving}
+                onChange={(engagement) => void setEngagement(project, engagement)}
+                options={[
+                  { value: "own", label: t.projects.engagementOwn },
+                  { value: "client", label: t.projects.engagementClient },
+                ]}
+              />
+            </>
+          )}
+          <Switch
+            checked={project.is_active}
+            onCheckedChange={() => void toggleProject(project)}
+            aria-label={project.name}
+          />
+        </div>
+      </li>
+    );
+  };
 
   return (
     <div>
@@ -375,20 +454,51 @@ export function SettingsPanel({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <p className="text-xs text-foreground-subtle">
-                {t.settings.activeProjectsDesc}
-              </p>
-              <SectionLabel className="shrink-0">
-                {t.settings.activeProjectCount(
-                  activeProjectsList.length,
-                  projects.length,
-                )}
-              </SectionLabel>
+              <div className="space-y-1">
+                <p className="text-xs text-foreground-subtle">
+                  {t.settings.activeProjectsDesc}
+                </p>
+                <p className="text-xs text-foreground-subtle">
+                  {t.settings.engagementDesc}
+                </p>
+              </div>
+              {projectsStatus.ready && (
+                <SectionLabel className="shrink-0">
+                  {t.settings.activeProjectCount(
+                    activeProjectsList.length,
+                    projects.length,
+                  )}
+                </SectionLabel>
+              )}
             </div>
-            {activeProjectsList.length > 0 && (
+            <p role="status" className="sr-only">
+              {projects
+                .filter((project) => savingEngagement.has(project.id))
+                .map((project) => `${project.name}: ${t.settings.engagementSaving}`)
+                .join(" ")}
+            </p>
+            {!projectsStatus.ready ? (
+              projectsStatus.failed ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {t.settings.projectsLoadFailed}
+                </p>
+              ) : (
+                <div aria-live="polite" className="space-y-2">
+                  <p className="text-xs text-foreground-muted">{t.settings.projectsLoading}</p>
+                  <Skeleton className="h-11 w-full" />
+                  <Skeleton className="h-11 w-full" />
+                </div>
+              )
+            ) : activeProjectsList.length > 0 ? (
               <ul className="divide-y divide-border rounded-md border border-border">
                 {activeProjectsList.map(projectRow)}
               </ul>
+            ) : (
+              <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-foreground-muted">
+                {inactiveProjectsList.length > 0
+                  ? t.settings.noActiveProjects
+                  : t.settings.noProjects}
+              </p>
             )}
             {inactiveProjectsList.length > 0 && (
               <div className="space-y-3">

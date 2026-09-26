@@ -58,6 +58,15 @@ type SettingsStrings = {
   preferenceSyncUnavailable: string;
   projectSections: string;
   projectSectionsDesc: string;
+  engagementDesc: string;
+  engagementFor: (project: string) => string;
+  engagementSaving: string;
+  engagementSaved: (project: string, engagement: "own" | "client") => string;
+  engagementUpdateFailed: (project: string) => string;
+  projectsLoading: string;
+  projectsLoadFailed: string;
+  noActiveProjects: string;
+  noProjects: string;
 };
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
@@ -126,6 +135,19 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     projectSections: "Project workspace sections",
     projectSectionsDesc:
       "Choose which tabs appear inside every project workspace. Overview always stays visible.",
+    engagementDesc:
+      "Own or Freelance places an active project above or below the Freelance divider in the sidebar and in Projects.",
+    engagementFor: (project) => `Own or Freelance: ${project}`,
+    engagementSaving: "Saving…",
+    engagementSaved: (project, engagement) =>
+      engagement === "client"
+        ? `${project} is now listed under Freelance.`
+        : `${project} is now listed with your own projects.`,
+    engagementUpdateFailed: (project) => `Could not move ${project}. It stays where it was.`,
+    projectsLoading: "Loading projects…",
+    projectsLoadFailed: "Could not load the projects. Reload the page to try again.",
+    noActiveProjects: "No project is active. Show the inactive projects and turn one on to list it in the sidebar.",
+    noProjects: "No projects yet. Add one in Projects.",
   },
   cs: {
     title: "Nastavení",
@@ -192,5 +214,18 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     projectSections: "Sekce projektového workspace",
     projectSectionsDesc:
       "Vyber, které záložky se zobrazí uvnitř každého projektu. Přehled zůstává vždy viditelný.",
+    engagementDesc:
+      "Vlastní nebo Freelance určuje, jestli se aktivní projekt v postranním panelu a v Projektech zobrazí nad oddělovačem Freelance, nebo pod ním.",
+    engagementFor: (project) => `Vlastní nebo Freelance: ${project}`,
+    engagementSaving: "Ukládám…",
+    engagementSaved: (project, engagement) =>
+      engagement === "client"
+        ? `${project} je teď v sekci Freelance.`
+        : `${project} je teď mezi vlastními projekty.`,
+    engagementUpdateFailed: (project) => `${project} se nepodařilo přesunout. Zůstává, kde byl.`,
+    projectsLoading: "Načítám projekty…",
+    projectsLoadFailed: "Projekty se nepodařilo načíst. Zkuste stránku načíst znovu.",
+    noActiveProjects: "Žádný projekt není aktivní. Zobrazte neaktivní projekty a zapněte ten, který chcete mít v postranním panelu.",
+    noProjects: "Zatím tu nejsou žádné projekty. Přidejte je v Projektech.",
   },
 };
