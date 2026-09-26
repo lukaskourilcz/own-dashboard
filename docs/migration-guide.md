@@ -345,7 +345,7 @@ After applying, fill the ids with `node scripts/backfill-project-repo-ids.mjs --
 
 Apply `20260925090100_project_engagement_and_names.sql`. It adds `projects.engagement` (`own` or `client`, default `own`) and `projects.previous_slugs text[]`, marks the projects with slugs `gym-plzen` and `paris-claire` as `client`, and renames three rows per owner: `aifirst` → `DNESKAi`/`dneskai`, `react-express-app` → `devShark`/`devshark`, `quorum` → `boardlessAI`/`boardlessai`. The old slug is appended to `previous_slugs`, so `/projects/aifirst` redirects to `/projects/dneskai` and `GET /api/crons/registry?project=aifirst` keeps answering. A rename is skipped when the owner already has a project with the new slug. `repo_full_name` is not changed; the id-based auto-sync writes it when the GitHub repositories are renamed.
 
-Verify that Projects shows the own group, one "Freelance — hired" divider and the two client projects last, and that the project form saves the engagement.
+Verify that Projects shows the own group, one "Freelance" divider and the two client projects last, and that the project form saves the engagement.
 
 ## Project workspace tab visibility check — 2026-09-25
 

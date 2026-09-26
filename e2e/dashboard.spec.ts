@@ -212,7 +212,7 @@ test.describe("dashboard sections", () => {
       await page.locator("aside nav").getByRole("button", { name: "Projects", exact: true }).click();
     }
     const table = page.getByRole("table");
-    await expect(table.getByRole("row", { name: "Freelance — hired" })).toHaveCount(1);
+    await expect(table.getByRole("row", { name: "Freelance", exact: true })).toHaveCount(1);
     const names = await table.locator("tbody tr td:nth-child(2) a").allTextContents();
     // The boardlessAI ventures follow their parent as subsections.
     expect(names).toEqual([
@@ -230,14 +230,14 @@ test.describe("dashboard sections", () => {
     // Keyboard order follows the visual order: the divider row sits between
     // the last own project and the first freelance project.
     const rows = await table.locator("tbody tr").allTextContents();
-    const divider = rows.findIndex((text) => text.includes("Freelance — hired"));
+    const divider = rows.findIndex((text) => text.trim() === "Freelance");
     expect(rows[divider - 1]).toContain("Recipe box app");
     expect(rows[divider + 1]).toContain("Acme customer portal");
     // The wide table scrolls inside its card; the page itself never widens.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     if (testInfo.project.name === "desktop") {
       const sidebar = page.locator("aside");
-      await expect(sidebar.getByText("Freelance — hired")).toBeVisible();
+      await expect(sidebar.getByText("Freelance", { exact: true })).toBeVisible();
       await expect(sidebar.getByRole("link", { name: "Harbor Bakery website" })).toBeVisible();
     }
   });
@@ -246,7 +246,9 @@ test.describe("dashboard sections", () => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page, { lang: "cs" });
     await page.locator("aside nav").getByRole("button", { name: "Projekty", exact: true }).click();
-    await expect(page.getByRole("table").getByRole("row", { name: "Freelance — najatý" })).toBeVisible();
+    // Czech uses the same plain label; the old "Freelance — najatý" is gone.
+    await expect(page.getByRole("table").getByRole("row", { name: "Freelance", exact: true })).toBeVisible();
+    await expect(page.getByText(/najatý/)).toHaveCount(0);
   });
 
   test("navigation and project-tab visibility survive a refresh", async ({ page }, testInfo) => {

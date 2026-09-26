@@ -155,8 +155,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     devUrlPlaceholder: "https://dev.example.com or http://localhost:3000",
     engagement: "Engagement",
     engagementOwn: "Own",
-    engagementClient: "Freelance (hired)",
-    freelanceDivider: "Freelance — hired",
+    engagementClient: "Freelance",
+    freelanceDivider: "Freelance",
     nameRequired: "Name is required.",
     slugRequired: "Slug is required.",
 
@@ -278,8 +278,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     devUrlPlaceholder: "https://dev.example.com nebo http://localhost:3000",
     engagement: "Typ spolupráce",
     engagementOwn: "Vlastní",
-    engagementClient: "Freelance (najatý)",
-    freelanceDivider: "Freelance — najatý",
+    engagementClient: "Freelance",
+    freelanceDivider: "Freelance",
     nameRequired: "Název je povinný.",
     slugRequired: "Identifikátor je povinný.",
 
