@@ -26,23 +26,16 @@ type AiStrings = {
   exportCopy: string;
   exportCopied: string;
   exportCopyFailed: string;
-  ideasTitle: string;
-  editIdeaTitle: string;
-  ideaEmpty: string;
   pricingEvidence: string;
-  ideasHint: string;
-  addIdea: string;
   rating: string;
   relevance: string;
   sources: string;
-  ideaSummary: string;
-  ideaBenefit: string;
-  originalReels: string;
-  reel: string;
-  source: string;
   recordType: string;
   linkType: string;
   ideaType: string;
+  ideaTypeHint: string;
+  movedToTips: string;
+  addedToTips: string;
   exportCount: (count: number) => string;
   title: string;
   description: string;
@@ -68,6 +61,7 @@ type AiStrings = {
   addCategoryPlaceholder: string;
   add: string;
   searchPlaceholder: string;
+  pickerSearchPlaceholder: string;
   // Table columns
   colDescription: string;
   open: string;
@@ -188,23 +182,16 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     exportCopy: "Copy all content",
     exportCopied: "Copied to clipboard.",
     exportCopyFailed: "Could not copy. Select the preview text and copy it manually.",
-    ideasTitle: "Ideas",
-    editIdeaTitle: "Edit idea",
-    ideaEmpty: "No ideas here yet. Add advice and its source to get started.",
     pricingEvidence: "Pricing evidence",
-    ideasHint: "Practical advice, grouped by topic, with sources and project relevance.",
-    addIdea: "Add idea",
     rating: "Usefulness",
     relevance: "Projects that benefit",
     sources: "Sources",
-    ideaSummary: "What the Reel was about",
-    ideaBenefit: "Why this idea is useful",
-    originalReels: "Original source or Reel",
-    reel: "Reel",
-    source: "Source",
     recordType: "Type",
     linkType: "Link",
-    ideaType: "Idea",
+    ideaType: "IG tip",
+    ideaTypeHint: "An IG tip is listed under IG TIPS, not in Links.",
+    movedToTips: "Moved to IG TIPS.",
+    addedToTips: "Added to IG TIPS.",
     exportCount: (count) => `${count} items`,
 
     title: "Links",
@@ -229,7 +216,8 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     addCategory: "Add category",
     addCategoryPlaceholder: "Add category",
     add: "Add",
-    searchPlaceholder: "Search links and ideas…",
+    searchPlaceholder: "Search links…",
+    pickerSearchPlaceholder: "Search links and IG tips…",
     colDescription: "Description",
     open: "Open link",
     visit: "Visit",
@@ -250,7 +238,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     duplicateCategoryHint: (pairs) => `These names read as the same category: ${pairs}. Merge from a category header.`,
     suggestedMerge: "Suggested",
     categoryEmpty: "No links here yet.",
-    manageHint: "Create categories like DESIGN, SECURITY, IDEAS to group links.",
+    manageHint: "Create categories like DESIGN or SECURITY to group links.",
     newLinkTitle: "Add link",
     editLinkTitle: "Edit link",
     name: "Name",
@@ -349,23 +337,16 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     exportCopy: "Kopírovat celý obsah",
     exportCopied: "Zkopírováno do schránky.",
     exportCopyFailed: "Kopírování se nezdařilo. Označte text náhledu a zkopírujte jej ručně.",
-    ideasTitle: "Nápady",
-    editIdeaTitle: "Upravit nápad",
-    ideaEmpty: "Zatím tu nejsou žádné nápady. Přidejte radu a její zdroj.",
     pricingEvidence: "Podklady k ceně",
-    ideasHint: "Praktické rady podle tématu, se zdroji a využitím v projektech.",
-    addIdea: "Přidat nápad",
     rating: "Užitečnost",
     relevance: "Využití v projektech",
     sources: "Zdroje",
-    ideaSummary: "O čem Reel byl",
-    ideaBenefit: "Proč je nápad užitečný",
-    originalReels: "Původní zdroj nebo Reel",
-    reel: "Reel",
-    source: "Zdroj",
     recordType: "Typ",
     linkType: "Odkaz",
-    ideaType: "Nápad",
+    ideaType: "IG tip",
+    ideaTypeHint: "IG tip se zobrazuje v sekci IG TIPS, ne v Odkazech.",
+    movedToTips: "Přesunuto do IG TIPS.",
+    addedToTips: "Přidáno do IG TIPS.",
     exportCount: (count) => `${count} položek`,
 
     title: "Odkazy",
@@ -390,7 +371,8 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     addCategory: "Přidat kategorii",
     addCategoryPlaceholder: "Přidat kategorii",
     add: "Přidat",
-    searchPlaceholder: "Hledat odkazy a nápady…",
+    searchPlaceholder: "Hledat odkazy…",
+    pickerSearchPlaceholder: "Hledat odkazy a IG tipy…",
     colDescription: "Popis",
     open: "Otevřít odkaz",
     visit: "Otevřít",
@@ -411,7 +393,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     duplicateCategoryHint: (pairs) => `Tyto názvy znamenají totéž: ${pairs}. Sloučit je můžete v hlavičce kategorie.`,
     suggestedMerge: "Doporučeno",
     categoryEmpty: "Zatím tu nejsou žádné odkazy.",
-    manageHint: "Vytvoř kategorie jako DESIGN, SECURITY, IDEAS pro seskupení odkazů.",
+    manageHint: "Vytvoř kategorie jako DESIGN nebo SECURITY pro seskupení odkazů.",
     newLinkTitle: "Přidat odkaz",
     editLinkTitle: "Upravit odkaz",
     name: "Název",

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview } from "./helpers";
+import { gotoPreview, signInFixtureUser } from "./helpers";
+import { aiLinks } from "../src/lib/demo/fixtures";
 
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]["page"];
 
@@ -15,8 +16,11 @@ test("exports exact pricing selection, Markdown, clipboard and download", async 
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await gotoPreview(page);
   await openLinks(page, info.project.name === "mobile");
-  await expect(page.getByRole("heading", { name: "Ideas", exact: true })).toBeVisible();
   const trigger = page.getByRole("button", { name: "Copy links to JSON / Markdown" });
+  await expect(trigger).toBeVisible();
+  // IG tips have their own section; Links no longer lists or exports them.
+  await expect(page.getByRole("heading", { name: "Ideas", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Copy IG tips to JSON / Markdown" })).toHaveCount(0);
   await trigger.click();
   const dialog = page.getByRole("dialog");
   const preview = dialog.getByLabel("Preview", { exact: true });
@@ -83,45 +87,45 @@ test("Czech dark export reflows at the supported widths", async ({ page }) => {
 });
 
 
-test("creates an Idea below Links and exposes review evidence", async ({ page }, info) => {
+test("an entry switched to IG tip leaves Links for IG TIPS", async ({ page }, info) => {
   await gotoPreview(page);
-  const expiresAt = Math.floor(Date.now() / 1000) + 3600;
-  const token = [Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"), Buffer.from(JSON.stringify({ sub: "u1", exp: expiresAt })).toString("base64url"), "test"].join(".");
-  await page.context().addCookies([{ name: "sb-example-auth-token", value: "base64-" + Buffer.from(JSON.stringify({ access_token: token, refresh_token: "fixture-refresh", token_type: "bearer", expires_at: expiresAt, expires_in: 3600, user: { id: "u1" } })).toString("base64url"), url: "http://localhost:3939" }]);
-  await page.reload();
-  let saved: Record<string, unknown> | null = null;
-  await page.route("**/rest/v1/ai_links**", async (route) => {
-    if (route.request().method() !== "POST") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(saved ? [saved] : []) });
-    const record = route.request().postDataJSON();
-    expect(record.record_type).toBe("idea");
-    saved = {
-      ...record, id: "test-idea", created_at: "2026-09-15", updated_at: "2026-09-15",
-      usefulness_rating: 5, rating_rationale: "Reduce licensing mistakes before publication.",
-      project_relevance: [{ repository: "own-dashboard", reason: "Record rights and costs before using generated media." }],
-      source_urls: ["https://www.rive.app/pricing"], pricing_evidence: "Reference is free to read; editor and export plans differ.",
-    };
-    await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(saved) });
+  await signInFixtureUser(page);
+  const rows = aiLinks.map((row) => ({ ...row })) as Record<string, unknown>[];
+  const patches: Record<string, unknown>[] = [];
+  await page.route(/example\.supabase\.co\/rest\/v1\/ai_links(\?|$)/, async (route) => {
+    const request = route.request();
+    if (request.method() === "GET") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
+    const body = request.postDataJSON() as Record<string, unknown>;
+    patches.push(body);
+    const id = new URL(request.url()).searchParams.get("id")?.replace(/^eq\./, "");
+    const index = rows.findIndex((row) => row.id === id);
+    rows[index] = { ...rows[index], ...body };
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows[index]) });
   });
-  await openLinks(page, info.project.name === "mobile");
-  await page.getByRole("button", { name: "Add idea", exact: true }).click();
-  const form = page.getByRole("dialog");
-  await form.getByLabel("Name", { exact: true }).fill("Check editor and export licensing separately");
-  await form.getByLabel("URL", { exact: true }).fill("https://www.rive.app/pricing");
-  await form.getByLabel("Description", { exact: true }).fill("Confirm commercial export rights before adopting a free design editor. Preserve the source and review date.");
-  await form.getByRole("button", { name: "Create", exact: true }).click();
-  await expect(form).not.toBeVisible();
-  const ideas = page.locator('section[aria-labelledby="ideas-heading"]');
-  await ideas.getByRole("button", { name: "Show details: Check editor and export licensing separately", exact: true }).click();
-  await expect(ideas.getByText("Usefulness: 5/5")).toBeVisible();
-  await ideas.getByText("Projects that benefit", { exact: true }).click();
-  await expect(ideas.getByText("Record rights and costs before using generated media.", { exact: false })).toBeVisible();
-  await expect(ideas.getByText("Original source or Reel", { exact: true })).toBeVisible();
-  await expect(ideas.getByRole("link", { name: "https://www.rive.app/pricing", exact: true })).toBeVisible();
-  await ideas.getByRole("button", { name: "Copy IG tips to JSON / Markdown", exact: true }).click();
-  const exportDialog = page.getByRole("dialog");
-  const exported = JSON.parse(await exportDialog.getByLabel("Preview", { exact: true }).inputValue());
-  expect(exported.scope).toBe("idea");
-  expect(exported.items).toHaveLength(1);
-  expect(exported.items[0].title).toBe("Check editor and export licensing separately");
+  await page.reload();
+  const mobile = info.project.name === "mobile";
+  await openLinks(page, mobile);
+  const main = page.locator("#main-content");
+  await expect(main.locator('[data-link-card="al8"]')).toBeVisible();
+
+  await main.getByRole("button", { name: "Edit: Figma", exact: true }).click();
+  const form = page.getByRole("dialog", { name: "Edit link" });
+  await form.getByRole("combobox", { name: "Type" }).click();
+  await page.getByRole("option", { name: "IG tip", exact: true }).click();
+  await expect(form.getByRole("combobox", { name: "Type" })).toHaveAccessibleDescription("An IG tip is listed under IG TIPS, not in Links.");
+  await form.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(form).toBeHidden();
+  expect(patches.at(-1)).toMatchObject({ record_type: "idea", title: "Figma", url: "https://www.figma.com/" });
+  await expect(page.getByText("Moved to IG TIPS.", { exact: true })).toBeVisible();
+  await expect(main.locator('[data-link-card="al8"]')).toHaveCount(0);
+
+  if (mobile) {
+    await page.getByTestId("mobile-nav").getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "IG TIPS", exact: true }).click();
+  } else await page.locator("aside nav").getByRole("button", { name: "IG TIPS", exact: true }).click();
+  // Without a topic yet, the moved entry waits under Ungrouped with its notes.
+  const moved = main.locator('section[aria-labelledby="tips-ungrouped"] [data-tip-card="al8"]');
+  await expect(moved).toContainText("Interface design and prototyping.");
+  await expect(moved).toContainText("From figma.com");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -26,7 +26,7 @@ test("resource library supports compact cards, filters, keyboard disclosure and 
     await page.getByRole("option",{name:cs?"Plně zdarma":"Fully free",exact:true}).click();
     await expect(card).toHaveCount(0);
     await expect(page.locator('[data-link-card="al2"]')).toBeVisible();
-    await page.getByRole("textbox",{name:cs?"Hledat odkazy a nápady…":"Search links and ideas…",exact:true}).fill("no matching resource");
+    await page.getByRole("textbox",{name:cs?"Hledat odkazy…":"Search links…",exact:true}).fill("no matching resource");
     await expect(page.getByText(cs?"Žádné výsledky":"No matches",{exact:true}).first()).toBeVisible();
     await page.getByRole("button",{name:cs?"Zrušit filtry":"Clear filters",exact:true}).click();
     await card.getByRole("button",{name:`${cs?"Upravit":"Edit"}: Midjourney`,exact:true}).click();

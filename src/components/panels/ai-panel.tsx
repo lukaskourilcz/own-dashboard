@@ -146,7 +146,19 @@ export function AiPanel({
     return next;
   });
   const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); setProjectFilter("all"); };
-  const hasUnknownPricing = aiLinks.some(link => !link.pricing);
+  // Links lists link records only; idea records are IG TIPS, in their own
+  // section. A category that holds tips and no link belongs to IG TIPS too.
+  const linkRecords = useMemo(() => aiLinks.filter((link) => link.record_type !== "idea"), [aiLinks]);
+  const linkCategories = useMemo(
+    () =>
+      aiCategories.filter(
+        (category) =>
+          linkRecords.some((link) => link.category_id === category.id) ||
+          !aiLinks.some((link) => link.category_id === category.id),
+      ),
+    [aiCategories, aiLinks, linkRecords],
+  );
+  const hasUnknownPricing = linkRecords.some(link => !link.pricing);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AiLink | null>(null);
   const [form, setForm] = useState<LinkForm>(emptyForm);
@@ -164,9 +176,7 @@ export function AiPanel({
 
   // Filter first, then bucket the survivors by category so search collapses
   // empty sections automatically.
-  const visibleLinks = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type !== "idea" && (!projectLinkIds || projectLinkIds.has(link.id))), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort, projectLinkIds]);
-
-  const ideas = useMemo(() => filterLibrary(aiLinks.filter(link => link.record_type === "idea" && (!projectLinkIds || projectLinkIds.has(link.id))), aiCategories, query, pricingFilter, categoryFilter, sort), [aiLinks, aiCategories, query, pricingFilter, categoryFilter, sort, projectLinkIds]);
+  const visibleLinks = useMemo(() => filterLibrary(linkRecords.filter(link => !projectLinkIds || projectLinkIds.has(link.id)), aiCategories, query, pricingFilter, categoryFilter, sort), [linkRecords, aiCategories, query, pricingFilter, categoryFilter, sort, projectLinkIds]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, AiLink[]>();
@@ -184,9 +194,9 @@ export function AiPanel({
 
   const searching = query.trim().length > 0 || pricingFilter !== "all" || categoryFilter !== "all" || projectFilter !== "all";
   const uncategorized = byCategory.get(UNCATEGORIZED) ?? [];
-  const isEmpty = aiLinks.length === 0 && aiCategories.length === 0;
+  const isEmpty = linkRecords.length === 0 && linkCategories.length === 0;
   const noResults =
-    searching && visibleLinks.length === 0 && ideas.length === 0 && aiLinks.length > 0;
+    searching && visibleLinks.length === 0 && linkRecords.length > 0;
 
   /* ---- link mutations ------------------------------------------------ */
 
@@ -204,7 +214,7 @@ export function AiPanel({
     },
     onSuccess: (l) => {
       setAiLinks((prev) => [l, ...prev]);
-      toast.ok(t.ai.linkCreated);
+      toast.ok(l.record_type === "idea" ? t.ai.addedToTips : t.ai.linkCreated);
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
     onError: (e) =>
@@ -244,7 +254,7 @@ export function AiPanel({
     },
     onSuccess: (l) => {
       setAiLinks((prev) => prev.map((x) => (x.id === l.id ? l : x)));
-      toast.ok(t.ai.linkSaved);
+      toast.ok(l.record_type === "idea" ? t.ai.movedToTips : t.ai.linkSaved);
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
     onError: (e) =>
@@ -408,9 +418,9 @@ export function AiPanel({
 
   /* ---- handlers ------------------------------------------------------ */
 
-  function openCreate(recordType: "link" | "idea" = "link") {
+  function openCreate() {
     setEditing(null);
-    setForm({ ...emptyForm, recordType });
+    setForm(emptyForm);
     setFormError(null);
     setDialogOpen(true);
   }
@@ -579,16 +589,16 @@ export function AiPanel({
               <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
               <Input aria-label={t.ai.searchPlaceholder} placeholder={t.ai.searchPlaceholder} value={query} onChange={e => setQuery(e.target.value)} className="pl-8" />
             </div>
-            <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...aiCategories.map(cat => ({value:cat.id,label:`${cat.name} (${aiLinks.filter(link => link.category_id === cat.id).length})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
+            <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...linkCategories.map(cat => ({value:cat.id,label:`${cat.name} (${linkRecords.filter(link => link.category_id === cat.id).length})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
             <SimpleSelect aria-label={t.ai.pricing} value={pricingFilter} onValueChange={value => setPricingFilter(value as PricingFilter)} options={[{value:"all",label:t.ai.allPricing}, ...(["free","freemium","paid"] as const).map(value => ({value,label:t.ai.pricingLabel[value]})), {value:"unknown",label:t.ai.pricingUnknown}]} />
             <SimpleSelect aria-label={t.ai.sort} value={sort} onValueChange={value => setSort(value as LinkSort)} options={[{value:"name",label:t.ai.sortName},{value:"newest",label:t.ai.sortNewest}]} />
             {projectIdsWithLinks.size > 0 && <SimpleSelect aria-label={t.ai.projectFilterLabel} value={projectFilter} onValueChange={setProjectFilter} options={[{value:"all",label:t.ai.allProjects}, ...projects.filter(project => projectIdsWithLinks.has(project.id)).map(project => ({value:project.id,label:project.name}))]} />}
           </div>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <p role="status" className="text-xs text-foreground-muted">{t.ai.resultCount(visibleLinks.length + ideas.length,aiLinks.length)}</p>
+            <p role="status" className="text-xs text-foreground-muted">{t.ai.resultCount(visibleLinks.length, linkRecords.length)}</p>
             <div className="flex flex-wrap gap-2">
               {searching && <Button variant="ghost" size="sm" onClick={resetFilters}>{t.ai.clearFilters}</Button>}
-              <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set([...visibleLinks, ...ideas].map(link => link.id)))} disabled={!visibleLinks.length && !ideas.length}>{t.ai.expandAll}</Button>
+              <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set(visibleLinks.map(link => link.id)))} disabled={!visibleLinks.length}>{t.ai.expandAll}</Button>
               <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set())} disabled={!expandedIds.size}>{t.ai.collapseAll}</Button>
             </div>
           </div>
@@ -615,10 +625,10 @@ export function AiPanel({
             />
           ) : (
             <div className="columns-1 gap-4 lg:columns-2 2xl:columns-3">
-              {aiCategories.map((cat) => {
+              {linkCategories.map((cat) => {
                   const links = byCategory.get(cat.id) ?? [];
                   // While searching, hide categories that have no matches.
-                  if ((links.length === 0 && (searching || aiLinks.some(link => link.category_id === cat.id && link.record_type === "idea"))) || (categoryFilter !== "all" && categoryFilter !== cat.id)) return null;
+                  if ((links.length === 0 && searching) || (categoryFilter !== "all" && categoryFilter !== cat.id)) return null;
                   return (
                     <CategoryGroup
                       key={cat.id}
@@ -682,37 +692,6 @@ export function AiPanel({
           )}
         </>
       )}
-
-      <section className="mt-8 border-t border-border pt-5" aria-labelledby="ideas-heading">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div><h2 id="ideas-heading" className="text-base font-semibold">{t.ai.ideasTitle}</h2>
-          <p className="text-xs text-foreground-muted">{t.ai.ideasHint}</p></div>
-          <div className="flex flex-wrap gap-2">
-            <LinkExportDialog links={aiLinks} categories={aiCategories} scope="idea" relations={exportRelations} />
-            <Button variant="outline" size="sm" onClick={() => openCreate("idea")}>{t.ai.addIdea}</Button>
-          </div>
-        </div>
-        <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
-          {[...aiCategories, { id: UNCATEGORIZED, name: t.ai.uncategorized }].map((category) => {
-            const rows = ideas.filter((idea) => (idea.category_id && categoryIds.has(idea.category_id) ? idea.category_id : UNCATEGORIZED) === category.id);
-            return rows.length ? <CategoryGroup key={category.id} name={category.name} count={rows.length}
-              muted={category.id === UNCATEGORIZED}
-              renaming={renamingId === category.id}
-              renameValue={renameValue}
-              onRenameChange={setRenameValue}
-              onStartRename={() => { setRenamingId(category.id); setRenameValue(category.name); }}
-              onCommitRename={commitRename}
-              onCancelRename={() => { setRenamingId(null); setRenameValue(""); }}
-              onDelete={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) removeCategory(existing); }}
-              onMerge={() => { const existing = aiCategories.find((c) => c.id === category.id); if (existing) openMerge(existing); }}
-              mergeSuggested={duplicateCategories.some(([keep, duplicate]) => keep.id === category.id || duplicate.id === category.id)}
-            >
-              {rows.map((idea) => <LinkLibraryCard key={idea.id} link={idea} expanded={expandedIds.has(idea.id)} onToggle={() => toggleDetails(idea.id)} onEdit={() => openEdit(idea)} onDelete={() => removeLink(idea)} usedBy={usedByFor(idea)} onAddToProject={() => setAddToProjectLink(idea)} />)}
-            </CategoryGroup> : null;
-          })}
-        </div>
-        {ideas.length === 0 && <p className="text-xs text-foreground-muted">{searching ? t.ai.noMatches : t.ai.ideaEmpty}</p>}
-      </section>
 
       <AddToProjectDialog
         open={addToProjectLink !== null}
@@ -1013,7 +992,7 @@ function LinkDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {form.recordType === "idea" ? (editing ? t.ai.editIdeaTitle : t.ai.addIdea) : (editing ? t.ai.editLinkTitle : t.ai.newLinkTitle)}
+            {editing ? t.ai.editLinkTitle : t.ai.newLinkTitle}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="mt-3 space-y-3">
@@ -1032,7 +1011,8 @@ function LinkDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ai-record-type">{t.ai.recordType}</Label>
-              <SimpleSelect id="ai-record-type" value={form.recordType} onValueChange={(v) => setForm((f) => ({ ...f, recordType: v as LinkForm["recordType"] }))} options={[{ value: "link", label: t.ai.linkType }, { value: "idea", label: t.ai.ideaType }]} />
+              <SimpleSelect id="ai-record-type" aria-describedby={form.recordType === "idea" ? "ai-record-type-hint" : undefined} value={form.recordType} onValueChange={(v) => setForm((f) => ({ ...f, recordType: v as LinkForm["recordType"] }))} options={[{ value: "link", label: t.ai.linkType }, { value: "idea", label: t.ai.ideaType }]} />
+              {form.recordType === "idea" && <p id="ai-record-type-hint" className="text-[11px] text-foreground-subtle">{t.ai.ideaTypeHint}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ai-url">{t.ai.url}</Label>

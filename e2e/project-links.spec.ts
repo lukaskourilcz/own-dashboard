@@ -42,7 +42,7 @@ test("a project workspace lists the links it uses and adds one from the library"
   await expect(picker).toBeVisible();
   // Links already used by the project are not offered.
   await expect(picker.getByText("Google Search Console")).toHaveCount(0);
-  await picker.getByRole("textbox", { name: "Search links and ideas…" }).fill("supabase");
+  await picker.getByRole("textbox", { name: "Search links and IG tips…" }).fill("supabase");
   await picker.getByRole("checkbox", { name: /Supabase/ }).check();
   if (testInfo.project.name === "desktop") {
     expect((await new AxeBuilder({ page: page as unknown as AxePage }).include('[role="dialog"]').withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);

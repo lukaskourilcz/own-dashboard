@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ExternalLink, FolderPlus, Lightbulb, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ExternalLink, FolderPlus, Pencil, Trash2 } from "lucide-react";
 import { EntityBadge } from "@/components/ui/status-badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict } from "@/lib/i18n";
@@ -41,19 +41,16 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete, us
   const t = useDict();
   const chips = chipOverflow(usedBy);
   const safeUrl = resourceKey(link.url) ? link.url : undefined;
-  const isIdea = link.record_type === "idea";
   const sourceUrls = (link.source_urls ?? []).filter((url) => /^https?:\/\//i.test(url));
   return <article className="min-w-0" data-link-card={link.id}>
     <div className="flex items-center gap-1 px-3 py-2 transition-colors hover:bg-surface-hover/50">
       <div className="min-w-0 flex-1">
         <button type="button" onClick={onToggle} aria-expanded={expanded} aria-controls={`link-details-${link.id}`} aria-label={`${expanded ? t.ai.collapseDetails : t.ai.expandDetails}: ${link.title}`} className="focus-ring flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md text-left sm:min-h-8" title={link.title}>
-          {isIdea
-            ? <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-information-soft text-information"><Lightbulb className="h-3.5 w-3.5" /></span>
-            : <LinkAvatar key={link.url} url={link.url} title={link.title} />}
+          <LinkAvatar key={link.url} url={link.url} title={link.title} />
           <span className="min-w-0 truncate text-sm font-medium">{link.title}</span>
           <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 text-foreground-muted transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} />
         </button>
-        {!isIdea && <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${t.ai.visit}: ${link.title}`} title={link.url} className="focus-ring ml-8 flex min-h-7 min-w-0 items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground hover:underline sm:min-h-5"><span className="truncate">{hostOf(link.url)}</span><ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>}
+        <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${t.ai.visit}: ${link.title}`} title={link.url} className="focus-ring ml-8 flex min-h-7 min-w-0 items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground hover:underline sm:min-h-5"><span className="truncate">{hostOf(link.url)}</span><ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>
         {(usedBy.length > 0 || isTool) && <div className="ml-8 mt-1 flex min-w-0 flex-wrap items-center gap-1 text-[11px] text-foreground-muted">
           {isTool && <EntityBadge className="min-h-5 py-0">{t.ai.toolBadge}</EntityBadge>}
           {usedBy.length > 0 && <>
@@ -73,23 +70,19 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete, us
     </div>
     <div id={`link-details-${link.id}`} hidden={!expanded} className="space-y-2 border-t border-border/60 bg-surface-muted/30 px-3 py-3 text-xs text-foreground-muted">
       <p className="flex items-center gap-2"><PricingDot pricing={link.pricing} />{link.pricing ? t.ai.pricingLabel[link.pricing] : t.ai.pricingUnknown}</p>
-      {isIdea && <p className="font-medium text-foreground">{t.ai.ideaSummary}</p>}
       <p className="whitespace-pre-line [overflow-wrap:anywhere]">{(linkDescription(link) || t.ai.noDescription).split(/(https?:\/\/[^\s]+)/g).map((part,index) => /^https?:\/\//.test(part) && resourceKey(part) ? <a key={index} href={part} target="_blank" rel="noreferrer" className="focus-ring rounded underline">{part}</a> : part)}</p>
           {link.usefulness_rating != null && <p className="mt-2 text-xs font-medium">{t.ai.rating}: {link.usefulness_rating}/5</p>}
-          {link.rating_rationale && <div className="mt-2"><p className="font-medium text-foreground">{isIdea ? t.ai.ideaBenefit : t.ai.rating}</p><p className="mt-1 text-xs text-foreground-muted">{link.rating_rationale}</p></div>}
+          {link.rating_rationale && <div className="mt-2"><p className="font-medium text-foreground">{t.ai.rating}</p><p className="mt-1 text-xs text-foreground-muted">{link.rating_rationale}</p></div>}
           {!!link.project_relevance?.length && <details className="mt-2 text-xs">
             <summary className="cursor-pointer focus-ring">{t.ai.relevance}</summary>
             <ul className="mt-1 space-y-1 break-words">{link.project_relevance.map((p) => <li key={p.repository}><strong>{p.repository}</strong>: {p.reason}</li>)}</ul>
           </details>}
           {link.pricing_evidence && <details className="mt-2 text-xs"><summary className="cursor-pointer focus-ring">{t.ai.pricingEvidence}</summary><p className="mt-1 break-words text-foreground-muted">{link.pricing_evidence}</p></details>}
-          {!!sourceUrls.length && (isIdea ? <div className="mt-2 text-xs">
-            <p className="font-medium text-foreground">{t.ai.originalReels}</p>
-            <ul className="mt-1 space-y-1 break-all">{sourceUrls.map((url, index) => <li key={url}><a href={url} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-8 items-center gap-1 rounded underline">{sourceUrls.length > 1 ? `${url.includes("instagram.com") ? t.ai.reel : t.ai.source} ${index + 1}: ${url}` : url}<ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a></li>)}</ul>
-          </div> : <details className="mt-2 text-xs">
+          {!!sourceUrls.length && <details className="mt-2 text-xs">
             <summary className="cursor-pointer focus-ring">{t.ai.sources}</summary>
             <ul className="mt-1 space-y-1 break-all">{sourceUrls.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer" className="underline">{url}</a></li>)}</ul>
-          </details>)}
-      {!isIdea && <a href={safeUrl} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 rounded text-foreground underline [overflow-wrap:anywhere] sm:min-h-8">{link.url}<ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>}
+          </details>}
+      <a href={safeUrl} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 rounded text-foreground underline [overflow-wrap:anywhere] sm:min-h-8">{link.url}<ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>
       {usedBy.length > 0 && <p className="text-xs"><span className="font-medium text-foreground">{t.ai.usedBy}:</span> {usedBy.map((project) => project.name).join(", ")}</p>}
       {onAddToProject && <button type="button" onClick={onAddToProject} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded text-xs font-medium text-foreground underline sm:min-h-8"><FolderPlus aria-hidden="true" className="h-3.5 w-3.5" />{t.ai.addToProject}</button>}
     </div>

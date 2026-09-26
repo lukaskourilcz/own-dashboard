@@ -67,6 +67,8 @@ test("IG TIPS groups the tips by topic on cards without icons", async ({ page },
   await expect(plan.getByRole("button", { name: "Hide details: Plan a month of posts around two topics" })).toHaveAttribute("aria-expanded", "true");
   await expect(plan.getByText("Research notes", { exact: true })).toBeVisible();
   await expect(plan.getByText("Why it is useful · usefulness 4/5")).toBeVisible();
+  await expect(plan.getByText("Projects that benefit", { exact: true })).toBeVisible();
+  await expect(plan.getByText("Plan the build-in-public posts.", { exact: false })).toBeVisible();
   await expect(plan.getByRole("link", { name: "https://www.instagram.com/p/EXAMPLE0001/" })).toBeVisible();
   await expect(plan.getByRole("link", { name: /Open original/ })).toHaveAttribute("target", "_blank");
 

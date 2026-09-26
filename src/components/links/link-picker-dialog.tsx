@@ -79,6 +79,8 @@ export function LinkPickerDialog({
     [available, categories, query, category],
   );
   const shown = matches.slice(0, limit);
+  // Without a record type the picker also offers IG tips (idea records).
+  const searchLabel = recordType === "link" ? t.ai.searchPlaceholder : t.ai.pickerSearchPlaceholder;
   const categoryName = new Map(categories.map((item) => [item.id, item.name]));
 
   function reset() {
@@ -132,8 +134,8 @@ export function LinkPickerDialog({
           <div className="relative min-w-0">
             <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
             <Input
-              aria-label={t.ai.searchPlaceholder}
-              placeholder={t.ai.searchPlaceholder}
+              aria-label={searchLabel}
+              placeholder={searchLabel}
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -197,7 +199,9 @@ export function LinkPickerDialog({
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{link.title}</span>
                         <span className="block truncate text-[11px] text-foreground-muted">
-                          {(link.category_id && categoryName.get(link.category_id)) || t.ai.uncategorized}
+                          {link.record_type === "idea"
+                            ? t.ai.ideaType
+                            : (link.category_id && categoryName.get(link.category_id)) || t.ai.uncategorized}
                         </span>
                       </span>
                     </label>
