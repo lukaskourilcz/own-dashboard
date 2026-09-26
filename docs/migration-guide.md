@@ -116,7 +116,7 @@ Application rollback can deploy the previous version while retaining the additiv
 
 ## Link ideas and relevance — 2026-09-15
 
-Apply `20260915210805_link_ideas_and_relevance.sql`. [Links and Ideas](links-and-ideas.md) describes the new columns and the category check on inserts and updates.
+Apply `20260915210805_link_ideas_and_relevance.sql`. [Links and IG TIPS](links-and-ideas.md) describes the new columns and the category check on inserts and updates.
 
 ## Portfolio, Competition and development finance — 2026-09-16
 
