@@ -97,6 +97,46 @@ test("Tools lists tools in use with per-project notes, adds one and retires one"
   await expect(page.locator('[data-link-card="al4"]').getByText("Tool", { exact: true })).toBeVisible();
 });
 
+test("Tools lists what the repositories use, marked as detected and never twice", async ({ page }, testInfo) => {
+  await gotoPreview(page);
+  await openTools(page, testInfo.project.name === "mobile");
+  const main = page.locator("#main-content");
+  const detected = main.locator('section[aria-labelledby="tools-detected"]');
+  await expect(detected.getByRole("heading", { level: 2, name: /^Found in repositories/ })).toBeVisible();
+
+  // Vercel and Supabase were added by hand: their cards name the repositories
+  // and the detected list leaves them out.
+  await expect(main.locator('[data-tool-card="tool-vercel"] [data-tool-detected-in]')).toHaveText("Also listed in the repositories of own-dashboard, boardlessAI");
+  await expect(detected.locator('[data-detected-tool="vercel"]')).toHaveCount(0);
+  await expect(detected.locator('[data-detected-tool="supabase"]')).toHaveCount(0);
+
+  const nextJs = detected.locator('[data-detected-tool="next.js"]');
+  await expect(nextJs.getByRole("list", { name: "Used in: Next.js" })).toHaveText(/own-dashboard\s*boardlessAI/);
+  await expect(nextJs).toContainText("Auto-detected · about-project.md");
+  await expect(detected.locator('[data-detected-tool="next"]')).toContainText("Auto-detected · package.json");
+
+  // The repository list explains the projects that contributed nothing.
+  await detected.getByText("Repositories: 4 of 9 active projects read").click();
+  await expect(detected.locator('[data-repository-status="inherited"]').first()).toContainText("Part of the boardlessAI repository");
+  await expect(detected.locator('[data-repository-status="no-repository"]')).toHaveCount(3);
+
+  // One project, then a word.
+  await main.getByRole("combobox", { name: "Filter by project" }).click();
+  await page.getByRole("option", { name: "devShark", exact: true }).click();
+  await expect(detected.locator("[data-detected-tool]")).toHaveCount(3);
+  await main.getByRole("combobox", { name: "Filter by project" }).click();
+  await page.getByRole("option", { name: "All projects", exact: true }).click();
+  await main.getByRole("textbox", { name: "Filter tools" }).fill("stripe");
+  await expect(detected.locator("[data-detected-tool]")).toHaveCount(1);
+  await expect(detected.locator('[data-detected-tool="stripe"]')).toBeVisible();
+  await main.getByRole("textbox", { name: "Filter tools" }).fill("nothing like this");
+  await expect(detected.getByText("No tool found in the repositories matches.")).toBeVisible();
+
+  // The preview has no repositories to read again.
+  await expect(detected.getByRole("button", { name: "Check the repositories again" })).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
 test("Czech Tools reads Nástroje and works at 360 px", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "the width is set explicitly");
   await page.setViewportSize({ width: 360, height: 800 });
@@ -105,5 +145,7 @@ test("Czech Tools reads Nástroje and works at 360 px", async ({ page }, testInf
   await page.getByRole("dialog").getByRole("button", { name: "Nástroje", exact: true }).click();
   await expect(page.locator("header").getByRole("heading", { level: 1, name: "Nástroje" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: /^Používá se/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: /^Zjištěno z repozitářů/ })).toBeVisible();
+  await expect(page.locator('[data-detected-tool="next.js"]')).toContainText("Zjištěno automaticky");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { MAX_DETECTED_REPOSITORIES, detectProjectStacks, type GitHubFetch, type StackProject } from "@/lib/stack-detection-server";
+import { MAX_DETECTED_REPOSITORIES } from "@/lib/stack-detection";
+import { detectProjectStacks, type GitHubFetch, type StackProject } from "@/lib/stack-detection-server";
 
 const ABOUT = `# Demo
 

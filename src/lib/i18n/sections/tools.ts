@@ -42,12 +42,42 @@ type ToolsStrings = {
   save: string;
   cancel: string;
   count: (n: number) => string;
+  manualEmpty: string;
+  manualEmptyDescription: string;
+  filterTools: string;
+  detectedTitle: string;
+  detectedDescription: string;
+  autoDetected: string;
+  fromPackageJson: string;
+  checkAgain: string;
+  checking: string;
+  checkedAt: (time: string) => string;
+  detectedLoading: string;
+  detectedError: string;
+  detectedRateLimited: string;
+  detectedDisconnected: string;
+  detectedEmpty: string;
+  detectedNoRepositories: string;
+  detectedNoMatches: string;
+  howEachUses: string;
+  alsoInRepositories: (projects: string) => string;
+  repositories: (total: number, read: number) => string;
+  repositoryStatus: {
+    ok: (count: number, source: string) => string;
+    empty: (source: string) => string;
+    "not-found": string;
+    unreadable: string;
+    error: string;
+    "no-repository": string;
+    inherited: (parent: string) => string;
+    skipped: (limit: number) => string;
+  };
 };
 
 export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
   en: {
     title: "Tools",
-    description: "The library links really in use: what each tool does and how it helps each project.",
+    description: "The tools your active projects use, found in each repository, and the library links you track by hand with their status and cost.",
     addTool: "Add tool",
     pickTool: "Choose a library link",
     pickToolDescription: "Tools are links from the library. Choose one, then describe it.",
@@ -89,10 +119,43 @@ export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
     save: "Save",
     cancel: "Cancel",
     count: (n) => `${n} tool${n === 1 ? "" : "s"}`,
+    manualEmpty: "No tools added by hand yet",
+    manualEmptyDescription: "Add a library link as a tool to track its status and monthly cost. The tools your repositories list are below.",
+    filterTools: "Filter tools",
+    detectedTitle: "Found in repositories",
+    detectedDescription:
+      "Read from each active project's about-project.md (Tech stack and Third-party libraries), or from the dependencies in its package.json when that file lists nothing. Nothing is stored: the repositories stay the source.",
+    autoDetected: "Auto-detected",
+    fromPackageJson: "Runtime dependency in package.json",
+    checkAgain: "Check the repositories again",
+    checking: "Checking…",
+    checkedAt: (time) => `Checked at ${time}`,
+    detectedLoading: "Reading the active projects' repositories…",
+    detectedError: "Could not read the repositories. Check again in a moment.",
+    detectedRateLimited: "The repositories were checked too often. Try again in a minute.",
+    detectedDisconnected:
+      "GitHub is not connected, so the repositories cannot be read. Connect it from any project's Repository tab, then check again.",
+    detectedEmpty:
+      "The active projects' repositories list no tools yet. Add ## Tech stack and ## Third-party libraries to each about-project.md, one line per tool: Name — what it does.",
+    detectedNoRepositories: "No active project has a GitHub repository linked.",
+    detectedNoMatches: "No tool found in the repositories matches.",
+    howEachUses: "How each project uses it",
+    alsoInRepositories: (projects) => `Also listed in the repositories of ${projects}`,
+    repositories: (total, read) => `Repositories: ${read} of ${total} active project${total === 1 ? "" : "s"} read`,
+    repositoryStatus: {
+      ok: (count, source) => `${count} tool${count === 1 ? "" : "s"} from ${source}`,
+      empty: (source) => `${source} lists no tools`,
+      "not-found": "No about-project.md or package.json",
+      unreadable: "GitHub does not show this repository to the connected account",
+      error: "Could not be read this time",
+      "no-repository": "No GitHub repository linked",
+      inherited: (parent) => `Part of the ${parent} repository`,
+      skipped: (limit) => `Not read: only the first ${limit} repositories are checked`,
+    },
   },
   cs: {
     title: "Nástroje",
-    description: "Odkazy z knihovny, které opravdu používáte: co každý nástroj dělá a jak pomáhá jednotlivým projektům.",
+    description: "Nástroje, které používají aktivní projekty, zjištěné z jejich repozitářů, a odkazy z knihovny, které sledujete ručně i se stavem a cenou.",
     addTool: "Přidat nástroj",
     pickTool: "Vyberte odkaz z knihovny",
     pickToolDescription: "Nástroje jsou odkazy z knihovny. Vyberte jeden a popište ho.",
@@ -133,6 +196,39 @@ export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
     signInFirst: "Nejprve se přihlaste.",
     save: "Uložit",
     cancel: "Zrušit",
-    count: (n) => `${n} ${n === 1 ? "nástroj" : n < 5 ? "nástroje" : "nástrojů"}`,
+    count: (n) => `${n} ${n === 1 ? "nástroj" : n >= 2 && n <= 4 ? "nástroje" : "nástrojů"}`,
+    manualEmpty: "Zatím žádné ručně přidané nástroje",
+    manualEmptyDescription: "Přidejte odkaz z knihovny jako nástroj a sledujte jeho stav a měsíční náklad. Nástroje uvedené v repozitářích jsou níže.",
+    filterTools: "Filtrovat nástroje",
+    detectedTitle: "Zjištěno z repozitářů",
+    detectedDescription:
+      "Načteno z about-project.md každého aktivního projektu (Tech stack a Third-party libraries), případně ze závislostí v package.json, když soubor nic neuvádí. Nic se neukládá: zdrojem zůstávají repozitáře.",
+    autoDetected: "Zjištěno automaticky",
+    fromPackageJson: "Běhová závislost v package.json",
+    checkAgain: "Znovu zkontrolovat repozitáře",
+    checking: "Kontroluji…",
+    checkedAt: (time) => `Zkontrolováno v ${time}`,
+    detectedLoading: "Čtu repozitáře aktivních projektů…",
+    detectedError: "Repozitáře se nepodařilo načíst. Zkuste to za chvíli znovu.",
+    detectedRateLimited: "Repozitáře se kontrolovaly příliš často. Zkuste to znovu za minutu.",
+    detectedDisconnected:
+      "GitHub není připojený, takže repozitáře nejde načíst. Připojte ho na záložce Repozitář u kteréhokoli projektu a zkontrolujte znovu.",
+    detectedEmpty:
+      "Repozitáře aktivních projektů zatím žádné nástroje neuvádějí. Doplňte do každého about-project.md sekce ## Tech stack a ## Third-party libraries, na každý řádek jeden nástroj: Název — co dělá.",
+    detectedNoRepositories: "Žádný aktivní projekt nemá napojený GitHub repozitář.",
+    detectedNoMatches: "Žádný nástroj z repozitářů neodpovídá.",
+    howEachUses: "Jak ho používají jednotlivé projekty",
+    alsoInRepositories: (projects) => `Uvedeno také v repozitářích projektů ${projects}`,
+    repositories: (total, read) => `Repozitáře: načteno ${read} z ${total} ${total === 1 ? "aktivního projektu" : "aktivních projektů"}`,
+    repositoryStatus: {
+      ok: (count, source) => `${count} ${count === 1 ? "nástroj" : count >= 2 && count <= 4 ? "nástroje" : "nástrojů"} z ${source}`,
+      empty: (source) => `${source} neuvádí žádné nástroje`,
+      "not-found": "Chybí about-project.md i package.json",
+      unreadable: "GitHub tento repozitář připojenému účtu nezobrazí",
+      error: "Tentokrát se nepodařilo načíst",
+      "no-repository": "Bez napojeného GitHub repozitáře",
+      inherited: (parent) => `Součást repozitáře projektu ${parent}`,
+      skipped: (limit) => `Nenačteno: kontroluje se jen prvních ${limit} repozitářů`,
+    },
   },
 };

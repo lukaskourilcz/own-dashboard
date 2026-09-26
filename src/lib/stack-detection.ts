@@ -74,6 +74,9 @@ export type DetectedToolsResponse = {
   tools: DetectedTool[];
 };
 
+/** How many repositories one detection reads; the rest are reported as skipped. */
+export const MAX_DETECTED_REPOSITORIES = 12;
+
 /** The two contract headings, normalized. */
 const STACK_HEADINGS = new Set(["tech stack", "third party libraries"]);
 
@@ -372,18 +375,21 @@ export function mergeDetectedTools(stacks: readonly ProjectStack[]): DetectedToo
 
 /**
  * Split detected tools into those the owner already added by hand (matched
- * by name, case-insensitively) and the rest. A match never adds a second
- * entry: the hand-added tool shows which repositories also list it.
+ * by any of the hand-added tool's names, case-insensitively) and the rest. A
+ * match never adds a second entry: the hand-added tool shows which
+ * repositories also list it.
  */
 export function partitionDetectedTools<T>(
   detected: readonly DetectedTool[],
   manual: readonly T[],
-  manualName: (tool: T) => string,
+  manualNames: (tool: T) => readonly (string | null | undefined)[],
 ): { unmatched: DetectedTool[]; matches: Map<T, DetectedTool> } {
   const manualByKey = new Map<string, T>();
   for (const tool of manual) {
-    const key = toolKey(manualName(tool));
-    if (key && !manualByKey.has(key)) manualByKey.set(key, tool);
+    for (const name of manualNames(tool)) {
+      const key = name ? toolKey(name) : "";
+      if (key && !manualByKey.has(key)) manualByKey.set(key, tool);
+    }
   }
   const matches = new Map<T, DetectedTool>();
   const unmatched: DetectedTool[] = [];

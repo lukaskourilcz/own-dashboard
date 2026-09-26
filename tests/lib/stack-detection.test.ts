@@ -209,9 +209,12 @@ describe("partitionDetectedTools", () => {
         ],
       },
     ]);
-    const manual = [{ id: "t1", label: "vercel" }];
-    const { unmatched, matches } = partitionDetectedTools(detected, manual, (tool) => tool.label);
+    const manual = [{ id: "t1", name: null, linkTitle: "vercel" }];
+    const { unmatched, matches } = partitionDetectedTools(detected, manual, (tool) => [tool.name, tool.linkTitle]);
     expect(unmatched.map((tool) => tool.name)).toEqual(["Sentry"]);
     expect(matches.get(manual[0]!)?.name).toBe("Vercel");
+    // An own name that differs from the library title still matches by either.
+    const renamed = [{ id: "t2", name: "Sentry", linkTitle: "Sentry — Application monitoring" }];
+    expect(partitionDetectedTools(detected, renamed, (tool) => [tool.name, tool.linkTitle]).unmatched.map((tool) => tool.name)).toEqual(["Vercel"]);
   });
 });

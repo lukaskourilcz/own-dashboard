@@ -81,6 +81,7 @@ export function DemoDashboard({
       lastWeekCalendar={f.lastWeekCalendar}
       selectedCalendarIds={f.selectedCalendarIds}
       repoVisibleIds={f.repoVisibleIds}
+      previewDetectedTools={f.detectedTools}
       initialPreferences={{
         language,
         theme: "light",

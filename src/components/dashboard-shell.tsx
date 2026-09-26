@@ -43,6 +43,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmationProvider } from "@/components/ui/confirmation-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { EventsResult } from "@/lib/calendar";
+import type { DetectedToolsResponse } from "@/lib/stack-detection";
 import { onDemandDataKeys, tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-data";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import type { WidgetId } from "@/lib/dashboard-layout";
@@ -159,6 +160,8 @@ type Props = {
   selectedCalendarIds: string[];
   repoVisibleIds: string[];
   initialPreferences: SyncedUiPreferences;
+  /** Fixture detection for the preview; the live Tools panel reads GitHub. */
+  previewDetectedTools?: DetectedToolsResponse;
 };
 
 // `g` then a letter. Inbox and References are hidden from navigation, so
@@ -382,7 +385,7 @@ export function DashboardShell(props: Props) {
           {tab === "dates" && <ImportantDatesPanel dates={importantDates} setDates={setImportantDates} userId={user.id} projects={activeProjects} organizations={organizations} />}
           {tab === "notes" && <NotesPanel notes={notes} setNotes={setNotes} projects={activeProjects} />}
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} promptLinks={promptLinks} setPromptLinks={setPromptLinks} projects={activeProjects} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} />}
-          {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} />}
+          {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} previewDetectedTools={props.previewDetectedTools} />}
           {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} tools={tools} focusLinkId={focusLinkId} onFocusHandled={() => setFocusLinkId(null)} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}

@@ -1,6 +1,7 @@
 import "server-only";
 import { ABOUT_PROJECT_FILE } from "@/lib/about-project";
 import {
+  MAX_DETECTED_REPOSITORIES,
   mergeDetectedTools,
   parseAboutProjectStack,
   parsePackageJsonStack,
@@ -20,7 +21,6 @@ import {
  * in repositories, concurrency, time per request and bytes per file.
  */
 
-export const MAX_DETECTED_REPOSITORIES = 12;
 const CONCURRENCY = 4;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_FILE_CHARACTERS = 256 * 1024;

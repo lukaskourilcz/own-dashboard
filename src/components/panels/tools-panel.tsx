@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Archive, ExternalLink, Library, Pencil, Plus, RotateCcw, Trash2, Wrench, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, ExternalLink, Library, Pencil, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
@@ -26,10 +24,19 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { LinkPickerDialog } from "@/components/links/link-picker-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
 import { PricingDot } from "@/components/panels/link-library-card";
+import { DetectedToolsSection, type DetectionView } from "@/components/tools/detected-tools-section";
+import { loadDetectedTools } from "@/lib/github";
 import { useDict } from "@/lib/i18n";
 import { resourceKey } from "@/lib/link-library";
 import { nextProjectLinkOrder } from "@/lib/project-links";
 import { qk } from "@/lib/queries/keys";
+import {
+  MAX_DETECTED_REPOSITORIES,
+  partitionDetectedTools,
+  toolKey,
+  type DetectedTool,
+  type DetectedToolsResponse,
+} from "@/lib/stack-detection";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import {
@@ -64,9 +71,13 @@ type Props = {
   subscriptions: Subscription[];
   displayCurrency: string;
   onShowInLibrary: (linkId: string) => void;
+  /** The fixture preview's detection; the live app reads the repositories. */
+  previewDetectedTools?: DetectedToolsResponse;
 };
 
 type UsageDraft = { project_id: string; note: string };
+
+const NO_DETECTED_TOOLS: DetectedTool[] = [];
 
 type ToolForm = {
   id?: string;
@@ -79,9 +90,13 @@ type ToolForm = {
 };
 
 /**
- * Tools: the curated in-use subset of the Links library. Each card says what
- * the tool does, its monthly cost from a linked subscription, and one row per
- * project with how it helps (project_links, role "tool").
+ * Tools: what the active projects really use. The tools each repository
+ * lists in its about-project.md (or package.json) arrive by themselves and are
+ * marked as detected; the library links the owner adds by hand keep what they
+ * do, a status, a monthly cost from a linked subscription and one row per
+ * project with how it helps (project_links, role "tool"). A detected tool
+ * with the name of a hand-added one never shows twice: the hand-added card
+ * names the repositories that also list it.
  */
 export function ToolsPanel({
   tools,
@@ -94,6 +109,7 @@ export function ToolsPanel({
   subscriptions,
   displayCurrency,
   onShowInLibrary,
+  previewDetectedTools,
 }: Props) {
   const t = useDict();
   const tt = t.tools;
@@ -102,15 +118,61 @@ export function ToolsPanel({
   const confirm = useConfirmation();
   const relations = useProjectLinkMutations(setProjectLinks);
   const [projectFilter, setProjectFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [form, setForm] = useState<ToolForm | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const returnFocus = useReturnFocus(form !== null);
 
+  // Detection runs when Tools opens and is kept for the page session; the
+  // owner's "Check the repositories again" is the only refresh.
+  const detection = useQuery({
+    queryKey: qk.detectedTools,
+    queryFn: loadDetectedTools,
+    enabled: !previewDetectedTools,
+    staleTime: 30 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+  const view: DetectionView = previewDetectedTools
+    ? { kind: "ok", data: previewDetectedTools }
+    : detection.data
+      ? detection.data.kind === "ok"
+        ? { kind: "ok", data: detection.data.data }
+        : { kind: detection.data.kind }
+      : detection.isError
+        ? { kind: "error" }
+        : { kind: "loading" };
+  const checking = !previewDetectedTools && detection.isFetching;
+
   const linkById = useMemo(() => new Map(aiLinks.map((link) => [link.id, link])), [aiLinks]);
   const categoryName = useMemo(() => new Map(aiCategories.map((category) => [category.id, category.name])), [aiCategories]);
-  const visible = useMemo(() => filterToolsByProject(tools, projectLinks, projectFilter), [tools, projectLinks, projectFilter]);
+  const detectedTools =
+    previewDetectedTools?.tools ?? (detection.data?.kind === "ok" ? detection.data.data.tools : NO_DETECTED_TOOLS);
+  const { unmatched, matches } = useMemo(
+    () => partitionDetectedTools(detectedTools, tools, (tool) => [tool.name, linkById.get(tool.ai_link_id)?.title]),
+    [detectedTools, tools, linkById],
+  );
+  const search = toolKey(query);
+  const visible = useMemo(
+    () =>
+      filterToolsByProject(tools, projectLinks, projectFilter).filter(
+        (tool) => !search || toolKey(`${toolName(tool, linkById.get(tool.ai_link_id))} ${tool.what_it_does}`).includes(search),
+      ),
+    [tools, projectLinks, projectFilter, search, linkById],
+  );
+  const visibleDetected = useMemo(
+    () =>
+      unmatched.filter(
+        (tool) =>
+          (projectFilter === "all" || tool.projects.some((usage) => usage.id === projectFilter)) &&
+          (!search ||
+            toolKey(`${tool.name} ${tool.whatItDoes} ${tool.projects.map((usage) => `${usage.name} ${usage.note}`).join(" ")}`).includes(search)),
+      ),
+    [unmatched, projectFilter, search],
+  );
   const groups = useMemo(() => groupToolsByStatus(visible, aiLinks), [visible, aiLinks]);
   const toolLinkIds = useMemo(() => new Set(tools.map((tool) => tool.ai_link_id)), [tools]);
 
@@ -226,9 +288,15 @@ export function ToolsPanel({
   const formLink = form ? linkById.get(form.ai_link_id) : undefined;
   const formTool = form?.id ? tools.find((tool) => tool.id === form.id) : undefined;
   const unusedProjects = form ? projects.filter((project) => !form.usage.some((row) => row.project_id === project.id)) : [];
-  const projectsWithTools = projects.filter((project) =>
-    projectLinks.some((row) => row.project_id === project.id && row.role === "tool" && toolLinkIds.has(row.ai_link_id)),
+  // The project filter offers every project a hand-added or a detected tool
+  // mentions.
+  const detectedProjectIds = new Set(unmatched.flatMap((tool) => tool.projects.map((usage) => usage.id)));
+  const projectsWithTools = projects.filter(
+    (project) =>
+      detectedProjectIds.has(project.id) ||
+      projectLinks.some((row) => row.project_id === project.id && row.role === "tool" && toolLinkIds.has(row.ai_link_id)),
   );
+  const filtering = search.length > 0 || projectFilter !== "all";
 
   return (
     <div>
@@ -243,124 +311,144 @@ export function ToolsPanel({
         }
       />
 
-      {tools.length === 0 ? (
-        <Card className="p-0">
-          <EmptyState
-            icon={Wrench}
-            title={tt.noTools}
-            description={tt.noToolsDescription}
-            action={
-              <Button size="sm" onClick={() => setPickerOpen(true)}>
-                <Plus className="h-3.5 w-3.5" />
-                {tt.addTool}
-              </Button>
-            }
-            className="py-16"
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <p role="status" className="text-xs text-foreground-muted">
+          {tools.length > 0 && tt.count(visible.length)}
+        </p>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <Input
+            aria-label={tt.filterTools}
+            placeholder={tt.filterTools}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="h-9 w-full sm:w-56"
           />
-        </Card>
-      ) : (
-        <>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <p role="status" className="text-xs text-foreground-muted">{tt.count(visible.length)}</p>
-            {projectsWithTools.length > 0 && (
-              <SimpleSelect
-                aria-label={tt.projectFilter}
-                value={projectFilter}
-                onValueChange={setProjectFilter}
-                className="w-full sm:w-56"
-                options={[
-                  { value: "all", label: tt.allProjects },
-                  ...projectsWithTools.map((project) => ({ value: project.id, label: project.name })),
-                ]}
-              />
-            )}
-          </div>
-          {groups.length === 0 ? (
-            <p className="text-sm text-foreground-muted">{tt.noToolsForProject}</p>
-          ) : (
-            <div className="space-y-6">
-              {groups.map((group) => (
-                <section key={group.status} aria-labelledby={`tools-${group.status}`}>
-                  <h2 id={`tools-${group.status}`} className="mb-3 flex items-baseline gap-2 border-b border-border pb-2 text-sm font-semibold">
-                    {tt.statusLabel[group.status]}
-                    <span className="text-[11px] font-medium tabular text-foreground-muted">{tt.count(group.tools.length)}</span>
-                  </h2>
-                  <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                    {group.tools.map((tool) => {
-                      const link = linkById.get(tool.ai_link_id);
-                      const name = toolName(tool, link);
-                      const usage = toolUsage(tool, projectLinks, projects);
-                      const cost = toolMonthlyCost(tool, subscriptions, displayCurrency);
-                      const safeUrl = link && resourceKey(link.url) ? link.url : undefined;
-                      const category = link?.category_id ? categoryName.get(link.category_id) : undefined;
-                      return (
-                        <li key={tool.id} data-tool-card={tool.id} className="flex min-w-0 flex-col rounded-lg border border-border bg-surface">
-                          <div className="flex items-start gap-2 border-b border-border px-3 py-2.5">
-                            <span className="mt-1"><PricingDot pricing={link?.pricing ?? null} /></span>
-                            <div className="min-w-0 flex-1">
-                              <h3 className="truncate text-sm font-semibold" title={name}>{name}</h3>
-                              <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-foreground-muted">
-                                {category && <EntityBadge className="min-h-5 py-0">{category}</EntityBadge>}
-                                {cost != null && <span className="tabular">{tt.monthly(formatCurrency(cost, displayCurrency))}</span>}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-1 space-y-2.5 px-3 py-2.5">
-                            <p className="text-sm text-foreground [overflow-wrap:anywhere]">{tool.what_it_does}</p>
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle">{tt.usedIn}</p>
-                              {usage.length === 0 ? (
-                                <p className="mt-1 text-xs text-foreground-muted">{tt.notUsedYet}</p>
-                              ) : (
-                                <ul className="mt-1 divide-y divide-border" aria-label={`${tt.usedIn}: ${name}`}>
-                                  {usage.map(({ relation, project }) => (
-                                    <li key={relation.id} className="py-1.5 text-xs">
-                                      <span className="font-medium text-foreground">{project.name}</span>
-                                      {relation.note && <span className="text-foreground-muted"> — {relation.note}</span>}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5">
-                            {safeUrl && (
-                              <Tooltip content={tt.openLink}>
-                                <Button asChild size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost">
-                                  <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${tt.openLink}: ${name}`}><ExternalLink /></a>
-                                </Button>
-                              </Tooltip>
-                            )}
-                            <Tooltip content={tt.showInLibrary}>
-                              <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => onShowInLibrary(tool.ai_link_id)} aria-label={`${tt.showInLibrary}: ${name}`}><Library /></Button>
-                            </Tooltip>
-                            <Tooltip content={t.common.edit}>
-                              <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => startEdit(tool)} aria-label={`${t.common.edit}: ${name}`}><Pencil /></Button>
-                            </Tooltip>
-                            <div className="ml-auto">
-                              {tool.status === "retired" ? (
-                                <Button size="sm" variant="ghost" onClick={() => void setStatus(tool, "in_use")} aria-label={`${tt.markInUse}: ${name}`}>
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                  {tt.markInUse}
-                                </Button>
-                              ) : (
-                                <Button size="sm" variant="ghost" onClick={() => void setStatus(tool, "retired")} aria-label={`${tt.markRetired}: ${name}`}>
-                                  <Archive className="h-3.5 w-3.5" />
-                                  {tt.markRetired}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ))}
-            </div>
+          {projectsWithTools.length > 0 && (
+            <SimpleSelect
+              aria-label={tt.projectFilter}
+              value={projectFilter}
+              onValueChange={setProjectFilter}
+              className="w-full sm:w-56"
+              options={[
+                { value: "all", label: tt.allProjects },
+                ...projectsWithTools.map((project) => ({ value: project.id, label: project.name })),
+              ]}
+            />
           )}
-        </>
-      )}
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {tools.length === 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-border px-4 py-3">
+            <div className="min-w-0 max-w-2xl">
+              <p className="text-sm font-medium text-foreground">{tt.manualEmpty}</p>
+              <p className="mt-0.5 text-xs text-foreground-muted">{tt.manualEmptyDescription}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              {tt.addTool}
+            </Button>
+          </div>
+        ) : groups.length === 0 ? (
+          <p className="text-sm text-foreground-muted">{tt.noToolsForProject}</p>
+        ) : (
+          groups.map((group) => (
+            <section key={group.status} aria-labelledby={`tools-${group.status}`}>
+              <h2 id={`tools-${group.status}`} className="mb-3 flex items-baseline gap-2 border-b border-border pb-2 text-sm font-semibold">
+                {tt.statusLabel[group.status]}
+                <span className="text-[11px] font-medium tabular text-foreground-muted">{tt.count(group.tools.length)}</span>
+              </h2>
+              <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {group.tools.map((tool) => {
+                  const link = linkById.get(tool.ai_link_id);
+                  const name = toolName(tool, link);
+                  const usage = toolUsage(tool, projectLinks, projects);
+                  const cost = toolMonthlyCost(tool, subscriptions, displayCurrency);
+                  const safeUrl = link && resourceKey(link.url) ? link.url : undefined;
+                  const category = link?.category_id ? categoryName.get(link.category_id) : undefined;
+                  const detected = matches.get(tool);
+                  return (
+                    <li key={tool.id} data-tool-card={tool.id} className="flex min-w-0 flex-col rounded-lg border border-border bg-surface">
+                      <div className="flex items-start gap-2 border-b border-border px-3 py-2.5">
+                        <span className="mt-1"><PricingDot pricing={link?.pricing ?? null} /></span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-sm font-semibold" title={name}>{name}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-foreground-muted">
+                            {category && <EntityBadge className="min-h-5 py-0">{category}</EntityBadge>}
+                            {cost != null && <span className="tabular">{tt.monthly(formatCurrency(cost, displayCurrency))}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-2.5 px-3 py-2.5">
+                        <p className="text-sm text-foreground [overflow-wrap:anywhere]">{tool.what_it_does}</p>
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle">{tt.usedIn}</p>
+                          {usage.length === 0 ? (
+                            <p className="mt-1 text-xs text-foreground-muted">{tt.notUsedYet}</p>
+                          ) : (
+                            <ul className="mt-1 divide-y divide-border" aria-label={`${tt.usedIn}: ${name}`}>
+                              {usage.map(({ relation, project }) => (
+                                <li key={relation.id} className="py-1.5 text-xs">
+                                  <span className="font-medium text-foreground">{project.name}</span>
+                                  {relation.note && <span className="text-foreground-muted"> — {relation.note}</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        {detected && (
+                          <p data-tool-detected-in className="text-[11px] text-foreground-subtle [overflow-wrap:anywhere]">
+                            {tt.alsoInRepositories(detected.projects.map((project) => project.name).join(", "))}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5">
+                        {safeUrl && (
+                          <Tooltip content={tt.openLink}>
+                            <Button asChild size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost">
+                              <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${tt.openLink}: ${name}`}><ExternalLink /></a>
+                            </Button>
+                          </Tooltip>
+                        )}
+                        <Tooltip content={tt.showInLibrary}>
+                          <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => onShowInLibrary(tool.ai_link_id)} aria-label={`${tt.showInLibrary}: ${name}`}><Library /></Button>
+                        </Tooltip>
+                        <Tooltip content={t.common.edit}>
+                          <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => startEdit(tool)} aria-label={`${t.common.edit}: ${name}`}><Pencil /></Button>
+                        </Tooltip>
+                        <div className="ml-auto">
+                          {tool.status === "retired" ? (
+                            <Button size="sm" variant="ghost" onClick={() => void setStatus(tool, "in_use")} aria-label={`${tt.markInUse}: ${name}`}>
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              {tt.markInUse}
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="ghost" onClick={() => void setStatus(tool, "retired")} aria-label={`${tt.markRetired}: ${name}`}>
+                              <Archive className="h-3.5 w-3.5" />
+                              {tt.markRetired}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))
+        )}
+
+        <DetectedToolsSection
+          view={view}
+          tools={visibleDetected}
+          filtered={filtering}
+          checking={checking}
+          canCheck={!previewDetectedTools}
+          onCheckAgain={() => void detection.refetch()}
+          maxRepositories={MAX_DETECTED_REPOSITORIES}
+        />
+      </div>
 
       <LinkPickerDialog
         open={pickerOpen}

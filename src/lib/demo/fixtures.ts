@@ -55,6 +55,7 @@ import type {
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
 import { parseDateOnly, previousMondayKey } from "@/lib/date-keys";
+import { mergeDetectedTools, toolKey, type DetectedToolsResponse, type ProjectStack, type StackEntry } from "@/lib/stack-detection";
 
 const UID = "preview-user";
 const NOW = new Date();
@@ -497,6 +498,60 @@ export const tools: Tool[] = [
   { id: "tool-supabase", user_id: UID, ai_link_id: "al5", name: null, what_it_does: "Postgres database, Auth and row-level security.", status: "in_use", subscription_id: null, created_at: TS, updated_at: TS },
   { id: "tool-figma", user_id: UID, ai_link_id: "al8", name: null, what_it_does: "Screen designs and design-system components.", status: "trial", subscription_id: "s4", created_at: TS, updated_at: TS },
 ];
+
+// What the Tools section finds in the fixture projects' repositories: a
+// short, invented stack per project, merged by the same code the live route
+// uses. Vercel and Supabase match hand-added tools above, so they appear on
+// those cards instead of twice. DNESKAi shows the package.json fallback.
+const stack = (...items: [name: string, whatItDoes: string][]): StackEntry[] =>
+  items.map(([name, whatItDoes]) => ({ name, key: toolKey(name), whatItDoes, specificity: 1 }));
+
+const fixtureStacks: ProjectStack[] = [
+  { project: { id: "proj-dneskai", name: "DNESKAi" }, source: "package-json", entries: stack(["next", ""], ["react", ""], ["sharp", ""]) },
+  {
+    project: { id: "proj-dashboard", name: "own-dashboard" },
+    source: "about-project",
+    entries: stack(
+      ["Next.js", "The app shell and its API routes"],
+      ["Supabase", "Database, sign-in and row-level security"],
+      ["TanStack Query", "The client-side data cache"],
+      ["Vercel", "Hosting and the scheduled jobs"],
+      ["Sentry", "Error monitoring"],
+    ),
+  },
+  {
+    project: { id: "proj-devshark", name: "devShark" },
+    source: "about-project",
+    entries: stack(
+      ["React", "The learning client"],
+      ["Vite", "Builds the client"],
+      ["Supabase", "Scores and grading on the server"],
+      ["Stripe", "Optional support payments"],
+    ),
+  },
+  {
+    project: { id: "proj-boardlessai", name: "boardlessAI" },
+    source: "about-project",
+    entries: stack(["Next.js", "The public site and the admin"], ["Vercel", "Hosting"], ["Resend", "The daily summary email"]),
+  },
+];
+
+export const detectedTools: DetectedToolsResponse = {
+  connected: true,
+  checkedAt: TS,
+  projects: [
+    { projectId: "proj-dneskai", projectName: "DNESKAi", repo: "lukaskourilcz/aifirst", status: "ok", source: "package-json", toolCount: 3 },
+    { projectId: "proj-dashboard", projectName: "own-dashboard", repo: "lukaskourilcz/own-dashboard", status: "ok", source: "about-project", toolCount: 5 },
+    { projectId: "proj-devshark", projectName: "devShark", repo: "lukaskourilcz/react-express-app", status: "ok", source: "about-project", toolCount: 4 },
+    { projectId: "proj-boardlessai", projectName: "boardlessAI", repo: "lukaskourilcz/quorum", status: "ok", source: "about-project", toolCount: 3 },
+    { projectId: "proj-design-lab", projectName: "Design Lab", repo: null, status: "inherited", source: null, toolCount: 0, parentName: "boardlessAI" },
+    { projectId: "proj-goviral", projectName: "GoVIRAL", repo: null, status: "inherited", source: null, toolCount: 0, parentName: "boardlessAI" },
+    { projectId: "proj-recipe-box", projectName: "Recipe box app", repo: null, status: "no-repository", source: null, toolCount: 0 },
+    { projectId: "proj-acme-portal", projectName: "Acme customer portal", repo: null, status: "no-repository", source: null, toolCount: 0 },
+    { projectId: "proj-harbor-bakery", projectName: "Harbor Bakery website", repo: null, status: "no-repository", source: null, toolCount: 0 },
+  ],
+  tools: mergeDetectedTools(fixtureStacks),
+};
 
 export const importantDates: ImportantDate[] = [
   { id: "d1", user_id: UID, title: "Contract renewal", the_date: ymd(12), is_recurring: true, recurrence_unit: "yearly", emoji: "📄", notes: null, created_at: TS },

@@ -14,7 +14,7 @@ OwnDashboard uses no LLM-backed AI. The AI-links Auto-fill route is the only rem
 
 ## Data boundaries
 
-Both routes send Jina Reader only the URL the user submitted. Owner data (records, notes, projects, invoices, transactions, tasks) is never sent to any external model or reader. AI routes are rate-limited.
+Both routes send Jina Reader only the URL the user submitted. The Tools section reads `about-project.md` or `package.json` from the owner's own repositories through GitHub with the owner's token on the server and parses them as text; nothing is sent to a model. Owner data (records, notes, projects, invoices, transactions, tasks) is never sent to any external model or reader. AI routes are rate-limited.
 
 Invoice PDF extraction is deliberately not an AI workflow. The PDF is read locally in the browser with `pdf.js`, deterministic parsing fills the editable invoice form, and the file itself is neither uploaded nor stored.
 
