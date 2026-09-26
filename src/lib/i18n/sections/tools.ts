@@ -59,6 +59,8 @@ type ToolsStrings = {
   detectedEmpty: string;
   detectedNoRepositories: string;
   detectedNoMatches: string;
+  showAllDetected: (n: number) => string;
+  showFirstDetected: (n: number) => string;
   howEachUses: string;
   alsoInRepositories: (projects: string) => string;
   repositories: (total: number, read: number) => string;
@@ -139,6 +141,8 @@ export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
       "The active projects' repositories list no tools yet. Add ## Tech stack and ## Third-party libraries to each about-project.md, one line per tool: Name — what it does.",
     detectedNoRepositories: "No active project has a GitHub repository linked.",
     detectedNoMatches: "No tool found in the repositories matches.",
+    showAllDetected: (n) => `Show all ${n} tools`,
+    showFirstDetected: (n) => `Show the first ${n}`,
     howEachUses: "How each project uses it",
     alsoInRepositories: (projects) => `Also listed in the repositories of ${projects}`,
     repositories: (total, read) => `Repositories: ${read} of ${total} active project${total === 1 ? "" : "s"} read`,
@@ -217,6 +221,8 @@ export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
       "Repozitáře aktivních projektů zatím žádné nástroje neuvádějí. Doplňte do každého about-project.md sekce ## Tech stack a ## Third-party libraries, na každý řádek jeden nástroj: Název — co dělá.",
     detectedNoRepositories: "Žádný aktivní projekt nemá napojený GitHub repozitář.",
     detectedNoMatches: "Žádný nástroj z repozitářů neodpovídá.",
+    showAllDetected: (n) => `Zobrazit všech ${n} nástrojů`,
+    showFirstDetected: (n) => `Zobrazit prvních ${n}`,
     howEachUses: "Jak ho používají jednotlivé projekty",
     alsoInRepositories: (projects) => `Uvedeno také v repozitářích projektů ${projects}`,
     repositories: (total, read) => `Repozitáře: načteno ${read} z ${total} ${total === 1 ? "aktivního projektu" : "aktivních projektů"}`,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EntityBadge } from "@/components/ui/status-badge";
@@ -17,6 +18,12 @@ export type DetectionView =
 
 const SOURCE_FILE = { "about-project": "about-project.md", "package-json": "package.json" } as const;
 const PROBLEM_STATUSES = new Set<ProjectStackStatus["status"]>(["unreadable", "error", "not-found"]);
+/**
+ * How many detected tools show before "Show all". Five active repositories
+ * already list about 75, so the full list waits for a click unless a filter
+ * is narrowing it.
+ */
+export const DETECTED_TOOLS_PAGE = 20;
 
 /**
  * The tools the active projects' repositories list, below the tools the owner
@@ -47,6 +54,8 @@ export function DetectedToolsSection({
   const t = useDict();
   const tt = t.tools;
   const { lang } = useLang();
+  const [showAll, setShowAll] = useState(false);
+  const shown = filtered || showAll ? tools : tools.slice(0, DETECTED_TOOLS_PAGE);
   const statuses = view.kind === "ok" ? view.data.projects : [];
   const read = statuses.filter((status) => status.status === "ok" || status.status === "empty").length;
   const hasProblem = statuses.some((status) => PROBLEM_STATUSES.has(status.status));
@@ -143,11 +152,25 @@ export function DetectedToolsSection({
                   : tt.detectedNoRepositories}
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
-              {tools.map((tool) => (
-                <DetectedToolRow key={tool.key} tool={tool} />
-              ))}
-            </ul>
+            <>
+              <ul id="tools-detected-list" className="divide-y divide-border rounded-lg border border-border bg-surface">
+                {shown.map((tool) => (
+                  <DetectedToolRow key={tool.key} tool={tool} />
+                ))}
+              </ul>
+              {!filtered && tools.length > DETECTED_TOOLS_PAGE && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  aria-controls="tools-detected-list"
+                  aria-expanded={showAll}
+                  onClick={() => setShowAll((value) => !value)}
+                  className="min-h-11 sm:min-h-0"
+                >
+                  {showAll ? tt.showFirstDetected(DETECTED_TOOLS_PAGE) : tt.showAllDetected(tools.length)}
+                </Button>
+              )}
+            </>
           )}
         </>
       )}

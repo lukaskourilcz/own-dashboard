@@ -121,6 +121,36 @@ describe("DetectedToolsSection", () => {
     expect(rows[0]!.textContent).toContain("Auto-detected · package.json");
   });
 
+  it("shows the first 20 of a long list until asked, and every match while filtering", () => {
+    const names = Array.from({ length: 25 }, (_, index) => `Tool ${String(index + 1).padStart(2, "0")}`);
+    const many = mergeDetectedTools([
+      {
+        project: { id: "p1", name: "boardlessAI" },
+        source: "about-project",
+        entries: names.map((name) => ({ name, key: toolKey(name), whatItDoes: "", specificity: 1 })),
+      },
+    ]);
+    const data = response({ tools: many });
+    const rows = () => container.querySelectorAll("#tools-detected-list > li").length;
+    const toggle = () => [...container.querySelectorAll("button")].find((element) => /^Show (all|the first)/.test(element.textContent ?? ""));
+
+    render({ kind: "ok", data }, { tools: many });
+    expect(rows()).toBe(20);
+    expect(toggle()?.textContent).toBe("Show all 25 tools");
+    expect(toggle()?.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle()?.getAttribute("aria-controls")).toBe("tools-detected-list");
+    act(() => toggle()!.click());
+    expect(rows()).toBe(25);
+    expect(toggle()?.textContent).toBe("Show the first 20");
+    expect(toggle()?.getAttribute("aria-expanded")).toBe("true");
+    act(() => toggle()!.click());
+    expect(rows()).toBe(20);
+
+    render({ kind: "ok", data }, { tools: many, filtered: true });
+    expect(rows()).toBe(25);
+    expect(toggle()).toBeUndefined();
+  });
+
   it("opens the repository list when a repository could not be read", () => {
     render({ kind: "ok", data: response() });
     const details = container.querySelector("details:not([data-detected-tool] details)") as HTMLDetailsElement;
