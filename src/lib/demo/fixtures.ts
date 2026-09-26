@@ -548,7 +548,8 @@ export const tools: Tool[] = [
 // What the Tools section finds in the fixture projects' repositories: a
 // short, invented stack per project, merged by the same code the live route
 // uses. Vercel and Supabase match hand-added tools above, so they appear on
-// those cards instead of twice. DNESKAi shows the package.json fallback.
+// those cards instead of twice. DNESKAi shows the package.json fallback, and
+// its `next` package merges with the "Next.js" the other projects name.
 const stack = (...items: [name: string, whatItDoes: string][]): StackEntry[] =>
   items.map(([name, whatItDoes]) => ({ name, key: toolKey(name), whatItDoes, specificity: 1 }));
 

@@ -90,9 +90,17 @@ function foldAccents(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-/** Identity for merging: case, accents and spacing never split one tool. */
+/**
+ * Identity for merging: case, accents, spacing, hyphens and underscores never
+ * split one tool, and a trailing ".js" is dropped, so an npm package and the
+ * product it ships merge (`next` and "Next.js", `react-dom` and "React DOM").
+ */
 export function toolKey(name: string): string {
-  return foldAccents(name).toLocaleLowerCase("en").replace(/\s+/g, " ").trim();
+  return foldAccents(name)
+    .toLocaleLowerCase("en")
+    .replace(/[\s_-]+/g, " ")
+    .trim()
+    .replace(/\.js$/, "");
 }
 
 function normalizeHeading(text: string): string {

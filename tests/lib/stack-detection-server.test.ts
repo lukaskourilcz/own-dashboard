@@ -81,9 +81,9 @@ describe("detectProjectStacks", () => {
       ["client", "no-repository", null, 0],
     ]);
     expect(result.projects.find((status) => status.projectId === "venture")?.parentName).toBe("dashboard");
+    // The reader's `next` package is the Next.js the dashboard names: one tool.
     expect(result.tools.map((tool) => [tool.name, tool.projects.map((usage) => usage.id)])).toEqual([
-      ["next", ["reader"]],
-      ["Next.js", ["dashboard"]],
+      ["Next.js", ["dashboard", "reader"]],
       ["react", ["reader"]],
       ["Supabase", ["dashboard"]],
       ["TypeScript", ["dashboard"]],

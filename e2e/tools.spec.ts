@@ -110,10 +110,12 @@ test("Tools lists what the repositories use, marked as detected and never twice"
   await expect(detected.locator('[data-detected-tool="vercel"]')).toHaveCount(0);
   await expect(detected.locator('[data-detected-tool="supabase"]')).toHaveCount(0);
 
-  const nextJs = detected.locator('[data-detected-tool="next.js"]');
-  await expect(nextJs.getByRole("list", { name: "Used in: Next.js" })).toHaveText(/own-dashboard\s*boardlessAI/);
-  await expect(nextJs).toContainText("Auto-detected · about-project.md");
-  await expect(detected.locator('[data-detected-tool="next"]')).toContainText("Auto-detected · package.json");
+  // DNESKAi's `next` package and the "Next.js" two projects name are one tool.
+  const nextJs = detected.locator('[data-detected-tool="next"]');
+  await expect(nextJs.getByRole("heading", { level: 3 })).toHaveText("Next.js");
+  await expect(nextJs.getByRole("list", { name: "Used in: Next.js" })).toHaveText(/DNESKAi\s*own-dashboard\s*boardlessAI/);
+  await expect(nextJs).toContainText("Auto-detected · package.json, about-project.md");
+  await expect(detected.getByRole("heading", { level: 3, name: /^next/i })).toHaveCount(1);
 
   // The repository list explains the projects that contributed nothing.
   await detected.getByText("Repositories: 4 of 9 active projects read").click();
@@ -146,6 +148,6 @@ test("Czech Tools reads Nástroje and works at 360 px", async ({ page }, testInf
   await expect(page.locator("header").getByRole("heading", { level: 1, name: "Nástroje" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: /^Používá se/ })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: /^Zjištěno z repozitářů/ })).toBeVisible();
-  await expect(page.locator('[data-detected-tool="next.js"]')).toContainText("Zjištěno automaticky");
+  await expect(page.locator('[data-detected-tool="next"]')).toContainText("Zjištěno automaticky");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

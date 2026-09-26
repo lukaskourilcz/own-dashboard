@@ -195,6 +195,25 @@ describe("mergeDetectedTools", () => {
     expect(toolKey("  Fio   Banka ")).toBe(toolKey("fio banka"));
     expect(toolKey("Čeština")).toBe("cestina");
   });
+
+  it("merges an npm package with the product it ships", () => {
+    expect(toolKey("Next.js")).toBe(toolKey("next"));
+    expect(toolKey("React DOM")).toBe(toolKey("react-dom"));
+    expect(toolKey("date_fns")).toBe(toolKey("date-fns"));
+    // Only a trailing ".js" goes; a scoped package keeps its scope.
+    expect(toolKey("pdfjs-dist")).toBe("pdfjs dist");
+    expect(toolKey("@supabase/supabase-js")).toBe("@supabase/supabase js");
+    const tools = mergeDetectedTools([
+      { project: { id: "p3", name: "DNESKAi" }, source: "package-json", entries: [entry("next")] },
+      { project: { id: "p1", name: "own-dashboard" }, source: "about-project", entries: [entry("Next.js", "The app shell")] },
+    ]);
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toMatchObject({ key: "next", name: "Next.js", whatItDoes: "The app shell" });
+    expect(tools[0]!.projects.map((usage) => [usage.name, usage.source])).toEqual([
+      ["DNESKAi", "package-json"],
+      ["own-dashboard", "about-project"],
+    ]);
+  });
 });
 
 describe("partitionDetectedTools", () => {
