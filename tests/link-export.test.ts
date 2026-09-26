@@ -42,6 +42,16 @@ describe("link export", () => {
     expect(md).toContain("project: Reduce image payload");
     expect(md).toContain("https://example.com/source");
   });
+  it("carries an IG tip's topic and card text, and nothing for a plain link", () => {
+    const tip = { ...row("Tip", "free"), record_type: "idea" as const, tip_group: "growth", tip_summary: "Plain words on the card." };
+    const data = buildLinkExport([tip, row("link", null)], [], "all");
+    expect(data.version).toBe(4);
+    expect(data.items[0]).toMatchObject({ group: "growth", summary: "Plain words on the card." });
+    expect(data.items[1]).toMatchObject({ group: null, summary: null });
+    const md = linkExportMarkdown(buildLinkExport([tip], [], "all", "", { scope: "idea" }));
+    expect(md.startsWith("# IG tips")).toBe(true);
+    expect(md).toContain("Topic: growth\n\nPlain words on the card.");
+  });
   it("supersedes embedded legacy scores without changing stored descriptions", () => {
     const old = { ...row("old", "free"), description: "2/5 · Useful reference" };
     expect(linkDescription(old)).toBe(old.description);
@@ -51,7 +61,7 @@ describe("link export", () => {
   it("handles legacy records, empty filters and unknown categories", () => {
     expect(buildLinkExport([row("legacy", null)], [], "all").items[0]).toMatchObject({ type: "link", usefulnessRating: null, sources: [] });
     expect(buildLinkExport([row("paid", "paid")], [], "free").items).toEqual([]);
-    expect(linkExportMarkdown(buildLinkExport([], [], "all"))).toContain("# Links & ideas");
+    expect(linkExportMarkdown(buildLinkExport([], [], "all"))).toContain("# Links & IG tips");
   });
   it("offers detailed, compact and category-grouped JSON structures", () => {
     const categories = [{ id: "design", user_id: "private-owner", name: "Design", sort_order: 1, created_at: "2026-09-15" }];

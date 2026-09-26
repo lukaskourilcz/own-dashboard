@@ -31,6 +31,7 @@ import { jobs } from "./sections/jobs";
 import { categories } from "./sections/categories";
 import { professional } from "./sections/professional";
 import { tools } from "./sections/tools";
+import { tips } from "./sections/tips";
 import { portfolio } from "./sections/portfolio";
 
 export { useLang, type Lang } from "./lang";
@@ -65,6 +66,7 @@ const dictionaries = {
     categories: categories.en,
     professional: professional.en,
     tools: tools.en,
+    tips: tips.en,
     portfolio: portfolio.en,
   },
   cs: {
@@ -96,6 +98,7 @@ const dictionaries = {
     categories: categories.cs,
     professional: professional.cs,
     tools: tools.cs,
+    tips: tips.cs,
     portfolio: portfolio.cs,
   },
 };

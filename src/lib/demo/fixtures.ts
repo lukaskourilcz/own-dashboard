@@ -479,6 +479,49 @@ export const aiLinks: AiLink[] = [
   { id: "al7", user_id: UID, category_id: "ac5", title: "PageSpeed Insights", url: "https://pagespeed.web.dev", description: "Core Web Vitals and Lighthouse checks for one URL.", pricing: "free", created_at: TS, updated_at: TS },
   { id: "al8", user_id: UID, category_id: "ac1", title: "Figma", url: "https://www.figma.com", description: "Interface design and prototyping.", pricing: "freemium", created_at: TS, updated_at: TS },
   { id: "al3", user_id: UID, category_id: null, title: "Hugging Face", url: "https://huggingface.co", description: "Open models, datasets, and demos.\n\nExample library note: compare a small prototype with the production requirements before adopting a new service, including the expected traffic, maintenance work, accessibility and the time needed to move away from it later.\n\nPricing: the free offering has limits, while compute and other services may be billed separately.\n\nExample reference: https://example.com/resources/a-long-reference-path-for-checking-readable-expanded-library-cards-on-narrow-screens", pricing: "freemium", created_at: TS, updated_at: TS },
+  // IG TIPS: invented tips stored as idea records, like the owner's. The
+  // Instagram addresses are placeholders. tip5 is left without a group or a
+  // summary to show the fallbacks; tip2 carries a long title and summary.
+  {
+    id: "tip1", user_id: UID, category_id: "ac3", record_type: "idea", title: "Plan a month of posts around two topics",
+    url: "https://www.instagram.com/p/EXAMPLE0001/", pricing: "free", created_at: TS, updated_at: TS,
+    description: "Reel notes: outlining a month in one sitting kept a small account posting every week. The creator's follower numbers are not verified.",
+    tip_group: "content",
+    tip_summary: "Pick two topics your audience keeps asking about and outline a month of posts in one sitting. Record short examples from work you are doing anyway, so every post shows something real. Judge the plan by the enquiries it brings, not by views, before posting more often.",
+    usefulness_rating: 4, rating_rationale: "A cheap habit with a clear measure.",
+    project_relevance: [{ repository: "own-dashboard", reason: "Plan the build-in-public posts." }],
+    source_urls: ["https://www.instagram.com/p/EXAMPLE0001/"],
+  },
+  {
+    id: "tip2", user_id: UID, category_id: "ac3", record_type: "idea",
+    title: "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post",
+    url: "https://example.com/guides/carousel-sizes", pricing: null, created_at: TS, updated_at: TS,
+    description: "Platform guide notes: one orientation applies to every slide; 1080 × 1350 is the recommended portrait size.",
+    tip_group: "formats",
+    tip_summary: "Instagram applies one orientation to every slide of a carousel, so a deck that mixes square and portrait slides gets cropped. Design at 1080 × 1350 pixels and make a square version only when a layout really needs one. Check the ratio before exporting, because a crop you notice after posting cannot be fixed without deleting the post. The same pages can go to LinkedIn as a PDF document.",
+    source_urls: ["https://example.com/guides/carousel-sizes"],
+  },
+  {
+    id: "tip3", user_id: UID, category_id: null, record_type: "idea", title: "Make the profile say what you offer and what to do next",
+    url: "https://www.instagram.com/p/EXAMPLE0002/", pricing: "free", created_at: TS, updated_at: TS,
+    description: "Reel notes: name, bio and pinned posts should answer offer, proof and next step.",
+    tip_group: "reach",
+    tip_summary: "Put your service and a searchable specialty in the name and bio, say who you help and with what result, and give one clear next step. Pin three posts: what you offer, a work story and real proof. Measure visits from the profile to your site rather than the creator's claims.",
+    source_urls: ["https://www.instagram.com/p/EXAMPLE0002/", "https://www.instagram.com/p/EXAMPLE0003/"],
+  },
+  {
+    id: "tip4", user_id: UID, category_id: "ac3", record_type: "idea", title: "Reward readers who bring a friend",
+    url: "https://example.com/newsletters/referrals", pricing: null, created_at: TS, updated_at: TS,
+    description: "Newsletter research: a referral perk grew lists more cheaply than a paid tier.",
+    tip_group: "growth",
+    tip_summary: "Give readers a real perk, such as early delivery or an ad-free edition, when a friend they invite subscribes. It only works once there is an email list, so start it after the newsletter launch.",
+    rating_rationale: "Grows the list that sponsors and donations both depend on.",
+  },
+  {
+    id: "tip5", user_id: UID, category_id: null, record_type: "idea", title: "Check a free resource before relying on it",
+    url: "https://www.instagram.com/p/EXAMPLE0004/", pricing: "free", created_at: TS, updated_at: TS,
+    description: "Open the provider's own page, tell a free resource from a trial or a paid export, and note the date you checked.",
+  },
 ];
 
 // Links the fixture projects really use. role "tool" rows double as the
@@ -489,6 +532,9 @@ export const projectLinks: ProjectLink[] = [
   { id: "pl3", user_id: UID, project_id: "proj-dneskai", ai_link_id: "al4", role: "tool", note: "Hosts the static magazine.", sort_order: 2, created_at: TS, updated_at: TS },
   { id: "pl4", user_id: UID, project_id: "proj-devshark", ai_link_id: "al4", role: "tool", note: "Hosts the React client and the twelve API handlers.", sort_order: 0, created_at: TS, updated_at: TS },
   { id: "pl5", user_id: UID, project_id: "proj-dashboard", ai_link_id: "al5", role: "tool", note: "Stores every record behind own-only RLS.", sort_order: 0, created_at: TS, updated_at: TS },
+  // IG tips a project uses.
+  { id: "pl6", user_id: UID, project_id: "proj-dashboard", ai_link_id: "tip1", role: "reference", note: "Plan the build-in-public posts.", sort_order: 1, created_at: TS, updated_at: TS },
+  { id: "pl7", user_id: UID, project_id: "proj-dneskai", ai_link_id: "tip4", role: "reference", note: "A perk for readers who invite a friend.", sort_order: 3, created_at: TS, updated_at: TS },
 ];
 
 // Three tools: two in use across projects, one on trial with a

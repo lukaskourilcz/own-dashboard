@@ -53,9 +53,9 @@ describe("project links", () => {
     expect(chipOverflow(["a"])).toEqual({ shown: ["a"], hidden: 0 });
   });
 
-  it("exports the relations in the detailed JSON shape as version 3", () => {
+  it("exports the relations in the detailed JSON shape as version 4", () => {
     const data = buildLinkExport(links, [], "all", "", { relations: { projectLinks: relations, projects } });
-    expect(data.version).toBe(3);
+    expect(data.version).toBe(4);
     const vercel = data.items.find((item) => item.title === "Vercel");
     expect(vercel?.usedBy).toEqual([
       { project: "devShark", slug: "devshark", role: "tool", note: "" },

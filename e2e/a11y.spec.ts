@@ -55,6 +55,7 @@ test.describe("accessibility (axe-core, WCAG 2.0/2.1 A & AA)", () => {
     "Prompts",
     "Tools",
     "Links",
+    "IG TIPS",
     "Settings",
   ] as const;
 

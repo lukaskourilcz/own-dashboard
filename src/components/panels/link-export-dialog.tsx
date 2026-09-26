@@ -72,7 +72,7 @@ export function LinkExportDialog({ links, categories, scope, relations }: { link
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = (scope === "idea" ? "ideas" : "links") + "." + (format === "json" ? "json" : "md");
+    anchor.download = (scope === "idea" ? "ig-tips" : "links") + "." + (format === "json" ? "json" : "md");
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }

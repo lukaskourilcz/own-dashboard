@@ -67,7 +67,7 @@ test("a project workspace lists the links it uses and adds one from the library"
   await page.getByRole("button", { name: "Copy links to JSON / Markdown" }).click();
   const preview = page.getByRole("dialog").getByLabel("Preview", { exact: true });
   const data = JSON.parse(await preview.inputValue());
-  expect(data.version).toBe(3);
+  expect(data.version).toBe(4);
   const exported = data.items.find((item: { title: string }) => item.title === "Supabase");
   expect(exported.usedBy.map((usage: { project: string }) => usage.project)).toContain("DNESKAi");
   await page.keyboard.press("Escape");

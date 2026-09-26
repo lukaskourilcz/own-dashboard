@@ -117,7 +117,7 @@ test("creates an Idea below Links and exposes review evidence", async ({ page },
   await expect(ideas.getByText("Record rights and costs before using generated media.", { exact: false })).toBeVisible();
   await expect(ideas.getByText("Original source or Reel", { exact: true })).toBeVisible();
   await expect(ideas.getByRole("link", { name: "https://www.rive.app/pricing", exact: true })).toBeVisible();
-  await ideas.getByRole("button", { name: "Copy ideas to JSON / Markdown", exact: true }).click();
+  await ideas.getByRole("button", { name: "Copy IG tips to JSON / Markdown", exact: true }).click();
   const exportDialog = page.getByRole("dialog");
   const exported = JSON.parse(await exportDialog.getByLabel("Preview", { exact: true }).inputValue());
   expect(exported.scope).toBe("idea");

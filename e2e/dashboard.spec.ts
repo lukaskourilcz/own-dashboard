@@ -24,6 +24,7 @@ const TABS = [
   "Prompts",
   "Tools",
   "Links",
+  "IG TIPS",
 ] as const;
 
 test.describe("dashboard sections", () => {

@@ -154,6 +154,9 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   prompts: ["prompts", "promptLinks", "projects", "aiLinks", "aiCategories", "projectLinks"],
   tools: ["tools", "aiLinks", "aiCategories", "projects", "projectLinks", "subscriptions"],
   links: ["aiLinks", "aiCategories", "projectLinks", "projects", "tools"],
+  // IG TIPS are the library's idea records: the same ai_links rows, their
+  // categories for the export, and the projects each tip is for.
+  "ig-tips": ["aiLinks", "aiCategories", "projectLinks", "projects"],
   references: ["shortcuts", "referenceRows"],
   settings: ["projects"],
 };

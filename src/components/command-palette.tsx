@@ -11,6 +11,7 @@ import {
   Gift,
   LayoutDashboard,
   Languages,
+  Lightbulb,
   ListTodo,
   Users,
   LogOut,
@@ -102,6 +103,7 @@ export function CommandPalette({
       { id: "go-prompts", label: s.prompts, group: "go", icon: MessageSquareText, keywords: "prompts snippets templates clipboard copy library prompty g m", run: go("prompts") },
       { id: "go-tools", label: s.tools, group: "go", icon: Wrench, keywords: "tools services stack nástroje g k", run: go("tools") },
       { id: "go-links", label: s.links, group: "go", icon: FileText, keywords: "links tools sites odkazy", run: go("links") },
+      { id: "go-ig-tips", label: s["ig-tips"], group: "go", icon: Lightbulb, keywords: "ig tips instagram reels ideas advice tipy nápady rady", run: go("ig-tips") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-theme",

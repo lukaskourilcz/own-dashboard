@@ -79,8 +79,9 @@ export function buildLinkExport(
       })
       .sort((a, b) => a.project.localeCompare(b.project));
   return {
-    // 3 adds `usedBy`: the projects that use each link (project_links).
-    version: 3,
+    // 3 added `usedBy`: the projects that use each link (project_links).
+    // 4 adds `group` and `summary`: an IG tip's topic and its card text.
+    version: 4,
     scope,
     selection,
     pricingFilter: pricing,
@@ -100,6 +101,8 @@ export function buildLinkExport(
       pricingEvidence: link.pricing_evidence ?? null,
       reviewedAt: link.reviewed_at ?? null,
       usedBy: usedBy(link.id),
+      group: link.tip_group ?? null,
+      summary: link.tip_summary ?? null,
     })),
   };
 }
@@ -135,7 +138,7 @@ export function shapeLinkExport(data: LinkExportData, shape: LinkExportShape) {
 const escapeMd = (value: string) => value.replace(/[\\`*_{}[\]<>#|]/g, "\\$&");
 
 export function linkExportMarkdown(data: LinkExportData) {
-  const heading = data.scope === "idea" ? "# Ideas" : data.scope === "link" ? "# Links" : "# Links & ideas";
+  const heading = data.scope === "idea" ? "# IG tips" : data.scope === "link" ? "# Links" : "# Links & IG tips";
   return [
     heading, "", "Pricing filter: " + data.pricingFilter,
     ...(data.search ? ["Search: " + escapeMd(data.search)] : []), "",
@@ -144,7 +147,9 @@ export function linkExportMarkdown(data: LinkExportData) {
       "Type: " + l.type, "URL: " + l.url,
       "Category: " + escapeMd(l.category ?? "Uncategorized"),
       "Pricing: " + (l.pricing ?? "Unknown"),
-      "Usefulness: " + (l.usefulnessRating == null ? "Not rated" : l.usefulnessRating + "/5"), "",
+      "Usefulness: " + (l.usefulnessRating == null ? "Not rated" : l.usefulnessRating + "/5"),
+      ...(l.group ? ["Topic: " + l.group] : []), "",
+      ...(l.summary ? [l.summary, ""] : []),
       l.description ?? "", "",
       ...(l.ratingRationale ? ["Benefit: " + l.ratingRationale, ""] : []),
       ...(l.usedBy.length ? ["Used by:", ...l.usedBy.map((u) => "- " + escapeMd(u.project) + " (" + u.role + ")" + (u.note ? ": " + u.note : "")), ""] : []),

@@ -23,6 +23,7 @@ import { TodosPanel } from "@/components/panels/todos-panel";
 import { ToolsPanel } from "@/components/panels/tools-panel";
 import { WorkOverviewPanel } from "@/components/panels/work-overview-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
+import { IgTipsPanel } from "@/components/panels/ig-tips-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
@@ -206,7 +207,7 @@ export function DashboardShell(props: Props) {
   const [promptLinks, setPromptLinks] = useEntityStore(qk.promptLinks, props.initialPromptLinks, fetchPromptLinks, dataOptions("promptLinks"));
   const [repoNotes, setRepoNotes] = useEntityStore(qk.repoNotes, props.initialRepoNotes, fetchRepoNotes, dataOptions("repoNotes"));
   const [repoLinks, setRepoLinks] = useEntityStore(qk.repoLinks, props.initialRepoLinks, fetchRepoLinks, dataOptions("repoLinks"));
-  const [aiLinks, setAiLinks] = useEntityStore(qk.aiLinks, props.initialAiLinks, fetchAiLinks, dataOptions("aiLinks"));
+  const [aiLinks, setAiLinks, aiLinksStatus] = useEntityStore(qk.aiLinks, props.initialAiLinks, fetchAiLinks, dataOptions("aiLinks"));
   const [aiCategories, setAiCategories] = useEntityStore(qk.aiCategories, props.initialAiCategories, fetchAiCategories, dataOptions("aiCategories"));
   const [projectLinks, setProjectLinks] = useEntityStore(qk.projectLinks, props.initialProjectLinks, fetchProjectLinks, dataOptions("projectLinks"));
   const [tools, setTools] = useEntityStore(qk.tools, props.initialTools, fetchTools, dataOptions("tools"));
@@ -387,6 +388,7 @@ export function DashboardShell(props: Props) {
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} promptLinks={promptLinks} setPromptLinks={setPromptLinks} projects={activeProjects} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} />}
           {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} previewDetectedTools={props.previewDetectedTools} />}
           {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} tools={tools} focusLinkId={focusLinkId} onFocusHandled={() => setFocusLinkId(null)} />}
+          {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} aiCategories={aiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
         </motion.div></AnimatePresence>
