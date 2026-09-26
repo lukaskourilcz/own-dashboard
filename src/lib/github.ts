@@ -3,6 +3,8 @@
  * No secrets, no server-only imports — safe to pull into client components.
  */
 
+import type { DetectedToolsResponse } from "@/lib/stack-detection";
+
 /** Trimmed repository shape returned by GET /api/github/repos. */
 export type GithubRepo = {
   id: number;
@@ -153,6 +155,27 @@ export async function loadRepoFile(
       html_url: string | null;
     };
     return { kind: "ok", content: json.content, htmlUrl: json.html_url };
+  } catch {
+    return { kind: "error" };
+  }
+}
+
+export type DetectedToolsResult =
+  | { kind: "ok"; data: DetectedToolsResponse }
+  | { kind: "disconnected" }
+  | { kind: "rate-limited" }
+  | { kind: "error" };
+
+/** The tools the active projects' repositories list, via
+ * GET /api/tools/detected. The token stays on the server. */
+export async function loadDetectedTools(): Promise<DetectedToolsResult> {
+  try {
+    const res = await fetch("/api/tools/detected", { cache: "no-store" });
+    if (res.status === 429) return { kind: "rate-limited" };
+    if (!res.ok) return { kind: "error" };
+    const data = (await res.json()) as DetectedToolsResponse;
+    if (!data.connected) return { kind: "disconnected" };
+    return { kind: "ok", data };
   } catch {
     return { kind: "error" };
   }

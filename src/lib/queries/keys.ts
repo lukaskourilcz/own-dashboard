@@ -56,6 +56,7 @@ export const qk = {
   transactionRules: ["transactionRules"] as const,
   // Network-backed.
   repos: ["github", "repos"] as const,
+  detectedTools: ["github", "detected-tools"] as const,
   calendarList: ["calendar", "list"] as const,
   calendarToday: ["calendar", "events", "today"] as const,
   calendarWeek: ["calendar", "events", "week"] as const,
