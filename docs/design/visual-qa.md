@@ -195,3 +195,35 @@ now also appears on the Work overview and in the Home hero.
   scroller on the page and is labelled and focusable, each column is a heading
   rather than a landmark so the board does not bury the page's real ones, and
   the overdue follow-up carries the word "due" as well as the warning tone.
+
+## IG TIPS, detected Tools and the Own/Freelance switch — 2026-09-26
+
+IG TIPS left Links for its own Library section, Tools lists what the active
+projects' repositories use, and Settings gives each active project an Own or
+Freelance control.
+
+- `npm run lint`, `npx tsc --noEmit` and `npm run build`: exit 0 on the final
+  commit. `npm run test`: 60 files, 654 tests, exit 0. Every commit of the
+  branch also passed `tsc` and the unit tests on its own.
+- `npm run test:e2e`, full suite on the commit before the paged detected list:
+  162 tests, 97 passed and 65 skipped by project design, exit 0 in 4.6 minutes.
+  The web server logged two `getaddrinfo ENOTFOUND example.supabase.co` errors
+  from server-side session checks with the fixture cookie; no test failed.
+  After the paged list, `e2e/tools.spec.ts`, `e2e/a11y.spec.ts` and
+  `e2e/ig-tips.spec.ts` ran again: 34 passed, 24 skipped, exit 0.
+- New browser coverage: IG TIPS topic sections, icon-free cards, keyboard
+  details, topic chips, search, the tip export, adding and editing a tip, a link
+  moved out of Links, and Czech at 360 px with 44 px card actions and no axe
+  violations; Tools detected rows, the repository statuses and the project and
+  text filters; the Own/Freelance switch both ways, a failed write, and Czech at
+  360 px with axe.
+- `/dev-preview` captures at 360 px and 1440 px in English light (IG TIPS, the
+  detected Tools list, Settings → Active projects, Links, Projects) and at 360 px
+  in Czech dark (IG TIPS, Settings) showed no horizontal overflow and no page
+  errors. They stay outside Git; the three changelog captures in
+  `media/changelog/` are committed.
+- Limits: the stack parser was checked against the current `about-project.md`
+  and `package.json` of the four public active repositories (75 distinct tools).
+  Three active repositories are private and could not be read from the agent
+  session, and the live route has not run against GitHub, because the preview
+  uses fixtures. Nothing was deployed.
