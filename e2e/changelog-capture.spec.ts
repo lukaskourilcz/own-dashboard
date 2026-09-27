@@ -69,6 +69,23 @@ const CAPTURES: readonly {
   charts: boolean;
 }[] = [
   {
+    file: "2026-09-28-ig-tips-plans.png",
+    tab: "IG TIPS",
+    panelHeading: "IG TIPS",
+    // The chip exists only once the fixture calendars are read.
+    control: "Not yet applied 3",
+    charts: false,
+  },
+  {
+    file: "2026-09-28-marketing-week.png",
+    tab: "Work overview",
+    panelHeading: "Work overview",
+    control: "Check the calendars again",
+    scrollTo: "[data-marketing-week]",
+    scrollBlock: "center",
+    charts: false,
+  },
+  {
     file: "2026-09-26-ig-tips.png",
     tab: "IG TIPS",
     panelHeading: "IG TIPS",
