@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
+import { CalendarSourceNotes } from "@/components/marketing/calendar-source-notes";
+import { useMarketingCalendars, type MarketingView } from "@/components/marketing/use-marketing-calendars";
 import { TipExportDialog } from "@/components/panels/tip-export-dialog";
 import { Button } from "@/components/ui/button";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
@@ -37,6 +39,14 @@ import {
   type TipGroupKey,
 } from "@/lib/ig-tips";
 import { linkDescription } from "@/lib/link-export";
+import {
+  aggregateTipUsage,
+  tipForDeepLink,
+  unmatchedTipRefs,
+  usageForTip,
+  type MarketingCalendarsResponse,
+  type TipUsage,
+} from "@/lib/marketing-calendars";
 import { resourceKey } from "@/lib/link-library";
 import { nextProjectLinkOrder, projectsUsingLink } from "@/lib/project-links";
 import type { EntityStatus } from "@/lib/queries/entities";
@@ -54,6 +64,11 @@ type Props = {
   projectLinks: ProjectLink[];
   setProjectLinks: Updater<ProjectLink[]>;
   projects: Project[];
+  /** Fixture calendars for the preview; the live panel reads GitHub. */
+  previewMarketingCalendars?: MarketingCalendarsResponse;
+  /** `/ig-tips?q=<title>`: prefill the search and open that tip's card. */
+  initialQuery?: string | null;
+  onDeepLinkHandled?: () => void;
 };
 
 type TipForm = {
@@ -79,6 +94,11 @@ function normalizeUrl(raw: string): string | null {
   }
 }
 
+const NO_USAGE: TipUsage[] = [];
+const chip = "inline-flex min-h-11 items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-ring sm:min-h-7";
+const chipOn = "border-primary bg-surface-selected text-foreground";
+const chipOff = "border-border text-foreground-muted hover:bg-surface-hover hover:text-foreground";
+
 /**
  * IG TIPS: the library's idea records as their own section, grouped by
  * topic. Every card leads with a plain description of what the tip is and
@@ -92,17 +112,25 @@ export function IgTipsPanel({
   projectLinks,
   setProjectLinks,
   projects,
+  previewMarketingCalendars,
+  initialQuery = null,
+  onDeepLinkHandled,
 }: Props) {
   const t = useDict();
   const tt = t.tips;
+  const m = t.marketing;
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
   const confirm = useConfirmation();
   const relations = useProjectLinkMutations(setProjectLinks);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   const [groupFilter, setGroupFilter] = useState<TipGroupKey | "all">("all");
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const [notApplied, setNotApplied] = useState(false);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => {
+    const target = tipForDeepLink(initialQuery, aiLinks.filter(isTip));
+    return new Set(target ? [target.id] : []);
+  });
   const [editing, setEditing] = useState<AiLink | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<TipForm>(emptyForm);
@@ -111,17 +139,55 @@ export function IgTipsPanel({
   const returnFocus = useReturnFocus(dialogOpen);
 
   const tips = useMemo(() => aiLinks.filter(isTip), [aiLinks]);
+  const calendars = useMarketingCalendars(previewMarketingCalendars);
+  const calendarSources = calendars.view.kind === "ok" ? calendars.view.data.sources : null;
+  const usage = useMemo(() => (calendarSources ? aggregateTipUsage(calendarSources) : null), [calendarSources]);
+  const usageRead = usage !== null && usage.readSources.length > 0;
+  const unmatchedRefs = useMemo(() => (usage ? unmatchedTipRefs(usage, tips.map((tip) => tip.title)) : 0), [usage, tips]);
   const groupLabel = (group: TipGroupKey) => tt.groupLabel[group];
   const searched = useMemo(() => searchTips(tips, query, (group) => tt.groupLabel[group]), [tips, query, tt.groupLabel]);
   const filtered = useMemo(
-    () => (groupFilter === "all" ? searched : searched.filter((tip) => tipGroupKey(tip) === groupFilter)),
-    [searched, groupFilter],
+    () =>
+      searched.filter(
+        (tip) =>
+          (groupFilter === "all" || tipGroupKey(tip) === groupFilter) &&
+          (!notApplied || !usageRead || usageForTip(usage!, tip.title).length === 0),
+      ),
+    [searched, groupFilter, notApplied, usage, usageRead],
+  );
+  const notAppliedCount = useMemo(
+    () => (usageRead ? tips.filter((tip) => usageForTip(usage!, tip.title).length === 0).length : 0),
+    [tips, usage, usageRead],
   );
   const groups = useMemo(() => groupTips(filtered), [filtered]);
   const availableGroups = useMemo(() => groupTips(tips).map((entry) => entry.group), [tips]);
   const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
-  const searching = query.trim().length > 0 || groupFilter !== "all";
+  const searching = query.trim().length > 0 || groupFilter !== "all" || (notApplied && usageRead);
+
+  // Arriving through `/ig-tips?q=<title>`: once the tips are loaded, open the
+  // card whose title is the query and bring it into view. Runs once; the
+  // shell then forgets the query so a later visit starts clean.
+  const deepLinkTipId = useMemo(() => tipForDeepLink(initialQuery, tips)?.id ?? null, [initialQuery, tips]);
+  useEffect(() => {
+    if (!initialQuery || !aiLinksStatus.ready) return;
+    let inner = 0;
+    const frame = window.requestAnimationFrame(() => {
+      if (deepLinkTipId) setExpanded((previous) => (previous.has(deepLinkTipId) ? previous : new Set([...previous, deepLinkTipId])));
+      inner = window.requestAnimationFrame(() => {
+        if (deepLinkTipId) {
+          const card = document.querySelector<HTMLElement>(`[data-tip-card="${CSS.escape(deepLinkTipId)}"]`);
+          card?.scrollIntoView({ block: "start" });
+          card?.querySelector<HTMLElement>("button[aria-controls]")?.focus({ preventScroll: true });
+        }
+        onDeepLinkHandled?.();
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(inner);
+    };
+  }, [initialQuery, aiLinksStatus.ready, deepLinkTipId, onDeepLinkHandled]);
 
   const toggle = (id: string) =>
     setExpanded((previous) => {
@@ -297,17 +363,30 @@ export function IgTipsPanel({
                   type="button"
                   aria-pressed={groupFilter === group}
                   onClick={() => setGroupFilter(group)}
-                  className={cn(
-                    "inline-flex min-h-11 items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-ring sm:min-h-7",
-                    groupFilter === group
-                      ? "border-primary bg-surface-selected text-foreground"
-                      : "border-border text-foreground-muted hover:bg-surface-hover hover:text-foreground",
-                  )}
+                  className={cn(chip, groupFilter === group ? chipOn : chipOff)}
                 >
                   {group === "all" ? tt.allGroups : groupLabel(group)}
                 </button>
               ))}
+              {usageRead && (
+                <button
+                  type="button"
+                  aria-pressed={notApplied}
+                  onClick={() => setNotApplied((value) => !value)}
+                  className={cn(chip, "sm:ml-2", notApplied ? chipOn : chipOff)}
+                >
+                  {m.notYetApplied}
+                  <span className="ml-1.5 tabular text-foreground-subtle">{notAppliedCount}</span>
+                </button>
+              )}
             </div>
+            <PlansStatus
+              view={calendars.view}
+              unmatchedRefs={unmatchedRefs}
+              checking={calendars.checking}
+              canCheck={calendars.canCheck}
+              onCheckAgain={calendars.checkAgain}
+            />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p role="status" className="text-xs text-foreground-muted">{tt.resultCount(filtered.length, tips.length)}</p>
               {searching && (
@@ -317,6 +396,7 @@ export function IgTipsPanel({
                   onClick={() => {
                     setQuery("");
                     setGroupFilter("all");
+                    setNotApplied(false);
                   }}
                 >
                   {tt.clearFilters}
@@ -341,6 +421,7 @@ export function IgTipsPanel({
                         key={tip.id}
                         tip={tip}
                         forProjects={projectsUsingLink(tip.id, projectLinks, projects).map(({ project }) => project.name)}
+                        usage={usage ? usageForTip(usage, tip.title) : NO_USAGE}
                         expanded={expanded.has(tip.id)}
                         onToggle={() => toggle(tip.id)}
                         onEdit={() => openEdit(tip)}
@@ -453,6 +534,7 @@ function Linkified({ text }: { text: string }) {
 function TipCard({
   tip,
   forProjects,
+  usage,
   expanded,
   onToggle,
   onEdit,
@@ -461,6 +543,8 @@ function TipCard({
 }: {
   tip: AiLink;
   forProjects: string[];
+  /** The marketing calendars that apply this tip, with entry counts. */
+  usage: TipUsage[];
   expanded: boolean;
   onToggle: () => void;
   onEdit: () => void;
@@ -489,6 +573,25 @@ function TipCard({
         {(sourceLine || forProjects.length > 0) && (
           <p className="mt-2 text-[11px] text-foreground-muted [overflow-wrap:anywhere]">
             {[sourceLine, forProjects.length > 0 ? tt.forProjects(forProjects.join(", ")) : null].filter(Boolean).join(" · ")}
+          </p>
+        )}
+        {usage.length > 0 && (
+          <p data-tip-usage className="mt-1 flex flex-wrap items-center gap-x-1 text-[11px] text-foreground-muted">
+            <span>{t.marketing.appliedIn}</span>{" "}
+            {usage.map((item, index) => (
+              <span key={item.sourceId} className="inline-flex items-center">
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="focus-ring inline-flex min-h-11 items-center rounded font-medium text-foreground underline hover:no-underline md:min-h-6"
+                >
+                  {t.marketing.usageLink(item.label, item.count)}
+                  <span className="sr-only"> {t.marketing.opensInNewTab}</span>
+                </a>
+                {index < usage.length - 1 && ", "}
+              </span>
+            ))}
           </p>
         )}
       </div>
@@ -563,5 +666,53 @@ function TipCard({
         </button>
       </div>
     </li>
+  );
+}
+
+/**
+ * Which marketing calendars the "Applied in" counts come from, or why they
+ * could not be read. Plain text rather than a live region: the tip count
+ * above is the section's status.
+ */
+function PlansStatus({
+  view,
+  unmatchedRefs,
+  checking,
+  canCheck,
+  onCheckAgain,
+}: {
+  view: MarketingView;
+  unmatchedRefs: number;
+  checking: boolean;
+  canCheck: boolean;
+  onCheckAgain: () => void;
+}) {
+  const m = useDict().marketing;
+  const read = view.kind === "ok" ? view.data.sources.filter((source) => source.status === "ok") : [];
+  return (
+    <div data-plans-status className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs">
+      <div className="min-w-0 space-y-1">
+        {view.kind === "loading" ? (
+          <p className="text-foreground-muted">{m.loading}</p>
+        ) : view.kind !== "ok" ? (
+          <p className="text-warning">{view.kind === "rate-limited" ? m.rateLimited : view.kind === "signed-out" ? m.signedOut : m.loadError}</p>
+        ) : (
+          <>
+            {read.length > 0 && (
+              <p className="text-foreground-muted [overflow-wrap:anywhere]">
+                {m.plansRead(read.map((source) => m.calendarEntries(source.label, source.calendar?.entries.length ?? 0)).join(", "))}
+              </p>
+            )}
+            <CalendarSourceNotes sources={view.data.sources} />
+            {unmatchedRefs > 0 && <p className="text-foreground-muted">{m.unmatchedRefs(unmatchedRefs)}</p>}
+          </>
+        )}
+      </div>
+      {canCheck && (
+        <Button size="sm" variant="ghost" onClick={onCheckAgain} disabled={checking} className="min-h-11 sm:min-h-0">
+          {checking ? m.checking : m.checkAgain}
+        </Button>
+      )}
+    </div>
   );
 }

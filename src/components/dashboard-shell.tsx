@@ -45,6 +45,7 @@ import { ConfirmationProvider } from "@/components/ui/confirmation-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { EventsResult } from "@/lib/calendar";
 import type { DetectedToolsResponse } from "@/lib/stack-detection";
+import type { MarketingCalendarsResponse } from "@/lib/marketing-calendars";
 import { onDemandDataKeys, tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-data";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import type { WidgetId } from "@/lib/dashboard-layout";
@@ -110,6 +111,8 @@ import type {
 type Props = {
   isPreview?: boolean;
   initialProjectId?: string;
+  /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
+  initialTipQuery?: string | null;
   user: { id: string; email: string; name: string | null; avatar_url: string | null };
   initialTab: NavTab;
   initialDataKeys: DashboardDataKey[];
@@ -163,6 +166,8 @@ type Props = {
   initialPreferences: SyncedUiPreferences;
   /** Fixture detection for the preview; the live Tools panel reads GitHub. */
   previewDetectedTools?: DetectedToolsResponse;
+  /** Fixture marketing calendars for the preview; the live app reads GitHub. */
+  previewMarketingCalendars?: MarketingCalendarsResponse;
 };
 
 // `g` then a letter. Inbox and References are hidden from navigation, so
@@ -213,6 +218,9 @@ export function DashboardShell(props: Props) {
   const [tools, setTools] = useEntityStore(qk.tools, props.initialTools, fetchTools, dataOptions("tools"));
   // A Tools card's "Show in Links" opens the library at that link's card.
   const [focusLinkId, setFocusLinkId] = useState<string | null>(null);
+  // `/ig-tips?q=` applies once, on the IG TIPS panel the page opened with.
+  const [tipQuery, setTipQuery] = useState<string | null>(props.initialTipQuery ?? null);
+  const clearTipQuery = useCallback(() => setTipQuery(null), []);
   const [shortcuts, setShortcuts] = useEntityStore(qk.shortcuts, props.initialShortcuts, fetchShortcuts, dataOptions("shortcuts"));
   const [referenceRows, setReferenceRows] = useEntityStore(qk.referenceRows, props.initialReferenceRows, fetchReferenceRows, dataOptions("referenceRows"));
   const [importantDates, setImportantDates] = useEntityStore(qk.importantDates, props.initialImportantDates, fetchImportantDates, dataOptions("importantDates"));
@@ -370,7 +378,7 @@ export function DashboardShell(props: Props) {
             goals: <RecurringPlans plans={plans} setPlans={setPlans} />,
           } satisfies Record<WidgetId, React.ReactNode>} />}
           {tab === "inbox" && <InboxPanel items={inboxItems} setItems={setInboxItems} notifications={notifications} setNotifications={setNotifications} />}
-          {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} reviewsStatus={weeklyReviewsStatus} lastWeekCalendar={lastWeekCalendar} lastWeekCalendarStatus={lastWeekCalendarStatus} isPreview={props.isPreview} />}
+          {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} reviewsStatus={weeklyReviewsStatus} lastWeekCalendar={lastWeekCalendar} lastWeekCalendarStatus={lastWeekCalendarStatus} isPreview={props.isPreview} previewMarketingCalendars={props.previewMarketingCalendars} />}
           {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} onBackToProjects={() => setTab("projects")} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} subscriptionAllocations={subscriptionAllocations} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} promptLinks={promptLinks} competitors={competitors} setCompetitors={setCompetitors} syncRepositories={!props.isPreview} isPreview={props.isPreview} />}
           {tab === "competition" && <CompetitionPanel projects={projects} competitors={competitors} setCompetitors={setCompetitors} onOpenProject={openProject} />}
           {tab === "opportunities" && <OpportunitiesPanel activated={activatedTabs.has("opportunities")} onActivate={() => activateTab("opportunities")} userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
@@ -388,7 +396,7 @@ export function DashboardShell(props: Props) {
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} promptLinks={promptLinks} setPromptLinks={setPromptLinks} projects={activeProjects} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} />}
           {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} previewDetectedTools={props.previewDetectedTools} />}
           {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} tools={tools} focusLinkId={focusLinkId} onFocusHandled={() => setFocusLinkId(null)} />}
-          {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} />}
+          {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
         </motion.div></AnimatePresence>
