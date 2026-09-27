@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
-import { LinkExportDialog } from "@/components/panels/link-export-dialog";
+import { TipExportDialog } from "@/components/panels/tip-export-dialog";
 import { Button } from "@/components/ui/button";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import {
@@ -43,7 +43,7 @@ import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
-import type { AiCategory, AiLink, Project, ProjectLink, Updater } from "@/lib/types";
+import type { AiLink, Project, ProjectLink, Updater } from "@/lib/types";
 import { useReturnFocus } from "@/lib/use-return-focus";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +51,6 @@ type Props = {
   aiLinks: AiLink[];
   setAiLinks: Updater<AiLink[]>;
   aiLinksStatus?: EntityStatus;
-  aiCategories: AiCategory[];
   projectLinks: ProjectLink[];
   setProjectLinks: Updater<ProjectLink[]>;
   projects: Project[];
@@ -90,7 +89,6 @@ export function IgTipsPanel({
   aiLinks,
   setAiLinks,
   aiLinksStatus = { ready: true, failed: false },
-  aiCategories,
   projectLinks,
   setProjectLinks,
   projects,
@@ -259,7 +257,7 @@ export function IgTipsPanel({
         description={tt.description}
         action={
           <div className="flex flex-wrap gap-2">
-            <LinkExportDialog links={aiLinks} categories={aiCategories} scope="idea" relations={exportRelations} />
+            <TipExportDialog links={aiLinks} relations={exportRelations} />
             {addButton}
           </div>
         }
