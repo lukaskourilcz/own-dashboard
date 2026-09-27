@@ -32,6 +32,7 @@ import { categories } from "./sections/categories";
 import { professional } from "./sections/professional";
 import { tools } from "./sections/tools";
 import { tips } from "./sections/tips";
+import { marketing } from "./sections/marketing";
 import { portfolio } from "./sections/portfolio";
 
 export { useLang, type Lang } from "./lang";
@@ -67,6 +68,7 @@ const dictionaries = {
     professional: professional.en,
     tools: tools.en,
     tips: tips.en,
+    marketing: marketing.en,
     portfolio: portfolio.en,
   },
   cs: {
@@ -99,6 +101,7 @@ const dictionaries = {
     professional: professional.cs,
     tools: tools.cs,
     tips: tips.cs,
+    marketing: marketing.cs,
     portfolio: portfolio.cs,
   },
 };
