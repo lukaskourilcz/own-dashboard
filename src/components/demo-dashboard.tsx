@@ -21,12 +21,22 @@ export function DemoDashboard({
   projectRef,
   initialTab,
   language = "cs",
+  liveMarketingCalendars = false,
+  initialTipQuery = null,
 }: {
   /** Opens a project workspace directly, by fixture id or slug. */
   projectRef?: string;
   /** Opens a destination directly, as its URL would. */
   initialTab?: NavTab;
   language?: Lang;
+  /**
+   * Read the marketing calendars through /api/marketing/calendars instead of
+   * the fixture. Only the preview harness sets it, so Playwright can stand in
+   * for that endpoint; the public tour always shows the fixture.
+   */
+  liveMarketingCalendars?: boolean;
+  /** The IG TIPS deep-link search, as `/ig-tips?q=` passes it. */
+  initialTipQuery?: string | null;
 }) {
   const project = projectRef ? resolveProjectRef(f.projects, projectRef) : undefined;
 
@@ -36,6 +46,7 @@ export function DemoDashboard({
       user={f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
+      initialTipQuery={initialTipQuery}
       initialDataKeys={[...DASHBOARD_DATA_KEYS]}
       initialSubscriptions={f.subscriptions}
       initialTodos={f.todos}
@@ -82,6 +93,7 @@ export function DemoDashboard({
       selectedCalendarIds={f.selectedCalendarIds}
       repoVisibleIds={f.repoVisibleIds}
       previewDetectedTools={f.detectedTools}
+      previewMarketingCalendars={liveMarketingCalendars ? undefined : f.marketingCalendars}
       initialPreferences={{
         language,
         theme: "light",

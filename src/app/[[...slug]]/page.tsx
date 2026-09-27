@@ -3,11 +3,18 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
+import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
 import { resolveProjectRef } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
 
-export default async function DashboardPage({ params }: { params: Promise<{ slug?: string[] }> }) {
+export default async function DashboardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug?: string[] }>;
+  searchParams: Promise<{ q?: string | string[] }>;
+}) {
   const { slug } = await params;
   if (!isDashboardSlug(slug)) notFound();
   const initialTab = tabFromSlug(slug);
@@ -96,8 +103,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ slug
     redirect(`/projects/${encodeURIComponent(requestedProject.slug)}`);
   }
 
+  // `/ig-tips?q=<title>` (linked from the marketing calendars) opens IG TIPS
+  // searching for that tip, with its card expanded.
+  const initialTipQuery = initialTab === "ig-tips" ? tipDeepLinkQuery((await searchParams).q) : null;
+
   return <DashboardShell
     initialTab={initialTab}
+    initialTipQuery={initialTipQuery}
     initialProjectId={requestedProject?.id}
     initialDataKeys={[...requiredData]}
     user={{ id: user.id, email: user.email ?? "", name: (user.user_metadata?.full_name as string | undefined) ?? null, avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null }}

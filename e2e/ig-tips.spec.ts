@@ -89,9 +89,23 @@ test("IG TIPS groups the tips by topic on cards without icons", async ({ page },
   await main.getByRole("button", { name: "Copy IG tips to JSON / Markdown" }).click();
   const exported = JSON.parse(await page.getByRole("dialog").getByLabel("Preview", { exact: true }).inputValue());
   expect(exported.scope).toBe("idea");
-  expect(exported.version).toBe(4);
+  expect(exported.version).toBe(5);
   expect(exported.items).toHaveLength(5);
-  expect(exported.items.find((item: { id: string }) => item.id === "tip1")).toMatchObject({ group: "content", summary: expect.stringContaining("one sitting") });
+  expect(exported.items.find((item: { id: string }) => item.id === "tip1")).toMatchObject({ tip_group: "content", tip_summary: expect.stringContaining("one sitting") });
+  expect(exported.items[0]).not.toHaveProperty("pricing");
+  // No price filter; topics replace categories.
+  const exportDialog = page.getByRole("dialog");
+  await expect(exportDialog.getByRole("combobox", { name: "Pricing" })).toHaveCount(0);
+  await exportDialog.getByRole("combobox", { name: "Include" }).click();
+  await page.getByRole("option", { name: "Selected topics", exact: true }).click();
+  await exportDialog.getByRole("checkbox", { name: /Growth & retention/ }).check();
+  const byTopic = JSON.parse(await exportDialog.getByLabel("Preview", { exact: true }).inputValue());
+  expect(byTopic.items.map((item: { id: string }) => item.id)).toEqual(["tip4"]);
+  await exportDialog.getByRole("combobox", { name: "JSON structure" }).click();
+  await page.getByRole("option", { name: "Grouped by topic", exact: true }).click();
+  expect(JSON.parse(await exportDialog.getByLabel("Preview", { exact: true }).inputValue()).topics).toEqual([
+    { tip_group: "growth", items: [expect.objectContaining({ id: "tip4", tip_summary: expect.stringContaining("perk") })] },
+  ]);
   await page.keyboard.press("Escape");
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

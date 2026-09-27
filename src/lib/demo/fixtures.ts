@@ -55,6 +55,7 @@ import type {
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
 import { parseDateOnly, previousMondayKey } from "@/lib/date-keys";
+import { MARKETING_CALENDAR_SOURCES, type MarketingCalendarsResponse, type MarketingEntry } from "@/lib/marketing-calendars";
 import { mergeDetectedTools, toolKey, type DetectedToolsResponse, type ProjectStack, type StackEntry } from "@/lib/stack-detection";
 
 const UID = "preview-user";
@@ -953,4 +954,63 @@ export const jobLastRun: JobScrapeRun = {
     jobicy: { count: 0, error: "jobicy.com responded 503" },
     weworkremotely: { count: 3 },
   },
+};
+
+// Marketing calendars, read-only: devShark launched two days ago and DNESKAi
+// launches in ten days, so the preview shows a week of entries, the countdown
+// and the pre-launch items. tipRefs cite the fixture tips by title: tip1 is
+// applied in both plans, tip2 in devShark only, tip3 to tip5 in neither.
+const TIP_PLAN = "Plan a month of posts around two topics";
+const TIP_CAROUSEL = "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post";
+/** A local calendar day, as the browser counts days for the Marketing week. */
+function localDay(dayOffset: number): string {
+  const d = new Date(NOW);
+  d.setDate(d.getDate() + dayOffset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function planEntry(id: string, dayOffset: number, time: string, platform: string, kind: string, title: string, tipRefs: string[], status = "planned"): MarketingEntry {
+  return { id, date: localDay(dayOffset), time, platform, kind, title, status, tipRefs };
+}
+export const marketingCalendars: MarketingCalendarsResponse = {
+  checkedAt: TS,
+  sources: [
+    {
+      ...MARKETING_CALENDAR_SOURCES[0],
+      status: "ok",
+      detail: null,
+      calendar: {
+        name: "devShark",
+        launch: localDay(-2),
+        periodStart: localDay(-2),
+        periodEnd: localDay(27),
+        skipped: 0,
+        prelaunch: [],
+        entries: [
+          planEntry("ds-001", -2, "08:00", "instagram", "task", "Day 0: record baselines", [TIP_PLAN]),
+          planEntry("ds-002", 0, "17:30", "instagram", "carousel", "Five interview questions juniors get wrong", [TIP_CAROUSEL, TIP_PLAN], "drafted"),
+          planEntry("ds-003", 0, "12:00", "threads", "thread", "What the practice queue taught me this week", [], "queued"),
+          planEntry("ds-004", 2, "18:00", "instagram", "reel", "Screen recording: one bug fixed in 60 seconds", [TIP_PLAN]),
+          planEntry("ds-005", 9, "09:00", "web", "review", "Weekly review: sends, saves, sign-ups", []),
+        ],
+      },
+    },
+    {
+      ...MARKETING_CALENDAR_SOURCES[1],
+      status: "ok",
+      detail: null,
+      calendar: {
+        name: "DNESKAi",
+        launch: localDay(10),
+        periodStart: localDay(10),
+        periodEnd: localDay(39),
+        skipped: 0,
+        prelaunch: [
+          { id: "dn-pre-01", due: localDay(-1), title: "Profile bio, link and three pinned posts", owner: "owner", repo: null, issue: null, status: "planned" },
+          { id: "dn-pre-02", due: localDay(3), title: "Share images for every edition", owner: "agent", repo: "lukaskourilcz/aifirst", issue: "#99", status: "planned" },
+          { id: "dn-pre-03", due: localDay(20), title: "Friday tools template", owner: "owner", repo: null, issue: null, status: "planned" },
+        ],
+        entries: [planEntry("dn-001", 10, "07:30", "instagram", "carousel", "Today's edition in five slides", [TIP_PLAN])],
+      },
+    },
+  ],
 };

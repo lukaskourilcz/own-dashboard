@@ -57,6 +57,11 @@ type TipsStrings = {
   noMatchesDescription: string;
   loading: string;
   loadFailed: string;
+  exportHint: string;
+  exportSelectionAll: string;
+  exportSelectionTopics: string;
+  exportChooseTopics: string;
+  exportShapeGrouped: string;
 };
 
 export const tips: { en: TipsStrings; cs: TipsStrings } = {
@@ -129,6 +134,11 @@ export const tips: { en: TipsStrings; cs: TipsStrings } = {
     noMatchesDescription: "Try another word or another topic.",
     loading: "Loading tips…",
     loadFailed: "Could not load the tips. Reload the page to try again.",
+    exportHint: "Choose all tips, selected topics or individual tips. Each tip carries its topic (tip_group) and its card text (tip_summary).",
+    exportSelectionAll: "All topics",
+    exportSelectionTopics: "Selected topics",
+    exportChooseTopics: "Choose topics",
+    exportShapeGrouped: "Grouped by topic",
   },
   cs: {
     title: "IG TIPS",
@@ -199,5 +209,10 @@ export const tips: { en: TipsStrings; cs: TipsStrings } = {
     noMatchesDescription: "Zkuste jiné slovo nebo jiné téma.",
     loading: "Načítám tipy…",
     loadFailed: "Tipy se nepodařilo načíst. Zkuste stránku načíst znovu.",
+    exportHint: "Vyberte všechny tipy, konkrétní témata nebo jednotlivé tipy. Každý tip nese své téma (tip_group) a text karty (tip_summary).",
+    exportSelectionAll: "Všechna témata",
+    exportSelectionTopics: "Vybraná témata",
+    exportChooseTopics: "Vyberte témata",
+    exportShapeGrouped: "Seskupeno podle tématu",
   },
 };

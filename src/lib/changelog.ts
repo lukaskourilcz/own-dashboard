@@ -56,6 +56,39 @@ export const SHIPPED_ENTRY_LIMIT = 2;
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-09-28",
+    title: "IG TIPS meet the marketing calendars",
+    features: [
+      {
+        title: "Tips know which plans apply them",
+        summary:
+          "Each IG TIPS card now says which marketing plans apply the tip and how often, as in \"Applied in devShark ×12, DNESKAi ×3\", and each count opens that calendar filtered by the tip. The counts come live from the devShark and DNESKAi calendar documents in the quorum repository, read through the server-side GitHub connection and never stored; a calendar that cannot be read is named with the reason. A \"Not yet applied\" chip lists the tips no plan uses, and `/ig-tips?q=<title>`, the link the calendars use, opens IG TIPS with that tip's card expanded.",
+        media: {
+          path: "media/changelog/2026-09-28-ig-tips-plans.png",
+          alt:
+            "IG TIPS with the topic chips followed by a \"Not yet applied 3\" chip, a line reading \"Marketing plans: devShark (5 entries), DNESKAi (1 entry)\", and the card \"Plan a month of posts around two topics\" ending with \"Applied in devShark ×3, DNESKAi ×1\"; the carousel tip below it reads \"Applied in devShark ×1\".",
+        },
+      },
+      {
+        title: "A marketing week in the Work overview",
+        summary:
+          "A read-only Marketing card beside Weekly planning lists the next seven days across the marketing calendars: date, time, project, platform, kind, title and status, each linking to the entry in its calendar. Before a plan starts it counts down to the launch (devShark and DNESKAi start on Thursday 5 November) and lists the pre-launch items due that week, overdue ones marked. Empty weeks and unreadable calendars say so.",
+        media: {
+          path: "media/changelog/2026-09-28-marketing-week.png",
+          alt:
+            "The Work overview's Marketing card: \"Marketing starts Thu 8 Oct · in 10 days · DNESKAi\", two pre-launch items with an Overdue and Planned badge, then Mon 28 Sep and Wed 30 Sep with devShark entries on Threads and Instagram marked Queued, Drafted and Planned, links to open the devShark and DNESKAi calendars and a disabled \"Check the calendars again\" button.",
+        },
+      },
+      {
+        title: "IG TIPS export by topic",
+        summary:
+          "\"Copy IG tips to JSON / Markdown\" selects all tips, chosen topics or chosen tips, groups them by topic and has no price filter any more, since tips carry no pricing. Every tip in the export names its topic and card text as `tip_group` and `tip_summary`, so a plan generator can read it directly.",
+        media: null,
+      },
+    ],
+    fixes: [],
+  },
+  {
     date: "2026-09-26",
     title: "IG TIPS, Tools from the repositories and the Own or Freelance switch",
     features: [

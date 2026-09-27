@@ -1,0 +1,328 @@
+{
+  "schemaVersion": "marketing-calendar/1",
+  "project": "devshark",
+  "name": "devShark",
+  "tagline": "Learn web development with graded quizzes, 770 server-graded coding tasks and a streak that forgives you.",
+  "launch": "2026-11-05",
+  "period": {
+    "start": "2026-11-05",
+    "end": "2026-12-04"
+  },
+  "prelaunch": [
+    {
+      "id": "ds-pre-01",
+      "due": "2026-09-30",
+      "title": "Switch Instagram to a professional account",
+      "detail": "Settings → Account type; verify Insights opens.",
+      "owner": "owner",
+      "repo": null,
+      "issue": null,
+      "status": "planned"
+    },
+    {
+      "id": "ds-pre-02",
+      "due": "2026-10-20",
+      "title": "UTM parameters kept on the first pageview",
+      "detail": "Open devshark.app?utm_source=instagram and check PostHog.",
+      "owner": "agent",
+      "repo": "lukaskourilcz/react-express-app",
+      "issue": "#239",
+      "status": "planned"
+    },
+    {
+      "id": "ds-pre-03",
+      "due": "2026-09-27",
+      "title": "Reserve @devshark on Threads",
+      "detail": "Handle reserved.",
+      "owner": "owner",
+      "repo": null,
+      "issue": null,
+      "status": "done"
+    }
+  ],
+  "entries": [
+    {
+      "id": "ds-001",
+      "date": "2026-11-05",
+      "time": "08:00",
+      "platform": "instagram",
+      "kind": "task",
+      "pillar": "p3",
+      "title": "Day 0: record baselines (IG + Threads + PostHog)",
+      "hook": "Write the zero down",
+      "hookType": "number",
+      "body": "Record in the plan's review log: IG followers (expected ≈ 0, account created 27 Sep 2026), IG profile visits and reach for the last 7 days from Instagram Insights (needs the professional conversion from NEEDED.md), Threads followers after creating the profile, devshark.app sign-ups for the last 7 days (Supabase auth count), PostHog premium_page_viewed count. Screenshot each panel into the review folder. Baseline without a number is 'unknown' and the KPI targets below assume 0.",
+      "cta": "Fill the 'baseline' column in kpis before the first post",
+      "assets": [
+        "Screenshots of IG Insights, Threads profile, PostHog, Supabase auth count"
+      ],
+      "effortMin": 30,
+      "status": "planned",
+      "tipRefs": [
+        "Make the professional profile answer offer, proof and next step",
+        "Fold the weekly review into weekly planning: time by channel, carry-forward, then objectives"
+      ],
+      "measure": "n/a (baseline)",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-002",
+      "date": "2026-11-05",
+      "time": "08:30",
+      "platform": "threads",
+      "kind": "task",
+      "pillar": "p4",
+      "title": "Day 0: create Threads @devshark.app, bio + first pin",
+      "hook": "Same handle everywhere",
+      "hookType": "authority",
+      "body": "Create the Threads profile from the @devshark.app Instagram account (same handle). Bio = offer (learn web dev with graded quizzes and 770 coding tasks), proof (116 free tasks, no card), next step (devshark.app link with utm_source=threads&utm_medium=bio). Pin the first QOTD once posted. Record the Threads URL for client/product-catalog.ts SOCIAL_PROFILES.threads (productDependency).",
+      "cta": "Profile live before 09:00 QOTD",
+      "assets": [
+        "Bio text (EN)",
+        "Profile image: 03-favicon.jpg wave mark from devshark-brand"
+      ],
+      "effortMin": 20,
+      "status": "planned",
+      "tipRefs": [
+        "Make the professional profile answer offer, proof and next step"
+      ],
+      "measure": "n/a",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-003",
+      "date": "2026-11-05",
+      "time": "08:30",
+      "platform": "threads",
+      "kind": "task",
+      "pillar": "p4",
+      "title": "Reply hour: 5 replies to bigger dev accounts (Thu)",
+      "hook": "Be early, be specific",
+      "hookType": "authority",
+      "body": "25 min: open the saved list of 15–20 larger dev-education/creator accounts on Threads (e.g. freeCodeCamp, roadmap.sh, Boot.dev, JavaScript Mastery, Fireship, Theo, Kent C. Dodds, Josh Comeau, Addy Osmani, Wes Bos, Sara Soueidan, Kevin Powell, Cassidy Williams, Syntax.fm, Web Dev Simplified — verify each has a Threads profile on day 0). Reply within the first hour of their fresh posts with a concrete, useful sentence (a fact, a counter-example, a one-line snippet), never 'great post' and never a link. Also answer every reply on our own posts from the previous day (creator-reply lift, Buffer 2026: +42 % on Threads). marketingShark's replyPolicy is draft_only, so replies are owner-written.",
+      "cta": "5 substantive replies + all own-thread replies answered",
+      "assets": [
+        "Saved account list (day 0)"
+      ],
+      "effortMin": 25,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "profile visits from replies (Threads Insights), new followers per day",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-004",
+      "date": "2026-11-05",
+      "time": "09:00",
+      "platform": "threads",
+      "kind": "thread",
+      "pillar": "p1",
+      "title": "QOTD #1: JS: 2 ** 3 + 1",
+      "hook": "What does `2 ** 3 + 1` evaluate to?",
+      "hookType": "question",
+      "body": "Text post, no image needed (code in backticks renders as text): 'What does `2 ** 3 + 1` evaluate to?'  A) 16  B) 9  C) 7  D) 6. Ask for the letter and one sentence why. Do not reveal the answer in the post. At 18:00 reply to own post with the answer (B) and the bank explanation: '`**` binds tighter than `+`, so it is 8 + 1.' Source: devShark question bank (lib/roadmap-questions-*.ts), tag JavaScript. Link only in that answer reply: devshark.app/quiz?utm_source=threads&utm_medium=post&utm_campaign=qotd. Draft comes from marketingShark's quiz package Threads caption (Queue 07:00); owner approves and posts manually until quorum#587 lands.",
+      "cta": "Reply with your answer",
+      "assets": [
+        "none (text post)"
+      ],
+      "effortMin": 8,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis",
+        "Build a sustainable content calendar around original work"
+      ],
+      "measure": "replies within 6 h (target ≥ 5 by week 3), profile clicks",
+      "producer": "marketingShark"
+    },
+    {
+      "id": "ds-005",
+      "date": "2026-11-05",
+      "time": "09:00",
+      "platform": "instagram",
+      "kind": "carousel",
+      "pillar": "p1",
+      "title": "Quiz carousel (MS Thu package): CSS content-box width",
+      "hook": "300px wide. Or is it?",
+      "hookType": "curiosity",
+      "body": "marketingShark quiz package, 5 slides 4:5 1080×1350: 1 hook with the question, 2 the four options (works alone as a second cover), 3 'think about it' with the intro hint, 4 the answer + one-paragraph explanation from the bank, 5 footer 'Try one, no signup → devshark.app'. Owner approves in Queue, downloads frames, posts manually (quorum#587 open). Caption: the question again in text (searchable), no hashtags beyond 3–5 topical (#css #webdev #frontend). Format: 4:5 1080×1350, one ratio per deck, headline 3–8 words at 40 px+, slide 2 works as a second cover. Caption ends with one CTA; link in bio carries utm_source=instagram&utm_medium=bio. Alt text on every slide (queue policy).",
+      "cta": "Save it for later / try the free version at devshark.app",
+      "assets": [
+        "marketingShark package frames (Design Lab) + one real product screenshot"
+      ],
+      "effortMin": 20,
+      "status": "planned",
+      "tipRefs": [
+        "Pace decks at 6 to 10 slides and design slide 2 as a second cover",
+        "Make 4:5 the master canvas and lock one ratio per deck",
+        "Draft every cover from a tagged hook pattern, then test the second line",
+        "Pilot useful slideshow content with a measurable next action"
+      ],
+      "measure": "saves and sends per reach after 48 h; profile visits",
+      "producer": "marketingShark"
+    },
+    {
+      "id": "ds-006",
+      "date": "2026-11-05",
+      "time": "12:00",
+      "platform": "instagram",
+      "kind": "story",
+      "pillar": "p1",
+      "title": "Story: quiz sticker — JS: 2 ** 3 + 1",
+      "hook": "Tap the answer",
+      "hookType": "question",
+      "body": "One story frame (1080×1920) on the brand green: the same question as today's Threads QOTD, Instagram quiz sticker with the four options and the correct one marked (B). Second frame at 20:00 with the split of answers and the explanation, link sticker to devshark.app/quiz (utm_source=instagram&utm_medium=story&utm_campaign=qotd). Stories are the product itself: a poll is a quiz question. Friday: add 3 recap frames from the marketingShark this-week package.",
+      "cta": "Answer the sticker; link sticker to /quiz",
+      "assets": [
+        "Story template (Canva or Design Lab), question text"
+      ],
+      "effortMin": 6,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "sticker taps, link sticker clicks, replies",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-007",
+      "date": "2026-11-05",
+      "time": "17:30",
+      "platform": "threads",
+      "kind": "thread",
+      "pillar": "p4",
+      "title": "Hot take: 'learn by building' skips the part where you find ",
+      "hook": "'learn by building' skips the part where you find out what you got wro",
+      "hookType": "contrarian",
+      "body": "Post: 'Learn by building' skips the part where you find out what you got wrong. A graded task with real tests tells you in 2 seconds. Hot take: feedback loops beat tutorials. Agree? — Ends with the question, no link in body; link to devshark.app/coding in first reply. Time slot: A (17:30, weeks 1–2) — A/B on replies per post, see notes.",
+      "cta": "Reply / open the link in the first reply",
+      "assets": [
+        "marketingShark package: caption + slide 1 PNG"
+      ],
+      "effortMin": 15,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "replies, reposts, profile clicks (Threads Insights); link clicks in the reply",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-008",
+      "date": "2026-11-06",
+      "time": "08:30",
+      "platform": "threads",
+      "kind": "task",
+      "pillar": "p4",
+      "title": "Reply hour: 5 replies to bigger dev accounts (Fri)",
+      "hook": "Be early, be specific",
+      "hookType": "authority",
+      "body": "25 min: open the saved list of 15–20 larger dev-education/creator accounts on Threads (e.g. freeCodeCamp, roadmap.sh, Boot.dev, JavaScript Mastery, Fireship, Theo, Kent C. Dodds, Josh Comeau, Addy Osmani, Wes Bos, Sara Soueidan, Kevin Powell, Cassidy Williams, Syntax.fm, Web Dev Simplified — verify each has a Threads profile on day 0). Reply within the first hour of their fresh posts with a concrete, useful sentence (a fact, a counter-example, a one-line snippet), never 'great post' and never a link. Also answer every reply on our own posts from the previous day (creator-reply lift, Buffer 2026: +42 % on Threads). marketingShark's replyPolicy is draft_only, so replies are owner-written.",
+      "cta": "5 substantive replies + all own-thread replies answered",
+      "assets": [
+        "Saved account list (day 0)"
+      ],
+      "effortMin": 25,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "profile visits from replies (Threads Insights), new followers per day",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-009",
+      "date": "2026-11-06",
+      "time": "09:00",
+      "platform": "threads",
+      "kind": "thread",
+      "pillar": "p1",
+      "title": "QOTD #2: CSS: content-box width",
+      "hook": "`width: 300px; padding: 20px; border: 5px solid; box-sizing: content-box`. How w",
+      "hookType": "question",
+      "body": "Text post, no image needed (code in backticks renders as text): '`width: 300px; padding: 20px; border: 5px solid; box-sizing: content-box`. How wide is the border box?'  A) 300px  B) 350px  C) 345px  D) 325px. Ask for the letter and one sentence why. Do not reveal the answer in the post. At 18:00 reply to own post with the answer (B) and the bank explanation: 'Padding and border are added on both sides: 300 + 40 + 10.' Source: devShark question bank (lib/roadmap-questions-*.ts), tag CSS. Link only in that answer reply: devshark.app/quiz?utm_source=threads&utm_medium=post&utm_campaign=qotd. Owner picks it from the bank (5 min); marketingShark has no package for this day's quiz.",
+      "cta": "Reply with your answer",
+      "assets": [
+        "none (text post)"
+      ],
+      "effortMin": 8,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis",
+        "Build a sustainable content calendar around original work"
+      ],
+      "measure": "replies within 6 h (target ≥ 5 by week 3), profile clicks",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-010",
+      "date": "2026-11-06",
+      "time": "12:00",
+      "platform": "instagram",
+      "kind": "story",
+      "pillar": "p1",
+      "title": "Story: quiz sticker — CSS: content-box width",
+      "hook": "Tap the answer",
+      "hookType": "question",
+      "body": "Story frame with today's quiz sticker (answer B), then 3 recap frames from the marketingShark this-week package (theme / recap / pick) with a link sticker to devshark.app (utm_campaign=this-week).",
+      "cta": "Answer the sticker; link sticker to /quiz",
+      "assets": [
+        "Story template (Canva or Design Lab), question text"
+      ],
+      "effortMin": 6,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "sticker taps, link sticker clicks, replies",
+      "producer": "owner"
+    },
+    {
+      "id": "ds-011",
+      "date": "2026-11-06",
+      "time": "17:30",
+      "platform": "threads",
+      "kind": "thread",
+      "pillar": "p3",
+      "title": "This week on devShark (marketingShark Friday package)",
+      "hook": "This week on devShark (marketingShark Friday package)",
+      "hookType": "list",
+      "body": "marketingShark 'this-week' package (hook/theme/recap/pick/footer). Owner posts the Threads caption + slide 1 as image. Recap: the week's 2 QOTDs, the free starter set (116 of 770 tasks), the typing racer reel. Time slot: A (17:30, weeks 1–2) — A/B on replies per post, see notes.",
+      "cta": "Reply / open the link in the first reply",
+      "assets": [
+        "marketingShark package: caption + slide 1 PNG"
+      ],
+      "effortMin": 8,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "replies, reposts, profile clicks (Threads Insights); link clicks in the reply",
+      "producer": "marketingShark"
+    },
+    {
+      "id": "ds-012",
+      "date": "2026-11-07",
+      "time": "08:30",
+      "platform": "threads",
+      "kind": "task",
+      "pillar": "p4",
+      "title": "Reply hour: 5 replies to bigger dev accounts (Sat)",
+      "hook": "Be early, be specific",
+      "hookType": "authority",
+      "body": "25 min: open the saved list of 15–20 larger dev-education/creator accounts on Threads (e.g. freeCodeCamp, roadmap.sh, Boot.dev, JavaScript Mastery, Fireship, Theo, Kent C. Dodds, Josh Comeau, Addy Osmani, Wes Bos, Sara Soueidan, Kevin Powell, Cassidy Williams, Syntax.fm, Web Dev Simplified — verify each has a Threads profile on day 0). Reply within the first hour of their fresh posts with a concrete, useful sentence (a fact, a counter-example, a one-line snippet), never 'great post' and never a link. Also answer every reply on our own posts from the previous day (creator-reply lift, Buffer 2026: +42 % on Threads). marketingShark's replyPolicy is draft_only, so replies are owner-written.",
+      "cta": "5 substantive replies + all own-thread replies answered",
+      "assets": [
+        "Saved account list (day 0)"
+      ],
+      "effortMin": 25,
+      "status": "planned",
+      "tipRefs": [
+        "Rebuild platform assumptions for 2026: Instagram sends and originality, Threads replies and time viewed, LinkedIn dwell as a hypothesis"
+      ],
+      "measure": "profile visits from replies (Threads Insights), new followers per day",
+      "producer": "owner"
+    }
+  ]
+}

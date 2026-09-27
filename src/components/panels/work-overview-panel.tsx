@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Metric } from "@/components/ui/metric";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { MarketingWeekCard } from "@/components/work/marketing-week";
 import { WeeklyPlanningFlow } from "@/components/work/weekly-planning";
 import { useDict } from "@/lib/i18n";
 import { CHANGELOG, entriesSince, previousCompletedReviewDate } from "@/lib/changelog";
@@ -16,6 +17,7 @@ import { assessProjectHealth } from "@/lib/project-health";
 import { useCrossProjectActivityQuery } from "@/lib/github-queries";
 import { dueFollowUps } from "@/lib/jobs/board";
 import type { EventsResult } from "@/lib/calendar";
+import type { MarketingCalendarsResponse } from "@/lib/marketing-calendars";
 import type { EntityStatus } from "@/lib/queries/entities";
 import type { ClientOpportunity, Cron, ImportantDate, Invoice, JobApplication, Organization, Project, ProjectCost, Todo, Updater, WeeklyReview } from "@/lib/types";
 
@@ -37,6 +39,7 @@ export function WorkOverviewPanel({
   lastWeekCalendar,
   lastWeekCalendarStatus,
   isPreview,
+  previewMarketingCalendars,
 }: {
   projects: Project[];
   opportunities: ClientOpportunity[];
@@ -53,6 +56,8 @@ export function WorkOverviewPanel({
   lastWeekCalendar: EventsResult;
   lastWeekCalendarStatus?: EntityStatus;
   isPreview?: boolean;
+  /** Fixture calendars for the preview; the live overview reads GitHub. */
+  previewMarketingCalendars?: MarketingCalendarsResponse;
 }) {
   const t = useDict();
   const p = t.professional;
@@ -135,6 +140,7 @@ export function WorkOverviewPanel({
             lastWeekCalendarStatus={lastWeekCalendarStatus}
             isPreview={isPreview}
           />
+          <MarketingWeekCard preview={previewMarketingCalendars} />
           <Card>
             <CardHeader><CardTitle>{p.shippedSinceReview}</CardTitle></CardHeader>
             <CardContent className="space-y-1.5">

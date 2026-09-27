@@ -135,7 +135,7 @@ export function shapeLinkExport(data: LinkExportData, shape: LinkExportShape) {
   return data;
 }
 
-const escapeMd = (value: string) => value.replace(/[\\`*_{}[\]<>#|]/g, "\\$&");
+export const escapeMd = (value: string) => value.replace(/[\\`*_{}[\]<>#|]/g, "\\$&");
 
 export function linkExportMarkdown(data: LinkExportData) {
   const heading = data.scope === "idea" ? "# IG tips" : data.scope === "link" ? "# Links" : "# Links & IG tips";

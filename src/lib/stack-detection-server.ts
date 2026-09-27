@@ -35,13 +35,22 @@ export type StackProject = {
   parent_id: string | null;
 };
 
-type FileRead =
-  | { kind: "ok"; text: string }
+export type FileRead =
+  | { kind: "ok"; text: string; truncated: boolean }
   | { kind: "not-found" }
   | { kind: "disconnected" }
-  | { kind: "error" };
+  | { kind: "error"; status: number | null };
 
-async function readRepoText(fetcher: GitHubFetch, repo: string, path: string): Promise<FileRead> {
+/**
+ * One text file from a repository's default branch, cut to `maxCharacters`
+ * (the cut is reported, so a caller that needs the whole file can refuse it).
+ */
+export async function readRepoText(
+  fetcher: GitHubFetch,
+  repo: string,
+  path: string,
+  maxCharacters = MAX_FILE_CHARACTERS,
+): Promise<FileRead> {
   try {
     const response = await fetcher(`/repos/${repo}/contents/${path}`, {
       headers: { Accept: "application/vnd.github.raw+json" },
@@ -49,15 +58,16 @@ async function readRepoText(fetcher: GitHubFetch, repo: string, path: string): P
     });
     if (response.status === 401) return { kind: "disconnected" };
     if (response.status === 404) return { kind: "not-found" };
-    if (!response.ok) return { kind: "error" };
-    return { kind: "ok", text: (await response.text()).slice(0, MAX_FILE_CHARACTERS) };
+    if (!response.ok) return { kind: "error", status: response.status };
+    const text = await response.text();
+    return { kind: "ok", text: text.slice(0, maxCharacters), truncated: text.length > maxCharacters };
   } catch {
-    return { kind: "error" };
+    return { kind: "error", status: null };
   }
 }
 
 /** Whether GitHub shows the repository to this token at all. */
-async function repositoryVisible(fetcher: GitHubFetch, repo: string): Promise<boolean | null> {
+export async function repositoryVisible(fetcher: GitHubFetch, repo: string): Promise<boolean | null> {
   try {
     const response = await fetcher(`/repos/${repo}`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
     if (response.ok) return true;
@@ -100,7 +110,7 @@ async function readRepoStack(fetcher: GitHubFetch, repo: string): Promise<RepoRe
   return { status: visible ? "not-found" : "unreadable" };
 }
 
-async function mapWithConcurrency<T, R>(items: readonly T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
+export async function mapWithConcurrency<T, R>(items: readonly T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
   const worker = async () => {

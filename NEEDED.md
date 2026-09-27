@@ -6,6 +6,10 @@ The repository implementation is complete. The items below are the external acco
 
 - [ ] **Delete the five settled remote branches** — every remote branch except `main` is merged or superseded (#86), but the agent session's git proxy refuses branch deletion and tag pushes. Run: `git fetch origin && git tag archive/claude/busy-carson-lc5ise origin/claude/busy-carson-lc5ise && git push origin archive/claude/busy-carson-lc5ise && git push origin --delete claude/busy-carson-lc5ise claude/elegant-cori-h9cdgb claude/gifted-albattani-p8suag claude/odkazy-free-links-export-44ptwg claude/compassionate-gates-xv2e0q`. The tag keeps busy-carson's unique commits reachable. `claude/compassionate-gates-xv2e0q` carried the 2026-09-26 IG TIPS work and is merged into `main`. [imp:2] [owner:me] [time:5m] [kind:setup]
 
+## IG TIPS and the marketing calendars · 2026-09-28
+
+- [ ] **Open IG TIPS once the quorum calendars are on `main`** — the devShark and DNESKAi plans (`state/marketing-calendar/marketingshark.json`, `caught-up.json` in lukaskourilcz/quorum) were not on `main` when this shipped, so IG TIPS and the Work overview's Marketing card say "Could not read … the file is not on the default branch yet". After they land, press "Check the calendars again" on IG TIPS: the status line should list both plans, and "… cited in the plans match no tip here" names how many `tipRefs` titles differ from a saved tip; rename the tip or the reference so they meet. [imp:2] [owner:me] [time:10m] [kind:content]
+
 ## IG TIPS, Tools from the repositories and the Freelance switch · 2026-09-26
 
 - [x] **Apply the IG TIPS migration, then the tip content** — done on 2026-09-26. `20260926140000_ig_tips.sql` ran in one transaction with its history row, recorded under the file version (38 rows now), and the 73 tip texts followed in three batches: all 73 tips have a topic and a card text, their checksum matches the prepared file, and no link record changed. `docs/migration-guide.md` has the checks. [imp:4] [owner:me] [time:10m] [kind:deploy]

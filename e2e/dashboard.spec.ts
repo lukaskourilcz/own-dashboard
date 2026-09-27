@@ -345,8 +345,8 @@ test.describe("dashboard sections", () => {
     // The fixture review closed the week of 2026-09-07, so the two newest
     // changelog entries published after it are the ones the block should name.
     await expect(page.getByText("Shipped since last review")).toBeVisible();
-    await expect(page.getByText("Tools, project links, Competition, payment matching and weekly planning")).toBeVisible();
-    await expect(page.getByText("2026-09-25")).toBeVisible();
+    await expect(page.getByText("IG TIPS meet the marketing calendars")).toBeVisible();
+    await expect(page.locator("li").filter({ hasText: "IG TIPS meet the marketing calendars" })).toContainText("2026-09-28");
   });
 
   test("weekly planning walks five steps from last week's time to next week's objectives", async ({ page }, testInfo) => {
