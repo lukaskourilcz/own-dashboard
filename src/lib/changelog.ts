@@ -72,7 +72,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       {
         title: "A marketing week in the Work overview",
         summary:
-          "A read-only Marketing card beside Weekly planning lists the next seven days across the marketing calendars: date, time, project, platform, kind, title and status, each linking to the entry in its calendar. Before a plan starts it counts down to the launch (devShark and DNESKAi start on Thursday 5 November) and lists the pre-launch items due that week, overdue ones marked. Empty weeks and unreadable calendars say so.",
+          "A read-only Marketing card beside Weekly planning lists the next seven days across the marketing calendars: date, time, project, platform, kind, title and status, each linking to the entry in its calendar. Before a plan starts it counts down to the launch (devShark and DNESKAi start on Sunday 4 October) and lists the pre-launch items due that week, overdue ones marked. Empty weeks and unreadable calendars say so.",
         media: {
           path: "media/changelog/2026-09-28-marketing-week.png",
           alt:

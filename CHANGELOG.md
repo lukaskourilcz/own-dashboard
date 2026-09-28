@@ -17,7 +17,7 @@ placeholder or generated screenshot.
 
   ![IG TIPS with the topic chips followed by a "Not yet applied 3" chip, a line reading "Marketing plans: devShark (5 entries), DNESKAi (1 entry)", and the card "Plan a month of posts around two topics" ending with "Applied in devShark ×3, DNESKAi ×1"; the carousel tip below it reads "Applied in devShark ×1".](media/changelog/2026-09-28-ig-tips-plans.png)
 
-- **A marketing week in the Work overview** — A read-only Marketing card beside Weekly planning lists the next seven days across the marketing calendars: date, time, project, platform, kind, title and status, each linking to the entry in its calendar. Before a plan starts it counts down to the launch (devShark and DNESKAi start on Thursday 5 November) and lists the pre-launch items due that week, overdue ones marked. Empty weeks and unreadable calendars say so.
+- **A marketing week in the Work overview** — A read-only Marketing card beside Weekly planning lists the next seven days across the marketing calendars: date, time, project, platform, kind, title and status, each linking to the entry in its calendar. Before a plan starts it counts down to the launch (devShark and DNESKAi start on Sunday 4 October) and lists the pre-launch items due that week, overdue ones marked. Empty weeks and unreadable calendars say so.
 
   ![The Work overview's Marketing card: "Marketing starts Thu 8 Oct · in 10 days · DNESKAi", two pre-launch items with an Overdue and Planned badge, then Mon 28 Sep and Wed 30 Sep with devShark entries on Threads and Instagram marked Queued, Drafted and Planned, links to open the devShark and DNESKAi calendars and a disabled "Check the calendars again" button.](media/changelog/2026-09-28-marketing-week.png)
 
