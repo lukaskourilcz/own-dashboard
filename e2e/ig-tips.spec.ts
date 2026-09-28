@@ -146,6 +146,14 @@ test("adds a tip with a topic and a description, then edits it", async ({ page }
   await expect(edit).toBeHidden();
   expect(writes.at(-1)).toMatchObject({ method: "PATCH", body: { tip_summary: "Record the opening first.", tip_group: "formats" } });
   await expect(created).toContainText("Record the opening first.");
+  await created.getByRole("button", { name: "Edit: Film the hook first" }).click();
+  await edit.getByRole("combobox", { name: "Type", exact: true }).click();
+  await page.getByRole("option", { name: "Link", exact: true }).click();
+  await edit.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(edit).toBeHidden();
+  await expect(created).toHaveCount(0);
+  expect(writes.at(-1)).toMatchObject({ method: "PATCH", body: { record_type: "link", tip_summary: "Record the opening first.", tip_group: "formats" } });
+
 });
 
 test("Czech IG TIPS reads at 360 px without overflow or axe violations", async ({ page }, testInfo) => {

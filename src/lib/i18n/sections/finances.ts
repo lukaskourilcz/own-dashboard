@@ -242,8 +242,8 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categorySubscriptions: "Subscriptions",
     monthFormat: "MMM",
     bank: {
-      title: "Bank sync",
-      subtitle: "Pull balances and transactions automatically, or import a CSV.",
+      title: "Statement import and bank sync",
+      subtitle: "Import a CSV statement or refresh an existing bank connection.",
       connect: "Connect bank",
       connecting: "Connecting…",
       pickBank: "Choose your bank",
@@ -461,8 +461,8 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categorySubscriptions: "Předplatná",
     monthFormat: "LLL",
     bank: {
-      title: "Napojení banky",
-      subtitle: "Automaticky stáhni zůstatky a transakce, nebo naimportuj CSV.",
+      title: "Import výpisů a bankovní synchronizace",
+      subtitle: "Importuj CSV výpis nebo obnov existující bankovní připojení.",
       connect: "Připojit banku",
       connecting: "Připojuji…",
       pickBank: "Vyber svou banku",

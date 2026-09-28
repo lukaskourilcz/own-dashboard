@@ -146,18 +146,9 @@ export function AiPanel({
     return next;
   });
   const resetFilters = () => { setQuery(""); setPricingFilter("all"); setCategoryFilter("all"); setProjectFilter("all"); };
-  // Links lists link records only; idea records are IG TIPS, in their own
-  // section. A category that holds tips and no link belongs to IG TIPS too.
+  // Tips use topic groups, but their legacy categories still need management.
   const linkRecords = useMemo(() => aiLinks.filter((link) => link.record_type !== "idea"), [aiLinks]);
-  const linkCategories = useMemo(
-    () =>
-      aiCategories.filter(
-        (category) =>
-          linkRecords.some((link) => link.category_id === category.id) ||
-          !aiLinks.some((link) => link.category_id === category.id),
-      ),
-    [aiCategories, aiLinks, linkRecords],
-  );
+  const linkCategories = aiCategories;
   const hasUnknownPricing = linkRecords.some(link => !link.pricing);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AiLink | null>(null);

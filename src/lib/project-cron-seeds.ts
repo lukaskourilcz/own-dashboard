@@ -24,26 +24,16 @@ export type CronSeed = {
 };
 
 const PROJECT_CRON_SEEDS: Record<string, CronSeed[]> = {
-  // DNESKAi (repository aifirst) — a daily/weekly content pipeline driven by
-  // GitHub Actions. Derived from .github/workflows/daily.yml and weekly.yml.
+  // DNESKAi receives reviewed articles from BoardlessAI. This workflow only
+  // checks weekday delivery; it does not generate content or call a model.
   dneskai: [
     {
-      name: "Denní generování článku",
-      schedule: "0 6 * * *",
+      name: "Kontrola vydání DNESKAi",
+      schedule: "0 7 * * 1-5",
       endpoint: ".github/workflows/daily.yml",
-      description:
-        "GitHub Actions — vygeneruje denní článek, obnoví AI přehled a embeddings.",
-      is_ai_call: true,
-      runs_per_month: 30,
-    },
-    {
-      name: "Týdenní souhrn",
-      schedule: "0 7 * * 0",
-      endpoint: ".github/workflows/weekly.yml",
-      description:
-        "GitHub Actions — vygeneruje týdenní souhrn (neděle 07:00 UTC).",
-      is_ai_call: true,
-      runs_per_month: 4,
+      description: "GitHub Actions — ověří vydání nebo záznam o nevydání v pracovní den.",
+      is_ai_call: false,
+      runs_per_month: 22,
     },
   ],
 };

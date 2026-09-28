@@ -133,7 +133,7 @@ The migrations, in the order they run:
 37. `20260925210000_restrict_purge_old_cron_runs.sql` — takes `purge_old_cron_runs()` away from `anon` and `authenticated`, leaving it to `service_role` and the scheduler.
 38. `20260926140000_ig_tips.sql` — `ai_links.tip_group` and `ai_links.tip_summary`: the topic group and the plain summary each IG TIPS card shows.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. Migrations 18–37 are applied in production (its migration list on 2026-09-26 shows every file version through `20260925210000`); 38 is the pending one.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. All 38 migrations are applied in production, verified against the linked project on 2026-09-28.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 

@@ -72,6 +72,7 @@ type Props = {
 };
 
 type TipForm = {
+  recordType: "link" | "idea";
   title: string;
   url: string;
   group: TipGroup | "";
@@ -79,7 +80,7 @@ type TipForm = {
   notes: string;
 };
 
-const emptyForm: TipForm = { title: "", url: "", group: "", summary: "", notes: "" };
+const emptyForm: TipForm = { recordType: "idea", title: "", url: "", group: "", summary: "", notes: "" };
 
 /** Add https:// to a scheme-less URL and accept only a safe http(s) address. */
 function normalizeUrl(raw: string): string | null {
@@ -198,7 +199,7 @@ export function IgTipsPanel({
     });
 
   const saveTip = useMutation({
-    mutationFn: async (vars: { id?: string; title: string; url: string; tip_group: TipGroup | null; tip_summary: string | null; description: string | null }) => {
+    mutationFn: async (vars: { id?: string; record_type: "link" | "idea"; title: string; url: string; tip_group: TipGroup | null; tip_summary: string | null; description: string | null }) => {
       const { id, ...values } = vars;
       if (id) {
         const { data, error } = await supabase
@@ -266,6 +267,7 @@ export function IgTipsPanel({
     const group = tipGroupKey(tip);
     setEditing(tip);
     setForm({
+      recordType: "idea",
       title: tip.title,
       url: tip.url,
       group: group === UNGROUPED_TIPS ? "" : group,
@@ -283,11 +285,12 @@ export function IgTipsPanel({
     if (!form.url.trim()) return setFormError(tt.urlRequired);
     const url = normalizeUrl(form.url);
     if (!url) return setFormError(tt.urlInvalid);
-    if (tips.some((tip) => tip.id !== editing?.id && tip.title === title && resourceKey(tip.url) === resourceKey(url))) {
+    if (aiLinks.some((tip) => tip.id !== editing?.id && (tip.record_type ?? "link") === form.recordType && (form.recordType === "link" || tip.title === title) && resourceKey(tip.url) === resourceKey(url))) {
       return setFormError(tt.duplicate);
     }
     saveTip.mutate({
       id: editing?.id,
+      record_type: form.recordType,
       title,
       url,
       tip_group: form.group || null,
@@ -444,6 +447,12 @@ export function IgTipsPanel({
             <DialogDescription className="sr-only">{tt.description}</DialogDescription>
           </DialogHeader>
           <form onSubmit={submit} className="mt-3 space-y-3">
+            {editing && <div className="space-y-1.5">
+              <Label htmlFor="tip-record-type">{t.ai.recordType}</Label>
+              <SimpleSelect id="tip-record-type" value={form.recordType}
+                onValueChange={(value) => setForm(current => ({ ...current, recordType: value as TipForm["recordType"] }))}
+                options={[{ value: "idea", label: t.ai.ideaType }, { value: "link", label: t.ai.linkType }]} />
+            </div>}
             <div className="space-y-1.5">
               <Label htmlFor="tip-title">{tt.titleLabel}</Label>
               <Input id="tip-title" value={form.title} maxLength={200} autoFocus onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
