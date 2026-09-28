@@ -76,3 +76,7 @@ at session end, update `NEEDED.md` (finished + newly-needed owner items).
 ## Validation and Git
 
 Run `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`, and `npm run test:e2e`; use `/dev-preview` for deterministic visual/axe checks. Report exact results only. During large work, inspect Git first, preserve unrelated changes, create coherent imperative commits, and never push unless explicitly requested. The Git workflow block in the shared `session-end` skill does not override this rule. Merging to `main` deploys to Vercel production. Definition of done includes business logic, RLS/privacy, responsive/a11y states, localization, tests/build, docs, media provenance/deferment, and a known clean implementation state.
+
+## Current integration scope (28 September 2026)
+
+The existing Finance features are sufficient. Preserve working connections and data, but do not revive unfinished bank, business-data, usage-billing or email integration rollouts. NEEDED.md contains only necessary unfinished work; completed items, optional ideas and decisions belong in reports, not the action list.

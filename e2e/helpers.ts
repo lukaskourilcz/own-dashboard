@@ -38,6 +38,10 @@ export async function stubBackend(page: Page): Promise<void> {
     contentType: "image/gif",
     body: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64"),
   }));
+  await page.route("**/api/integrations/status", route => route.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({ google: { configured: false }, github: { configured: false }, bank: { configured: false, providers: [] }, email: { configured: false } }),
+  }));
   await page.route("**/api/github/repos", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",

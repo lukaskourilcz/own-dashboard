@@ -78,6 +78,11 @@ export function BankSync({
     queryFn: fetchBankConnections,
   });
   const connections = connectionsQuery.data ?? [];
+  const providersQuery = useQuery({
+    queryKey: ["bank", "providers"],
+    queryFn: fetchBankProviders,
+  });
+  const canConnect = (providersQuery.data ?? []).some(provider => provider.configured || provider.connected);
 
   // Pull the latest balances + transactions. With a connection id it syncs that
   // one bank, without it every bank the owner has. `variables` is what keeps the
@@ -166,10 +171,10 @@ export function BankSync({
               {syncingAll ? t.finances.bank.syncing : t.finances.bank.syncNow}
             </Button>
           )}
-          <Button size="sm" onClick={() => setPickerOpen(true)}>
+          {canConnect && <Button size="sm" onClick={() => setPickerOpen(true)}>
             <Plus className="h-3.5 w-3.5" />
             {t.finances.bank.connect}
-          </Button>
+          </Button>}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -582,7 +587,7 @@ function BankPickerDialog({
 
         {step === "provider" && (
           <ul className="mt-4 space-y-1">
-            {(providersQuery.data ?? []).map((provider) => {
+            {(providersQuery.data ?? []).filter(provider => provider.configured || provider.connected).map((provider) => {
               // A token provider is always reachable — this dialog is where it
               // gets configured. Everything else needs server-side credentials.
               const usable = provider.configured || !provider.supportsInstitutionPicker;

@@ -88,6 +88,8 @@ export function ProjectTraffic({
     staleTime: 5 * 60_000,
   });
   const data = query.data;
+  // Existing analytics remain available; an absent integration is not a setup task.
+  if (data?.kind === "unconfigured") return null;
 
   return (
     <Card>
@@ -103,8 +105,6 @@ export function ProjectTraffic({
           <p className="text-sm text-foreground-muted">{p.trafficLoading}</p>
         ) : !data || data.kind === "error" ? (
           <p className="text-sm text-foreground-muted">{p.trafficError}</p>
-        ) : data.kind === "unconfigured" ? (
-          <p className="text-sm text-foreground-muted">{p.trafficUnconfigured}</p>
         ) : data.kind === "not-found" ? (
           <p className="text-sm text-foreground-muted">{p.trafficNotFound}</p>
         ) : (

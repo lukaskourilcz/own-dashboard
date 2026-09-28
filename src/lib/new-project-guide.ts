@@ -5,7 +5,7 @@
  */
 export const NEW_PROJECT_GUIDE = `# New project guide — wiring a repo into OwnDashboard
 
-Standards every new project (and the agent building it) should follow so it plugs into OwnDashboard immediately: tasks import, the Knowledge / Scaling / Monetization tabs render, and the Overview shows live traffic. Keep these files at the **repository root**.
+Standards every new project (and the agent building it) should follow so it plugs into OwnDashboard immediately: tasks import, the Knowledge / Scaling / Monetization tabs render, and existing traffic connections remain available. Keep these files at the **repository root**.
 
 ## The four root markdown files
 
@@ -31,7 +31,6 @@ A short framing sentence, then a table of options for this project — \`Option 
 ## Wire it to OwnDashboard
 
 - **Deploy on Vercel** from \`main\`, with the git repo linked.
-- **Enable Vercel Web Analytics** on the project so the Overview **Traffic** card shows visitors / page views (\`VERCEL_API_TOKEN\` is set once in OwnDashboard's env).
 - In OwnDashboard, add the project and set its **repository** (\`owner/name\`) — that's how tasks, docs, and traffic are all matched.
 
 ## Skills every repo carries (\`.claude/skills/\`)

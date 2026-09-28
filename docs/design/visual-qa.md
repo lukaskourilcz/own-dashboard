@@ -227,3 +227,7 @@ Freelance control.
   Three active repositories are private and could not be read from the agent
   session, and the live route has not run against GitHub, because the preview
   uses fixtures. Nothing was deployed.
+
+## 28 September 2026 maintenance
+
+Existing components and tokens retained. Production-build fixture checks covered desktop/mobile navigation, accessibility and IG TIPS editing. A tip can return to Links via the labelled Type control. Full suite: 105 passes, 70 layout-specific skips, three fixture/interaction failures corrected; affected-suite rerun: 24 passes, 12 skips. No new generated media.
