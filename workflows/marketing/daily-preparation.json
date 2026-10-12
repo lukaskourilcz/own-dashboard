@@ -1,0 +1,354 @@
+{
+  "name": "OwnDashboard \u2014 daily marketing preparation (inactive)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "ade23433-6002-5f82-bf20-c2c6be6955d6",
+      "name": "Manual preparation",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "64bdf846-22aa-5896-803e-6b05d7557b35",
+      "name": "Daily preparation",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "afb57c94-0ac2-5da7-995f-2f88b3628ea4",
+      "name": "Brand calendar scopes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const date = $now.setZone('Europe/Prague').plus({days:1}).toISODate();\nreturn ['dneskai','devshark'].map(brand => ({json:{operation:'discover',brand,date}}));"
+      }
+    },
+    {
+      "id": "13c5b8be-7161-559c-aa69-90c75ff1806d",
+      "name": "Discover real sources and calendar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "419a513e-0734-50c7-9ef9-6ac93e31d4d1",
+      "name": "Actual calendar entries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const requests = [];\nfor (const item of $input.all()) {\n  const response = item.json;\n  if (!['dneskai','devshark'].includes(response.brand) || !Array.isArray(response.entries)) continue;\n  for (const entry of response.entries) {\n    if (typeof entry.id !== 'string' || !['instagram','threads'].includes(entry.platform)) continue;\n    requests.push({json:{operation:'enqueue',brand:response.brand,entryId:entry.id,platform:entry.platform}});\n  }\n}\nreturn requests.slice(0,8);"
+      }
+    },
+    {
+      "id": "1acda910-a649-52a2-9bea-0603a2719ab9",
+      "name": "Enqueue idempotent slot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "2c8a25cd-e993-5f2f-954d-0954add9be89",
+      "name": "Accepted generation jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().flatMap((item,index) => typeof item.json.jobId === 'string' ? [{json:{operation:'execute',jobId:item.json.jobId},pairedItem:{item:index}}] : []);"
+      }
+    },
+    {
+      "id": "2faa5225-69e4-577f-a429-5a75fd9d4ce7",
+      "name": "Execute saved generation job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "1b9bead6-ed5d-5841-987c-d2f086de96b6",
+      "name": "Read saved job status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({operation:'status',jobId:$('Accepted generation jobs').item.json.jobId}) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "Manual preparation": {
+      "main": [
+        [
+          {
+            "node": "Brand calendar scopes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily preparation": {
+      "main": [
+        [
+          {
+            "node": "Brand calendar scopes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand calendar scopes": {
+      "main": [
+        [
+          {
+            "node": "Discover real sources and calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discover real sources and calendar": {
+      "main": [
+        [
+          {
+            "node": "Actual calendar entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actual calendar entries": {
+      "main": [
+        [
+          {
+            "node": "Enqueue idempotent slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enqueue idempotent slot": {
+      "main": [
+        [
+          {
+            "node": "Accepted generation jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accepted generation jobs": {
+      "main": [
+        [
+          {
+            "node": "Execute saved generation job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute saved generation job": {
+      "main": [
+        [
+          {
+            "node": "Read saved job status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read saved job status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}

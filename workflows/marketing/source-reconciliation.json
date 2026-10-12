@@ -1,0 +1,185 @@
+{
+  "name": "OwnDashboard \u2014 source reconciliation (inactive)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "78fc907d-fc37-5333-af27-740dacb8dfa2",
+      "name": "Manual source reconciliation",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "7f9181a1-9d56-5597-a6d4-0ac0a5ac5a7a",
+      "name": "Discovery scopes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return ['dneskai','devshark'].map(brand=>({json:{operation:'discover',brand}}));"
+      }
+    },
+    {
+      "id": "9edaaf23-f33e-5110-bf3c-a89937b656a7",
+      "name": "Discover actual source identities",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "438c1c66-258f-54d6-aa0e-3c05ddce27d6",
+      "name": "Refresh actual source identities",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().flatMap(item => {\n  const response = item.json;\n  if (!['dneskai','devshark'].includes(response.brand)) return [];\n  const packets = Array.isArray(response.packets) ? response.packets : [];\n  const sourceIds = [...new Set(packets.filter(packet=>packet && typeof packet.sourceId==='string').map(packet=>packet.sourceId))].slice(0,20);\n  return sourceIds.length ? [{json:{operation:'refresh',brand:response.brand,sourceIds}}] : [];\n});"
+      }
+    },
+    {
+      "id": "08d53f33-8c31-5587-8e1f-6de86269d35e",
+      "name": "Refresh authoritative source state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "Manual source reconciliation": {
+      "main": [
+        [
+          {
+            "node": "Discovery scopes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discovery scopes": {
+      "main": [
+        [
+          {
+            "node": "Discover actual source identities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discover actual source identities": {
+      "main": [
+        [
+          {
+            "node": "Refresh actual source identities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh actual source identities": {
+      "main": [
+        [
+          {
+            "node": "Refresh authoritative source state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}

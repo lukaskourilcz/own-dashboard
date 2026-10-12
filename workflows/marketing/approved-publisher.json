@@ -1,0 +1,265 @@
+{
+  "name": "OwnDashboard \u2014 approved due-post publisher (inactive, dry run)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "572d5174-4d3d-588e-be82-884f4097d547",
+      "name": "Manual due-post inspection",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "f703bc53-6276-583b-83ed-6f16b672d06f",
+      "name": "Approved due-post check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "416ae519-3c49-5c76-a86f-ab873b98584b",
+      "name": "Brand publishing scopes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return ['dneskai','devshark'].map(brand => ({json:{operation:'publish',brand,dryRun:true}}));"
+      }
+    },
+    {
+      "id": "5dd03f5e-a05e-5779-96fb-3293e903aa3d",
+      "name": "Publish approved due posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "b831a54c-12ac-5e34-9c60-ef44bf77cf83",
+      "name": "Recorded ambiguous publications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const records = [];\nfor (const item of $input.all()) {\n  const rows = Array.isArray(item.json.outcomes) ? item.json.outcomes : [];\n  for (const row of rows) {\n    const status = row.status ?? row.outcome?.status;\n    if (typeof row.publicationId === 'string' && ['reconciliation','pending'].includes(status)) records.push({json:{operation:'reconcile',publicationId:row.publicationId}});\n  }\n}\nreturn records.slice(0,5);"
+      }
+    },
+    {
+      "id": "52db830c-ff7f-51c3-af02-64a6058eb23d",
+      "name": "Reconcile recorded publication",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "17ab8529-57c6-5114-8c63-ed227ce19e08",
+      "name": "Read claims after publish timeout",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({operation:'reconcile',brand:$('Brand publishing scopes').item.json.brand}) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "Manual due-post inspection": {
+      "main": [
+        [
+          {
+            "node": "Brand publishing scopes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved due-post check": {
+      "main": [
+        [
+          {
+            "node": "Brand publishing scopes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand publishing scopes": {
+      "main": [
+        [
+          {
+            "node": "Publish approved due posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish approved due posts": {
+      "main": [
+        [
+          {
+            "node": "Recorded ambiguous publications",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read claims after publish timeout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recorded ambiguous publications": {
+      "main": [
+        [
+          {
+            "node": "Reconcile recorded publication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}
