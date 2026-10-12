@@ -1,12 +1,12 @@
 {
   "schemaVersion": "marketing-template/1",
-  "version": "devshark-editorial/1",
+  "version": "devshark-editorial/2",
   "brand": "devshark",
-  "rendererVersion": "editorial-svg/1",
+  "rendererVersion": "design-editorial-svg/2",
   "width": 1080,
   "height": 1350,
-  "templateSha256": "d4ff952838bd38c9385f7df57fd8754eada980ed41a687c8674ea2f22e9707bf",
-  "authoring": "repository-deterministic",
+  "templateSha256": "41a8ff3a7bacbd8935e754fbafea8eafa0874ab5f50fa207504a432f2d39ba23",
+  "authoring": "claude-design",
   "approved": false,
   "approval": null
 }

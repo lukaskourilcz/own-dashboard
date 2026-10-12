@@ -1,0 +1,25 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Carousel primitives" subtitle="Slide · Kicker · Headline · Panel · PanelRow · TechChip · CodeBlock — shown at 1/3 scale" -->
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script><script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:12px;background:#E6EAE4;font-family:Inter,sans-serif}.row{display:flex;gap:12px}.cell{width:216px;height:270px;overflow:hidden;position:relative}.cell>div{transform:scale(0.2);transform-origin:0 0}</style></head><body>
+<div id="root"></div>
+<script type="text/babel">
+const NS = Object.values(window).find(v => v && typeof v === 'object' && v.Slide && v.Kicker) || {};
+const { Slide, Kicker, Headline, Statement, Accent, Footer, BigNumber, Panel, PanelRow, Body, TintRow, TechChip, ChipRow, CodeBlock, TestsPassed, Logo } = NS;
+const A = '../../assets/';
+function Demo() {
+  if (!Slide) return <div style={{font:'13px Inter'}}>Bundle not built yet — components live in components/carousel/.</div>;
+  return (
+    <div className="row">
+      <div className="cell"><Slide theme="dark" bigFin="big" label="cover"><Kicker wave={1}>Introducing</Kicker><Headline size="cover">Meet devShark.</Headline><Statement>A <Accent>learning platform</Accent> for web developers.</Statement><Footer align="right" ink>Swipe →</Footer></Slide></div>
+      <div className="cell"><Slide theme="light" bigFin="small"><Kicker wave={4}>How it works</Kicker><Headline>Learn. Quiz. Code.</Headline><Panel rows fill={false}><PanelRow marker="01">Guided lessons build the concept.</PanelRow><PanelRow marker="02" highlighted>Quizzes check it.</PanelRow></Panel></Slide></div>
+      <div className="cell"><Slide theme="light"><Kicker wave={7}>Topics</Kicker><Headline>16 topics, one path.</Headline><Panel><ChipRow><TechChip tech="html5" assetBase={A}/><TechChip tech="css3" assetBase={A}/><TechChip tech="react" assetBase={A}/><TechChip>Git</TechChip></ChipRow></Panel></Slide></div>
+      <div className="cell"><Slide theme="green" bigFin="huge"><Kicker wave={5}>Every day</Kicker><Headline size="hero" style={{marginTop:48}}>One question a day.</Headline></Slide></div>
+      <div className="cell"><Slide theme="dark"><Kicker wave={2}>Coding challenges</Kicker><Headline>770 challenges.</Headline><Panel style={{padding:'32px 20px',justifyContent:'center'}}><CodeBlock lines={[[['const','k'],' ',['count','f'],' ',['=','o'],' ',['new','k'],' ',['Map','c'],'();'],['counts.',['set','f'],'(n, ',['0','n'],');']]}/><TestsPassed>25 of 25 tests passed</TestsPassed></Panel></Slide></div>
+      <div className="cell"><Slide theme="green" fin={false} bigFin="tucked"><Logo/><Headline size="hero" style={{marginTop:88}}>Lock in the launch price.</Headline><Panel fill={false} style={{marginTop:'auto',alignSelf:'flex-start',position:'relative',padding:'32px 48px'}}><Body strong size="var(--type-url)" style={{lineHeight:1.1}}>devshark.app</Body></Panel></Slide></div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

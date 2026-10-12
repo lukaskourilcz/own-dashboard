@@ -1,0 +1,98 @@
+/* devShark V9 brand palette + the product's light/dark themes (client/src/styles/astryx-theme.css, docs/brand/brand-guidelines.md). */
+:root {
+  /* Brand constants */
+  --brand-green: #2D7A2D;
+  --brand-green-800: #236123;
+  --brand-green-100: #E3EFE1;
+  --brand-ink: #132019;
+  --brand-ink-700: #3C4F43;
+  --brand-ink-surface: #1B2A21;
+  --brand-pale: #F3F6F1;
+  --brand-line: #D6DED3;
+  --brand-white: #FFFFFF;
+  --brand-dark-accent: #4CAF50;
+
+  /* Semantic, light slide (default) */
+  --bg: #F3F6F1;
+  --surface: #FFFFFF;
+  --elevated: #FFFFFF;
+  --text: #132019;
+  --text-2: #3C4F43;
+  --accent: #2D7A2D;
+  --tint: #E3EFE1;
+  --hairline: #D6DED3;
+  /* Inside a panel (same as the slide on light and dark; ink on green) */
+  --panel-bg: var(--surface);
+  --panel-text: #132019;
+  --panel-text-2: #3C4F43;
+  --panel-accent: #2D7A2D;
+  --panel-tint: #E3EFE1;
+  --panel-hairline: #D6DED3;
+  --chip-bg: #F3F6F1;
+  /* Marks for this background */
+  --fin-corner: url("../assets/devshark-fin-clean-green.svg");
+  --fin-big: url("../assets/devshark-fin-clean-green.svg");
+  --logo-horizontal: url("../assets/devshark-logo-horizontal-green.svg");
+
+  /* Code: the website's Prism One Dark block (client/src/components/CodeBlock.tsx) — same on every background */
+  --code-bg: #282C34;
+  --code-fg: #ABB2BF;
+  --code-keyword: #C678DD;
+  --code-function: #61AFEF;
+  --code-operator: #56B6C2;
+  --code-number: #D19A66;
+  --code-class: #E5C07B;
+  --code-string: #98C379;
+  --code-comment: #5C6370;
+
+  /* Tech-chip tints: each logo's brand colour at 14% over white, ink label */
+  --tint-html: #FBE6E1;
+  --tint-css: #DEEBF5;
+  --tint-javascript: #FEFBDF;
+  --tint-typescript: #E2ECF7;
+  --tint-react: #E9FAFE;
+  --tint-nextjs: #DBDBDB;
+  --tint-nodejs: #E2F1E2;
+}
+
+[data-theme="dark"] {
+  --bg: #0B141B;
+  --surface: #101C24;
+  --elevated: #14232C;
+  --text: #E8EEF0;
+  --text-2: #9DB3BC;
+  --accent: #4CAF50;
+  --tint: rgba(76, 175, 80, 0.14);
+  --hairline: rgba(232, 238, 240, 0.10);
+  --panel-bg: var(--surface);
+  --panel-text: #E8EEF0;
+  --panel-text-2: #9DB3BC;
+  --panel-accent: #4CAF50;
+  --panel-tint: rgba(76, 175, 80, 0.14);
+  --panel-hairline: rgba(232, 238, 240, 0.10);
+  --chip-bg: #0B141B;
+  --fin-corner: url("../assets/devshark-fin-clean-white.svg");
+  --fin-big: url("../assets/devshark-fin-clean-green.svg");
+  --logo-horizontal: url("../assets/devshark-logo-horizontal-white.svg");
+}
+
+[data-theme="green"] {
+  --bg: #2D7A2D;
+  --surface: #FFFFFF;
+  --elevated: #FFFFFF;
+  --text: #FFFFFF;
+  --text-2: #FFFFFF;
+  --accent: #FFFFFF;
+  --tint: #E3EFE1;
+  --hairline: #D6DED3;
+  --panel-bg: #FFFFFF;
+  --panel-text: #132019;
+  --panel-text-2: #3C4F43;
+  --panel-accent: #2D7A2D;
+  --panel-tint: #E3EFE1;
+  --panel-hairline: #D6DED3;
+  --chip-bg: #F3F6F1;
+  --fin-corner: url("../assets/devshark-fin-clean-white.svg");
+  --fin-big: url("../assets/devshark-fin-clean-ink.svg");
+  --logo-horizontal: url("../assets/devshark-logo-horizontal-white.svg");
+}

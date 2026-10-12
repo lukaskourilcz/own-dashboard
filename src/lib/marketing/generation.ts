@@ -99,7 +99,7 @@ export function authoredMarketingText(value: string, code: string | null): strin
   return value.replace(/```[^\n]*\n([\s\S]*?)```/g, (_match, block: string) => {
     if (!code || block.trim() !== code.trim()) throw new MarketingGenerationError("authored-code-mismatch");
     return "";
-  }).replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/`([^`\n]+)`/g, "$1").trim();
+  }).replace(/(^|[\s(])\*\*([^\s*\n](?:[^*\n]*[^\s*\n])?)\*\*(?=$|[\s).,!?;:])/g, "$1$2").replace(/`([^`\n]+)`/g, "$1").trim();
 }
 function sourceSlides(copy: MarketingCopy, source: SourcePacket): MarketingSlide[] {
   if (source.kind === "article") return copy.slides;

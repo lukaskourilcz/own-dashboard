@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{margin:0;background:#e9e6df;color:#1c1b19;font-family:"Helvetica Neue",Helvetica,sans-serif;-webkit-font-smoothing:antialiased} a{color:#1d43bb} a:hover{color:#14161a}</style>
+</helmet>
+<div style="max-width:1180px;margin:0 auto;padding:0 24px 80px">
+  <dc-import name="R2 Nav" current="07" hint-size="100%,44px"></dc-import>
+  <header style="padding:40px 0 28px;border-bottom:1px solid #cfcbc2">
+    <p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">07 · Design system changes · type, colour, grid, image ratios, card and row anatomy</p>
+    <h1 style="margin:0 0 16px;font-size:34px;font-weight:600;letter-spacing:-.01em;max-width:26ch">Keep the tokens, change the roles</h1>
+    <p style="margin:0;font-size:16px;line-height:1.55;max-width:72ch;color:#3c4149">Everything below is expressed with the existing custom properties plus four new ones. What makes the site read as a publication is not new colour but a stricter division of labour between the three typefaces, one ink rule, a 12-column grid, and photographs at 3:2 and 1:1 instead of 21:9 and 4:3.</p>
+  </header>
+
+  <section style="padding:32px 0 0">
+    <h2 style="margin:0 0 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">1 · Typeface roles</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+      <div style="padding:20px;background:#f7f7f5;border:1px solid #cfcbc2"><p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">Space Grotesk · 500 / 600 / 700</p><p style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:700;line-height:1.02;letter-spacing:-.03em;color:#14161a">Lead headline on the photo</p><p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:#3c4149">Lead headlines (on the band, white), page and section titles, the section bar, section labels (600 · 12 px · .08em · uppercase), UI controls, footer links. <strong>Not</strong> secondary headlines.</p></div>
+      <div style="padding:20px;background:#f7f7f5;border:1px solid #cfcbc2"><p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">Source Serif 4 · 400 / 600</p><p style="margin:0;font-family:'Source Serif 4',serif;font-size:26px;font-weight:600;line-height:1.2;color:#14161a">Secondary headline in serif</p><p style="margin:8px 0 0;font-family:'Source Serif 4',serif;font-size:17px;line-height:1.5;color:#3c4149">Dek and body copy, 19 px / 1.7 in the article.</p><p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:#3c4149">New role: every headline that is not the lead (26 / 22 / 20 / 18 / 17 px, weight 600). This is the single biggest change in register: a serif headline column is what a business daily looks like.</p></div>
+      <div style="padding:20px;background:#f7f7f5;border:1px solid #cfcbc2"><p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">IBM Plex Mono · 400</p><p style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#3c4149">pátek 25. 9. 2026 · 6.05<br>Foto: Mikhail Nilov / Pexels<br>github.com · přes TensorFeed</p><p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:#3c4149">Dates, times, credits, hosts, ledger numbers. Lowercase, 11–13 px, no tracking. It stops being a label face: the sixteen kicker classes become section labels in Grotesk.</p></div>
+    </div>
+  </section>
+
+  <section style="padding:36px 0 0">
+    <h2 style="margin:0 0 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">2 · Type scale (desktop → 390)</h2>
+    <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:6px 20px">
+      <sc-for list="{{ scale }}" as="s" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:200px 120px 120px minmax(0,1fr);gap:16px;padding:10px 0;border-top:1px solid #e2e2de;font-size:13px;color:#3c4149;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#14161a">{{ s.token }}</span><span>{{ s.desk }}</span><span>{{ s.mob }}</span><span>{{ s.use }}</span></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:36px 0 0">
+    <h2 style="margin:0 0 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">3 · Colour · four additions, nothing removed</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+      <sc-for list="{{ colors }}" as="c" hint-placeholder-count="4">
+        <div style="background:#f7f7f5;border:1px solid #cfcbc2"><div style="height:64px;background:{{ c.hex }}"></div><div style="padding:12px 14px;font-size:13px;line-height:1.5;color:#3c4149"><p style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#14161a">{{ c.token }}</p><p style="margin:2px 0 6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">{{ c.hex }}</p>{{ c.use }}</div></div>
+      </sc-for>
+    </div>
+    <p style="margin:14px 0 0;font-size:14px;line-height:1.55;color:#3c4149;max-width:80ch">Contrast: white on the band over a pure-white photo pixel composites to #3f4144 → 10.1:1. #9db2ff (section label on the band) on the band → 7.8:1. #5f6672 on #f7f7f5 stays at 5.02:1, the floor. Blue #2f5ae6 is now used for section labels, links and the active-state ring only – it leaves the kickers, plates and completion row.</p>
+  </section>
+
+  <section style="padding:36px 0 0">
+    <h2 style="margin:0 0 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">4 · Grid</h2>
+    <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:20px">
+      <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;height:56px"><sc-for list="{{ cols }}" as="c" hint-placeholder-count="12"><div style="background:#eaf0ff;border:1px solid #c9d3f5"></div></sc-for></div>
+      <p style="margin:14px 0 0;font-size:14px;line-height:1.55;color:#3c4149">Container 1360 px (unchanged), 12 columns, 24 px gutters, 40 px page padding at 1440 → 91.3 px columns. Spans used: lead 12 / 8 / 7; secondary 4 / 5; briefs 8 + aside 4; article body 8 + side 4; photo 9 + caption 3; date column 200 px fixed on list pages. Below 960 px everything is one column with 12 px page padding; the section strip scrolls. The 244 px sidebar and the 300 px right rail tokens are retired.</p>
+    </div>
+  </section>
+
+  <section style="padding:36px 0 0">
+    <h2 style="margin:0 0 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">5 · Image ratios and slots</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+      <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:16px"><div style="aspect-ratio:3/2;border:1px dashed #8e8e88;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5f6672">3:2 · ≥ 1600 × 1067 · dodá BoardlessAI</div><p style="margin:10px 0 0;font-size:13px;line-height:1.5;color:#3c4149"><strong>hero</strong> — lead at 8 / 7 cols, section covers, article figure, week lead row (280 px), „Další z vydání“ cards. Rendered with <code>object-fit: cover</code>; at 12 cols the lead uses a 2:1 crop of the same file, so the subject must sit in the upper 55 % (the band covers the lower part).</p></div>
+      <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:16px"><div style="aspect-ratio:1/1;width:50%;border:1px dashed #8e8e88;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5f6672;text-align:center">1:1 · ≥ 800 × 800<br>dodá BoardlessAI</div><p style="margin:10px 0 0;font-size:13px;line-height:1.5;color:#3c4149"><strong>thumb</strong> — third slot on the front (136 px), mobile lead (full width), side rows (120 / 96 / 88 px), archive (56 px), compact list (64 px). A different crop of the same photograph, chosen upstream so the subject survives the square.</p></div>
+      <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:16px"><div style="aspect-ratio:3/2;display:flex;align-items:flex-end;padding:12px;border:1px solid #e2e2de;background:#efefec;color:#5f6672;font-family:'IBM Plex Mono',monospace;font-size:11px">bez fotografie · 16. 9. 2026</div><p style="margin:10px 0 0;font-size:13px;line-height:1.5;color:#3c4149"><strong>fallback</strong> — when an article has no photo (legacy, or a drawn plate): a #efefec box with a hairline and a mono line stating the fact, at the slot's ratio so nothing shifts. The lead slot never falls back to a box: a photo-less lead becomes a typographic lead (headline on paper at 60 px, 8 cols) and the day's next article with a photo takes the picture position. The neon SVG plates are no longer rendered anywhere.</p></div>
+    </div>
+  </section>
+
+  <section style="padding:36px 0 0">
+    <h2 style="margin:0 0 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5a5751">6 · Card and row anatomy</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;font-family:'Space Grotesk',sans-serif;color:#14161a">
+      <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:16px"><p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">Cover card</p><div style="aspect-ratio:3/2;background:#e2e2de"></div><p style="margin:12px 0 6px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5f6672"><span style="color:#2f5ae6">Regulace</span> · úterý 22. 9.</p><h3 style="margin:0;font-family:'Source Serif 4',serif;font-size:21px;font-weight:600;line-height:1.22">Serif headline, two to three lines</h3><p style="margin:8px 0 0;font-family:'Source Serif 4',serif;font-size:15px;line-height:1.5;color:#3c4149">Dek clamped to two lines.</p><p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5f6672">Photo 3:2 · label · serif 21 · dek 15. No plate, no border, no hover line: the hover is the headline turning #1d43bb.</p></div>
+      <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:16px"><p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">Compact row</p><div style="display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:14px;padding:12px 0;border-top:1px solid #e2e2de"><div><p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#2f5ae6">Vývoj<span style="color:#5f6672;font-weight:500"> · 9.30</span></p><h3 style="margin:0;font-family:'Source Serif 4',serif;font-size:18px;font-weight:600;line-height:1.28">Serif headline at 18 px</h3></div><div style="width:88px;height:88px;background:#e2e2de"></div></div><p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5f6672">Hairline above · label + time · serif 18 · 1:1 thumb 88 (or 96 / 64 / 56). Whole row is the link; ≥ 44 px.</p></div>
+      <div style="background:#f7f7f5;border:1px solid #cfcbc2;padding:16px"><p style="margin:0 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5751">Module head</p><div style="padding-top:12px;border-top:2px solid #14161a"><p style="margin:0 0 2px;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">Krátce</p><p style="margin:0;font-family:'Source Serif 4',serif;font-size:14px;color:#5f6672">One serif line saying what the module is.</p></div><p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5f6672">2 px ink rule · Grotesk 600 13 px · optional serif 14 explainer · optional action link right in blue 13 px. Replaces SectionMasthead's mono kicker + grey rule.</p></div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const S = (token, desk, mob, use) => ({ token, desk, mob, use });
+    const C = (token, hex, use) => ({ token, hex, use });
+    return {
+      cols: Array.from({ length: 12 }, (_, i) => i),
+      scale: [
+        S("--text-lead-1", "60 / 1.02 / −.03em", "28 / 1.06", "Lead headline, 1-article day, on the band (white)"),
+        S("--text-lead-2", "44 · 40 / 1.04", "28", "Lead headline, 2- / 3-article day, on the band"),
+        S("--text-title", "52 / 1.04 / −.03em", "32 / 1.08", "Article h1 (Grotesk 700)"),
+        S("--text-page", "48 / 1.02", "34", "Section / page title (Grotesk 700)"),
+        S("--text-h-serif-1", "26 / 1.2", "20 / 1.22", "Secondary article headline (Source Serif 600)"),
+        S("--text-h-serif-2", "22 / 1.22", "19", "Card and third-slot headline"),
+        S("--text-h-serif-3", "18 / 1.28", "18", "Compact row, Krátce title, ledger title"),
+        S("--text-dek", "19–20 / 1.5", "17", "Dek (Source Serif 400, #3c4149)"),
+        S("--text-body", "19 / 1.7", "18 / 1.7", "Article body, measure 36 em"),
+        S("--text-label", "12 / 600 / .08em / caps", "12", "Section labels, module heads at 13 (Grotesk)"),
+        S("--text-meta", "12–13 mono", "12", "Dates, times, credits, hosts (Plex Mono 400, lowercase)"),
+      ],
+      colors: [
+        C("--border-ink", "#14161a", "2 px masthead rule, module heads, completion row. Same hex as --text-primary; a role, not a colour."),
+        C("--band-ink", "rgba(20,22,26,.84)", "Flat band under the lead headline on photos. Never a gradient; opacity fixed so contrast is computable."),
+        C("--band-label", "#9db2ff", "Section label on the band (the logotype's dark-surface „Ai“ blue)."),
+        C("--band-meta", "#c9c9c3", "Time on the band; also the existing --border-strong."),
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

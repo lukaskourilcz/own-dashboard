@@ -4,6 +4,7 @@ import { enqueueMarketingJob, readMarketingJob, executeMarketingJob, marketingPr
 import { contentHash, revisionHash } from "@/lib/marketing/hashes";
 import { pendingMarketingTemplate, type MarketingTemplate } from "@/lib/marketing/render";
 import type { MarketingWorkerRequest, MarketingWorkerResult } from "../../services/marketing-worker/protocol";
+import devDesign from "../../templates/marketing/devshark/derived-layout.json";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 vi.mock("server-only", () => ({}));
@@ -16,7 +17,7 @@ const content = { title: "Test-only question", body: "Choose an option.", catego
 function request(): MarketingWorkerRequest {
   const base = pendingMarketingTemplate("devshark");
   // Synthetic test approval only. Repository manifests remain unapproved.
-  const template: MarketingTemplate = { ...base, approved: true, authoring: "claude-design", approval: { approvedBy: owner, approvedAt: new Date().toISOString(), templateSha256: base.templateSha256, designExportSha256: "a".repeat(64) } };
+  const template: MarketingTemplate = { ...base, approved: true, authoring: "claude-design", approval: { approvedBy: owner, approvedAt: new Date().toISOString(), templateSha256: base.templateSha256, designExportSha256: devDesign.archiveSha256 } };
   return { schemaVersion: "marketing-job/1", idempotencyKey: revisionId, template, generation: { revisionId, consent: true, source: { schemaVersion: "marketing-source/1", brand: "devshark", kind: "question", sourceId: "test-only", sourceRevision: "test-only-v1", contentHash: contentHash(content), canonicalUrl: "https://devshark.app/test-only", locale: "en", observedAt: new Date().toISOString(), expiresAt: null, eligible: true, eligibilityReason: "test-only", content }, account: { id: "test-only-remote", platform: "instagram", handle: "test-only" }, scheduledAt: new Date(Date.now() + 3600000).toISOString(), templateVersion: template.version, knowledge: [] } };
 }
 function database() {

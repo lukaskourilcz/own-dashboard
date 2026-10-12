@@ -16,7 +16,7 @@ import realArticle from "../../templates/marketing/benchmarks/dneskai-article.js
 // Synthetic QA fixtures only; never use them as a source/export/publishing example.
 const content = { title: "Test-only JavaScript question", body: "Which value does this expression return?", category: "JavaScript", difficulty: "Easy", code: "const x = 1;\nconsole.log(x);", options: ["1", "2"], answer: "1", explanation: "The variable stores the number 1.", evidence: [], image: null };
 const packet = parseSourcePacket({ schemaVersion: "marketing-source/1", brand: "devshark", kind: "question", sourceId: "test-only", sourceRevision: "test-v1", contentHash: contentHash(content), canonicalUrl: "https://devshark.app/test-only", locale: "en", observedAt: "2026-10-13T08:00:00Z", expiresAt: null, eligible: true, eligibilityReason: "test-only", content });
-const input: GenerationInput = { source: packet, account: { id: "test-only", platform: "instagram", handle: "test-only" }, scheduledAt: "2026-10-14T10:00:00Z", templateVersion: "devshark-editorial/1", knowledge: [], consent: true, revisionId: "f76d5271-0d87-4b76-ad17-ebc16d9f3b2e" };
+const input: GenerationInput = { source: packet, account: { id: "test-only", platform: "instagram", handle: "test-only" }, scheduledAt: "2026-10-14T10:00:00Z", templateVersion: "devshark-editorial/2", knowledge: [], consent: true, revisionId: "f76d5271-0d87-4b76-ad17-ebc16d9f3b2e" };
 const copy = { title: "Test-only question", caption: "Read the question and choose an answer.", locale: "en", slides: [{ headline: "Choose an answer", body: "Read the question.", code: null, evidenceIndexes: [] }, { headline: "Review", body: "Read the authored explanation.", code: null, evidenceIndexes: [] }] };
 const now = () => new Date("2026-10-13T09:00:00Z");
 function model(results = [{ copy, usage: { inputTokens: 200, outputTokens: 100 } }]) {
@@ -24,10 +24,15 @@ function model(results = [{ copy, usage: { inputTokens: 200, outputTokens: 100 }
   return { model: "claude-sonnet-4-6", pricing: { inputPerMillionUsd: 3, outputPerMillionUsd: 15 }, invoke } satisfies MarketingModel;
 }
 function revision(brand: "dneskai" | "devshark"): ContentRevision {
-  return { schemaVersion: "marketing-content/1", brand, title: "Test-only", caption: "Test-only caption", format: "carousel", sources: [{ sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash }], knowledgeIds: [], assets: [], account: input.account, scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: `${brand}-editorial/1`, promptVersion: "marketing-copy/1", model: "claude-sonnet-4-6", traceId: null };
+  return { schemaVersion: "marketing-content/1", brand, title: "Test-only", caption: "Test-only caption", format: "carousel", sources: [{ sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash }], knowledgeIds: [], assets: [], account: input.account, scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: `${brand}-editorial/2`, promptVersion: "marketing-copy/1", model: "claude-sonnet-4-6", traceId: null };
 }
 
 describe("bounded source-derived generation", () => {
+  it("preserves authored exponent operators while removing actual emphasis markers", () => {
+    expect(authoredMarketingText("** has higher precedence than +, so 2 ** 3 is evaluated first.", null)).toBe("** has higher precedence than +, so 2 ** 3 is evaluated first.");
+    expect(authoredMarketingText("Read **this explanation** and `code`.", null)).toBe("Read this explanation and code.");
+    expect(authoredMarketingText("Evaluate `2**3**4` before adding 1.", null)).toBe("Evaluate 2**3**4 before adding 1.");
+  });
   it("rejects missing consent, retired sources, bad hashes and reference-as-source before calling a model", async () => {
     for (const patch of [{ consent: false }, { source: { ...packet, eligible: false } }, { source: { ...packet, contentHash: "0".repeat(64) } }, { source: { ...packet, kind: "instagram-reference" } }]) {
       const provider = model();
@@ -98,6 +103,7 @@ describe("deterministic brand rendering", () => {
     expect(fitMarketingText({ value: text, faceId: "source-serif-4-400", fontSize: 42, width: 904, maxLines: 4 }).join(" ")).toBe(text);
     expect(() => fitMarketingText({ value: "W".repeat(200), faceId: "space-grotesk-700", fontSize: 62, width: 904, maxLines: 3 })).toThrow("word-overflow");
     expect(() => fitMarketingText({ value: "const ".repeat(200), faceId: "jetbrains-mono-400", fontSize: 30, width: 856, maxLines: 10, code: true })).toThrow("code-line-overflow");
+    expect(() => fitMarketingText({ value: "const a\u0301 = 1;", faceId: "jetbrains-mono-400", fontSize: 28, width: 856, maxLines: 10, code: true })).toThrow("unsupported-glyph");
     expect(() => fitMarketingText({ value: "🦈", faceId: "manrope-800", fontSize: 62, width: 904, maxLines: 3 })).toThrow("unsupported-glyph");
   });
   it("renders reproducible 1080x1350 JPEG with original outlined logo and no system font fallback", async () => {
@@ -149,10 +155,33 @@ describe("real authored review preview", () => {
     const previews = await renderMarketingPreview({ draft, template: pendingMarketingTemplate("devshark"), revisionId: input.revisionId });
     expect(previews).toHaveLength(4);
     expect(previews[0].svg).not.toContain("```js");
+    expect(previews[0].svg).toContain('fill="#F3F6F1"');
+    expect(previews[1].svg).toContain('fill="#0B141B"');
+    expect(previews[2].svg).toContain('fill="#2D7A2D"');
+    expect(previews[0].svg).toContain('id="waterline"');
+    expect(previews[0].svg).not.toContain('width="400" height="64"');
+    expect(previews[3].svg).toContain('width="400" height="64"');
     expect(source.eligible).toBe(false);
     if (process.env.MARKETING_QA_PREVIEW_DIR) {
       await mkdir(process.env.MARKETING_QA_PREVIEW_DIR, { recursive: true });
       await Promise.all(previews.map((preview, i) => writeFile(path.join(process.env.MARKETING_QA_PREVIEW_DIR!, `devshark-${i + 1}.jpg`), preview.jpeg)));
     }
+  }, 60000);
+});
+
+
+describe("DNESKAi Design R2 social adaptation preview", () => {
+  it("renders real held authored article excerpts with lead/secondary font roles", async () => {
+    const source = parseSourcePacket(realArticle);
+    const paragraphs = source.content.body.split("\n\n");
+    const draft = { revision: { ...revision("dneskai"), sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }] }, slides: [
+      { headline: source.content.title, body: authoredMarketingText(paragraphs[0], null), code: null, evidenceIndexes: [0] },
+      { headline: "Souvislosti článku", body: authoredMarketingText(paragraphs[1].split(/(?<=[.!?])\s+/)[0], null), code: null, evidenceIndexes: [0] },
+    ] };
+    const previews = await renderMarketingPreview({ draft, template: pendingMarketingTemplate("dneskai"), revisionId: input.revisionId });
+    expect(previews[0].svg).toContain('font-family="Space Grotesk"');
+    expect(previews[1].svg).toContain('font-family="Source Serif 4"');
+    expect(source.eligible).toBe(false);
+    if (process.env.MARKETING_QA_PREVIEW_DIR) await Promise.all(previews.map((preview, i) => writeFile(path.join(process.env.MARKETING_QA_PREVIEW_DIR!, `dneskai-held-${i + 1}.jpg`), preview.jpeg)));
   }, 60000);
 });
