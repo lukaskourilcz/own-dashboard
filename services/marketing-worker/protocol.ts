@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { GenerationInputSchema, generateMarketingDraft, type GeneratedMarketingDraft, type MarketingModel, type GenerationBudget } from "../../src/lib/marketing/generation";
 import { MarketingTemplateSchema, renderMarketingAssets, validateMarketingTemplate, type MarketingAssetStorage, type MarketingTemplate } from "../../src/lib/marketing/render";
-import { parseSourcePacket, sourceUsable } from "../../src/lib/marketing/contracts";
+import { parseSourcePacket, sourceUsable, revisionReadiness } from "../../src/lib/marketing/contracts";
 import { contentHash, revisionHash } from "../../src/lib/marketing/hashes";
 import type { MarketingTracer } from "../../src/lib/marketing/tracing";
 
@@ -86,9 +86,12 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
   await assertCurrentSource();
   const draft = await generateMarketingDraft({ ...job.generation, source: expected }, dependencies);
   const renderStartedAt = Date.now();
-  const assets = await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId, templateRoot: dependencies.templateRoot }, dependencies.storage);
+  const assets = draft.revision.account.platform === "instagram"
+    ? await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId, templateRoot: dependencies.templateRoot }, dependencies.storage)
+    : [];
   await assertCurrentSource();
   const revision = { ...draft.revision, assets };
+  if (revisionReadiness(revision).length) throw new Error("revision-not-ready");
   const finalHash = revisionHash(revision);
   if (draft.traceId) await dependencies.tracer?.recordPreparedRevision?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, revisionHash: finalHash, assetHashes: assets.map((asset) => asset.sha256), templateSha256: job.template.templateSha256, latencyMs: Date.now() - renderStartedAt });
   return { ...draft, revision, revisionHash: finalHash };

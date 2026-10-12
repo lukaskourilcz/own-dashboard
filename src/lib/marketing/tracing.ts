@@ -47,8 +47,8 @@ const diagnosticsSchema = z.strictObject({
   estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(z.string().regex(/^[a-z-]{1,80}$/)).max(30),
 });
 const finishSchema = z.strictObject({ status: z.enum(["review", "failed"]), revision_hash: hash.nullable(), attempts: z.number().int().min(0).max(3), input_tokens: z.number().int().nonnegative(), output_tokens: z.number().int().nonnegative(), estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(z.string().regex(/^[a-z-]{1,80}$/)).max(30) });
-const preparedSchema = z.strictObject({ revision_id: z.uuid(), revision_hash: hash, asset_hashes: z.array(hash).min(1).max(10), template_sha256: hash, render_latency_ms: z.number().nonnegative() });
-const fullMetadataSchema = metadataSchema.extend(finishSchema.shape).extend({ asset_hashes: z.array(hash).min(1).max(10).optional(), template_sha256: hash.optional(), render_latency_ms: z.number().nonnegative().optional() });
+const preparedSchema = z.strictObject({ revision_id: z.uuid(), revision_hash: hash, asset_hashes: z.array(hash).max(10), template_sha256: hash, render_latency_ms: z.number().nonnegative() });
+const fullMetadataSchema = metadataSchema.extend(finishSchema.shape).extend({ asset_hashes: z.array(hash).max(10).optional(), template_sha256: hash.optional(), render_latency_ms: z.number().nonnegative().optional() });
 export type OwnerFeedback = { traceId: string; revisionId: string; revisionHash: string; decision: "approved" | "returned" | "skipped"; qualityScore: number };
 export interface LangSmithMarketingTracer extends MarketingTracer {
   recordOwnerFeedback(input: OwnerFeedback): Promise<boolean>;
