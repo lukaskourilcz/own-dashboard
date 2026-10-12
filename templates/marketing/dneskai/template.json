@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "marketing-template/1",
+  "version": "dneskai-editorial/1",
+  "brand": "dneskai",
+  "rendererVersion": "editorial-svg/1",
+  "width": 1080,
+  "height": 1350,
+  "templateSha256": "57213f3de98ed759fcb713d1b67664e8fc16d7b6c711ce1af4e2425b496db171",
+  "authoring": "repository-deterministic",
+  "approved": false,
+  "approval": null
+}

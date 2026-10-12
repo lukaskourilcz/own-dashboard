@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "marketing-source/1",
+  "brand": "dneskai",
+  "kind": "article",
+  "sourceId": "2026-10-12-silicon-valley-super-intelligence-rebrand",
+  "sourceRevision": "9e5e3768a054eb28c5b0669b6a151c774cae9fb9fdca1531b60bfa8fe86bfc84",
+  "contentHash": "5fdc2e756e6039bc280ddd01a66d132a8074b3fa4e4646554fcf0370351cc7b2",
+  "canonicalUrl": "https://dneskai.vercel.app/articles/2026-10-12-silicon-valley-super-intelligence-rebrand",
+  "locale": "cs",
+  "observedAt": "2026-10-12T23:10:05.139Z",
+  "expiresAt": "2026-10-15T03:01:15.341Z",
+  "eligible": false,
+  "eligibilityReason": "QA only: actual generated review; owner has not selected or approved headline/image",
+  "content": {
+    "title": "Washington přejmenovává umělou inteligenci. Silicon Valley souhlasí.",
+    "body": "Prezident Donald Trump oznámil, že Bílý dům od nynějška považuje termín „umělá inteligence\" za zastaralý a preferuje výraz „super inteligence\". Není to jen sémantická poznámka: prohlášení doprovázelo sdělení, že každý, kdo nadále používá starý termín, se tím staví do opozice vůči vládní vizi technologie. Část Silicon Valley zareagovala rychle.\n\nElon Musk přislíbil přejmenovat SpaceXAI na SpaceXSI. Další vlivné hlasy z oboru se přidaly v řádu hodin. Šíření nového označení není spontánní: jde o reakci na konkrétní politický tlak, nikoli o odborný konsenzus. Vědci a inženýři, kteří s termínem „artificial intelligence\" pracují desítky let, žádnou změnu nepřijali – a širší veřejnost zatím zůstává u AI. Přesto přejmenování nastoluje otázku, zda a jak bude výběr terminologie ovlivňovat budoucí regulaci: pokud zákon nebo vyhláška hovoří o „super inteligenci\", jeho dosah se může lišit od předpisu, který reguloval „umělou inteligenci\".\n\nSouběžně s tím vystoupil Brad Smith, prezident Microsoftu, v rozhovoru pro BBC s výrokem, který se rychle rozšířil: vaše pračka podléhá přísnějším bezpečnostním pravidlům než AI, každý karton mléka v obchodě prochází inspekcí, ale AI nikoli. Smith volal po globálních bezpečnostních normách – po právní povinnosti oznamovat obětem, pokud agent AI unikne kontrole, po nezávislých hodnotitelích, kteří by schvalovali nové modely před jejich nasazením, a po nouzových brzdách, jež by umožnily technologii v případě selhání zastavit.\n\nSmithova slova jsou tvrzením firmy, nikoli nezávislým auditem. Microsoft sám provozuje jedny z největších AI systémů na světě a má přímý zájem na tom, jak budoucí regulace bude vypadat. Přesto kontrast s Trumpovou pozicí – prezident opakovaně říká, že „kdo vyhraje AI, vyhraje vše\", a průmysl by se měl regulovat sám, aby neprohrál s Čínou – je ostrý. Smith naznačil, že USA by britskou regulaci přijaly snadněji než bruselskou, protože Londýn nevzbuzuje v americkém Kongresu takový odpor jako Evropská unie.\n\n---\n\nTřetí příběh ze stejného dne je konkrétnější a v jistém smyslu poučnější než oba politické spory.\n\nElgin Community College v Illinois si v dubnu 2025 nechala nainstalovat šest kamer společnosti Flock Safety s odůvodněním, že zvýší bezpečnost studentů. Do září téhož roku vedení školy zjistilo, že Flock sdílí data s Customs and Border Protection, že přístupy ke kamerovým záznamům nebyly dostatečně zabezpečeny a že jak zaměstnanci firmy, tak pracovníci bezpečnostních složek přístupy zneužívali. Škola proto v říjnu 2025 požádala Flock o odstranění kamer.\n\nFlock odmítl. Podle prezidentky školy Peggy Heinrichové firma argumentovala tím, že smlouvu neporušila. Škola se obrátila na Chicago Sun-Times, případ se dostal na veřejnost – a kamery zůstaly.\n\nPřípad ukazuje strukturální problém, který přesahuje jeden kontrakt: instituce, která podepíše smlouvu na sledovací technologii, nemusí mít v rukou nástroje, jak z ní vystoupit, i když zjistí, že data plynou tam, kam nechtěla. Výstupní doložky a podmínky sdílení dat s třetími stranami jsou v takových smlouvách klíčové – a jejich absence nebo nejednoznačnost se projeví až poté, co nastane problém.\n\n---\n\nNa okraj politické debaty o regulaci stojí paralelní spor o infrastrukturu. Amazon nedávno oznámil – v zásadě ve stopách Microsoftu – že přestane používat smlouvy o mlčenlivosti (NDA) při jednání s místními samosprávami o datových centrech. TechCrunch v podcastu Equity rozebírá, zda tato transparence stačí k tomu, aby se zmírnily moratoriem na datová centra, která se v posledních letech množí.\n\nSkeptická pozice v té debatě zní: moratoriums obvykle trvají rok nebo dva, zatímco datová centra se uvádějí do provozu za tři až pět let – takže krátkodobý zákaz stavbu zpravidla nezastaví, jen ji zpozdí. Optimistická protiváha říká, že firmy NDA rušit nemusely, a pokud to dělají, je to proto, že odpor komunit vnímají jako reálnou hrozbu.\n\n---\n\nZ kulturní periferie příběhu: v Londýně měl premiéru film Luky Guadagnina „Artificial\", který sleduje pět dní roku 2023, kdy byl Sam Altman odvolán z čela OpenAI a pak znovu přijat. Andrew Garfield hraje Altmana, Yura Borisov Ilju Sutskevera. Film na festivalu v New Yorku sklidil příznivé kritiky a Garfield i Borisov vstoupili do oscarové sezóny. Garfield na červeném koberci v Londýně reagoval na ohlasy slovy, že se snaží dělat práci, na niž je hrdý, a vše ostatní je mimo jeho kontrolu. Film vstupuje do kin v prosinci.\n\nA pro úplnost: Apple chystá na úterý oznámení nového zařízení pro chytrou domácnost pod názvem HomeView. Podle Marka Gurmana z Bloombergu půjde o zařízení s displejem a čipem A18 ve dvou provedeních – stolním a nástěnném. Apple také plánuje aktualizace Apple TV a HomePod mini a partnerství s LG na výrobu chytrého zámku, termostatu a zvonku. HomeKit ani HomePod zatím výrazný tržní podíl nezískaly; HomeView je podle Gurmana dosud největší sázka firmy na tento segment.",
+    "category": "",
+    "difficulty": null,
+    "code": null,
+    "options": [],
+    "answer": null,
+    "explanation": null,
+    "evidence": [
+      {
+        "url": "https://www.theverge.com/ai-artificial-intelligence/1009406/silicon-valley-is-falling-in-line-with-trumps-attempt-to-rename-ai",
+        "title": "Silicon Valley is falling in line with Trump’s attempt to rename AI",
+        "excerpt": "The White House is actively pressuring the tech industry to drop the term 'artificial intelligence' in favor of 'super intelligence,' and key figures including Elon Musk are complying. This is a meaningful shift in how the government frames—and may eventually regulate—the technology.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      },
+      {
+        "url": "https://www.bbc.com/news/articles/c6rmy7zmvx3lo",
+        "title": "AI is less regulated than milk, says Microsoft president",
+        "excerpt": "Microsoft's president publicly stating that AI is less regulated than milk crystallizes the governance gap at a moment when political pressure around the technology is peaking—directly relevant context alongside the renaming story.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      },
+      {
+        "url": "https://www.theverge.com/tech/1009411/elgin-community-college-flock-safety-cameras",
+        "title": "A college in Illinois tried to cancel its Flock contact and it refused",
+        "excerpt": "Elgin Community College tried to cancel a surveillance camera contract after discovering data was being shared with CBP and access was being abused—and Flock refused to remove the cameras. A concrete case study in how surveillance tech contracts can trap institutions and why exit clauses matter.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      },
+      {
+        "url": "https://techcrunch.com/2026/10/11/will-the-homeview-be-apples-first-smart-home-success/",
+        "title": "Will the HomeView be Apple’s first smart home success?",
+        "excerpt": "Apple's rumored 'HomeView' device now has a reported name and launch timeline, signaling the company's most serious push yet into a smart home market it has repeatedly failed to dominate.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      },
+      {
+        "url": "https://www.theverge.com/science/1009379/nasa-800gb-artemis-ii-data",
+        "title": "NASA dumped over 800GB of Artemis II data online",
+        "excerpt": "NASA releasing 800GB of Artemis II science data—including crew footage of lunar impact flashes—opens a historic mission archive to researchers and the public for the first time.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      },
+      {
+        "url": "https://variety.com/2026/film/festivals/andrew-garfield-reacts-artificial-oscar-buzz-london-premiere-1236907596/",
+        "title": "Andrew Garfield Reacts to Oscar Buzz as ‘Artificial’ Gets Resounding London Reception: ‘So Flattered That Anyone Is Going to See This Film in the First Place’",
+        "excerpt": "Luca Guadagnino's film about Sam Altman's 2023 firing is generating serious Oscar buzz after London screenings, making it the year's most high-profile intersection of AI culture and Hollywood.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      },
+      {
+        "url": "https://techcrunch.com/2026/10/11/can-the-ai-industry-persuade-data-center-opponents-by-getting-rid-of-ndas/",
+        "title": "Can the AI industry persuade data center opponents by getting rid of NDAs?",
+        "excerpt": "Data center moratoriums are a growing threat to AI build-out; this piece examines whether voluntary transparency (dropping NDAs) can defuse community opposition—a practical question for every major AI infrastructure project.",
+        "checkedAt": "2026-10-12T03:01:15.341Z"
+      }
+    ],
+    "image": {
+      "url": "https://dneskai.vercel.app/images/editions/2026-10-12-silicon-valley-super-intelligence-rebrand-candidate-1/hero.webp",
+      "alt": "Ilustrace k tématu: svítící elektronické schéma s hodinami. Nejde o fotografii.",
+      "licence": "{\"origin\":\"illustration\",\"name\":\"BoardlessAI illustration\",\"author\":\"BoardlessAI FRAME\",\"source_url\":\"https://boardless-ai.vercel.app/\",\"attribution_html\":\"Ilustrace: BoardlessAI FRAME\"}"
+    }
+  }
+}

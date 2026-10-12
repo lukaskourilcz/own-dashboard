@@ -1,0 +1,70 @@
+{
+  "brand": "devshark",
+  "source": {
+    "kind": "repository",
+    "repository": "lukaskourilcz/react-express-app",
+    "ref": "main",
+    "commit": "bc3a2e8899e0243715a3ad0ad99db33309652833",
+    "documents": [
+      "docs/brand/brand-guidelines.md",
+      "docs/marketing/social-skill.md",
+      "client/public/brand/v9/README.md"
+    ]
+  },
+  "approvedOn": "2026-09-27",
+  "palette": {
+    "background": {
+      "value": "#f3f6f1",
+      "source": "Pale, the manifest background_color and the carousel's light ground."
+    },
+    "surface": {
+      "value": "#e3efe1",
+      "source": "--brand-green-100, the green tint: a card on the pale ground."
+    },
+    "surface-strong": {
+      "value": "#d6ded3",
+      "source": "--brand-line; the code panel on a pale slide. Ink on it clears 12:1."
+    },
+    "foreground": {
+      "value": "#132019",
+      "source": "--brand-ink, primary text; 15.43:1 on pale."
+    },
+    "muted": {
+      "value": "#3c4f43",
+      "source": "--brand-ink-700, secondary text; 8.05:1 on pale."
+    },
+    "accent": {
+      "value": "#236123",
+      "source": "--brand-green-800: green text that clears 4.5:1 on the tint and the line, where #2d7a2d does not."
+    },
+    "secondary": {
+      "value": "#132019",
+      "source": "--brand-ink as the second mark colour on pale: the green fails 4.5:1 on the line tone."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Manrope",
+      "source": "brand-guidelines.md: Manrope 800 and 700 for headings and display; the logo lettering started as Manrope ExtraBold."
+    },
+    "body": {
+      "family": "Inter",
+      "source": "brand-guidelines.md: Inter 400 and 500 for body text and interface."
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "source": "brand-guidelines.md and social-skill.md: JetBrains Mono for code on a pale or ink panel."
+    }
+  },
+  "logo": {
+    "sha256": "d959eac1963f94f1bb18bdc6cd96e69fe7c384d1ab11e0596441be0c68b149fe",
+    "sourcePath": "client/public/brand/v9/recommended/devshark-logo-horizontal-green.svg",
+    "viewBox": [
+      0,
+      -74.9,
+      602.571,
+      95.764
+    ]
+  },
+  "copiedFrom": "marketing-quorum/studio/brand-kits/marketingshark"
+}

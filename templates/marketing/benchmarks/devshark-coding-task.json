@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "marketing-source/1",
+  "brand": "devshark",
+  "kind": "coding-task",
+  "sourceId": "coding-task:js-digit-sum",
+  "sourceRevision": "d1eb8b2635b171c7cd0ee580251e5aa99658ce455da7d65b4a1d7904aaa1886a",
+  "contentHash": "b67019b9d844b9be0c533753a18dba6a41c9f4234a0d2ab7d1bce1eebb80e037",
+  "canonicalUrl": "https://devshark.app/coding/javascript/js-digit-sum",
+  "locale": "en",
+  "observedAt": "2026-10-12T23:10:05.960Z",
+  "expiresAt": null,
+  "eligible": false,
+  "eligibilityReason": "qa-only-unverified-current-overrides",
+  "content": {
+    "title": "Digit sum",
+    "body": "Write `digitSum(n)`, returning the sum of the decimal digits of a whole number that is zero or more, using a `while` loop and arithmetic rather than a string. `digitSum(493)` gives 16. A single digit is its own sum, and `digitSum(0)` gives 0.",
+    "category": "javascript",
+    "difficulty": "easy",
+    "code": "const digitSum = n => {\n\n};\n\n// Scratch pad — change this and press Run.\nconsole.log(digitSum(493));\n",
+    "options": [],
+    "answer": null,
+    "explanation": null,
+    "evidence": [],
+    "image": null
+  }
+}

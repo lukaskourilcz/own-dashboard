@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "marketing-template/1",
+  "version": "devshark-editorial/1",
+  "brand": "devshark",
+  "rendererVersion": "editorial-svg/1",
+  "width": 1080,
+  "height": 1350,
+  "templateSha256": "d4ff952838bd38c9385f7df57fd8754eada980ed41a687c8674ea2f22e9707bf",
+  "authoring": "repository-deterministic",
+  "approved": false,
+  "approval": null
+}

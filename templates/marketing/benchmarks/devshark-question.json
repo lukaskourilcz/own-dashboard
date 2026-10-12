@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "marketing-source/1",
+  "brand": "devshark",
+  "kind": "question",
+  "sourceId": "question:rm-js-1",
+  "sourceRevision": "70dff6ef0b2282609f105be366243eabcd13dec3d668d2ed600149d12c2f2c70",
+  "contentHash": "3cb3be05cb579c2c0b6166e56a4e82da6520991a94dae205fe5a8940ad89e602",
+  "canonicalUrl": "https://devshark.app/quiz?categories=javascript",
+  "locale": "en",
+  "observedAt": "2026-10-12T23:10:05.960Z",
+  "expiresAt": null,
+  "eligible": false,
+  "eligibilityReason": "qa-only-unverified-current-overrides",
+  "content": {
+    "title": "What does this expression evaluate to?",
+    "body": "Two operators, one expression. Decide which one JavaScript applies first, then do the other.\n\nWhat does this expression evaluate to?\n\n```js\n2 ** 3 + 1;\n```",
+    "category": "javascript",
+    "difficulty": "1",
+    "code": "2 ** 3 + 1;\n",
+    "options": [
+      "16",
+      "9",
+      "7",
+      "6"
+    ],
+    "answer": "9",
+    "explanation": "** has higher precedence than +, so 2 ** 3 is evaluated first and gives 8; adding 1 gives 9. 16 would need 2 ** (3 + 1), which the grammar never produces from this line, and 7 comes from reading ** as multiplication.",
+    "evidence": [],
+    "image": null
+  }
+}

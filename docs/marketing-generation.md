@@ -1,0 +1,63 @@
+# Marketing generation and rendering
+
+This server-only marketing workflow accepts public authored source packets after the owner enables marketing-source consent. It sends their content to Claude. It never sends OwnDashboard project notes, contacts, invoices, financial records, learner responses, hidden grading tests or server solutions. The existing non-marketing no-model-call boundary still applies. No model or LangSmith network call ran during implementation.
+
+## Bounded generation
+
+`src/lib/marketing/generation.ts` exports `generateMarketingDraft(input, dependencies)`. Input includes a strict `SourcePacket`, account, schedule, template version, revision UUID, up to eight brand-matching presentation references and `consent: true`. Dependencies supply a configured `MarketingModel`, optional tracer/abort signal/clock, and a validated budget. The worker verifies source eligibility, expiry, brand/locale, content hash and a future schedule before provider admission. An Instagram reference can inform presentation; it cannot replace an article or exercise source.
+
+`createClaudeMarketingModel({apiKey, model, pricing})` uses server TypeScript LangChain `ChatAnthropic`, forced strict structured output, temperature zero and SDK retries disabled. Configure the Claude model ID and current input/output token rates in the worker. Verify model access with the owner-approved pilot; implementation does not infer account availability or replace the configured model with a newer one. The documented Sonnet 4.6 standard rate at research time was $3 input / $15 output per million tokens; this is a setup reference, not a live billing feed.
+
+The default budget allows two attempts, at most 20,000 reserved input tokens and 2,500 output tokens per attempt, $0.25 total estimated cost and 60 seconds for generation. A 60-second HTTP host should choose a shorter generation limit to leave time for rendering, uploads, source refresh and diagnostics. The reservation uses UTF-8 prompt/schema bytes plus envelope headroom. It is conservative admission arithmetic; billing reconciliation uses actual provider usage. No prompt caching, browsing, model tools, fallback provider or LLM judge participates.
+
+Only known usage with invalid copy permits another attempt within the remaining reservation. Unknown usage, transport errors and provider failures stop without a retry because billing may already have happened. The durable runner must record provider admission before calling the model and reconcile a crash after admission rather than replay it.
+
+Zod rejects schema drift and additional fields. Deterministic QA checks locale, unsupported URLs/HTML/control characters/emoji, novel numeric strings, evidence indices and missing article citations. Those checks do not prove semantic entailment or language quality. The owner reviews factual claims, natural Czech/English and evidence before approving the exact final revision hash.
+
+For devShark the renderer receives original authored question text, option order, answer, explanation and exact source code. It never reconstructs these from model output. It removes recognized Markdown emphasis markers from displayed authored prose and moves a matching fenced code block into the exact-code slide; a mismatch holds the job. A coding task without a safe authored explanation holds the job. The model supplies title/caption for review; generated code is forbidden. DNESKAi copy remains Czech and links the exact article/evidence revision. devShark remains English. A final caption includes the canonical source URL; Threads captions exceeding 500 characters hold the draft.
+
+## Templates and Claude Design
+
+`templates/marketing/{dneskai,devshark}/template.json` records `marketing-template/1`, a template digest, renderer version and approval. Both templates currently have `authoring: repository-deterministic`, `approved: false`, `approval: null`. They cannot render publication assets. The deterministic renderer prepares local review previews with original brand assets; it does not claim Claude Design authorship.
+
+Claude's current Design documentation describes artifact authoring, design-system import, ZIP/standalone HTML/PDF/PPTX exports and Claude Code handoff. We found no documented generic Claude Design API. `ChatAnthropic` generates copy; it does not replace the Design export workflow.
+
+The owner must author/review the bounded layouts in Claude Design, retain the actual export, record its SHA-256, and approve the exact deployed template digest. Production requires `authoring: claude-design`, `approved: true`, and an approval with owner UUID, timestamp, export hash and matching template hash. Importing an export does not itself confer approval. The server resolves the trusted template registry rather than trusting a caller's `approved` flag. Change the renderer version and regenerate template hashes when changing layout or rasterization behavior.
+
+The original outlined logos, palettes, six OFL font files and measured glyph advances come from `marketing-quorum/studio`. The copied brand manifests identify source repositories/commits and approval dates; `provenance.json` pins font hashes and the upstream metrics source. Quorum files remain unchanged. No raster generator, Higgsfield, Dots, paid account, generated product UI or fake screenshot participates.
+
+## Deterministic JPEG rendering and storage
+
+`renderMarketingPreview(input)` allows local review of pending templates and rejects production environments. `renderMarketingAssets(input, storage)` requires a trusted Design-approved template. It emits 1080 × 1350 JPEG slides, quality 92 with 4:4:4 chroma sampling, at most five slides and 8 MiB per JPEG. The renderer uses explicit pinned font files with system fonts disabled and validates original asset/font checksums.
+
+Text fitting uses measured glyph advances, normalizes displayed text to NFC, supports Czech diacritics, and fails on missing glyphs, long unbreakable words or vertical overflow. It preserves source-code indentation and line breaks; code never wraps or truncates. An overflowing exercise holds the job for an edited source/layout. It never creates a guessed replacement or fake product screen.
+
+`MarketingAssetStorage.put({key, bytes, sha256, contentType, metadata})` returns `{url, sha256}`. The adapter must enforce owner-scoped storage, immutable object keys, no overwrite, and HTTPS access to exact JPEG bytes. The renderer rejects a returned hash differing from its local bytes. Metadata records revision UUID, template/export hashes, SVG hash and renderer version. Private storage with signed URLs is supported only when those URLs remain usable through the schedule and publication retries. Rotating a URL changes the revision and requires renewed approval. Clean partial uploads after failed jobs with a retention policy.
+
+Store the final `ContentRevision` with its assets alongside the slide JSON. Hash the full final revision, including assets/account/schedule, before review. Source retirement, source supersession, changed assets, changed schedule or changed template requires a new revision and approval.
+
+## LangSmith EU diagnostics
+
+`createMarketingTracer` uses the explicit LangSmith SDK with `https://eu.api.smith.langchain.com` and EU web links. Configure an EU workspace/key; a hostname alone does not migrate a US workspace. Global LangChain/LangSmith tracing and verbose console tracing must remain disabled. The model call also runs inside a disabled traceable context. Native n8n workflow tracing does not represent this worker.
+
+The adapter hides inputs/outputs, filters metadata, disables runtime/environment metadata, prompt cache and debug logs, and uses one-second diagnostic transport timeouts with no retry. It records source ID/revision hashes, exact source content hash, stored revision UUID, model, hashed prompt/template versions, knowledge UUIDs, attempts, latency, token usage, estimated cost and bounded QA codes. Raw source/copy, URLs, credentials, owner notes and exception text do not enter traces. Resolve the source ID/revision hashes against OwnDashboard's stored source records.
+
+`recordPreparedRevision` adds render latency, asset hashes and the final revision hash to the same trace after source revalidation. `recordOwnerFeedback` verifies the trace's exact revision UUID/hash before sending an approval/returned/skipped decision and quality score. Free-text owner feedback remains local. The adapter returns private EU trace links and never enables public sharing. Diagnostics failures return false/null so they cannot authorize or block a draft. A missing trace means diagnostics are unavailable.
+
+`generation-benchmark.ts` performs offline deterministic evaluations. `templates/marketing/benchmarks` contains real authored devShark question/task and DNESKAi held article packets with original unavailable eligibility. The task lacks an authored explanation; the benchmark expects that hold. Synthetic fixtures exist only in tests. `writeBenchmarkExamples(existingDatasetId, results)` can export hashes/QA codes to an existing EU dataset, with no source or copy text. It has not been invoked; the owner configures dataset scope, retention and access before a pilot.
+
+## Worker integration and verification
+
+`services/marketing-worker/protocol.ts` exposes authenticated HTTP admission/status and a separate durable runner. Its README defines idempotency, owner scoping, fencing, source refresh, reconciliation and hosting requirements. n8n Cloud calls HTTP; it does not use Execute Command. Root API/DB adapters supply the durable queue, trusted template registry, storage and model configuration. This module provisions no hosting, paid service or production activation.
+
+Focused tests cover consent/hash/eligibility isolation, references, immutable exercise semantics, retries/cost, article QA, Czech glyphs, overflow, reproducible JPEG bytes, pending template refusal, both-brand held benchmarks, EU redaction, final asset binding and typed feedback. Live model quality, Design approval/export, current eligible production packets, deployed worker limits, signed-URL lifetime and LangSmith workspace access remain owner-pilot/setup gates.
+
+## Primary sources checked 13 October 2026
+
+- [LangChain ChatAnthropic integration](https://docs.langchain.com/oss/javascript/integrations/chat/anthropic)
+- [Claude API pricing](https://platform.claude.com/docs/en/about-claude/pricing)
+- [Claude Design authoring and export](https://support.claude.com/en/articles/14604416-get-started-with-claude-design)
+- [LangSmith input/output redaction](https://docs.langchain.com/langsmith/mask-inputs-outputs)
+- [LangSmith TypeScript client reference](https://reference.langchain.com/javascript/langsmith)
+
+Pinned dependencies: `@langchain/anthropic 1.5.12`, `@langchain/core 1.2.17`, `langsmith 0.10.11`, `@resvg/resvg-js 2.6.2`, `sharp 0.35.5`. SDK signatures and runtime options were checked against installed declarations/implementation in addition to documentation.
