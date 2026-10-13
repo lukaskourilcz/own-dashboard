@@ -1,10 +1,14 @@
 import 'server-only';
 import { timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-export function authenticateN8n(request:Request,env:Record<string,string|undefined>=process.env):string|null {
+import { marketingPilotConfiguration } from './pilot';
+export function authenticateN8n(request:Request,env:Record<string,string|undefined>=process.env,now=new Date()):string|null {
  const owner=z.uuid().safeParse(env.MARKETING_OWNER_ID);const expected=env.MARKETING_N8N_SECRET;
+ if(!owner.success||!Number.isFinite(now.getTime()))return null;
+ // An absent pilot tuple preserves ordinary admission; a partial one throws.
+ try{marketingPilotConfiguration(owner.data,env,now);}catch{return null;}
  const supplied=request.headers.get('authorization')?.replace(/^Bearer /,'');
- if(!owner.success||!expected||expected.length<32||!supplied)return null;
+ if(!expected||expected.length<32||!supplied)return null;
  const a=Buffer.from(expected),b=Buffer.from(supplied);
  return a.length===b.length&&timingSafeEqual(a,b)?owner.data:null;
 }

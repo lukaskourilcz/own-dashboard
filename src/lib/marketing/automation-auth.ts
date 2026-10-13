@@ -1,11 +1,13 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { MarketingBrand } from './contracts';
 import { z } from 'zod';
+import { marketingPilotConfiguration } from './pilot';
 
 export type AutomationPrincipal = { ownerId: string; brand: MarketingBrand | null; role: 'source' | 'worker' | 'publisher' };
 export function authenticateAutomation(request: Request, body: string, env: Record<string,string|undefined> = process.env, now=Date.now()): AutomationPrincipal | null {
  const ownerId=env.MARKETING_OWNER_ID;
- if(!ownerId||!z.uuid().safeParse(ownerId).success) return null;
+ if(!ownerId||!z.uuid().safeParse(ownerId).success||!Number.isFinite(now)) return null;
+ try{marketingPilotConfiguration(ownerId,env,new Date(now));}catch{return null;}
  const token=request.headers.get('authorization')?.replace(/^Bearer /,'');
  const time=request.headers.get('x-marketing-timestamp');
  const signature=request.headers.get('x-marketing-signature');
