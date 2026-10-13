@@ -1,0 +1,73 @@
+{
+  "name": "OwnDashboard marketing staging source check (manual only)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "ac95c81f-34ad-4542-84ad-caa468395f4d",
+      "name": "Manual staging source check",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "55b4bafe-073e-4719-a005-74c3246c988f",
+      "name": "Refresh three actual staging sources",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard-j2ndtg5xk-lukas-kourils-projects.vercel.app/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"operation\":\"refresh\",\"brand\":\"devshark\",\"sourceIds\":[\"question:rm-js-17\",\"question:rm-js-1\",\"coding-task:js-digit-sum\"]}",
+        "options": {
+          "timeout": 60000,
+          "redirect": { "redirect": { "followRedirects": false } },
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "REPLACE_WITH_STAGING_CUSTOM_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing staging (owner approval pending)"
+        }
+      },
+      "retryOnFail": false,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "10446d07-a489-4b72-a8d3-ed0b1a8107b0",
+      "name": "Safe source status summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const sourceIds = ['question:rm-js-17', 'question:rm-js-1', 'coding-task:js-digit-sum'];\nconst items = $input.all();\nconst response = items[0]?.json;\nconst invalid = () => { throw new Error('Unexpected staging source-check response'); };\nif (items.length !== 1 || !response || response.brand !== 'devshark' || !Array.isArray(response.packets) || !Array.isArray(response.held) || response.packets.length > 3 || response.held.length > 3 || !Number.isSafeInteger(response.dropped) || response.dropped < 0 || response.dropped > 20) invalid();\nconst packets = new Map();\nfor (const packet of response.packets) {\n  if (!packet || !sourceIds.includes(packet.sourceId) || packets.has(packet.sourceId) || typeof packet.eligible !== 'boolean' || typeof packet.contentHash !== 'string' || !/^[a-f0-9]{64}$/.test(packet.contentHash)) invalid();\n  packets.set(packet.sourceId, packet);\n}\nconst held = new Set();\nfor (const item of response.held) {\n  if (!item || !sourceIds.includes(item.sourceId) || held.has(item.sourceId)) invalid();\n  held.add(item.sourceId);\n}\nconst sources = sourceIds.map(sourceId => {\n  const packet = packets.get(sourceId);\n  return { sourceId, contentHash: packet?.contentHash ?? null, status: held.has(sourceId) ? 'held' : packet ? (packet.eligible ? 'eligible' : 'ineligible') : 'missing' };\n});\nreturn [{ json: { status: sources.some(source => source.status === 'missing') ? 'incomplete' : 'checked', requestedCount: 3, packetCount: packets.size, eligibleCount: sources.filter(source => source.status === 'eligible').length, heldCount: held.size, missingCount: sources.filter(source => source.status === 'missing').length, droppedCount: response.dropped, sources } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Manual staging source check": {
+      "main": [[{ "node": "Refresh three actual staging sources", "type": "main", "index": 0 }]]
+    },
+    "Refresh three actual staging sources": {
+      "main": [[{ "node": "Safe source status summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}
