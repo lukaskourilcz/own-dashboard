@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import sourceFixture from "../../templates/marketing/benchmarks/devshark-question.json";
+import templateFixture from "../../templates/marketing/devshark/template.json";
 
-const mocks = vi.hoisted(() => ({ admin: vi.fn(), sync: vi.fn(), enqueueCalendar: vi.fn(), execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), enqueue: vi.fn(), read: vi.fn(), run: vi.fn(), poll: vi.fn(), abort: vi.fn(), diagnostics: vi.fn(), ingest: vi.fn() }));
+const mocks = vi.hoisted(() => ({ admin: vi.fn(), sync: vi.fn(), enqueueCalendar: vi.fn(), execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), enqueue: vi.fn(), read: vi.fn(), run: vi.fn(), poll: vi.fn(), abort: vi.fn(), diagnostics: vi.fn(), ingest: vi.fn(), refresh: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
 vi.mock("@/lib/marketing/orchestrator", () => ({ synchronizeMarketingSources: (...args: unknown[]) => mocks.sync(...args), enqueueCalendarMarketingJob: (...args: unknown[]) => mocks.enqueueCalendar(...args), executeOrchestratedMarketingJob: (...args: unknown[]) => mocks.execute(...args), publishDueMarketing: (...args: unknown[]) => mocks.publish(...args), reconcileStoredMarketingPublication: (...args: unknown[]) => mocks.reconcile(...args) }));
 vi.mock("@/lib/marketing/worker-runtime", () => ({ enqueueMarketingJob: (...args: unknown[]) => mocks.enqueue(...args), readMarketingJob: (...args: unknown[]) => mocks.read(...args) }));
 vi.mock("@/lib/marketing/knowledge-runner", () => ({ runQueuedKnowledgeAnalysis: (...args: unknown[]) => mocks.run(...args), pollQueuedKnowledgeAnalysis: (...args: unknown[]) => mocks.poll(...args), abortQueuedKnowledgeAnalysis: (...args: unknown[]) => mocks.abort(...args), createKnowledgeDiagnostics: () => mocks.diagnostics() }));
 vi.mock("@/lib/marketing/store", () => ({ ingestSource: (...args: unknown[]) => mocks.ingest(...args) }));
+vi.mock("@/lib/marketing/source-refresh", () => ({ refreshSource: (...args: unknown[]) => mocks.refresh(...args) }));
 import { POST } from "@/app/api/marketing/n8n/route";
 
 const owner = "11111111-1111-4111-8111-111111111111";
@@ -46,6 +49,42 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); });
 
 describe("authenticated n8n marketing operation boundary", () => {
+  function rawJob(source = sourceFixture) {
+    return { schemaVersion: "marketing-job/1", idempotencyKey: sourceId, generation: {
+      source, account: { id: "test-account", platform: "instagram", handle: "test-only" },
+      scheduledAt: "2026-10-18T08:00:00Z", templateVersion: templateFixture.version,
+      knowledge: [], consent: true, revisionId: sourceId,
+    }, template: templateFixture };
+  }
+  it("refreshes explicit jobs before storing any source and forwards the authoritative held packet", async () => {
+    // This fixture intentionally remains ineligible; the mocked queue does not prove eligibility.
+    const current = { ...sourceFixture, observedAt: "2026-10-13T12:00:00Z" };
+    mocks.refresh.mockResolvedValue(current); mocks.enqueue.mockResolvedValue({ status: "held" });
+    const response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob() }));
+    expect(response.status).toBe(200); expect(await response.json()).toEqual({ status: "held" });
+    expect(mocks.refresh).toHaveBeenCalledWith(sourceFixture, expect.any(AbortSignal));
+    expect(mocks.ingest).toHaveBeenCalledWith(expect.anything(), owner, current, "devshark");
+    expect(mocks.enqueue).toHaveBeenCalledWith(expect.anything(), owner, rawJob(current));
+    expect(current.eligible).toBe(false);
+  });
+  it.each(["canonicalUrl", "sourceRevision", "contentHash"] as const)("holds a changed explicit source %s before ingestion or enqueue", async (field) => {
+    const changed = { ...sourceFixture, [field]: field === "canonicalUrl" ? "https://devshark.app/forged" : "a".repeat(64) };
+    mocks.refresh.mockResolvedValue(sourceFixture);
+    const response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob(changed) }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "source-superseded" });
+    expect(mocks.ingest).not.toHaveBeenCalled(); expect(mocks.enqueue).not.toHaveBeenCalled();
+  });
+  it("rejects an invalid brand locale before producer refresh or privileged writes", async () => {
+    const response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob({ ...sourceFixture, locale: "cs" }) }));
+    expect(response.status).toBe(409);
+    expect(mocks.refresh).not.toHaveBeenCalled(); expect(mocks.ingest).not.toHaveBeenCalled(); expect(mocks.enqueue).not.toHaveBeenCalled();
+  });
+  it("holds inconsistent producer content before ingestion despite an unchanged declared hash", async () => {
+    mocks.refresh.mockResolvedValue({ ...sourceFixture, content: { ...sourceFixture.content, answer: "16" } });
+    const response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob() }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "source-superseded" });
+    expect(mocks.ingest).not.toHaveBeenCalled(); expect(mocks.enqueue).not.toHaveBeenCalled();
+  });
   it.each([null, "Bearer wrong-token", `Bearer ${secret}extra`])("rejects a missing or invalid token before privileged work: %s", async (authorization) => {
     const response = await POST(request({ operation: "knowledge-run", sourceId }, authorization));
     expect(response.status).toBe(401); expect(await response.json()).toEqual({ error: "unauthorized" });
@@ -92,6 +131,10 @@ describe("authenticated n8n marketing operation boundary", () => {
     mocks.run.mockRejectedValueOnce(new Error("private raw provider payload TEST SECRET"));
     response = await POST(request({ operation: "knowledge-run", sourceId }));
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "marketing-operation-held" });
+    mocks.refresh.mockResolvedValue(sourceFixture);
+    mocks.enqueue.mockRejectedValueOnce(new Error("knowledge-reference-unavailable"));
+    response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob() }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "knowledge-reference-unavailable" });
   });
   it("defaults publishing to dry-run and forwards an explicit live flag only for the authenticated owner", async () => {
     expect((await POST(request({ operation: "publish", brand: "devshark" }))).status).toBe(200);

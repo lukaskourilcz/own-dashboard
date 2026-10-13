@@ -5,6 +5,8 @@ import { synchronizeMarketingSources,enqueueCalendarMarketingJob,executeOrchestr
 import { enqueueMarketingJob,readMarketingJob } from '@/lib/marketing/worker-runtime';
 import { BrandSchema } from '@/lib/marketing/contracts';
 import { runQueuedKnowledgeAnalysis,pollQueuedKnowledgeAnalysis,abortQueuedKnowledgeAnalysis,createKnowledgeDiagnostics } from '@/lib/marketing/knowledge-runner';
+import { refreshSource } from '@/lib/marketing/source-refresh';
+import { contentHash } from '@/lib/marketing/hashes';
 import { ingestSource } from '@/lib/marketing/store';
 export const runtime='nodejs';
 export const maxDuration=60;
@@ -40,8 +42,10 @@ export async function POST(request:Request){
     const job=MarketingWorkerRequestSchema.parse(input.job);
     const {parseSourcePacket}=await import('@/lib/marketing/contracts');const packet=parseSourcePacket(job.generation.source);
     if(packet.brand!==input.brand)throw new Error('source-brand-mismatch');
-    await ingestSource(db,owner,packet,input.brand);
-    return Response.json(await enqueueMarketingJob(db,owner,job));
+    const current=await refreshSource(packet,signal);
+    if(current.brand!==packet.brand||current.kind!==packet.kind||current.sourceId!==packet.sourceId||current.sourceRevision!==packet.sourceRevision||current.contentHash!==packet.contentHash||current.canonicalUrl!==packet.canonicalUrl||current.locale!==packet.locale||contentHash(current.content)!==packet.contentHash)throw new Error('source-superseded');
+    await ingestSource(db,owner,current,input.brand);
+    return Response.json(await enqueueMarketingJob(db,owner,{...job,generation:{...job.generation,source:current}}));
    }
    if(!input.entryId||!input.platform)return Response.json({error:'calendar-entry-required'},{status:400});
    return Response.json(await enqueueCalendarMarketingJob(db,owner,{...input,entryId:input.entryId,platform:input.platform}));
@@ -70,7 +74,7 @@ export async function POST(request:Request){
   return Response.json({outcomes});
  }catch(error){
   const invalid=error instanceof z.ZodError||error instanceof SyntaxError;
-  const allowed=new Set(['calendar-entry-held','campaign-not-active','account-unverified','eligible-source-required','bound-source-unavailable','template-unavailable','template-not-approved','source-cursor-stale','source-integration-unconfigured','source-current-unavailable','source-removed','source-recheck-unavailable','source-superseded','marketing-generation-consent-required','schedule-outside-asset-window','knowledge-apify-configuration-required','knowledge-model-configuration-required','knowledge-reviewed-consent-required','knowledge-reviewed-plan-changed','knowledge-source-unavailable']);
+  const allowed=new Set(['calendar-entry-held','campaign-not-active','account-unverified','eligible-source-required','bound-source-unavailable','template-unavailable','template-not-approved','source-cursor-stale','source-integration-unconfigured','source-current-unavailable','source-removed','source-recheck-unavailable','source-superseded','marketing-generation-consent-required','schedule-outside-asset-window','knowledge-apify-configuration-required','knowledge-model-configuration-required','knowledge-reviewed-consent-required','knowledge-reviewed-plan-changed','knowledge-source-unavailable','knowledge-reference-unavailable']);
   const code=error instanceof Error?(('code' in error&&typeof error.code==='string')?error.code:error.message):'';
   return Response.json({error:invalid?'invalid-request':allowed.has(code)?code:'marketing-operation-held'},{status:invalid?400:409});
  }

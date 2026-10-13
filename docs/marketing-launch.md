@@ -10,12 +10,15 @@ quorum exports existing final BoardlessAI editorial packets and tombstones throu
 
 Claude Design exports author versioned layouts, then the deterministic renderer fills them with source-bound copy. There is no invented Claude Design render API. Both actual exported template adaptations remain unapproved. LangChain calls Claude with strict structured output and bounded usage; LangSmith EU receives only redacted hashes/versions/usage and exact owner feedback. Tracing failure cannot permit publication or block an already-authorized send.
 
+Explicit custom generation jobs refresh the authoritative producer before source ingestion; brand, kind, ID, revision, canonical URL, locale and actual content hash must match. Execution rechecks this binding before generation and after rendering. Knowledge references must match owned, reviewed brand-specific summaries before queueing and immediately before each model call.
+
 ## Evidence and its limits
 
 - The complete local render→exact approval→exclusive claim→durable intents→receipt test uses actual renderer/database/publisher code, but explicitly mocked Claude, storage and Meta boundaries. Preview bytes equal approved asset hashes; no Meta calls occur before approval; double approval produces one publication. See [offline proof](marketing-pipeline-verification.md).
 - The offline benchmark has45 cases, including source/brand/answer/rendering/redaction/retry limits. No paid judge or real model cost was measured. It is not a general factual-entailment evaluator.
 - A separate local producer pilot used the actual485-row devShark deletion snapshot read from its connected database. The previous question `rm-js-1` is deleted. `rm-js-17` was not deleted, and active `js-digit-sum` produced source-bound4/3-slide previews. This validates the local producer plus that DB snapshot; deployed source-API freshness and owner template approval remain unverified. Private pilot artifacts are deliberately absent from this public repo.
 - The existing Sep15 Apify dataset has33 unique URLs,32 nonempty transcripts, one restricted source, no OCR and no Saved timestamps. The original provider receipt is retained privately; it is no estimate for a future run. The21-day import excludes unknown/unverified dates by default. Supply actual Instagram Saved JSON and timestamp proof, or explicitly opt into unknown dates; do not infer Saved date from publication date.
+- Instagram Saved-only export is configured for the last month in JSON to the owner's device. The request is held at Instagram's password confirmation; no export file or21-day timestamp evidence has been obtained yet. The importer applies the exact21-day filter after export.
 - The inspected BoardlessAI review state has no final article selection. Its held article preview is design/layout evidence, not factual or editorial approval.
 
 ## Configuration, without putting secrets in GitHub or chat
