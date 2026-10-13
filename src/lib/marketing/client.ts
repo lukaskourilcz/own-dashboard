@@ -1,7 +1,7 @@
 import type { MarketingRevisionRow, PublicationRow, SourcePacket } from './contracts';
 import { MARKETING_JOB_HEALTH_LIMIT, MarketingJobHealthSchema, type MarketingJobHealth } from './job-health';
 export type MarketingState={
- revisions:Array<MarketingRevisionRow & {ready:boolean}>;
+ revisions:Array<MarketingRevisionRow & {ready:boolean;offline_import_receipt?:{schemaVersion?:string;holdCode?:string}|null}>;
  campaigns:Array<{id:string;brand:string;name:string;starts_on:string;ends_on:string;source_hash:string;status:string}>;
  entries:Array<{id:string;campaign_id:string;date:string;local_time:string|null;bound_source_id:string|null;brand?:string;title:string;kind:string;platform:string;status:string;needs_review:boolean}>;
  publications:Array<PublicationRow & {revision_id:string}>;

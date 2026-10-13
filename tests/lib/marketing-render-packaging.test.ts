@@ -44,10 +44,10 @@ describe('marketing native JPEG runtime package closure, no provider/source/cred
     }
     expect(() => probeResult({ status: null, signal: null, stdout: '', error: new Error('TEST-ONLY-SPAWN-FAILED') }, true)).toThrow();
   });
-  it('requires libvips runtime assets omitted by the observed NFT and includes them only on the two rendering routes', async () => {
+  it('requires libvips runtime assets omitted by the observed NFT and includes them only on the rendering and JPEG-import routes', async () => {
     const includes = await configuredIncludes();
     const routes = Object.entries(includes).filter(([, patterns]) => patterns.includes(libvipsInclude)).map(([route]) => route).sort();
-    expect(routes).toEqual(['/api/marketing/jobs/*/execute', '/api/marketing/n8n']);
+    expect(routes).toEqual(['/api/marketing/jobs/*/execute', '/api/marketing/n8n', '/api/marketing/offline-import']);
     const temporary = await mkdtemp(path.join(os.tmpdir(), 'marketing-native-package-test-'));
     try {
       const installed = path.resolve('node_modules'), target = path.join(temporary, 'node_modules');

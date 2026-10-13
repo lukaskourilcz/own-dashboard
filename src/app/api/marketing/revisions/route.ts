@@ -29,7 +29,7 @@ export async function POST(request:Request){
    return NextResponse.json({publicationId:data,scheduling});
   }
   if(input.action==='edit'){
-   const {data:row,error}=await db.from('marketing_revisions').select('revision,slides').eq('id',input.id).eq('user_id',user.id).single();
+   const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt').eq('id',input.id).eq('user_id',user.id).single();
    if(error||!row)return NextResponse.json({error:'revision-unavailable'},{status:404});
    const scheduled=Date.parse(input.scheduledAt);if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});
    const admin=createAdminClient();const assets=await refreshMarketingAssetUrls(admin,user.id,parseContentRevision(row.revision).assets);
@@ -37,7 +37,7 @@ export async function POST(request:Request){
    const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:row.slides});
    const {revisionHash}=await import('@/lib/marketing/hashes');
    await recordMarketingOwnerFeedback({traceId:revision.traceId,revisionId:saved.id,revisionHash:revisionHash(revision),decision:'edited'},process.env,{db,ownerId:user.id});
-   return NextResponse.json(saved);
+   return NextResponse.json(row.offline_import_receipt?{...saved,ready:false,holdCode:'offline-import-review-required'}:saved);
   }
   const {error}=await db.rpc('marketing_decide_revision',{p_revision_id:input.id,p_action:input.action,p_feedback:input.feedback??null});
   if(error)return NextResponse.json({error:'decision-unavailable'},{status:409});
