@@ -107,7 +107,64 @@ describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
   const result=await pollDneskaiInstagram(source,registration,'2026-10-11T00:00:00Z',{env:apifyEnv,fetcher,signal,now});expect(result.running).toBe(false);if(!result.running)expect(result).toMatchObject({complete:false,errorCode:'collection-source-partial'});
  });
  it('does not load datasets with unknown or over-budget costs or a forged run',async()=>{const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!;for(const patch of [{usageTotalUsd:null},{usageTotalUsd:0.1}]){const fetcher=vi.fn<typeof fetch>(async()=>json({data:{...registration,...patch}}));const result=await pollDneskaiInstagram(source,registration,'2026-10-12T00:00:00Z',{env:apifyEnv,fetcher,signal,now});expect(result.running).toBe(false);expect(fetcher).toHaveBeenCalledTimes(1);}const fetcher=vi.fn<typeof fetch>(async()=>json({data:{...registration,id:'foreign'}}));await expect(pollDneskaiInstagram(source,registration,now.toISOString(),{env:apifyEnv,fetcher,signal,now})).rejects.toThrow('binding');});
+ it('binds every documented Jev field reference to the submitted state, including batch indexes',()=>{
+  const request=jevRequest([row(),{...row(),id:'second-test'}],[{id:'history-test',title:'Earlier event',text:'Earlier public excerpt'}]);
+  for(const [key,value]of Object.entries(request.questions)){
+   const question=value as {instructions:string;criteria?:Record<string,string|null>};
+   const references=[...question.instructions.matchAll(/`([^`]+)`/g)].map(match=>match[1]);
+   expect(references.length).toBeGreaterThan(0);
+   for(const reference of references){
+    const parts=reference.replace(/\[(\d+)\]/g,'.$1').split('.');
+    const resolved=parts.reduce<unknown>((current,part)=>(current as Record<string,unknown>)?.[part],request.state);
+    expect(resolved,reference).toBeDefined();
+   }
+   expect(references).toContain(`items[${key.split('_').at(-1)}]`);
+   if(key.startsWith('relevance')){expect(question.criteria?.true).toBeTruthy();expect(question.criteria?.false).toBeTruthy();}
+  }
+ });
  it('uses pinned official Jev schema and known usage cost, compact history and supported duplicate binding',async()=>{const items=[row()],history=[{id:'prior-test',title:'A prior event',text:'Prior public source text'}],request=jevRequest(items,history),response=jevResponse(request);(response.answers.duplicate_0 as {choice:string;probabilities:Record<string,number>}).choice='h0';(response.answers.duplicate_0 as {probabilities:Record<string,number>}).probabilities={none:0,uncertain:0,h0:1};const fetcher=vi.fn<typeof fetch>(async()=>json(response));const result=await classifyDneskaiCandidates(items,history,{env:{TYPESAFE_API_KEY:'test-only'},fetcher,signal});expect(result.items[0]).toMatchObject({status:'duplicate',duplicateOf:'prior-test',targetDate:null});expect(result.costUsd).toBeCloseTo(0.000042);expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string).model).toBe('jev-1.13.0');});
  it.each(['sum','missing','winner','unsupported','model','usage'])('holds malformed Jev %s response',async mutation=>{const items=[row()],request=jevRequest(items,[]),response=jevResponse(request);const category=response.answers.category_0 as {choice:string;probabilities:Record<string,number>};if(mutation==='sum')category.probabilities['ai-news']=0.2;if(mutation==='missing')delete category.probabilities.other;if(mutation==='winner'){category.choice='other';}if(mutation==='unsupported')category.choice='truth';if(mutation==='model')response.model='jev-latest';if(mutation==='usage')response.usage.input_tokens=64001;await expect(classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal})).rejects.toThrow();});
  it('keeps uncertain interpretation held and refuses absent credentials before HTTP',async()=>{const items=[row()],response=jevResponse(jevRequest(items,[]));(response.answers.relevance_0 as {noul:number}).noul=0.8;const result=await classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal});expect(result.items[0].status).toBe('held');const fetcher=vi.fn();await expect(classifyDneskaiCandidates(items,[],{env:{},fetcher,signal})).rejects.toThrow('unconfigured');expect(fetcher).not.toHaveBeenCalled();});
+ it('accepts uncertain on-topic taxonomy without turning it into uncertain relevance',async()=>{
+  const items=[row()],response=jevResponse(jevRequest(items,[]));
+  response.answers.category_0={type:'choice',choice:'ai-news',confidence:0.28,probabilities:{'ai-news':0.4,'tech-news':0.3,marketing:0,tool:0.1,'ai-project':0.2,other:0}};
+  const result=await classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal});
+  expect(result.items[0]).toMatchObject({status:'new',reason:null,targetDate:null});
+  expect(result.diagnostics[0]).toMatchObject({inScopeProbability:1,categoryConfidence:0.28,failedChecks:[]});
+  expect(items[0]).toEqual(row());
+ });
+ it.each([
+  ['category',0.2,0.99,1],['duplicate',0,0.99,0.89],['relevance',0,0.84,1],
+  ['category-duplicate-relevance',0.2,0.84,0.89],
+ ] as const)('keeps %s uncertainty held with a specific diagnostic',async(reason,other,relevance,unique)=>{
+  const items=[row()],response=jevResponse(jevRequest(items,[]));
+  response.answers.category_0={type:'choice',choice:'ai-news',confidence:0.95,probabilities:{'ai-news':1-other,'tech-news':0,marketing:0,tool:0,'ai-project':0,other}};
+  response.answers.relevance_0={type:'noul',noul:relevance};
+  response.answers.duplicate_0={type:'choice',choice:'none',confidence:0.95,probabilities:{none:unique,uncertain:1-unique}};
+  const result=await classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal});
+  expect(result.items[0]).toMatchObject({status:'held',reason:'collection-review-'+reason});
+  expect(result.diagnostics[0].failedChecks).toEqual(reason.split('-'));
+ });
+ it('rejects clearly unrelated content, but leaves ambiguous promotion held',async()=>{
+  const items=[row()],response=jevResponse(jevRequest(items,[]));
+  response.answers.category_0={type:'choice',choice:'other',confidence:1,probabilities:{'ai-news':0,'tech-news':0,marketing:0,tool:0,'ai-project':0,other:1}};
+  response.answers.relevance_0={type:'noul',noul:0.04};
+  const result=await classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal});
+  expect(result.items[0]).toMatchObject({status:'rejected',reason:'collection-editorial-out-of-scope'});
+ });
+ it.each([0.99,1.01,0.98,1.02])('handles rounded distribution sum %s without accepting malformed distributions',async sum=>{
+  const items=[row()],response=jevResponse(jevRequest(items,[]));
+  response.answers.category_0={type:'choice',choice:'ai-news',confidence:0.8,probabilities:{'ai-news':0.9,'tech-news':sum-0.9,marketing:0,tool:0,'ai-project':0,other:0}};
+  const result=classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal});
+  if(sum===0.99||sum===1.01)expect((await result).items[0].status).toBe('new');
+  else await expect(result).rejects.toThrow('collection-jev-schema-invalid');
+ });
+ it('binds duplicate options to real prior state paths and never compares with future items',()=>{
+  const request=jevRequest([row(),row(1)],[{id:'history',title:'Prior event',text:'Public excerpt'}]);
+  const first=request.questions.duplicate_0 as {criteria:Record<string,string>};
+  const second=request.questions.duplicate_1 as {criteria:Record<string,string>};
+  expect(first.criteria.h0).toBe('`history[0]`');expect(first.criteria).not.toHaveProperty('c0');
+  expect(second.criteria.c0).toBe('`items[0]`');expect(second.criteria).not.toHaveProperty('c1');
+ });
+
 });
