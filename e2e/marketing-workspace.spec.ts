@@ -50,7 +50,12 @@ for (const lang of ["en", "cs"] as const) {
         await expect(panel.getByRole("button", { name: knowledge.preview, exact: true })).toBeDisabled();
         await expect(panel.getByRole("button", { name: knowledge.normalize, exact: true })).toBeDisabled();
       }
-      if (key === "results") await expect(panel.getByText(copy.noResults, { exact: true })).toBeVisible();
+      if (key === "results") {
+        await expect(panel.getByText(copy.noResults, { exact: true })).toBeVisible();
+        await expect(panel.getByTestId('weekly-results')).toBeVisible();
+        await expect(panel.getByRole('heading', { name: lang === 'cs' ? 'Týdenní přehled publikování' : 'Weekly publication review' })).toBeVisible();
+        await expect(panel.getByText(lang === 'cs' ? 'Není změřeno' : 'Not collected', { exact: true })).toHaveCount(4);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
       const axe = await new AxeBuilder({ page: page as unknown as AxePage }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
       expect(axe.violations, `${lang}/${key}/${info.project.name}`).toEqual([]);

@@ -21,15 +21,18 @@ export function planCampaignImport(value:unknown,start:string,knowledge:Array<{i
  const shift=differenceInCalendarDays(parseDateOnly(start),parseDateOnly(plan.launch));
  const byTitle=new Map<string,string[]>();for(const item of knowledge){const key=tipTitleKey(item.title);byTitle.set(key,[...(byTitle.get(key)??[]),item.id]);}
  const unmatched=new Set<string>();const ambiguous=new Set<string>();
+ const endsOn=format(addDays(parseDateOnly(start),6),'yyyy-MM-dd');
  const entries=plan.entries.map(entry=>{
   const text=JSON.stringify(entry);
   const fixed=entry.schedulePolicy==='fixed'||entry.fixedDate===true||datedOrCommercial(entry)||/FrontKon|mesic\.ai|měsíc\.ai|Hacktoberfest|voucher|discount|sleva|coupon|promo code/i.test(text);
   const completed=entry.status==='published'||entry.status==='done';
   const fresh=plan.project==='dneskai' && /news|edition|novink|zpráv|daily digest/i.test(text);
   const ids=(entry.tipRefs??[]).flatMap(title=>{const matches=byTitle.get(tipTitleKey(title))??[];if(matches.length===0)unmatched.add(title);if(matches.length>1)ambiguous.add(title);return matches.length===1?matches:[];});
-  return {source_id:entry.id,date:completed||fixed?entry.date:format(addDays(parseDateOnly(entry.date),shift),'yyyy-MM-dd'),local_time:entry.time??null,kind:entry.kind,platform:entry.platform,title:entry.title,original:entry,knowledge_ids:[...new Set(ids)],status:completed?entry.status:fixed||fresh?'blocked':'planned',needs_review:!completed&&(fixed||fresh)};
+  const date=completed||fixed?entry.date:format(addDays(parseDateOnly(entry.date),shift),'yyyy-MM-dd');
+  const outsideWeek=date<start||date>endsOn;
+  return {source_id:entry.id,date,local_time:entry.time??null,kind:entry.kind,platform:entry.platform,title:entry.title,original:entry,knowledge_ids:[...new Set(ids)],status:completed?entry.status:outsideWeek?'backlog':fixed||fresh?'blocked':'planned',needs_review:!completed&&(fixed||fresh)};
  });
  if(new Set(entries.map(e=>e.source_id)).size!==entries.length)throw new Error('duplicate-calendar-id');
- return {campaign:{brand:plan.project,name:plan.name,starts_on:start,ends_on:format(addDays(parseDateOnly(start),29),'yyyy-MM-dd'),time_zone:'Europe/Prague',source_snapshot:plan,source_hash:contentHash(plan),status:'draft'},entries,report:{inputCount:plan.entries.length,outputCount:entries.length,shiftDays:shift,held:entries.filter(e=>e.needs_review).length,unmatchedTipTitles:[...unmatched],ambiguousTipTitles:[...ambiguous],completed:entries.filter(e=>e.status==='done'||e.status==='published').length}};
+ return {campaign:{brand:plan.project,name:plan.name,starts_on:start,ends_on:endsOn,time_zone:'Europe/Prague',source_snapshot:plan,source_hash:contentHash(plan),status:'draft'},entries,report:{inputCount:plan.entries.length,outputCount:entries.length,shiftDays:shift,held:entries.filter(e=>e.needs_review).length,backlog:entries.filter(e=>e.status==='backlog').length,unmatchedTipTitles:[...unmatched],ambiguousTipTitles:[...ambiguous],completed:entries.filter(e=>e.status==='done'||e.status==='published').length}};
 }
 export { pragueScheduledAt } from './clock';
