@@ -37,6 +37,7 @@ create table public.marketing_accounts (
 create table public.marketing_revisions (
   id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
   project_id uuid references public.projects(id), campaign_id uuid references public.marketing_campaigns(id),
+  calendar_entry_id uuid references public.marketing_calendar_entries(id),
   replaces_id uuid references public.marketing_revisions(id), brand text not null check(brand in ('dneskai','devshark')),
   revision jsonb not null, slides jsonb not null default '[]', content_hash text not null check(content_hash ~ '^[a-f0-9]{64}$'),
   ready boolean not null default false,
@@ -57,6 +58,7 @@ create table public.marketing_events (
   delivered_at timestamptz, created_at timestamptz not null default now()
 );
 create index marketing_revisions_owner_status on public.marketing_revisions(user_id,status,created_at desc);
+create index marketing_revisions_calendar_entry on public.marketing_revisions(user_id,calendar_entry_id) where calendar_entry_id is not null;
 create index marketing_sources_owner on public.marketing_sources(user_id,brand);
 create index marketing_due on public.marketing_publications(scheduled_at) where status='queued';
 create index marketing_calendar_owner_date on public.marketing_calendar_entries(user_id,date);
@@ -80,6 +82,11 @@ begin
   if tg_table_name='marketing_revisions' and (to_jsonb(new)->>'replaces_id') is not null and not exists(
     select 1 from public.marketing_revisions where id=(to_jsonb(new)->>'replaces_id')::uuid and user_id=new.user_id and brand=to_jsonb(new)->>'brand'
   ) then raise exception 'foreign replacement'; end if;
+  if tg_table_name='marketing_revisions' and (to_jsonb(new)->>'calendar_entry_id') is not null and not exists(
+    select 1 from public.marketing_calendar_entries e join public.marketing_campaigns c on c.id=e.campaign_id
+    where e.id=(to_jsonb(new)->>'calendar_entry_id')::uuid and e.user_id=new.user_id and c.user_id=new.user_id
+      and c.brand=to_jsonb(new)->>'brand' and e.campaign_id=(to_jsonb(new)->>'campaign_id')::uuid
+  ) then raise exception 'foreign calendar entry'; end if;
   if tg_table_name='marketing_calendar_entries' and exists (
     select 1 from jsonb_array_elements_text(to_jsonb(new)->'knowledge_ids') k
     where not exists(select 1 from public.ai_links a where a.id=k::uuid and a.user_id=new.user_id)
@@ -125,28 +132,33 @@ grant execute on function public.marketing_sources_valid(uuid,text,jsonb,timesta
 -- the only owner approval path; privileged work is guarded by auth.uid().
 -- Campaign-only archival deliberately leaves remote receipts intact. New
 -- approvals and remote write intents lock/check its current owned active state.
-create function public.marketing_revision_campaign_active(p_owner uuid,p_campaign uuid)
+create function public.marketing_revision_campaign_active(p_owner uuid,p_campaign uuid,p_entry uuid default null)
 returns boolean language plpgsql set search_path='' as $$
-declare c public.marketing_campaigns;
+declare c public.marketing_campaigns; e public.marketing_calendar_entries;
 begin
+ if p_entry is not null then
+  select * into e from public.marketing_calendar_entries where id=p_entry and user_id=p_owner for update;
+  if not found or e.campaign_id is distinct from p_campaign or e.status<>'planned' or e.needs_review then return false; end if;
+ end if;
  if p_campaign is null then return true; end if;
  select * into c from public.marketing_campaigns where id=p_campaign and user_id=p_owner for share;
  return found and c.status='active';
 end $$;
-revoke all on function public.marketing_revision_campaign_active(uuid,uuid) from public,anon,authenticated;
-grant execute on function public.marketing_revision_campaign_active(uuid,uuid) to service_role;
+revoke all on function public.marketing_revision_campaign_active(uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.marketing_revision_campaign_active(uuid,uuid,uuid) to service_role;
 
 create function public.marketing_approve_revision(p_revision_id uuid,p_expected_hash text)
 returns uuid language plpgsql security definer set search_path='' as $$
-declare r public.marketing_revisions; publication uuid; expected_campaign uuid;
+declare r public.marketing_revisions; publication uuid; expected_campaign uuid; expected_entry uuid;
 begin
  select * into r from public.marketing_revisions where id=p_revision_id and user_id=(select auth.uid());
  if not found then raise exception 'revision unavailable'; end if;
  expected_campaign:=r.campaign_id;
- if not public.marketing_revision_campaign_active(r.user_id,expected_campaign) then raise exception 'campaign inactive'; end if;
+ expected_entry:=r.calendar_entry_id;
+ if not public.marketing_revision_campaign_active(r.user_id,expected_campaign,expected_entry) then raise exception 'campaign inactive'; end if;
  select * into r from public.marketing_revisions where id=p_revision_id and user_id=(select auth.uid()) for update;
  if not found then raise exception 'revision unavailable'; end if;
- if r.campaign_id is distinct from expected_campaign then raise exception 'revision changed'; end if;
+ if r.campaign_id is distinct from expected_campaign or r.calendar_entry_id is distinct from expected_entry then raise exception 'revision changed'; end if;
  if r.content_hash<>p_expected_hash then raise exception 'revision changed'; end if;
  if r.status not in ('review','approved') or not r.ready then raise exception 'revision not ready'; end if;
  if (r.revision->>'scheduledAt')::timestamptz<=now() then raise exception 'schedule expired'; end if;
@@ -223,7 +235,7 @@ begin
    select p.id from public.marketing_publications p join public.marketing_revisions r on r.id=p.revision_id
    where p.user_id=p_owner and (p_publication is null or p.id=p_publication) and (p_brand is null or r.brand=p_brand) and p.status='queued' and p.scheduled_at<=now() and p.scheduled_at>=now()-interval '15 minutes'
    and r.status='approved' and r.approved_hash=r.content_hash and r.ready
-   and (r.campaign_id is null or exists(select 1 from public.marketing_campaigns c where c.id=r.campaign_id and c.user_id=p_owner and c.status='active'))
+   and public.marketing_revision_campaign_active(p_owner,r.campaign_id,r.calendar_entry_id)
    and p.scheduled_at=(r.revision->>'scheduledAt')::timestamptz
    and public.marketing_sources_valid(p_owner,r.brand,r.revision,now(),true)
    and exists(select 1 from public.marketing_accounts a where a.user_id=p_owner and a.brand=r.brand and a.platform=p.platform
@@ -239,7 +251,7 @@ grant execute on function public.marketing_claim_due(uuid,integer,text,uuid) to 
 
 create function public.marketing_save_revision(p_owner uuid,p_id uuid,p_revision jsonb,p_hash text,p_ready boolean,p_slides jsonb,p_replace uuid default null)
 returns uuid language plpgsql set search_path='' as $$
-declare existing public.marketing_revisions; previous public.marketing_revisions;
+declare existing public.marketing_revisions; previous public.marketing_revisions; inherited_entry uuid; expected_campaign uuid; legacy_entries uuid[];
 begin
  if not public.marketing_sources_valid(p_owner,p_revision->>'brand',p_revision,now(),false) then raise exception 'source changed'; end if;
  select * into existing from public.marketing_revisions where id=p_id for update;
@@ -248,13 +260,33 @@ begin
   return existing.id;
  end if;
  if p_replace is not null then
+  select * into previous from public.marketing_revisions where id=p_replace and user_id=p_owner and brand=p_revision->>'brand';
+  if not found then raise exception 'replacement unavailable'; end if;
+  expected_campaign:=previous.campaign_id;
+  inherited_entry:=previous.calendar_entry_id;
+  -- Legacy worker rows have a job association but no direct revision lineage.
+  if inherited_entry is null then
+   select array_agg(distinct e.id) into legacy_entries from public.marketing_jobs j join public.marketing_calendar_entries e on e.id::text=j.request->>'calendarEntryId'
+    where j.user_id=p_owner and j.request->'generation'->>'revisionId'=p_replace::text and e.user_id=p_owner and e.campaign_id=expected_campaign;
+   if cardinality(legacy_entries)>1 then raise exception 'replacement lineage ambiguous'; end if;
+   inherited_entry:=legacy_entries[1];
+  end if;
+  if inherited_entry is not null then
+   perform 1 from public.marketing_calendar_entries where id=inherited_entry and user_id=p_owner and campaign_id=expected_campaign for update;
+   if not found then raise exception 'replacement lineage unavailable'; end if;
+  end if;
+  if expected_campaign is not null then
+   perform 1 from public.marketing_campaigns where id=expected_campaign and user_id=p_owner for share;
+   if not found then raise exception 'replacement lineage unavailable'; end if;
+  end if;
   select * into previous from public.marketing_revisions where id=p_replace and user_id=p_owner and brand=p_revision->>'brand' for update;
   if not found or previous.status in ('publishing','published','reconciliation','superseded') or exists(select 1 from public.marketing_publications where revision_id=p_replace and status in ('claimed','published','reconciliation')) then raise exception 'replacement unavailable'; end if;
+  if previous.campaign_id is distinct from expected_campaign or (previous.calendar_entry_id is not null and previous.calendar_entry_id is distinct from inherited_entry) then raise exception 'replacement lineage changed'; end if;
   update public.marketing_revisions set status='superseded',approved_at=null,approved_hash=null where id=p_replace;
   update public.marketing_publications set status='cancelled' where revision_id=p_replace and status='queued';
  end if;
- insert into public.marketing_revisions(id,user_id,brand,revision,slides,content_hash,ready,replaces_id)
- values(p_id,p_owner,p_revision->>'brand',p_revision,p_slides,p_hash,p_ready,p_replace);
+ insert into public.marketing_revisions(id,user_id,project_id,campaign_id,calendar_entry_id,brand,revision,slides,content_hash,ready,replaces_id)
+ values(p_id,p_owner,previous.project_id,previous.campaign_id,inherited_entry,p_revision->>'brand',p_revision,p_slides,p_hash,p_ready,p_replace);
  return p_id;
 end $$;
 revoke all on function public.marketing_save_revision(uuid,uuid,jsonb,text,boolean,jsonb,uuid) from public,anon,authenticated;

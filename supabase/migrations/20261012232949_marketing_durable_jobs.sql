@@ -29,7 +29,7 @@ revoke all on function public.marketing_activate_campaign(uuid,text) from public
 grant execute on function public.marketing_activate_campaign(uuid,text) to authenticated;
 create function public.marketing_release_calendar_entry(p_entry uuid,p_hash text,p_source uuid,p_date date,p_time text,p_kind text)
 returns void language plpgsql security definer set search_path='' as $$
-declare e public.marketing_calendar_entries; c public.marketing_campaigns;
+declare e public.marketing_calendar_entries; c public.marketing_campaigns; revision_ids uuid[];
 begin
  select * into e from public.marketing_calendar_entries where id=p_entry and user_id=(select auth.uid()) for update;
  if not found then raise exception 'entry unavailable'; end if;
@@ -38,12 +38,12 @@ begin
  if (e.platform='instagram' and p_kind<>'carousel') or (e.platform='threads' and p_kind<>'thread') or e.platform not in ('instagram','threads')
   or p_time !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or e.status in ('published','done') then raise exception 'entry not releasable'; end if;
  if not exists(select 1 from public.marketing_sources s where s.id=p_source and s.user_id=e.user_id and s.brand=c.brand and s.eligible and (s.expires_at is null or s.expires_at>now())) then raise exception 'current source required'; end if;
- if exists(select 1 from public.marketing_jobs j join public.marketing_publications p on p.revision_id=(j.request->'generation'->>'revisionId')::uuid
-   where j.user_id=e.user_id and j.request->>'calendarEntryId'=e.id::text and p.status in ('claimed','reconciliation','published')) then raise exception 'entry publication already started'; end if;
- update public.marketing_publications set status='cancelled' where user_id=e.user_id and status='queued' and revision_id in(
-  select (request->'generation'->>'revisionId')::uuid from public.marketing_jobs where user_id=e.user_id and request->>'calendarEntryId'=e.id::text);
- update public.marketing_revisions set status='superseded',approved_hash=null,approved_at=null where user_id=e.user_id and status in ('review','approved','returned','failed') and id in(
-  select (request->'generation'->>'revisionId')::uuid from public.marketing_jobs where user_id=e.user_id and request->>'calendarEntryId'=e.id::text);
+ select array_agg(r.id) into revision_ids from public.marketing_revisions r where r.user_id=e.user_id and
+  (r.calendar_entry_id=e.id or exists(select 1 from public.marketing_jobs j where j.user_id=e.user_id and j.request->>'calendarEntryId'=e.id::text and j.request->'generation'->>'revisionId'=r.id::text));
+ if exists(select 1 from public.marketing_publications p where p.user_id=e.user_id and p.revision_id=any(revision_ids)
+   and p.status in ('claimed','reconciliation','published')) then raise exception 'entry publication already started'; end if;
+ update public.marketing_publications set status='cancelled' where user_id=e.user_id and status='queued' and revision_id=any(revision_ids);
+ update public.marketing_revisions set status='superseded',approved_hash=null,approved_at=null where user_id=e.user_id and status in ('review','approved','returned','failed') and id=any(revision_ids);
  update public.marketing_jobs set status=case when status='running' then 'reconciliation' else 'failed' end,error_code='calendar-entry-rebound',fence=null,lease_until=null where user_id=e.user_id and request->>'calendarEntryId'=e.id::text and status in ('queued','running');
  update public.marketing_calendar_entries set date=p_date,local_time=p_time,kind=p_kind,bound_source_id=p_source,status='planned',needs_review=false,generation_version=generation_version+1 where id=e.id;
 end $$;
@@ -134,7 +134,7 @@ begin
  end if;
  if p_error is null then
   perform public.marketing_save_revision(p_owner,(j.request->'generation'->>'revisionId')::uuid,p_result->'revision',p_result->>'revisionHash',true,p_result->'slides',null);
-  if j.request->>'calendarEntryId' is not null then update public.marketing_revisions r set campaign_id=e.campaign_id
+  if j.request->>'calendarEntryId' is not null then update public.marketing_revisions r set campaign_id=e.campaign_id,calendar_entry_id=e.id
    from public.marketing_calendar_entries e where r.id=(j.request->'generation'->>'revisionId')::uuid and r.user_id=p_owner and e.id=(j.request->>'calendarEntryId')::uuid and e.user_id=p_owner; end if;
  end if;
  update public.marketing_jobs set status=case when p_error is null then 'review' else 'failed' end,
@@ -164,20 +164,20 @@ end $$;
 
 create function public.marketing_checkpoint_publication(p_owner uuid,p_publication uuid,p_expected_container text,p_expected_error text,p_container text,p_error text)
 returns void language plpgsql set search_path='' as $$
-declare p public.marketing_publications; r public.marketing_revisions; expected_campaign uuid; expected_revision uuid;
+declare p public.marketing_publications; r public.marketing_revisions; expected_campaign uuid; expected_revision uuid; expected_entry uuid;
 begin
  select * into p from public.marketing_publications where id=p_publication and user_id=p_owner;
  if not found then raise exception 'publication fence lost'; end if;
  expected_revision:=p.revision_id;
- select campaign_id into expected_campaign from public.marketing_revisions where id=expected_revision and user_id=p_owner;
- if p_error in ('container-create-intent','publish-intent') and not public.marketing_revision_campaign_active(p_owner,expected_campaign)
+ select campaign_id,calendar_entry_id into expected_campaign,expected_entry from public.marketing_revisions where id=expected_revision and user_id=p_owner;
+ if p_error in ('container-create-intent','publish-intent') and not public.marketing_revision_campaign_active(p_owner,expected_campaign,expected_entry)
  then raise exception 'publication no longer authorized'; end if;
  select * into p from public.marketing_publications where id=p_publication and user_id=p_owner for update;
  if not found or p.revision_id is distinct from expected_revision or p.status<>'claimed' or p.lease_until<=now()
   or p.remote_container_id is distinct from p_expected_container or p.error_code is distinct from p_expected_error
  then raise exception 'publication fence lost'; end if;
  select * into r from public.marketing_revisions where id=p.revision_id and user_id=p_owner for update;
- if p_error in ('container-create-intent','publish-intent') and (not found or r.campaign_id is distinct from expected_campaign or r.status not in ('approved','publishing') or not r.ready or r.approved_hash is distinct from r.content_hash
+ if p_error in ('container-create-intent','publish-intent') and (not found or r.campaign_id is distinct from expected_campaign or r.calendar_entry_id is distinct from expected_entry or r.status not in ('approved','publishing') or not r.ready or r.approved_hash is distinct from r.content_hash
   or not public.marketing_sources_valid(p_owner,r.brand,r.revision,now(),true)
   or p.scheduled_at<now()-interval '15 minutes' or p.scheduled_at>now()
   or not exists(select 1 from public.marketing_accounts a where a.user_id=p_owner and a.brand=r.brand and a.platform=p.platform

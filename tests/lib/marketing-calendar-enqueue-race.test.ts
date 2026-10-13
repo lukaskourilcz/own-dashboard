@@ -125,7 +125,7 @@ describe("calendar snapshot fencing across enqueue, claim and finish", () => {
   it("keeps generic jobs unchanged and explicitly revokes the calendar helper and worker functions from browser roles", async () => {
     const generic = (await enqueue({})).rows[0].result.jobId; await claim(generic);
     expect((await finish(generic, null, "test-only-provider-failure")).rows[0].result).toBe("failed");
-    for (const signature of ["marketing_revision_campaign_active(uuid,uuid)", "marketing_calendar_job_current(uuid,jsonb)", "marketing_enqueue_job(uuid,uuid,text,jsonb)", "marketing_claim_job(uuid,uuid,uuid)", "marketing_finish_job(uuid,uuid,uuid,jsonb,text)"]) {
+    for (const signature of ["marketing_revision_campaign_active(uuid,uuid,uuid)", "marketing_calendar_job_current(uuid,jsonb)", "marketing_enqueue_job(uuid,uuid,text,jsonb)", "marketing_claim_job(uuid,uuid,uuid)", "marketing_finish_job(uuid,uuid,uuid,jsonb,text)"]) {
       for (const role of ["anon", "authenticated"]) {
         const permission = await db.query<{ allowed: boolean }>("select has_function_privilege($1,$2,'EXECUTE') as allowed", [role, signature]);
         expect(permission.rows[0].allowed).toBe(false);
