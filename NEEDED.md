@@ -1,6 +1,8 @@
 # NEEDED
 
-- [ ] **Complete the controlled DNESKAi rollout** — wider cross-source Jev evaluation, a separately authorized new run and any later daily activation are tracked in [#108](https://github.com/lukaskourilcz/own-dashboard/issues/108). Research selection is not final-post approval. Daily collection and publishing stay disabled; preserve expired scopes and existing paid reservations. [imp:3] [owner:me] [time:45m] [kind:deploy]
+Current marketing issue audit and consolidated owner decisions: [14 October audit](docs/marketing-issue-audit-2026-10-14.md). DNESKAi web keeps one daily article independently of the larger social topic set.
+
+- [ ] **Complete the controlled DNESKAi rollout** — Offline scoring and opt-in native free feeds are implemented; wider owner-reviewed cross-source evaluation, a separately authorized new run and any later daily activation are tracked in [#108](https://github.com/lukaskourilcz/own-dashboard/issues/108). Research selection is not final-post approval. Daily collection and publishing stay disabled; preserve expired scopes and existing paid reservations. [imp:3] [owner:me] [time:45m] [kind:deploy]
 
 - [ ] **Verify the remaining financial records against actual invoices** — confirm subscription amounts and renewal dates, Canva’s current status, Claude Max’s June/July App Store charges, and the inferred UptimeRobot start date. Review project allocations where the equal split no longer reflects usage. Use the existing Subscriptions and Money views; no new bank or business API connection is needed. [imp:3] [owner:me] [time:40m] [kind:content]
 

@@ -40,12 +40,14 @@ describe('owner workflow guide', () => {
     expect(container.textContent).toContain(lang === 'cs' ? 'Publikování přes Meta: vypnuté' : 'Meta publishing: disabled');
     for (const fact of lang === 'cs' ? [
       'každý den jeden příspěvek do Instagram feedu, dva příspěvky na Threads a tři Stories',
-      'import do stagingu probíhá', 'neaktivní návrhy se zástupným připojením',
+      'živý import do stagingu čeká na ověření', 'neaktivní návrhy se zástupným připojením',
+      'Denní sběr zůstává vypnutý', 'po pěti minutách do 23:55', 'nula ze čtyř témat',
       'Vzdálenější termíny zůstávají v backlogu', 'aktuální finální článek z BoardlessAI',
       'Dosah, uložení, sdílení ani odpovědi jsme zatím nezměřili', 'schválení přesných verzí',
     ] : [
       'one Instagram feed post, two Threads posts and three Stories per day',
-      'staging import is in progress', 'inactive drafts with placeholder connections',
+      'live staging import is awaiting verification', 'inactive drafts with placeholder connections',
+      'Daily collection remains disabled', 'every five minutes until 23:55', 'zero of four topics',
       'Later dates stay in the backlog', 'timely final article from BoardlessAI',
       'Reach, saves, shares and replies have not been collected', 'exact owner approval',
     ]) expect(container.textContent).toContain(fact);
