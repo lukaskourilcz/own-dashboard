@@ -8,6 +8,11 @@ export class DneskaiProviderError extends Error {constructor(readonly code:strin
 export type ProviderEnvironment=Record<string,string|undefined>;
 export const JEV_MODEL='jev-1.13.0';
 export const JEV_INPUT_USD_PER_MTOK=0.042; // https://docs.typesafe.ai/models, verified 2026-10-13; output free.
+/** Keep UTF-16 length limits without sending a split emoji or an unpaired source surrogate. */
+function boundedText(value:string,maxLength:number){
+ const clipped=value.toWellFormed().slice(0,maxLength);
+ return /[\uD800-\uDBFF]$/.test(clipped)?clipped.slice(0,-1):clipped;
+}
 const safeUrl=(value:string)=>{const url=new URL(value);if(value.length>2048||url.protocol!=='https:'||url.username||url.password||url.hash)throw new DneskaiProviderError('collection-url-invalid');return url.href;};
 const APIFY_SAFE_ERROR_TYPES=new Set(['invalid-input','invalid-input-schema','invalid-parameter','invalid-request','invalid-token','invalid-credentials','invalid-build','unknown-build-tag','build-not-found','actor-not-found','actor-disabled','insufficient-permissions','missing-api-token','max-items-must-be-greater-than-zero','max-total-charge-usd-below-minimum','max-total-charge-usd-must-be-greater-than-zero','concurrent-runs-limit-exceeded','actor-memory-limit-exceeded','not-enough-usage-to-run-paid-actor','monthly-usage-limit-too-low','rate-limit-exceeded','internal-server-error','schema-validation-error','schema-validation-failed','page-not-found','unexpected-route']);
 /** Read a bounded official machine identifier only. Never propagate messages, parameters, URLs or raw body. */
@@ -73,7 +78,7 @@ export async function pollDneskaiInstagram(source:DneskaiSource,registration:Dne
  const username=new URL(source.url).pathname.split('/').filter(Boolean)[0];
  // A collaborator is authoritative only on the exact requested profile result. Tags and mentions are not authorship.
  if(data.some(item=>(item.ownerUsername!==username&&!(item.inputUrl===source.url&&item.coauthorProducers?.some(author=>author.username===username)))||item.error||!['www.instagram.com','instagram.com'].includes(new URL(item.url).hostname)))throw new DneskaiProviderError('collection-apify-item-binding-invalid');
- const items=data.filter(item=>Date.parse(item.timestamp)>Date.parse(since)&&Date.parse(item.timestamp)<=options.now.getTime()).map(item=>candidate(source.id,item.id,item.caption.slice(0,500),item.caption,item.url,item.timestamp,options.now.toISOString(),[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])]));
+ const items=data.filter(item=>Date.parse(item.timestamp)>Date.parse(since)&&Date.parse(item.timestamp)<=options.now.getTime()).map(item=>candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,options.now.toISOString(),[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])]));
  return{running:false as const,run,items,complete:data.length<source.maxItems,errorCode:data.length>=source.maxItems?'collection-source-partial':null};
 }
 export type JevHistory={id:string;title:string;text:string};
@@ -86,7 +91,7 @@ export function jevRequest(items:readonly DneskaiCandidate[],history:readonly Je
   questions[`relevance_${index}`]={type:'noul',instructions:`Is ${reference} substantive, timely AI/technology research for Czech DNESKAi? Promotional slogans and unsupported claims do not count. This decision does not establish factual truth.`};
   questions[`duplicate_${index}`]={type:'choice',instructions:`Is ${reference} semantically the same event/tool/claim as an entry in state.history (h labels) or an earlier state.items entry (c labels)? This includes already classified candidates from earlier batches. If the excerpts are insufficient choose uncertain.`,criteria:{none:'Clearly different subject',uncertain:'Insufficient evidence',...Object.fromEntries(history.map((_,i)=>[`h${i}`,null])),...Object.fromEntries(items.slice(0,index).map((_,i)=>[`c${i}`,null]))}};
  }
- const state={items:items.map((item,i)=>({id:`c${i}`,title:item.title.slice(0,120),text:item.text.slice(0,600)})),history:history.map((item,i)=>({id:`h${i}`,title:item.title.slice(0,40),text:item.text.slice(0,64)}))};
+ const state={items:items.map((item,i)=>({id:`c${i}`,title:boundedText(item.title,120),text:boundedText(item.text,600)})),history:history.map((item,i)=>({id:`h${i}`,title:boundedText(item.title,40),text:boundedText(item.text,64)}))};
  const request={model:JEV_MODEL,state,questions};
  // UTF-8 bytes are a conservative local token bound, with margin for the service's typed wrappers.
  if(Buffer.byteLength(JSON.stringify(request))>60000||Buffer.byteLength(JSON.stringify(state))>28000)throw new DneskaiProviderError('collection-jev-input-limit');return request;

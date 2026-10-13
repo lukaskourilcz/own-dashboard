@@ -170,12 +170,28 @@ neprokazuje celý sběr, klasifikaci ani schválení příspěvku. Export schvá
 
 Lokální Apify klíč prošel kontrolou formátu a bezplatným ověřením účtu. Aktuální
 actor i tarif odpovídají připnuté konfiguraci. Příčina dřívějšího HTTP odmítnutí
-stále není doložená. Nový placený test čeká na samostatný souhlas; původní
-stagingová rezervace 0,04 USD nebyla resetována.
+stále není doložená. Vlastník následně schválil jeden nový test do 0,05 USD.
+Apify vrátilo sedm příspěvků za doložených 0,0161 USD. Výsledek zůstává částečný,
+protože dosáhl limitu sedmi položek. Jediné volání Jev skončilo HTTP 400;
+jeho cenu neznáme a ponecháváme rezervaci 0,003 USD. Požadavek jsme neopakovali
+a původní stagingová rezervace 0,04 USD zůstává samostatná.
+
+Offline kontrola uloženého požadavku našla rozdělené emoji v nadpisu. Oprava
+zkracuje nadpisy a texty bez neplatných UTF-16 znaků, zachovává dosavadní limity
+a původní zdrojový text. Kontrola stejné dávky po opravě nenašla neplatné znaky.
+Regresní testy pokrývají hranice textů kandidátů, historie a instagramového
+nadpisu. Vlastník pak schválil jedno další volání Jev do 0,003 USD na stejné
+uložené dávce, bez nového scrapování. Po opravě Jev vrátilo platné vyhodnocení
+sedmi položek za 0,000155064 USD. Všechny zůstaly `held` s důvodem
+`collection-classification-uncertain`; relevance byla 0,04–0,40. Prahy jsme
+nesnižovali a žádné téma nepovažujeme za vybrané. První HTTP 400 nemá zachovaný
+diagnostický text, takže jeho přesnou příčinu nelze doložit. Data testu zůstávají
+v soukromých místních dokladech; do produkční databáze jsme je neimportovali.
 - Worker je po testu opět nepublikovaný. Časovač ani veřejný webhook nemá.
   Produkční nasazení této změny, pravidelný sběr a publikování zůstávají vypnuté.
   Původní tři rezervace generování, nula finálních revizí a nula publikací se nezměnily.
-  Úplný průchod přes Apify a Jev není ověřený; další nasazení a pokus potřebují
+  Samostatný průchod přes Apify a opravené Jev je ověřený. Celý běh přes n8n
+  a uložení do produkční databáze ještě neproběhl; jeho spuštění potřebuje
   nový výslovný rozsah, bez resetování předchozích rezervací.
 
 Databázové testy ověřují skutečné SQL v místním PostgreSQL prostředí PGlite;
