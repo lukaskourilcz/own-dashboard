@@ -5,6 +5,7 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { useDict,useLang } from '@/lib/i18n';
 import { CalendarSlot } from '@/components/marketing/calendar-slot';
 import { MarketingDiagnostics } from '@/components/marketing/marketing-diagnostics';
+import { MarketingJobHealthSummary } from '@/components/marketing/job-health';
 import { KnowledgeLibrary } from '@/components/marketing/knowledge-library';
 import { KnowledgeImport } from '@/components/marketing/knowledge-import';
 import { CalendarImport } from '@/components/marketing/calendar-import';
@@ -49,6 +50,7 @@ export function MarketingPanel({isPreview=false,onOpenKnowledge}:{isPreview?:boo
   {isPreview&&<p className="mb-3 text-xs text-foreground-muted">{t.preview}</p>}
   {message&&<p role="status" className="mb-4 text-sm">{message}</p>}
   {query.isPending&&!isPreview?<p role="status">{t.loading}</p>:query.isError?<p role="alert" className="rounded-md border border-border p-4">{t.unavailable}</p>:<div role="tabpanel" id={`marketing-panel-${view}`} aria-labelledby={`marketing-tab-${view}`}>
+  {view==='review'&&<MarketingJobHealthSummary jobs={(data.jobHealth??[]).filter(job=>brand==='all'||job.brand===brand)} lang={lang} disabled={isPreview} refreshing={query.isFetching} onRefresh={()=>void query.refetch()}/>}
   {view==='review'&&(revisions.filter(r=>['review','returned','approved'].includes(r.status)).length===0?<EmptyState title={t.empty} description={t.emptyDescription}/>:<div className="space-y-5">{revisions.filter(r=>['review','returned','approved'].includes(r.status)).map(row=>{
    const r=row.revision;const activeCampaign=!row.campaign_id||data.campaigns.some(c=>c.id===row.campaign_id&&c.status==='active');const currentSources=r.sources.every(ref=>data.sources.some(item=>item.brand===r.brand&&item.source_id===ref.sourceId&&item.packet.sourceRevision===ref.sourceRevision&&item.packet.contentHash===ref.contentHash&&item.eligible&&(item.packet.expiresAt===null||Date.parse(item.packet.expiresAt)>Date.now())));const verified=data.accounts.some(a=>a.brand===r.brand&&a.platform===r.account.platform&&a.remote_account_id===r.account.id&&a.verified_at);
    return <article key={row.id} className="overflow-hidden rounded-lg border border-border bg-surface">

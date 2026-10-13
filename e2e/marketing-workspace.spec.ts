@@ -21,6 +21,10 @@ for (const lang of ["en", "cs"] as const) {
     await expect(page.getByText(copy.preview, { exact: true })).toBeVisible();
     await expect(page.getByText(copy.empty, { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: copy.refresh, exact: true })).toBeDisabled();
+    const jobHealth = page.getByRole('region', { name: lang === 'cs' ? 'Příprava návrhů' : 'Draft preparation' });
+    await expect(jobHealth).toBeVisible();
+    await expect(jobHealth.getByRole('button', { name: lang === 'cs' ? 'Zkontrolovat stav znovu' : 'Check status again' })).toBeDisabled();
+    await expect(jobHealth.getByText(lang === 'cs' ? 'Pro tuto značku nejsou zaznamenané úlohy přípravy.' : 'No preparation jobs recorded for this brand.')).toBeVisible();
     await expect(page.locator("#marketing-panel-review article")).toHaveCount(0);
     await expect(page.getByRole("button", { name: copy.approve, exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
