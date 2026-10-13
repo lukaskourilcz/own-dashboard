@@ -66,7 +66,7 @@ The adapter hides inputs/outputs, filters metadata, disables runtime/environment
 
 `services/marketing-worker/protocol.ts` exposes authenticated HTTP admission/status and a separate durable runner. Its README defines idempotency, owner scoping, fencing, source refresh, reconciliation and hosting requirements. n8n Cloud calls HTTP; it does not use Execute Command. Root API/DB adapters supply the durable queue, trusted template registry, storage and model configuration. This module provisions no hosting, paid service or production activation.
 
-Focused tests cover consent/hash/eligibility isolation, references, immutable exercise semantics, retries/cost, article QA, Czech glyphs, overflow, reproducible JPEG bytes, pending template refusal, both-brand held benchmarks, EU redaction, final asset binding and typed feedback. Live model quality, owner approval of the Design-derived templates, current eligible production packets, deployed worker limits, signed-URL lifetime and LangSmith workspace access remain owner-pilot/setup gates.
+Focused tests cover consent/hash/eligibility isolation, references, immutable exercise semantics, retries/cost, article QA, Czech glyphs, overflow, reproducible JPEG bytes, pending template refusal, both-brand held benchmarks, EU redaction, final asset binding and typed feedback. Owner-approved read-only checks verified Claude model-list access and EU LangSmith project-list access on13 October2026, with no model invocation or trace write. Live model quality, trace ingestion/redaction, owner approval of the Design-derived templates, current eligible production packets, deployed worker limits and signed-URL lifetime remain owner-pilot/setup gates.
 
 ## Primary sources checked 13 October 2026
 
