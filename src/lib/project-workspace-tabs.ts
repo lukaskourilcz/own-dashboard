@@ -7,6 +7,7 @@ export const PROJECT_WORKSPACE_TABS = [
   "finance",
   "competition",
   "knowledge",
+  "sources",
   "scaling",
   "monetization",
 ] as const;

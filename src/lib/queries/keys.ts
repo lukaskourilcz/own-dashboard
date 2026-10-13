@@ -58,6 +58,7 @@ export const qk = {
   repos: ["github", "repos"] as const,
   detectedTools: ["github", "detected-tools"] as const,
   marketingState: ["marketing", "state"] as const,
+  dneskaiSources: ["marketing", "dneskai-sources"] as const,
   marketingKnowledge: ["marketing", "knowledge"] as const,
   marketingCalendars: ["github", "marketing-calendars"] as const,
   calendarList: ["calendar", "list"] as const,
