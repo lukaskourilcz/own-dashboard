@@ -130,6 +130,17 @@ describe("bounded source-derived generation", () => {
     expect(provider.invoke).not.toHaveBeenCalled();
     expect(realTask.eligible).toBe(false);
   });
+  it("paginates every authored public-spec word across multiple six-line slides", () => {
+    // Repeated public text is a layout-only QA case, not a new operational task.
+    const content = { ...realTask.content, body: `${realTask.content.body}\n\n${realTask.content.body}` };
+    const source = parseSourcePacket({ ...realTask, content, contentHash: contentHash(content) });
+    const challenge = authoredCodingChallenge(source);
+    const pages = challenge.slides.filter(slide => slide.headline === source.content.title || slide.headline === "Public task specification");
+    expect(pages.length).toBeGreaterThan(1); expect(challenge.slides.length).toBeLessThanOrEqual(5);
+    expect(pages.every(page => page.body.split("\n").length <= 6)).toBe(true);
+    expect(pages.map(page => page.body).join(" ").replace(/\s+/g, " ")).toBe(authoredMarketingText(content.body, content.code).replace(/\s+/g, " "));
+    expect(source.eligible).toBe(false);
+  });
 });
 
 describe("deterministic brand rendering", () => {
