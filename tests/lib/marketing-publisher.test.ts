@@ -176,6 +176,17 @@ describe('inactive Cloud workflow exports', () => {
           expect(node.retryOnFail).toBe(false);
           expect(workflow.nodes.map((value: { type: string }) => value.type)).toEqual(['n8n-nodes-base.manualTrigger', 'n8n-nodes-base.httpRequest', 'n8n-nodes-base.code']);
           expect(workflow.settings).toMatchObject({ saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false });
+        } else if (file === 'dneskai-collection-pilot-worker.json') {
+          expect(node.parameters.genericAuthType).toBe('httpCustomAuth');
+          expect(node.parameters.url).toBe('={{ $("Validate isolated scope").first().json.origin + "/api/marketing/dneskai/collect" }}');
+          expect(node.parameters.jsonBody).toContain('pilot:true');
+          expect(node.credentials.httpCustomAuth.id).toBe('REPLACE_WITH_ISOLATED_COLLECTION_CUSTOM_AUTH_CREDENTIAL_ID');
+          expect(node.parameters.options.redirect.redirect.followRedirects).toBe(false);
+          expect(node.parameters.options.timeout).toBe(60_000);
+          expect(node.retryOnFail).toBe(false);
+          expect(workflow.settings).toMatchObject({ executionTimeout: 120, callerPolicy: 'workflowsFromAList', callerIds: 'REPLACE_WITH_THIS_PILOT_WORKFLOW_ID', availableInMCP: false, saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false });
+          expect(workflow.nodes.filter((value: { type: string }) => value.type.endsWith('Trigger')).map((value: { type: string }) => value.type)).toEqual(['n8n-nodes-base.manualTrigger', 'n8n-nodes-base.executeWorkflowTrigger']);
+          expect(workflow.nodes.some((value: { type: string }) => value.type === 'n8n-nodes-base.webhook')).toBe(false);
         } else if (file === 'dneskai-source-collection.json') {
           expect(node.parameters.genericAuthType).toBe('httpHeaderAuth');
           expect(node.parameters.url).toBe('https://own-dashboard-tau.vercel.app/api/marketing/dneskai/collect');
