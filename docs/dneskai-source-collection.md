@@ -126,9 +126,23 @@ zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schvá
   samo o sobě není důvod k vyřazení. Jev vrátil validní strukturované vyhodnocení.
 - Základní migrace sběru i odděleného pilotu jsou aplikované do schválené dočasné Supabase větve.
   Všechny čtyři tabulky mají RLS, anonymní čtení i zápis z prohlížeče jsou zakázané.
-- Kompletní propojený průchod databáze → Quorum → n8n → výběr témat se ještě
-  ověřuje; samostatné provider testy jej nenahrazují. Produkce, plánovaný sběr
-  a publikování zůstávají vypnuté.
+- Izolovaný běh 13. října provedl tři automatické kroky n8n a uložil 55 skutečných
+  podkladů z feedů. Přihlášené API OwnDashboardu i projektová záložka Zdroje
+  zobrazily stejný stav. Nová Preview běží na OwnDashboard `7cd4605` a Quorum `55ab379`.
+- Spuštění Apify skončilo chybou `provider-http-failed`; tato nasazená verze
+  nezachovala konkrétní HTTP kód. Následný seznam běhů Apify neobsahoval nový běh.
+  To samo nenahrazuje potvrzení nákladů: rezervace 0,04 USD zůstává uzamčená
+  s neznámou spotřebou. Jev proto neproběhl; vybraná témata jsou 0 ze 4.
+- Obě schválená Preview sestavení jsou využitá. Lokální oprava `97068b5`
+  zachovává platné položky feedu při vadné URL a přidává omezené HTTP/strojové
+  chybové kódy bez zpráv a tajemství. Prošla 62 cílenými testy, typy a lintem;
+  není nasazená. Cesta Apify `/v2/actors/:actorId/runs` odpovídá dokumentaci,
+  proto jsme ji bez důkazu neměnili. Příčina odmítnutí zatím není potvrzená.
+- Worker je po testu opět nepublikovaný. Časovač ani veřejný webhook nemá.
+  Produkční nasazení této změny, pravidelný sběr a publikování zůstávají vypnuté.
+  Původní tři rezervace generování, nula finálních revizí a nula publikací se nezměnily.
+  Úplný průchod přes Apify a Jev není ověřený; další nasazení a pokus potřebují
+  nový výslovný rozsah, bez resetování předchozích rezervací.
 
 Databázové testy ověřují skutečné SQL v místním PostgreSQL prostředí PGlite;
 nenahrazují živý integrační test na schválené Supabase větvi. Testy s připravenými
