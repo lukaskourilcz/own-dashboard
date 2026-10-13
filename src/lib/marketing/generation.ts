@@ -2,10 +2,11 @@ import { z } from "zod";
 import { parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash } from "./hashes";
 import type { MarketingTracer } from "./tracing";
+import { marketingHumanizerInstructions } from "./humanizer";
 import { fitMarketingText } from "./render";
 import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
 
-export const MARKETING_PROMPT_VERSION = "marketing-copy/2";
+export const MARKETING_PROMPT_VERSION = "marketing-copy/3";
 export const MarketingSlideSchema = z.strictObject({
   headline: z.string().min(1).max(160),
   body: z.string().min(1).max(1200),
@@ -69,6 +70,7 @@ export function generationPrompt(source: SourcePacket, knowledge: GenerationInpu
       "A coding task without an authored explanation is challenge-only: preserve its public specification and starter code; do not solve it, suggest an algorithm, infer answers or claim a solution. The server supplies its exact title, challenge caption and task link.",
       "Do not place code in output; the renderer inserts source code unchanged. Use plain text, no HTML, emoji or markdown decoration.",
       "Return 2-5 slides, concise text, title, caption and locale matching the schema. Do not include URLs in generated text.",
+      marketingHumanizerInstructions(source),
     ].join("\n"),
     prompt: JSON.stringify({
       source: { brand: source.brand, kind: source.kind, locale: source.locale, content: {

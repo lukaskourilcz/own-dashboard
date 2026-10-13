@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "marketing-humanizer-provenance/1",
+  "repository": "https://github.com/blader/humanizer",
+  "commit": "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8",
+  "skillVersion": "3.1.0",
+  "license": "MIT",
+  "files": {
+    "SKILL.md": {
+      "sha256": "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad",
+      "bytes": 32348
+    },
+    "LICENSE": {
+      "sha256": "4ac4810254ab36d45419141aeb8e69bf50652cfafe5b2dab947d06d44e5cbf96",
+      "bytes": 1066
+    }
+  },
+  "adapter": {
+    "version": "marketing-humanizer/1",
+    "module": "src/lib/marketing/humanizer.ts",
+    "mode": "embedded",
+    "sourceSections": [
+      "How to work",
+      "Voice",
+      "Embedded mode",
+      "1-9",
+      "11-20",
+      "22-26",
+      "When not to act"
+    ],
+    "scope": "Generated prose only. Authored exercises/code/public task spec remain deterministic; no invented personal experience, quotes or authority.",
+    "providerCallsAdded": 0,
+    "maximumInstructionBytes": 2500
+  },
+  "installation": "Repository-local provenance and bounded runtime adapter; no global plugin installed"
+}
