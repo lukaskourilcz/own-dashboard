@@ -52,6 +52,27 @@ describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
   const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!,body=kind==='malformed'?'not-json':JSON.stringify({error:{type:kind==='unknown'?'PRIVATE-unknown-machine-value':'invalid-input',message:kind==='oversized'?'PRIVATE'.repeat(4000):'PRIVATE'}}),fetcher=vi.fn<typeof fetch>(async()=>new Response(body,{status:400}));
   try{await startDneskaiInstagram(source,'2026-10-12T00:00:00Z',{env:apifyEnv,fetcher,signal});throw new Error('expected rejection');}catch(error){expect((error as Error).message).toBe('provider-http-400');}expect(fetcher).toHaveBeenCalledTimes(1);
  });
+ it.each([
+  ['2026-10-06T21:09:06.897873+00:00','2026-10-06T21:09:06.897Z'],
+  ['2026-10-06T23:09:06.897873+02:00','2026-10-06T21:09:06.897Z'],
+  ['2026-10-06T16:09:06-05:00','2026-10-06T21:09:06.000Z'],
+ ])('converts persisted watermark %s to the pinned actor UTC input',async(since,expected)=>{
+  const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!;
+  // Official input schema, build 0.0.813, read 2026-10-13. Offset suffixes are not accepted.
+  const actorDatePattern=/^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])(T[0-2]\d:[0-5]\d(:[0-5]\d)?(\.\d+)?Z?)?$|^(\d+)\s*(minute|hour|day|week|month|year)s?$/;
+  expect(actorDatePattern.test(since)).toBe(false);
+  const fetcher=vi.fn<typeof fetch>(async(_url,init)=>{
+   const input=JSON.parse(String(init?.body));expect(input.onlyPostsNewerThan).toBe(expected);
+   expect(actorDatePattern.test(input.onlyPostsNewerThan)).toBe(true);
+   expect(Math.abs(Date.parse(input.onlyPostsNewerThan)-Date.parse(since))).toBeLessThan(1);
+   return json({data:registration});
+  });
+  await startDneskaiInstagram(source,since,{env:apifyEnv,fetcher,signal});expect(fetcher).toHaveBeenCalledTimes(1);
+ });
+ it.each(['not-a-date','2026-02-30T12:00:00Z','2026-10-06T21:00:00'])('rejects invalid or unzoned watermark %s before a paid request',async since=>{
+  const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!,fetcher=vi.fn<typeof fetch>();
+  await expect(startDneskaiInstagram(source,since,{env:apifyEnv,fetcher,signal})).rejects.toThrow('collection-instagram-input-invalid');expect(fetcher).not.toHaveBeenCalled();
+ });
  it('starts one capped pinned async official actor, then polls exact registered run and preserves bounded media URLs',async()=>{const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!,fetcher=vi.fn<typeof fetch>().mockResolvedValueOnce(json({data:{...registration,status:'RUNNING',usageTotalUsd:null}})).mockResolvedValueOnce(json({data:registration})).mockResolvedValueOnce(json([{id:'post-test',shortCode:'test',caption:'OFFLINE TEST public caption',timestamp:'2026-10-13T20:20:00Z',url:'https://www.instagram.com/p/test/',ownerUsername:'mosseri',displayUrl:'https://cdn.example.test/a.jpg',images:['https://cdn.example.test/b.jpg'],childPosts:[{displayUrl:'https://cdn.example.test/c.jpg'}]}]));await startDneskaiInstagram(source,'2026-10-12T00:00:00Z',{env:apifyEnv,fetcher,signal});const startUrl=fetcher.mock.calls[0][0];expect(new URL(String(startUrl)).origin).toBe('https://api.apify.com');expect(new URL(String(startUrl)).pathname).toBe('/v2/actors/apify~instagram-scraper/runs');expect(Object.fromEntries(new URL(String(startUrl)).searchParams)).toEqual({build:'1.2.3',waitForFinish:'0',timeout:'120',restartOnError:'false',maxItems:'7',maxTotalChargeUsd:'0.04'});expect(startUrl).toContain('waitForFinish=0');expect(startUrl).toContain('maxTotalChargeUsd=0.04');expect(startUrl).toContain('restartOnError=false');expect(new Headers(fetcher.mock.calls[0][1]?.headers).get('authorization')).toBe('Bearer test-only-token');const result=await pollDneskaiInstagram(source,registration,'2026-10-12T00:00:00Z',{env:apifyEnv,fetcher,signal,now});expect(result.running).toBe(false);if(!result.running)expect(result.items[0].mediaUrls).toHaveLength(3);expect(fetcher.mock.calls.every(call=>String(call[0]).startsWith('https://api.apify.com/'))).toBe(true);});
  it('accepts explicit coauthorship on the exact requested profile and still filters an old pinned post',async()=>{
   const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!;

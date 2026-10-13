@@ -265,3 +265,9 @@ Přesun sběrných a redakčních modulů z BoardlessAI do OwnDashboardu je samo
 [úkol #104](https://github.com/lukaskourilcz/own-dashboard/issues/104). Současné
 ověření ještě používá Quorum. K vypnutí původních běhů dojde až po ověřeném
 přechodu; tento úkol jejich nastavení nemění.
+
+### Apify datum z databáze
+
+Produkční ověření 13. října ukázalo rozdíl mezi vstupem z lokálního testu a databází. PostgreSQL vrací čas například jako `2026-10-06T21:09:06.897873+00:00`. Vstupní schéma připnutého Apify buildu `0.0.813` tento posun odmítá. Před požadavkem ověříme datum a převedeme jej na UTC zápis `2026-10-06T21:09:06.897Z`. Neplatné datum odmítneme před placeným voláním. Lokální filtrování výsledků dál používá původní hranici.
+
+Odmítnutý pokus se automaticky neopakuje. Jeho rezervace zůstává evidovaná; oprava kódu neobnovuje rozpočet ani počet kroků.
