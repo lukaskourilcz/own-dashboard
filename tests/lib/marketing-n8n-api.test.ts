@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import sourceFixture from "../../templates/marketing/benchmarks/devshark-question.json";
 import templateFixture from "../../templates/marketing/devshark/template.json";
 
-const mocks = vi.hoisted(() => ({ admin: vi.fn(), sync: vi.fn(), enqueueCalendar: vi.fn(), execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), enqueue: vi.fn(), read: vi.fn(), run: vi.fn(), poll: vi.fn(), abort: vi.fn(), diagnostics: vi.fn(), ingest: vi.fn(), refresh: vi.fn() }));
+const mocks = vi.hoisted(() => ({ admin: vi.fn(), sync: vi.fn(), enqueueCalendar: vi.fn(), execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), enqueue: vi.fn(), read: vi.fn(), run: vi.fn(), poll: vi.fn(), abort: vi.fn(), diagnostics: vi.fn(), ingest: vi.fn(), refresh: vi.fn(), querySources:vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
 vi.mock("@/lib/marketing/orchestrator", () => ({ synchronizeMarketingSources: (...args: unknown[]) => mocks.sync(...args), enqueueCalendarMarketingJob: (...args: unknown[]) => mocks.enqueueCalendar(...args), executeOrchestratedMarketingJob: (...args: unknown[]) => mocks.execute(...args), publishDueMarketing: (...args: unknown[]) => mocks.publish(...args), reconcileStoredMarketingPublication: (...args: unknown[]) => mocks.reconcile(...args) }));
 vi.mock("@/lib/marketing/worker-runtime", () => ({ enqueueMarketingJob: (...args: unknown[]) => mocks.enqueue(...args), readMarketingJob: (...args: unknown[]) => mocks.read(...args) }));
 vi.mock("@/lib/marketing/knowledge-runner", () => ({ runQueuedKnowledgeAnalysis: (...args: unknown[]) => mocks.run(...args), pollQueuedKnowledgeAnalysis: (...args: unknown[]) => mocks.poll(...args), abortQueuedKnowledgeAnalysis: (...args: unknown[]) => mocks.abort(...args), createKnowledgeDiagnostics: () => mocks.diagnostics() }));
 vi.mock("@/lib/marketing/store", () => ({ ingestSource: (...args: unknown[]) => mocks.ingest(...args) }));
-vi.mock("@/lib/marketing/source-refresh", () => ({ refreshSource: (...args: unknown[]) => mocks.refresh(...args) }));
+vi.mock("@/lib/marketing/source-refresh", () => ({ refreshSource: (...args: unknown[]) => mocks.refresh(...args),refreshMarketingSources:(...args:unknown[])=>mocks.querySources(...args) }));
 import { POST } from "@/app/api/marketing/n8n/route";
 
 const owner = "11111111-1111-4111-8111-111111111111";
@@ -151,7 +151,7 @@ describe("authenticated n8n marketing operation boundary", () => {
     const response = await POST(request({ operation: "discover", brand: "devshark", date: "2026-10-15", cursor: "test-cursor" }));
     expect(response.status).toBe(200); expect((await response.json()).entries.map((row: Row) => row.id)).toEqual(["owned-slot"]);
     expect(mocks.sync).toHaveBeenCalledWith(state.db, owner, "devshark", undefined, "test-cursor", expect.any(AbortSignal));
-    expect(state.queries[1].limit).toBe(8);
+    expect(state.queries[1].limit).toBe(43);
   });
   it("routes job execution/status by fixed owner and never invokes a paid knowledge runner", async () => {
     await POST(request({ operation: "execute", jobId: sourceId })); await POST(request({ operation: "status", jobId: sourceId }));

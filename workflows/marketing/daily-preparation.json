@@ -1,5 +1,5 @@
 {
-  "name": "OwnDashboard \u2014 daily marketing preparation (inactive)",
+  "name": "OwnDashboard — DNESKAi daily preparation (inactive)",
   "active": false,
   "nodes": [
     {
@@ -44,7 +44,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const date = $now.setZone('Europe/Prague').plus({days:1}).toISODate();\nreturn ['dneskai','devshark'].map(brand => ({json:{operation:'discover',brand,date}}));"
+        "jsCode": "const date = $now.setZone('Europe/Prague').toISODate();\nreturn [{json:{operation:'discover',brand:'dneskai',date}}];"
       }
     },
     {
@@ -100,7 +100,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const requests = [];\nfor (const item of $input.all()) {\n  const response = item.json;\n  if (!['dneskai','devshark'].includes(response.brand) || !Array.isArray(response.entries)) continue;\n  for (const entry of response.entries) {\n    if (typeof entry.id !== 'string' || !['instagram','threads'].includes(entry.platform)) continue;\n    requests.push({json:{operation:'enqueue',brand:response.brand,entryId:entry.id,platform:entry.platform}});\n  }\n}\nreturn requests.slice(0,8);"
+        "jsCode": "const inputs=$input.all();\nconst total=inputs.reduce((sum,item)=>sum+(item.json.brand==='dneskai'&&Array.isArray(item.json.entries)?item.json.entries.length:0),0);\nif(total>8)return [];\nconst requests = [];\nfor (const [index,item] of inputs.entries()) {\n  const response = item.json;\n  if (response.brand !== 'dneskai' || !Array.isArray(response.entries)) continue;\n  if (response.planning?.calendarHasMore || response.entries.length > 8) continue;\n  if (!Array.isArray(response.packets) || !response.packets.some(packet => packet?.eligible === true)) continue;\n  for (const entry of response.entries) {\n    if (typeof entry.id !== 'string' || !['instagram','threads'].includes(entry.platform)) continue;\n    requests.push({json:{operation:'enqueue',brand:'dneskai',entryId:entry.id,platform:entry.platform},pairedItem:{item:index}});\n  }\n}\nreturn requests;"
       }
     },
     {
@@ -242,6 +242,20 @@
       "maxTries": 3,
       "waitBetweenTries": 1000,
       "onError": "continueErrorOutput"
+    },
+    {
+      "id": "0f83729c-1c18-492a-ac86-26d34ea3a504",
+      "name": "Daily preparation holds",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const inputs=$input.all();\nconst total=inputs.reduce((sum,item)=>sum+(item.json.brand==='dneskai'&&Array.isArray(item.json.entries)?item.json.entries.length:0),0);\nreturn inputs.map((item,index) => {\n  const response=item.json;\n  const entries=Array.isArray(response.entries)?response.entries:[];\n  const sourceReady=Array.isArray(response.packets)&&response.packets.some(packet=>packet?.eligible===true);\n  const held=total>8||!sourceReady||response.planning?.calendarHasMore===true||entries.length>8||response.brand!=='dneskai';\n  return {json:{brand:'dneskai',phase:'discovery',status:held?'held':'admission-required',observedEntryCount:entries.length,totalRequestedCount:total,heldEntryCount:Array.isArray(response.heldEntries)?response.heldEntries.length:0,heldUnsupportedStoryCount:Number.isInteger(response.heldUnsupportedStoryCount)?response.heldUnsupportedStoryCount:0,holdCode:response.brand!=='dneskai'?'source-discovery-unavailable':!sourceReady?'fresh-approved-source-required':response.planning?.calendarHasMore||entries.length>8||total>8?'daily-capacity-review-required':null,jobAdmissionsPerRolling24Hours:8,pilotLifetimeJobs:3,remainingAdmissions:null,approvalRequired:true},pairedItem:{item:index}};\n});"
+      }
     }
   ],
   "connections": {
@@ -283,6 +297,18 @@
         [
           {
             "node": "Actual calendar entries",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Daily preparation holds",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Daily preparation holds",
             "type": "main",
             "index": 0
           }

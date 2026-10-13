@@ -1,0 +1,139 @@
+{
+  "name": "OwnDashboard — weekly owner review (manual, inactive)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "9dff89d5-6a1f-47fd-b4c3-876a6795d3e2",
+      "name": "Manual weekly owner review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "87c5e1e1-ea0d-4aad-b372-03d6cc399d9b",
+      "name": "Previous completed week scopes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const today=$now.setZone('Europe/Prague');\nconst previousSunday=today.minus({days:(today.weekday%7)+7}).toISODate();\nreturn ['devshark','dneskai'].map(brand=>({json:{operation:'weekly-report',brand,weekStartsOn:previousSunday}}));"
+      }
+    },
+    {
+      "id": "85f5d993-aec8-4330-a673-c2eb8cbeaf19",
+      "name": "Read actual weekly publication statuses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "7edfe093-c073-4c81-97de-ff042759ca9f",
+      "name": "Read-only weekly report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item,index)=>{\n const response=item.json;\n const valid=response.mode==='read-only'&&['devshark','dneskai'].includes(response.brand);\n const statusCounts={};\n for(const status of ['queued','claimed','published','failed','reconciliation','cancelled'])statusCounts[status]=valid&&Number.isInteger(response.statusCounts?.[status])&&response.statusCounts[status]>=0?response.statusCounts[status]:null;\n return {json:{mode:'read-only',brand:valid?response.brand:null,weekStartsOn:valid&&typeof response.window?.startDate==='string'?response.window.startDate:null,status:valid?'observed':'held',coverage:valid&&['complete','partial'].includes(response.coverage)?response.coverage:'unavailable',sampleSize:valid&&Number.isInteger(response.sampleSize)?response.sampleSize:null,hasMore:valid?response.hasMore===true:null,statusCounts,providerMetricsStatus:'unavailable',providerMetrics:null,weeklyComparison:null,providerCalls:0,errorCode:valid?null:'weekly-report-unavailable'},pairedItem:{item:index}};\n});"
+      }
+    }
+  ],
+  "connections": {
+    "Manual weekly owner review": {
+      "main": [
+        [
+          {
+            "node": "Previous completed week scopes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Previous completed week scopes": {
+      "main": [
+        [
+          {
+            "node": "Read actual weekly publication statuses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read actual weekly publication statuses": {
+      "main": [
+        [
+          {
+            "node": "Read-only weekly report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read-only weekly report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}

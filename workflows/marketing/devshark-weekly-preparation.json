@@ -1,0 +1,170 @@
+{
+  "name": "OwnDashboard — devShark Sunday preparation discovery (inactive)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "ad7b3b0e-cf09-466f-add0-1445a659ab74",
+      "name": "Manual weekly discovery",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "6c015fd7-373a-4ac9-81dc-7de6da0ab4cc",
+      "name": "Sunday preparation discovery",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fc213e1f-9806-499d-9e88-ef48bef8eafc",
+      "name": "Sunday seven-day scope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const today=$now.setZone('Europe/Prague');\nconst sunday=today.plus({days:(7-today.weekday)%7});\nconst dates=Array.from({length:7},(_,index)=>sunday.plus({days:index}).toISODate());\nreturn [{json:{operation:'discover',brand:'devshark',dates}}];"
+      }
+    },
+    {
+      "id": "0cc32230-86f7-4dd6-8633-569e34da1ea7",
+      "name": "Discover actual dated sources and week",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "62d73cbb-2a59-4914-a988-04f6494f06c1",
+      "name": "Weekly preparation holds",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item,index)=>{\n const response=item.json;\n const valid=response.brand==='devshark'&&Array.isArray(response.dates);\n const dates=valid?response.dates.filter(date=>typeof date==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(date)).slice(0,7):[];\n return {json:{brand:'devshark',mode:'discovery-and-owner-review',status:'held',dates,observedDeliverableCount:valid&&Number.isInteger(response.planning?.calendarObservedCount)?response.planning.calendarObservedCount:0,supportedReleasedCount:valid&&Array.isArray(response.entries)?response.entries.length:0,heldEntryCount:valid&&Array.isArray(response.heldEntries)?response.heldEntries.length:0,heldUnsupportedStoryCount:valid&&Number.isInteger(response.heldUnsupportedStoryCount)?response.heldUnsupportedStoryCount:0,sourcePacketCount:valid&&Array.isArray(response.packets)?response.packets.length:0,sourceHoldCount:valid&&Array.isArray(response.held)?response.held.length:0,calendarHasMore:response.planning?.calendarHasMore===true,requestedDeliverableQuota:42,automaticallyGenerated:0,providerCalls:0,remainingAdmissions:null,jobAdmissionsPerRolling24Hours:8,pilotLifetimeJobs:3,ownerReviewRequired:true,holdCodes:valid?['weekly-paid-admission-extension-required','thread-variants-unimplemented','story-publication-unsupported','weekly-asset-window-required']:['source-discovery-unavailable']},pairedItem:{item:index}};\n});"
+      }
+    }
+  ],
+  "connections": {
+    "Manual weekly discovery": {
+      "main": [
+        [
+          {
+            "node": "Sunday seven-day scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sunday preparation discovery": {
+      "main": [
+        [
+          {
+            "node": "Sunday seven-day scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sunday seven-day scope": {
+      "main": [
+        [
+          {
+            "node": "Discover actual dated sources and week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discover actual dated sources and week": {
+      "main": [
+        [
+          {
+            "node": "Weekly preparation holds",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Weekly preparation holds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}
