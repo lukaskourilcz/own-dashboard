@@ -301,3 +301,11 @@ pro relevanci, kategorii a duplicitu, porovnat je s ručně označeným vzorkem
 a ověřit kvalitu v jednom předem ohraničeném evaluačním rozsahu. Žádný práh
 se nemění jen proto, aby vznikla čtyři témata. Tento lokální test nezasáhl
 produkční databázi ani n8n a neobsahoval další scraping.
+
+
+## Navazující lokální ověření 14. října
+
+Oprava odděluje nejistotu mezi překrývajícími se kategoriemi od relevance a duplicity.
+Devět schválených volání nad uloženými veřejnými daty stálo 0,00203343 USD.
+Výsledky, omezení a postup nasazení jsou v [protokolu ověření](dneskai-jev-evaluation-2026-10-14.md).
+Produkční data, pravidelný sběr a publikování se nezměnily.
