@@ -100,3 +100,13 @@ experiment byl odstraněn. Finální změna nezasahuje do předplatného ani toh
 Celá E2E sada tedy není zelená a tato známá chyba testovacího času zůstává před
 release k vyřešení. Testy marketingu, Workflows a desktopové/mobilní přístupnosti
 v úplném běhu prošly.
+
+## Schválené nasazení a oprava půlnočního testu
+
+Vlastník 14. října výslovně schválil opravu a nasazení. Příčinou rozdílu
+7/8 dní byla tvorba ukázkových kalendářních dat přes UTC. Funkce `ymd` nyní
+používá existující místní `todayKey`; časové okamžiky zůstávají v UTC.
+Regresní testy kontrolují Netflix (+8 dní) a Figma (+120 dní) po pražské
+půlnoci i přes konec letního času. Žádné skutečné předplatné se nemění.
+Zbývající provozní kroky jsou v [#108](https://github.com/lukaskourilcz/own-dashboard/issues/108).
+Povolení nasadit opravu nezapíná sběr ani publikování.

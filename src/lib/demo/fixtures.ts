@@ -54,7 +54,7 @@ import type {
   WeeklyReview,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
-import { parseDateOnly, previousMondayKey } from "@/lib/date-keys";
+import { parseDateOnly, previousMondayKey, todayKey } from "@/lib/date-keys";
 import { MARKETING_CALENDAR_SOURCES, type MarketingCalendarsResponse, type MarketingEntry } from "@/lib/marketing-calendars";
 import { mergeDetectedTools, toolKey, type DetectedToolsResponse, type ProjectStack, type StackEntry } from "@/lib/stack-detection";
 
@@ -65,7 +65,7 @@ const TS = NOW.toISOString();
 function ymd(dayOffset = 0): string {
   const d = new Date(NOW);
   d.setDate(d.getDate() + dayOffset);
-  return d.toISOString().slice(0, 10);
+  return todayKey(d);
 }
 function at(hour: number, minute = 0, dayOffset = 0): string {
   const d = new Date(NOW);
