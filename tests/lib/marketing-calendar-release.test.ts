@@ -47,7 +47,9 @@ async function revision(id: string, calendarEntryId: string, approved = false) {
     sources: [{ sourceId: "question:owned", sourceRevision: "v1", contentHash: sha }], knowledgeIds: [] };
   await db.query("insert into marketing_revisions(id,user_id,campaign_id,brand,revision,content_hash,ready) values($1,$2,$3,'devshark',$4,$5,true)", [id, owner, campaign, JSON.stringify(content), sha]);
   const jobId = uuid(Number.parseInt(id.slice(0, 8), 16) + 100);
-  await db.query("insert into marketing_jobs(id,user_id,idempotency_key,request_hash,request) values($1,$2,$3,$4,$5)", [jobId, owner, id, sha, JSON.stringify({ calendarEntryId, generation: { revisionId: id, source: { brand: "devshark" } } })]);
+  const version = calendarEntryId === entry ? 1 : 7;
+  const scheduledAt = calendarEntryId === entry ? "2026-10-14T07:00:00Z" : "2026-10-14T08:00:00Z";
+  await db.query("insert into marketing_jobs(id,user_id,idempotency_key,request_hash,request) values($1,$2,$3,$4,$5)", [jobId, owner, id, sha, JSON.stringify({ calendarEntryId, calendarEntryVersion: version, generation: { revisionId: id, scheduledAt, account: { platform: "instagram" }, source: { brand: "devshark", sourceId: "question:owned", sourceRevision: "v1", contentHash: sha } } })]);
   if (approved) await asOwner(owner, () => db.query("select marketing_approve_revision($1,$2)", [id, sha]));
   return jobId;
 }
@@ -71,6 +73,8 @@ describe("actual calendar binding and release SQL", () => {
     const targetRevision = uuid(20); const targetPendingRevision = uuid(21); const siblingRevision = uuid(22);
     const targetJob = await revision(targetRevision, entry, true); const pendingJob = await revision(targetPendingRevision, entry);
     const siblingJob = await revision(siblingRevision, otherEntry, true); const fence = uuid(30); const siblingFence = uuid(31);
+    // This slot had already been released before the work started.
+    await db.query("update marketing_calendar_entries set needs_review=false where id=$1", [entry]);
     await db.query("update marketing_jobs set status='review' where id=$1", [targetJob]);
     await db.query("select marketing_claim_job($1,$2,$3)", [owner, pendingJob, fence]);
     await db.query("select marketing_claim_job($1,$2,$3)", [owner, siblingJob, siblingFence]);
