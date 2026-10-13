@@ -22,18 +22,28 @@ behavior while ordinary navigation uses the existing shell.
 ## State represented on 13 October 2026
 
 Core professional areas are available. Connections remain subject to owner setup.
-Marketing is a pilot: paid generation has admitted three jobs without a final
-stored revision; the render fix needs verification before a new paid allowance.
+Marketing is a pilot. The first week's assets are ready offline, using deterministic
+rendering without another model call; staging import is in progress. This does not
+grant approval to the posts. The paid pipeline's three admitted jobs did not produce
+a finished stored draft; another paid attempt needs a new owner-approved allowance.
 DNESKAi has fourteen real held reviews and no approved final article source.
 Preview headline/image selection does not authorize production magazine delivery.
-Publishing and scheduled workflows remain disabled. Instagram analytics and the
+Three new n8n workflows are saved as inactive drafts with placeholder connections.
+Publishing and live scheduled generation remain disabled. Instagram analytics and the
 independent Threads connection need their own consented access.
 
 The requested Sunday devShark plan covers seven days, with one Instagram feed post,
 two Threads posts and three Stories per day. The guide labels preparation as work
-in progress. Later dates remain backlog. It separates source/template approval from
+in progress: prepared offline assets still need import and exact owner approval.
+Later dates remain backlog. DNESKAi requires a timely final BoardlessAI article
+each day, with the owner's genuine headline and image selection. The guide
+separates source/template approval from
 approval of exact final copy, graphics, account and publication time. Weekly
 engagement observations cannot establish a winning format from a tiny sample.
+Weekly Results uses the loaded publication/revision sample for seven days of
+scheduled slots; it does not infer actual publication timestamps or complete weekly
+coverage. Reach, saves, shares and replies remain uncollected. Missing measurements
+never become fabricated zero values or performance gains.
 Recent Saved acquisition is deferred under [#101](https://github.com/lukaskourilcz/own-dashboard/issues/101).
 
 This is versioned explanatory content with an explicit verification date, not a
@@ -42,6 +52,14 @@ translations. Current handover and remaining work are linked through
 [#102](https://github.com/lukaskourilcz/own-dashboard/issues/102).
 
 ## Validation
+
+Content review after the seven-day scope update: four guide tests and scoped
+ESLint passed. The guide and weekly-results tests together passed eleven checks;
+the follow-up guide assertions cover both languages, daily quotas, offline/import
+boundaries, inactive workflow drafts, timely DNESKAi sources, backlog and missing
+engagement measurements. The earlier route and visual checks below cover the
+original Workflows implementation in `5aa26a1`; this prose-only update does not
+claim a new deployment or rerun of those browser checks.
 
 - Scoped Vitest: 19 passed across the guide, canonical navigation and route data tests.
 - Scoped ESLint and whole TypeScript check passed.
