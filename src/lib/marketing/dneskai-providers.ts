@@ -9,8 +9,22 @@ export type ProviderEnvironment=Record<string,string|undefined>;
 export const JEV_MODEL='jev-1.13.0';
 export const JEV_INPUT_USD_PER_MTOK=0.042; // https://docs.typesafe.ai/models, verified 2026-10-13; output free.
 const safeUrl=(value:string)=>{const url=new URL(value);if(value.length>2048||url.protocol!=='https:'||url.username||url.password||url.hash)throw new DneskaiProviderError('collection-url-invalid');return url.href;};
+const APIFY_SAFE_ERROR_TYPES=new Set(['invalid-input','invalid-input-schema','invalid-parameter','invalid-request','invalid-token','invalid-credentials','invalid-build','unknown-build-tag','build-not-found','actor-not-found','actor-disabled','insufficient-permissions','missing-api-token','max-items-must-be-greater-than-zero','max-total-charge-usd-below-minimum','max-total-charge-usd-must-be-greater-than-zero','concurrent-runs-limit-exceeded','actor-memory-limit-exceeded','not-enough-usage-to-run-paid-actor','monthly-usage-limit-too-low','rate-limit-exceeded','internal-server-error','schema-validation-error','schema-validation-failed','page-not-found','unexpected-route']);
+/** Read a bounded official machine identifier only. Never propagate messages, parameters, URLs or raw body. */
+async function apifyMachineError(response:Response):Promise<string|null>{
+ const reader=response.body?.getReader();if(!reader)return null;
+ try{let size=0;const chunks:Uint8Array[]=[];for(;;){const result=await reader.read();if(result.done)break;size+=result.value.length;if(size>16384){await reader.cancel();return null;}chunks.push(result.value);}
+  const raw=JSON.parse(Buffer.concat(chunks).toString('utf8')),type=raw?.error?.type;return typeof type==='string'&&APIFY_SAFE_ERROR_TYPES.has(type)?type:null;
+ }catch{return null;}
+}
+// Retain strict envelope/item validation while applying the HTTPS URL boundary per item.
+const FeedResponseForUrlValidation=DneskaiFeedResponseSchema.extend({sources:DneskaiFeedResponseSchema.shape.sources.element.extend({items:z.array(DneskaiFeedResponseSchema.shape.sources.element.shape.items.element.extend({url:z.string()})).max(20)}).array().max(8)});
 async function jsonRequest(url:string,init:RequestInit,fetcher:typeof fetch,signal:AbortSignal){
- try{const response=await fetcher(url,{...init,redirect:'error',cache:'no-store',signal});if(!response.ok)throw new DneskaiProviderError(`provider-http-${[401,403,429,529].includes(response.status)?response.status:'failed'}`);const reader=response.body?.getReader();if(!reader)throw new Error();let size=0;const chunks:Uint8Array[]=[];for(;;){const result=await reader.read();if(result.done)break;size+=result.value.length;if(size>1_000_000){await reader.cancel();throw new DneskaiProviderError('provider-response-too-large');}chunks.push(result.value);}return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch(error){if(error instanceof DneskaiProviderError)throw error;throw new DneskaiProviderError('provider-response-ambiguous');}
+ try{const response=await fetcher(url,{...init,redirect:'error',cache:'no-store',signal});if(!response.ok){
+  const status=[400,401,402,403,404,408,409,413,422,429,500,502,503,504,529].includes(response.status)?String(response.status):'failed';
+  const machine=new URL(url).hostname==='api.apify.com'?await apifyMachineError(response):null;
+  throw new DneskaiProviderError(`provider-http-${status}${machine?`-${machine}`:''}`);
+ }const reader=response.body?.getReader();if(!reader)throw new Error();let size=0;const chunks:Uint8Array[]=[];for(;;){const result=await reader.read();if(result.done)break;size+=result.value.length;if(size>1_000_000){await reader.cancel();throw new DneskaiProviderError('provider-response-too-large');}chunks.push(result.value);}return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch(error){if(error instanceof DneskaiProviderError)throw error;throw new DneskaiProviderError('provider-response-ambiguous');}
 }
 export async function collectDneskaiFeed(source:DneskaiSource,since:string,options:{env?:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal;now?:Date;collectionPilot?:{owner:string;project:string}}){
  const env=options.env??process.env;const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');
@@ -19,11 +33,17 @@ export async function collectDneskaiFeed(source:DneskaiSource,since:string,optio
  const previewConfigured=env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN!==undefined||env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN!==undefined;
  if(previewConfigured&&!options.collectionPilot)throw new DneskaiProviderError('collection-preview-scope-required');
  const fetcher=previewConfigured?((url,request)=>requestDneskaiCollectionPreview(new URL(String(url)),request??{},{env,fetcher:options.fetcher,now:options.now,signal:options.signal},options.collectionPilot!.owner,options.collectionPilot!.project)) as typeof fetch:options.fetcher??fetch;
- const response=DneskaiFeedResponseSchema.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));
+ const response=FeedResponseForUrlValidation.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));
  if(response.sources.length!==1||response.sources[0].sourceId!==source.id||response.sources[0].items.length>source.maxItems)throw new DneskaiProviderError('collection-bridge-binding-invalid');
- const result=response.sources[0];const items=result.items.filter(item=>item.publishedAt===null||Date.parse(item.publishedAt)>Date.parse(since)).map(item=>{safeUrl(item.url);if(!item.externalId||item.externalId.length>300||Date.parse(item.fetchedAt)>(options.now??new Date()).getTime()+60000||item.publishedAt&&Date.parse(item.publishedAt)>(options.now??new Date()).getTime()+60000)throw new DneskaiProviderError('collection-item-invalid');return candidate(source.id,item.externalId,item.title,item.summary,item.url,item.publishedAt,item.fetchedAt);});
- const complete=result.status==='ok'&&result.items.length<source.maxItems&&result.items.every(item=>item.publishedAt!==null);
- return{items,complete,errorCode:result.errorCode?'collection-source-error':!complete?'collection-source-partial':null};
+ const result=response.sources[0],items:DneskaiCandidate[]=[];let invalidUrls=0;
+ for(const item of result.items){
+  try{safeUrl(item.url);}catch{invalidUrls++;continue;}
+  if(item.publishedAt!==null&&Date.parse(item.publishedAt)<=Date.parse(since))continue;
+  if(!item.externalId||item.externalId.length>300||Date.parse(item.fetchedAt)>(options.now??new Date()).getTime()+60000||item.publishedAt&&Date.parse(item.publishedAt)>(options.now??new Date()).getTime()+60000)throw new DneskaiProviderError('collection-item-invalid');
+  items.push(candidate(source.id,item.externalId,item.title,item.summary,item.url,item.publishedAt,item.fetchedAt));
+ }
+ const complete=invalidUrls===0&&result.status==='ok'&&result.items.length<source.maxItems&&result.items.every(item=>item.publishedAt!==null);
+ return{items,complete,errorCode:result.status==='error'||result.errorCode?'collection-source-error':invalidUrls?'collection-source-invalid-url':!complete?'collection-source-partial':null};
 }
 export function candidate(sourceId:string,externalId:string,title:string,text:string,url:string,publishedAt:string|null,fetchedAt:string,mediaUrls:readonly string[]=[]):DneskaiCandidate{
  const hash=contentHash({title,text,url: safeUrl(url),publishedAt});return{targetDate:null,id:contentHash({sourceId,externalId,hash}),sourceId,externalId,title,text,url,publishedAt,fetchedAt,mediaUrls:[...new Set(mediaUrls.map(safeUrl))].slice(0,4),contentHash:hash,category:null,relevance:null,duplicateOf:null,status:title.trim()||text.trim()?'new':'held',reason:title.trim()||text.trim()?null:'collection-empty-source-text'};
@@ -31,7 +51,7 @@ export function candidate(sourceId:string,externalId:string,title:string,text:st
 const RunSchema=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),actId:z.string(),buildNumber:z.string(),userId:z.string(),defaultDatasetId:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),status:z.enum(['READY','RUNNING','SUCCEEDED','FAILED','TIMING-OUT','TIMED-OUT','ABORTING','ABORTED']),finishedAt:z.iso.datetime({offset:true}).nullable().optional(),usageTotalUsd:z.number().nonnegative().nullable().optional()});
 export type DneskaiApifyRegistration=z.infer<typeof RunSchema>;
 function apifyConfiguration(env:ProviderEnvironment){if(!env.APIFY_TOKEN||!env.MARKETING_DNESKAI_APIFY_ACTOR_ID||!env.MARKETING_DNESKAI_APIFY_BUILD||!/^\d+\.\d+\.\d+$/.test(env.MARKETING_DNESKAI_APIFY_BUILD))throw new DneskaiProviderError('collection-apify-unconfigured');return{token:env.APIFY_TOKEN,id:env.MARKETING_DNESKAI_APIFY_ACTOR_ID,build:env.MARKETING_DNESKAI_APIFY_BUILD};}
-/** Actor input is the official apify/instagram-scraper schema, not the separate Reel/transcript actor. */
+/** Official RunActor reference and actor API page specify /v2/actors/:actorId/runs (verified2026-10-13). */
 export async function startDneskaiInstagram(source:DneskaiSource,since:string,options:{env:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal}){
  const config=apifyConfiguration(options.env);if(source.kind!=='instagram'||source.maxItems>7)throw new DneskaiProviderError('collection-instagram-input-invalid');
  const params=new URLSearchParams({build:config.build,waitForFinish:'0',timeout:'120',restartOnError:'false',maxItems:String(source.maxItems),maxTotalChargeUsd:'0.04'});
