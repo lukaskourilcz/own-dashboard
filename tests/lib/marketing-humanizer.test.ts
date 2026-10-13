@@ -55,7 +55,7 @@ describe("bounded Humanizer embedded in the existing Claude generation", () => {
     expect(call.system).toContain("Never invent first-person experience");
     expect(call.system).toContain("uncertainty, attribution and evidence indexes");
     expect(JSON.parse(call.prompt).source.content).toEqual(expect.objectContaining({ body: packet.content.body, code: packet.content.code }));
-    expect(draft.revision.promptVersion).toBe("marketing-copy/3"); expect(MARKETING_PROMPT_VERSION).toBe("marketing-copy/3");
+    expect(draft.revision.promptVersion).toBe("marketing-copy/4"); expect(MARKETING_PROMPT_VERSION).toBe("marketing-copy/4");
     expect(draft.usage).toEqual({ attempts: 1, inputTokens: 200, outputTokens: 100, estimatedCostUsd: 0.0021 });
     expect(DEFAULT_GENERATION_BUDGET).toEqual({ maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000 });
     expect(fixture.eligible).toBe(false);

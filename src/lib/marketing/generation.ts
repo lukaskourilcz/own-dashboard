@@ -8,7 +8,11 @@ import devsharkLayout from "../../../templates/marketing/devshark/derived-layout
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
 import { classifyMarketingProviderError, type MarketingProviderFailure } from "./provider-errors";
 
-export const MARKETING_PROMPT_VERSION = "marketing-copy/3";
+export const MARKETING_PROMPT_VERSION = "marketing-copy/4";
+const COPY_VALIDATION_CODES = ["invalid-schema", "locale-mismatch", "unsafe-text", "unsupported-number", "model-code-forbidden", "unknown-evidence", "missing-evidence"] as const;
+function validationRetryFeedback(issues: readonly string[]): string {
+  return `\nValidation feedback for this same authored source: ${JSON.stringify({ issueCodes: COPY_VALIDATION_CODES.filter(code => issues.includes(code)) })}. Correct these schema/presentation violations without introducing any new facts or changing authored content.`;
+}
 export const MarketingSlideSchema = z.strictObject({
   headline: z.string().min(1).max(160),
   body: z.string().min(1).max(1200),
@@ -74,8 +78,10 @@ export function generationPrompt(source: SourcePacket, knowledge: GenerationInpu
       "For article slides cite at least one supporting zero-based evidenceIndex per slide. Every factual claim must follow source evidence.",
       "For questions and explained coding tasks use the authored public explanation only. Hidden tests and server solutions are unavailable.",
       "A coding task without an authored explanation is challenge-only: preserve its public specification and starter code; do not solve it, suggest an algorithm, infer answers or claim a solution. The server supplies its exact title, challenge caption and task link.",
-      "Do not place code in output; the renderer inserts source code unchanged. Use plain text, no HTML, emoji or markdown decoration.",
-      "Return 2-5 slides, concise text, title, caption and locale matching the schema. Do not include URLs in generated text.",
+      "Set code:null on every generated slide; the renderer inserts source code unchanged. Use plain text, no HTML, emoji or markdown decoration.",
+      "When the supplied source evidence array is empty, set evidenceIndexes:[] on every generated slide. Otherwise use only valid zero-based indexes into that exact array.",
+      "Do not number slides or introduce numerical values absent from the authored source. Preserve supported numbers accurately when needed.",
+      "Return 2-5 slides. Local response limits remain mandatory: title and each headline 1-160 characters; caption 1-1800; each body 1-1200; evidenceIndexes at most 30 nonnegative integer indexes. Use locale matching the source. Do not include URLs in generated text.",
       marketingHumanizerInstructions(source),
     ].join("\n"),
     prompt: JSON.stringify({
@@ -173,13 +179,15 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (![model.pricing.inputPerMillionUsd, model.pricing.outputPerMillionUsd].every((rate) => Number.isFinite(rate) && rate > 0)) throw new MarketingGenerationError("pricing-required");
   const prompts = generationPrompt(source, input.knowledge);
   // UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead.
-  const inputReservation = Buffer.byteLength(prompts.system + prompts.prompt + JSON.stringify(marketingProviderWireSchema())) + 2048;
+  const inputReservation = Buffer.byteLength(prompts.system + prompts.prompt + validationRetryFeedback(COPY_VALIDATION_CODES) + JSON.stringify(marketingProviderWireSchema())) + 2048;
   if (inputReservation > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
   const reservation = cost({ inputTokens: inputReservation, outputTokens: budget.maxOutputTokens }, model.pricing);
   if (reservation > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
   const trace = await dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: MARKETING_PROMPT_VERSION, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) });
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
   const usage = { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
+  const failedValidationIssues = new Set<string>();
+  let retryFeedback = "";
   try {
     for (let attempt = 1; attempt <= budget.maxAttempts; attempt++) {
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
@@ -188,7 +196,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       let result: Awaited<ReturnType<MarketingModel["invoke"]>>;
       const startedAt = Date.now();
       try {
-        result = await model.invoke({ ...prompts, maxOutputTokens: budget.maxOutputTokens, signal });
+        result = await model.invoke({ ...prompts, prompt: prompts.prompt + retryFeedback, maxOutputTokens: budget.maxOutputTokens, signal });
       } catch (failure) {
         // Billing may already have happened. Never retry an ambiguous transport/provider failure.
         usage.estimatedCostUsd += reservation;
@@ -211,6 +219,8 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       const issues = parsed.success ? challenge ? parsed.data.locale === source.locale ? [] : ["locale-mismatch"] : validateMarketingCopy(parsed.data, source) : ["invalid-schema"];
       await trace?.stage({ name: "generation", attempt, latencyMs: Date.now() - startedAt, usage: result.usage, costUsd: cost(result.usage, model.pricing), issues });
       if (!parsed.success || issues.length) {
+        for (const issue of issues) failedValidationIssues.add(issue);
+        retryFeedback = validationRetryFeedback(issues);
         if (attempt === budget.maxAttempts) throw new MarketingGenerationError("copy-validation-failed");
         continue;
       }
@@ -232,7 +242,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
     throw new MarketingGenerationError("copy-validation-failed");
   } catch (error) {
     const code = error instanceof MarketingGenerationError ? error.code : "generation-failed";
-    await trace?.finish({ status: "failed", revisionHash: null, usage, issues: [code] });
+    await trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...failedValidationIssues, code] });
     throw new MarketingGenerationError(code, error instanceof MarketingGenerationError ? error.providerFailure : undefined);
   }
 }

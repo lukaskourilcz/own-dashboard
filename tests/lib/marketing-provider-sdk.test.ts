@@ -53,8 +53,11 @@ describe('actual installed Claude/LangChain/LangSmith setup with mocked HTTP; ze
       content: [{ type: 'tool_use', id: 'toolu_TEST_ONLY', name: 'marketing_copy', input: bad }], stop_reason: 'tool_use', stop_sequence: null, usage: { input_tokens: 120, output_tokens: 80 } }));
     vi.stubGlobal('fetch', fetcher);
     const model = await createClaudeMarketingModel({ apiKey: 'TEST-ONLY-NO-PROVIDER-CREDENTIAL', model: 'claude-sonnet-4-6', pricing: { inputPerMillionUsd: 3, outputPerMillionUsd: 15 } });
-    await expect(generateMarketingDraft(offlineInput(), { model, budget: { ...DEFAULT_GENERATION_BUDGET, maxAttempts: 1 } })).rejects.toThrow('copy-validation-failed');
+    const finish = vi.fn<MarketingTrace['finish']>(async () => {});
+    const tracer = { start: vi.fn(async () => ({ id: 'TEST-ONLY-TRACE', finish, stage: vi.fn<MarketingTrace['stage']>(async () => {}) })) };
+    await expect(generateMarketingDraft(offlineInput(), { model, tracer, budget: { ...DEFAULT_GENERATION_BUDGET, maxAttempts: 1 } })).rejects.toThrow('copy-validation-failed');
     expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(finish).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed', revisionHash: null, issues: ['invalid-schema', 'copy-validation-failed'] }));
   });
   it('does not retry an SDK rate-limit failure and exposes no raw vendor message or request ID', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({ type: 'error', error: { type: 'rate_limit_error', message: 'TEST_ONLY_PRIVATE_MESSAGE https://private.example.invalid/' }, request_id: 'TEST_ONLY_PRIVATE_REQUEST_ID' }, { status: 429 }));
@@ -73,5 +76,31 @@ describe('actual installed Claude/LangChain/LangSmith setup with mocked HTTP; ze
       usage: { attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: expect.any(Number) } });
     expect(finish.mock.calls[0][0].usage.estimatedCostUsd).toBeGreaterThan(0);
     expect(JSON.stringify(finish.mock.calls)).not.toContain('TEST_ONLY_PRIVATE');
+  });
+  it('uses explicit output rules and only fixed validation codes on a bounded second actual SDK request', async () => {
+    const requests: Record<string, unknown>[] = [];
+    const valid = { title: 'Offline QA', caption: 'Read the authored exercise.', locale: 'en', slides: [
+      { headline: 'Offline QA', body: 'Read the authored question.', code: null, evidenceIndexes: [] },
+      { headline: 'Offline QA', body: 'Read the authored explanation.', code: null, evidenceIndexes: [] },
+    ] };
+    const invalid = { ...valid, slides: valid.slides.map(slide => ({ ...slide, body: 'TEST_ONLY_PRIVATE_OUTPUT 999999991', code: 'TEST_ONLY_PRIVATE_OUTPUT', evidenceIndexes: [0] })) };
+    const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
+      requests.push(JSON.parse(String(init?.body)));
+      return Response.json({ id: 'msg_TEST_ONLY', type: 'message', role: 'assistant', model: 'claude-sonnet-4-6',
+        content: [{ type: 'tool_use', id: 'toolu_TEST_ONLY', name: 'marketing_copy', input: requests.length === 1 ? invalid : valid }],
+        stop_reason: 'tool_use', stop_sequence: null, usage: { input_tokens: 200, output_tokens: 100 } });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const model = await createClaudeMarketingModel({ apiKey: 'TEST-ONLY-NO-PROVIDER-CREDENTIAL', model: 'claude-sonnet-4-6', pricing: { inputPerMillionUsd: 3, outputPerMillionUsd: 15 } });
+    const draft = await generateMarketingDraft(offlineInput(), { model });
+    expect(fetcher).toHaveBeenCalledTimes(2); expect(draft.usage.attempts).toBe(2); expect(draft.usage.estimatedCostUsd).toBe(0.0042);
+    expect(draft.revision.promptVersion).toBe('marketing-copy/4');
+    const first = JSON.stringify(requests[0]); const second = JSON.stringify(requests[1]);
+    for (const instruction of ['code:null', 'evidenceIndexes:[]', 'Do not number slides', 'headline 1-160 characters']) expect(first).toContain(instruction);
+    expect(first).not.toContain('Validation feedback for this same authored source');
+    expect(second).toContain('Validation feedback for this same authored source');
+    for (const code of ['unsupported-number', 'model-code-forbidden', 'unknown-evidence']) expect(second).toContain(code);
+    expect(second).not.toContain('TEST_ONLY_PRIVATE_OUTPUT'); expect(second).not.toContain('999999991');
+    expect(draft.slides.every(slide => slide.code === null && slide.evidenceIndexes.length === 0)).toBe(true);
   });
 });

@@ -84,15 +84,17 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
       const metadata = marketingTraceMetadata(input);
       const id = randomUUID();
       if (!await safeWrite(() => client.createRun({ id, name: "marketing-generation", run_type: "chain", inputs: {}, project_name: config.projectName, start_time: Date.now(), extra: { metadata } }))) return null;
+      const generationIssues = new Set<string>();
       return {
         id,
         async stage(event) {
           const metadata = diagnosticsSchema.parse({ stage: event.name, attempt: event.attempt, latency_ms: event.latencyMs, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.costUsd, issue_codes: event.issues });
+          if (event.name === "generation") for (const issue of metadata.issue_codes) generationIssues.add(issue);
           const child = randomUUID();
           await safeWrite(() => client.createRun({ id: child, name: `marketing-${event.name}`, run_type: event.name === "generation" ? "llm" : "tool", parent_run_id: id, trace_id: id, inputs: {}, project_name: config.projectName, start_time: Date.now() - event.latencyMs, end_time: Date.now(), extra: { metadata } }));
         },
         async finish(event) {
-          const metadata = finishSchema.parse({ status: event.status, revision_hash: event.revisionHash, attempts: event.usage.attempts, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.usage.estimatedCostUsd, issue_codes: event.issues });
+          const metadata = finishSchema.parse({ status: event.status, revision_hash: event.revisionHash, attempts: event.usage.attempts, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.usage.estimatedCostUsd, issue_codes: event.status === "failed" ? [...new Set([...generationIssues, ...event.issues])] : event.issues });
           await safeWrite(() => client.updateRun(id, { end_time: Date.now(), outputs: {}, error: event.status === "failed" ? "marketing-generation-failed" : undefined, extra: { metadata: { ...marketingTraceMetadata(input), ...metadata } } }));
         },
       };

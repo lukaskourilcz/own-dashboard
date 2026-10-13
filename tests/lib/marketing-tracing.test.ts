@@ -57,6 +57,17 @@ describe("redacted LangSmith EU SDK tracing", () => {
     expect(mocks.createFeedback).toHaveBeenCalledWith(feedback.traceId, "owner-review", { score: 0.25, value: "returned", sourceInfo: { revision_id: feedback.revisionId, revision_hash: feedback.revisionHash } });
     await expect(tracer.recordOwnerFeedback({ ...feedback, comment: "TEST PRIVATE OWNER NOTE" } as typeof feedback)).rejects.toThrow();
   });
+  it("retains deduplicated generation reasons in the failed root even when child ingestion fails", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const trace = await tracer.start(start);
+    mocks.createRun.mockRejectedValue(new Error("TEST PRIVATE CHILD INGESTION ERROR"));
+    await trace!.stage({ name: "generation", attempt: 1, latencyMs: 123, usage, costUsd: usage.estimatedCostUsd, issues: ["model-code-forbidden", "unknown-evidence"] });
+    await trace!.stage({ name: "generation", attempt: 2, latencyMs: 123, usage, costUsd: usage.estimatedCostUsd, issues: ["unknown-evidence", "unsupported-number"] });
+    await trace!.finish({ status: "failed", revisionHash: null, usage: { ...usage, attempts: 2 }, issues: ["copy-validation-failed"] });
+    const update = mocks.updateRun.mock.calls[0][1];
+    expect(update.extra.metadata.issue_codes).toEqual(["model-code-forbidden", "unknown-evidence", "unsupported-number", "copy-validation-failed"]);
+    expect(update.outputs).toEqual({}); expect(JSON.stringify(update)).not.toContain("TEST PRIVATE");
+  });
   it("binds exact prepared asset/revision hashes and refuses mismatched owner feedback", async () => {
     const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
     const traceId = "67a15323-4a6f-4463-a03b-c4c010015d80";
