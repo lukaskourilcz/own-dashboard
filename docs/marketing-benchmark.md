@@ -1,6 +1,6 @@
 # Marketing offline acceptance
 
-`scripts/marketing-benchmark.ts` evaluates 45 local acceptance cases against the retained, authored packets in `templates/marketing/benchmarks/`: a Czech DNESKAi article, an English devShark question, and an English devShark coding task. The fixture manifest describes their holds. All three original packets remain `eligible=false`; this suite never makes them production eligible, persists them, uploads media, or publishes posts. The coding task also lacks a safe authored explanation and remains held for that reason.
+`scripts/marketing-benchmark.ts` evaluates 45 local acceptance cases against the retained, authored packets in `templates/marketing/benchmarks/`: a Czech DNESKAi article, an English devShark question, and an English devShark coding task. All three original packets remain `eligible=false`; this suite never makes them production eligible, persists them, uploads media, or publishes posts. A coding task may use its public specification and exact starter code as a bounded challenge without an explanation or generated solution; the real retained task remains held because its current production source is unavailable. Challenge layout still fails closed on overflow.
 
 The dataset includes three held baselines and deliberate mutations for mismatched content hashes, unsupported source schemas, private fields, wrong brand/locale, expired eligibility, withdrawn source revisions, malformed copy JSON, copy schema violations, unsupported numbers, missing/out-of-range citations, model-written code, an altered authored answer, and oversized copy/source code. Font/layout probes exercise Czech diacritics, exact decomposed code identifiers, long code lines, code/prose height, unbreakable words, unsupported glyphs, and template digest changes. Counterfactual eligibility and all mutations/layout probes are explicitly marked `offlineSimulation` in the report and exist only in memory.
 
@@ -20,8 +20,8 @@ The recorded local run on 2026-10-13 passed **45/45** cases and rendered six 108
 
 | Held source | Slides | First render | Repeat render | Repeat hashes |
 | --- | ---: | ---: | ---: | --- |
-| DNESKAi article | 2 | 118.91 ms | 88.79 ms | identical |
-| devShark question | 4 | 158.20 ms | 154.28 ms | identical |
+| DNESKAi article | 2 | 324.14 ms | 93.39 ms | identical |
+| devShark question | 4 | 177.31 ms | 158.33 ms | identical |
 
 **Provider calls: 0.** Provider cost is `null`, with status `not-measured-no-provider-calls`. No Claude generation quality, actual provider price/cost, production eligibility, remote storage, tracing delivery, or live publishing performance has been measured by this suite. Local rendering uses the genuine Claude Design-derived templates while their owner approval remains pending; rendered packets remain held QA material.
 

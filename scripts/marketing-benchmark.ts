@@ -27,8 +27,8 @@ function baseCopy(source: SourcePacket): MarketingCopy {
     { headline: source.locale === "cs" ? "Souvislosti článku" : "Authored explanation", body: text, code: null, evidenceIndexes: source.kind === "article" ? [0] : [] },
   ] };
 }
-function baselineIssues(fixture: Fixture): string[] {
-  return fixture === "task" ? ["source-unavailable", "authored-explanation-required"] : ["source-unavailable"];
+function baselineIssues(): string[] {
+  return ["source-unavailable"];
 }
 /** Counterfactual mutations stay in memory. The retained producer fixtures remain eligible=false. */
 export function createMarketingBenchmarkCases(): OfflineMarketingCase[] {
@@ -38,7 +38,7 @@ export function createMarketingBenchmarkCases(): OfflineMarketingCase[] {
     const source = parseSourcePacket(clone(fixtures[fixture]));
     const copy = baseCopy(source);
     mutate?.(source, copy);
-    cases.push({ id: `${fixture}/${name}`, fixture, source, copy, expectedIssues: options.invalidSource ? ["invalid-source"] : [...baselineIssues(fixture), ...extra], offlineSimulation: options.simulation ?? (!!mutate || !!options.probe), provenanceCheck: options.provenanceCheck, probe: options.probe });
+    cases.push({ id: `${fixture}/${name}`, fixture, source, copy, expectedIssues: options.invalidSource ? ["invalid-source"] : [...baselineIssues(), ...extra], offlineSimulation: options.simulation ?? (!!mutate || !!options.probe), provenanceCheck: options.provenanceCheck, probe: options.probe });
   }
   for (const fixture of ["article", "question", "task"] as const) add(fixture, "held-baseline");
   for (const fixture of ["article", "question"] as const) {
