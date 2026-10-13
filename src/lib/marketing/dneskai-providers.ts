@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DneskaiFeedRequestSchema,DneskaiFeedResponseSchema,type DneskaiCandidate,type DneskaiSource } from './dneskai-contracts';
 import { signAutomationBody } from './automation-auth';
 import { contentHash } from './hashes';
+import { requestDneskaiCollectionPreview } from './source-refresh';
 export class DneskaiProviderError extends Error {constructor(readonly code:string){super(code);}}
 export type ProviderEnvironment=Record<string,string|undefined>;
 export const JEV_MODEL='jev-1.13.0';
@@ -11,10 +12,14 @@ const safeUrl=(value:string)=>{const url=new URL(value);if(value.length>2048||ur
 async function jsonRequest(url:string,init:RequestInit,fetcher:typeof fetch,signal:AbortSignal){
  try{const response=await fetcher(url,{...init,redirect:'error',cache:'no-store',signal});if(!response.ok)throw new DneskaiProviderError(`provider-http-${[401,403,429,529].includes(response.status)?response.status:'failed'}`);const reader=response.body?.getReader();if(!reader)throw new Error();let size=0;const chunks:Uint8Array[]=[];for(;;){const result=await reader.read();if(result.done)break;size+=result.value.length;if(size>1_000_000){await reader.cancel();throw new DneskaiProviderError('provider-response-too-large');}chunks.push(result.value);}return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch(error){if(error instanceof DneskaiProviderError)throw error;throw new DneskaiProviderError('provider-response-ambiguous');}
 }
-export async function collectDneskaiFeed(source:DneskaiSource,since:string,options:{env?:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal;now?:Date}){
+export async function collectDneskaiFeed(source:DneskaiSource,since:string,options:{env?:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal;now?:Date;collectionPilot?:{owner:string;project:string}}){
  const env=options.env??process.env;const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');
  const origin=new URL(safeUrl(base)).origin;const request=DneskaiFeedRequestSchema.parse({action:'collect',sourceIds:[source.id],since,maxItems:source.maxItems});const body=JSON.stringify(request);
- const response=DneskaiFeedResponseSchema.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,{method:'POST',headers:signAutomationBody(body,secret,options.now?.getTime()),body},options.fetcher??fetch,options.signal));
+ const init={method:'POST',headers:signAutomationBody(body,secret,options.now?.getTime()),body};
+ const previewConfigured=env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN!==undefined||env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN!==undefined;
+ if(previewConfigured&&!options.collectionPilot)throw new DneskaiProviderError('collection-preview-scope-required');
+ const fetcher=previewConfigured?((url,request)=>requestDneskaiCollectionPreview(new URL(String(url)),request??{},{env,fetcher:options.fetcher,now:options.now,signal:options.signal},options.collectionPilot!.owner,options.collectionPilot!.project)) as typeof fetch:options.fetcher??fetch;
+ const response=DneskaiFeedResponseSchema.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));
  if(response.sources.length!==1||response.sources[0].sourceId!==source.id||response.sources[0].items.length>source.maxItems)throw new DneskaiProviderError('collection-bridge-binding-invalid');
  const result=response.sources[0];const items=result.items.filter(item=>item.publishedAt===null||Date.parse(item.publishedAt)>Date.parse(since)).map(item=>{safeUrl(item.url);if(!item.externalId||item.externalId.length>300||Date.parse(item.fetchedAt)>(options.now??new Date()).getTime()+60000||item.publishedAt&&Date.parse(item.publishedAt)>(options.now??new Date()).getTime()+60000)throw new DneskaiProviderError('collection-item-invalid');return candidate(source.id,item.externalId,item.title,item.summary,item.url,item.publishedAt,item.fetchedAt);});
  const complete=result.status==='ok'&&result.items.length<source.maxItems&&result.items.every(item=>item.publishedAt!==null);

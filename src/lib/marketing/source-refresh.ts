@@ -5,6 +5,7 @@ import { contentHash } from './hashes';
 import { signAutomationBody } from './automation-auth';
 import { MARKETING_SOURCE_MAX_AGE_MS } from './publisher';
 import { marketingPilotConfiguration } from './pilot';
+import { dneskaiCollectionPilotConfiguration } from './dneskai-pilot';
 
 type SourcePreviewShare = { token: string; origin: string };
 export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
@@ -30,13 +31,13 @@ function endpoint(config: SourceRefreshConfig): URL {
   if (url.protocol !== 'https:' || url.username || url.password || url.hash || config.secret.length < 32) throw new SourceRefreshError('source-integration-invalid');
   return url;
 }
-function validatePreviewShare(access: SourcePreviewShare, url: URL, env: Record<string, string | undefined>): void {
+function validatePreviewShare(access: SourcePreviewShare, url: URL, env: Record<string, string | undefined>, collectionScope?: {owner:string;project:string}): void {
   try {
     const origin = new URL(access.origin);
     if (access.origin !== origin.origin || origin.protocol !== 'https:' || origin.port || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(origin.hostname)
       || origin.username || origin.password || url.origin !== access.origin || url.searchParams.has('_vercel_share') || url.searchParams.has('x-vercel-protection-bypass')
       || !/^[\x21-\x7e]{1,2048}$/.test(access.token)) throw new Error();
-    if (env.VERCEL_ENV !== 'preview' || !marketingPilotConfiguration(env.MARKETING_OWNER_ID ?? '', env)) throw new Error();
+    if (env.VERCEL_ENV !== 'preview' || !(collectionScope?dneskaiCollectionPilotConfiguration(collectionScope.owner,collectionScope.project,env):marketingPilotConfiguration(env.MARKETING_OWNER_ID ?? '', env))) throw new Error();
   } catch { throw new SourceRefreshError('source-preview-configuration-invalid'); }
 }
 function responsePreviewCookie(response: Response, url: URL): string {
@@ -81,9 +82,9 @@ async function protectedRequest(input: SourceRefreshOptions, url: string, option
     return suppressTracing(() => (input.fetcher ?? nativeProtectedRequest)(url, options));
   });
 }
-async function previewCookie(input: SourceRefreshOptions, url: URL, access: SourcePreviewShare, signal: AbortSignal): Promise<string> {
+async function previewCookie(input: SourceRefreshOptions, url: URL, access: SourcePreviewShare, signal: AbortSignal, collectionScope?: {owner:string;project:string}): Promise<string> {
   const env = input.env ?? process.env;
-  validatePreviewShare(access, url, env);
+  validatePreviewShare(access, url, env,collectionScope);
   const preflight = new URL(url); preflight.searchParams.set('_vercel_share', access.token);
   let response: Response;
   try { response = await protectedRequest(input, preflight.href, { method: 'GET', redirect: 'manual', credentials: 'omit', cache: 'no-store', signal }); }
@@ -93,9 +94,22 @@ async function previewCookie(input: SourceRefreshOptions, url: URL, access: Sour
     if (response.status !== 307 || response.redirected || !location || new URL(location, preflight).href !== url.href) throw new Error();
   } catch { throw new SourceRefreshError('source-preview-redirect-invalid'); }
   const cookie = responsePreviewCookie(response, url);
-  validatePreviewShare(access, url, env); // A slow preflight cannot cross the approved pilot expiry.
+  validatePreviewShare(access, url, env,collectionScope); // A slow preflight cannot cross the approved pilot expiry.
   if (signal.aborted) throw new SourceRefreshError('source-preview-unavailable');
   return cookie;
+}
+/** Exact configured bridge only, with independent active collection-pilot authorization. Cookie remains invocation-local. */
+export async function requestDneskaiCollectionPreview(url:URL,init:RequestInit,input:SourceRefreshOptions,owner:string,project:string):Promise<Response>{
+ const env=input.env??process.env;
+ if(!dneskaiCollectionPilotConfiguration(owner,project,env,input.now??new Date()))throw new SourceRefreshError('source-preview-configuration-invalid');
+ const base=new URL(env.MARKETING_DNESKAI_SOURCE_URL??'');
+ if(url.href!==`${base.origin}/admin/api/marketing-collection`)throw new SourceRefreshError('source-preview-configuration-invalid');
+ const token=env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN,origin=env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN;
+ if(!token||!origin)throw new SourceRefreshError('source-preview-configuration-invalid');
+ const signal=input.signal??AbortSignal.timeout(8000),headers=new Headers(init.headers);
+ headers.set('Cookie',await previewCookie(input,url,{token,origin},signal,{owner,project}));
+ const response=await protectedRequest(input,url.href,{...init,headers,signal,redirect:'error',credentials:'omit',cache:'no-store'});
+ if(response.redirected||(response.url&&response.url!==url.href)||response.status>=300&&response.status<400)throw new SourceRefreshError('source-current-unavailable');return response;
 }
 function canonicalDailyDate(url: string): string | null {
   const path = new URL(url).pathname;

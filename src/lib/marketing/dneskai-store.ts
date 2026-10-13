@@ -5,11 +5,12 @@ import { DneskaiCandidateSchema,DneskaiCollectionStateSchema,type DneskaiCandida
 import { DNESKAI_SOURCES,isDneskaiProject,dneskaiCheapIdentity } from './dneskai-registry';
 import { contentHash } from './hashes';
 import type { JevHistory } from './dneskai-providers';
+import type { DneskaiCollectionPilot } from './dneskai-pilot';
 export type DneskaiDatabase=ReturnType<typeof createAdminClient>;
-export type DneskaiRun={id:string;user_id:string;project_id:string;date:string;target_date:string;status:'running'|'complete'|'partial'|'held'|'failed';fence:string|null;tick_count:number;selected_count:number;cost_usd:number|null;error_code:string|null};
+export type DneskaiRun={collection_pilot_owner?:string|null;id:string;user_id:string;project_id:string;date:string;target_date:string;status:'running'|'complete'|'partial'|'held'|'failed';fence:string|null;tick_count:number;selected_count:number;cost_usd:number|null;error_code:string|null};
 export type DneskaiStage={run_id:string;source_id:string;kind:'feed'|'instagram'|'jev';status:'queued'|'running'|'polling'|'ok'|'partial'|'error'|'held';since_at:string;registration:unknown;reserved_usd:number;cost_usd:number|null;error_code:string|null};
 export interface DneskaiCollectionStore{
- admit(owner:string,project:string,date:string,sources:readonly DneskaiSource[]):Promise<DneskaiRun>;
+ admit(owner:string,project:string,date:string,sources:readonly DneskaiSource[],pilot?:DneskaiCollectionPilot):Promise<DneskaiRun>;
  claim(owner:string,runId:string,fence:string):Promise<DneskaiRun|null>;
  stages(owner:string,runId:string):Promise<DneskaiStage[]>;
  claimStage(owner:string,runId:string,fence:string,sourceId:string,paid:boolean):Promise<DneskaiStage|null>;
@@ -27,7 +28,7 @@ export function createDneskaiCollectionStore(db:DneskaiDatabase):DneskaiCollecti
  const rpc=async(name:string,args:Record<string,unknown>)=>{const {data,error}=await db.rpc(name,args);if(error)throw new Error('collection-store-unavailable');return data;};
  const candidates=async(owner:string,project:string)=>{const {data,error}=await db.from('marketing_dneskai_candidates').select('candidate').eq('user_id',owner).eq('project_id',project).order('updated_at',{ascending:false}).limit(201);if(error)throw new Error('collection-store-unavailable');return(data??[]).map(row=>DneskaiCandidateSchema.parse(row.candidate));};
  return{
-  admit:(owner,project,date,sources)=>rpc('marketing_dneskai_admit',{p_owner:owner,p_project:project,p_date:date,p_sources:sources}) as Promise<DneskaiRun>,
+  admit:(owner,project,date,sources,pilot)=>rpc(pilot?'marketing_dneskai_admit_pilot':'marketing_dneskai_admit',{p_owner:owner,p_project:project,p_date:date,p_sources:sources,...(pilot?{p_pilot:pilot}:{})}) as Promise<DneskaiRun>,
   claim:(owner,runId,fence)=>rpc('marketing_dneskai_claim',{p_owner:owner,p_run:runId,p_fence:fence}) as Promise<DneskaiRun|null>,
   async stages(owner,runId){const {data,error}=await db.from('marketing_dneskai_stages').select('*').eq('user_id',owner).eq('run_id',runId).order('source_id');if(error)throw new Error('collection-store-unavailable');return(data??[]) as DneskaiStage[];},
   claimStage:(owner,runId,fence,sourceId,paid)=>rpc('marketing_dneskai_claim_stage',{p_owner:owner,p_run:runId,p_fence:fence,p_source:sourceId,p_paid:paid}) as Promise<DneskaiStage|null>,
