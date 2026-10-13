@@ -1,7 +1,7 @@
 import { cp, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
@@ -22,14 +22,28 @@ async function configuredIncludes() {
   }
   return includes;
 }
-function probe(directory: string) {
+function probeResult(result: Pick<SpawnSyncReturns<string>, 'status' | 'signal' | 'error' | 'stdout'>, missingLibraryExpected = false) {
+  // A native loader may terminate instead of throwing JS. Only the negative probe may normalize that.
+  expect(result.error).toBeUndefined();
+  if (missingLibraryExpected && (result.status !== 0 || result.signal !== null)) return { loaded: false };
+  expect(result.status).toBe(0); expect(result.signal).toBeNull();
+  return JSON.parse(result.stdout) as { loaded: boolean; cjsCallable?: boolean; esmCallable?: boolean; format?: string; width?: number; height?: number };
+}
+function probe(directory: string, missingLibraryExpected = false) {
   // Both official exports must load; encode an actual 1px JPEG without inherited keys, hooks or network.
   const script = `(async()=>{try{const cjs=require("sharp"),esm=(await import("sharp")).default;if(typeof cjs!=="function"||typeof esm!=="function")return console.log(JSON.stringify({loaded:false}));const bytes=await esm({create:{width:1,height:1,channels:3,background:{r:0,g:0,b:0}}}).jpeg().toBuffer();const info=await esm(bytes).metadata();console.log(JSON.stringify({loaded:true,cjsCallable:true,esmCallable:true,format:info.format,width:info.width,height:info.height}));}catch{console.log(JSON.stringify({loaded:false}));}})();`;
   const result = spawnSync(process.execPath, ['-e', script], { cwd: directory, env: { PATH: process.env.PATH, NODE_ENV: 'test' }, encoding: 'utf8', timeout: 10000 });
-  expect(result.status).toBe(0);
-  return JSON.parse(result.stdout) as { loaded: boolean; cjsCallable?: boolean; esmCallable?: boolean; format?: string; width?: number; height?: number };
+  return probeResult(result, missingLibraryExpected);
 }
 describe('marketing native JPEG runtime package closure, no provider/source/credential access', () => {
+  it('normalizes only negative native exits/signals; positive probes and failed spawning stay strict', () => {
+    for (const failure of [{ status: 1, signal: null }, { status: null, signal: 'SIGABRT' as const }]) {
+      const result = { ...failure, stdout: 'TEST-ONLY-NATIVE-ERROR-NOT-PARSED' };
+      expect(probeResult(result, true)).toEqual({ loaded: false });
+      expect(() => probeResult(result)).toThrow();
+    }
+    expect(() => probeResult({ status: null, signal: null, stdout: '', error: new Error('TEST-ONLY-SPAWN-FAILED') }, true)).toThrow();
+  });
   it('requires libvips runtime assets omitted by the observed NFT and includes them only on the two rendering routes', async () => {
     const includes = await configuredIncludes();
     const routes = Object.entries(includes).filter(([, patterns]) => patterns.includes(libvipsInclude)).map(([route]) => route).sort();
@@ -54,7 +68,7 @@ describe('marketing native JPEG runtime package closure, no provider/source/cred
         } else await cp(root, path.join(target, '@img', name), { recursive: true });
       }
       expect(binaries.length).toBeGreaterThan(0);
-      expect(probe(temporary)).toEqual({ loaded: false });
+      expect(probe(temporary, true)).toEqual({ loaded: false });
       // Materialize the configured, platform-neutral library-directory include.
       for (const entry of binaries) await cp(path.join(entry.root, 'lib'), path.join(target, '@img', entry.name, 'lib'), { recursive: true });
       expect(probe(temporary)).toEqual({ loaded: true, cjsCallable: true, esmCallable: true, format: 'jpeg', width: 1, height: 1 });
