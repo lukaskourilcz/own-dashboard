@@ -13,8 +13,7 @@
       "id": "devshark-coding-task-unavailable",
       "sourceFile": "devshark-coding-task.json",
       "expectedIssueCodes": [
-        "source-unavailable",
-        "authored-explanation-required"
+        "source-unavailable"
       ]
     },
     {

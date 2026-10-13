@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const MARKETING_SOURCE_VERSION = "marketing-source/1";
 export const MARKETING_CONTENT_VERSION = "marketing-content/1";
+export const MARKETING_APPROVAL_VERSION = "marketing-approval/1";
+export const MARKETING_PUBLICATION_VERSION = "marketing-publication/1";
 export const BrandSchema = z.enum(["dneskai", "devshark"]);
 export const PlatformSchema = z.enum(["instagram", "threads"]);
 const id = z.string().min(1).max(200);
@@ -89,6 +91,50 @@ export const ContentRevisionSchema = z.strictObject({
 export type ContentRevision = z.infer<typeof ContentRevisionSchema>;
 export type MarketingBrand = z.infer<typeof BrandSchema>;
 
+/** Portable owner decision. Authentication and the atomic stored-revision gate remain mandatory. */
+export const ApprovalDecisionSchema = z.strictObject({
+  schemaVersion: z.literal(MARKETING_APPROVAL_VERSION),
+  revisionId: z.uuid(),
+  revisionHash: hash,
+  decision: z.enum(["approved", "returned", "skipped"]),
+  decidedAt: timestamp,
+  feedback: z.string().max(2000).nullable(),
+});
+export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
+export function parseApprovalDecision(value: unknown, expected?: { revisionId: string; revisionHash: string }): ApprovalDecision {
+  const decision = ApprovalDecisionSchema.parse(value);
+  if (expected && (decision.revisionId !== expected.revisionId || decision.revisionHash !== expected.revisionHash)) throw new Error("approval-revision-mismatch");
+  return decision;
+}
+
+const remoteId = id.regex(/^\S+$/);
+const receiptUrl = httpsUrl.regex(/^https:\/\/[^/?#\s@]+(?:[/?#][^\s]*)?$/);
+const receiptError = z.string().min(1).max(100).regex(/^[a-z0-9-]+$/);
+const receiptFields = {
+  schemaVersion: z.literal(MARKETING_PUBLICATION_VERSION),
+  publicationId: z.uuid(),
+  revisionId: z.uuid(),
+  revisionHash: hash,
+  platform: PlatformSchema,
+  observedAt: timestamp,
+};
+/** State-specific receipts preserve ambiguous remote evidence without claiming a completed publication. */
+export const PublicationReceiptSchema = z.union([
+  z.strictObject({ ...receiptFields, status: z.literal("queued"), remoteContainerId: z.null(), remoteMediaId: z.null(), remoteUrl: z.null(), errorCode: z.null() }),
+  z.strictObject({ ...receiptFields, status: z.literal("claimed"), remoteContainerId: remoteId.nullable(), remoteMediaId: z.null(), remoteUrl: z.null(), errorCode: receiptError.nullable() }),
+  z.strictObject({ ...receiptFields, status: z.literal("published"), remoteContainerId: remoteId.nullable(), remoteMediaId: remoteId, remoteUrl: receiptUrl, errorCode: z.null() }),
+  z.strictObject({ ...receiptFields, status: z.literal("failed"), remoteContainerId: remoteId.nullable(), remoteMediaId: z.null(), remoteUrl: z.null(), errorCode: receiptError }),
+  z.strictObject({ ...receiptFields, status: z.literal("reconciliation"), remoteContainerId: remoteId.nullable(), remoteMediaId: z.null(), remoteUrl: z.null(), errorCode: receiptError }),
+  z.strictObject({ ...receiptFields, status: z.literal("reconciliation"), remoteContainerId: remoteId.nullable(), remoteMediaId: remoteId, remoteUrl: receiptUrl.nullable(), errorCode: receiptError }),
+  z.strictObject({ ...receiptFields, status: z.literal("cancelled"), remoteContainerId: z.null(), remoteMediaId: z.null(), remoteUrl: z.null(), errorCode: receiptError.nullable() }),
+]);
+export type PublicationReceipt = z.infer<typeof PublicationReceiptSchema>;
+export function parsePublicationReceipt(value: unknown, expected?: { publicationId: string; revisionId: string; revisionHash: string; platform: z.infer<typeof PlatformSchema> }): PublicationReceipt {
+  const receipt = PublicationReceiptSchema.parse(value);
+  if (expected && (receipt.publicationId !== expected.publicationId || receipt.revisionId !== expected.revisionId || receipt.revisionHash !== expected.revisionHash || receipt.platform !== expected.platform)) throw new Error("receipt-publication-mismatch");
+  return receipt;
+}
+
 /** Parsing proves shape; readiness is a separate, stricter publication gate. */
 export function parseContentRevision(value: unknown): ContentRevision {
   return ContentRevisionSchema.parse(value);
@@ -109,6 +155,7 @@ export type MarketingRevisionRow = {
   campaign_id: string | null;
   revision: ContentRevision;
   content_hash: string;
+  ready: boolean;
   status: "review" | "approved" | "publishing" | "published" | "failed" | "reconciliation" | "returned" | "skipped" | "superseded";
   approved_at: string | null;
   approved_hash: string | null;
@@ -118,7 +165,7 @@ export type MarketingRevisionRow = {
 
 export type PublicationRow = {
   id: string; revision_id: string; platform: "instagram" | "threads";
-  status: "queued" | "claimed" | "published" | "failed" | "reconciliation";
+  status: "queued" | "claimed" | "published" | "failed" | "reconciliation" | "cancelled";
   remote_container_id: string | null; remote_media_id: string | null;
   remote_url: string | null; error_code: string | null;
 };
@@ -131,6 +178,6 @@ export function sourceUsable(packet: SourcePacket, now = new Date()): boolean {
 export function canonicalJson(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  return `{${Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
+  return `{${Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
     .map(([key, entry]) => `${JSON.stringify(key)}:${canonicalJson(entry)}`).join(",")}}`;
 }
