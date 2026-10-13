@@ -166,9 +166,34 @@ describe('inactive Cloud workflow exports', () => {
       const text = await readFile(`workflows/marketing/${file}`, 'utf8'); const workflow = JSON.parse(text);
       expect(workflow.active).toBe(false); expect(text).not.toContain('n8n-nodes-base.executeCommand');
       for (const node of workflow.nodes.filter((node: { type: string }) => node.type === 'n8n-nodes-base.httpRequest')) {
-        expect(node.parameters.genericAuthType).toBe('httpHeaderAuth'); expect(node.parameters.url).toContain('example.invalid');
+        if (file === 'staging-source-check.json') {
+          expect(node.parameters.genericAuthType).toBe('httpCustomAuth');
+          expect(node.parameters.url).toBe('https://own-dashboard-j2ndtg5xk-lukas-kourils-projects.vercel.app/api/marketing/n8n');
+          expect(node.credentials.httpCustomAuth.id).toBe('REPLACE_WITH_STAGING_CUSTOM_AUTH_CREDENTIAL_ID');
+          expect(JSON.parse(node.parameters.jsonBody)).toEqual({ operation: 'refresh', brand: 'devshark', sourceIds: ['question:rm-js-17', 'question:rm-js-1', 'coding-task:js-digit-sum'] });
+          expect(node.parameters.options.redirect.redirect.followRedirects).toBe(false);
+          expect(node.parameters.options.timeout).toBe(60_000);
+          expect(node.retryOnFail).toBe(false);
+          expect(workflow.nodes.map((value: { type: string }) => value.type)).toEqual(['n8n-nodes-base.manualTrigger', 'n8n-nodes-base.httpRequest', 'n8n-nodes-base.code']);
+          expect(workflow.settings).toMatchObject({ saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false });
+        } else {
+          expect(node.parameters.genericAuthType).toBe('httpHeaderAuth'); expect(node.parameters.url).toContain('example.invalid');
+        }
         if (node.name.startsWith('Publish') || node.name.startsWith('Execute')) expect(node.retryOnFail).toBe(false);
       }
     }
+  });
+  it('keeps staging source prose, URLs and transport fields out of the manual summary', async () => {
+    const workflow = JSON.parse(await readFile('workflows/marketing/staging-source-check.json', 'utf8'));
+    const node = workflow.nodes.find((value: { type: string }) => value.type === 'n8n-nodes-base.code');
+    const summarize = new Function('$input', node.parameters.jsCode);
+    const marker = 'PRIVATE_TRANSPORT_AND_SOURCE_SENTINEL';
+    const packets = ['question:rm-js-17', 'question:rm-js-1', 'coding-task:js-digit-sum'].map((sourceId, index) => ({ sourceId, eligible: index !== 1, contentHash: 'a'.repeat(64), content: { body: marker }, canonicalUrl: `https://example.invalid/${marker}` }));
+    const response = { brand: 'devshark', packets, held: [{ sourceId: 'question:rm-js-1' }], dropped: 0, headers: { cookie: marker }, raw: marker };
+    const result = summarize({ all: () => [{ json: response }] });
+    expect(result[0].json).toMatchObject({ status: 'checked', requestedCount: 3, eligibleCount: 2, heldCount: 1, missingCount: 0 });
+    expect(JSON.stringify(result)).not.toContain(marker);
+    expect(() => summarize({ all: () => [{ json: { ...response, packets: [packets[0], packets[0]] } }] })).toThrow();
+    expect(() => summarize({ all: () => [{ json: { ...response, brand: 'dneskai' } }] })).toThrow();
   });
 });
