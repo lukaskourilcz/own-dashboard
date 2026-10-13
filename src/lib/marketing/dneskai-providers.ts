@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { collectNativeDneskaiFeed } from './dneskai-native-feed';
 import { DneskaiFeedRequestSchema,DneskaiFeedResponseSchema,type DneskaiCandidate,type DneskaiSource } from './dneskai-contracts';
 import { signAutomationBody } from './automation-auth';
 import { contentHash } from './hashes';
@@ -32,13 +33,19 @@ async function jsonRequest(url:string,init:RequestInit,fetcher:typeof fetch,sign
  }const reader=response.body?.getReader();if(!reader)throw new Error();let size=0;const chunks:Uint8Array[]=[];for(;;){const result=await reader.read();if(result.done)break;size+=result.value.length;if(size>1_000_000){await reader.cancel();throw new DneskaiProviderError('provider-response-too-large');}chunks.push(result.value);}return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch(error){if(error instanceof DneskaiProviderError)throw error;throw new DneskaiProviderError('provider-response-ambiguous');}
 }
 export async function collectDneskaiFeed(source:DneskaiSource,since:string,options:{env?:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal;now?:Date;collectionPilot?:{owner:string;project:string}}){
- const env=options.env??process.env;const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');
+ const env=options.env??process.env;
+ if(env.MARKETING_DNESKAI_FEED_PROVIDER && !['bridge','native'].includes(env.MARKETING_DNESKAI_FEED_PROVIDER))throw new DneskaiProviderError('collection-feed-provider-invalid');
+ let response:z.infer<typeof FeedResponseForUrlValidation>;
+ if(env.MARKETING_DNESKAI_FEED_PROVIDER==='native'){response=await collectNativeDneskaiFeed(source,since,options);}
+ else {
+ const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');
  const origin=new URL(safeUrl(base)).origin;const request=DneskaiFeedRequestSchema.parse({action:'collect',sourceIds:[source.id],since,maxItems:source.maxItems});const body=JSON.stringify(request);
  const init={method:'POST',headers:signAutomationBody(body,secret,options.now?.getTime()),body};
  const previewConfigured=env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN!==undefined||env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN!==undefined;
  if(previewConfigured&&!options.collectionPilot)throw new DneskaiProviderError('collection-preview-scope-required');
  const fetcher=previewConfigured?((url,request)=>requestDneskaiCollectionPreview(new URL(String(url)),request??{},{env,fetcher:options.fetcher,now:options.now,signal:options.signal},options.collectionPilot!.owner,options.collectionPilot!.project)) as typeof fetch:options.fetcher??fetch;
- const response=FeedResponseForUrlValidation.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));
+ response=FeedResponseForUrlValidation.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));
+ }
  if(response.sources.length!==1||response.sources[0].sourceId!==source.id||response.sources[0].items.length>source.maxItems)throw new DneskaiProviderError('collection-bridge-binding-invalid');
  const result=response.sources[0],items:DneskaiCandidate[]=[];let invalidUrls=0;
  for(const item of result.items){
