@@ -136,6 +136,7 @@ The migrations, in the order they run:
 40. `20261012232949_marketing_durable_jobs.sql` — consent-bound durable jobs, calendar rebinding and publishing receipts.
 41. `20261012233059_marketing_knowledge_import.sql` — provenance-backed atomic procedures and consent-bound extraction.
 42. `20261013001528_marketing_private_assets.sql` — private immutable worker assets with owner-prefix reads.
+43. `20261013092409_marketing_staging_pilot_guard.sql` — immutable owner pilot limits, lifetime reservations and fenced invocation deadlines.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. All 38 migrations are applied in production, verified against the linked project on 2026-09-28.
 
