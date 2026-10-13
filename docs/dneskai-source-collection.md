@@ -7,6 +7,7 @@ ukazuje rozvrh, výsledky kontrol, problémy a vybraná témata.
 Každý den ve 22:00 Europe/Prague n8n zahájí sběr pro následující den. Plán počítá
 se čtyřmi odlišnými tématy. Pokud kvalitních témat není dost, přehled ukáže méně
 návrhů. Samotný výběr tématu neschvaluje text, obrázky ani publikování.
+Pravidelný sběr zatím není zapnutý; následující rozvrh popisuje připravené chování.
 
 ```mermaid
 flowchart TD
@@ -101,8 +102,8 @@ Před spuštěním je potřeba:
    Běžný publikační klíč tento endpoint nepřijímá. Klíče Apify a Jev zůstávají
    na serveru OwnDashboardu.
 3. Připojit Jev pouze do schváleného serverového prostředí. Vlastník založil účet
-   a doplnil kredit; nový klíč je zatím uložený pouze v soukromé místní konfiguraci
-   mimo repozitář. Do cloudových služeb zatím přenesen nebyl.
+   a doplnil kredit; klíč je uložený v soukromé místní konfiguraci a ve schválené
+   Preview větvi OwnDashboardu. V produkčním prostředí není.
 4. Ověřit rozpočet a provider konfiguraci, provést jeden omezený živý sběr a
    porovnat výsledek s dashboardem. Mockované testy nejsou dokladem živého běhu.
 5. Předložit výsledek vlastníkovi před produkčním nasazením. Potom zapnout pouze
@@ -113,18 +114,24 @@ zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schvá
 
 ## Ověřeno v této změně
 
-- OwnDashboard: 1 275 testů prošlo, jeden zůstává přeskočený podle existující
+- OwnDashboard před dokončením integrace (commit `551a1cd`): 1 288 testů prošlo, jeden zůstává přeskočený podle existující
   konfigurace. Prohlížečové testy: 126 prošlo, 70 je přeskočeno podle existující
   konfigurace (zejména duplicitní kombinace zařízení).
 - Quorum: 4 783 testů prošlo; sestavení, typy a lint prošly.
 - Skutečný bezplatný odběr OpenAI a Hugging Face vrátil po třech datovaných
   položkách. Záměrný limit byl správně označen jako částečný výsledek.
 - n8n návrh je uložený a neaktivní; nastavení ověřeno zpětným exportem.
-- Jev klíč je aktivní a uložený lokálně. Placená volání, cloudová migrace,
-  nové nasazení a kompletní živý průchod zatím provedeny nebyly.
+- Samostatné živé ověření Apify a Jev prošlo. Apify vrátil skutečný příspěvek
+  s Mosseriho spoluautorstvím; starý připnutý příspěvek byl vyloučen. Spoluautorství
+  samo o sobě není důvod k vyřazení. Jev vrátil validní strukturované vyhodnocení.
+- Základní migrace sběru i odděleného pilotu jsou aplikované do schválené dočasné Supabase větve.
+  Všechny čtyři tabulky mají RLS, anonymní čtení i zápis z prohlížeče jsou zakázané.
+- Kompletní propojený průchod databáze → Quorum → n8n → výběr témat se ještě
+  ověřuje; samostatné provider testy jej nenahrazují. Produkce, plánovaný sběr
+  a publikování zůstávají vypnuté.
 
 Databázové testy ověřují skutečné SQL v místním PostgreSQL prostředí PGlite;
-nenahrazují aplikaci migrace do schválené Supabase větve. Testy s připravenými
+nenahrazují živý integrační test na schválené Supabase větvi. Testy s připravenými
 odpověďmi Apify/Jev nejsou důkazem úspěšného spojení s těmito poskytovateli.
 
 ## Aktuální dokumentace poskytovatelů
@@ -137,3 +144,23 @@ odpověďmi Apify/Jev nejsou důkazem úspěšného spojení s těmito poskytova
 
 Ověřeno 13. října 2026. Reálná faktura závisí na tarifu, sdíleném kreditu a
 skutečné spotřebě, nikoli jen na počtu naplánovaných kontrol.
+
+## Oddělený test propojení
+
+Testovací cesta přijímá explicitní `pilot: true` a funguje pouze ve Vercel Preview.
+Potřebuje samostatné zapnutí, přesné ID vlastníka a projektu a časové okno dlouhé
+nejvýše 48 hodin. Databáze uloží toto oprávnění natrvalo pro jeden běh; změna
+nastavení neobnoví počet pokusů ani rozpočet. Nejvýše 0,24 USD se rezervuje ještě
+před požadavky na poskytovatele. Neznámá spotřeba zastaví další placené kroky.
+
+Tento test může začít před 22:00. Běžný sběr přitom zůstává vypnutý a původní
+vyčerpaný limit tří generování se nemění. Schválení obsahu ani publikování
+nelze tímto přístupem provést. Oprava ukládání výsledku Jev dovoluje změnit
+kategorii, hodnocení a důvod vyřazení; původní text a zdroj se měnit nesmí.
+
+## Následující session
+
+Přesun sběrných a redakčních modulů z BoardlessAI do OwnDashboardu je samostatný
+[úkol #104](https://github.com/lukaskourilcz/own-dashboard/issues/104). Současné
+ověření ještě používá Quorum. K vypnutí původních běhů dojde až po ověřeném
+přechodu; tento úkol jejich nastavení nemění.

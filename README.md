@@ -140,6 +140,7 @@ The migrations, in the order they run:
 44. `20261013150816_marketing_offline_import.sql` — owner-bound offline draft imports with immutable review holds and active pilot checks.
 45. `20261013150933_marketing_story_receipts.sql` — accepts a verified Story publication ID without requiring a permanent public URL.
 46. `20261013165236_marketing_dneskai_collection.sql` — owner-scoped DNESKAi research collection, fenced daily runs and bounded provider reservations; no approval or publication.
+47. `20261013181506_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 
