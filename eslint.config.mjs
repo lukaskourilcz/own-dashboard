@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "playwright-report/**",
     "test-results/**",
+    // Immutable original Design exports are provenance, never application code.
+    "templates/marketing/claude-design/**",
   ]),
 ]);
 

@@ -1,0 +1,187 @@
+{
+  "name": "OwnDashboard — consented knowledge processing (inactive)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "c5702e14-e4aa-4e96-b20c-056bf14be67c",
+      "name": "Manual knowledge processing",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "331845e2-b390-4567-a497-d42207c37d2e",
+      "name": "Twice-daily consented knowledge queue",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8,20 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3992f56e-fa7f-4623-b59c-a1463bcfb525",
+      "name": "Read owner-consented queue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"operation\": \"knowledge-queue\"}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "c8d5175b-242e-4723-b47f-6ef46fefd2e9",
+      "name": "Bounded registered work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().flatMap(item => (item.json.sources ?? []).slice(0,5).map(source => ({json:{operation:source.status === 'queued'?'knowledge-run':'knowledge-poll',sourceId:source.id}})));"
+      }
+    },
+    {
+      "id": "75ec153b-1d42-43b3-8960-56cd3c8f51c3",
+      "name": "Run or poll exact source",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "Manual knowledge processing": {
+      "main": [
+        [
+          {
+            "node": "Read owner-consented queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read owner-consented queue": {
+      "main": [
+        [
+          {
+            "node": "Bounded registered work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bounded registered work": {
+      "main": [
+        [
+          {
+            "node": "Run or poll exact source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twice-daily consented knowledge queue": {
+      "main": [
+        [
+          {
+            "node": "Read owner-consented queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {}
+}

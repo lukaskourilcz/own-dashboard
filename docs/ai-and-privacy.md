@@ -1,6 +1,6 @@
 # AI and privacy
 
-OwnDashboard uses no LLM-backed AI. The AI-links Auto-fill route is the only remaining "AI"-badged surface. It reads a page deterministically, makes no model call and sends no owner data.
+The owner explicitly authorized model-backed marketing on 2026-10-13 in issue #93. This permission is restricted to the Marketing workspace. Existing link enrichment, Career, invoices, finances and other areas retain their deterministic boundaries.
 
 ## Current AI actions
 
@@ -19,3 +19,21 @@ Both routes send Jina Reader only the URL the user submitted. The Tools section 
 Invoice PDF extraction is deliberately not an AI workflow. The PDF is read locally in the browser with `pdf.js`, deterministic parsing fills the editable invoice form, and the file itself is neither uploaded nor stored.
 
 Provider configuration is limited to the optional `JINA_API_KEY`, which only raises Jina's anonymous rate limit. The Anthropic SDK and every Claude-backed route (project copilot, career copilot, weekly brief, knowledge review, quick-add intent, AI search) were removed in the drop-AI-features commit.
+
+## Marketing-only exception (2026-10-13)
+
+The owner also requested DNESKAi source rotation and Jev classification on this date.
+The collection service may send bounded public source texts and public candidate history
+to TypeSafe only after its separate provider configuration and budget admission pass.
+It does not send owner notes, financial data, credentials or unrelated project records.
+The Sources panel holds research candidates; selection grants no editorial or social
+approval. Missing credentials, uncertain provider spend and duplicate uncertainty remain
+visible holds. The earlier disposable pilot does not authorize new collection spend.
+
+n8n Cloud orchestrates versioned authenticated HTTP operations. Supabase owns the source heads, jobs, exact content revisions, approvals and publication receipts. Claude Design exports are reviewed template sources; the renderer runs fixed code and never executes exported or model-generated scripts. Dots and Higgsfield are excluded.
+
+With `MARKETING_AI_CONSENT=true`, the server may send selected public editorial evidence, authored effective questions or active coding-task specifications and explicitly reviewed presentation advice to Anthropic. It never sends learner records, invoices, account credentials, cookies or unrelated projects. Individual Saved-source analysis additionally requires the exact owner-reviewed plan and budget stored by the knowledge import form. Capture alone starts no paid call. Source text is untrusted data, never executable instructions. Missing speech, timecodes and saved dates remain missing.
+
+LangSmith is separately opt-in. Only hashes, technical versions, brand, usage, timing, issue codes and the exact owner decision are sent to its EU endpoint; raw prompts, captions, source text, feedback text, signed asset URLs and credentials are excluded. Diagnostic failure cannot grant content approval or bypass publication checks. The original source, final assets, caption, destination and schedule remain in owner-only storage. Post approval happens only in OwnDashboard and binds the exact revision hash; edits create a fresh unapproved revision.
+
+Private `marketing-assets` storage contains immutable owner-prefixed JPEGs. Seven-day signed URLs are issued only for slots within six days; the publisher verifies the reachable bytes against approved hashes immediately before sending. No browser receives service-role credentials. Publication starts paused globally and per brand, and requires a verified enabled profile and current live source checks. Ambiguous remote replies enter reconciliation without automatic resending.

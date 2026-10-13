@@ -1,0 +1,20 @@
+<!-- @startingPoint section="Carousel" subtitle="Blank devShark post: cover, panel slide, closing slide — replace the copy" viewport="1080x1350" -->
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>New devShark carousel</title><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script><script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:#E6EAE4;font-family:Inter,sans-serif;color:#132019}.row{display:flex;gap:40px;padding:40px;width:max-content}</style></head><body><div id="root"></div>
+<script type="text/babel">
+const NS = Object.values(window).find(v => v && typeof v === 'object' && v.Slide && v.Kicker) || {};
+const { Slide, Kicker, Headline, Statement, Accent, Footer, Panel, PanelRow, Body, Logo } = NS;
+function App() {
+  if (!Slide) return <p style={{ padding: 24 }}>Bundle not built yet.</p>;
+  return (
+    <div className="row">
+      <Slide theme="dark" bigFin="big" label="1"><Kicker wave={1}>Kicker</Kicker><Headline size="cover">Headline.</Headline><Statement>One <Accent>statement</Accent> in the same face, under 25 words.</Statement><Footer align="right" ink>Swipe →</Footer></Slide>
+      <Slide theme="light" bigFin="small" label="2"><Kicker wave={4}>Section</Kicker><Headline>One idea per slide.</Headline><Panel rows fill={false}><PanelRow marker="01">First point.</PanelRow><PanelRow marker="02" highlighted>The point that matters.</PanelRow></Panel></Slide>
+      <Slide theme="green" bigFin="tucked" label="3"><Logo /><Headline size="hero" style={{ marginTop: 88 }}>Closing line.</Headline><Panel fill={false} style={{ marginTop: 'auto', alignSelf: 'flex-start', position: 'relative', padding: '32px 48px' }}><Body strong size="var(--type-url)" style={{ lineHeight: 1.1 }}>devshark.app</Body></Panel></Slide>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

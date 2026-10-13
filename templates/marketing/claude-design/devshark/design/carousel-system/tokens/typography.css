@@ -1,0 +1,39 @@
+/* Type scale for 1080 × 1350 carousel slides. Nothing on a slide is set under 40 px except code (28 px, One Dark block). */
+:root {
+  --font-display: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --weight-display: 800;
+  --weight-kicker: 700;
+  --weight-body: 400;
+  --weight-body-strong: 500;
+
+  --type-kicker: 40px;            /* Manrope 700, uppercase, tracking 0.09em, wave 12px below */
+  --type-headline: 104px;         /* Manrope 800, line 1.02 — three-line headlines */
+  --type-headline-short: 112px;   /* one- and two-line headlines */
+  --type-headline-hero: 152px;    /* line 0.98, tracking -0.025em — the statement slides (Every day, closing) */
+  --type-cover: 80px;             /* cover headline AND cover statement share this size and face */
+  --type-number: 184px;           /* line 0.9, tracking -0.03em — €1.80, 55% */
+  --type-number-unit: 72px;       /* "a month", "off" beside the number */
+  --type-body: 44px;              /* Inter 400, line 1.35 */
+  --type-body-lg: 46px;
+  --type-body-sm: 40px;
+  --type-sub: 44px;               /* Inter 500 */
+  --type-footer: 40px;            /* Inter 500 — Swipe →, Offer ends */
+  --type-url: 64px;               /* Inter 500 — devshark.app */
+  --type-chip: 46px;              /* Inter 500 — tech chips; plain chips 42px */
+  --type-row-marker: 40px;        /* Manrope 700 — 01 02 03; check marks 44px */
+  --type-code: 28px;              /* JetBrains Mono 400, line 1.45 */
+  --type-tests: 34px;             /* JetBrains Mono — "✓ 25 of 25 tests passed" */
+
+  --tracking-display: -0.015em;
+  --tracking-hero: -0.025em;
+  --tracking-number: -0.03em;
+  --tracking-kicker: 0.09em;
+
+  --leading-display: 1.02;
+  --leading-hero: 0.98;
+  --leading-body: 1.35;
+  --leading-row: 1.3;
+}

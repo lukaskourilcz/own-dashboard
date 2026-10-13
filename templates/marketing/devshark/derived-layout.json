@@ -1,0 +1,103 @@
+{
+  "archiveSha256": "eaddeced6e28df466fe65d6b1dd87a449331c7bc17578d70d662a1f4dcb286cb",
+  "sourceProject": "https://claude.ai/design/p/c0bf3c06-2e9c-4244-a279-aa96bce7bf07",
+  "adaptation": "Bounded authored-source carousel derived from Direction B mixed colours; no sample launch prices, statistics, fake UI, texture or decorative corner fin. Uses the Direction B 72px display size for authored exercise headings, Inter400 footer from the pinned kit, and omits optional grain for deterministic flat rendering.",
+  "sourceFiles": {
+    "tokens/colors.css": "c80206c668d411343b119b6b11a530d274be9cf996a268824cc54d5ebfb37b02",
+    "tokens/spacing.css": "53eb1e03b1f5d10b61ccd3472e840054465dab98e946197c47e6e67ce9d9e778",
+    "tokens/typography.css": "768f2fc35c145deee1d19a39caa4b67e9683db156c70a0e1e5a31a54d43dd4ae",
+    "tokens/marks.css": "49acbcbd239ba8821b3d619dc4949e4bd703d0331d3c1bd1a93ff2d0f61fb6d8",
+    "components/carousel/Slide.jsx": "5778b87f7065648c26e29ee2fb04c0756d2eab5824d2057dd27ec84b2be8e993",
+    "components/carousel/Headline.jsx": "6b9318c31cc25c401162a18d4eb202c5a583cdb8406c9e1cf47626be6095d4a1",
+    "components/carousel/Kicker.jsx": "42982de87046d0b7027dee95b4771583cd81be6a74aac5af644c80bc93afb52b",
+    "components/carousel/CodeBlock.jsx": "d003f45152f4bfab12212556395a879fbcdbd3391d749a00b8ccbad89a704700",
+    "guidelines/layout-sequences.html": "18a3bfc65d91581e4414865c0ab3c001a4ca60ac0b3d080a7cf3b49e67b41d82",
+    "Direction B - Mixed colours.dc.html": "1d364e522fda00820c5ea8d2c8abeb7a379e40851baf3f196005b81def408c19"
+  },
+  "themes": {
+    "light": {
+      "background": "#F3F6F1",
+      "foreground": "#132019",
+      "muted": "#3C4F43",
+      "accent": "#2D7A2D",
+      "surface": "#FFFFFF"
+    },
+    "dark": {
+      "background": "#0B141B",
+      "foreground": "#E8EEF0",
+      "muted": "#9DB3BC",
+      "accent": "#4CAF50",
+      "surface": "#101C24"
+    },
+    "green": {
+      "background": "#2D7A2D",
+      "foreground": "#FFFFFF",
+      "muted": "#FFFFFF",
+      "accent": "#FFFFFF",
+      "surface": "#FFFFFF"
+    }
+  },
+  "code": {
+    "background": "#282C34",
+    "foreground": "#ABB2BF",
+    "fontSize": 28,
+    "lineHeight": 1.45,
+    "radius": 12
+  },
+  "layout": {
+    "margin": 80,
+    "contentTop": 168,
+    "headlineFontSize": 72,
+    "headlineLineHeight": 1.02,
+    "bodyFontSize": 44,
+    "bodyLineHeight": 1.35,
+    "footerFontSize": 40,
+    "kickerFontSize": 40,
+    "gapHeadlineBody": 48,
+    "waterlineHeight": 12,
+    "waterlineGap": 12,
+    "finWidth": 620,
+    "finRight": -90,
+    "finBottom": 0,
+    "closingLogoWidth": 400,
+    "themeSequence": [
+      "light",
+      "dark",
+      "green",
+      "dark"
+    ],
+    "finPositions": [
+      {
+        "width": 620,
+        "x": 550
+      },
+      {
+        "width": 340,
+        "x": 600
+      },
+      {
+        "width": 0,
+        "x": 0
+      },
+      {
+        "width": 560,
+        "x": 260
+      }
+    ]
+  },
+  "waves": [
+    "M0 6 Q12 0.8 24 6 T48 6",
+    "M0 6 Q12 2 24 6 T48 6",
+    "M0 6 Q12 11.2 24 6 T48 6",
+    "M0 6 Q6 1.2 12 6 T24 6 T36 6 T48 6",
+    "M0 6 Q8 1.6 16 6 T32 6 T48 6",
+    "M0 6 Q8 2.8 16 6 T32 6 T48 6",
+    "M0 6 Q24 0.4 48 6",
+    "M0 6 Q24 11.6 48 6"
+  ],
+  "assets": {
+    "devshark-fin-clean-green.svg": "348d145b20eb26c3f091d2b406794d35c90136aa0930693d93bd930f3497666c",
+    "devshark-fin-clean-ink.svg": "aedebdf0bc8dae4e4ac339341917b4ec55c978d1d7bb834bd48faadfcf416e1e",
+    "devshark-logo-horizontal-white.svg": "ba705d15f8c6e391a5c515accc3d1faf45f6488bfb762945c2fd5e5f8247114f"
+  }
+}

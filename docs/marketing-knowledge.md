@@ -1,0 +1,56 @@
+# Saved sources and atomic knowledge
+
+Instagram knowledge remains canonical `ai_links.record_type = 'idea'`. The importer adds owner-only source and evidence sidecars; it does not create another tip library. Existing IDs, authored notes, calendar references and project associations remain intact. Normalization carries the current owned project/prompt/tool IDs into metadata and marks legacy evidence `legacy-unverified`. A legacy multi-tip note remains one provisional item until its actual procedure boundaries are reviewed; normalization does not pretend to split unverified content.
+
+## Capture and dates
+
+The supported entry points are an owner-provided Instagram Saved JSON export or individual HTTPS post/Reel URLs. Private Saved collection/profile URLs are rejected. No cookies, private collection scraping or official Saved API access is assumed. A visible collection in Chrome does not establish a supported export API.
+
+Each batch chooses an exclusive UTC cutoff. Its window is `[cutoff - 21 days, cutoff)`, applied only to verified `saved_at`. `published_at` and the actual first `imported_at` are separate. Missing Saved dates remain unknown and are excluded by default; explicit opt-in imports them as partial date evidence. An export's `Saved on` epoch timestamp needs a matching known-item timestamp proof before it is treated as verified. Explicit normalized `saved_at` is an owner assertion, not an independently fetched Instagram fact. Upsert never substitutes publication dates or changes the first import/cutoff.
+
+Capture accepts at most 500 rows and 1 MB. Post/Reel variants and tracking query strings deduplicate by shortcode per owner. Captions, available transcripts and OCR remain separate channels with declared provider, cost (nullable), segments and actual timecodes (nullable). Owner-supplied media evidence uses the same strict schema; unavailable channels contain no text. No missing speech/OCR/timecodes are invented. A transcript containing music or a short utterance does not imply actionable advice.
+
+## Owner API
+
+`GET /api/marketing/knowledge` returns `{sources, items}`, capped at 500 sources and 1000 items, newest first. Optional `projectId` must be an owned UUID. Item rows contain `ai_link_id`, `procedure_hash`, `metadata` (title/summary/steps/tags/references/missingParts/contraryClaims), `evidence`, `source_ids`, `review_status`, `reviewed_at` and `reviewed_hash`.
+
+`POST /api/marketing/knowledge` requires the existing signed-in owner session, same-origin CSRF checks and a 20/minute owner limit. Every action is strict; caller owner IDs and unknown approval flags are rejected. Browser requests send JSON with the normal session cookie; no integration secret is exposed.
+
+| Action | Required fields | Result |
+| --- | --- | --- |
+| `preview` | `capture: {cutoff,input,includeUnknownDates?,timestampProof?}` | Reconciliation, selected sources and `reviewHash` |
+| `capture` | Same `capture`, exact `reviewHash` | Reconciliation plus `saved: {sourceIds,knowledgeIds,createdItems,duplicate}` |
+| `normalize-existing` | `apply: boolean` | Preview metadata or apply owner sidecars; preserve canonical IDs |
+| `analysis-plan` | One `sourceIds` UUID, `provider: apify\|claude`, `maxCostUsd: (0,1]` | `{plan}` with exact `reviewHash` |
+| `prepare-analysis` | Same selection/provider/budget, `consent:true`, exact `reviewHash` | `{plan,saved?,alreadyProcessed,requests:[{sourceId,analysisKey}]}` |
+| `review-item` | `aiLinkId`, `expectedProcedureHash` SHA-256, `status: reviewed\|needs-review` | `{aiLinkId,procedureHash,status,reviewedAt}` |
+
+Manual review binds the current procedure hash. A changed hash returns 409, missing owned item 404; guarded foreign references fail closed. Review retains all unavailable/legacy evidence and missing parts. It is an owner's assessment of usefulness, not proof of absent speech, publication facts, Saved dates or future social-post approval. `KnowledgeImport({onImported?,disabled?})` uses the existing EN/CS language and semantic tokens. `disabled` blocks all fetches for authentic `/dev-preview` use.
+
+## Runnable worker adapters
+
+`knowledge-runner.ts` exports `runQueuedKnowledgeAnalysis(ownerId,sourceId)`, `pollQueuedKnowledgeAnalysis(ownerId,sourceId)` and `abortQueuedKnowledgeAnalysis(ownerId,sourceId)`. The worker's authenticated owner context supplies `ownerId`; payloads cannot choose another owner. Each paid launch requires a stored exact plan hash and per-action consent, then the service-only atomic `marketing_claim_knowledge_analysis` changes `queued` to `analyzing` before the provider call. Repeated dispatch cannot claim again. An uncertain start or persistence failure requires reconciliation and never automatically starts another paid run. Queued cancellation costs nothing. Cancelling an already executing Claude request may still incur provider charges; it prevents its tips being saved after cancellation. No auto-retry is promised: a changed, reviewed plan/source version is required for another attempt.
+
+No provider executes unless `MARKETING_KNOWLEDGE_WORKER_ENABLED=true`. Required configuration:
+
+- Apify: `APIFY_TOKEN`, `APIFY_ACTOR_ID`, `APIFY_ACTOR_BUILD` pinned as a verified numeric build, never `latest`.
+- Claude: `ANTHROPIC_API_KEY`, `MARKETING_CLAUDE_MODEL`, `MARKETING_CLAUDE_INPUT_USD_PER_MTOK`, `MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK`. These pricing variables are shared with marketing generation. Configured rates estimate token charges; the token reservation and 4000-token output limit bound the request, while measured usage is required before persisting results.
+- Optional redacted diagnostics: `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com`. Inputs/outputs are empty; only hashes, model, stage, tokens, estimated cost and bounded error code leave the app. Native `LANGSMITH_TRACING=true` or `LANGCHAIN_TRACING_V2=true` is rejected because it can capture source text.
+
+The owner-used actor is `apify/instagram-reel-scraper` (`xMc5Ga1oCONPmWJIa`). The actual reviewed input is one direct Reel URL in `username`, `resultsLimit:1`, `includeTranscript:true`, `includeSharesCount:false`, `includeDownloadedVideo:false`. `resultsLimit` does not bound direct-URL output. Launch uses `POST /v2/actors/:actorId/runs` with pinned `build`, `maxTotalChargeUsd`, `maxItems=1`, `timeout=120`, `restartOnError=false`, `waitForFinish=0`. The provider charge cap covers pricing models; `maxItems` caps billable items rather than guaranteeing dataset size. The runner checks a maximum two returned rows and accepts exactly one matching requested source. [Actor input schema](https://apify.com/apify/instagram-reel-scraper/input-schema), [official launch API](https://docs.apify.com/api/v2/actors-runs-post).
+
+The returned run ID, default dataset ID, actor/build and provider account ID are registered only from the authenticated provider response. Poll fetches that registered run, verifies the registration, then fetches its registered dataset using bounded [dataset items](https://docs.apify.com/api/v2/dataset-items-get). Captions are caption evidence; the actor's actual `transcript` field supplies speech text, without inferred segment timecodes. This actor does not supply OCR. Restricted/error rows remain inaccessible. `onlyPostsNewerThan` is a publication-date filter and is never used as a Saved cutoff. Public headline prices and the owner console differed; provider `usageTotalUsd` is recorded without guessing cost or allocating a shared historical run across individual sources.
+
+`POST /api/marketing/knowledge/callback` is a worker notification endpoint using the existing timestamped raw-body HMAC (`signAutomationBody` / `authenticateAutomation`, worker secret and configured owner). It accepts `{eventId,sourceId,analysisKey,runId,datasetId,status}`. Optional `capture`, `extraction` and `usage` must be absent/null: arbitrary webhook facts are rejected. The source must already belong to the worker owner with the same analysis key and registered run/dataset. Notification status does not establish completion; the server polls the official API. Native Apify notifications must pass through the authenticated n8n wrapper; no dynamic HMAC is assumed from Apify itself. The root worker dispatches these adapters; no shell execution is required by these adapters.
+
+Claude uses LangChain structured output for up to 12 distinct procedures, one attempt, a 60-second timeout, no tools/browsing and no automatic transport retries. Submitted source captions/transcripts/OCR are the only allowed model data. Exact evidence quotations and actual segment timecodes are checked against the source before atomic persistence. New items require owner review. Exact procedure hashes may join evidence; semantic similarity only proposes review, and contrary claims change the hash. These procedures guide presentation/process; they never invent devShark learning content or DNESKAi product facts.
+
+## Database and verification
+
+Migration `20261012233059_marketing_knowledge_import.sql` creates `marketing_knowledge_sources`, `marketing_knowledge_items` and `marketing_knowledge_events`. Authenticated clients have owner-scoped SELECT only; writes/RPC execution are service-only. The atomic import RPC deduplicates owner/event, rejects event payload conflicts, preserves first import/cutoff, merges available evidence without downgrading it and protects pending analysis. Triggers recheck canonical idea ownership, joined evidence sources and every nested project/note/prompt/tool reference even for privileged writes. Missing referenced sources roll the entire batch back. The review and claim RPCs enforce ownership inside the database.
+
+Focused Vitest tests exercise duplicate/cutoff/missing-date handling, multiple procedures, unavailable transcripts, forged evidence, foreign owners/references, CSRF/HMAC, exact review hashes, durable one-attempt claims, ambiguous starts, registered provider polling and cancellation. PGlite executes the actual migration and its RLS/RPCs rather than a SQL-shaped mock.
+
+The read-only local benchmark is `node scripts/marketing-knowledge-reconcile.mjs INPUT_JSON OUTPUT_JSON [EXCLUSIVE_UTC_CUTOFF]`. It uses existing dependencies and calls no model, scraper or database. Input is the sanitized `{provenance,items}` existing dataset; output has counts, content hashes and a small manual multi-procedure validation result. Raw captions/transcripts never enter its output or repo. On the existing 33-Reel dataset, Saved dates are unknown, 32 transcripts are nonempty and one source is restricted. Default Saved-window selection therefore excludes all 33; explicit unknown-date opt-in captures them with incomplete date evidence. Two small manually selected profile procedures validate, but this is not a Claude quality benchmark and not a recent Saved backfill. The original shared provider receipt is retained in the private setup evidence; this work starts no new paid run.
+
+Production migration/provider secrets, verified future actor build, owner-reviewed provider plan, actual Saved export/timestamp proof and end-to-end worker/owner UI verification remain deployment/setup steps. No production Saved import or live extraction has been claimed.

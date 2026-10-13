@@ -1,0 +1,71 @@
+{
+  "brand": "dneskai",
+  "source": {
+    "kind": "repository",
+    "repository": "lukaskourilcz/aifirst",
+    "ref": "main",
+    "commit": "978cf71eaa07e6465dea9055a92a7ad918844405",
+    "documents": [
+      "design_handoff_dneskai_logo/README.md",
+      "docs/design/BRAND_SYSTEM.md",
+      "docs/design/DESIGN_SYSTEM.md"
+    ]
+  },
+  "approvedOn": "2026-09-27",
+  "palette": {
+    "background": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md; the white ground the light logotype is approved for."
+    },
+    "surface": {
+      "value": "#f7f7f5",
+      "source": "--surface-page in DESIGN_SYSTEM.md; the paper ground the light logotype is approved for."
+    },
+    "surface-strong": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md."
+    },
+    "foreground": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md."
+    },
+    "muted": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts)."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Space Grotesk",
+      "source": "BRAND_SYSTEM.md: display headlines, section headings, navigation and controls."
+    },
+    "body": {
+      "family": "Source Serif 4",
+      "source": "BRAND_SYSTEM.md: article prose, deks, definitions and descriptive card copy."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: dates, issue identifiers, source ids, tags, captions and measured values."
+    }
+  },
+  "logo": {
+    "sha256": "3fc530282b94b0e104c918ae771d252c601f826526f734a3f174529f9cdaee03",
+    "sourcePath": "public/brand/DNESKAi-logo.svg",
+    "viewBox": [
+      50,
+      -708,
+      4217.817852834741,
+      708
+    ],
+    "copiedFrom": "claude-design/dneskai/design_handoff_dneskai_r2/report/public/brand/DNESKAi-logo.svg"
+  },
+  "copiedFrom": "marketing-quorum/studio/brand-kits/caught-up"
+}

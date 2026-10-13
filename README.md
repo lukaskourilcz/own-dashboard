@@ -132,8 +132,17 @@ The migrations, in the order they run:
 36. `20260925200300_drop_link_project_references.sql` — guarded drop of the unused `ai_link_projects` and `projects.video_url`.
 37. `20260925210000_restrict_purge_old_cron_runs.sql` — takes `purge_old_cron_runs()` away from `anon` and `authenticated`, leaving it to `service_role` and the scheduler.
 38. `20260926140000_ig_tips.sql` — `ai_links.tip_group` and `ai_links.tip_summary`: the topic group and the plain summary each IG TIPS card shows.
+39. `20261012225640_marketing_control_surface.sql` — owned campaigns/sources/revisions/approval and fenced publication queue.
+40. `20261012232949_marketing_durable_jobs.sql` — consent-bound durable jobs, calendar rebinding and publishing receipts.
+41. `20261012233059_marketing_knowledge_import.sql` — provenance-backed atomic procedures and consent-bound extraction.
+42. `20261013001528_marketing_private_assets.sql` — private immutable worker assets with owner-prefix reads.
+43. `20261013092409_marketing_staging_pilot_guard.sql` — immutable owner pilot limits, lifetime reservations and fenced invocation deadlines.
+44. `20261013150816_marketing_offline_import.sql` — owner-bound offline draft imports with immutable review holds and active pilot checks.
+45. `20261013150933_marketing_story_receipts.sql` — accepts a verified Story publication ID without requiring a permanent public URL.
+46. `20261013165236_marketing_dneskai_collection.sql` — owner-scoped DNESKAi research collection, fenced daily runs and bounded provider reservations; no approval or publication.
+47. `20261013181506_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. All 38 migrations are applied in production, verified against the linked project on 2026-09-28.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 

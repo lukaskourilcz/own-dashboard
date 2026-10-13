@@ -1,0 +1,59 @@
+{
+  "copiedOn": "2026-10-13",
+  "source": "marketing-quorum/studio",
+  "fontMetricsSourceSha256": "6d30171d29b992e2ea3a8d170c22caa90ba0de57fb1a42fd2fffe4aca8c022d7",
+  "fonts": [
+    {
+      "file": "space-grotesk/space-grotesk-700.ttf",
+      "sha256": "7209bbb75fc0f5c546a5f5773b0db74ffc6abf04c2148c1105cace5765a96bdb"
+    },
+    {
+      "file": "source-serif-4/source-serif-4-400.ttf",
+      "sha256": "e5a4ee6a3d87bb9024796be390c6771e2a0eb1883dae25effaf57ca01668e24b"
+    },
+    {
+      "file": "ibm-plex-mono/ibm-plex-mono-400.ttf",
+      "sha256": "a7fdc993f9f0387caedba4e42521136fa97e4c0837ae6239bf0413ccf8af00c2"
+    },
+    {
+      "file": "manrope/manrope-800.ttf",
+      "sha256": "c5c0faa3c3a1b1a184f6bb2e405931bdbf51d21c72d8162309118e91304988e0"
+    },
+    {
+      "file": "inter/inter-400.ttf",
+      "sha256": "1b08e7fc267a5c7e1d614100f604b83e7e8a0be241f0f288faa2b3ac93a683ba"
+    },
+    {
+      "file": "jetbrains-mono/jetbrains-mono-400.ttf",
+      "sha256": "e6fd0d7e91550b3ed2b735d4312474362c4716edc4fc0577a0f61ed782d5aed1"
+    },
+    {
+      "file": "manrope/manrope-700.ttf",
+      "sha256": "484d10f0683e9e9f588de978f70cd3ad17cb3522bc0ca6efc4491c83429d323c"
+    },
+    {
+      "file": "source-serif-4/source-serif-4-600.ttf",
+      "sha256": "36db62940cb5728b12b1802476dc7fcf4c6c519a7bdd476ba23a4e555fc4655f"
+    }
+  ],
+  "templateAuthoring": "claude-design",
+  "claudeDesignExport": {
+    "devshark": {
+      "provider": "claude-design",
+      "projectUrl": "https://claude.ai/design/p/c0bf3c06-2e9c-4244-a279-aa96bce7bf07",
+      "exportedAt": "2026-10-13",
+      "archiveSha256": "eaddeced6e28df466fe65d6b1dd87a449331c7bc17578d70d662a1f4dcb286cb",
+      "approved": false,
+      "usage": "Template source only; sample product claims require revalidation"
+    },
+    "dneskai": {
+      "provider": "claude-design",
+      "projectUrl": "https://claude.ai/design/p/4c6f6a01-5f7c-4f22-9b54-a549e1da189d",
+      "exportedAt": "2026-10-13",
+      "archiveSha256": "78801c2471b31b24d5bf57fc62765374ec0d97d89e52131e80b5f98c7b734b09",
+      "approved": false,
+      "usage": "DNESKAi web brand design source; derived social layout requires owner review"
+    }
+  },
+  "approved": false
+}

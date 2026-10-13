@@ -5,6 +5,8 @@ export const NAV_TABS = [
   "home",
   "inbox",
   "work",
+  "marketing",
+  "workflows",
   "projects",
   "competition",
   "opportunities",

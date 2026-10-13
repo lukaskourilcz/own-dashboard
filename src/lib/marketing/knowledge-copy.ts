@@ -1,0 +1,33 @@
+/** EN/CS domain copy for the source import form; uses the existing language choice. */
+export const knowledgeImportCopy = {
+ en: {
+  title: "Import saved knowledge", intro: "Upload Instagram Saved JSON or paste post/reel URLs. Preview the fixed 21-day scope before saving. No scraper or model runs during capture.",
+  input: "Saved JSON or URLs", file: "Choose JSON export", cutoff: "Import cutoff (UTC; exclusive)", unknown: "Include items whose saved date is unknown or unverified",
+  proofUrl: "Known saved item URL (optional)", proofDate: "Confirmed Saved timestamp (local time)", proofHelp: "Verify the export's Saved on timestamp against this item. A post's publication date does not prove when you saved it.",
+  preview: "Preview import", save: "Save captured sources", busy: "Working…", unknownDate: "Saved date unknown", unverifiedDate: "Saved timestamp unverified", verifiedDate: "Saved date verified",
+  captionOnly: "Actual transcript unavailable", transcriptAvailable: "Transcript supplied", ocrAvailable: "OCR supplied", ocrUnavailable: "OCR unavailable", empty: "No sources match this scope. Verify the saved timestamp or include unknown dates.",
+  report: "Import reconciliation", received: "Received", unique: "Selected sources", duplicates: "Duplicate URLs", excluded: "Outside the 21-day window", unknownCount: "Unknown/unverified dates", rejected: "Unsupported rows",
+  preserved: "Preserve existing tip IDs", normalize: "Preview existing tips", normalizeApply: "Normalize metadata", normalizeHelp: "Keep canonical tips, notes and calendar references. Original source evidence remains unverified.",
+  source: "Source", date: "Saved date", status: "Evidence status", saved: "Sources saved. Existing tip IDs and associations stay intact.", normalized: "Existing tip metadata normalized.",
+  analysis: "Prepare a bounded extraction", provider: "Provider", scraper: "Apify: reel caption and transcript", model: "Claude: atomic procedures", budget: "Maximum cost (USD)", plan: "Review extraction plan", queue: "Approve plan and queue",
+  consent: "I authorize this action to send these submitted source captions/transcripts/OCR to the selected provider within this budget. It sends no owner notes, projects or credentials.",
+  queued: "Queued for the configured worker. No provider run was started by this form.", processed: "This source version has already been queued or analyzed; no repeat request was created.",
+  error: "Import could not complete. Check the input or connection and retry.", tooLarge: "The export exceeds 1 MB. Split it into batches of at most 500 items.", changed: "The input or extraction plan changed. Preview it again.", proofMismatch: "The known item's timestamp does not match Saved on in this export.",
+  configure: "Configure the selected worker/provider before extraction.", titlePlan: "Exact provider request for review", more: "Only the first 50 selected sources appear below; the report includes the entire bounded batch.",
+ },
+ cs: {
+  title: "Import uložených znalostí", intro: "Nahrajte Instagram Saved JSON nebo vložte URL příspěvků a reels. Před uložením zkontrolujte pevné období 21 dnů. Zachycení nespouští scraper ani model.",
+  input: "Saved JSON nebo URL", file: "Vybrat JSON export", cutoff: "Konec importovaného období (UTC; nezahrnuje tento okamžik)", unknown: "Zahrnout položky s neznámým nebo neověřeným datem uložení",
+  proofUrl: "URL známé uložené položky (volitelné)", proofDate: "Potvrzený čas Saved (místní čas)", proofHelp: "Porovnejte čas Saved on v exportu s touto položkou. Datum zveřejnění neprokazuje, kdy jste položku uložili.",
+  preview: "Náhled importu", save: "Uložit zachycené zdroje", busy: "Zpracovávám…", unknownDate: "Datum uložení neznámé", unverifiedDate: "Čas uložení neověřený", verifiedDate: "Datum uložení ověřené",
+  captionOnly: "Skutečný přepis není dostupný", transcriptAvailable: "Přepis dodán", ocrAvailable: "OCR dodáno", ocrUnavailable: "OCR není dostupné", empty: "Tomuto období neodpovídá žádný zdroj. Ověřte čas uložení nebo zahrňte neznámá data.",
+  report: "Vyhodnocení importu", received: "Přijaté položky", unique: "Vybrané zdroje", duplicates: "Duplicitní URL", excluded: "Mimo období 21 dnů", unknownCount: "Neznámá/neověřená data", rejected: "Nepodporované řádky",
+  preserved: "Zachovat ID stávajících tipů", normalize: "Náhled stávajících tipů", normalizeApply: "Normalizovat metadata", normalizeHelp: "Zachovejte kanonické tipy, poznámky a odkazy z kalendářů. Důkazy z původních zdrojů zůstávají neověřené.",
+  source: "Zdroj", date: "Datum uložení", status: "Stav důkazů", saved: "Zdroje uloženy. ID stávajících tipů a jejich vazby zůstávají zachovány.", normalized: "Metadata stávajících tipů normalizována.",
+  analysis: "Připravit omezenou extrakci", provider: "Poskytovatel", scraper: "Apify: popisek a přepis reel", model: "Claude: samostatné postupy", budget: "Maximální cena (USD)", plan: "Zkontrolovat plán extrakce", queue: "Schválit plán a zařadit do fronty",
+  consent: "Pro tuto akci povoluji odeslat popisky/přepisy/OCR těchto zadaných zdrojů vybranému poskytovateli v rámci rozpočtu. Neodesílá mé poznámky, projekty ani přihlašovací údaje.",
+  queued: "Zařazeno pro nastavený worker. Tento formulář nespustil poskytovatele.", processed: "Tato verze zdroje už je ve frontě nebo analyzovaná; nevznikl další požadavek.",
+  error: "Import se nepodařilo dokončit. Zkontrolujte vstup nebo připojení a zkuste to znovu.", tooLarge: "Export přesahuje 1 MB. Rozdělte jej na dávky nejvýše 500 položek.", changed: "Vstup nebo plán extrakce se změnil. Vytvořte nový náhled.", proofMismatch: "Čas známé položky neodpovídá Saved on v tomto exportu.",
+  configure: "Před extrakcí nastavte vybraný worker a poskytovatele.", titlePlan: "Přesný požadavek pro poskytovatele ke kontrole", more: "Níže se zobrazuje prvních 50 vybraných zdrojů; souhrn zahrnuje celou omezenou dávku.",
+ },
+};

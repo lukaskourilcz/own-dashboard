@@ -291,6 +291,7 @@ export function SettingsPanel({
       finance: t.professional.projectFinance,
       competition: t.portfolio.projectCompetitionTab,
       knowledge: t.professional.projectKnowledge,
+      sources: t.professional.projectSources,
       scaling: t.professional.projectScaling,
       monetization: t.professional.projectMonetization,
     } satisfies Record<ProjectWorkspaceTab, string>;

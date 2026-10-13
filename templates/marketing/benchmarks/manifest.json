@@ -1,0 +1,27 @@
+{
+  "purpose": "offline QA only; real authored packets with unavailable eligibility preserved",
+  "productionEligible": false,
+  "examples": [
+    {
+      "id": "devshark-question-unavailable",
+      "sourceFile": "devshark-question.json",
+      "expectedIssueCodes": [
+        "source-unavailable"
+      ]
+    },
+    {
+      "id": "devshark-coding-task-unavailable",
+      "sourceFile": "devshark-coding-task.json",
+      "expectedIssueCodes": [
+        "source-unavailable"
+      ]
+    },
+    {
+      "id": "dneskai-article-unavailable",
+      "sourceFile": "dneskai-article.json",
+      "expectedIssueCodes": [
+        "source-unavailable"
+      ]
+    }
+  ]
+}

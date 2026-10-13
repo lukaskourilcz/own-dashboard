@@ -1,0 +1,38 @@
+/* Slide geometry. Every number is in slide pixels (1080 wide). */
+:root {
+  --slide-w: 1080px;
+  --slide-h: 1350px;
+  --slide-margin: 80px;           /* side and bottom margin of the content box */
+  --content-top: 168px;           /* kicker baseline block starts here, 80px under the fin */
+  --fin-size: 48px;               /* corner fin width, slides 1–7 */
+  --fin-inset: 48px;              /* from the top and left edges */
+  --logo-w: 400px;                /* horizontal logo on the closing slide (letter d ≈ 50px = clear space) */
+
+  --gap-kicker-headline: 40px;
+  --gap-headline-panel: 48px;
+  --gap-cover-statement: 56px;
+  --gap-topics-note: 56px;
+
+  --radius-panel: 16px;
+  --radius-row: 12px;
+  --radius-code: 12px;
+  --radius-chip: 999px;
+
+  --panel-pad: 48px;
+  --panel-pad-rows: 40px 20px;    /* rows panel: rows carry 20px 28px so a tinted row stops 28px inside the edge */
+  --row-pad: 20px 28px;
+  --chip-pad: 12px 30px 12px 20px;
+  --chip-gap: 14px;
+  --chip-logo: 60px;
+  --code-pad: 26px 36px;
+
+  --wave-h: 12px;
+  --wave-gap: 12px;               /* between kicker text and its wave */
+  --wave-tile: 48px 12px;
+
+  /* Where the big fin surfaces (tip left, base on the bottom edge; cropping past sides/bottom is fine) */
+  --fin-big-w: 620px;    --fin-big-right: -90px;
+  --fin-small-w: 340px;  --fin-small-left: 600px;
+  --fin-huge-w: 820px;   --fin-huge-right: -280px;  --fin-huge-bottom: -90px;
+  --fin-tucked-w: 560px; --fin-tucked-left: 260px;
+}
