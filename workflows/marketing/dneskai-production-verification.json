@@ -1,0 +1,291 @@
+{
+  "name": "OwnDashboard DNESKAi production verification (single registered run)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "a370a020-67df-4130-a8a8-e1ad55978ce7",
+      "name": "Manual production check",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "0565d84e-ba2b-4de9-82b7-c3d0dcbf9497",
+      "name": "Internal production continuation",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "ef359a76-9407-471c-b91a-33f92582f007",
+      "name": "Validate production scope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const projectId = 'REPLACE_WITH_PRODUCTION_DNESKAI_PROJECT_UUID';\nconst origin = 'https://own-dashboard-tau.vercel.app';\nconst registeredRunId = 'REPLACE_WITH_REGISTERED_PRODUCTION_RUN_UUID';\nconst workerId = 'REPLACE_WITH_THIS_PRODUCTION_WORKFLOW_ID';\nconst expiresAt = 'REPLACE_WITH_APPROVED_EXPIRY';\nconst uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst now = Date.now();\nconst expiry = Date.parse(expiresAt);\nif (!uuid.test(registeredRunId) || !uuid.test(projectId) || !/^[A-Za-z0-9]{8,64}$/.test(workerId) || workerId !== $workflow.id ||\n    origin !== 'https://own-dashboard-tau.vercel.app') {\n  throw new Error('collection-production-check-configuration-required');\n}\nif (!Number.isFinite(now) || !Number.isFinite(expiry) || now + 60000 >= expiry) throw new Error('collection-production-check-expired');\nconst rows = $input.all();\nconst value = rows[0]?.json;\nif (rows.length !== 1 || !value || typeof value !== 'object' || Array.isArray(value) ||\n    Object.keys(value).some(key => !['projectId', 'runId', 'ticks', 'startedAt'].includes(key))) {\n  throw new Error('collection-production-check-continuation-invalid');\n}\nconst fresh = Object.keys(value).length === 0;\nif (!fresh && (value.projectId !== projectId || value.runId !== registeredRunId ||\n    !Number.isSafeInteger(value.ticks) || value.ticks < 1 || value.ticks >= 40 ||\n    !Number.isSafeInteger(value.startedAt) || value.startedAt > now || value.startedAt < now - 40 * 120000)) {\n  throw new Error('collection-production-check-continuation-invalid');\n}\nreturn [{json: {projectId, origin, workerId, expiresAt,\n  runId: registeredRunId, ticks: fresh ? 0 : value.ticks, startedAt: fresh ? now : value.startedAt}}];"
+      }
+    },
+    {
+      "id": "2de79a5b-338d-40ae-8de8-a4fd7db62fa7",
+      "name": "Collect registered production tick",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Validate production scope\").first().json.origin + \"/api/marketing/dneskai/collect\" }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({projectId:$json.projectId,runId:$json.runId,manual:true}) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_PRODUCTION_COLLECTION_CREDENTIAL_ID",
+          "name": "OwnDashboard DNESKAi single production run"
+        }
+      },
+      "retryOnFail": false,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "8c175581-3ed7-427e-8676-a9555fef7dbd",
+      "name": "Bounded safe progress",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const scope = $('Validate production scope').first().json;\nconst rows = $input.all();\nconst value = rows[0]?.json;\nconst uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nif (rows.length !== 1 || !value || !uuid.test(value.runId ?? '') ||\n    !['running','complete','partial','held','failed'].includes(value.status) || typeof value.continue !== 'boolean' ||\n    (value.continue && value.status !== 'running') || (scope.runId !== null && value.runId !== scope.runId)) {\n  throw new Error('collection-production-check-response-invalid');\n}\nconst ticks = scope.ticks + 1;\nconst now = Date.now();\nif (!Number.isSafeInteger(ticks) || ticks < 1 || ticks > 40 || !Number.isFinite(now)) throw new Error('collection-production-check-counter-invalid');\n// Leave room for the fixed wait and one complete API request before the authorized expiry.\nconst expired = now + 75000 >= Date.parse(scope.expiresAt);\nconst exhausted = ticks >= 40;\nconst continuation = value.continue && !expired && !exhausted;\nreturn [{json: {projectId: scope.projectId, runId: value.runId, ticks, startedAt: scope.startedAt,\n  status: value.status, continue: continuation, approvalRequired: true,\n  errorCode: value.continue ? (exhausted ? 'collection-production-check-tick-limit' : expired ? 'collection-production-check-expiry-near' : null) :\n    value.status === 'running' ? 'collection-production-check-run-busy' : null}}];"
+      }
+    },
+    {
+      "id": "ad31d5ef-8af3-49b1-b422-a4fc2d98d661",
+      "name": "Continue same production run",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "35ab9e38-a657-472b-ae37-44cb89bca9c0",
+              "leftValue": "={{ $json.continue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d19f83f9-3153-4353-9c15-5821f4d9e01f",
+      "name": "Wait15 before next tick",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "webhookId": "579b4596-13d4-4807-93ae-ae3bbb190909"
+    },
+    {
+      "id": "1e57530b-ca59-4a42-8580-ceac82d3c15b",
+      "name": "Recheck and project continuation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const scope = $('Validate production scope').first().json;\nconst rows = $input.all();\nconst value = rows[0]?.json;\nconst now = Date.now();\nif (rows.length !== 1 || !value || value.projectId !== scope.projectId || value.runId !== $('Bounded safe progress').first().json.runId ||\n    value.continue !== true || value.status !== 'running' || !Number.isSafeInteger(value.ticks) || value.ticks < 1 || value.ticks >= 40 ||\n    value.startedAt !== scope.startedAt || !Number.isFinite(now) || now + 60000 >= Date.parse(scope.expiresAt)) {\n  throw new Error('collection-production-check-continuation-held');\n}\n// Native detached sub-workflow receives only this fixed control-state projection.\nreturn [{json: {projectId: scope.projectId, runId: value.runId, ticks: value.ticks, startedAt: scope.startedAt}}];"
+      }
+    },
+    {
+      "id": "7e1cc96c-0bb6-4f68-9d80-8d34f5f50ea5",
+      "name": "Detach next internal tick",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "retryOnFail": false,
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Manual production check": {
+      "main": [
+        [
+          {
+            "node": "Validate production scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Internal production continuation": {
+      "main": [
+        [
+          {
+            "node": "Validate production scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate production scope": {
+      "main": [
+        [
+          {
+            "node": "Collect registered production tick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect registered production tick": {
+      "main": [
+        [
+          {
+            "node": "Bounded safe progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bounded safe progress": {
+      "main": [
+        [
+          {
+            "node": "Continue same production run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue same production run": {
+      "main": [
+        [
+          {
+            "node": "Wait15 before next tick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait15 before next tick": {
+      "main": [
+        [
+          {
+            "node": "Recheck and project continuation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recheck and project continuation": {
+      "main": [
+        [
+          {
+            "node": "Detach next internal tick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 120,
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "REPLACE_WITH_THIS_PRODUCTION_WORKFLOW_ID"
+  },
+  "pinData": {},
+  "tags": []
+}

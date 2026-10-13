@@ -187,6 +187,15 @@ describe('inactive Cloud workflow exports', () => {
           expect(workflow.settings).toMatchObject({ executionTimeout: 120, callerPolicy: 'workflowsFromAList', callerIds: 'REPLACE_WITH_THIS_PILOT_WORKFLOW_ID', availableInMCP: false, saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false });
           expect(workflow.nodes.filter((value: { type: string }) => value.type.endsWith('Trigger')).map((value: { type: string }) => value.type)).toEqual(['n8n-nodes-base.manualTrigger', 'n8n-nodes-base.executeWorkflowTrigger']);
           expect(workflow.nodes.some((value: { type: string }) => value.type === 'n8n-nodes-base.webhook')).toBe(false);
+        } else if (file === 'dneskai-production-verification.json') {
+          expect(node.parameters.genericAuthType).toBe('httpHeaderAuth');
+          expect(node.parameters.url).toBe('={{ $("Validate production scope").first().json.origin + "/api/marketing/dneskai/collect" }}');
+          expect(node.parameters.jsonBody).toBe('={{ JSON.stringify({projectId:$json.projectId,runId:$json.runId,manual:true}) }}');
+          expect(node.credentials.httpHeaderAuth.id).toBe('REPLACE_WITH_PRODUCTION_COLLECTION_CREDENTIAL_ID');
+          expect(node.parameters.options.redirect.redirect.followRedirects).toBe(false);
+          expect(node.retryOnFail).toBe(false);
+          expect(workflow.settings).toMatchObject({executionTimeout:120,callerPolicy:'workflowsFromAList',callerIds:'REPLACE_WITH_THIS_PRODUCTION_WORKFLOW_ID',availableInMCP:false,saveManualExecutions:false});
+          expect(workflow.nodes.filter((value:{type:string})=>value.type.endsWith('Trigger')).map((value:{type:string})=>value.type)).toEqual(['n8n-nodes-base.manualTrigger','n8n-nodes-base.executeWorkflowTrigger']);
         } else if (file === 'dneskai-source-collection.json') {
           expect(node.parameters.genericAuthType).toBe('httpHeaderAuth');
           expect(node.parameters.url).toBe('https://own-dashboard-tau.vercel.app/api/marketing/dneskai/collect');

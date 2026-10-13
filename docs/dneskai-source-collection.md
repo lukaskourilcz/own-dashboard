@@ -115,6 +115,32 @@ zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schvá
 
 ## Ověřeno v této změně
 
+### Jednorázové produkční ověření bez denního rozvrhu
+
+`workflows/marketing/dneskai-production-verification.json` je samostatná šablona
+pro ruční start a interní pokračování. Nepoužívá původní stagingový worker,
+časovač, veřejný webhook ani přístupové cookie Preview. Po importu je neaktivní.
+
+Před spuštěním správce zaregistruje jediný běh pro vlastníka a projekt DNESKAi
+přes existující `marketing_dneskai_admit`. Ověří skutečný seznam zdrojů a nastaví
+stejné ID běhu do workflow i neveřejné serverové konfigurace
+`MARKETING_DNESKAI_MANUAL_RUN`. Konfigurace obsahuje `version: dneskai-manual/1`,
+`ownerId`, `projectId`, `runId`, `startsAt` a `expiresAt`; server přijímá nejvýše
+dvouhodinové okno. Tento postup nemění databázové stropy 0,25 USD a 40 kroků.
+Nejasná placená operace zastaví další placené kroky podle stávajících pravidel.
+
+n8n dostane jen samostatný `MARKETING_DNESKAI_MANUAL_SECRET` jako Header Auth,
+nikoli běžný sběrný klíč ani klíče poskytovatelů. Každý požadavek musí obsahovat
+`manual: true` a přesné ID registrovaného běhu. Server odmítne běžný požadavek
+s tímto klíčem, jiné ID, jiný projekt, Preview prostředí i vypršelý přístup.
+Workflow předává pokračování jen samo sobě a při chybě HTTP nic neopakuje.
+Platnost server kontroluje znovu před placenou operací.
+
+`MARKETING_DNESKAI_COLLECTION_ENABLED` a `MARKETING_DNESKAI_PAID_ENABLED` mohou
+zůstat `false`. Jednorázový režim neuděluje právo vytvářet další běhy a nemění
+publikování. Zprovoznění vyžaduje schválený nový rozpočet a přístup n8n; samotná
+šablona ani lokální testy nejsou důkazem dokončeného produkčního průchodu.
+
 - OwnDashboard před dokončením integrace (commit `551a1cd`): 1 288 testů prošlo, jeden zůstává přeskočený podle existující
   konfigurace. Prohlížečové testy: 126 prošlo, 70 je přeskočeno podle existující
   konfigurace (zejména duplicitní kombinace zařízení).
