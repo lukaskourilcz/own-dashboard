@@ -27,7 +27,18 @@ describe('pure seven-day Prague planning without preparation/approval/publicatio
   it('uses Sunday itself, not Monday, for preparation; daily fresh DNESKAi has one source date', () => {
     expect(marketingPreparationPlan('devshark', new Date('2026-10-18T05:00:00Z'))).toMatchObject({ due: true, mode: 'weekly-sunday', preparationDate: '2026-10-18', sourceDates: sevenDayMarketingWindow('2026-10-18').dates, reviewRequired: true });
     expect(marketingPreparationPlan('devshark', new Date('2026-10-13T12:00:00Z'))).toMatchObject({ due: false, preparationDate: '2026-10-18' });
-    expect(marketingPreparationPlan('dneskai', new Date('2026-10-13T22:30:00Z'))).toMatchObject({ due: true, mode: 'daily-fresh', preparationDate: '2026-10-14', sourceDates: ['2026-10-14'] });
+    expect(marketingPreparationPlan('dneskai', new Date('2026-10-13T22:30:00Z'))).toMatchObject({ due: false, mode: 'daily-fresh', preparationDate: '2026-10-14', targetDate: '2026-10-15', dailyTarget: 4, sourceDates: ['2026-10-14'] });
+  });
+  it('collects at22Prague for four next-day drafts, including both DST offsets, without approving them', () => {
+    for (const [before, due, target] of [['2026-10-24T19:59:59Z', '2026-10-24T20:00:00Z', '2026-10-25'], ['2026-10-25T20:59:59Z', '2026-10-25T21:00:00Z', '2026-10-26']]) {
+      expect(marketingPreparationPlan('dneskai', new Date(before)).due).toBe(false);
+      expect(marketingPreparationPlan('dneskai', new Date(due))).toMatchObject({ due: true, targetDate: target, dailyTarget: 4, reviewRequired: true });
+    }
+    const cadence = marketingDailyCadence('dneskai', { carousels: ['09:00', '12:00', '16:00', '19:00'] });
+    const slots = planMarketingWeekSlots('2026-10-18', cadence);
+    expect(slots).toHaveLength(28);
+    expect(slots.every(slot => slot.reviewRequired && !('approved' in slot))).toBe(true);
+    expect(() => marketingDailyCadence('dneskai', { carousels: ['09:00', '09:00', '16:00', '19:00'] })).toThrow('duplicate-marketing-cadence');
   });
   it.each([['2026-03-29', 167], ['2026-10-25', 169]])('retains seven local dates across DST on%s (%ihours)', (start, hours) => {
     const window = sevenDayMarketingWindow(start); expect(window.dates).toHaveLength(7);

@@ -1,6 +1,13 @@
 # Marketing orchestration and publishing
 
-The four exports under `workflows/marketing/` are inactive. They prepare or inspect owner-scoped
+**DNESKAi update, 2026-10-13:** new collection uses
+`workflows/marketing/dneskai-source-collection.json` at 22:00 Europe/Prague, targeting
+four distinct next-day topics. See [collection and rotation](dneskai-source-collection.md).
+The older `daily-preparation.json` below is a retained inactive article-generation
+workflow, not the new collection schedule. Do not activate both as competing daily plans.
+Topic selection never approves a final social revision.
+
+The four original exports described below under `workflows/marketing/` are inactive. They prepare or inspect owner-scoped
 marketing work through OwnDashboard's authenticated API. The publishing export sends `dryRun:true`.
 No workflow, account, publisher or paid plan was activated while building these files.
 

@@ -4,7 +4,7 @@ import { pragueScheduledAt } from './clock';
 
 export const MARKETING_PLANNING_TIME_ZONE = 'Europe/Prague' as const;
 export const MARKETING_PLANNING_SOURCE_KINDS = { devshark: ['question', 'coding-task'], dneskai: ['article'] } as const;
-export const MARKETING_DAILY_QUOTAS = { devshark: { carousel: 1, thread: 2, story: 3 }, dneskai: { carousel: 1, thread: 0, story: 0 } } as const;
+export const MARKETING_DAILY_QUOTAS = { devshark: { carousel: 1, thread: 2, story: 3 }, dneskai: { carousel: 4, thread: 0, story: 0 } } as const;
 export type MarketingWeekWindow = { timeZone: typeof MARKETING_PLANNING_TIME_ZONE; startDate: string; endDateInclusive: string; endDateExclusive: string; startAt: string; endAtExclusive: string; dates: string[] };
 function calendarDay(date: string, offset: number): string {
   z.iso.date().parse(date);
@@ -27,7 +27,10 @@ export function rollingMarketingWindow(now: Date): MarketingWeekWindow { return 
 export function marketingPreparationPlan(brand: MarketingBrand, now: Date) {
   BrandSchema.parse(brand);
   const localDate = pragueMarketingDate(now), weekday = new Date(`${localDate}T12:00:00Z`).getUTCDay();
-  if (brand === 'dneskai') return { brand, mode: 'daily-fresh' as const, due: true, preparationDate: localDate, sourceDates: [localDate], reviewRequired: true as const, timeZone: MARKETING_PLANNING_TIME_ZONE };
+  if (brand === 'dneskai') return { brand, mode: 'daily-fresh' as const,
+    due: now.getTime() >= Date.parse(pragueScheduledAt(localDate, '22:00')),
+    preparationDate: localDate, targetDate: calendarDay(localDate, 1), dailyTarget: 4,
+    sourceDates: [localDate], reviewRequired: true as const, timeZone: MARKETING_PLANNING_TIME_ZONE };
   const sunday = calendarDay(localDate, (7 - weekday) % 7);
   return { brand, mode: 'weekly-sunday' as const, due: weekday === 0, preparationDate: sunday,
     sourceDates: sevenDayMarketingWindow(sunday).dates, reviewRequired: true as const, timeZone: MARKETING_PLANNING_TIME_ZONE };
@@ -37,12 +40,18 @@ const localTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const cadenceSchema = z.array(z.strictObject({ brand: BrandSchema, platform: PlatformSchema, format: z.enum(['carousel', 'thread', 'story']), localTime })
   .refine(item => item.format === 'thread' ? item.platform === 'threads' : item.platform === 'instagram', 'slot-format-platform-mismatch')).max(12);
 type DevsharkDailyTimes = { carousel: string; threads: readonly [string, string]; stories: readonly [string, string, string] };
-/** devShark has six requests/day; DNESKAi retains its one-feed baseline. Times are caller-configured. */
+/** The single DNESKAi carousel overload retains historical plans; new plans supply four explicit times. */
 export function marketingDailyCadence(brand: 'devshark', value: DevsharkDailyTimes): MarketingSlotCadence[];
 export function marketingDailyCadence(brand: 'dneskai', value: { carousel: string }): MarketingSlotCadence[];
-export function marketingDailyCadence(brand: MarketingBrand, value: DevsharkDailyTimes | { carousel: string }): MarketingSlotCadence[] {
+export function marketingDailyCadence(brand: 'dneskai', value: { carousels: readonly [string, string, string, string] }): MarketingSlotCadence[];
+export function marketingDailyCadence(brand: MarketingBrand, value: DevsharkDailyTimes | { carousel: string } | { carousels: readonly [string, string, string, string] }): MarketingSlotCadence[] {
   BrandSchema.parse(brand);
   if (brand === 'dneskai') {
+    if ('carousels' in value) {
+      const times = z.strictObject({ carousels: z.tuple([localTime, localTime, localTime, localTime]) }).parse(value);
+      if (new Set(times.carousels).size !== 4) throw new Error('duplicate-marketing-cadence');
+      return times.carousels.map(localTime => ({ brand, platform: 'instagram', format: 'carousel', localTime }));
+    }
     const times = z.strictObject({ carousel: localTime }).parse(value);
     return [{ brand, platform: 'instagram', format: 'carousel', localTime: times.carousel }];
   }

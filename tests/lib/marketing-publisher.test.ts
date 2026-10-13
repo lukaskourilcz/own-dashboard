@@ -176,6 +176,12 @@ describe('inactive Cloud workflow exports', () => {
           expect(node.retryOnFail).toBe(false);
           expect(workflow.nodes.map((value: { type: string }) => value.type)).toEqual(['n8n-nodes-base.manualTrigger', 'n8n-nodes-base.httpRequest', 'n8n-nodes-base.code']);
           expect(workflow.settings).toMatchObject({ saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false });
+        } else if (file === 'dneskai-source-collection.json') {
+          expect(node.parameters.genericAuthType).toBe('httpHeaderAuth');
+          expect(node.parameters.url).toBe('https://own-dashboard-tau.vercel.app/api/marketing/dneskai/collect');
+          expect(node.credentials.httpHeaderAuth.id).toBe('REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID');
+          expect(node.retryOnFail).toBe(false);
+          expect(workflow.settings.saveDataSuccessExecution).toBe('none');
         } else {
           expect(node.parameters.genericAuthType).toBe('httpHeaderAuth'); expect(node.parameters.url).toContain('example.invalid');
         }

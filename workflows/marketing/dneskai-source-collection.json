@@ -1,0 +1,162 @@
+{
+  "name": "OwnDashboard \u2014 DNESKAi rotating sources at 22:00 (inactive)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "c4d22b63-9168-44ed-90fd-fe5268a8f565",
+      "name": "Evening collection and recovery",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 22-23 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fda4233b-768f-4ab2-8f05-4894a29f8ead",
+      "name": "Manual collection check",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "aa0c69e2-0d04-466a-9a53-3dea6ffcef6a",
+      "name": "Collection scope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const projectId='REPLACE_WITH_DNESKAI_PROJECT_UUID';\nif(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))throw new Error('Configure the owned DNESKAi project ID before running');\nreturn [{json:{projectId}}];"
+      }
+    },
+    {
+      "id": "eee1fb07-d039-49cf-8010-ed912d5a9168",
+      "name": "Collect one durable step",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard-tau.vercel.app/api/marketing/dneskai/collect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({projectId:$(\"Collection scope\").first().json.projectId}) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard DNESKAi collection"
+        }
+      },
+      "retryOnFail": false,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "51ab2432-9b12-49e7-8e2b-a46fe028ec35",
+      "name": "Collection progress",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const rows=$input.all();\nif(rows.length!==1)throw new Error('collection-response-invalid');\nconst value=rows[0].json;\nif(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.runId??'')||!['running','complete','partial','held','failed'].includes(value.status)||typeof value.continue!=='boolean')throw new Error('collection-response-invalid');\nif(value.continue&&value.status!=='running')throw new Error('collection-response-invalid');\nreturn [{json:{runId:value.runId,status:value.status,continue:value.continue,approvalRequired:true}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Evening collection and recovery": {
+      "main": [
+        [
+          {
+            "node": "Collection scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual collection check": {
+      "main": [
+        [
+          {
+            "node": "Collection scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collection scope": {
+      "main": [
+        [
+          {
+            "node": "Collect one durable step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect one durable step": {
+      "main": [
+        [
+          {
+            "node": "Collection progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Prague",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 120,
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "tags": []
+}

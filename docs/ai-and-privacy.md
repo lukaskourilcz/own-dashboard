@@ -22,6 +22,14 @@ Provider configuration is limited to the optional `JINA_API_KEY`, which only rai
 
 ## Marketing-only exception (2026-10-13)
 
+The owner also requested DNESKAi source rotation and Jev classification on this date.
+The collection service may send bounded public source texts and public candidate history
+to TypeSafe only after its separate provider configuration and budget admission pass.
+It does not send owner notes, financial data, credentials or unrelated project records.
+The Sources panel holds research candidates; selection grants no editorial or social
+approval. Missing credentials, uncertain provider spend and duplicate uncertainty remain
+visible holds. The earlier disposable pilot does not authorize new collection spend.
+
 n8n Cloud orchestrates versioned authenticated HTTP operations. Supabase owns the source heads, jobs, exact content revisions, approvals and publication receipts. Claude Design exports are reviewed template sources; the renderer runs fixed code and never executes exported or model-generated scripts. Dots and Higgsfield are excluded.
 
 With `MARKETING_AI_CONSENT=true`, the server may send selected public editorial evidence, authored effective questions or active coding-task specifications and explicitly reviewed presentation advice to Anthropic. It never sends learner records, invoices, account credentials, cookies or unrelated projects. Individual Saved-source analysis additionally requires the exact owner-reviewed plan and budget stored by the knowledge import form. Capture alone starts no paid call. Source text is untrusted data, never executable instructions. Missing speech, timecodes and saved dates remain missing.
