@@ -24,6 +24,7 @@ for (const lang of ["en", "cs"] as const) {
     await expect(page.locator("#marketing-panel-review article")).toHaveCount(0);
     await expect(page.getByRole("button", { name: copy.approve, exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await expect.poll(async()=>page.locator('#marketing-tab-review').evaluate(element=>{for(let node:Element|null=element;node;node=node.parentElement){if(Number(getComputedStyle(node).opacity)<1)return false;}return true;})).toBe(true);
     const reviewAxe = await new AxeBuilder({ page: page as unknown as AxePage }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
     expect(reviewAxe.violations, `${lang}/review/${info.project.name}`).toEqual([]);
     for (const key of ["calendar", "knowledge", "results"] as const) {
@@ -50,6 +51,7 @@ for (const lang of ["en", "cs"] as const) {
       const axe = await new AxeBuilder({ page: page as unknown as AxePage }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
       expect(axe.violations, `${lang}/${key}/${info.project.name}`).toEqual([]);
     }
+    if(lang==="cs")await page.screenshot({path:`/tmp/marketing-own-dashboard-${info.project.name}.png`,fullPage:true});
     expect(writes).toEqual([]);
     expect(errors).toEqual([]);
   });
@@ -79,8 +81,8 @@ test("Marketing tabs expose roving focus and Arrow/Home/End keyboard controls", 
 test("Marketing APIs reject unauthenticated decisions, worker jobs and invalid n8n tokens without writes", async ({ request }) => {
   const results = await Promise.all([
     request.get("/api/marketing/state"),
-    request.post("/api/marketing/revisions", { data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
-    request.post("/api/marketing/knowledge", { data: { action: "preview" } }),
+    request.post("/api/marketing/revisions", { headers:{Origin:"http://localhost:3939"}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
+    request.post("/api/marketing/knowledge", { headers:{Origin:"http://localhost:3939"}, data: { action: "preview" } }),
     request.post("/api/marketing/jobs", { data: {} }),
     request.post("/api/marketing/n8n", { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { operation: "publish", brand: "devshark", dryRun: false } }),
   ]);

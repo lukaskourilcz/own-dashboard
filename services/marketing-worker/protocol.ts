@@ -7,11 +7,17 @@ import type { MarketingTracer } from "../../src/lib/marketing/tracing";
 
 export const MarketingWorkerRequestSchema = z.strictObject({
   schemaVersion: z.literal("marketing-job/1"), idempotencyKey: z.uuid(),
+  calendarEntryId: z.uuid().optional(), calendarEntryVersion: z.number().int().positive().optional(),
   generation: GenerationInputSchema,
   template: MarketingTemplateSchema,
-});
+}).refine(value => !!value.calendarEntryId === !!value.calendarEntryVersion, "Calendar entry/version must be paired");
 export type MarketingWorkerRequest = z.infer<typeof MarketingWorkerRequestSchema>;
 export type MarketingWorkerResult = GeneratedMarketingDraft & { revisionHash: string };
+/** Observation freshness is rechecked separately; it is not a new content identity. */
+export function marketingJobIdentityHash(request: MarketingWorkerRequest): string {
+ const source=parseSourcePacket(request.generation.source);
+ return contentHash({...request,generation:{...request.generation,source:{...source,observedAt:null}}});
+}
 export type MarketingJobStatus = "queued" | "running" | "review" | "failed" | "reconciliation";
 export interface DurableMarketingQueue {
   /** Persist before responding. Same key+hash returns original job; same key+different hash must throw. */
@@ -58,7 +64,7 @@ export function createMarketingWorkerHandler(dependencies: {
       if (!trustedTemplate || contentHash(trustedTemplate) !== contentHash(body.template)) return Response.json({ error: "template-not-approved" }, { status: 409 });
       validateMarketingTemplate(trustedTemplate, true);
       if (body.template.brand !== source.brand || body.template.version !== body.generation.templateVersion) return Response.json({ error: "template-revision-mismatch" }, { status: 400 });
-      const job = await dependencies.queue.enqueue({ key: body.idempotencyKey, hash: contentHash(body), request: body });
+      const job = await dependencies.queue.enqueue({ key: body.idempotencyKey, hash: marketingJobIdentityHash(body), request: body });
       return Response.json({ schemaVersion: "marketing-job/1", ...job }, { status: job.duplicate ? 200 : 202 });
     } catch {
       return Response.json({ error: "job-not-accepted" }, { status: 422 });

@@ -1,12 +1,12 @@
 # OwnDashboard — cost & scaling
 
-Self-hosted, own-only tool on Vercel + Supabase. It makes no model calls. The stack is in `about-project.md`; prices checked 2026-07-21.
+Self-hosted, own-only tool on Vercel + Supabase. Model usage is restricted to the opt-in marketing worker. The stack is in `about-project.md`; prices checked 2026-07-21.
 
 ## What it costs
 
 - **Personal, free tiers:** ~$0/month (Vercel Hobby, Supabase Free).
 - **Always-on personal:** ~$25/month (Supabase Pro $25).
-- Nothing is priced per use by default: there is no model usage, and the optional services below stay on their free tiers.
+- Marketing is paused by default; when enabled, provider usage is billed separately, and and the optional services below stay on their free tiers.
 - Job-board refreshes run only when the owner presses **Check for new offers** in Career (no daily scrape cron), so function time and outbound requests scale with use, not with the calendar.
 
 ## When to scale
@@ -17,3 +17,9 @@ Self-hosted, own-only tool on Vercel + Supabase. It makes no model calls. The st
 ## Keep costs down
 
 Set budget alerts on each provider that has a paid tier; stay on free tiers until a real limit is hit.
+
+## Marketing budget (implementation 2026-10-13)
+
+The generation worker requires explicit current model pricing and caps each job at an estimated $0.25 with two attempts. The database admits at most eight new content jobs per owner in a rolling 24-hour window; duplicate job keys consume no new slot. This is an application guard, not a provider spending cap. Set provider caps before activation. Rendering uses committed Claude Design-derived templates and makes no daily Design call.
+
+Claude Max, Anthropic API billing, n8n Cloud executions, Apify transcript add-ons and LangSmith entitlements are separate. The existing subscriptions remain unchanged; renewal dates and paid-plan classification are not inferred from an open browser session. No new paid plan was selected and no promotional-credit terms were accepted. Actual model pilot cost is not yet measured because credentials have not been provisioned. Record model usage, Actor charges, n8n execution totals and tracing usage separately by DNESKAi/devShark before expanding the schedule.

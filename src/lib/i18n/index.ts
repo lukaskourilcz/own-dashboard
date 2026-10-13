@@ -32,6 +32,7 @@ import { categories } from "./sections/categories";
 import { professional } from "./sections/professional";
 import { tools } from "./sections/tools";
 import { tips } from "./sections/tips";
+import { marketingWorkspace } from "./sections/marketing-workspace";
 import { marketing } from "./sections/marketing";
 import { portfolio } from "./sections/portfolio";
 
@@ -69,6 +70,7 @@ const dictionaries = {
     tools: tools.en,
     tips: tips.en,
     marketing: marketing.en,
+    marketingWorkspace: marketingWorkspace.en,
     portfolio: portfolio.en,
   },
   cs: {
@@ -102,6 +104,7 @@ const dictionaries = {
     tools: tools.cs,
     tips: tips.cs,
     marketing: marketing.cs,
+    marketingWorkspace: marketingWorkspace.cs,
     portfolio: portfolio.cs,
   },
 };

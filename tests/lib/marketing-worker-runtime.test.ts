@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
-import { enqueueMarketingJob, readMarketingJob, executeMarketingJob, marketingProviderConfiguration, createMarketingAssetStorage, MARKETING_ASSET_URL_SECONDS } from "@/lib/marketing/worker-runtime";
+import { enqueueMarketingJob, readMarketingJob, executeMarketingJob, marketingProviderConfiguration, createMarketingAssetStorage, marketingJobIdentityHash, MARKETING_ASSET_URL_SECONDS } from "@/lib/marketing/worker-runtime";
 import { contentHash, revisionHash } from "@/lib/marketing/hashes";
 import { pendingMarketingTemplate, type MarketingTemplate } from "@/lib/marketing/render";
 import type { MarketingWorkerRequest, MarketingWorkerResult } from "../../services/marketing-worker/protocol";
@@ -47,9 +47,15 @@ describe("durable worker production boundaries", () => {
     const { db, rpc, query } = database(); const input = request();
     rpc.mockResolvedValue({ data: { jobId, status: "queued", duplicate: false }, error: null });
     expect(await enqueueMarketingJob(db, owner, input, { env, resolveTemplate: async () => input.template })).toEqual({ jobId, status: "queued", duplicate: false });
-    expect(rpc).toHaveBeenCalledWith("marketing_enqueue_job", { p_owner: owner, p_key: revisionId, p_hash: contentHash(input), p_request: input });
+    expect(rpc).toHaveBeenCalledWith("marketing_enqueue_job", { p_owner: owner, p_key: revisionId, p_hash: marketingJobIdentityHash(input), p_request: input });
     expect(query.eq).toHaveBeenCalledWith("user_id", owner);
     expect(query.eq).toHaveBeenCalledWith("remote_account_id", input.generation.account.id);
+  });
+  it("keeps refreshed observation idempotent but binds source and delivery changes",()=>{
+    const input=request();const source=input.generation.source as Record<string,unknown>;
+    const observed={...input,generation:{...input.generation,source:{...source,observedAt:new Date(Date.now()+1000).toISOString()}}};
+    expect(marketingJobIdentityHash(observed)).toBe(marketingJobIdentityHash(input));
+    expect(marketingJobIdentityHash({...input,generation:{...input.generation,source:{...source,sourceRevision:'test-only-v2'}}})).not.toBe(marketingJobIdentityHash(input));
   });
   it("returns unavailable for foreign jobs and reports expired running leases as reconciliation", async () => {
     const { db, query } = database();
@@ -68,7 +74,7 @@ describe("durable worker production boundaries", () => {
   });
   it("awaits the runner and atomically commits an exact ready result under the same fence", async () => {
     const { db, rpc } = database(); const input = request();
-    rpc.mockImplementation(async (name) => ({ data: name === "marketing_claim_job" ? input : null, error: null }));
+    rpc.mockImplementation(async (name) => ({ data: name === "marketing_claim_job" ? input : name === "marketing_finish_job" ? "review" : null, error: null }));
     const refreshSource = vi.fn(async () => input.generation.source);
     const revision = { schemaVersion: "marketing-content/1" as const, brand: "devshark" as const, title: "Test-only", caption: "Test-only", format: "carousel" as const, sources: [{ sourceId: "test-only", sourceRevision: "test-only-v1", contentHash: contentHash(content) }], knowledgeIds: [], assets: [1, 2].map((i) => ({ url: `https://example.com/test-only-${i}.jpg`, sha256: "c".repeat(64), mimeType: "image/jpeg" as const, width: 1080, height: 1350, alt: "Test-only" })), account: input.generation.account, scheduledAt: input.generation.scheduledAt, timeZone: "Europe/Prague" as const, templateVersion: input.template.version, promptVersion: "marketing-copy/1", model: model.model, traceId: null };
     const result: MarketingWorkerResult = { revision, slides: [], traceId: null, usage: { attempts: 1, inputTokens: 100, outputTokens: 100, estimatedCostUsd: 0.0018 }, revisionHash: revisionHash(revision) };
@@ -81,7 +87,7 @@ describe("durable worker production boundaries", () => {
   });
   it("redacts arbitrary provider exceptions and never rewrites an ambiguous success as failure", async () => {
     const { db, rpc } = database(); const input = request();
-    rpc.mockResolvedValueOnce({ data: input, error: null }).mockResolvedValueOnce({ data: null, error: null });
+    rpc.mockResolvedValueOnce({ data: input, error: null }).mockResolvedValueOnce({ data: "failed", error: null });
     const failure = await executeMarketingJob(db, owner, jobId, { env, model, refreshSource: vi.fn(), storage: { put: vi.fn() }, run: vi.fn(async () => { throw new Error("secret-only-provider-response"); }) });
     expect(failure).toEqual({ claimed: true, status: "failed", errorCode: "worker-execution-failed" });
     expect(JSON.stringify(rpc.mock.calls)).not.toContain("secret-only-provider-response");

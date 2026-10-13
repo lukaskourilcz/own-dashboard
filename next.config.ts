@@ -54,6 +54,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@resvg/resvg-js"],
+  outputFileTracingIncludes: {
+    "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
+    "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

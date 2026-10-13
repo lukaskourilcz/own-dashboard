@@ -88,6 +88,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   // A project workspace renders every related record, including the
   // subscription allocations behind its Finance tab and the competitor
   // research behind its Competition tab.
+  marketing: ["projects", "aiLinks", "projectLinks"],
   projects: [
     "subscriptions",
     "subscriptionAllocations",

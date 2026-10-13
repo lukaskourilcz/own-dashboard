@@ -95,9 +95,9 @@ describe("authenticated n8n marketing operation boundary", () => {
   });
   it("defaults publishing to dry-run and forwards an explicit live flag only for the authenticated owner", async () => {
     expect((await POST(request({ operation: "publish", brand: "devshark" }))).status).toBe(200);
-    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "devshark", true, expect.any(AbortSignal));
+    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "devshark", true, expect.any(AbortSignal),undefined);
     expect((await POST(request({ operation: "publish", brand: "dneskai", dryRun: false }))).status).toBe(200);
-    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", false, expect.any(AbortSignal));
+    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", false, expect.any(AbortSignal),undefined);
   });
   it("forwards bounded discovery parameters and returns only released planned slots in active owned campaigns", async () => {
     const state = database({ marketing_campaigns: [{ id: "own-campaign", user_id: owner, brand: "devshark", status: "active" }, { id: "foreign-campaign", user_id: other, brand: "devshark", status: "active" }], marketing_calendar_entries: [

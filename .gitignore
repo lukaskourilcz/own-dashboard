@@ -63,3 +63,6 @@ next-env.d.ts
 
 # claude code: ui-ux-pro-max search script bytecode
 __pycache__/
+
+# Supabase CLI local metadata
+/supabase/.temp/

@@ -34,6 +34,7 @@ async function request(input: SourceRefreshOptions, url: URL, options: RequestIn
   try { response = await (input.fetcher ?? fetch)(url.href, { ...options, redirect: 'error',
     signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(12000)]) : AbortSignal.timeout(12000) }); }
   catch { throw new SourceRefreshError('source-current-unavailable'); }
+  if (response.status === 409) throw new SourceRefreshError('source-cursor-stale');
   if (response.status === 410) throw new SourceRefreshError('source-removed');
   if (!response.ok) throw new SourceRefreshError('source-current-unavailable');
   if (Number(response.headers.get('content-length')) > 2_000_000) throw new SourceRefreshError('source-response-too-large');

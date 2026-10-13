@@ -84,6 +84,7 @@ export function CommandPalette({
     const s = t.nav.sections;
     const list: Action[] = [
       { id: "go-home", label: s.home, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g h", run: go("home") },
+      { id: "go-marketing", label: s.marketing, group: "go", icon: CalendarDays, keywords: "marketing approve posts content schvalování", run: go("marketing") },
       { id: "go-work", label: s.work, group: "go", icon: BriefcaseBusiness, keywords: "work overview delivery práce", run: go("work") },
       { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
       { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "pipeline leads tugedr opportunities příležitosti", run: go("opportunities") },

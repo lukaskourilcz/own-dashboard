@@ -2,7 +2,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MarketingWorkerRequestSchema, createMarketingWorkerHandler, runMarketingWorkerJob, type MarketingWorkerRequest, type MarketingWorkerResult, type DurableMarketingQueue } from "../../../services/marketing-worker/protocol";
+import { marketingJobIdentityHash, MarketingWorkerRequestSchema, createMarketingWorkerHandler, runMarketingWorkerJob, type MarketingWorkerRequest, type MarketingWorkerResult, type DurableMarketingQueue } from "../../../services/marketing-worker/protocol";
 import { createClaudeMarketingModel, DEFAULT_GENERATION_BUDGET, MarketingGenerationError, type MarketingModel } from "./generation";
 import { createMarketingTracer, LANGSMITH_EU_ENDPOINT, type MarketingTracer } from "./tracing";
 import { MarketingTemplateSchema, validateMarketingTemplate, MarketingRenderError, type MarketingTemplate, type MarketingAssetStorage } from "./render";
@@ -51,6 +51,7 @@ async function assertAccount(db: Database, ownerId: string, request: MarketingWo
     .eq("remote_account_id", request.generation.account.id).eq("handle", request.generation.account.handle).maybeSingle();
   if (error || !data || !data.verified_at) throw new MarketingWorkerRuntimeError("marketing-account-unavailable");
 }
+export { marketingJobIdentityHash } from '../../../services/marketing-worker/protocol';
 export async function enqueueMarketingJob(db: Database, ownerId: string, value: unknown, options: {
   env?: Environment; now?: () => Date; resolveTemplate?: typeof resolveMarketingTemplate;
 } = {}) {
@@ -66,7 +67,7 @@ export async function enqueueMarketingJob(db: Database, ownerId: string, value: 
   validateMarketingTemplate(trusted, true);
   if (trusted.brand !== source.brand || request.generation.templateVersion !== trusted.version) throw new MarketingWorkerRuntimeError("template-revision-mismatch");
   await assertAccount(db, ownerId, request);
-  const { data, error } = await db.rpc("marketing_enqueue_job", { p_owner: ownerId, p_key: request.idempotencyKey, p_hash: contentHash(request), p_request: request });
+  const { data, error } = await db.rpc("marketing_enqueue_job", { p_owner: ownerId, p_key: request.idempotencyKey, p_hash: marketingJobIdentityHash(request), p_request: request });
   if (error) throw new MarketingWorkerRuntimeError("job-enqueue-failed");
   return z.strictObject({ jobId: z.uuid(), status: z.enum(["queued", "running", "review", "failed", "reconciliation"]), duplicate: z.boolean() }).parse(data);
 }
@@ -152,13 +153,13 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
     // No automatic replay; never persist provider response/credentials/exception text.
     const knownCode = failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError
       ? failure.code : failure instanceof Error && ["source-superseded", "template-superseded"].includes(failure.message) ? failure.message : "worker-execution-failed";
-    const { error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: null, p_error: knownCode });
-    if (finishError) throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
+    const { data: finishedStatus, error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: null, p_error: knownCode });
+    if (finishError || finishedStatus !== "failed") throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
     return { claimed: true, status: "failed" as const, errorCode: knownCode };
   }
   // A lost/ambiguous final commit must not become a second failure write or a second model call.
-  const { error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: result, p_error: null });
-  if (finishError) throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
+  const { data: finishedStatus, error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: result, p_error: null });
+  if (finishError || finishedStatus !== "review") throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
   return { claimed: true, status: "review" as const, revisionId: (data as MarketingWorkerRequest).generation.revisionId };
 }
 export async function marketingJobsHttpHandler(request: Request) {

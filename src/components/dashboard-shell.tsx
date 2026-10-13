@@ -23,6 +23,7 @@ import { TodosPanel } from "@/components/panels/todos-panel";
 import { ToolsPanel } from "@/components/panels/tools-panel";
 import { WorkOverviewPanel } from "@/components/panels/work-overview-panel";
 import { AiPanel } from "@/components/panels/ai-panel";
+import { MarketingPanel } from "@/components/panels/marketing-panel";
 import { IgTipsPanel } from "@/components/panels/ig-tips-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
@@ -396,6 +397,7 @@ export function DashboardShell(props: Props) {
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} promptLinks={promptLinks} setPromptLinks={setPromptLinks} projects={activeProjects} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} />}
           {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} previewDetectedTools={props.previewDetectedTools} />}
           {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} tools={tools} focusLinkId={focusLinkId} onFocusHandled={() => setFocusLinkId(null)} />}
+          {tab === "marketing" && <MarketingPanel isPreview={props.isPreview} onOpenKnowledge={() => setTab("ig-tips")} />}
           {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}

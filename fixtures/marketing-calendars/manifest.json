@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "marketing-calendar-export/1",
+  "exportedAt": "2026-10-12T23:08:32.954Z",
+  "files": [
+    {
+      "venture": "caught-up",
+      "path": "state/marketing-calendar/caught-up.json",
+      "sourceVersion": "marketing-calendar/1",
+      "sourceCommit": "f6d2b0afe7b3a350bc0c03f77ed55ff1dab888ef",
+      "sha256": "fcad2076c2246afb4b6a097227cad8882957799d2410e2b774ba35e7682b00c6"
+    },
+    {
+      "venture": "marketingshark",
+      "path": "state/marketing-calendar/marketingshark.json",
+      "sourceVersion": "marketing-calendar/1",
+      "sourceCommit": "f6d2b0afe7b3a350bc0c03f77ed55ff1dab888ef",
+      "sha256": "40e720656dd873c2e9a9791512432d4574a0e235431d8c376ea1db9594d87e2c"
+    }
+  ]
+}

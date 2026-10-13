@@ -132,6 +132,10 @@ The migrations, in the order they run:
 36. `20260925200300_drop_link_project_references.sql` — guarded drop of the unused `ai_link_projects` and `projects.video_url`.
 37. `20260925210000_restrict_purge_old_cron_runs.sql` — takes `purge_old_cron_runs()` away from `anon` and `authenticated`, leaving it to `service_role` and the scheduler.
 38. `20260926140000_ig_tips.sql` — `ai_links.tip_group` and `ai_links.tip_summary`: the topic group and the plain summary each IG TIPS card shows.
+39. `20261012225640_marketing_control_surface.sql` — owned campaigns/sources/revisions/approval and fenced publication queue.
+40. `20261012232949_marketing_durable_jobs.sql` — consent-bound durable jobs, calendar rebinding and publishing receipts.
+41. `20261012233059_marketing_knowledge_import.sql` — provenance-backed atomic procedures and consent-bound extraction.
+42. `20261013001528_marketing_private_assets.sql` — private immutable worker assets with owner-prefix reads.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. All 38 migrations are applied in production, verified against the linked project on 2026-09-28.
 

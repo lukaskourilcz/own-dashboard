@@ -115,16 +115,16 @@ async function render(input: MarketingRenderInput, production: boolean): Promise
   if (revision.account.platform !== "instagram" || revision.format !== "carousel") throw new MarketingRenderError("unsupported-render-format");
   const slides = z.array(MarketingSlideSchema).min(2).max(5).parse(input.draft.slides);
   const selected = style[template.brand];
-  const root = input.templateRoot ?? path.resolve(process.cwd(), "templates/marketing");
-  const logo = await readFile(path.join(root, template.brand, "logo.svg"));
+  const root = input.templateRoot ?? path.join(/* turbopackIgnore: true */ process.cwd(), "templates/marketing");
+  const logo = await readFile(path.join(/* turbopackIgnore: true */ root, template.brand, "logo.svg"));
   if (createHash("sha256").update(logo).digest("hex") !== selected.kit.logo.sha256) throw new MarketingRenderError("brand-asset-hash-mismatch");
   const fontIds = [...new Set([selected.headline, selected.body, selected.code, selected.secondary, selected.kicker])];
   const fontFiles = await Promise.all(fontIds.map(async (id) => {
     const font = faces[id];
-    const bytes = await readFile(path.join(root, "fonts", font.file));
+    const bytes = await readFile(path.join(/* turbopackIgnore: true */ root, "fonts", font.file));
     const expected = provenance.fonts.find((candidate) => candidate.file === font.file);
     if (!expected || createHash("sha256").update(bytes).digest("hex") !== expected.sha256) throw new MarketingRenderError("font-hash-mismatch");
-    return path.join(root, "fonts", font.file);
+    return path.join(/* turbopackIgnore: true */ root, "fonts", font.file);
   }));
   const { Resvg } = await import("@resvg/resvg-js");
   const { default: sharp } = await import("sharp");
@@ -132,7 +132,7 @@ async function render(input: MarketingRenderInput, production: boolean): Promise
   const design = selected.design;
   const designAssets: Record<string, Buffer> = {};
   for (const [file, sha256] of Object.entries(design.assets)) {
-    const bytes = await readFile(path.join(root, template.brand, file));
+    const bytes = await readFile(path.join(/* turbopackIgnore: true */ root, template.brand, file));
     if (createHash("sha256").update(bytes).digest("hex") !== sha256) throw new MarketingRenderError("design-asset-hash-mismatch");
     designAssets[file] = bytes;
   }

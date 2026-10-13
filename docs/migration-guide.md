@@ -410,3 +410,16 @@ The groups and summaries of the owner's existing tips are data, not schema. They
 ### Rollback
 
 `alter table public.ai_links drop column if exists tip_summary, drop column if exists tip_group;` removes the groups and summaries. The tips keep their titles, URLs, descriptions, categories and project links.
+
+## Marketing automation (review before production)
+
+Apply only after the owner reviews the implementation and approves deployment. Do not use this migration list to activate publishing.
+
+1. `20261012225640_marketing_control_surface.sql`: adds isolated owned campaign/calendar/source/history/account/revision/publication/event tables. Browser writes are revoked; bounded approval/decision functions authenticate `auth.uid()`. Service integration credentials bind one owner. All function grants explicitly revoke Supabase default anon/authenticated privileges before restoring intended access.
+2. `20261012232949_marketing_durable_jobs.sql`: adds durable generation jobs, owner campaign/slot controls, replacement invalidation, exclusive leases and compare-and-set publisher checkpoints/receipts. Rebinding a slot retains its original plan, supersedes its old prepared revision and increments delivery identity; it approves no post.
+3. `20261012233059_marketing_knowledge_import.sql`: adds evidence/procedure sidecars to canonical `ai_links`; retains IDs/relationships, hashes, source timestamps and exact consent-bound provider plans. Import/analysis/review runs through owner-scoped server operations.
+4. `20261013001528_marketing_private_assets.sql`: provisions a private JPEG bucket capped at8 MiB, only owner-prefix reads, and restrictive browser write backstops. Service worker uses immutable upload keys and verifies stored hashes before signing.
+
+Before applying, back up schema/data and verify a staging copy with own-only access and service-role credentials. No migration changes existing calendar content, approves templates/posts, connects accounts or enables schedules. Import both complete repository calendars as paused drafts; review counts and dated content before activation. Publishing flags and accounts remain disabled.
+
+Rollback first disables per-brand/global publisher and n8n schedules. Retain approved revisions, assets, provider/media IDs and receipts for reconciliation. Archive a new campaign to restore calendar control; never drop evidence tables or blindly republish an ambiguous remote outcome. See [marketing orchestration](marketing-n8n.md), [knowledge](marketing-knowledge.md) and [offline flow proof](marketing-pipeline-verification.md).
