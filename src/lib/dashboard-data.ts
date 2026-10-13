@@ -89,6 +89,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   // subscription allocations behind its Finance tab and the competitor
   // research behind its Competition tab.
   marketing: ["projects", "aiLinks", "projectLinks"],
+  workflows: [],
   projects: [
     "subscriptions",
     "subscriptionAllocations",

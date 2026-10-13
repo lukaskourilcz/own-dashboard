@@ -78,6 +78,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { value: "work", icon: BriefcaseBusiness },
       { value: "marketing", icon: CalendarDays },
+      { value: "workflows", icon: Network },
       { value: "projects", icon: FolderKanban },
       { value: "competition", icon: Swords },
       { value: "opportunities", icon: FolderInput },
