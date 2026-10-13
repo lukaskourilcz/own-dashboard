@@ -24,7 +24,7 @@ export async function POST(request:Request){
   if(input.action==='approve'){
    const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:input.id,p_expected_hash:input.expectedHash});
    if(error)return NextResponse.json({error:'approval-unavailable'},{status:409});
-   if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:input.id,revisionHash:original.content_hash,decision:'approved'});
+   if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:input.id,revisionHash:original.content_hash,decision:'approved'},process.env,{db,ownerId:user.id});
    const scheduling=await notifyMarketingApproval(data);
    return NextResponse.json({publicationId:data,scheduling});
   }
@@ -34,11 +34,14 @@ export async function POST(request:Request){
    const scheduled=Date.parse(input.scheduledAt);if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});
    const admin=createAdminClient();const assets=await refreshMarketingAssetUrls(admin,user.id,parseContentRevision(row.revision).assets);
    const revision=parseContentRevision({...row.revision,assets,caption:input.caption,scheduledAt:input.scheduledAt});
-   return NextResponse.json(await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:row.slides}));
+   const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:row.slides});
+   const {revisionHash}=await import('@/lib/marketing/hashes');
+   await recordMarketingOwnerFeedback({traceId:revision.traceId,revisionId:saved.id,revisionHash:revisionHash(revision),decision:'edited'},process.env,{db,ownerId:user.id});
+   return NextResponse.json(saved);
   }
   const {error}=await db.rpc('marketing_decide_revision',{p_revision_id:input.id,p_action:input.action,p_feedback:input.feedback??null});
   if(error)return NextResponse.json({error:'decision-unavailable'},{status:409});
-  if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:input.id,revisionHash:original.content_hash,decision:input.action});
+  if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:input.id,revisionHash:original.content_hash,decision:input.action},process.env,{db,ownerId:user.id});
   return NextResponse.json({ok:true});
  }catch{return NextResponse.json({error:'invalid-revision'},{status:400});}
 }
