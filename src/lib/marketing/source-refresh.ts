@@ -1,13 +1,16 @@
 import 'server-only';
+import { request as httpsRequest } from 'node:https';
 import { parseSourcePacket, sourceUsable, type MarketingBrand, type SourcePacket } from './contracts';
 import { contentHash } from './hashes';
 import { signAutomationBody } from './automation-auth';
 import { MARKETING_SOURCE_MAX_AGE_MS } from './publisher';
+import { marketingPilotConfiguration } from './pilot';
 
-export type SourceRefreshConfig = { url: string; secret: string };
+type SourcePreviewShare = { token: string; origin: string };
+export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
 export type SourceRefreshResult = { packets: SourcePacket[]; held: Array<{ sourceId: string; reason: string }>;
   observedAt: string; noEditionDates: string[]; nextCursor: string | null; dropped: number };
-export type SourceRefreshOptions = { config?: SourceRefreshConfig; fetcher?: typeof fetch; now?: Date; signal?: AbortSignal };
+export type SourceRefreshOptions = { config?: SourceRefreshConfig; fetcher?: typeof fetch; now?: Date; signal?: AbortSignal; env?: Record<string, string | undefined> };
 export class SourceRefreshError extends Error { constructor(readonly code: string) { super(code); } }
 
 export function sourceRefreshConfig(brand: MarketingBrand, env: Record<string, string | undefined> = process.env): SourceRefreshConfig {
@@ -15,12 +18,84 @@ export function sourceRefreshConfig(brand: MarketingBrand, env: Record<string, s
   const url = env[`${prefix}_SOURCE_URL`];
   const secret = env[`${prefix}_SOURCE_SECRET`];
   if (!url || !secret || secret.length < 32) throw new SourceRefreshError('source-integration-unconfigured');
-  return { url, secret };
+  const token = env[`${prefix}_SOURCE_PREVIEW_SHARE_TOKEN`], origin = env[`${prefix}_SOURCE_PREVIEW_ORIGIN`];
+  if (token === undefined && origin === undefined) return { url, secret };
+  if (!token || !origin) throw new SourceRefreshError('source-preview-configuration-invalid');
+  const config = { url, secret, previewShare: { token, origin } };
+  validatePreviewShare(config.previewShare, endpoint(config), env);
+  return config;
 }
 function endpoint(config: SourceRefreshConfig): URL {
   const url = new URL(config.url);
   if (url.protocol !== 'https:' || url.username || url.password || url.hash || config.secret.length < 32) throw new SourceRefreshError('source-integration-invalid');
   return url;
+}
+function validatePreviewShare(access: SourcePreviewShare, url: URL, env: Record<string, string | undefined>): void {
+  try {
+    const origin = new URL(access.origin);
+    if (access.origin !== origin.origin || origin.protocol !== 'https:' || origin.port || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(origin.hostname)
+      || origin.username || origin.password || url.origin !== access.origin || url.searchParams.has('_vercel_share') || url.searchParams.has('x-vercel-protection-bypass')
+      || !/^[\x21-\x7e]{1,2048}$/.test(access.token)) throw new Error();
+    if (env.VERCEL_ENV !== 'preview' || !marketingPilotConfiguration(env.MARKETING_OWNER_ID ?? '', env)) throw new Error();
+  } catch { throw new SourceRefreshError('source-preview-configuration-invalid'); }
+}
+function responsePreviewCookie(response: Response, url: URL): string {
+  // Consume only Vercel's one response cookie; never a caller/browser cookie jar.
+  const values = typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
+  if (values.length !== 1 || values[0].length > 10000) throw new SourceRefreshError('source-preview-cookie-invalid');
+  const [cookie, ...attributes] = values[0].split(';').map(value => value.trim());
+  if (!/^_vercel_jwt=[A-Za-z0-9._~-]{1,8192}$/.test(cookie)) throw new SourceRefreshError('source-preview-cookie-invalid');
+  const flags = attributes.map(attribute => attribute.toLowerCase());
+  const domain = flags.find(attribute => attribute.startsWith('domain='))?.slice(7);
+  if (!flags.includes('secure') || !flags.includes('httponly') || !flags.includes('path=/') || (domain && domain !== url.hostname && domain !== `.${url.hostname}`)) throw new SourceRefreshError('source-preview-cookie-invalid');
+  return cookie;
+}
+/** Avoid Next's fetch URL/cache metrics for the credential-bearing preflight. */
+function nativeProtectedRequest(url: string, options: RequestInit): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const outgoing = httpsRequest(url, { method: options.method ?? 'GET', headers: Object.fromEntries(new Headers(options.headers)), signal: options.signal ?? undefined }, response => {
+      const chunks: Buffer[] = []; let bytes = 0;
+      response.on('error', reject);
+      response.on('data', (value: Buffer) => {
+        bytes += value.length;
+        if (bytes > 2_000_000) { response.destroy(); outgoing.destroy(); reject(new SourceRefreshError('source-response-too-large')); return; }
+        chunks.push(value);
+      });
+      response.on('end', () => {
+        try {
+          const headers = new Headers();
+          for (const [name, value] of Object.entries(response.headers)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) headers.append(name, item);
+          resolve(new Response(Buffer.concat(chunks), { status: response.statusCode ?? 502, headers }));
+        } catch { reject(new SourceRefreshError('source-response-invalid')); }
+      });
+    });
+    outgoing.on('error', reject);
+    if (typeof options.body === 'string') outgoing.write(options.body);
+    outgoing.end(); // Native HTTPS never follows a redirect or stores cookies.
+  });
+}
+async function protectedRequest(input: SourceRefreshOptions, url: string, options: RequestInit): Promise<Response> {
+  const { suppressTracing, withIsolationScope } = await import('@sentry/nextjs');
+  return withIsolationScope(scope => {
+    scope.clear(); scope.addEventProcessor(() => null);
+    return suppressTracing(() => (input.fetcher ?? nativeProtectedRequest)(url, options));
+  });
+}
+async function previewCookie(input: SourceRefreshOptions, url: URL, access: SourcePreviewShare, signal: AbortSignal): Promise<string> {
+  const env = input.env ?? process.env;
+  validatePreviewShare(access, url, env);
+  const preflight = new URL(url); preflight.searchParams.set('_vercel_share', access.token);
+  let response: Response;
+  try { response = await protectedRequest(input, preflight.href, { method: 'GET', redirect: 'manual', credentials: 'omit', cache: 'no-store', signal }); }
+  catch { throw new SourceRefreshError('source-preview-unavailable'); }
+  const location = response.headers.get('location');
+  try {
+    if (response.status !== 307 || response.redirected || !location || new URL(location, preflight).href !== url.href) throw new Error();
+  } catch { throw new SourceRefreshError('source-preview-redirect-invalid'); }
+  const cookie = responsePreviewCookie(response, url);
+  validatePreviewShare(access, url, env); // A slow preflight cannot cross the approved pilot expiry.
+  if (signal.aborted) throw new SourceRefreshError('source-preview-unavailable');
+  return cookie;
 }
 function canonicalDailyDate(url: string): string | null {
   const path = new URL(url).pathname;
@@ -29,11 +104,17 @@ function canonicalDailyDate(url: string): string | null {
   if (!Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) throw new SourceRefreshError('daily-source-date-invalid');
   return date;
 }
-async function request(input: SourceRefreshOptions, url: URL, options: RequestInit): Promise<unknown> {
+async function request(input: SourceRefreshOptions, url: URL, options: RequestInit, config: SourceRefreshConfig): Promise<unknown> {
+  const signal = input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(12000)]) : AbortSignal.timeout(12000);
+  const headers = new Headers(options.headers);
+  if (config.previewShare) headers.set('Cookie', await previewCookie(input, url, config.previewShare, signal));
   let response: Response;
-  try { response = await (input.fetcher ?? fetch)(url.href, { ...options, redirect: 'error',
-    signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(12000)]) : AbortSignal.timeout(12000) }); }
+  try {
+    const init: RequestInit = { ...options, ...(config.previewShare ? { headers, credentials: 'omit', cache: 'no-store' } : {}), redirect: 'error', signal };
+    response = config.previewShare ? await protectedRequest(input, url.href, init) : await (input.fetcher ?? fetch)(url.href, init);
+  }
   catch { throw new SourceRefreshError('source-current-unavailable'); }
+  if (config.previewShare && (response.redirected || (response.url && response.url !== url.href))) throw new SourceRefreshError('source-current-unavailable');
   if (response.status === 409) throw new SourceRefreshError('source-cursor-stale');
   if (response.status === 410) throw new SourceRefreshError('source-removed');
   if (!response.ok) throw new SourceRefreshError('source-current-unavailable');
@@ -59,8 +140,9 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
   const deadline = AbortSignal.timeout(50000);
   input = { ...input, signal: input.signal ? AbortSignal.any([input.signal, deadline]) : deadline };
   const now = input.now ?? new Date();
-  const config = input.config ?? sourceRefreshConfig(input.brand);
+  const config = input.config ?? sourceRefreshConfig(input.brand, input.env);
   const base = endpoint(config);
+  if (config.previewShare) validatePreviewShare(config.previewShare, base, input.env ?? process.env);
   if (input.sourceIds && (!input.sourceIds.length || input.sourceIds.length > 20 || input.sourceIds.some(id => !id || id.length > 200))) throw new SourceRefreshError('source-query-invalid');
   const result: SourceRefreshResult = { packets: [], held: [], observedAt: now.toISOString(), noEditionDates: [], nextCursor: null, dropped: 0 };
   const append = (value: unknown, expectedId?: string) => {
@@ -74,7 +156,7 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
   if (input.brand === 'dneskai') {
     if (base.pathname !== '/admin/api/marketing-source' || base.search) throw new SourceRefreshError('source-integration-invalid');
     const body = JSON.stringify({ action: 'sources', ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}) });
-    const raw = await request(input, base, { method: 'POST', body, headers: signAutomationBody(body, config.secret, now.getTime()) });
+    const raw = await request(input, base, { method: 'POST', body, headers: signAutomationBody(body, config.secret, now.getTime()) }, config);
     if (!raw || typeof raw !== 'object' || !('schemaVersion' in raw) || raw.schemaVersion !== 'marketing-source-query/1' || !('sources' in raw) || !Array.isArray(raw.sources) || raw.sources.length > 20 || !('brand' in raw) || raw.brand !== 'dneskai') throw new SourceRefreshError('source-response-invalid');
     const seen = new Set<string>();
     for (const row of raw.sources) {
@@ -99,7 +181,7 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
       url.searchParams.set('daily', daily);
     } else if (sourceId) url.searchParams.set('sourceId', sourceId);
     else if (input.cursor) url.searchParams.set('cursor', input.cursor);
-    const raw = await request(input, url, { headers: { Authorization: `Bearer ${config.secret}`, Accept: 'application/json' } });
+    const raw = await request(input, url, { headers: { Authorization: `Bearer ${config.secret}`, Accept: 'application/json' } }, config);
     if (!raw || typeof raw !== 'object' || !('packets' in raw) || !Array.isArray(raw.packets) || raw.packets.length > 20) throw new SourceRefreshError('source-response-invalid');
     if (sourceId && raw.packets.length !== 1) { result.held.push({ sourceId, reason: 'source-unavailable' }); return; }
     for (const packet of raw.packets) append(packet, sourceId);
