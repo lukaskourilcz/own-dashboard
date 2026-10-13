@@ -5,6 +5,8 @@ import type { MarketingTracer } from "./tracing";
 import { marketingHumanizerInstructions } from "./humanizer";
 import { fitMarketingText } from "./render";
 import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
+import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
+import { classifyMarketingProviderError, type MarketingProviderFailure } from "./provider-errors";
 
 export const MARKETING_PROMPT_VERSION = "marketing-copy/3";
 export const MarketingSlideSchema = z.strictObject({
@@ -21,6 +23,10 @@ export const MarketingCopySchema = z.strictObject({
   slides: z.array(MarketingSlideSchema).min(2).max(5),
 });
 export type MarketingCopy = z.infer<typeof MarketingCopySchema>;
+/** Official wire transformation; original Zod constraints remain the response authority. */
+export function marketingProviderWireSchema(): Record<string, unknown> {
+  return transformJSONSchema(z.toJSONSchema(MarketingCopySchema));
+}
 const KnowledgeSchema = z.strictObject({ id: z.uuid(), brand: z.enum(["dneskai", "devshark"]), presentation: z.string().min(1).max(1200) });
 export const GenerationInputSchema = z.strictObject({
   source: z.unknown(),
@@ -56,7 +62,7 @@ export type GeneratedMarketingDraft = {
   traceId: string | null;
 };
 export class MarketingGenerationError extends Error {
-  constructor(public readonly code: string) { super(code); this.name = "MarketingGenerationError"; }
+  constructor(public readonly code: string, public readonly providerFailure?: MarketingProviderFailure) { super(code); this.name = "MarketingGenerationError"; }
 }
 export function generationPrompt(source: SourcePacket, knowledge: GenerationInput["knowledge"]): { system: string; prompt: string } {
   return {
@@ -167,7 +173,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (![model.pricing.inputPerMillionUsd, model.pricing.outputPerMillionUsd].every((rate) => Number.isFinite(rate) && rate > 0)) throw new MarketingGenerationError("pricing-required");
   const prompts = generationPrompt(source, input.knowledge);
   // UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead.
-  const inputReservation = Buffer.byteLength(prompts.system + prompts.prompt + JSON.stringify(z.toJSONSchema(MarketingCopySchema))) + 2048;
+  const inputReservation = Buffer.byteLength(prompts.system + prompts.prompt + JSON.stringify(marketingProviderWireSchema())) + 2048;
   if (inputReservation > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
   const reservation = cost({ inputTokens: inputReservation, outputTokens: budget.maxOutputTokens }, model.pricing);
   if (reservation > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
@@ -183,10 +189,13 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       const startedAt = Date.now();
       try {
         result = await model.invoke({ ...prompts, maxOutputTokens: budget.maxOutputTokens, signal });
-      } catch {
+      } catch (failure) {
         // Billing may already have happened. Never retry an ambiguous transport/provider failure.
         usage.estimatedCostUsd += reservation;
-        throw new MarketingGenerationError(signal.aborted ? "generation-timeout" : "provider-failed");
+        if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
+        if (failure instanceof MarketingGenerationError) throw failure;
+        const providerFailure = classifyMarketingProviderError(failure);
+        throw new MarketingGenerationError(providerFailure.code, providerFailure);
       }
       if (!result.usage || ![result.usage.inputTokens, result.usage.outputTokens].every((n) => Number.isInteger(n) && n >= 0)) {
         usage.estimatedCostUsd += reservation;
@@ -224,7 +233,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   } catch (error) {
     const code = error instanceof MarketingGenerationError ? error.code : "generation-failed";
     await trace?.finish({ status: "failed", revisionHash: null, usage, issues: [code] });
-    throw new MarketingGenerationError(code);
+    throw new MarketingGenerationError(code, error instanceof MarketingGenerationError ? error.providerFailure : undefined);
   }
 }
 
@@ -246,9 +255,17 @@ export async function createClaudeMarketingModel(config: ClaudeMarketingModelCon
     model: config.model, pricing: config.pricing,
     async invoke(input) {
       assertPrivateInvocation();
-      const model = new ChatAnthropic({ apiKey: config.apiKey, model: config.model, temperature: 0, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0 } });
-      const structured = model.withStructuredOutput(MarketingCopySchema, { name: "marketing_copy", includeRaw: true, method: "functionCalling", strict: true });
-      const result = await traceable(() => structured.invoke([["system", input.system], ["human", input.prompt]], { signal: input.signal, callbacks: [] }), { tracingEnabled: false })();
+      let structured;
+      try {
+        const model = new ChatAnthropic({ apiKey: config.apiKey, model: config.model, temperature: 0, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0, logLevel: "off" } });
+        structured = model.withStructuredOutput(marketingProviderWireSchema(), { name: "marketing_copy", includeRaw: true, method: "functionCalling", strict: true });
+      } catch { throw new MarketingGenerationError("provider-sdk-setup-failed"); }
+      let result;
+      try { result = await traceable(() => structured.invoke([["system", input.system], ["human", input.prompt]], { signal: input.signal, callbacks: [] }), { tracingEnabled: false })(); }
+      catch (failure) {
+        const providerFailure = classifyMarketingProviderError(failure);
+        throw new MarketingGenerationError(providerFailure.code, providerFailure);
+      }
       const measured = isAIMessage(result.raw) ? result.raw.usage_metadata : undefined;
       return { copy: result.parsed, usage: measured ? { inputTokens: measured.input_tokens, outputTokens: measured.output_tokens } : null };
     },

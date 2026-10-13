@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.122.0",
     "@blocknote/code-block": "^0.51.4",
     "@blocknote/core": "^0.51.4",
     "@blocknote/mantine": "^0.51.4",
