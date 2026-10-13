@@ -85,9 +85,11 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
   }
   validateMarketingTemplate(job.template as MarketingTemplate, true);
   const expected = parseSourcePacket(job.generation.source);
+  const authorityFields = ["brand", "kind", "sourceId", "sourceRevision", "canonicalUrl", "locale", "contentHash"] as const;
   const assertCurrentSource = async () => {
     const current = parseSourcePacket(await dependencies.reloadSource(expected.sourceId));
-    if (!sourceUsable(current) || current.sourceRevision !== expected.sourceRevision || current.contentHash !== expected.contentHash || contentHash(current.content) !== expected.contentHash) throw new Error("source-superseded");
+    // Observation time may advance during a fresh producer read. Stable authority may not change.
+    if (!sourceUsable(current) || authorityFields.some((field) => current[field] !== expected[field]) || contentHash(current.content) !== current.contentHash || contentHash(expected.content) !== expected.contentHash) throw new Error("source-superseded");
   };
   await assertCurrentSource();
   const draft = await generateMarketingDraft({ ...job.generation, source: expected }, dependencies);
