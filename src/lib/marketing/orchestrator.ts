@@ -5,7 +5,7 @@ import { parseContentRevision,parseSourcePacket,sourceUsable,type MarketingBrand
 import { ingestSource,sourceReferences } from './store';
 import { SourceRefreshError,refreshMarketingSources,refreshSource } from './source-refresh';
 import { enqueueMarketingJob,executeMarketingJob } from './worker-runtime';
-import { currentMarketingTemplate } from './render';
+import { trustedMarketingTemplate } from './template-registry';
 import { pragueScheduledAt } from './clock';
 import { publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type MetaPublisherConfig,type PublisherState } from './publisher';
 type Database=ReturnType<typeof createAdminClient>;
@@ -33,6 +33,7 @@ export async function synchronizeMarketingSources(db:Database,owner:string,brand
  return refreshed;
 }
 export async function enqueueCalendarMarketingJob(db:Database,owner:string,input:{brand:MarketingBrand;entryId:string;platform:'instagram'|'threads';sourceId?:string}){
+ const template=trustedMarketingTemplate(input.brand);
  const {data:entry,error}=await db.from('marketing_calendar_entries').select('*').eq('user_id',owner).eq('id',input.entryId).single();
  if(error||!entry||!['post','carousel','thread'].includes(entry.kind)||entry.needs_review||entry.status!=='planned'||entry.platform!==input.platform)throw new Error('calendar-entry-held');
  const {data:campaign,error:campaignError}=await db.from('marketing_campaigns').select('*').eq('user_id',owner).eq('id',entry.campaign_id).eq('brand',input.brand).eq('status','active').single();
@@ -54,7 +55,6 @@ export async function enqueueCalendarMarketingJob(db:Database,owner:string,input
  if(entry.bound_source_id&&!bound)throw new Error('bound-source-unavailable');
  const source=bound?parseSourcePacket(bound.packet):input.sourceId?candidates.find(packet=>packet.sourceId===input.sourceId):candidates.find(packet=>!used.has(`${packet.sourceId}|${packet.sourceRevision}|${packet.contentHash}`));
  if(!source||!sourceUsable(source)||source.brand!==input.brand)throw new Error('eligible-source-required');
- const template=await currentMarketingTemplate(input.brand);
  if(!template)throw new Error('template-unavailable');
 
  // Only explicitly reviewed advice may influence presentation. Product facts stay in the source.

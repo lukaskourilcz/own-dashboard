@@ -5,14 +5,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { marketingJobIdentityHash, MarketingWorkerRequestSchema, createMarketingWorkerHandler, runMarketingWorkerJob, type MarketingWorkerRequest, type MarketingWorkerResult, type DurableMarketingQueue } from "../../../services/marketing-worker/protocol";
 import { createClaudeMarketingModel, DEFAULT_GENERATION_BUDGET, MarketingGenerationError, type MarketingModel } from "./generation";
 import { createMarketingTracer, LANGSMITH_EU_ENDPOINT, type MarketingTracer } from "./tracing";
-import { MarketingTemplateSchema, validateMarketingTemplate, MarketingRenderError, type MarketingTemplate, type MarketingAssetStorage } from "./render";
+import { validateMarketingTemplate, MarketingRenderError, type MarketingTemplate, type MarketingAssetStorage } from "./render";
 import { parseSourcePacket, sourceUsable, revisionReadiness, parseContentRevision, type SourcePacket } from "./contracts";
 import { contentHash, revisionHash } from "./hashes";
 import { authenticateAutomation } from "./automation-auth";
 import { ingestSource } from "./store";
-import dneskaiTemplate from "../../../templates/marketing/dneskai/template.json";
-import devsharkTemplate from "../../../templates/marketing/devshark/template.json";
 import { marketingPilotConfiguration, MarketingPilotError, MARKETING_PILOT_JOB_RESERVATION_USD } from "./pilot";
+import { resolveTrustedMarketingTemplate, MarketingTemplateApprovalError } from "./template-registry";
 
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
@@ -22,9 +21,14 @@ const sixDaysMs = 6 * 24 * 60 * 60 * 1000;
 export class MarketingWorkerRuntimeError extends Error {
   constructor(public readonly code: string) { super(code); this.name = "MarketingWorkerRuntimeError"; }
 }
-export async function resolveMarketingTemplate(version: string): Promise<MarketingTemplate | null> {
-  const template = [dneskaiTemplate, devsharkTemplate].find((candidate) => candidate.version === version);
-  return template ? MarketingTemplateSchema.parse(template) : null;
+export async function resolveMarketingTemplate(version: string, options: { env?: Environment; now?: Date } = {}): Promise<MarketingTemplate | null> {
+  return resolveTrustedMarketingTemplate(version, options.env, options.now);
+}
+function templateResolver(override: typeof resolveMarketingTemplate | undefined, env: Environment = process.env, now?: () => Date): typeof resolveMarketingTemplate {
+  // Offline tests may inject a template without changing public manifests.
+  // Deployed workers and any supplied pilot receipt always use the trusted registry.
+  if (override && process.env.NODE_ENV !== 'production' && env.NODE_ENV !== 'production' && env.MARKETING_PILOT_TEMPLATE_APPROVALS === undefined) return override;
+  return version => resolveMarketingTemplate(version, { env, now: now?.() });
 }
 function assertOwner(ownerId: string) { z.uuid().parse(ownerId); }
 export function assertMarketingGenerationConsent(env: Environment = process.env) {
@@ -83,7 +87,7 @@ export async function enqueueMarketingJob(db: Database, ownerId: string, value: 
   const source = parseSourcePacket(request.generation.source);
   if (!sourceUsable(source, (options.now ?? (() => new Date()))()) || contentHash(source.content) !== source.contentHash || source.kind === "instagram-reference") throw new MarketingWorkerRuntimeError("source-unavailable");
   assertSchedule(request.generation.scheduledAt, (options.now ?? (() => new Date()))());
-  const trusted = await (options.resolveTemplate ?? resolveMarketingTemplate)(request.template.version);
+  const trusted = await templateResolver(options.resolveTemplate, options.env, options.now)(request.template.version);
   if (!trusted || contentHash(trusted) !== contentHash(request.template)) throw new MarketingWorkerRuntimeError("template-not-approved");
   validateMarketingTemplate(trusted, true);
   if (trusted.brand !== source.brand || request.generation.templateVersion !== trusted.version) throw new MarketingWorkerRuntimeError("template-revision-mismatch");
@@ -181,7 +185,7 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
     result = await (dependencies.run ?? runMarketingWorkerJob)(request, {
       model: guardedModel, tracer, storage: dependencies.storage ?? createMarketingAssetStorage(db, ownerId, request.generation.scheduledAt, { signal }),
       signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...(pilot ? { maxCostUsd: Math.min(DEFAULT_GENERATION_BUDGET.maxCostUsd, MARKETING_PILOT_JOB_RESERVATION_USD) } : {}) },
-      reloadTemplate: dependencies.resolveTemplate ?? resolveMarketingTemplate,
+      reloadTemplate: templateResolver(dependencies.resolveTemplate, env),
       reloadSource: async (sourceId) => {
         if (sourceId !== originalSource.sourceId || signal.aborted) throw new MarketingWorkerRuntimeError("source-refresh-failed");
         const current = parseSourcePacket(await dependencies.refreshSource(originalSource, signal));
@@ -194,7 +198,7 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
     if (signal.aborted || revisionReadiness(revision).length || revisionHash(revision) !== result.revisionHash) throw new MarketingWorkerRuntimeError("job-result-invalid");
   } catch (failure) {
     // No automatic replay; never persist provider response/credentials/exception text.
-    const knownCode = pilotUnavailable ? "pilot-admission-unavailable" : knowledgeUnavailable ? "knowledge-reference-unavailable" : failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError || failure instanceof MarketingPilotError
+    const knownCode = pilotUnavailable ? "pilot-admission-unavailable" : knowledgeUnavailable ? "knowledge-reference-unavailable" : failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError || failure instanceof MarketingPilotError || failure instanceof MarketingTemplateApprovalError
       ? failure.code : failure instanceof Error && ["source-superseded", "template-superseded"].includes(failure.message) ? failure.message : "worker-execution-failed";
     const { data: finishedStatus, error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: null, p_error: knownCode });
     if (finishError || finishedStatus !== "failed") throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
