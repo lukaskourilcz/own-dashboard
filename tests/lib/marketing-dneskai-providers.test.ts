@@ -107,6 +107,21 @@ describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
   const result=await pollDneskaiInstagram(source,registration,'2026-10-11T00:00:00Z',{env:apifyEnv,fetcher,signal,now});expect(result.running).toBe(false);if(!result.running)expect(result).toMatchObject({complete:false,errorCode:'collection-source-partial'});
  });
  it('does not load datasets with unknown or over-budget costs or a forged run',async()=>{const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!;for(const patch of [{usageTotalUsd:null},{usageTotalUsd:0.1}]){const fetcher=vi.fn<typeof fetch>(async()=>json({data:{...registration,...patch}}));const result=await pollDneskaiInstagram(source,registration,'2026-10-12T00:00:00Z',{env:apifyEnv,fetcher,signal,now});expect(result.running).toBe(false);expect(fetcher).toHaveBeenCalledTimes(1);}const fetcher=vi.fn<typeof fetch>(async()=>json({data:{...registration,id:'foreign'}}));await expect(pollDneskaiInstagram(source,registration,now.toISOString(),{env:apifyEnv,fetcher,signal,now})).rejects.toThrow('binding');});
+ it('binds every documented Jev field reference to the submitted state, including batch indexes',()=>{
+  const request=jevRequest([row(),{...row(),id:'second-test'}],[{id:'history-test',title:'Earlier event',text:'Earlier public excerpt'}]);
+  for(const [key,value]of Object.entries(request.questions)){
+   const question=value as {instructions:string;criteria?:Record<string,string|null>};
+   const references=[...question.instructions.matchAll(/`([^`]+)`/g)].map(match=>match[1]);
+   expect(references.length).toBeGreaterThan(0);
+   for(const reference of references){
+    const parts=reference.replace(/\[(\d+)\]/g,'.$1').split('.');
+    const resolved=parts.reduce<unknown>((current,part)=>(current as Record<string,unknown>)?.[part],request.state);
+    expect(resolved,reference).toBeDefined();
+   }
+   expect(references).toContain(`items[${key.split('_').at(-1)}]`);
+   if(key.startsWith('relevance')){expect(question.criteria?.true).toBeTruthy();expect(question.criteria?.false).toBeTruthy();}
+  }
+ });
  it('uses pinned official Jev schema and known usage cost, compact history and supported duplicate binding',async()=>{const items=[row()],history=[{id:'prior-test',title:'A prior event',text:'Prior public source text'}],request=jevRequest(items,history),response=jevResponse(request);(response.answers.duplicate_0 as {choice:string;probabilities:Record<string,number>}).choice='h0';(response.answers.duplicate_0 as {probabilities:Record<string,number>}).probabilities={none:0,uncertain:0,h0:1};const fetcher=vi.fn<typeof fetch>(async()=>json(response));const result=await classifyDneskaiCandidates(items,history,{env:{TYPESAFE_API_KEY:'test-only'},fetcher,signal});expect(result.items[0]).toMatchObject({status:'duplicate',duplicateOf:'prior-test',targetDate:null});expect(result.costUsd).toBeCloseTo(0.000042);expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string).model).toBe('jev-1.13.0');});
  it.each(['sum','missing','winner','unsupported','model','usage'])('holds malformed Jev %s response',async mutation=>{const items=[row()],request=jevRequest(items,[]),response=jevResponse(request);const category=response.answers.category_0 as {choice:string;probabilities:Record<string,number>};if(mutation==='sum')category.probabilities['ai-news']=0.2;if(mutation==='missing')delete category.probabilities.other;if(mutation==='winner'){category.choice='other';}if(mutation==='unsupported')category.choice='truth';if(mutation==='model')response.model='jev-latest';if(mutation==='usage')response.usage.input_tokens=64001;await expect(classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal})).rejects.toThrow();});
  it('keeps uncertain interpretation held and refuses absent credentials before HTTP',async()=>{const items=[row()],response=jevResponse(jevRequest(items,[]));(response.answers.relevance_0 as {noul:number}).noul=0.8;const result=await classifyDneskaiCandidates(items,[],{env:{TYPESAFE_API_KEY:'test-only'},fetcher:async()=>json(response),signal});expect(result.items[0].status).toBe('held');const fetcher=vi.fn();await expect(classifyDneskaiCandidates(items,[],{env:{},fetcher,signal})).rejects.toThrow('unconfigured');expect(fetcher).not.toHaveBeenCalled();});

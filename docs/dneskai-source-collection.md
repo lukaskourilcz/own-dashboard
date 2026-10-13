@@ -271,3 +271,33 @@ přechodu; tento úkol jejich nastavení nemění.
 Produkční ověření 13. října ukázalo rozdíl mezi vstupem z lokálního testu a databází. PostgreSQL vrací čas například jako `2026-10-06T21:09:06.897873+00:00`. Vstupní schéma připnutého Apify buildu `0.0.813` tento posun odmítá. Před požadavkem ověříme datum a převedeme jej na UTC zápis `2026-10-06T21:09:06.897Z`. Neplatné datum odmítneme před placeným voláním. Lokální filtrování výsledků dál používá původní hranici.
 
 Odmítnutý pokus se automaticky neopakuje. Jeho rezervace zůstává evidovaná; oprava kódu neobnovuje rozpočet ani počet kroků.
+
+
+### Produkční propojení a zbývající redakční ověření — 13. října 2026
+
+PR #107 opravilo UTC formát pro Apify. Stejný schválený běh pokračoval pouze
+na dosud nespuštěné zdroje a Jev, bez resetu limitů. Skončil po 16 krocích:
+70 uložených kandidátů, tři úspěšné Instagram zdroje, osm úspěšných dávek Jev
+a žádná publikace. API náklady jsou 0,017213294 USD: Apify vykázalo 0,0161 USD
+a Jev 0,001113294 USD podle vstupních tokenů a ověřené sazby. Rezervace
+odmítnutého activeprogrammer pokusu zůstala 0,04 USD; nebyl opakován.
+
+Výběr zůstal 0/4. Šedesát vyhodnocených kandidátů má nízkou jistotu/relevanci
+a deset položek bez data vyřadila kontrola vstupu před placeným vyhodnocením. Propojení
+služeb je ověřené, kvalita redakčního výběru ještě ne. Aktuální lokální oprava
+používá odkazy jako `items[0]` uzavřené v backtick znacích, jak předepisuje
+[TypeSafe: odkazy na konkrétní pole](https://docs.typesafe.ai/primitives#reference-specific-fields).
+Relevance se ptá pouze na konkrétní obsah; aktuálnost nadále kontroluje kód.
+Prahy jistoty se nesnižují. Úspěšné testy formátu nejsou důkazem lepšího
+sémantického výsledku; další placené přehodnocení a nasazení vyžaduje nový
+souhlas. Denní sběr i publikování zůstávají vypnuté.
+
+Vlastník následně schválil jedno lokální volání Jev na osmi existujících
+veřejných podkladech, do 0,003 USD a bez změn databáze. Stálo 0,00016002 USD.
+Dvě relevance vzrostly nad 0,85, ale všech osm položek zůstalo zadržených
+kombinovanou podmínkou jistoty. Oprava reference proto není ověřením funkčního
+redakčního výběru. Před dalším ostrým během je nutné ukládat oddělené důvody
+pro relevanci, kategorii a duplicitu, porovnat je s ručně označeným vzorkem
+a ověřit kvalitu v jednom předem ohraničeném evaluačním rozsahu. Žádný práh
+se nemění jen proto, aby vznikla čtyři témata. Tento lokální test nezasáhl
+produkční databázi ani n8n a neobsahoval další scraping.
