@@ -118,7 +118,12 @@ describe("OFFLINE SIMULATION: authored source → actual JPEG → exact owner ap
     expect(uploaded.size).toBe(4);
     await database.query(`insert into marketing_accounts(id,user_id,brand,platform,remote_account_id,handle,verified_at,enabled)
       values($1,$2,'devshark','instagram','101','offline_qa_only',now(),true)`, [accountId, owner]);
-    const revision = { ...generated.revision, scheduledAt: new Date(Date.now() + 300).toISOString() };
+    // PostgreSQL now() is stable during a transaction. Anchor approval's future
+    // schedule to that same clock so CPU contention cannot expire this fixture
+    // between saving it and exercising the real owner approval functions.
+    await database.exec("begin");
+    const approvalSchedule = (await database.query<{ scheduled_at: Date }>("select now() + interval '300 milliseconds' as scheduled_at")).rows[0].scheduled_at;
+    const revision = { ...generated.revision, scheduledAt: approvalSchedule.toISOString() };
     const hash = revisionHash(revision);
     expect(await saveRevision(db, owner, revision, { id: revisionId, slides: generated.slides })).toEqual({ id: revisionId, ready: true });
     const loadState = async (): Promise<PublisherState> => {
@@ -169,6 +174,8 @@ describe("OFFLINE SIMULATION: authored source → actual JPEG → exact owner ap
     const first = await database.query<{ id: string }>("select marketing_approve_revision($1,$2) id", [revisionId, hash]);
     const duplicate = await database.query<{ id: string }>("select marketing_approve_revision($1,$2) id", [revisionId, hash]);
     await database.exec("reset role");
+    expect((await database.query("select * from marketing_claim_due($1,1,'devshark')", [owner])).rows).toEqual([]);
+    await database.exec("commit");
     expect(duplicate.rows[0].id).toBe(first.rows[0].id);
     expect((await database.query<{ count: number }>("select count(*)::int as count from marketing_publications")).rows[0].count).toBe(1);
     expect((await database.query<{ count: number }>("select count(*)::int as count from marketing_events where kind='approved'")).rows[0].count).toBe(1);
@@ -178,7 +185,10 @@ describe("OFFLINE SIMULATION: authored source → actual JPEG → exact owner ap
       expect(sha(image.jpeg)).toBe(approvedAsset.sha256);
       expect(uploaded.get(approvedAsset.url)!.bytes.equals(image.jpeg)).toBe(true);
     }
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    // Wait for the unchanged approved schedule to become due on the real SQL
+    // clock; neither the revision/hash nor the publication time is rewritten.
+    await expect.poll(async () => (await database.query<{ due: boolean }>("select scheduled_at<=now() as due from marketing_publications where revision_id=$1", [revisionId])).rows[0].due,
+      { timeout: 10000, interval: 50 }).toBe(true);
     await reloadSource(); // Explicit simulated producer refresh is persisted before the due claim.
     expect((await database.query("select * from marketing_claim_due($1,1,'dneskai')", [owner])).rows).toEqual([]);
     const claimed = await database.query<PublicationRow & { user_id: string; lease_until: string }>("select * from marketing_claim_due($1,1,'devshark')", [owner]);
