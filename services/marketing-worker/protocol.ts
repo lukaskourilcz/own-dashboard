@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { GenerationInputSchema, generateMarketingDraft, type GeneratedMarketingDraft, type MarketingModel, type GenerationBudget } from "../../src/lib/marketing/generation";
-import { MarketingTemplateSchema, renderMarketingAssets, validateMarketingTemplate, type MarketingAssetStorage, type MarketingTemplate } from "../../src/lib/marketing/render";
+import { MarketingTemplateSchema, renderMarketingAssets, renderAuthoredMarketingPreflight, validateMarketingTemplate, MarketingRenderError, marketingPreparationFailureCode, type MarketingAssetStorage, type MarketingTemplate } from "../../src/lib/marketing/render";
 import { parseSourcePacket, sourceUsable, revisionReadiness } from "../../src/lib/marketing/contracts";
 import { contentHash, revisionHash } from "../../src/lib/marketing/hashes";
 import type { MarketingTracer } from "../../src/lib/marketing/tracing";
@@ -92,15 +92,28 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
     if (!sourceUsable(current) || authorityFields.some((field) => current[field] !== expected[field]) || contentHash(current.content) !== current.contentHash || contentHash(expected.content) !== expected.contentHash) throw new Error("source-superseded");
   };
   await assertCurrentSource();
+  if (job.generation.consent && job.generation.account.platform === "instagram" && ["question", "coding-task"].includes(expected.kind)) {
+    // Exercise authored layout/files/native encoders before the first paid attempt. No upload or revision write.
+    await renderAuthoredMarketingPreflight({ source: expected, account: job.generation.account, scheduledAt: job.generation.scheduledAt, template: job.template, revisionId: job.generation.revisionId, signal: dependencies.signal });
+  }
   const draft = await generateMarketingDraft({ ...job.generation, source: expected }, dependencies);
   const renderStartedAt = Date.now();
-  const assets = draft.revision.account.platform === "instagram"
-    ? await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId }, dependencies.storage)
-    : [];
-  await assertCurrentSource();
-  const revision = { ...draft.revision, assets };
-  if (revisionReadiness(revision).length) throw new Error("revision-not-ready");
-  const finalHash = revisionHash(revision);
-  if (draft.traceId) await dependencies.tracer?.recordPreparedRevision?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, revisionHash: finalHash, assetHashes: assets.map((asset) => asset.sha256), templateSha256: job.template.templateSha256, latencyMs: Date.now() - renderStartedAt });
-  return { ...draft, revision, revisionHash: finalHash };
+  try {
+    const assets = draft.revision.account.platform === "instagram"
+      ? await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId }, dependencies.storage)
+      : [];
+    await assertCurrentSource();
+    const revision = { ...draft.revision, assets };
+    if (revisionReadiness(revision).length) throw new Error("revision-not-ready");
+    const finalHash = revisionHash(revision);
+    if (draft.traceId) await dependencies.tracer?.recordPreparedRevision?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, revisionHash: finalHash, assetHashes: assets.map((asset) => asset.sha256), templateSha256: job.template.templateSha256, latencyMs: Date.now() - renderStartedAt });
+    return { ...draft, revision, revisionHash: finalHash };
+  } catch (failure) {
+    const code = marketingPreparationFailureCode(failure);
+    if (draft.traceId) {
+      // Diagnostics are best effort; a trace outage never changes or retries the failed preparation.
+      try { await dependencies.tracer?.recordPreparationFailure?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, code }); } catch {}
+    }
+    throw new MarketingRenderError(code);
+  }
 }

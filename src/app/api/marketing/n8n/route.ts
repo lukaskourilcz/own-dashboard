@@ -8,6 +8,8 @@ import { runQueuedKnowledgeAnalysis,pollQueuedKnowledgeAnalysis,abortQueuedKnowl
 import { refreshSource } from '@/lib/marketing/source-refresh';
 import { contentHash } from '@/lib/marketing/hashes';
 import { ingestSource } from '@/lib/marketing/store';
+import { runMarketingRenderPreflight,MARKETING_PREFLIGHT_HOLD_CODES } from '@/lib/marketing/render-preflight';
+import { MARKETING_RENDER_FAILURE_CODES } from '@/lib/marketing/render';
 export const runtime='nodejs';
 export const maxDuration=60;
 const Input=z.discriminatedUnion('operation',[
@@ -16,6 +18,7 @@ const Input=z.discriminatedUnion('operation',[
  z.strictObject({operation:z.literal('enqueue'),brand:BrandSchema,job:z.unknown().optional(),entryId:z.uuid().optional(),platform:z.enum(['instagram','threads']).optional(),sourceId:z.string().max(200).optional()}),
  z.strictObject({operation:z.literal('execute'),jobId:z.uuid()}),
  z.strictObject({operation:z.literal('status'),jobId:z.uuid()}),
+ z.strictObject({operation:z.literal('render-preflight'),brand:BrandSchema,sourceId:z.string().min(1).max(200),scheduledAt:z.iso.datetime({offset:true})}),
  z.strictObject({operation:z.literal('knowledge-queue')}),
  z.strictObject({operation:z.enum(['knowledge-run','knowledge-poll','knowledge-abort']),sourceId:z.uuid()}),
  z.strictObject({operation:z.literal('publication-plan'),publicationId:z.uuid().optional(),brand:BrandSchema.optional()}),
@@ -52,6 +55,7 @@ export async function POST(request:Request){
   }
   if(input.operation==='execute')return Response.json(await executeOrchestratedMarketingJob(db,owner,input.jobId));
   if(input.operation==='status')return Response.json(await readMarketingJob(db,owner,input.jobId));
+  if(input.operation==='render-preflight')return Response.json(await runMarketingRenderPreflight(db,owner,{brand:input.brand,sourceId:input.sourceId,scheduledAt:input.scheduledAt},{signal}),{headers:{'Cache-Control':'no-store'}});
   if(input.operation==='knowledge-queue'){const {data,error}=await db.from('marketing_knowledge_sources').select('id,status').eq('user_id',owner).in('status',['queued','analyzing']).order('updated_at').limit(5);if(error)throw new Error('knowledge-state-unavailable');return Response.json({sources:data??[]});}
   if(input.operation==='knowledge-run')return Response.json(await runQueuedKnowledgeAnalysis(owner,input.sourceId,{diagnostics:await createKnowledgeDiagnostics()}));
   if(input.operation==='knowledge-poll')return Response.json(await pollQueuedKnowledgeAnalysis(owner,input.sourceId));
@@ -76,6 +80,6 @@ export async function POST(request:Request){
   const invalid=error instanceof z.ZodError||error instanceof SyntaxError;
   const allowed=new Set(['calendar-entry-held','campaign-not-active','account-unverified','eligible-source-required','bound-source-unavailable','template-unavailable','template-not-approved','source-cursor-stale','source-integration-unconfigured','source-current-unavailable','source-removed','source-recheck-unavailable','source-superseded','marketing-generation-consent-required','schedule-outside-asset-window','knowledge-apify-configuration-required','knowledge-model-configuration-required','knowledge-reviewed-consent-required','knowledge-reviewed-plan-changed','knowledge-source-unavailable','knowledge-reference-unavailable']);
   const code=error instanceof Error?(('code' in error&&typeof error.code==='string')?error.code:error.message):'';
-  return Response.json({error:invalid?'invalid-request':allowed.has(code)?code:'marketing-operation-held'},{status:invalid?400:409});
+  return Response.json({error:invalid?'invalid-request':allowed.has(code)||MARKETING_PREFLIGHT_HOLD_CODES.some(value=>value===code)||MARKETING_RENDER_FAILURE_CODES.some(value=>value===code)?code:'marketing-operation-held'},{status:invalid?400:409});
  }
 }

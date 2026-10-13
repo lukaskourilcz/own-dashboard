@@ -4,6 +4,7 @@ import { contentHash } from "./hashes";
 import type { SourcePacket } from "./contracts";
 import type { ModelUsage } from "./generation";
 import type { MarketingBenchmarkResult } from "./generation-benchmark";
+import { MARKETING_PREPARATION_FAILURE_CODES } from "./render";
 
 export const LANGSMITH_EU_ENDPOINT = "https://eu.api.smith.langchain.com";
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -30,6 +31,7 @@ export type PreparedRevisionTrace = { traceId: string; revisionId: string; revis
 export interface MarketingTracer {
   start(input: TraceStart): Promise<MarketingTrace | null>;
   recordPreparedRevision?(input: PreparedRevisionTrace): Promise<boolean>;
+  recordPreparationFailure?(input: { traceId: string; revisionId: string; code: string }): Promise<boolean>;
 }
 /** Only identifiers needed to resolve the exact stored source/revision leave the worker. */
 export function marketingTraceMetadata(input: TraceStart) {
@@ -108,6 +110,16 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
         if (previous.revision_id !== prepared.revision_id) throw new Error("trace-revision-mismatch");
         await client.createRun({ id: randomUUID(), name: "marketing-render", run_type: "tool", parent_run_id: traceId, trace_id: traceId, inputs: {}, project_name: config.projectName, start_time: Date.now() - prepared.render_latency_ms, end_time: Date.now(), extra: { metadata: { stage: "render", attempt: 0, latency_ms: prepared.render_latency_ms, input_tokens: 0, output_tokens: 0, estimated_cost_usd: 0, issue_codes: [] } } });
         await client.updateRun(traceId, { end_time: Date.now(), outputs: {}, extra: { metadata: { ...previous, ...prepared } } });
+      });
+    },
+    async recordPreparationFailure(input) {
+      const parsed = z.strictObject({ traceId: z.uuid(), revisionId: z.uuid(), code: z.enum(MARKETING_PREPARATION_FAILURE_CODES) }).parse(input);
+      return safeWrite(async () => {
+        const run = await client.readRun(parsed.traceId);
+        const previous = fullMetadataSchema.parse(run.extra?.metadata);
+        if (previous.revision_id !== parsed.revisionId) throw new Error("trace-revision-mismatch");
+        const metadata = fullMetadataSchema.parse({ ...previous, status: "failed", issue_codes: [...new Set([...previous.issue_codes, parsed.code])] });
+        await client.updateRun(parsed.traceId, { end_time: Date.now(), outputs: {}, error: "marketing-preparation-failed", extra: { metadata } });
       });
     },
     async recordOwnerFeedback(input) {

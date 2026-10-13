@@ -10,9 +10,9 @@ import dneskaiDesign from "../../../templates/marketing/dneskai/derived-layout.j
 import devsharkDesign from "../../../templates/marketing/devshark/derived-layout.json";
 import dneskaiTemplate from "../../../templates/marketing/dneskai/template.json";
 import devsharkTemplate from "../../../templates/marketing/devshark/template.json";
-import { AssetSchema, parseContentRevision, type ContentRevision } from "./contracts";
+import { AssetSchema, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash } from "./hashes";
-import { MarketingSlideSchema, type GeneratedMarketingDraft, type MarketingSlide } from "./generation";
+import { MarketingSlideSchema, authoredMarketingText, authoredCodingChallenge, type GeneratedMarketingDraft, type MarketingSlide } from "./generation";
 
 const sha = z.string().regex(/^[a-f0-9]{64}$/);
 export const MarketingTemplateSchema = z.strictObject({
@@ -31,6 +31,27 @@ export interface MarketingAssetStorage {
 }
 export class MarketingRenderError extends Error {
   constructor(public readonly code: string) { super(code); this.name = "MarketingRenderError"; }
+}
+export const MARKETING_RENDER_FAILURE_CODES = ["template-hash-mismatch", "claude-design-approval-required", "template-revision-mismatch", "unsupported-render-format", "unsupported-glyph", "code-line-overflow", "word-overflow", "text-overflow", "brand-asset-hash-mismatch", "font-hash-mismatch", "design-asset-hash-mismatch", "fin-content-overflow", "code-height-overflow", "body-height-overflow", "asset-too-large", "asset-dimensions-invalid", "stored-asset-hash-mismatch", "preview-disabled-in-production", "render-input-invalid", "brand-asset-unavailable", "font-unavailable", "design-asset-unavailable", "render-rasterizer-unavailable", "render-jpeg-encoder-unavailable", "render-rasterization-failed", "render-jpeg-encoding-failed", "asset-metadata-unavailable", "render-layout-invalid", "asset-storage-failed", "render-preflight-timeout", "render-preflight-source-unavailable", "render-preflight-source-kind-unsupported"] as const;
+export const MARKETING_PREPARATION_FAILURE_CODES = [...MARKETING_RENDER_FAILURE_CODES, "worker-timeout", "asset-input-invalid", "private-asset-bucket-required", "stored-asset-metadata-mismatch", "existing-asset-conflict", "asset-signing-failed", "schedule-outside-asset-window", "render-preparation-failed", "source-superseded", "revision-not-ready"] as const;
+export function marketingPreparationFailureCode(failure: unknown): typeof MARKETING_PREPARATION_FAILURE_CODES[number] {
+  try {
+    if (failure instanceof Error) {
+      const code = Object.getOwnPropertyDescriptor(failure, "code")?.value;
+      const known = MARKETING_PREPARATION_FAILURE_CODES.find(value => value === code);
+      if (known) return known;
+      const message = Object.getOwnPropertyDescriptor(failure, "message")?.value;
+      if (message === "source-superseded" || message === "revision-not-ready") return message;
+    }
+  } catch {}
+  return "render-preparation-failed";
+}
+async function renderStage<T>(code: typeof MARKETING_RENDER_FAILURE_CODES[number], run: () => T | Promise<T>): Promise<T> {
+  try { return await run(); }
+  catch (failure) {
+    if (failure instanceof MarketingRenderError && MARKETING_RENDER_FAILURE_CODES.some(value => value === failure.code)) throw new MarketingRenderError(failure.code);
+    throw new MarketingRenderError(code);
+  }
 }
 type Face = { familyName: string; rasterFamily: string; weight: number; file: string; widths: Record<string, string> };
 const faces: Record<string, Face> = metrics;
@@ -107,7 +128,7 @@ function textSvg(lines: string[], faceId: string, size: number, x: number, y: nu
   return `<text letter-spacing="${tracking}" xml:space="preserve" x="${x}" y="${y}" fill="${color}" font-family="${escapeXml(face.rasterFamily)}" font-size="${size}" font-weight="${face.weight}">${lines.map((line, i) => `<tspan x="${x}" dy="${i ? size * leading : 0}">${escapeXml(line)}</tspan>`).join("")}</text>`;
 }
 export type MarketingRenderedSlide = { svg: string; svgSha256: string; jpeg: Buffer; sha256: string; width: 1080; height: 1350; alt: string };
-async function render(input: MarketingRenderInput, production: boolean): Promise<MarketingRenderedSlide[]> {
+async function renderUnchecked(input: MarketingRenderInput, production: boolean): Promise<MarketingRenderedSlide[]> {
   const template = validateMarketingTemplate(input.template, production);
   z.uuid().parse(input.revisionId);
   const revision = parseContentRevision(input.draft.revision);
@@ -116,23 +137,23 @@ async function render(input: MarketingRenderInput, production: boolean): Promise
   const slides = z.array(MarketingSlideSchema).min(2).max(5).parse(input.draft.slides);
   const selected = style[template.brand];
   const root = path.join(process.cwd(), "templates", "marketing");
-  const logo = await readFile(path.join(root, template.brand, "logo.svg"));
+  const logo = await renderStage("brand-asset-unavailable", () => readFile(path.join(root, template.brand, "logo.svg")));
   if (createHash("sha256").update(logo).digest("hex") !== selected.kit.logo.sha256) throw new MarketingRenderError("brand-asset-hash-mismatch");
   const fontIds = [...new Set([selected.headline, selected.body, selected.code, selected.secondary, selected.kicker])];
   const fontFiles = await Promise.all(fontIds.map(async (id) => {
     const font = faces[id];
-    const bytes = await readFile(path.join(root, "fonts", font.file));
+    const bytes = await renderStage("font-unavailable", () => readFile(path.join(root, "fonts", font.file)));
     const expected = provenance.fonts.find((candidate) => candidate.file === font.file);
     if (!expected || createHash("sha256").update(bytes).digest("hex") !== expected.sha256) throw new MarketingRenderError("font-hash-mismatch");
     return path.join(root, "fonts", font.file);
   }));
-  const { Resvg } = await import("@resvg/resvg-js");
-  const { default: sharp } = await import("sharp");
+  const { Resvg } = await renderStage("render-rasterizer-unavailable", () => import("@resvg/resvg-js"));
+  const { default: sharp } = await renderStage("render-jpeg-encoder-unavailable", () => import("sharp"));
   const rendered: MarketingRenderedSlide[] = [];
   const design = selected.design;
   const designAssets: Record<string, Buffer> = {};
   for (const [file, sha256] of Object.entries(design.assets)) {
-    const bytes = await readFile(path.join(root, template.brand, file));
+    const bytes = await renderStage("design-asset-unavailable", () => readFile(path.join(root, template.brand, file)));
     if (createHash("sha256").update(bytes).digest("hex") !== sha256) throw new MarketingRenderError("design-asset-hash-mismatch");
     designAssets[file] = bytes;
   }
@@ -186,14 +207,54 @@ async function render(input: MarketingRenderInput, production: boolean): Promise
     if (bodyBottom > 1172) throw new MarketingRenderError("body-height-overflow");
     const footerSize = design.layout.footerFontSize;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350"><rect width="1080" height="1350" fill="${palette.background}"/>${decorations}${textSvg(headings, headlineFace, headlineSize, margin, headingY, palette.foreground, headlineLeading)}${textSvg(bodies, selected.body, bodySize, margin, bodyY, palette.foreground, bodyLeading)}${codeSvg}${textSvg([`${index + 1} / ${slides.length}`], isDev ? selected.body : selected.code, footerSize, margin, 1260, palette.muted)}</svg>`;
-    const png = new Resvg(svg, { font: { loadSystemFonts: false, fontFiles, defaultFontFamily: faces[selected.body].rasterFamily } }).render().asPng();
-    const jpeg = await sharp(Buffer.from(png)).flatten({ background: palette.background }).jpeg({ quality: 92, chromaSubsampling: "4:4:4", progressive: false }).toBuffer();
+    const png = await renderStage("render-rasterization-failed", () => new Resvg(svg, { font: { loadSystemFonts: false, fontFiles, defaultFontFamily: faces[selected.body].rasterFamily } }).render().asPng());
+    const jpeg = await renderStage("render-jpeg-encoding-failed", () => sharp(Buffer.from(png)).flatten({ background: palette.background }).jpeg({ quality: 92, chromaSubsampling: "4:4:4", progressive: false }).toBuffer());
     if (jpeg.length > 8 * 1024 * 1024) throw new MarketingRenderError("asset-too-large");
-    const info = await sharp(jpeg).metadata();
+    const info = await renderStage("asset-metadata-unavailable", () => sharp(jpeg).metadata());
     if (info.format !== "jpeg" || info.width !== 1080 || info.height !== 1350) throw new MarketingRenderError("asset-dimensions-invalid");
     rendered.push({ svg, svgSha256: createHash("sha256").update(svg).digest("hex"), jpeg, sha256: createHash("sha256").update(jpeg).digest("hex"), width: 1080, height: 1350, alt: `${slide.headline}. ${slide.body}${slide.code ? `\n${slide.code}` : ""}`.slice(0, 1000) });
   }
   return rendered;
+}
+async function render(input: MarketingRenderInput, production: boolean): Promise<MarketingRenderedSlide[]> {
+  // Shape failures never expose Zod issue paths or authored values.
+  try { return await renderUnchecked(input, production); }
+  catch (failure) {
+    if (failure instanceof MarketingRenderError && MARKETING_RENDER_FAILURE_CODES.some(value => value === failure.code)) throw new MarketingRenderError(failure.code);
+    throw new MarketingRenderError(failure instanceof z.ZodError ? "render-input-invalid" : "render-layout-invalid");
+  }
+}
+/** Approved renderer in memory only: no storage, revision writes or publication authority. */
+export async function renderApprovedMarketingSlides(input: MarketingRenderInput): Promise<MarketingRenderedSlide[]> {
+  return render(input, true);
+}
+export type MarketingRenderPreflightResult = { diagnosticOnly: true; stage: "render-complete"; providerCalls: 0; storage: "not-exercised"; assetCount: number; assets: { sha256: string; svgSha256: string; width: 1080; height: 1350; bytes: number }[] };
+/** Exact authored surfaces only. Diagnostic revisions exist in memory and confer no readiness. */
+type AuthoredPreflightInput = { source: SourcePacket; account: ContentRevision["account"]; scheduledAt: string; template: MarketingTemplate; revisionId: string; signal?: AbortSignal; now?: Date };
+export async function renderAuthoredMarketingPreflight(input: AuthoredPreflightInput): Promise<MarketingRenderPreflightResult> {
+  return renderStage("render-layout-invalid", () => renderAuthoredMarketingPreflightUnchecked(input));
+}
+async function renderAuthoredMarketingPreflightUnchecked(input: AuthoredPreflightInput): Promise<MarketingRenderPreflightResult> {
+  if (input.signal?.aborted) throw new MarketingRenderError("render-preflight-timeout");
+  const source = parseSourcePacket(input.source);
+  if (!sourceUsable(source, input.now) || contentHash(source.content) !== source.contentHash) throw new MarketingRenderError("render-preflight-source-unavailable");
+  if (!["question", "coding-task"].includes(source.kind)) throw new MarketingRenderError("render-preflight-source-kind-unsupported");
+  let slides: MarketingSlide[];
+  if (source.kind === "coding-task" && !source.content.explanation) slides = authoredCodingChallenge(source).slides;
+  else {
+    slides = [{ headline: source.content.title, body: authoredMarketingText(source.content.body, source.content.code), code: null, evidenceIndexes: [] }];
+    if (source.content.code) slides.push({ headline: "Code", body: source.content.category, code: source.content.code, evidenceIndexes: [] });
+    if (source.content.options.length) slides.push({ headline: "Choose an answer", body: source.content.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${authoredMarketingText(option, null)}`).join("\n"), code: null, evidenceIndexes: [] });
+    slides.push({ headline: "Authored explanation", body: authoredMarketingText([source.content.answer, source.content.explanation].filter(Boolean).join("\n\n"), source.content.code), code: null, evidenceIndexes: [] });
+  }
+  const revision: ContentRevision = { schemaVersion: "marketing-content/1", brand: source.brand, title: source.content.title,
+    caption: `Renderer diagnostic only.\n\n${source.canonicalUrl}`, format: "carousel", sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }],
+    knowledgeIds: [], assets: [], account: input.account, scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.template.version,
+    promptVersion: "render-diagnostic/1", model: "no-provider-render-diagnostic", traceId: null };
+  const rendered = await renderApprovedMarketingSlides({ draft: { revision, slides }, template: input.template, revisionId: input.revisionId });
+  if (input.signal?.aborted) throw new MarketingRenderError("render-preflight-timeout");
+  return { diagnosticOnly: true, stage: "render-complete", providerCalls: 0, storage: "not-exercised", assetCount: rendered.length,
+    assets: rendered.map(slide => ({ sha256: slide.sha256, svgSha256: slide.svgSha256, width: slide.width, height: slide.height, bytes: slide.jpeg.length })) };
 }
 /** A local review preview cannot authorize production publishing. */
 export async function renderMarketingPreview(input: MarketingRenderInput): Promise<MarketingRenderedSlide[]> {

@@ -83,6 +83,20 @@ describe("redacted LangSmith EU SDK tracing", () => {
     mocks.getRunUrl.mockResolvedValue("https://eu.smith.langchain.com/private-run");
     expect(await tracer.getTraceUrl("67a15323-4a6f-4463-a03b-c4c010015d80")).toBe("https://eu.smith.langchain.com/private-run");
   });
+  it("records downstream preparation failure only on the exact generated revision, preserving measured usage/hashes", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const traceId = "67a15323-4a6f-4463-a03b-c4c010015d80";
+    const previous = structuredClone((await mocks.readRun()).extra.metadata);
+    expect(await tracer.recordPreparationFailure!({ traceId, revisionId: start.revisionId, code: "font-unavailable" })).toBe(true);
+    expect(mocks.updateRun.mock.calls[0][1]).toMatchObject({ outputs: {}, error: "marketing-preparation-failed", extra: { metadata: { ...previous, status: "failed", issue_codes: ["font-unavailable"] } } });
+    mocks.updateRun.mockClear();
+    expect(await tracer.recordPreparationFailure!({ traceId, revisionId: "11111111-1111-4111-8111-111111111111", code: "font-unavailable" })).toBe(false);
+    expect(mocks.updateRun).not.toHaveBeenCalled();
+    await expect(tracer.recordPreparationFailure!({ traceId, revisionId: start.revisionId, code: "TEST PRIVATE SVG PATH" })).rejects.toThrow();
+    mocks.readRun.mockRejectedValueOnce(new Error("TEST PRIVATE TRACE OUTAGE"));
+    expect(await tracer.recordPreparationFailure!({ traceId, revisionId: start.revisionId, code: "render-preparation-failed" })).toBe(false);
+    expect(mocks.updateRun).not.toHaveBeenCalled();
+  });
   it("binds edited feedback to original immutable metadata while sending the exact reviewed tuple", async () => {
     const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
     const metadataBefore = structuredClone((await mocks.readRun()).extra.metadata);
