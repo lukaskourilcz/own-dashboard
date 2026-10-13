@@ -1,6 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
-import { parseContentRevision, parseSourcePacket, revisionReadiness, sourceUsable, type MarketingRevisionRow, type PublicationRow, type SourcePacket, type ContentRevision } from './contracts';
+import { parseContentRevision, parseSourcePacket, publishedStoryReceipt, revisionReadiness, sourceUsable, type MarketingRevisionRow, type PublicationRow, type SourcePacket, type ContentRevision } from './contracts';
 import { contentHash, revisionHash } from './hashes';
 
 export const MARKETING_SOURCE_MAX_AGE_MS = 15 * 60_000;
@@ -160,14 +160,42 @@ async function mediaUrl(input: PublishMarketingInput, media: string): Promise<st
     return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
   } catch { return null; }
 }
+/** Only the owned account's active Story edge can confirm a recorded media ID
+ * without a stored publish acknowledgement. No URL, timestamp or image match
+ * is used to guess an ID after an ambiguous publish request. */
+async function verifyRecordedStory(input: PublishMarketingInput, media: string): Promise<boolean> {
+  if (!/^[1-9]\d{0,99}$/.test(media) || await verifyRemoteAccount(input)) return false;
+  let after: string | undefined;
+  const cursors = new Set<string>();
+  for (let page = 0; page < 2; page++) {
+    const data = await graph(input, `${input.account.remote_account_id}/stories`, 'GET', { fields: 'id', limit: '100', ...(after ? { after } : {}) });
+    if (!Array.isArray(data.data) || data.data.length > 100 || data.data.some(item => !item || typeof item !== 'object' || !('id' in item) || typeof item.id !== 'string' || !/^[1-9]\d{0,99}$/.test(item.id))) return false;
+    if (data.data.some(item => item.id === media)) return true;
+    const paging = data.paging as { cursors?: { after?: unknown }; next?: unknown } | undefined;
+    if (!paging?.next) return false;
+    const cursor = paging.cursors?.after;
+    if (typeof cursor !== 'string' || !cursor || cursor.length > 2048 || cursors.has(cursor)) return false;
+    cursors.add(cursor); after = cursor;
+  }
+  return false;
+}
 
 /** This path never POSTs: PUBLISHED without a media ID remains a reconciliation for the operator. */
 export async function reconcileMarketingPublication(input: PublishMarketingInput): Promise<PublishOutcome> {
   if (input.publication.user_id !== input.revisionRow.user_id || input.account.user_id !== input.revisionRow.user_id || input.publication.revision_id !== input.revisionRow.id || input.publication.platform !== input.account.platform ||
       input.account.brand !== input.revisionRow.revision.brand || input.account.remote_account_id !== input.revisionRow.revision.account.id || (input.account.platform === 'threads') !== (input.config.loginMode === 'threads')) return result('held', 'publication-binding-mismatch');
+  const story = input.revisionRow.revision.format === 'story' && input.account.platform === 'instagram';
+  if (story && revisionHash(input.revisionRow.revision) !== input.revisionRow.content_hash) return result('held', 'revision-identity-mismatch');
+  // A persisted numeric publish acknowledgement is historical evidence even
+  // after the Story expires or credentials change. It never causes a POST.
+  if (publishedStoryReceipt(input.revisionRow.revision, input.publication)) return result('published', null, input.publication.remote_container_id, input.publication.remote_media_id, input.publication.remote_url);
   if (!/^v\d+\.\d+$/.test(input.config.apiVersion) || !timestampValid(input.config.apiVersionVerifiedAt, input.now ?? new Date()) || !input.config.accessToken || !Number.isFinite(Date.parse(input.config.tokenExpiresAt)) || Date.parse(input.config.tokenExpiresAt) <= (input.now ?? new Date()).getTime()) return result('held', 'reconciliation-credentials-unavailable', input.publication.remote_container_id);
   const { remote_container_id: container, remote_media_id: media } = input.publication;
   if (idValid(media)) {
+    if (story) {
+      try { return await verifyRecordedStory(input, media) ? result('published', null, container, media) : result('reconciliation', 'remote-story-unverified', container, media); }
+      catch { return result('reconciliation', 'remote-story-unverified', container, media); }
+    }
     const url = await mediaUrl(input, media);
     return result(url ? 'published' : 'reconciliation', url ? null : 'remote-permalink-unavailable', container, media, url);
   }
@@ -256,8 +284,13 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     await save('publish-intent', result('pending', 'publish-intent', container));
     sideEffectStarted = true;
     const published = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publish' : 'media_publish'}`, 'POST', { creation_id: container });
-    if (!idValid(published.id as string)) throw new MetaFailure('published-media-identity-unavailable');
+    if (!idValid(published.id as string) || (revision.format === 'story' && !/^[1-9]\d{0,99}$/.test(published.id as string))) throw new MetaFailure('published-media-identity-unavailable');
     media = published.id as string;
+    if (revision.format === 'story') {
+      const outcome = result('published', null, container, media);
+      await save('outcome', outcome);
+      return outcome;
+    }
     // A deadline during the following read must leave the known remote media durable.
     await save('outcome', result('reconciliation', 'remote-permalink-unavailable', container, media));
     remoteUrl = await mediaUrl(input, media);

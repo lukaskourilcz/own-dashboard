@@ -1,7 +1,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { parseContentRevision,parseSourcePacket,sourceUsable,type MarketingBrand,type MarketingRevisionRow,type PublicationRow,type SourcePacket } from './contracts';
+import { parseContentRevision,parseSourcePacket,publishedStoryReceipt,sourceUsable,type MarketingBrand,type MarketingRevisionRow,type PublicationRow,type SourcePacket } from './contracts';
 import { ingestSource,sourceReferences } from './store';
 import { SourceRefreshError,refreshMarketingSources,refreshSource } from './source-refresh';
 import { enqueueMarketingJob,executeMarketingJob } from './worker-runtime';
@@ -134,6 +134,6 @@ export async function reconcileStoredMarketingPublication(db:Database,owner:stri
  if(error||!publication)throw new Error('publication-unavailable');
  const state=await publishingState(db,owner,publication.revision_id,false);
  const outcome=await reconcileMarketingPublication({...state,publication,config:metaConfiguration(state.revisionRow.revision.brand,publication.platform),checkpoint:async()=>{throw new Error('read-only-reconciliation');},revalidate:async()=>state});
- if(outcome.status==='published'&&outcome.remoteUrl){const {error:saveError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:id,p_expected_container:publication.remote_container_id,p_expected_error:publication.error_code,p_status:'published',p_container:outcome.remoteContainerId,p_media:outcome.remoteMediaId,p_url:outcome.remoteUrl,p_error:null});if(saveError)throw new Error('receipt-reconciliation-required');}
+ if(outcome.status==='published'&&(outcome.remoteUrl||publishedStoryReceipt(state.revisionRow.revision,{status:outcome.status,platform:publication.platform,remote_media_id:outcome.remoteMediaId,remote_url:outcome.remoteUrl}))){const {error:saveError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:id,p_expected_container:publication.remote_container_id,p_expected_error:publication.error_code,p_status:'published',p_container:outcome.remoteContainerId,p_media:outcome.remoteMediaId,p_url:outcome.remoteUrl,p_error:null});if(saveError)throw new Error('receipt-reconciliation-required');}
  return outcome;
 }

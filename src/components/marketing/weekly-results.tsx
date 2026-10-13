@@ -1,7 +1,7 @@
 'use client';
 import { useId } from 'react';
 import { z } from 'zod';
-import type { MarketingBrand, MarketingRevisionRow, PublicationRow } from '@/lib/marketing/contracts';
+import { publishedStoryReceipt, type MarketingBrand, type MarketingRevisionRow, type PublicationRow } from '@/lib/marketing/contracts';
 import { compareMarketingWeeks } from '@/lib/marketing/weekly-analytics';
 import { pragueMarketingDate, sevenDayMarketingWindow } from '@/lib/marketing/weekly-planning';
 
@@ -9,7 +9,7 @@ export type WeeklyResultsProps = {
   revisions: readonly MarketingRevisionRow[]; publications: readonly PublicationRow[];
   brand?: MarketingBrand | 'all'; lang: 'en' | 'cs'; weekStartsOn?: string; now?: Date;
 };
-const revisionMetadata = z.object({ id: z.uuid(), revision: z.object({ brand: z.enum(['devshark', 'dneskai']), scheduledAt: z.iso.datetime({ offset: true }), account: z.object({ platform: z.enum(['instagram', 'threads']) }) }) });
+const revisionMetadata = z.object({ id: z.uuid(), revision: z.object({ brand: z.enum(['devshark', 'dneskai']), format: z.enum(['carousel', 'post', 'reel', 'thread', 'story']).optional(), scheduledAt: z.iso.datetime({ offset: true }), account: z.object({ platform: z.enum(['instagram', 'threads']) }) }) });
 const publicationMetadata = z.object({ id: z.uuid(), revision_id: z.uuid(), platform: z.enum(['instagram', 'threads']), status: z.enum(['queued', 'claimed', 'published', 'failed', 'reconciliation', 'cancelled']), remote_media_id: z.string().max(200).nullable(), remote_url: z.string().max(2000).nullable() });
 const copy = {
   en: { title: 'Weekly publication review', scope: 'Seven completed Prague calendar days by default. Counts refer to scheduled slots and their recorded outcomes, not the actual publication timestamp.',
@@ -32,7 +32,8 @@ const copy = {
   },
 };
 type Counters = { published: number; waiting: number; failed: number; reconciliation: number; cancelled: number };
-function validRemote(value: z.infer<typeof publicationMetadata>): boolean {
+function validRemote(value: z.infer<typeof publicationMetadata>, revision: z.infer<typeof revisionMetadata>['revision']): boolean {
+  if (revision.format === 'story') return publishedStoryReceipt(revision, value);
   if (!value.remote_media_id || !/^\S+$/u.test(value.remote_media_id) || !value.remote_url) return false;
   try { const url = new URL(value.remote_url); return url.protocol === 'https:' && !url.username && !url.password; } catch { return false; }
 }
@@ -69,7 +70,7 @@ export function weeklyRecordedResults(input: WeeklyResultsProps) {
     const row = rows.find(row => row.brand === matched.revision.brand && row.platform === publication.platform);
     if (!row) continue;
     if (publication.status === 'published') {
-      if (validRemote(publication)) row.counts.published++;
+      if (validRemote(publication, matched.revision)) row.counts.published++;
       else { row.counts.reconciliation++; excluded++; }
     } else if (publication.status === 'queued' || publication.status === 'claimed') row.counts.waiting++;
     else row.counts[publication.status]++;

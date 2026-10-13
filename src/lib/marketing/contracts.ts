@@ -175,6 +175,16 @@ export type PublicationRow = {
   remote_url: string | null; error_code: string | null;
 };
 
+/** An acknowledged Story need not have a permanent public URL. This narrow
+ * classifier does not grant publication authority or infer an acknowledgement. */
+export function publishedStoryReceipt(revision: { format?: string; account: { platform: string } },
+  receipt: { status: string; platform: string; remote_media_id: string | null; remote_url: string | null }): boolean {
+  if (revision.format !== "story" || revision.account.platform !== "instagram" || receipt.platform !== "instagram" || receipt.status !== "published" ||
+      !receipt.remote_media_id || !/^[1-9]\d{0,99}$/.test(receipt.remote_media_id)) return false;
+  if (receipt.remote_url === null) return true;
+  try { const url = new URL(receipt.remote_url); return url.protocol === "https:" && !url.username && !url.password; } catch { return false; }
+}
+
 export function sourceUsable(packet: SourcePacket, now = new Date()): boolean {
   return packet.eligible && (packet.expiresAt === null || Date.parse(packet.expiresAt) > now.getTime());
 }

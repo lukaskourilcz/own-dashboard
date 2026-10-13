@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { parseSourcePacket, revisionReadiness, type ContentRevision } from '@/lib/marketing/contracts';
 import { contentHash, revisionHash } from '@/lib/marketing/hashes';
-import { publicationGate, publishMarketingRevision, type PublishMarketingInput, type PublisherCheckpoint } from '@/lib/marketing/publisher';
+import { publicationGate, publishMarketingRevision, reconcileMarketingPublication, type PublishMarketingInput, type PublisherCheckpoint } from '@/lib/marketing/publisher';
 vi.mock('server-only', () => ({}));
 const now = new Date('2026-10-13T12:00:00Z');
 const owner = '11111111-1111-4111-8111-111111111111';
@@ -55,7 +55,8 @@ describe('bounded Instagram single-JPEG Story capability, offline only', () => {
     expect(Object.fromEntries(posts[1].body)).toEqual({ creation_id: '201' });
     const profiles = requests.filter(v => v.url.pathname.endsWith('/101'));
     expect(profiles).toHaveLength(2); expect(profiles.every(v => v.url.searchParams.get('fields') === 'id,username,account_type')).toBe(true);
-    expect(checkpoints.map(v => v.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome', 'outcome']);
+    expect(checkpoints.map(v => v.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome']);
+    expect(checkpoints.at(-1)).toMatchObject({ status: 'published', remoteMediaId: '301', remoteUrl: null, errorCode: null });
     expect(posts[0].body.has('caption')).toBe(false); expect(posts[0].body.has('alt_text')).toBe(false); expect(posts[0].body.has('children')).toBe(false);
   });
   it.each([undefined, null, 'MEDIA_CREATOR', 'PERSONAL', 'unknown'])('holds missing or unsupported account_type %s before any POST', async accountType => {
@@ -110,12 +111,36 @@ describe('bounded Instagram single-JPEG Story capability, offline only', () => {
     expect(await publishMarketingRevision(input)).toMatchObject({ status: 'held', errorCode: 'checkpoint-fence-lost', remoteContainerId: null });
     expect(requests.some(v => v.method === 'POST')).toBe(false);
   });
-  it('preserves a known Story media ID without inventing a permalink or replaying a receipt', async () => {
+  it('records a numeric Story publish acknowledgement without requiring a permanent URL', async () => {
     const { input, requests } = fixture(); const original = input.fetcher!;
     input.fetcher = async (value, options) => new URL(String(value)).pathname.endsWith('/301') ? Response.json({ id: '301' }) : original(value, options);
-    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'reconciliation', remoteMediaId: '301', remoteUrl: null });
+    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'published', remoteMediaId: '301', remoteUrl: null });
     const before = requests.filter(v => v.method === 'POST').length;
-    expect(await publishMarketingRevision({ ...input, publication: { ...input.publication, status: 'reconciliation', remote_container_id: '201', remote_media_id: '301' } })).toMatchObject({ status: 'reconciliation', remoteMediaId: '301' });
+    expect(await publishMarketingRevision({ ...input, config: { ...input.config, accessToken: '', tokenExpiresAt: '' }, publication: { ...input.publication, status: 'published', remote_container_id: '201', remote_media_id: '301', error_code: null } })).toMatchObject({ status: 'published', remoteMediaId: '301', remoteUrl: null });
     expect(requests.filter(v => v.method === 'POST')).toHaveLength(before);
+  });
+  it('requires owned remote Story evidence when a recorded media ID has no stored acknowledgement', async () => {
+    const { input, requests } = fixture(); const original = input.fetcher!;
+    input.publication = { ...input.publication, status: 'reconciliation', remote_container_id: '201', remote_media_id: '301', error_code: 'remote-permalink-unavailable' };
+    input.fetcher = async (value, options) => { const url = new URL(String(value)); if (url.pathname.endsWith('/101/stories')) { requests.push({ url, method: options?.method ?? 'GET', body: new URLSearchParams() }); return Response.json({ data: [{ id: '301' }] }); } return original(value, options); };
+    expect(await reconcileMarketingPublication(input)).toMatchObject({ status: 'published', remoteMediaId: '301', remoteUrl: null });
+    expect(requests.some(v => v.url.pathname.endsWith('/101/stories'))).toBe(true); expect(requests.every(v => v.method === 'GET')).toBe(true);
+    input.fetcher = async (value, options) => new URL(String(value)).pathname.endsWith('/101/stories') ? Response.json({ data: [{ id: '999' }] }) : original(value, options);
+    expect(await reconcileMarketingPublication(input)).toMatchObject({ status: 'reconciliation', errorCode: 'remote-story-unverified' });
+  });
+  it('bounds Story pagination, ignores provider next URLs, and never guesses a missing media ID', async () => {
+    const { input, requests } = fixture(); const original = input.fetcher!; let pages = 0;
+    input.publication = { ...input.publication, status: 'reconciliation', remote_container_id: '201', remote_media_id: '301' };
+    input.fetcher = async (value, options) => { const url = new URL(String(value)); if (url.pathname.endsWith('/101/stories')) { pages++; expect(url.hostname).toBe('graph.instagram.com'); return Response.json({ data: [{ id: '999' }], paging: { next: 'https://untrusted.example.invalid/DO-NOT-FETCH', cursors: { after: `cursor-${pages}` } } }); } return original(value, options); };
+    expect(await reconcileMarketingPublication(input)).toMatchObject({ status: 'reconciliation', errorCode: 'remote-story-unverified' }); expect(pages).toBe(2);
+    input.publication.remote_media_id = null;
+    input.fetcher = async (value, options) => new URL(String(value)).pathname.endsWith('/201') ? Response.json({ id: '201', status_code: 'PUBLISHED' }) : original(value, options);
+    expect(await reconcileMarketingPublication(input)).toMatchObject({ status: 'reconciliation', errorCode: 'remote-published-media-id-required', remoteMediaId: null });
+    expect(requests.every(v => v.method === 'GET')).toBe(true);
+  });
+  it.each(['0', 'not-a-media-id', '001'])('keeps an invalid publish acknowledgement %s ambiguous', async id => {
+    const { input } = fixture(); const original = input.fetcher!;
+    input.fetcher = async (value, options) => new URL(String(value)).pathname.endsWith('/media_publish') ? Response.json({ id }) : original(value, options);
+    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'reconciliation', errorCode: 'published-media-identity-unavailable', remoteMediaId: null });
   });
 });

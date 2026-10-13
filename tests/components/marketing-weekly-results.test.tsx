@@ -35,6 +35,17 @@ describe('weekly review of bounded persisted outcomes', () => {
     expect(result.rows[1].counts.published).toBe(1); expect(result.rows[2].counts.published).toBe(0); expect(input).toEqual(original);
     expect(weeklyRecordedResults({ ...input, brand: 'dneskai' }).rows.every(row => row.brand === 'dneskai')).toBe(true);
   });
+  it('counts only numeric acknowledged Instagram Story receipts without a URL, preserving other format holds', () => {
+    const story = (n: number, platform: PublicationRow['platform'] = 'instagram'): MarketingRevisionRow => ({ ...revision(n, undefined, 'devshark', platform), revision: { ...revision(n).revision, format: 'story', account: { ...revision(n).revision.account, platform } } });
+    const rows = [story(1), revision(2), revision(3, undefined, 'devshark', 'threads'), story(4), story(5), story(6), story(7, 'threads')];
+    const receipts = rows.map((_, index) => ({ ...publication(index + 1, 'published', index === 2 || index === 6 ? 'threads' : 'instagram'), remote_media_id: String(301 + index), remote_url: null }));
+    receipts[3].remote_media_id = 'not-a-media-id'; receipts[4].remote_media_id = '0'; receipts[5].status = 'reconciliation';
+    const result = weeklyRecordedResults(props({ revisions: rows, publications: receipts }));
+    expect(result.rows[0].counts.published).toBe(1); expect(result.rows[0].counts.reconciliation).toBe(4);
+    expect(result.rows[1].counts.published).toBe(0); expect(result.rows[1].counts.reconciliation).toBe(2);
+    render(props({ revisions: [story(1)], publications: [receipts[0]] }));
+    expect(container.querySelectorAll('a,img')).toHaveLength(0); expect(container.textContent).not.toContain('Not-a-media-id');
+  });
   it('holds malformed, unmatched, duplicate and platform-mismatched publication metadata without claiming success', () => {
     const input = props({ revisions: [revision(1), revision(2), revision(3), revision(3), revision(4), revision(5)],
       publications: [publication(1), publication(1), publication(2, 'published', 'threads'), publication(3), { ...publication(4), remote_url: 'javascript:PRIVATE-URL' }, { ...publication(5), remote_media_id: null }, publication(99)] });
