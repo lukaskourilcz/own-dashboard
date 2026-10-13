@@ -153,6 +153,17 @@ nejvýše 48 hodin. Databáze uloží toto oprávnění natrvalo pro jeden běh;
 nastavení neobnoví počet pokusů ani rozpočet. Nejvýše 0,24 USD se rezervuje ještě
 před požadavky na poskytovatele. Neznámá spotřeba zastaví další placené kroky.
 
+Samostatný [interní n8n worker](https://bambambaklawa.app.n8n.cloud/workflow/1hB4ROPAlWm3YSXn)
+je uložený neaktivní, bez přístupového údaje a bez spuštění. Zpětný export potvrdil
+devět uzlů, vlastní interní pokračování, limit 120 sekund, vypnuté ukládání dat a MCP.
+Jeho [export a postup](../workflows/marketing/dneskai-collection-pilot-worker.md)
+nepoužívají časovač ani veřejný webhook. Interní pokračování vyžaduje publikovanou
+verzi tohoto pomocného workflow; původní pravidelný návrh zůstává vypnutý.
+
+Po doplnění pilotu a workeru prošlo 1 341 testů (jeden přeskočený), 126
+prohlížečových testů (70 konfigurací přeskočených), lint, kontrola typů a sestavení.
+Živý průchod čeká na rozšíření počtu Preview sestavení a omezený přístup n8n.
+
 Tento test může začít před 22:00. Běžný sběr přitom zůstává vypnutý a původní
 vyčerpaný limit tří generování se nemění. Schválení obsahu ani publikování
 nelze tímto přístupem provést. Oprava ukládání výsledku Jev dovoluje změnit
