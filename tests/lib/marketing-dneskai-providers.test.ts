@@ -10,6 +10,28 @@ const apifyEnv={APIFY_TOKEN:'test-only-token',MARKETING_DNESKAI_APIFY_ACTOR_ID:'
 const registration={id:'testRun',actId:'official-test-id',userId:'testUser',buildNumber:'1.2.3',defaultDatasetId:'testDataset',status:'SUCCEEDED' as const,finishedAt:'2026-10-13T20:29:00Z',usageTotalUsd:0.01};
 function jevResponse(request:ReturnType<typeof jevRequest>){const answers:Record<string,unknown>={};for(const [key,question]of Object.entries(request.questions)){const q=question as {type:string;criteria?:Record<string,unknown>};if(q.type==='noul')answers[key]={type:'noul',noul:0.99};else{const choice=key.startsWith('category')?'ai-news':'none';answers[key]={type:'choice',choice,confidence:0.95,probabilities:Object.fromEntries(Object.keys(q.criteria!).map(key=>[key,key===choice?1:0]))};}}return{model:'jev-1.13.0',answers,usage:{input_tokens:1000,output_tokens:100}};}
 describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
+ it.each([1,2])('keeps emoji at all Jev text boundaries well formed with %i UTF-16 units remaining',remaining=>{
+  const text=(limit:number)=>'a'.repeat(limit-remaining)+'🤖 suffix';
+  const items=[{...row(),title:text(120),text:text(600)}],history=[{id:'prior-test',title:text(40),text:text(64)}];
+  const state=JSON.parse(JSON.stringify(jevRequest(items,history))).state;
+  for(const [value,limit] of [[state.items[0].title,120],[state.items[0].text,600],[state.history[0].title,40],[state.history[0].text,64]] as const){
+   expect(value.isWellFormed()).toBe(true);expect(value.length).toBeLessThanOrEqual(limit);
+   expect(value).toBe('a'.repeat(limit-remaining)+(remaining===2?'🤖':''));
+  }
+  expect(items[0].title).toBe(text(120));
+ });
+ it('normalizes malformed source Unicode only in the bounded Jev request',()=>{
+  const item={...row(),title:'test\uD800text\uDC00',text:'test\uDC00'};
+  const state=jevRequest([item],[]).state;
+  expect(state.items[0]).toMatchObject({title:'test\uFFFDtext\uFFFD',text:'test\uFFFD'});
+  expect(item.title).toBe('test\uD800text\uDC00');
+ });
+ it('does not split an Instagram emoji when deriving its 500-unit candidate title',async()=>{
+  const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!,caption='a'.repeat(499)+'🤖 public caption';
+  const fetcher=vi.fn<typeof fetch>().mockResolvedValueOnce(json({data:registration})).mockResolvedValueOnce(json([{id:'emoji-test',shortCode:'test',caption,timestamp:'2026-10-13T20:20:00Z',url:'https://www.instagram.com/p/test/',ownerUsername:'mosseri'}]));
+  const result=await pollDneskaiInstagram(source,registration,'2026-10-12T00:00:00Z',{env:apifyEnv,fetcher,signal,now});
+  expect(result.running).toBe(false);if(!result.running){expect(result.items[0].title).toBe('a'.repeat(499));expect(result.items[0].text).toBe(caption);}
+ });
  it('uses canonical project identity,42 genuine registry identities and exact cadence',()=>{expect(DNESKAI_SOURCES).toHaveLength(42);expect(new Set(DNESKAI_SOURCES.map(row=>row.id)).size).toBe(42);expect(isDneskaiProject({portfolio_key:'aifirst',repo_full_name:null,parent_id:null})).toBe(true);expect(isDneskaiProject({portfolio_key:null,repo_full_name:'owner/fake-dneskai',parent_id:null})).toBe(false);expect(dueDneskaiSources('2026-10-18').filter(row=>row.kind==='instagram').map(row=>row.name).sort()).toEqual(['insidertech','meta.ai','mosseri','techcrunch','theapplehub']);expect(DNESKAI_SOURCES.find(row=>row.id==='anthropic-news')?.kind).toBe('html');for(const id of ['ars-technica','the-verge','wired-ai'])expect(DNESKAI_SOURCES.find(row=>row.id===id)?.weekdays).toEqual([1]);expect(DNESKAI_SOURCES.find(row=>row.id==='github-ai-releases')?.weekdays).toEqual([2,5]);});
  it('cheap dedup ignores tracking URLs and case/spacing in the same authored text',()=>{expect(dneskaiCheapIdentity({title:'NEWS',text:'Some   text',url:'https://example.test/item?utm_source=x'})).toEqual(dneskaiCheapIdentity({title:'news',text:'some text',url:'https://example.test/item'}));});
  it('calls only configured bridge origin with exact HMAC and refuses incomplete foreign responses',async()=>{const source=DNESKAI_SOURCES.find(row=>row.id==='anthropic-news')!,secret='test-only-secret-'.repeat(3),env={MARKETING_DNESKAI_SOURCE_URL:'https://quorum.example/admin/api/marketing-sources',MARKETING_DNESKAI_SOURCE_SECRET:secret},fetcher=vi.fn<typeof fetch>(async()=>json({schemaVersion:'dneskai-feed/1',sources:[{sourceId:source.id,status:'ok',errorCode:null,items:[{externalId:'test',title:'Test authored news',url:'https://example.test/news',summary:'Public summary',publishedAt:now.toISOString(),fetchedAt:now.toISOString()}]}]}));const result=await collectDneskaiFeed(source,'2026-10-12T00:00:00Z',{env,fetcher,signal,now});expect(result.complete).toBe(true);const [url,init]=fetcher.mock.calls[0] as unknown as [string,RequestInit];expect(url).toBe('https://quorum.example/admin/api/marketing-collection');expect(init.redirect).toBe('error');expect(init.headers).toEqual(signAutomationBody(init.body as string,secret,now.getTime()));fetcher.mockResolvedValueOnce(json({schemaVersion:'dneskai-feed/1',sources:[]}));await expect(collectDneskaiFeed(source,now.toISOString(),{env,fetcher,signal,now})).rejects.toThrow('binding');});

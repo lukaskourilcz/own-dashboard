@@ -103,7 +103,8 @@ Před spuštěním je potřeba:
    na serveru OwnDashboardu.
 3. Připojit Jev pouze do schváleného serverového prostředí. Vlastník založil účet
    a doplnil kredit; klíč je uložený v soukromé místní konfiguraci a ve schválené
-   Preview větvi OwnDashboardu. V produkčním prostředí není.
+   Preview větvi OwnDashboardu. Od produkčního propojení 13. října je nastavený
+   také v samostatném prostředí Production; pravidelný sběr zůstává vypnutý.
 4. Ověřit rozpočet a provider konfiguraci, provést jeden omezený živý sběr a
    porovnat výsledek s dashboardem. Mockované testy nejsou dokladem živého běhu.
 5. Předložit výsledek vlastníkovi před produkčním nasazením. Potom zapnout pouze
@@ -136,12 +137,61 @@ zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schvá
 - Obě schválená Preview sestavení jsou využitá. Lokální oprava `97068b5`
   zachovává platné položky feedu při vadné URL a přidává omezené HTTP/strojové
   chybové kódy bez zpráv a tajemství. Prošla 62 cílenými testy, typy a lintem;
-  není nasazená. Cesta Apify `/v2/actors/:actorId/runs` odpovídá dokumentaci,
+  byla následně sloučena v PR #100 a nasazena do produkce. Cesta Apify `/v2/actors/:actorId/runs` odpovídá dokumentaci,
   proto jsme ji bez důkazu neměnili. Příčina odmítnutí zatím není potvrzená.
+
+## Produkční propojení 13. října 2026
+
+Na výslovný pokyn vlastníka je všech devět marketingových migrací v produkční
+databázi. Před změnou byl do neveřejného místního úložiště uložen stav dotčených
+preferencí, původní omezení a pravidla úložiště. Nových 17 marketingových tabulek
+má RLS, anonym nemůže spouštět marketingové funkce a úložiště obrázků je soukromé.
+Přihlášený vlastník může číst výsledky, ale nemůže přímo měnit revize ani spouštět
+sběr přes databázovou funkci. Stagingová data se do produkce nekopírovala.
+
+Production má klíče Apify/Jev a nová samostatná integrační tajemství pro zdrojový
+most a sběr. Dočasné Preview cookie ani pilotní konfigurace se nepoužívají.
+Sběr, placené operace a publikování jsou vypnuté. Požadavek s platným integračním
+klíčem na produkční sběr vrátil očekávané `403 collection-disabled`. Přihlášený
+Chrome ověřil načtení registru zdrojů bez chyby konfigurace Apify/Jev.
+
+Nasazení OwnDashboardu `dpl_G7WsuRJcZyUTcxzQDxbHDi72XXCf` je READY na hlavní
+doméně a používá již ověřený merge `32ad3d8`. Dřívější kontrola tohoto kódu:
+1 357 testů prošlo, jeden byl přeskočen; prohlížečové testy: 126 prošlo,
+70 konfigurovaných přeskočení. V tomto kroku se aplikační kód neměnil.
+
+Quorum PR #599 je sloučené v `60ebbef`. Na přesném čistém commitu prošlo
+4 784 testů, typy, lint, sestavení a kontrola běžící aplikace. Produkční nasazení
+`dpl_2edyiBK5moHA3n9poS7w67nDUprP` je READY na `boardless-ai.vercel.app`.
+Podepsaný bezplatný požadavek vrátil HTTP 200 a jeden datovaný podklad z
+`openai-blog`, se stavem `ok` a bez chyby. Jde o ověření zdrojového rozhraní;
+neprokazuje celý sběr, klasifikaci ani schválení příspěvku. Export schválených
+článků zůstává vypnutý, stejně jako pravidelný sběr a publikování.
+
+Lokální Apify klíč prošel kontrolou formátu a bezplatným ověřením účtu. Aktuální
+actor i tarif odpovídají připnuté konfiguraci. Příčina dřívějšího HTTP odmítnutí
+stále není doložená. Vlastník následně schválil jeden nový test do 0,05 USD.
+Apify vrátilo sedm příspěvků za doložených 0,0161 USD. Výsledek zůstává částečný,
+protože dosáhl limitu sedmi položek. Jediné volání Jev skončilo HTTP 400;
+jeho cenu neznáme a ponecháváme rezervaci 0,003 USD. Požadavek jsme neopakovali
+a původní stagingová rezervace 0,04 USD zůstává samostatná.
+
+Offline kontrola uloženého požadavku našla rozdělené emoji v nadpisu. Oprava
+zkracuje nadpisy a texty bez neplatných UTF-16 znaků, zachovává dosavadní limity
+a původní zdrojový text. Kontrola stejné dávky po opravě nenašla neplatné znaky.
+Regresní testy pokrývají hranice textů kandidátů, historie a instagramového
+nadpisu. Vlastník pak schválil jedno další volání Jev do 0,003 USD na stejné
+uložené dávce, bez nového scrapování. Po opravě Jev vrátilo platné vyhodnocení
+sedmi položek za 0,000155064 USD. Všechny zůstaly `held` s důvodem
+`collection-classification-uncertain`; relevance byla 0,04–0,40. Prahy jsme
+nesnižovali a žádné téma nepovažujeme za vybrané. První HTTP 400 nemá zachovaný
+diagnostický text, takže jeho přesnou příčinu nelze doložit. Data testu zůstávají
+v soukromých místních dokladech; do produkční databáze jsme je neimportovali.
 - Worker je po testu opět nepublikovaný. Časovač ani veřejný webhook nemá.
   Produkční nasazení této změny, pravidelný sběr a publikování zůstávají vypnuté.
   Původní tři rezervace generování, nula finálních revizí a nula publikací se nezměnily.
-  Úplný průchod přes Apify a Jev není ověřený; další nasazení a pokus potřebují
+  Samostatný průchod přes Apify a opravené Jev je ověřený. Celý běh přes n8n
+  a uložení do produkční databáze ještě neproběhl; jeho spuštění potřebuje
   nový výslovný rozsah, bez resetování předchozích rezervací.
 
 Databázové testy ověřují skutečné SQL v místním PostgreSQL prostředí PGlite;
