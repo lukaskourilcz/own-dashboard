@@ -21,6 +21,8 @@ for (const lang of ["en", "cs"] as const) {
     await expect(page.getByText(copy.preview, { exact: true })).toBeVisible();
     await expect(page.getByText(copy.empty, { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: copy.refresh, exact: true })).toBeDisabled();
+    await page.getByText(lang === 'cs' ? 'Převzít připravené návrhy' : 'Import prepared drafts', { exact: true }).click();
+    await expect(page.getByLabel(lang === 'cs' ? 'Připravené soubory pro import' : 'Prepared import files')).toBeDisabled();
     const jobHealth = page.getByRole('region', { name: lang === 'cs' ? 'Příprava návrhů' : 'Draft preparation' });
     await expect(jobHealth).toBeVisible();
     await expect(jobHealth.getByRole('button', { name: lang === 'cs' ? 'Zkontrolovat stav znovu' : 'Check status again' })).toBeDisabled();
@@ -93,6 +95,7 @@ test("Marketing APIs reject unauthenticated decisions, worker jobs and invalid n
     request.post("/api/marketing/revisions", { headers:{Origin:"http://localhost:3939"}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
     request.post("/api/marketing/knowledge", { headers:{Origin:"http://localhost:3939"}, data: { action: "preview" } }),
     request.post("/api/marketing/jobs", { data: {} }),
+    request.post("/api/marketing/offline-import", { headers:{Origin:"http://localhost:3939"}, data: {} }),
     request.post("/api/marketing/n8n", { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { operation: "publish", brand: "devshark", dryRun: false } }),
   ]);
   for (const result of results) {
