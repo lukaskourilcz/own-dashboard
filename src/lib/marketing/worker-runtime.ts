@@ -119,6 +119,7 @@ export function createMarketingAssetStorage(db: Database, ownerId: string, sched
       const expectedMetadata = { ...input.metadata, sha256: input.sha256, ownerId };
       const files = db.storage.from(MARKETING_ASSET_BUCKET);
       // Never rewrite. A retry may reuse an existing object only after byte and metadata verification.
+      if (options.signal?.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
       const uploaded = await files.upload(key, input.bytes, { upsert: false, contentType: "image/jpeg", cacheControl: "3600", metadata: expectedMetadata });
       const info = await files.info(key);
       if (info.error || !info.data || info.data.size !== input.bytes.length || info.data.contentType !== "image/jpeg" || !Object.entries(expectedMetadata).every(([field, value]) => info.data.metadata?.[field] === value)) throw new MarketingWorkerRuntimeError("stored-asset-metadata-mismatch");

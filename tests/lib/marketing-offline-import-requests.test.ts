@@ -1,0 +1,16 @@
+import { mkdtempSync,writeFileSync,mkdirSync,readFileSync,rmSync,readdirSync,symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach,describe,it,expect,vi } from 'vitest';
+import { offlineFixture,campaignId } from './marketing-offline-import-fixture';
+import { validateMarketingOfflineImport } from '@/lib/marketing/offline-import-validation';
+import { prepareOfflineImportRequests } from '../../scripts/marketing-offline-import-requests.mjs';
+vi.mock('server-only',()=>({}));
+const scratch:string[]=[];
+afterEach(()=>scratch.splice(0).forEach(dir=>rmSync(dir,{recursive:true,force:true})));
+function privateBundle(){const dir=mkdtempSync(path.join(tmpdir(),'offline-import-requests-test-'));scratch.push(dir);const bundle=path.join(dir,'bundle');mkdirSync(bundle);const f=offlineFixture();writeFileSync(path.join(bundle,'manifest.json'),JSON.stringify(f.manifest));for(const [file,bytes]of f.files){mkdirSync(path.dirname(path.join(bundle,file)),{recursive:true});writeFileSync(path.join(bundle,file),bytes);}const packets=f.manifest.days.map(day=>({...f.source,sourceId:day.sourceId}));writeFileSync(path.join(dir,'packets.json'),JSON.stringify(packets));const slots=['ig','threads-question','threads-answer','story-1','story-2','story-3'];const entries=f.manifest.days.flatMap((day,i)=>slots.map((slot,j)=>({id:`${String(i*6+j+1).padStart(8,'0')}-aaaa-4aaa-8aaa-aaaaaaaaaaaa`,campaign_id:campaignId,generation_version:1,date:day.date,original:{slot,sourceId:day.sourceId,sourceRevision:day.sourceRevision,contentHash:day.contentHash}})));writeFileSync(path.join(dir,'entries.json'),JSON.stringify(entries));return{dir,bundle,f,entries,options:{bundle,packets:path.join(dir,'packets.json'),entries:path.join(dir,'entries.json'),output:path.join(dir,'requests')}};}
+describe('private offline import request preparation without calls',()=>{
+ it('emits42 distinct bounded slot requests validated against exact source and proof files',()=>{const f=privateBundle();expect(prepareOfflineImportRequests(f.options)).toEqual({requests:42,providerCalls:0,storageCalls:0,apiCalls:0,ready:false});const files=readdirSync(f.options.output);expect(files).toHaveLength(42);for(const file of files){const input=JSON.parse(readFileSync(path.join(f.options.output,file),'utf8'));expect(validateMarketingOfflineImport(input,new Date('2026-10-13T12:00:00Z')).input.entryVersion).toBe(1);}expect(()=>prepareOfflineImportRequests(f.options)).toThrow('new-private-output');});
+ it('rejects renamed/missing/duplicate slot sources before producing a directory',()=>{const f=privateBundle();f.entries[0].original.sourceId='foreign';writeFileSync(f.options.entries,JSON.stringify(f.entries));expect(()=>prepareOfflineImportRequests(f.options)).toThrow('exact-owned-slot');expect(()=>readFileSync(path.join(f.options.output,'anything'))).toThrow();});
+ it('rejects symlink escape even when the descriptor hash matches',()=>{const f=privateBundle(),descriptor=f.f.manifest.days[0].instagram.slides[0];const outside=path.join(f.dir,'outside.jpg');writeFileSync(outside,f.f.files.get(descriptor.file)!);rmSync(path.join(f.bundle,descriptor.file));symlinkSync(outside,path.join(f.bundle,descriptor.file));expect(()=>prepareOfflineImportRequests(f.options)).toThrow('stay-in-bundle');});
+});
