@@ -33,20 +33,23 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
   const cost = (amount: number | null) => amount === null ? t.unknownCost : new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(amount);
   const status = (value: 'never' | 'ok' | 'partial' | 'error' | 'held' | 'running' | 'complete' | 'failed') => <StatusBadge value={value} label={t[value]} tone={value === 'ok' || value === 'complete' ? 'success' : value === 'error' || value === 'failed' ? 'risk' : value === 'partial' || value === 'held' ? 'warning' : 'neutral'} />;
   const todayChecks = state.sourceStates.filter(value => value.lastAttemptAt && pragueMarketingDate(new Date(value.lastAttemptAt)) === today);
-  const tomorrowRun = state.runs.find(run => run.targetDate === tomorrow);
-  const selected = state.candidates.filter(candidate => candidate.status === 'selected' && candidate.targetDate === tomorrow).slice(0, 4);
+  const topicDays = [{ id: 'today', date: today, title: t.todayTopics, empty: t.noTodayTopics }, { id: 'tomorrow', date: tomorrow, title: t.nextTopics, empty: t.noTopics }];
   const unassociated = state.candidates.some(candidate => candidate.status === 'selected' && candidate.targetDate === null);
   const sourceName = (id: string) => state.sources.find(source => source.id === id)?.name ?? t.sourceUnknown;
   return <>
     <div className="space-y-2 border-t border-border pt-4"><StatusBadge value={state.enabled ? 'active' : 'held'} label={state.enabled ? t.enabled : t.disabled} tone={state.enabled ? 'information' : 'warning'} />
       {state.blockers.length > 0 && <div role="status"><h3 className="text-sm font-medium">{t.configuration}</h3><ul className="list-inside list-disc text-sm text-foreground-muted">{state.blockers.map((code, index) => <li key={`${code}-${index}`}>{t.blockers[code] ?? t.configuration}</li>)}</ul></div>}</div>
-    <section aria-labelledby="dneskai-tomorrow-title" className="space-y-2"><h3 id="dneskai-tomorrow-title" className="text-sm font-semibold">{t.nextTopics} · {dateOnly(tomorrow)}</h3>
-      <p className="text-sm text-foreground-muted">{tomorrowRun && <>{status(tomorrowRun.status)} · </>}{t.selectedCount}: {selected.length} / 4</p>
-      {unassociated && <p className="text-xs text-foreground-muted">{t.pendingTopics}</p>}
-      {selected.length === 0 ? <p className="text-sm text-foreground-muted">{t.noTopics}</p> : <ol className="divide-y divide-border">{selected.map(candidate => {
+    {unassociated && <p className="text-xs text-foreground-muted">{t.pendingTopics}</p>}
+    <div className="grid min-w-0 gap-5 md:grid-cols-2">{topicDays.map(day => {
+      const selected = state.candidates.filter(candidate => candidate.status === 'selected' && candidate.targetDate === day.date).slice(0, 4);
+      const run = state.runs.find(run => run.targetDate === day.date);
+      return <section key={day.id} aria-labelledby={`dneskai-${day.id}-title`} className="min-w-0 space-y-2 border-t border-border pt-3"><h3 id={`dneskai-${day.id}-title`} className="text-sm font-semibold">{day.title} · {dateOnly(day.date)}</h3>
+      <p className="text-sm text-foreground-muted">{run && <>{status(run.status)} · </>}{t.selectedCount}: {selected.length} / 4</p>
+      {selected.length === 0 ? <p className="text-sm text-foreground-muted">{day.empty}</p> : <ol className="divide-y divide-border">{selected.map(candidate => {
         const url = sourceExternalUrl(candidate.url);
         return <li key={candidate.id} className="min-w-0 space-y-1 py-3"><p className="break-words text-sm font-medium">{url ? <a href={url} target="_blank" rel="noopener noreferrer" className="focus-ring rounded underline">{candidate.title || t.unnamed}</a> : candidate.title || t.unnamed}</p><p className="text-xs text-foreground-muted">{sourceName(candidate.sourceId)} · {t.unpublished}</p><p className="text-xs text-foreground-muted">{candidate.publishedAt ? <>{t.publishedAt}: {at(candidate.publishedAt)}</> : t.unknownPublished}</p></li>;
-      })}</ol>}</section>
+      })}</ol>}</section>;
+    })}</div>
     <section aria-labelledby="dneskai-checks-title" className="space-y-2"><h3 id="dneskai-checks-title" className="text-sm font-semibold">{t.today} · {dateOnly(today)}</h3>
       {todayChecks.length === 0 ? <p className="text-sm text-foreground-muted">{t.noChecks}</p> : <ul className="divide-y divide-border">{todayChecks.map(value => <li key={value.sourceId} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span className="min-w-0 break-words">{sourceName(value.sourceId)}</span><span>{status(value.status)} · {at(value.lastAttemptAt)}</span></li>)}</ul>}</section>
     <section aria-labelledby="dneskai-registry-title"><h3 id="dneskai-registry-title" className="mb-2 text-sm font-semibold">{t.registry}</h3>

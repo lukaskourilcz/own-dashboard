@@ -38,12 +38,29 @@ describe('read-only DNESKAi source checks', () => {
   });
   it('counts only actual tomorrow candidates, holding old and unassociated selections', () => {
     const value = state(); const candidate = value.candidates[0];
-    value.candidates.push({ ...candidate, id: 'old', title: 'OLD-SELECTION', targetDate: '2026-10-13' }, { ...candidate, id: 'unknown', title: 'UNASSOCIATED-SELECTION', targetDate: null });
+    value.candidates.push({ ...candidate, id: 'old', title: 'OLD-SELECTION', targetDate: '2026-10-12' }, { ...candidate, id: 'unknown', title: 'UNASSOCIATED-SELECTION', targetDate: null });
     value.runs[0].selectedCount = 4;
     render(<DneskaiSourceRecords state={value} lang="en" now={now} />);
     expect(container.textContent).toContain('Selected topics: 1 / 4'); expect(container.textContent).toContain(dneskaiSources.en.pendingTopics);
     expect(container.textContent).not.toContain('OLD-SELECTION'); expect(container.textContent).not.toContain('UNASSOCIATED-SELECTION');
     const tomorrow = container.querySelector('[aria-labelledby="dneskai-tomorrow-title"]'); expect(tomorrow?.textContent).not.toContain('4 / 4');
+  });
+  it.each(['en', 'cs'] as const)('keeps last night’s four research topics visible after Prague midnight and the next morning (%s)', lang => {
+    const value = state(); const candidate = value.candidates[0];
+    value.candidates = Array.from({ length: 4 }, (_, index) => ({ ...candidate, id: `midnight-${index}`, title: `MIDNIGHT-TOPIC-${index}`, targetDate: '2026-10-14' }));
+    value.runs[0].selectedCount = 4;
+    render(<DneskaiSourceRecords state={value} lang={lang} now={new Date('2026-10-13T21:59:59Z')} />);
+    expect(container.querySelector('[aria-labelledby="dneskai-tomorrow-title"]')?.textContent).toContain('4 / 4');
+    expect(container.querySelector('[aria-labelledby="dneskai-today-title"]')?.textContent).not.toContain('MIDNIGHT-TOPIC');
+    for (const instant of ['2026-10-13T22:00:00Z', '2026-10-14T07:00:00Z']) {
+      render(<DneskaiSourceRecords state={value} lang={lang} now={new Date(instant)} />);
+      const today = container.querySelector('[aria-labelledby="dneskai-today-title"]'); const tomorrow = container.querySelector('[aria-labelledby="dneskai-tomorrow-title"]');
+      expect(today?.textContent).toContain(dneskaiSources[lang].todayTopics); expect(today?.textContent).toContain('4 / 4');
+      for (let index = 0; index < 4; index++) expect(today?.textContent).toContain(`MIDNIGHT-TOPIC-${index}`);
+      expect(tomorrow?.textContent).toContain('0 / 4'); expect(tomorrow?.textContent).not.toContain('MIDNIGHT-TOPIC');
+      expect(today?.querySelectorAll('li')).toHaveLength(4); expect(today?.textContent).toContain(dneskaiSources[lang].unpublished);
+      expect(container.querySelectorAll('button,input,img')).toHaveLength(0);
+    }
   });
   it('leaves unsafe URLs as text and never loads remote candidate images', () => {
     const value = state(); value.sources[0].url = 'javascript:alert(1)'; value.candidates[0].url = 'https://user:secret@example.invalid';
