@@ -144,6 +144,11 @@ export function revisionReadiness(revision: ContentRevision): string[] {
   if (revision.account.platform === "instagram" && revision.assets.length === 0) issues.push("missing-assets");
   if (revision.format === "carousel" && revision.assets.length < 2) issues.push("carousel-needs-two-assets");
   if (revision.format === "reel" && !revision.assets.some((asset) => asset.mimeType === "video/mp4")) issues.push("missing-video");
+  if (revision.format === "story") {
+    if (revision.account.platform !== "instagram") issues.push("story-instagram-required");
+    if (revision.assets.length !== 1 || revision.assets[0]?.mimeType !== "image/jpeg") issues.push("story-single-jpeg-required");
+    else if (revision.assets[0].width !== 1080 || revision.assets[0].height !== 1920) issues.push("story-image-dimensions-required");
+  }
   if (revision.account.platform === "threads" && revision.caption.length > 500) issues.push("threads-caption-too-long");
   return issues;
 }

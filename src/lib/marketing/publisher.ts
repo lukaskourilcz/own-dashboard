@@ -51,7 +51,7 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   if (Date.parse(revision.scheduledAt) < now.getTime() - 15 * 60_000) return 'publish-window-expired';
   if (revision.assets.some(asset => !asset.alt.trim())) return 'asset-alt-required';
   if (revision.account.platform === 'threads' && !['thread', 'post', 'carousel', 'reel'].includes(revision.format)) return 'unsupported-format';
-  if (revision.account.platform === 'instagram' && !['post', 'carousel', 'reel'].includes(revision.format)) return 'unsupported-format';
+  if (revision.account.platform === 'instagram' && !['post', 'carousel', 'reel', 'story'].includes(revision.format)) return 'unsupported-format';
   if (revision.format === 'carousel' && (revision.assets.length < 2 || revision.assets.length > 10)) return 'unsupported-carousel-size';
   if (revision.format === 'post' && revision.account.platform === 'instagram' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'image/jpeg')) return 'unsupported-post-assets';
   if (revision.format === 'reel' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'video/mp4')) return 'unsupported-reel-assets';
@@ -100,7 +100,19 @@ async function graph(input: PublishMarketingInput, node: string, method: 'GET' |
     return raw as Record<string, unknown>;
   } catch { throw new MetaFailure('meta-invalid-response'); }
 }
+async function verifyRemoteAccount(input: PublishMarketingInput): Promise<string | null> {
+  const story = input.revisionRow.revision.format === 'story';
+  let profile: Record<string, unknown>;
+  try { profile = await graph(input, input.account.remote_account_id, 'GET', { fields: story ? 'id,username,account_type' : 'id,username' }); }
+  catch (error) { if (story) return 'story-business-account-unverified'; throw error; }
+  if (profile.id !== input.account.remote_account_id || typeof profile.username !== 'string' || profile.username.toLowerCase() !== input.account.handle.replace(/^@/, '').toLowerCase()) return 'remote-account-mismatch';
+  // Story publishing is restricted to Business accounts. Scopes or a stored
+  // professional-account check alone cannot establish this current capability.
+  if (story && (typeof profile.account_type !== 'string' || profile.account_type.toUpperCase() !== 'BUSINESS')) return 'story-business-account-unverified';
+  return null;
+}
 async function verifyAssets(input: PublishMarketingInput): Promise<void> {
+  const story = input.revisionRow.revision.format === 'story';
   for (const asset of input.revisionRow.revision.assets) {
     input.signal?.throwIfAborted();
     const url = new URL(asset.url);
@@ -109,13 +121,28 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     try { response = await (input.fetcher ?? fetch)(url.href, { redirect: 'error', signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000) }); }
     catch { throw new MetaFailure('asset-unreachable'); }
     if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== asset.mimeType || !response.body) throw new MetaFailure('asset-mime-or-response-invalid');
-    const maxBytes = asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
+    const maxBytes = story ? 8_000_000 : asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
     if (Number(response.headers.get('content-length')) > maxBytes) throw new MetaFailure('asset-too-large');
     const hash = createHash('sha256'); let bytes = 0; const reader = response.body.getReader();
+    const imageChunks: Uint8Array[] = [];
     try { while (true) { input.signal?.throwIfAborted(); const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
-      if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); } }
+      if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); if (story) imageChunks.push(part.value); } }
     catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable'); }
     if (hash.digest('hex') !== asset.sha256) throw new MetaFailure('asset-hash-mismatch');
+    if (story) {
+      // Check the downloaded approved bytes, not caller-supplied dimensions.
+      let metadata: { format?: string; width?: number; height?: number; orientation?: number };
+      let decodeImage: (() => Promise<unknown>) | undefined;
+      try { const { default: sharp } = await import('sharp');
+        const image = sharp(Buffer.concat(imageChunks), { failOn: 'error', limitInputPixels: 1080 * 1920 });
+        metadata = await image.metadata(); decodeImage = () => image.stats();
+      }
+      catch { throw new MetaFailure('story-image-invalid'); }
+      if (metadata.format !== 'jpeg') throw new MetaFailure('story-image-format-invalid');
+      if (metadata.width !== 1080 || metadata.height !== 1920 || (metadata.orientation !== undefined && metadata.orientation !== 1)) throw new MetaFailure('story-image-dimensions-invalid');
+      try { if (!decodeImage) throw new Error(); await decodeImage(); }
+      catch { throw new MetaFailure('story-image-invalid'); }
+    }
   }
 }
 async function containerStatus(input: PublishMarketingInput, container: string): Promise<string> {
@@ -170,8 +197,8 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     try { await input.checkpoint({ stage, ...outcome }); } catch { throw new CheckpointFailure(); }
   };
   try {
-    const profile = await graph(input, input.account.remote_account_id, 'GET', { fields: 'id,username' });
-    if (profile.id !== input.account.remote_account_id || typeof profile.username !== 'string' || profile.username.toLowerCase() !== input.account.handle.replace(/^@/, '').toLowerCase()) return result('held', 'remote-account-mismatch', container);
+    const accountGate = await verifyRemoteAccount(input);
+    if (accountGate) return result('held', accountGate, container);
     await verifyAssets(input);
     const threads = input.account.platform === 'threads';
     const quota = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publishing_limit' : 'content_publishing_limit'}`, 'GET', { fields: 'quota_usage,config' });
@@ -188,8 +215,12 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       container = `intent:${revisionHash(revision)}`;
       await save('container-create-intent', result('pending', 'container-create-intent', container));
       sideEffectStarted = true;
-      const fields: Record<string, string> = { [threads ? 'text' : 'caption']: revision.caption };
-      if (revision.format === 'carousel') {
+      // Story text is rendered in the JPEG. The stored caption is internal
+      // review copy; it is never sent as a public Story caption or alt_text.
+      const fields: Record<string, string> = revision.format === 'story' ? {} : { [threads ? 'text' : 'caption']: revision.caption };
+      if (revision.format === 'story') {
+        Object.assign(fields, { media_type: 'STORIES', image_url: revision.assets[0]!.url });
+      } else if (revision.format === 'carousel') {
         const children: string[] = [];
         for (const asset of revision.assets) children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
           [asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url']: asset.url, is_carousel_item: 'true', alt_text: asset.alt }));
@@ -217,6 +248,10 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     const fresh = await input.revalidate();
     const refreshedGate = publicationGate(fresh, input.config, clock());
     if (refreshedGate || revisionHash(fresh.revisionRow.revision) !== revisionHash(revision) || fresh.account.remote_account_id !== input.account.remote_account_id) return result('held', refreshedGate ?? 'approval-changed-before-publish', container);
+    if (revision.format === 'story') {
+      const storyAccountGate = await verifyRemoteAccount({ ...input, ...fresh });
+      if (storyAccountGate) return result('held', storyAccountGate, container);
+    }
     input.signal?.throwIfAborted();
     await save('publish-intent', result('pending', 'publish-intent', container));
     sideEffectStarted = true;
