@@ -1,115 +1,83 @@
 {
-  "name": "OwnDashboard \u2014 approved due-post publisher (inactive, dry run)",
+  "name": "OwnDashboard — approved UTC publication planner (inactive, dry run)",
   "active": false,
   "nodes": [
     {
-      "id": "572d5174-4d3d-588e-be82-884f4097d547",
-      "name": "Manual due-post inspection",
+      "id": "3814f199-10d8-5119-a226-3086dcf89fee",
+      "name": "Manual approved-publication inspection",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
         0,
-        0
+        -180
       ],
       "parameters": {}
     },
     {
-      "id": "f703bc53-6276-583b-83ed-6f16b672d06f",
-      "name": "Approved due-post check",
+      "id": "700540e5-c5ea-5b1a-9c32-587d52b946ec",
+      "name": "Hourly approved-publication recovery",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
         0,
-        180
+        0
       ],
       "parameters": {
         "rule": {
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "*/5 * * * *"
+              "expression": "0 * * * *"
             }
           ]
         }
       }
     },
     {
-      "id": "416ae519-3c49-5c76-a86f-ab873b98584b",
-      "name": "Brand publishing scopes",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "01625805-fd77-5bce-ad9f-3205a1331cbe",
+      "name": "Authenticated owner approval hook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
       "position": [
-        220,
-        0
+        0,
+        180
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "return ['dneskai','devshark'].map(brand => ({json:{operation:'publish',brand,dryRun:true}}));"
-      }
-    },
-    {
-      "id": "5dd03f5e-a05e-5779-96fb-3293e903aa3d",
-      "name": "Publish approved due posts",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        440,
-        0
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": {
-          "timeout": 60000,
-          "redirect": {
-            "redirect": {
-              "followRedirects": false
-            }
-          },
-          "response": {
-            "response": {
-              "responseFormat": "json"
-            }
-          }
-        }
+        "httpMethod": "POST",
+        "path": "marketing-approved-publication",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
       },
+      "webhookId": "5ae4c7c0-4c6c-581b-87cf-edd97778abc8",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
-          "name": "OwnDashboard marketing n8n"
+          "id": "REPLACE_WITH_APPROVAL_WEBHOOK_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard approval webhook"
         }
-      },
-      "retryOnFail": false,
-      "maxTries": 3,
-      "waitBetweenTries": 1000,
-      "onError": "continueErrorOutput"
+      }
     },
     {
-      "id": "b831a54c-12ac-5e34-9c60-ef44bf77cf83",
-      "name": "Recorded ambiguous publications",
+      "id": "30c52e0f-075c-5605-a085-4aefdfe1dd36",
+      "name": "Select publication planning scope",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        660,
+        240,
         0
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const records = [];\nfor (const item of $input.all()) {\n  const rows = Array.isArray(item.json.outcomes) ? item.json.outcomes : [];\n  for (const row of rows) {\n    const status = row.status ?? row.outcome?.status;\n    if (typeof row.publicationId === 'string' && ['reconciliation','pending'].includes(status)) records.push({json:{operation:'reconcile',publicationId:row.publicationId}});\n  }\n}\nreturn records.slice(0,5);"
+        "jsCode": "const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nreturn $input.all().map((item,index) => {\n  if (Object.prototype.hasOwnProperty.call(item.json,'body')) {\n    const body = item.json.body;\n    if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || !uuid.test(body.publicationId ?? '')) throw new Error('invalid-publication-hook');\n    return {json:{operation:'publication-plan',publicationId:body.publicationId},pairedItem:{item:index}};\n  }\n  return {json:{operation:'publication-plan'},pairedItem:{item:index}};\n});"
       }
     },
     {
-      "id": "52db830c-ff7f-51c3-af02-64a6058eb23d",
-      "name": "Reconcile recorded publication",
+      "id": "b449e0a7-5dc6-530a-823f-c7b3c43cc20a",
+      "name": "Read exact approved publication plan",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        880,
+        460,
         0
       ],
       "parameters": {
@@ -146,13 +114,58 @@
       "onError": "continueErrorOutput"
     },
     {
-      "id": "17ab8529-57c6-5114-8c63-ed227ce19e08",
-      "name": "Read claims after publish timeout",
+      "id": "9f31691d-6dc9-5017-b319-793894edb263",
+      "name": "Bounded UTC publication slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst now = Date.now();\nconst rows = $input.all().flatMap(item => Array.isArray(item.json.publications) ? item.json.publications : []).slice(0,8);\nconst seen = new Set();\nconst result = [];\nfor (const row of rows) {\n  const when = Date.parse(row.scheduledAt);\n  if (!uuid.test(row.publicationId ?? '') || !['dneskai','devshark'].includes(row.brand) || !Number.isFinite(when) || when > now + 24*60*60*1000 || when < now - 15*60*1000 || seen.has(row.publicationId)) throw new Error('invalid-publication-plan');\n  seen.add(row.publicationId);\n  result.push({json:{publicationId:row.publicationId,brand:row.brand,scheduledAt:new Date(when).toISOString()}});\n}\nreturn result.sort((a,b) => Date.parse(a.json.scheduledAt) - Date.parse(b.json.scheduledAt));"
+      }
+    },
+    {
+      "id": "fa455731-c6ae-541b-8661-eed4b27cadb7",
+      "name": "One planned publication at a time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {
+          "reset": false
+        }
+      }
+    },
+    {
+      "id": "2619cdaf-150c-51b3-9b42-863159fc1f3f",
+      "name": "Wait until exact UTC slot",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.scheduledAt }}"
+      },
+      "webhookId": "254ee5a3-9e76-5404-8652-39e24abc0361"
+    },
+    {
+      "id": "c52dc3b4-06ad-5dc2-8bcd-d258b2fad987",
+      "name": "Inspect exact approved publication dry run",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        660,
-        200
+        1340,
+        0
       ],
       "parameters": {
         "method": "POST",
@@ -161,7 +174,139 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({operation:'reconcile',brand:$('Brand publishing scopes').item.json.brand}) }}",
+        "jsonBody": "={{ JSON.stringify({operation:'publish',publicationId:$json.publicationId,brand:$json.brand,dryRun:true}) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "0c1bb7c4-41a9-5226-853c-22212ef89fc6",
+      "name": "Read recorded publication outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const planned = $('Wait until exact UTC slot').item.json;\nconst rows = $input.all().flatMap(item => Array.isArray(item.json.outcomes) ? item.json.outcomes : []);\nconst pending = rows.some(row => row.publicationId === planned.publicationId && ['pending','reconciliation'].includes(row.status));\nreturn [{json:{publicationId:planned.publicationId,brand:planned.brand,reconcile:pending},pairedItem:{item:0}}];"
+      }
+    },
+    {
+      "id": "c2693105-b2f5-5ea0-98c9-9237ebb8f232",
+      "name": "Known ambiguous publication",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "eb0b8af7-c91f-5a67-b97d-d776484e31c5",
+              "leftValue": "={{ $json.reconcile }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e1684b6c-674a-5a91-8ea2-2d8bdb35e4b4",
+      "name": "Read-only reconcile recorded outcome",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({operation:'reconcile',publicationId:$json.publicationId}) }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "OwnDashboard marketing n8n"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "81223406-cf27-5e29-8a5e-5412deb6e506",
+      "name": "Read-only reconcile after publish uncertainty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://own-dashboard.example.invalid/api/marketing/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({operation:'reconcile',publicationId:$('Wait until exact UTC slot').item.json.publicationId}) }}",
         "options": {
           "timeout": 60000,
           "redirect": {
@@ -189,62 +334,172 @@
     }
   ],
   "connections": {
-    "Manual due-post inspection": {
+    "Manual approved-publication inspection": {
       "main": [
         [
           {
-            "node": "Brand publishing scopes",
+            "node": "Select publication planning scope",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Approved due-post check": {
+    "Hourly approved-publication recovery": {
       "main": [
         [
           {
-            "node": "Brand publishing scopes",
+            "node": "Select publication planning scope",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Brand publishing scopes": {
+    "Authenticated owner approval hook": {
       "main": [
         [
           {
-            "node": "Publish approved due posts",
+            "node": "Select publication planning scope",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Publish approved due posts": {
+    "Select publication planning scope": {
       "main": [
         [
           {
-            "node": "Recorded ambiguous publications",
+            "node": "Read exact approved publication plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read exact approved publication plan": {
+      "main": [
+        [
+          {
+            "node": "Bounded UTC publication slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bounded UTC publication slots": {
+      "main": [
+        [
+          {
+            "node": "One planned publication at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One planned publication at a time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait until exact UTC slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait until exact UTC slot": {
+      "main": [
+        [
+          {
+            "node": "Inspect exact approved publication dry run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect exact approved publication dry run": {
+      "main": [
+        [
+          {
+            "node": "Read recorded publication outcome",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Read claims after publish timeout",
+            "node": "Read-only reconcile after publish uncertainty",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Recorded ambiguous publications": {
+    "Read recorded publication outcome": {
       "main": [
         [
           {
-            "node": "Reconcile recorded publication",
+            "node": "Known ambiguous publication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Known ambiguous publication": {
+      "main": [
+        [
+          {
+            "node": "Read-only reconcile recorded outcome",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "One planned publication at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read-only reconcile recorded outcome": {
+      "main": [
+        [
+          {
+            "node": "One planned publication at a time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "One planned publication at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read-only reconcile after publish uncertainty": {
+      "main": [
+        [
+          {
+            "node": "One planned publication at a time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "One planned publication at a time",
             "type": "main",
             "index": 0
           }
@@ -254,7 +509,7 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "timezone": "Europe/Prague",
+    "timezone": "UTC",
     "saveDataSuccessExecution": "none",
     "saveDataErrorExecution": "none",
     "saveManualExecutions": false,
