@@ -70,7 +70,7 @@ describe('guarded Meta publishing', () => {
     const { input, checkpoints, requests } = fixture();
     const outcome = await publishMarketingRevision(input);
     expect(outcome).toMatchObject({ status: 'published', remoteContainerId: '201', remoteMediaId: '301' });
-    expect(checkpoints.map(row => row.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome']);
+    expect(checkpoints.map(row => row.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome', 'outcome']);
     expect(requests.filter(row => row.method === 'POST')).toHaveLength(2);
     expect(requests.every(row => !row.url.includes(input.config.accessToken))).toBe(true);
     expect(JSON.stringify(checkpoints)).not.toContain(input.config.accessToken);
@@ -108,6 +108,35 @@ describe('guarded Meta publishing', () => {
     const count = requests.filter(row => row.method === 'POST').length;
     expect((await reconcileMarketingPublication({ ...input, publication: { ...input.publication, status: 'reconciliation', remote_container_id: '201', remote_media_id: '301' } })).status).toBe('reconciliation');
     expect(requests.filter(row => row.method === 'POST')).toHaveLength(count);
+  });
+  it('persists the known media before a permalink deadline and retains it after a lost receipt fence', async () => {
+    const first = fixture(); const fetcher = first.input.fetcher!; const controller = new AbortController(); first.input.signal = controller.signal;
+    first.input.fetcher = async (url, options) => {
+      if (String(url).includes('/301?')) {
+        expect(first.checkpoints.at(-1)).toMatchObject({ stage: 'outcome', status: 'reconciliation', remoteMediaId: '301' });
+        controller.abort(); throw new DOMException('QA deadline', 'AbortError');
+      }
+      expect(options?.signal).toBeDefined(); return fetcher(url, options);
+    };
+    expect(await publishMarketingRevision(first.input)).toMatchObject({ status: 'reconciliation', remoteMediaId: '301', remoteContainerId: '201' });
+    expect(first.checkpoints.at(-1)).toMatchObject({ status: 'reconciliation', remoteMediaId: '301' });
+    const second = fixture(); const checkpoint = second.input.checkpoint;
+    second.input.checkpoint = async value => {
+      if (value.remoteMediaId) throw new Error('QA receipt fence lost');
+      await checkpoint(value);
+    };
+    expect(await publishMarketingRevision(second.input)).toMatchObject({ status: 'reconciliation', errorCode: 'checkpoint-fence-lost', remoteMediaId: '301' });
+    expect(second.requests.some(request => request.url.includes('/301?'))).toBe(false);
+    expect(second.checkpoints.filter(value => value.stage === 'outcome')).toHaveLength(0);
+  });
+  it('aborts a pending poll wait at the shared deadline without another remote request', async () => {
+    const { input, requests, checkpoints } = fixture(); const fetcher = input.fetcher!; const controller = new AbortController(); input.signal = controller.signal;
+    input.fetcher = async (url, options) => String(url).includes('/201?') ? Response.json({ id: '201', status_code: 'IN_PROGRESS' }) : fetcher(url, options);
+    input.wait = () => { controller.abort(); return new Promise<void>(() => {}); };
+    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'reconciliation', errorCode: 'publication-deadline-exceeded', remoteContainerId: '201' });
+    expect(checkpoints.at(-1)).toMatchObject({ status: 'reconciliation', remoteContainerId: '201' });
+    expect(requests.filter(request => request.method === 'POST')).toHaveLength(1);
+    expect(requests.some(request => request.url.includes('media_publish'))).toBe(false);
   });
   it('does not write an outcome over a lost checkpoint fence', async () => {
     const { input, requests } = fixture(); const checkpoint = vi.fn(async () => { throw new Error('CAS lost'); }); input.checkpoint = checkpoint;

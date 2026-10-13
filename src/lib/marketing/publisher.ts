@@ -64,7 +64,27 @@ function graphBase(config: MetaPublisherConfig): string {
 }
 class MetaFailure extends Error { constructor(readonly code: string) { super(code); } }
 class CheckpointFailure extends Error {}
+async function pollWait(input: PublishMarketingInput, ms: number): Promise<void> {
+  input.signal?.throwIfAborted();
+  if (!input.signal) return (input.wait ?? (delay => new Promise(resolve => setTimeout(resolve, delay))))(ms);
+  const signal = input.signal;
+  let abort: (() => void) | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      abort = () => reject(signal.reason);
+      signal.addEventListener('abort', abort, { once: true });
+      if (signal.aborted) { abort(); return; }
+      if (input.wait) input.wait(ms).then(resolve, reject);
+      else timer = setTimeout(resolve, ms);
+    });
+  } finally {
+    if (abort) signal.removeEventListener('abort', abort);
+    if (timer) clearTimeout(timer);
+  }
+}
 async function graph(input: PublishMarketingInput, node: string, method: 'GET' | 'POST', fields: Record<string, string>) {
+  input.signal?.throwIfAborted();
   const url = new URL(`${graphBase(input.config)}/${node}`);
   const requestTimeout = AbortSignal.timeout(Math.min(15000, Math.max(1000, input.config.requestTimeoutMs ?? 10000)));
   const options: RequestInit = { method, redirect: 'error', signal: input.signal ? AbortSignal.any([input.signal, requestTimeout]) : requestTimeout,
@@ -82,6 +102,7 @@ async function graph(input: PublishMarketingInput, node: string, method: 'GET' |
 }
 async function verifyAssets(input: PublishMarketingInput): Promise<void> {
   for (const asset of input.revisionRow.revision.assets) {
+    input.signal?.throwIfAborted();
     const url = new URL(asset.url);
     if (url.protocol !== 'https:' || url.username || url.password || !input.config.approvedAssetHosts.includes(url.hostname)) throw new MetaFailure('asset-host-unapproved');
     let response: Response;
@@ -91,7 +112,7 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     const maxBytes = asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
     if (Number(response.headers.get('content-length')) > maxBytes) throw new MetaFailure('asset-too-large');
     const hash = createHash('sha256'); let bytes = 0; const reader = response.body.getReader();
-    try { while (true) { const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
+    try { while (true) { input.signal?.throwIfAborted(); const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
       if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); } }
     catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable'); }
     if (hash.digest('hex') !== asset.sha256) throw new MetaFailure('asset-hash-mismatch');
@@ -142,6 +163,8 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
   if (previous.status !== 'claimed' || !previous.lease_until || !Number.isFinite(Date.parse(previous.lease_until)) || Date.parse(previous.lease_until) <= clock().getTime()) return result('held', 'publication-claim-required');
   const revision = input.revisionRow.revision;
   let container = previous.remote_container_id;
+  let media = previous.remote_media_id;
+  let remoteUrl = previous.remote_url;
   let sideEffectStarted = false;
   const save = async (stage: PublisherCheckpoint['stage'], outcome: PublishOutcome) => {
     try { await input.checkpoint({ stage, ...outcome }); } catch { throw new CheckpointFailure(); }
@@ -187,25 +210,29 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     for (let attempt = 0; attempt < attempts; attempt++) {
       status = await containerStatus(input, container);
       if (status !== 'IN_PROGRESS') break;
-      if (attempt + 1 < attempts) await (input.wait ?? (ms => new Promise(resolve => setTimeout(resolve, ms))))(Math.max(0, Math.min(1000, input.config.pollIntervalMs ?? 1000)));
+      if (attempt + 1 < attempts) await pollWait(input, Math.max(0, Math.min(1000, input.config.pollIntervalMs ?? 1000)));
     }
     if (status === 'IN_PROGRESS') return result('pending', 'container-pending', container);
     if (status !== 'FINISHED') return result('reconciliation', status === 'PUBLISHED' ? 'remote-published-media-id-required' : 'container-unpublishable', container);
     const fresh = await input.revalidate();
     const refreshedGate = publicationGate(fresh, input.config, clock());
     if (refreshedGate || revisionHash(fresh.revisionRow.revision) !== revisionHash(revision) || fresh.account.remote_account_id !== input.account.remote_account_id) return result('held', refreshedGate ?? 'approval-changed-before-publish', container);
+    input.signal?.throwIfAborted();
     await save('publish-intent', result('pending', 'publish-intent', container));
     sideEffectStarted = true;
     const published = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publish' : 'media_publish'}`, 'POST', { creation_id: container });
     if (!idValid(published.id as string)) throw new MetaFailure('published-media-identity-unavailable');
-    const media = published.id as string;
-    const url = await mediaUrl(input, media);
-    const outcome = result(url ? 'published' : 'reconciliation', url ? null : 'remote-permalink-unavailable', container, media, url);
+    media = published.id as string;
+    // A deadline during the following read must leave the known remote media durable.
+    await save('outcome', result('reconciliation', 'remote-permalink-unavailable', container, media));
+    remoteUrl = await mediaUrl(input, media);
+    const outcome = result(remoteUrl ? 'published' : 'reconciliation', remoteUrl ? null : 'remote-permalink-unavailable', container, media, remoteUrl);
+    if (!remoteUrl) return outcome;
     await save('outcome', outcome);
     return outcome;
   } catch (error) {
-    if (error instanceof CheckpointFailure) return result(sideEffectStarted ? 'reconciliation' : 'held', 'checkpoint-fence-lost', sideEffectStarted ? container : previous.remote_container_id);
-    const outcome = result(sideEffectStarted || previous.remote_container_id ? 'reconciliation' : 'failed', error instanceof MetaFailure ? error.code : 'checkpoint-or-revalidation-failed', container);
+    if (error instanceof CheckpointFailure) return result(sideEffectStarted ? 'reconciliation' : 'held', 'checkpoint-fence-lost', sideEffectStarted ? container : previous.remote_container_id, media, remoteUrl);
+    const outcome = result(sideEffectStarted || previous.remote_container_id ? 'reconciliation' : 'failed', error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'checkpoint-or-revalidation-failed', container, media, remoteUrl);
     try { await save('outcome', outcome); } catch { /* The initial durable intent still prevents a replay after a receipt write fails. */ }
     return outcome;
   }
