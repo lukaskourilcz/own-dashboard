@@ -59,8 +59,11 @@ function apifyConfiguration(env:ProviderEnvironment){if(!env.APIFY_TOKEN||!env.M
 /** Official RunActor reference and actor API page specify /v2/actors/:actorId/runs (verified2026-10-13). */
 export async function startDneskaiInstagram(source:DneskaiSource,since:string,options:{env:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal}){
  const config=apifyConfiguration(options.env);if(source.kind!=='instagram'||source.maxItems>7)throw new DneskaiProviderError('collection-instagram-input-invalid');
+ // The pinned actor accepts UTC Z timestamps, but rejects PostgreSQL +00:00 offsets.
+ if(!z.iso.datetime({offset:true}).safeParse(since).success)throw new DneskaiProviderError('collection-instagram-input-invalid');
+ const sinceUtc=new Date(since).toISOString();
  const params=new URLSearchParams({build:config.build,waitForFinish:'0',timeout:'120',restartOnError:'false',maxItems:String(source.maxItems),maxTotalChargeUsd:'0.04'});
- const run=RunSchema.parse(z.object({data:z.unknown()}).parse(await jsonRequest(`https://api.apify.com/v2/actors/apify~instagram-scraper/runs?${params}`,{method:'POST',headers:{Authorization:`Bearer ${config.token}`,'Content-Type':'application/json'},body:JSON.stringify({directUrls:[source.url],resultsType:'posts',resultsLimit:source.maxItems,onlyPostsNewerThan:since,addParentData:true})},options.fetcher??fetch,options.signal)).data);
+ const run=RunSchema.parse(z.object({data:z.unknown()}).parse(await jsonRequest(`https://api.apify.com/v2/actors/apify~instagram-scraper/runs?${params}`,{method:'POST',headers:{Authorization:`Bearer ${config.token}`,'Content-Type':'application/json'},body:JSON.stringify({directUrls:[source.url],resultsType:'posts',resultsLimit:source.maxItems,onlyPostsNewerThan:sinceUtc,addParentData:true})},options.fetcher??fetch,options.signal)).data);
  if(run.actId!==config.id||run.buildNumber!==config.build)throw new DneskaiProviderError('collection-apify-binding-invalid');return run;
 }
 export async function pollDneskaiInstagram(source:DneskaiSource,registration:DneskaiApifyRegistration,since:string,options:{env:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal;now:Date}){
