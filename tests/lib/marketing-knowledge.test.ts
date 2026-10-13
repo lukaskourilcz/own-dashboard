@@ -39,6 +39,13 @@ describe("Saved source normalization", () => {
   expect(capture({ input: [{ url, saved_at: "2026-09-21T23:59:59Z" }] }).counts.outsideWindow).toBe(1);
   expect(() => capture({ input: Array.from({ length: 501 }, () => ({ url })) })).toThrow("unbounded");
  });
+ it("keeps manually attached actual transcript/OCR channels and their timecodes distinct", () => {
+  const transcript = { status: "available", provider: "owner-reviewed-transcription", costUsd: null, segments: [{ text: "Actual speech", startSeconds: 1, endSeconds: 3 }], reason: null };
+  const result = capture({ input: [{ url, saved_at: saved, caption: "Caption", transcript }] });
+  expect(result.sources[0].content.transcript).toEqual(transcript); expect(result.sources[0].content.ocr.status).toBe("not-requested");
+  expect(result.warnings).not.toContain("actual-transcript-unavailable-for-some-sources");
+  expect(() => capture({ input: [{ url, saved_at: saved, transcript: { ...transcript, segments: [{ text: "Speech", startSeconds: 4, endSeconds: 1 }] } }] })).toThrow();
+ });
 });
 describe("Evidence-bounded atomic extraction", () => {
  it("extracts several procedures from one caption without inventing speech; diagnostics remain redacted", async () => {
@@ -60,16 +67,18 @@ describe("Evidence-bounded atomic extraction", () => {
  });
  it("prepares bounded, cookie-free Apify descriptors and keeps published timestamp separate", () => {
   const plan = prepareApifyKnowledgeRun(capture().sources);
-  expect(plan.request.input.resultsLimit).toBe(1); expect(plan.enumeratesPrivateSaved).toBe(false); expect(plan.cookiesRequired).toBe(false);
-  expect(plan.request.url).toContain("maxTotalChargeUsd=0.25"); expect(plan.datasetRequest.query.limit).toBe(50);
+  expect(plan.request.input.resultsLimit).toBe(1); expect(plan.request.input.includeTranscript).toBe(true); expect(plan.request.input.username).toEqual(["https://www.instagram.com/reel/ABC123/"]); expect(plan.enumeratesPrivateSaved).toBe(false); expect(plan.cookiesRequired).toBe(false);
+  expect(plan.request.url).toContain("maxTotalChargeUsd=0.25"); expect(plan.datasetRequest.query.limit).toBe(2);
   expect(captionOnlyDatasetItem({ shortCode: "ABC123", caption: "Caption", timestamp: saved })).toEqual({ shortcode: "ABC123", caption: "Caption", publishedAt: saved, inaccessible: false });
  });
 });
 describe("Canonical knowledge reuse", () => {
  it("preserves existing tip IDs and leaves source verification explicit", () => {
   const tip: AiLink = { id: "11111111-1111-4111-8111-111111111111", user_id: "owner", category_id: null, title: "Owned tip", url, description: "Authored notes", pricing: null, record_type: "idea", created_at: saved, updated_at: saved };
-  const before = structuredClone(tip); const normalized = normalizeExistingTips([tip]);
+  const before = structuredClone(tip); const projectId = "22222222-2222-4222-8222-222222222222";
+  const normalized = normalizeExistingTips([tip], { projects: [{ project_id: projectId, ai_link_id: tip.id }] });
   expect(normalized.items[0].aiLinkId).toBe(tip.id); expect(normalized.items[0].evidenceStatus).toBe("legacy-unverified"); expect(tip).toEqual(before);
+  expect(normalized.items[0].references.projectIds).toEqual([projectId]);
  });
  it("keeps contrary claims separate and proposes semantic duplicates without merging", () => {
   const original = item(); const contrary = item({ aiLinkId: null, contraryClaims: ["This source opposes the first claim"], procedureHash: "b".repeat(64) });

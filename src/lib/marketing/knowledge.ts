@@ -25,10 +25,17 @@ export const KnowledgeSourceSchema = z.strictObject({
   provenance: z.enum(["instagram-export", "manual", "apify", "existing-tip"]),
   analysis_key: z.string().regex(/^[a-f0-9]{64}$/).nullable(), budget_usd: z.number().min(0).max(1),
   run_id: z.string().max(100).nullable(), dataset_id: z.string().max(100).nullable(),
-  analysis: z.strictObject({ model: z.string().max(100), promptVersion: z.string().max(100), inputTokens: z.number().int().nonnegative(), outputTokens: z.number().int().nonnegative(), costUsd: z.number().nonnegative(), missingParts: z.array(z.string().max(300)).max(30) }).nullable(),
+  analysis: z.strictObject({ model: z.string().max(100), promptVersion: z.string().max(100), inputTokens: z.number().int().nonnegative(), outputTokens: z.number().int().nonnegative(), costUsd: z.number().nonnegative().nullable(), missingParts: z.array(z.string().max(300)).max(30) }).nullable(),
+  analysis_request: z.strictObject({ provider: z.enum(["apify", "claude"]), reviewHash: z.string().regex(/^[a-f0-9]{64}$/), consentAt: timestamp, plan: z.record(z.string(), z.unknown()),
+    registration: z.strictObject({ runId: z.string().max(100), datasetId: z.string().max(100), userId: z.string().max(100), actorId: z.string().max(100), actorBuild: z.string().max(100) }).nullable() }).nullable(),
 });
 export type KnowledgeSource = z.infer<typeof KnowledgeSourceSchema>;
 export type StoredKnowledgeSource = KnowledgeSource & { id: string; user_id: string };
+export function knowledgeSourceFromRow(row: Record<string, unknown>): KnowledgeSource {
+  const fields = Object.fromEntries(Object.keys(KnowledgeSourceSchema.shape).map((key) => [key, row[key]]));
+  fields.budget_usd = Number(row.budget_usd);
+  return KnowledgeSourceSchema.parse(fields);
+}
 export function instagramIdentity(value: string): { shortcode: string; canonicalUrl: string } | null {
   try {
     const url = new URL(value);
@@ -68,9 +75,12 @@ export function planKnowledgeCapture(value: CaptureInput, now = new Date()): Cap
     const saved = obj(obj(r.string_map_data)["Saved on"]);
     const identity = instagramIdentity(String(r.url ?? saved.href ?? ""));
     if (!identity) return null;
+    if (typeof r.caption === "string" && r.caption.length > 30000) throw new Error("capture-source-too-large");
     return { ...identity, savedAt: normalizeDate(r.saved_at) ?? epochDate(saved.timestamp),
       explicitSaved: normalizeDate(r.saved_at) !== null, exportedSaved: epochDate(saved.timestamp) !== null,
-      publishedAt: normalizeDate(r.published_at), caption: typeof r.caption === "string" ? r.caption.slice(0, 30000) : null };
+      publishedAt: normalizeDate(r.published_at), caption: typeof r.caption === "string" ? r.caption : null,
+      transcript: r.transcript === undefined ? unavailableMedia() : MediaEvidenceSchema.parse(r.transcript),
+      ocr: r.ocr === undefined ? unavailableMedia() : MediaEvidenceSchema.parse(r.ocr) };
   });
   const proof = input.timestampProof && instagramIdentity(input.timestampProof.url);
   const timestampVerified = !!proof && normalized.some((r) => r?.shortcode === proof.shortcode && r.exportedSaved && r.savedAt === normalizeDate(input.timestampProof!.savedAt));
@@ -89,14 +99,16 @@ export function planKnowledgeCapture(value: CaptureInput, now = new Date()): Cap
     unique.set(row.shortcode, KnowledgeSourceSchema.parse({ shortcode: row.shortcode, canonical_url: row.canonicalUrl,
       saved_at: row.savedAt, saved_at_status: verified ? "verified" : row.savedAt ? "unverified" : "unknown",
       published_at: row.publishedAt, imported_at: now.toISOString(), cutoff,
-      content: { caption: row.caption, captionProvider: row.caption ? "owner-provided" : null, transcript: unavailableMedia(), ocr: unavailableMedia() },
-      status: row.caption ? "captured" : "partial", provenance: row.exportedSaved ? "instagram-export" : "manual",
-      analysis_key: null, budget_usd: 0, run_id: null, dataset_id: null, analysis: null,
+      content: { caption: row.caption, captionProvider: row.caption ? "owner-provided" : null, transcript: row.transcript, ocr: row.ocr },
+      status: row.caption || row.transcript.status === "available" || row.ocr.status === "available" ? "captured" : "partial", provenance: row.exportedSaved ? "instagram-export" : "manual",
+      analysis_key: null, budget_usd: 0, run_id: null, dataset_id: null, analysis: null, analysis_request: null,
     }));
   }
   counts.unique = unique.size;
   return { version: KNOWLEDGE_VERSION, cutoff, startsAt, sources: [...unique.values()], counts, timestampVerified,
-    warnings: [ ...(counts.unknownDates ? ["saved-timestamps-unknown-or-unverified"] : []), "transcript-and-ocr-not-requested", "no-live-saved-completeness-proof" ] };
+    warnings: [ ...(counts.unknownDates ? ["saved-timestamps-unknown-or-unverified"] : []),
+      ...([...unique.values()].some((s) => s.content.transcript.status !== "available") ? ["actual-transcript-unavailable-for-some-sources"] : []),
+      ...([...unique.values()].some((s) => s.content.ocr.status !== "available") ? ["ocr-unavailable-for-some-sources"] : []), "no-live-saved-completeness-proof" ] };
 }
 
 const TagsSchema = z.strictObject({ goal: z.array(z.string().min(1).max(80)).max(10), stage: z.array(z.string().min(1).max(80)).max(10), format: z.array(z.string().min(1).max(80)).max(10), tool: z.array(z.string().min(1).max(80)).max(10), brand: z.array(z.enum(["dneskai", "devshark"])).max(2), effort: z.enum(["small", "medium", "large", "unknown"]) });
@@ -126,7 +138,7 @@ export function validateProcedureEvidence(procedure: KnowledgeProcedure, sources
   }
   return [...new Set(issues)];
 }
-export function normalizeExistingTips(tips: readonly AiLink[]): { sources: KnowledgeSource[]; items: KnowledgeItem[]; report: { preserved: number; skipped: number; evidencePending: number } } {
+export function normalizeExistingTips(tips: readonly AiLink[], relations: { projects?: readonly { project_id: string; ai_link_id: string }[]; prompts?: readonly { prompt_id: string; ai_link_id: string }[]; tools?: readonly { id: string; ai_link_id: string }[] } = {}): { sources: KnowledgeSource[]; items: KnowledgeItem[]; report: { preserved: number; skipped: number; evidencePending: number } } {
   const items: KnowledgeItem[] = [];
   for (const tip of tips.filter((t) => t.record_type === "idea")) {
     const summary = tipText(tip);
@@ -136,7 +148,11 @@ export function normalizeExistingTips(tips: readonly AiLink[]): { sources: Knowl
       tipGroup: TIP_GROUPS.includes(tip.tip_group as typeof TIP_GROUPS[number]) ? tip.tip_group as typeof TIP_GROUPS[number] : null,
       tags: emptyTags(), evidence: [{ shortcode: identity?.shortcode ?? `legacy-${tip.id}`, channel: "legacy-note", quote: summary.slice(0, 2000), startSeconds: null, endSeconds: null }],
       missingParts: ["Original source/transcript and procedure boundaries need review"], contraryClaims: [] };
-    items.push(KnowledgeItemSchema.parse({ ...procedure, aiLinkId: tip.id, procedureHash: procedureHash(procedure), sourceShortcodes: [], references: emptyReferences(), evidenceStatus: "legacy-unverified" }));
+    items.push(KnowledgeItemSchema.parse({ ...procedure, aiLinkId: tip.id, procedureHash: procedureHash(procedure), sourceShortcodes: [], references: {
+      projectIds: [...new Set((relations.projects ?? []).filter((r) => r.ai_link_id === tip.id).map((r) => r.project_id))],
+      promptIds: [...new Set((relations.prompts ?? []).filter((r) => r.ai_link_id === tip.id).map((r) => r.prompt_id))],
+      toolIds: [...new Set((relations.tools ?? []).filter((r) => r.ai_link_id === tip.id).map((r) => r.id))], noteIds: [],
+    }, evidenceStatus: "legacy-unverified" }));
   }
   return { sources: [], items, report: { preserved: items.length, skipped: tips.filter((t) => t.record_type === "idea").length - items.length, evidencePending: items.length } };
 }

@@ -19,6 +19,7 @@ export function knowledgeExtractionPrompt(source: KnowledgeSource): { system: st
     "Captions are not speech. Only available transcript segments support speech claims; only available OCR segments support image-text claims.",
     "Every procedure requires exact verbatim evidence quotes and its actual channel and segment timecodes. Do not invent missing steps, speech, outcomes, measurements or current product facts.",
     "Preserve qualifications and contrary claims. If a complete procedure cannot be supported, put the gap in missingParts or return no procedure.",
+    "Music, filler or short utterances do not establish an actionable procedure. Return no procedure unless the supplied evidence supports one.",
     "Tips guide presentation/process only. They cannot invent DNESKAi facts or devShark learning content.",
   ].join("\n"), prompt: JSON.stringify({ shortcode: source.shortcode, evidence: source.content, scope: "marketing/development procedures only" }) };
 }
@@ -61,7 +62,8 @@ export async function extractKnowledge(source: KnowledgeSource, dependencies: { 
     await emit({ ...metadata, event: "review", ...result.usage, costUsd });
     return { analysisKey, items, missingParts, usage: { ...result.usage, costUsd } };
   } catch (error) {
-    const code = error instanceof Error && error.message.startsWith("knowledge-") ? error.message : signal.aborted ? "knowledge-analysis-timeout" : "knowledge-provider-failed";
+    const known = new Set(["knowledge-usage-unavailable", "knowledge-provider-budget-exceeded", "knowledge-evidence-validation-failed"]);
+    const code = error instanceof Error && known.has(error.message) ? error.message : signal.aborted ? "knowledge-analysis-timeout" : "knowledge-provider-failed";
     await emit({ ...metadata, event: "failed", error: code });
     throw new Error(code); // Never retry ambiguous provider failures.
   }

@@ -66,7 +66,7 @@ export function KnowledgeImport({ onImported, disabled = false }: { onImported?:
       ] as const).map(([label, count]) => <div key={label}><dt className="text-foreground-muted">{label}</dt><dd className="font-medium tabular-nums">{count}</dd></div>)}</dl>
       {!preview.sources.length ? <p className="text-xs text-warning">{t.empty}</p> : <ul className="divide-y divide-border text-xs">{preview.sources.slice(0, 50).map((source) => <li key={source.shortcode} className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between">
         <a href={source.canonical_url} target="_blank" rel="noopener noreferrer" className="focus-ring min-h-11 break-all py-2 text-primary underline underline-offset-2">{source.shortcode}</a>
-        <span className="text-foreground-muted">{source.saved_at_status === "verified" ? t.verifiedDate : source.saved_at_status === "unverified" ? t.unverifiedDate : t.unknownDate}{source.saved_at ? ` · ${new Date(source.saved_at).toLocaleString(lang)}` : ""}<br />{t.captionOnly}</span>
+        <span className="text-foreground-muted">{source.saved_at_status === "verified" ? t.verifiedDate : source.saved_at_status === "unverified" ? t.unverifiedDate : t.unknownDate}{source.saved_at ? ` · ${new Date(source.saved_at).toLocaleString(lang)}` : ""}<br />{source.content.transcript.status === "available" ? t.transcriptAvailable : t.captionOnly} · {source.content.ocr.status === "available" ? t.ocrAvailable : t.ocrUnavailable}</span>
       </li>)}</ul>}
       {preview.sources.length > 50 && <p className="text-xs text-foreground-muted">{t.more}</p>}
     </div>}

@@ -39,9 +39,19 @@ describe("Atomic owner knowledge import", () => {
   expect(stored.rows[0].source_ids).toHaveLength(2); expect(stored.rows[0].evidence).toHaveLength(2);
  });
  it("preserves existing tip IDs and authored notes while normalizing sidecars", async () => {
-  const result = await save([], [item("ABC123", { aiLinkId: legacy, procedureHash: "c".repeat(64), sourceShortcodes: [], evidenceStatus: "legacy-unverified" })], "legacy");
+  const result = await save([], [item("ABC123", { aiLinkId: legacy, procedureHash: "c".repeat(64), sourceShortcodes: [], evidence: [{ shortcode: "ABC123", channel: "legacy-note", quote: "Original notes", startSeconds: null, endSeconds: null }], evidenceStatus: "legacy-unverified" })], "legacy");
   expect(result.rows[0].result.knowledgeIds).toEqual([legacy]); expect(result.rows[0].result.createdItems).toBe(0);
   expect((await db.query<{ description: string }>("select description from ai_links where id=$1", [legacy])).rows[0].description).toBe("Original notes");
+ });
+ it("binds manual review to the owner and exact hash, retaining missing evidence", async () => {
+  await db.query("update marketing_knowledge_items set metadata=jsonb_set(metadata,'{missingParts}','[\"Actual source transcript unverified\"]') where ai_link_id=$1", [legacy]);
+  await expect(db.query("select marketing_review_knowledge_item($1,$2,$3,'reviewed')", [other, legacy, "c".repeat(64)])).rejects.toThrow("unavailable");
+  await expect(db.query("select marketing_review_knowledge_item($1,$2,$3,'reviewed')", [owner, legacy, "d".repeat(64)])).rejects.toThrow("procedure changed");
+  await db.query("select marketing_review_knowledge_item($1,$2,$3,'reviewed')", [owner, legacy, "c".repeat(64)]);
+  const reviewed = await db.query<{ review_status: string; reviewed_hash: string; metadata: { missingParts: string[] } }>("select review_status,reviewed_hash,metadata from marketing_knowledge_items where ai_link_id=$1", [legacy]);
+  expect(reviewed.rows[0].review_status).toBe("reviewed"); expect(reviewed.rows[0].reviewed_hash).toBe("c".repeat(64)); expect(reviewed.rows[0].metadata.missingParts).toContain("Actual source transcript unverified");
+  await db.query("select marketing_review_knowledge_item($1,$2,$3,'needs-review')", [owner, legacy, "c".repeat(64)]);
+  expect((await db.query<{ reviewed_at: unknown }>("select reviewed_at from marketing_knowledge_items where ai_link_id=$1", [legacy])).rows[0].reviewed_at).toBeNull();
  });
  it("rolls back sources and events when an unowned link is supplied", async () => {
   await expect(save([source("ROLLBACK")], [item("ROLLBACK", { aiLinkId: foreign })], "foreign-link")).rejects.toThrow("foreign knowledge link");
@@ -60,6 +70,20 @@ describe("Atomic owner knowledge import", () => {
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]); await db.exec("set role authenticated");
   try { expect((await db.query<{ user_id: string }>("select user_id from marketing_knowledge_sources")).rows.every((row) => row.user_id === owner)).toBe(true); }
   finally { await db.exec("reset role"); }
+ });
+ it("rejects evidence pointing outside an item's owned source joins", async () => {
+  await expect(save([source("FORGED")], [item("FORGED", { evidence: [{ shortcode: "OTHER", channel: "caption", quote: "Unrelated", startSeconds: null, endSeconds: null }], procedureHash: "a".repeat(64) })], "forged-evidence")).rejects.toThrow("foreign knowledge evidence");
+  expect((await db.query("select * from marketing_knowledge_sources where shortcode='FORGED'")).rows).toHaveLength(0);
+ });
+ it("claims one durable analysis attempt and cannot overwrite cancelled work with a late callback", async () => {
+  const s = { ...source("CLAIM"), status: "queued", analysis_key: "e".repeat(64), analysis_request: { provider: "claude", reviewHash: "e".repeat(64), consentAt: "2026-10-13T00:00:00Z", plan: {}, registration: null } };
+  const saved = await save([s], [], "claim-setup"); const id = saved.rows[0].result.sourceIds[0];
+  const claim = (user = owner) => db.query<{ result: unknown }>("select marketing_claim_knowledge_analysis($1,$2,$3) as result", [user, id, s.analysis_key]);
+  expect((await claim(other)).rows[0].result).toBeNull();
+  expect((await claim()).rows[0].result).not.toBeNull(); expect((await claim()).rows[0].result).toBeNull();
+  await save([{ ...s, status: "cancelled" }], [], "callback:cancel-claim");
+  await expect(save([{ ...s, status: "review" }], [], "callback:late-complete")).rejects.toThrow("analysis cancelled");
+  expect((await db.query<{ status: string }>("select status from marketing_knowledge_sources where id=$1", [id])).rows[0].status).toBe("cancelled");
  });
  it("prevents capture retry from resetting queued analysis, preserves the first cutoff, and rejects event conflicts", async () => {
   const queued = { ...source(), status: "queued", analysis_key: "d".repeat(64), budget_usd: 0.25 };

@@ -5,7 +5,7 @@ create table public.marketing_knowledge_sources (
  saved_at timestamptz, saved_at_status text not null check(saved_at_status in ('verified','unverified','unknown')),
  published_at timestamptz, imported_at timestamptz not null, cutoff timestamptz not null,
  content jsonb not null, provenance text not null, status text not null check(status in ('captured','partial','inaccessible','queued','analyzing','review','failed','cancelled')),
- analysis_key text, budget_usd numeric not null default 0 check(budget_usd between 0 and 1), run_id text, dataset_id text, analysis jsonb,
+ analysis_key text, budget_usd numeric not null default 0 check(budget_usd between 0 and 1), run_id text, dataset_id text, analysis jsonb, analysis_request jsonb,
  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), unique(user_id,shortcode),
  check(canonical_url='https://www.instagram.com/p/' || shortcode || '/'),
  check((saved_at_status='unknown' and saved_at is null) or (saved_at_status<>'unknown' and saved_at is not null)),
@@ -16,7 +16,7 @@ create table public.marketing_knowledge_items (
  ai_link_id uuid not null references public.ai_links(id) on delete cascade,
  procedure_hash text not null check(procedure_hash ~ '^[a-f0-9]{64}$'), metadata jsonb not null,
  evidence jsonb not null default '[]', source_ids uuid[] not null default '{}',
- review_status text not null check(review_status in ('needs-review','reviewed','legacy-unverified')),
+ review_status text not null check(review_status in ('needs-review','reviewed','legacy-unverified')), reviewed_at timestamptz, reviewed_hash text,
  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), unique(user_id,ai_link_id)
 );
 create index marketing_knowledge_procedure_idx on public.marketing_knowledge_items(user_id,procedure_hash);
@@ -35,10 +35,14 @@ create policy marketing_knowledge_items_own on public.marketing_knowledge_items 
 
 -- Privileged writers must also preserve ownership of every nested canonical reference.
 create function public.marketing_knowledge_owner_guard() returns trigger language plpgsql set search_path=public,pg_temp as $$
-declare ref jsonb; refid text; kind text;
+declare ref jsonb; refid text; kind text; evidence_item jsonb;
 begin
  if not exists(select 1 from public.ai_links where id=new.ai_link_id and user_id=new.user_id and record_type='idea') then raise exception 'foreign knowledge link'; end if;
  if exists(select 1 from unnest(new.source_ids) sid where not exists(select 1 from public.marketing_knowledge_sources s where s.id=sid and s.user_id=new.user_id)) then raise exception 'foreign knowledge source'; end if;
+ if jsonb_typeof(new.evidence)<>'array' then raise exception 'invalid knowledge evidence'; end if;
+ for evidence_item in select value from jsonb_array_elements(new.evidence) loop
+  if evidence_item->>'channel'<>'legacy-note' and not exists(select 1 from public.marketing_knowledge_sources s where s.id=any(new.source_ids) and s.user_id=new.user_id and s.shortcode=evidence_item->>'shortcode') then raise exception 'foreign knowledge evidence'; end if;
+ end loop;
  ref:=new.metadata->'references';
  if jsonb_typeof(ref)<>'object' or ref is null or exists(select 1 from jsonb_object_keys(ref) k where k not in ('projectIds','noteIds','promptIds','toolIds')) then raise exception 'invalid knowledge references'; end if;
  foreach kind in array array['projectIds','noteIds','promptIds','toolIds'] loop
@@ -75,6 +79,7 @@ begin
  for s in select value from jsonb_array_elements(p_sources) loop
   select * into existing from public.marketing_knowledge_sources where user_id=p_owner and shortcode=s->>'shortcode' for update;
   if found then
+   if p_event_id like 'callback:%' and existing.analysis_key=s->>'analysis_key' and existing.status='cancelled' and s->>'status'<>'cancelled' then raise exception 'knowledge analysis cancelled'; end if;
    -- Capture retries never reset a completed/queued analysis or its first cutoff.
    if s->>'status'='queued' and existing.analysis_key=s->>'analysis_key' then
     sourceids:=sourceids || to_jsonb(existing.id); continue;
@@ -85,8 +90,8 @@ begin
     sourceids:=sourceids || to_jsonb(existing.id); continue;
    end if;
   end if;
-  insert into public.marketing_knowledge_sources(user_id,shortcode,canonical_url,saved_at,saved_at_status,published_at,imported_at,cutoff,content,provenance,status,analysis_key,budget_usd,run_id,dataset_id,analysis)
-  values(p_owner,s->>'shortcode',s->>'canonical_url',(s->>'saved_at')::timestamptz,s->>'saved_at_status',(s->>'published_at')::timestamptz,(s->>'imported_at')::timestamptz,(s->>'cutoff')::timestamptz,s->'content',s->>'provenance',s->>'status',s->>'analysis_key',coalesce((s->>'budget_usd')::numeric,0),s->>'run_id',s->>'dataset_id',nullif(s->'analysis','null'::jsonb))
+  insert into public.marketing_knowledge_sources(user_id,shortcode,canonical_url,saved_at,saved_at_status,published_at,imported_at,cutoff,content,provenance,status,analysis_key,budget_usd,run_id,dataset_id,analysis,analysis_request)
+  values(p_owner,s->>'shortcode',s->>'canonical_url',(s->>'saved_at')::timestamptz,s->>'saved_at_status',(s->>'published_at')::timestamptz,(s->>'imported_at')::timestamptz,(s->>'cutoff')::timestamptz,s->'content',s->>'provenance',s->>'status',s->>'analysis_key',coalesce((s->>'budget_usd')::numeric,0),s->>'run_id',s->>'dataset_id',nullif(s->'analysis','null'::jsonb),nullif(s->'analysis_request','null'::jsonb))
   on conflict(user_id,shortcode) do update set
    saved_at=case when excluded.saved_at_status='verified' then excluded.saved_at else marketing_knowledge_sources.saved_at end,
    saved_at_status=case when excluded.saved_at_status='verified' then 'verified' else marketing_knowledge_sources.saved_at_status end,
@@ -97,7 +102,7 @@ begin
     'transcript',case when excluded.content->'transcript'->>'status'='available' or marketing_knowledge_sources.content->'transcript'->>'status'<>'available' then excluded.content->'transcript' else marketing_knowledge_sources.content->'transcript' end,
     'ocr',case when excluded.content->'ocr'->>'status'='available' or marketing_knowledge_sources.content->'ocr'->>'status'<>'available' then excluded.content->'ocr' else marketing_knowledge_sources.content->'ocr' end),
    status=case when excluded.status='partial' and marketing_knowledge_sources.status='captured' then 'captured' else excluded.status end,analysis_key=coalesce(excluded.analysis_key,marketing_knowledge_sources.analysis_key),
-   budget_usd=excluded.budget_usd,run_id=coalesce(excluded.run_id,marketing_knowledge_sources.run_id),dataset_id=coalesce(excluded.dataset_id,marketing_knowledge_sources.dataset_id),analysis=coalesce(excluded.analysis,marketing_knowledge_sources.analysis),updated_at=now()
+   budget_usd=excluded.budget_usd,run_id=coalesce(excluded.run_id,marketing_knowledge_sources.run_id),dataset_id=coalesce(excluded.dataset_id,marketing_knowledge_sources.dataset_id),analysis=coalesce(excluded.analysis,marketing_knowledge_sources.analysis),analysis_request=coalesce(excluded.analysis_request,marketing_knowledge_sources.analysis_request),updated_at=now()
   returning id into sourceid;
   sourceids:=sourceids || to_jsonb(sourceid);
  end loop;
@@ -126,6 +131,7 @@ begin
   insert into public.marketing_knowledge_items(user_id,ai_link_id,procedure_hash,metadata,evidence,source_ids,review_status)
   values(p_owner,linkid,item->>'procedureHash',item-'aiLinkId'-'procedureHash'-'evidence',merged_evidence,refs,item->>'evidenceStatus')
   on conflict(user_id,ai_link_id) do update set
+   metadata=case when item->>'aiLinkId' is not null then jsonb_set(marketing_knowledge_items.metadata,'{references}',excluded.metadata->'references') else marketing_knowledge_items.metadata end,
    evidence=(select coalesce(jsonb_agg(distinct e),'[]'::jsonb) from jsonb_array_elements(marketing_knowledge_items.evidence || excluded.evidence) e),
    source_ids=array(select distinct sid from unnest(marketing_knowledge_items.source_ids || excluded.source_ids) sid),updated_at=now();
   -- Source joins extend the canonical tip's evidence URLs without changing its ID/text/project associations.
@@ -138,3 +144,37 @@ begin
 end $$;
 revoke execute on function public.marketing_import_knowledge(uuid,jsonb,jsonb,text) from public,anon,authenticated;
 grant execute on function public.marketing_import_knowledge(uuid,jsonb,jsonb,text) to service_role;
+
+-- Claim before any paid call. An ambiguous start remains held, never auto-retried.
+create function public.marketing_claim_knowledge_analysis(p_owner uuid,p_source uuid,p_analysis_key text) returns jsonb
+language plpgsql set search_path=public,pg_temp as $$
+declare claimed public.marketing_knowledge_sources;
+begin
+ update public.marketing_knowledge_sources set status='analyzing',updated_at=now()
+ where id=p_source and user_id=p_owner and analysis_key=p_analysis_key and status='queued' and analysis_request is not null
+ returning * into claimed;
+ if not found then return null; end if;
+ return to_jsonb(claimed);
+end $$;
+revoke execute on function public.marketing_claim_knowledge_analysis(uuid,uuid,text) from public,anon,authenticated;
+grant execute on function public.marketing_claim_knowledge_analysis(uuid,uuid,text) to service_role;
+
+-- Manual review binds this procedure hash only. It approves no social post,
+-- verifies no absent speech/timestamp, and retains all missing-parts evidence.
+create function public.marketing_review_knowledge_item(p_owner uuid,p_link uuid,p_hash text,p_status text) returns jsonb
+language plpgsql set search_path=public,pg_temp as $$
+declare item public.marketing_knowledge_items;
+begin
+ if p_status not in ('reviewed','needs-review') then raise exception 'invalid knowledge review status'; end if;
+ select * into item from public.marketing_knowledge_items where user_id=p_owner and ai_link_id=p_link for update;
+ if not found then raise exception 'knowledge item unavailable'; end if;
+ if item.procedure_hash<>p_hash then raise exception 'knowledge procedure changed'; end if;
+ update public.marketing_knowledge_items set review_status=p_status,
+  reviewed_at=case when p_status='reviewed' then now() else null end,
+  reviewed_hash=case when p_status='reviewed' then p_hash else null end,
+  metadata=jsonb_set(metadata,'{evidenceStatus}',to_jsonb(p_status)),updated_at=now()
+ where id=item.id returning * into item;
+ return jsonb_build_object('aiLinkId',item.ai_link_id,'procedureHash',item.procedure_hash,'status',item.review_status,'reviewedAt',item.reviewed_at);
+end $$;
+revoke execute on function public.marketing_review_knowledge_item(uuid,uuid,text,text) from public,anon,authenticated;
+grant execute on function public.marketing_review_knowledge_item(uuid,uuid,text,text) to service_role;
