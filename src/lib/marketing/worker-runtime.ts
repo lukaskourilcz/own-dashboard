@@ -51,6 +51,25 @@ async function assertAccount(db: Database, ownerId: string, request: MarketingWo
     .eq("remote_account_id", request.generation.account.id).eq("handle", request.generation.account.handle).maybeSingle();
   if (error || !data || !data.verified_at) throw new MarketingWorkerRuntimeError("marketing-account-unavailable");
 }
+async function assertKnowledge(db: Database, ownerId: string, request: MarketingWorkerRequest) {
+  const references = request.generation.knowledge;
+  if (!references.length) return;
+  const brand = parseSourcePacket(request.generation.source).brand;
+  const ids = references.map((reference) => reference.id);
+  if (references.length > 8 || new Set(ids).size !== ids.length || references.some((reference) => reference.brand !== brand)) throw new MarketingWorkerRuntimeError("knowledge-reference-unavailable");
+  try {
+    // Read only approved presentation and brand tags, never canonical notes,
+    // project/prompt/tool references or the owner's other knowledge content.
+    const { data, error } = await db.from("marketing_knowledge_items")
+      .select("ai_link_id,user_id,review_status,summary:metadata->summary,brands:metadata->tags->brand")
+      .eq("user_id", ownerId).eq("review_status", "reviewed").in("ai_link_id", ids).limit(8);
+    if (error || !data || data.length !== ids.length || references.some((reference) => {
+      const item = data.find((row) => row.ai_link_id === reference.id);
+      return !item || item.user_id !== ownerId || item.review_status !== "reviewed" || !Array.isArray(item.brands) || !item.brands.includes(brand) ||
+        typeof item.summary !== "string" || String(item.summary).slice(0, 1200) !== reference.presentation;
+    })) throw new MarketingWorkerRuntimeError("knowledge-reference-unavailable");
+  } catch { throw new MarketingWorkerRuntimeError("knowledge-reference-unavailable"); }
+}
 export { marketingJobIdentityHash } from '../../../services/marketing-worker/protocol';
 export async function enqueueMarketingJob(db: Database, ownerId: string, value: unknown, options: {
   env?: Environment; now?: () => Date; resolveTemplate?: typeof resolveMarketingTemplate;
@@ -67,6 +86,7 @@ export async function enqueueMarketingJob(db: Database, ownerId: string, value: 
   validateMarketingTemplate(trusted, true);
   if (trusted.brand !== source.brand || request.generation.templateVersion !== trusted.version) throw new MarketingWorkerRuntimeError("template-revision-mismatch");
   await assertAccount(db, ownerId, request);
+  await assertKnowledge(db, ownerId, request);
   const { data, error } = await db.rpc("marketing_enqueue_job", { p_owner: ownerId, p_key: request.idempotencyKey, p_hash: marketingJobIdentityHash(request), p_request: request });
   if (error) throw new MarketingWorkerRuntimeError("job-enqueue-failed");
   return z.strictObject({ jobId: z.uuid(), status: z.enum(["queued", "running", "review", "failed", "reconciliation"]), duplicate: z.boolean() }).parse(data);
@@ -122,21 +142,30 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
   if (!data) return { claimed: false, job: await readMarketingJob(db, ownerId, jobId) };
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(55000)]) : AbortSignal.timeout(55000);
   let result: MarketingWorkerResult;
+  let knowledgeUnavailable = false;
   try {
     const request = MarketingWorkerRequestSchema.parse(data);
     if (!request.generation.consent) throw new MarketingWorkerRuntimeError("marketing-consent-required");
     assertSchedule(request.generation.scheduledAt, new Date());
     await assertAccount(db, ownerId, request);
+    await assertKnowledge(db, ownerId, request);
     const originalSource = parseSourcePacket(request.generation.source);
     const env = dependencies.env ?? process.env;
     const model = dependencies.model ?? await createClaudeMarketingModel(config);
+    const guardedModel: MarketingModel = { model: model.model, pricing: model.pricing, async invoke(input) {
+      // Producer refresh/render preparation can take time. Recheck immediately
+      // before every paid invocation too, including a copy-validation retry.
+      try { await assertKnowledge(db, ownerId, request); }
+      catch (failure) { knowledgeUnavailable = true; throw failure; }
+      return model.invoke(input);
+    } };
     let tracer = dependencies.tracer;
     if (!tracer && env.MARKETING_LANGSMITH_ENABLED === "true") {
       if (!env.LANGSMITH_API_KEY || !env.LANGSMITH_PROJECT || env.LANGSMITH_ENDPOINT !== LANGSMITH_EU_ENDPOINT) throw new MarketingWorkerRuntimeError("langsmith-eu-configuration-required");
       tracer = await createMarketingTracer({ apiKey: env.LANGSMITH_API_KEY, projectName: env.LANGSMITH_PROJECT, endpoint: env.LANGSMITH_ENDPOINT });
     }
     result = await (dependencies.run ?? runMarketingWorkerJob)(request, {
-      model, tracer, storage: dependencies.storage ?? createMarketingAssetStorage(db, ownerId, request.generation.scheduledAt, { signal }),
+      model: guardedModel, tracer, storage: dependencies.storage ?? createMarketingAssetStorage(db, ownerId, request.generation.scheduledAt, { signal }),
       signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000 },
       reloadTemplate: dependencies.resolveTemplate ?? resolveMarketingTemplate,
       reloadSource: async (sourceId) => {
@@ -151,7 +180,7 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
     if (signal.aborted || revisionReadiness(revision).length || revisionHash(revision) !== result.revisionHash) throw new MarketingWorkerRuntimeError("job-result-invalid");
   } catch (failure) {
     // No automatic replay; never persist provider response/credentials/exception text.
-    const knownCode = failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError
+    const knownCode = knowledgeUnavailable ? "knowledge-reference-unavailable" : failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError
       ? failure.code : failure instanceof Error && ["source-superseded", "template-superseded"].includes(failure.message) ? failure.message : "worker-execution-failed";
     const { data: finishedStatus, error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: null, p_error: knownCode });
     if (finishError || finishedStatus !== "failed") throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
