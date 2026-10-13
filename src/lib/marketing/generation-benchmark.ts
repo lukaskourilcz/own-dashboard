@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseSourcePacket, sourceUsable } from "./contracts";
-import { MarketingCopySchema, validateMarketingCopy } from "./generation";
+import { authoredCodingChallenge, MarketingCopySchema, MarketingGenerationError, validateMarketingCopy } from "./generation";
 import { contentHash } from "./hashes";
 
 export type MarketingBenchmarkExample = {
@@ -20,7 +20,10 @@ export function evaluateMarketingBenchmark(examples: MarketingBenchmarkExample[]
     const issueCodes: string[] = [];
     if (source.contentHash !== contentHash(source.content)) issueCodes.push("source-hash-mismatch");
     if (!sourceUsable(source, now)) issueCodes.push("source-unavailable");
-    if (source.kind === "coding-task" && !source.content.explanation) issueCodes.push("authored-explanation-required");
+    if (source.kind === "coding-task" && !source.content.explanation) {
+      try { authoredCodingChallenge(source); }
+      catch (error) { issueCodes.push(error instanceof MarketingGenerationError ? error.code : "challenge-spec-overflow"); }
+    }
     if (!copy.success) issueCodes.push("invalid-schema");
     else issueCodes.push(...validateMarketingCopy(copy.data, source));
     const issues = [...new Set(issueCodes)].sort();

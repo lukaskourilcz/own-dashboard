@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { generateMarketingDraft, generationPrompt, authoredMarketingText, MarketingCopySchema, validateMarketingCopy, DEFAULT_GENERATION_BUDGET, type GenerationInput, type MarketingModel } from "@/lib/marketing/generation";
+import { generateMarketingDraft, generationPrompt, authoredMarketingText, authoredCodingChallenge, MarketingCopySchema, validateMarketingCopy, DEFAULT_GENERATION_BUDGET, type GenerationInput, type MarketingModel } from "@/lib/marketing/generation";
 import { parseSourcePacket, type ContentRevision } from "@/lib/marketing/contracts";
 import { contentHash } from "@/lib/marketing/hashes";
 import { fitMarketingText, marketingTemplateDigest, pendingMarketingTemplate, renderMarketingAssets, renderMarketingPreview, validateMarketingTemplate } from "@/lib/marketing/render";
@@ -90,6 +90,46 @@ describe("bounded source-derived generation", () => {
     const result = MarketingCopySchema.parse({ ...copy, locale: "cs", slides: [{ ...copy.slides[0], body: "999%", code: "invented" }, { ...copy.slides[1], evidenceIndexes: [8] }] });
     expect(validateMarketingCopy(result, article)).toEqual(expect.arrayContaining(["unsupported-number", "model-code-forbidden", "missing-evidence", "unknown-evidence"]));
   });
+  it("builds a public challenge without explanations, discarding model solutions and keeping the actual held fixture unchanged", async () => {
+    const held = parseSourcePacket(realTask); const provider = model();
+    await expect(generateMarketingDraft({ ...input, source: held }, { model: provider, now })).rejects.toThrow("source-unavailable");
+    expect(provider.invoke).not.toHaveBeenCalled();
+    // Operational eligibility is simulated only in this mock test, never in the retained producer fixture.
+    const source = parseSourcePacket({ ...held, eligible: true, eligibilityReason: "mock operational simulation only" });
+    const malicious = { ...copy, title: "Invented solution", caption: "Use recursion to return 999. Guaranteed solution.", slides: copy.slides.map(slide => ({ ...slide, headline: "Hidden solution", body: "Use recursion to return 999." })) };
+    const draft = await generateMarketingDraft({ ...input, source }, { model: model([{ copy: malicious, usage: { inputTokens: 200, outputTokens: 100 } }]), now });
+    const expected = authoredCodingChallenge(source);
+    expect(draft.slides).toEqual(expected.slides);
+    expect(draft.revision.title).toBe(realTask.content.title);
+    expect(draft.revision.caption).toBe(`${realTask.content.title}\n\nTry the public coding challenge on devShark.\n\n${realTask.canonicalUrl}`);
+    expect(JSON.stringify(draft)).not.toMatch(/999|recursion|Guaranteed|Hidden solution/);
+    expect(draft.slides.find(slide => slide.code)?.code).toBe(realTask.content.code);
+    const spec = draft.slides.filter(slide => slide.headline === source.content.title || slide.headline === "Public task specification");
+    expect(spec.flatMap(slide => slide.body.split("\n")).join(" ").replace(/\s+/g, " ")).toBe(authoredMarketingText(source.content.body, source.content.code).replace(/\s+/g, " "));
+    expect(spec.every(slide => slide.body.split("\n").length <= 6)).toBe(true);
+    expect(draft.slides.length).toBeGreaterThanOrEqual(2); expect(draft.slides.length).toBeLessThanOrEqual(5);
+    expect(draft.slides.at(-1)?.headline).toBe("Try the challenge");
+    expect(realTask.eligible).toBe(false); expect(realTask.content.explanation).toBeNull();
+    const thread = await generateMarketingDraft({ ...input, source, account: { ...input.account, platform: "threads" } }, { model: model(), now });
+    expect(thread.revision.caption).toContain(source.canonicalUrl); expect(thread.revision.caption.length).toBeLessThanOrEqual(500);
+    expect(generationPrompt(source, []).system).toContain("do not solve it");
+  });
+  it("holds full public-spec, starter-code and caption overflow before calling a model instead of truncating", async () => {
+    const base = parseSourcePacket({ ...realTask, eligible: true, eligibilityReason: "mock operational simulation only" });
+    for (const content of [
+      { ...base.content, body: `${base.content.body} `.repeat(60) },
+      { ...base.content, code: `${base.content.code}\n${"// Keep all authored starter lines.\n".repeat(20)}` },
+      { ...base.content, code: `const authoredIdentifier = '${"W".repeat(100)}';` },
+    ]) {
+      const provider = model(); const source = { ...base, content, contentHash: contentHash(content) };
+      await expect(generateMarketingDraft({ ...input, source }, { model: provider, now })).rejects.toThrow("challenge-spec-overflow");
+      expect(provider.invoke).not.toHaveBeenCalled();
+    }
+    const provider = model();
+    await expect(generateMarketingDraft({ ...input, source: { ...base, canonicalUrl: `https://devshark.app/${"a".repeat(500)}` }, account: { ...input.account, platform: "threads" } }, { model: provider, now })).rejects.toThrow("challenge-caption-overflow");
+    expect(provider.invoke).not.toHaveBeenCalled();
+    expect(realTask.eligible).toBe(false);
+  });
 });
 
 describe("deterministic brand rendering", () => {
@@ -128,7 +168,7 @@ describe("real authored offline benchmark boundaries", () => {
   it("preserves unavailable eligibility and missing explanation instead of inventing content", () => {
     const results = evaluateMarketingBenchmark([
       { id: "real-devshark-question-unavailable", source: realQuestion, copy, expectedIssueCodes: ["source-unavailable"] },
-      { id: "real-devshark-task-missing-explanation", source: realTask, copy, expectedIssueCodes: ["source-unavailable", "authored-explanation-required"] },
+      { id: "real-devshark-task-without-explanation-held", source: realTask, copy, expectedIssueCodes: ["source-unavailable"] },
     ], now());
     const articleCopy = { ...copy, locale: "cs", slides: copy.slides.map((slide) => ({ ...slide, evidenceIndexes: [0] })) };
     const articleResults = evaluateMarketingBenchmark([{ id: "real-dneskai-held-article", source: realArticle, copy: articleCopy, expectedIssueCodes: ["source-unavailable"] }], now());
@@ -143,6 +183,20 @@ describe("real authored offline benchmark boundaries", () => {
 
 
 describe("real authored review preview", () => {
+  it("renders the held public coding challenge read-only with exact starter code and no invented answer", async () => {
+    const source = parseSourcePacket(realTask); const challenge = authoredCodingChallenge(source);
+    const draft = { revision: { ...revision("devshark"), title: challenge.title, caption: challenge.caption, sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }] }, slides: challenge.slides };
+    const previews = await renderMarketingPreview({ draft, template: pendingMarketingTemplate("devshark"), revisionId: input.revisionId });
+    expect(previews).toHaveLength(challenge.slides.length);
+    expect(challenge.slides.find(slide => slide.code)?.code).toBe(realTask.content.code);
+    expect(previews.map(slide => slide.svg).join("\n")).toContain("digitSum");
+    expect(challenge.slides.some(slide => slide.headline === "Authored explanation")).toBe(false);
+    expect(source.eligible).toBe(false); expect(realTask.eligible).toBe(false);
+    if (process.env.MARKETING_QA_PREVIEW_DIR) {
+      await mkdir(process.env.MARKETING_QA_PREVIEW_DIR, { recursive: true });
+      await Promise.all(previews.map((preview, i) => writeFile(path.join(process.env.MARKETING_QA_PREVIEW_DIR!, `devshark-coding-held-${i + 1}.jpg`), preview.jpeg)));
+    }
+  }, 60000);
   it("renders a held source for local QA without changing source eligibility", async () => {
     const source = parseSourcePacket(realQuestion);
     const slides = [

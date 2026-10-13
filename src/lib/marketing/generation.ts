@@ -2,8 +2,10 @@ import { z } from "zod";
 import { parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash } from "./hashes";
 import type { MarketingTracer } from "./tracing";
+import { fitMarketingText } from "./render";
+import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
 
-export const MARKETING_PROMPT_VERSION = "marketing-copy/1";
+export const MARKETING_PROMPT_VERSION = "marketing-copy/2";
 export const MarketingSlideSchema = z.strictObject({
   headline: z.string().min(1).max(160),
   body: z.string().min(1).max(1200),
@@ -63,7 +65,8 @@ export function generationPrompt(source: SourcePacket, knowledge: GenerationInpu
       "Use Czech for DNESKAi and English for devShark. Do not invent facts, quotes, statistics, current events, answers or product UI.",
       "Presentation references affect pacing and layout only; they are not factual evidence. Do not copy reference claims.",
       "For article slides cite at least one supporting zero-based evidenceIndex per slide. Every factual claim must follow source evidence.",
-      "For questions and coding tasks use the authored public explanation only. Hidden tests and server solutions are unavailable.",
+      "For questions and explained coding tasks use the authored public explanation only. Hidden tests and server solutions are unavailable.",
+      "A coding task without an authored explanation is challenge-only: preserve its public specification and starter code; do not solve it, suggest an algorithm, infer answers or claim a solution. The server supplies its exact title, challenge caption and task link.",
       "Do not place code in output; the renderer inserts source code unchanged. Use plain text, no HTML, emoji or markdown decoration.",
       "Return 2-5 slides, concise text, title, caption and locale matching the schema. Do not include URLs in generated text.",
     ].join("\n"),
@@ -103,6 +106,7 @@ export function authoredMarketingText(value: string, code: string | null): strin
 }
 function sourceSlides(copy: MarketingCopy, source: SourcePacket): MarketingSlide[] {
   if (source.kind === "article") return copy.slides;
+  if (source.kind === "coding-task" && !source.content.explanation) return authoredCodingChallenge(source).slides;
   // Preserve quiz semantics and safe authored explanations without asking a model to reconstruct them.
   const question = { headline: source.content.title, body: authoredMarketingText(source.content.body, source.content.code), code: null, evidenceIndexes: [] };
   const explanation = { headline: source.locale === "en" ? "Authored explanation" : "Vysvětlení autora", body: authoredMarketingText([source.content.answer, source.content.explanation].filter(Boolean).join("\n\n"), source.content.code), code: null, evidenceIndexes: [] };
@@ -111,6 +115,33 @@ function sourceSlides(copy: MarketingCopy, source: SourcePacket): MarketingSlide
   if (source.content.options.length) slides.push({ headline: "Choose an answer", body: source.content.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${authoredMarketingText(option, null)}`).join("\n"), code: null, evidenceIndexes: [] });
   slides.push(explanation);
   return slides.map((slide) => MarketingSlideSchema.parse(slide));
+}
+/** Authored public challenge for review/QA; this helper grants no source eligibility or publication approval. */
+export function authoredCodingChallenge(value: SourcePacket, platform: "instagram" | "threads" = "instagram"): { title: string; caption: string; slides: MarketingSlide[] } {
+  const source = parseSourcePacket(value);
+  if (source.kind !== "coding-task" || source.content.explanation) throw new MarketingGenerationError("challenge-source-required");
+  const title = source.content.title;
+  const caption = `${title}\n\nTry the public coding challenge on devShark.\n\n${source.canonicalUrl}`;
+  if (caption.length > (platform === "threads" ? 500 : 2200)) throw new MarketingGenerationError("challenge-caption-overflow");
+  try {
+    const width = 1080 - devsharkLayout.layout.margin * 2;
+    fitMarketingText({ value: title, faceId: "manrope-800", fontSize: devsharkLayout.layout.headlineFontSize, width, maxLines: 3 });
+    if (title.length > 160) throw new Error("headline-overflow");
+    const body = authoredMarketingText(source.content.body, source.content.code);
+    const maxPages = source.content.code ? 3 : 4;
+    const lines = fitMarketingText({ value: body, faceId: "inter-400", fontSize: devsharkLayout.layout.bodyFontSize, width, maxLines: maxPages * 6 });
+    const slides: MarketingSlide[] = [];
+    for (let offset = 0; offset < lines.length; offset += 6) slides.push({ headline: offset === 0 ? title : "Public task specification", body: lines.slice(offset, offset + 6).join("\n"), code: null, evidenceIndexes: [] });
+    if (source.content.code) {
+      fitMarketingText({ value: source.content.code, faceId: "jetbrains-mono-400", fontSize: devsharkLayout.code.fontSize, width: width - 72, maxLines: 10, code: true });
+      slides.push({ headline: "Starter code", body: source.content.category, code: source.content.code, evidenceIndexes: [] });
+    }
+    slides.push({ headline: "Try the challenge", body: "Try the public task on devShark.\nOpen the task using the link in the caption.", code: null, evidenceIndexes: [] });
+    if (slides.length < 2 || slides.length > 5 || !body) throw new Error("slide-overflow");
+    return { title, caption, slides: slides.map(slide => MarketingSlideSchema.parse(slide)) };
+  } catch {
+    throw new MarketingGenerationError("challenge-spec-overflow");
+  }
 }
 function cost(usage: ModelUsage, pricing: MarketingModel["pricing"]): number {
   return (usage.inputTokens * pricing.inputPerMillionUsd + usage.outputTokens * pricing.outputPerMillionUsd) / 1_000_000;
@@ -125,7 +156,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (!sourceUsable(source, now())) throw new MarketingGenerationError("source-unavailable");
   if (source.kind === "instagram-reference") throw new MarketingGenerationError("reference-is-not-source");
   if (contentHash(source.content) !== source.contentHash) throw new MarketingGenerationError("source-hash-mismatch");
-  if (source.kind === "coding-task" && !source.content.explanation) throw new MarketingGenerationError("authored-explanation-required");
+  const challenge = source.kind === "coding-task" && !source.content.explanation ? authoredCodingChallenge(source, input.account.platform) : null;
   if (input.knowledge.some((item) => item.brand !== source.brand)) throw new MarketingGenerationError("knowledge-brand-mismatch");
   if (Date.parse(input.scheduledAt) <= now().getTime()) throw new MarketingGenerationError("schedule-must-be-future");
   const budget = BudgetSchema.parse(dependencies.budget ?? DEFAULT_GENERATION_BUDGET);
@@ -165,24 +196,25 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       if (result.usage.inputTokens > budget.maxInputTokens || result.usage.outputTokens > budget.maxOutputTokens || usage.estimatedCostUsd > budget.maxCostUsd) throw new MarketingGenerationError("provider-budget-exceeded");
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
       const parsed = MarketingCopySchema.safeParse(result.copy);
-      const issues = parsed.success ? validateMarketingCopy(parsed.data, source) : ["invalid-schema"];
+      // Challenge output uses only authored text; none of the model's factual copy is retained.
+      const issues = parsed.success ? challenge ? parsed.data.locale === source.locale ? [] : ["locale-mismatch"] : validateMarketingCopy(parsed.data, source) : ["invalid-schema"];
       await trace?.stage({ name: "generation", attempt, latencyMs: Date.now() - startedAt, usage: result.usage, costUsd: cost(result.usage, model.pricing), issues });
       if (!parsed.success || issues.length) {
         if (attempt === budget.maxAttempts) throw new MarketingGenerationError("copy-validation-failed");
         continue;
       }
       if (!sourceUsable(source, now())) throw new MarketingGenerationError("source-unavailable");
-      const caption = `${parsed.data.caption}\n\n${source.canonicalUrl}`;
+      const caption = challenge?.caption ?? `${parsed.data.caption}\n\n${source.canonicalUrl}`;
       if (input.account.platform === "threads" && caption.length > 500) throw new MarketingGenerationError("threads-caption-too-long");
       const revision = parseContentRevision({
-        schemaVersion: "marketing-content/1", brand: source.brand, title: parsed.data.title, caption,
+        schemaVersion: "marketing-content/1", brand: source.brand, title: challenge?.title ?? parsed.data.title, caption,
         format: input.account.platform === "threads" ? "thread" : "carousel",
         sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }],
         knowledgeIds: input.knowledge.map(({ id }) => id), assets: [], account: input.account,
         scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,
         promptVersion: MARKETING_PROMPT_VERSION, model: model.model, traceId: trace?.id ?? null,
       });
-      const slides = sourceSlides(parsed.data, source);
+      const slides = challenge?.slides ?? sourceSlides(parsed.data, source);
       await trace?.finish({ status: "review", revisionHash: contentHash(revision), usage, issues: [] });
       return { revision, slides, usage, traceId: trace?.id ?? null };
     }
