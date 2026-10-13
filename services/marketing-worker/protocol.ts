@@ -74,7 +74,7 @@ export function createMarketingWorkerHandler(dependencies: {
 /** The durable runner supplies a fenced claim and persists the returned result before acknowledging it. */
 export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dependencies: {
   model: MarketingModel; tracer?: MarketingTracer; storage: MarketingAssetStorage;
-  budget?: GenerationBudget; signal?: AbortSignal; templateRoot?: string;
+  budget?: GenerationBudget; signal?: AbortSignal;
   reloadSource(sourceId: string): Promise<unknown>;
   reloadTemplate?(version: string): Promise<MarketingTemplate | null>;
 }): Promise<MarketingWorkerResult> {
@@ -93,7 +93,7 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
   const draft = await generateMarketingDraft({ ...job.generation, source: expected }, dependencies);
   const renderStartedAt = Date.now();
   const assets = draft.revision.account.platform === "instagram"
-    ? await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId, templateRoot: dependencies.templateRoot }, dependencies.storage)
+    ? await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId }, dependencies.storage)
     : [];
   await assertCurrentSource();
   const revision = { ...draft.revision, assets };
