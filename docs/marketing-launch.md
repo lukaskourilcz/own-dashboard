@@ -18,7 +18,7 @@ Explicit custom generation jobs refresh the authoritative producer before source
 - The offline benchmark has45 cases, including source/brand/answer/rendering/redaction/retry limits. No paid judge or real model cost was measured. It is not a general factual-entailment evaluator.
 - A separate local producer pilot used the actual485-row devShark deletion snapshot read from its connected database. The previous question `rm-js-1` is deleted. `rm-js-17` was not deleted, and active `js-digit-sum` produced source-bound4/3-slide previews. This local check was subsequently followed by the real protected producer/n8n checks below. Layout approval does not approve this sample content. Private pilot artifacts are deliberately absent from this public repo.
 - The existing Sep15 Apify dataset has33 unique URLs,32 nonempty transcripts, one restricted source, no OCR and no Saved timestamps. The original provider receipt is retained privately; it is no estimate for a future run. The21-day import excludes unknown/unverified dates by default. Supply actual Instagram Saved JSON and timestamp proof, or explicitly opt into unknown dates; do not infer Saved date from publication date.
-- Instagram accepted the owner's password-confirmed Saved-only export request on13 October2026:13 September–13 October, JSON to device. Its file is available until17 October, less than1MiB. The owner completed the separate download password confirmation, but Chrome blocked the archive host with `ERR_BLOCKED_BY_CLIENT`; manual downloading also failed. No local file or21-day timestamp evidence has been obtained yet. No security setting was changed and no authenticated archive URL was extracted or fetched outside the browser. Obtain the official export on a working owner-controlled device/browser, then apply the exact21-day filter.
+- Instagram accepted the owner's password-confirmed Saved-only export request on13 October2026:13 September–13 October, JSON to device. Its file is available until17 October, less than1MiB. The owner completed the separate download password confirmation, but Chrome blocked the archive host with `ERR_BLOCKED_BY_CLIENT`; manual downloading also failed. No local file or21-day timestamp evidence has been obtained yet. No security setting was changed and no authenticated archive URL was extracted or fetched outside the browser. The owner has deferred export acquisition and import to another session, tracked in [#101](https://github.com/lukaskourilcz/own-dashboard/issues/101), including real21-day backfill. Do not repeat a download question or attempt in this session. The missing archive does not block the current devShark pilot; the broader knowledge implementation under [#95](https://github.com/lukaskourilcz/own-dashboard/issues/95) remains in scope.
 - Owner-approved,30-day API keys were created for one Claude workspace without Admin API access and one EU LangSmith workspace using a service key. Keys are stored outside the repository in private local staging configuration and the authorized branch-specific private Vercel Preview environment. Authenticated read-only Claude model listing and EU LangSmith project listing both returned HTTP200 on13 October2026. The private `own-dashboard-marketing-staging` LangSmith project is created, readable with the scoped key and displays14-day retention. One explicitly labelled `connectivity-check` diagnostic used the actual marketing tracer and a held offline fixture; readback verified zero model attempts/tokens, absent inputs/outputs, hash-only source identity and no key/source URL/copy. It is deliberately marked failed with no revision, so it cannot be mistaken for a generated or approved post. Initial immediate readback returned404 before indexing; later read-only retrieval succeeded, with no repeat write. That connectivity check made no model invocation, credit purchase or publication. It verifies diagnostic ingestion/redaction; the subsequent real generation attempts are recorded separately below.
 - The OwnDashboard implementation head `65964adfe670eaa9f267db07b36a92a14cc8c6a8`, including Humanizer, passed local904 tests across90 files, lint, types and build. Its remote check, browser E2E and Vercel preview checks passed. The linked source PRs also passed their required remote checks.
 - The staging authentication, protected sources, strict template approval registry and calendar classifier passed1009 tests with one deliberate skip across98 files, whole-repository lint, types and build at `3ea8c5f`. One initial full-suite run hit a five-second unrelated demo-fixture import timeout under high concurrency; that file passed alone, and the complete suite passed with four workers. The preceding staging head `2196d23` passed the complete local browser regression (116 passed,70 deliberate device-scoped skips), GitHub check/E2E and Vercel Preview. Later heads require their own remote status checks.
@@ -28,8 +28,9 @@ Explicit custom generation jobs refresh the authoritative producer before source
 - A separate manual n8n Cloud source-check workflow executed once against the protected OwnDashboard Preview: three real packets, two eligible, one deleted question held, zero missing/dropped. The Custom Auth credential contains only the staging API key and exact Preview access cookie, restricted to that hostname. Redirects/retries and success/error/manual/progress data saving are disabled; transient editor data was cleared. The original four workflows remain inactive.
 - Both new Instagram Tester invitations were accepted. Both brand tokens were verified by actual Graph profile reads and the native Meta Access Token Debugger: valid User tokens for the correct app, exactly `instagram_business_basic` and `instagram_business_content_publish`. API-only permission introspection returned400 and self-debug returned403; these failures were not treated as proof. Expiry/scopes came from the authenticated native debugger. The professional `user_id` is used for account identity, distinct from the app-scoped `id`, as documented in Meta's [Get Started guide](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/get-started). Both accounts are registered only in the child database with `enabled=false`; the13 new private server values are Secret variables scoped only to the marketing Preview branch. No publishing permission was exercised.
 - Head `d7172d4` passed 1,023 local tests with one intentional skip across 102 files, whole-repository lint, TypeScript and production build. Its focused Marketing browser suite passed eight desktop/mobile checks in EN/CS, including accessibility, keyboard navigation, overflow and refused writes. The deployed owner UI now shows the last ten safe generation-job summaries in **Ke schválení / To approve**, including failures when no draft exists. A manual status check reads state only; it starts no model call. Unknown job costs remain unknown alongside the explicitly labelled subtotal of recorded estimates.
+- Combined head `7187302` passed 1,025 local tests with one intentional skip across 102 files, production build, whole-repository TypeScript and scoped lint. Its remote check, browser E2E and Vercel Preview checks passed. These gates verify the implementation head; the actual third generation attempt below still failed downstream.
 
-### Actual generation attempts and remaining hold
+### Actual generation attempts and exhausted quota
 
 The first admitted live job, from staging head `c251c6f`, failed with `provider-failed`. It saved
 no final assets and recorded no verified token usage. Its actual model consumption remains
@@ -44,18 +45,35 @@ binding; no private identifiers or payloads are reproduced here. Stage-child dia
 not yet available, so the observed wrapper code does not establish the exact validation cause.
 Trace ingestion and two model responses do not prove a valid rendered or approved post.
 
-The pilot has admitted **two of its three permitted jobs**. Both $0.25 reservations remain in
-place ($0.50 total reserved); the known second-job estimate does not refund a reservation or
-reset the attempt count. No finished live carousel, final post approval or social publication
-has been verified. Prompt clarity, safe validation feedback and root-issue preservation have
-corrections committed in `0975685`. Do not admit another job until combined-head verification passes;
-at most one admitted job remains within the original fixed window and quota.
+The third admitted job, using an actual question source on head `7187302`, passed its COPY
+phase. Its EU COPY trace finished with status `review`, one successful Claude call, 1,957 input
+tokens, 228 output tokens and an empty validation-issues list. The same verified configured
+rates give a model cost estimate of **$0.009291**. The downstream worker then failed with
+`worker-execution-failed` before Storage; it persisted no job result containing the generated
+copy. A green COPY trace proves that phase only, not complete worker execution, a finished
+carousel or owner approval.
+
+The pilot has admitted **all three permitted jobs** and paid generation is stopped. All three
+$0.25 admission reservations remain in place (**$0.75 total reserved**); known model estimates
+do not refund reservations or reset the attempt count. Actual read-only cloud checks confirmed
+**zero final revisions, zero publications and zero recent Storage objects**. Existing connectivity
+artifacts remain connectivity evidence. No finished live carousel or final post approval has
+been verified.
+
+Commit `b9adc53` adds a zero-write, zero-model-call render preflight, stage classification,
+a check before any paid call and final failure tracing. Combined verification, deployment and
+actual cloud preflight proof remain pending; the downstream error alone does not establish the
+failure's exact cause. A code change does not complete the live flow.
+No further paid generation is authorized. An additional job requires the owner's explicit pilot
+extension after a concrete rendering fix passes verification; keep the original quota and
+reservations intact until then.
 
 Both verified Instagram accounts remain disabled, and the original four n8n workflows remain
 inactive. The manual n8n source check preserves three packets, two eligible and one held deleted
 question. DNESKAi still has 14 held real article reviews and zero eligible article sources;
-preview-only article selection does not authorize magazine delivery. The Instagram Saved archive
-remains blocked as described above. Production mutations, production rollout and social sends
+preview-only article selection does not authorize magazine delivery. Instagram Saved acquisition
+and import are deferred to another session under #101; waiting for that file does not block the
+current devShark generation/render diagnostics. Production mutations, production rollout and social sends
 remain outside the pilot scope.
 
 ## Configuration, without putting secrets in GitHub or chat
@@ -92,8 +110,8 @@ The automation and n8n authenticators also reject expired, partial, malformed or
 1. Review the three PRs and the verified staging result. Both exact layout digests have staging-only owner approval. The separate child database already has the verified baseline and marketing migrations; production remains unchanged. Preserve the existing production calendar/publisher snapshots.
 2. Install private scoped credentials through service managers/server env, never chat/GitHub. Creating new security-sensitive access requires the owner's action-time approval in Chrome; payment/credit purchase or changing existing credentials must be completed by the owner.
 3. All four n8n drafts have been imported and persisted inactive through native URL import; replace the placeholder OwnDashboard host with the verified deployed staging endpoint, assign named credentials and inspect native node versions/settings. Test actual import, disabled scheduling, auth/replay rejection, UTC Wait resume and paused-data redaction.
-4. Select one actual final DNESKAi article in BoardlessAI. Discover one currently eligible devShark question and one active task through the deployed live source route. Revalidate source heads before and after generation. Feed one transcript-backed reviewed marketing procedure into presentation only.
-5. Keep the private staging template receipt and quota fixed. Verify the prompt/validation corrections before admitting the remaining permitted job. The first two admitted jobs failed; their reservations remain retained. For a successful draft, verify recorded Claude usage, exact EU trace binding/redaction and immutable stored JPEG bytes, then inspect mobile/error/source-change behavior in the authenticated OwnDashboard. The deployed job-health UI and a redacted root trace are already verified; finished live assets and stage-child diagnostics remain unverified.
+4. Select one actual final DNESKAi article in BoardlessAI. Discover one currently eligible devShark question and one active task through the deployed live source route. Revalidate source heads before and after generation. A transcript-backed reviewed marketing procedure may affect presentation only. Recent Saved export acquisition/import is deferred to #101 in another session and does not hold current devShark diagnostics; preserve the broader knowledge implementation under #95.
+5. Keep the private staging template receipt, exhausted quota and retained reservations fixed. Verify a concrete rendering fix with zero-write/model-call preflight and safe stage/final-failure diagnostics before seeking an explicit owner extension for another paid job. All three admitted jobs failed; the third passed COPY but failed downstream before Storage. For any later authorized successful draft, verify recorded Claude usage, exact EU trace binding/redaction and immutable stored JPEG bytes, then inspect mobile/error/source-change behavior in the authenticated OwnDashboard. Finished live assets and complete-flow acceptance remain unverified.
 6. In OwnDashboard inspect the exact final assets/caption/account/time. The owner approves each final revision there. This pilot still prohibits social sends; publishing flags/accounts/schedules remain disabled. A later separately authorized cutover must verify remote IDs/permalinks per channel, with no cross-channel duplicate retry.
 7. Only after the owner reviews those concrete results, confirm old publisher hold, import/review/activate the preserved30-day drafts and authorize production cutover. Enable schedules/accounts/publish flags separately. If readiness misses18 October, report it; never silently shift the requested campaign.
 
