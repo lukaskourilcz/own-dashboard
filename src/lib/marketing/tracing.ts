@@ -49,7 +49,8 @@ const diagnosticsSchema = z.strictObject({
 const finishSchema = z.strictObject({ status: z.enum(["review", "failed"]), revision_hash: hash.nullable(), attempts: z.number().int().min(0).max(3), input_tokens: z.number().int().nonnegative(), output_tokens: z.number().int().nonnegative(), estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(z.string().regex(/^[a-z-]{1,80}$/)).max(30) });
 const preparedSchema = z.strictObject({ revision_id: z.uuid(), revision_hash: hash, asset_hashes: z.array(hash).max(10), template_sha256: hash, render_latency_ms: z.number().nonnegative() });
 const fullMetadataSchema = metadataSchema.extend(finishSchema.shape).extend({ asset_hashes: z.array(hash).max(10).optional(), template_sha256: hash.optional(), render_latency_ms: z.number().nonnegative().optional() });
-export type OwnerFeedback = { traceId: string; revisionId: string; revisionHash: string; decision: "approved" | "returned" | "skipped"; qualityScore: number };
+export type OwnerFeedback = { traceId: string; revisionId: string; revisionHash: string; decision: "approved" | "returned" | "skipped" | "edited"; qualityScore: number;
+  generatedRevisionId?: string; generatedRevisionHash?: string };
 export interface LangSmithMarketingTracer extends MarketingTracer {
   recordOwnerFeedback(input: OwnerFeedback): Promise<boolean>;
   writeBenchmarkExamples(datasetId: string, results: MarketingBenchmarkResult[]): Promise<boolean>;
@@ -108,12 +109,14 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
       });
     },
     async recordOwnerFeedback(input) {
-      const feedback = z.strictObject({ traceId: z.uuid(), revisionId: z.uuid(), revisionHash: hash, decision: z.enum(["approved", "returned", "skipped"]), qualityScore: z.number().min(0).max(1) }).parse(input);
+      const feedback = z.strictObject({ traceId: z.uuid(), revisionId: z.uuid(), revisionHash: hash, decision: z.enum(["approved", "returned", "skipped", "edited"]), qualityScore: z.number().min(0).max(1),
+        generatedRevisionId: z.uuid().optional(), generatedRevisionHash: hash.optional() }).refine((value) => (value.generatedRevisionId === undefined) === (value.generatedRevisionHash === undefined), { message: "generated-revision-pair-required" }).parse(input);
       return safeWrite(async () => {
         const run = await client.readRun(feedback.traceId);
         const metadata = fullMetadataSchema.parse(run.extra?.metadata);
-        if (metadata.revision_id !== feedback.revisionId || metadata.revision_hash !== feedback.revisionHash) throw new Error("trace-revision-mismatch");
-        await client.createFeedback(feedback.traceId, "owner-review", { score: feedback.qualityScore, value: feedback.decision, sourceInfo: { revision_id: feedback.revisionId, revision_hash: feedback.revisionHash } });
+        if (metadata.revision_id !== (feedback.generatedRevisionId ?? feedback.revisionId) || metadata.revision_hash !== (feedback.generatedRevisionHash ?? feedback.revisionHash)) throw new Error("trace-revision-mismatch");
+        await client.createFeedback(feedback.traceId, "owner-review", { score: feedback.qualityScore, value: feedback.decision, sourceInfo: { revision_id: feedback.revisionId, revision_hash: feedback.revisionHash,
+          ...(feedback.generatedRevisionId ? { generated_revision_id: feedback.generatedRevisionId, generated_revision_hash: feedback.generatedRevisionHash } : {}) } });
       });
     },
     async writeBenchmarkExamples(datasetId, results) {

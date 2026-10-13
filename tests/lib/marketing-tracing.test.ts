@@ -72,6 +72,33 @@ describe("redacted LangSmith EU SDK tracing", () => {
     mocks.getRunUrl.mockResolvedValue("https://eu.smith.langchain.com/private-run");
     expect(await tracer.getTraceUrl("67a15323-4a6f-4463-a03b-c4c010015d80")).toBe("https://eu.smith.langchain.com/private-run");
   });
+  it("binds edited feedback to original immutable metadata while sending the exact reviewed tuple", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const metadataBefore = structuredClone((await mocks.readRun()).extra.metadata);
+    const feedback = { traceId: "67a15323-4a6f-4463-a03b-c4c010015d80", revisionId: "3e4382f1-1c71-4aac-9e0d-33aef28f355f", revisionHash: "b".repeat(64), decision: "edited" as const, qualityScore: 0,
+      generatedRevisionId: start.revisionId, generatedRevisionHash: "a".repeat(64) };
+    expect(await tracer.recordOwnerFeedback(feedback)).toBe(true);
+    expect(mocks.createFeedback).toHaveBeenCalledWith(feedback.traceId, "owner-review", { score: 0, value: "edited", sourceInfo: {
+      revision_id: feedback.revisionId, revision_hash: feedback.revisionHash, generated_revision_id: start.revisionId, generated_revision_hash: "a".repeat(64),
+    } });
+    expect(mocks.updateRun).not.toHaveBeenCalled();
+    expect((await mocks.readRun()).extra.metadata).toEqual(metadataBefore);
+    mocks.createFeedback.mockClear();
+    expect(await tracer.recordOwnerFeedback({ ...feedback, generatedRevisionHash: "c".repeat(64) })).toBe(false);
+    expect(await tracer.recordOwnerFeedback({ ...feedback, generatedRevisionId: feedback.revisionId })).toBe(false);
+    expect(mocks.createFeedback).not.toHaveBeenCalled();
+  });
+  it("rejects incomplete lineage pairs and returns false for trace-read or feedback outages", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const feedback = { traceId: "67a15323-4a6f-4463-a03b-c4c010015d80", revisionId: start.revisionId, revisionHash: "a".repeat(64), decision: "approved" as const, qualityScore: 1 };
+    await expect(tracer.recordOwnerFeedback({ ...feedback, generatedRevisionId: start.revisionId })).rejects.toThrow("generated-revision-pair-required");
+    mocks.readRun.mockRejectedValueOnce(new Error("TEST PRIVATE TRACE READ ERROR"));
+    expect(await tracer.recordOwnerFeedback(feedback)).toBe(false);
+    expect(mocks.createFeedback).not.toHaveBeenCalled();
+    mocks.createFeedback.mockRejectedValueOnce(new Error("TEST PRIVATE TRACE WRITE ERROR"));
+    expect(await tracer.recordOwnerFeedback(feedback)).toBe(false);
+    expect(mocks.updateRun).not.toHaveBeenCalled();
+  });
   it("blocks ambient LangChain tracing before loading/calling Claude", async () => {
     vi.stubEnv("LANGSMITH_TRACING", "true");
     await expect(createClaudeMarketingModel({ apiKey: "test-only", model: "claude-sonnet-4-6", pricing: { inputPerMillionUsd: 3, outputPerMillionUsd: 15 } })).rejects.toThrow("unsafe-native-tracing-enabled");
