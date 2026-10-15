@@ -14,6 +14,9 @@ type SettingsStrings = {
   reorder: string;
   tasks: string;
   tasksAll: string;
+  careerMarket: string;
+  showCzechCareer: string;
+  showCzechCareerDescription: string;
   cv: string;
   cvDesc: string;
   cvCzech: string;
@@ -87,6 +90,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     reorder: "Drag to reorder",
     tasks: "Tasks",
     tasksAll: "All",
+    careerMarket: "Career search",
+    showCzechCareer: "Show Czech Career contents",
+    showCzechCareerDescription: "Career focuses on Oslo and work available from Norway. Enable this to also show Czech job boards, companies and earlier Czech applications. Your history stays saved.",
     cv: "CV links",
     cvDesc:
       "Google Docs links to your CVs — shown as buttons on the Career page. Paste the share URL; editing the doc keeps the same link.",
@@ -166,6 +172,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     reorder: "Přetáhni pro změnu pořadí",
     tasks: "Úkoly",
     tasksAll: "Vše",
+    careerMarket: "Hledání práce",
+    showCzechCareer: "Zobrazit český obsah Kariéry",
+    showCzechCareerDescription: "Kariéra se zaměřuje na Oslo a práci dostupnou z Norska. Zaškrtnutím zobrazíte také české portály, firmy a dřívější české přihlášky. Historie zůstává uložená.",
     cv: "Odkazy na CV",
     cvDesc:
       "Odkazy na tvoje životopisy v Google Docs — zobrazí se jako tlačítka na stránce Práce. Vlož sdílecí URL; úpravy dokumentu odkaz nemění.",

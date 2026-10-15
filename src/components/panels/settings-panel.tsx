@@ -42,12 +42,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDict, useLang } from "@/lib/i18n";
 import {
   useCvLinks,
+  useCzechCareerVisibility,
   useDisplayCurrency,
   useNavOrder,
   useNavVisibility,
@@ -271,6 +273,7 @@ export function SettingsPanel({
   const { count: tasksPerCategory, setCount: setTasksPerCategory } =
     useTasksPerCategory();
   const { cs: cvCs, en: cvEn, setCs: setCvCs, setEn: setCvEn } = useCvLinks();
+  const { showCzechCareer, setShowCzechCareer } = useCzechCareerVisibility();
   const { hiddenProjectTabs, setHiddenProjectTabs } =
     useProjectTabVisibility();
   const toggleProjectTab = (tab: ProjectWorkspaceTab) => {
@@ -558,6 +561,24 @@ export function SettingsPanel({
                 );
               })}
             </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader><CardTitle>{t.settings.careerMarket}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex items-start gap-3">
+              <Checkbox id="show-czech-career" checked={showCzechCareer}
+                onCheckedChange={(checked) => {
+                  const next = checked === true;
+                  setShowCzechCareer(next);
+                  savePreferences({ show_czech_career: next });
+                }} />
+              <div className="space-y-1">
+                <Label htmlFor="show-czech-career">{t.settings.showCzechCareer}</Label>
+                <p className="max-w-2xl text-sm text-foreground-muted">{t.settings.showCzechCareerDescription}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

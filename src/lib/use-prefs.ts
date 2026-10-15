@@ -486,3 +486,17 @@ export function writeRepoFilter(ids: string[]): void {
     // ignore — quota or privacy mode; the server sync is the fallback.
   }
 }
+
+// The Oslo search is the default. This opt-in restores Czech career sources
+// and records without deleting the owner's earlier search history.
+const czechCareerPref = makeStringPref("showCzechCareer");
+const readCzechCareer = () => czechCareerPref.read() === "1";
+const serverCzechCareer = () => false;
+const setCzechCareer = (value: boolean) => czechCareerPref.set(value ? "1" : "0");
+
+export function useCzechCareerVisibility() {
+  const showCzechCareer = useSyncExternalStore(
+    czechCareerPref.subscribe, readCzechCareer, serverCzechCareer,
+  );
+  return { showCzechCareer, setShowCzechCareer: setCzechCareer };
+}

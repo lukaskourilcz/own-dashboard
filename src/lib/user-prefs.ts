@@ -24,6 +24,7 @@ export type UserPreferences = {
   cv_url_cs: string;
   cv_url_en: string;
   hidden_project_tabs: string[];
+  show_czech_career: boolean;
   sync_available: boolean;
 };
 
@@ -46,6 +47,7 @@ const DEFAULT_PREFS: UserPreferences = {
   cv_url_cs: "",
   cv_url_en: "",
   hidden_project_tabs: [],
+  show_czech_career: false,
   sync_available: true,
 };
 
@@ -56,7 +58,7 @@ export async function loadUserPreferences(
   const { data, error } = await supabase
     .from("user_preferences")
     .select(
-      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, ai_enabled, ai_sensitive_opt_in, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs",
+      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, ai_enabled, ai_sensitive_opt_in, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs, show_czech_career",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -108,6 +110,7 @@ export async function loadUserPreferences(
     cv_url_cs: data.cv_url_cs ?? "",
     cv_url_en: data.cv_url_en ?? "",
     hidden_project_tabs: normalizeHiddenProjectTabs(data.hidden_project_tabs),
+    show_czech_career: data.show_czech_career === true,
     sync_available: true,
   };
 }

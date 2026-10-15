@@ -113,6 +113,7 @@ export function DemoDashboard({
         tasks_per_category: 5,
         cv_url_cs: "",
         cv_url_en: "",
+        show_czech_career: false,
         hidden_project_tabs: [],
         sync_available: true,
       }}
