@@ -8,15 +8,15 @@ const owner = uuid(1); const other = uuid(2); const campaign = uuid(3); const re
 const source = uuid(5); const alternate = uuid(6); const entry = uuid(7); const siblingEntry = uuid(8);
 const original = uuid(9); const replacement = uuid(10); const project = uuid(11); const fence = uuid(12);
 const foreignCampaign = uuid(13); const foreignEntry = uuid(14); const sha = "a".repeat(64); const editedSha = "b".repeat(64);
-const body = (scheduledAt = "2026-10-14T07:00:00Z") => ({ brand: "devshark", caption: "Test-only caption", scheduledAt,
+const body = (scheduledAt = "2099-10-14T07:00:00Z") => ({ brand: "devshark", caption: "Test-only caption", scheduledAt,
   account: { id: "12345678", platform: "instagram", handle: "test-only-handle" }, sources: [{ sourceId: "question:owned", sourceRevision: "v1", contentHash: sha }], knowledgeIds: [] });
-const request = (revisionId = original, calendarEntryId = entry) => ({ calendarEntryId, calendarEntryVersion: 1, generation: { revisionId, scheduledAt: "2026-10-14T07:00:00Z", account: body().account,
+const request = (revisionId = original, calendarEntryId = entry) => ({ calendarEntryId, calendarEntryVersion: 1, generation: { revisionId, scheduledAt: "2099-10-14T07:00:00Z", account: body().account,
   source: { brand: "devshark", sourceId: "question:owned", sourceRevision: "v1", contentHash: sha } } });
 async function ownerAction(sql: string, values: unknown[]) {
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]); await db.exec("set role authenticated");
   try { return await db.query(sql, values); } finally { await db.exec("reset role"); }
 }
-const release = () => ownerAction("select marketing_release_calendar_entry($1,$2,$3,'2026-10-15','18:30','carousel')", [entry, sha, alternate]);
+const release = () => ownerAction("select marketing_release_calendar_entry($1,$2,$3,'2099-10-15','18:30','carousel')", [entry, sha, alternate]);
 const archive = () => ownerAction("select marketing_activate_campaign($1,$2)", [replacementCampaign, editedSha]);
 const edit = (previous = original, id = replacement, content = body()) => db.query("select marketing_save_revision($1,$2,$3,$4,true,'[]',$5)", [owner, id, JSON.stringify({ ...content, caption: "Edited test-only caption" }), editedSha, previous]);
 const approve = (id = replacement) => ownerAction("select marketing_approve_revision($1,$2) as id", [id, editedSha]);
@@ -35,14 +35,14 @@ beforeAll(async () => {
 beforeEach(async () => {
   await db.exec("truncate marketing_events,marketing_publications,marketing_revisions,marketing_jobs,marketing_calendar_entries,marketing_source_history,marketing_accounts,marketing_sources,marketing_campaigns");
   await db.query(`insert into marketing_campaigns(id,user_id,brand,name,starts_on,ends_on,source_snapshot,source_hash,status)
-    values($1,$4,'devshark','Original','2026-10-01','2026-10-31','{}',$6,'active'),($2,$4,'devshark','Replacement','2026-10-01','2026-10-31','{}',$7,'draft'),
-    ($3,$5,'devshark','Foreign','2026-10-01','2026-10-31','{}',$6,'active')`, [campaign, replacementCampaign, foreignCampaign, owner, other, sha, editedSha]);
+    values($1,$4,'devshark','Original','2099-10-01','2099-10-31','{}',$6,'active'),($2,$4,'devshark','Replacement','2099-10-01','2099-10-31','{}',$7,'draft'),
+    ($3,$5,'devshark','Foreign','2099-10-01','2099-10-31','{}',$6,'active')`, [campaign, replacementCampaign, foreignCampaign, owner, other, sha, editedSha]);
   await db.query(`insert into marketing_sources(id,user_id,brand,source_id,source_revision,content_hash,packet,observed_at,eligible)
     values($1,$3,'devshark','question:owned','v1',$4,'{}',now(),true),($2,$3,'devshark','question:alternate','v1',$4,'{}',now(),true)`, [source, alternate, owner, sha]);
   await db.query(`insert into marketing_calendar_entries(id,user_id,campaign_id,source_id,date,local_time,kind,platform,title,original,needs_review,bound_source_id)
-    values($1,$4,$6,'slot','2026-10-14','09:00','carousel','instagram','Test-only slot','{}',false,$8),
-    ($2,$4,$6,'sibling','2026-10-14','09:00','carousel','instagram','Sibling slot','{}',false,$8),
-    ($3,$5,$7,'foreign','2026-10-14','09:00','carousel','instagram','Foreign slot','{}',false,null)`, [entry, siblingEntry, foreignEntry, owner, other, campaign, foreignCampaign, source]);
+    values($1,$4,$6,'slot','2099-10-14','09:00','carousel','instagram','Test-only slot','{}',false,$8),
+    ($2,$4,$6,'sibling','2099-10-14','09:00','carousel','instagram','Sibling slot','{}',false,$8),
+    ($3,$5,$7,'foreign','2099-10-14','09:00','carousel','instagram','Foreign slot','{}',false,null)`, [entry, siblingEntry, foreignEntry, owner, other, campaign, foreignCampaign, source]);
   await db.query("insert into marketing_accounts(user_id,brand,platform,remote_account_id,handle,verified_at,enabled) values($1,'devshark','instagram','12345678','test-only-handle',now(),true)", [owner]);
 });
 afterAll(async () => { await db?.close(); });

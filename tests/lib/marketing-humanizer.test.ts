@@ -10,7 +10,7 @@ import heldTask from "../../templates/marketing/benchmarks/devshark-coding-task.
 import heldArticle from "../../templates/marketing/benchmarks/dneskai-article.json";
 
 function source(fixture: typeof heldQuestion | typeof heldTask | typeof heldArticle): SourcePacket {
-  return parseSourcePacket({ ...structuredClone(fixture), eligible: true, eligibilityReason: "OFFLINE HUMANIZER INTEGRATION SIMULATION ONLY", observedAt: new Date().toISOString() });
+  return parseSourcePacket({ ...structuredClone(fixture), eligible: true, eligibilityReason: "OFFLINE HUMANIZER INTEGRATION SIMULATION ONLY", observedAt: new Date().toISOString(), expiresAt: fixture.expiresAt === null ? null : new Date(Date.now() + 86400000).toISOString() });
 }
 function input(packet: SourcePacket): GenerationInput {
   return { source: packet, consent: true, knowledge: [], scheduledAt: new Date(Date.now() + 3600000).toISOString(), revisionId: "33333333-3333-4333-8333-333333333333",
