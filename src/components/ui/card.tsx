@@ -39,7 +39,7 @@ export function CardTitle({
     <div
       data-card-title
       className={cn(
-        "mac-card-title flex items-center gap-2 text-sm font-bold text-foreground tracking-[-0.01em] [&>svg]:size-[13px] [&>svg]:shrink-0 [&>svg]:rounded-md [&>svg]:bg-[var(--section-accent,var(--mac-blue))] [&>svg]:box-content [&>svg]:p-[4.5px] [&>svg]:text-white",
+        "mac-card-title flex items-center gap-2 text-sm font-semibold text-foreground tracking-[-0.01em] [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-foreground-muted",
         className,
       )}
       {...props}

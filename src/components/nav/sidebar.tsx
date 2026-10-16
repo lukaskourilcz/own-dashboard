@@ -44,6 +44,7 @@ import {
   sortByNavOrder,
 } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
+import { brandConfig } from "@/lib/brand";
 import { groupProjectsByEngagement } from "@/lib/projects";
 import { saveUserPreferences } from "@/lib/preference-client";
 import { isHiddenNavTab, type NavTab } from "@/lib/nav-tabs";
@@ -206,7 +207,7 @@ export function Sidebar({
           <motion.span
             layoutId="active-nav"
             className="absolute inset-0 rounded-md bg-[var(--sidebar-selected)]"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
           />
         )}
         <it.icon className="relative z-10 h-4 w-4 shrink-0" />
@@ -255,9 +256,7 @@ export function Sidebar({
           </Tooltip>
         ) : (
           <>
-            <span className="traffic-light h-3 w-3 rounded-full bg-[var(--traffic-close)]" aria-hidden />
-            <span className="traffic-light h-3 w-3 rounded-full bg-[var(--traffic-minimize)]" aria-hidden />
-            <span className="traffic-light h-3 w-3 rounded-full bg-[var(--traffic-zoom)]" aria-hidden />
+            <span className="text-sm font-semibold tracking-tight">{brandConfig.name}</span>
             <Tooltip content={t.nav.collapse} side="right">
               <button
                 type="button"

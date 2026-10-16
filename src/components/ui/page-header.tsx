@@ -19,21 +19,21 @@ export function PageHeader({
     <div
       data-page-header
       className={cn(
-        "mac-page-header flex flex-col gap-3 border-b border-border sm:flex-row sm:items-end sm:justify-between sm:gap-4",
+        "mac-page-header flex flex-col gap-3 border-b border-border xl:flex-row xl:items-end xl:justify-between xl:gap-4",
         density === "compact" ? "mb-4 pb-3" : "mb-6 pb-4",
         className,
       )}
     >
       <div className="min-w-0">
         {eyebrow && <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand">{eyebrow}</p>}
-        <h1 className="text-xl font-semibold tracking-[-0.018em] text-foreground">
+        <h1 className="text-2xl font-semibold leading-tight tracking-[-0.025em] text-foreground">
           {title}
         </h1>
         {description && (
           <p className="mt-1 text-sm text-foreground-muted">{description}</p>
         )}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="min-w-0 max-w-full">{action}</div>}
     </div>
   );
 }

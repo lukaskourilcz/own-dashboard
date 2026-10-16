@@ -13,7 +13,7 @@ Never introduce a raw hex or framework color utility in a production component w
 | Role | Implementation intent |
 | --- | --- |
 | Login/display | 28–40 px, compact leading, only on the private auth surface |
-| Page title | 22 px desktop, 20 px narrow, semibold, tight tracking |
+| Page title | 24 px, responsive, semibold, tight tracking |
 | Section/module title | 12–16 px, sentence case, semibold |
 | Body | 14 px / 1.5 |
 | Small body and metadata | 11–13 px with AA contrast |
@@ -28,14 +28,14 @@ Do not uppercase long labels. Czech diacritics must be tested in every font role
 
 ## Layout and density
 
-At `md` and above, the application sits inside a graphite desktop with 20 px block padding and 30 px inline padding. The window fills that padded area at every width, so the graphite margin stays 20 px top and bottom and 30 px left and right rather than widening past a fixed maximum. The window is viewport-contained, 12 px rounded, and scrolls only its content region. Desktop sidebar is 224 px and the collapsed rail 64 px; the shared toolbar is 52 px. Content padding is 16 px narrow and 20–24 px desktop. Dense rows are 38 px desktop; ordinary rows are 46 px. Touch versions preserve at least 44 px targets. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px. Mobile removes desktop wallpaper/window framing and includes safe-area insets.
+At `md` and above, the application sits inside a neutral desktop with 16 px block padding and 20 px inline padding. The viewport-contained window has a 14 px radius and scrolls only its content region. The translucent sidebar is 232 px (64 px collapsed), light in light mode and heavier in dark mode; the shared toolbar is 56 px. Navigation uses a critically damped selection spring and never waits for a page exit animation. Content padding is 16 px narrow and 20–24 px desktop. Dense rows are 38 px desktop; ordinary rows are 46 px. Touch versions preserve at least 44 px targets. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px. Mobile removes desktop wallpaper/window framing and includes safe-area insets.
 
 Home and login may breathe. Work, Projects, Opportunities, Career, Money, and Invoices use medium-high density. Prefer section bands, aligned rows, split panes, and tables. Use cards only for summaries, self-contained objects, and elevated workflows. Avoid nested cards.
 
 ## Components
 
 - `PageHeader` supports regular and compact density plus an optional contextual eyebrow.
-- `Card` is a compact white contained module with a hairline border, 12 px radius, 16–18 px padding, and one restrained surface shadow.
+- `Card` is a compact white contained module with a hairline border, 14 px radius, 16–18 px padding, and one restrained surface shadow.
 - `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations.
 - `ConfirmationProvider` and `useConfirmation` are the only destructive-confirmation surface. Deletions use the branded Radix dialog with a named consequence and explicit destructive action; browser-native confirmation dialogs are reserved for non-destructive consent until migrated.
 - `StatusBadge` is the canonical label/marker/tone presentation for shared project, opportunity, organization, inbox, invoice, and health states.
@@ -79,3 +79,7 @@ State the count, condition, consequence, and next action. Initial-empty and filt
 ## Anti-AI-slop review
 
 Reject gradients used as default decoration, glows, glass, giant display type, decorative metrics, pill controls without tag/status semantics, excessive card grids, random shadows/radii, fake charts, generic “insight” copy, filler images, AI robots/brains/sparkles, and generated UI. Character comes from connected information, authentic domain data, purposeful density, relationships, typographic precision, and restrained operational-cartography cues.
+
+## Apple interaction update (2026-10-16)
+
+Applied the requested [apple-design skill](https://github.com/emilkowalski/skills/blob/main/skills/apple-design/SKILL.md): system typography with optical sizing, restrained shared modules, semantic material hierarchy and immediate press feedback. Replaced inert traffic-light decoration with the product name. Dialogs keep Radix focus/escape behavior and symmetric scale paths; Tailwind 4 owns the centering translation, so keyframes never translate the surface a second time. All icon buttons have 44 px mobile targets. Reduced motion removes spatial movement; reduced transparency and increased contrast independently produce solid readable chrome. Page actions wrap below wide-desktop widths.

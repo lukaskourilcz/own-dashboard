@@ -4,6 +4,7 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/i18n";
 
 /**
  * ShadCN-style Dialog built on Radix — the single modal primitive for the app.
@@ -30,7 +31,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "anim-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-sm",
+      "mac-modal-scrim anim-fade fixed inset-0 z-50 backdrop-blur-sm",
       className,
     )}
     {...props}
@@ -44,13 +45,15 @@ export const DialogContent = React.forwardRef<
     /** Show the top-right ✕ close button (default true). */
     showClose?: boolean;
   }
->(({ className, children, showClose = true, ...props }, ref) => (
+>(({ className, children, showClose = true, ...props }, ref) => {
+  const cs = useLang().lang === "cs";
+  return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "anim-dialog fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-elevated",
+        "anim-dialog fixed left-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-xl border border-border-strong bg-surface-elevated p-5 shadow-elevated",
         className,
       )}
       {...props}
@@ -58,15 +61,16 @@ export const DialogContent = React.forwardRef<
       {children}
       {showClose && (
         <DialogPrimitive.Close
-          className="absolute right-4 top-4 rounded-md p-1 text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring disabled:pointer-events-none"
-          aria-label="Close"
+          className="absolute right-3 top-3 flex size-11 items-center justify-center rounded-full text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring disabled:pointer-events-none md:size-8"
+          aria-label={cs ? "Zavřít" : "Close"}
         >
           <X className="h-4 w-4" />
         </DialogPrimitive.Close>
       )}
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 export function DialogHeader({
