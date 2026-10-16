@@ -9,9 +9,13 @@ import { Input } from "@/components/ui/input";
 import { SimpleSelect } from "@/components/ui/select";
 import { useLang } from "@/lib/i18n";
 import { CAREER_COMPANIES } from "@/lib/jobs/companies";
+import { OSLO_COMPANIES } from "@/lib/jobs/oslo-companies";
+import { canonicalJobUrl } from "@/lib/jobs/oslo-research";
+import { useCzechCareerVisibility } from "@/lib/use-prefs";
 export function CareerCompanies({ userId, isPreview = false }: { userId: string; isPreview?: boolean }) {
   const { lang } = useLang();
   const cs = lang === "cs";
+  const { showCzechCareer } = useCzechCareerVisibility();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [country, setCountry] = useState("all");
@@ -20,9 +24,12 @@ export function CareerCompanies({ userId, isPreview = false }: { userId: string;
     queryFn: ({ signal }) => fetchCareerCompanies(userId, signal),
     enabled: !isPreview, staleTime: 60_000,
   });
-  const companies: CareerCompany[] = isPreview
+  const stored: CareerCompany[] = isPreview
     ? CAREER_COMPANIES.map(([name, url, category]) => ({ id: name, name, url, category, country: "CZ", notes: "", checked_on: null }))
     : directory.data ?? [];
+  const publicCompanies: CareerCompany[] = OSLO_COMPANIES.map(row => ({ id: row.name, name: row.name, url: row.url, category: row.category, country: "NO", notes: row.notes[lang], checked_on: row.checkedOn }));
+  const publicUrls = new Set(publicCompanies.map(row => canonicalJobUrl(row.url)));
+  const companies = [...publicCompanies, ...stored.filter(row => !publicUrls.has(canonicalJobUrl(row.url)) && (showCzechCareer || /^(NO|Norway|Norge)$/i.test(row.country)))];
   const countries = [...new Set(companies.map(row => row.country).filter(Boolean))].sort();
   const labels: Record<string, string> = cs
     ? {
@@ -48,8 +55,8 @@ export function CareerCompanies({ userId, isPreview = false }: { userId: string;
     <section className="space-y-4">
       <p className="max-w-3xl text-sm text-foreground-muted">
         {cs
-          ? `${companies.length} uložených firem. U každé nabídky ověřte technologie, požadovaný jazyk a země, ze kterých lze pracovat.`
-          : `${companies.length} saved employers. Check the stack, required language and eligible work countries on each posting.`}
+          ? `${companies.length} přímých kariérních odkazů pro Oslo a Norsko. Jde o adresář firem, ne seznam aktuálních vhodných pozic. Odkazy prověřeny 16. 10. 2026; nabídky, stack a jazyk ověřte u konkrétní role.`
+          : `${companies.length} direct career destinations for Oslo and Norway. This is an employer directory, not a list of matching live vacancies. Links checked October 16, 2026; verify each role’s stack and language.`}
       </p>
       {!isPreview && directory.isPending && <p role="status">{cs ? "Načítám firmy…" : "Loading companies…"}</p>}
       {!isPreview && directory.isError && <div role="alert"><p>{cs ? "Firmy se nepodařilo načíst." : "Could not load companies."}</p><Button variant="outline" onClick={() => directory.refetch()}>{cs ? "Zkusit znovu" : "Retry"}</Button></div>}

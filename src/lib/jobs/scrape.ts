@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { JOB_SOURCES } from "./sources";
-import { JOB_SOURCE_META } from "./meta";
+import { JOB_SOURCE_META, isCzechJobSource } from "./meta";
 import { selectDeadUrls } from "./prune";
-import { isCareerRelevant } from "./filter";
+import { isCareerRelevant, isOsloRelevant } from "./filter";
 import type { ScrapedJob, ScrapeSummary, SourceOutcome } from "./types";
 
 /**
@@ -74,23 +74,27 @@ export async function runJobScrape(
   // Existing Supabase client uses ungenerated table types.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin: SupabaseClient<any>,
+  options: { includeCzech?: boolean } = {},
 ): Promise<ScrapeSummary> {
   const startedAt = new Date().toISOString();
   const deadline = Date.now() + 45_000;
   const sources: Record<string, SourceOutcome> = {};
 
-  const settled = await Promise.allSettled(JOB_SOURCES.map((s) => s.fetch()));
+  const activeSources = JOB_SOURCES.filter(s => options.includeCzech || !isCzechJobSource(s.id));
+  const activeIds = activeSources.map(s => s.id);
+  const includeJob = (job: ScrapedJob) => isCareerRelevant(job) && (options.includeCzech || isOsloRelevant(job));
+  const settled = await Promise.allSettled(activeSources.map((s) => s.fetch()));
 
   // Dedupe on (source, external_id) — the CZ boards return overlapping
   // result sets for the different role queries.
   const byKey = new Map<string, ScrapedJob>();
   settled.forEach((result, i) => {
-    const id = JOB_SOURCES[i].id;
+    const id = activeSources[i].id;
     if (result.status === "fulfilled") {
-      for (const job of result.value.filter(isCareerRelevant)) {
+      for (const job of result.value.filter(includeJob)) {
         byKey.set(`${job.source}\u0000${job.externalId}`, job);
       }
-      sources[id] = { count: result.value.filter(isCareerRelevant).length };
+      sources[id] = { count: result.value.filter(includeJob).length };
     } else {
       sources[id] = {
         count: 0,
@@ -104,7 +108,7 @@ export async function runJobScrape(
   });
 
   const okSources = Object.values(sources).filter((s) => !s.error).length;
-  const jobs = [...byKey.values()].filter(isCareerRelevant);
+  const jobs = [...byKey.values()];
   const seenAt = new Date().toISOString();
 
   // Which of the scraped keys already exist? Needed only for the
@@ -155,7 +159,7 @@ export async function runJobScrape(
     // showing a dead link for weeks. Scoped per source and skipped for any
     // source that failed or came back suspiciously empty, so one board's
     // outage or markup change never deletes another board's listings.
-    for (const { id } of JOB_SOURCES) {
+    for (const { id } of activeSources) {
       if (Date.now() > deadline - 5000) break;
       const outcome = sources[id];
       if (!outcome || outcome.error) continue;
@@ -202,6 +206,7 @@ export async function runJobScrape(
     const { data: prunedRows } = await admin
       .from("job_listings")
       .delete()
+      .in("source", activeIds)
       .lt("last_seen_at", cutoff)
       .select("id");
     pruned += prunedRows?.length ?? 0;
@@ -212,7 +217,8 @@ export async function runJobScrape(
     // that now classify as null. Idempotent: a clean table finds nothing.
     const { data: existingRows } = await admin
       .from("job_listings")
-      .select("id, title, tags, description, location, remote, seniority");
+      .select("id, title, tags, description, location, remote, seniority")
+      .in("source", activeIds);
     const irrelevant = (existingRows ?? [])
       .filter((r) => !isCareerRelevant(r))
       .map((r) => r.id as string);

@@ -110,6 +110,11 @@ const MY_STACK: StackSkill[] = [
   { name: "Mocha", weight: 1, group: "testing & validation", aliases: ["mocha"] },
   { name: "Vitest", weight: 1, group: "testing & validation", aliases: ["vitest"] },
   // ai
+  { name: "n8n", weight: 2, group: "ai", aliases: ["n8n"] },
+  { name: "LangChain", weight: 2, group: "ai", aliases: ["langchain"] },
+  { name: "Apify", weight: 2, group: "ai", aliases: ["apify"] },
+  { name: "TypeSafe AI (Jev)", weight: 1, group: "ai", aliases: ["typesafe ai", "typesafe.ai", "jev"] },
+  { name: "ElevenLabs", weight: 1, group: "ai", aliases: ["elevenlabs"] },
   { name: "Anthropic SDK", weight: 1, group: "ai", aliases: ["anthropic"] },
   { name: "Vercel AI SDK", weight: 1, group: "ai", aliases: ["vercel ai"] },
   { name: "Claude Code", weight: 1, group: "ai", aliases: ["claude code", "claude"] },

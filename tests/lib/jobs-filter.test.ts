@@ -16,15 +16,15 @@ describe("matchRole", () => {
     expect(matchRole("SENIOR FRONTEND VÝVOJÁŘ")).toBe("frontend");
     expect(matchRole("Front-end Developer")).toBe("frontend");
     expect(matchRole("React Developer")).toBe("frontend");
-    expect(matchRole("Vue.js vývojář")).toBeNull();
-    expect(matchRole("Frontend Development Engineer - Angular")).toBeNull();
+    expect(matchRole("Vue.js vývojář")).toBe("frontend");
+    expect(matchRole("Frontend Development Engineer - Angular")).toBe("frontend");
   });
 
   it("classifies generic + JS-ecosystem software-engineering titles", () => {
     expect(matchRole("Software Engineer")).toBe("software");
     expect(matchRole("Senior Software Developer")).toBe("software");
     expect(matchRole("Web Developer")).toBe("software");
-    expect(matchRole("Backend Engineer (Node.js)")).toBeNull();
+    expect(matchRole("Backend Engineer (Node.js)")).toBe("software");
     expect(matchRole("TypeScript Engineer")).toBe("software");
   });
 
@@ -38,7 +38,7 @@ describe("matchRole", () => {
     expect(matchRole("Java programátor")).toBeNull();
     expect(matchRole("Ruby on Rails Developer")).toBeNull();
     // ...unless the posting also shows a JS/web signal.
-    expect(matchRole("Fullstack Developer (React, Python)")).toBeNull();
+    expect(matchRole("Fullstack Developer (React, Python)")).toBe("fullstack");
     expect(matchRole("Software Engineer", "python react typescript")).toBe(
       "frontend",
     );

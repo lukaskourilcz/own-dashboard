@@ -9,13 +9,13 @@ import type { JobRole } from "./types";
 // first so they can veto everything else. Czech variants included — the
 // scraped boards are Czech-first.
 const NEGATIVE =
-  /\b(platform|reliability|infrastructure|architect|advocate|evangelist|qa|testers?|testing|tester(ka)?|devops|sre|data\s+(engineer|analyst|scientist)|analytik|analyst|security|embedded|hardware|hw|mobile|ios|android|salesforce|sap\b|business\s+develop|sales|marketing|recruit|designer|scrum|product\s+(manager|owner)|project\s+manager|support|helpdesk|consultant|konzultant|account\s+(manager|executive)|copywriter|obchodn)/i;
+  /\b(advocate|evangelist|qa|testers?|testing|tester(ka)?|data\s+(analyst|scientist)|analytik|analyst|embedded|hardware|hw|mobile|ios|android|salesforce|sap\b|business\s+develop|sales|marketing|recruit|designer|scrum|product\s+(manager|owner)|project\s+manager|support|helpdesk|account\s+(manager|executive)|copywriter|obchodn)/i;
 
 const FULLSTACK = /full[\s-]*stack/i;
 
 // "Frontend"/"front-end" plus the common framework-titled roles
 // ("React Developer", "Vue.js vývojář"…).
-const FRONTEND = /front[\s-]*end|\b(react|next\.?js)\b/i;
+const FRONTEND = /front[\s-]*end|\b(react|next\.?js|vue(?:\.js)?|angular|svelte(?:kit)?)\b/i;
 
 // Generic software-engineering titles: a dev word together with either
 // "software"/"web" or a backend-ish tech hint.
@@ -40,19 +40,16 @@ export function matchRole(title: string, extra?: string): JobRole | null {
   const t = title.trim();
   if (
     !t ||
-    /\bGo\b/.test(t) ||
-    (/back[ -]?end/i.test(t) && !/full[ -]?stack|front[ -]?end/i.test(t)) ||
     NEGATIVE.test(t) ||
-    FOREIGN_LANG.test(t) ||
-    FOREIGN_SYMBOLIC.test(t) ||
-    /\b(angular|vue(?:js)?|svelte|staff|principal|director|head\s+of)\b/i.test(
-      t,
-    )
+    ((FOREIGN_LANG.test(t) || FOREIGN_SYMBOLIC.test(t) || /\bGo\b/.test(t)) &&
+      !/typescript|javascript|react|node|full[ -]?stack/i.test(`${t} ${extra ?? ""}`))
   )
     return null;
   const wide = `${t} ${extra ?? ""}`;
+  if (/\breact\s+native\b/i.test(t) && !/\breact(?:\.js|js)?\b|next\.?(?:js)/i.test(wide.replace(/\breact\s+native\b/gi, " "))) return null;
   if (FULLSTACK.test(wide)) return "fullstack";
   if (FRONTEND.test(wide)) return "frontend";
+  if (/\b(ai|integration|automation|growth)\b/i.test(t) && DEV_WORD.test(t)) return "software";
   if (DEV_WORD.test(wide) && TECH_HINT.test(wide)) return "software";
   return null;
 }
@@ -70,10 +67,8 @@ export type CareerCandidate = {
   seniority?: string | null;
 };
 
-/** Conservative personal search: React web + Prague or remote from Czechia.
- * Mixed off-stack requirements are excluded rather than promoted by JS keywords.
- * This measures evidence of relevance, never probability of getting hired.
- */
+/** Discovery stays broad: adjacent stacks and seniority are assessed in the
+ * detail view, never silently discarded. This is not a hiring prediction. */
 export function isCareerRelevant(job: CareerCandidate): boolean {
   const text = `${job.title} ${job.tags.join(" ")} ${job.description ?? ""}`;
   if (!matchRole(job.title, text)) return false;
@@ -81,28 +76,26 @@ export function isCareerRelevant(job: CareerCandidate): boolean {
   // before checking for an independent React/Next.js web signal, so mobile-
   // only roles stay out while owner-selected mixed web/mobile roles survive.
   const webText = text.replace(/\breact\s+native\b/gi, " ");
-  if (!/\b(react(?:\.js|js)?|next(?:\.js|js))\b/i.test(webText)) return false;
-  if (/\b(angular|vue(?:\.js|js)?|svelte)\b/i.test(text))
-    return false;
-  if (
-    job.tags.some((tag) => /^go$/i.test(tag)) ||
-    /\bGo\s+(?:backend|programming|developer|engineer)\b|\b(?:and|with|using)\s+Go\b/.test(
-      text,
-    )
-  )
-    return false;
-  if (FOREIGN_LANG.test(text) || FOREIGN_SYMBOLIC.test(text)) return false;
-  if (/\b(staff|principal|director|head\s+of)\b/i.test(job.seniority ?? ""))
-    return false;
-  // Explicit mandatory long experience is a stretch, not a credible daily lead.
-  if (
-    /\b(?:minimum|at least|required|alespoň|minimálně)\s+(?:[6-9]|\d{2})\+?\s*(?:years|let)/i.test(
-      text,
-    )
-  )
-    return false;
+  if (!/\b(react(?:\.js|js)?|next(?:\.js|js)|typescript|javascript|node(?:\.js)?|n8n|langchain|svelte)\b/i.test(webText)) return false;
+  if (isOsloRelevant(job)) return true;
   if (isPrague(job.location)) return true;
   return job.remote && isCzechRemote(job.location);
+}
+
+export function isOslo(location: string | null | undefined): boolean {
+  return /\b(oslo|fornebu|lysaker|sandvika|asker|lillestrøm|baerum|bærum)\b/i.test(location ?? "");
+}
+
+export function isNorwayRemote(location: string | null | undefined): boolean {
+  const loc = location ?? "";
+  if (/(?:except|excluding|not in)\s+(?:norway|norge)/i.test(loc)) return false;
+  if (/\b(?:US|UK|Germany|France|Poland|Spain|Czechia|Canada|Australia|EU)[ -]only\b|only (?:in|within) (?:the )?(?:US|UK|Germany|France|EU)\b/i.test(loc)) return false;
+  // Norway is in the EEA, not the EU. EU-only is deliberately insufficient.
+  return /\b(norway|norge|europe|EEA|EMEA|worldwide|anywhere|global)\b/i.test(loc);
+}
+
+export function isOsloRelevant(job: Pick<CareerCandidate, "location" | "remote">): boolean {
+  return isOslo(job.location) || (job.remote && isNorwayRemote(job.location));
 }
 
 export function isCzechRemote(location: string | null | undefined): boolean {
@@ -123,7 +116,7 @@ export function careerSeniority(
   job: Pick<CareerCandidate, "title" | "seniority">,
 ): "junior" | "medior" | "senior" | "unspecified" {
   const text = `${job.title} ${job.seniority ?? ""}`;
-  if (/\b(senior|sr\.?)\b/i.test(text)) return "senior";
+  if (/\b(senior|sr\.?|staff|principal|lead|architect)\b/i.test(text)) return "senior";
   if (/\b(junior|jr\.?|entry)\b/i.test(text)) return "junior";
   if (/\b(medior|mid(?:dle)?(?:-level)?)\b/i.test(text)) return "medior";
   return "unspecified";

@@ -66,3 +66,6 @@ __pycache__/
 
 # Supabase CLI local metadata
 /supabase/.temp/
+
+# Local research and private application preparation
+/work/

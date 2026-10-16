@@ -27,6 +27,8 @@ export type JobSourceMeta = {
 };
 
 export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
+  'ashby-sanity': {label:'Sanity · Careers',kind:'json',endpoint:'https://api.ashbyhq.com/posting-api/job-board/sanity',site:'https://www.sanity.io/careers',complete:false,scope:{cs:'Přímý zdroj zaměstnavatele; Oslo a práce na dálku z Norska',en:'Direct employer feed; Oslo and Norway-compatible remote roles'}},
+  'ashby-enode': {label:'Enode · Careers',kind:'json',endpoint:'https://api.ashbyhq.com/posting-api/job-board/Enode',site:'https://enode.com/careers',complete:false,scope:{cs:'Evropské remote pozice; před podáním potvrdit zaměstnávání v Norsku',en:'Europe remote roles; confirm Norway employment before applying'}},
   curated: {
     label: "Selected leads",
     kind: "curated",
@@ -143,4 +145,10 @@ export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
 
 export function jobSourceLabel(source: string): string {
   return JOB_SOURCE_META[source]?.label ?? source;
+}
+
+const CZECH_SOURCES = new Set(["curated", "startupjobs", "jobscz", "pracecz", "ashby-apify", "ashby-rossum", "lever-outreach"]);
+/** Unknown Apify imports are opt-in too: their configured tasks may target CZ. */
+export function isCzechJobSource(source: string): boolean {
+  return CZECH_SOURCES.has(source) || source.startsWith("apify-");
 }

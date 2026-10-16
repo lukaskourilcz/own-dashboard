@@ -3,6 +3,8 @@ import type { ScrapedJob } from "./types";
 
 // Public employer APIs. Each employer is isolated so failures remain visible.
 export const EMPLOYER_BOARDS = [
+  { id: "ashby-sanity", provider: "ashby", slug: "sanity", name: "Sanity" },
+  { id: "ashby-enode", provider: "ashby", slug: "Enode", name: "Enode" },
   { id: "ashby-rossum", provider: "ashby", slug: "rossum.ai", name: "Rossum" },
   {
     id: "lever-outreach",
@@ -36,10 +38,13 @@ export function normalizeEmployerJob(
   if (row.isListed === false) return null;
   const title = str(row.title || row.text);
   const categories = obj(row.categories);
-  const location =
+  const primaryLocation =
     str(obj(row.location).name) ||
     str(row.location) ||
     str(categories.location);
+  const secondary = Array.isArray(row.secondaryLocations)
+    ? row.secondaryLocations.map(value => str(obj(value).location)).filter(Boolean) : [];
+  const location = [primaryLocation, ...secondary].filter(Boolean).join(" / ");
   const description = plain(
     row.descriptionPlain || row.description || row.content,
   );

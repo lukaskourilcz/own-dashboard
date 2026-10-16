@@ -22,7 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -51,7 +51,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
-import { useCvLinks } from "@/lib/use-prefs";
+import { useCvLinks, useCzechCareerVisibility } from "@/lib/use-prefs";
 import { jobSourceLabel } from "@/lib/jobs/meta";
 import { JobSources } from "@/components/panels/job-sources";
 import { compareByFit, matchListing, type JobMatch } from "@/lib/jobs/match";
@@ -72,7 +72,9 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { isCareerRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { isCareerRelevant, isOsloRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
+import { researchForUrl } from "@/lib/jobs/oslo-research";
 import { CareerBoard } from "./career-board";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
@@ -147,14 +149,18 @@ export function JobsPanel({
 }: Props) {
   const t = useDict();
   const { cs: cvCs, en: cvEn } = useCvLinks();
+  const { showCzechCareer } = useCzechCareerVisibility();
   const { lang } = useLang();
   const [view, setView] = useState<
-    "open" | "saved" | "ready" | "applied" | "letters" | "companies"
-  >("open");
+    "oslo" | "open" | "saved" | "ready" | "applied" | "letters" | "companies"
+  >("oslo");
   const relevantListings = useMemo(
-    () => listings.filter(isCareerRelevant),
-    [listings],
+    () => listings.filter(job => isCareerRelevant(job) && (showCzechCareer || isOsloRelevant(job))),
+    [listings, showCzechCareer],
   );
+
+  const visibleSaved = savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloRelevant({ location: row.location, remote: /remote/i.test(row.location ?? "") }));
+  const visibleApplications = applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloRelevant({ location: row.location, remote: /remote/i.test(row.location ?? "") }));
 
   // Listings the user already applied to, by listing id and by URL (manual
   // logs may match a scraped offer only by its link).
@@ -176,7 +182,6 @@ export function JobsPanel({
   const [applyOpen, setApplyOpen] = useState(false);
   const qc = useQueryClient();
   const toast = useToast();
-  const locale = useDateLocale();
   const [checking, setChecking] = useState(false);
 
   // The only way Career fetches: refresh the job boards (rate limit
@@ -201,33 +206,6 @@ export function JobsPanel({
     }
   }
 
-  if (!activated) {
-    const lastRunAt = lastRun?.finished_at ?? lastRun?.started_at ?? null;
-    return (
-      <div className="min-w-0">
-        <PageHeader title={t.jobs.title} description={t.jobs.description} />
-        <Card>
-          <CardContent className="space-y-3 py-5">
-            <h2 className="text-sm font-semibold">{t.jobs.gateTitle}</h2>
-            <p className="max-w-2xl text-sm text-foreground-muted">{t.jobs.gateDescription}</p>
-            <p className="text-xs text-foreground-muted">
-              {t.jobs.lastChecked}:{" "}
-              {lastRunAt
-                ? formatDistanceToNow(new Date(lastRunAt), { addSuffix: true, locale })
-                : t.jobs.never}
-            </p>
-            <Button onClick={() => void checkOffers()} disabled={checking}>
-              <RefreshCw className={cn("h-3.5 w-3.5", checking && "animate-spin")} />
-              {checking ? t.jobs.checking : t.jobs.checkOffers}
-            </Button>
-          </CardContent>
-        </Card>
-        <div className="mt-4">
-          <JobSources lastRun={lastRun} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-w-0">
@@ -238,7 +216,7 @@ export function JobsPanel({
           <div className="flex flex-wrap items-center gap-2">
             {(cvCs || cvEn) && (
               <div className="flex items-center">
-                {cvCs && (
+                {showCzechCareer && cvCs && (
                   <Tooltip content={t.jobs.cvCzech}>
                     <Button
                       asChild
@@ -279,12 +257,12 @@ export function JobsPanel({
               </div>
             )}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
-              {(["open", "saved", "ready", "applied", "letters", "companies"] as const).map(
+              {(["oslo", "open", "saved", "ready", "applied", "letters", "companies"] as const).map(
                 (v) => (
                   <button
                     key={v}
                     type="button"
-                    onClick={() => setView(v)}
+                    onClick={() => { setView(v); if (v !== "oslo" && !activated) void onActivate(); }}
                     className={cn(
                       "min-h-11 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-ring",
                       view === v
@@ -292,7 +270,9 @@ export function JobsPanel({
                         : "text-foreground-muted hover:text-foreground",
                     )}
                   >
-                    {v === "open"
+                    {v === "oslo"
+                      ? "Oslo"
+                      : v === "open"
                       ? t.jobs.openTab
                       : v === "saved"
                         ? t.jobs.savedTab
@@ -309,7 +289,7 @@ export function JobsPanel({
                             : "Career links"}
                     {(v === "saved" || v === "ready" || v === "applied") && (
                       <span className="ml-2 text-sm text-foreground-muted">
-                        {v === "applied" ? applications.length : savedPositions.filter(row => v === "ready" ? !!row.cover_letter_url : !row.cover_letter_url).length}
+                        {v === "applied" ? visibleApplications.length : visibleSaved.filter(row => v === "ready" ? !!row.cover_letter_url : !row.cover_letter_url).length}
                       </span>
                     )}
                   </button>
@@ -320,20 +300,24 @@ export function JobsPanel({
         }
       />
 
-      {view === "companies" ? (
+      {view === "oslo" ? (
+        <OsloCareerWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyFor(savedToListing(position)); setApplyOpen(true); }} />
+      ) : !activated ? (
+        <Card className="p-5"><p role="status" className="mb-3 text-sm">{lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…"}</p><Button variant="outline" onClick={() => void onActivate()}>{lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
+      ) : view === "companies" ? (
         <CareerCompanies userId={userId} isPreview={isPreview} />
       ) : view === "letters" ? (
-        <LetterWorkspace
+        <><OsloLetterReview /><LetterWorkspace
           templates={templates}
           setTemplates={setTemplates}
           userId={userId}
-          applications={applications}
-        />
+          applications={visibleApplications}
+        /></>
       ) : view === "saved" || view === "ready" ? (
         <SavedPositionsView
           key={view}
           readyOnly={view === "ready"}
-          positions={savedPositions.filter(row => view === "ready" ? !!row.cover_letter_url : !row.cover_letter_url)}
+          positions={visibleSaved.filter(row => view === "ready" ? !!row.cover_letter_url : !row.cover_letter_url)}
           setPositions={setSavedPositions}
           userId={userId}
           onPrepare={(position, listing) => {
@@ -359,7 +343,7 @@ export function JobsPanel({
         />
       ) : (
         <AppliedView
-          applications={applications}
+          applications={visibleApplications}
           setApplications={setApplications}
           savedPositions={savedPositions}
           events={events}
@@ -440,6 +424,7 @@ function OpenPositionsView({
 
   const { lang } = useLang();
   const cs = lang === "cs";
+  const { showCzechCareer } = useCzechCareerVisibility();
   const [detailId, setDetailId] = useState<string | null>(null);
   const [mobileDetail, setMobileDetail] = useState(false);
   const [workplace, setWorkplace] = useState("all");
@@ -778,7 +763,7 @@ function OpenPositionsView({
           aria-label={cs ? "Místo práce" : "Work location"}
           options={[
             { value: "all", label: cs ? "Praha i remote" : "Prague + remote" },
-            { value: "prague", label: "Praha" },
+            ...(showCzechCareer ? [{ value: "prague", label: "Praha" }] : []),
             { value: "remote", label: "Remote" },
           ]}
         />

@@ -41,7 +41,7 @@ describe("personal career eligibility", () => {
       isCareerRelevant({ ...candidate, remote: false, location: "Brno" }),
     ).toBe(false);
   });
-  it("does not let React rescue foreign stacks or irrelevant disciplines", () => {
+  it("retains adjacent stacks and senior stretches while rejecting unrelated disciplines", () => {
     for (const description of [
       "React with Java Spring",
       "React and Kotlin",
@@ -50,14 +50,14 @@ describe("personal career eligibility", () => {
       "Python React",
       "React with C#",
     ])
-      expect(isCareerRelevant({ ...candidate, description })).toBe(false);
+      expect(isCareerRelevant({ ...candidate, description })).toBe(true);
     for (const title of [
       "Principal React Engineer",
         "Platform Reliability Engineer",
       "Backend Node.js Developer",
-      "QA React Engineer",
     ])
-      expect(isCareerRelevant({ ...candidate, title })).toBe(false);
+      expect(isCareerRelevant({ ...candidate, title })).toBe(true);
+    expect(isCareerRelevant({ ...candidate, title: "QA React Engineer" })).toBe(false);
     expect(
       isCareerRelevant({
         ...candidate,
@@ -183,9 +183,8 @@ describe("source normalization", () => {
     expect(CURATED_JOBS.every((job) => isJobUrl(job.url))).toBe(true);
   });
 
-  it("continues to reject submitted roles built around Angular, Python, or Rails", () => {
+  it("keeps adjacent frontend stacks but rejects pure Python and Rails without web-stack evidence", () => {
     for (const description of [
-      "Node.js and TypeScript with Angular and Ionic",
       "Python web frameworks with HTML and CSS",
       "Ruby on Rails 8 with Hotwire, Turbo and Stimulus",
     ]) {
@@ -193,6 +192,7 @@ describe("source normalization", () => {
         isCareerRelevant({
           ...candidate,
           title: "Full Stack Developer",
+          tags: [],
           description,
         }),
       ).toBe(false);

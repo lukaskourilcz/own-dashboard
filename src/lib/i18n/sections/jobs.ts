@@ -181,7 +181,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
   en: {
     title: "Career",
     description:
-      "React opportunities in Prague and remote from Czechia. Build and track each application.",
+      "Frontend, fullstack and AI integration roles in Oslo. Prepare and track each application.",
     openTab: "Open positions",
     savedTab: "Saved",
     appliedTab: "Applied",
@@ -263,7 +263,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     listingDeleted: "Selected positions were deleted.",
     noListingsYet: "No open positions yet",
     noListingsDescription:
-      "The daily check runs at 10:00 (Prague time). Use “Check now” to fetch the boards immediately.",
+      "Use “Check now” to refresh selected boards. Career does not run background checks.",
     noMatches: "Nothing matches",
     noMatchesDescription: "Try different filters or clear the search.",
     listingsShown: "positions",
@@ -365,7 +365,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
   cs: {
     title: "Kariéra",
     description:
-      "React pozice v Praze a na dálku z Česka. Připravte a sledujte každou žádost.",
+      "Frontend, fullstack a AI integrace v Oslu. Připravte a sledujte každou přihlášku.",
     openTab: "Otevřené pozice",
     savedTab: "Uložené",
     appliedTab: "Odeslané přihlášky",

@@ -1,0 +1,454 @@
+/** Official career destinations, checked 2026-10-16. A directory, not a claim of a matching live vacancy. */
+export const OSLO_COMPANIES = [
+  {
+    "name": "Aidn",
+    "url": "https://aidn.teamtailor.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Zdravotnický SaaS; přímé nabídky Fullstack a Senior Fullstack.",
+      "en": "Healthcare SaaS; direct Fullstack and Senior Fullstack openings."
+    }
+  },
+  {
+    "name": "Aize",
+    "url": "https://careers.aize.io/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Průmyslové digitální produkty; Senior Software Engineer IAM.",
+      "en": "Industrial digital products; Senior Software Engineer IAM."
+    }
+  },
+  {
+    "name": "Alv",
+    "url": "https://alv.no/jobbe-i-alv",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  },
+  {
+    "name": "Appear",
+    "url": "https://careers.appear.net/jobs",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Video technologie; rozlišit webový produkt od embedded rolí.",
+      "en": "Video technology; distinguish web-product work from embedded roles."
+    }
+  },
+  {
+    "name": "Appfarm",
+    "url": "https://www.appfarm.io/careers",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "No-code a AI produkt; kariérní stránka uvádí AI Engineer. Detaily požadavků znovu ověřit.",
+      "en": "No-code and AI product; careers page lists AI Engineer. Recheck detailed requirements."
+    }
+  },
+  {
+    "name": "Ardoq",
+    "url": "https://careers.ardoq.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Enterprise SaaS. Starší vývojářské výsledky vyhledávačů nemusí odpovídat aktuálnímu seznamu.",
+      "en": "Enterprise SaaS. Older engineering search results may differ from the current board."
+    }
+  },
+  {
+    "name": "Attensi",
+    "url": "https://careers.attensi.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Creator Tools: TypeScript, SvelteKit, AI a real-time.",
+      "en": "Creator Tools: TypeScript, SvelteKit, AI and real-time."
+    }
+  },
+  {
+    "name": "Bekk",
+    "url": "https://www.bekk.no/jobb",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  },
+  {
+    "name": "Bouvet",
+    "url": "https://www.bouvet.no/ledige-stillinger",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  },
+  {
+    "name": "Capra",
+    "url": "https://capraconsulting.no/jobb-hos-oss",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  },
+  {
+    "name": "Cognite",
+    "url": "https://www.cognite.com/en/company/careers",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Průmyslová data a AI. Ověřit Python a minimální délku praxe pro fullstack.",
+      "en": "Industrial data and AI. Check Python and tenure requirements for fullstack."
+    }
+  },
+  {
+    "name": "DNB",
+    "url": "https://www.dnb.no/om-oss/jobb-og-karriere",
+    "category": "Finance",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "DNV",
+    "url": "https://jobs.dnv.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Høvik u Osla: FIS Developer and Architect kombinuje React s výraznou .NET částí.",
+      "en": "Høvik near Oslo: FIS Developer and Architect combines React with substantial .NET work."
+    }
+  },
+  {
+    "name": "Enode",
+    "url": "https://enode.com/careers",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Node/TypeScript a API pro energetiku. Remote Europe; ověřit zaměstnávání z Norska.",
+      "en": "Node/TypeScript energy APIs. Remote Europe; confirm Norway employment."
+    }
+  },
+  {
+    "name": "Falkor / Kongsberg Digital",
+    "url": "https://careers.falkor.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Původní web přesměrovává na Falkor. Ověřit konkrétní tým a lokalitu Oslo/Lysaker.",
+      "en": "The former site redirects to Falkor. Check the team and Oslo/Lysaker location."
+    }
+  },
+  {
+    "name": "Fiken",
+    "url": "https://fiken.no/jobb",
+    "category": "Finance",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Flowcase",
+    "url": "https://flowcase.teamtailor.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "SaaS a přístupný React frontend. Oslo hybrid a podmínka bydliště v Norsku.",
+      "en": "SaaS and accessible React frontend. Oslo hybrid and Norway-residence requirement."
+    }
+  },
+  {
+    "name": "Gjensidige",
+    "url": "https://www.gjensidige.no/om-oss/jobb",
+    "category": "Finance",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Itera",
+    "url": "https://www.itera.com/en/join-us",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  },
+  {
+    "name": "Kahoot!",
+    "url": "https://kahoot.com/jobs/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Monil",
+    "url": "https://careers.monil.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Lysaker: propojené senzory a zemědělství. Většina rolí je Go, embedded nebo infrastruktura.",
+      "en": "Lysaker: connected sensors and agriculture. Many roles are Go, embedded or infrastructure."
+    }
+  },
+  {
+    "name": "Neat",
+    "url": "https://careers.neat.no/jobs",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Oslo/Fornebu: video a podnikové systémy. Webové role oddělit od hardwaru a Linux/embedded.",
+      "en": "Oslo/Fornebu: video and business systems. Separate web work from hardware and Linux/embedded."
+    }
+  },
+  {
+    "name": "Nettbil",
+    "url": "https://www.nettbil.no/karriere",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "No Isolation",
+    "url": "https://careers.noisolation.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "AI Integration je vhodnější než backendová Senior Software Engineer role v Go.",
+      "en": "AI Integration is a stronger fit than the Go-focused Senior Software Engineer role."
+    }
+  },
+  {
+    "name": "Nofence",
+    "url": "https://nofence.teamtailor.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Oda",
+    "url": "https://careers.oda.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Otovo",
+    "url": "https://careers.otovo.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Pexip",
+    "url": "https://www.pexip.com/careers",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Video a řídicí rozhraní; aktuální frontend nabídka dohledána na LinkedIn.",
+      "en": "Video and control interfaces; current frontend vacancy verified on LinkedIn."
+    }
+  },
+  {
+    "name": "Plaace",
+    "url": "https://career.plaace.co/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "reMarkable",
+    "url": "https://jobs.remarkable.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Sanity",
+    "url": "https://www.sanity.io/careers",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Content Agent v Oslu; AI Growth je aktuálně pouze pro USA.",
+      "en": "Content Agent includes Oslo; AI Growth is currently US-only."
+    }
+  },
+  {
+    "name": "Six Robotics",
+    "url": "https://careers.sixrobotics.com/",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "React/TypeScript frontend; bezpečnostní prověrka a podmínky občanství vyžadují ověření.",
+      "en": "React/TypeScript frontend; verify clearance and citizenship requirements."
+    }
+  },
+  {
+    "name": "Spond",
+    "url": "https://careers.spond.com/jobs",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Angličtina stačí; aktuální Software Engineer má důraz na Java/Go backend.",
+      "en": "English is sufficient; current Software Engineer emphasizes Java/Go backend."
+    }
+  },
+  {
+    "name": "Storebrand",
+    "url": "https://www.storebrand.no/om-storebrand/jobb-i-storebrand",
+    "category": "Finance",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Tibber",
+    "url": "https://jobs.tibber.com/locations/oslo",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Oslo stránka nyní neukazuje odpovídající nabídky. Zdroj pro další kontrolu.",
+      "en": "Oslo location page currently shows no matching jobs. A source for later review."
+    }
+  },
+  {
+    "name": "Tripletex",
+    "url": "https://www.tripletex.no/om-tripletex/jobb/",
+    "category": "Finance",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Unleash",
+    "url": "https://www.getunleash.io/careers",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Vývojářské nástroje a feature management. Ověřit povolené země pro remote.",
+      "en": "Developer tooling and feature management. Check remote hiring countries."
+    }
+  },
+  {
+    "name": "Variant",
+    "url": "https://www.variant.no/no/jobb",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  },
+  {
+    "name": "Vend",
+    "url": "https://vend.com/career",
+    "category": "Product",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Visma",
+    "url": "https://www.visma.com/careers",
+    "category": "Finance",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "Kariérní zdroj pro Oslo/Norsko. U konkrétní role ověřit stack, jazyk a místo výkonu práce.",
+      "en": "Career source for Oslo/Norway. Verify each role’s stack, language and work location."
+    }
+  },
+  {
+    "name": "Witted",
+    "url": "https://witted.com/careers",
+    "category": "Agency",
+    "country": "NO",
+    "checkedOn": "2026-10-16",
+    "notes": {
+      "cs": "U klientských projektů ověřit pracovní jazyk a požadavky na norštinu.",
+      "en": "Check client-project language and Norwegian requirements."
+    }
+  }
+] as const;
