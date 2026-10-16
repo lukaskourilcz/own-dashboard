@@ -297,7 +297,7 @@ export function JobsPanel({
                             : "Career links"}
                     {(v === "saved" || v === "ready" || v === "applied") && (
                       <span className="ml-2 text-sm text-foreground-muted">
-                        {v === "applied" ? visibleApplications.length : visibleSaved.filter(row => v === "ready" ? isPositionReady(row) : !isPositionReady(row)).length}
+                        {!activated && !isPreview ? "—" : v === "applied" ? visibleApplications.length : visibleSaved.filter(row => v === "ready" ? isPositionReady(row) : !isPositionReady(row)).length}
                       </span>
                     )}
                   </button>
