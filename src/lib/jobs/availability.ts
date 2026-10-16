@@ -3,6 +3,11 @@ import type { JobListing } from "@/lib/types";
 export type Availability = "open" | "closed" | "unknown";
 const LISTING_TIMEOUT_MS = 15_000;
 const HOSTS = [
+  "thehub.io", "finn.no", "arbeidsplassen.nav.no",
+  "careers.sixrobotics.com", "careers.attensi.com", "careers.monil.com",
+  "careers.aize.io", "careers.spond.com", "careers.noisolation.com",
+  "aidn.teamtailor.com", "flowcase.teamtailor.com", "sanity.io", "jobs.dnv.com",
+  "careers.falkor.com", "job-boards.eu.greenhouse.io",
   "startupjobs.cz",
   "jobs.cz",
   "prace.cz",

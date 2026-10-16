@@ -83,7 +83,7 @@ export function isCareerRelevant(job: CareerCandidate): boolean {
 }
 
 export function isOslo(location: string | null | undefined): boolean {
-  return /\b(oslo|fornebu|lysaker|sandvika|asker|lillestrøm|baerum|bærum)\b/i.test(location ?? "");
+  return /\b(oslo|fornebu|lysaker|høvik|hovik|sandvika|asker|lillestrøm|baerum|bærum)\b/i.test(location ?? "");
 }
 
 export function isNorwayRemote(location: string | null | undefined): boolean {
@@ -96,6 +96,13 @@ export function isNorwayRemote(location: string | null | undefined): boolean {
 
 export function isOsloRelevant(job: Pick<CareerCandidate, "location" | "remote">): boolean {
   return isOslo(job.location) || (job.remote && isNorwayRemote(job.location));
+}
+
+/** Snapshots do not have a remote flag. Only explicit text or a remote-only
+ * source establishes it; a Norway office in another city is insufficient. */
+export function isOsloSnapshot(job: { location: string | null; source: string | null }): boolean {
+  const remoteSource = ["remotive","remoteok","jobicy","weworkremotely"].includes(job.source ?? "");
+  return isOsloRelevant({location:job.location,remote:remoteSource || /remote/i.test(job.location ?? "")});
 }
 
 export function isCzechRemote(location: string | null | undefined): boolean {

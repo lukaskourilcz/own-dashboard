@@ -14,6 +14,11 @@ export function readinessLabel(value: string | undefined, cs: boolean): string {
   return cs ? "Rozpracováno" : "Draft";
 }
 
+/** Text-only prepared drafts are just as usable as linked Google Docs. */
+export function isPositionReady(position: { readiness?: string; cover_letter_url?: string | null }): boolean {
+  return position.readiness === "ready" || (position.readiness !== "needs_review" && !!position.cover_letter_url);
+}
+
 /** New progress events carry structured details; legacy notes stay readable. */
 export function progressEventLabel(detail: string | null, cs: boolean): string {
   if (!detail) return "";

@@ -447,7 +447,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     listingDeleted: "Vybrané pozice byly smazány.",
     noListingsYet: "Zatím žádné otevřené pozice",
     noListingsDescription:
-      "Denní kontrola běží v 10:00. Tlačítkem „Zkontrolovat teď“ načtete portály okamžitě.",
+      "Vybrané portály načtete tlačítkem „Zkontrolovat teď“. Kariéra nespouští kontroly na pozadí.",
     noMatches: "Nic neodpovídá",
     noMatchesDescription: "Zkuste jiné filtry nebo smažte hledání.",
     listingsShown: "pozic",

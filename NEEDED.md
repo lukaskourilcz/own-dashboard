@@ -1,5 +1,9 @@
 # NEEDED
 
+- [x] **Shift Career to Oslo and refresh the shared interface** — 33 assessed roles, 41 official career destinations, private English drafts, role dialogs and scoring, OFF-by-default synchronized Czech-content checkbox, bounded manual availability checks and Apple-style shared surfaces. [imp:5] [owner:ai] [time:1d] [kind:deploy]
+
+- [ ] **Review Oslo application drafts before sending** — adjust relocation tense after 22 October, confirm individual security/citizenship requirements, choose the appropriate Aidn level and check agency-client duplicates. Specialist ML/embedded, Norwegian-required and expired roles are flagged for review. [imp:4] [owner:me] [time:30m] [kind:content]
+
 - [ ] **Complete the controlled DNESKAi rollout** — wider cross-source Jev evaluation, a separately authorized new run and any later daily activation are tracked in [#108](https://github.com/lukaskourilcz/own-dashboard/issues/108). Research selection is not final-post approval. Daily collection and publishing stay disabled; preserve expired scopes and existing paid reservations. [imp:3] [owner:me] [time:45m] [kind:deploy]
 
 - [ ] **Verify the remaining financial records against actual invoices** — confirm subscription amounts and renewal dates, Canva’s current status, Claude Max’s June/July App Store charges, and the inferred UptimeRobot start date. Review project allocations where the equal split no longer reflects usage. Use the existing Subscriptions and Money views; no new bank or business API connection is needed. [imp:3] [owner:me] [time:40m] [kind:content]

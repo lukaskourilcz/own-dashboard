@@ -323,12 +323,17 @@ export function DashboardShell(props: Props) {
         organizations: [qk.organizations, fetchOrganizations],
         opportunities: [qk.opportunities, fetchOpportunities],
       };
-      await Promise.all(onDemandDataKeys(target).map((key) => {
+      const results = await Promise.allSettled(onDemandDataKeys(target).map((key) => {
         const loader = loaders[key];
         return loader
-          ? qc.fetchQuery({ queryKey: loader[0], queryFn: loader[1], staleTime: 0 }).catch(() => undefined)
+          ? qc.fetchQuery({ queryKey: loader[0], queryFn: loader[1], staleTime: 0 })
           : undefined;
       }));
+      // Do not turn a failed private-letter load into an apparently empty
+      // workspace: keep the manual retry available and surface the failure.
+      if (target === "career" && results.some(result => result.status === "rejected")) {
+        throw new Error("Could not load private Career records");
+      }
     }
     setActivatedTabs((previous) => (previous.has(target) ? previous : new Set(previous).add(target)));
   }, [props.isPreview, qc]);
@@ -367,7 +372,7 @@ export function DashboardShell(props: Props) {
         />
         <div className="mac-content mac-content-scroll min-w-0 px-4 py-4 md:px-6 md:py-5">
         <MobileNav tab={tab} setTab={setTab} />
-        <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
+        <AnimatePresence initial={false} mode="popLayout"><motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
           {isHiddenNavTab(tab) && <p className="mb-3 text-xs text-foreground-subtle">{t.nav.hiddenFromNavigation}</p>}
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,

@@ -26,7 +26,7 @@
   --sidebar-foreground: #282b31;
   --sidebar-muted: #626873;
   --desktop-wallpaper: #dfe3e9;
-  --primary-button: #0064d1;
+  --primary-button: var(--primary);
 
   /* foreground */
   --foreground: #1d1d1f;
@@ -118,6 +118,7 @@
 }
 
 .dark {
+  --primary-button: #dbe8fb;
   --background: #101214;
   --surface: #15181b;
   --surface-secondary: #1a1d20;
@@ -271,7 +272,7 @@ body {
   backdrop-filter: blur(40px) saturate(180%);
 }
 
-.mac-sidebar button[aria-current="page"] { color: var(--primary); }
+.mac-sidebar button[aria-current="page"] { color: var(--accent-foreground); }
 
 .mac-content {
   background: var(--background);

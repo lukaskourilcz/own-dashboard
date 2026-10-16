@@ -72,13 +72,13 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { isCareerRelevant, isOsloRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { isCareerRelevant, isOsloRelevant, isOsloSnapshot, isPrague, careerSeniority } from "@/lib/jobs/filter";
 import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
 import { researchForUrl } from "@/lib/jobs/oslo-research";
 import { CareerBoard } from "./career-board";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
-import { isGoogleLetterUrl, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
+import { isGoogleLetterUrl, isPositionReady, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
 import { CareerLetterHelper } from "./career-letter-helper";
 import type { Availability } from "@/lib/jobs/availability";
 import type { LetterLanguage } from "@/lib/jobs/letter-helper";
@@ -104,7 +104,7 @@ const STATUSES: JobApplicationStatus[] = [
 ];
 
 type Props = {
-  /** True once "Check for new offers" ran in this page session. */
+  /** True after an explicit private Career data load in this page session. */
   activated: boolean;
   /** Fetch Career's on-demand data and mark it active. */
   onActivate: () => Promise<void>;
@@ -159,8 +159,8 @@ export function JobsPanel({
     [listings, showCzechCareer],
   );
 
-  const visibleSaved = savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloRelevant({ location: row.location, remote: /remote/i.test(row.location ?? "") }));
-  const visibleApplications = applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloRelevant({ location: row.location, remote: /remote/i.test(row.location ?? "") }));
+  const visibleSaved = savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row));
+  const visibleApplications = applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row));
 
   // Listings the user already applied to, by listing id and by URL (manual
   // logs may match a scraped offer only by its link).
@@ -183,10 +183,14 @@ export function JobsPanel({
   const qc = useQueryClient();
   const toast = useToast();
   const [checking, setChecking] = useState(false);
+  const [activationFailed, setActivationFailed] = useState(false);
+  async function loadCareer() {
+    setActivationFailed(false);
+    try { await onActivate(); } catch { setActivationFailed(true); }
+  }
 
-  // The only way Career fetches: refresh the job boards (rate limit
-  // unchanged), then load the on-demand records and re-verify which
-  // listings are still open. Nothing refetches on its own afterwards.
+  // Explicit feed refresh, separate from opening a private draft or workflow.
+  // The rate limit is unchanged; nothing refreshes on a timer or focus.
   async function checkOffers() {
     setChecking(true);
     try {
@@ -201,6 +205,9 @@ export function JobsPanel({
         qc.invalidateQueries({ queryKey: qk.jobLastRun }),
         qc.invalidateQueries({ queryKey: qk.jobAvailability }),
       ]);
+    } catch {
+      setActivationFailed(true);
+      toast.err(t.jobs.refreshErr);
     } finally {
       setChecking(false);
     }
@@ -256,13 +263,14 @@ export function JobsPanel({
                 )}
               </div>
             )}
+            {(view !== "open" || !activated) && <Button onClick={() => { setView("open"); void checkOffers(); }} disabled={checking}><RefreshCw className={cn("size-4",checking && "animate-spin")} aria-hidden />{checking ? t.jobs.checking : t.jobs.checkOffers}</Button>}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
               {(["oslo", "open", "saved", "ready", "applied", "letters", "companies"] as const).map(
                 (v) => (
                   <button
                     key={v}
                     type="button"
-                    onClick={() => { setView(v); if (v !== "oslo" && !activated) void onActivate(); }}
+                    onClick={() => { setView(v); if (v !== "oslo" && !activated) void loadCareer(); }}
                     className={cn(
                       "min-h-11 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-ring",
                       view === v
@@ -289,7 +297,7 @@ export function JobsPanel({
                             : "Career links"}
                     {(v === "saved" || v === "ready" || v === "applied") && (
                       <span className="ml-2 text-sm text-foreground-muted">
-                        {v === "applied" ? visibleApplications.length : visibleSaved.filter(row => v === "ready" ? !!row.cover_letter_url : !row.cover_letter_url).length}
+                        {v === "applied" ? visibleApplications.length : visibleSaved.filter(row => v === "ready" ? isPositionReady(row) : !isPositionReady(row)).length}
                       </span>
                     )}
                   </button>
@@ -303,7 +311,7 @@ export function JobsPanel({
       {view === "oslo" ? (
         <OsloCareerWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyFor(savedToListing(position)); setApplyOpen(true); }} />
       ) : !activated ? (
-        <Card className="p-5"><p role="status" className="mb-3 text-sm">{lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…"}</p><Button variant="outline" onClick={() => void onActivate()}>{lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
+        <Card className="p-5"><p role={activationFailed ? "alert" : "status"} className="mb-3 text-sm">{activationFailed ? lang === "cs" ? "Uložená Kariéra se nepodařila načíst. Zkuste to znovu." : "Could not load saved Career. Please retry." : lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…"}</p><Button variant="outline" onClick={() => void loadCareer()}>{lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
       ) : view === "companies" ? (
         <CareerCompanies userId={userId} isPreview={isPreview} />
       ) : view === "letters" ? (
@@ -317,7 +325,7 @@ export function JobsPanel({
         <SavedPositionsView
           key={view}
           readyOnly={view === "ready"}
-          positions={visibleSaved.filter(row => view === "ready" ? !!row.cover_letter_url : !row.cover_letter_url)}
+          positions={visibleSaved.filter(row => view === "ready" ? isPositionReady(row) : !isPositionReady(row))}
           setPositions={setSavedPositions}
           userId={userId}
           onPrepare={(position, listing) => {
@@ -1743,7 +1751,8 @@ function CoverLetterField({
 }) {
   const t = useDict();
   const { lang } = useLang();
-  const [letterLanguage, setLetterLanguage] = useState<LetterLanguage>(lang);
+  const { showCzechCareer } = useCzechCareerVisibility();
+  const [letterLanguage, setLetterLanguage] = useState<LetterLanguage>(showCzechCareer ? lang : "en");
   const [draftName, setDraftName] = useState("");
   const locale = useDateLocale();
   const toast = useToast();

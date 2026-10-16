@@ -32,13 +32,13 @@ No generated symbol exploration has been approved. The next pass must compare sa
 
 ## Color
 
-- A graphite desktop frames the authenticated application as a private working window.
+- A neutral desktop frames the authenticated application as a private working window.
 - The light application canvas uses the macOS grouped-surface register: `#f5f5f7` through semantic tokens, white modules, quiet hairline borders, and translucent toolbar chrome.
-- The sidebar is dark translucent graphite with white icons and labels; selected rows use a restrained white overlay.
+- The sidebar uses a light translucent material in light mode and heavier graphite in dark mode. Selected rows use a quiet blue tint with accessible text contrast.
 - System blue defines primary action, selection, focus, and structural identity.
 - Orange is attention/follow-up, green is confirmed success/healthy, red is destructive/failed/overdue/high-risk, and teal/indigo/pink/purple identify professional domains.
 - Status colors remain semantic, paired with text and markers, and never decorative.
-- Gradients are limited to the desktop wallpaper, primary button, and avatar treatment. Purple-blue marketing gradients, rainbow accents, neon, cyan glow, and saturated finance backgrounds are prohibited.
+- Shared chrome and primary actions use solid semantic fills; avatar treatment may retain a restrained gradient. Purple-blue marketing gradients, rainbow accents, neon, cyan glow, and saturated finance backgrounds are prohibited.
 
 All implementation colors live in `src/app/globals.css`. Raw values are limited to fixed legal invoice output, third-party marks, and framework metadata that cannot consume CSS variables.
 
@@ -48,7 +48,7 @@ The authenticated interface uses the native system stack (`-apple-system`, Blink
 
 ## Shape and surface
 
-Use 5/7/12/14 px radii. The desktop app window and ordinary modules use 12 px corners; compact controls use 7 px. Borders establish hierarchy before restrained shadows. Translucency is limited to the sidebar and toolbar where it communicates window structure. Pills are reserved for tags/status. Avoid nested cards, floating glass panels, and oversized rounding.
+Use 6/8/14/20 px radii. The desktop app window and ordinary modules use 14 px corners; compact controls use 8 px and task dialogs use 20 px. Borders establish hierarchy before restrained shadows. Translucency is limited to the sidebar and toolbar where it communicates window structure. Pills are reserved for tags/status. Avoid nested cards, floating glass panels, and oversized rounding.
 
 ## Iconography
 

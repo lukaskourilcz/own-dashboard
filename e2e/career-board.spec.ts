@@ -62,7 +62,7 @@ test("the stage board groups every column and preserves the progress fields on a
       contentType: "application/json",
       body: JSON.stringify({
         id: "app-2", user_id: "preview-user", listing_id: null, title: "Senior React Engineer",
-        company: "Harbour Systems", url: null, source: "manual", location: "Prague", cover_letter: "",
+        company: "Harbour Systems", url: null, source: "manual", location: "Oslo", cover_letter: "",
         status: payload!.p_status, applied_on: "2026-01-01", notes: payload!.p_notes,
         next_follow_up_at: payload!.p_follow_up_at, responded_on: payload!.p_responded_on,
         response_kind: payload!.p_response_kind,

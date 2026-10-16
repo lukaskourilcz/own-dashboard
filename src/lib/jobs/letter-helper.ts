@@ -80,6 +80,7 @@ export function suggestApplicationAngles(description: string) {
 // Public portfolio + explicitly supplied career context. These are editable
 // evidence suggestions, not invented achievements or generated hiring claims.
 const CAREER_EVIDENCE: Evidence[] = [
+  { id: "ai-tooling", employer: "AI tooling", domain: /automation|agent|llm|ai|integration|n8n|langchain/i, stack: /n8n|langchain|apify|typesafe|jev|llm|webhook/i, label: { en: "Practical AI tooling and integrations", cs: "Praktické AI nástroje a integrace" }, paragraph: { en: "I have strong hands-on experience with n8n, LangChain, Apify and TypeSafe AI (Jev). I enjoy connecting APIs and using LLMs in useful workflows, including the PDF analysis features I worked on at Ersilia.", cs: "Mám silnou praktickou zkušenost s n8n, LangChain, Apify a TypeSafe AI (Jev). Rád propojuji API a používám LLM v užitečných postupech, včetně funkcí pro analýzu PDF, na kterých jsem pracoval v Ersilii." } },
   {
     id: "embedit",
     employer: "EmbedIT",
@@ -199,7 +200,7 @@ export function buildLetter(input: {
   const intro =
     lang === "cs"
       ? `Dobrý den,\n\nrád bych se ucházel o pozici ${position}${company ? ` ve společnosti ${company}` : ""}.`
-      : `Hello,\n\nI would like to apply for ${position}${company ? ` at ${company}` : ""}.`;
+      : `Hello${company ? ` ${company}` : ""},\n\nMy name is Lukas and I would like to join your team as ${position}.`;
   const skills = input.skills.length
     ? lang === "cs"
       ? `Z technologií uvedených v nabídce mám zkušenosti s: ${input.skills.join(", ")}.`

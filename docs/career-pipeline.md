@@ -4,7 +4,7 @@ Career now stores the company directory in Supabase and connects saved positions
 
 ## Workflow
 
-Career loads nothing until **Check for new offers / Zkontrolovat nové nabídky** is pressed; the saved, prepared and sent lists below appear after that press and stay loaded for the rest of the page session.
+Career displays public Oslo research immediately. Opening a role or saved/workflow tab loads private records on demand; **Check for new offers / Zkontrolovat nové nabídky** also refreshes feeds and availability. The prepared queue accepts explicit ready text-only drafts as well as Google Docs links. See [current Oslo workflow](career-workspace.md).
 
 1. Save a position or open an imported one. Attach its Google Docs or Drive file URL and review the posting, letter and eligibility notes. Readiness is explicit: draft, ready or needs review.
 2. Open **Applications to send / Přihlášky k odeslání**. The list includes every saved position with a letter link, including visibly marked items needing review. Search by company or role.
@@ -79,7 +79,7 @@ A direct link is sufficient for this workflow and creates no extra background AP
 
 ## Data and consistency
 
-- `career_companies` stores the owner, company name, URL, category, country, research notes and last check date. The directory loads only when its Career subtab is open, with a user-scoped React Query key and a 1,000-row bound. Static companies remain only as public preview fixtures.
+- `career_companies` stores the owner, company name, URL, category, country, research notes and last check date. The directory loads only when its Career subtab is open, with a user-scoped React Query key and a 1,000-row bound. Public Oslo career destinations are available in production and merge with owner links; Czech destinations require the Settings opt-in.
 - `saved_job_positions` adds `cover_letter_url` and `readiness`. Existing saved positions keep their identities and drafts. The prepared list uses the presence of a letter link; readiness is a review flag, not a second application status.
 - `job_applications` adds the letter URL, idempotent request ID, first-response date and response kind. Existing status and follow-up columns remain authoritative. A later migration adds the contact pair; the progress RPC does not take it, so the contact is a separate own-only update guarded by the same RLS policies and reported separately when it fails.
 - `record_job_application` records the application, adds its initial event and consumes the saved position in one transaction. An owner/request unique key and transaction lock make retries return the original record. A manually saved position retains a null listing foreign key instead of incorrectly using its saved-row UUID.

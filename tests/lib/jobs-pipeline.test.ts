@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { isGoogleLetterUrl, progressEventLabel } from "@/lib/jobs/pipeline";
+import { isGoogleLetterUrl, isPositionReady, progressEventLabel } from "@/lib/jobs/pipeline";
 
 describe("career document links", () => {
+  it("accepts reviewed text-only drafts while preserving a linked letter review hold", () => {
+    expect(isPositionReady({readiness:"ready"})).toBe(true);
+    expect(isPositionReady({readiness:"draft"})).toBe(false);
+    expect(isPositionReady({readiness:"needs_review",cover_letter_url:"https://docs.google.com/document/d/a/edit"})).toBe(false);
+    expect(isPositionReady({cover_letter_url:"https://docs.google.com/document/d/a/edit"})).toBe(true);
+  });
   it("accepts optional canonical Google document links and rejects lookalike hosts", () => {
     for (const url of ["", "https://docs.google.com/document/d/abc-123/edit", "https://drive.google.com/file/d/abc/view"]) expect(isGoogleLetterUrl(url)).toBe(true);
     for (const url of ["javascript:alert(1)", "https://docs.google.com.evil.example/document/d/a", "https://docs.google.com@evil.example/document/d/a", "https://drive.google.com/drive/folders/a", "http://docs.google.com/document/d/a"]) expect(isGoogleLetterUrl(url)).toBe(false);

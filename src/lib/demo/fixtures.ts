@@ -753,15 +753,15 @@ export const notifications: AppNotification[] = [{
 export const jobListings: JobListing[] = [
   {
     id: "job-1",
-    source: "startupjobs",
+    source: "preview",
     external_id: "102781",
     title: "Senior Frontend Engineer (React)",
-    company: "Ecomail.cz",
-    url: "https://www.startupjobs.cz/nabidka/102781/senior-frontend-engineer",
-    location: "Praha",
+    company: "Harbour Web Studio",
+    url: "https://example.com/careers/senior-frontend",
+    location: "Oslo",
     role: "frontend",
     remote: true,
-    salary: "90 000 – 120 000 Kč",
+    salary: "850,000–1,100,000 NOK/year",
     tags: ["react", "typescript"],
     seniority: "senior",
     description:
@@ -799,7 +799,7 @@ export const savedJobPositions: SavedJobPosition[] = [{
   source: "manual", location: "Remote, Europe", description: "Build accessible React applications.",
   cover_letter: "Hello Example Studio team, this is a fictional preview letter.",
   cover_letter_url: "https://docs.google.com/document/d/example-preview-only/edit",
-  readiness: "needs_review", notes: "Preview only. Check the posting before sending.", saved_at: TS, updated_at: TS,
+  readiness: "ready", notes: "Preview only. Check the posting before sending.", saved_at: TS, updated_at: TS,
 }];
 
 export const jobApplications: JobApplication[] = [
@@ -831,7 +831,7 @@ export const jobApplications: JobApplication[] = [
     company: "Harbour Systems",
     url: "https://example.com/careers/senior-react",
     source: "manual",
-    location: "Prague",
+    location: "Oslo",
     cover_letter: "Dear Example Studio team, …",
     status: "applied",
     applied_on: ymd(-18),
@@ -871,7 +871,7 @@ export const jobApplications: JobApplication[] = [
     company: "Meridian Tools",
     url: null,
     source: "manual",
-    location: "Prague",
+    location: "Oslo",
     cover_letter: "",
     status: "offer",
     applied_on: ymd(-40),
@@ -891,7 +891,7 @@ export const jobApplications: JobApplication[] = [
     company: "Atlas Retail",
     url: null,
     source: "manual",
-    location: "Brno",
+    location: "Oslo",
     cover_letter: "",
     status: "rejected",
     applied_on: ymd(-52),

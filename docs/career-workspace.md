@@ -1,65 +1,45 @@
 # Career workspace
 
-Updated 25 September 2026. Scope: a personal React frontend/fullstack search for Prague and remote work from Czechia, plus an English/Czech application-writing workspace.
+Updated 16 October 2026. The default market is Oslo, its commuting area and remote work explicitly compatible with Norway. Interface language remains Czech by default; application letters default to English.
 
-## Review and changes
+## Oslo workflow
 
-The previous implementation explicitly classified Angular and Vue as frontend matches. Generic web signals could rescue Java/Python jobs. Czech ingestion required remote work, excluding Prague office jobs. Every job seen again received a new freshness timestamp, several rolling feeds were marked complete, and the prune total was overwritten rather than accumulated. The UI was a wide table; letter templates were behind application logging and followed the interface language.
+The default **Oslo** tab displays public research immediately, without fetching private records or starting scrapers. `oslo-research.ts` contains 33 role assessments; `oslo-companies.ts` contains 41 official careers destinations checked on 16 October. Directory membership is not a claim of a suitable current vacancy. [Research register](career-oslo-research.md) links to every source.
 
-The new flow preserves the existing catch-all route, route-scoped query state, shortlists, deletion tombstones, application snapshots, history and own-only letter/template persistence. It adds:
+The priority grid shows profile matches of at least 75%, excludes explicit barriers, stale research and alternative part-time contracts, and sorts by score. All researched roles, senior stretches, AI roles and contracts remain inspectable through filters. Every card opens a Radix dialog with a source link, working arrangement, salary/deadline when known, candidate evidence, gaps, score breakdown and the private editable English letter. Keyboard focus returns to the triggering card; unsaved edits have an explicit discard path.
 
-- A separate Saved stage between discovery and application. Saving snapshots the listing; pasting a URL reads available page metadata into editable fields. Cover-letter drafts and notes stay with the saved position. Confirming that the application was sent creates the application/history row and removes the saved position.
+Opening a role or a saved/workflow tab is an explicit request to load owner-scoped records. **Check for new offers / Zkontrolovat nové nabídky** refreshes selected feeds, loads records and checks availability. There are no scheduled scrapes, focus refreshes, paid Actor runs or model calls in Career. A failed private-data load stays retryable rather than looking like an empty account.
 
-- A React requirement at ingestion and display boundaries. Explicit Angular, Vue, Svelte, React Native and off-stack language requirements are excluded conservatively. JavaScript never matches Java. Generic React software titles can qualify; backend-only titles and staff/principal/head roles do not.
-- Prague office/hybrid jobs alongside explicit Czechia, EU/Europe/EMEA and worldwide remote locations. Remote-only country restrictions and unspecified locations fail closed. Junior/medior/senior filters include an unspecified category. Matching is keyword evidence, not a hiring probability or a guarantee of employment eligibility.
-- A job list and detail pane; narrow screens open selected details in a dialog. Filters cover source, role, work location, level, search, shortlist and technology overlap. Duplicate company/title/location entries are collapsed in the visible list.
-- Nothing loads on a visit (since 25 September 2026). Career opens with the last check time, the source list and one button, **Check for new offers / Zkontrolovat nové nabídky**. Pressing it refreshes the job boards through `/api/jobs/refresh` (rate limit unchanged: two per ten minutes), loads listings, saved positions, applications, events and letters, and runs the availability check. Nothing refetches on focus, remount or a timer afterwards; the next press refreshes. The daily `jobs-scrape` cron was removed from `vercel.json`; its route stays for manual, authenticated use. No paid scraping starts on a visit or a press.
-- A separate authenticated, CSRF-checked availability request on each press. Employer APIs verify published listings; other sources get bounded page checks. Closed/expired pages, redirects to generic pages, blocked pages and unverified results are hidden. A 200 response alone does not prove availability.
-- English/Czech letter language independent of interface language. Paste the full posting, inspect matched skills and gaps, choose experience evidence, add a specific motivation sentence and build an editable draft. Copy and save named letters/templates, or record the exact sent letter with its application. This helper runs locally and makes no AI call.
-- Fintech/banking prompts prioritize EmbedIT and Entain/Gibraltar; pharma/health prompts prioritize Controlant and Ersilia. Suggestions are based on keywords and user-confirmed experience, not semantic understanding. Operational experience is described separately from engineering work. Every claim remains editable.
-- A searchable owner-scoped company directory (`career_companies`, see [Career pipeline](career-pipeline.md)); the 26 researched official career pages in `src/lib/jobs/companies.ts` fill the preview. Directory membership is not a claim of a current relevant vacancy.
+## Scoring and freshness
 
-## Research and sources
+Scores are manual profile-match assessments, never probabilities of getting hired: stack 40, experience 25, domain 15, location 10 and language 10. Required Norwegian caps a role at 49%; other documented mandatory barriers cap it at 59%. Role-specific gaps remain explicit, including Python/.NET depth, degree requirements, tenure and security-clearance eligibility. The assessment does not know applicant competition or internal hiring decisions.
 
-[Current portfolio](https://lukaskouril.dev/en) supplied React, TypeScript, Next.js, Node.js, PostgreSQL, Supabase and the relevant public experience. The user explicitly confirmed the Gibraltar/EmbedIT and Controlant/Ersilia industry mapping. The existing broader stack matcher is retained; Redis, Vercel and Supabase are now recognized as portfolio-supported skills.
+On LinkedIn only original posting ages within five weeks were saved. Twelve newly saved listings were checked individually at 2 days to 3 weeks old; Attensi was already saved and verified at one week. Six Robotics' frontend page only established a repost date, so it was not saved there. Older active direct-employer roles can still appear, clearly sourced as employer listings. The registry does not invent exact posting dates from relative labels. Research older than 35 days and passed deadlines leave the default priority view. API refresh does not reset the original research date.
 
-[Greenhouse](https://docs.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), and [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) document public employer job APIs. Prefer employer feeds to syndication when practical. Public API access does not itself establish blanket redistribution rights. This is a personal authenticated tool that links to originals.
+The dialog's **Check availability** makes one authenticated, CSRF-checked, rate-limited request for a known research ID. It cannot fetch arbitrary URLs. Closed/expired, blocked and unknown results are distinguished; HTTP 200 alone is insufficient. LinkedIn may require browser authentication and therefore remain unknown to a server check. Always inspect the original before applying.
 
-Live endpoints checked successfully during implementation:
+## Sources and Czech archive
 
-- [Apify employer board](https://api.ashbyhq.com/posting-api/job-board/apify): 11 records before relevance filtering.
-- [Rossum employer board](https://api.ashbyhq.com/posting-api/job-board/rossum.ai): 6 records before filtering; none should be assumed relevant merely because the employer is in Prague.
-- [Outreach employer board](https://api.lever.co/v0/postings/outreach?mode=json): 33 records before filtering.
+Direct public Ashby feeds for [Sanity](https://api.ashbyhq.com/posting-api/job-board/sanity) and [Enode](https://api.ashbyhq.com/posting-api/job-board/Enode) were verified live. Ashby secondary locations are retained: a London-first record can also offer Oslo. General remote feeds remain bounded discovery sources. Norway is not treated as EU-only; unknown and incompatible remote countries fail closed. Senior/staff/principal titles and adjacent frontend/backend stacks are assessed instead of discarded; unrelated disciplines and mobile-only roles remain excluded.
 
-A proposed SentinelOne Greenhouse endpoint returned 404 and was not enabled. SentinelOne remains in the manual directory. The adapter supports Greenhouse for a future verified board token.
+In Settings, **Zobrazit český obsah Kariéry / Show Czech Career contents** is OFF by default and syncs through `user_preferences.show_czech_career`. Off hides Prague/Czech saved records, company links, CV shortcut and source metadata; refresh/availability also skip Czech sources. Existing records and adapters are preserved. Czech StartupJobs, Jobs.cz, Prace.cz, the previous curated set, Prague employer feeds and unknown-scope Apify tasks execute only with the opt-in. Another Norwegian city is not automatically an Oslo office; Norway-wide remote must be established.
 
-The existing eight board adapters remain, with stricter personal filtering and Prague coverage. Rolling-feed absence no longer triggers immediate deletion. HTML adapters depend on third-party markup and are not contractual APIs; failed or blocked requests cannot establish vacancy availability. The source panel shows actual run outcomes, including configured Apify tasks.
+The official directory combines public Norway research with owner-added links. Existing Czech links return with the checkbox. LinkedIn, The Hub saved jobs, FINN, NAV and Startuplab are manual browsing destinations, not advertised as functioning scrape integrations.
 
-### Optional Apify connection
+## Private letters and application tracking
 
-Set server-only `APIFY_TOKEN` and comma-separated `APIFY_JOB_TASK_IDS` in the deployment. Use saved tasks that return job descriptions and location/remote fields. The importer supports common flat job field aliases and nested company names. Unexpected data shapes may require an adapter extension; absence of credentials is not presented as a working integration.
+The 33 offline-prepared English letters were inserted into the existing owner's `saved_job_positions` without overwriting existing drafts. Personal text, contact details and Google Docs links stay outside this public repository. Four existing native Google Docs letters are linked; text-only drafts can also be marked ready. The shared English CV shortcut points to the revised CV, including n8n, LangChain, Apify and TypeSafe AI (Jev).
 
-The importer resolves a [successful run](https://docs.apify.com/api/v2/actor-task-runs-last-get), checks its completion time, and reads that fixed dataset. Only runs finished within 24 hours are accepted. Re-importing does not replace the original observation timestamp with the current time. It imports at most 1,000 rows/task and five tasks. It never starts an Actor, buys a plan, or schedules a paid run.
+The existing sent-date, stage board, response statistics, contacts and follow-up workflows are retained. `record_job_application` atomically snapshots an actual sent application; saving or copying a draft never marks it sent. No employer applications or messages are submitted by Career. The letter review tab compares the older templates with the user's personal style: preserve warmth and company-specific motivation, add concrete evidence, condense chronology, remove repeated live-coding promises, correct relocation wording and distinguish LLM integration from model training.
 
-Research findings:
+The additive preference migration is `20261015234547_oslo_career_preferences.sql`, matching production history. Existing owner-only RLS remains enabled on preferences, saved positions, applications and companies. A private local backup preceded the additive data insert. Public preview fixtures contain fictional letters only.
 
-- [solidcode Jobs.cz actor](https://apify.com/solidcode/jobs-cz-scraper): candidate for a small task with React/Next.js/TypeScript, Praha and full descriptions. Verify its actual run price and output in Apify first; headline and plan pricing differ and run-start fees apply.
-- [Lexis Jobs.cz actor](https://apify.com/lexis-solutions/jobs-cz-scraper/api): subscription plus usage, unattractive as the first choice for one personal search.
-- [StartupJobs.cz actor](https://apify.com/martin1080p/startup-jobs-scraper/api): listed as under maintenance during research; do not rely on it.
-- [LinkedIn actor](https://apify.com/bebity/linkedin-jobs-scraper): pricing text was inconsistent during a September transition. [LinkedIn terms](https://www.linkedin.com/legal/user-agreement) restrict scraping; actor availability is not permission. No LinkedIn Actor run was started.
+## Optional legacy Apify import
 
-### Design references
+With Czech content enabled, server-only `APIFY_TOKEN` and comma-separated `APIFY_JOB_TASK_IDS` can import already completed saved tasks. The importer accepts successful runs finished within 24 hours, at most 1,000 rows per task and five tasks, retaining original observation time. It never starts an Actor or schedules a paid run. Task output must establish role, location and stack; credentials do not prove a working integration.
 
-Inspected Mobbin images: [Glassdoor search/details](https://mobbin.com/screens/29c1d205-4f0e-4231-8499-8e9765dc31ed), [Mercor opportunities](https://mobbin.com/screens/db3c0878-3d38-4b6c-a469-c9c776872bef), [WRITER contextual suggestions](https://mobbin.com/screens/6865de54-3229-4b76-9e85-fc4a3499dd15), and [Grammarly review panel](https://mobbin.com/screens/b727d76e-6475-4a20-a8bd-d0ad05569b30). Applied persistent job context and reviewable writing suggestions within the existing dashboard's semantic theme.
+## Limits
 
-The researched list in `src/lib/jobs/companies.ts` links to the official career destinations. Qest's company stack includes React alongside unrelated technologies, showing why company-level technology evidence cannot qualify every vacancy. Ackee and Salsita had career pages with no current vacancies during research; persistent pages are not proof of an opening.
+Research is a dated snapshot. A live page can retain a passed deadline, as Monil does. Company pages can carry unrelated embedded or specialist ML jobs. LLM tooling is not evidence of computer-vision training expertise. Six Robotics' citizenship and clearance conditions need individual confirmation; EU citizenship alone is insufficient. Agency adverts may duplicate a direct employer role. Choose one appropriate Aidn level and check recruiter-client overlap before submitting duplicates.
 
-## Availability and operating limits
-
-Availability is a best-effort snapshot, not a promise that a vacancy remains open after the check. Job descriptions may be incomplete; conservative rejection can omit suitable mixed-stack roles. Location strings do not settle work authorization, payroll-country support or mandatory office attendance.
-
-The availability endpoint reads at most 500 stored candidates and probes at most 100 non-employer pages per request, with a time budget. A “Check more listings” action continues with unchecked candidates. Unchecked results stay hidden; failed checks do not delete application history. Provider outages may temporarily produce an empty list. A source that serves an obsolete ad with no closure signal can still look open. The employer directory remains usable during outages.
-
-The Saved stage adds `saved_job_positions` (`20260908062146`, with the one-owner seed `20260908063200`); letters and templates reuse existing tables. Draft/template saving is explicit, not automatic. Application records save a snapshot that survives listing pruning. There is no automated submission or email sending.
-
-The deployed Supabase credentials and Apify task configuration were unavailable in this workspace. No live owner data was read or modified for verification. Production configuration and actual saved-letter round trips require a signed-in production session. The manual `/api/cron/jobs-scrape` route rejects requests when `CRON_SECRET` is missing.
+Availability checks are bounded, fail visibly and do not delete application history. Public summaries link to original ads; no complete third-party job descriptions are republished in the research registry. The catch-all shell, route-scoped query loading, no-model-call boundary and existing invoice/finance behavior remain intact.
