@@ -80,7 +80,7 @@ export function suggestApplicationAngles(description: string) {
 // Public portfolio + explicitly supplied career context. These are editable
 // evidence suggestions, not invented achievements or generated hiring claims.
 const CAREER_EVIDENCE: Evidence[] = [
-  { id: "ai-tooling", employer: "AI tooling", domain: /automation|agent|llm|ai|integration|n8n|langchain/i, stack: /n8n|langchain|apify|typesafe|jev|llm|webhook/i, label: { en: "Practical AI tooling and integrations", cs: "Praktické AI nástroje a integrace" }, paragraph: { en: "I have strong hands-on experience with n8n, LangChain, Apify and TypeSafe AI (Jev). I enjoy connecting APIs and using LLMs in useful workflows, including the PDF analysis features I worked on at Ersilia.", cs: "Mám silnou praktickou zkušenost s n8n, LangChain, Apify a TypeSafe AI (Jev). Rád propojuji API a používám LLM v užitečných postupech, včetně funkcí pro analýzu PDF, na kterých jsem pracoval v Ersilii." } },
+  { id: "ai-tooling", employer: "AI tooling", domain: /automation|agent|\bllm\b|\bai\b|integration|n8n|langchain/i, stack: /n8n|langchain|apify|typesafe|jev|llm|webhook/i, label: { en: "Practical AI tooling and integrations", cs: "Praktické AI nástroje a integrace" }, paragraph: { en: "I have strong hands-on experience with n8n, LangChain, Apify and TypeSafe AI (Jev). I enjoy connecting APIs and using LLMs in useful workflows, including the PDF analysis features I worked on at Ersilia.", cs: "Mám silnou praktickou zkušenost s n8n, LangChain, Apify a TypeSafe AI (Jev). Rád propojuji API a používám LLM v užitečných postupech, včetně funkcí pro analýzu PDF, na kterých jsem pracoval v Ersilii." } },
   {
     id: "embedit",
     employer: "EmbedIT",

@@ -610,9 +610,9 @@ function RoleResearch({
             : " · Saved on LinkedIn"
           : ""}
       </p>
-      {job.aliases.length > 0 && (
+      {(job.aliases.length > 0 || !!job.relatedUrls?.length) && (
         <div className="flex flex-wrap gap-3 text-xs">
-          {job.aliases
+          {[...job.aliases, ...(job.relatedUrls ?? [])]
             .filter(
               (url) =>
                 !url.includes("linkedin.com") || job.source !== "LinkedIn",

@@ -74,7 +74,7 @@ import { cn } from "@/lib/utils";
 
 import { isCareerRelevant, isOsloRelevant, isOsloSnapshot, isPrague, careerSeniority } from "@/lib/jobs/filter";
 import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
-import { researchForUrl } from "@/lib/jobs/oslo-research";
+import { researchForUrl, careerPositionKey } from "@/lib/jobs/oslo-research";
 import { CareerBoard } from "./career-board";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
@@ -173,7 +173,7 @@ export function JobsPanel({
   );
   const appliedUrls = useMemo(
     () =>
-      new Set(applications.map((a) => a.url).filter((x): x is string => !!x)),
+      new Set(applications.filter(a => !!a.url).map(a => careerPositionKey(a.url))),
     [applications],
   );
 
@@ -426,7 +426,7 @@ function OpenPositionsView({
     [savedPositions],
   );
   const savedUrls = useMemo(
-    () => new Set(savedPositions.map((position) => position.url)),
+    () => new Set(savedPositions.map((position) => careerPositionKey(position.url))),
     [savedPositions],
   );
 
@@ -675,6 +675,8 @@ function OpenPositionsView({
 
   const saveMutation = useMutation({
     mutationFn: async (listing: JobListing) => {
+      const existing = savedPositions.find(position => careerPositionKey(position.url) === careerPositionKey(listing.url));
+      if (existing) return existing;
       const { data, error } = await supabase
         .from("saved_job_positions")
         .upsert(
@@ -1005,9 +1007,9 @@ function OpenPositionsView({
                   match={matchById.get(l.id)}
                   state={stateByListing.get(l.id)?.state}
                   applied={
-                    appliedListingIds.has(l.id) || appliedUrls.has(l.url)
+                    appliedListingIds.has(l.id) || appliedUrls.has(careerPositionKey(l.url))
                   }
-                  saved={savedListingIds.has(l.id) || savedUrls.has(l.url)}
+                  saved={savedListingIds.has(l.id) || savedUrls.has(careerPositionKey(l.url))}
                   selected={selected.has(l.id)}
                   onSelect={() =>
                     setSelected((old) => {
@@ -1036,7 +1038,7 @@ function OpenPositionsView({
                 return detail ? (
                   <CareerJobDetails
                     listing={detail}
-                    saved={savedListingIds.has(detail.id) || savedUrls.has(detail.url)}
+                    saved={savedListingIds.has(detail.id) || savedUrls.has(careerPositionKey(detail.url))}
                     onApply={() => saveMutation.mutate(detail)}
                   />
                 ) : null;
@@ -1052,7 +1054,7 @@ function OpenPositionsView({
                   return detail ? (
                     <CareerJobDetails
                       listing={detail}
-                      saved={savedListingIds.has(detail.id) || savedUrls.has(detail.url)}
+                      saved={savedListingIds.has(detail.id) || savedUrls.has(careerPositionKey(detail.url))}
                       onApply={() => {
                         setMobileDetail(false);
                         saveMutation.mutate(detail);

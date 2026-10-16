@@ -10,6 +10,8 @@ export type ResearchJob = {
   title: string;
   url: string;
   aliases: string[];
+  /** Related adverts are references, not proof of an identical vacancy. */
+  relatedUrls?: string[];
   source: "LinkedIn" | "The Hub" | "Employer" | "FINN";
   location: string;
   arrangement: string;
@@ -536,7 +538,8 @@ export const OSLO_JOBS: ResearchJob[] = [
     company: "Tenth Revolution Group",
     title: "Lead Front End Developer",
     url: li("4470834718"),
-    aliases: [li("4470834708")],
+    aliases: [],
+    relatedUrls: [li("4470834708")],
     source: "LinkedIn",
     location: "Oslo",
     arrangement: "Hybrid · Full-time",
@@ -948,6 +951,10 @@ export function researchForUrl(
   return OSLO_JOBS.find((job) =>
     [job.url, ...job.aliases].some((value) => canonicalJobUrl(value) === key),
   );
+}
+
+export function careerPositionKey(url: string | null | undefined): string {
+  return researchForUrl(url)?.id ?? canonicalJobUrl(url);
 }
 export function researchIsStale(job: ResearchJob, now = new Date()): boolean {
   return (

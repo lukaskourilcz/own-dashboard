@@ -8,6 +8,7 @@ import {
 import { normalizeEmployerJob } from "@/lib/jobs/employer-sources";
 import {
   canonicalJobUrl,
+  careerPositionKey,
   OSLO_JOBS,
   researchForUrl,
   researchIsStale,
@@ -86,6 +87,10 @@ describe("evidence-based research", () => {
     expect(canonicalJobUrl("https://thehub.io/jobs/one?utm_source=x")).toBe(
       "thehub.io/jobs/one",
     );
+  });
+  it("deduplicates verified employer aliases but keeps uncertain agency adverts separate", () => {
+    expect(careerPositionKey("https://jobs.ashbyhq.com/sanity/52fc85b3-fa35-48ec-ae43-63f8e7d22ac7")).toBe(careerPositionKey("https://www.sanity.io/careers/senior-software-engineer-content-agent"));
+    expect(careerPositionKey("https://www.linkedin.com/jobs/view/4470834718/")).not.toBe(careerPositionKey("https://www.linkedin.com/jobs/view/4470834708/"));
   });
   it("expires priorities without resetting original research and catches passed deadlines", () => {
     const flowcase = OSLO_JOBS.find((row) => row.id === "flowcase-frontend")!;
