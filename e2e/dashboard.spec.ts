@@ -67,7 +67,7 @@ test.describe("dashboard sections", () => {
     if (testInfo.project.name === "desktop") {
       await expect(page.locator(".mac-window")).toBeVisible();
       await expect(page.locator(".mac-toolbar")).toBeVisible();
-      await expect(page.locator(".traffic-light")).toHaveCount(3);
+      await expect(page.locator("aside").getByText("OwnDashboard", { exact: true })).toBeVisible();
     }
     await expect(page.getByRole("heading", { level: 2 }).first()).toContainText(
       "Jan",
