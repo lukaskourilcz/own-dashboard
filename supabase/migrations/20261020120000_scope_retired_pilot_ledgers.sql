@@ -36,53 +36,41 @@ end $$;
 revoke all on function marketing_private.check_generation_pilot(uuid,jsonb,boolean) from public,anon,authenticated;
 grant execute on function marketing_private.check_generation_pilot(uuid,jsonb,boolean) to service_role;
 
-create or replace function public.marketing_dneskai_admit(p_owner uuid,p_project uuid,p_date date,p_sources jsonb) returns jsonb language plpgsql set search_path='' as $$
-declare r public.marketing_dneskai_runs;s jsonb;idx integer;today date:=(clock_timestamp() at time zone 'Europe/Prague')::date;
+-- marketing_dneskai_admit and marketing_dneskai_claim_stage are redefined by more than one migration
+-- (#112's 20261020100000 changes their Instagram limits and Jev planning). This file never restates
+-- their bodies. It rewrites only the three pilot predicates inside whatever body is current, so it
+-- composes with any earlier redefinition, and it stops if a predicate is not found exactly the expected
+-- number of times. A body that already carries the scoped predicates is left alone, so a re-run changes
+-- nothing. CREATE OR REPLACE keeps each function's owner and grants.
+--
+-- admit: the explicit-scope block holds only during an unexpired collection pilot, and ordinary admission
+-- never returns the retained pilot run (the pilot side already refuses an ordinary run the same way).
+-- claim_stage: an ordinary run is held from paid work only while a generation or collection pilot window
+-- is unexpired. A pilot run keeps its immutable window and one-run limit; the unknown-cost guard is unchanged.
+do $patch$
+declare patch record; definition text; unscoped_count integer; scoped_count integer;
 begin
- if exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner and clock_timestamp()<expires_at) then raise exception 'collection pilot explicit scope required';end if;
- if not exists(select 1 from public.projects where id=p_project and user_id=p_owner and (portfolio_key='aifirst' or (portfolio_key is null and parent_id is null and (lower(repo_full_name)='lukaskourilcz/aifirst' or exists(select 1 from unnest(previous_repo_full_names) name where lower(name)='lukaskourilcz/aifirst'))))) then raise exception 'collection project unavailable';end if;
- -- Ordinary admission never adopts the retained pilot run, mirroring the pilot side's existing-run check.
- select * into r from public.marketing_dneskai_runs where user_id=p_owner and project_id=p_project and date=p_date;
- if found then if r.collection_pilot_owner is not null then raise exception 'collection pilot existing daily run';end if;return to_jsonb(r);end if;
- if p_date is distinct from today or to_char(clock_timestamp() at time zone 'Europe/Prague','HH24:MI')<'22:00' or jsonb_typeof(p_sources) is distinct from 'array' or jsonb_array_length(p_sources) not between 1 and 42 then raise exception 'collection admission invalid';end if;
- perform pg_advisory_xact_lock(hashtextextended(p_owner::text||p_project::text||p_date::text||'dneskai-admit',0));
- select * into r from public.marketing_dneskai_runs where user_id=p_owner and project_id=p_project and date=p_date;
- if found then if r.collection_pilot_owner is not null then raise exception 'collection pilot existing daily run';end if;return to_jsonb(r);end if;
- insert into public.marketing_dneskai_runs(user_id,project_id,date,target_date,cost_usd) values(p_owner,p_project,p_date,p_date+1,0) returning * into r;
- for s in select value from jsonb_array_elements(p_sources) loop
-  if s->>'id' is null or s->>'kind' is null or (s->>'maxItems')::int not between 1 and 20 then raise exception 'collection source invalid';end if;
-  insert into public.marketing_dneskai_stages(user_id,run_id,source_id,kind,since_at,max_items) values(p_owner,r.id,s->>'id',case when s->>'kind'='instagram' then 'instagram' else 'feed' end,coalesce((select last_success_at-interval '5 minutes' from public.marketing_dneskai_source_states where user_id=p_owner and project_id=p_project and source_id=s->>'id'),r.created_at-interval '7 days'),(s->>'maxItems')::int);
- end loop;
- for idx in 0..15 loop insert into public.marketing_dneskai_stages(user_id,run_id,source_id,kind,since_at,max_items) values(p_owner,r.id,'__jev:'||lpad(idx::text,2,'0'),'jev',r.created_at-interval '30 days',8);end loop;
- return to_jsonb(r);
-end $$;
-
-create or replace function public.marketing_dneskai_claim_stage(p_owner uuid,p_run uuid,p_fence uuid,p_source text,p_paid boolean) returns jsonb language plpgsql set search_path='' as $$
-declare r public.marketing_dneskai_runs;s public.marketing_dneskai_stages;total numeric;items integer;amount numeric;
-begin
- select * into r from public.marketing_dneskai_runs where id=p_run and user_id=p_owner and fence=p_fence and lease_until>clock_timestamp() and status='running' for update;if not found then raise exception 'collection fence unavailable';end if;
- select * into s from public.marketing_dneskai_stages where run_id=p_run and source_id=p_source and user_id=p_owner for update;if not found or s.status not in('queued','polling') then return null;end if;
- if p_paid then
-  if r.date is distinct from (clock_timestamp() at time zone 'Europe/Prague')::date then raise exception 'collection day expired';end if;
-  perform pg_advisory_xact_lock(hashtextextended(p_owner::text||'dneskai-paid-serial',0));
-  if exists(select 1 from public.marketing_dneskai_stages where user_id=p_owner and reserved_usd>0 and (cost_usd is null or cost_usd>reserved_usd)) then raise exception 'collection cost unresolved';end if;
-  if s.status<>'queued' or s.kind='feed' or s.reserved_usd<>0 then raise exception 'paid attempt unavailable';end if;
-  -- A pilot run keeps its immutable window and one-run limit. An ordinary run is held only while a
-  -- generation or collection pilot window is unexpired; an expired ledger row no longer blocks it.
-  if r.collection_pilot_owner is not null then
-   perform marketing_private.check_dneskai_collection_pilot(p_owner,r.project_id);
-   if not exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner and run_id=p_run) then raise exception 'collection pilot run mismatch';end if;
-  elsif exists(select 1 from marketing_private.generation_pilots where user_id=p_owner and clock_timestamp()<expires_at) or exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner and clock_timestamp()<expires_at) then raise exception 'collection paid pilot blocked';end if;
-  perform pg_advisory_xact_lock(hashtextextended(p_owner::text||r.date::text||'dneskai-budget',0));
-  if r.date is distinct from (clock_timestamp() at time zone 'Europe/Prague')::date then raise exception 'collection day expired';end if;
-  select coalesce(sum(st.reserved_usd),0),coalesce(sum(st.reserved_items),0) into total,items from public.marketing_dneskai_stages st join public.marketing_dneskai_runs ru on ru.id=st.run_id where ru.user_id=p_owner and ru.date=r.date;
-  amount:=case when s.kind='instagram' then 0.04 else 0.003 end;
-  if r.collection_pilot_owner is not null then
-   perform marketing_private.check_dneskai_collection_pilot(p_owner,r.project_id);
-   if (select coalesce(sum(st.reserved_usd),0) from public.marketing_dneskai_stages st where st.run_id=p_run)+amount>0.24 then raise exception 'collection pilot budget exceeded';end if;
+ for patch in select * from (values
+  ('public.marketing_dneskai_admit(uuid,uuid,date,jsonb)'::regprocedure,
+   $unscoped$if exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner) then raise exception 'collection pilot explicit scope required';end if;$unscoped$,
+   $scoped$if exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner and clock_timestamp()<expires_at) then raise exception 'collection pilot explicit scope required';end if;$scoped$,
+   1),
+  ('public.marketing_dneskai_admit(uuid,uuid,date,jsonb)'::regprocedure,
+   $unscoped$if found then return to_jsonb(r);end if;$unscoped$,
+   $scoped$if found then if r.collection_pilot_owner is not null then raise exception 'collection pilot existing daily run';end if;return to_jsonb(r);end if;$scoped$,
+   2),
+  ('public.marketing_dneskai_claim_stage(uuid,uuid,uuid,text,boolean)'::regprocedure,
+   $unscoped$elsif exists(select 1 from marketing_private.generation_pilots where user_id=p_owner) or exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner) then raise exception 'collection paid pilot blocked';end if;$unscoped$,
+   $scoped$elsif exists(select 1 from marketing_private.generation_pilots where user_id=p_owner and clock_timestamp()<expires_at) or exists(select 1 from marketing_private.dneskai_collection_pilots where user_id=p_owner and clock_timestamp()<expires_at) then raise exception 'collection paid pilot blocked';end if;$scoped$,
+   1)
+ ) as p(fn,unscoped,scoped,expected) loop
+  definition:=pg_get_functiondef(patch.fn);
+  unscoped_count:=(length(definition)-length(replace(definition,patch.unscoped,'')))/length(patch.unscoped);
+  scoped_count:=(length(definition)-length(replace(definition,patch.scoped,'')))/length(patch.scoped);
+  if unscoped_count=0 and scoped_count=patch.expected then continue; end if;
+  if unscoped_count<>patch.expected or scoped_count<>0 then
+   raise exception 'pilot predicate in % not found as expected (% unscoped, % scoped, % wanted)',patch.fn,unscoped_count,scoped_count,patch.expected;
   end if;
-  if total+amount>0.25 or (s.kind='instagram' and (s.max_items>7 or items+s.max_items>35)) then raise exception 'collection daily budget exceeded';end if;
-  update public.marketing_dneskai_stages set reserved_usd=amount,reserved_items=case when s.kind='instagram' then max_items else 0 end where run_id=p_run and source_id=p_source;
- end if;
- update public.marketing_dneskai_stages set status='running' where run_id=p_run and source_id=p_source returning * into s;return to_jsonb(s);
-end $$;
+  execute replace(definition,patch.unscoped,patch.scoped);
+ end loop;
+end $patch$;
