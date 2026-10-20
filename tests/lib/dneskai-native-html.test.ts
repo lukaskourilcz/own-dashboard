@@ -94,6 +94,21 @@ describe('native publisher HTML extraction', () => {
    expect(result.sources[0].items).toHaveLength(1);
   }
  });
+ it('keeps the parsed listing as a partial result when the source deadline fires during enrichment', async () => {
+  const controller = new AbortController();
+  const fetcher = vi.fn<typeof fetch>(async input => {
+   if (String(input) === 'https://www.niemanlab.org/') return html('<ul><li><a href="https://www.niemanlab.org/2026/10/offline-a/">Offline Nieman story A</a></li><li><a href="https://www.niemanlab.org/2026/10/offline-b/">Offline Nieman story B</a></li></ul>');
+   // The runner's 8-second per-source signal fires while article pages are being read.
+   controller.abort();
+   throw new DOMException('The operation was aborted.', 'AbortError');
+  });
+  const result = await collectNativeDneskaiFeed(source('nieman-lab'), since, { now, signal: controller.signal, fetcher, resolve });
+  expect(result.sources[0]).toMatchObject({ status: 'partial', errorCode: 'collection-timeout' });
+  expect(result.sources[0].items.map(item => item.url)).toEqual(['https://www.niemanlab.org/2026/10/offline-a/', 'https://www.niemanlab.org/2026/10/offline-b/']);
+  // Before the listing is read, the deadline still costs the whole source.
+  const early = new AbortController(); early.abort();
+  expect((await collectNativeDneskaiFeed(source('nieman-lab'), since, { now, signal: early.signal, fetcher, resolve })).sources[0]).toMatchObject({ status: 'error', errorCode: 'collection-timeout', items: [] });
+ });
  it('reads midnight RSS dates as day bounds, in UTC or the publisher offset, and keeps real times exact', async () => {
   const runAt = new Date('2026-10-19T20:00:00Z'), cursor = '2026-10-18T19:55:00Z';
   const entry = (id: string, date: string) => `<item><guid>${id}</guid><title>Offline feed item ${id}</title><link>https://huggingface.co/blog/${id}</link><pubDate>${date}</pubDate></item>`;

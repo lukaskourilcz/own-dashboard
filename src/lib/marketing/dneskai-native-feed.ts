@@ -35,7 +35,13 @@ export async function collectNativeDneskaiFeed(source: DneskaiSource, since: str
       allowHosts: [new URL(configured.url).hostname], now, since: new Date(query.since), signal, allowPaidReaders: false,
       fetchImpl: options.fetcher, resolveImpl: options.resolve, reportIssue: code => { issues.add(code); },
     });
-    signal.throwIfAborted();
+    // A deadline that fired after something was read (during HTML article enrichment, or after some
+    // GitHub repositories or HN stories answered) keeps what was read. The timeout code makes the
+    // result partial, so the source cursor stays put and the next run reads the same window again.
+    if (signal.aborted) {
+      if (!raw.length) signal.throwIfAborted();
+      issues.add('collection-timeout');
+    }
     if (!raw.length) return envelope('error', issues.has('reader-disabled') ? 'reader-disabled' : 'empty-source');
     const ids = new Set<string>(), urls = new Set<string>();
     for (const value of raw) {
