@@ -140,10 +140,23 @@ export function dneskaiMediaCredit(source: Pick<DneskaiSource, 'id' | 'name' | '
     const profile = new URL(source.url).pathname.split('/').filter(Boolean)[0] ?? source.name;
     return bounded(`Foto: @${candidate.instagram?.ownerUsername ?? profile}`);
   }
-  const host = new URL(pageUrl ?? candidate.url).hostname.toLowerCase();
+  const page = new URL(pageUrl ?? candidate.url);
+  const host = page.hostname.toLowerCase();
+  const author = platformAuthor(source, page);
+  if (author) return bounded(`Obrázek: ${author}`);
   // An aggregator (Hacker News, Spaceflight News) links to another publisher's page: credit that site.
-  const onSourceSite = registrableDomain(host) === registrableDomain(new URL(source.url).hostname);
+  const sites = [registrableDomain(new URL(source.url).hostname), ...(SOURCE_SITES[source.id] ?? [])];
+  const onSourceSite = sites.includes(registrableDomain(host));
   return bounded(`Obrázek: ${onSourceSite ? dneskaiPublisherName(source) : host.replace(/^www\./, '')}`);
+}
+/** Registered API hosts whose candidates live on another domain of the same publisher. */
+const SOURCE_SITES: Readonly<Record<string, readonly string[]>> = { 'stackexchange-ml': ['stackoverflow.com'] };
+/** A post on a platform belongs to its author: the credit names the account, not the platform. */
+function platformAuthor(source: Pick<DneskaiSource, 'kind'>, page: URL): string | undefined {
+  const segments = page.pathname.split('/').filter(Boolean).map((segment) => { try { return decodeURIComponent(segment); } catch { return ''; } });
+  if (source.kind === 'bluesky' && segments[0] === 'profile' && segments[2] === 'post' && /^[a-z0-9.:-]{1,253}$/i.test(segments[1] ?? '')) return `@${segments[1]} (Bluesky)`;
+  if (source.kind === 'github' && page.hostname === 'github.com' && /^[a-z0-9-]{1,39}$/i.test(segments[0] ?? '') && /^[a-z0-9._-]{1,100}$/i.test(segments[1] ?? '')) return `${segments[0]}/${segments[1]} (GitHub)`;
+  return undefined;
 }
 function bounded(credit: string) {
   const value = credit.replace(/\s+/g, ' ').trim();

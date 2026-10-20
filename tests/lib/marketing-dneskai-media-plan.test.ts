@@ -120,6 +120,10 @@ describe('DNESKAi media credit, caption-only and resolution flags', () => {
     expect(dneskaiMediaCredit(source('wired-ai'), { url: 'https://www.wired.com/story/x/' })).toBe('Obrázek: Wired');
     expect(dneskaiMediaCredit(source('hf-blog'), { url: 'https://huggingface.co/blog/x' })).toBe('Obrázek: Hugging Face');
     expect(dneskaiMediaCredit(source('hn-frontpage'), { url: 'https://www.example.org/post' })).toBe('Obrázek: example.org');
+    // A platform post is credited to its author, not to the platform.
+    expect(dneskaiMediaCredit(source('bluesky-language-models'), { url: 'https://bsky.app/profile/offline.test.bsky.social/post/3kofflinetest' })).toBe('Obrázek: @offline.test.bsky.social (Bluesky)');
+    expect(dneskaiMediaCredit(source('github-ai-releases'), { url: 'https://github.com/offline-org/offline-repo/releases/tag/v1.0.0' })).toBe('Obrázek: offline-org/offline-repo (GitHub)');
+    expect(dneskaiMediaCredit(source('stackexchange-ml'), { url: 'https://stackoverflow.com/questions/1/offline-test' })).toBe('Obrázek: Stack Overflow');
     expect(dneskaiPublisherName(source('import-ai'))).toBe('Import AI');
     for (const row of DNESKAI_SOURCES) {
       const credit = dneskaiMediaCredit(row, { url: row.kind === 'instagram' ? 'https://www.instagram.com/p/x/' : row.url });

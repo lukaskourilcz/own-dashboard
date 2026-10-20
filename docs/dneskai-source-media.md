@@ -122,6 +122,9 @@ Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service r
 - Feed: `Obrázek: <vydavatel>` podle registru („TechCrunch“, „Wired“, „Hugging Face“).
   Agregátor (Hacker News, Spaceflight News) odkazuje na cizí stránku, credit pak nese
   její doménu.
+- Příspěvek na platformě patří autorovi: Bluesky `Obrázek: @<handle> (Bluesky)`, GitHub
+  `Obrázek: <vlastník>/<repozitář> (GitHub)`. Otázky ze Stack Exchange nesou
+  `Obrázek: Stack Overflow`.
 
 Credit není nikdy prázdný a má nejvýše 120 znaků, stejně jako pole `credit` slidu.
 
