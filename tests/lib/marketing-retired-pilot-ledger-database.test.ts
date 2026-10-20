@@ -52,6 +52,7 @@ async function enqueue(tuple?: unknown, key: string = randomUUID()) {
 const claimJob = (job: string, tuple?: unknown) => tuple === undefined
   ? db.query<{ value: unknown }>('select marketing_claim_job($1,$2,$3) value', [owner, job, randomUUID()])
   : db.query<{ value: unknown }>('select marketing_claim_job($1,$2,$3,$4) value', [owner, job, randomUUID(), json(tuple)]);
+const jobStatus = async (job: string) => (await db.query<{ status: string }>('select status from marketing_jobs where id=$1', [job])).rows[0].status;
 const admit = async (who: string, projectId: string, date: string) => (await db.query<{ r: { id: string } }>('select marketing_dneskai_admit($1,$2,$3,$4) r', [who, projectId, date, json(sources)])).rows[0].r.id;
 const admitPilot = async (date: string) => (await db.query<{ r: { id: string } }>('select marketing_dneskai_admit_pilot($1,$2,$3,$4,$5) r', [second, secondProject, date, json(sources), json(collection)])).rows[0].r.id;
 const claimRun = (who: string, run: string, fence: string) => db.query('select marketing_dneskai_claim($1,$2,$3)', [who, run, fence]);
@@ -102,8 +103,11 @@ describe('the scoping migration composes with every other definition of the same
     }
   });
 
-  it('replaces the single-definition generation guard', () => {
+  it('replaces the three single-definition functions', () => {
     expect(after.checkGeneration).toContain('clock_timestamp()<config.expires_at');
+    expect(after.enqueue).toContain("raise exception 'pilot job retired'");
+    expect(after.claimJob).toContain("raise exception 'pilot job retired'");
+    expect(before.claimJob).not.toContain('pilot job retired');
   });
 
   it('is a no-op when it runs again', async () => {
@@ -140,6 +144,20 @@ describe('retired pilot ledgers block only while their window is unexpired (#113
     await expect(enqueue(generation)).rejects.toThrow('pilot outside window');
     await expect(enqueue({ ...generation, expiresAt: '2026-10-14T10:00:01Z' })).rejects.toThrow('pilot configuration changed');
     await expect(claimJob(reserved[1].jobId, generation)).rejects.toThrow('pilot outside window');
+    expect(await ledger()).toMatchObject({ generation_windows: '1', generation_reservations: '3/0.75' });
+  });
+
+  it('never lets a reserved pilot job become ordinary work after its window expires', async () => {
+    await at('2026-10-14T12:00:00Z');
+    const { rows } = await db.query<{ id: string; idempotency_key: string }>('select j.id,j.idempotency_key from marketing_jobs j join marketing_private.generation_pilot_reservations r on r.job_id=j.id order by j.created_at');
+    expect(rows).toHaveLength(3);
+    for (const job of rows) {
+      // Ordinary claim without a tuple: refused, so the job cannot run at the default budget outside its window.
+      await expect(claimJob(job.id)).rejects.toThrow('pilot job retired');
+      // Ordinary enqueue of the same idempotency key: the duplicate path never hands the reserved job back either.
+      await expect(enqueue(undefined, job.idempotency_key)).rejects.toThrow('pilot job retired');
+      expect(await jobStatus(job.id)).toBe('queued');
+    }
     expect(await ledger()).toMatchObject({ generation_windows: '1', generation_reservations: '3/0.75' });
   });
 
@@ -184,7 +202,10 @@ describe('retired pilot ledgers block only while their window is unexpired (#113
       has_function_privilege('authenticated','marketing_private.check_generation_pilot(uuid,jsonb,boolean)','execute') generation_authenticated,
       has_function_privilege('authenticated','public.marketing_dneskai_admit(uuid,uuid,date,jsonb)','execute') admit_authenticated,
       has_function_privilege('anon','public.marketing_dneskai_claim_stage(uuid,uuid,uuid,text,boolean)','execute') stage_anon,
-      has_function_privilege('service_role','public.marketing_dneskai_claim_stage(uuid,uuid,uuid,text,boolean)','execute') stage_service`);
-    expect(rows[0]).toEqual({ generation_authenticated: false, admit_authenticated: false, stage_anon: false, stage_service: true });
+      has_function_privilege('service_role','public.marketing_dneskai_claim_stage(uuid,uuid,uuid,text,boolean)','execute') stage_service,
+      has_function_privilege('authenticated','public.marketing_enqueue_job(uuid,uuid,text,jsonb,jsonb)','execute') enqueue_authenticated,
+      has_function_privilege('anon','public.marketing_claim_job(uuid,uuid,uuid,jsonb)','execute') claim_anon,
+      has_function_privilege('service_role','public.marketing_claim_job(uuid,uuid,uuid,jsonb)','execute') claim_service`);
+    expect(rows[0]).toEqual({ generation_authenticated: false, admit_authenticated: false, stage_anon: false, stage_service: true, enqueue_authenticated: false, claim_anon: false, claim_service: true });
   });
 });

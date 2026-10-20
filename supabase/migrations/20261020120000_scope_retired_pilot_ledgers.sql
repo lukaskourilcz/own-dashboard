@@ -3,7 +3,8 @@
 -- What changes is how long a row blocks ordinary work. Each guard below now applies only while its
 -- pilot window is unexpired, so an expired preview ledger cannot block production admission or
 -- paid collection on the same database. During an unexpired window every interlock is unchanged.
--- A pilot tuple still can never open a second window or be replayed after expiry.
+-- A pilot tuple still can never open a second window or be replayed after expiry, and a job a pilot
+-- reserved never becomes ordinary work: it is refused outside its window instead of running uncapped.
 
 create or replace function marketing_private.check_generation_pilot(p_owner uuid,p_pilot jsonb,p_register boolean default false)
 returns boolean language plpgsql set search_path='' as $$
@@ -35,6 +36,44 @@ begin
 end $$;
 revoke all on function marketing_private.check_generation_pilot(uuid,jsonb,boolean) from public,anon,authenticated;
 grant execute on function marketing_private.check_generation_pilot(uuid,jsonb,boolean) to service_role;
+
+-- An expired window lets ordinary enqueue and claim through, so both wrappers now refuse a reserved job
+-- on the ordinary path. Without this an expired pilot's queued job could be claimed with no tuple, skip
+-- marketing_check_pilot_attempt and run at the default generation budget instead of its $0.25 cap.
+create or replace function public.marketing_enqueue_job(p_owner uuid,p_key uuid,p_hash text,p_request jsonb,p_pilot jsonb default null)
+returns jsonb language plpgsql set search_path='' as $$
+declare pilot boolean; result jsonb; reservation marketing_private.generation_pilot_reservations; jobs integer; dollars numeric;
+begin
+ pilot:=marketing_private.check_generation_pilot(p_owner,p_pilot,true);
+ result:=marketing_private.marketing_enqueue_job(p_owner,p_key,p_hash,p_request);
+ if pilot then
+  select * into reservation from marketing_private.generation_pilot_reservations where job_id=(result->>'jobId')::uuid;
+  if found then
+   if reservation.user_id<>p_owner then raise exception 'pilot owner mismatch'; end if;
+  else
+   if (result->>'duplicate')::boolean then raise exception 'pilot job not reserved'; end if;
+   select count(*),coalesce(sum(reserved_usd),0) into jobs,dollars from marketing_private.generation_pilot_reservations where user_id=p_owner;
+   if jobs>=3 or dollars+0.25>0.75 then raise exception 'pilot budget exhausted'; end if;
+   insert into marketing_private.generation_pilot_reservations(job_id,user_id) values((result->>'jobId')::uuid,p_owner);
+  end if;
+ elsif exists(select 1 from marketing_private.generation_pilot_reservations where job_id=(result->>'jobId')::uuid) then
+  raise exception 'pilot job retired';
+ end if;
+ return result;
+end $$;
+create or replace function public.marketing_claim_job(p_owner uuid,p_job uuid,p_fence uuid,p_pilot jsonb default null)
+returns jsonb language plpgsql set search_path='' as $$
+declare pilot boolean;
+begin
+ pilot:=marketing_private.check_generation_pilot(p_owner,p_pilot);
+ if pilot and not exists(select 1 from marketing_private.generation_pilot_reservations where job_id=p_job and user_id=p_owner) then raise exception 'pilot job not reserved'; end if;
+ if not pilot and exists(select 1 from marketing_private.generation_pilot_reservations where job_id=p_job) then raise exception 'pilot job retired'; end if;
+ return marketing_private.marketing_claim_job(p_owner,p_job,p_fence);
+end $$;
+revoke all on function public.marketing_enqueue_job(uuid,uuid,text,jsonb,jsonb) from public,anon,authenticated;
+grant execute on function public.marketing_enqueue_job(uuid,uuid,text,jsonb,jsonb) to service_role;
+revoke all on function public.marketing_claim_job(uuid,uuid,uuid,jsonb) from public,anon,authenticated;
+grant execute on function public.marketing_claim_job(uuid,uuid,uuid,jsonb) to service_role;
 
 -- marketing_dneskai_admit and marketing_dneskai_claim_stage are redefined by more than one migration
 -- (#112's 20261020100000 changes their Instagram limits and Jev planning). This file never restates
