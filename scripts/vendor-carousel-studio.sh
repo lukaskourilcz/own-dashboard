@@ -68,13 +68,16 @@ cp -R "$scratch/source/studio/brand-kits/caught-up" "$out/brand-kits/caught-up"
 cp "$scratch/source/studio/golden/dneskai-photo.json" "$out/golden/dneskai-photo.json"
 cp "$scratch/source/LICENSE" "$out/LICENSE"
 # The manifest keeps what Node and npm read. Exact dependency pins become caret ranges so that
-# OwnDashboard's own sharp, resvg and zod satisfy them and npm installs no second copy.
+# OwnDashboard's own sharp, resvg and zod satisfy them and npm installs no second copy. One subpath
+# export is added: `./dneskai-slide`, the DNESKAi slide API alone, so a route bundle does not pull in
+# the barrel's hook-library reader, whose dynamic file reads make Turbopack trace the whole project.
 node -e '
   const fs = require("node:fs");
   const upstream = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
   const caret = (range) => /^\d+\.\d+\.\d+$/.test(range) ? `^${range}` : range;
   const dependencies = Object.fromEntries(Object.entries(upstream.dependencies).map(([name, range]) => [name, caret(range)]));
-  const trimmed = { name: upstream.name, version: upstream.version, type: upstream.type, exports: upstream.exports, dependencies };
+  const exports = { ...upstream.exports, "./dneskai-slide": { types: "./dist/dneskai-slide.d.ts", default: "./dist/dneskai-slide.js" } };
+  const trimmed = { name: upstream.name, version: upstream.version, type: upstream.type, exports, dependencies };
   fs.writeFileSync(process.argv[2], JSON.stringify(trimmed, null, 2) + "\n");
 ' "$scratch/source/studio/package.json" "$out/package.json"
 

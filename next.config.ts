@@ -54,15 +54,17 @@ const securityHeaders = [
 ];
 
 // The vendored carousel studio (vendor/carousel-studio, own-dashboard#117) reads its fonts and
-// brand kit through a path derived from its own module URL, which no bundler can follow. Kept
-// external, Node loads it from its real location, and these globs put the files beside it in every
-// marketing function that can render a DNESKAi slide. Without them the deployed rasteriser finds no
-// fonts (system fonts are switched off) and Quorum's render route answered 500 in production.
+// brand kit through a path derived from its own module URL. Its node_modules entry is a link into
+// vendor/, so Turbopack bundles it as project code and rewrites that URL to the project-relative
+// vendor/carousel-studio/dist path at run time. No bundler follows the reads themselves, so these
+// globs put the files at that path in every marketing function that can render a DNESKAi slide.
+// Without them the deployed rasteriser finds no fonts (system fonts are switched off), which is
+// how Quorum's render route answered 500 in production.
 const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/carousel-studio/brand-kits/**/*"];
 
 const nextConfig: NextConfig = {
-  // Native bindings loaded through platform-suffixed specifiers, and the studio for the reason above.
-  serverExternalPackages: ["sharp", "@resvg/resvg-js", "@boardlessai/carousel-studio"],
+  // Native bindings loaded through platform-suffixed specifiers no bundler can resolve.
+  serverExternalPackages: ["sharp", "@resvg/resvg-js"],
   outputFileTracingIncludes: {
     "/api/marketing/offline-import": ["./node_modules/@img/sharp-libvips-*/lib/**/*"],
     "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg", "./node_modules/@img/sharp-libvips-*/lib/**/*"],

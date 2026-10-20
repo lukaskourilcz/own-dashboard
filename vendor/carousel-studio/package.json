@@ -6,6 +6,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./dneskai-slide": {
+      "types": "./dist/dneskai-slide.d.ts",
+      "default": "./dist/dneskai-slide.js"
     }
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio";
+import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
@@ -23,7 +23,7 @@ export const DNESKAI_STUDIO = {
   package: "@boardlessai/carousel-studio",
   version: "1.0.0",
   commit: "72b7a5e02a640e6ffcbdd50c5f21f83066004cdf",
-  treeSha256: "d3cdd59ac1a1663000df62630722ed040cb3af9e95e9279e8166038519166400",
+  treeSha256: "4c144642f44cbd588e2af13f796305b42be562e6e27129d50a56cdf6b08e9829",
 } as const;
 /** OwnDashboard's own rules on top of the studio's: the clip gate and the JPEG below. Bump on any change to either. */
 export const DNESKAI_RENDER_POLICY = "dneskai-render/1";
@@ -51,7 +51,9 @@ export interface DneskaiSlideStorage {
   put(input: { renderKey: string; bytes: Buffer; sha256: string; metadata: Record<string, string> }): Promise<StoredDneskaiSlide>;
 }
 
-type Studio = typeof import("@boardlessai/carousel-studio");
+// The DNESKAi slide API alone (a subpath export of the vendored manifest): the package barrel also
+// carries the hook-library reader, whose dynamic file reads make Turbopack trace the whole project.
+type Studio = typeof import("@boardlessai/carousel-studio/dneskai-slide");
 type Sharp = typeof import("sharp");
 type Position = { index: number; count: number };
 const sha256 = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
@@ -59,7 +61,7 @@ const sha256 = (bytes: Buffer | string) => createHash("sha256").update(bytes).di
 let studioModule: Promise<Studio> | null = null;
 /** Loaded on use, like sharp and resvg in render.ts, so importing this module costs nothing. */
 async function studio(): Promise<Studio> {
-  studioModule ??= import("@boardlessai/carousel-studio");
+  studioModule ??= import("@boardlessai/carousel-studio/dneskai-slide");
   try { return await studioModule; }
   catch { studioModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
 }

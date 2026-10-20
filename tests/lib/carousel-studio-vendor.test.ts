@@ -63,6 +63,24 @@ describe("vendored @boardlessai/carousel-studio", () => {
     for (const family of ["Space Grotesk", "Source Serif 4", "IBM Plex Mono", "IBM Plex Sans"]) expect(studio.FONT_FAMILIES).toContain(family);
   });
 
+  it("exports the DNESKAi slide API alone, which is all the renderer imports", async () => {
+    const slide = await import("@boardlessai/carousel-studio/dneskai-slide");
+    expect(typeof slide.renderDneskaiSlide).toBe("function");
+    expect(typeof slide.validateDneskaiSlide).toBe("function");
+    const renderer = readFileSync(path.join(root, "src/lib/marketing/dneskai-render.ts"), "utf8");
+    const specifiers = [...renderer.matchAll(/(?:from\s+|import\(\s*)"(@boardlessai\/carousel-studio[^"]*)"/g)].map((match) => match[1]);
+    expect(specifiers.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(specifiers)).toEqual(new Set(["@boardlessai/carousel-studio/dneskai-slide"]));
+  });
+
+  it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {
+    const config = readFileSync(path.join(root, "next.config.ts"), "utf8");
+    expect(config).toContain('const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/carousel-studio/brand-kits/**/*"];');
+    expect(config).toContain('"/api/marketing/**": carouselStudioFiles,');
+    const picomatch = createRequire(path.join(root, "package.json"))("next/dist/compiled/picomatch") as (glob: string) => (value: string) => boolean;
+    for (const route of ["/api/marketing/jobs/[id]/execute", "/api/marketing/n8n", "/api/marketing/revisions"]) expect(picomatch("/api/marketing/**")(route)).toBe(true);
+  });
+
   it("reproduces every pinned DNESKAi golden PNG with OwnDashboard's sharp and zod", async () => {
     const studio = await import("@boardlessai/carousel-studio");
     const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(vendor, "golden/dneskai-photo.json"), "utf8")));
