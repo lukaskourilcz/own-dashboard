@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_BASE, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
-  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiEvidencePublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiRetryFeedback,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiRetryFeedback,
   loadDneskaiGlyphFilter, normalizeDneskaiCopy, normalizeDneskaiHashtag, validateDneskaiCopy, type DneskaiCopy, type DneskaiGlyphFilter,
 } from "@/lib/marketing/dneskai-generation";
 import { DEFAULT_GENERATION_BUDGET, claudeCallProfile, createClaudeMarketingModel, generateMarketingDraft, type GenerationDependencies, type MarketingModel } from "@/lib/marketing/generation";
@@ -9,6 +9,7 @@ import { MARKETING_HUMANIZER_POLICY_FINGERPRINT } from "@/lib/marketing/humanize
 import { MARKETING_DECK_CONTENT_VERSION, parseContentRevision } from "@/lib/marketing/contracts";
 import { DneskaiDeckSchema } from "@/lib/marketing/dneskai-slides";
 import { validateDneskaiDeck, type DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
+import { dneskaiEvidencePublishers } from "@/lib/marketing/dneskai-publishers";
 import { ACCOUNT, BRIEF_NOW, briefFixture, briefInput, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 
 vi.mock("server-only", () => ({}));
@@ -64,6 +65,11 @@ describe("marketing-copy/5 prompt (#116)", () => {
     const framed = offerFor({ media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })) });
     expect(framed.rules).toMatchObject({ firstSlide: "figure-or-statement", singleVariant: "type" });
     expect(offerFor({ media: [], suggestedFormat: "single-image" }).rules).toEqual({ formats: ["single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
+  });
+  it("names publishers from the registry in the worker and from the account or host without it", async () => {
+    const evidence = briefFixture(pictures).evidence;
+    expect(await dneskaiEvidencePublishers(evidence)).toEqual(["The Verge", "@technology (Instagram)"]);
+    expect(await dneskaiFallbackPublishers(evidence)).toEqual(["theverge.com", "@technology (Instagram)"]);
   });
   it("shrinks a long brief to its input budget instead of refusing it", () => {
     const long = briefFixture(pictures, { evidence: Array.from({ length: 8 }, (_, index) => ({ ...briefFixture(pictures).evidence[0]!, candidateId: `c-${index}`, url: `https://www.theverge.com/test-only/${index}`, excerpt: "Dlouhý úryvek ze zdroje. ".repeat(160) })), media: [] });
@@ -203,7 +209,7 @@ describe("deck and caption assembly by code", () => {
 });
 
 describe("generation from a brief", () => {
-  const dependencies = (model: MarketingModel, extra: Partial<GenerationDependencies> = {}): GenerationDependencies => ({ model, now, loadDneskaiMedia: loadMedia, validateDneskaiDeck: clean, ...extra });
+  const dependencies = (model: MarketingModel, extra: Partial<GenerationDependencies> = {}): GenerationDependencies => ({ model, now, loadDneskaiMedia: loadMedia, validateDneskaiDeck: clean, evidencePublishers: dneskaiEvidencePublishers, ...extra });
   it("builds a marketing-content/2 deck revision from one call, at Sonnet 5.5 cost", async () => {
     const packet = briefPacket(briefFixture(pictures));
     const model = fakeModel([{ copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);

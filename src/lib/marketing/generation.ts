@@ -12,9 +12,9 @@ import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import {
   DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DNESKAI_SOURCES_SLIDE, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
-  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiEvidencePublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
   dneskaiSourcesSlideBlocked, loadDneskaiGlyphFilter, normalizeDneskaiCopy, validateDneskaiCopy,
-  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiGlyphFilter,
+  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers, type DneskaiGlyphFilter,
 } from "./dneskai-generation";
 
 export const MARKETING_PROMPT_VERSION = "marketing-copy/4";
@@ -197,6 +197,8 @@ export type GenerationDependencies = {
   onUsage?(usage: GeneratedMarketingDraft["usage"]): void;
   /** Brief generation (#116): the stored source media (#114). Required for a brief; nothing is invoked without it. */
   loadDneskaiMedia?: LoadDneskaiMediaBytes;
+  /** Brief generation: the publisher names of the source lines. Defaults to the Instagram account or the host. */
+  evidencePublishers?: DneskaiEvidencePublishers;
   /** Brief generation: the studio's deck gate. Defaults to `validateDneskaiDeck` from dneskai-render.ts. */
   validateDneskaiDeck?: (deck: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal) => Promise<DneskaiSlideRenderProblem[]>;
 };
@@ -256,7 +258,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   // The prompt gets what the input reservation leaves after the system prompt, schema, envelope and retry instructions.
   const promptBytes = budget.maxInputTokens - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - 2048 - DNESKAI_RETRY_INSTRUCTION_BYTES;
   let offer: DneskaiBriefOffer;
-  try { offer = dneskaiBriefOffer(brief, await dneskaiEvidencePublishers(brief.evidence.slice(0, 6)), { promptBytes }); }
+  try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
   const loadMedia = memoizedMedia(dependencies.loadDneskaiMedia!);
   const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;

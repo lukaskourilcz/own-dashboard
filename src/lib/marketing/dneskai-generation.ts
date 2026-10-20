@@ -156,20 +156,17 @@ export function czechDate(value: string): string | null {
 }
 const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "web"; } };
 
-/** The publisher a source line names: the registry's publisher, the Instagram account, or the host. */
-export async function dneskaiEvidencePublishers(evidence: DneskaiBrief["evidence"]): Promise<string[]> {
-  // Loaded on use: the registry and the credit rules belong to collection (#111, #114), not to every import of generation.
-  const [{ DNESKAI_SOURCES }, { dneskaiPublisherName }] = await Promise.all([import("./dneskai-registry"), import("./dneskai-media-plan")]);
-  return evidence.map((item) => {
-    const source = DNESKAI_SOURCES.find((entry) => entry.id === item.sourceId);
-    if (!source) return host(item.url);
-    if (source.kind === "instagram") {
-      const profile = new URL(source.url).pathname.split("/").filter(Boolean)[0];
-      return profile ? `@${profile} (Instagram)` : "Instagram";
-    }
-    return dneskaiPublisherName(source);
-  });
+/**
+ * The publisher a source line names when no registry is at hand: the Instagram account of an `instagram:<profile>`
+ * source, otherwise the page's host. The worker passes the registry's names (`dneskai-publishers.ts`) instead.
+ */
+export function dneskaiFallbackPublisher(item: Pick<DneskaiBrief["evidence"][number], "sourceId" | "url">): string {
+  const profile = /^instagram:([A-Za-z0-9._]{1,30})$/.exec(item.sourceId)?.[1];
+  return profile ? `@${profile} (Instagram)` : host(item.url);
 }
+/** Resolves the publisher of each evidence item, in order. */
+export type DneskaiEvidencePublishers = (evidence: DneskaiBrief["evidence"]) => Promise<string[]>;
+export const dneskaiFallbackPublishers: DneskaiEvidencePublishers = async (evidence) => evidence.map(dneskaiFallbackPublisher);
 
 function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: OfferPlan): DneskaiBriefOffer {
   let remaining = plan.excerptTotal;
@@ -178,7 +175,7 @@ function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: Offe
     const allowance = Math.min(index === 0 ? PRIMARY_EXCERPT : SUPPORTING_EXCERPT, remaining);
     const excerpt = allowance >= 120 ? shortened(item.excerpt, allowance) : "";
     remaining -= excerpt.length;
-    return { index, publisher: publishers[index] ?? host(item.url), title: shortened(item.title, TITLE_CHARS), excerpt,
+    return { index, publisher: publishers[index] || dneskaiFallbackPublisher(item), title: shortened(item.title, TITLE_CHARS), excerpt,
       published: item.publishedAt && !item.dateEstimated ? czechDate(item.publishedAt) : null, captionOnly: item.captionOnly, url: item.url };
   });
   const indexOf = new Map(presented.map((item, index) => [item.candidateId, index]));

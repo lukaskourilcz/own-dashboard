@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { marketingJobIdentityHash, marketingJobTemplate, parseMarketingJobRequest, createMarketingWorkerHandler, runMarketingWorkerJob, type MarketingJobRequest, type MarketingWorkerResult, type DurableMarketingQueue } from "../../../services/marketing-worker/protocol";
 import { createClaudeMarketingModel, DEFAULT_GENERATION_BUDGET, MarketingGenerationError, type GeneratedMarketingDraft, type GenerationDependencies, type MarketingModel } from "./generation";
 import { DNESKAI_DECK_TEMPLATE_VERSION } from "./dneskai-generation";
+import { dneskaiEvidencePublishers } from "./dneskai-publishers";
 import { createMarketingTracer, LANGSMITH_EU_ENDPOINT, type MarketingTracer } from "./tracing";
 import { validateMarketingTemplate, MarketingRenderError, type MarketingTemplate, type MarketingAssetStorage } from "./render";
 import { parseSourcePacket, sourceUsable, revisionReadiness, parseContentRevision, type SourcePacket } from "./contracts";
@@ -306,6 +307,7 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
       signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...(pilot ? { maxCostUsd: Math.min(DEFAULT_GENERATION_BUDGET.maxCostUsd, MARKETING_PILOT_JOB_RESERVATION_USD) } : {}) },
       reloadTemplate: templateResolver(dependencies.resolveTemplate, env),
       loadDneskaiMedia: dependencies.loadDneskaiMedia,
+      evidencePublishers: dneskaiEvidencePublishers,
       onUsage: (usage) => { spent = usage; },
       ...(originalSource.brand === "dneskai" ? { admitPaidCall: dneskaiDailyGenerationAdmission(db, ownerId, jobId, fence, env) } : {}),
       renderDneskaiDeck: dependencies.loadDneskaiMedia ? (input) => (dependencies.renderDneskaiDeck

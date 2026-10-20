@@ -535,3 +535,28 @@ Rollback: roll the application back first, then re-run `marketing_approve_revisi
 `marketing_private.render_report_blocks` and the `render_report` column. A rolled-back release computes the hash
 with URLs again, so a revision approved under this release would hold at the publisher as
 `exact-approval-required` until it is edited and approved again.
+
+## DNESKAi daily generation ceiling (2026-10-20)
+
+`20261020170000_dneskai_daily_generation_budget.sql` belongs to #116. It adds no column and changes no existing
+table or function.
+
+- `marketing_private.dneskai_generation_spend`: one row per DNESKAi generation job that made a paid call, with the
+  reserved maximum, the number of calls and when they were reserved. RLS on; only the service role reads and writes
+  it. Rows are never deleted; the 24-hour window moves past them. The October pilot ledgers are untouched.
+- `marketing_dneskai_generation_spent(owner, except_job)` (service role only): the DNESKAi generation spend of the
+  last 24 hours. A job in `review`, or `failed` with a recorded `result.usage.estimatedCostUsd`, counts at that
+  cost; any other reserved job counts at its full reservation.
+- `marketing_reserve_dneskai_generation(owner, job, fence, reservation, ceiling)` (service role only): under an owner
+  advisory lock and the job's live fence, admits the call when spent plus the reservation stays within the ceiling
+  and records the reservation; a refused call records nothing. It refuses other brands and out-of-range figures.
+
+Verify after applying: `anon` and `authenticated` cannot execute either function or read the ledger; four running
+jobs at $0.25 fill a $1.00 ceiling and the fifth is refused; a finished job counts at its recorded cost.
+`tests/lib/marketing-dneskai-generation-budget-database.test.ts` runs these checks against the migration in PGlite.
+
+Order: apply the migration before deploying the code that calls it. Code without the migration refuses every paid
+DNESKAi generation call with `dneskai-daily-generation-budget-unavailable`; devShark generation is unaffected.
+
+Rollback: roll the application back first, then drop the two functions and the table. Dropping them under the
+current application keeps DNESKAi generation refused, which is the safe direction.
