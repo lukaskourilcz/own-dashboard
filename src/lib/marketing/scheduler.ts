@@ -99,7 +99,8 @@ export interface MarketingSchedulerStore {
   pruneTicks(days: number): Promise<number>;
 }
 
-export type SchedulerCollectionRun = { id: string; date: string; status: "running" | "complete" | "partial" | "held" | "failed" };
+/** `pilot` marks a retained collection-pilot run: it occupies its date, and the scheduler never ticks it or makes briefs from it. */
+export type SchedulerCollectionRun = { id: string; date: string; status: "running" | "complete" | "partial" | "held" | "failed"; pilot: boolean };
 export type SchedulerPublishOutcome = { publicationId: string; status: string; errorCode: string | null };
 
 /** Everything a tick touches. `createMarketingSchedulerPorts` wires the real modules; tests pass fakes. */
@@ -107,7 +108,7 @@ export interface MarketingSchedulerPorts {
   store: MarketingSchedulerStore;
   /** The owner's single DNESKAi project (isDneskaiProject + requireDneskaiProject). */
   dneskaiProject(): Promise<string>;
-  /** Ordinary (non-pilot) collection runs of the last two Prague days, newest first. */
+  /** Collection runs of the last two Prague days, newest first, pilot runs flagged. */
   collectionRuns(project: string, today: string): Promise<SchedulerCollectionRun[]>;
   /** One tickDneskaiCollection: admits today's run when `runId` is absent. */
   tickCollection(project: string, runId: string | undefined, signal: AbortSignal): Promise<DneskaiCollectResponse>;
@@ -212,6 +213,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   const project = () => (projectRead ??= ports.dneskaiProject());
   let runsRead: Promise<SchedulerCollectionRun[]> | null = null;
   const runs = () => (runsRead ??= project().then((id) => ports.collectionRuns(id, pragueMarketingDate(clock()))));
+  const ordinaryRuns = async () => (await runs()).filter((run) => !run.pilot);
   let yieldRead: Promise<boolean> | null = null;
   const yieldToPublication = () => (yieldRead ??= marketingPublishingLive(env) ? ports.publicationDueSoon(MARKETING_PUBLICATION_YIELD_MS) : Promise.resolve(false));
   const intakePaused = (): StepOutcome | null => env.MARKETING_DNESKAI_COLLECTION_ENABLED === "true" ? null : { status: "skipped", code: "collection-disabled" };
@@ -229,14 +231,16 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       async precheck(): Promise<StepOutcome | null> {
         const paused = intakePaused(); if (paused) return paused;
         if (await yieldToPublication()) return yielded;
-        const list = await runs();
-        if (list.some((run) => run.status === "running")) return null;
-        if (list.some((run) => run.date === pragueMarketingDate(clock()))) return { status: "noop", code: "collection-finished" };
+        const list = await runs(), today = pragueMarketingDate(clock());
+        if (list.some((run) => !run.pilot && run.status === "running")) return null;
+        if (list.some((run) => !run.pilot && run.date === today)) return { status: "noop", code: "collection-finished" };
+        // Admission refuses a date a pilot run holds; asking would only record the same error each tick.
+        if (list.some((run) => run.pilot && run.date === today)) return { status: "noop", code: "collection-pilot-today" };
         if (pragueHour(clock()) < 22) return { status: "noop", code: "collection-not-due" };
         return null;
       },
       async run({ signal: abort, now }): Promise<StepOutcome> {
-        const running = (await runs()).find((run) => run.status === "running");
+        const running = (await ordinaryRuns()).find((run) => run.status === "running");
         let response: DneskaiCollectResponse;
         try { response = await ports.tickCollection(await project(), running?.id, abort); }
         catch (error) {
@@ -280,7 +284,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       category: "briefs", lease: "briefs",
       async precheck(): Promise<StepOutcome | null> {
         const paused = intakePaused(); if (paused) return paused;
-        briefRun = (await runs()).find((run) => run.status !== "running") ?? null;
+        briefRun = (await ordinaryRuns()).find((run) => run.status !== "running") ?? null;
         if (!briefRun) return { status: "noop", code: "briefs-no-finished-run" };
         if (await yieldToPublication()) return yielded;
         return null;

@@ -21,7 +21,8 @@ import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type Sched
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
 const DUE_WINDOW_MS = 15 * 60_000;
-const RunRowSchema = z.object({ id: z.uuid(), date: z.iso.date(), status: z.enum(["running", "complete", "partial", "held", "failed"]) });
+const RunRowSchema = z.object({ id: z.uuid(), date: z.iso.date(), status: z.enum(["running", "complete", "partial", "held", "failed"]), collection_pilot_owner: z.uuid().nullable().optional() })
+  .transform(({ collection_pilot_owner, ...run }) => ({ ...run, pilot: Boolean(collection_pilot_owner) }));
 
 function daysBefore(date: string, days: number): string {
   return new Date(Date.parse(`${date}T12:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
@@ -53,8 +54,8 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     store: createMarketingSchedulerStore(db, owner),
     dneskaiProject: () => resolveDneskaiProjectId(db, owner),
     async collectionRuns(project, today): Promise<SchedulerCollectionRun[]> {
-      const { data, error } = await db.from("marketing_dneskai_runs").select("id,date,status").eq("user_id", owner).eq("project_id", project)
-        .is("collection_pilot_owner", null).gte("date", daysBefore(today, 2)).order("date", { ascending: false }).limit(5);
+      const { data, error } = await db.from("marketing_dneskai_runs").select("id,date,status,collection_pilot_owner").eq("user_id", owner).eq("project_id", project)
+        .gte("date", daysBefore(today, 2)).order("date", { ascending: false }).limit(5);
       if (error) throw new Error("collection-state-unavailable");
       return z.array(RunRowSchema).parse(data ?? []);
     },

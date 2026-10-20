@@ -93,7 +93,7 @@ const step = (result: MarketingTickResult, category: string) => result.did.find(
 const statuses = (result: MarketingTickResult) => Object.fromEntries(result.did.map((entry) => [entry.category, entry.code ? `${entry.status}:${entry.code}` : entry.status]));
 /** Every category has work and the clock stands still, so every category has its full budget. */
 const busyDay = (): Partial<MarketingSchedulerPorts> => ({
-  collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running' }, { id: finishedRun, date: '2026-10-19', status: 'partial' }],
+  collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: false }, { id: finishedRun, date: '2026-10-19', status: 'partial', pilot: false }],
   pendingMedia: async () => ['candidate-1', 'candidate-2'],
   createBriefs: async () => ({ created: [{ briefId: 'brief-1', eventId: 'event-1', jobId: jobA }], skipped: [], pending: false }),
   queuedGenerationJobs: async () => [jobA, jobB],
@@ -232,11 +232,21 @@ describe('collection', () => {
     const after = harness({}, new Clock(Date.parse('2026-10-20T20:00:00Z')));
     expect(step(await after.tick(), 'collection')).toMatchObject({ status: 'done', pending: true, detail: { admitted: true } });
     expect(after.called('tickCollection')[0][1][1]).toBeUndefined();
-    const finished = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'complete' }] }, new Clock(evening));
+    const finished = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'complete', pilot: false }] }, new Clock(evening));
     expect(step(await finished.tick(), 'collection')).toMatchObject({ status: 'noop', code: 'collection-finished' });
   });
+  it('leaves a date held by a retained pilot run alone and never ticks or briefs a pilot run', async () => {
+    const h = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: true }, { id: finishedRun, date: '2026-10-19', status: 'complete', pilot: true }] }, new Clock(evening));
+    const result = await h.tick();
+    expect(statuses(result)).toMatchObject({ collection: 'noop:collection-pilot-today', briefs: 'noop:briefs-no-finished-run' });
+    expect(result.errors).toEqual([]);
+    for (const name of ['tickCollection', 'createBriefs']) expect(h.called(name)).toEqual([]);
+    // Yesterday's pilot run does not hold today: ordinary admission goes ahead.
+    const yesterday = harness({ collectionRuns: async () => [{ id: finishedRun, date: '2026-10-19', status: 'complete', pilot: true }] }, new Clock(evening));
+    expect(step(await yesterday.tick(), 'collection')).toMatchObject({ status: 'done', detail: { admitted: true } });
+  });
   it('respects retryAfterSeconds and stops after continue=false', async () => {
-    const h = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running' }] }, new Clock(evening));
+    const h = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: false }] }, new Clock(evening));
     await h.tick();
     expect(h.store.leases.get('collection')?.next).toBe(evening + 15_000);
     h.clock.advance(10_000);
@@ -244,7 +254,7 @@ describe('collection', () => {
     h.clock.advance(5_000);
     expect(step(await h.tick(), 'collection').status).toBe('done');
     expect(h.called('tickCollection')).toHaveLength(2);
-    const done = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running' }], tickCollection: async () => ({ runId, status: 'complete', continue: false }) }, new Clock(evening));
+    const done = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: false }], tickCollection: async () => ({ runId, status: 'complete', continue: false }) }, new Clock(evening));
     const result = await done.tick();
     expect(step(result, 'collection')).toMatchObject({ status: 'done', detail: { continue: false, runStatus: 'complete' } });
     expect(step(result, 'collection').pending).toBeUndefined();
@@ -271,7 +281,7 @@ describe('media, briefs and generation', () => {
     expect(h.called('collectMedia')).toHaveLength(3);
   });
   it('records briefs-unwired as a skip, not an error', async () => {
-    const { tick, called } = harness({ collectionRuns: async () => [{ id: finishedRun, date: '2026-10-19', status: 'partial' }] }, new Clock(evening));
+    const { tick, called } = harness({ collectionRuns: async () => [{ id: finishedRun, date: '2026-10-19', status: 'partial', pilot: false }] }, new Clock(evening));
     const result = await tick();
     expect(step(result, 'briefs')).toMatchObject({ status: 'skipped', code: 'briefs-unwired' });
     expect(result.errors).toEqual([]);
@@ -280,7 +290,7 @@ describe('media, briefs and generation', () => {
   it('creates briefs for a finished run until nothing is pending, then leaves that run alone', async () => {
     let pending = true;
     const h = harness({
-      collectionRuns: async () => [{ id: finishedRun, date: '2026-10-19', status: 'partial' }],
+      collectionRuns: async () => [{ id: finishedRun, date: '2026-10-19', status: 'partial', pilot: false }],
       createBriefs: async () => ({ created: pending ? [{ briefId: 'b1', eventId: 'e1', jobId: jobA }] : [], skipped: [{ eventId: 'e2', code: 'brief-media-missing' }], pending }),
     }, new Clock(evening));
     expect(step(await h.tick(), 'briefs')).toMatchObject({ status: 'done', pending: true, detail: { created: 1, jobs: 1, skipped: 1 } });

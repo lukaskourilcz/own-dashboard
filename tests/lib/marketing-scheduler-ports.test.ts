@@ -69,10 +69,15 @@ describe('DNESKAi project resolution', () => {
 });
 
 describe('scheduler ports', () => {
-  it('reads only ordinary runs of the last two Prague days', async () => {
-    const { db, calls } = fakeDb({ marketing_dneskai_runs: [{ id: project, date: '2026-10-20', status: 'running' }] });
-    expect(await createMarketingSchedulerPorts(db, owner, {}).collectionRuns(project, '2026-10-20')).toEqual([{ id: project, date: '2026-10-20', status: 'running' }]);
-    expect(calls('marketing_dneskai_runs')[0]).toEqual(expect.arrayContaining([['eq', ['user_id', owner]], ['eq', ['project_id', project]], ['is', ['collection_pilot_owner', null]], ['gte', ['date', '2026-10-18']]]));
+  it('reads the runs of the last two Prague days and flags a retained pilot run', async () => {
+    const { db, calls } = fakeDb({ marketing_dneskai_runs: [
+      { id: project, date: '2026-10-20', status: 'running', collection_pilot_owner: null },
+      { id: other, date: '2026-10-19', status: 'complete', collection_pilot_owner: owner },
+    ] });
+    expect(await createMarketingSchedulerPorts(db, owner, {}).collectionRuns(project, '2026-10-20')).toEqual([
+      { id: project, date: '2026-10-20', status: 'running', pilot: false }, { id: other, date: '2026-10-19', status: 'complete', pilot: true },
+    ]);
+    expect(calls('marketing_dneskai_runs')[0]).toEqual(expect.arrayContaining([['select', ['id,date,status,collection_pilot_owner']], ['eq', ['user_id', owner]], ['eq', ['project_id', project]], ['gte', ['date', '2026-10-18']]]));
   });
   it('lists queued jobs of the DNESKAi brand only, oldest first', async () => {
     const { db, calls } = fakeDb({ marketing_jobs: [{ id: project }] });
@@ -176,7 +181,7 @@ describe('a carousel left at container-pending by the slot tick', () => {
       ...real,
       store: store(),
       dneskaiProject: async () => project,
-      collectionRuns: async () => [{ id: run, date: '2026-10-20', status: 'running' }, { id: finished, date: '2026-10-19', status: 'partial' }],
+      collectionRuns: async () => [{ id: run, date: '2026-10-20', status: 'running', pilot: false }, { id: finished, date: '2026-10-19', status: 'partial', pilot: false }],
       tickCollection: async () => { work.push('tickCollection'); clock += 30_000; return { runId: run, status: 'running', continue: true }; },
       pendingMedia: async () => ['candidate-1'],
       collectMedia: async () => { work.push('collectMedia'); clock += 40_000; return { complete: true, candidates: [] }; },
