@@ -15,7 +15,12 @@ externí id) a credit se ukládají vždy.
 `src/lib/marketing/dneskai-media.ts` bere nejvýše osm kandidátů a stahuje jen ty se
 stavem `selected`. Plánovač (#120) ji zavolá hned po doběhnutí sběru, ještě tutéž
 noc: odkazy na Instagram CDN vyprší za 24 až 48 hodin a uložené odkazy z 13. 10. už
-vracejí 403.
+vracejí 403. Kandidát sebraný v jednom běhu a vybraný až v pozdějším může mít odkazy
+starší než den a skončit jako `media-http-403`.
+
+Dokud není zapojený plánovač (#120), sběr médií nic nevolá. Totéž platí pro načítání
+bytů (#117, #118) a retenci: funkce existují, ale žádná cesta v aplikaci je zatím
+nespouští.
 
 Které kandidáty předat, řekne `pendingDneskaiMediaCandidates(db, owner, project)`:
 vybrané kandidáty pro dnešní nebo pozdější pražský den, jejichž stahování nezačalo nebo
