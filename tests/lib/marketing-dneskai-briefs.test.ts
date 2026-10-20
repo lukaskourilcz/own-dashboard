@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, dneskaiBriefJobRequest, dneskaiBriefRepeat, dneskaiBriefSlots, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
+import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 import { dneskaiBriefSourcePacket } from '@/lib/marketing/dneskai-brief-source';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
 import { dneskaiEventId, dneskaiEventMemberHash } from '@/lib/marketing/dneskai-events';
@@ -112,7 +112,6 @@ function fakeStore(rows: DneskaiBriefRow[], members: DneskaiCandidate[], options
     phashes: async () => new Map(),
     takenSlots: async () => [],
     account: async () => options.account ? { remote_account_id: '17840000000000000', handle: 'dneskai' } : null,
-    knowledge: async () => [],
     prepare: async (_owner, id, brief, scheduledAt, status, code) => { calls.push(['prepare', id, status, code, scheduledAt]); const row = rows.find((item) => item.id === id)!; Object.assign(row, { status, code, ...(brief ? { brief, scheduled_at: scheduledAt } : {}) }); },
     skip: async (_owner, id, code, duplicateOf) => { calls.push(['skip', id, code, duplicateOf]); Object.assign(rows.find((item) => item.id === id)!, { status: 'skipped', code }); },
     ingest: async (_owner, packet) => { calls.push(['ingest', packet.sourceId]); return { id: '66666666-6666-4666-8666-666666666666' }; },
@@ -157,9 +156,10 @@ describe('createDneskaiBriefs over a store', () => {
     const result = await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now });
     expect(result).toEqual({ created: [{ briefId: rows[0]!.id, eventId: rows[0]!.event_id, jobId: '99999999-9999-4999-8999-999999999999' }], skipped: [], pending: false });
     expect(calls.map(([name]) => name)).toEqual(['prepare', 'ingest', 'admit', 'queued']);
-    const request = requests[0] as ReturnType<typeof dneskaiBriefJobRequest>;
+    const request = requests[0] as ReturnType<typeof dneskaiBriefGenerationRequest>;
     expect(request).toMatchObject({ schemaVersion: 'marketing-job/1', calendarEntryId: '88888888-8888-4888-8888-888888888888', calendarEntryVersion: 1,
-      generation: { account: { platform: 'instagram', handle: 'dneskai' }, scheduledAt: '2026-10-21T06:00:00.000Z', consent: true } });
+      generation: { account: { platform: 'instagram', handle: 'dneskai' }, scheduledAt: '2026-10-21T06:00:00.000Z', consent: true, knowledge: [] } });
+    expect(request).not.toHaveProperty('template');
     expect(request.idempotencyKey).toBe(request.generation.revisionId);
     expect(GenerationInputSchema.parse(request.generation)).toBeTruthy();
     const packet = parseSourcePacket(request.generation.source);

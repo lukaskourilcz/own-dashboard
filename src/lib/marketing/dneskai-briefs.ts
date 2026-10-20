@@ -142,7 +142,6 @@ export type DneskaiBriefRow = {
   brief: unknown; scheduled_at: string | null; calendar_entry_id: string | null; job_id: string | null; created_at: string; updated_at: string;
 };
 export type DneskaiBriefMemberRow = { id: string; status: DneskaiCandidate['status']; target_date: string | null; content_hash: string; candidate: DneskaiCandidate };
-type Knowledge = { id: string; brand: 'dneskai'; presentation: string };
 type Admitted = { campaignId: string; entryId: string; entryVersion: number };
 type JobAdmission = { jobId: string; status: string; duplicate: boolean };
 
@@ -159,7 +158,6 @@ export interface DneskaiBriefStore {
   /** Scheduled instants of other DNESKAi posts and briefs on that Prague day (not this run's briefs). */
   takenSlots(owner: string, project: string, targetDate: string, runId: string): Promise<string[]>;
   account(owner: string): Promise<{ remote_account_id: string; handle: string } | null>;
-  knowledge(owner: string): Promise<Knowledge[]>;
   prepare(owner: string, briefId: string, brief: DneskaiBrief | null, scheduledAt: string | null, status: 'pending' | 'ready', code: string | null): Promise<void>;
   skip(owner: string, briefId: string, code: string, duplicateOf?: string | null): Promise<void>;
   ingest(owner: string, packet: SourcePacket): Promise<{ id: string }>;
@@ -183,11 +181,11 @@ export function dneskaiBriefJobKey(owner: string, eventId: string, targetDate: s
 }
 
 /**
- * The generation request of a brief job (`marketing-job/1`): the brief SourcePacket, the verified account, the
- * brief's slot and the reviewed presentation knowledge. DNESKAi decks render through the carousel studio, so the
- * request carries no devShark single-layout template; `templateVersion` names the studio renderer.
+ * The generation request of a brief job (`marketing-job/1`): the brief SourcePacket, the verified account and the
+ * brief's slot. A DNESKAi deck job renders through the carousel studio, so it carries no devShark single-layout
+ * template (`templateVersion` names the studio renderer) and no presentation knowledge (#116).
  */
-export function dneskaiBriefJobRequest(input: { owner: string; packet: SourcePacket; account: { remote_account_id: string; handle: string }; admitted: Admitted; knowledge: readonly Knowledge[] }) {
+export function dneskaiBriefGenerationRequest(input: { owner: string; packet: SourcePacket; account: { remote_account_id: string; handle: string }; admitted: Admitted }) {
   const brief = input.packet.brief;
   if (!brief) throw new DneskaiBriefError('brief-invalid');
   const key = dneskaiBriefJobKey(input.owner, brief.eventId, brief.targetDate, input.admitted.entryVersion);
@@ -195,7 +193,7 @@ export function dneskaiBriefJobRequest(input: { owner: string; packet: SourcePac
     schemaVersion: 'marketing-job/1' as const, idempotencyKey: key, calendarEntryId: input.admitted.entryId, calendarEntryVersion: input.admitted.entryVersion,
     generation: {
       source: input.packet, account: { id: input.account.remote_account_id, platform: 'instagram' as const, handle: input.account.handle }, scheduledAt: brief.scheduledAt,
-      templateVersion: DNESKAI_RENDERER_VERSION, knowledge: input.knowledge.slice(0, 8), consent: true, revisionId: key,
+      templateVersion: DNESKAI_RENDERER_VERSION, knowledge: [], consent: true, revisionId: key,
     },
   };
 }
@@ -209,7 +207,7 @@ export async function enqueueBriefJob(store: DneskaiBriefStore, owner: string, r
   const packet = dneskaiBriefSourcePacket(brief);
   const source = await store.ingest(owner, packet);
   const admitted = await store.admit(owner, row.id, source.id);
-  const request = dneskaiBriefJobRequest({ owner, packet, account, admitted, knowledge: await store.knowledge(owner) });
+  const request = dneskaiBriefGenerationRequest({ owner, packet, account, admitted });
   const job = await store.enqueue(owner, request);
   await store.queued(owner, row.id, job.jobId);
   return job;
@@ -388,12 +386,6 @@ export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { en
     },
     async account(owner) {
       return read(db.from('marketing_accounts').select('remote_account_id,handle').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').not('verified_at', 'is', null).maybeSingle());
-    },
-    async knowledge(owner) {
-      // Only explicitly reviewed presentation advice; product facts stay in the brief (same rule as the calendar path).
-      const items = (await read(db.from('marketing_knowledge_items').select('ai_link_id,metadata').eq('user_id', owner).eq('review_status', 'reviewed').limit(50))) as Array<{ ai_link_id: string; metadata: { tags?: { brand?: unknown }; summary?: unknown } | null }> ?? [];
-      return items.filter((item) => Array.isArray(item.metadata?.tags?.brand) && (item.metadata.tags.brand as unknown[]).includes('dneskai')).slice(0, 8)
-        .map((item) => ({ id: item.ai_link_id, brand: 'dneskai' as const, presentation: String(item.metadata?.summary ?? '').slice(0, 1200) })).filter((item) => item.presentation.length > 0);
     },
     async prepare(owner, briefId, brief, scheduledAt, status, code) { await rpc('marketing_dneskai_prepare_brief', { p_owner: owner, p_brief: briefId, p_value: brief, p_scheduled_at: scheduledAt, p_status: status, p_code: code }); },
     async skip(owner, briefId, code, duplicateOf = null) { await rpc('marketing_dneskai_skip_brief', { p_owner: owner, p_brief: briefId, p_code: code, p_duplicate_of: duplicateOf }); },

@@ -28,8 +28,7 @@ const picture = 'c'.repeat(64);
 
 /**
  * The service-role store exactly as production builds it, over a PostgREST stand-in on the same database. Only
- * the reads that use embedded relations (media links, publications) and the knowledge table this replay omits
- * are answered by SQL here.
+ * the reads that use embedded relations (media links, publications) are answered by SQL here.
  */
 function pgliteStore(): DneskaiBriefStore {
   const client = pgliteRestClient(db);
@@ -48,7 +47,6 @@ function pgliteStore(): DneskaiBriefStore {
       'select a.id asset_id,a.sha256,l.position,l.origin_kind,l.origin_url,l.credit,a.width,a.height from marketing_media_asset_links l join marketing_media_assets a on a.id=l.asset_id where l.user_id=$1 and l.project_id=$2 and l.candidate_id=$3 order by l.position', [who, projectId, candidateId]))
       .map((row) => ({ assetId: row.asset_id, sha256: row.sha256, position: row.position, originKind: row.origin_kind, originUrl: row.origin_url, credit: row.credit, width: row.width, height: row.height, mime: 'image/jpeg', bytes: 1000, fetchedAt: instant, ...dneskaiMediaCapabilities(row), duplicateOfAssetId: null, duplicateOfSha256: null, purged: false, previewUrl: null })) }) as never,
     takenSlots: async () => [],
-    knowledge: async () => [],
   };
 }
 
