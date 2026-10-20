@@ -75,3 +75,20 @@ describe('DNESKAi event grouping without paid calls (#115)', () => {
     expect(rankDneskaiEventMembers([hn, crunch, insider], (id) => media.get(id) ?? 0).map((item) => item.externalId)).toEqual(['insider', 'hn', 'crunch']);
   });
 });
+
+describe('the collection store passes the grouping to marketing_dneskai_finish', () => {
+  it('sends p_events for a finishing run and nothing while the run continues', async () => {
+    const { createDneskaiCollectionStore } = await import('@/lib/marketing/dneskai-store');
+    const a = report('openai-blog', 'store-a', 'Synthetic launch of Model Nine for developers', 0, { status: 'new' });
+    const b = report('the-verge', 'store-b', 'Synthetic launch of Model Nine for developers', 1, { status: 'new' });
+    const c = report('hf-blog', 'store-c', 'Unrelated synthetic notebook tool', 2, { status: 'new' });
+    const chain = (data: unknown) => { const value: Record<string, unknown> = {}; for (const key of ['select', 'eq', 'in', 'gte', 'order', 'limit', 'maybeSingle']) value[key] = () => value; value.then = (resolve: (result: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve); return value; };
+    const rpc = vi.fn(async () => ({ data: { id: 'run' }, error: null }));
+    const db = { from: (table: string) => chain(table === 'marketing_dneskai_runs' ? { project_id: 'project' } : [a, b, c].map((candidate) => ({ candidate }))), rpc };
+    const store = createDneskaiCollectionStore(db as never);
+    await store.finish('owner', 'run', 'fence', 'complete', null);
+    expect(rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'complete', p_error: null, p_events: [{ eventId: dneskaiEventId(a.id), anchorId: a.id, memberIds: [a.id, b.id] }] });
+    await store.finish('owner', 'run', 'fence', 'running', null);
+    expect(rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'running', p_error: null });
+  });
+});

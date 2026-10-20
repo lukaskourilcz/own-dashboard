@@ -197,7 +197,7 @@ end $$;
 create function public.marketing_dneskai_admit_brief(p_owner uuid,p_brief uuid,p_source uuid) returns jsonb language plpgsql set search_path='' as $$
 declare b public.marketing_dneskai_briefs;s public.marketing_sources;c public.marketing_campaigns;en public.marketing_calendar_entries;
  today date:=(clock_timestamp() at time zone 'Europe/Prague')::date;daily_hash text:=encode(sha256(convert_to('dneskai-daily-briefs/1','UTF8')),'hex');
- local_time text;entry_kind text;
+ v_local_time text;v_kind text;
 begin
  select * into b from public.marketing_dneskai_briefs where id=p_brief and user_id=p_owner for update;
  if not found then raise exception 'brief unavailable';end if;
@@ -215,15 +215,15 @@ begin
   on conflict(user_id,brand,source_hash,starts_on) do update set status='active' returning * into c;
  end if;
  if b.target_date<c.starts_on or b.target_date>c.ends_on then raise exception 'brief campaign conflict';end if;
- local_time:=to_char(b.scheduled_at at time zone 'Europe/Prague','HH24:MI');
- entry_kind:=case when b.brief->>'suggestedFormat'='single-image' then 'post' else 'carousel' end;
+ v_local_time:=to_char(b.scheduled_at at time zone 'Europe/Prague','HH24:MI');
+ v_kind:=case when b.brief->>'suggestedFormat'='single-image' then 'post' else 'carousel' end;
  insert into public.marketing_calendar_entries(user_id,campaign_id,source_id,date,local_time,kind,platform,title,original,status,needs_review,bound_source_id)
- values(p_owner,c.id,'brief:'||b.target_date::text||':'||b.event_id,b.target_date,local_time,entry_kind,'instagram',left(coalesce(b.brief->>'title',''),300),
+ values(p_owner,c.id,'brief:'||b.target_date::text||':'||b.event_id,b.target_date,v_local_time,v_kind,'instagram',left(coalesce(b.brief->>'title',''),300),
   jsonb_build_object('schemaVersion','dneskai-brief-entry/1','briefId',b.id,'eventId',b.event_id,'title',b.brief->>'title','category',b.category,'suggestedFormat',b.brief->>'suggestedFormat','evidenceCount',jsonb_array_length(b.brief->'evidence'),'mediaCount',jsonb_array_length(coalesce(b.brief->'media','[]'))),
   'planned',false,s.id)
  on conflict(campaign_id,source_id) do nothing;
  select * into en from public.marketing_calendar_entries where campaign_id=c.id and source_id='brief:'||b.target_date::text||':'||b.event_id and user_id=p_owner for update;
- if not found or en.status<>'planned' or en.needs_review or en.date<>b.target_date or en.local_time is distinct from local_time or en.kind<>entry_kind or en.platform<>'instagram' then raise exception 'brief entry changed';end if;
+ if not found or en.status<>'planned' or en.needs_review or en.date<>b.target_date or en.local_time is distinct from v_local_time or en.kind<>v_kind or en.platform<>'instagram' then raise exception 'brief entry changed';end if;
  if en.bound_source_id is distinct from s.id then update public.marketing_calendar_entries set bound_source_id=s.id where id=en.id returning * into en;end if;
  update public.marketing_dneskai_briefs set calendar_entry_id=en.id,updated_at=clock_timestamp() where id=b.id;
  return jsonb_build_object('campaignId',c.id,'entryId',en.id,'entryVersion',en.generation_version,'scheduledAt',b.scheduled_at);

@@ -70,7 +70,9 @@ describe('event selection in marketing_dneskai_finish (#115)', () => {
     const a = classified('openai-blog', 'single-a', 'Synthetic single report alpha', 'ai-news', 0.9);
     const b = classified('the-verge', 'single-b', 'Synthetic single report alpha', 'ai-news', 0.89, {}, 1);
     await insertCandidates(db, owner, secondProject, id, [a, b]);
-    await db.query('select marketing_dneskai_finish($1,$2,$3,$4,null)', [owner, id, fence, 'partial']);
+    // As the service role, like the collector: the private hashing helpers are granted to it.
+    await db.exec('set role service_role');
+    try { await db.query('select marketing_dneskai_finish($1,$2,$3,$4,null)', [owner, id, fence, 'partial']); } finally { await db.exec('reset role'); }
     expect((await rows<{ event_id: string }>('select event_id from marketing_dneskai_briefs where run_id=$1 order by rank', [id])).map((row) => row.event_id)).toEqual([dneskaiEventId(a.id), dneskaiEventId(b.id)]);
   });
 
