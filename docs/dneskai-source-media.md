@@ -82,6 +82,11 @@ Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service r
 - Blízký pHash (64bitový DCT hash, Hammingova vzdálenost ≤ 6) označí menší kopii
   `duplicate_of_asset_id` na větší, která zůstává kanonická. Typicky `displayUrl`
   proti `images[0]` v jiném rozlišení nebo stejná tisková fotka u dvou vydavatelů.
+- Skupiny jsou ploché a vzdálenost se měří vždy ke kanonickému obrázku, nikdy přes
+  souseda. Nový obrázek se připojí k nejbližšímu kanonickému do 6 bitů, který je
+  aspoň stejně velký. Když je největší, převezme menší kanonické do 6 bitů a z jejich
+  duplicit jen ty, které jsou do 6 bitů i od něj. Ostatní se přesunou k jinému
+  kanonickému do 6 bitů, nebo zůstanou samostatné.
 - `fullBleedCapable` = kratší strana ≥ 900 px (cover, single). `insetCapable` = šířka
   ≥ 600 px (obrázek v rámu). Menší obrázky se uloží a UI je ukáže jako malé.
 

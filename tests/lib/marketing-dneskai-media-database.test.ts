@@ -199,3 +199,43 @@ describe('retention', () => {
     await finish('cand-f', 'complete');
   });
 });
+
+describe('near-duplicate marking never chains', () => {
+  const dupOf = async (...shas: string[]) => Object.fromEntries((await db.query<{ sha256: string; dup: string | null }>(
+    'select a.sha256,c.sha256 dup from marketing_media_assets a left join marketing_media_assets c on c.id=a.duplicate_of_asset_id where a.sha256=any($1)', [shas])).rows.map((row) => [row.sha256, row.dup]));
+  const recordAll = async (candidate: string, assets: Array<Record<string, unknown>>) => {
+    await insertCandidate(candidate);
+    await begin(candidate);
+    await setPlan(candidate, igPlan(assets.length));
+    for (const [position, patch] of assets.entries()) await record(candidate, asset(position, patch));
+    await finish(candidate, 'complete');
+  };
+  // Same-template text slides measure 4-6 bits apart, so a chain would pull distinct slides into one group.
+  // Each case uses its own high bits, at least 16 bits from every other picture in this database.
+  const A = { phash: '0000000000000000', bytes: 3000 }, B = { phash: '000000000000003f', bytes: 2000 }, C = { phash: '0000000000000fff', bytes: 1000 };
+
+  it('marks a picture 6 bits from the canonical, never one 12 bits away through a neighbour', async () => {
+    await recordAll('cand-chain', [{ ...A, sha256: sha(400) }, { ...B, sha256: sha(401) }, { ...C, sha256: sha(402) }]);
+    expect(await dupOf(sha(400), sha(401), sha(402))).toEqual({ [sha(400)]: null, [sha(401)]: sha(400), [sha(402)]: null });
+  });
+
+  it('moves to a larger newcomer only the duplicates within 6 bits of it', async () => {
+    // Arriving smallest first: B takes C over, then A takes B over but C is 12 bits from A.
+    await recordAll('cand-chain-rev', [{ ...C, sha256: sha(412), phash: 'ffffffff00000fff' }, { ...B, sha256: sha(411), phash: 'ffffffff0000003f' }, { ...A, sha256: sha(410), phash: 'ffffffff00000000' }]);
+    expect(await dupOf(sha(410), sha(411), sha(412))).toEqual({ [sha(410)]: null, [sha(411)]: sha(410), [sha(412)]: null });
+  });
+
+  it('re-points a duplicate left behind to the nearest larger canonical that is still within 6 bits', async () => {
+    await recordAll('cand-regroup', [
+      { sha256: sha(420), phash: 'ffff000000000000', width: 640, height: 800, bytes: 500 }, // P
+      { sha256: sha(421), phash: 'ffff0000003f001f', width: 1080, height: 1350, bytes: 900 }, // S: 11 bits from P
+      { sha256: sha(422), phash: 'ffff00000000001f', width: 320, height: 400, bytes: 100 }, // Q: 5 from P, 6 from S
+      { sha256: sha(423), phash: 'ffff000000000fc0', width: 1440, height: 1800, bytes: 2000 }, // R: 6 from P, 11 from Q
+    ]);
+    expect(await dupOf(sha(420), sha(421), sha(422), sha(423))).toEqual({ [sha(420)]: sha(423), [sha(421)]: null, [sha(422)]: sha(421), [sha(423)]: null });
+    // Every marker points at a canonical within 6 bits that is at least as large.
+    const { rows } = await db.query<{ n: string }>(`select count(*) n from marketing_media_assets d join marketing_media_assets c on c.id=d.duplicate_of_asset_id
+      where c.duplicate_of_asset_id is not null or bit_count(('x'||c.phash)::bit(64) # ('x'||d.phash)::bit(64))>6 or (c.width::bigint*c.height,c.bytes)<(d.width::bigint*d.height,d.bytes)`);
+    expect(Number(rows[0]!.n)).toBe(0);
+  });
+});

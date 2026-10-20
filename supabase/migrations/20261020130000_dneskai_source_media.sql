@@ -164,9 +164,10 @@ end $$;
 
 -- Records one stored picture for one plan position. A new sha256 needs uploaded=true (the object exists
 -- before the row does); a purged asset comes back only with a fresh upload. A near-identical picture
--- (pHash Hamming distance <= 6) is marked as a duplicate of the larger one, which stays canonical.
+-- (pHash Hamming distance <= 6 to the canonical itself) is marked as a duplicate of the larger one, which
+-- stays canonical.
 create function public.marketing_media_record_asset(p_owner uuid,p_project uuid,p_candidate text,p_fence uuid,p_asset jsonb) returns jsonb language plpgsql set search_path='' as $$
-declare c public.marketing_media_collections;cand public.marketing_dneskai_candidates;a public.marketing_media_assets;near public.marketing_media_assets;canonical public.marketing_media_assets;
+declare c public.marketing_media_collections;cand public.marketing_dneskai_candidates;a public.marketing_media_assets;canonical public.marketing_media_assets;absorbed uuid[];
  v_sha text:=p_asset->>'sha256';v_pos integer;v_mime text:=p_asset->>'mime';v_phash text:=nullif(p_asset->>'phash','');created boolean:=false;linked integer;
 begin
  select * into c from public.marketing_media_collections where user_id=p_owner and project_id=p_project and candidate_id=p_candidate and fence=p_fence and lease_until>clock_timestamp() for update;
@@ -183,17 +184,31 @@ begin
   values(p_owner,p_project,v_sha,p_candidate,cand.candidate->>'sourceId',cand.candidate->>'externalId',p_asset->>'originUrl',p_asset->>'originKind',v_pos,(p_asset->>'width')::int,(p_asset->>'height')::int,v_mime,(p_asset->>'bytes')::int,
    'marketing-media/'||p_owner::text||'/'||v_sha||'.'||case v_mime when 'image/jpeg' then 'jpg' when 'image/png' then 'png' when 'image/webp' then 'webp' end,p_asset->>'credit',v_phash)
   returning * into a;created:=true;
+  -- Groups stay flat and every marker stays true: a duplicate points at a canonical (no marker of its own)
+  -- that is at least as large and whose own pHash is within 6 bits of it. Nearness is never chained.
   if a.phash is not null then
-   select * into near from public.marketing_media_assets m where m.user_id=p_owner and m.id<>a.id and m.purged_at is null and m.phash is not null
+   select * into canonical from public.marketing_media_assets m where m.user_id=p_owner and m.id<>a.id and m.duplicate_of_asset_id is null and m.purged_at is null and m.phash is not null
     and bit_count(('x'||m.phash)::bit(64) # ('x'||a.phash)::bit(64))<=6
+    and (m.width::bigint*m.height,m.bytes)>=(a.width::bigint*a.height,a.bytes)
     order by bit_count(('x'||m.phash)::bit(64) # ('x'||a.phash)::bit(64)),m.fetched_at,m.id limit 1;
    if found then
-    select * into canonical from public.marketing_media_assets where id=coalesce(near.duplicate_of_asset_id,near.id);
-    if canonical.purged_at is not null then canonical:=near;end if;
-    if (a.width::bigint*a.height,a.bytes)>(canonical.width::bigint*canonical.height,canonical.bytes) then
-     update public.marketing_media_assets set duplicate_of_asset_id=a.id where user_id=p_owner and id<>a.id and (id=canonical.id or duplicate_of_asset_id=canonical.id);
-    else
-     update public.marketing_media_assets set duplicate_of_asset_id=canonical.id where id=a.id returning * into a;
+    update public.marketing_media_assets set duplicate_of_asset_id=canonical.id where id=a.id returning * into a;
+   else
+    -- The new picture is the largest copy nearby. Each smaller canonical within 6 bits becomes its duplicate,
+    -- with those of its duplicates that are also within 6 bits of the new picture.
+    select coalesce(array_agg(m.id),'{}') into absorbed from public.marketing_media_assets m where m.user_id=p_owner and m.id<>a.id and m.duplicate_of_asset_id is null and m.purged_at is null and m.phash is not null
+     and bit_count(('x'||m.phash)::bit(64) # ('x'||a.phash)::bit(64))<=6;
+    if cardinality(absorbed)>0 then
+     update public.marketing_media_assets m set duplicate_of_asset_id=a.id where m.user_id=p_owner and (m.id=any(absorbed)
+      or (m.duplicate_of_asset_id=any(absorbed) and m.phash is not null and bit_count(('x'||m.phash)::bit(64) # ('x'||a.phash)::bit(64))<=6));
+     -- Any other duplicate of theirs moves to the nearest live canonical within 6 bits of itself that is at
+     -- least as large, or stands alone: an unmarked near copy is safer than a distinct picture marked as one.
+     update public.marketing_media_assets d set duplicate_of_asset_id=(
+      select m.id from public.marketing_media_assets m where m.user_id=p_owner and m.id<>d.id and m.duplicate_of_asset_id is null and m.purged_at is null and m.phash is not null and d.phash is not null
+       and bit_count(('x'||m.phash)::bit(64) # ('x'||d.phash)::bit(64))<=6
+       and (m.width::bigint*m.height,m.bytes)>=(d.width::bigint*d.height,d.bytes)
+       order by bit_count(('x'||m.phash)::bit(64) # ('x'||d.phash)::bit(64)),m.fetched_at,m.id limit 1)
+      where d.user_id=p_owner and d.duplicate_of_asset_id=any(absorbed);
     end if;
    end if;
   end if;
