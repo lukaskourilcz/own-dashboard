@@ -3,7 +3,8 @@ import { BrandSchema, PlatformSchema, type MarketingBrand } from './contracts';
 import { pragueScheduledAt } from './clock';
 
 export const MARKETING_PLANNING_TIME_ZONE = 'Europe/Prague' as const;
-export const MARKETING_PLANNING_SOURCE_KINDS = { devshark: ['question', 'coding-task'], dneskai: ['article'] } as const;
+/** DNESKAi plans from briefs (#115) first; an approved article remains a valid source while the article cycle is paused. */
+export const MARKETING_PLANNING_SOURCE_KINDS = { devshark: ['question', 'coding-task'], dneskai: ['brief', 'article'] } as const;
 export const MARKETING_DAILY_QUOTAS = { devshark: { carousel: 1, thread: 2, story: 3 }, dneskai: { carousel: 4, thread: 0, story: 0 } } as const;
 export type MarketingWeekWindow = { timeZone: typeof MARKETING_PLANNING_TIME_ZONE; startDate: string; endDateInclusive: string; endDateExclusive: string; startAt: string; endAtExclusive: string; dates: string[] };
 function calendarDay(date: string, offset: number): string {

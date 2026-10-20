@@ -7,6 +7,7 @@ import { contentHash } from './hashes';
 import type { JevHistory } from './dneskai-providers';
 import type { DneskaiCollectionPilot } from './dneskai-pilot';
 import { previewPilotRetired } from './preview-pilot';
+import { dneskaiFinishEvents,groupDneskaiEvents } from './dneskai-events';
 export type DneskaiDatabase=ReturnType<typeof createAdminClient>;
 export type DneskaiRun={collection_pilot_owner?:string|null;jev_stage_count?:number|null;id:string;user_id:string;project_id:string;date:string;target_date:string;status:'running'|'complete'|'partial'|'held'|'failed';fence:string|null;tick_count:number;selected_count:number;cost_usd:number|null;error_code:string|null};
 export type DneskaiStage={run_id:string;source_id:string;kind:'feed'|'instagram'|'jev';status:'queued'|'running'|'polling'|'ok'|'partial'|'error'|'held';since_at:string;registration:unknown;reserved_usd:number;cost_usd:number|null;error_code:string|null};
@@ -45,9 +46,19 @@ export function createDneskaiCollectionStore(db:DneskaiDatabase):DneskaiCollecti
    ]);if(selected.error||published.error||approved.error)throw new Error('collection-store-unavailable');
    const history=[...(selected.data??[]).map(row=>({id:row.candidate.id,title:row.candidate.title,text:row.candidate.text.slice(0,500)})),...(published.data??[]).map(row=>({id:row.id,title:String(row.revision.title).slice(0,500),text:String(row.revision.caption).slice(0,500)})),...(approved.data??[]).map(row=>({id:row.id,title:String(row.revision.title).slice(0,500),text:String(row.revision.caption).slice(0,500)}))];return[...new Map(history.map(item=>[item.id,item])).values()].slice(0,20);
   },
-  finish:(owner,runId,fence,status,errorCode)=>rpc('marketing_dneskai_finish',{p_owner:owner,p_run:runId,p_fence:fence,p_status:status,p_error:errorCode}) as Promise<DneskaiRun>,
+  // A finished run selects events (#115): the grouping is computed here, without a paid call, and validated in SQL.
+  async finish(owner,runId,fence,status,errorCode){const events=status==='running'?null:await finishEvents(db,owner,runId);return rpc('marketing_dneskai_finish',{p_owner:owner,p_run:runId,p_fence:fence,p_status:status,p_error:errorCode,...(events?{p_events:events}:{})}) as Promise<DneskaiRun>;},
   planJev:(owner,runId,fence,count)=>rpc('marketing_dneskai_plan_jev',{p_owner:owner,p_run:runId,p_fence:fence,p_count:count}) as Promise<number>,
  };
+}
+/** The open and recently selected reports of the run's project, grouped into events for marketing_dneskai_finish. */
+export async function finishEvents(db:DneskaiDatabase,owner:string,runId:string){
+ const {data:run,error}=await db.from('marketing_dneskai_runs').select('project_id').eq('user_id',owner).eq('id',runId).maybeSingle();if(error||!run)throw new Error('collection-store-unavailable');
+ const since=new Date(Date.now()-30*86400000).toISOString();
+ const {data,error:candidateError}=await db.from('marketing_dneskai_candidates').select('candidate').eq('user_id',owner).eq('project_id',run.project_id).in('status',['new','duplicate','selected']).gte('updated_at',since).order('updated_at',{ascending:false}).limit(300);
+ if(candidateError)throw new Error('collection-store-unavailable');
+ const candidates=(data??[]).flatMap(row=>{const parsed=DneskaiCandidateSchema.safeParse(row.candidate);return parsed.success?[parsed.data]:[];});
+ return dneskaiFinishEvents(groupDneskaiEvents(candidates));
 }
 export function dneskaiCollectionBlockers(env:Record<string,string|undefined>){const result:string[]=[];if(env.MARKETING_DNESKAI_COLLECTION_ENABLED!=='true')result.push('collection-disabled');if(env.MARKETING_DNESKAI_FEED_PROVIDER&&!['bridge','native'].includes(env.MARKETING_DNESKAI_FEED_PROVIDER))result.push('collection-feed-provider-invalid');if(env.MARKETING_DNESKAI_FEED_PROVIDER!=='native'&&(!env.MARKETING_DNESKAI_SOURCE_URL||!env.MARKETING_DNESKAI_SOURCE_SECRET))result.push('collection-bridge-unconfigured');if(env.MARKETING_DNESKAI_PAID_ENABLED!=='true')result.push('collection-paid-disabled');if(!env.TYPESAFE_API_KEY)result.push('collection-jev-unconfigured');result.push('collection-transcripts-not-implemented');if(!env.APIFY_TOKEN||!env.MARKETING_DNESKAI_APIFY_BUILD||!env.MARKETING_DNESKAI_APIFY_ACTOR_ID)result.push('collection-apify-unconfigured');if(['MARKETING_PILOT_OWNER_ID','MARKETING_PILOT_STARTS_AT','MARKETING_PILOT_EXPIRES_AT'].some(key=>env[key]!==undefined)&&!previewPilotRetired('generation-pilot',env))result.push('collection-paid-pilot-blocked');return result;}
 export async function readDneskaiCollectionState(db:DneskaiDatabase,owner:string,project:string,env:Record<string,string|undefined>=process.env){
