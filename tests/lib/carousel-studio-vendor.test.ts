@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { DNESKAI_STUDIO } from "@/lib/marketing/dneskai-render";
+import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, DNESKAI_STUDIO, type DneskaiTextField } from "@/lib/marketing/dneskai-render";
+import type { DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
 
 const root = path.resolve(__dirname, "../..");
 const vendor = path.join(root, "vendor/carousel-studio");
@@ -75,6 +76,35 @@ describe("vendored @boardlessai/carousel-studio", () => {
     // Never the barrel: only the two subpaths the vendored manifest adds.
     expect(specifiers).toContain("@boardlessai/carousel-studio/dneskai-slide");
     expect(specifiers.filter((specifier) => !["@boardlessai/carousel-studio/dneskai-slide", "@boardlessai/carousel-studio/fonts"].includes(specifier))).toEqual([]);
+  });
+
+  it("draws each written field in the face, and on the slide types, that the renderer's text gate assumes", async () => {
+    const studio = await import("@boardlessai/carousel-studio");
+    const brand = studio.CAROUSEL_BRANDS["caught-up"];
+    const style = studio.kitStyleFor(brand);
+    if (!style) throw new Error("the caught-up kit is missing");
+    const dressed = studio.dressBrand(brand, style);
+    const typeOf: Record<string, DneskaiSlideType> = {
+      "dneskai-cover-photo": "cover-photo", "dneskai-figure": "figure", "dneskai-split": "split", "dneskai-split-pair": "split",
+      "dneskai-statement": "statement", "dneskai-single-photo": "single", "dneskai-single-type": "single",
+      ...Object.fromEntries(Array.from({ length: studio.DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) => [`dneskai-sources-${count}`, "sources" as const])),
+    };
+    // A new template is a new place for copy: it fails here until the gate knows about it.
+    expect([...studio.DNESKAI_PHOTO_TEMPLATES.keys()].sort()).toEqual(Object.keys(typeOf).sort());
+    const codeOwned = new Set(["folio", "title", "images-label", "disclosure"]);
+    for (const [id, type] of Object.entries(typeOf)) {
+      const template = studio.kitTemplate(studio.DNESKAI_PHOTO_TEMPLATES.get(id)!, style);
+      const drawn = new Set<string>();
+      for (const layer of template.slides[0]!.layers) {
+        if (layer.type !== "text" || codeOwned.has(layer.slot)) continue;
+        const field = (layer.slot.startsWith("source-") ? "sources" : layer.slot) as DneskaiTextField;
+        const family = dressed.fonts[layer.fontToken];
+        expect({ id, field, family, weight: studio.resolveFace(family, layer.fontWeight).weight, uppercase: layer.uppercase })
+          .toEqual({ id, field, ...DNESKAI_FIELD_FACES[field] });
+        drawn.add(field);
+      }
+      expect({ id, fields: [...drawn].sort() }).toEqual({ id, fields: [...DNESKAI_PLACED_FIELDS[type]].sort() });
+    }
   });
 
   it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {

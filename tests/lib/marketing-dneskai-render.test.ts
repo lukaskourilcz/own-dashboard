@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
-import { createDneskaiDeckRenderer, dneskaiEncoderIdentity, dneskaiRenderKey, validateDneskaiDeck, DNESKAI_SLIDE_JPEG, type DneskaiSlideStorage, type StoredDneskaiSlide } from "@/lib/marketing/dneskai-render";
+import { createDneskaiDeckRenderer, dneskaiEncoderIdentity, dneskaiRenderKey, validateDneskaiDeck, DNESKAI_SLIDE_JPEG, type DneskaiSlideRenderProblem, type DneskaiSlideStorage, type StoredDneskaiSlide } from "@/lib/marketing/dneskai-render";
 import { DneskaiDeckSchema, type DneskaiDeck } from "@/lib/marketing/dneskai-slides";
 import type { DneskaiDeckRenderResult } from "@/lib/marketing/dneskai-ports";
 
@@ -163,6 +163,76 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     expect(storage.put).not.toHaveBeenCalled();
     expect(await validateDneskaiDeck(deck, loadMedia)).toEqual([expect.objectContaining({ slide: 0, code: "text-clipped", blocking: true })]);
   }, 60000);
+
+  it("refuses the whole deck on a character the field's face does not carry and stores nothing", async () => {
+    const { asset, loadMedia } = await fixtures();
+    const deck = carousel(asset);
+    // The studio draws these as boxes and reports nothing; the gate names each one.
+    deck.slides[4].headline = "Žraloci 🦈 a modely 中文";
+    deck.slides[6].sources = ["Smyšlený blog: Smyšlený článek (20. 10. 2026)", "Ověřeno ✓"];
+    deck.slides[0].kicker = "Smyšlené téma · 20. 10. 2026";
+    const { storage } = memoryStorage();
+    const result = await render(deck, storage, loadMedia);
+    expect(result).toEqual({ status: "refused", assets: [], renderKeys: [], problems: [
+      { slide: 4, code: "unsupported-glyph", blocking: true, field: "headline", message: expect.stringContaining("🦈 (U+1F988), 中 (U+4E2D), 文 (U+6587)") },
+      { slide: 6, code: "unsupported-glyph", blocking: true, field: "sources[1]", message: expect.stringContaining("✓ (U+2713)") },
+    ] });
+    expect(result.problems[0]!.message).toContain("Space Grotesk");
+    expect(storage.put).not.toHaveBeenCalled();
+    expect(await validateDneskaiDeck(deck, loadMedia)).toEqual(result.problems);
+
+    // Czech, its quotation marks and the kicker's uppercase pass; one bad glyph in one slide still refuses all of it.
+    const czech = carousel(asset);
+    czech.slides[1].body = "„Příliš žluťoučký kůň“ – úpěl ďábelské ódy… 5 × 3 = 15 % (§ 2)";
+    expect((await validateDneskaiDeck(czech, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);
+    czech.slides[1].credit = "Graf: smyšlený zdroj ™";
+    expect(await validateDneskaiDeck(czech, loadMedia)).toEqual([expect.objectContaining({ slide: 1, code: "unsupported-glyph", field: "credit" })]);
+  }, 60000);
+
+  it("refuses written text the slide type does not draw instead of dropping it from the picture", async () => {
+    const { asset, loadMedia } = await fixtures();
+    const deck = carousel(asset);
+    deck.slides[0].body = "Cover nemá místo pro odstavec.";
+    deck.slides[4].credit = "Výrok: smyšlený zdroj";
+    deck.slides[6].headline = "Zdroje k vydání";
+    deck.slides[5].sources = ["Smyšlený zdroj na výroku"];
+    const { storage } = memoryStorage();
+    const result = await render(deck, storage, loadMedia);
+    expect(result.status).toBe("refused");
+    expect((result.problems as DneskaiSlideRenderProblem[]).map(({ slide, code, blocking, field }) => ({ slide, code, blocking, field }))).toEqual([
+      { slide: 0, code: "text-unplaced", blocking: true, field: "body" },
+      { slide: 4, code: "text-unplaced", blocking: true, field: "credit" },
+      { slide: 5, code: "text-unplaced", blocking: true, field: "sources[0]" },
+      { slide: 6, code: "text-unplaced", blocking: true, field: "headline" },
+    ]);
+    expect(storage.put).not.toHaveBeenCalled();
+    // Blank text is no text: whitespace in a field the slide does not draw is not a problem.
+    const blank = carousel(asset); blank.slides[4].credit = "   "; blank.slides[0].body = "";
+    expect(await validateDneskaiDeck(blank, loadMedia)).toEqual([]);
+  }, 60000);
+
+  it("keys the words as the studio draws them: surrounding whitespace and blank source lines are a cache hit", async () => {
+    const { asset } = await fixtures();
+    const deck = carousel(asset);
+    const encoder = await dneskaiEncoderIdentity();
+    const key = (slide: DneskaiDeck["slides"][number], index: number) => dneskaiRenderKey(slide, { index, count: 7 }, encoder);
+    expect(key({ ...deck.slides[1], headline: `  ${deck.slides[1].headline}\n`, credit: ` ${deck.slides[1].credit} ` }, 1)).toBe(key(deck.slides[1], 1));
+    expect(key({ ...deck.slides[6], sources: ["  ", ...deck.slides[6].sources!, " "] }, 6)).toBe(key(deck.slides[6], 6));
+    expect(key({ ...deck.slides[4], body: undefined }, 4)).toBe(key({ ...deck.slides[4], body: "  " }, 4));
+    expect(key({ ...deck.slides[1], headline: `${deck.slides[1].headline}!` }, 1)).not.toBe(key(deck.slides[1], 1));
+  });
+
+  it("reports a media load that fails after the job's time ran out as worker-timeout, not as missing media", async () => {
+    const { asset } = await fixtures();
+    const controller = new AbortController();
+    const loadMedia = vi.fn(async () => { controller.abort(); throw new Error("aborted"); });
+    const { storage } = memoryStorage();
+    const renderer = createDneskaiDeckRenderer({ storage: () => storage });
+    await expect(renderer({ owner, revisionId, deck: carousel(asset), loadMedia, signal: controller.signal })).rejects.toThrow("worker-timeout");
+    const late = new AbortController();
+    await expect(validateDneskaiDeck(carousel(asset), async () => { late.abort(); throw new Error("aborted"); }, late.signal)).rejects.toThrow("worker-timeout");
+    expect(storage.put).not.toHaveBeenCalled();
+  });
 
   it("refuses a full-bleed photograph under 900 px and a missing medium as visible problems", async () => {
     const { asset, loadMedia } = await fixtures();

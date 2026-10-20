@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
-import { DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide, type DneskaiSlideType } from "./dneskai-slides";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 
 /**
@@ -13,9 +13,14 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
  * input, applies OwnDashboard's stricter gate, encodes the Instagram JPEG and stores it once per
  * render key in the private `marketing-assets` bucket.
  *
- * The gate is the studio's plus one rule: `text-clipped`, which the studio reports without
- * refusing, refuses here, because cut Czech copy must never ship. One blocking problem on any
- * slide refuses the whole deck and nothing is stored.
+ * The gate is the studio's plus three rules, because copy the owner approves must be the copy
+ * that prints, whole and legible:
+ * - `text-clipped`, which the studio reports without refusing, refuses here: cut Czech copy never ships;
+ * - `unsupported-glyph`: a drawn character the field's committed face does not carry. The studio
+ *   draws those as a box (or in another face) and reports nothing;
+ * - `text-unplaced`: written text the slide type has no place for. The studio leaves it off the
+ *   slide without a word, and the deck would still carry it into approval.
+ * One blocking problem on any slide refuses the whole deck and nothing is stored.
  */
 
 /** The vendored engine. `tests/lib/carousel-studio-vendor.test.ts` ties these to vendor/carousel-studio/UPSTREAM.md. */
@@ -25,8 +30,8 @@ export const DNESKAI_STUDIO = {
   commit: "72b7a5e02a640e6ffcbdd50c5f21f83066004cdf",
   treeSha256: "551ae3a567d73c357d98bd9d52d1ffc81d5fe70f3814e5bafab470d1f9ea1af1",
 } as const;
-/** OwnDashboard's own rules on top of the studio's: the clip gate and the JPEG below. Bump on any change to either. */
-export const DNESKAI_RENDER_POLICY = "dneskai-render/1";
+/** OwnDashboard's own rules on top of the studio's: the clip, glyph and placement gates and the JPEG below. Bump on any change. */
+export const DNESKAI_RENDER_POLICY = "dneskai-render/2";
 export const DNESKAI_RENDERER_VERSION = `carousel-studio/${DNESKAI_STUDIO.version}+${DNESKAI_STUDIO.commit.slice(0, 7)}`;
 /** Instagram portrait: exactly 1080 × 1350, baseline JPEG at quality 92 without chroma subsampling, sRGB, at most 8 MiB. */
 export const DNESKAI_SLIDE_JPEG = { width: 1080, height: 1350, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;
@@ -51,19 +56,27 @@ export interface DneskaiSlideStorage {
   put(input: { renderKey: string; bytes: Buffer; sha256: string; metadata: Record<string, string> }): Promise<StoredDneskaiSlide>;
 }
 
-// The DNESKAi slide API alone (a subpath export of the vendored manifest): the package barrel also
-// carries the hook-library reader, whose dynamic file reads make Turbopack trace the whole project.
+// The DNESKAi slide API and the face metrics alone (subpath exports of the vendored manifest): the
+// package barrel also carries the hook-library reader, whose dynamic file reads make Turbopack
+// trace the whole project.
 type Studio = typeof import("@boardlessai/carousel-studio/dneskai-slide");
+type Fonts = typeof import("@boardlessai/carousel-studio/fonts");
 type Sharp = typeof import("sharp");
 type Position = { index: number; count: number };
 const sha256 = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
 
 let studioModule: Promise<Studio> | null = null;
+let fontsModule: Promise<Fonts> | null = null;
 /** Loaded on use, like sharp and resvg in render.ts, so importing this module costs nothing. */
 async function studio(): Promise<Studio> {
   studioModule ??= import("@boardlessai/carousel-studio/dneskai-slide");
   try { return await studioModule; }
   catch { studioModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
+}
+async function fonts(): Promise<Fonts> {
+  fontsModule ??= import("@boardlessai/carousel-studio/fonts");
+  try { return await fontsModule; }
+  catch { fontsModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
 }
 async function sharpModule(): Promise<Sharp["default"]> {
   try { return (await import("sharp")).default; }
@@ -74,6 +87,82 @@ async function sharpModule(): Promise<Sharp["default"]> {
 export async function dneskaiEncoderIdentity(): Promise<{ sharp: string; vips: string }> {
   const sharp = await sharpModule();
   return { sharp: String(sharp.versions.sharp ?? ""), vips: String(sharp.versions.vips) };
+}
+
+/** A field of a slide that carries written copy. `sources` stands for each of its lines. */
+export type DneskaiTextField = "headline" | "body" | "kicker" | "credit" | "sources";
+const TEXT_FIELDS = ["headline", "body", "kicker", "credit"] as const;
+
+/**
+ * The face each written field is set in on every DNESKAi template, and whether the template
+ * uppercases it first: the caught-up kit's faces (headline Space Grotesk, body Source Serif 4,
+ * mono IBM Plex Mono) at the weights of the photo templates' text layers. Source lines are set in
+ * the body face. `tests/lib/carousel-studio-vendor.test.ts` derives this table from the vendored
+ * templates and fails when the two disagree, so a re-vendor cannot move a field to another face
+ * unnoticed.
+ */
+export const DNESKAI_FIELD_FACES = {
+  headline: { family: "Space Grotesk", weight: 700, uppercase: false },
+  body: { family: "Source Serif 4", weight: 400, uppercase: false },
+  kicker: { family: "IBM Plex Mono", weight: 400, uppercase: true },
+  credit: { family: "IBM Plex Mono", weight: 400, uppercase: false },
+  sources: { family: "Source Serif 4", weight: 400, uppercase: false },
+} as const satisfies Record<DneskaiTextField, { family: string; weight: number; uppercase: boolean }>;
+
+/**
+ * The written fields each slide type draws. The studio fills only its template's slots, so any
+ * other field would sit in the approved deck and never reach the picture. Checked against the
+ * vendored templates like the faces.
+ */
+export const DNESKAI_PLACED_FIELDS = {
+  "cover-photo": ["headline", "kicker", "credit"],
+  figure: ["headline", "body", "credit"],
+  split: ["headline", "body", "kicker", "credit"],
+  statement: ["headline", "body"],
+  sources: ["sources"],
+  single: ["headline", "body", "kicker", "credit"],
+} as const satisfies Record<DneskaiSlideType, readonly DneskaiTextField[]>;
+
+/**
+ * The string the studio draws for a field: trimmed, uppercased in Czech where the template does
+ * it, composed (NFC) and with every run of whitespace set as one word space, as its fitter does.
+ */
+function drawnText(value: string, uppercase: boolean): string {
+  const trimmed = value.trim();
+  return (uppercase ? trimmed.toLocaleUpperCase("cs") : trimmed).normalize("NFC").replace(/\s+/gu, " ");
+}
+
+function characterList(characters: string[]): string {
+  const named = characters.slice(0, 8).map((character) => `${character} (U+${character.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")})`);
+  return characters.length > 8 ? `${named.join(", ")} and ${characters.length - 8} more` : named.join(", ");
+}
+
+/**
+ * OwnDashboard's text gate for one slide, without media or rendering: written text the slide type
+ * does not draw (`text-unplaced`) and drawn characters the field's committed face does not carry
+ * (`unsupported-glyph`). The face check uses the studio's own metric tables, which are also what
+ * its fitter measures by, so a character outside them could neither be measured nor drawn.
+ */
+function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts): DneskaiSlideRenderProblem[] {
+  const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const written = [
+    ...TEXT_FIELDS.flatMap((field) => slide[field]?.trim() ? [{ field, name: field as string, value: slide[field]! }] : []),
+    ...(slide.sources ?? []).flatMap((value, line) => value.trim() ? [{ field: "sources" as const, name: `sources[${line}]`, value }] : []),
+  ];
+  const problems: DneskaiSlideRenderProblem[] = [];
+  for (const { field, name, value } of written) {
+    if (!placed.includes(field)) {
+      problems.push({ slide: index, code: "text-unplaced", blocking: true, field: name, message: `A ${slide.type} slide does not draw a ${field}, so this text would be approved but never shown. Remove it or use a slide type that draws it.` });
+      continue;
+    }
+    const face = DNESKAI_FIELD_FACES[field];
+    const missing = metrics.missingCommittedGlyphs(metrics.resolveFace(face.family, face.weight), drawnText(value, face.uppercase))
+      .filter((character) => !/\s/u.test(character));
+    if (missing.length) {
+      problems.push({ slide: index, code: "unsupported-glyph", blocking: true, field: name, message: `The ${name} uses ${missing.length === 1 ? "a character" : "characters"} that ${face.family} does not carry: ${characterList(missing)}. ${missing.length === 1 ? "It" : "They"} would print as an empty box; replace or remove ${missing.length === 1 ? "it" : "them"}.` });
+    }
+  }
+  return problems;
 }
 
 /**
@@ -100,24 +189,34 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
  * hash, which pin every template and the payload the studio derives), OwnDashboard's policy, the
  * encoder, the words, the variant, each photograph's asset hash and crop, and the slide's place in
  * the deck. The studio's template and payload are pure functions of exactly these, so hashing the
- * inputs lets a cache hit skip loading and decoding the photographs. The alt text is not drawn and
- * is not part of the key.
+ * inputs lets a cache hit skip loading and decoding the photographs. The words are keyed as the
+ * studio takes them, trimmed and with blank source lines dropped, so an edit to the surrounding
+ * whitespace is a hit. The alt text is not drawn and is not part of the key.
  */
 export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }): string {
   const images = [...slide.images].sort((left, right) => left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0)
     .map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, crop: image.crop ?? null }));
   return sha256(canonicalJson({
-    schemaVersion: "dneskai-render-key/1",
+    schemaVersion: "dneskai-render-key/2",
     studio: DNESKAI_STUDIO,
     policy: DNESKAI_RENDER_POLICY,
     encoder: { ...encoder, jpeg: DNESKAI_SLIDE_JPEG },
     slide: {
-      type: slide.type, variant: slide.variant ?? null, headline: slide.headline, body: slide.body ?? null,
-      kicker: slide.kicker ?? null, credit: slide.credit ?? null, sources: slide.sources ?? null, images,
+      type: slide.type, variant: slide.variant ?? null, headline: slide.headline.trim(), body: (slide.body ?? "").trim(),
+      kicker: (slide.kicker ?? "").trim(), credit: (slide.credit ?? "").trim(),
+      sources: (slide.sources ?? []).map((line) => line.trim()).filter(Boolean), images,
     },
     position: { index: position.index, count: position.count },
     locale: "cs",
   }));
+}
+
+/** The input field a cut studio slot is filled from: `source-N` is the N-th non-blank source line. */
+function truncatedField(slide: DneskaiSlide, slot: string): string {
+  if (!slot.startsWith("source-")) return slot;
+  const line = Number(slot.slice("source-".length)) - 1;
+  const written = (slide.sources ?? []).flatMap((value, position) => value.trim() ? [position] : []);
+  return `sources[${written[line] ?? line}]`;
 }
 
 function slideProblem(slide: number, problem: DneskaiSlideProblem): DneskaiSlideRenderProblem {
@@ -134,8 +233,11 @@ function mediaLoader(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
   };
 }
 
-/** The slide's photographs, or the problems that stop it. A loader failure is a visible missing medium. */
-async function slideImages(slide: DneskaiSlide, index: number, load: LoadDneskaiMediaBytes): Promise<{ images: DneskaiImageInput[]; problems: DneskaiSlideRenderProblem[] }> {
+/**
+ * The slide's photographs, or the problems that stop it. A loader failure is a visible missing
+ * medium, except when the job's time ran out first: that is `worker-timeout`, not a content problem.
+ */
+async function slideImages(slide: DneskaiSlide, index: number, load: LoadDneskaiMediaBytes, signal?: AbortSignal): Promise<{ images: DneskaiImageInput[]; problems: DneskaiSlideRenderProblem[] }> {
   const images: DneskaiImageInput[] = [];
   const problems: DneskaiSlideRenderProblem[] = [];
   for (const image of slide.images) {
@@ -143,26 +245,35 @@ async function slideImages(slide: DneskaiSlide, index: number, load: LoadDneskai
       const bytes = await load(image.assetSha256);
       images.push({ slot: image.slot, bytes, assetSha256: image.assetSha256, ...(image.crop ? { crop: image.crop } : {}) });
     } catch {
+      if (signal?.aborted) throw new DneskaiRenderError("worker-timeout");
       problems.push({ slide: index, code: "media-asset-unavailable", blocking: true, field: image.slot, message: `The stored photograph ${image.assetSha256} for ${image.slot} could not be loaded.` });
     }
   }
   return { images, problems };
 }
 
-/** Every problem a deck has, without rendering or storing anything. Generation (#116) uses it to fit copy. */
-export async function validateDneskaiDeck(value: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes): Promise<DneskaiSlideRenderProblem[]> {
+async function studioProblems(engine: Studio, input: DneskaiSlideInput, index: number): Promise<DneskaiSlideRenderProblem[]> {
+  let found: DneskaiSlideProblem[];
+  try { found = await engine.validateDneskaiSlide(input); }
+  catch { throw new DneskaiRenderError("render-rasterization-failed"); }
+  return found.map((problem) => slideProblem(index, problem));
+}
+
+/**
+ * Every problem a deck has, the renderer's own gate included, without rendering or storing
+ * anything. Generation (#116) uses it to fit copy.
+ */
+export async function validateDneskaiDeck(value: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal): Promise<DneskaiSlideRenderProblem[]> {
   const deck = parseDeck(value);
-  const engine = await studio();
+  const [engine, metrics] = await Promise.all([studio(), fonts()]);
   const load = mediaLoader(loadMedia);
   const problems: DneskaiSlideRenderProblem[] = [];
   for (const [index, slide] of deck.slides.entries()) {
-    const loaded = await slideImages(slide, index, load);
+    problems.push(...textProblems(slide, index, metrics));
+    const loaded = await slideImages(slide, index, load, signal);
     problems.push(...loaded.problems);
     if (loaded.problems.length) continue;
-    let found: DneskaiSlideProblem[];
-    try { found = await engine.validateDneskaiSlide(dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images)); }
-    catch { throw new DneskaiRenderError("render-rasterization-failed"); }
-    problems.push(...found.map((problem) => slideProblem(index, problem)));
+    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images), index));
   }
   return problems;
 }
@@ -219,8 +330,12 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
     const deck = parseDeck(input.deck);
     const abortCheck = () => { if (input.signal?.aborted) throw new DneskaiRenderError("worker-timeout"); };
     abortCheck();
+    const metrics = await fonts();
     const storage = dependencies.storage(input.owner, input.signal);
     const count = deck.slides.length;
+    // The text gate needs no media and no render; when it refuses, the slides are only validated.
+    const ownProblems = deck.slides.map((slide, index) => textProblems(slide, index, metrics));
+    const refusedByText = ownProblems.some((found) => found.length > 0);
     const encoder = await dneskaiEncoderIdentity();
     const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder));
     const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));
@@ -230,18 +345,30 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
     const problems: DneskaiSlideRenderProblem[] = [];
     const rendered: Array<RenderedSlide | null> = [];
     for (const [index, slide] of deck.slides.entries()) {
+      problems.push(...ownProblems[index]!);
       const hit = cached[index];
       if (hit) { problems.push(...cachedProblems(index, hit)); rendered.push(null); continue; }
-      const loaded = await slideImages(slide, index, load);
+      const loaded = await slideImages(slide, index, load, input.signal);
       abortCheck();
       problems.push(...loaded.problems);
       if (loaded.problems.length) { rendered.push(null); continue; }
       const engine = await studio();
+      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images);
+      if (refusedByText) {
+        // The deck is refused already: report the studio's problems too, without drawing a slide nobody keeps.
+        problems.push(...await studioProblems(engine, studioInput, index));
+        rendered.push(null);
+        continue;
+      }
       let result;
-      try { result = await engine.renderDneskaiSlide(dneskaiStudioInput(slide, { index, count }, loaded.images)); }
+      try { result = await engine.renderDneskaiSlide(studioInput); }
       catch { throw new DneskaiRenderError("render-rasterization-failed"); }
       abortCheck();
       const found = result.problems.map((problem) => slideProblem(index, problem));
+      // Defence in depth: a slot the renderer cut is refused even if the studio's own report missed it.
+      if (result.truncatedSlots.length && !found.some((problem) => problem.code === "text-clipped")) {
+        for (const slot of result.truncatedSlots) found.push({ slide: index, code: "text-clipped", blocking: true, field: truncatedField(slide, slot), message: `The renderer cut ${slot}; shorten it.` });
+      }
       if (result.status !== "rendered" && !found.some((problem) => problem.blocking)) found.push({ slide: index, code: "render-refused", blocking: true, field: null, message: "The studio refused this slide." });
       problems.push(...found);
       rendered.push(result.status === "rendered" && result.png && result.pngHash && result.template
