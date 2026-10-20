@@ -1,0 +1,1 @@
+{"version":3,"file":"lint-cli.d.ts","sourceRoot":"","sources":["../../src/hooks/lint-cli.ts"],"names":[],"mappings":"AAGA,OAAO,EAA0C,KAAK,OAAO,EAAE,MAAM,WAAW,CAAC;AACjF,OAAO,EAAY,KAAK,OAAO,EAAE,MAAM,aAAa,CAAC;AAWrD,wBAAsB,gBAAgB,CAAC,IAAI,SAAa,GAAG,OAAO,CAAC;IACjE,QAAQ,EAAE,OAAO,EAAE,CAAC;IACpB,MAAM,EAAE,MAAM,CAAC,OAAO,EAAE,MAAM,CAAC,CAAC;CACjC,CAAC,CAaD"}

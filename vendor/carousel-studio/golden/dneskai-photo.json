@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "dneskai-photo-golden/1",
+  "canvas": {
+    "width": 1080,
+    "height": 1350
+  },
+  "updatedAt": "2026-10-20",
+  "entries": [
+    {
+      "name": "cover-photo",
+      "templateId": "dneskai-cover-photo",
+      "version": "1.0.0",
+      "pngHash": "0fe4b5a2ef8b3fc008ec75ccf7fa868cd938126b15e3c5071d3e0084faef41a4"
+    },
+    {
+      "name": "cover-photo-crop",
+      "templateId": "dneskai-cover-photo",
+      "version": "1.0.0",
+      "pngHash": "2780e681546579b766d2e7c2a865f40f73edb4076de7fd764076c51ff3458edb"
+    },
+    {
+      "name": "figure",
+      "templateId": "dneskai-figure",
+      "version": "1.0.0",
+      "pngHash": "eca5be9028ffb69638252e83466287124367a5436c9aebb4abafc5f3b034a35f"
+    },
+    {
+      "name": "split",
+      "templateId": "dneskai-split",
+      "version": "1.0.0",
+      "pngHash": "2505d5f6f33576ea85cad97b57cb101dcd2e83a38d822034e8a5457092ac3da7"
+    },
+    {
+      "name": "split-pair",
+      "templateId": "dneskai-split-pair",
+      "version": "1.0.0",
+      "pngHash": "030f23fa9bb721cc5a2daf59b54eecaba848f847bd34b8bad42a0b6c9c754d8a"
+    },
+    {
+      "name": "statement",
+      "templateId": "dneskai-statement",
+      "version": "1.0.0",
+      "pngHash": "0e048d6a620ef9b350da39e7d8a5885fd85f86979581c1b3e353ac8140cabef4"
+    },
+    {
+      "name": "statement-ink",
+      "templateId": "dneskai-statement",
+      "version": "1.0.0",
+      "pngHash": "db35146b787d502ac755b7179ba78674419030dc3e10ed9c7bffd3d03ff34e5c"
+    },
+    {
+      "name": "sources",
+      "templateId": "dneskai-sources-4",
+      "version": "1.0.0",
+      "pngHash": "5961af0bc42de7cef7a85c1ae12306453232c3978d1b50e45eee7732633c66b3"
+    },
+    {
+      "name": "single-photo",
+      "templateId": "dneskai-single-photo",
+      "version": "1.0.0",
+      "pngHash": "71dff49aedeccebfe3970acccd94c165d326f2734898e9f484b2d04fc48c0527"
+    },
+    {
+      "name": "single-type",
+      "templateId": "dneskai-single-type",
+      "version": "1.0.0",
+      "pngHash": "9eb13243e8a8973afb01d650794bf223667e65c7dee4ca52269b7668e61f1ba6"
+    }
+  ]
+}
