@@ -68,15 +68,20 @@ cp -R "$scratch/source/studio/brand-kits/caught-up" "$out/brand-kits/caught-up"
 cp "$scratch/source/studio/golden/dneskai-photo.json" "$out/golden/dneskai-photo.json"
 cp "$scratch/source/LICENSE" "$out/LICENSE"
 # The manifest keeps what Node and npm read. Exact dependency pins become caret ranges so that
-# OwnDashboard's own sharp, resvg and zod satisfy them and npm installs no second copy. One subpath
-# export is added: `./dneskai-slide`, the DNESKAi slide API alone, so a route bundle does not pull in
-# the barrel's hook-library reader, whose dynamic file reads make Turbopack trace the whole project.
+# OwnDashboard's own sharp, resvg and zod satisfy them and npm installs no second copy. Two subpath
+# exports are added: `./dneskai-slide`, the DNESKAi slide API alone, so a route bundle does not pull in
+# the barrel's hook-library reader, whose dynamic file reads make Turbopack trace the whole project;
+# and `./fonts`, the committed faces' metrics, which OwnDashboard's glyph gate checks copy against.
 node -e '
   const fs = require("node:fs");
   const upstream = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
   const caret = (range) => /^\d+\.\d+\.\d+$/.test(range) ? `^${range}` : range;
   const dependencies = Object.fromEntries(Object.entries(upstream.dependencies).map(([name, range]) => [name, caret(range)]));
-  const exports = { ...upstream.exports, "./dneskai-slide": { types: "./dist/dneskai-slide.d.ts", default: "./dist/dneskai-slide.js" } };
+  const exports = {
+    ...upstream.exports,
+    "./dneskai-slide": { types: "./dist/dneskai-slide.d.ts", default: "./dist/dneskai-slide.js" },
+    "./fonts": { types: "./dist/fonts.d.ts", default: "./dist/fonts.js" }
+  };
   const trimmed = { name: upstream.name, version: upstream.version, type: upstream.type, exports, dependencies };
   fs.writeFileSync(process.argv[2], JSON.stringify(trimmed, null, 2) + "\n");
 ' "$scratch/source/studio/package.json" "$out/package.json"
@@ -85,9 +90,14 @@ rebuilt="$(tree_hash "$out")"
 if [[ "$write" == "--write" ]]; then
   find "$vendor" -mindepth 1 -maxdepth 1 ! -name UPSTREAM.md -exec rm -rf {} +
   cp -R "$out/." "$vendor/"
-  sed -i "s/^- Commit: \`[0-9a-f]\{40\}\`$/- Commit: \`$commit\`/; s/^- Tree sha256: \`[0-9a-f]\{64\}\`$/- Tree sha256: \`$rebuilt\`/" "$upstream_doc"
-  echo "vendor/carousel-studio rebuilt from $commit: $rebuilt"
+  committed="$(TZ=UTC git -C "$quorum" show -s --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd "$commit")"
+  today="$(date -u +%Y-%m-%d)"
+  sed -i "s/^- Commit: \`[0-9a-f]\{40\}\`$/- Commit: \`$commit\`/; s/^- Commit date: \`[^\`]*\`$/- Commit date: \`$committed\`/; s/^- Vendored: \`[^\`]*\`$/- Vendored: \`$today\`/; s/^- Tree sha256: \`[0-9a-f]\{64\}\`$/- Tree sha256: \`$rebuilt\`/" "$upstream_doc"
+  echo "vendor/carousel-studio rebuilt from $commit ($committed): $rebuilt"
   [[ "$(recorded_hash)" == "$rebuilt" ]] || { echo "UPSTREAM.md has no Commit/Tree sha256 lines to update." >&2; exit 1; }
+  grep -q "^- Commit date: \`$committed\`$" "$upstream_doc" && grep -q "^- Vendored: \`$today\`$" "$upstream_doc" \
+    || { echo "UPSTREAM.md has no Commit date/Vendored lines to update." >&2; exit 1; }
+  echo "Update DNESKAI_STUDIO in src/lib/marketing/dneskai-render.ts and the note under Pin in UPSTREAM.md."
   exit 0
 fi
 

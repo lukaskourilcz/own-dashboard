@@ -63,14 +63,18 @@ describe("vendored @boardlessai/carousel-studio", () => {
     for (const family of ["Space Grotesk", "Source Serif 4", "IBM Plex Mono", "IBM Plex Sans"]) expect(studio.FONT_FAMILIES).toContain(family);
   });
 
-  it("exports the DNESKAi slide API alone, which is all the renderer imports", async () => {
+  it("exports the DNESKAi slide API and the face metrics, which is all the renderer imports", async () => {
     const slide = await import("@boardlessai/carousel-studio/dneskai-slide");
     expect(typeof slide.renderDneskaiSlide).toBe("function");
     expect(typeof slide.validateDneskaiSlide).toBe("function");
+    const fonts = await import("@boardlessai/carousel-studio/fonts");
+    expect(fonts.missingCommittedGlyphs(fonts.resolveFace("Space Grotesk", 700), "Žluťoučký kůň 🦈")).toEqual(["🦈"]);
     const renderer = readFileSync(path.join(root, "src/lib/marketing/dneskai-render.ts"), "utf8");
     const specifiers = [...renderer.matchAll(/(?:from\s+|import\(\s*)"(@boardlessai\/carousel-studio[^"]*)"/g)].map((match) => match[1]);
     expect(specifiers.length).toBeGreaterThanOrEqual(2);
-    expect(new Set(specifiers)).toEqual(new Set(["@boardlessai/carousel-studio/dneskai-slide"]));
+    // Never the barrel: only the two subpaths the vendored manifest adds.
+    expect(specifiers).toContain("@boardlessai/carousel-studio/dneskai-slide");
+    expect(specifiers.filter((specifier) => !["@boardlessai/carousel-studio/dneskai-slide", "@boardlessai/carousel-studio/fonts"].includes(specifier))).toEqual([]);
   });
 
   it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {

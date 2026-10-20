@@ -23,7 +23,7 @@ export const DNESKAI_STUDIO = {
   package: "@boardlessai/carousel-studio",
   version: "1.0.0",
   commit: "72b7a5e02a640e6ffcbdd50c5f21f83066004cdf",
-  treeSha256: "4c144642f44cbd588e2af13f796305b42be562e6e27129d50a56cdf6b08e9829",
+  treeSha256: "551ae3a567d73c357d98bd9d52d1ffc81d5fe70f3814e5bafab470d1f9ea1af1",
 } as const;
 /** OwnDashboard's own rules on top of the studio's: the clip gate and the JPEG below. Bump on any change to either. */
 export const DNESKAI_RENDER_POLICY = "dneskai-render/1";

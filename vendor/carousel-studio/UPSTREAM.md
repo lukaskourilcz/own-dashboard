@@ -8,10 +8,12 @@ Vercel build of OwnDashboard needs no Quorum checkout, no pnpm workspace and no 
 
 - Repository: `lukaskourilcz/quorum`, directory `studio/`, package `@boardlessai/carousel-studio` 1.0.0
 - Commit: `72b7a5e02a640e6ffcbdd50c5f21f83066004cdf`
-- Commit date: 2026-10-20T19:21:09Z. The same `studio/` tree (`68a3bb6e0775c8cab9ce4a74eae10ad5a4b96d0f`)
-  reached Quorum `main` with PR #604 (`8be79ab`).
-- Vendored: 2026-10-20
-- Tree sha256: `4c144642f44cbd588e2af13f796305b42be562e6e27129d50a56cdf6b08e9829`
+- Commit date: `2026-10-20T19:21:09Z`
+- Vendored: `2026-10-20`
+- Tree sha256: `551ae3a567d73c357d98bd9d52d1ffc81d5fe70f3814e5bafab470d1f9ea1af1`
+
+Note on this pin: the same `studio/` tree (`68a3bb6e0775c8cab9ce4a74eae10ad5a4b96d0f`) reached Quorum
+`main` with PR #604 (`8be79ab`). `--write` updates the four lines above; rewrite this note by hand.
 
 The tree hash covers every file in this directory except this one: sha256 over the sorted
 `sha256sum` lines of the files, as `scripts/vendor-carousel-studio.sh` computes it.
@@ -26,7 +28,7 @@ The tree hash covers every file in this directory except this one: sha256 over t
 | `brand-kits/caught-up/` | `studio/brand-kits/caught-up/` | The DNESKAi logotype and its manifest, which pins each file by sha256 |
 | `golden/dneskai-photo.json` | `studio/golden/dneskai-photo.json` | The pinned PNG hash of each DNESKAi slide type, used by the vendor test |
 | `LICENSE` | Quorum `LICENSE` (MIT) | Licence of the engine code |
-| `package.json` | `studio/package.json`, trimmed | Only `name`, `version`, `type`, `exports` and `dependencies`, plus one subpath export (below) |
+| `package.json` | `studio/package.json`, trimmed | Only `name`, `version`, `type`, `exports` and `dependencies`, plus two subpath exports (below) |
 
 Left out on purpose: `src/`, `tests/`, `scripts/`, the hook libraries in `studio/hooks/` (a missing
 library loads as empty and DNESKAi slides never read one), `golden/manifest.json` and the
@@ -42,13 +44,21 @@ DNESKAi golden hashes reproduce with these versions (`tests/lib/carousel-studio-
 A future sharp minor (0.36) falls outside the range and npm would nest the pinned version; re-vendor
 or widen the range on purpose, and let the golden test decide.
 
-## The `./dneskai-slide` subpath
+## The `./dneskai-slide` and `./fonts` subpaths
 
-The trimmed manifest adds one export upstream does not have: `@boardlessai/carousel-studio/dneskai-slide`
-→ `dist/dneskai-slide.js`, the DNESKAi slide API and its 27 dependencies. OwnDashboard's renderer
-imports that and never the barrel. The barrel also re-exports the hook-library reader
-(`dist/hooks/libraries.js`), whose file reads take a path Turbopack cannot scope, and a route that
-bundled it traced the whole repository (docs, tests, migrations) into its function.
+The trimmed manifest adds two exports upstream does not have. OwnDashboard's renderer imports these
+two and never the barrel:
+
+- `@boardlessai/carousel-studio/dneskai-slide` → `dist/dneskai-slide.js`, the DNESKAi slide API and
+  its 27 dependencies. The barrel also re-exports the hook-library reader (`dist/hooks/libraries.js`),
+  whose file reads take a path Turbopack cannot scope, and a route that bundled it traced the whole
+  repository (docs, tests, migrations) into its function.
+- `@boardlessai/carousel-studio/fonts` → `dist/fonts.js`, already part of the slide API's module
+  graph: `resolveFace` and `missingCommittedGlyphs` over the committed metric tables. The studio's
+  DNESKAi API does not report a character its faces lack (resvg draws a box or borrows another
+  face), so OwnDashboard checks every drawn field against the face it is set in and refuses the
+  deck with `unsupported-glyph` (`src/lib/marketing/dneskai-render.ts`). When Quorum's `inspect()`
+  reports missing glyphs itself, re-vendor and drop the local check.
 
 ## Licences
 
