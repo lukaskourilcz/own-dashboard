@@ -217,11 +217,14 @@ export const DneskaiRenderReportSchema = z.strictObject({
   renderedAt: timestamp,
 });
 export type DneskaiRenderReport = z.infer<typeof DneskaiRenderReportSchema>;
-/** A stored report that does not parse counts as blocking: it cannot be shown to be clean. */
+/**
+ * Mirrors `marketing_private.render_report_blocks`: anything but a clean `rendered` report blocks, and a stored
+ * report that does not parse counts as blocking because it cannot be shown to be clean. No report (legacy) is clear.
+ */
 export function renderReportBlocks(report: unknown): boolean {
   if (report === null || report === undefined) return false;
   const parsed = DneskaiRenderReportSchema.safeParse(report);
-  return !parsed.success || parsed.data.problems.some((problem) => problem.blocking);
+  return !parsed.success || parsed.data.status !== "rendered" || parsed.data.problems.some((problem) => problem.blocking);
 }
 
 export type PublicationRow = {

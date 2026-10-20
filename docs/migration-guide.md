@@ -491,3 +491,41 @@ Verify after applying: the owner and another signed-in user both get `permission
 Order: apply the migration before deploying the code that reads it. The application treats a failed token-store read as `credential-store-unavailable`, never as "no stored token", so code running without the migration holds every publish, preflight and reconciliation, the verify route answers `credential-store-unavailable` or `account-store-failed`, and `GET /api/marketing/accounts` returns 503, which the Instagram account panel shows as unavailable.
 
 Rollback: roll the application back first, or together with the database, to a release without `marketing_account_tokens`; that release reads only the environment token. Then `drop table public.marketing_account_tokens cascade;` and drop the `marketing_account_token*` and `marketing_verify_account`, `marketing_store_account_token`, `marketing_read_account_token` functions. Dropping them under the current application does not fall back to the environment token: publishing and reconciliation hold with `credential-store-unavailable` and the panel shows the account as unavailable until the application is rolled back too. Setup: [external setup §11](external-setup.md#11-instagram-publishing-for-dneskai-121).
+
+## Revision media identity (2026-10-20)
+
+`20261020140000_marketing_revision_media_identity.sql` belongs to #118. The server now stores `content_hash` as
+`revisionContentHash`: sha256 of the canonical revision without `assets[].url`. SQL never computed the hash and
+still only compares stored values, so `marketing_save_revision`, `marketing_claim_due` and the publication fences
+are unchanged.
+
+- `marketing_revisions.render_report jsonb` (nullable) holds the last deck render: status, problems, render keys.
+- `marketing_renew_revision_asset_urls(owner, revision, expected_hash, assets)` (service role only) replaces the
+  stored assets with renewed ones when the revision is `review` or `approved`, `content_hash` equals the expected
+  hash, the revision without URLs is identical (`marketing_private.revision_without_urls`), and every new URL is a
+  signed `marketing-assets` URL for the same object path as before. It never touches `content_hash`,
+  `approved_hash`, `status`, `ready` or the publication, and it creates no revision.
+- `marketing_attach_revision_render(owner, revision, expected_hash, content, hash, ready, report)` (service role
+  only) attaches rendered JPEGs once to an unready `review` revision with a deck and no assets. Only `assets` may
+  differ from the stored revision. `ready=true` needs one asset per slide and a clean `rendered` report; a refused
+  render keeps the content and hash and records the report.
+- `marketing_approve_revision` is replaced whole with the body from `20261012225640` plus two holds: a blocking
+  report (`render blocked`, via `marketing_private.render_report_blocks`) and a deck whose asset count differs from
+  its slide count (`revision not ready`). Grants are restated: authenticated only.
+
+Verify after applying: the two new functions and both private helpers are not executable by `anon` or
+`authenticated`; renewing an approved revision leaves `approved_hash` and the queued publication as they were;
+a renewal that changes a sha256, alt text, size, order, count or object path is refused.
+`tests/lib/marketing-revision-media-database.test.ts` runs these checks against the migration in PGlite.
+
+Order: apply the migration before deploying the code that calls the two functions. Code without the migration
+cannot renew URLs in place or attach a deck render (`asset-url-renewal-refused`, `render-attach-failed`); legacy
+edits and approvals keep working. Production holds no revisions (0 rows on 2026-10-20), so the hash change
+invalidates no approval.
+
+Rollback: roll the application back first, then re-run `marketing_approve_revision` from
+`20261012225640_marketing_control_surface.sql`, drop `marketing_renew_revision_asset_urls`,
+`marketing_attach_revision_render`, `marketing_private.revision_without_urls`,
+`marketing_private.render_report_blocks` and the `render_report` column. A rolled-back release computes the hash
+with URLs again, so a revision approved under this release would hold at the publisher as
+`exact-approval-required` until it is edited and approved again.

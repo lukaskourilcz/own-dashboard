@@ -62,6 +62,7 @@ describe("deck revision contract", () => {
     expect(renderReportBlocks(report)).toBe(false);
     expect(renderReportBlocks({ ...report, problems: [{ slide: 0, code: "text-clipped", blocking: false, message: "advisory" }] })).toBe(false);
     expect(renderReportBlocks({ ...report, status: "refused", problems: [{ slide: 0, code: "image-too-small", blocking: true, message: "short side 640 px" }] })).toBe(true);
+    expect(renderReportBlocks({ ...report, status: "refused" })).toBe(true);
     expect(renderReportBlocks({ status: "rendered" })).toBe(true);
   });
 });
