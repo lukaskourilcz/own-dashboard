@@ -84,6 +84,20 @@ describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
   expect(result.running).toBe(false);if(!result.running){expect(result.items.map(item=>item.externalId)).toEqual(['collaborative-test']);expect(result.complete).toBe(true);expect(result.run.usageTotalUsd).toBe(0.01);expect(result.items[0]).not.toHaveProperty('coauthorProducers');}
   const fields=new URL(String(fetcher.mock.calls[1][0])).searchParams.get('fields')!.split(',');expect(fields).toContain('inputUrl');expect(fields).toContain('coauthorProducers');expect(fetcher).toHaveBeenCalledTimes(2);
  });
+ it('records the post owner and item type so credit and caption-only handling need no second request',async()=>{
+  const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!;
+  const base={shortCode:'test',caption:'OFFLINE TEST public caption',timestamp:'2026-10-12T12:00:00Z',url:'https://www.instagram.com/p/test/'};
+  const rows=[{...base,id:'reel-test',ownerUsername:'mosseri',type:'Video',productType:'clips',displayUrl:'https://cdn.example.test/cover.jpg'},
+   {...base,id:'carousel-test',ownerUsername:'test_creator',inputUrl:source.url,coauthorProducers:[{username:'mosseri'}],type:'Sidecar',childPosts:[{type:'Image',displayUrl:'https://cdn.example.test/1.jpg'},{type:'Video',displayUrl:'https://cdn.example.test/2.jpg'}]},
+   {...base,id:'image-test',ownerUsername:'mosseri',type:'Image'},{...base,id:'unknown-test',ownerUsername:'mosseri'}];
+  const fetcher=vi.fn<typeof fetch>().mockResolvedValueOnce(json({data:registration})).mockResolvedValueOnce(json(rows));
+  const result=await pollDneskaiInstagram(source,registration,'2026-10-11T00:00:00Z',{env:apifyEnv,fetcher,signal,now});
+  expect(result.running).toBe(false);
+  if(!result.running)expect(Object.fromEntries(result.items.map(item=>[item.externalId,item.instagram]))).toEqual({'reel-test':{ownerUsername:'mosseri',mediaType:'video'},'carousel-test':{ownerUsername:'test_creator',mediaType:'carousel',containsVideo:true},'image-test':{ownerUsername:'mosseri',mediaType:'image'},'unknown-test':{ownerUsername:'mosseri'}});
+  const fields=new URL(String(fetcher.mock.calls[1][0])).searchParams.get('fields')!.split(',');expect(fields).toEqual(expect.arrayContaining(['type','productType','ownerUsername']));
+  // The detail is additive: the candidate id and content hash are those of the same post without it.
+  if(!result.running){const reel=result.items[0];const plain=candidate(source.id,'reel-test',reel.title,reel.text,reel.url,reel.publishedAt,reel.fetchedAt,reel.mediaUrls);expect([reel.id,reel.contentHash]).toEqual([plain.id,plain.contentHash]);expect(plain).not.toHaveProperty('instagram');}
+ });
  it.each(['missing-input','foreign-input','query-input','non-profile-input','missing-coauthors','foreign-coauthor','case-mismatch','mentions-only','tags-only','too-many','invalid-username'])('rejects collaborative %s evidence without weakening source binding',async mutation=>{
   const source=DNESKAI_SOURCES.find(row=>row.id==='instagram:mosseri')!;
   const post:Record<string,unknown>={id:'collaborative-test',shortCode:'test',caption:'OFFLINE TEST public caption @mosseri',timestamp:'2026-10-12T12:00:00Z',url:'https://www.instagram.com/p/test/',ownerUsername:'test_creator',inputUrl:source.url,coauthorProducers:[{username:'mosseri'}]};
