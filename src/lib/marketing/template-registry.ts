@@ -1,6 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import { marketingPilotConfiguration } from './pilot';
+import { previewPilotRetired } from './preview-pilot';
 import { currentMarketingTemplate, marketingTemplateDefinition, validateMarketingTemplate, type MarketingTemplate } from './render';
 
 type Environment = Record<string, string | undefined>;
@@ -15,9 +16,10 @@ export class MarketingTemplateApprovalError extends Error {
 }
 function stagingApprovals(env: Environment, now: Date): z.infer<typeof approvalsSchema> {
   const raw = env.MARKETING_PILOT_TEMPLATE_APPROVALS;
-  if (raw === undefined) return [];
+  // Outside Preview the retired receipt grants nothing and blocks nothing; repository manifests apply.
+  if (raw === undefined || previewPilotRetired('template-approvals', env)) return [];
   try {
-    if (env.VERCEL_ENV !== 'preview' || Buffer.byteLength(raw, 'utf8') > 4096) throw new Error();
+    if (Buffer.byteLength(raw, 'utf8') > 4096) throw new Error();
     const pilot = marketingPilotConfiguration(env.MARKETING_OWNER_ID ?? '', env, now);
     if (!pilot) throw new Error();
     const approvals = approvalsSchema.parse(JSON.parse(raw));

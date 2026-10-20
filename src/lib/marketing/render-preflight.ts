@@ -5,6 +5,7 @@ import type { createAdminClient } from '@/lib/supabase/admin';
 import { BrandSchema, parseSourcePacket, sourceUsable } from './contracts';
 import { contentHash } from './hashes';
 import { marketingPilotConfiguration } from './pilot';
+import { previewPilotRetired } from './preview-pilot';
 import { trustedMarketingTemplate } from './template-registry';
 import { refreshSource } from './source-refresh';
 import { renderAuthoredMarketingPreflight, validateMarketingTemplate } from './render';
@@ -19,7 +20,7 @@ export class MarketingRenderPreflightError extends Error {
 /** Authenticated Preview diagnostic. Reads producer/DB state; never reserves, writes or uploads. */
 export async function runMarketingRenderPreflight(db: Database, ownerId: string, value: z.infer<typeof RenderPreflightInputSchema>, options: { env?: Environment; now?: () => Date; signal?: AbortSignal; refresh?: typeof refreshSource } = {}) {
   const input = RenderPreflightInputSchema.parse(value), env = options.env ?? process.env, now = options.now ?? (() => new Date());
-  if (env.VERCEL_ENV !== 'preview') throw new MarketingRenderPreflightError('render-preflight-preview-required');
+  if (previewPilotRetired('generation-pilot', env)) throw new MarketingRenderPreflightError('render-preflight-preview-required');
   if (env.MARKETING_OWNER_ID !== ownerId) throw new MarketingRenderPreflightError('render-preflight-owner-mismatch');
   if (!marketingPilotConfiguration(ownerId, env, now())) throw new MarketingRenderPreflightError('render-preflight-pilot-required');
   if (env.MARKETING_AI_CONSENT !== 'true') throw new MarketingRenderPreflightError('render-preflight-consent-required');

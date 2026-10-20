@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { previewPilotRetired } from "./preview-pilot";
 
 export const MARKETING_PILOT_MAX_JOBS = 3;
 export const MARKETING_PILOT_JOB_RESERVATION_USD = 0.25;
@@ -10,9 +11,12 @@ export type MarketingPilot = z.infer<typeof schema>;
 export class MarketingPilotError extends Error {
   constructor(public readonly code: string) { super(code); this.name = "MarketingPilotError"; }
 }
-/** No pilot settings preserves normal admission. A partial tuple never disables the guard. */
+/**
+ * No pilot settings preserves normal admission. A partial tuple never disables the guard in Preview.
+ * Outside Preview the retired tuple is ignored (#113): no pilot authority, no admission failure.
+ */
 export function marketingPilotConfiguration(ownerId: string, env: Record<string, string | undefined> = process.env, now = new Date()): MarketingPilot | null {
-  if (names.every((name) => env[name] === undefined)) return null;
+  if (names.every((name) => env[name] === undefined) || previewPilotRetired("generation-pilot", env)) return null;
   const parsed = schema.safeParse({ ownerId: env.MARKETING_PILOT_OWNER_ID, startsAt: env.MARKETING_PILOT_STARTS_AT, expiresAt: env.MARKETING_PILOT_EXPIRES_AT });
   if (!parsed.success) throw new MarketingPilotError("pilot-configuration-invalid");
   const pilot = parsed.data;

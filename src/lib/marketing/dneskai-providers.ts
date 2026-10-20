@@ -5,6 +5,7 @@ import { DneskaiFeedRequestSchema,DneskaiFeedResponseSchema,type DneskaiCandidat
 import { signAutomationBody } from './automation-auth';
 import { contentHash } from './hashes';
 import { requestDneskaiCollectionPreview } from './source-refresh';
+import { previewPilotRetired } from './preview-pilot';
 export class DneskaiProviderError extends Error {constructor(readonly code:string){super(code);}}
 export type ProviderEnvironment=Record<string,string|undefined>;
 export const JEV_MODEL='jev-1.13.0';
@@ -41,7 +42,8 @@ export async function collectDneskaiFeed(source:DneskaiSource,since:string,optio
  const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');
  const origin=new URL(safeUrl(base)).origin;const request=DneskaiFeedRequestSchema.parse({action:'collect',sourceIds:[source.id],since,maxItems:source.maxItems});const body=JSON.stringify(request);
  const init={method:'POST',headers:signAutomationBody(body,secret,options.now?.getTime()),body};
- const previewConfigured=env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN!==undefined||env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN!==undefined;
+ // A retired Preview share outside Preview is ignored, so ordinary collection keeps the direct signed bridge.
+ const previewConfigured=(env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN!==undefined||env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN!==undefined)&&!previewPilotRetired('source-preview',env);
  if(previewConfigured&&!options.collectionPilot)throw new DneskaiProviderError('collection-preview-scope-required');
  const fetcher=previewConfigured?((url,request)=>requestDneskaiCollectionPreview(new URL(String(url)),request??{},{env,fetcher:options.fetcher,now:options.now,signal:options.signal},options.collectionPilot!.owner,options.collectionPilot!.project)) as typeof fetch:options.fetcher??fetch;
  response=FeedResponseForUrlValidation.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));

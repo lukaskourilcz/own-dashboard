@@ -1,5 +1,7 @@
 # Offline weekly draft import
 
+> **Retired 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)).** The importer stays disabled outside Vercel Preview and logs one `pilot-retired` line when its switch is set outside Preview. The pilot window it depends on expired on 15 October. See [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
+
 This importer saves an already authored devShark weekly bundle for owner review. It makes zero model calls and creates no paid generation job, approval or publication. The source producer must still return an eligible, unexpired packet with the exact authority fields and content hash. A private offline DB export alone cannot pass that live recheck.
 
 The server defaults to disabled. Activation requires `MARKETING_OFFLINE_IMPORT_ENABLED=true`, `VERCEL_ENV=preview`, the exact `MARKETING_OWNER_ID`, and the original active, registered owner pilot window. The database checks the immutable pilot tuple again. This does not add or reset its three paid reservations. The present implementation does not authorize a live import of 42 slots or production activation.

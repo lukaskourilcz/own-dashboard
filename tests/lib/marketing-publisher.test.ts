@@ -162,8 +162,11 @@ describe('guarded Meta publishing', () => {
 
 describe('inactive Cloud workflow exports', () => {
   it('keeps credentials out of JSON and publish calls free of blind automatic retries', async () => {
-    for (const file of (await readdir('workflows/marketing')).filter(file => file.endsWith('.json'))) {
-      const text = await readFile(`workflows/marketing/${file}`, 'utf8'); const workflow = JSON.parse(text);
+    // Retired exports keep the same guarantees as the ones still in place.
+    const exports = (await Promise.all(['workflows/marketing', 'workflows/marketing/retired'].map(async directory => (await readdir(directory)).filter(file => file.endsWith('.json')).map(file => ({ directory, file }))))).flat();
+    expect(exports.map(entry => entry.file)).toEqual(expect.arrayContaining(['staging-source-check.json', 'dneskai-collection-pilot-worker.json', 'dneskai-production-verification.json', 'dneskai-source-collection.json']));
+    for (const { directory, file } of exports) {
+      const text = await readFile(`${directory}/${file}`, 'utf8'); const workflow = JSON.parse(text);
       expect(workflow.active).toBe(false); expect(text).not.toContain('n8n-nodes-base.executeCommand');
       for (const node of workflow.nodes.filter((node: { type: string }) => node.type === 'n8n-nodes-base.httpRequest')) {
         if (file === 'staging-source-check.json') {
@@ -209,8 +212,11 @@ describe('inactive Cloud workflow exports', () => {
       }
     }
   });
+});
+
+describe('retired staging source check export', () => {
   it('keeps staging source prose, URLs and transport fields out of the manual summary', async () => {
-    const workflow = JSON.parse(await readFile('workflows/marketing/staging-source-check.json', 'utf8'));
+    const workflow = JSON.parse(await readFile('workflows/marketing/retired/staging-source-check.json', 'utf8'));
     const node = workflow.nodes.find((value: { type: string }) => value.type === 'n8n-nodes-base.code');
     const summarize = new Function('$input', node.parameters.jsCode);
     const marker = 'PRIVATE_TRANSPORT_AND_SOURCE_SENTINEL';

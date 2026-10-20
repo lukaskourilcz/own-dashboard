@@ -1,5 +1,7 @@
 # Private staging template approval receipt
 
+> **Retired 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)).** Outside Vercel Preview the receipt is ignored: the repository manifests apply, nothing is approved, and the process logs one `pilot-retired` line. See [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
+
 The owner approved the two current Claude Design-derived template digests for the staging pilot only. Public template manifests remain pending. Store the receipt only in the private Vercel Preview server variable `MARKETING_PILOT_TEMPLATE_APPROVALS`; do not commit its owner UUID, copy it into browser variables or provision it for Production.
 
 The value is a JSON array of at most two unique-brand objects. Each object contains exactly `brand`, `approvedBy`, `approvedAt`, `designExportSha256` and `templateSha256`. Use the fixed staging owner UUID for `approvedBy` and the actual owner approval timestamp for `approvedAt`. The timestamp must fall inside the fixed pilot window and must not be in the future. Keep the receipt unchanged after queue admission so retries/reloads bind the same approval metadata.

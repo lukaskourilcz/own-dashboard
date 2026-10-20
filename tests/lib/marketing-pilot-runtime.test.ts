@@ -13,7 +13,8 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 const owner = "11111111-1111-4111-8111-111111111111";
 const start = new Date("2026-10-13T10:00:00.000Z");
-const env = { MARKETING_AI_CONSENT: "true", ANTHROPIC_API_KEY: "TEST-ONLY-NO-REAL-PROVIDER", MARKETING_CLAUDE_MODEL: "claude-sonnet-4-6",
+// The pilot tuple is read only on Vercel Preview (#113).
+const env = { VERCEL_ENV: "preview", MARKETING_AI_CONSENT: "true", ANTHROPIC_API_KEY: "TEST-ONLY-NO-REAL-PROVIDER", MARKETING_CLAUDE_MODEL: "claude-sonnet-4-6",
   MARKETING_CLAUDE_INPUT_USD_PER_MTOK: "3", MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK: "15",
   MARKETING_PILOT_OWNER_ID: owner, MARKETING_PILOT_STARTS_AT: start.toISOString(), MARKETING_PILOT_EXPIRES_AT: "2026-10-15T10:00:00.000Z" };
 const pilot = { ownerId: owner, startsAt: env.MARKETING_PILOT_STARTS_AT, expiresAt: env.MARKETING_PILOT_EXPIRES_AT };

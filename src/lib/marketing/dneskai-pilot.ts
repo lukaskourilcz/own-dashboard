@@ -1,16 +1,18 @@
 import 'server-only';
 import { timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
+import { previewPilotRetired } from './preview-pilot';
 export const DNESKAI_COLLECTION_PILOT_MAX_RESERVED_USD=0.24;
 export const DNESKAI_COLLECTION_PILOT_MAX_RUNS=1;
 const names=['MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED','MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID','MARKETING_DNESKAI_COLLECTION_PILOT_PROJECT_ID','MARKETING_DNESKAI_COLLECTION_PILOT_STARTS_AT','MARKETING_DNESKAI_COLLECTION_PILOT_EXPIRES_AT'] as const;
 const schema=z.strictObject({ownerId:z.uuid(),projectId:z.uuid(),startsAt:z.iso.datetime(),expiresAt:z.iso.datetime()});
 export type DneskaiCollectionPilot=z.infer<typeof schema>;
 export class DneskaiCollectionPilotError extends Error{constructor(readonly code:string){super(code);}}
-/** Independent collection authority; never changes generation reservations or grants publishing authority. */
+/** Independent collection authority; never changes generation reservations or grants publishing authority. Preview only: elsewhere a configured tuple is retired and every pilot request fails closed. */
 export function dneskaiCollectionPilotConfiguration(owner:string,project:string,env:Record<string,string|undefined>=process.env,now=new Date()):DneskaiCollectionPilot|null{
  if(names.every(name=>env[name]===undefined))return null;
  if(env.MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED==='false'&&names.slice(1).every(name=>env[name]===undefined))return null;
+ if(previewPilotRetired('collection-pilot',env))throw new DneskaiCollectionPilotError('collection-pilot-invalid');
  const parsed=schema.safeParse({ownerId:env[names[1]],projectId:env[names[2]],startsAt:env[names[3]],expiresAt:env[names[4]]});
  if(env.VERCEL_ENV!=='preview'||env[names[0]]!=='true'||!parsed.success||env.MARKETING_OWNER_ID!==owner)throw new DneskaiCollectionPilotError('collection-pilot-invalid');
  const pilot=parsed.data,start=Date.parse(pilot.startsAt),end=Date.parse(pilot.expiresAt);

@@ -1,9 +1,11 @@
 # Marketing orchestration and publishing
 
+> **Historical state, superseded by [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110).** This page describes the October 2026 staging and n8n orchestration, retired on 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)). The current plan is [`docs/reports/dneskai-instagram-2026-10-20.md`](reports/dneskai-instagram-2026-10-20.md). Retired exports are in [`workflows/marketing/retired/`](../workflows/marketing/retired/README.md); the staging inventory is [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
+
 **DNESKAi update, 2026-10-13:** new collection uses
 `workflows/marketing/dneskai-source-collection.json` at 22:00 Europe/Prague, targeting
 four distinct next-day topics. See [collection and rotation](dneskai-source-collection.md).
-The older `daily-preparation.json` below is a retained inactive article-generation
+The older `retired/daily-preparation.json` below is a retained inactive article-generation
 workflow, not the new collection schedule. Do not activate both as competing daily plans.
 Topic selection never approves a final social revision.
 
@@ -15,7 +17,7 @@ No workflow, account, publisher or paid plan was activated while building these 
 
 Import the JSON files into the owner's existing n8n Cloud workspace and keep them unpublished:
 
-- `daily-preparation.json`: at 07:00 Prague time, discover real sources and the next day's actual
+- `retired/daily-preparation.json`: at 07:00 Prague time, discover real sources and the next day's actual
   active calendar entries, enqueue at most eight idempotent slots, execute accepted jobs and read
   their saved status. Calendar entries determine date/time/platform; the workflow invents no slot.
 - `approved-publisher.json`: an authenticated approval webhook and one hourly recovery execution query
@@ -27,7 +29,7 @@ Import the JSON files into the owner's existing n8n Cloud workspace and keep the
   queued/registered sources. Launch once or poll an existing run; provider launch retries are disabled.
   Manual runs support the pilot. A failed or ambiguous launch stays held for manual reconciliation,
   and cancelled sources are never resumed.
-- `source-reconciliation.json`: manual discovery and refresh of at most 20 actual source identities.
+- `retired/source-reconciliation.json`: manual discovery and refresh of at most 20 actual source identities.
   Missing or unapproved material produces no fabricated source or fallback story.
 
 Replace `https://own-dashboard.example.invalid` with the verified OwnDashboard host. Replace the
