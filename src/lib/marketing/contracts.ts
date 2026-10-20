@@ -81,6 +81,8 @@ export const ContentRevisionSchema = z.strictObject({
   knowledgeIds: z.array(z.uuid()).max(30),
   assets: z.array(AssetSchema).max(10),
   account: z.strictObject({ id, platform: PlatformSchema, handle: z.string().min(1).max(100) }),
+  /** Instagram co-authors invited on the post. Present only when a revision records a documented collaboration. */
+  collaborators: z.array(z.string().regex(/^[A-Za-z0-9._]{1,30}$/)).min(1).max(3).optional(),
   scheduledAt: timestamp,
   timeZone: z.literal("Europe/Prague"),
   templateVersion: id,

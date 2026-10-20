@@ -8,7 +8,20 @@ export type MarketingPublishAccount = { id: string; user_id: string; brand: Cont
   remote_account_id: string; handle: string; verified_at: string | null; enabled: boolean };
 export type MetaPublisherConfig = { enabled: boolean; apiVersion: string; apiVersionVerifiedAt: string;
   loginMode: 'instagram' | 'facebook' | 'threads'; accessToken: string; tokenExpiresAt: string;
-  scopes: string[]; approvedAssetHosts: string[]; pollAttempts?: number; pollIntervalMs?: number; requestTimeoutMs?: number };
+  scopes: string[]; approvedAssetHosts: string[]; pollAttempts?: number; pollIntervalMs?: number; requestTimeoutMs?: number;
+  /** Set by the credential resolver when no usable token exists; the publisher holds with this exact code. */
+  credentialHold?: string | null; credentialSource?: 'database' | 'environment' };
+/** Instagram feed image limits: JPEG, 320–1440 px wide, 4:5 to 1.91:1, at most 8 MiB. */
+export const INSTAGRAM_FEED_IMAGE = { minWidth: 320, maxWidth: 1440, maxBytes: 8 * 1024 * 1024 } as const;
+export const INSTAGRAM_MAX_COLLABORATORS = 3;
+export const INSTAGRAM_ALT_TEXT_MAX = 1000;
+export function instagramFeedGeometryValid(width: number, height: number): boolean {
+  // Cross-multiplied so 1080 x 1350 (exactly 4:5) is never lost to float rounding.
+  return Number.isInteger(width) && Number.isInteger(height) && width >= INSTAGRAM_FEED_IMAGE.minWidth && width <= INSTAGRAM_FEED_IMAGE.maxWidth &&
+    height > 0 && width * 5 >= height * 4 && width * 100 <= height * 191;
+}
+const instagramFeed = (revision: ContentRevision) => revision.account.platform === 'instagram' && revision.format !== 'story';
+const normalizedHandle = (value: string) => value.replace(/^@/, '').toLowerCase();
 export type PublishOutcome = { status: 'held' | 'dry-run' | 'pending' | 'published' | 'failed' | 'reconciliation';
   remoteContainerId: string | null; remoteMediaId: string | null; remoteUrl: string | null; errorCode: string | null };
 export type PublisherCheckpoint = PublishOutcome & { stage: 'container-create-intent' | 'container-created' | 'publish-intent' | 'outcome' };
@@ -34,7 +47,10 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   if (!account.enabled || !timestampValid(account.verified_at, now) || !idValid(account.remote_account_id)) return 'account-unverified-or-disabled';
   if (!config.enabled) return 'publishing-disabled';
   if (!/^v\d+\.\d+$/.test(config.apiVersion) || !timestampValid(config.apiVersionVerifiedAt, now)) return 'api-version-unverified';
-  if (!config.accessToken || !Number.isFinite(Date.parse(config.tokenExpiresAt)) || Date.parse(config.tokenExpiresAt) <= now.getTime()) return 'credentials-expired-or-missing';
+  if (config.credentialHold) return config.credentialHold;
+  if (!config.accessToken) return 'access-token-missing';
+  if (!Number.isFinite(Date.parse(config.tokenExpiresAt))) return 'access-token-expiry-unverified';
+  if (Date.parse(config.tokenExpiresAt) <= now.getTime()) return 'access-token-expired';
   if ((account.platform === 'threads') !== (config.loginMode === 'threads')) return 'login-mode-mismatch';
   const required = account.platform === 'threads' ? ['threads_basic', 'threads_content_publish'] : config.loginMode === 'instagram'
     ? ['instagram_business_basic', 'instagram_business_content_publish'] : ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement'];
@@ -55,6 +71,19 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   if (revision.format === 'carousel' && (revision.assets.length < 2 || revision.assets.length > 10)) return 'unsupported-carousel-size';
   if (revision.format === 'post' && revision.account.platform === 'instagram' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'image/jpeg')) return 'unsupported-post-assets';
   if (revision.format === 'reel' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'video/mp4')) return 'unsupported-reel-assets';
+  if (revision.assets.some(asset => asset.alt.length > INSTAGRAM_ALT_TEXT_MAX)) return 'asset-alt-too-long';
+  if (instagramFeed(revision)) {
+    // Declared geometry is checked here; the downloaded bytes are decoded and checked again before any container exists.
+    if (revision.assets.some(asset => asset.mimeType === 'image/jpeg' && !instagramFeedGeometryValid(asset.width, asset.height))) return 'asset-geometry-unsupported';
+    if ((revision.caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0) > 30) return 'caption-hashtag-limit';
+    if ((revision.caption.match(/(?<![\w.@])@[A-Za-z0-9._]{1,30}/g)?.length ?? 0) > 20) return 'caption-mention-limit';
+  }
+  const collaborators = revision.collaborators ?? [];
+  if (collaborators.length) {
+    if (!instagramFeed(revision) || !['post', 'carousel', 'reel'].includes(revision.format)) return 'collaborators-unsupported';
+    const names = collaborators.map(normalizedHandle);
+    if (names.length > INSTAGRAM_MAX_COLLABORATORS || new Set(names).size !== names.length || names.includes(normalizedHandle(account.handle))) return 'collaborators-invalid';
+  }
   return null;
 }
 
@@ -102,33 +131,54 @@ async function graph(input: PublishMarketingInput, node: string, method: 'GET' |
 }
 async function verifyRemoteAccount(input: PublishMarketingInput): Promise<string | null> {
   const story = input.revisionRow.revision.format === 'story';
+  // Instagram Login distinguishes the professional account ID (`user_id`,
+  // used by every publishing edge) from the app-scoped `id`; compare the former.
+  const instagramLogin = input.config.loginMode === 'instagram';
+  const fields = [instagramLogin ? 'id,user_id,username' : 'id,username', ...(story ? ['account_type'] : [])].join(',');
   let profile: Record<string, unknown>;
-  try { profile = await graph(input, input.account.remote_account_id, 'GET', { fields: story ? 'id,username,account_type' : 'id,username' }); }
+  try { profile = await graph(input, input.account.remote_account_id, 'GET', { fields }); }
   catch (error) { if (story) return 'story-business-account-unverified'; throw error; }
-  if (profile.id !== input.account.remote_account_id || typeof profile.username !== 'string' || profile.username.toLowerCase() !== input.account.handle.replace(/^@/, '').toLowerCase()) return 'remote-account-mismatch';
+  const identity = instagramLogin && typeof profile.user_id === 'string' ? profile.user_id : profile.id;
+  if (identity !== input.account.remote_account_id || typeof profile.username !== 'string' || profile.username.toLowerCase() !== normalizedHandle(input.account.handle)) return 'remote-account-mismatch';
   // Story publishing is restricted to Business accounts. Scopes or a stored
   // professional-account check alone cannot establish this current capability.
   if (story && (typeof profile.account_type !== 'string' || profile.account_type.toUpperCase() !== 'BUSINESS')) return 'story-business-account-unverified';
   return null;
 }
 async function verifyAssets(input: PublishMarketingInput): Promise<void> {
-  const story = input.revisionRow.revision.format === 'story';
-  for (const asset of input.revisionRow.revision.assets) {
+  const revision = input.revisionRow.revision;
+  const story = revision.format === 'story';
+  for (const asset of revision.assets) {
     input.signal?.throwIfAborted();
+    const feedImage = instagramFeed(revision) && asset.mimeType === 'image/jpeg';
     const url = new URL(asset.url);
     if (url.protocol !== 'https:' || url.username || url.password || !input.config.approvedAssetHosts.includes(url.hostname)) throw new MetaFailure('asset-host-unapproved');
     let response: Response;
     try { response = await (input.fetcher ?? fetch)(url.href, { redirect: 'error', signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000) }); }
     catch { throw new MetaFailure('asset-unreachable'); }
     if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== asset.mimeType || !response.body) throw new MetaFailure('asset-mime-or-response-invalid');
-    const maxBytes = story ? 8_000_000 : asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
+    const maxBytes = story ? 8_000_000 : feedImage ? INSTAGRAM_FEED_IMAGE.maxBytes : asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
     if (Number(response.headers.get('content-length')) > maxBytes) throw new MetaFailure('asset-too-large');
     const hash = createHash('sha256'); let bytes = 0; const reader = response.body.getReader();
     const imageChunks: Uint8Array[] = [];
     try { while (true) { input.signal?.throwIfAborted(); const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
-      if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); if (story) imageChunks.push(part.value); } }
+      if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); if (story || feedImage) imageChunks.push(part.value); } }
     catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable'); }
     if (hash.digest('hex') !== asset.sha256) throw new MetaFailure('asset-hash-mismatch');
+    if (feedImage) {
+      // Meta fetches the URL itself; check the approved bytes it will receive, not the declared metadata.
+      let metadata: { format?: string; width?: number; height?: number; orientation?: number; space?: string };
+      let decodeImage: (() => Promise<unknown>) | undefined;
+      try { const { default: sharp } = await import('sharp');
+        const image = sharp(Buffer.concat(imageChunks), { failOn: 'error', limitInputPixels: 8000 * 8000 });
+        metadata = await image.metadata(); decodeImage = () => image.stats();
+      } catch { throw new MetaFailure('asset-image-invalid'); }
+      if (metadata.format !== 'jpeg') throw new MetaFailure('asset-format-unsupported');
+      if (!metadata.width || !metadata.height || !instagramFeedGeometryValid(metadata.width, metadata.height) || (metadata.orientation !== undefined && metadata.orientation !== 1)) throw new MetaFailure('asset-dimensions-unsupported');
+      if (metadata.width !== asset.width || metadata.height !== asset.height) throw new MetaFailure('asset-dimensions-mismatch');
+      if (metadata.space !== 'srgb') throw new MetaFailure('asset-color-space-unsupported');
+      try { await decodeImage(); } catch { throw new MetaFailure('asset-image-invalid'); }
+    }
     if (story) {
       // Check the downloaded approved bytes, not caller-supplied dimensions.
       let metadata: { format?: string; width?: number; height?: number; orientation?: number };
@@ -180,7 +230,45 @@ async function verifyRecordedStory(input: PublishMarketingInput, media: string):
   return false;
 }
 
-/** This path never POSTs: PUBLISHED without a media ID remains a reconciliation for the operator. */
+/** How far before the scheduled slot the account's media list is read after an ambiguous publish. */
+export const RECONCILE_LOOKBACK_MS = 5 * 60_000;
+/** A publish intent is accepted at most 15 minutes after the slot; the extra 5 minutes cover the request deadline. */
+export const RECONCILE_LOOKAHEAD_MS = 20 * 60_000;
+const RECONCILE_CAPTION_PREFIX = 100;
+const RECONCILE_PAGE_SIZE = 50;
+const normalizedCaption = (value: string) => value.normalize('NFC').replace(/\s+/g, ' ').trim();
+const metaInstant = (value: unknown) => typeof value === 'string' ? Date.parse(value.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')) : Number.NaN;
+const expectedMediaType = (format: ContentRevision['format']) => format === 'carousel' ? 'CAROUSEL_ALBUM' : format === 'post' ? 'IMAGE' : format === 'reel' ? 'VIDEO' : null;
+type MediaMatch = { kind: 'match'; id: string; permalink: string | null } | { kind: 'none' | 'ambiguous' | 'incomplete' | 'unavailable' };
+/**
+ * After an ambiguous `media_publish`, the owned account's own media list is
+ * the only evidence used to recover the media ID: the same media type, a
+ * timestamp inside the slot window and the approved caption as a prefix.
+ * Exactly one match is required. This is a read; it never publishes.
+ */
+async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<MediaMatch> {
+  const revision = input.revisionRow.revision;
+  const type = expectedMediaType(revision.format); const scheduled = Date.parse(revision.scheduledAt);
+  if (!type || !Number.isFinite(scheduled)) return { kind: 'unavailable' };
+  const prefix = normalizedCaption(revision.caption).slice(0, RECONCILE_CAPTION_PREFIX);
+  const from = scheduled - RECONCILE_LOOKBACK_MS; const until = Math.min(scheduled + RECONCILE_LOOKAHEAD_MS, (input.now ?? new Date()).getTime() + 60_000);
+  let data: Record<string, unknown>;
+  try { data = await graph(input, `${input.account.remote_account_id}/media`, 'GET', { fields: 'id,caption,timestamp,permalink,media_type', since: String(Math.floor(from / 1000)), limit: String(RECONCILE_PAGE_SIZE) }); }
+  catch { return { kind: 'unavailable' }; }
+  if (!Array.isArray(data.data) || data.data.length > RECONCILE_PAGE_SIZE) return { kind: 'unavailable' };
+  const items = data.data.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
+  if (items.length !== data.data.length) return { kind: 'unavailable' };
+  const matches = items.filter(item => typeof item.id === 'string' && idValid(item.id) && item.media_type === type && typeof item.caption === 'string' &&
+    normalizedCaption(item.caption).startsWith(prefix) && metaInstant(item.timestamp) >= from && metaInstant(item.timestamp) <= until);
+  if (matches.length > 1) return { kind: 'ambiguous' };
+  const paging = data.paging as { next?: unknown } | undefined;
+  if (!matches.length) return { kind: items.length === RECONCILE_PAGE_SIZE && paging?.next ? 'incomplete' : 'none' };
+  const match = matches[0]!; let permalink: string | null = null;
+  try { const url = typeof match.permalink === 'string' ? new URL(match.permalink) : null; permalink = url && url.protocol === 'https:' && !url.username && !url.password ? url.href : null; } catch { permalink = null; }
+  return { kind: 'match', id: match.id as string, permalink };
+}
+
+/** This path never POSTs. A feed post whose publish was ambiguous is matched against the account's own media list. */
 export async function reconcileMarketingPublication(input: PublishMarketingInput): Promise<PublishOutcome> {
   if (input.publication.user_id !== input.revisionRow.user_id || input.account.user_id !== input.revisionRow.user_id || input.publication.revision_id !== input.revisionRow.id || input.publication.platform !== input.account.platform ||
       input.account.brand !== input.revisionRow.revision.brand || input.account.remote_account_id !== input.revisionRow.revision.account.id || (input.account.platform === 'threads') !== (input.config.loginMode === 'threads')) return result('held', 'publication-binding-mismatch');
@@ -189,7 +277,7 @@ export async function reconcileMarketingPublication(input: PublishMarketingInput
   // A persisted numeric publish acknowledgement is historical evidence even
   // after the Story expires or credentials change. It never causes a POST.
   if (publishedStoryReceipt(input.revisionRow.revision, input.publication)) return result('published', null, input.publication.remote_container_id, input.publication.remote_media_id, input.publication.remote_url);
-  if (!/^v\d+\.\d+$/.test(input.config.apiVersion) || !timestampValid(input.config.apiVersionVerifiedAt, input.now ?? new Date()) || !input.config.accessToken || !Number.isFinite(Date.parse(input.config.tokenExpiresAt)) || Date.parse(input.config.tokenExpiresAt) <= (input.now ?? new Date()).getTime()) return result('held', 'reconciliation-credentials-unavailable', input.publication.remote_container_id);
+  if (input.config.credentialHold || !/^v\d+\.\d+$/.test(input.config.apiVersion) || !timestampValid(input.config.apiVersionVerifiedAt, input.now ?? new Date()) || !input.config.accessToken || !Number.isFinite(Date.parse(input.config.tokenExpiresAt)) || Date.parse(input.config.tokenExpiresAt) <= (input.now ?? new Date()).getTime()) return result('held', 'reconciliation-credentials-unavailable', input.publication.remote_container_id);
   const { remote_container_id: container, remote_media_id: media } = input.publication;
   if (idValid(media)) {
     if (story) {
@@ -200,9 +288,21 @@ export async function reconcileMarketingPublication(input: PublishMarketingInput
     return result(url ? 'published' : 'reconciliation', url ? null : 'remote-permalink-unavailable', container, media, url);
   }
   if (!idValid(container)) return result('reconciliation', 'container-identity-unavailable', container);
-  try { const status = await containerStatus(input, container);
-    return result('reconciliation', status === 'PUBLISHED' ? 'remote-published-media-id-required' : `remote-container-${status.toLowerCase()}`, container);
-  } catch { return result('reconciliation', 'remote-status-unavailable', container); }
+  let status: string | null = null;
+  try { status = await containerStatus(input, container); } catch { status = null; }
+  // FINISHED, IN_PROGRESS, ERROR and EXPIRED all say this container was not
+  // published, so a similar post in the list cannot be ours.
+  if (instagramFeed(input.revisionRow.revision) && (status === 'PUBLISHED' || status === null)) {
+    const found = await findPublishedFeedMedia(input);
+    if (found.kind === 'match') {
+      const url = found.permalink ?? await mediaUrl(input, found.id);
+      return result(url ? 'published' : 'reconciliation', url ? null : 'remote-permalink-unavailable', container, found.id, url);
+    }
+    if (found.kind === 'ambiguous') return result('reconciliation', 'remote-media-match-ambiguous', container);
+    if (found.kind === 'incomplete') return result('reconciliation', 'remote-media-list-incomplete', container);
+  }
+  if (status === null) return result('reconciliation', 'remote-status-unavailable', container);
+  return result('reconciliation', status === 'PUBLISHED' ? 'remote-published-media-id-required' : `remote-container-${status.toLowerCase()}`, container);
 }
 
 export async function publishMarketingRevision(input: PublishMarketingInput): Promise<PublishOutcome> {
@@ -233,7 +333,10 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     const limit = Array.isArray(quota.data) ? quota.data[0] as Record<string, unknown> | undefined : quota;
     const quotaConfig = limit?.config;
     const total = quotaConfig && typeof quotaConfig === 'object' && 'quota_total' in quotaConfig ? quotaConfig.quota_total : null;
-    if (!limit || typeof limit.quota_usage !== 'number' || !Number.isInteger(limit.quota_usage) || limit.quota_usage < 0 || typeof total !== 'number' || !Number.isInteger(total) || total <= limit.quota_usage) return result('held', 'publishing-quota-unavailable-or-exhausted', container);
+    // The provider's quota_total is authoritative (the reference documents 50
+    // per 24 hours, the guide 100); no number is assumed when it is absent.
+    if (!limit || typeof limit.quota_usage !== 'number' || !Number.isInteger(limit.quota_usage) || limit.quota_usage < 0 || typeof total !== 'number' || !Number.isInteger(total) || total <= 0) return result('held', 'publishing-quota-unavailable', container);
+    if (limit.quota_usage >= total) return result('held', 'publishing-quota-exhausted', container);
     const createPath = `${input.account.remote_account_id}/${threads ? 'threads' : 'media'}`;
     const create = async (params: Record<string, string>) => {
       const data = await graph(input, createPath, 'POST', params);
@@ -246,19 +349,24 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       // Story text is rendered in the JPEG. The stored caption is internal
       // review copy; it is never sent as a public Story caption or alt_text.
       const fields: Record<string, string> = revision.format === 'story' ? {} : { [threads ? 'text' : 'caption']: revision.caption };
+      // Instagram accepts alt_text on image containers only; Threads takes it for images and videos.
+      const altText = (asset: ContentRevision['assets'][number]): Record<string, string> => threads || asset.mimeType === 'image/jpeg' ? { alt_text: asset.alt } : {};
       if (revision.format === 'story') {
         Object.assign(fields, { media_type: 'STORIES', image_url: revision.assets[0]!.url });
       } else if (revision.format === 'carousel') {
         const children: string[] = [];
         for (const asset of revision.assets) children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
-          [asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url']: asset.url, is_carousel_item: 'true', alt_text: asset.alt }));
+          [asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url']: asset.url, is_carousel_item: 'true', ...altText(asset) }));
         Object.assign(fields, { media_type: 'CAROUSEL', children: children.join(',') });
       } else if (revision.assets[0]) {
+        // An Instagram single image is the default container type: image_url without media_type or children.
         const asset = revision.assets[0]; fields[asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url'] = asset.url;
         if (asset.mimeType === 'video/mp4') fields.media_type = threads ? 'VIDEO' : 'REELS';
         else if (threads) fields.media_type = 'IMAGE';
-        fields.alt_text = asset.alt;
+        Object.assign(fields, altText(asset));
       } else fields.media_type = 'TEXT';
+      // Co-authors go on the post itself, never on carousel children, and only when the revision records them.
+      if (instagramFeed(revision) && revision.collaborators?.length) fields.collaborators = JSON.stringify(revision.collaborators);
       // auto_publish_text is omitted: container creation cannot approve or publish a thread.
       container = await create(fields);
       await save('container-created', result('pending', 'container-pending', container));
@@ -272,7 +380,14 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       if (attempt + 1 < attempts) await pollWait(input, Math.max(0, Math.min(1000, input.config.pollIntervalMs ?? 1000)));
     }
     if (status === 'IN_PROGRESS') return result('pending', 'container-pending', container);
-    if (status !== 'FINISHED') return result('reconciliation', status === 'PUBLISHED' ? 'remote-published-media-id-required' : 'container-unpublishable', container);
+    if (status === 'ERROR' || status === 'EXPIRED') {
+      // No media_publish was ever sent for this container on this path, so a
+      // failed container is a definite failure rather than an ambiguity.
+      const outcome = result('failed', `container-${status.toLowerCase()}`, container);
+      await save('outcome', outcome);
+      return outcome;
+    }
+    if (status !== 'FINISHED') return result('reconciliation', 'remote-published-media-id-required', container);
     const fresh = await input.revalidate();
     const refreshedGate = publicationGate(fresh, input.config, clock());
     if (refreshedGate || revisionHash(fresh.revisionRow.revision) !== revisionHash(revision) || fresh.account.remote_account_id !== input.account.remote_account_id) return result('held', refreshedGate ?? 'approval-changed-before-publish', container);
