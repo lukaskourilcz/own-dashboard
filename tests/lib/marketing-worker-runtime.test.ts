@@ -35,11 +35,19 @@ const model = { model: "claude-sonnet-4-6", pricing: { inputPerMillionUsd: 3, ou
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe("durable worker production boundaries", () => {
-  it("requires explicit consent/model/prices without guessing defaults", () => {
+  it("requires consent and a key; defaults only to Sonnet 5.5 at its own rates (#116)", () => {
     expect(() => marketingProviderConfiguration({})).toThrow("marketing-consent-required");
-    expect(() => marketingProviderConfiguration({ ...env, MARKETING_CLAUDE_MODEL: undefined })).toThrow("claude-configuration-required");
+    expect(() => marketingProviderConfiguration({ ...env, ANTHROPIC_API_KEY: undefined })).toThrow("claude-configuration-required");
+    expect(() => marketingProviderConfiguration({ ...env, MARKETING_CLAUDE_MODEL: "gpt-test-only" })).toThrow("claude-configuration-required");
+    // Another model never borrows Sonnet 5.5's prices.
     expect(() => marketingProviderConfiguration({ ...env, MARKETING_CLAUDE_INPUT_USD_PER_MTOK: undefined })).toThrow("claude-pricing-required");
+    expect(() => marketingProviderConfiguration({ ...env, MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK: "free" })).toThrow("claude-pricing-required");
     expect(marketingProviderConfiguration(env).pricing.inputPerMillionUsd).toBe(3);
+    const defaults = { MARKETING_AI_CONSENT: "true", ANTHROPIC_API_KEY: "test-only-no-real-call" };
+    expect(marketingProviderConfiguration(defaults)).toEqual({ apiKey: "test-only-no-real-call", model: "claude-sonnet-5-5", pricing: { inputPerMillionUsd: 2, outputPerMillionUsd: 10 } });
+    expect(marketingProviderConfiguration({ ...defaults, MARKETING_CLAUDE_MODEL: "", MARKETING_CLAUDE_INPUT_USD_PER_MTOK: "" }).pricing).toEqual({ inputPerMillionUsd: 2, outputPerMillionUsd: 10 });
+    // Rates the environment sets win, also for the default model.
+    expect(marketingProviderConfiguration({ ...defaults, MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK: "12" }).pricing).toEqual({ inputPerMillionUsd: 2, outputPerMillionUsd: 12 });
   });
   it("refuses pending templates and schedules beyond the signed URL window before queue insertion", async () => {
     const { db, rpc } = database(); const input = request();
