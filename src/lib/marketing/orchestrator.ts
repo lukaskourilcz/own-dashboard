@@ -7,7 +7,9 @@ import { SourceRefreshError,refreshMarketingSources,refreshSource } from './sour
 import { enqueueMarketingJob,executeMarketingJob } from './worker-runtime';
 import { trustedMarketingTemplate } from './template-registry';
 import { pragueScheduledAt } from './clock';
-import { publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type MetaPublisherConfig,type PublisherState } from './publisher';
+import { publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type PublisherState } from './publisher';
+import { resolveMetaPublisherConfig } from './meta-credentials';
+export { metaConfiguration } from './meta-credentials';
 type Database=ReturnType<typeof createAdminClient>;
 export function marketingSlotId(owner:string,brand:string,platform:string,scheduledAt:string,version=1,entryId?:string):string{
  const value=createHash('sha256').update([owner,brand,platform,scheduledAt,String(version),entryId??''].join('|')).digest('hex').slice(0,32);
@@ -63,11 +65,6 @@ export async function enqueueCalendarMarketingJob(db:Database,owner:string,input
  const knowledge=(items??[]).filter(item=>Array.isArray(item.metadata?.tags?.brand)&&item.metadata.tags.brand.includes(input.brand)&&(entry.knowledge_ids.length===0||entry.knowledge_ids.includes(item.ai_link_id))).slice(0,8).map(item=>({id:item.ai_link_id,brand:input.brand,presentation:String(item.metadata.summary??'').slice(0,1200)})).filter(item=>item.presentation.length>0);
  return enqueueMarketingJob(db,owner,{schemaVersion:'marketing-job/1',idempotencyKey:key,calendarEntryId:entry.id,calendarEntryVersion:entry.generation_version,generation:{source,account:{id:account.remote_account_id,platform:input.platform,handle:account.handle},scheduledAt,templateVersion:template.version,knowledge,consent:true,revisionId:key},template});
 }
-export function metaConfiguration(brand:MarketingBrand,platform:'instagram'|'threads',env:Record<string,string|undefined>=process.env):MetaPublisherConfig{
- const prefix=`MARKETING_${brand.toUpperCase()}_${platform.toUpperCase()}`;
- if(platform==='instagram'&&!['instagram','facebook'].includes(env[`${prefix}_LOGIN_MODE`]??''))throw new Error('meta-login-mode-required');
- return {enabled:env.MARKETING_PUBLISH_ENABLED==='true'&&env[`MARKETING_${brand.toUpperCase()}_PUBLISH_ENABLED`]==='true',apiVersion:env[`${prefix}_API_VERSION`]??'',apiVersionVerifiedAt:env[`${prefix}_API_VERSION_VERIFIED_AT`]??'',loginMode:platform==='threads'?'threads':env[`${prefix}_LOGIN_MODE`]==='instagram'?'instagram':'facebook',accessToken:env[`${prefix}_ACCESS_TOKEN`]??'',tokenExpiresAt:env[`${prefix}_TOKEN_EXPIRES_AT`]??'',scopes:(env[`${prefix}_VERIFIED_SCOPES`]??'').split(',').filter(Boolean),approvedAssetHosts:(env.MARKETING_APPROVED_ASSET_HOSTS??'').split(',').filter(Boolean)};
-}
 async function publishingState(db:Database,owner:string,revisionId:string,refresh:boolean,signal=AbortSignal.timeout(55000)):Promise<PublisherState>{
  const {data:row,error}=await db.from('marketing_revisions').select('*').eq('user_id',owner).eq('id',revisionId).single();
  if(error||!row)throw new Error('revision-unavailable');
@@ -111,7 +108,9 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
   const publication=raw as PublicationRow&{user_id:string;lease_until:string|null};const state=await publishingState(db,owner,publication.revision_id,true,signal);
   if(state.revisionRow.revision.brand!==brand)throw new Error('publication-brand-mismatch');
   let container=publication.remote_container_id,code=publication.error_code;
-  const outcome=await publishMarketingRevision({...state,publication,config:metaConfiguration(brand,publication.platform),dryRun,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
+  // The stored account token wins over the environment bootstrap; a held credential stops at the gate.
+  const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);
+  const outcome=await publishMarketingRevision({...state,publication,config,dryRun,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
    if(checkpoint.stage==='outcome'){
     const {error:receiptError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:publication.id,p_expected_container:container,p_expected_error:code,p_status:checkpoint.status,p_container:checkpoint.remoteContainerId,p_media:checkpoint.remoteMediaId,p_url:checkpoint.remoteUrl,p_error:checkpoint.errorCode});
     if(receiptError)throw new Error('publication-receipt-fence-lost');
@@ -133,7 +132,7 @@ export async function reconcileStoredMarketingPublication(db:Database,owner:stri
  const {data:publication,error}=await db.from('marketing_publications').select('*').eq('user_id',owner).eq('id',id).in('status',['claimed','reconciliation','published']).single();
  if(error||!publication)throw new Error('publication-unavailable');
  const state=await publishingState(db,owner,publication.revision_id,false);
- const outcome=await reconcileMarketingPublication({...state,publication,config:metaConfiguration(state.revisionRow.revision.brand,publication.platform),checkpoint:async()=>{throw new Error('read-only-reconciliation');},revalidate:async()=>state});
+ const outcome=await reconcileMarketingPublication({...state,publication,config:await resolveMetaPublisherConfig(db,owner,state.account,process.env),checkpoint:async()=>{throw new Error('read-only-reconciliation');},revalidate:async()=>state});
  if(outcome.status==='published'&&(outcome.remoteUrl||publishedStoryReceipt(state.revisionRow.revision,{status:outcome.status,platform:publication.platform,remote_media_id:outcome.remoteMediaId,remote_url:outcome.remoteUrl}))){const {error:saveError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:id,p_expected_container:publication.remote_container_id,p_expected_error:publication.error_code,p_status:'published',p_container:outcome.remoteContainerId,p_media:outcome.remoteMediaId,p_url:outcome.remoteUrl,p_error:null});if(saveError)throw new Error('receipt-reconciliation-required');}
  return outcome;
 }
