@@ -43,6 +43,11 @@ export const DneskaiFeedResponseSchema = z.strictObject({
   schemaVersion: z.literal('dneskai-feed/1'), sources: z.array(z.strictObject({
     sourceId: z.string(), status: z.enum(['ok', 'partial', 'error']), errorCode: z.string().nullable(),
     items: z.array(z.strictObject({ externalId: z.string(), title: z.string().max(500), url: z.url(),
-      publishedAt: z.iso.datetime({ offset: true }).nullable(), summary: z.string().max(2000), fetchedAt: z.iso.datetime({ offset: true }) })).max(20),
+      publishedAt: z.iso.datetime({ offset: true }).nullable(), summary: z.string().max(2000), fetchedAt: z.iso.datetime({ offset: true }),
+      // Optional and additive: the Quorum bridge omits both, so dneskai-feed/1 stays compatible.
+      // imageUrl is a reference the adapter saw for free (RSS media, card image, og:image); nothing downloads it.
+      imageUrl: z.url().max(2048).optional(),
+      // publishedAt is an upper bound derived from a day/month without a time of day.
+      dateEstimated: z.literal(true).optional() })).max(20),
   })).max(8),
 });

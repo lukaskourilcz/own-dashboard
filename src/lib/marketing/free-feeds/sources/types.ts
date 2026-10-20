@@ -24,7 +24,14 @@ export const SourceItemSchema = z.object({
   fetchedAt: z.string().datetime(),
   weight: z.number().min(0).max(1),
   tags: z.array(z.string().min(1)).max(12),
-  promptInjectionSignals: z.array(z.string()).max(20)
+  promptInjectionSignals: z.array(z.string()).max(20),
+  /** A publisher image URL the adapter saw for free (RSS media, card image, og:image). Never downloaded here. */
+  imageUrl: z.string().url().startsWith("https://").max(2048).optional(),
+  /**
+   * `publishedAt` is an upper bound, not the publisher's timestamp: the latest instant that still
+   * carries the stated day or month in any time zone, clamped to the fetch time.
+   */
+  dateEstimated: z.literal(true).optional()
 });
 export type SourceItem = z.infer<typeof SourceItemSchema>;
 
@@ -89,6 +96,8 @@ export interface SourceFetchContext {
   fetchImpl?: typeof fetch;
   resolveImpl?: (hostname: string) => Promise<string[]>;
   now: Date;
+  /** Collection window start; adapters may skip optional per-item work for older entries. */
+  since?: Date;
   signal?: AbortSignal;
   /** Defaults preserve existing pipelines; collection must explicitly prohibit both readers. */
   allowPaidReaders?: boolean;

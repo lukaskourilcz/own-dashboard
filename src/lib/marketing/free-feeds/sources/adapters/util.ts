@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { sanitizeExternalContent } from "../../security/content";
-import { safeFetch, type SafeFetchOptions } from "../../security/url";
+import { parseSafeHttpsUrl, safeFetch, type SafeFetchOptions } from "../../security/url";
 import {
   SourceItemSchema,
   type SourceConfig,
@@ -26,6 +26,8 @@ export function makeItem(
     publishedAt?: string | number | Date;
     author?: string;
     externalId?: string;
+    imageUrl?: string;
+    dateEstimated?: boolean;
   },
   source: SourceConfig,
   now: Date
@@ -43,12 +45,14 @@ export function makeItem(
   const summary = sanitizeExternalContent(fields.summary ?? "", 2_000);
   const author = sanitizeExternalContent(fields.author ?? "", 200).text || null;
 
+  const imageUrl = safeImageUrl(fields.imageUrl);
+  const publishedAt = safeIsoDate(fields.publishedAt);
   return SourceItemSchema.parse({
     sourceId: source.id,
     externalId: fields.externalId ?? stableId(canonical.toString()),
     title: title.text,
     url: canonical.toString(),
-    publishedAt: safeIsoDate(fields.publishedAt),
+    publishedAt,
     author,
     summary: summary.text,
     fetchedAt: now.toISOString(),
@@ -56,16 +60,36 @@ export function makeItem(
     tags: source.tags,
     promptInjectionSignals: [
       ...new Set([...title.promptInjectionSignals, ...summary.promptInjectionSignals])
-    ].slice(0, 20)
+    ].slice(0, 20),
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(publishedAt && fields.dateEstimated ? { dateEstimated: true } : {})
   });
 }
+
+/** Keep only a bounded public HTTPS image reference. The image itself is never fetched here. */
+export function safeImageUrl(value: string | undefined): string | undefined {
+  if (!value || value.length > 2048) return undefined;
+  try {
+    const url = parseSafeHttpsUrl(value.trim());
+    if (url.hash || url.toString().length > 2048) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Native requests identify the reader. Node's https client sends no User-Agent at all, which
+ * several CDNs reject; the token matches the one publishers already see from the bridge.
+ */
+export const SOURCE_USER_AGENT = "boardlessai-source-shadow/0.1";
 
 async function sourceFetch(
   url: string,
   context: SourceFetchContext,
   options: Omit<SafeFetchOptions, "allowHosts"> = {}
 ) {
-  return safeFetch(url, { fetchImpl: context.fetchImpl, resolveImpl: context.resolveImpl, maxRedirects: 0, ...options, allowHosts: context.allowHosts, signal: context.signal && options.signal ? AbortSignal.any([context.signal, options.signal]) : context.signal ?? options.signal });
+  return safeFetch(url, { fetchImpl: context.fetchImpl, resolveImpl: context.resolveImpl, maxRedirects: 0, ...options, headers: { "user-agent": SOURCE_USER_AGENT, ...options.headers }, allowHosts: context.allowHosts, signal: context.signal && options.signal ? AbortSignal.any([context.signal, options.signal]) : context.signal ?? options.signal });
 }
 
 export async function fetchText(

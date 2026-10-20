@@ -23,7 +23,7 @@ export async function collectNativeDneskaiFeed(source: DneskaiSource, since: str
   if (Date.parse(query.since) > now.getTime()) throw new Error('collection-window-invalid');
   const signal = AbortSignal.any([options.signal, AbortSignal.timeout(40_000)]);
   const issues = new Set<string>();
-  const items: Array<{ externalId: string; title: string; url: string; publishedAt: string | null; summary: string; fetchedAt: string }> = [];
+  const items: Array<{ externalId: string; title: string; url: string; publishedAt: string | null; summary: string; fetchedAt: string; imageUrl?: string; dateEstimated?: true }> = [];
   const envelope = (status: 'ok' | 'partial' | 'error', errorCode: string | null) => DneskaiFeedResponseSchema.parse({
     schemaVersion: 'dneskai-feed/1', sources: [{ sourceId: source.id, status, errorCode, items: items.slice(0, source.maxItems) }],
   });
@@ -32,7 +32,7 @@ export async function collectNativeDneskaiFeed(source: DneskaiSource, since: str
     signal.throwIfAborted();
     const raw = await fetchSource({ ...configured, maxItems: Math.min(50, source.maxItems + 1) }, {
       // All built-in API paths remain on the source's exact host. Redirects are prohibited.
-      allowHosts: [new URL(configured.url).hostname], now, signal, allowPaidReaders: false,
+      allowHosts: [new URL(configured.url).hostname], now, since: new Date(query.since), signal, allowPaidReaders: false,
       fetchImpl: options.fetcher, resolveImpl: options.resolve, reportIssue: code => { issues.add(code); },
     });
     signal.throwIfAborted();
@@ -53,10 +53,13 @@ export async function collectNativeDneskaiFeed(source: DneskaiSource, since: str
       if (item.publishedAt === null) issues.add('unknown-date');
       // Never feed detected source instructions into subsequent classification/editorial prompts.
       if (item.promptInjectionSignals.length) { issues.add('untrusted-instructions'); continue; }
-      items.push({ externalId: item.externalId, title: item.title, url: item.url, publishedAt: item.publishedAt, summary: item.summary, fetchedAt: now.toISOString() });
+      items.push({ externalId: item.externalId, title: item.title, url: item.url, publishedAt: item.publishedAt, summary: item.summary, fetchedAt: now.toISOString(),
+        ...(item.imageUrl ? { imageUrl: item.imageUrl } : {}), ...(item.dateEstimated ? { dateEstimated: true as const } : {}) });
     }
     items.sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''));
     if (items.length >= source.maxItems) issues.add('item-cap');
+    // An API that returned its full page, all of it older than the window, covered the window.
+    if (!items.length && [...issues].every(code => code === 'upstream-cap')) return envelope('ok', null);
     return envelope(issues.size ? items.length ? 'partial' : 'error' : 'ok', issues.size ? [...issues].sort().join(',') : null);
   } catch (error) {
     // Machine codes only: do not expose publisher bodies, query strings or headers.

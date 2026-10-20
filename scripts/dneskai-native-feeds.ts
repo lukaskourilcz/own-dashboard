@@ -58,7 +58,8 @@ async function main() {
         sourceId: source.id, kind: source.kind, maxItems: source.maxItems,
         startedAt: startedAt.toISOString(), finishedAt: new Date().toISOString(),
         status: row.status, errorCode: row.errorCode,
-        items: row.items.map(item => ({ externalId: item.externalId, url: item.url, publishedAt: item.publishedAt, fetchedAt: item.fetchedAt, title: item.title, ...('imageUrl' in item && item.imageUrl ? { imageUrl: item.imageUrl } : {}) })),
+        items: row.items.map(item => ({ externalId: item.externalId, url: item.url, publishedAt: item.publishedAt, fetchedAt: item.fetchedAt, title: item.title,
+          ...(item.dateEstimated ? { dateEstimated: true } : {}), ...(item.imageUrl ? { imageUrl: item.imageUrl } : {}) })),
       };
       console.log(`${source.id}\t${row.status}\t${row.errorCode ?? ''}\t${row.items.length}`);
     }
