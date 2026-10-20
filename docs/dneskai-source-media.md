@@ -116,8 +116,9 @@ text nesmí podat jako přepis videa: je to jen popisek.
 `purgeUnusedDneskaiMedia(db, owner, 30)` smaže byty assetů starších než 30 dní, na které
 neodkazuje žádná revize (`revision.deck.slides[].images[].assetSha256`, v jakémkoli
 stavu) a které žádný kandidát nepoužil v posledních 30 dnech. Nastaví `purged_at`,
-řádky, původ a credit zůstávají. Když mazání v úložišti selže, značka se vrátí a
-další denní běh to zkusí znovu. Plánovač ji volá jednou denně, ne souběžně se sběrem.
+řádky, původ a credit zůstávají. Maže se po stovkách objektů. Když dávka v úložišti
+selže, značka se vrátí jen jí a dávkám po ní a další denní běh je zkusí znovu. Dávky
+smazané před chybou značku drží, protože jejich byty už nejsou. Plánovač ji volá jednou denně, ne souběžně se sběrem.
 Stejné byty stažené později se nahrají znovu a `purged_at` se vymaže.
 
 ## API

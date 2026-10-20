@@ -35,6 +35,8 @@ export const DNESKAI_MEDIA_FETCH_TIMEOUT_MS = 15_000;
 export const DNESKAI_MEDIA_PREVIEW_SECONDS = 60 * 60;
 /** Reads of one picture (or of the article page) before a retryable failure becomes final. */
 export const DNESKAI_MEDIA_MAX_ATTEMPTS = 3;
+/** Storage deletes per request during retention. */
+export const DNESKAI_MEDIA_PURGE_CHUNK = 100;
 const DEFAULT_BUDGET_MS = 50_000;
 const LEASE_SAFETY_MS = DNESKAI_MEDIA_FETCH_TIMEOUT_MS + 5_000;
 
@@ -387,15 +389,20 @@ export async function purgeUnusedDneskaiMedia(db: DneskaiMediaDatabase, owner: s
   if (!Number.isInteger(olderThanDays) || olderThanDays < 1 || olderThanDays > 365) throw new DneskaiMediaError('media-purge-invalid');
   const store = options.store ?? supabaseMediaObjectStore(db);
   const claimed = z.array(z.object({ id: z.uuid(), storagePath: z.string() })).parse(await rpc(db, 'marketing_media_claim_purge', { p_owner: owner, p_older_than_days: olderThanDays, p_limit: options.limit ?? 200 }));
-  if (!claimed.length) return { purged: 0, errorCode: null };
-  try {
-    await store.remove(claimed.map((row) => objectName(owner, row.storagePath)));
-  } catch {
-    // Nothing is marked purged while its bytes may still be there; the next daily pass retries.
-    await rpc(db, 'marketing_media_unmark_purge', { p_owner: owner, p_ids: claimed.map((row) => row.id) });
-    return { purged: 0, errorCode: 'media-purge-storage-failed' };
+  let purged = 0;
+  for (let index = 0; index < claimed.length; index += DNESKAI_MEDIA_PURGE_CHUNK) {
+    const chunk = claimed.slice(index, index + DNESKAI_MEDIA_PURGE_CHUNK);
+    try {
+      await store.remove(chunk.map((row) => objectName(owner, row.storagePath)));
+      purged += chunk.length;
+    } catch {
+      // Only rows whose deletion did not happen lose the mark: an earlier chunk's bytes are gone, and an
+      // unmarked row without bytes would be reused without a fresh upload. The next daily pass retries.
+      await rpc(db, 'marketing_media_unmark_purge', { p_owner: owner, p_ids: claimed.slice(index).map((row) => row.id) });
+      return { purged, errorCode: 'media-purge-storage-failed' as const };
+    }
   }
-  return { purged: claimed.length, errorCode: null };
+  return { purged, errorCode: null };
 }
 
 const LinkRowSchema = z.object({

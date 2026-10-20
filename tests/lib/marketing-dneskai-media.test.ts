@@ -26,6 +26,9 @@ class MemoryStore implements DneskaiMediaObjectStore {
   objects = new Map<string, { bytes: Buffer; contentType: string; metadata: Record<string, string> }>();
   puts: string[] = [];
   failRemove = false;
+  /** Fails every remove call after this many have succeeded. */
+  failRemoveAfter = Infinity;
+  removeCalls = 0;
   async put(name: string, bytes: Buffer, contentType: string, metadata: Record<string, string>) {
     this.puts.push(name);
     if (this.objects.has(name)) return 'exists' as const;
@@ -33,7 +36,11 @@ class MemoryStore implements DneskaiMediaObjectStore {
     return 'stored' as const;
   }
   async get(name: string) { return this.objects.get(name)?.bytes ?? null; }
-  async remove(names: readonly string[]) { if (this.failRemove) throw new Error('offline storage failure'); for (const name of names) this.objects.delete(name); }
+  async remove(names: readonly string[]) {
+    if (this.failRemove || this.removeCalls >= this.failRemoveAfter) throw new Error('offline storage failure');
+    this.removeCalls += 1;
+    for (const name of names) this.objects.delete(name);
+  }
   async sign(names: readonly string[]) { return names.map((name) => `https://storage.test/sign/${name}?token=TEST`); }
 }
 
@@ -253,5 +260,27 @@ describe('purgeUnusedDneskaiMedia', () => {
     expect(Number((await pg.query<{ n: string }>('select count(*) n from marketing_media_assets')).rows[0]!.n)).toBe(all.length);
     await expect(createDneskaiMediaLoader(client(), owner, { store })(sha(B))).rejects.toThrow('media-asset-unavailable');
     await expect(purgeUnusedDneskaiMedia(client(), owner, 0, { store })).rejects.toThrow('media-purge-invalid');
+  });
+
+  it('keeps the purge mark of a chunk whose bytes were deleted when a later chunk fails', async () => {
+    const store = new MemoryStore();
+    const ids: string[] = [];
+    for (let index = 0; index < 120; index += 1) {
+      const digest = createHash('sha256').update(`OFFLINE purge ${index}`).digest('hex');
+      const { rows } = await pg.query<{ id: string; storage_path: string }>(`insert into marketing_media_assets(user_id,project_id,sha256,candidate_id,source_id,external_id,origin_url,origin_kind,position,width,height,mime,bytes,storage_path,credit,fetched_at)
+        values($1,$2,$3,'offline','offline','offline','https://cdn.publisher.test/x.jpg','og-image',0,1200,900,'image/jpeg',1,$4,'Obrázek: Publisher','2026-09-01T00:00:00Z') returning id,storage_path`, [owner, project, digest, `marketing-media/${owner}/${digest}.jpg`]);
+      ids.push(rows[0]!.id);
+      store.objects.set(rows[0]!.storage_path.slice('marketing-media/'.length), { bytes: Buffer.alloc(1), contentType: 'image/jpeg', metadata: {} });
+    }
+    store.failRemoveAfter = 1;
+    expect(await purgeUnusedDneskaiMedia(client(), owner, 30, { store })).toEqual({ purged: 100, errorCode: 'media-purge-storage-failed' });
+    const marked = await pg.query<{ id: string; storage_path: string }>('select id,storage_path from marketing_media_assets where id=any($1) and purged_at is not null', [ids]);
+    expect(marked.rows).toHaveLength(100);
+    // Every row still marked has lost its bytes, and every row with bytes is unmarked.
+    for (const row of marked.rows) expect(store.objects.has(row.storage_path.slice('marketing-media/'.length))).toBe(false);
+    expect(store.objects.size).toBe(20);
+    store.failRemoveAfter = Infinity;
+    expect(await purgeUnusedDneskaiMedia(client(), owner, 30, { store })).toEqual({ purged: 20, errorCode: null });
+    expect(store.objects.size).toBe(0);
   });
 });
