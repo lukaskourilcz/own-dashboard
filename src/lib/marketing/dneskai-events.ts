@@ -72,22 +72,26 @@ function jaccard(left: ReadonlySet<string>, right: ReadonlySet<string>): { score
 }
 
 const disjoint = (a: readonly string[], b: readonly string[]) => a.length > 0 && b.length > 0 && !a.some((token) => b.includes(token));
+const VERSION_TOKEN = /^v?\d+(?:\.\d+)+[a-z0-9-]*$|^v\d+$/;
+/** A headline's tokens with its number and version tokens, computed once per report. */
+type TitleFacts = { tokens: ReadonlySet<string>; numbers: string[]; versions: string[] };
+function titleFacts(tokens: ReadonlySet<string>): TitleFacts {
+  const all = [...tokens];
+  return { tokens, numbers: all.filter((token) => /\d/.test(token)), versions: all.filter((token) => VERSION_TOKEN.test(token)) };
+}
 /**
  * Different version or number tokens mean different events, however similar the rest reads: `0.12.6` and
  * `0.12.7` are two releases even when both headlines also mention „Gemma 3“.
  */
-function numbersConflict(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
-  const numbers = (tokens: ReadonlySet<string>) => [...tokens].filter((token) => /\d/.test(token));
-  const versions = (tokens: ReadonlySet<string>) => [...tokens].filter((token) => /^v?\d+(?:\.\d+)+[a-z0-9-]*$|^v\d+$/.test(token));
-  return disjoint(versions(left), versions(right)) || disjoint(numbers(left), numbers(right));
+function factsMatch(a: TitleFacts, b: TitleFacts): boolean {
+  if (disjoint(a.versions, b.versions) || disjoint(a.numbers, b.numbers)) return false;
+  const { score, shared } = jaccard(a.tokens, b.tokens);
+  return shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD;
 }
 
 /** True when two headlines describe the same event by the #115 token rule. */
 export function dneskaiHeadlinesMatch(left: string, right: string): boolean {
-  const a = dneskaiTitleTokens(left), b = dneskaiTitleTokens(right);
-  if (numbersConflict(a, b)) return false;
-  const { score, shared } = jaccard(a, b);
-  return shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD;
+  return factsMatch(titleFacts(dneskaiTitleTokens(left)), titleFacts(dneskaiTitleTokens(right)));
 }
 
 const TRACKING = /^(?:utm_.*|fbclid|gclid|ref|ref_src|source|igsh|igshid|si|mc_cid|mc_eid|ncid|cmpid|guccounter)$/i;
@@ -153,22 +157,31 @@ export function groupDneskaiEvents<T extends DneskaiEventInput>(candidates: read
   const reasons = new Map<number, Set<DneskaiEvent['links'][number]>>();
   const union = (left: number, right: number, reason: DneskaiEvent['links'][number]) => {
     const a = find(left), b = find(right);
-    const merged = new Set([...(reasons.get(a) ?? []), ...(reasons.get(b) ?? []), reason]);
-    if (a !== b) parent[Math.max(a, b)] = Math.min(a, b);
-    reasons.set(find(left), merged);
+    const root = Math.min(a, b), other = Math.max(a, b);
+    const merged = reasons.get(root) ?? new Set<DneskaiEvent['links'][number]>();
+    if (a !== b) { for (const value of reasons.get(other) ?? []) merged.add(value); reasons.delete(other); parent[other] = root; }
+    merged.add(reason);
+    reasons.set(root, merged);
   };
-  const tokens = items.map((item) => dneskaiEventHeadline(item));
+  // Everything a pair comparison needs is computed once per report: a night can hold a few thousand reports.
+  const facts = items.map((item) => titleFacts(dneskaiTitleTokens(dneskaiEventHeadline(item))));
   const urls = items.map((item) => dneskaiEventUrlKeys(item));
+  const urlSets = urls.map((keys) => new Set(keys));
+  const times = items.map((item) => { const value = instant(item); return Number.isFinite(value) ? value : 0; });
   items.forEach((item, position) => {
     const target = item.duplicateOf ? index.get(item.duplicateOf) : undefined;
     if (target !== undefined && target !== position) union(position, target, 'jev-duplicate');
   });
   const windowMs = DNESKAI_EVENT_WINDOW_HOURS * 3600000;
-  for (let left = 0; left < items.length; left++) {
-    for (let right = left + 1; right < items.length; right++) {
-      if (Math.abs(instant(items[left]!) - instant(items[right]!)) > windowMs) continue;
-      if (urls[left]!.some((key) => urls[right]!.includes(key))) union(left, right, 'same-url');
-      else if (dneskaiHeadlinesMatch(tokens[left]!, tokens[right]!)) union(left, right, 'similar-title');
+  // Pairs are visited in publication order, so each scan stops at the end of the 72-hour window.
+  const byTime = items.map((_, position) => position).sort((a, b) => times[a]! - times[b]! || a - b);
+  for (let i = 0; i < byTime.length; i++) {
+    const left = byTime[i]!;
+    for (let j = i + 1; j < byTime.length; j++) {
+      const right = byTime[j]!;
+      if (times[right]! - times[left]! > windowMs) break;
+      if (urls[left]!.some((key) => urlSets[right]!.has(key))) union(left, right, 'same-url');
+      else if (factsMatch(facts[left]!, facts[right]!)) union(left, right, 'similar-title');
     }
   }
   const groups = new Map<number, T[]>();
@@ -180,10 +193,19 @@ export function groupDneskaiEvents<T extends DneskaiEventInput>(candidates: read
   }));
 }
 
-/** The `p_events` argument of `marketing_dneskai_finish`: events with two or more members (a single report is implicit). */
-export function dneskaiFinishEvents(events: readonly DneskaiEvent[]): Array<{ eventId: string; anchorId: string; memberIds: string[] }> {
-  return events.filter((event) => event.members.length > 1).slice(0, 300)
-    .map((event) => ({ eventId: event.eventId, anchorId: event.anchorId, memberIds: event.members.map((member) => member.id) }));
+/** `marketing_dneskai_finish` accepts at most this many events, each with at most this many members. */
+export const DNESKAI_FINISH_EVENT_LIMIT = 300;
+export const DNESKAI_FINISH_EVENT_MEMBER_LIMIT = 300;
+/**
+ * The `p_events` argument of `marketing_dneskai_finish`: events with two or more members (a single report is
+ * implicit). `keep` drops events that cannot be selected (no open report); over the limit the events with the
+ * most recently collected member win, and an oversized event keeps its anchor and earliest members.
+ */
+export function dneskaiFinishEvents<T extends DneskaiEventInput>(events: readonly DneskaiEvent<T>[], keep: (event: DneskaiEvent<T>) => boolean = () => true): Array<{ eventId: string; anchorId: string; memberIds: string[] }> {
+  const latest = (event: DneskaiEvent<T>) => Math.max(...event.members.map((member) => Date.parse(member.fetchedAt)));
+  const grouped = events.filter((event) => event.members.length > 1 && keep(event));
+  const kept = grouped.length > DNESKAI_FINISH_EVENT_LIMIT ? [...grouped].sort((a, b) => latest(b) - latest(a)).slice(0, DNESKAI_FINISH_EVENT_LIMIT) : grouped;
+  return kept.map((event) => ({ eventId: event.eventId, anchorId: event.anchorId, memberIds: event.members.slice(0, DNESKAI_FINISH_EVENT_MEMBER_LIMIT).map((member) => member.id) }));
 }
 
 /**

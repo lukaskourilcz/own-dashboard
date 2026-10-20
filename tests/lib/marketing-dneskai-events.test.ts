@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { dneskaiEventId, dneskaiEventMemberHash, dneskaiHeadlinesMatch, dneskaiPrimaryUrlKey, dneskaiSourceTier, dneskaiTitleTokens, groupDneskaiEvents, rankDneskaiEventMembers } from '@/lib/marketing/dneskai-events';
+import { DNESKAI_FINISH_EVENT_LIMIT, dneskaiEventId, dneskaiEventMemberHash, dneskaiFinishEvents, dneskaiHeadlinesMatch, dneskaiPrimaryUrlKey, dneskaiSourceTier, dneskaiTitleTokens, groupDneskaiEvents, rankDneskaiEventMembers } from '@/lib/marketing/dneskai-events';
 import { syntheticCandidate } from './marketing-dneskai-briefs-db';
 vi.mock('server-only', () => ({}));
 
@@ -76,19 +76,73 @@ describe('DNESKAi event grouping without paid calls (#115)', () => {
   });
 });
 
+describe('the events sent to marketing_dneskai_finish', () => {
+  it('keeps only the events a keep rule allows and, over the limit, the most recently collected ones', () => {
+    const pairs = Array.from({ length: DNESKAI_FINISH_EVENT_LIMIT + 2 }, (_, index) => [
+      report('openai-blog', `pair-${index}-a`, `Synthetic launch number ${index} of Model Nine`, index / 10),
+      report('the-verge', `pair-${index}-b`, `Synthetic launch number ${index} of Model Nine`, index / 10 + 0.01),
+    ]).flat();
+    const events = groupDneskaiEvents(pairs);
+    expect(events).toHaveLength(DNESKAI_FINISH_EVENT_LIMIT + 2);
+    const sent = dneskaiFinishEvents(events);
+    expect(sent).toHaveLength(DNESKAI_FINISH_EVENT_LIMIT);
+    // The two earliest events give way; the newest ones are the ones that can still be selected.
+    expect(sent.map((event) => event.anchorId)).not.toContain(pairs[0]!.id);
+    expect(sent.map((event) => event.anchorId)).not.toContain(pairs[2]!.id);
+    expect(sent.map((event) => event.anchorId)).toContain(pairs[4]!.id);
+    expect(dneskaiFinishEvents(events.slice(0, 3), (event) => event.anchorId !== pairs[0]!.id).map((event) => event.anchorId)).toEqual([pairs[2]!.id, pairs[4]!.id]);
+  });
+});
+
+type Rows = Array<{ candidate: unknown }>;
+/** A Supabase stand-in for the store: the candidate reads are answered by status, with `range` paging. */
+function storeDatabase(byStatus: Record<string, Rows>) {
+  const reads: Array<{ status: string; from: number; to: number }> = [];
+  const from = (table: string) => {
+    let status = ''; let range: [number, number] | null = null;
+    const value: Record<string, unknown> = {};
+    for (const key of ['select', 'in', 'gte', 'order', 'limit', 'maybeSingle']) value[key] = () => value;
+    value.eq = (column: string, filter: string) => { if (column === 'status') status = filter; return value; };
+    value.range = (start: number, end: number) => { range = [start, end]; reads.push({ status, from: start, to: end }); return value; };
+    value.then = (resolve: (result: unknown) => unknown) => Promise.resolve({ data: table === 'marketing_dneskai_runs' ? { project_id: 'project' } : (byStatus[status] ?? []).slice(range![0], range![1] + 1), error: null }).then(resolve);
+    return value;
+  };
+  return { reads, db: { from, rpc: vi.fn(async () => ({ data: { id: 'run' }, error: null })) } };
+}
+
 describe('the collection store passes the grouping to marketing_dneskai_finish', () => {
   it('sends p_events for a finishing run and nothing while the run continues', async () => {
     const { createDneskaiCollectionStore } = await import('@/lib/marketing/dneskai-store');
     const a = report('openai-blog', 'store-a', 'Synthetic launch of Model Nine for developers', 0, { status: 'new' });
     const b = report('the-verge', 'store-b', 'Synthetic launch of Model Nine for developers', 1, { status: 'new' });
     const c = report('hf-blog', 'store-c', 'Unrelated synthetic notebook tool', 2, { status: 'new' });
-    const chain = (data: unknown) => { const value: Record<string, unknown> = {}; for (const key of ['select', 'eq', 'in', 'gte', 'order', 'limit', 'maybeSingle']) value[key] = () => value; value.then = (resolve: (result: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve); return value; };
-    const rpc = vi.fn(async () => ({ data: { id: 'run' }, error: null }));
-    const db = { from: (table: string) => chain(table === 'marketing_dneskai_runs' ? { project_id: 'project' } : [a, b, c].map((candidate) => ({ candidate }))), rpc };
+    // An event of a selected report and its duplicate has no open report: it cannot be selected and is not sent.
+    const s = report('wired-ai', 'store-s', 'Synthetic chip export rules tightened', 0, { status: 'selected', targetDate: '2026-10-20' });
+    const d = report('the-register', 'store-d', 'Synthetic chip export rules tightened', 1, { status: 'duplicate', duplicateOf: s.id });
+    const { db, reads } = storeDatabase({ new: [a, b, c].map((candidate) => ({ candidate })), selected: [{ candidate: s }], duplicate: [{ candidate: d }] });
     const store = createDneskaiCollectionStore(db as never);
     await store.finish('owner', 'run', 'fence', 'complete', null);
-    expect(rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'complete', p_error: null, p_events: [{ eventId: dneskaiEventId(a.id), anchorId: a.id, memberIds: [a.id, b.id] }] });
+    expect(db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'complete', p_error: null, p_events: [{ eventId: dneskaiEventId(a.id), anchorId: a.id, memberIds: [a.id, b.id] }] });
+    expect(reads).toEqual([{ status: 'new', from: 0, to: 999 }, { status: 'selected', from: 0, to: 999 }, { status: 'duplicate', from: 0, to: 999 }]);
     await store.finish('owner', 'run', 'fence', 'running', null);
-    expect(rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'running', p_error: null });
+    expect(db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'running', p_error: null });
+  });
+
+  it('pages through the open reports and records a grouping that reached its read limit on the run', async () => {
+    const { createDneskaiCollectionStore, DNESKAI_EVENT_READS } = await import('@/lib/marketing/dneskai-store');
+    const limit = DNESKAI_EVENT_READS[0].limit;
+    const open = Array.from({ length: limit + 1 }, (_, index) => ({ candidate: report('hf-blog', `open-${index}`, `Synthetic tool ${index}`, -index / 100, { status: 'new' }) }));
+    const { db, reads } = storeDatabase({ new: open });
+    const store = createDneskaiCollectionStore(db as never);
+    await store.finish('owner', 'run', 'fence', 'complete', null);
+    expect(reads.filter((read) => read.status === 'new')).toEqual([{ status: 'new', from: 0, to: 999 }, { status: 'new', from: 1000, to: 1999 }, { status: 'new', from: 2000, to: 2000 }]);
+    expect(db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', expect.objectContaining({ p_error: 'collection-event-window-partial' }));
+    // A run that already carries a code keeps it.
+    await store.finish('owner', 'run', 'fence', 'partial', 'collection-review-incomplete');
+    expect(db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', expect.objectContaining({ p_error: 'collection-review-incomplete' }));
+    // Exactly the limit is complete: nothing was left out.
+    const exact = storeDatabase({ new: open.slice(0, limit) });
+    await createDneskaiCollectionStore(exact.db as never).finish('owner', 'run', 'fence', 'complete', null);
+    expect(exact.db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', expect.objectContaining({ p_error: null }));
   });
 });
