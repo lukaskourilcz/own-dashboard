@@ -76,7 +76,7 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     const briefs = await store.briefs(owner, project, runId);
     expect(briefs.map((row) => [row.rank, row.status, row.code, row.scheduled_at])).toEqual([[1, 'pending', 'account-unavailable', '2026-10-21T06:00:00+00:00'], [2, 'pending', 'account-unavailable', '2026-10-21T10:30:00+00:00']]);
     // The owner's read: events with their reports, primary first, and the brief state.
-    const read = await readDneskaiBriefs(pgliteRestClient(db) as never, owner, project, { date: '2026-10-21' });
+    const read = await readDneskaiBriefs(pgliteRestClient(db) as never, owner, project, '2026-10-21');
     expect(read.events.map((event) => [event.status, event.brief?.rank, event.brief?.status, event.brief?.code, event.members.map((member) => [member.candidateId, member.role])])).toEqual([
       ['selected', 1, 'pending', 'account-unavailable', [[lead.id, 'primary'], [verge.id, 'supporting']]], ['selected', 2, 'pending', 'account-unavailable', [[tool.id, 'primary']]]]);
     expect(read.events[0]!.brief).toMatchObject({ scheduledAt: '2026-10-21T06:00:00.000Z', mediaCount: 1, evidenceCount: 2, suggestedFormat: 'carousel' });

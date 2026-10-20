@@ -38,8 +38,9 @@ and duplicates; wider editorial evaluation remains tracked in
 [#108](https://github.com/lukaskourilcz/own-dashboard/issues/108).
 The web keeps its single daily BoardlessAI article and existing delivery path.
 Socials can cover more research topics; collecting them does not create extra
-web articles. The current content adapter still accepts final articles, while
-independent social briefs from other topics remain in progress. Source/template
+web articles. Selected events become social briefs and generation jobs in
+OwnDashboard without an article ([events and briefs](dneskai-briefs.md), #115);
+an approved article remains a valid source. Source/template
 approval does not approve exact final copy, graphics, account or publication
 time. The guide does not claim that source-port work in #104 has cut over.
 

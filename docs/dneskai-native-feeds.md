@@ -74,9 +74,9 @@ The daily web article remains subject to its existing quality/review gates;
 a social topic cannot cause a second web article or approve an edition.
 
 Native results are research candidates, not approved article SourcePackets.
-The existing content adapter still requires a final BoardlessAI article.
-Independent social briefs from other selected topics are a remaining step
-in #96/#104; never relabel research as a published or approved web article.
+Selected events become social briefs inside OwnDashboard (#115,
+[events and briefs](dneskai-briefs.md)) with no web article and no Quorum call;
+never relabel research as a published or approved web article.
 
 ## Live read-only comparison, 14 October 2026
 

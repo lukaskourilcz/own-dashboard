@@ -14,16 +14,17 @@ flowchart TD
   A[22:00: denní zdroje a dnešní skupina] --> B[Nové texty a odkazy na média]
   B --> C[Kontrola ID a již zpracovaného obsahu]
   C --> D[Jev: relevance a podobné události]
-  D --> E[Nejvýše čtyři témata na zítřek]
+  D --> E[Nejvýše čtyři události na zítřek]
   D --> F[Ostatní kandidáti a důvody vyřazení]
-  E --> G[Navazující redakční zpracování BoardlessAI]
-  G --> H[Finální text a grafika]
+  E --> G[Zadání z událostí a obrázků v OwnDashboardu]
+  G --> H[Text a slidy z jednoho volání modelu]
   H --> I[Vlastník schválí přesnou verzi v OwnDashboardu]
   I --> J[Stávající řízené publikování]
 ```
 
-Tato změna implementuje sběr a výběr témat. Navazující tvorba grafiky, převod do
-hotové revize a připojení Threads zůstávají odložené podle zadání. Ve výběru nejsou
+Tato změna implementuje sběr a výběr témat. Od #115 se vybírají události, ne
+jednotlivé zprávy, a z každé vznikne zadání bez článku: viz
+[události a zadání](dneskai-briefs.md). Připojení Threads zůstává odložené. Ve výběru nejsou
 tlačítka, která by mohla schválit budoucí, dosud nevytvořený příspěvek. Stávající
 marketingový schvalovací postup váže souhlas na přesný text, média, účet a termín;
 změna revize vyžaduje nové schválení.

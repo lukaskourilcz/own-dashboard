@@ -1,0 +1,179 @@
+# DNESKAi: události a zadání bez článku (#115)
+
+Večerní sběr (#111, #112) končí výběrem nejvýše čtyř **událostí** na další den. Každá
+vybraná událost se po stažení obrázků (#114) změní v **zadání** (brief,
+`dneskai-brief/1`) a to v jednu úlohu generování v `marketing_jobs`. Článek
+BoardlessAI k tomu není potřeba, Quorum se nevolá a v celé cestě neběží žádný model.
+Výběr tématu není ověření faktů ani schválení: vlastník dál schvaluje přesnou
+vyrenderovanou revizi.
+
+```mermaid
+flowchart TD
+  A[Kandidáti po Jev] --> B[Seskupení do událostí, bez placeného volání]
+  B --> C[marketing_dneskai_finish: nejvýše 4 události]
+  C --> D[Média vybraných zpráv, #114]
+  D --> E[Zadání: důkazy, obrázky, formát, čas]
+  E -->|opakování za 14 dní| X[Přeskočeno, zprávy jako duplicita]
+  E -->|bez ověřeného účtu| W[Čeká: account-unavailable]
+  E --> F[Kampaň DNESKAi daily + kalendářní položka]
+  F --> G[marketing_enqueue_job: úloha generování, #116]
+```
+
+## Seskupení do událostí
+
+`src/lib/marketing/dneskai-events.ts`, čistá funkce `groupDneskaiEvents`. Dvě zprávy
+patří k jedné události, když platí aspoň jedno:
+
+1. Jev označil jednu za duplicitu druhé (`duplicateOf`), bez ohledu na čas.
+2. Mají stejnou primární URL po kanonizaci: bez schématu, `www.`/`m.`/`amp.`,
+   sledovacích parametrů, fragmentu, `/amp` a koncového lomítka. Instagram a Hacker
+   News se počítají i přes odkaz na článek v textu.
+3. Titulky (u Instagramu první řádek popisku, nejvýše 200 znaků) mají token Jaccard
+   ≥ 0,6 po odstranění českých a anglických stop-slov a sjednocení diakritiky, a
+   sdílejí aspoň dva tokeny. Různá čísla verzí nebo různá čísla vůbec spojení vylučují:
+   `Ollama 0.12.6` a `Ollama 0.12.7` jsou dvě události.
+
+Pravidla 2 a 3 spojují jen zprávy publikované do 72 hodin od sebe.
+
+- `eventId` = sha256 z `dneskai-event/1\n` + id nejdříve sebrané zprávy. Pozdější
+  zpráva o téže události ID nezmění.
+- `memberHash` = sha256 z `dneskai-event-members/1\n` + seřazených řádků
+  `id:contentHash`. SQL (`marketing_private.dneskai_member_hash`) počítá totéž.
+
+## Výběr v SQL
+
+`marketing_dneskai_finish` (migrace `20261020150000_dneskai_events_briefs.sql`) dostává
+seskupení jako `p_events` (jen události se dvěma a více zprávami; jednotlivá zpráva je
+událost sama o sobě). Seskupení počítá `createDneskaiCollectionStore().finish` ze
+zpráv ve stavu `new`, `duplicate` a `selected` za posledních 30 dní. SQL ho ověří:
+každá událost je pojmenovaná svou kotvou a žádná zpráva není ve dvou.
+
+- Událost vede její nejlepší způsobilá zpráva (dosavadní podmínky: kategorie mimo
+  `other`, relevance ≥ 0,85, bez duplicity, datum do 48 h u zpráv a do 30 dní jinak).
+- Nejvýše čtyři události: nejdřív jedna za každou kategorii, pak podle relevance.
+  Méně je v pořádku, nic se nedoplňuje.
+- Událost, ve které už je dříve vybraná zpráva nebo Jev duplicita něčeho mimo ni, byla
+  pokrytá dřív. Nevybere se a její otevřené zprávy dostanou `duplicate` s důvodem
+  `collection-already-covered`.
+- Všechny klasifikované zprávy vybrané události dostanou `selected` a cílový den, aby
+  pro ně sběr médií stáhl obrázky. Nejvýše osm; další se složí do vedoucí zprávy
+  (`collection-event-member-overflow`).
+- Za každou vybranou událost vznikne řádek `marketing_dneskai_briefs` ve stavu
+  `pending`. `selected_count` běhu počítá události, ne zprávy.
+- Zadržení starých a nedatovaných zpráv zůstává beze změny.
+
+## Zadání
+
+`createDneskaiBriefs` (`src/lib/marketing/dneskai-briefs.ts`), port
+`CreateDneskaiBriefs`, zapojený v `getCreateDneskaiBriefs(db)`. Plánovač (#120) ho volá
+po sběru médií s `{ owner, project, runId }`; je idempotentní a druhé volání nic nového
+nevytvoří. `pending: true` znamená, že některá vybraná zpráva ještě čeká na média
+(`pendingDneskaiMediaCandidates` nebo nedokončený `marketing_media_collections`).
+
+Pro každou událost v pořadí:
+
+1. **Důkazy**: první je hlavní zdroj. Vydavatel nebo jeho vlastní účet (blogy
+   laboratoří, GitHub releases, arXiv, `@mosseri`, `@meta.ai`) před redakcí, redakce
+   před agregátorem (Hacker News, TechCrunch, souhrnné instagramové účty). Pak více
+   použitelných obrázků, pak novější zpráva. Zpráva bez odkazu https se citovat nedá a
+   vynechá se. `captionOnly` nese každý důkaz zvlášť.
+2. **Média**: `dneskaiOfferableMediaAssets` z #114, u každé zprávy v původním pořadí,
+   hlavní zdroj první, bez opakování, nejvýše 20.
+3. **Formát**: `single-image`, když má hlavní zpráva méně než 400 znaků a nejvýše jeden
+   použitelný obrázek (v rámu nebo na celou plochu). Jinak `carousel`.
+4. **Platnost**: 48 hodin pro `ai-news` a `tech-news`, 14 dní pro `tool`,
+   `ai-project` a `marketing`, počítáno od vytvoření zadání.
+5. **Čas**: `DNESKAI_BRIEF_SLOTS` = 08:00, 12:30, 17:00 a 20:00 Europe/Prague, přes
+   `pragueScheduledAt`, takže 25. 10. 2026 (konec letního času) dává 07:00, 11:30,
+   16:00 a 19:00 UTC. Události dostávají časy v pořadí svého pořadí výběru, i ta, která
+   ještě čeká na média. Čas se přeskočí, když je do hodiny od jiného příspěvku nebo
+   zadání téhož dne, nebo když do něj zbývá méně než 30 minut. Den, jehož poslední čas
+   už minul, se uzavře (`brief-target-date-passed`).
+
+### Opakování za 14 dní
+
+Před uložením se zadání porovná s připravenými a publikovanými revizemi DNESKAi za
+posledních 14 dní (`review`, `approved`, `publishing`, `published`, `reconciliation`,
+`returned`, `skipped`) a se zařazenými zadáními jiných běhů. Opakování je:
+
+- shodná kanonická URL důkazu se zdrojem nebo důkazem revize (`marketing_sources`),
+- stejný obrázek jako v decku revize (stejný sha256),
+- nebo stejná fotka v jiném rozlišení: pHash do 3 bitů. Přísnější než značka duplicity
+  v #114 (6 bitů), protože různé slidy jedné šablony leží 4 až 6 bitů od sebe.
+
+Opakování zadání nevytvoří: řádek přejde do `skipped` s kódem
+`collection-already-covered` a jeho zprávy dostanou `duplicate` s `duplicateOf` na
+revizi nebo zprávu, která téma pokryla.
+
+## Zařazení do fronty
+
+`enqueueBriefJob`:
+
+1. SourcePacket `kind: 'brief'` (`dneskaiBriefSourcePacket`,
+   `src/lib/marketing/dneskai-brief-source.ts`): `sourceId` = `eventId`,
+   `sourceRevision` = `memberHash`, `contentHash` z obsahu, `canonicalUrl` = URL hlavního
+   důkazu, `locale: cs`, `observedAt` a `expiresAt` ze zadání, `eligible: true`, obsah
+   `title`, `body` (text hlavní zprávy), `category`, `evidence` (`checkedAt` =
+   `observedAt` zadání), `image: null`. `parseSourcePacket` kontroluje, že revize,
+   kanonická URL, kategorie a platnost odpovídají zadání.
+2. Paket se uloží jako hlava zdroje (`marketing_ingest_source`).
+3. `marketing_dneskai_admit_brief` založí aktivní kampaň **DNESKAi daily** (jednou na
+   vlastníka, 10 let platnosti) a jednu kalendářní položku na zadání: `carousel` nebo
+   `post`, `instagram`, den a čas zadání, `original` = shrnutí zadání, vázaná na hlavu
+   zdroje. Jinou aktivní kampaň DNESKAi nikdy nepřevezme (`campaign-conflict`).
+4. `enqueueMarketingJob` → `marketing_enqueue_job`: platí `marketing_calendar_job_current`
+   i limit 8 úloh za 24 hodin. Požadavek nenese šablonu ani znalosti; `templateVersion`
+   je verze vendorovaného studia (#116).
+5. `marketing_dneskai_brief_queued` zapíše `job_id`, stav `queued`.
+
+Bez ověřeného řádku `marketing_accounts` pro dneskai/instagram zadání vznikne, ale
+zůstane `pending` s kódem `account-unavailable` a úloha se nevytvoří. Další volání ho
+zařadí, jakmile účet existuje. Selhání fronty nechá zadání `ready` s kódem a další volání
+to zkusí znovu.
+
+## Obnova zdroje
+
+`refreshSource` a `refreshMarketingSources` čtou brief z `marketing_dneskai_briefs`
+(`marketing_dneskai_brief_source`), nikdy z bridge Quorum, a bridge dostane jen
+zbývající ID článků. Rozhoduje `kind` předchozího paketu.
+
+- Worker před generováním i po ní: `executeMarketingJob` předává vlastníka a klienta
+  jako třetí argument `refreshSource`.
+- Publikační brána a její preflight: `synchronizeMarketingSources(db, owner, …)`.
+- Obnovený paket má čerstvé `observedAt` a jinak stejnou identitu.
+- Zadání, jehož vybrané zprávy už nejsou ty, ze kterých vzniklo (jiný `memberHash` nebo
+  méně zpráv), vrátí `eligible: false` s `brief-members-changed`; přeskočené zadání
+  s kódem přeskočení. Prošlé zadání vrátí své prošlé `expiresAt`. Chybějící nebo
+  nečitelné zadání a volání bez vlastníka se zadrží, nic se nenahrazuje.
+
+## Stavy a kódy
+
+| Stav | Kód | Význam |
+|---|---|---|
+| `pending` | – | čeká na média ze zdrojů |
+| `pending` | `account-unavailable` | zadání hotové, chybí ověřený účet `@dneskai` |
+| `ready` | – / kód chyby | zadání hotové, zařazení se zopakuje |
+| `queued` | – | úloha generování existuje (`job_id`) |
+| `skipped` | `collection-already-covered` | opakování za 14 dní |
+| `skipped` | `brief-members-changed`, `brief-slot-unavailable`, `brief-slot-passed`, `brief-target-date-passed`, `brief-evidence-unavailable`, `brief-expired`, `brief-invalid` | zadání nevzniklo nebo už neplatí |
+
+## Rozhraní
+
+- Záložka **Zdroje** ukazuje pro dnešek a zítřek události místo jednotlivých
+  kandidátů: hlavní zdroj, další zprávy, stav zadání a plánovaný čas. Pod nimi jsou
+  další nedávné události s důvodem slovy (zadržená, duplicita, mimo témata).
+- `readDneskaiBriefs(db, owner, project, date?)` (`dneskai-brief-read.ts`) je čtení
+  pro #119: události, zprávy s rolí `primary`/`supporting`, stav, kód, čas, formát a
+  počty důkazů a médií.
+- `getBriefAssetHashLister(db, owner)`: úprava revize smí použít obrázky zadání, ze
+  kterého revize vznikla (`sources[0]`: `eventId` a `memberHash`), a obrázky, které deck
+  už má.
+
+## Omezení
+
+- n8n operace `enqueue` s hotovým jobem volá `refreshSource` bez vlastníka, takže brief
+  přes ni neprojde (`source-recheck-unavailable`). Zadání zařazuje jen
+  `createDneskaiBriefs`.
+- Obecný `og:image` vydavatele (stejná karta pro všechny články) by se ve shodě obrázků
+  projevil jako opakování. Zatím jsme ho nepozorovali; kdyby se objevil, přeskočené
+  zadání to ukáže s důvodem.

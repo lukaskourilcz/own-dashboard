@@ -22,10 +22,10 @@ const BriefRowSchema = z.object({
 });
 
 /** Selected events of the latest target days (or one day), each with its brief state and its reports, primary first. */
-export async function readDneskaiBriefs(db: Database, owner: string, project: string, options: { date?: string } = {}): Promise<DneskaiBriefsRead> {
-  z.uuid().parse(owner); z.uuid().parse(project); if (options.date) z.iso.date().parse(options.date);
+export async function readDneskaiBriefs(db: Database, owner: string, project: string, date?: string): Promise<DneskaiBriefsRead> {
+  z.uuid().parse(owner); z.uuid().parse(project); if (date) z.iso.date().parse(date);
   const query = db.from('marketing_dneskai_briefs').select('id,event_id,target_date,rank,member_ids,status,code,brief,scheduled_at,job_id').eq('user_id', owner).eq('project_id', project);
-  const { data, error } = await (options.date ? query.eq('target_date', options.date).order('rank') : query.order('target_date', { ascending: false }).order('rank').limit(28));
+  const { data, error } = await (date ? query.eq('target_date', date).order('rank') : query.order('target_date', { ascending: false }).order('rank').limit(28));
   if (error) throw new Error('dneskai-briefs-unavailable');
   const rows = (data ?? []).flatMap((row) => { const parsed = BriefRowSchema.safeParse(row); return parsed.success ? [parsed.data] : []; });
   const ids = [...new Set(rows.flatMap((row) => row.member_ids))];
