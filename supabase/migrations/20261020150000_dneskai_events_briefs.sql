@@ -215,16 +215,28 @@ end $$;
 create function public.marketing_dneskai_admit_brief(p_owner uuid,p_brief uuid,p_source uuid) returns jsonb language plpgsql set search_path='' as $$
 declare b public.marketing_dneskai_briefs;s public.marketing_sources;c public.marketing_campaigns;en public.marketing_calendar_entries;
  today date:=(clock_timestamp() at time zone 'Europe/Prague')::date;daily_hash text:=encode(sha256(convert_to('dneskai-daily-briefs/1','UTF8')),'hex');
- v_local_time text;v_kind text;
+ v_local_time text;v_kind text;v_job uuid;
 begin
  select * into b from public.marketing_dneskai_briefs where id=p_brief and user_id=p_owner for update;
  if not found then raise exception 'brief unavailable';end if;
  if b.status<>'ready' or b.brief is null or b.scheduled_at is null then raise exception 'brief not ready';end if;
+ -- A retry after the job was created but not recorded on the brief returns that job, whatever the entry's state
+ -- now, so the brief can record it instead of failing on a changed entry. A job of an older entry version
+ -- (the entry was rebound since) does not count.
+ if b.calendar_entry_id is not null then
+  select * into en from public.marketing_calendar_entries where id=b.calendar_entry_id and user_id=p_owner;
+  if found then
+   select j.id into v_job from public.marketing_jobs j where j.user_id=p_owner and j.request->>'calendarEntryId'=en.id::text and j.request->>'calendarEntryVersion'=en.generation_version::text
+    and j.request->'generation'->'source'->>'kind'='brief' and j.request->'generation'->'source'->>'sourceId'=b.event_id order by j.created_at desc,j.id limit 1;
+   if v_job is not null then return jsonb_build_object('campaignId',en.campaign_id,'entryId',en.id,'entryVersion',en.generation_version,'scheduledAt',b.scheduled_at,'jobId',v_job);end if;
+  end if;
+ end if;
  if b.scheduled_at<=clock_timestamp() then raise exception 'brief slot passed';end if;
  select * into s from public.marketing_sources where id=p_source and user_id=p_owner and brand='dneskai' and source_id=b.event_id
   and source_revision=b.member_hash and eligible and (expires_at is null or expires_at>clock_timestamp()) and packet->>'kind'='brief';
  if not found then raise exception 'brief source unavailable';end if;
  perform pg_advisory_xact_lock(hashtextextended(p_owner::text||'dneskai-daily-campaign',0));
+ -- marketing_one_active_campaign allows one active campaign per owner and brand, so this reads at most one row.
  select * into c from public.marketing_campaigns where user_id=p_owner and brand='dneskai' and status='active';
  if found and c.source_hash<>daily_hash then raise exception 'brief campaign conflict';end if;
  if not found then

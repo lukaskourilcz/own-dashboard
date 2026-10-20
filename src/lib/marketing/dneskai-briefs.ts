@@ -155,7 +155,8 @@ export type DneskaiBriefRow = {
   brief: unknown; scheduled_at: string | null; calendar_entry_id: string | null; job_id: string | null; created_at: string; updated_at: string;
 };
 export type DneskaiBriefMemberRow = { id: string; status: DneskaiCandidate['status']; target_date: string | null; content_hash: string; candidate: DneskaiCandidate };
-type Admitted = { campaignId: string; entryId: string; entryVersion: number };
+/** `jobId` is set when the entry already has this brief's job (a retry after `queued` failed). */
+type Admitted = { campaignId: string; entryId: string; entryVersion: number; jobId?: string };
 type JobAdmission = { jobId: string; status: string; duplicate: boolean };
 
 /** Every read and write the brief creation needs, so its decisions can be tested without a database. */
@@ -214,12 +215,14 @@ export function dneskaiBriefGenerationRequest(input: { owner: string; packet: So
 /**
  * Admits one ready brief: ingests its SourcePacket as the source head, ensures the "DNESKAi daily" campaign and the
  * brief's calendar entry, enqueues the job through `marketing_enqueue_job` (calendar current, 8 jobs per 24 h) and
- * records the job on the brief. Idempotent: a repeated call returns the same job.
+ * records the job on the brief. Idempotent: a repeated call returns the same job, and a brief whose job exists
+ * but was never recorded (the last step failed) records that job instead of creating another.
  */
 export async function enqueueBriefJob(store: DneskaiBriefStore, owner: string, row: Pick<DneskaiBriefRow, 'id'>, brief: DneskaiBrief, account: { remote_account_id: string; handle: string }): Promise<JobAdmission> {
   const packet = dneskaiBriefSourcePacket(brief);
   const source = await store.ingest(owner, packet);
   const admitted = await store.admit(owner, row.id, source.id);
+  if (admitted.jobId) { await store.queued(owner, row.id, admitted.jobId); return { jobId: admitted.jobId, status: 'recorded', duplicate: true }; }
   const request = dneskaiBriefGenerationRequest({ owner, packet, account, admitted });
   const job = await store.enqueue(owner, request);
   await store.queued(owner, row.id, job.jobId);
@@ -409,7 +412,7 @@ export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { en
       try { const stored = await ingestSource(db, owner, packet, 'dneskai'); return { id: z.uuid().parse(stored.id) }; } catch { throw new DneskaiBriefError('brief-source-save-failed'); }
     },
     async admit(owner, briefId, sourceUuid) {
-      return z.object({ campaignId: z.uuid(), entryId: z.uuid(), entryVersion: z.number().int().positive() }).parse(await rpc('marketing_dneskai_admit_brief', { p_owner: owner, p_brief: briefId, p_source: sourceUuid }));
+      return z.object({ campaignId: z.uuid(), entryId: z.uuid(), entryVersion: z.number().int().positive(), jobId: z.uuid().optional() }).parse(await rpc('marketing_dneskai_admit_brief', { p_owner: owner, p_brief: briefId, p_source: sourceUuid }));
     },
     enqueue: options.enqueue ?? ((owner, request) => enqueueMarketingJob(db, owner, request)),
     async queued(owner, briefId, jobId) { await rpc('marketing_dneskai_brief_queued', { p_owner: owner, p_brief: briefId, p_job: jobId }); },

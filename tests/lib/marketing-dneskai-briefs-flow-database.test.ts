@@ -105,6 +105,18 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     expect(await rows('select id from marketing_jobs')).toHaveLength(2);
   });
 
+  it('records the existing job of a brief that missed it, even after its entry left planned', async () => {
+    const [brief] = await store.briefs(owner, project, runId);
+    const jobs = await rows<{ id: string }>('select id from marketing_jobs order by id');
+    // marketing_dneskai_brief_queued failed after marketing_enqueue_job succeeded; the entry moved on since.
+    await db.query("update marketing_dneskai_briefs set status='ready',job_id=null where id=$1", [brief!.id]);
+    await db.query("update marketing_calendar_entries set status='drafted' where id=$1", [brief!.calendar_entry_id]);
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId })).toEqual({ created: [{ briefId: brief!.id, eventId: brief!.event_id, jobId: brief!.job_id }], skipped: [], pending: false });
+    expect(await rows<{ id: string }>('select id from marketing_jobs order by id')).toEqual(jobs);
+    expect((await store.briefs(owner, project, runId))[0]).toMatchObject({ status: 'queued', job_id: brief!.job_id, code: null });
+    await db.query("update marketing_calendar_entries set status='planned' where id=$1", [brief!.calendar_entry_id]);
+  });
+
   it('re-reads a brief from the store and makes it ineligible when a member changes', async () => {
     const job = (await rows<{ request: { generation: { source: unknown } } }>("select request from marketing_jobs where request->'generation'->'source'->>'canonicalUrl'=$1", [lead.url]))[0]!;
     const packet = parseSourcePacket(job.request.generation.source);
@@ -152,7 +164,7 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     const [brief] = await store.briefs(owner, project, runId);
     await db.query("update marketing_campaigns set status='archived'");
     await db.query("insert into marketing_campaigns(user_id,brand,name,starts_on,ends_on,source_snapshot,source_hash,status) values($1,'dneskai','Imported plan','2026-10-01','2026-12-31','{}',$2,'active')", [owner, 'f'.repeat(64)]);
-    await db.query("update marketing_dneskai_briefs set status='ready',job_id=null where id=$1", [brief!.id]);
+    await db.query("update marketing_dneskai_briefs set status='ready',job_id=null,calendar_entry_id=null where id=$1", [brief!.id]);
     const source = (await rows<{ id: string }>("select id from marketing_sources where source_id=$1", [brief!.event_id]))[0]!.id;
     expect(await rpc.rpc('marketing_dneskai_admit_brief', { p_owner: owner, p_brief: brief!.id, p_source: source })).toMatchObject({ error: { message: expect.stringContaining('brief campaign conflict') } });
     const [, second] = await store.briefs(owner, project, runId);
