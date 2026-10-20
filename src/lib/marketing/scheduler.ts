@@ -56,8 +56,17 @@ export const MARKETING_TICK_LEASE_SECONDS = 90;
 export const MARKETING_TICK_MEDIA_BUDGET_MS = 40_000;
 export const MARKETING_TICK_RETENTION_DAYS = 14;
 export const MARKETING_MEDIA_RETENTION_DAYS = 30;
-/** A publication due this soon (or already in its 15-minute window) makes collection, media and generation wait. */
+/**
+ * A live publication due this soon (or already in its 15-minute window), or a claimed one waiting for its
+ * container, makes collection, media, briefs and generation wait for that tick.
+ */
 export const MARKETING_PUBLICATION_YIELD_MS = 5 * 60_000;
+/**
+ * A live publish starts only with this much of the soft budget left (35 s before every signal aborts). A
+ * publish cut off between its container-create intent and the container cannot be retried and ends in
+ * reconciliation, so it is better to wait five minutes than to start short. A dry run writes nothing.
+ */
+export const MARKETING_LIVE_PUBLISH_MINIMUM_START_MS = 30_000;
 /** A publication left in `reconciliation` is read again at most this often. */
 export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 /** Signed asset URLs that expire within this window are renewed by the daily tick. */
@@ -111,7 +120,7 @@ export interface MarketingSchedulerPorts {
   /** Oldest first, queued DNESKAi generation jobs. */
   queuedGenerationJobs(limit: number): Promise<string[]>;
   executeJob(jobId: string, signal: AbortSignal): Promise<unknown>;
-  /** A queued DNESKAi publication whose slot is in its 15-minute window or starts within `aheadMs`. */
+  /** A queued DNESKAi publication whose slot is in its 15-minute window or starts within `aheadMs`, or a claimed one waiting for its container. */
   publicationDueSoon(aheadMs: number): Promise<boolean>;
   /** A queued DNESKAi publication in its window, or a claimed one waiting for its container. */
   publicationWork(): Promise<boolean>;
@@ -147,6 +156,8 @@ type Step = {
   lease: MarketingSchedulerLease | null;
   /** Cheap reads that decide, without a lease, that there is nothing to do or that the category is paused. */
   precheck?: () => Promise<StepOutcome | null>;
+  /** Overrides MINIMUM_START_MS for this tick. */
+  minimumStartMs?: number;
   run: (context: StepContext) => Promise<StepOutcome>;
 };
 
@@ -267,7 +278,9 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       async precheck(): Promise<StepOutcome | null> {
         const paused = intakePaused(); if (paused) return paused;
         briefRun = (await runs()).find((run) => run.status !== "running") ?? null;
-        return briefRun ? null : { status: "noop", code: "briefs-no-finished-run" };
+        if (!briefRun) return { status: "noop", code: "briefs-no-finished-run" };
+        if (await yieldToPublication()) return yielded;
+        return null;
       },
       async run({ state, signal: abort }): Promise<StepOutcome> {
         const run = briefRun!;
@@ -316,6 +329,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     },
     {
       category: "publishing", lease: "publishing",
+      minimumStartMs: marketingPublishingLive(env) ? MARKETING_LIVE_PUBLISH_MINIMUM_START_MS : MINIMUM_START_MS.publishing,
       async precheck(): Promise<StepOutcome | null> { return (await ports.publicationWork()) ? null : { status: "noop" }; },
       async run({ signal: abort }): Promise<StepOutcome> {
         const dryRun = !marketingPublishingLive(env);
@@ -428,7 +442,7 @@ async function runStep(step: Step, context: { store: MarketingSchedulerStore; ho
     const early = await step.precheck?.();
     if (early) return record(early);
   } catch (error) { return record({ status: "error", code: schedulerFailureCode(error, step.category) }); }
-  if (remaining() < MINIMUM_START_MS[step.category]) return record(budgetSpent);
+  if (remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);
   let lease: SchedulerLeaseResult | null = null;
   if (step.lease) {
     try { lease = await store.acquire(step.lease, holder, MARKETING_TICK_LEASE_SECONDS); }

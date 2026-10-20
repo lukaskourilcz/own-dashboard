@@ -147,10 +147,24 @@ describe('a tick with work in every category', () => {
     const clock = new Clock(evening);
     const { tick, called } = harness({ ...busyDay(), tickCollection: async () => { clock.advance(30_000); return { runId, status: 'running', continue: true, retryAfterSeconds: 15 }; } }, clock);
     const result = await tick();
-    expect(statuses(result)).toMatchObject({ collection: 'done', media: 'deferred:tick-budget-exhausted', briefs: 'done', generation: 'deferred:tick-budget-exhausted', publishing: 'done', reconciliation: 'done', token: 'done' });
+    // 18 s are left after collection: too little for media (25 s), generation (43 s) and a live publish (30 s).
+    expect(statuses(result)).toMatchObject({ collection: 'done', media: 'deferred:tick-budget-exhausted', briefs: 'done', generation: 'deferred:tick-budget-exhausted', publishing: 'deferred:tick-budget-exhausted', reconciliation: 'done', token: 'done' });
     expect(called('collectMedia')).toEqual([]);
     expect(called('executeJob')).toEqual([]);
-    expect(result.next.pending).toEqual(expect.arrayContaining(['media', 'generation']));
+    expect(called('publishDue')).toEqual([]);
+    expect(result.next.pending).toEqual(expect.arrayContaining(['media', 'generation', 'publishing']));
+  });
+  it('starts a live publish only with 30 s left and a dry run with 15 s', async () => {
+    const run = async (spentMs: number, env: Record<string, string | undefined>) => {
+      const clock = new Clock(evening);
+      const h = harness({ publicationWork: async () => true, publishDue: async () => ({ outcomes: [] }), queuedGenerationJobs: async () => { clock.advance(spentMs); return []; } }, clock);
+      return { status: statuses(await h.tick(env)).publishing, calls: h.called('publishDue').length };
+    };
+    expect(await run(17_000, on)).toEqual({ status: 'done', calls: 1 });
+    expect(await run(19_000, on)).toEqual({ status: 'deferred:tick-budget-exhausted', calls: 0 });
+    const dry = { ...on, MARKETING_DNESKAI_PUBLISH_ENABLED: 'false' };
+    expect(await run(19_000, dry)).toEqual({ status: 'done', calls: 1 });
+    expect(await run(34_000, dry)).toEqual({ status: 'deferred:tick-budget-exhausted', calls: 0 });
   });
   it('isolates every failure: each category still runs and each error is recorded with a stable code', async () => {
     const fail = (message: string) => async () => { throw Object.assign(new Error(message), message === 'with code' ? { code: 'claude-configuration-required' } : {}); };
@@ -198,13 +212,14 @@ describe('pauses', () => {
     await tick({ ...on, ...patch });
     expect(called('publishDue')[0][1][0]).toBe(dryRun);
   });
-  it('makes collection, media and generation wait while a live publication is due', async () => {
+  it('makes collection, media, briefs and generation wait while a live publication is due', async () => {
     const { tick, called } = harness({ ...busyDay(), publicationDueSoon: async () => true }, new Clock(evening));
     const result = await tick();
-    expect(statuses(result)).toMatchObject({ collection: 'deferred:yield-to-publication', media: 'deferred:yield-to-publication', generation: 'deferred:yield-to-publication', briefs: 'done', publishing: 'done' });
+    expect(statuses(result)).toMatchObject({ collection: 'deferred:yield-to-publication', media: 'deferred:yield-to-publication', briefs: 'deferred:yield-to-publication', generation: 'deferred:yield-to-publication', publishing: 'done' });
+    for (const name of ['tickCollection', 'collectMedia', 'createBriefs', 'executeJob']) expect(called(name)).toEqual([]);
     expect(called('publicationDueSoon')).toHaveLength(1);
     const dry = harness({ ...busyDay(), publicationDueSoon: async () => true }, new Clock(evening));
-    expect(statuses(await dry.tick({ ...on, MARKETING_PUBLISH_ENABLED: 'false' }))).toMatchObject({ collection: 'done', media: 'done', generation: 'done' });
+    expect(statuses(await dry.tick({ ...on, MARKETING_PUBLISH_ENABLED: 'false' }))).toMatchObject({ collection: 'done', media: 'done', briefs: 'done', generation: 'done' });
     expect(dry.called('publicationDueSoon')).toEqual([]);
   });
 });

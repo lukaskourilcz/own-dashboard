@@ -46,6 +46,9 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     if (error) throw new Error(code);
     return (data ?? []).length > 0;
   };
+  /** The same claimed continuation publishDueMarketing's pending query picks up. */
+  const containerPending = (now: Date) =>
+    any(publications().eq("status", "claimed").eq("error_code", "container-pending").gt("lease_until", now.toISOString()).limit(1), "publication-state-unavailable");
   return {
     store: createMarketingSchedulerStore(db, owner),
     dneskaiProject: () => resolveDneskaiProjectId(db, owner),
@@ -72,14 +75,20 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env }),
     async publicationDueSoon(aheadMs) {
-      const now = Date.now();
-      return any(publications().eq("status", "queued").gte("scheduled_at", new Date(now - DUE_WINDOW_MS).toISOString()).lte("scheduled_at", new Date(now + aheadMs).toISOString()).limit(1), "publication-state-unavailable");
+      const now = new Date();
+      // A claimed carousel waiting for its container counts too: its 10-minute claim leaves room for
+      // about one continuation, and a tick that spends its budget elsewhere loses the slot.
+      const [soon, pending] = await Promise.all([
+        any(publications().eq("status", "queued").gte("scheduled_at", new Date(now.getTime() - DUE_WINDOW_MS).toISOString()).lte("scheduled_at", new Date(now.getTime() + aheadMs).toISOString()).limit(1), "publication-state-unavailable"),
+        containerPending(now),
+      ]);
+      return soon || pending;
     },
     async publicationWork() {
       const now = new Date();
       const [due, pending] = await Promise.all([
         any(publications().eq("status", "queued").gte("scheduled_at", new Date(now.getTime() - DUE_WINDOW_MS).toISOString()).lte("scheduled_at", now.toISOString()).limit(1), "publication-state-unavailable"),
-        any(publications().eq("status", "claimed").eq("error_code", "container-pending").gt("lease_until", now.toISOString()).limit(1), "publication-state-unavailable"),
+        containerPending(now),
       ]);
       return due || pending;
     },

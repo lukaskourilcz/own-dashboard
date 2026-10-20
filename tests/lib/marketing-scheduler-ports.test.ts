@@ -16,6 +16,7 @@ vi.mock('@/lib/marketing/orchestrator', () => ({ publishDueMarketing: (...args: 
 vi.mock('@/lib/marketing/meta-credentials', async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/marketing/meta-credentials')>(), listMetaTokenMetadata: (...args: unknown[]) => mocks.list(...args), refreshInstagramToken: (...args: unknown[]) => mocks.refresh(...args) }));
 vi.mock('@/lib/marketing/asset-urls', () => ({ renewStoredRevisionAssetUrls: (...args: unknown[]) => mocks.renew(...args) }));
 import { createMarketingSchedulerPorts, resolveDneskaiProjectId } from '@/lib/marketing/scheduler-ports';
+import { runMarketingTick, type MarketingSchedulerPorts, type MarketingSchedulerStore } from '@/lib/marketing/scheduler';
 
 const owner = '11111111-1111-4111-8111-111111111111', project = '22222222-2222-4222-8222-222222222222', other = '33333333-3333-4333-8333-333333333333';
 type Call = [string, unknown[]];
@@ -137,5 +138,57 @@ describe('scheduler ports', () => {
     expect(await ports.mediaCollectionActive()).toBe(true);
     expect(busy.calls('marketing_media_collections')[0]).toEqual(expect.arrayContaining([['eq', ['user_id', owner]], ['gt', ['lease_until', expect.any(String)]]]));
     await expect(createMarketingSchedulerPorts(fakeDb({ marketing_publications: { error: 'down' } }).db, owner, {}).publicationWork()).rejects.toThrow('publication-state-unavailable');
+  });
+  it('counts a claimed carousel waiting for its container as a publication due soon', async () => {
+    const claimed = { id: other, status: 'claimed', error_code: 'container-pending' };
+    const pending = fakeDb({ marketing_publications: [claimed] });
+    const ports = createMarketingSchedulerPorts(pending.db, owner, {});
+    expect(await ports.publicationDueSoon(300_000)).toBe(true);
+    const reads = pending.calls('marketing_publications');
+    // The queued read finds nothing; only the claimed continuation answers.
+    expect(reads).toContainEqual(expect.arrayContaining([['eq', ['status', 'queued']]]));
+    expect(reads).toContainEqual(expect.arrayContaining([['eq', ['status', 'claimed']], ['eq', ['error_code', 'container-pending']], ['gt', ['lease_until', expect.any(String)]]]));
+    expect(await createMarketingSchedulerPorts(fakeDb({ marketing_publications: [{ ...claimed, error_code: 'publish-intent' }] }).db, owner, {}).publicationDueSoon(300_000)).toBe(false);
+  });
+});
+
+describe('a carousel left at container-pending by the slot tick', () => {
+  const on = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true', MARKETING_PUBLISH_ENABLED: 'true', MARKETING_DNESKAI_PUBLISH_ENABLED: 'true' };
+  const job = '44444444-4444-4444-8444-444444444444', run = '55555555-5555-4555-8555-555555555555', finished = '66666666-6666-4666-8666-666666666666';
+  const store = (): MarketingSchedulerStore => ({
+    beginTick: async () => true, finishTick: async () => true, pruneTicks: async () => 0, release: async () => true,
+    acquire: async () => ({ acquired: true, until: new Date(Date.now() + 90_000).toISOString(), state: {} }),
+  });
+  it('gets its continuation: collection, media, briefs and generation yield and the publisher runs first', async () => {
+    // Only the claimed row exists; no queued publication is in its window.
+    const { db } = fakeDb({ marketing_publications: [{ id: other, status: 'claimed', error_code: 'container-pending' }] });
+    const real = createMarketingSchedulerPorts(db, owner, on);
+    let clock = Date.parse('2026-10-20T20:35:00Z');
+    const work: string[] = [];
+    const ports: MarketingSchedulerPorts = {
+      ...real,
+      store: store(),
+      dneskaiProject: async () => project,
+      collectionRuns: async () => [{ id: run, date: '2026-10-20', status: 'running' }, { id: finished, date: '2026-10-19', status: 'partial' }],
+      tickCollection: async () => { work.push('tickCollection'); clock += 30_000; return { runId: run, status: 'running', continue: true }; },
+      pendingMedia: async () => ['candidate-1'],
+      collectMedia: async () => { work.push('collectMedia'); clock += 40_000; return { complete: true, candidates: [] }; },
+      createBriefs: async () => { work.push('createBriefs'); clock += 20_000; return { created: [], skipped: [], pending: false }; },
+      queuedGenerationJobs: async () => [job],
+      executeJob: async () => { work.push('executeJob'); clock += 40_000; return { claimed: true, status: 'review' }; },
+      nextReconciliation: async () => null,
+      tokenMetadata: async () => [],
+    };
+    mocks.publish.mockImplementation(async () => { work.push('publishDue'); return { outcomes: [{ publicationId: other, status: 'published', errorCode: null }] }; });
+    const result = await runMarketingTick({ owner, env: on, ports, now: () => new Date(clock) }, { tick: '77777777-7777-4777-8777-777777777777', kind: 'minute' });
+    const status = Object.fromEntries(result.did.map((entry) => [entry.category, entry.code ? `${entry.status}:${entry.code}` : entry.status]));
+    expect(status).toMatchObject({
+      collection: 'deferred:yield-to-publication', media: 'deferred:yield-to-publication', briefs: 'deferred:yield-to-publication',
+      generation: 'deferred:yield-to-publication', publishing: 'done',
+    });
+    expect(work).toEqual(['publishDue']);
+    // Live: the publisher is asked for a real publish, not a dry run.
+    expect(mocks.publish).toHaveBeenCalledWith(db, owner, 'dneskai', false, expect.any(AbortSignal));
+    expect(result.did.find((entry) => entry.category === 'publishing')?.detail).toMatchObject({ dryRun: false, published: 1 });
   });
 });

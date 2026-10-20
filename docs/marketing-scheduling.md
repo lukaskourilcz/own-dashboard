@@ -47,9 +47,16 @@ one after another. Each unit is wrapped, so a failure is recorded and the next c
 
 A paused category is a recorded `skipped` with its code and costs $0. Nothing is called for it.
 
-A live publication that is due now or within five minutes makes collection, media and generation wait
-for that tick (`deferred: yield-to-publication`), so the publisher always gets the whole budget at its
-slot. Briefs, reconciliation and token still run.
+Collection, media, briefs and generation wait for that tick (`deferred: yield-to-publication`) while
+publishing is live and either a queued DNESKAi publication is due now or within five minutes, or a
+claimed carousel is waiting for its container (`container-pending`). The second case matters most: the
+claim lasts ten minutes and the publisher polls the container for only three seconds, so a carousel
+usually needs the next tick to send `media_publish`, and a tick that spends its budget on generation
+would let the claim expire into `reconciliation`. Reconciliation and token still run after publishing.
+
+A live publish starts only with at least 30 s of the 48 s budget left; a dry run needs 15 s. A publish
+cut off between its container-create intent and the container cannot be retried, so a tick that is
+already late leaves it to the next one.
 
 ## What the daily tick does
 
