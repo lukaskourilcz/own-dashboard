@@ -142,6 +142,7 @@ The migrations, in the order they run:
 46. `20261013165236_marketing_dneskai_collection.sql` — owner-scoped DNESKAi research collection, fenced daily runs and bounded provider reservations; no approval or publication.
 47. `20261013181506_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
 48. `20261015234547_oslo_career_preferences.sql` — synchronized Czech Career opt-in, OFF by default; preserves existing records.
+49. `20261020100000_dneskai_collection_cursor_limits.sql` — DNESKAi collection cursor advances after a read capped only by its item limit; Instagram cap 10 per profile and 50 per day within the unchanged $0.25 daily ceiling; Jev stages planned from the candidate count (at most 16).
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 

@@ -12,7 +12,9 @@ export const DneskaiCandidateSchema = z.strictObject({
   targetDate: z.iso.date().nullable(), id: z.string().min(1).max(200), sourceId: z.string().min(1).max(100), externalId: z.string().min(1).max(300),
   title: z.string().max(500), text: z.string().max(12000), url: z.url(),
   publishedAt: z.iso.datetime({ offset: true }).nullable(), fetchedAt: z.iso.datetime({ offset: true }),
-  mediaUrls: z.array(z.url()).max(20), contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+  // publishedAt is an upper bound (fetch time for an undated item, end of a stated day/month otherwise).
+  dateEstimated: z.literal(true).optional(),
+  mediaUrls: z.array(z.url()).max(10), contentHash: z.string().regex(/^[a-f0-9]{64}$/),
   category: z.enum(['ai-news', 'tech-news', 'marketing', 'tool', 'ai-project', 'other']).nullable(),
   relevance: z.number().min(0).max(1).nullable(), duplicateOf: z.string().max(200).nullable(),
   status: z.enum(['new', 'held', 'duplicate', 'rejected', 'selected']), reason: z.string().max(200).nullable(),
