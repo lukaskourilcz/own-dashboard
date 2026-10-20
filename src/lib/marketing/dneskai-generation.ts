@@ -49,6 +49,36 @@ type TemplateId = keyof typeof DNESKAI_TEXT_LIMITS;
 /** What the prompt asks for: four fifths of the ceiling, so the fitter has room at the template's sizes. */
 const target = (limit: number) => Math.floor(limit * 0.8);
 
+const whitespace = (value: string) => value.replace(/\s+/gu, " ").trim();
+const distinct = <T>(values: T[]) => [...new Set(values)];
+const CREDIT_LABEL = /^(?:Foto|Obrázek):\s+/u;
+const CREDIT_PLATFORM = /\s+\((?:Bluesky|GitHub|Instagram)\)$/u;
+/** Code points, which the studio's grapheme count never exceeds: a credit that fits by this count fits the layer. */
+const characters = (value: string) => [...value.normalize("NFC")].length;
+/**
+ * The credit line of one slide, fitted by code to the credit layer of its template, which the model cannot
+ * change: the full credits („Obrázek: @simonwillison.net (Bluesky)“), then without the „Foto:“/„Obrázek:“
+ * label, then also without the platform in brackets. Each form names the same author; nothing is cut
+ * mid-name. `null` when even the shortest form does not fit `limit` characters. The credit layers are set in
+ * the monospace face at one size, and the studio checks that their character limit fits one line, so the
+ * count is the whole test. The caption and the sources slide keep the full credits.
+ */
+export function fitDneskaiCredit(credits: readonly string[], limit: number): string | null {
+  const full = distinct(credits.map(whitespace).filter(Boolean));
+  if (!full.length) return "";
+  const unlabelled = full.map((credit) => credit.replace(CREDIT_LABEL, ""));
+  const bare = unlabelled.map((credit) => credit.replace(CREDIT_PLATFORM, ""));
+  for (const form of [full, unlabelled, bare]) {
+    const line = distinct(form).join(" · ");
+    if (characters(line) <= limit) return line;
+  }
+  return null;
+}
+/** The credit layer of a template, if it has one. */
+const creditLimit = (template: TemplateId): number | undefined => (DNESKAI_TEXT_LIMITS[template] as { credit?: number }).credit;
+/** True when code can set this picture's credit alone on the slide template. */
+const creditFits = (credit: string, template: TemplateId) => fitDneskaiCredit([credit], creditLimit(template) ?? 0) !== null;
+
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
 const unit = z.number().min(0).max(1);
 export const DneskaiCopyImageSchema = z.strictObject({
@@ -90,14 +120,14 @@ const SYSTEM_RULES = [
   "Facts: use only what the evidence titles and excerpts state. Add no background knowledge, names, dates, prices or numbers of your own; every number you write must appear in the evidence. Keep each claim as strong as its source: an announcement stays an announcement, a plan stays a plan, a report stays a report, and say who claims it. Say what is unconfirmed when the evidence leaves it open.",
   "Evidence with captionOnly true is the text an author posted under an Instagram post or Reel. It is not a transcript: never write that the person said, explained or showed something in the video; write what they posted, wrote or announced.",
   "Register: natural Czech editorial prose, calm, direct and skeptical. Name the actor, the change and what remains uncertain. No hype, no clickbait, no exclamation marks, no rhetorical questions, no emoji, no markdown, no URLs, no hashtags in the title, caption or slides, no greetings and no call to follow or comment. Use Czech quotation marks „ “ and plain punctuation; no symbols such as ✓, →, • or ™, which the typefaces cannot draw.",
-  "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. Use each picture at most once. Omit crop: the editor sets the focal point.",
+  "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. fullBleedCapable, insetCapable and singlePhotoCapable say which slides a picture and its credit fit. Use each picture at most once. Omit crop: the editor sets the focal point.",
   "Formats: a carousel normally has 4 to 7 slides you write; code appends a final sources slide, so never write one. A single-image post is exactly one slide of type single. Use only the formats the rules allow.",
   "Slide types, with character targets (the renderer refuses text that does not fit, and code adds the picture credit):",
   `- cover-photo: the first slide of a carousel only. images: image-1, one picture with fullBleedCapable true, drawn to every edge. headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-cover-photo"].headline)}; optional kicker, a short topic label, up to ${target(DNESKAI_TEXT_LIMITS["dneskai-cover-photo"].kicker)}. No body.`,
   `- figure: images: image-1, one picture with insetCapable true, framed. headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-figure"].headline)}; optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-figure"].body)}. No kicker.`,
   `- split: images: image-1 and optionally image-2, pictures with insetCapable true. Optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-split"].kicker)}; headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-split"].headline)}; optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-split"].body)} with one picture or ${target(DNESKAI_TEXT_LIMITS["dneskai-split-pair"].body)} with two.`,
   `- statement: no picture. One sentence as headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-statement"].headline)}; optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-statement"].body)}. variant accent (default) or ink. No kicker.`,
-  `- single: the only slide of a single-image post. variant photo: image-1 with fullBleedCapable true, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].headline)}, optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].body)}, optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].kicker)}. variant type: no picture, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].headline)}, optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].body)}, optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].kicker)}.`,
+  `- single: the only slide of a single-image post. variant photo: image-1 with singlePhotoCapable true, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].headline)}, optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].body)}, optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].kicker)}. variant type: no picture, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].headline)}, optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].body)}, optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].kicker)}.`,
   "Follow rules.firstSlide for the first carousel slide and rules.singleVariant for a single slide. Show pictures on at least rules.minimumPictureSlides carousel slides. Images use slots image-1, then image-2.",
   "alt: one or two Czech sentences for a reader who cannot see the slide: what kind of slide it is, its message, and whose picture it carries, named from its credit, without describing the picture. Never repeat the headline as the alt text.",
   "caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what is still open. Code appends the sources, picture credits and hashtags. hashtags: up to 8 topic tags, Latin letters and digits only, lowercase, without #.",
@@ -118,8 +148,12 @@ export const MARKETING_BRIEF_PROMPT_ID = `${MARKETING_BRIEF_PROMPT_VERSION}+${MA
 
 /** One evidence item as the model sees it. `index` is its place in the brief. */
 export type DneskaiOfferEvidence = { index: number; publisher: string; title: string; excerpt: string; published: string | null; captionOnly: boolean; url: string };
-/** One picture the model may choose. */
-export type DneskaiOfferMedia = Omit<DneskaiBriefMedia, "candidateId"> & { evidenceIndex: number };
+/**
+ * One picture the model may choose. `fullBleedCapable` and `insetCapable` are the brief's flags narrowed to the
+ * pictures whose credit code can set on a cover or a framed slide; `singlePhotoCapable` adds the short credit
+ * line of a single photo post.
+ */
+export type DneskaiOfferMedia = Omit<DneskaiBriefMedia, "candidateId"> & { evidenceIndex: number; singlePhotoCapable: boolean };
 export type DneskaiBriefOffer = {
   brief: DneskaiBrief;
   evidence: DneskaiOfferEvidence[];
@@ -136,7 +170,6 @@ const OFFER_PLANS: readonly OfferPlan[] = [
   { evidence: 4, media: 6, excerptTotal: 1600 }, { evidence: 3, media: 5, excerptTotal: 1000 }, { evidence: 2, media: 4, excerptTotal: 600 }, { evidence: 1, media: 3, excerptTotal: 400 },
 ];
 const PRIMARY_EXCERPT = 2000, SUPPORTING_EXCERPT = 700, TITLE_CHARS = 240;
-const whitespace = (value: string) => value.replace(/\s+/gu, " ").trim();
 /** Cut at a word boundary with an ellipsis; the evidence keeps its words, it only loses its tail. */
 function shortened(value: string, max: number): string {
   const text = whitespace(value);
@@ -183,14 +216,18 @@ function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: Offe
     const evidenceIndex = indexOf.get(item.candidateId);
     if (evidenceIndex === undefined) return [];
     const { candidateId, ...rest } = item; void candidateId;
-    return [{ ...rest, evidenceIndex }];
+    // The model cannot change a credit, so a picture is offered only where code can set its credit.
+    return [{ ...rest, evidenceIndex,
+      fullBleedCapable: item.fullBleedCapable && creditFits(item.credit, "dneskai-cover-photo"),
+      insetCapable: item.insetCapable && creditFits(item.credit, "dneskai-figure") && creditFits(item.credit, "dneskai-split"),
+      singlePhotoCapable: item.fullBleedCapable && creditFits(item.credit, "dneskai-single-photo") }];
   }).sort((left, right) => left.evidenceIndex - right.evidenceIndex || left.position - right.position).slice(0, plan.media);
   const usable = media.filter((item) => item.fullBleedCapable || item.insetCapable).length;
   const fullBleed = media.some((item) => item.fullBleedCapable);
   const rules = {
     formats: brief.suggestedFormat === "single-image" ? ["single-image" as const] : ["carousel" as const, "single-image" as const],
     firstSlide: fullBleed ? "cover-photo" as const : media.some((item) => item.insetCapable) ? "figure-or-statement" as const : "statement" as const,
-    singleVariant: fullBleed ? "photo" as const : "type" as const,
+    singleVariant: media.some((item) => item.singlePhotoCapable) ? "photo" as const : "type" as const,
     minimumPictureSlides: Math.min(2, usable),
   };
   const corpus = [brief.title, czechDate(brief.targetDate) ?? "", ...evidence.flatMap((item) => [item.title, item.excerpt, item.published ?? ""])].join("\n");
@@ -216,7 +253,7 @@ export function dneskaiBriefPrompt(offer: DneskaiBriefOffer): string {
     rules: offer.rules,
     evidence: offer.evidence.map(({ url, ...item }) => { void url; return item; }),
     media: offer.media.map((item) => ({ assetSha256: item.assetSha256, evidenceIndex: item.evidenceIndex, position: item.position, credit: item.credit, originKind: item.originKind,
-      width: item.width, height: item.height, fullBleedCapable: item.fullBleedCapable, insetCapable: item.insetCapable })),
+      width: item.width, height: item.height, fullBleedCapable: item.fullBleedCapable, insetCapable: item.insetCapable, singlePhotoCapable: item.singlePhotoCapable })),
     // Owner-reviewed presentation knowledge does not apply to briefs (#95, #101 decoupled).
     presentationOnly: [],
   });
@@ -285,9 +322,15 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
       if (!offered) { issues.push(issue("unknown-asset", index, image.slot, "This assetSha256 is not one of the offered media.")); continue; }
       if (used.has(image.assetSha256)) issues.push(issue("asset-repeated", index, image.slot, "This picture is already used on an earlier slide."));
       used.add(image.assetSha256);
-      const bleed = slide.type === "cover-photo" || slide.type === "single";
-      if (bleed && !offered.fullBleedCapable) issues.push(issue("picture-not-full-bleed", index, image.slot, `A ${slide.type} slide needs a picture with fullBleedCapable true.`));
-      if (!bleed && !offered.insetCapable) issues.push(issue("picture-not-inset", index, image.slot, `A ${slide.type} slide needs a picture with insetCapable true.`));
+      if (slide.type === "single") { if (!offered.singlePhotoCapable) issues.push(issue("picture-not-single-photo", index, image.slot, "A single photo slide needs a picture with singlePhotoCapable true.")); }
+      else if (slide.type === "cover-photo") { if (!offered.fullBleedCapable) issues.push(issue("picture-not-full-bleed", index, image.slot, "A cover-photo slide needs a picture with fullBleedCapable true.")); }
+      else if (!offered.insetCapable) issues.push(issue("picture-not-inset", index, image.slot, `A ${slide.type} slide needs a picture with insetCapable true.`));
+    }
+    // Two pictures share one credit line, which code sets and the model cannot shorten.
+    const credits = slide.images.flatMap((image) => media.get(image.assetSha256)?.credit ?? []);
+    const creditLine = creditLimit(dneskaiTemplateId(slide));
+    if (slide.images.length > 1 && credits.length === slide.images.length && creditLine !== undefined && fitDneskaiCredit(credits, creditLine) === null) {
+      issues.push(issue("picture-credits-too-long", index, "images", "The credits of these two pictures do not fit the slide's one credit line together; show one picture on this slide or choose pictures from the same source."));
     }
     if (copy.format === "carousel" && index > 0 && slide.type === "cover-photo") issues.push(issue("cover-not-first", index, "type", "cover-photo is only the first slide."));
     if (slide.type === "single" && slide.variant !== offer.rules.singleVariant) issues.push(issue("single-variant", index, "variant", `rules.singleVariant is ${offer.rules.singleVariant}.`));
@@ -347,7 +390,6 @@ export function dneskaiHashtags(proposed: readonly string[]): string[] {
   return [...new Set([...cleaned, ...DNESKAI_HASHTAG_BASE])].slice(0, 10);
 }
 
-const distinct = <T>(values: T[]) => [...new Set(values)];
 /** Every distinct picture the written slides use, in first-use order, from the offer. */
 function usedMedia(copy: DneskaiCopy, offer: DneskaiBriefOffer): DneskaiOfferMedia[] {
   const media = new Map(offer.media.map((item) => [item.assetSha256, item]));
@@ -382,14 +424,17 @@ function sourceLine(item: DneskaiOfferEvidence, credits: string[], lineChars: nu
 export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer, glyphs: DneskaiGlyphFilter, lineChars: number = DNESKAI_SOURCES_SLIDE.lineChars): DneskaiDeck {
   const media = new Map(offer.media.map((item) => [item.assetSha256, item]));
   const slides: DneskaiSlide[] = copy.slides.map((slide) => {
-    const credit = glyphs(distinct(slide.images.flatMap((image) => media.get(image.assetSha256)?.credit ?? [])).join(" · "), "credit");
+    // Fitted before the glyph filter, which only removes characters; the gate above refuses a line that cannot fit.
+    const credits = slide.images.flatMap((image) => media.get(image.assetSha256)?.credit ?? []);
+    const limit = creditLimit(dneskaiTemplateId(slide)) ?? 120;
+    const credit = glyphs(fitDneskaiCredit(credits, limit) ?? shortened(distinct(credits).join(" · "), limit), "credit");
     return {
       type: slide.type,
       ...(slide.variant ? { variant: slide.variant } : {}),
       headline: slide.headline.trim(),
       ...(slide.body ? { body: slide.body.trim() } : {}),
       ...(slide.kicker ? { kicker: slide.kicker.trim() } : {}),
-      ...(credit ? { credit: credit.slice(0, 120).trim() } : {}),
+      ...(credit ? { credit } : {}),
       images: slide.images.map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, ...(image.crop ? { crop: image.crop } : {}) })),
       alt: slide.alt.trim(),
     };
@@ -453,7 +498,7 @@ export function dneskaiRenderIssues(problems: readonly DneskaiSlideRenderProblem
     const written = slide && field && ["headline", "body", "kicker", "credit"].includes(field) ? (slide[field as "headline"] ?? "").trim().length : 0;
     let advice = RENDER_ADVICE[problem.code] ?? `has the render problem ${problem.code}`;
     if (problem.code === "text-clipped" && written) advice += field === "credit"
-      ? " (the picture credit is set by code: use another slide type or picture)"
+      ? " (code sets the picture credit: show one picture on this slide or choose a picture from another source)"
       : ` to at most ${Math.max(10, Math.floor(written * 0.75))} characters (it has ${written})`;
     if (problem.code === "unsupported-glyph") {
       const points = distinct(problem.message.match(/U\+[0-9A-F]{4,6}/g) ?? []).slice(0, 8);

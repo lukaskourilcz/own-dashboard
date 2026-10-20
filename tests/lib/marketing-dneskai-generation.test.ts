@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_BASE, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
-  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiRetryFeedback,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiRetryFeedback,
   loadDneskaiGlyphFilter, normalizeDneskaiCopy, normalizeDneskaiHashtag, validateDneskaiCopy, type DneskaiCopy, type DneskaiGlyphFilter,
 } from "@/lib/marketing/dneskai-generation";
 import { DEFAULT_GENERATION_BUDGET, claudeCallProfile, createClaudeMarketingModel, generateMarketingDraft, type GenerationDependencies, type MarketingModel } from "@/lib/marketing/generation";
@@ -39,7 +39,7 @@ beforeEach(() => { vi.clearAllMocks(); });
 describe("marketing-copy/5 prompt (#116)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("c760dbe5303e3a0c469ff3baaf9e94818db1548c3e398c5d23a890e0cda58531");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("aa2dcebd50a8485b195c60a34469a8d2a0586f815b3809c2a8ec9ad52abac7d6");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/5+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("states the factual, captionOnly, picture, format and register rules and embeds the Czech Humanizer review", () => {
@@ -208,6 +208,65 @@ describe("deck and caption assembly by code", () => {
   });
 });
 
+// Synthetic credits of the lengths production produces: a Bluesky account (37 characters with its label) and an
+// aggregator's host (36). The single photo post's credit line holds 30.
+const BLUESKY_CREDIT = "Obrázek: @testonly-blog.net (Bluesky)";
+const HOST_CREDIT = "Obrázek: techcommunity.test-only.com";
+const UNFITTABLE_CREDIT = "Obrázek: images.test-only-example-university.edu";
+const singleImageBrief = (credits: [string, string]) => briefFixture(pictures, { suggestedFormat: "single-image",
+  media: briefFixture(pictures).media.map((item) => item.assetSha256 === pictures.hero.sha256 ? { ...item, credit: credits[0] } : item.assetSha256 === pictures.post.sha256 ? { ...item, credit: credits[1] } : item) });
+const singlePhoto = (sha256: string): DneskaiCopy => ({ ...validCopy(pictures), format: "single-image", slides: [{ type: "single", variant: "photo", headline: "Lightroom otevře zavřené oči",
+  body: "Zdarma jsou 2 použití.", images: [{ slot: "image-1", assetSha256: sha256 }], alt: "Oznámení o nové funkci Lightroomu s obrázkem ze zdroje." }] });
+
+describe("code-set picture credits", () => {
+  it("fits a credit to its line by dropping the label, then the platform, never cutting a name", () => {
+    expect(fitDneskaiCredit(["Foto: @technology"], 30)).toBe("Foto: @technology");
+    expect(fitDneskaiCredit([BLUESKY_CREDIT], 80)).toBe(BLUESKY_CREDIT);
+    expect(fitDneskaiCredit([BLUESKY_CREDIT], 30)).toBe("@testonly-blog.net (Bluesky)");
+    expect(fitDneskaiCredit(["Obrázek: @test-only.bsky.social (Bluesky)"], 30)).toBe("@test-only.bsky.social");
+    expect(fitDneskaiCredit([HOST_CREDIT], 30)).toBe("techcommunity.test-only.com");
+    expect(fitDneskaiCredit([UNFITTABLE_CREDIT], 30)).toBeNull();
+    expect(fitDneskaiCredit(["Obrázek: The Verge", "Foto: @technology", "Obrázek: The Verge"], 80)).toBe("Obrázek: The Verge · Foto: @technology");
+    expect(fitDneskaiCredit([`Obrázek: ${"a".repeat(60)}`, `Obrázek: ${"b".repeat(60)}`], 80)).toBeNull();
+    expect(fitDneskaiCredit([], 30)).toBe("");
+  });
+  it("offers a single photo only with a picture whose credit code can set on its short line", () => {
+    const offer = dneskaiBriefOffer(singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]), publishers);
+    expect(offer.rules).toMatchObject({ formats: ["single-image"], singleVariant: "photo" });
+    expect(offer.media.map((item) => [item.fullBleedCapable, item.singlePhotoCapable])).toEqual([[true, true], [false, false], [true, true]]);
+    expect(JSON.parse(dneskaiBriefPrompt(offer)).media[0]).toMatchObject({ fullBleedCapable: true, insetCapable: true, singlePhotoCapable: true });
+    const unfittable = dneskaiBriefOffer(singleImageBrief([UNFITTABLE_CREDIT, UNFITTABLE_CREDIT]), publishers);
+    expect(unfittable.rules.singleVariant).toBe("type");
+    // The long credit still fits the 80-character line of a cover or a framed slide.
+    expect(unfittable.media.map((item) => [item.fullBleedCapable, item.insetCapable, item.singlePhotoCapable])).toEqual([[true, true, false], [false, true, false], [true, true, false]]);
+    expect(validateDneskaiCopy(singlePhoto(pictures.hero.sha256), unfittable).map((entry) => [entry.slide, entry.code])).toEqual([[0, "picture-not-single-photo"], [0, "single-variant"]]);
+    // A credit that fits nowhere keeps its picture off every slide.
+    const nowhere = dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => ({ ...item, credit: `Obrázek: ${"x".repeat(90)}` })) }), publishers);
+    expect(nowhere.rules).toMatchObject({ firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
+  });
+  it("refuses two pictures whose credits cannot share one line, before rendering", () => {
+    const long = (prefix: string) => `Obrázek: ${prefix}.${"test-only-example".repeat(3)}.edu`;
+    const offer = dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => item.assetSha256 === pictures.figure.sha256 ? { ...item, credit: long("a") } : item.assetSha256 === pictures.post.sha256 ? { ...item, credit: long("b") } : item) }), publishers);
+    const copy = validCopy(pictures);
+    copy.slides = [copy.slides[0]!, { ...copy.slides[3]!, images: [{ slot: "image-1", assetSha256: pictures.figure.sha256 }, { slot: "image-2", assetSha256: pictures.post.sha256 }] }, copy.slides[2]!];
+    expect(validateDneskaiCopy(copy, offer).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[1, "picture-credits-too-long", "images"]]);
+    // Together with the cover's own credit both fit, so the pair is accepted on the brief's real credits.
+    expect(validateDneskaiCopy(copy, offerFor())).toEqual([]);
+    expect(buildDneskaiDeck(copy, offerFor(), glyphs).slides[1]!.credit).toBe("Obrázek: The Verge · Foto: @technology");
+  });
+  it("sets the fitted credit on the slide and keeps the full credit in the caption", () => {
+    const offer = dneskaiBriefOffer(singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]), publishers);
+    const copy = singlePhoto(pictures.hero.sha256);
+    expect(validateDneskaiCopy(copy, offer)).toEqual([]);
+    expect(buildDneskaiDeck(copy, offer, glyphs).slides[0]!.credit).toBe("@testonly-blog.net (Bluesky)");
+    const caption = assembleDneskaiCaption(copy, offer);
+    expect("caption" in caption && caption.caption).toContain(`\n\n${BLUESKY_CREDIT}\n\n`);
+    const carousel = validCopy(pictures);
+    carousel.slides[0]!.images[0]!.assetSha256 = pictures.hero.sha256;
+    expect(buildDneskaiDeck(carousel, dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => item.assetSha256 === pictures.hero.sha256 ? { ...item, credit: BLUESKY_CREDIT } : item) }), publishers), glyphs).slides[0]!.credit).toBe(BLUESKY_CREDIT);
+  });
+});
+
 describe("generation from a brief", () => {
   const dependencies = (model: MarketingModel, extra: Partial<GenerationDependencies> = {}): GenerationDependencies => ({ model, now, loadDneskaiMedia: loadMedia, validateDneskaiDeck: clean, evidencePublishers: dneskaiEvidencePublishers, ...extra });
   it("builds a marketing-content/2 deck revision from one call, at Sonnet 5.5 cost", async () => {
@@ -321,6 +380,17 @@ describe("generation from a brief", () => {
 });
 
 describe("the real studio gate on a code-assembled deck", () => {
+  it("renders a single photo post whose every full-bleed picture carries a long credit in one call", async () => {
+    // The review's case: a single-image brief whose full-bleed pictures carry a Bluesky and a host credit.
+    const brief = singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]);
+    for (const sha256 of [pictures.hero.sha256, pictures.post.sha256]) {
+      const model = fakeModel([{ copy: singlePhoto(sha256), usage: { inputTokens: 3000, outputTokens: 600 } }]);
+      const draft = await generateMarketingDraft(briefInput(briefPacket(brief)), { model, now, loadDneskaiMedia: loadMedia, evidencePublishers: dneskaiEvidencePublishers });
+      expect(model.invoke).toHaveBeenCalledTimes(1);
+      expect(draft.deck!.slides[0]!.credit).toBe(sha256 === pictures.hero.sha256 ? "@testonly-blog.net (Bluesky)" : "techcommunity.test-only.com");
+      expect((await validateDneskaiDeck(draft.deck!, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);
+    }
+  }, 30000);
   it("passes the valid answer's deck, sources slide included, and reports a clipped headline by slide and field", async () => {
     const deck = buildDneskaiDeck(validCopy(pictures), offerFor(), glyphs);
     expect((await validateDneskaiDeck(deck, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);
