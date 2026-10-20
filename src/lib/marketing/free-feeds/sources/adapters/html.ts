@@ -1,5 +1,4 @@
 import * as cheerio from "cheerio";
-import type { AnyNode } from "domhandler";
 import type {
   SourceConfig,
   SourceFetchContext,
@@ -7,6 +6,9 @@ import type {
 } from "../types";
 import { fetchReadable, linksFromMarkdown } from "./reader";
 import { dayUpperBound, fetchText, makeItem, midnightDay, safeImageUrl, type SourceDate } from "./util";
+
+/** cheerio's node type (domhandler's `AnyNode`), derived so the transitive package is not imported. */
+type AnyNode = Exclude<Parameters<typeof cheerio.load>[0], string | Buffer | unknown[]>;
 
 /**
  * The number of distinct summaries below which a page is treated as having none.
@@ -171,10 +173,19 @@ export function projectHtml(
     return !anchor.find("h1,h2,h3,h4,h5,h6").length && words.length <= 3 && clean(anchor.text()).length <= 30;
   })).map(([url]) => url));
   const anchors = linked.filter(({ url }) => !taxonomy.has(url));
-  const articleUrlsIn = (scope: cheerio.Cheerio<AnyNode>) => new Set(scope.find("a[href]").toArray().flatMap((link) => {
-    const url = publisherArticleUrl($(link).attr("href") ?? "", listing)?.toString();
-    return url && !taxonomy.has(url) ? [url] : [];
-  }));
+  // Memoised per element: neighbouring anchors share ancestors, so each ancestor is scanned once.
+  const articleUrlCount = new Map<AnyNode, number>();
+  const articleUrlsIn = (scope: cheerio.Cheerio<AnyNode>) => {
+    const node = scope.get(0);
+    const known = node ? articleUrlCount.get(node) : undefined;
+    if (known !== undefined) return known;
+    const count = new Set(scope.find("a[href]").toArray().flatMap((link) => {
+      const url = publisherArticleUrl($(link).attr("href") ?? "", listing)?.toString();
+      return url && !taxonomy.has(url) ? [url] : [];
+    })).size;
+    if (node) articleUrlCount.set(node, count);
+    return count;
+  };
   const drafts = new Map<string, Draft>();
   for (const { element, url } of anchors) {
     const anchor = $(element);
@@ -182,7 +193,7 @@ export function projectHtml(
     let card: cheerio.Cheerio<AnyNode> = anchor;
     for (let depth = 0; depth < 5; depth += 1) {
       const parent = card.parent();
-      if (!parent.length || parent.is("body,main,html") || articleUrlsIn(parent).size > 1) break;
+      if (!parent.length || parent.is("body,main,html") || articleUrlsIn(parent) > 1) break;
       card = parent;
     }
     const { title, rank } = titleFor(anchor);
