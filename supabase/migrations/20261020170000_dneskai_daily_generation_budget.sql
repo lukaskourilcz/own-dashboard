@@ -25,10 +25,13 @@ grant select,insert,update on marketing_private.dneskai_generation_spend to serv
 -- DNESKAi generation spend of the last 24 hours, other than p_except's own.
 create function public.marketing_dneskai_generation_spent(p_owner uuid,p_except uuid default null)
 returns numeric language sql set search_path='' as $$
+ -- Nested CASE: the numeric cast runs only on a JSON number, whatever order a planner gives AND.
  select coalesce(sum(case
-   when j.status in ('review','failed') and jsonb_typeof(j.result->'usage'->'estimatedCostUsd')='number'
-    and (j.result->'usage'->>'estimatedCostUsd')::numeric>=0
-   then (j.result->'usage'->>'estimatedCostUsd')::numeric
+   when j.status in ('review','failed') then case
+    when jsonb_typeof(j.result->'usage'->'estimatedCostUsd')='number' then case
+     when (j.result->'usage'->>'estimatedCostUsd')::numeric>=0 then (j.result->'usage'->>'estimatedCostUsd')::numeric
+     else s.reserved_usd end
+    else s.reserved_usd end
    else s.reserved_usd end),0)
  from marketing_private.dneskai_generation_spend s
  left join public.marketing_jobs j on j.id=s.job_id and j.user_id=s.user_id
