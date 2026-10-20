@@ -12,7 +12,9 @@ export const DneskaiCandidateSchema = z.strictObject({
   targetDate: z.iso.date().nullable(), id: z.string().min(1).max(200), sourceId: z.string().min(1).max(100), externalId: z.string().min(1).max(300),
   title: z.string().max(500), text: z.string().max(12000), url: z.url(),
   publishedAt: z.iso.datetime({ offset: true }).nullable(), fetchedAt: z.iso.datetime({ offset: true }),
-  mediaUrls: z.array(z.url()).max(20), contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+  // publishedAt is an upper bound (fetch time for an undated item, end of a stated day/month otherwise).
+  dateEstimated: z.literal(true).optional(),
+  mediaUrls: z.array(z.url()).max(10), contentHash: z.string().regex(/^[a-f0-9]{64}$/),
   category: z.enum(['ai-news', 'tech-news', 'marketing', 'tool', 'ai-project', 'other']).nullable(),
   relevance: z.number().min(0).max(1).nullable(), duplicateOf: z.string().max(200).nullable(),
   status: z.enum(['new', 'held', 'duplicate', 'rejected', 'selected']), reason: z.string().max(200).nullable(),
@@ -43,6 +45,11 @@ export const DneskaiFeedResponseSchema = z.strictObject({
   schemaVersion: z.literal('dneskai-feed/1'), sources: z.array(z.strictObject({
     sourceId: z.string(), status: z.enum(['ok', 'partial', 'error']), errorCode: z.string().nullable(),
     items: z.array(z.strictObject({ externalId: z.string(), title: z.string().max(500), url: z.url(),
-      publishedAt: z.iso.datetime({ offset: true }).nullable(), summary: z.string().max(2000), fetchedAt: z.iso.datetime({ offset: true }) })).max(20),
+      publishedAt: z.iso.datetime({ offset: true }).nullable(), summary: z.string().max(2000), fetchedAt: z.iso.datetime({ offset: true }),
+      // Optional and additive: the Quorum bridge omits both, so dneskai-feed/1 stays compatible.
+      // imageUrl is a reference the adapter saw for free (RSS media, card image, og:image); nothing downloads it.
+      imageUrl: z.url().max(2048).optional(),
+      // publishedAt is an upper bound derived from a day/month without a time of day.
+      dateEstimated: z.literal(true).optional() })).max(20),
   })).max(8),
 });

@@ -12,8 +12,9 @@ function fixture(stages:DneskaiStage[],items=Array.from({length:17},(_,i)=>item(
  const finish=vi.fn(async(_owner:string,_run:string,_fence:string,status:DneskaiRun['status'],error:string|null)=>{run.status=status;run.error_code=error;return{...run};});
  const saveStage=vi.fn(async(_owner:string,_run:string,_fence:string,id:string,result:Parameters<DneskaiCollectionStore['saveStage']>[4])=>{const stage=stages.find(row=>row.source_id===id)!;stage.status=result.status;stage.error_code=result.errorCode;stage.cost_usd=result.costUsd;if(result.registration)stage.registration=result.registration;for(const item of result.items){const i=items.findIndex(old=>old.id===item.id);if(i<0)items.push(item);else items[i]=item;}});
  const claimStage=vi.fn(async(_owner:string,_run:string,_fence:string,id:string,paid:boolean)=>{const row=stages.find(stage=>stage.source_id===id)!;row.status='running';if(paid)row.reserved_usd=row.kind==='instagram'?0.04:0.003;return{...row};});
- const store:DneskaiCollectionStore={admit:vi.fn(async()=>({...run})),claim:vi.fn(async(_owner,_id,fence)=>({...run,fence})),stages:vi.fn(async()=>stages.map(row=>({...row}))),claimStage,saveStage,candidates:vi.fn(async()=>items.map(item=>({...item}))),history:vi.fn(async()=>[]),finish};
- return{store,run,items,stages,finish,saveStage,claimStage};
+ const planJev=vi.fn(async(_owner:string,_run:string,_fence:string,count:number)=>{for(let i=0;i<count;i++)stages.push(stage(`__jev:${String(i).padStart(2,'0')}`));run.jev_stage_count=count;return count;});
+ const store:DneskaiCollectionStore={admit:vi.fn(async()=>({...run})),claim:vi.fn(async(_owner,_id,fence)=>({...run,fence})),stages:vi.fn(async()=>stages.map(row=>({...row}))),claimStage,saveStage,candidates:vi.fn(async()=>items.map(item=>({...item}))),history:vi.fn(async()=>[]),finish,planJev};
+ return{store,run,items,stages,finish,saveStage,claimStage,planJev};
 }
 function stage(sourceId:string,kind:DneskaiStage['kind']='jev'):DneskaiStage{return{run_id:runId,source_id:sourceId,kind,status:'queued',since_at:'2026-10-06T20:30:00Z',registration:null,reserved_usd:0,cost_usd:null,error_code:null};}
 describe('staged DNESKAi collection with mocked transports only',()=>{
@@ -31,6 +32,33 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
  it('keeps data beyond128 explicitly pending/partial rather than truncating it as complete',async()=>{const f=fixture(Array.from({length:16},(_,i)=>stage(`__jev:${String(i).padStart(2,'0')}`)),Array.from({length:135},(_,i)=>item(i))),jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));let result;for(let i=0;i<4;i++)result=await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,jev});expect(jev).toHaveBeenCalledTimes(16);expect(result).toMatchObject({status:'partial',continue:false});expect(f.run.error_code).toBe('collection-classification-pending');expect(f.items.filter(item=>item.category===null)).toHaveLength(7);});
  it('stops new paid work after ambiguous actor start and retains unknown reservation',async()=>{const f=fixture([stage('instagram:mosseri','instagram'),stage('instagram:meta.ai','instagram'),stage('__jev:00')]),startInstagram=vi.fn(async()=>{throw new Error('raw private error');}),jev=vi.fn();await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,startInstagram,jev});expect(startInstagram).toHaveBeenCalledTimes(1);expect(f.stages[0]).toMatchObject({status:'held',reserved_usd:0.04,cost_usd:null});await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,startInstagram,jev});expect(startInstagram).toHaveBeenCalledTimes(1);expect(jev).not.toHaveBeenCalled();expect(f.stages[1].error_code).toBe('collection-cost-unresolved');});
  it('rechecks midnight after durable paid reservation before provider call',async()=>{const f=fixture([stage('instagram:mosseri','instagram')]),startInstagram=vi.fn(),clock=vi.fn(()=>now);const original=f.store.claimStage;f.store.claimStage=async(...args)=>{const result=await original(...args);clock.mockReturnValue(new Date('2026-10-13T22:00:01Z'));return result;};await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:clock,startInstagram});expect(startInstagram).not.toHaveBeenCalled();expect(f.stages[0].error_code).toBe('collection-day-or-consent-changed');});
+ it('plans ceil(new candidates / 8) Jev stages once, only after every source stage settled',async()=>{
+  const f=fixture([stage('openai-blog','feed')]),feed=vi.fn(async()=>({items:[],complete:true,errorCode:null}));
+  const jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));
+  const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev});
+  expect(f.planJev).toHaveBeenCalledTimes(1);expect(f.planJev.mock.calls[0][3]).toBe(3);
+  expect(f.stages.filter(row=>row.kind==='jev').map(row=>row.source_id)).toEqual(['__jev:00','__jev:01','__jev:02']);
+  expect(jev.mock.calls.map(call=>call[0].length)).toEqual([8,8,1]);expect(result).toMatchObject({status:'complete',continue:false});
+ });
+ it('plans no Jev stage without new candidates and still completes a covered run',async()=>{
+  const f=fixture([stage('openai-blog','feed')],[]),feed=vi.fn(async()=>({items:[],complete:true,errorCode:null})),jev=vi.fn();
+  expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev})).toMatchObject({status:'complete',continue:false});
+  expect(f.planJev.mock.calls[0][3]).toBe(0);expect(f.stages.some(row=>row.kind==='jev')).toBe(false);expect(jev).not.toHaveBeenCalled();
+ });
+ it('waits for unfinished sources before planning and never replans a planned or legacy run',async()=>{
+  const f=fixture([stage('instagram:mosseri','instagram')]),startInstagram=vi.fn(async()=>({id:'TEST',actId:'test-only',userId:'TEST',buildNumber:'1.2.3',defaultDatasetId:'TEST',status:'RUNNING' as const}));
+  expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,startInstagram})).toMatchObject({status:'running',continue:true});expect(f.planJev).not.toHaveBeenCalled();
+  const legacy=fixture(Array.from({length:16},(_,i)=>stage(`__jev:${String(i).padStart(2,'0')}`)),[]);
+  await tickDneskaiCollection(owner,{projectId:project},{store:legacy.store,env,now:()=>now,jev:vi.fn()});expect(legacy.planJev).not.toHaveBeenCalled();
+  const planned=fixture([],[]);planned.run.jev_stage_count=0;
+  await tickDneskaiCollection(owner,{projectId:project},{store:planned.store,env,now:()=>now,jev:vi.fn()});expect(planned.planJev).not.toHaveBeenCalled();
+ });
+ it('saves an Instagram read capped only by its limit as partial so the cursor can move',async()=>{
+  const f=fixture([{...stage('instagram:mosseri','instagram'),status:'polling',registration:{id:'TEST'}}],[]);
+  const pollInstagram=vi.fn(async()=>({running:false as const,run:{id:'TEST',actId:'test-only',userId:'TEST',buildNumber:'1.2.3',defaultDatasetId:'TEST',status:'SUCCEEDED' as const,usageTotalUsd:0.02},items:[item(1,'instagram:mosseri')],complete:false,errorCode:'collection-source-item-cap'}));
+  await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,pollInstagram});
+  expect(f.saveStage.mock.calls[0][4]).toMatchObject({status:'partial',errorCode:'collection-source-item-cap'});
+ });
  it('terminal daily admission returns exact persisted state without feeds/providers',async()=>{const f=fixture([]);f.run.status='complete';const feed=vi.fn(),jev=vi.fn();expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev})).toEqual({runId,status:'complete',continue:false});expect(f.store.claimStage).not.toHaveBeenCalled();expect(feed).not.toHaveBeenCalled();expect(jev).not.toHaveBeenCalled();});
  it('cheap dedup precedes paid batching and source round-robin prevents a hot source starving others',()=>{const first=item(1,'openai-blog'),duplicate={...first,id:'different',url:'https://other.example.test/path'},items=[first,duplicate,item(2,'openai-blog'),item(3,'anthropic-news'),item(4,'deepmind-blog')];expect(pendingDneskaiCandidates(items,now).map(item=>item.sourceId).slice(0,3)).toEqual(['openai-blog','anthropic-news','deepmind-blog']);expect(pendingDneskaiCandidates(items,now)).toHaveLength(4);expect(pendingDneskaiCandidates([{...first,publishedAt:null},{...first,publishedAt:'2026-01-01T00:00:00Z'}],now)).toEqual([]);});
  it('manual explicit collection pilot admits before22 without reusing exhausted generation authority',async()=>{

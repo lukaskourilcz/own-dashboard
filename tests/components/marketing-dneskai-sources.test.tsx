@@ -29,6 +29,18 @@ describe('read-only DNESKAi source checks', () => {
     expect(container.querySelectorAll('img,iframe,video')).toHaveLength(0); expect(container.querySelectorAll('button')).toHaveLength(0);
     expect(container.textContent).not.toContain('PRIVATE-ERROR'); expect(container.textContent).not.toContain('$0');
   });
+  it.each(['en', 'cs'] as const)('separates source publication, last successful check and import time, and labels estimates (%s)', lang => {
+    const value = state(); const t = dneskaiSources[lang]; const candidate = value.candidates[0];
+    value.candidates = [{ ...candidate, publishedAt: '2026-10-12T11:59:59Z', dateEstimated: true, fetchedAt: '2026-10-12T20:05:00Z' }, { ...candidate, id: 'older', status: 'held', targetDate: null, publishedAt: '2026-10-10T08:00:00+02:00', fetchedAt: '2026-10-10T20:05:00Z' }];
+    value.sourceStates[0] = { ...value.sourceStates[0], errorCode: 'collection-source-item-cap' };
+    render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
+    for (const text of [t.success, t.newestPublished, t.lastImport, t.importedAt, `(${t.estimated})`, t.blockers['collection-source-item-cap']]) expect(container.textContent).toContain(text);
+    // A capped read is informational, not an error.
+    const capNote = [...container.querySelectorAll('p')].find(node => node.textContent === t.blockers['collection-source-item-cap']);
+    expect(capNote?.className).toContain('text-foreground-muted'); expect(capNote?.className).not.toContain('text-risk');
+    for (const instant of ['2026-10-12T11:59:59Z', '2026-10-12T20:05:00Z', '2026-10-11T20:00:00Z']) expect(container.querySelector(`time[datetime="${instant}"]`), instant).not.toBeNull();
+    expect(container.querySelector('time[datetime="2026-10-10T20:05:00Z"]')).toBeNull();
+  });
   it('shows missing configuration and no scheduled checks without inventing a successful empty run', () => {
     const value = state(); value.enabled = false; value.blockers = ['collection-bridge-unconfigured']; value.sourceStates = []; value.candidates = []; value.runs = [];
     render(<DneskaiSourceRecords state={value} lang="en" now={now} />);

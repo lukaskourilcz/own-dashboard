@@ -48,4 +48,16 @@ describe('authoritative source refresh', () => {
       await expect(refreshSource(packet, new AbortController().signal, { now, config, fetcher: async () => Response.json({ packets: [altered] }) })).rejects.toThrow();
     }
   });
+  it('keeps approved-article lookup independent from native social feed selection', async () => {
+    const url = 'https://quorum.example.invalid/admin/api/marketing-source';
+    const fetcher = vi.fn<typeof fetch>(async (requested, options) => {
+      expect(String(requested)).toBe(url);
+      expect(JSON.parse(String(options?.body))).toEqual({action:'sources',sourceIds:['daily-web-article']});
+      return Response.json({schemaVersion:'marketing-source-query/1',brand:'dneskai',sources:[{sourceId:'daily-web-article',status:'held',packet:null}],noEditionDates:[]});
+    });
+    const result = await refreshMarketingSources({brand:'dneskai',sourceIds:['daily-web-article'],now,fetcher,
+      env:{MARKETING_DNESKAI_FEED_PROVIDER:'native',MARKETING_DNESKAI_SOURCE_URL:url,MARKETING_DNESKAI_SOURCE_SECRET:secret}});
+    expect(fetcher).toHaveBeenCalledTimes(1);expect(result.packets).toEqual([]);expect(result.held).toHaveLength(1);
+  });
+
 });

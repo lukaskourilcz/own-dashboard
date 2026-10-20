@@ -429,6 +429,17 @@ Before applying, back up schema/data and verify a staging copy with own-only acc
 
 Rollback first disables per-brand/global publisher and n8n schedules. Retain approved revisions, assets, provider/media IDs and receipts for reconciliation. Archive a new campaign to restore calendar control; never drop evidence tables or blindly republish an ambiguous remote outcome. See [marketing orchestration](marketing-n8n.md), [knowledge](marketing-knowledge.md) and [offline flow proof](marketing-pipeline-verification.md).
 
+## DNESKAi collection cursor and limits (2026-10-20)
+
+`20261020100000_dneskai_collection_cursor_limits.sql` replaces four collection functions with their latest bodies plus three changes, and adds one function and one column. Applied migrations stay untouched.
+
+- `marketing_dneskai_save_stage`: a stage saved as `partial` with `collection-source-item-cap` (the provider stopped only at its item cap) moves `marketing_dneskai_source_states.last_success_at` to its newest accepted item (`publishedAt`, or `fetchedAt` when undated), never past now. A complete read still moves it to the run start. Errors, invalid URLs, other partial results, held or over-budget results and empty results leave it unchanged.
+- `marketing_dneskai_claim_stage`: Instagram stages take up to 10 items (was 7) and a Prague day up to 50 reserved Instagram items (was 35). The $0.04 stage reservation and the $0.25 daily ceiling are unchanged; 10 results at $2.30 per 1,000 cost $0.023.
+- `marketing_dneskai_admit` and `marketing_dneskai_admit_pilot` no longer create 16 fixed `__jev:00..15` stages. The new service-role function `marketing_dneskai_plan_jev(owner, run, fence, count)` creates `ceil(new candidates / 8)` stages (0 to 16) once per run, after every source stage has settled, and records the count in the new nullable `marketing_dneskai_runs.jev_stage_count`. Runs admitted before the migration keep their 16 stages.
+- The `reserved_items` check on `marketing_dneskai_stages` becomes `0..10`.
+
+Verify on a staging copy with `tests/lib/marketing-dneskai-cursor-database.test.ts` (PGlite replay of all three collection migrations): two consecutive runs over the same feed, where the second reads only from the first run's cursor and inserts no duplicate. No schedule, flag or account changes. Rollback: redeploying the previous app keeps working against the new functions except that it never calls `marketing_dneskai_plan_jev`, so its runs get no Jev stages; reapply the 20261013181506 function bodies before rolling the app back.
+
 ## Oslo Career preference (2026-10-16)
 
 `20261015234547_oslo_career_preferences.sql` adds `user_preferences.show_czech_career` with `NOT NULL DEFAULT false`. The filename matches the version recorded in production. Existing own-only preference RLS and grants remain in force. Verify a new preference row is false, authenticated PATCH accepts only a boolean, and another owner cannot read or change it. Existing Czech saved positions, applications, sources and career links are retained behind the opt-in. Default refresh and availability checks skip Czech sources and unknown Apify task scopes. No cron or AI model calls were added.
