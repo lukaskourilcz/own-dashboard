@@ -27,8 +27,8 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
 export const DNESKAI_STUDIO = {
   package: "@boardlessai/carousel-studio",
   version: "1.0.0",
-  commit: "72b7a5e02a640e6ffcbdd50c5f21f83066004cdf",
-  treeSha256: "551ae3a567d73c357d98bd9d52d1ffc81d5fe70f3814e5bafab470d1f9ea1af1",
+  commit: "852c2e9f4fd4447ee602cd2df2c775bbba036fa2",
+  treeSha256: "af3c47ddedae6c83413154f2f72e953b6eaabb7e360fafa6c6bfe61f7d06de24",
 } as const;
 /** OwnDashboard's own rules on top of the studio's: the clip, glyph and placement gates and the JPEG below. Bump on any change. */
 export const DNESKAI_RENDER_POLICY = "dneskai-render/2";

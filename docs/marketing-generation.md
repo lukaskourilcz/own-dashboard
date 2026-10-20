@@ -147,4 +147,4 @@ Focused tests cover consent/hash/eligibility isolation, references, immutable ex
 - [LangSmith input/output redaction](https://docs.langchain.com/langsmith/mask-inputs-outputs)
 - [LangSmith TypeScript client reference](https://reference.langchain.com/javascript/langsmith)
 
-Pinned dependencies: `@langchain/anthropic 1.5.12`, `@langchain/core 1.2.17`, `langsmith 0.10.11`, `@resvg/resvg-js 2.6.2`, `sharp 0.35.5`, and `@boardlessai/carousel-studio 1.0.0` vendored from Quorum `72b7a5e`. SDK signatures and runtime options were checked against installed declarations/implementation in addition to documentation.
+Pinned dependencies: `@langchain/anthropic 1.5.12`, `@langchain/core 1.2.17`, `langsmith 0.10.11`, `@resvg/resvg-js 2.6.2`, `sharp 0.35.5`, and `@boardlessai/carousel-studio 1.0.0` vendored from Quorum `852c2e9`. SDK signatures and runtime options were checked against installed declarations/implementation in addition to documentation.

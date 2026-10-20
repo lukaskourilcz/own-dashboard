@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { CONNECTOR_MAX_SLIDES, MASTER_CANVAS, MASTER_FORMAT } from "./canvas.js";
+import { layoutDneskaiSlide } from "./dneskai-layout.js";
 import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, DNESKAI_PHOTO_TEMPLATES, dneskaiSourceSlot, dneskaiSourcesTemplate } from "./dneskai-photo.js";
 import { cropRegion } from "./images.js";
 import { CAROUSEL_BRANDS } from "./library.js";
@@ -10,7 +11,9 @@ import { ImageCropSchema } from "./schema.js";
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
  * strings code owns (the folio, the sources slide's title and its disclosure), decodes and crops
- * the photographs, and renders through the same engine and gates as every other Design Lab slide.
+ * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
+ * the words and pictures they carry and the height left over is set around them on purpose), and
+ * renders through the same engine and gates as every other Design Lab slide.
  *
  * It refuses rather than degrades. A missing required photograph, a full-bleed photograph under
  * `DNESKAI_BLEED_MIN_SHORT_SIDE` or cropped past `DNESKAI_BLEED_MAX_UPSCALE`, bytes that do not
@@ -170,39 +173,45 @@ async function inspect(input) {
     const seen = new Set();
     const images = {};
     const crops = {};
+    const pictures = {};
+    // One list per given image, so a picture's resolution problems, found once the slide is laid
+    // out, are reported beside its decoding problems in the order the images were given.
+    const perImage = [];
     const { default: sharp } = await import("sharp");
     for (const image of input.images ?? []) {
+        const found = [];
+        perImage.push(found);
         if (seen.has(image.slot)) {
-            problems.push(problem("image-duplicate", true, image.slot, `Image slot ${image.slot} was given twice.`));
+            found.push(problem("image-duplicate", true, image.slot, `Image slot ${image.slot} was given twice.`));
             continue;
         }
         seen.add(image.slot);
         const layer = layers.get(image.slot);
         if (!layer) {
-            problems.push(problem("image-unexpected", true, image.slot, `A ${input.type} slide (${template.id}) has no place for ${image.slot}; it holds ${[...layers.keys()].join(", ") || "no images"}.`));
+            found.push(problem("image-unexpected", true, image.slot, `A ${input.type} slide (${template.id}) has no place for ${image.slot}; it holds ${[...layers.keys()].join(", ") || "no images"}.`));
             continue;
         }
         const bytes = Buffer.from(image.bytes);
         const sha256 = createHash("sha256").update(bytes).digest("hex");
         if (image.assetSha256 !== undefined && image.assetSha256 !== sha256) {
-            problems.push(problem("image-hash-mismatch", true, image.slot, `The bytes for ${image.slot} hash to ${sha256}, not the asset ${image.assetSha256}.`));
+            found.push(problem("image-hash-mismatch", true, image.slot, `The bytes for ${image.slot} hash to ${sha256}, not the asset ${image.assetSha256}.`));
             continue;
         }
         // A crop handed back from an earlier payload names the asset it was set on. Other bytes mean
         // another picture, so it is refused rather than recorded against bytes it never saw.
         const cropAsset = image.crop?.assetSha256;
         if (cropAsset !== undefined && cropAsset !== sha256) {
-            problems.push(problem("image-hash-mismatch", true, image.slot, `The crop for ${image.slot} was set on the asset ${cropAsset}, but these bytes hash to ${sha256}. Drop the crop's assetSha256 to reuse it on another picture.`));
+            found.push(problem("image-hash-mismatch", true, image.slot, `The crop for ${image.slot} was set on the asset ${cropAsset}, but these bytes hash to ${sha256}. Drop the crop's assetSha256 to reuse it on another picture.`));
             continue;
         }
         // The computed hash goes last, so the record always names the bytes that were drawn.
         const crop = ImageCropSchema.safeParse({ focal: { x: 0.5, y: 0.5 }, ...image.crop, assetSha256: sha256 });
         if (!crop.success) {
-            problems.push(problem("crop-invalid", true, image.slot, `The crop for ${image.slot} is not valid: ${crop.error.issues.map((issue) => issue.message).join("; ")}.`));
+            found.push(problem("crop-invalid", true, image.slot, `The crop for ${image.slot} is not valid: ${crop.error.issues.map((issue) => issue.message).join("; ")}.`));
             continue;
         }
         if (bytes.length > DNESKAI_MAX_IMAGE_BYTES) {
-            problems.push(problem("image-unsupported", true, image.slot, `The file for ${image.slot} is ${bytes.length} bytes; this renderer takes at most ${DNESKAI_MAX_IMAGE_BYTES}.`));
+            found.push(problem("image-unsupported", true, image.slot, `The file for ${image.slot} is ${bytes.length} bytes; this renderer takes at most ${DNESKAI_MAX_IMAGE_BYTES}.`));
             continue;
         }
         let decoded;
@@ -212,12 +221,12 @@ async function inspect(input) {
             // SVG through librsvg, GIF, TIFF and HEIF, and a fetched third-party file must not reach
             // those decoders. libvips picks its loader from the same signature.
             if (!sniffImageFormat(bytes)) {
-                problems.push(problem("image-unsupported", true, image.slot, `The file for ${image.slot} is not ${DNESKAI_IMAGE_FORMATS.join(", ")}; this renderer takes no other format.`));
+                found.push(problem("image-unsupported", true, image.slot, `The file for ${image.slot} is not ${DNESKAI_IMAGE_FORMATS.join(", ")}; this renderer takes no other format.`));
                 continue;
             }
             const meta = await sharp(bytes, { limitInputPixels: false }).metadata();
             if ((meta.width ?? 0) * (meta.height ?? 0) > DNESKAI_MAX_IMAGE_PIXELS) {
-                problems.push(problem("image-unsupported", true, image.slot, `${image.slot} is ${meta.width} × ${meta.height} px; this renderer decodes at most ${DNESKAI_MAX_IMAGE_PIXELS / 1_000_000} megapixels.`));
+                found.push(problem("image-unsupported", true, image.slot, `${image.slot} is ${meta.width} × ${meta.height} px; this renderer decodes at most ${DNESKAI_MAX_IMAGE_PIXELS / 1_000_000} megapixels.`));
                 continue;
             }
             // rotate() with no angle applies the file's own orientation, so a phone photograph stands up.
@@ -226,36 +235,19 @@ async function inspect(input) {
             size = { width: info.width, height: info.height };
         }
         catch {
-            problems.push(problem("image-undecodable", true, image.slot, `The bytes for ${image.slot} are not an image this renderer can decode.`));
+            found.push(problem("image-undecodable", true, image.slot, `The bytes for ${image.slot} are not an image this renderer can decode.`));
             continue;
         }
         // Recorded even when the picture is refused below: the crop is the editor's and stays valid
         // for a larger original of the same subject, and the payload says what would have been drawn.
         images[image.slot] = decoded;
         crops[image.slot] = crop.data;
-        // Measured on the region the crop actually cuts, not on the file: a zoom or a frame of another
-        // shape draws fewer of the picture's pixels, and those are the ones stretched to the frame.
-        const frame = { width: layer.width * MASTER_CANVAS.width, height: layer.height * MASTER_CANVAS.height };
-        const region = cropRegion(size, crop.data, frame, crop.data.fit ?? layer.fit);
-        const upscale = Math.max(region.outWidth / region.width, region.outHeight / region.height);
-        const drawn = `${image.slot} is ${size.width} × ${size.height} px and this crop draws ${region.width} × ${region.height} px of it at ${upscale.toFixed(2)}×`;
-        if (isBleed(layer)) {
-            const shorter = Math.min(size.width, size.height);
-            if (shorter < DNESKAI_BLEED_MIN_SHORT_SIDE || upscale > DNESKAI_BLEED_MAX_UPSCALE) {
-                problems.push(problem("image-low-resolution", true, image.slot, `${drawn}; a photograph across the whole slide needs ${DNESKAI_BLEED_MIN_SHORT_SIDE} px on its shorter side and at most ${DNESKAI_BLEED_MAX_UPSCALE}× once cropped. Use a larger original, zoom out or use a framed slide.`));
-                continue;
-            }
-            if (upscale > DNESKAI_BLEED_SOFT_UPSCALE) {
-                problems.push(problem("image-upscaled", false, image.slot, `${drawn} across the whole slide and may look soft.`));
-            }
-        }
-        else if (upscale > DNESKAI_FRAME_MAX_UPSCALE) {
-            problems.push(problem("image-upscaled", false, image.slot, `${drawn} in this frame and may look soft.`));
-        }
+        pictures[image.slot] = { ...size, crop: crop.data, focalGiven: image.crop?.focal !== undefined };
     }
+    const missing = [];
     for (const [slot, layer] of layers) {
         if (!layer.optional && !seen.has(slot)) {
-            problems.push(problem("image-missing", true, slot, `A ${input.type} slide (${template.id}) needs a photograph in ${slot}.`));
+            missing.push(problem("image-missing", true, slot, `A ${input.type} slide (${template.id}) needs a photograph in ${slot}.`));
         }
     }
     const payload = {
@@ -264,15 +256,51 @@ async function inspect(input) {
         ...(input.type === "statement" && input.variant === "ink" ? { variant: "INK" } : {}),
         ...(Object.keys(crops).length ? { images: crops } : {})
     };
-    // The cut a render would make, found without the photographs, so it is reported even when an
-    // image problem stops the render.
-    for (const fit of carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT })) {
+    // The words fitted in the template's declared frames: what would be cut, found without the
+    // photographs so it is reported even when an image problem stops the render, and the lines
+    // the layout stacks.
+    const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT });
+    const clipped = [];
+    for (const fit of fits) {
         if (fit.fitted.truncated && payload.strings[fit.slot]) {
             const field = fieldOf(fit.slot, input);
-            problems.push(problem("text-clipped", false, field, `The ${field} does not fit ${fit.slot} whole and would be cut; shorten it.`));
+            clipped.push(problem("text-clipped", false, field, `The ${field} does not fit ${fit.slot} whole and would be cut; shorten it.`));
         }
     }
-    return { problems, template, payload, images };
+    const laid = layoutDneskaiSlide({
+        template,
+        text: Object.fromEntries(fits.map((fit) => [fit.slot, { lines: fit.fitted.lines.length, fontSize: fit.fitted.fontSize }])),
+        pictures
+    });
+    // Measured on the region the crop actually cuts in the frame the picture is laid out in, not on
+    // the file: a zoom or a frame of another shape draws fewer of the picture's pixels, and those are
+    // the ones stretched to the frame.
+    const laidLayers = imageLayers(laid);
+    (input.images ?? []).forEach((image, index) => {
+        const picture = pictures[image.slot];
+        const layer = laidLayers.get(image.slot);
+        // Only the given image a slot was decoded from: a duplicate was refused above.
+        if (!picture || !layer || (input.images ?? []).findIndex((other) => other.slot === image.slot) !== index)
+            return;
+        const frame = { width: layer.width * MASTER_CANVAS.width, height: layer.height * MASTER_CANVAS.height };
+        const region = cropRegion(picture, picture.crop, frame, picture.crop.fit ?? layer.fit);
+        const upscale = Math.max(region.outWidth / region.width, region.outHeight / region.height);
+        const drawn = `${image.slot} is ${picture.width} × ${picture.height} px and this crop draws ${region.width} × ${region.height} px of it at ${upscale.toFixed(2)}×`;
+        const found = perImage[index];
+        if (isBleed(layer)) {
+            const shorter = Math.min(picture.width, picture.height);
+            if (shorter < DNESKAI_BLEED_MIN_SHORT_SIDE || upscale > DNESKAI_BLEED_MAX_UPSCALE) {
+                found.push(problem("image-low-resolution", true, image.slot, `${drawn}; a photograph across the whole slide needs ${DNESKAI_BLEED_MIN_SHORT_SIDE} px on its shorter side and at most ${DNESKAI_BLEED_MAX_UPSCALE}× once cropped. Use a larger original, zoom out or use a framed slide.`));
+            }
+            else if (upscale > DNESKAI_BLEED_SOFT_UPSCALE) {
+                found.push(problem("image-upscaled", false, image.slot, `${drawn} across the whole slide and may look soft.`));
+            }
+        }
+        else if (upscale > DNESKAI_FRAME_MAX_UPSCALE) {
+            found.push(problem("image-upscaled", false, image.slot, `${drawn} in this frame and may look soft.`));
+        }
+    });
+    return { problems: [...problems, ...perImage.flat(), ...missing, ...clipped], template: laid, payload, images };
 }
 /** Every problem the slide has, without rendering it. */
 export async function validateDneskaiSlide(input) {

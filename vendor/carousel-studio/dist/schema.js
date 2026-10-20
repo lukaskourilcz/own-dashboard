@@ -101,7 +101,15 @@ const TextLayerSchema = FrameSchema.extend({
      * line left a gap that grew with every word the headline did not have. A bottom-anchored frame
      * keeps the last line on the frame's floor whatever the line count.
      */
-    valign: z.enum(["top", "middle", "bottom"]).optional()
+    valign: z.enum(["top", "middle", "bottom"]).optional(),
+    /**
+     * Spaces a line may not break at. v2 only, and absent means any space, as in every v1 layer.
+     *
+     * `cs` keeps the Czech typesetting ties: a one-letter preposition or conjunction goes down with
+     * the word after it instead of ending a line, the digit groups of one number stay together and a
+     * number keeps its unit or percent sign (`KeepWithNext` in `text.ts`).
+     */
+    keepWithNext: z.enum(["cs"]).optional()
 }).superRefine((layer, context) => {
     if (layer.minFontSize > layer.maxFontSize) {
         context.addIssue({ code: "custom", message: "minFontSize cannot exceed maxFontSize" });
@@ -357,6 +365,9 @@ export const CarouselTemplateSchema = z.object({
                 referencedSlots.add(layer.slot);
             if (layer.type === "text" && layer.valign !== undefined && !v2) {
                 context.addIssue({ code: "custom", message: `valign is a ${CAROUSEL_TEMPLATE_V2} field`, path: at("valign") });
+            }
+            if (layer.type === "text" && layer.keepWithNext !== undefined && !v2) {
+                context.addIssue({ code: "custom", message: `keepWithNext is a ${CAROUSEL_TEMPLATE_V2} field`, path: at("keepWithNext") });
             }
             if (layer.type === "image") {
                 imageSlots.add(layer.slot);

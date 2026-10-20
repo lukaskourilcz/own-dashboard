@@ -4,7 +4,9 @@ import { type CarouselPayload, type ImageCrop } from "./schema.js";
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
  * strings code owns (the folio, the sources slide's title and its disclosure), decodes and crops
- * the photographs, and renders through the same engine and gates as every other Design Lab slide.
+ * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
+ * the words and pictures they carry and the height left over is set around them on purpose), and
+ * renders through the same engine and gates as every other Design Lab slide.
  *
  * It refuses rather than degrades. A missing required photograph, a full-bleed photograph under
  * `DNESKAI_BLEED_MIN_SHORT_SIDE` or cropped past `DNESKAI_BLEED_MAX_UPSCALE`, bytes that do not

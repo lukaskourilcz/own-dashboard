@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { MASTER_CANVAS } from "./canvas.js";
+import { DNESKAI_THUMBNAIL_GRID } from "./dneskai-layout.js";
 import { renderDneskaiSlide } from "./dneskai-slide.js";
 import { GOLDEN_DIRECTORY } from "./golden.js";
 /**
@@ -12,11 +13,14 @@ import { GOLDEN_DIRECTORY } from "./golden.js";
  * crop path are pinned with the composition.
  *
  * The stand-in photographs are drawn from integer arithmetic and are exactly the size of the frame
- * they fill, so the crop's resample is the identity and the pinned bytes do not lean on a resize
- * kernel. `cover-photo-crop` pins the crop arithmetic the same way: a picture twice the frame at
- * zoom 2 around an off-centre focal point cuts a frame-sized region, so the extract offsets are
- * pinned and the resample is still the identity. Only the PNG hash is pinned: the SVG embeds sharp's PNG encoding of each picture, which
- * is a property of the zlib build rather than of the slide.
+ * they are laid out in — a contained picture's frame is the rectangle it is drawn at, so a picture
+ * that fits its column at 1× keeps its size — and the crop's resample is the identity: the pinned
+ * bytes do not lean on a resize kernel. `cover-photo-crop` pins the crop arithmetic the same way: a
+ * picture twice the frame at zoom 2 around an off-centre focal point cuts a frame-sized region, so
+ * the extract offsets are pinned and the resample is still the identity. `single-photo-focal` pins
+ * the band moved to the top for a focal point under it. Only the PNG hash is pinned: the SVG embeds
+ * sharp's PNG encoding of each picture, which is a property of the zlib build rather than of the
+ * slide.
  */
 export const DNESKAI_GOLDEN_PATH = path.join(GOLDEN_DIRECTORY, "dneskai-photo.json");
 /**
@@ -47,7 +51,7 @@ export async function dneskaiGoldenCases() {
     const tall = await syntheticPhoto(468, 600, 3);
     const pairOne = await syntheticPhoto(468, 300, 4);
     const pairTwo = await syntheticPhoto(468, 280, 5);
-    const thumbs = await Promise.all([6, 7, 8, 9].map((seed) => syntheticPhoto(220, 150, seed)));
+    const thumbs = await Promise.all([6, 7, 8, 9].map((seed) => syntheticPhoto(DNESKAI_THUMBNAIL_GRID.width, DNESKAI_THUMBNAIL_GRID.height, seed)));
     const at = (index, count = 7) => ({ index, count });
     return [
         { name: "cover-photo", input: { type: "cover-photo", position: at(0), kicker: "Smyšlené téma · 20. 10. 2026", headline: "Smyšlený titulek stojí na spodním okraji fotky a nese jednu větu", credit: "Foto: smyšlený zdroj", images: [{ slot: "image-1", bytes: bleed }] } },
@@ -59,6 +63,7 @@ export async function dneskaiGoldenCases() {
         { name: "statement-ink", input: { type: "statement", variant: "ink", position: at(5), headline: "Tentýž výrok na inkoustové ploše.", body: "Varianta pro slide, který potřebuje klid." } },
         { name: "sources", input: { type: "sources", position: at(6), sources: ["Smyšlený blog: Smyšlený článek o smyšleném modelu (20. 10. 2026)", "Obrázky: smyšlený zdroj"], images: thumbs.map((bytes, index) => ({ slot: `image-${index + 1}`, bytes })) } },
         { name: "single-photo", input: { type: "single", variant: "photo", position: { index: 0, count: 1 }, kicker: "Smyšlené oznámení", headline: "Jeden obrázek, jedna věta na modrém panelu", body: "Řádek pod panelem doplní, co se změnilo.", credit: "Foto: smyšlený zdroj", images: [{ slot: "image-1", bytes: bleed }] } },
+        { name: "single-photo-focal", input: { type: "single", variant: "photo", position: { index: 0, count: 1 }, kicker: "Smyšlené oznámení", headline: "Tentýž panel nahoře, protože ohnisko je dole", body: "Řádek pod panelem jde s ním.", credit: "Foto: smyšlený zdroj", images: [{ slot: "image-1", bytes: bleed, crop: { focal: { x: 0.5, y: 0.8 } } }] } },
         { name: "single-type", input: { type: "single", variant: "type", position: { index: 0, count: 1 }, kicker: "Smyšlené oznámení", headline: "Oznámení jen z písma, bez fotky", body: "Odstavec dole vysvětlí, co oznámení znamená pro čtenáře.", credit: "Zdroj: smyšlený" } }
     ];
 }

@@ -8,11 +8,14 @@ import { type DneskaiSlideInput } from "./dneskai-slide.js";
  * crop path are pinned with the composition.
  *
  * The stand-in photographs are drawn from integer arithmetic and are exactly the size of the frame
- * they fill, so the crop's resample is the identity and the pinned bytes do not lean on a resize
- * kernel. `cover-photo-crop` pins the crop arithmetic the same way: a picture twice the frame at
- * zoom 2 around an off-centre focal point cuts a frame-sized region, so the extract offsets are
- * pinned and the resample is still the identity. Only the PNG hash is pinned: the SVG embeds sharp's PNG encoding of each picture, which
- * is a property of the zlib build rather than of the slide.
+ * they are laid out in — a contained picture's frame is the rectangle it is drawn at, so a picture
+ * that fits its column at 1× keeps its size — and the crop's resample is the identity: the pinned
+ * bytes do not lean on a resize kernel. `cover-photo-crop` pins the crop arithmetic the same way: a
+ * picture twice the frame at zoom 2 around an off-centre focal point cuts a frame-sized region, so
+ * the extract offsets are pinned and the resample is still the identity. `single-photo-focal` pins
+ * the band moved to the top for a focal point under it. Only the PNG hash is pinned: the SVG embeds
+ * sharp's PNG encoding of each picture, which is a property of the zlib build rather than of the
+ * slide.
  */
 export declare const DNESKAI_GOLDEN_PATH: string;
 /**

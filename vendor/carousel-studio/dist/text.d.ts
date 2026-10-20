@@ -15,6 +15,18 @@ export interface FittedText {
     brokenWords: string[];
 }
 /**
+ * Which spaces a line may not break at.
+ *
+ * Absent, any space breaks, which is what every carousel-template/1 layer has always done and must
+ * keep doing: its recorded hashes were drawn that way. `cs` keeps the Czech typesetting ties
+ * (ČSN 01 6910): a one-letter preposition or conjunction — v, k, s, z, o, u, a, i, in either
+ * case — never ends a line but goes down with the word after it; the digit groups of one number
+ * ("10 000") stay together; a number keeps the unit, percent sign or currency after it ("50 %",
+ * "3 GB", "100 Kč", "10 mil."); and a no-break space the writer typed is honoured. The lines are
+ * still drawn with ordinary spaces.
+ */
+export type KeepWithNext = "cs";
+/**
  * The largest size at which a string sets inside its frame, and how it breaks there.
  *
  * Measured against the committed advance widths of the face the layer will actually be drawn in,
@@ -37,6 +49,8 @@ export declare function fitText(input: {
     fontWeight: number;
     /** Letter-spacing in em, which widens every character and so narrows every line. */
     tracking?: number;
+    /** Spaces a line may not break at; absent, any space breaks (see `KeepWithNext`). */
+    keepWithNext?: KeepWithNext;
 }): FittedText;
 /**
  * How many characters of a face fit one line, at a size, tracked, in one language.

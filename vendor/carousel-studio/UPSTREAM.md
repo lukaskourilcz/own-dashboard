@@ -7,13 +7,14 @@ Vercel build of OwnDashboard needs no Quorum checkout, no pnpm workspace and no 
 ## Pin
 
 - Repository: `lukaskourilcz/quorum`, directory `studio/`, package `@boardlessai/carousel-studio` 1.0.0
-- Commit: `72b7a5e02a640e6ffcbdd50c5f21f83066004cdf`
-- Commit date: `2026-10-20T19:21:09Z`
+- Commit: `852c2e9f4fd4447ee602cd2df2c775bbba036fa2`
+- Commit date: `2026-10-20T22:29:10Z`
 - Vendored: `2026-10-20`
-- Tree sha256: `551ae3a567d73c357d98bd9d52d1ffc81d5fe70f3814e5bafab470d1f9ea1af1`
+- Tree sha256: `af3c47ddedae6c83413154f2f72e953b6eaabb7e360fafa6c6bfe61f7d06de24`
 
-Note on this pin: the same `studio/` tree (`68a3bb6e0775c8cab9ce4a74eae10ad5a4b96d0f`) reached Quorum
-`main` with PR #604 (`8be79ab`). `--write` updates the four lines above; rewrite this note by hand.
+Note on this pin: commit `852c2e9` is Quorum `main` after PR #607 (studio tree
+`3d8482180ed0da7dc718df83bfb8e62e495c6511`): the DNESKAi kit lays slides out for the words and pictures
+they hold and keeps Czech ties (`keepWithNext: "cs"`). `--write` updates the four lines above; rewrite this note by hand.
 
 The tree hash covers every file in this directory except this one: sha256 over the sorted
 `sha256sum` lines of the files, as `scripts/vendor-carousel-studio.sh` computes it.

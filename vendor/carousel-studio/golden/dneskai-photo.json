@@ -21,50 +21,56 @@
     {
       "name": "figure",
       "templateId": "dneskai-figure",
-      "version": "1.0.0",
-      "pngHash": "eca5be9028ffb69638252e83466287124367a5436c9aebb4abafc5f3b034a35f"
+      "version": "1.1.0",
+      "pngHash": "1de393ba03f1b259abcdcd149fa66138f7f8b2899a6afc29c7444ee53f0d10b7"
     },
     {
       "name": "split",
       "templateId": "dneskai-split",
-      "version": "1.0.0",
-      "pngHash": "2505d5f6f33576ea85cad97b57cb101dcd2e83a38d822034e8a5457092ac3da7"
+      "version": "1.1.0",
+      "pngHash": "1b0f4604dc4d0c03389f18d4a129b91f9a8d6eeb87d34d115ddb658e4f316276"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-split-pair",
-      "version": "1.0.0",
-      "pngHash": "030f23fa9bb721cc5a2daf59b54eecaba848f847bd34b8bad42a0b6c9c754d8a"
+      "version": "1.1.0",
+      "pngHash": "818421cf3c8929c28687d057f860504a7c00861204252d63945a24505bd3e52f"
     },
     {
       "name": "statement",
       "templateId": "dneskai-statement",
-      "version": "1.0.0",
-      "pngHash": "0e048d6a620ef9b350da39e7d8a5885fd85f86979581c1b3e353ac8140cabef4"
+      "version": "1.1.0",
+      "pngHash": "85f876eac86e3c842f0c8f3217bb8e16f3cd818259ac4f66963fa6debe70c557"
     },
     {
       "name": "statement-ink",
       "templateId": "dneskai-statement",
-      "version": "1.0.0",
-      "pngHash": "db35146b787d502ac755b7179ba78674419030dc3e10ed9c7bffd3d03ff34e5c"
+      "version": "1.1.0",
+      "pngHash": "f2445b258d640edcadc265b3a012c8003da0bd9831c8f0a34f1997d37a99738d"
     },
     {
       "name": "sources",
       "templateId": "dneskai-sources-4",
-      "version": "1.0.0",
-      "pngHash": "5961af0bc42de7cef7a85c1ae12306453232c3978d1b50e45eee7732633c66b3"
+      "version": "1.1.0",
+      "pngHash": "b402c8b089e435a83d0f29d5f9850e8f3c7d915d4ef8419d00803f1dbdd66d70"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-single-photo",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "pngHash": "71dff49aedeccebfe3970acccd94c165d326f2734898e9f484b2d04fc48c0527"
+    },
+    {
+      "name": "single-photo-focal",
+      "templateId": "dneskai-single-photo",
+      "version": "1.1.0",
+      "pngHash": "3264aba68612ac4fea89d673979132312eb9faafc8be2e311a378f7cf352358c"
     },
     {
       "name": "single-type",
       "templateId": "dneskai-single-type",
-      "version": "1.0.0",
-      "pngHash": "9eb13243e8a8973afb01d650794bf223667e65c7dee4ca52269b7668e61f1ba6"
+      "version": "1.1.0",
+      "pngHash": "8c6c8bb832cda2f0758291ec56c85c3edd50321f5f831caea1428bbb1c8a1989"
     }
   ]
 }

@@ -30,16 +30,77 @@ function breakLongWord(word, face, widthPx, fontSize, tracking, locale) {
         chunks.push(current);
     return chunks.length ? chunks : [word];
 }
-function wrap(value, face, widthPx, fontSize, tracking, maxLines, locale, breakWords) {
-    const words = value.normalize("NFC").replaceAll(/\s+/gu, " ").trim().split(" ").filter(Boolean);
+/** A one-letter preposition or conjunction, after any opening bracket or quote. */
+const CS_SINGLE_LETTER = /^[\p{Ps}\p{Pi}"']*[vkszouaiVKSZOUAI]$/u;
+/** A number: optional sign, currency or opening mark, then digits with decimal or group marks. */
+const CS_NUMBER = /^[\p{Ps}\p{Pi}"'+\-−±~≈\p{Sc}]*\d(?:[\d.,]*\d)?$/u;
+/** The next group of a number written with spaces: exactly three digits. */
+const CS_DIGIT_GROUP = /^\d{3}(?!\d)/u;
+/** Closing marks a unit may carry: "50 %," or "(3 GB)". The dot is kept off "tis." by the list. */
+const CS_TRAILING = /[.,;:!?…)\]}"'“”»’]+$/u;
+const CS_UNITS = new Set([
+    "%", "‰", "‱", "°", "°C", "°F", "×",
+    "Kč", "€", "$", "£", "¥", "USD", "EUR", "CZK",
+    "tis", "mil", "mld", "bil",
+    "km", "m", "cm", "mm", "µm", "μm", "nm", "kg", "g", "mg", "t", "l", "ml",
+    "s", "ms", "µs", "μs", "ns", "min", "h",
+    "B", "kB", "KB", "MB", "GB", "TB", "PB", "kb", "Mb", "Gb", "Tb",
+    "Hz", "kHz", "MHz", "GHz", "W", "kW", "MW", "GW", "kWh", "MWh", "GWh", "TWh", "V", "mAh",
+    "px", "pt", "dpi", "fps"
+]);
+const NO_BREAK_SPACE = /^[   ]+$/u;
+/** Whether the space between two words is a tie under `cs`. */
+function tiedCs(previous, separator, next) {
+    if (NO_BREAK_SPACE.test(separator))
+        return true;
+    if (CS_SINGLE_LETTER.test(previous))
+        return true;
+    if (!CS_NUMBER.test(previous))
+        return false;
+    return CS_DIGIT_GROUP.test(next) || CS_UNITS.has(next.replace(CS_TRAILING, ""));
+}
+/**
+ * The words of a passage, in the groups a line may not break inside.
+ *
+ * Without `keepWithNext` every word is its own group, split exactly as the fitter always split
+ * them, so a v1 layer sets the lines it always set.
+ */
+function tieGroups(value, keepWithNext) {
+    if (keepWithNext === undefined) {
+        return value.normalize("NFC").replaceAll(/\s+/gu, " ").trim().split(" ").filter(Boolean).map((word) => [word]);
+    }
+    // Words at even places, the whitespace between them at odd ones.
+    const parts = value.normalize("NFC").trim().split(/(\s+)/u);
+    const groups = [];
+    for (let index = 0; index < parts.length; index += 2) {
+        const word = parts[index];
+        if (!word)
+            continue;
+        const group = groups.at(-1);
+        const previous = group?.at(-1);
+        if (group && previous !== undefined && tiedCs(previous, parts[index - 1] ?? " ", word))
+            group.push(word);
+        else
+            groups.push([word]);
+    }
+    return groups;
+}
+function wrap(value, face, widthPx, fontSize, tracking, maxLines, locale, breakWords, keepWithNext) {
     const brokenWords = [];
-    const pieces = words.flatMap((word) => {
-        if (widthOf(face, word, fontSize, tracking) <= widthPx)
-            return [word];
+    const pieces = tieGroups(value, keepWithNext).flatMap((group) => {
+        // A tied group is laid as one word, drawn with its ordinary spaces.
+        const joined = group.join(" ");
+        if (widthOf(face, joined, fontSize, tracking) <= widthPx)
+            return [joined];
         if (!breakWords)
-            return [word];
-        brokenWords.push(word);
-        return breakLongWord(word, face, widthPx, fontSize, tracking, locale);
+            return [joined];
+        // A tie wider than the measure is let go before any word in it is broken.
+        return group.flatMap((word) => {
+            if (widthOf(face, word, fontSize, tracking) <= widthPx)
+                return [word];
+            brokenWords.push(word);
+            return breakLongWord(word, face, widthPx, fontSize, tracking, locale);
+        });
     });
     const lines = [];
     let truncated = false;
@@ -90,13 +151,13 @@ export function fitText(input) {
     const normalized = all.slice(0, input.maxChars).join("");
     const clippedByContract = all.length > input.maxChars;
     for (let fontSize = input.maxFontSize; fontSize >= input.minFontSize; fontSize -= 1) {
-        const wrapped = wrap(normalized, face, input.widthPx, fontSize, tracking, input.maxLines, input.locale, false);
+        const wrapped = wrap(normalized, face, input.widthPx, fontSize, tracking, input.maxLines, input.locale, false, input.keepWithNext);
         const fitsHeight = wrapped.lines.length * fontSize * 1.12 <= input.heightPx;
         if (fitsHeight && !wrapped.truncated && !wrapped.overflowed) {
             return { lines: wrapped.lines, fontSize, truncated: clippedByContract, normalized, brokenWords: [] };
         }
     }
-    const wrapped = wrap(normalized, face, input.widthPx, input.minFontSize, tracking, input.maxLines, input.locale, true);
+    const wrapped = wrap(normalized, face, input.widthPx, input.minFontSize, tracking, input.maxLines, input.locale, true, input.keepWithNext);
     return {
         lines: wrapped.lines,
         fontSize: input.minFontSize,

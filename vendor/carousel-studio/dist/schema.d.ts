@@ -83,6 +83,9 @@ export declare const CarouselLayerSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
         top: "top";
         bottom: "bottom";
     }>>;
+    keepWithNext: z.ZodOptional<z.ZodEnum<{
+        cs: "cs";
+    }>>;
 }, z.core.$strip>, z.ZodObject<{
     x: z.ZodNumber;
     y: z.ZodNumber;
@@ -290,6 +293,9 @@ export declare const CarouselTemplateSchema: z.ZodObject<{
                 middle: "middle";
                 top: "top";
                 bottom: "bottom";
+            }>>;
+            keepWithNext: z.ZodOptional<z.ZodEnum<{
+                cs: "cs";
             }>>;
         }, z.core.$strip>, z.ZodObject<{
             x: z.ZodNumber;
