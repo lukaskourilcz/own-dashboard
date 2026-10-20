@@ -402,7 +402,8 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
     throw new MarketingGenerationError("copy-validation-failed");
   } catch (error) {
     const code = error instanceof MarketingGenerationError ? error.code : "generation-failed";
-    await trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...failedValidationIssues, code] });
+    // The trace keeps at most 30 issue codes.
+    await trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...[...failedValidationIssues].slice(0, 29), code] });
     throw new MarketingGenerationError(code, error instanceof MarketingGenerationError ? error.providerFailure : undefined);
   }
 }
