@@ -54,7 +54,7 @@ describe('bounded Instagram single-JPEG Story capability, offline only', () => {
     expect(Object.fromEntries(posts[0].body)).toEqual({ media_type: 'STORIES', image_url: input.revisionRow.revision.assets[0].url });
     expect(Object.fromEntries(posts[1].body)).toEqual({ creation_id: '201' });
     const profiles = requests.filter(v => v.url.pathname.endsWith('/101'));
-    expect(profiles).toHaveLength(2); expect(profiles.every(v => v.url.searchParams.get('fields') === 'id,username,account_type')).toBe(true);
+    expect(profiles).toHaveLength(2); expect(profiles.every(v => v.url.searchParams.get('fields') === 'id,user_id,username,account_type')).toBe(true);
     expect(checkpoints.map(v => v.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome']);
     expect(checkpoints.at(-1)).toMatchObject({ status: 'published', remoteMediaId: '301', remoteUrl: null, errorCode: null });
     expect(posts[0].body.has('caption')).toBe(false); expect(posts[0].body.has('alt_text')).toBe(false); expect(posts[0].body.has('children')).toBe(false);

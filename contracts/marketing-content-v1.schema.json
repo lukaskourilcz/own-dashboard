@@ -148,6 +148,15 @@
       ],
       "additionalProperties": false
     },
+    "collaborators": {
+      "minItems": 1,
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._]{1,30}$"
+      }
+    },
     "scheduledAt": {
       "type": "string",
       "format": "date-time",

@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
+import sharp from 'sharp';
 import { readFile, readdir } from 'node:fs/promises';
 import { parseSourcePacket, type ContentRevision } from '@/lib/marketing/contracts';
 import { contentHash, revisionHash } from '@/lib/marketing/hashes';
@@ -8,7 +9,9 @@ vi.mock('server-only', () => ({}));
 
 const now = new Date('2026-10-13T09:00:00Z');
 const owner = '11111111-1111-4111-8111-111111111111';
-const bytes = new TextEncoder().encode('Synthetic QA asset bytes only');
+// A real 1080 x 1350 JPEG: the publisher decodes feed images before creating any container.
+let bytes: Buffer;
+beforeAll(async () => { bytes = await sharp({ create: { width: 1080, height: 1350, channels: 3, background: '#203040' } }).jpeg().toBuffer(); });
 const sourceContent = { title: 'Synthetic QA question', body: 'QA only: choose an option.', category: 'javascript', difficulty: 'Easy', code: null,
   options: ['A', 'B'], answer: 'A', explanation: 'Synthetic authored QA explanation.', evidence: [], image: null };
 function fixture(threads = false) {
@@ -35,7 +38,7 @@ function fixture(threads = false) {
     checkpoint: async checkpoint => { checkpoints.push(checkpoint); }, revalidate: async () => input,
     fetcher: async (request, options) => {
       const url = String(request); const method = options?.method ?? 'GET'; const body = String(options?.body ?? ''); requests.push({ url, method, body });
-      if (url.startsWith('https://assets.example.invalid/')) return new Response(bytes, { headers: { 'Content-Type': 'image/jpeg' } });
+      if (url.startsWith('https://assets.example.invalid/')) return new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/jpeg' } });
       if (url.includes('publishing_limit')) return Response.json({ data: [{ quota_usage: 0, config: { quota_total: 100 } }] });
       if (url.includes('publish') && method === 'POST') return Response.json({ id: '301' });
       if (method === 'POST') { expect(checkpoints[0]?.stage).toBe('container-create-intent'); return Response.json({ id: '201' }); }

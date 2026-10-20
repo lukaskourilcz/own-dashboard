@@ -143,7 +143,8 @@ The migrations, in the order they run:
 47. `20261013181506_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
 48. `20261015234547_oslo_career_preferences.sql` — synchronized Czech Career opt-in, OFF by default; preserves existing records.
 49. `20261020100000_dneskai_collection_cursor_limits.sql` — DNESKAi collection cursor advances after a read capped only by its item limit; Instagram cap 10 per profile and 50 per day within the unchanged $0.25 daily ceiling; Jev stages planned from the candidate count (at most 16).
-50. `20261020120000_scope_retired_pilot_ledgers.sql` — retired October pilot ledgers block ordinary admission and paid collection only while their window is unexpired, and a reserved pilot job is never claimed as ordinary work; every ledger row and reservation is kept.
+50. `20261020110000_marketing_account_tokens.sql` — one long-lived Meta token per marketing account, readable only through service-role functions; the owner sees expiry, refresh time and scopes.
+51. `20261020120000_scope_retired_pilot_ledgers.sql` — retired October pilot ledgers block ordinary admission and paid collection only while their window is unexpired, and a reserved pilot job is never claimed as ordinary work; every ledger row and reservation is kept.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 

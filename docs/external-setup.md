@@ -130,3 +130,37 @@ Projects are matched to GitHub by the numeric repository id (`projects.repo_id`)
 4. Open Projects. The auto-sync finds the repository by id, writes the new `repo_full_name` and appends the old one to `previous_repo_full_names`. Tasks imported under the old name, crons, costs and communications stay on the same project; no second project is created. If the id was never stored, the sync looks the old name up on GitHub (which redirects renamed repositories) before it would create anything.
 
 The project's display name and slug do not follow the repository name; change them in the project form. Cron seeds are keyed by slug, so a repository rename never loses them.
+
+## 11. Instagram publishing for @dneskai (#121)
+
+The code connects one Instagram professional account through the Instagram API with Instagram Login (host `graph.instagram.com`). The owner creates the account, the app and the token; nothing in this repository registers, buys or publishes. Publishing stays off throughout this setup: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the account's `enabled` column remain false until the pilot (#123).
+
+1. **Professional account.** In Instagram, switch `@dneskai` to a Business or Creator account. A personal account cannot publish through the API; verification refuses it with `professional-account-required`.
+2. **Meta app in Development mode.** In developers.facebook.com, use a Business-type app with the Instagram use case and *API setup with Instagram login*. Leave the app in Development mode. In that mode the app may publish to accounts that hold a role on it, so App Review is not needed for the owner's own account.
+3. **App role.** Add `@dneskai` as an Instagram tester under App roles and accept the invitation in the Instagram app. Without a role the token cannot publish.
+4. **Scopes.** Request exactly `instagram_business_basic` and `instagram_business_content_publish`. Do not add messaging, comments, insights or ads permissions.
+5. **Long-lived token.** Generate the token for `@dneskai` in the Instagram login API setup. It is a long-lived Instagram User token valid for 60 days. A short-lived OAuth token must first be exchanged with `GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token`, which needs the app secret; do that on your own machine and never paste the secret or the token into the repository, an issue or a chat.
+6. **Expiry and scopes.** Open the token in Meta's Access Token Debugger and copy its expiry and granted scopes. Instagram Login has no API that lists a token's permissions (`debug_token` belongs to Facebook Login and needs an app token), so the server takes the scopes from `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES`. Record only what the debugger shows.
+7. **Production environment** (Vercel, Production, marked Sensitive):
+
+   | Name | Value |
+   |---|---|
+   | `MARKETING_OWNER_ID` | The owner's Supabase Auth user UUID. The verify route refuses every other signed-in user. |
+   | `MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN` | The long-lived token from step 5. It is the bootstrap value only. |
+   | `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE` | `instagram` |
+   | `MARKETING_DNESKAI_INSTAGRAM_API_VERSION` | The Graph API version you confirmed for the app. Meta's Instagram reference examples used `v26.0` on 20 October 2026. |
+   | `MARKETING_DNESKAI_INSTAGRAM_API_VERSION_VERIFIED_AT` | ISO date and time when you checked that version. |
+   | `MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT` | ISO expiry from the debugger, for example `2026-12-19T10:00:00Z`. |
+   | `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` | `instagram_business_basic,instagram_business_content_publish` |
+   | `MARKETING_DNESKAI_INSTAGRAM_HANDLE` | Optional. Set it only when the handle is not `dneskai`; verification refuses any other account. |
+   | `MARKETING_APPROVED_ASSET_HOSTS` | The Supabase Storage host of the production project, `<project-ref>.supabase.co`. Meta downloads the signed JPEG URLs from it. |
+
+8. **Database.** Apply `supabase/migrations/20261020110000_marketing_account_tokens.sql` before the code that uses it is deployed. It adds `marketing_account_tokens`, which no API role can read directly; only service-role functions read or write the token, and the owner sees expiry, refresh time and scopes. Without the migration, every publish and reconciliation holds with `credential-store-unavailable` and the panel shows the account as unavailable.
+9. **Verify.** After the deploy, open the DNESKAi project, tab **Sources**, panel **Instagram account**, and press **Verify account**. The server reads `GET /<version>/me?fields=user_id,username,account_type` with the bootstrap token (or a stored token that expires later) and stores the professional `user_id`, the handle and the token. The expected result is *Verified*, *Publishing disabled* and a valid token with its expiry date. Verification allows five attempts per ten minutes.
+
+### Token lifetime
+
+- The stored token wins while it is unexpired. The environment token is used only when nothing valid is stored. When neither is valid, publishing holds with `access-token-expired` or `access-token-missing` before any request to Meta.
+- `refreshInstagramToken` exchanges a token that is at least 24 hours old and still valid through `GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token` and stores the new 60-day token. The pg_cron ticker (#120) calls it once fewer than ten days remain. A failed or ambiguous refresh is reported and not retried, and the old token stays in place.
+- The panel warns when fewer than ten days remain and when the token has expired. If no automatic refresh has run by then, generate a new token, replace the environment value and verify again.
+- Verification reads `/me` with whichever valid token expires later: the stored one after a refresh, or a newly installed environment token. So verifying still works after the environment token's own 60 days have passed, and an older environment token never replaces a newer stored token. Verifying a different account (another `user_id` or handle) replaces the token and sets `enabled=false`. Re-verifying the same account keeps its current `enabled` value.

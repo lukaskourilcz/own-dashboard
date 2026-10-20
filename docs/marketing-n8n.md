@@ -92,7 +92,7 @@ cannot supply an owner ID. Operations are:
 | `execute` | Saved `jobId`; run the bounded durable generation worker. The workflow disables automatic retries and queries status after any uncertain response. |
 | `status` | Original saved `jobId`; read the recorded job outcome. |
 | `publication-plan` | Optional exact `publicationId` or `brand`; requery owned queued publications with exact approved hash, ready assets, and a future schedule within 24 hours; return up to eight `{publicationId,brand,scheduledAt}` rows. A hook provides no approval evidence. |
-| `publish` | `brand`, optional exact `publicationId`, `dryRun:true` by default; the server selects and rechecks due publications. It requires a separate approval of the complete revision and final assets. |
+| `publish` | `brand`, optional exact `publicationId`, `dryRun:true` by default; the server selects and rechecks due publications. It requires a separate approval of the complete revision and final assets. `preflight:true` (only with a dry run) adds the read-only Meta checks described below. |
 | `reconcile` | Actual returned `publicationId`, or `brand` after timeout; query recorded remote state without creating or publishing another container. |
 
 Read/refresh/status/reconcile and idempotent enqueue requests allow three HTTP attempts with a
@@ -159,9 +159,27 @@ Facebook Login uses the corresponding Instagram/Page permission family. Threads 
 `threads_basic` and `threads_content_publish`. Request no messages, comments, ads or analytics
 scopes for this adapter. Keep tokens on the server.
 
+Since #121 the environment `ACCESS_TOKEN` is the bootstrap value. The owner's **Verify account**
+button (`POST /api/marketing/accounts/verify`) stores it in `marketing_account_tokens`, and the
+publisher and reconciliation use the stored token while it is unexpired. A missing, expired or
+unreadable credential holds with `access-token-missing`, `access-token-expired`,
+`access-token-expiry-unverified` or `credential-store-unavailable` before any Graph request. A live
+run resolves the credential before `marketing_claim_due`, so such a hold leaves the publication
+queued and unclaimed rather than recording it as failed.
+`refreshInstagramToken` renews an Instagram Login token that is at least 24 hours old. Owner setup:
+[external setup §11](external-setup.md#11-instagram-publishing-for-dneskai-121).
+
 `MARKETING_PUBLISH_ENABLED` and each `MARKETING_<BRAND>_PUBLISH_ENABLED` flag must remain false
 until the owner authorizes cutover. Each account also requires `enabled=true` and a recorded
 verification. `MARKETING_APPROVED_ASSET_HOSTS` declares the exact public final-asset hosts.
+
+A plain dry run makes no request. A preflight (`publish` with `dryRun:true, preflight:true`) runs
+the same gate except those two switches, then reads the remote profile, downloads and decodes
+every asset and reads the publishing quota. It stops before the container-create intent: no POST,
+no claim and no checkpoint. A switch that is still off comes back in `advisories`
+(`account-disabled`, `publishing-disabled`) with `status:"dry-run"`, so the verified, disabled
+account from #121 can be checked before the pilot. Any other failed check is a `held` result with
+its code and is not recorded.
 
 The adapter verifies the complete revision hash against both stored content hash and approval,
 the approved remote account ID/handle, ready final assets and exact source identity/revision/hash.
@@ -171,18 +189,39 @@ database revalidation callback before publishing. The adapter downloads final as
 credentials or redirects, checks declared MIME and SHA-256 bytes, and refuses unapproved hosts.
 
 It reads the authenticated remote profile and provider-returned quota configuration before
-container creation. It infers no quota number from advertised documentation. It persists a
+container creation. It infers no quota number from advertised documentation: `quota_total` is
+authoritative, a missing value holds with `publishing-quota-unavailable` and a full quota with
+`publishing-quota-exhausted`. With Instagram Login the profile check compares the professional
+`user_id`, not the app-scoped `id`. Every Instagram feed image is decoded from the downloaded
+bytes before any container exists: JPEG, sRGB, 320–1440 px wide, 4:5 to 1.91:1, at most 8 MiB and
+the declared size. Each image child and each single image carries its `alt_text` (at most 1,000
+characters). `collaborators` (at most three usernames) go on the post only when the revision
+records them. A single image uses the default image container: `image_url` without `media_type`
+or children. It persists a
 container-create intent before the first POST, persists the returned container ID, polls at most
 three times, revalidates current authority, and persists publish intent before `media_publish` or
 `threads_publish`. The database checkpoint must compare the expected old container/error fields
 and require the still-valid claim. A lost fence causes no second outcome write.
 
-An unfinished known container stays pending. A publish timeout, uncertain response or failed
-receipt keeps reconciliation state and the known IDs. Missing permalink lookup retains the media
-ID and remains reconciliation; it does not announce a verified public post. A previously attempted
-publish, recorded media ID or reconciliation record performs only GET queries. If the provider
-reports PUBLISHED without a retained media ID, the operator must reconcile that actual ID; the
-adapter does not guess from similar captions or publish again.
+An unfinished known container stays pending. A container in `ERROR` or `EXPIRED` before any
+publish request is recorded as `failed` (`container-error`, `container-expired`). A publish timeout,
+uncertain response or failed receipt keeps reconciliation state and the known IDs. Missing
+permalink lookup retains the media ID and remains reconciliation; it does not announce a verified
+public post. A previously attempted publish, recorded media ID or reconciliation record performs
+only GET queries.
+
+For an Instagram feed post without a retained media ID, reconciliation re-reads the stored
+container and, unless Meta reports it `FINISHED`, `IN_PROGRESS`, `ERROR` or `EXPIRED`, reads
+`GET /<ig-user-id>/media?fields=id,caption,timestamp,permalink,media_type&since=<slot − 5 min>&until=<slot + 20 min>`
+(or one minute after the current time, if that is earlier), one page of 50.
+It records the post as published only when exactly one item has the expected media type
+(`CAROUSEL_ALBUM`, `IMAGE` or `VIDEO`), a timestamp between five minutes before and twenty minutes
+after the slot, and the approved caption's first 100 characters as its prefix. Two matches stay in
+reconciliation as `remote-media-match-ambiguous`. A full page that has a next page stays as
+`remote-media-list-incomplete`, even with one match, because the next page could hold a second
+one. No match keeps the container-based code. It
+never sends a second `media_publish`. Stories keep their stricter rule: only the account's active
+Story edge confirms a recorded media ID.
 
 Supported publishing formats are Instagram JPEG post/carousel and MP4 Reel, plus Threads
 text/image/video/carousel. The contract caps carousels at ten assets. Instagram Stories remain
