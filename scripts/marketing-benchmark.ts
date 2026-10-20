@@ -79,7 +79,7 @@ export function createMarketingBenchmarkCases(): OfflineMarketingCase[] {
   add("article", "unbreakable-word-overflow", undefined, ["word-overflow"], { probe: () => { fitMarketingText({ value: "W".repeat(100), faceId: "space-grotesk-700", fontSize: 70, width: 904, maxLines: 3 }); } });
   add("article", "prose-height-overflow", undefined, ["text-overflow"], { probe: () => { fitMarketingText({ value: Array(13).fill("Krátký řádek.").join("\n"), faceId: "source-serif-4-400", fontSize: 44, width: 904, maxLines: 12 }); } });
   add("question", "unsupported-emoji-glyph", undefined, ["unsupported-glyph"], { probe: () => { fitMarketingText({ value: "🦈", faceId: "manrope-800", fontSize: 72, width: 920, maxLines: 3 }); } });
-  add("article", "changed-template-digest", undefined, ["template-hash-mismatch"], { probe: () => { validateMarketingTemplate({ ...pendingMarketingTemplate("dneskai"), templateSha256: "0".repeat(64) }, false); } });
+  add("article", "changed-template-digest", undefined, ["template-hash-mismatch"], { probe: () => { validateMarketingTemplate({ ...pendingMarketingTemplate("devshark"), templateSha256: "0".repeat(64) }, false); } });
   assert.equal(cases.length, 45);
   return cases;
 }
@@ -100,13 +100,12 @@ export function evaluateOfflineMarketingCases(cases = createMarketingBenchmarkCa
     return { id: example.id, fixture: example.fixture, originalEligible: false, offlineSimulation: example.offlineSimulation, sourceContentHash: fixtures[example.fixture].contentHash, issueCodes: actual, expectedIssueCodes: expected, passed: JSON.stringify(actual) === JSON.stringify(expected), latencyMs: performance.now() - started };
   });
 }
-function reviewDraft(fixture: "article" | "question"): { revision: ContentRevision; slides: MarketingSlide[] } {
-  const source = parseSourcePacket(fixtures[fixture]);
+// The single-layout renderer draws devShark only; DNESKAi slides render through the carousel studio (#117).
+function reviewDraft(): { revision: ContentRevision; slides: MarketingSlide[] } {
+  const source = parseSourcePacket(fixtures.question);
+  if (source.brand !== "devshark") throw new Error("benchmark-fixture-brand");
   const template = pendingMarketingTemplate(source.brand);
-  const slides: MarketingSlide[] = fixture === "article" ? [
-    { headline: source.content.title, body: source.content.body.split("\n\n")[0], code: null, evidenceIndexes: [0] },
-    { headline: "Souvislosti článku", body: source.content.body.split("\n\n")[1].split(/(?<=[.!?])\s+/)[0], code: null, evidenceIndexes: [0] },
-  ] : [
+  const slides: MarketingSlide[] = [
     { headline: source.content.title, body: authoredMarketingText(source.content.body, source.content.code), code: null, evidenceIndexes: [] },
     { headline: "Code", body: source.content.category, code: source.content.code, evidenceIndexes: [] },
     { headline: "Choose an answer", body: source.content.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`).join("\n"), code: null, evidenceIndexes: [] },
@@ -117,9 +116,9 @@ function reviewDraft(fixture: "article" | "question"): { revision: ContentRevisi
 export async function runOfflineMarketingBenchmark() {
   const cases = evaluateOfflineMarketingCases();
   const rendering = [];
-  for (const fixture of ["article", "question"] as const) {
-    const draft = reviewDraft(fixture);
-    const input = { draft, template: pendingMarketingTemplate(draft.revision.brand), revisionId: "a1c477b5-8e8e-428b-97bd-93b457a746c3" };
+  {
+    const draft = reviewDraft();
+    const input = { draft, template: pendingMarketingTemplate("devshark"), revisionId: "a1c477b5-8e8e-428b-97bd-93b457a746c3" };
     const start = performance.now(); const first = await renderMarketingPreview(input); const firstMs = performance.now() - start;
     const repeatStart = performance.now(); const repeat = await renderMarketingPreview(input); const repeatMs = performance.now() - repeatStart;
     rendering.push({ brand: draft.revision.brand, originalEligible: false, slides: first.length, firstRenderMs: firstMs, repeatRenderMs: repeatMs, reproducible: JSON.stringify(first.map((slide) => slide.sha256)) === JSON.stringify(repeat.map((slide) => slide.sha256)), assets: first.map((slide) => ({ sha256: slide.sha256, bytes: slide.jpeg.length, width: slide.width, height: slide.height })) });

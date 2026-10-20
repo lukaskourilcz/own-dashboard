@@ -35,7 +35,8 @@ export async function synchronizeMarketingSources(db:Database,owner:string,brand
  return refreshed;
 }
 export async function enqueueCalendarMarketingJob(db:Database,owner:string,input:{brand:MarketingBrand;entryId:string;platform:'instagram'|'threads';sourceId?:string}){
- const template=trustedMarketingTemplate(input.brand);
+ // DNESKAi has no single-layout template since #117; its decks render through the carousel studio.
+ const template=input.brand==='devshark'?trustedMarketingTemplate(input.brand):null;
  const {data:entry,error}=await db.from('marketing_calendar_entries').select('*').eq('user_id',owner).eq('id',input.entryId).single();
  if(error||!entry||!['post','carousel','thread'].includes(entry.kind)||entry.needs_review||entry.status!=='planned'||entry.platform!==input.platform)throw new Error('calendar-entry-held');
  const {data:campaign,error:campaignError}=await db.from('marketing_campaigns').select('*').eq('user_id',owner).eq('id',entry.campaign_id).eq('brand',input.brand).eq('status','active').single();

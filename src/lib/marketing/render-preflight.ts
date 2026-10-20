@@ -8,7 +8,7 @@ import { marketingPilotConfiguration } from './pilot';
 import { previewPilotRetired } from './preview-pilot';
 import { trustedMarketingTemplate } from './template-registry';
 import { refreshSource } from './source-refresh';
-import { renderAuthoredMarketingPreflight, validateMarketingTemplate } from './render';
+import { MarketingRenderError, renderAuthoredMarketingPreflight, validateMarketingTemplate } from './render';
 
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
@@ -27,7 +27,10 @@ export async function runMarketingRenderPreflight(db: Database, ownerId: string,
   const scheduled = Date.parse(input.scheduledAt), time = now().getTime();
   if (scheduled <= time || scheduled > time + 6 * 86400000) throw new MarketingRenderPreflightError('render-preflight-schedule-invalid');
   const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(45000)]) : AbortSignal.timeout(45000);
-  const template = validateMarketingTemplate(trustedMarketingTemplate(input.brand, env, now()), true);
+  // Only devShark's authored sources have a single-layout template; DNESKAi decks render through the carousel studio.
+  const brand = input.brand;
+  if (brand !== 'devshark') throw new MarketingRenderError('render-preflight-source-kind-unsupported');
+  const template = validateMarketingTemplate(trustedMarketingTemplate(brand, env, now()), true);
   const { data: account, error: accountError } = await db.from('marketing_accounts').select('user_id,brand,platform,remote_account_id,handle,verified_at').eq('user_id', ownerId).eq('brand', input.brand).eq('platform', 'instagram').not('verified_at', 'is', null).single();
   if (accountError || !account || account.user_id !== ownerId || account.brand !== input.brand || account.platform !== 'instagram' || !account.verified_at) throw new MarketingRenderPreflightError('render-preflight-account-unavailable');
   const { data: row, error: sourceError } = await db.from('marketing_sources').select('packet').eq('user_id', ownerId).eq('brand', input.brand).eq('source_id', input.sourceId).maybeSingle();
@@ -46,6 +49,6 @@ export async function runMarketingRenderPreflight(db: Database, ownerId: string,
   const fields = ['brand', 'kind', 'sourceId', 'sourceRevision', 'canonicalUrl', 'locale', 'contentHash'] as const;
   if (!sourceUsable(current, now()) || fields.some(field => current[field] !== source[field]) || contentHash(current.content) !== source.contentHash) throw new MarketingRenderPreflightError('render-preflight-source-changed');
   marketingPilotConfiguration(ownerId, env, now());
-  if (contentHash(trustedMarketingTemplate(input.brand, env, now())) !== contentHash(template)) throw new MarketingRenderPreflightError('render-preflight-source-changed');
+  if (contentHash(trustedMarketingTemplate(brand, env, now())) !== contentHash(template)) throw new MarketingRenderPreflightError('render-preflight-source-changed');
   return result;
 }

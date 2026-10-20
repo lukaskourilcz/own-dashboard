@@ -22,8 +22,8 @@ describe("offline marketing benchmark acceptance", () => {
     const report = await runOfflineMarketingBenchmark();
     expect(report.caseCount).toBe(45); expect(report.passed).toBe(45); expect(report.failed).toBe(0);
     expect(report.providerCalls).toBe(0); expect(report.providerCostUsd).toBeNull();
-    expect(report.rendering.map((entry) => entry.reproducible)).toEqual([true, true]);
-    expect(report.rendering.map((entry) => entry.slides)).toEqual([2, 4]);
+    expect(report.rendering.map((entry) => entry.reproducible)).toEqual([true]);
+    expect(report.rendering.map((entry) => entry.slides)).toEqual([4]);
     expect(report.rendering.every((entry) => entry.firstRenderMs > 0 && entry.repeatRenderMs > 0)).toBe(true);
     expect(report.rendering.flatMap((entry) => entry.assets).every((asset) => /^[a-f0-9]{64}$/.test(asset.sha256) && asset.width === 1080 && asset.height === 1350 && asset.bytes > 0)).toBe(true);
   }, 60000);
