@@ -155,7 +155,7 @@ The code connects one Instagram professional account through the Instagram API w
    | `MARKETING_DNESKAI_INSTAGRAM_HANDLE` | Optional. Set it only when the handle is not `dneskai`; verification refuses any other account. |
    | `MARKETING_APPROVED_ASSET_HOSTS` | The Supabase Storage host of the production project, `<project-ref>.supabase.co`. Meta downloads the signed JPEG URLs from it. |
 
-8. **Database.** Apply `supabase/migrations/20261020110000_marketing_account_tokens.sql`. It adds `marketing_account_tokens`, which no API role can read directly; only service-role functions read or write the token, and the owner sees expiry, refresh time and scopes.
+8. **Database.** Apply `supabase/migrations/20261020110000_marketing_account_tokens.sql` before the code that uses it is deployed. It adds `marketing_account_tokens`, which no API role can read directly; only service-role functions read or write the token, and the owner sees expiry, refresh time and scopes. Without the migration, every publish and reconciliation holds with `credential-store-unavailable` and the panel shows the account as unavailable.
 9. **Verify.** After the deploy, open the DNESKAi project, tab **Sources**, panel **Instagram account**, and press **Verify account**. The server reads `GET /<version>/me?fields=user_id,username,account_type` with the bootstrap token and stores the professional `user_id`, the handle and the token. The expected result is *Verified*, *Publishing disabled* and a valid token with its expiry date. Verification allows five attempts per ten minutes.
 
 ### Token lifetime
