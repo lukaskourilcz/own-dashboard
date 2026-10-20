@@ -62,7 +62,7 @@ describe("authenticated n8n marketing operation boundary", () => {
     mocks.refresh.mockResolvedValue(current); mocks.enqueue.mockResolvedValue({ status: "held" });
     const response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob() }));
     expect(response.status).toBe(200); expect(await response.json()).toEqual({ status: "held" });
-    expect(mocks.refresh).toHaveBeenCalledWith(sourceFixture, expect.any(AbortSignal));
+    expect(mocks.refresh).toHaveBeenCalledWith(sourceFixture, expect.any(AbortSignal), { owner, db: expect.anything() });
     expect(mocks.ingest).toHaveBeenCalledWith(expect.anything(), owner, current, "devshark");
     expect(mocks.enqueue).toHaveBeenCalledWith(expect.anything(), owner, rawJob(current));
     expect(current.eligible).toBe(false);

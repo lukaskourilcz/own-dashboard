@@ -97,7 +97,7 @@ export async function POST(request:Request){
     const job=MarketingWorkerRequestSchema.parse(input.job);
     const {parseSourcePacket}=await import('@/lib/marketing/contracts');const packet=parseSourcePacket(job.generation.source);
     if(packet.brand!==input.brand)throw new Error('source-brand-mismatch');
-    const current=await refreshSource(packet,signal);
+    const current=await refreshSource(packet,signal,{owner,db});
     if(current.brand!==packet.brand||current.kind!==packet.kind||current.sourceId!==packet.sourceId||current.sourceRevision!==packet.sourceRevision||current.contentHash!==packet.contentHash||current.canonicalUrl!==packet.canonicalUrl||current.locale!==packet.locale||contentHash(current.content)!==packet.contentHash)throw new Error('source-superseded');
     await ingestSource(db,owner,current,input.brand);
     return Response.json(await enqueueMarketingJob(db,owner,{...job,generation:{...job.generation,source:current}}));
