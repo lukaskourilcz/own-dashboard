@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
+import { MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash, revisionContentHash } from "./hashes";
 import type { MarketingTracer } from "./tracing";
 import { marketingHumanizerInstructions } from "./humanizer";
@@ -7,6 +7,15 @@ import { fitMarketingText } from "./render";
 import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
 import { classifyMarketingProviderError, type MarketingProviderFailure } from "./provider-errors";
+import type { DneskaiDeck } from "./dneskai-slides";
+import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
+import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
+import {
+  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DNESKAI_SOURCES_SLIDE, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiEvidencePublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
+  dneskaiSourcesSlideBlocked, loadDneskaiGlyphFilter, normalizeDneskaiCopy, validateDneskaiCopy,
+  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiGlyphFilter,
+} from "./dneskai-generation";
 
 export const MARKETING_PROMPT_VERSION = "marketing-copy/4";
 const COPY_VALIDATION_CODES = ["invalid-schema", "locale-mismatch", "unsafe-text", "unsupported-number", "model-code-forbidden", "unknown-evidence", "missing-evidence"] as const;
@@ -54,16 +63,20 @@ export const DEFAULT_GENERATION_BUDGET: GenerationBudget = {
   maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000,
 };
 export type ModelUsage = { inputTokens: number; outputTokens: number };
+/** The structured answer a call asks for: a name and the wire JSON schema. Absent: `marketing_copy` (`marketing-copy/4`). */
+export type MarketingModelOutput = { name: string; schema: Record<string, unknown> };
 export interface MarketingModel {
   readonly model: string;
   readonly pricing: { inputPerMillionUsd: number; outputPerMillionUsd: number };
-  invoke(input: { system: string; prompt: string; maxOutputTokens: number; signal: AbortSignal }): Promise<{ copy: unknown; usage: ModelUsage | null }>;
+  invoke(input: { system: string; prompt: string; maxOutputTokens: number; signal: AbortSignal; output?: MarketingModelOutput }): Promise<{ copy: unknown; usage: ModelUsage | null }>;
 }
 export type GeneratedMarketingDraft = {
   revision: ContentRevision;
   slides: MarketingSlide[];
   usage: ModelUsage & { attempts: number; estimatedCostUsd: number };
   traceId: string | null;
+  /** Brief drafts (#116): the slide deck the worker renders through the carousel studio; also `revision.deck`. */
+  deck?: DneskaiDeck;
 };
 export class MarketingGenerationError extends Error {
   constructor(public readonly code: string, public readonly providerFailure?: MarketingProviderFailure) { super(code); this.name = "MarketingGenerationError"; }
@@ -160,9 +173,142 @@ export function authoredCodingChallenge(value: SourcePacket, platform: "instagra
 function cost(usage: ModelUsage, pricing: MarketingModel["pricing"]): number {
   return (usage.inputTokens * pricing.inputPerMillionUsd + usage.outputTokens * pricing.outputPerMillionUsd) / 1_000_000;
 }
-export async function generateMarketingDraft(value: GenerationInput, dependencies: {
+type AttemptOutcome<T> = { ok: true; value: T } | { ok: false; issues: string[]; feedback: string };
+/** What differs between the article/exercise prompt (`marketing-copy/4`) and the brief prompt (`marketing-copy/5`). */
+interface GenerationProfile<T> {
+  promptVersion: string;
+  prompts: { system: string; prompt: string };
+  /** Absent: the model's default `marketing_copy` output. */
+  output?: MarketingModelOutput;
+  outputSchema: Record<string, unknown>;
+  /** Bytes the retry turn may add, reserved before the first call. A retry may use more only if it still fits the input budget. */
+  feedbackReserveBytes: number;
+  evaluate(copy: unknown, context: { signal: AbortSignal; feedbackBytes: number }): Promise<AttemptOutcome<T>>;
+  finish(value: T, traceId: string | null, usage: GeneratedMarketingDraft["usage"]): GeneratedMarketingDraft;
+}
+export type GenerationDependencies = {
   model: MarketingModel; tracer?: MarketingTracer; now?: () => Date; budget?: GenerationBudget; signal?: AbortSignal;
-}): Promise<GeneratedMarketingDraft> {
+  /**
+   * Called before every paid model call, after the per-job budget admits it. Throw a `MarketingGenerationError` to
+   * refuse the call (the DNESKAi daily ceiling); nothing is invoked or reserved then.
+   */
+  admitPaidCall?(input: { attempt: number; maxCostUsd: number }): Promise<void>;
+  /** The running usage after every attempt, including an ambiguous one, so a failed job can record what it may have spent. */
+  onUsage?(usage: GeneratedMarketingDraft["usage"]): void;
+  /** Brief generation (#116): the stored source media (#114). Required for a brief; nothing is invoked without it. */
+  loadDneskaiMedia?: LoadDneskaiMediaBytes;
+  /** Brief generation: the studio's deck gate. Defaults to `validateDneskaiDeck` from dneskai-render.ts. */
+  validateDneskaiDeck?: (deck: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal) => Promise<DneskaiSlideRenderProblem[]>;
+};
+
+function legacyProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, challenge: ReturnType<typeof authoredCodingChallenge> | null): GenerationProfile<MarketingCopy> {
+  return {
+    promptVersion: MARKETING_PROMPT_VERSION,
+    prompts: generationPrompt(source, input.knowledge),
+    outputSchema: marketingProviderWireSchema(),
+    feedbackReserveBytes: Buffer.byteLength(validationRetryFeedback(COPY_VALIDATION_CODES)),
+    async evaluate(copy) {
+      const parsed = MarketingCopySchema.safeParse(copy);
+      // Challenge output uses only authored text; none of the model's factual copy is retained.
+      const issues = parsed.success ? challenge ? parsed.data.locale === source.locale ? [] : ["locale-mismatch"] : validateMarketingCopy(parsed.data, source) : ["invalid-schema"];
+      return parsed.success && !issues.length ? { ok: true, value: parsed.data } : { ok: false, issues, feedback: validationRetryFeedback(issues) };
+    },
+    finish(copy, traceId, usage) {
+      const caption = challenge?.caption ?? `${copy.caption}\n\n${source.canonicalUrl}`;
+      if (input.account.platform === "threads" && caption.length > 500) throw new MarketingGenerationError("threads-caption-too-long");
+      const revision = parseContentRevision({
+        schemaVersion: "marketing-content/1", brand: source.brand, title: challenge?.title ?? copy.title, caption,
+        format: input.account.platform === "threads" ? "thread" : "carousel",
+        sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }],
+        knowledgeIds: input.knowledge.map(({ id }) => id), assets: [], account: input.account,
+        scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,
+        promptVersion: MARKETING_PROMPT_VERSION, model: model.model, traceId,
+      });
+      return { revision, slides: challenge?.slides ?? sourceSlides(copy, source), usage, traceId };
+    },
+  };
+}
+
+type BriefResult = { copy: DneskaiCopy; deck: DneskaiDeck; caption: string };
+const ZOD_ISSUE_LIMIT = 10;
+function schemaIssues(error: z.ZodError): DneskaiCopyIssue[] {
+  return error.issues.slice(0, ZOD_ISSUE_LIMIT).map((entry) => {
+    const slide = entry.path[0] === "slides" && typeof entry.path[1] === "number" ? entry.path[1] : null;
+    const field = (slide === null ? entry.path : entry.path.slice(2)).map(String).join(".").slice(0, 60) || null;
+    return { code: "invalid-schema", slide, field, detail: entry.message.replace(/\s+/g, " ").slice(0, 200) };
+  });
+}
+/** One cache of stored source bytes per generation, shared by both attempts. */
+function memoizedMedia(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
+  const loaded = new Map<string, Promise<Buffer>>();
+  return (sha256) => {
+    let bytes = loaded.get(sha256);
+    if (!bytes) { bytes = load(sha256); bytes.catch(() => loaded.delete(sha256)); loaded.set(sha256, bytes); }
+    return bytes;
+  };
+}
+/** Narrower and narrower source lines for the code-written sources slide before giving up on it. */
+const SOURCE_LINE_STEPS = [DNESKAI_SOURCES_SLIDE.lineChars, 150, 110] as const;
+
+async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
+  const brief = source.brief!;
+  let offer: DneskaiBriefOffer;
+  try { offer = dneskaiBriefOffer(brief, await dneskaiEvidencePublishers(brief.evidence.slice(0, 6))); }
+  catch { throw new MarketingGenerationError("brief-preparation-failed"); }
+  const loadMedia = memoizedMedia(dependencies.loadDneskaiMedia!);
+  const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;
+  let glyphs: Promise<DneskaiGlyphFilter> | null = null;
+  const outputSchema = dneskaiCopyWireSchema();
+  return {
+    promptVersion: MARKETING_BRIEF_PROMPT_ID,
+    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer) },
+    output: { name: "dneskai_post", schema: outputSchema },
+    outputSchema,
+    feedbackReserveBytes: DNESKAI_RETRY_INSTRUCTION_BYTES,
+    async evaluate(raw, context) {
+      const fail = (issues: DneskaiCopyIssue[]): AttemptOutcome<BriefResult> =>
+        ({ ok: false, issues: [...new Set(issues.map((entry) => entry.code))], feedback: dneskaiRetryFeedback(issues, raw, context.feedbackBytes) });
+      const parsed = DneskaiCopySchema.safeParse(normalizeDneskaiCopy(raw));
+      if (!parsed.success) return fail(schemaIssues(parsed.error));
+      const issues = validateDneskaiCopy(parsed.data, offer);
+      const assembled = assembleDneskaiCaption(parsed.data, offer);
+      if ("issue" in assembled) issues.push(assembled.issue);
+      if (issues.length || !("caption" in assembled)) return fail(issues);
+      glyphs ??= loadDneskaiGlyphFilter();
+      let filter: DneskaiGlyphFilter;
+      try { filter = await glyphs; } catch { glyphs = null; throw new MarketingGenerationError("render-rasterizer-unavailable"); }
+      let deck: DneskaiDeck | null = null; let problems: DneskaiSlideRenderProblem[] = [];
+      for (const lineChars of SOURCE_LINE_STEPS) {
+        try { deck = buildDneskaiDeck(parsed.data, offer, filter, lineChars); }
+        catch { throw new MarketingGenerationError("brief-deck-invalid"); }
+        try { problems = await validateDeck(deck, loadMedia, context.signal); }
+        catch (failure) {
+          if (failure instanceof DneskaiRenderError) throw new MarketingGenerationError(failure.code === "worker-timeout" ? "generation-timeout" : failure.code);
+          throw new MarketingGenerationError("render-validation-failed");
+        }
+        // Code writes the sources slide; it shortens its own lines rather than asking the model.
+        if (!dneskaiSourcesSlideBlocked(problems, deck)) break;
+      }
+      if (!deck || dneskaiSourcesSlideBlocked(problems, deck)) throw new MarketingGenerationError("brief-sources-slide-refused");
+      const blocking = dneskaiRenderIssues(problems, deck);
+      return blocking.length ? fail(blocking) : { ok: true, value: { copy: parsed.data, deck, caption: assembled.caption } };
+    },
+    finish({ copy, deck, caption }, traceId, usage) {
+      const revision = parseContentRevision({
+        schemaVersion: MARKETING_DECK_CONTENT_VERSION, brand: "dneskai", title: copy.title.trim(), caption,
+        format: deck.format === "carousel" ? "carousel" : "post",
+        sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }],
+        knowledgeIds: [], assets: [], account: input.account,
+        scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,
+        promptVersion: MARKETING_BRIEF_PROMPT_ID, model: model.model, traceId, deck,
+      });
+      // Deck revisions keep their slides in `deck`; the legacy slide list stays empty, as in an owner edit (#118).
+      return { revision, slides: [], usage, traceId, deck };
+    },
+  };
+}
+
+export async function generateMarketingDraft(value: GenerationInput, dependencies: GenerationDependencies): Promise<GeneratedMarketingDraft> {
   const input = GenerationInputSchema.parse(value);
   if (!input.consent) throw new MarketingGenerationError("consent-required");
   const source = parseSourcePacket(input.source);
@@ -172,72 +318,79 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (contentHash(source.content) !== source.contentHash) throw new MarketingGenerationError("source-hash-mismatch");
   const challenge = source.kind === "coding-task" && !source.content.explanation ? authoredCodingChallenge(source, input.account.platform) : null;
   if (input.knowledge.some((item) => item.brand !== source.brand)) throw new MarketingGenerationError("knowledge-brand-mismatch");
+  if (source.kind === "brief") {
+    // A brief carries its own evidence; reviewed presentation knowledge stays with the article and exercise prompts.
+    if (input.knowledge.length) throw new MarketingGenerationError("brief-knowledge-unsupported");
+    if (input.account.platform !== "instagram") throw new MarketingGenerationError("brief-instagram-only");
+    if (input.templateVersion !== DNESKAI_DECK_TEMPLATE_VERSION) throw new MarketingGenerationError("template-revision-mismatch");
+  }
   if (Date.parse(input.scheduledAt) <= now().getTime()) throw new MarketingGenerationError("schedule-must-be-future");
   const budget = BudgetSchema.parse(dependencies.budget ?? DEFAULT_GENERATION_BUDGET);
   const model = dependencies.model;
   if (!/^claude-[a-z0-9.-]+$/.test(model.model)) throw new MarketingGenerationError("claude-only");
   if (![model.pricing.inputPerMillionUsd, model.pricing.outputPerMillionUsd].every((rate) => Number.isFinite(rate) && rate > 0)) throw new MarketingGenerationError("pricing-required");
-  const prompts = generationPrompt(source, input.knowledge);
+  if (source.kind === "brief" && !dependencies.loadDneskaiMedia) throw new MarketingGenerationError("dneskai-media-loader-required");
+  const profile: GenerationProfile<MarketingCopy | BriefResult> = source.kind === "brief"
+    ? await briefProfile(input, source, model, dependencies) as GenerationProfile<MarketingCopy | BriefResult>
+    : legacyProfile(input, source, model, challenge) as GenerationProfile<MarketingCopy | BriefResult>;
+  const prompts = profile.prompts;
   // UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead.
-  const inputReservation = Buffer.byteLength(prompts.system + prompts.prompt + validationRetryFeedback(COPY_VALIDATION_CODES) + JSON.stringify(marketingProviderWireSchema())) + 2048;
-  if (inputReservation > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
-  const reservation = cost({ inputTokens: inputReservation, outputTokens: budget.maxOutputTokens }, model.pricing);
-  if (reservation > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
-  const trace = await dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: MARKETING_PROMPT_VERSION, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) });
+  const baseBytes = Buffer.byteLength(prompts.system + prompts.prompt + JSON.stringify(profile.outputSchema)) + 2048;
+  const attemptInput = (feedback: string) => baseBytes + Math.max(profile.feedbackReserveBytes, Buffer.byteLength(feedback));
+  if (attemptInput("") > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
+  const reservationFor = (inputBytes: number) => cost({ inputTokens: inputBytes, outputTokens: budget.maxOutputTokens }, model.pricing);
+  if (reservationFor(attemptInput("")) > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
+  const trace = await dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) });
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
   const usage = { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
+  const report = () => { try { dependencies.onUsage?.({ ...usage }); } catch {} };
   const failedValidationIssues = new Set<string>();
   let retryFeedback = "";
   try {
     for (let attempt = 1; attempt <= budget.maxAttempts; attempt++) {
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
+      const inputBytes = attemptInput(retryFeedback);
+      if (inputBytes > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
+      const reservation = reservationFor(inputBytes);
       if (usage.estimatedCostUsd + reservation > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
+      await dependencies.admitPaidCall?.({ attempt, maxCostUsd: budget.maxCostUsd });
+      if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
       usage.attempts = attempt;
       let result: Awaited<ReturnType<MarketingModel["invoke"]>>;
       const startedAt = Date.now();
       try {
-        result = await model.invoke({ ...prompts, prompt: prompts.prompt + retryFeedback, maxOutputTokens: budget.maxOutputTokens, signal });
+        result = await model.invoke({ ...prompts, prompt: prompts.prompt + retryFeedback, maxOutputTokens: budget.maxOutputTokens, signal, ...(profile.output ? { output: profile.output } : {}) });
       } catch (failure) {
         // Billing may already have happened. Never retry an ambiguous transport/provider failure.
-        usage.estimatedCostUsd += reservation;
+        usage.estimatedCostUsd += reservation; report();
         if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
         if (failure instanceof MarketingGenerationError) throw failure;
         const providerFailure = classifyMarketingProviderError(failure);
         throw new MarketingGenerationError(providerFailure.code, providerFailure);
       }
       if (!result.usage || ![result.usage.inputTokens, result.usage.outputTokens].every((n) => Number.isInteger(n) && n >= 0)) {
-        usage.estimatedCostUsd += reservation;
+        usage.estimatedCostUsd += reservation; report();
         throw new MarketingGenerationError("usage-unavailable");
       }
       usage.inputTokens += result.usage.inputTokens;
       usage.outputTokens += result.usage.outputTokens;
       usage.estimatedCostUsd += cost(result.usage, model.pricing);
+      report();
       if (result.usage.inputTokens > budget.maxInputTokens || result.usage.outputTokens > budget.maxOutputTokens || usage.estimatedCostUsd > budget.maxCostUsd) throw new MarketingGenerationError("provider-budget-exceeded");
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
-      const parsed = MarketingCopySchema.safeParse(result.copy);
-      // Challenge output uses only authored text; none of the model's factual copy is retained.
-      const issues = parsed.success ? challenge ? parsed.data.locale === source.locale ? [] : ["locale-mismatch"] : validateMarketingCopy(parsed.data, source) : ["invalid-schema"];
+      const outcome = await profile.evaluate(result.copy, { signal, feedbackBytes: budget.maxInputTokens - baseBytes });
+      const issues = outcome.ok ? [] : outcome.issues;
       await trace?.stage({ name: "generation", attempt, latencyMs: Date.now() - startedAt, usage: result.usage, costUsd: cost(result.usage, model.pricing), issues });
-      if (!parsed.success || issues.length) {
+      if (!outcome.ok) {
         for (const issue of issues) failedValidationIssues.add(issue);
-        retryFeedback = validationRetryFeedback(issues);
+        retryFeedback = outcome.feedback;
         if (attempt === budget.maxAttempts) throw new MarketingGenerationError("copy-validation-failed");
         continue;
       }
       if (!sourceUsable(source, now())) throw new MarketingGenerationError("source-unavailable");
-      const caption = challenge?.caption ?? `${parsed.data.caption}\n\n${source.canonicalUrl}`;
-      if (input.account.platform === "threads" && caption.length > 500) throw new MarketingGenerationError("threads-caption-too-long");
-      const revision = parseContentRevision({
-        schemaVersion: "marketing-content/1", brand: source.brand, title: challenge?.title ?? parsed.data.title, caption,
-        format: input.account.platform === "threads" ? "thread" : "carousel",
-        sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }],
-        knowledgeIds: input.knowledge.map(({ id }) => id), assets: [], account: input.account,
-        scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,
-        promptVersion: MARKETING_PROMPT_VERSION, model: model.model, traceId: trace?.id ?? null,
-      });
-      const slides = challenge?.slides ?? sourceSlides(parsed.data, source);
-      await trace?.finish({ status: "review", revisionHash: revisionContentHash(revision), usage, issues: [] });
-      return { revision, slides, usage, traceId: trace?.id ?? null };
+      const draft = profile.finish(outcome.value, trace?.id ?? null, usage);
+      await trace?.finish({ status: "review", revisionHash: revisionContentHash(draft.revision), usage, issues: [] });
+      return draft;
     }
     throw new MarketingGenerationError("copy-validation-failed");
   } catch (error) {
@@ -251,6 +404,18 @@ export type ClaudeMarketingModelConfig = {
   apiKey: string; model: string;
   pricing: MarketingModel["pricing"];
 };
+/**
+ * How a provider call is shaped for the configured model. Claude Sonnet 5.5 rejects forced tool use, non-default
+ * sampling and disabled thinking, so it answers through structured outputs (`output_config.format`) with thinking
+ * at its lowest setting (`between_tools`, no extended thinking) and low effort, which leaves the whole output
+ * budget to the answer. Every other model keeps the forced strict tool call at temperature zero.
+ */
+export type ClaudeCallProfile =
+  | { structured: "tool"; temperature: 0 }
+  | { structured: "json-schema"; thinking: { type: "between_tools" }; effort: "low" | "medium" | "high" };
+export function claudeCallProfile(model: string): ClaudeCallProfile {
+  return /^claude-sonnet-5-5(?![0-9])/.test(model) ? { structured: "json-schema", thinking: { type: "between_tools" }, effort: "low" } : { structured: "tool", temperature: 0 };
+}
 /** Load only in a trusted server worker. No global/native tracing is allowed. */
 export async function createClaudeMarketingModel(config: ClaudeMarketingModelConfig): Promise<MarketingModel> {
   if (!config.apiKey || !/^claude-[a-z0-9.-]+$/.test(config.model)) throw new MarketingGenerationError("provider-configuration-required");
@@ -261,14 +426,23 @@ export async function createClaudeMarketingModel(config: ClaudeMarketingModelCon
   const { ChatAnthropic } = await import("@langchain/anthropic");
   const { isAIMessage } = await import("@langchain/core/messages");
   const { traceable } = await import("langsmith/traceable");
+  const profile = claudeCallProfile(config.model);
   return {
     model: config.model, pricing: config.pricing,
     async invoke(input) {
       assertPrivateInvocation();
+      const output = input.output ?? { name: "marketing_copy", schema: marketingProviderWireSchema() };
       let structured;
       try {
-        const model = new ChatAnthropic({ apiKey: config.apiKey, model: config.model, temperature: 0, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0, logLevel: "off" } });
-        structured = model.withStructuredOutput(marketingProviderWireSchema(), { name: "marketing_copy", includeRaw: true, method: "functionCalling", strict: true });
+        const fields = {
+          apiKey: config.apiKey, model: config.model, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0, logLevel: "off" as const },
+          // `between_tools` is newer than the pinned SDK's thinking type; LangChain passes it through unchanged.
+          ...(profile.structured === "tool" ? { temperature: profile.temperature } : { thinking: profile.thinking, outputConfig: { effort: profile.effort } }),
+        };
+        const model = new ChatAnthropic(fields as ConstructorParameters<typeof ChatAnthropic>[0]);
+        structured = profile.structured === "tool"
+          ? model.withStructuredOutput(output.schema, { name: output.name, includeRaw: true, method: "functionCalling", strict: true })
+          : model.withStructuredOutput(output.schema, { name: output.name, includeRaw: true, method: "jsonSchema" });
       } catch { throw new MarketingGenerationError("provider-sdk-setup-failed"); }
       let result;
       try { result = await traceable(() => structured.invoke([["system", input.system], ["human", input.prompt]], { signal: input.signal, callbacks: [] }), { tracingEnabled: false })(); }
