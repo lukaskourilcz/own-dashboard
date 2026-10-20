@@ -70,7 +70,7 @@ describe('collection cursor and limits: real migration SQL, OFFLINE clock and fe
  it('never moves the cursor back, past now, or on error, invalid URLs, other partials or empty results',async()=>{
   const run=(await db.query<{id:string}>("select id from marketing_dneskai_runs where date='2026-10-14'")).rows[0].id;
   const before=await cursorOf('openai-blog');
-  await db.exec(`insert into marketing_dneskai_stages(user_id,run_id,source_id,kind,since_at,max_items) select user_id,id,s,'feed',created_at,20 from marketing_dneskai_runs, unnest(array['t-error','t-url','t-partial','t-empty','t-future','t-old']) s where date='2026-10-14'`);
+  await db.exec(`insert into marketing_dneskai_stages(user_id,run_id,source_id,kind,since_at,max_items) select user_id,id,s,'feed',created_at,20 from marketing_dneskai_runs, unnest(array['t-error','t-url','t-partial','t-empty','t-future','t-old','t-undated']) s where date='2026-10-14'`);
   const items=(source:string,instant:string)=>[{...payload({externalId:`${source}-x`,at:instant},'2026-10-14T20:30:00Z'),sourceId:source}];
   for(const [source,result] of [['t-error',{status:'partial',errorCode:'collection-source-error'}],['t-url',{status:'partial',errorCode:'collection-source-invalid-url'}],['t-partial',{status:'partial',errorCode:'collection-source-partial'}]] as const){
    await claimStage(run,source);await save(run,source,{...result,items:items(source,'2026-10-14T20:00:00Z'),complete:false,costUsd:0});expect(await cursorOf(source)).toBeNull();
@@ -78,6 +78,9 @@ describe('collection cursor and limits: real migration SQL, OFFLINE clock and fe
   await claimStage(run,'t-empty');await save(run,'t-empty',{status:'partial',errorCode:'collection-source-item-cap',items:[],complete:false,costUsd:0});expect(await cursorOf('t-empty')).toBeNull();
   // A capped read whose newest item claims a future time cannot push the cursor beyond the database clock.
   await claimStage(run,'t-future');await save(run,'t-future',{status:'partial',errorCode:'collection-source-item-cap',items:items('t-future','2026-10-14T20:31:00Z'),complete:false,costUsd:0});expect(await cursorOf('t-future')).toBe('2026-10-14T20:30:00.000Z');
+  // An undated item counts at its fetch time (the SQL fallback; the provider normally dates it already).
+  const undated={...payload({externalId:'t-undated-x',at:'2026-10-12T01:00:00Z'},'2026-10-14T20:10:00Z'),sourceId:'t-undated',publishedAt:null};
+  await claimStage(run,'t-undated');await save(run,'t-undated',{status:'partial',errorCode:'collection-source-item-cap',items:[undated,...items('t-undated','2026-10-14T19:00:00Z')],complete:false,costUsd:0});expect(await cursorOf('t-undated')).toBe('2026-10-14T20:10:00.000Z');
   // An older capped read never rewinds a later cursor.
   await claimStage(run,'t-old');await save(run,'t-old',{status:'ok',errorCode:null,items:[],complete:true,costUsd:0});const later=await cursorOf('t-old');
   await db.query("update marketing_dneskai_stages set status='queued' where run_id=$1 and source_id='t-old'",[run]);
