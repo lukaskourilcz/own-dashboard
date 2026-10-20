@@ -2,7 +2,10 @@
 --
 -- Two jobs call marketing_private.scheduler_post(kind):
 --   marketing-tick-minute  every 5 minutes (UTC)  -> POST {"tick": <uuid>, "kind": "minute"}
---   marketing-tick-daily   02:15 UTC every day    -> POST {"tick": <uuid>, "kind": "daily"}
+--   marketing-tick-daily   02:18 UTC every day    -> POST {"tick": <uuid>, "kind": "daily"}
+-- The daily minute sits between two minute ticks: the 02:15 one has finished (the route stops at 60 s)
+-- and its 90 s category leases have expired even if it died, and the 02:20 one has not started, so the
+-- media purge never finds the media lease held by a minute tick.
 -- The request carries the same signature as every other automation call into OwnDashboard
 -- (authenticateAutomation): Authorization: Bearer <secret>, X-Marketing-Timestamp (Unix seconds)
 -- and X-Marketing-Signature = hex(HMAC-SHA256(secret, timestamp || '.' || body)), where body is
@@ -67,6 +70,6 @@ do $schedule$
 begin
  if to_regnamespace('cron') is not null then
   perform cron.schedule('marketing-tick-minute','*/5 * * * *',$command$select marketing_private.scheduler_post('minute')$command$);
-  perform cron.schedule('marketing-tick-daily','15 2 * * *',$command$select marketing_private.scheduler_post('daily')$command$);
+  perform cron.schedule('marketing-tick-daily','18 2 * * *',$command$select marketing_private.scheduler_post('daily')$command$);
  end if;
 end $schedule$;

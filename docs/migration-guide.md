@@ -547,11 +547,12 @@ replace the n8n timers with Supabase pg_cron ([marketing scheduling](marketing-s
   `next_allowed_at` for backoff and a small `state` object.
 - Service-role functions: `marketing_scheduler_begin_tick` (false for a tick id seen before),
   `marketing_scheduler_finish_tick`, `marketing_scheduler_acquire` (`busy` or `backoff` when refused),
-  `marketing_scheduler_release` (only by the current holder) and `marketing_scheduler_prune_ticks`.
+  `marketing_scheduler_release` (only by the current holder), `marketing_scheduler_save_state` (state under a
+  live lease, used for the token mark) and `marketing_scheduler_prune_ticks`.
 - The cron migration creates pg_cron (`pg_catalog`), pg_net and pgcrypto (`extensions`) when the engine offers
   them, adds `marketing_private.scheduler_signature` and the security-definer
   `marketing_private.scheduler_post(kind)`, and schedules `marketing-tick-minute` (`*/5 * * * *`) and
-  `marketing-tick-daily` (`15 2 * * *`). `scheduler_post` reads `marketing_scheduler_url` and
+  `marketing-tick-daily` (`18 2 * * *`, between two minute ticks). `scheduler_post` reads `marketing_scheduler_url` and
   `marketing_scheduler_secret` from Vault and returns without sending anything while either is missing, so the
   migration needs no values. No API role may execute either private function.
 

@@ -148,7 +148,7 @@ The migrations, in the order they run:
 52. `20261020130000_dneskai_source_media.sql` — DNESKAi source pictures for selected topics: private `marketing-media` bucket (JPEG, PNG, WebP, 32 MiB), one asset per owner and sha256 with origin, order, size, pHash and credit, links per candidate, per-candidate collection state, and service-role functions for collection, lookup and retention.
 53. `20261020140000_marketing_revision_media_identity.sql` — revisions keep their approval across signed-URL renewal: a service-role function rewrites only `assets[].url` for the same private objects; deck renders attach once to an unready revision, and approval refuses a blocking render report.
 54. `20261020160000_marketing_scheduler.sql` — the scheduler's tick record (`marketing_ticks`, kept 14 days) and one lease per category with backoff and small state; service-role functions only.
-55. `20261020160100_marketing_scheduler_cron.sql` — pg_cron, pg_net and pgcrypto; a Vault-configured, signed request to `/api/marketing/tick` every five minutes and daily at 02:15 UTC that sends nothing until both Vault secrets exist.
+55. `20261020160100_marketing_scheduler_cron.sql` — pg_cron, pg_net and pgcrypto; a Vault-configured, signed request to `/api/marketing/tick` every five minutes and daily at 02:18 UTC that sends nothing until both Vault secrets exist.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 

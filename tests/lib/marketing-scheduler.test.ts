@@ -90,7 +90,7 @@ function harness(overrides: Partial<MarketingSchedulerPorts> = {}, clock = new C
   const ports = Object.fromEntries(Object.entries(base).map(([name, value]) => [name, typeof value === 'function'
     ? async (...args: unknown[]) => { calls.push([name, args]); return (value as (...input: unknown[]) => unknown)(...args); }
     : value])) as unknown as MarketingSchedulerPorts;
-  const tick = (env: Record<string, string | undefined> = on, kind: 'minute' | 'daily' = 'minute', id = tickId()) => runMarketingTick({ owner, env, ports, now: clock.now }, { tick: id, kind });
+  const tick = (env: Record<string, string | undefined> = on, kind: 'minute' | 'daily' = 'minute', id = tickId(), signal?: AbortSignal) => runMarketingTick({ owner, env, ports, now: clock.now, ...(signal ? { signal } : {}) }, { tick: id, kind });
   const called = (name: string) => calls.filter(([entry]) => entry === name);
   return { ports, calls, called, store, clock, tick };
 }
@@ -407,7 +407,7 @@ describe('the daily tick', () => {
     expect(result.did.map((entry) => entry.category)).toEqual([...MARKETING_DAILY_DUTIES]);
     expect(statuses(result)).toEqual({ renewal: 'done', purge: 'done', retention: 'done' });
     expect(h.called('renewRevision').map(([, args]) => args[0])).toEqual(['soon', 'unreadable']);
-    expect(step(result, 'renewal').detail).toEqual({ checked: 3, expiring: 2, renewed: 2, failed: 0 });
+    expect(step(result, 'renewal').detail).toEqual({ checked: 3, expiring: 2, renewed: 2, failed: 0, setAside: 0 });
     expect(h.called('purgeMedia')[0][1]).toEqual([30]);
     expect(step(result, 'retention').detail).toEqual({ removed: 3 });
     for (const name of ['tickCollection', 'collectMedia', 'createBriefs', 'executeJob', 'publishDue', 'reconcile', 'refreshToken']) expect(h.called(name)).toEqual([]);
@@ -421,6 +421,50 @@ describe('the daily tick', () => {
     const leased = harness({}, clock, store);
     expect(step(await leased.tick(on, 'daily'), 'purge')).toMatchObject({ status: 'busy', code: 'lease-held' });
     expect(leased.called('purgeMedia')).toEqual([]);
+  });
+  it('sets a revision that can never be renewed aside for a week and retries a transient failure the next day', async () => {
+    const failures: Record<string, string> = { old: 'revision-identity-mismatch', flaky: 'asset-storage-unavailable' };
+    const h = harness({
+      renewableRevisions: async () => ['old', 'flaky', 'fine'].map((id) => ({ id, assetUrls: [signed(h.clock.at + 3_600_000)] })),
+      renewRevision: async (id) => { if (failures[id]) throw Object.assign(new Error(failures[id]), { code: failures[id] }); return { renewed: 1 }; },
+    }, new Clock(evening));
+    const first = await h.tick(on, 'daily');
+    expect(step(first, 'renewal')).toMatchObject({ status: 'error', code: 'revision-identity-mismatch', detail: { expiring: 3, renewed: 1, failed: 2, setAside: 0 } });
+    h.clock.advance(24 * 60 * 60_000);
+    const second = await h.tick(on, 'daily');
+    expect(step(second, 'renewal')).toMatchObject({ status: 'error', code: 'asset-storage-unavailable', detail: { expiring: 3, renewed: 1, failed: 1, setAside: 1 } });
+    h.clock.advance(7 * 24 * 60 * 60_000);
+    await h.tick(on, 'daily');
+    expect(h.called('renewRevision').map(([, args]) => args[0])).toEqual(['old', 'flaky', 'fine', 'flaky', 'fine', 'old', 'flaky', 'fine']);
+  });
+  it('writes the tick record when a renewal or a purge hangs, and leaves the purge holding the media lease', async () => {
+    const hang = () => new Promise<never>(() => {});
+    const clock = new Clock(evening), store = memoryStore(clock);
+    const h = harness({
+      renewableRevisions: async () => [{ id: 'soon', assetUrls: [signed(evening + 3_600_000)] }, { id: 'next', assetUrls: [signed(evening + 3_600_000)] }],
+      renewRevision: hang, purgeMedia: hang,
+    }, clock, store);
+    const controller = new AbortController();
+    const running = h.tick(on, 'daily', tickId(), controller.signal);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    controller.abort();
+    const result = await running;
+    expect(statuses(result)).toEqual({ renewal: 'error:renewal-cut-off', purge: 'deferred:tick-budget-exhausted', retention: 'deferred:tick-budget-exhausted' });
+    expect(h.called('renewRevision')).toHaveLength(1);
+    expect(result.recorded).toBe(true);
+    // The cut-off renewal keeps its lease until it expires.
+    expect(store.leases.get('renewal')?.holder).toBe(result.tick);
+    // A purge cut off the same way keeps the media lease, so media collection cannot start beside it.
+    const purgeClock = new Clock(evening), purgeStore = memoryStore(purgeClock);
+    const purging = harness({ purgeMedia: hang }, purgeClock, purgeStore);
+    const purgeController = new AbortController();
+    const pending = purging.tick(on, 'daily', tickId(), purgeController.signal);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    purgeController.abort();
+    const purged = await pending;
+    expect(statuses(purged)).toEqual({ renewal: 'noop', purge: 'error:purge-cut-off', retention: 'deferred:tick-budget-exhausted' });
+    expect(purgeStore.leases.get('media')?.holder).toBe(purged.tick);
+    expect(purged.recorded).toBe(true);
   });
   it('records a failed renewal and a storage failure of the purge without stopping the next duty', async () => {
     const h = harness({

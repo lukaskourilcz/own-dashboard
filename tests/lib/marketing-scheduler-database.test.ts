@@ -61,7 +61,7 @@ describe('pg_cron schedule (20261020160100)', () => {
   it('schedules exactly the two tick jobs, and re-running the file replaces rather than duplicates them', async () => {
     const jobs = async () => (await db.query<{ jobname: string; schedule: string; command: string }>('select jobname,schedule,command from cron.job order by jobname')).rows;
     const expected = [
-      { jobname: 'marketing-tick-daily', schedule: '15 2 * * *', command: "select marketing_private.scheduler_post('daily')" },
+      { jobname: 'marketing-tick-daily', schedule: '18 2 * * *', command: "select marketing_private.scheduler_post('daily')" },
       { jobname: 'marketing-tick-minute', schedule: '*/5 * * * *', command: "select marketing_private.scheduler_post('minute')" },
     ];
     expect(await jobs()).toEqual(expected);

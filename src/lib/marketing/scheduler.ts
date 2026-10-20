@@ -84,6 +84,10 @@ const TOKEN_FAILED_BACKOFF_MS = 24 * 60 * 60_000;
 const TOKEN_HELD_BACKOFF_MS = 60 * 60_000;
 const RENEWALS_PER_TICK = 10;
 const RENEWAL_RESERVE_MS = 10_000;
+/** Codes that say a revision can never be renewed (for example one stored before #118); it waits a week. */
+const PERMANENT_RENEWAL_CODES = new Set(["revision-identity-mismatch", "revision-not-renewable", "revision-unavailable", "asset-input-invalid"]);
+const RENEWAL_SET_ASIDE_MS = 7 * 24 * 60 * 60_000;
+const MAX_SET_ASIDE_REVISIONS = 50;
 
 export type SchedulerLeaseResult =
   | { acquired: true; until: string; state: Record<string, unknown> }
@@ -147,6 +151,8 @@ export interface MarketingSchedulerDependencies {
   env: Environment;
   ports: MarketingSchedulerPorts;
   now?: () => Date;
+  /** Aborts the tick earlier than its 53 s hard budget (tests). */
+  signal?: AbortSignal;
 }
 
 type StepOutcome = {
@@ -155,6 +161,8 @@ type StepOutcome = {
   nextAllowedAt?: string | null;
   /** Written on release when present; otherwise the stored state stays. */
   state?: Record<string, unknown>;
+  /** Leaves the lease to expire on its own: work cut off by the tick signal may still be running. */
+  keepLease?: boolean;
 };
 type StepContext = {
   state: Record<string, unknown>; signal: AbortSignal; remainingMs: () => number; now: () => Date;
@@ -202,6 +210,19 @@ const stringRecord = (value: unknown): Record<string, string> =>
     ? Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
     : {};
 const liveUntil = (value: unknown, now: number) => Object.fromEntries(Object.entries(stringRecord(value)).filter(([, until]) => Date.parse(until) > now));
+class TickCutOff extends Error { constructor(readonly code: string) { super(code); } }
+/** Settles when `work` does or when the tick signal fires, whichever is first, so the tick record is always written. */
+function untilCutOff<T>(work: Promise<T>, signal: AbortSignal, code: string): Promise<T> {
+  if (signal.aborted) return Promise.reject(new TickCutOff(code));
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => reject(new TickCutOff(code));
+    signal.addEventListener("abort", abort, { once: true });
+    work.then(
+      (value) => { signal.removeEventListener("abort", abort); resolve(value); },
+      (error: unknown) => { signal.removeEventListener("abort", abort); reject(error); },
+    );
+  });
+}
 
 export async function runMarketingTick(deps: MarketingSchedulerDependencies, value: unknown): Promise<MarketingTickResult> {
   const input = MarketingTickInputSchema.parse(value);
@@ -209,7 +230,8 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   const clock = deps.now ?? (() => new Date());
   const started = clock().getTime();
   const remaining = () => MARKETING_TICK_SOFT_BUDGET_MS - (clock().getTime() - started);
-  const signal = AbortSignal.timeout(MARKETING_TICK_HARD_BUDGET_MS);
+  const hard = AbortSignal.timeout(MARKETING_TICK_HARD_BUDGET_MS);
+  const signal = deps.signal ? AbortSignal.any([deps.signal, hard]) : hard;
   if (!(await ports.store.beginTick(input.tick, input.kind))) {
     return { tick: input.tick, kind: input.kind, duplicate: true, recorded: false, did: [], errors: [], next: { pending: [] } };
   }
@@ -403,27 +425,46 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   const dailySteps: Step[] = [
     {
       category: "renewal", lease: "renewal",
-      async run({ remainingMs, now }): Promise<StepOutcome> {
+      async run({ state, signal: abort, remainingMs, now }): Promise<StepOutcome> {
+        const at = now().getTime();
         const revisions = await ports.renewableRevisions();
-        const horizon = now().getTime() + MARKETING_URL_RENEWAL_WINDOW_MS;
+        const horizon = at + MARKETING_URL_RENEWAL_WINDOW_MS;
         const expiring = revisions.filter((revision) => revision.assetUrls.some((url) => { const expires = signedUrlExpiresAt(url); return expires === null || expires < horizon; }));
-        let renewed = 0, failed = 0, code: string | undefined;
-        for (const revision of expiring.slice(0, RENEWALS_PER_TICK)) {
+        // A revision that can never be renewed would otherwise take a slot and record an error every day.
+        const setAside = liveUntil(state.setAside, at);
+        const due = expiring.filter((revision) => !setAside[revision.id]);
+        let renewed = 0, failed = 0, code: string | undefined, cutOff = false;
+        for (const revision of due.slice(0, RENEWALS_PER_TICK)) {
           if (remainingMs() < RENEWAL_RESERVE_MS) break;
-          try { await ports.renewRevision(revision.id); renewed++; }
-          catch (error) { failed++; code ??= schedulerFailureCode(error, "renewal"); }
+          try { await untilCutOff(ports.renewRevision(revision.id), abort, "renewal-cut-off"); renewed++; }
+          catch (error) {
+            failed++;
+            const failure = schedulerFailureCode(error, "renewal");
+            code ??= failure;
+            if (error instanceof TickCutOff) { cutOff = true; break; }
+            if (PERMANENT_RENEWAL_CODES.has(failure)) setAside[revision.id] = iso(at + RENEWAL_SET_ASIDE_MS);
+          }
         }
+        const listed = new Set(revisions.map((revision) => revision.id));
         return {
-          status: failed ? "error" : renewed ? "done" : "noop", ...(code ? { code } : {}), pending: expiring.length > renewed + failed,
-          detail: { checked: revisions.length, expiring: expiring.length, renewed, failed },
+          status: failed ? "error" : renewed ? "done" : "noop", ...(code ? { code } : {}), pending: due.length > renewed + failed,
+          detail: { checked: revisions.length, expiring: expiring.length, renewed, failed, setAside: expiring.length - due.length },
+          state: { setAside: Object.fromEntries(Object.entries(setAside).filter(([id]) => listed.has(id)).slice(-MAX_SET_ASIDE_REVISIONS)) },
+          ...(cutOff ? { keepLease: true } : {}),
         };
       },
     },
     {
       category: "purge", lease: "media",
-      async run(): Promise<StepOutcome> {
+      async run({ signal: abort }): Promise<StepOutcome> {
         if (await ports.mediaCollectionActive()) return { status: "skipped", code: "media-collection-in-progress", pending: true };
-        const result = await ports.purgeMedia(MARKETING_MEDIA_RETENTION_DAYS);
+        let result: { purged: number; errorCode: string | null };
+        try { result = await untilCutOff(ports.purgeMedia(MARKETING_MEDIA_RETENTION_DAYS), abort, "purge-cut-off"); }
+        catch (error) {
+          // A purge still running must keep media collection out until its lease expires after the function has stopped.
+          if (error instanceof TickCutOff) return { status: "error", code: error.code, keepLease: true };
+          throw error;
+        }
         return { status: result.errorCode ? "error" : result.purged ? "done" : "noop", ...(result.errorCode ? { code: result.errorCode } : {}), detail: { purged: result.purged } };
       },
     },
@@ -454,7 +495,7 @@ async function runStep(step: Step, context: { store: MarketingSchedulerStore; ho
     ms: Math.max(0, clock().getTime() - begun), ...(outcome.detail ? { detail: outcome.detail } : {}),
   });
   const budgetSpent: StepOutcome = { status: "deferred", code: "tick-budget-exhausted", pending: true };
-  if (remaining() < 1_000) return record(budgetSpent);
+  if (remaining() < 1_000 || signal.aborted) return record(budgetSpent);
   try {
     const early = await step.precheck?.();
     if (early) return record(early);
@@ -471,7 +512,7 @@ async function runStep(step: Step, context: { store: MarketingSchedulerStore; ho
   const saveState = (state: Record<string, unknown>) => held ? store.saveState(held, holder, state) : Promise.resolve(false);
   try { outcome = await step.run({ state: lease?.acquired ? lease.state : {}, signal, remainingMs: remaining, now: clock, saveState }); }
   catch (error) { outcome = { status: "error", code: schedulerFailureCode(error, step.category) }; }
-  if (step.lease && lease?.acquired) {
+  if (step.lease && lease?.acquired && !outcome.keepLease) {
     // A failed release leaves the lease to expire on its own (90 s); the next tick is five minutes away.
     try { await store.release(step.lease, holder, { nextAllowedAt: outcome.nextAllowedAt ?? null, ...(outcome.state ? { state: outcome.state } : {}) }); }
     catch { /* recorded below as it happened */ }

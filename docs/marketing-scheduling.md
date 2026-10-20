@@ -9,7 +9,7 @@ in Supabase with pg_cron and pg_net. n8n keeps no marketing timer.
 ```
 pg_cron (Supabase)                      Vercel (OwnDashboard)
  marketing-tick-minute  */5 * * * *  ─┐
- marketing-tick-daily   15 2 * * *   ─┤  marketing_private.scheduler_post(kind)
+ marketing-tick-daily   18 2 * * *   ─┤  marketing_private.scheduler_post(kind)
                                       │   reads URL + secret from Vault, signs, net.http_post (55 s)
                                       └──────────────► POST /api/marketing/tick  (Node, maxDuration 60)
                                                         authenticateAutomation, role "scheduler"
@@ -60,28 +60,35 @@ already late leaves it to the next one.
 
 ## What the daily tick does
 
-At 02:15 UTC. It runs only these duties; the minute tick that fires at the same moment does the rest.
+At 02:18 UTC, between two minute ticks: the 02:15 tick has finished (the route stops at 60 s) and its
+90-second leases have expired even if it died, and the 02:20 tick has not started. So the purge does not
+find the media lease held by a minute tick. It runs only these duties.
 
 | Duty | What |
 |---|---|
-| renewal | For the newest 50 approved or ready-for-review revisions of any brand, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. |
-| purge | `purgeUnusedDneskaiMedia(db, owner, 30)` under the media lease, and only when no media candidate is claimed by a collection pass. |
+| renewal | For the newest 50 approved or ready-for-review revisions of any brand, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. A revision refused with a code that cannot change (`revision-identity-mismatch`, for example one stored before #118, `revision-not-renewable`, `revision-unavailable`, `asset-input-invalid`) is set aside for seven days (`detail.setAside`); any other failure is tried again the next day, while its URLs still have a day left. |
+| purge | `purgeUnusedDneskaiMedia(db, owner, 30)` under the media lease, and only when no media candidate is claimed by a collection pass. A day it is refused (`busy`, `backoff`, `media-collection-in-progress`) waits for the next daily tick; retention is 30 days, so one day later costs nothing. |
 | retention | Deletes `marketing_ticks` rows older than 14 days. |
 
 ## Time budget
 
 The route may run 60 s and pg_net waits 55 s. A tick starts no category after 48 s and every abort
 signal fires at 53 s. Each category needs a minimum to start (collection 20 s, media 25 s,
-generation 43 s, publishing 15 s, token 16 s). A category that does not fit is recorded as
+generation 43 s, publishing 30 s when live and 15 s as a dry run, token 16 s). A category that does not fit is recorded as
 `deferred: tick-budget-exhausted` with `pending: true` and runs on the next tick. In practice a
 collection step at night uses most of a tick, so media and generation follow once collection is done.
+
+`renewStoredRevisionAssetUrls` and `purgeUnusedDneskaiMedia` take no abort signal. The tick stops waiting
+for them at 53 s (`renewal-cut-off`, `purge-cut-off`), still writes its record, and does not release their
+lease: it expires on its own after the function has stopped, so media collection cannot start beside a
+purge that is still running.
 
 ## Idempotency and concurrency
 
 - The tick id is the primary key of `marketing_ticks`. A replayed or retried tick finds its row and
   returns `duplicate: true` without doing anything.
 - Each category takes a 90-second lease in `marketing_scheduler_state` before it works. A second tick
-  running at the same moment (the minute and daily jobs at 02:15, a manual call) records `busy` for
+  running at the same moment (a retried request, a manual call) records `busy` for
   what the first one holds. A lease of a tick that died expires before the next tick.
 - The leases sit on top of the existing fences: the collection run lease, the media candidate claim,
   the job lease, the publication claim and the token compare-and-set. Media retention uses the media
