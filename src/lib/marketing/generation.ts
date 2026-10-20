@@ -68,7 +68,8 @@ export type MarketingModelOutput = { name: string; schema: Record<string, unknow
 export interface MarketingModel {
   readonly model: string;
   readonly pricing: { inputPerMillionUsd: number; outputPerMillionUsd: number };
-  invoke(input: { system: string; prompt: string; maxOutputTokens: number; signal: AbortSignal; output?: MarketingModelOutput }): Promise<{ copy: unknown; usage: ModelUsage | null }>;
+  /** `stopReason` is present only when the answer stopped early: cut off at the output limit, or refused. */
+  invoke(input: { system: string; prompt: string; maxOutputTokens: number; signal: AbortSignal; output?: MarketingModelOutput }): Promise<{ copy: unknown; usage: ModelUsage | null; stopReason?: "max_tokens" | "refusal" }>;
 }
 export type GeneratedMarketingDraft = {
   revision: ContentRevision;
@@ -183,7 +184,7 @@ interface GenerationProfile<T> {
   outputSchema: Record<string, unknown>;
   /** Bytes the retry turn may add, reserved before the first call. A retry may use more only if it still fits the input budget. */
   feedbackReserveBytes: number;
-  evaluate(copy: unknown, context: { signal: AbortSignal; feedbackBytes: number }): Promise<AttemptOutcome<T>>;
+  evaluate(copy: unknown, context: { signal: AbortSignal; feedbackBytes: number; stopReason?: "max_tokens" | "refusal" }): Promise<AttemptOutcome<T>>;
   finish(value: T, traceId: string | null, usage: GeneratedMarketingDraft["usage"]): GeneratedMarketingDraft;
 }
 export type GenerationDependencies = {
@@ -273,6 +274,8 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
       const fail = (issues: DneskaiCopyIssue[]): AttemptOutcome<BriefResult> =>
         ({ ok: false, issues: [...new Set(issues.map((entry) => entry.code))], feedback: dneskaiRetryFeedback(issues, raw, context.feedbackBytes) });
       const parsed = DneskaiCopySchema.safeParse(normalizeDneskaiCopy(raw));
+      if (!parsed.success && context.stopReason === "max_tokens") return fail([{ code: "output-truncated", slide: null, field: null, detail: "The answer was cut off at the output limit. Write fewer or shorter slides and a shorter caption." }]);
+      if (!parsed.success && context.stopReason === "refusal") return fail([{ code: "provider-refusal", slide: null, field: null, detail: "The answer was declined. Report only what the evidence states, plainly." }]);
       if (!parsed.success) return fail(schemaIssues(parsed.error));
       const issues = validateDneskaiCopy(parsed.data, offer);
       const assembled = assembleDneskaiCaption(parsed.data, offer);
@@ -382,7 +385,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       report();
       if (result.usage.inputTokens > budget.maxInputTokens || result.usage.outputTokens > budget.maxOutputTokens || usage.estimatedCostUsd > budget.maxCostUsd) throw new MarketingGenerationError("provider-budget-exceeded");
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
-      const outcome = await profile.evaluate(result.copy, { signal, feedbackBytes: budget.maxInputTokens - baseBytes });
+      const outcome = await profile.evaluate(result.copy, { signal, feedbackBytes: budget.maxInputTokens - baseBytes, ...(result.stopReason ? { stopReason: result.stopReason } : {}) });
       const issues = outcome.ok ? [] : outcome.issues;
       await trace?.stage({ name: "generation", attempt, latencyMs: Date.now() - startedAt, usage: result.usage, costUsd: cost(result.usage, model.pricing), issues });
       if (!outcome.ok) {
@@ -455,7 +458,9 @@ export async function createClaudeMarketingModel(config: ClaudeMarketingModelCon
         throw new MarketingGenerationError(providerFailure.code, providerFailure);
       }
       const measured = isAIMessage(result.raw) ? result.raw.usage_metadata : undefined;
-      return { copy: result.parsed, usage: measured ? { inputTokens: measured.input_tokens, outputTokens: measured.output_tokens } : null };
+      const stopped = isAIMessage(result.raw) ? result.raw.response_metadata?.stop_reason : undefined;
+      return { copy: result.parsed, usage: measured ? { inputTokens: measured.input_tokens, outputTokens: measured.output_tokens } : null,
+        ...(stopped === "max_tokens" || stopped === "refusal" ? { stopReason: stopped } : {}) };
     },
   };
 }

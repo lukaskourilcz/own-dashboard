@@ -29,7 +29,7 @@ const loadMedia = vi.fn(async (sha256: string) => {
   if (!found) throw new Error("media-asset-unavailable");
   return found.bytes;
 });
-function fakeModel(answers: Array<{ copy: unknown; usage: { inputTokens: number; outputTokens: number } | null }>) {
+function fakeModel(answers: Array<{ copy: unknown; usage: { inputTokens: number; outputTokens: number } | null; stopReason?: "max_tokens" | "refusal" }>) {
   const invoke = vi.fn(async (input: Parameters<MarketingModel["invoke"]>[0]) => { void input; return answers.shift() ?? { copy: null, usage: { inputTokens: 1, outputTokens: 1 } }; });
   return { model: "claude-sonnet-5-5", pricing: { inputPerMillionUsd: 2, outputPerMillionUsd: 10 }, invoke } satisfies MarketingModel;
 }
@@ -278,6 +278,11 @@ describe("generation from a brief", () => {
     expect(model.invoke).toHaveBeenCalledTimes(1); expect(validate).toHaveBeenCalledTimes(2);
     expect(draft.deck!.slides.at(-1)!.sources!.every((line) => line.length <= 150)).toBe(true);
   });
+  it("says so when the answer was cut off at the output limit", async () => {
+    const model = fakeModel([{ copy: null, usage: { inputTokens: 3000, outputTokens: 2500 }, stopReason: "max_tokens" }, { copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
+    await generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model));
+    expect(model.invoke.mock.calls[1]![0].prompt).toContain("Post [output-truncated]: The answer was cut off at the output limit.");
+  });
   it("never retries when usage is unknown", async () => {
     const model = fakeModel([{ copy: { invalid: true }, usage: null }]);
     await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model))).rejects.toThrow("usage-unavailable");
@@ -352,5 +357,9 @@ describe("Claude Sonnet 5.5 call shape (mocked HTTP; zero network)", () => {
     expect(request?.thinking).toEqual({ type: "between_tools" });
     expect(request?.output_config).toEqual({ effort: "low", format: { type: "json_schema", schema: dneskaiCopyWireSchema() } });
     expect(request).not.toHaveProperty("tools"); expect(request).not.toHaveProperty("tool_choice"); expect(request).not.toHaveProperty("temperature");
+    fetcher.mockImplementationOnce(async () => Response.json({ id: "msg_TEST_ONLY", type: "message", role: "assistant", model: "claude-sonnet-5-5", content: [{ type: "text", text: '{"title":"Cut' }],
+      stop_reason: "max_tokens", stop_sequence: null, usage: { input_tokens: 3100, output_tokens: 2500 } }));
+    expect(await model.invoke({ system: "OFFLINE ONLY", prompt: "OFFLINE ONLY", maxOutputTokens: 2500, signal: AbortSignal.timeout(5000), output: { name: "dneskai_post", schema: dneskaiCopyWireSchema() } }))
+      .toEqual({ copy: null, usage: { inputTokens: 3100, outputTokens: 2500 }, stopReason: "max_tokens" });
   });
 });
