@@ -437,8 +437,7 @@ Public role summaries and the employer directory ship in source. Personal Englis
 
 ## Retired staging pilot ledgers (2026-10-20)
 
-`20261020120000_scope_retired_pilot_ledgers.sql` replaces three service-only functions for #113:
-`marketing_private.check_generation_pilot`, `marketing_dneskai_admit` and `marketing_dneskai_claim_stage`.
+`20261020120000_scope_retired_pilot_ledgers.sql` changes five service-only functions for #113.
 Before it, a generation or collection pilot row blocked the owner's ordinary job admission, collection
 admission and paid collection for good, expired or not. Now each block holds only while that pilot window
 is unexpired. No row is changed or removed: windows, the three $0.25 generation reservations, the lifetime
@@ -446,8 +445,28 @@ collection run and its reserved stages stay as they are. An expired tuple still 
 a changed one `pilot configuration changed`, and ordinary admission refuses to return the retained pilot run.
 The unknown-cost guard (`collection cost unresolved`) is unchanged. Function grants stay service-only.
 
-The read-only check on 2026-10-20 found no pilot ledger rows in production; they exist only in the Supabase
-branch `marketing-staging-20261013`. Verify after applying: `select pg_get_functiondef('marketing_private.check_generation_pilot(uuid,jsonb,boolean)'::regprocedure)`
-contains `clock_timestamp()<config.expires_at`, and `has_function_privilege('authenticated','public.marketing_dneskai_admit(uuid,uuid,date,jsonb)','execute')`
-is false. Rollback re-runs the three function bodies from `20261013092409_marketing_staging_pilot_guard.sql`
-and `20261013181506_dneskai_collection_pilot.sql` as `create or replace`; no data changes either way.
+- `marketing_private.check_generation_pilot`, `marketing_enqueue_job` and `marketing_claim_job` are defined
+  only by `20261013092409` and are replaced whole. The two job wrappers now refuse a job the pilot reserved
+  on the ordinary path (`pilot job retired`, on claim and on the enqueue duplicate path), so after expiry it
+  cannot run without `marketing_check_pilot_attempt` and its $0.25 cap. The job and its reservation stay.
+- `marketing_dneskai_admit` and `marketing_dneskai_claim_stage` are also redefined by #112's
+  `20261020100000_dneskai_collection_cursor_limits.sql`, which sorts first. This migration does not restate
+  them. It reads the current body with `pg_get_functiondef`, replaces exactly three pilot conditions and
+  stops with `pilot predicate in … not found as expected` if a condition is missing or appears an
+  unexpected number of times. A body that already has the scoped conditions is left alone, so a re-run is a
+  no-op. The Instagram limits and Jev planning of whichever body came before are kept byte for byte;
+  `tests/lib/marketing-retired-pilot-ledger-database.test.ts` checks that against the body each earlier
+  migration left.
+
+Apply in filename order. If `20261020100000` reaches a database after this migration, it restores the
+unscoped conditions; apply this file again afterwards. The read-only check on 2026-10-20 found no pilot
+ledger rows in production; they exist only in the Supabase branch `marketing-staging-20261013`. Verify
+after applying: `pg_get_functiondef('marketing_private.check_generation_pilot(uuid,jsonb,boolean)'::regprocedure)`
+contains `clock_timestamp()<config.expires_at`, `pg_get_functiondef('public.marketing_dneskai_claim_stage(uuid,uuid,uuid,text,boolean)'::regprocedure)`
+contains `generation_pilots where user_id=p_owner and clock_timestamp()<expires_at`,
+`pg_get_functiondef('public.marketing_claim_job(uuid,uuid,uuid,jsonb)'::regprocedure)` contains
+`pilot job retired`, and `has_function_privilege('authenticated','public.marketing_dneskai_admit(uuid,uuid,date,jsonb)','execute')`
+is false. Rollback re-runs the latest earlier body of each function as `create or replace`: the three
+whole functions from `20261013092409_marketing_staging_pilot_guard.sql`, and admit and claim_stage from
+`20261020100000` when it is applied, otherwise from `20261013181506_dneskai_collection_pilot.sql`. No data
+changes either way.

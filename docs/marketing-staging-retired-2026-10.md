@@ -26,7 +26,10 @@ Production. Production gets its own credentials when the issue that needs them l
 - Migration `20261020120000_scope_retired_pilot_ledgers.sql` keeps every ledger row. A generation or
   collection pilot window now blocks ordinary admission and paid collection only while it is unexpired. An
   expired tuple still cannot be replayed or extended, and ordinary admission never adopts the retained
-  pilot run.
+  pilot run. A job the generation pilot reserved never becomes ordinary work: after the window, ordinary
+  claim and enqueue refuse it with `pilot job retired`, so it cannot run outside its $0.25 cap. The
+  migration rewrites only the pilot conditions inside the collection functions, so the Instagram limits
+  and Jev planning from [#112](https://github.com/lukaskourilcz/own-dashboard/issues/112) stay as they are.
 
 ## Where the pilot ledger lives
 
@@ -35,7 +38,7 @@ Read-only checks on 2026-10-20:
 | Database | Generation windows | Generation reservations | Collection pilots (with run) | Paid stages with unresolved cost |
 |---|---|---|---|---|
 | Production project `own-dashboard` | 0 | 0 | 0 | 0 |
-| Supabase branch `marketing-staging-20261013` | 1 (13 Oct 09:11 to 15 Oct 09:10 UTC) | 3, $0.75 | 1 (1) | 1 |
+| Supabase branch `marketing-staging-20261013` | 1 (13 Oct 09:11 to 15 Oct 09:10 UTC) | 3 × $0.25, $0.75 in total | 1 (1) | 1 |
 
 The ledger rows exist only in the staging branch, so production was never blocked by them. The branch was
 still `ACTIVE_HEALTHY` with status `MIGRATIONS_FAILED` on 2026-10-20. Keep it until the owner has reviewed
@@ -59,10 +62,21 @@ Vercel project `own-dashboard`, target Preview, git branch `codex/marketing-auto
 | Automation and owner controls | `MARKETING_N8N_SECRET`, `MARKETING_OWNER_ID`, `MARKETING_AI_CONSENT`, `MARKETING_APPROVED_ASSET_HOSTS`, `MARKETING_KNOWLEDGE_WORKER_ENABLED` |
 | Staging database | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
 
-Production carries none of the pilot or preview-share names. Deleting a variable does not change preview
+Production carries none of the pilot or preview-share names. It does carry the two variables of the
+single production run below. Deleting a variable does not change preview
 deployments that already exist: each keeps the values it was built with. Deployments that include the
 13 October pilot guard have refused n8n and automation requests since the pilot window closed on
 15 October, but their runtime still holds those values. Removing those deployments is the owner's call.
+
+## Production variables of the single production run
+
+Vercel project `own-dashboard`, target Production: `MARKETING_DNESKAI_MANUAL_RUN` and
+`MARKETING_DNESKAI_MANUAL_SECRET`. They belong to the 13 October production verification and pair with the
+n8n credential `OwnDashboard DNESKAi single production run 20261013`. `MARKETING_DNESKAI_MANUAL_RUN` is a
+`dneskai-manual/1` scope for one pre-registered run, at most two hours long. `src/lib/marketing/dneskai-manual.ts`
+returns no expiry once that window has passed, so the manual path refuses every request and both variables
+open nothing today. **Recommendation: delete both after the pilot, together with that credential.** The
+other 12 production variables serve ordinary collection and stay.
 
 ## n8n credentials still present
 
@@ -87,9 +101,11 @@ the history. This is planned, not done, at the time of writing.
 
 1. Archive the two n8n workflows that MCP could not reach: `1hB4ROPAlWm3YSXn` and `MK0xn98gIXofmZSn`.
 2. Rename the three credentials above with a `RETIRED` prefix.
-3. After the pilot (#123): delete the 59 preview variables, the three credentials and, when no longer
-   needed, the old preview deployments of `codex/marketing-automation`.
+3. After the pilot (#123): delete the 59 preview variables, the two production variables
+   `MARKETING_DNESKAI_MANUAL_RUN` and `MARKETING_DNESKAI_MANUAL_SECRET`, the three credentials and, when no
+   longer needed, the old preview deployments of `codex/marketing-automation`.
 4. Decide on the Supabase branch `marketing-staging-20261013` after reviewing its pilot ledger. Deleting it
-   removes the record of the three $0.75 reservations and the unresolved $0.04 collection stage.
+   removes the record of the three $0.25 reservations ($0.75 in total) and the unresolved $0.04 collection
+   stage.
 5. `DNESKAi rotating sources at 22:00` and `approved UTC publication planner` stay inactive until the
    pg_cron ticker from [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120) is live; #120 archives them.
