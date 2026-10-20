@@ -55,6 +55,14 @@ describe('retired preview pilot notice (#113)', () => {
     expect(JSON.stringify(warn.mock.calls)).not.toContain(marker);
   });
 
+  it('keeps the render preflight a Preview-only diagnostic and reports the retired tuple it meets', async () => {
+    const { runMarketingRenderPreflight } = await import('@/lib/marketing/render-preflight');
+    const env = { VERCEL_ENV: 'production', ...generation, MARKETING_OWNER_ID: owner };
+    // Rejected before any database read or source refresh.
+    await expect(runMarketingRenderPreflight({} as never, owner, { brand: 'dneskai', sourceId: 'openai-blog', scheduledAt: '2026-10-14T08:00:00Z' }, { env, now: () => now })).rejects.toThrow('render-preflight-preview-required');
+    expect(lines()).toEqual([{ event: 'pilot-retired', family: 'generation-pilot', vercelEnv: 'production', variables: ['MARKETING_PILOT_OWNER_ID', 'MARKETING_PILOT_STARTS_AT', 'MARKETING_PILOT_EXPIRES_AT'] }]);
+  });
+
   it('shows the paid-pilot blocker only in Preview, where the interlock still applies', async () => {
     const { dneskaiCollectionBlockers } = await import('@/lib/marketing/dneskai-store');
     expect(dneskaiCollectionBlockers({ VERCEL_ENV: 'preview', ...generation })).toContain('collection-paid-pilot-blocked');
