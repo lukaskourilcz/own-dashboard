@@ -427,6 +427,11 @@ describe("Claude Sonnet 5.5 call shape (mocked HTTP; zero network)", () => {
     expect(claudeCallProfile("claude-sonnet-5-5")).toEqual({ structured: "json-schema", thinking: { type: "between_tools" }, effort: "low" });
     expect(claudeCallProfile("claude-sonnet-4-6")).toEqual({ structured: "tool", temperature: 0 });
     expect(claudeCallProfile("claude-sonnet-5-50")).toEqual({ structured: "tool", temperature: 0 });
+    // Models that refuse a sampling override answer through structured outputs too, at their own thinking default.
+    for (const model of ["claude-opus-5-5", "claude-opus-5", "claude-sonnet-5", "claude-haiku-5-5", "claude-opus-4-8", "claude-opus-4-7", "claude-fable-5-1"]) {
+      expect(claudeCallProfile(model)).toEqual({ structured: "json-schema", effort: "low" });
+    }
+    expect(claudeCallProfile("claude-haiku-4-5")).toEqual({ structured: "tool", temperature: 0 });
     let request: Record<string, unknown> | undefined;
     const copy = validCopy(pictures);
     const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
@@ -447,5 +452,28 @@ describe("Claude Sonnet 5.5 call shape (mocked HTTP; zero network)", () => {
       stop_reason: "max_tokens", stop_sequence: null, usage: { input_tokens: 3100, output_tokens: 2500 } }));
     expect(await model.invoke({ system: "OFFLINE ONLY", prompt: "OFFLINE ONLY", maxOutputTokens: 2500, signal: AbortSignal.timeout(5000), output: { name: "dneskai_post", schema: dneskaiCopyWireSchema() } }))
       .toEqual({ copy: null, usage: { inputTokens: 3100, outputTokens: 2500 }, stopReason: "max_tokens" });
+  });
+  it("shapes the Saved-source analysis call the same way, since it shares MARKETING_CLAUDE_MODEL", async () => {
+    const { createClaudeKnowledgeModel } = await import("@/lib/marketing/knowledge-extraction");
+    const requests: Record<string, unknown>[] = [];
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (_url, init) => {
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      requests.push(body);
+      const answer = { procedures: [], missingParts: ["Test-only gap."] };
+      return Response.json({ id: "msg_TEST_ONLY", type: "message", role: "assistant", model: body.model,
+        content: body.tools ? [{ type: "tool_use", id: "toolu_TEST_ONLY", name: "atomic_knowledge", input: answer }] : [{ type: "text", text: JSON.stringify(answer) }],
+        stop_reason: body.tools ? "tool_use" : "end_turn", stop_sequence: null, usage: { input_tokens: 900, output_tokens: 40 } });
+    }));
+    const pricing = { inputPerMillionUsd: 2, outputPerMillionUsd: 10 };
+    for (const name of ["claude-sonnet-5-5", "claude-sonnet-4-6"]) {
+      const model = await createClaudeKnowledgeModel({ apiKey: "TEST-ONLY-NO-PROVIDER-CREDENTIAL", model: name, pricing });
+      expect(await model.invoke({ system: "OFFLINE ONLY", prompt: "OFFLINE ONLY", maxOutputTokens: 4000, signal: AbortSignal.timeout(5000) }))
+        .toEqual({ extraction: { procedures: [], missingParts: ["Test-only gap."] }, usage: { inputTokens: 900, outputTokens: 40 } });
+    }
+    const [sonnet55, sonnet46] = requests;
+    expect(sonnet55).toMatchObject({ model: "claude-sonnet-5-5", thinking: { type: "between_tools" }, output_config: { effort: "low", format: { type: "json_schema" } } });
+    expect(sonnet55).not.toHaveProperty("tools"); expect(sonnet55).not.toHaveProperty("tool_choice"); expect(sonnet55).not.toHaveProperty("temperature");
+    // An older model keeps the unchanged forced tool call at temperature zero.
+    expect(sonnet46).toMatchObject({ model: "claude-sonnet-4-6", temperature: 0, tool_choice: { type: "tool", name: "atomic_knowledge" } });
   });
 });

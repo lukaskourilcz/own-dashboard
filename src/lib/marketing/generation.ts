@@ -7,6 +7,7 @@ import { fitMarketingText } from "./render";
 import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
 import { classifyMarketingProviderError, type MarketingProviderFailure } from "./provider-errors";
+import { claudeCallFields, claudeCallProfile } from "./claude-call-profile";
 import type { DneskaiDeck } from "./dneskai-slides";
 import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
@@ -420,18 +421,7 @@ export type ClaudeMarketingModelConfig = {
   apiKey: string; model: string;
   pricing: MarketingModel["pricing"];
 };
-/**
- * How a provider call is shaped for the configured model. Claude Sonnet 5.5 rejects forced tool use, non-default
- * sampling and disabled thinking, so it answers through structured outputs (`output_config.format`) with thinking
- * at its lowest setting (`between_tools`, no extended thinking) and low effort, which leaves the whole output
- * budget to the answer. Every other model keeps the forced strict tool call at temperature zero.
- */
-export type ClaudeCallProfile =
-  | { structured: "tool"; temperature: 0 }
-  | { structured: "json-schema"; thinking: { type: "between_tools" }; effort: "low" | "medium" | "high" };
-export function claudeCallProfile(model: string): ClaudeCallProfile {
-  return /^claude-sonnet-5-5(?![0-9])/.test(model) ? { structured: "json-schema", thinking: { type: "between_tools" }, effort: "low" } : { structured: "tool", temperature: 0 };
-}
+export { claudeCallProfile, type ClaudeCallProfile } from "./claude-call-profile";
 /** Load only in a trusted server worker. No global/native tracing is allowed. */
 export async function createClaudeMarketingModel(config: ClaudeMarketingModelConfig): Promise<MarketingModel> {
   if (!config.apiKey || !/^claude-[a-z0-9.-]+$/.test(config.model)) throw new MarketingGenerationError("provider-configuration-required");
@@ -452,8 +442,7 @@ export async function createClaudeMarketingModel(config: ClaudeMarketingModelCon
       try {
         const fields = {
           apiKey: config.apiKey, model: config.model, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0, logLevel: "off" as const },
-          // `between_tools` is newer than the pinned SDK's thinking type; LangChain passes it through unchanged.
-          ...(profile.structured === "tool" ? { temperature: profile.temperature } : { thinking: profile.thinking, outputConfig: { effort: profile.effort } }),
+          ...claudeCallFields(profile),
         };
         const model = new ChatAnthropic(fields as ConstructorParameters<typeof ChatAnthropic>[0]);
         structured = profile.structured === "tool"
