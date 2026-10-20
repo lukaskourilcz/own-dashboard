@@ -108,7 +108,7 @@ Před spuštěním je potřeba:
 4. Ověřit rozpočet a provider konfiguraci, provést jeden omezený živý sběr a
    porovnat výsledek s dashboardem. Mockované testy nejsou dokladem živého běhu.
 5. Předložit výsledek vlastníkovi před produkčním nasazením. Potom zapnout pouze
-   nový plán sběru; staré `daily-preparation` nesmí paralelně spouštět jiný režim.
+   nový plán sběru; staré `retired/daily-preparation` nesmí paralelně spouštět jiný režim.
 
 Schválení provozu sběru nenahrazuje schválení čtyř finálních příspěvků. Publikování
 zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schválené revize.
@@ -117,7 +117,7 @@ zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schvá
 
 ### Jednorázové produkční ověření bez denního rozvrhu
 
-`workflows/marketing/dneskai-production-verification.json` je samostatná šablona
+`workflows/marketing/retired/dneskai-production-verification.json` (od 20. 10. 2026 retirovaný) je samostatná šablona
 pro ruční start a interní pokračování. Nepoužívá původní stagingový worker,
 časovač, veřejný webhook ani přístupové cookie Preview. Po importu je neaktivní.
 
@@ -246,7 +246,7 @@ před požadavky na poskytovatele. Neznámá spotřeba zastaví další placené
 Samostatný [interní n8n worker](https://bambambaklawa.app.n8n.cloud/workflow/1hB4ROPAlWm3YSXn)
 je uložený neaktivní, bez přístupového údaje a bez spuštění. Zpětný export potvrdil
 devět uzlů, vlastní interní pokračování, limit 120 sekund, vypnuté ukládání dat a MCP.
-Jeho [export a postup](../workflows/marketing/dneskai-collection-pilot-worker.md)
+Jeho [export a postup](../workflows/marketing/retired/dneskai-collection-pilot-worker.md)
 nepoužívají časovač ani veřejný webhook. Interní pokračování vyžaduje publikovanou
 verzi tohoto pomocného workflow; původní pravidelný návrh zůstává vypnutý.
 

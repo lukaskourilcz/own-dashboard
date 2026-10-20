@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { describe,it,expect } from 'vitest';
-const workflow=JSON.parse(readFileSync('workflows/marketing/dneskai-production-verification.json','utf8'));
+const workflow=JSON.parse(readFileSync('workflows/marketing/retired/dneskai-production-verification.json','utf8'));
 const projectId='11111111-1111-4111-8111-111111111111',runId='22222222-2222-4222-8222-222222222222',workerId='OFFLINEworker123';
 const now=Date.parse('2026-10-13T20:30:00Z');
 function execute(value:unknown,actualWorker=workerId,clock=now){
@@ -9,7 +9,7 @@ function execute(value:unknown,actualWorker=workerId,clock=now){
  for(const [key,value] of Object.entries({REPLACE_WITH_PRODUCTION_DNESKAI_PROJECT_UUID:projectId,REPLACE_WITH_REGISTERED_PRODUCTION_RUN_UUID:runId,REPLACE_WITH_THIS_PRODUCTION_WORKFLOW_ID:workerId,REPLACE_WITH_APPROVED_EXPIRY:'2026-10-13T21:00:00Z'}))code=code.replaceAll(key,value);
  return vm.runInNewContext(`(()=>{${code}})()`,{$workflow:{id:actualWorker},$input:{all:()=>[{json:value}]},Date:{now:()=>clock,parse:Date.parse}},{timeout:1000});
 }
-describe('manual production workflow offline contract',()=>{
+describe('retired manual production workflow offline contract',()=>{
  it('cannot admit a new run and binds even its first manual call to the registered run',()=>{
   const initial=execute({})[0].json;expect(initial).toMatchObject({projectId,runId,ticks:0,origin:'https://own-dashboard-tau.vercel.app'});
   expect(execute({projectId,runId,ticks:1,startedAt:now})[0].json.runId).toBe(runId);
