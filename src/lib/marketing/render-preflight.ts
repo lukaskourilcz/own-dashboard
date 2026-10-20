@@ -38,13 +38,13 @@ export async function runMarketingRenderPreflight(db: Database, ownerId: string,
   const previous = parseSourcePacket(row.packet);
   if (previous.brand !== input.brand || previous.sourceId !== input.sourceId) throw new MarketingRenderPreflightError('render-preflight-source-unavailable');
   let source;
-  try { source = parseSourcePacket(await (options.refresh ?? refreshSource)(previous, signal)); }
+  try { source = parseSourcePacket(await (options.refresh ?? refreshSource)(previous, signal, { owner: ownerId, db })); }
   catch { throw new MarketingRenderPreflightError('render-preflight-refresh-failed'); }
   if (source.brand !== input.brand || source.sourceId !== input.sourceId || source.kind !== previous.kind || !sourceUsable(source, now()) || contentHash(source.content) !== source.contentHash) throw new MarketingRenderPreflightError('render-preflight-source-unavailable');
   const result = await renderAuthoredMarketingPreflight({ source, template, account: { id: account.remote_account_id, handle: account.handle, platform: 'instagram' }, scheduledAt: input.scheduledAt, revisionId: randomUUID(), signal, now: now() });
   // A source withdrawal or template/pilot expiry during rendering never produces a success receipt.
   let current;
-  try { current = parseSourcePacket(await (options.refresh ?? refreshSource)(source, signal)); }
+  try { current = parseSourcePacket(await (options.refresh ?? refreshSource)(source, signal, { owner: ownerId, db })); }
   catch { throw new MarketingRenderPreflightError('render-preflight-refresh-failed'); }
   const fields = ['brand', 'kind', 'sourceId', 'sourceRevision', 'canonicalUrl', 'locale', 'contentHash'] as const;
   if (!sourceUsable(current, now()) || fields.some(field => current[field] !== source[field]) || contentHash(current.content) !== source.contentHash) throw new MarketingRenderPreflightError('render-preflight-source-changed');
