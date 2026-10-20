@@ -175,6 +175,14 @@ describe('createDneskaiBriefs over a store', () => {
     expect(calls).toEqual([['skip', rows[0]!.id, 'collection-already-covered', 'revision-1']]);
   });
 
+  it('leaves the slot of a skipped repeat to the next event', async () => {
+    const rows = [briefRow(ids('a', 1), 1, [a1, a2]), briefRow(ids('b', 2), 2, [b1], 'tool')];
+    const { store } = fakeStore(rows, [a1, a2, b1], { account: false, coverage: [{ id: 'rev', duplicateOf: 'revision-1', urls: [a1.url], assetSha256s: [] }] });
+    const result = await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now });
+    expect(result.skipped).toEqual([{ eventId: rows[0]!.event_id, code: 'collection-already-covered' }]);
+    expect(rows[1]).toMatchObject({ status: 'pending', code: 'account-unavailable', scheduled_at: '2026-10-21T06:00:00.000Z' });
+  });
+
   it('skips an event whose members changed since selection, and closes a target day whose slots have passed', async () => {
     const changed = briefRow(ids('a', 1), 1, [a1, a2]);
     const { store, calls } = fakeStore([changed], [a1, { ...a2, status: 'duplicate' }], { account: true });

@@ -52,18 +52,31 @@ export function dneskaiBriefSlots(targetDate: string): string[] {
 }
 
 /**
+ * The free slots of one target day. A slot is free when no other post or brief of the day is scheduled within an
+ * hour of it and it is at least 30 minutes away; `take` marks a slot used.
+ */
+export function dneskaiSlotAllocator(targetDate: string, taken: readonly string[], now: Date) {
+  const used = [...taken];
+  const free = (slot: string) => Date.parse(slot) >= now.getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE
+    && !used.some((value) => Math.abs(Date.parse(value) - Date.parse(slot)) < DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES * MINUTE);
+  return {
+    peek: (): string | null => dneskaiBriefSlots(targetDate).find(free) ?? null,
+    take(slot: string) { used.push(slot); },
+  };
+}
+
+/**
  * Assigns slots in rank order. A brief that already holds a slot keeps it; every other open brief takes the
  * first free slot of the day that is not within an hour of another post and not closer than 30 minutes to now.
  * Briefs still waiting for media are assigned too, so a later-ranked brief never takes a better-ranked slot.
  */
 export function assignDneskaiBriefSlots(briefs: ReadonlyArray<{ id: string; rank: number; scheduledAt: string | null }>, targetDate: string, taken: readonly string[], now: Date): Map<string, string | null> {
-  const used = [...taken, ...briefs.flatMap((brief) => brief.scheduledAt ? [brief.scheduledAt] : [])];
-  const clear = (slot: string) => !used.some((value) => Math.abs(Date.parse(value) - Date.parse(slot)) < DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES * MINUTE);
+  const slots = dneskaiSlotAllocator(targetDate, [...taken, ...briefs.flatMap((brief) => brief.scheduledAt ? [brief.scheduledAt] : [])], now);
   const result = new Map<string, string | null>();
   for (const brief of [...briefs].sort((a, b) => a.rank - b.rank)) {
     if (brief.scheduledAt) { result.set(brief.id, brief.scheduledAt); continue; }
-    const slot = dneskaiBriefSlots(targetDate).find((value) => Date.parse(value) >= now.getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE && clear(value)) ?? null;
-    if (slot) used.push(slot);
+    const slot = slots.peek();
+    if (slot) slots.take(slot);
     result.set(brief.id, slot);
   }
   return result;
@@ -241,8 +254,10 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
     return result;
   }
   const owed = await store.owedMedia(input.owner, input.project, [...new Set(open.flatMap((row) => row.member_ids))]);
-  const slots = assignDneskaiBriefSlots(rows.filter((row) => row.status !== 'skipped').map((row) => ({ id: row.id, rank: row.rank, scheduledAt: row.scheduled_at })),
-    run.target_date, await store.takenSlots(input.owner, input.project, run.target_date, input.runId), clock());
+  // Slots go in rank order: a brief still waiting for media reserves the next free one for this call, and a brief
+  // takes its slot only once it is built, so a repeat or an unusable event leaves its slot to the next one.
+  const slots = dneskaiSlotAllocator(run.target_date, [...await store.takenSlots(input.owner, input.project, run.target_date, input.runId),
+    ...rows.flatMap((row) => row.status !== 'skipped' && row.scheduled_at ? [row.scheduled_at] : [])], clock());
   let coverage: Promise<DneskaiCoverage[]> | null = null;
   let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
   for (const row of open) {
@@ -258,12 +273,12 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       if (!verified) continue; // still held as account-unavailable; nothing new to report
       if (row.status === 'pending') await store.prepare(input.owner, row.id, null, null, 'ready', null);
     } else {
-      if (row.member_ids.some((id) => owed.has(id))) { result.pending = true; continue; }
+      if (row.member_ids.some((id) => owed.has(id))) { const reserved = slots.peek(); if (reserved) slots.take(reserved); result.pending = true; continue; }
       const members = await store.members(input.owner, input.project, row.member_ids);
       if (members.length !== row.member_ids.length || members.some((member) => member.status !== 'selected' || member.target_date !== row.target_date) || memberHash(members) !== row.member_hash) {
         await skip(row, 'brief-members-changed'); continue;
       }
-      const slot = slots.get(row.id) ?? null;
+      const slot = slots.peek();
       if (!slot) { await skip(row, 'brief-slot-unavailable'); continue; }
       const withMedia = await Promise.all(members.map(async (member) => {
         const view = await store.media(input.owner, input.project, member.id);
@@ -275,6 +290,7 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       const phashes = await store.phashes(input.owner, [...new Set([...outcome.brief.media.map((item) => item.assetSha256), ...recent.flatMap((item) => item.assetSha256s)])]);
       const repeat = dneskaiBriefRepeat(outcome.brief, recent, phashes);
       if (repeat) { await skip(row, 'collection-already-covered', repeat.coverage.duplicateOf); continue; }
+      slots.take(slot);
       try { await store.prepare(input.owner, row.id, outcome.brief, slot, verified ? 'ready' : 'pending', verified ? null : 'account-unavailable'); }
       catch (error) {
         const code = error instanceof DneskaiBriefError ? error.code : 'brief-store-unavailable';
