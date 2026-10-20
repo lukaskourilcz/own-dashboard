@@ -35,6 +35,9 @@ describe('read-only DNESKAi source checks', () => {
     value.sourceStates[0] = { ...value.sourceStates[0], errorCode: 'collection-source-item-cap' };
     render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
     for (const text of [t.success, t.newestPublished, t.lastImport, t.importedAt, `(${t.estimated})`, t.blockers['collection-source-item-cap']]) expect(container.textContent).toContain(text);
+    // A capped read is informational, not an error.
+    const capNote = [...container.querySelectorAll('p')].find(node => node.textContent === t.blockers['collection-source-item-cap']);
+    expect(capNote?.className).toContain('text-foreground-muted'); expect(capNote?.className).not.toContain('text-risk');
     for (const instant of ['2026-10-12T11:59:59Z', '2026-10-12T20:05:00Z', '2026-10-11T20:00:00Z']) expect(container.querySelector(`time[datetime="${instant}"]`), instant).not.toBeNull();
     expect(container.querySelector('time[datetime="2026-10-10T20:05:00Z"]')).toBeNull();
   });

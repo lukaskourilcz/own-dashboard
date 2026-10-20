@@ -24,6 +24,9 @@ export function DneskaiSources({ projectId, lang, disabled = false, now = new Da
   </section>;
 }
 
+/** A capped read is normal: the cursor moves on (docs/dneskai-native-feeds.md). It informs, it does not warn. */
+const INFORMATIONAL_SOURCE_CODES = new Set(['collection-source-item-cap']);
+
 export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiCollectionState; lang: 'en' | 'cs'; now: Date }) {
   const t = dneskaiSources[lang]; const today = pragueMarketingDate(now);
   const tomorrow = new Date(Date.parse(`${today}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
@@ -70,7 +73,7 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
             <div><dt className="text-foreground-muted">{t.lastImport}</dt><dd className="tabular">{at(imported?.fetchedAt ?? null)}</dd></div>
             <div><dt className="text-foreground-muted">{t.count}</dt><dd className="tabular">{value ? value.itemCount : t.noDate}</dd></div>
             <div><dt className="text-foreground-muted">{t.cost}</dt><dd className="tabular">{cost(value?.costUsd ?? null)}</dd></div>
-          </dl>{value?.errorCode && <p className="text-xs text-risk">{t.blockers[value.errorCode] ?? t.errorDetail}</p>}
+          </dl>{value?.errorCode && <p className={`text-xs ${INFORMATIONAL_SOURCE_CODES.has(value.errorCode) ? 'text-foreground-muted' : 'text-risk'}`}>{t.blockers[value.errorCode] ?? t.errorDetail}</p>}
         </li>;
       })}</ul>}</section>
     <section aria-labelledby="dneskai-runs-title" className="space-y-2"><h3 id="dneskai-runs-title" className="text-sm font-semibold">{t.runs}</h3>
