@@ -1,5 +1,7 @@
 # Marketing orchestration and publishing
 
+> **Historical state, superseded by [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110).** This page describes the October 2026 staging and n8n orchestration, retired on 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)). The current plan is [`docs/reports/dneskai-instagram-2026-10-20.md`](reports/dneskai-instagram-2026-10-20.md). Retired exports are in [`workflows/marketing/retired/`](../workflows/marketing/retired/README.md); the staging inventory is [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
+
 **DNESKAi update, 2026-10-13:** new collection uses
 `workflows/marketing/dneskai-source-collection.json` at 22:00 Europe/Prague, targeting
 four distinct next-day topics. See [collection and rotation](dneskai-source-collection.md).

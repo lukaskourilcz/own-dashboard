@@ -1,5 +1,7 @@
 # Marketing implementation and launch review
 
+> **Historical state, superseded by [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110).** This page describes the October 2026 staging and n8n orchestration, retired on 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)). The current plan is [`docs/reports/dneskai-instagram-2026-10-20.md`](reports/dneskai-instagram-2026-10-20.md). Retired exports are in [`workflows/marketing/retired/`](../workflows/marketing/retired/README.md); the staging inventory is [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
+
 Owner request: own-dashboard#93. Implementation spans OwnDashboard, quorum#598 and react-express-app#364. Dots and Higgsfield are excluded. Daily final-post approval belongs only to OwnDashboard. This document is a deployment/pilot checklist, not permission to deploy or publish.
 
 ## Reviewable result

@@ -434,3 +434,20 @@ Rollback first disables per-brand/global publisher and n8n schedules. Retain app
 `20261015234547_oslo_career_preferences.sql` adds `user_preferences.show_czech_career` with `NOT NULL DEFAULT false`. The filename matches the version recorded in production. Existing own-only preference RLS and grants remain in force. Verify a new preference row is false, authenticated PATCH accepts only a boolean, and another owner cannot read or change it. Existing Czech saved positions, applications, sources and career links are retained behind the opt-in. Default refresh and availability checks skip Czech sources and unknown Apify task scopes. No cron or AI model calls were added.
 
 Public role summaries and the employer directory ship in source. Personal English letters are prepared offline and stored only in owner-scoped `saved_job_positions`, outside Git. No existing letters are overwritten. App rollback may leave this additive column safely in place.
+
+## Retired staging pilot ledgers (2026-10-20)
+
+`20261020120000_scope_retired_pilot_ledgers.sql` replaces three service-only functions for #113:
+`marketing_private.check_generation_pilot`, `marketing_dneskai_admit` and `marketing_dneskai_claim_stage`.
+Before it, a generation or collection pilot row blocked the owner's ordinary job admission, collection
+admission and paid collection for good, expired or not. Now each block holds only while that pilot window
+is unexpired. No row is changed or removed: windows, the three $0.25 generation reservations, the lifetime
+collection run and its reserved stages stay as they are. An expired tuple still raises `pilot outside window`,
+a changed one `pilot configuration changed`, and ordinary admission refuses to return the retained pilot run.
+The unknown-cost guard (`collection cost unresolved`) is unchanged. Function grants stay service-only.
+
+The read-only check on 2026-10-20 found no pilot ledger rows in production; they exist only in the Supabase
+branch `marketing-staging-20261013`. Verify after applying: `select pg_get_functiondef('marketing_private.check_generation_pilot(uuid,jsonb,boolean)'::regprocedure)`
+contains `clock_timestamp()<config.expires_at`, and `has_function_privilege('authenticated','public.marketing_dneskai_admit(uuid,uuid,date,jsonb)','execute')`
+is false. Rollback re-runs the three function bodies from `20261013092409_marketing_staging_pilot_guard.sql`
+and `20261013181506_dneskai_collection_pilot.sql` as `create or replace`; no data changes either way.
