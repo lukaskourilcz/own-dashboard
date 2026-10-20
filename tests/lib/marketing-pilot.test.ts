@@ -9,7 +9,8 @@ const owner = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
 const now = new Date();
 const pilot = { ownerId: owner, startsAt: new Date(now.getTime() - 60000).toISOString(), expiresAt: new Date(now.getTime() + 47 * 3600000).toISOString() };
-const env = { MARKETING_PILOT_OWNER_ID: owner, MARKETING_PILOT_STARTS_AT: pilot.startsAt, MARKETING_PILOT_EXPIRES_AT: pilot.expiresAt };
+// The tuple is read only on Vercel Preview (#113).
+const env = { VERCEL_ENV: "preview", MARKETING_PILOT_OWNER_ID: owner, MARKETING_PILOT_STARTS_AT: pilot.startsAt, MARKETING_PILOT_EXPIRES_AT: pilot.expiresAt };
 let db: PGlite;
 beforeAll(async () => {
   db = new PGlite();
@@ -36,13 +37,17 @@ describe("fixed pilot configuration", () => {
     expect(marketingPilotConfiguration(owner, env, now)).toEqual(pilot);
   });
   it("rejects partial, empty, malformed, foreign, future, expired and over-48-hour tuples", () => {
-    for (const values of [
-      { MARKETING_PILOT_OWNER_ID: owner }, { ...env, MARKETING_PILOT_EXPIRES_AT: "" },
+    const tuples = [
+      { VERCEL_ENV: "preview", MARKETING_PILOT_OWNER_ID: owner }, { ...env, MARKETING_PILOT_EXPIRES_AT: "" },
       { ...env, MARKETING_PILOT_STARTS_AT: "yesterday" }, { ...env, MARKETING_PILOT_OWNER_ID: other },
       { ...env, MARKETING_PILOT_STARTS_AT: new Date(now.getTime() + 1000).toISOString() },
       { ...env, MARKETING_PILOT_EXPIRES_AT: now.toISOString() },
       { ...env, MARKETING_PILOT_EXPIRES_AT: new Date(Date.parse(pilot.startsAt) + 48 * 3600000 + 1).toISOString() },
-    ]) expect(() => marketingPilotConfiguration(owner, values, now)).toThrow(/pilot-/);
+    ];
+    for (const values of tuples) expect(() => marketingPilotConfiguration(owner, values, now)).toThrow(/pilot-/);
+    // Outside Preview the retired tuple, valid or not, is ignored and grants no pilot.
+    for (const VERCEL_ENV of ["production", "development", undefined])
+      for (const values of [env, ...tuples]) expect(marketingPilotConfiguration(owner, { ...values, VERCEL_ENV }, now)).toBeNull();
   });
 });
 describe("actual local Postgres pilot procedures; no provider calls", () => {

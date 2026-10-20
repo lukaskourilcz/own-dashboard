@@ -10,13 +10,14 @@ import { ingestSource } from './store';
 import { createMarketingAssetStorage } from './worker-runtime';
 import { currentMarketingTemplate } from './render';
 import { marketingPilotConfiguration } from './pilot';
+import { previewPilotRetired } from './preview-pilot';
 import { assertOfflineSource, assertOfflineSourceBinding, offlineImportSlot, validateMarketingOfflineImport, OFFLINE_IMPORT_HOLD, MarketingOfflineImportError, type MarketingOfflineImportReceipt } from './offline-import-validation';
 
 type Database=ReturnType<typeof createAdminClient>;
 type Environment=Record<string,string|undefined>;
 function reject(code:ConstructorParameters<typeof MarketingOfflineImportError>[0]):never {throw new MarketingOfflineImportError(code);}
 export function assertMarketingOfflineImportConfiguration(ownerId:string,env:Environment=process.env,now=new Date()) {
-  if(env.MARKETING_OFFLINE_IMPORT_ENABLED!=='true'||env.VERCEL_ENV!=='preview'||!z.uuid().safeParse(ownerId).success||ownerId!==env.MARKETING_OWNER_ID)reject('offline-import-disabled');
+  if(previewPilotRetired('offline-import',env)||env.MARKETING_OFFLINE_IMPORT_ENABLED!=='true'||!z.uuid().safeParse(ownerId).success||ownerId!==env.MARKETING_OWNER_ID)reject('offline-import-disabled');
   try{const pilot=marketingPilotConfiguration(ownerId,env,now);if(!pilot)reject('offline-import-disabled');return pilot;}catch{reject('offline-import-disabled');}
 }
 export async function importMarketingOfflineDraft(db:Database,ownerId:string,value:unknown,options:{env?:Environment;now?:Date;clock?:()=>Date;refresh?:typeof refreshSource;storage?:ReturnType<typeof createMarketingAssetStorage>;inspectJpeg?:(bytes:Buffer)=>Promise<{width?:number;height?:number;format?:string;orientation?:number;pages?:number}>;signal?:AbortSignal}={}){

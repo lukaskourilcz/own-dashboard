@@ -6,6 +6,7 @@ import { signAutomationBody } from './automation-auth';
 import { MARKETING_SOURCE_MAX_AGE_MS } from './publisher';
 import { marketingPilotConfiguration } from './pilot';
 import { dneskaiCollectionPilotConfiguration } from './dneskai-pilot';
+import { previewPilotRetired } from './preview-pilot';
 
 type SourcePreviewShare = { token: string; origin: string };
 export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
@@ -20,7 +21,8 @@ export function sourceRefreshConfig(brand: MarketingBrand, env: Record<string, s
   const secret = env[`${prefix}_SOURCE_SECRET`];
   if (!url || !secret || secret.length < 32) throw new SourceRefreshError('source-integration-unconfigured');
   const token = env[`${prefix}_SOURCE_PREVIEW_SHARE_TOKEN`], origin = env[`${prefix}_SOURCE_PREVIEW_ORIGIN`];
-  if (token === undefined && origin === undefined) return { url, secret };
+  // Outside Preview the retired share is never sent; the request is the ordinary signed one.
+  if ((token === undefined && origin === undefined) || previewPilotRetired('source-preview', env)) return { url, secret };
   if (!token || !origin) throw new SourceRefreshError('source-preview-configuration-invalid');
   const config = { url, secret, previewShare: { token, origin } };
   validatePreviewShare(config.previewShare, endpoint(config), env);

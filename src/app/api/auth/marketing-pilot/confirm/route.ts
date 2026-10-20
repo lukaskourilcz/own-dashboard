@@ -1,9 +1,10 @@
 import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { marketingPilotConfiguration, type MarketingPilot } from "@/lib/marketing/pilot";
+import { previewPilotRetired } from "@/lib/marketing/preview-pilot";
 
 function activePilot(): MarketingPilot | null {
-  if (process.env.VERCEL_ENV !== "preview") return null;
+  if (previewPilotRetired("generation-pilot", process.env)) return null;
   try {
     return marketingPilotConfiguration(process.env.MARKETING_PILOT_OWNER_ID ?? "");
   } catch {

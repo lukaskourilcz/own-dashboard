@@ -50,14 +50,26 @@ describe('private staging template approval registry; synthetic owner receipts o
     expect(trustedMarketingTemplate('dneskai', partial)).toEqual(currentMarketingTemplate('dneskai'));
     expect(trustedMarketingTemplate('devshark', { ...env(), MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' }).approved).toBe(false);
   });
-  it('rejects non-preview, expired, future-start, foreign-owner and incomplete pilot contexts even for an empty receipt', () => {
+  it('rejects expired, future-start, foreign-owner and incomplete pilot contexts in Preview even for an empty receipt', () => {
     for (const invalid of [
-      { ...env(), VERCEL_ENV: 'production' }, { ...env(), VERCEL_ENV: undefined }, { ...env(), MARKETING_OWNER_ID: undefined },
+      { ...env(), MARKETING_OWNER_ID: undefined },
       { ...env(), MARKETING_OWNER_ID: randomUUID() }, { ...env(), MARKETING_PILOT_OWNER_ID: undefined },
       { ...env(), MARKETING_PILOT_EXPIRES_AT: now.toISOString() }, { ...env(), MARKETING_PILOT_STARTS_AT: '2026-10-13T13:00:00.000Z' },
       { ...env(), MARKETING_PILOT_EXPIRES_AT: '2026-10-16T10:00:00.000Z' },
     ]) expect(() => trustedMarketingTemplate('devshark', invalid)).toThrow('pilot-template-approval-invalid');
-    expect(() => trustedMarketingTemplate('devshark', { VERCEL_ENV: 'production', MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' })).toThrow('pilot-template-approval-invalid');
+  });
+  it('ignores a retired receipt outside Preview: repository manifests apply and nothing is approved or blocked (#113)', async () => {
+    for (const retired of [
+      { ...env(), VERCEL_ENV: 'production' }, { ...env(), VERCEL_ENV: undefined }, { VERCEL_ENV: 'production', MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' },
+      { ...env(), VERCEL_ENV: 'production', MARKETING_PILOT_TEMPLATE_APPROVALS: '{malformed-test-only' }, { ...env(), VERCEL_ENV: 'development', MARKETING_PILOT_EXPIRES_AT: now.toISOString() },
+    ]) {
+      for (const brand of ['devshark', 'dneskai'] as const) {
+        expect(trustedMarketingTemplate(brand, retired)).toEqual(currentMarketingTemplate(brand));
+        expect(trustedMarketingTemplate(brand, retired).approved).toBe(false);
+      }
+      expect(resolveTrustedMarketingTemplate('missing-version', retired)).toBeNull();
+      expect(await resolveMarketingTemplate('devshark-editorial/2', { env: retired })).toEqual(currentMarketingTemplate('devshark'));
+    }
   });
   it('rejects malformed, partial, extra-field, duplicate and oversized receipts with a fixed non-private error', () => {
     const entry = approval('devshark');
