@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { authenticateAutomation } from '@/lib/marketing/automation-auth';
+import { createMarketingSchedulerStore, runMarketingTick, type MarketingSchedulerPorts } from '@/lib/marketing/scheduler';
 
 // The real migrations against an isolated WASM Postgres with pgcrypto. pg_cron, pg_net and Vault are
 // Supabase services PGlite cannot load; the stand-ins below have their call signatures and record calls.
@@ -204,3 +205,64 @@ describe('tick record and category leases (20261020160000)', () => {
     }
   });
 });
+
+describe('the TypeScript store over the real functions', () => {
+  /** The slice of a service-role Supabase client the store uses: `rpc` runs `select public.<name>(...)` as service_role. */
+  const rpcClient = () => ({
+    async rpc(name: string, args: Record<string, unknown>) {
+      const keys = Object.keys(args);
+      const values = keys.map((key) => { const value = args[key]; return value !== null && typeof value === 'object' ? JSON.stringify(value) : value; });
+      try {
+        const rows = await as('service_role', null, async () => (await db.query<{ r: unknown }>(`select public.${name}(${keys.map((key, index) => `${key} => $${index + 1}`).join(', ')}) as r`, values)).rows);
+        return { data: rows[0]?.r ?? null, error: null };
+      } catch (error) { return { data: null, error: { message: String(error) } }; }
+    },
+  });
+  it('parses every answer of the SQL functions', async () => {
+    const store = createMarketingSchedulerStore(rpcClient() as never, owner);
+    const tick = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+    expect(await store.beginTick(tick, 'daily')).toBe(true);
+    expect(await store.beginTick(tick, 'daily')).toBe(false);
+    expect(await store.acquire('token', holderA, 90)).toMatchObject({ acquired: true, until: expect.any(String), state: {} });
+    expect(await store.acquire('token', holderB, 90)).toMatchObject({ acquired: false, reason: 'busy', until: expect.any(String) });
+    expect(await store.release('token', holderA, { nextAllowedAt: '2026-10-20T20:06:00.000Z', state: { uncertain: { [owner]: '2026-09-01T00:00:00Z' } } })).toBe(true);
+    expect(await store.acquire('token', holderB, 90)).toMatchObject({ acquired: false, reason: 'backoff' });
+    await setTime('2026-10-20T20:06:01Z');
+    expect(await store.acquire('token', holderB, 90)).toMatchObject({ acquired: true, state: { uncertain: { [owner]: '2026-09-01T00:00:00Z' } } });
+    expect(await store.release('token', holderB, { nextAllowedAt: null })).toBe(true);
+    expect(await store.finishTick(tick, [{ category: 'retention', status: 'noop', ms: 1 }], [])).toBe(true);
+    expect(await store.pruneTicks(14)).toBe(0);
+    await expect(store.acquire('token', 'not-a-uuid', 90)).rejects.toThrow('scheduler-state-unavailable');
+    await setTime(instant);
+  });
+  it('lets two concurrent ticks share the real leases: the second finds collection busy and runs it never', async () => {
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => { open = resolve; });
+    let collections = 0;
+    const store = createMarketingSchedulerStore(rpcClient() as never, owner);
+    const nothing = async () => false;
+    const ports = {
+      store, dneskaiProject: async () => owner,
+      collectionRuns: async () => [{ id: holderA, date: '2026-10-20', status: 'running' as const }],
+      tickCollection: async () => { collections++; await gate; return { runId: holderA, status: 'running' as const, continue: false }; },
+      pendingMedia: async () => [], createBriefs: async () => { throw new Error('briefs-unwired'); }, queuedGenerationJobs: async () => [],
+      publicationWork: nothing, publicationDueSoon: nothing, nextReconciliation: async () => null, tokenMetadata: async () => [],
+    } as unknown as MarketingSchedulerPorts;
+    const env = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true' };
+    const now = () => new Date(Date.parse('2026-10-20T20:10:00Z'));
+    await setTime('2026-10-20T20:10:00Z');
+    const first = runMarketingTick({ owner, env, ports, now }, { tick: '12121212-1212-4121-8121-121212121212', kind: 'minute' });
+    while (collections === 0) await new Promise((resolve) => setTimeout(resolve, 5));
+    const second = await runMarketingTick({ owner, env, ports, now }, { tick: '34343434-3434-4343-8343-343434343434', kind: 'minute' });
+    expect(second.did[0]).toMatchObject({ category: 'collection', status: 'busy', code: 'lease-held' });
+    expect(second.recorded).toBe(true);
+    open();
+    expect((await first).did[0]).toMatchObject({ category: 'collection', status: 'done' });
+    expect(collections).toBe(1);
+    const rows = (await db.query<{ id: string; finished_at: string | null }>("select id,finished_at from marketing_ticks where id in ('12121212-1212-4121-8121-121212121212','34343434-3434-4343-8343-343434343434')")).rows;
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.finished_at !== null)).toBe(true);
+    await setTime(instant);
+  });
+});
+
