@@ -22,7 +22,7 @@ export class SourceHttpError extends Error { constructor(readonly status: number
 
 function isPrivateIpv4(address: string): boolean {
   const octets = address.split(".").map(Number);
-  const [a = -1, b = -1] = octets;
+  const [a = -1, b = -1, c = -1] = octets;
   return (
     a === 0 ||
     a === 10 ||
@@ -31,6 +31,12 @@ function isPrivateIpv4(address: string): boolean {
     (a === 172 && b >= 16 && b <= 31) ||
     (a === 192 && b === 168) ||
     (a === 100 && b >= 64 && b <= 127) ||
+    // IETF protocol assignments and the three documentation ranges (RFC 6890, RFC 5737).
+    (a === 192 && b === 0 && (c === 0 || c === 2)) ||
+    (a === 198 && b === 51 && c === 100) ||
+    (a === 203 && b === 0 && c === 113) ||
+    // Benchmarking (RFC 2544), never a publisher.
+    (a === 198 && (b === 18 || b === 19)) ||
     a >= 224
   );
 }

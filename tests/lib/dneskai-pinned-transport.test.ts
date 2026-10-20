@@ -35,4 +35,8 @@ describe('DNS-pinned free-feed transport', () => {
   expect(isPublicAddress('fec0::1')).toBe(false);
   expect(isPublicAddress('2606:4700:4700::1111')).toBe(true);
  });
+ it('rejects special-purpose IPv4 ranges that are not publisher addresses', () => {
+  for (const address of ['192.0.0.8', '192.0.2.10', '198.18.0.1', '198.19.255.254', '198.51.100.7', '203.0.113.9', '240.0.0.1']) expect(isPublicAddress(address), address).toBe(false);
+  for (const address of ['93.184.216.34', '192.0.1.1', '198.20.0.1', '203.0.114.1']) expect(isPublicAddress(address), address).toBe(true);
+ });
 });
