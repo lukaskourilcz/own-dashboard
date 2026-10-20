@@ -1,6 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
-import { parseContentRevision, parseSourcePacket, publishedStoryReceipt, revisionReadiness, sourceUsable, type MarketingRevisionRow, type PublicationRow, type SourcePacket, type ContentRevision } from './contracts';
+import { parseContentRevision, parseSourcePacket, publishedStoryReceipt, renderReportBlocks, revisionReadiness, sourceUsable, type MarketingRevisionRow, type PublicationRow, type SourcePacket, type ContentRevision } from './contracts';
 import { contentHash, revisionContentHash } from './hashes';
 
 export const MARKETING_SOURCE_MAX_AGE_MS = 15 * 60_000;
@@ -55,9 +55,12 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   const advisory = options.enablementAdvisory === true;
   let revision: ContentRevision;
   try { revision = parseContentRevision(row.revision); } catch { return 'invalid-revision'; }
+  // The approval binds the content without delivery URLs (#118): a renewed signed URL keeps it, any other change breaks it.
+  // The downloaded bytes are compared with assets[].sha256 again in verifyAssets before any container exists.
   const hash = revisionContentHash(revision);
   if (!['approved', 'publishing'].includes(row.status) || !timestampValid(row.approved_at, now) || row.approved_hash !== hash || row.content_hash !== hash) return 'exact-approval-required';
   if (!row.ready || revisionReadiness(revision).length) return 'final-assets-required';
+  if (renderReportBlocks(row.render_report)) return 'render-blocked';
   if (account.user_id !== row.user_id || account.remote_account_id !== revision.account.id || account.brand !== revision.brand || account.platform !== revision.account.platform ||
       account.handle.replace(/^@/, '').toLowerCase() !== revision.account.handle.replace(/^@/, '').toLowerCase()) return 'account-binding-mismatch';
   if ((!advisory && !account.enabled) || !timestampValid(account.verified_at, now) || !idValid(account.remote_account_id)) return 'account-unverified-or-disabled';
