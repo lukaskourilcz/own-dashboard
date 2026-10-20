@@ -79,8 +79,9 @@ nedůvěryhodná data, nikoli pokyny pro přístup k nástrojům. Jev nemůže n
 
 Přímé feedy a API používají stávající adaptéry. Tato cesta nepoužívá placené
 Firecrawl/Jina záložní čtení. Uchovává odkazy na média, automaticky nenačítá náhledy
-všech kandidátů. Navazující stahování a ověření práv k médiím patří jen k vybraným
-tématům; URL obrázku sama nedokládá oprávnění k opětovnému publikování.
+všech kandidátů. Obrázky vybraných témat stahuje samostatný krok s původem a creditem,
+bez gate práv (rozhodnutí vlastníka 7, #110). Zatím ho nic nevolá; plánovač (#120) ho
+spustí tutéž noc po sběru. Viz [obrázky ze zdrojů](dneskai-source-media.md).
 
 Přepis zvuku Reels zatím není zapnutý ani implementovaný v této sběrné cestě.
 Položky bez použitelného textu čekají na kontrolu. Dřívější odhad za přepis jednoho

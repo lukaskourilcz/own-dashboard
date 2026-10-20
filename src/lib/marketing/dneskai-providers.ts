@@ -73,8 +73,20 @@ export async function collectDneskaiFeed(source:DneskaiSource,since:string,optio
 const CAP_CODES=new Set(['item-cap','upstream-cap']);
 /** Instagram carousels carry up to ten children; feed items carry at most one free image reference. */
 export const DNESKAI_MEDIA_URL_LIMIT=10;
-export function candidate(sourceId:string,externalId:string,title:string,text:string,url:string,publishedAt:string|null,fetchedAt:string,mediaUrls:readonly string[]=[],dateEstimated=false):DneskaiCandidate{
- const hash=contentHash({title,text,url: safeUrl(url),publishedAt});return{targetDate:null,id:contentHash({sourceId,externalId,hash}),sourceId,externalId,title,text,url,publishedAt,fetchedAt,...(dateEstimated&&publishedAt?{dateEstimated:true as const}:{}),mediaUrls:[...new Set(mediaUrls.map(safeUrl))].slice(0,DNESKAI_MEDIA_URL_LIMIT),contentHash:hash,category:null,relevance:null,duplicateOf:null,status:title.trim()||text.trim()?'new':'held',reason:title.trim()||text.trim()?null:'collection-empty-source-text'};
+export type DneskaiInstagramItem=NonNullable<DneskaiCandidate['instagram']>;
+/** The identity hash covers title, text, URL and date only, so the additive `instagram` detail never changes an id. */
+export function candidate(sourceId:string,externalId:string,title:string,text:string,url:string,publishedAt:string|null,fetchedAt:string,mediaUrls:readonly string[]=[],dateEstimated=false,instagram?:DneskaiInstagramItem):DneskaiCandidate{
+ const hash=contentHash({title,text,url: safeUrl(url),publishedAt});return{targetDate:null,id:contentHash({sourceId,externalId,hash}),sourceId,externalId,title,text,url,publishedAt,fetchedAt,...(dateEstimated&&publishedAt?{dateEstimated:true as const}:{}),mediaUrls:[...new Set(mediaUrls.map(safeUrl))].slice(0,DNESKAI_MEDIA_URL_LIMIT),...(instagram&&Object.keys(instagram).length?{instagram}:{}),contentHash:hash,category:null,relevance:null,duplicateOf:null,status:title.trim()||text.trim()?'new':'held',reason:title.trim()||text.trim()?null:'collection-empty-source-text'};
+}
+/**
+ * Apify's instagram-scraper `type` (Image | Video | Sidecar) and `productType` (clips for a Reel, igtv).
+ * Unknown values leave the type unset; the media read model then treats the caption as caption only.
+ */
+export function instagramItemDetail(item:{ownerUsername:string;type?:string|null;productType?:string|null;childPosts?:readonly {type?:string|null}[]}):DneskaiInstagramItem{
+ const product=(item.productType??'').toLowerCase(),type=(item.type??'').toLowerCase();
+ const mediaType=type==='video'||product==='clips'||product==='igtv'?'video' as const:type==='sidecar'?'carousel' as const:type==='image'?'image' as const:undefined;
+ const containsVideo=mediaType==='carousel'&&(item.childPosts??[]).some(post=>(post.type??'').toLowerCase()==='video');
+ return{...(/^[A-Za-z0-9_.]{1,30}$/.test(item.ownerUsername)?{ownerUsername:item.ownerUsername}:{}),...(mediaType?{mediaType}:{}),...(containsVideo?{containsVideo:true as const}:{})};
 }
 const RunSchema=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),actId:z.string(),buildNumber:z.string(),userId:z.string(),defaultDatasetId:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),status:z.enum(['READY','RUNNING','SUCCEEDED','FAILED','TIMING-OUT','TIMED-OUT','ABORTING','ABORTED']),finishedAt:z.iso.datetime({offset:true}).nullable().optional(),usageTotalUsd:z.number().nonnegative().nullable().optional()});
 export type DneskaiApifyRegistration=z.infer<typeof RunSchema>;
@@ -98,13 +110,13 @@ export async function pollDneskaiInstagram(source:DneskaiSource,registration:Dne
  if(run.status!=='SUCCEEDED')return{running:false as const,run,items:[] as DneskaiCandidate[],complete:false,errorCode:'collection-apify-failed'};
  if(!run.finishedAt||options.now.getTime()-Date.parse(run.finishedAt)<10000)return{running:true as const,run};
  if(run.usageTotalUsd==null||run.usageTotalUsd>0.04)return{running:false as const,run,items:[] as DneskaiCandidate[],complete:false,errorCode:run.usageTotalUsd==null?'collection-cost-unknown':'collection-budget-exceeded'};
- const params=new URLSearchParams({format:'json',clean:'true',limit:String(source.maxItems+1),fields:'id,shortCode,caption,timestamp,url,ownerUsername,inputUrl,coauthorProducers,displayUrl,images,childPosts,error'});
- const data=z.array(z.object({id:z.string(),shortCode:z.string(),caption:z.string().max(12000),timestamp:z.iso.datetime({offset:true}),url:z.url(),ownerUsername:z.string(),inputUrl:z.url().max(2048).optional(),coauthorProducers:z.array(z.object({username:z.string().regex(/^[A-Za-z0-9_.]{1,30}$/)})).max(20).nullable().optional(),displayUrl:z.url().optional(),images:z.array(z.url()).max(20).optional(),childPosts:z.array(z.object({displayUrl:z.url().optional()})).max(20).optional(),error:z.unknown().optional()})).max(11).parse(await jsonRequest(`https://api.apify.com/v2/datasets/${run.defaultDatasetId}/items?${params}`,{headers},fetcher,options.signal));
+ const params=new URLSearchParams({format:'json',clean:'true',limit:String(source.maxItems+1),fields:'id,shortCode,caption,timestamp,url,ownerUsername,inputUrl,coauthorProducers,type,productType,displayUrl,images,childPosts,error'});
+ const data=z.array(z.object({id:z.string(),shortCode:z.string(),caption:z.string().max(12000),timestamp:z.iso.datetime({offset:true}),url:z.url(),ownerUsername:z.string(),inputUrl:z.url().max(2048).optional(),coauthorProducers:z.array(z.object({username:z.string().regex(/^[A-Za-z0-9_.]{1,30}$/)})).max(20).nullable().optional(),type:z.string().max(40).nullable().optional(),productType:z.string().max(40).nullable().optional(),displayUrl:z.url().optional(),images:z.array(z.url()).max(20).optional(),childPosts:z.array(z.object({displayUrl:z.url().optional(),type:z.string().max(40).nullable().optional()})).max(20).optional(),error:z.unknown().optional()})).max(11).parse(await jsonRequest(`https://api.apify.com/v2/datasets/${run.defaultDatasetId}/items?${params}`,{headers},fetcher,options.signal));
  if(data.length>source.maxItems)throw new DneskaiProviderError('collection-provider-cap-exceeded');
  const username=new URL(source.url).pathname.split('/').filter(Boolean)[0];
  // A collaborator is authoritative only on the exact requested profile result. Tags and mentions are not authorship.
  if(data.some(item=>(item.ownerUsername!==username&&!(item.inputUrl===source.url&&item.coauthorProducers?.some(author=>author.username===username)))||item.error||!['www.instagram.com','instagram.com'].includes(new URL(item.url).hostname)))throw new DneskaiProviderError('collection-apify-item-binding-invalid');
- const items=data.filter(item=>Date.parse(item.timestamp)>Date.parse(since)&&Date.parse(item.timestamp)<=options.now.getTime()).map(item=>candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,options.now.toISOString(),[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])]));
+ const items=data.filter(item=>Date.parse(item.timestamp)>Date.parse(since)&&Date.parse(item.timestamp)<=options.now.getTime()).map(item=>candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,options.now.toISOString(),[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])],false,instagramItemDetail(item)));
  // A full page with posts in the window stopped only at the cap: the cursor moves to the newest post.
  return{running:false as const,run,items,complete:data.length<source.maxItems,errorCode:data.length>=source.maxItems?items.length?'collection-source-item-cap':'collection-source-partial':null};
 }

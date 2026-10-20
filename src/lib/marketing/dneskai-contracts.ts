@@ -15,6 +15,14 @@ export const DneskaiCandidateSchema = z.strictObject({
   // publishedAt is an upper bound (fetch time for an undated item, end of a stated day/month otherwise).
   dateEstimated: z.literal(true).optional(),
   mediaUrls: z.array(z.url()).max(10), contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+  // Instagram only, optional and additive (candidates before #114 lack it): the post owner's handle (the
+  // source profile, or the collaborator who owns a documented co-author post) for the photo credit, and the
+  // item type, so a Reel's caption is never read as a transcript of the video.
+  instagram: z.strictObject({
+    ownerUsername: z.string().regex(/^[A-Za-z0-9_.]{1,30}$/).optional(),
+    mediaType: z.enum(['image', 'carousel', 'video']).optional(),
+    containsVideo: z.literal(true).optional(),
+  }).optional(),
   category: z.enum(['ai-news', 'tech-news', 'marketing', 'tool', 'ai-project', 'other']).nullable(),
   relevance: z.number().min(0).max(1).nullable(), duplicateOf: z.string().max(200).nullable(),
   status: z.enum(['new', 'held', 'duplicate', 'rejected', 'selected']), reason: z.string().max(200).nullable(),
