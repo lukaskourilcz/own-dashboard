@@ -250,15 +250,17 @@ function memoizedMedia(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
 /** Narrower and narrower source lines for the code-written sources slide before giving up on it. */
 const SOURCE_LINE_STEPS = [DNESKAI_SOURCES_SLIDE.lineChars, 150, 110] as const;
 
-async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
+async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, budget: GenerationBudget, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
   const brief = source.brief!;
+  const outputSchema = dneskaiCopyWireSchema();
+  // The prompt gets what the input reservation leaves after the system prompt, schema, envelope and retry instructions.
+  const promptBytes = budget.maxInputTokens - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - 2048 - DNESKAI_RETRY_INSTRUCTION_BYTES;
   let offer: DneskaiBriefOffer;
-  try { offer = dneskaiBriefOffer(brief, await dneskaiEvidencePublishers(brief.evidence.slice(0, 6))); }
+  try { offer = dneskaiBriefOffer(brief, await dneskaiEvidencePublishers(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
   const loadMedia = memoizedMedia(dependencies.loadDneskaiMedia!);
   const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;
   let glyphs: Promise<DneskaiGlyphFilter> | null = null;
-  const outputSchema = dneskaiCopyWireSchema();
   return {
     promptVersion: MARKETING_BRIEF_PROMPT_ID,
     prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer) },
@@ -331,7 +333,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (![model.pricing.inputPerMillionUsd, model.pricing.outputPerMillionUsd].every((rate) => Number.isFinite(rate) && rate > 0)) throw new MarketingGenerationError("pricing-required");
   if (source.kind === "brief" && !dependencies.loadDneskaiMedia) throw new MarketingGenerationError("dneskai-media-loader-required");
   const profile: GenerationProfile<MarketingCopy | BriefResult> = source.kind === "brief"
-    ? await briefProfile(input, source, model, dependencies) as GenerationProfile<MarketingCopy | BriefResult>
+    ? await briefProfile(input, source, model, budget, dependencies) as GenerationProfile<MarketingCopy | BriefResult>
     : legacyProfile(input, source, model, challenge) as GenerationProfile<MarketingCopy | BriefResult>;
   const prompts = profile.prompts;
   // UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead.
