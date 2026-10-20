@@ -185,6 +185,8 @@ describe('reconciliation after an ambiguous media_publish', () => {
     const list = state.calls.find(call => call.url.pathname.endsWith('/media') && call.method === 'GET')!;
     expect(list.url.searchParams.get('fields')).toBe('id,caption,timestamp,permalink,media_type');
     expect(list.url.searchParams.get('since')).toBe(String(Date.parse('2026-10-20T06:55:00Z') / 1000));
+    // The window ends at the earlier of slot + 20 minutes and now + 1 minute (the fixture's clock is the slot).
+    expect(list.url.searchParams.get('until')).toBe(String(Date.parse('2026-10-20T07:01:00Z') / 1000));
     // Re-entering the publisher with a reconciliation record also only reads.
     expect((await publishMarketingRevision({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300', error_code: first.errorCode } })).status).toBe('published');
     expect(state.posts()).toHaveLength(postCount);
@@ -199,6 +201,13 @@ describe('reconciliation after an ambiguous media_publish', () => {
     const state = ambiguous(() => Response.json({ data }), status);
     const recovered = await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300', error_code: 'meta-request-uncertain' } });
     expect(recovered).toMatchObject({ status: 'reconciliation', errorCode: code, remoteMediaId: null });
+    expect(state.posts()).toHaveLength(0);
+  });
+  it('does not accept a single match from a full page that has a next page', async () => {
+    const filler = Array.from({ length: 49 }, (_, index) => item({ id: String(80000 + index), caption: `Jiný příspěvek ${index}` }));
+    const state = ambiguous(() => Response.json({ data: [item(), ...filler], paging: { next: 'https://graph.instagram.com/v99.0/next-page-offline' } }));
+    const recovered = await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300', error_code: 'meta-request-uncertain' } });
+    expect(recovered).toMatchObject({ status: 'reconciliation', errorCode: 'remote-media-list-incomplete', remoteMediaId: null });
     expect(state.posts()).toHaveLength(0);
   });
   it('reads the permalink separately when the list omits it and never guesses one', async () => {

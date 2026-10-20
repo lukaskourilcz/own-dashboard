@@ -279,7 +279,8 @@ async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<Med
   const prefix = normalizedCaption(revision.caption).slice(0, RECONCILE_CAPTION_PREFIX);
   const from = scheduled - RECONCILE_LOOKBACK_MS; const until = Math.min(scheduled + RECONCILE_LOOKAHEAD_MS, (input.now ?? new Date()).getTime() + 60_000);
   let data: Record<string, unknown>;
-  try { data = await graph(input, `${input.account.remote_account_id}/media`, 'GET', { fields: 'id,caption,timestamp,permalink,media_type', since: String(Math.floor(from / 1000)), limit: String(RECONCILE_PAGE_SIZE) }); }
+  try { data = await graph(input, `${input.account.remote_account_id}/media`, 'GET', { fields: 'id,caption,timestamp,permalink,media_type',
+    since: String(Math.floor(from / 1000)), until: String(Math.ceil(until / 1000)), limit: String(RECONCILE_PAGE_SIZE) }); }
   catch { return { kind: 'unavailable' }; }
   if (!Array.isArray(data.data) || data.data.length > RECONCILE_PAGE_SIZE) return { kind: 'unavailable' };
   const items = data.data.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
@@ -287,8 +288,10 @@ async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<Med
   const matches = items.filter(item => typeof item.id === 'string' && idValid(item.id) && item.media_type === type && typeof item.caption === 'string' &&
     normalizedCaption(item.caption).startsWith(prefix) && metaInstant(item.timestamp) >= from && metaInstant(item.timestamp) <= until);
   if (matches.length > 1) return { kind: 'ambiguous' };
+  // A full page with a next link can hide a second match inside the window, so one match there is not unique.
   const paging = data.paging as { next?: unknown } | undefined;
-  if (!matches.length) return { kind: items.length === RECONCILE_PAGE_SIZE && paging?.next ? 'incomplete' : 'none' };
+  if (items.length === RECONCILE_PAGE_SIZE && paging?.next) return { kind: 'incomplete' };
+  if (!matches.length) return { kind: 'none' };
   const match = matches[0]!; let permalink: string | null = null;
   try { const url = typeof match.permalink === 'string' ? new URL(match.permalink) : null; permalink = url && url.protocol === 'https:' && !url.username && !url.password ? url.href : null; } catch { permalink = null; }
   return { kind: 'match', id: match.id as string, permalink };

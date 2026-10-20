@@ -208,11 +208,14 @@ only GET queries.
 
 For an Instagram feed post without a retained media ID, reconciliation re-reads the stored
 container and, unless Meta reports it `FINISHED`, `IN_PROGRESS`, `ERROR` or `EXPIRED`, reads
-`GET /<ig-user-id>/media?fields=id,caption,timestamp,permalink,media_type&since=<slot − 5 min>`.
+`GET /<ig-user-id>/media?fields=id,caption,timestamp,permalink,media_type&since=<slot − 5 min>&until=<slot + 20 min>`
+(or one minute after the current time, if that is earlier), one page of 50.
 It records the post as published only when exactly one item has the expected media type
 (`CAROUSEL_ALBUM`, `IMAGE` or `VIDEO`), a timestamp between five minutes before and twenty minutes
 after the slot, and the approved caption's first 100 characters as its prefix. Two matches stay in
-reconciliation as `remote-media-match-ambiguous`; no match keeps the container-based code. It
+reconciliation as `remote-media-match-ambiguous`. A full page that has a next page stays as
+`remote-media-list-incomplete`, even with one match, because the next page could hold a second
+one. No match keeps the container-based code. It
 never sends a second `media_publish`. Stories keep their stricter rule: only the account's active
 Story edge confirms a recorded media ID.
 
