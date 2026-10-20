@@ -23,7 +23,9 @@ export function instagramFeedGeometryValid(width: number, height: number): boole
 const instagramFeed = (revision: ContentRevision) => revision.account.platform === 'instagram' && revision.format !== 'story';
 const normalizedHandle = (value: string) => value.replace(/^@/, '').toLowerCase();
 export type PublishOutcome = { status: 'held' | 'dry-run' | 'pending' | 'published' | 'failed' | 'reconciliation';
-  remoteContainerId: string | null; remoteMediaId: string | null; remoteUrl: string | null; errorCode: string | null };
+  remoteContainerId: string | null; remoteMediaId: string | null; remoteUrl: string | null; errorCode: string | null;
+  /** Preflight only: the enablement switches that would still hold a real run. */
+  advisories?: string[] };
 export type PublisherCheckpoint = PublishOutcome & { stage: 'container-create-intent' | 'container-created' | 'publish-intent' | 'outcome' };
 export type PublisherState = { revisionRow: MarketingRevisionRow; account: MarketingPublishAccount; sources: SourcePacket[] };
 export type PublishMarketingInput = PublisherState & { publication: PublicationRow & { user_id: string; lease_until?: string | null };
@@ -37,8 +39,20 @@ const timestampValid = (value: string | null | undefined, now: Date) => !!value 
 const result = (status: PublishOutcome['status'], errorCode: string | null, container: string | null = null, media: string | null = null, url: string | null = null): PublishOutcome =>
   ({ status, errorCode, remoteContainerId: container, remoteMediaId: media, remoteUrl: url });
 
-export function publicationGate(state: PublisherState, config: MetaPublisherConfig, now: Date): string | null {
+/**
+ * `enablementAdvisory` is set only for a preflight dry run, which must be able
+ * to check a verified account while both publishing switches are still off
+ * (#121). It skips account.enabled and config.enabled and nothing else; a real
+ * run never passes it.
+ */
+export type PublicationGateOptions = { enablementAdvisory?: boolean };
+/** The enablement switches a preflight reports instead of enforcing. */
+export function publicationAdvisories(state: Pick<PublisherState, 'account'>, config: Pick<MetaPublisherConfig, 'enabled'>): string[] {
+  return [...(state.account.enabled ? [] : ['account-disabled']), ...(config.enabled ? [] : ['publishing-disabled'])];
+}
+export function publicationGate(state: PublisherState, config: MetaPublisherConfig, now: Date, options: PublicationGateOptions = {}): string | null {
   const { revisionRow: row, account } = state;
+  const advisory = options.enablementAdvisory === true;
   let revision: ContentRevision;
   try { revision = parseContentRevision(row.revision); } catch { return 'invalid-revision'; }
   const hash = revisionHash(revision);
@@ -46,8 +60,8 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   if (!row.ready || revisionReadiness(revision).length) return 'final-assets-required';
   if (account.user_id !== row.user_id || account.remote_account_id !== revision.account.id || account.brand !== revision.brand || account.platform !== revision.account.platform ||
       account.handle.replace(/^@/, '').toLowerCase() !== revision.account.handle.replace(/^@/, '').toLowerCase()) return 'account-binding-mismatch';
-  if (!account.enabled || !timestampValid(account.verified_at, now) || !idValid(account.remote_account_id)) return 'account-unverified-or-disabled';
-  if (!config.enabled) return 'publishing-disabled';
+  if ((!advisory && !account.enabled) || !timestampValid(account.verified_at, now) || !idValid(account.remote_account_id)) return 'account-unverified-or-disabled';
+  if (!advisory && !config.enabled) return 'publishing-disabled';
   if (!/^v\d+\.\d+$/.test(config.apiVersion) || !timestampValid(config.apiVersionVerifiedAt, now)) return 'api-version-unverified';
   if (config.credentialHold) return config.credentialHold;
   if (!config.accessToken) return 'access-token-missing';
@@ -324,21 +338,26 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
   const previous = input.publication;
   if (previous.user_id !== input.revisionRow.user_id || previous.revision_id !== input.revisionRow.id || previous.platform !== input.account.platform) return result('held', 'publication-binding-mismatch');
   if (previous.status === 'published' || previous.remote_media_id || previous.status === 'reconciliation' || previous.error_code === 'publish-intent' || previous.remote_container_id?.startsWith('intent:')) return reconcileMarketingPublication(input);
-  const gate = publicationGate(input, input.config, clock());
-  if (gate) return result('held', gate, previous.remote_container_id);
-  if (input.dryRun !== false) {
-    if (!input.preflight) return result('dry-run', null, previous.remote_container_id);
+  // A preflight dry run reports the two enablement switches as advisories, so it
+  // can run against the verified, still-disabled account; every other gate holds.
+  const preflight = input.dryRun !== false && input.preflight === true;
+  const gate = publicationGate(input, input.config, clock(), { enablementAdvisory: preflight });
+  if (preflight) {
+    const advisories = publicationAdvisories(input, input.config);
+    const outcome = (code: string | null): PublishOutcome => ({ ...result(code ? 'held' : 'dry-run', code, previous.remote_container_id), advisories });
+    if (gate) return outcome(gate);
     // GET requests only: no checkpoint, claim or container. Any failure is a hold, never a recorded outcome.
     try {
       const preflightGate = await verifyRemoteAccount(input);
-      if (preflightGate) return result('held', preflightGate, previous.remote_container_id);
+      if (preflightGate) return outcome(preflightGate);
       await verifyAssets(input);
-      const quotaGate = await publishingQuotaGate(input);
-      return result(quotaGate ? 'held' : 'dry-run', quotaGate, previous.remote_container_id);
+      return outcome(await publishingQuotaGate(input));
     } catch (error) {
-      return result('held', error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'preflight-unavailable', previous.remote_container_id);
+      return outcome(error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'preflight-unavailable');
     }
   }
+  if (gate) return result('held', gate, previous.remote_container_id);
+  if (input.dryRun !== false) return result('dry-run', null, previous.remote_container_id);
   if (previous.status !== 'claimed' || !previous.lease_until || !Number.isFinite(Date.parse(previous.lease_until)) || Date.parse(previous.lease_until) <= clock().getTime()) return result('held', 'publication-claim-required');
   const revision = input.revisionRow.revision;
   let container = previous.remote_container_id;

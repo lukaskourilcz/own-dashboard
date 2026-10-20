@@ -220,10 +220,43 @@ describe('dry-run preflight', () => {
     expect(await publishMarketingRevision({ ...input, dryRun: true })).toMatchObject({ status: 'dry-run', errorCode: null });
     expect(calls).toHaveLength(0);
     const preflight = await publishMarketingRevision({ ...input, dryRun: true, preflight: true, publication: { ...input.publication, status: 'queued', lease_until: null } });
-    expect(preflight).toEqual({ status: 'dry-run', errorCode: null, remoteContainerId: null, remoteMediaId: null, remoteUrl: null });
+    expect(preflight).toEqual({ status: 'dry-run', errorCode: null, remoteContainerId: null, remoteMediaId: null, remoteUrl: null, advisories: [] });
     expect(calls.every(call => call.method === 'GET')).toBe(true);
     expect(calls.map(call => call.url.pathname.split('/').at(-1))).toEqual(['17841400000000001', 'slide-1.jpg', 'slide-2.jpg', 'slide-3.jpg', 'content_publishing_limit']);
     expect(checkpoints).toHaveLength(0);
+  });
+  // The production state #121 asks for: a verified account with enabled=false and both publish flags off.
+  const disabled = (patch: Partial<PublishMarketingInput['account']> = {}) => {
+    const state = fixture();
+    state.input.account = { ...state.input.account, enabled: false, ...patch };
+    state.input.config = { ...state.input.config, enabled: false };
+    return state;
+  };
+  it('checks a verified but disabled account with both publish flags off and reports the switches as advisories', async () => {
+    const { input, calls, checkpoints } = disabled();
+    const outcome = await publishMarketingRevision({ ...input, dryRun: true, preflight: true, publication: { ...input.publication, status: 'queued', lease_until: null } });
+    expect(outcome).toEqual({ status: 'dry-run', errorCode: null, remoteContainerId: null, remoteMediaId: null, remoteUrl: null, advisories: ['account-disabled', 'publishing-disabled'] });
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.every(call => call.method === 'GET')).toBe(true);
+    expect(calls.map(call => call.url.pathname.split('/').at(-1))).toEqual(['17841400000000001', 'slide-1.jpg', 'slide-2.jpg', 'slide-3.jpg', 'content_publishing_limit']);
+    expect(checkpoints).toHaveLength(0);
+  });
+  it('still enforces both switches on a real run and on a plain dry run in the same state', async () => {
+    const { input, calls, checkpoints } = disabled();
+    expect(await publishMarketingRevision({ ...input, dryRun: false, preflight: true })).toEqual({ status: 'held', errorCode: 'account-unverified-or-disabled', remoteContainerId: null, remoteMediaId: null, remoteUrl: null });
+    expect(await publishMarketingRevision({ ...input, dryRun: true })).toMatchObject({ status: 'held', errorCode: 'account-unverified-or-disabled' });
+    expect(await publishMarketingRevision({ ...input, account: { ...input.account, enabled: true }, dryRun: false })).toMatchObject({ status: 'held', errorCode: 'publishing-disabled' });
+    expect(publicationGate(input, input.config, now)).toBe('account-unverified-or-disabled');
+    expect(publicationGate(input, input.config, now, { enablementAdvisory: true })).toBeNull();
+    expect(calls).toHaveLength(0); expect(checkpoints).toHaveLength(0);
+  });
+  it('keeps every other gate in a preflight: an unverified account holds before any request', async () => {
+    const { input, calls } = disabled({ verified_at: null });
+    expect(await publishMarketingRevision({ ...input, dryRun: true, preflight: true })).toEqual({ status: 'held', errorCode: 'account-unverified-or-disabled', remoteContainerId: null, remoteMediaId: null, remoteUrl: null, advisories: ['account-disabled', 'publishing-disabled'] });
+    const expired = disabled();
+    expired.input.config = { ...expired.input.config, accessToken: '', credentialHold: 'access-token-expired' };
+    expect(await publishMarketingRevision({ ...expired.input, dryRun: true, preflight: true })).toMatchObject({ status: 'held', errorCode: 'access-token-expired' });
+    expect(calls).toHaveLength(0); expect(expired.calls).toHaveLength(0);
   });
   it('reports a failing check as a hold without writing anything', async () => {
     const quota = fixture({ graph: ({ url }) => url.pathname.endsWith('/content_publishing_limit') ? Response.json({ data: [{ quota_usage: 50, config: { quota_total: 50 } }] }) : undefined });
