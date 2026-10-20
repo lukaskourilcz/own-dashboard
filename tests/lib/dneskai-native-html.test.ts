@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { collectNativeDneskaiFeed } from '@/lib/marketing/dneskai-native-feed';
 import { DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
 import { DneskaiFeedResponseSchema } from '@/lib/marketing/dneskai-contracts';
+import { collectDneskaiFeed } from '@/lib/marketing/dneskai-providers';
 import { ARTICLE_ENRICHMENT_LIMIT, articleMetadata, parseListingDate, projectHtml, publisherArticleUrl } from '@/lib/marketing/free-feeds/sources/adapters/html';
 import { parseRssFeed } from '@/lib/marketing/free-feeds/sources/adapters/rss';
 import registry from '@/lib/marketing/free-feeds/registry.json';
@@ -97,11 +98,24 @@ describe('free image references in the feed contract', () => {
    + entry('<media:content url="http://example.test/insecure.jpg" type="image/jpeg"/>', 'd')), config('openai-blog'), now);
   expect(items.map(item => item.imageUrl)).toEqual(['https://example.test/e.jpg', 'https://example.test/m.png', 'https://example.test/t.webp', undefined]);
  });
+ it('repairs unescaped query ampersands only when the feed is otherwise unparseable', async () => {
+  const items = await parseRssFeed(rss(entry('<media:content url="https://example.test/i.jpg?w=1&dpr=2&crop=1" medium="image"/>') + entry('<description>Fish &amp; chips</description>', 'b')), config('rest-of-world'), now);
+  expect(items.map(item => item.imageUrl)).toEqual(['https://example.test/i.jpg?w=1&dpr=2&crop=1', undefined]);
+  expect(items[1].summary).toBe('Fish & chips');
+ });
  it('keeps dneskai-feed/1 backward compatible: bridge items without the new fields still parse', () => {
   const base = { schemaVersion: 'dneskai-feed/1', sources: [{ sourceId: 'x', status: 'ok', errorCode: null, items: [{ externalId: 'a', title: 't', url: 'https://example.test/a', publishedAt: null, summary: '', fetchedAt: now.toISOString() }] }] };
   expect(DneskaiFeedResponseSchema.safeParse(base).success).toBe(true);
   expect(DneskaiFeedResponseSchema.safeParse({ ...base, sources: [{ ...base.sources[0], items: [{ ...base.sources[0].items[0], imageUrl: 'https://example.test/i.jpg', dateEstimated: true }] }] }).success).toBe(true);
   expect(DneskaiFeedResponseSchema.safeParse({ ...base, sources: [{ ...base.sources[0], items: [{ ...base.sources[0].items[0], dateEstimated: false }] }] }).success).toBe(false);
+ });
+ it('turns a safe image reference into candidate media and drops an unsafe one without failing', async () => {
+  const env = { MARKETING_DNESKAI_SOURCE_URL: 'https://quorum.example/source', MARKETING_DNESKAI_SOURCE_SECRET: 's'.repeat(32) };
+  const item = (id: string, imageUrl?: string) => ({ externalId: id, title: `Offline item ${id}`, url: `https://example.test/${id}`, summary: 'Offline summary', publishedAt: '2026-10-20T08:00:00Z', fetchedAt: now.toISOString(), ...(imageUrl ? { imageUrl } : {}) });
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ schemaVersion: 'dneskai-feed/1', sources: [{ sourceId: 'openai-blog', status: 'ok', errorCode: null, items: [item('a', 'https://example.test/a.jpg'), item('b', 'http://example.test/b.jpg'), item('c')] }] }));
+  const result = await collectDneskaiFeed(source('openai-blog'), since, { env, fetcher, signal, now });
+  expect(result.items.map(row => row.mediaUrls)).toEqual([['https://example.test/a.jpg'], [], []]);
+  expect(fetcher).toHaveBeenCalledTimes(1);
  });
  it('treats a full API page that is entirely older than the window as a covered window', async () => {
   const fetcher = vi.fn<typeof fetch>(async () => Response.json({ has_more: true, items: Array.from({ length: 11 }, (_, i) => ({ question_id: i, title: `Offline older question ${i}`, link: `https://example.test/q${i}`, creation_date: 1760000000 - i })) }));

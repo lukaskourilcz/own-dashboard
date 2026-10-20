@@ -52,7 +52,9 @@ export async function collectDneskaiFeed(source:DneskaiSource,since:string,optio
   try{safeUrl(item.url);}catch{invalidUrls++;continue;}
   if(item.publishedAt!==null&&Date.parse(item.publishedAt)<=Date.parse(since))continue;
   if(!item.externalId||item.externalId.length>300||Date.parse(item.fetchedAt)>(options.now??new Date()).getTime()+60000||item.publishedAt&&Date.parse(item.publishedAt)>(options.now??new Date()).getTime()+60000)throw new DneskaiProviderError('collection-item-invalid');
-  items.push(candidate(source.id,item.externalId,item.title,item.summary,item.url,item.publishedAt,item.fetchedAt));
+  // A free image reference travels as candidate media; an unusable one is dropped, never fetched here.
+  const image=item.imageUrl?(()=>{try{return safeUrl(item.imageUrl!);}catch{return null;}})():null;
+  items.push(candidate(source.id,item.externalId,item.title,item.summary,item.url,item.publishedAt,item.fetchedAt,image?[image]:[]));
  }
  const complete=invalidUrls===0&&result.status==='ok'&&result.items.length<source.maxItems&&result.items.every(item=>item.publishedAt!==null);
  return{items,complete,errorCode:result.status==='error'||result.errorCode?'collection-source-error':invalidUrls?'collection-source-invalid-url':!complete?'collection-source-partial':null};

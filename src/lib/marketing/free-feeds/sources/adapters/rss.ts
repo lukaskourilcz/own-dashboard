@@ -63,12 +63,18 @@ export function projectRssItem(
   );
 }
 
+/** Bare `&` in a URL query (`?w=1&dpr=2`) is the usual reason a real feed is not well-formed XML. */
+export function escapeBareAmpersands(xml: string): string {
+  return xml.replace(/&(?!(?:[A-Za-z][A-Za-z0-9]{1,31}|#[0-9]{1,7}|#x[0-9A-Fa-f]{1,6});)/g, "&amp;");
+}
+
 export async function parseRssFeed(
   xml: string,
   source: SourceConfig,
   now: Date
 ): Promise<SourceItem[]> {
-  const feed = await parser.parseString(xml);
+  // Well-formed feeds parse untouched; one repaired retry covers unescaped query ampersands.
+  const feed = await parser.parseString(xml).catch(() => parser.parseString(escapeBareAmpersands(xml)));
   return (feed.items as RssItem[] | undefined)
     ?.map((item) => projectRssItem(item, source, now))
     .filter((item): item is SourceItem => item !== null) ?? [];
