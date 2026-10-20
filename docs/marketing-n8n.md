@@ -2,8 +2,12 @@
 
 > **Historical state, superseded by [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110).** This page describes the October 2026 staging and n8n orchestration, retired on 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)). The current plan is [`docs/reports/dneskai-instagram-2026-10-20.md`](reports/dneskai-instagram-2026-10-20.md). Retired exports are in [`workflows/marketing/retired/`](../workflows/marketing/retired/README.md); the staging inventory is [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
 
-**DNESKAi update, 2026-10-13:** new collection uses
-`workflows/marketing/dneskai-source-collection.json` at 22:00 Europe/Prague, targeting
+**Scheduling update, 2026-10-20 ([#120](https://github.com/lukaskourilcz/own-dashboard/issues/120)):** n8n no longer
+times anything for DNESKAi. Supabase pg_cron calls `POST /api/marketing/tick`; see
+[marketing scheduling](marketing-scheduling.md). The two timers below moved to `workflows/marketing/retired/`.
+
+**DNESKAi update, 2026-10-13:** new collection used
+`workflows/marketing/retired/dneskai-source-collection.json` at 22:00 Europe/Prague, targeting
 four distinct next-day topics. See [collection and rotation](dneskai-source-collection.md).
 The older `retired/daily-preparation.json` below is a retained inactive article-generation
 workflow, not the new collection schedule. Do not activate both as competing daily plans.
@@ -20,7 +24,7 @@ Import the JSON files into the owner's existing n8n Cloud workspace and keep the
 - `retired/daily-preparation.json`: at 07:00 Prague time, discover real sources and the next day's actual
   active calendar entries, enqueue at most eight idempotent slots, execute accepted jobs and read
   their saved status. Calendar entries determine date/time/platform; the workflow invents no slot.
-- `approved-publisher.json`: an authenticated approval webhook and one hourly recovery execution query
+- `retired/approved-publisher.json` (retired by #120): an authenticated approval webhook and one hourly recovery execution query
   the server's approved publication plan. At most eight exact publication IDs within the next 24 hours
   enter a batch-size-one loop, sorted by UTC schedule. Each waits until its exact slot and calls the
   publisher with that ID and `dryRun:true`. Known ambiguous outcomes and HTTP uncertainty enter
