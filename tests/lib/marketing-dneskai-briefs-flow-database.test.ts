@@ -1,0 +1,147 @@
+import type { PGlite } from '@electric-sql/pglite';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { createDneskaiBriefStore, createDneskaiBriefsWithStore, listDneskaiBriefAssetHashes, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
+import { refreshDneskaiBriefPacket } from '@/lib/marketing/dneskai-brief-source';
+import { dneskaiFinishEvents, groupDneskaiEvents } from '@/lib/marketing/dneskai-events';
+import { dneskaiMediaCapabilities } from '@/lib/marketing/dneskai-media-plan';
+import { parseSourcePacket } from '@/lib/marketing/contracts';
+import { contentHash } from '@/lib/marketing/hashes';
+import type { DneskaiCandidate } from '@/lib/marketing/dneskai-contracts';
+import type { DneskaiMediaAssetView } from '@/lib/marketing/dneskai-media-contracts';
+import { briefsRpcClient, createBriefsDatabase, insertCandidates, setBriefsTestTime, syntheticCandidate } from './marketing-dneskai-briefs-db';
+vi.mock('server-only', () => ({}));
+
+// One collection night end to end in isolated WASM Postgres: real migration SQL, OFFLINE clock, synthetic data.
+const owner = '11111111-1111-4111-8111-111111111111', project = '22222222-2222-4222-8222-222222222222', fence = '55555555-5555-4555-8555-555555555555';
+const instant = '2026-10-20T20:30:00Z';
+let db: PGlite; let rpc: ReturnType<typeof briefsRpcClient>; let store: DneskaiBriefStore; let runId: string;
+const json = JSON.stringify;
+const iso = (column: string) => `to_json(${column})#>>'{}'`;
+const rows = async <T,>(sql: string, args: unknown[] = []) => (await db.query<T>(sql, args)).rows;
+const at = (minutes: number) => new Date(Date.parse('2026-10-20T15:00:00Z') + minutes * 60000).toISOString();
+const report = (sourceId: string, id: string, title: string, category: DneskaiCandidate['category'], minutes: number, patch: Partial<DneskaiCandidate> = {}) =>
+  syntheticCandidate(sourceId, id, title, { category, relevance: 0.93, publishedAt: at(minutes), fetchedAt: at(300 + minutes), ...patch }, `${title}. Synthetic report ${id}. `.repeat(20));
+const lead = report('openai-blog', 'lead', 'Synthetic launch of Model Nine for developers', 'ai-news', 0);
+const verge = report('the-verge', 'verge', 'Synthetic launch of Model Nine for developers', 'ai-news', 20, { relevance: 0.9 });
+const tool = report('hf-blog', 'tool', 'Synthetic notebook tool for tiny datasets', 'tool', 10, { relevance: 0.88 });
+const picture = 'c'.repeat(64);
+
+/** The service-role store over the real SQL functions, with its table reads answered by SQL against the same database. */
+function pgliteStore(): DneskaiBriefStore {
+  const real = createDneskaiBriefStore(rpc as never, {
+    // marketing_enqueue_job exactly as enqueueMarketingJob calls it; the identity hash mirrors marketingJobIdentityHash.
+    enqueue: async (who, request) => {
+      const value = request as { idempotencyKey: string; generation: { source: { observedAt: string } } };
+      const { data, error } = await rpc.rpc('marketing_enqueue_job', { p_owner: who, p_key: value.idempotencyKey, p_hash: contentHash({ ...value, generation: { ...value.generation, source: { ...value.generation.source, observedAt: null } } }), p_request: request });
+      if (error) throw new Error(error.message);
+      return data as { jobId: string; status: string; duplicate: boolean };
+    },
+  });
+  return {
+    ...real,
+    run: async (who, projectId, id) => (await rows<{ id: string; date: string; target_date: string; status: string }>('select id,date::text,target_date::text,status from marketing_dneskai_runs where id=$1 and user_id=$2 and project_id=$3', [id, who, projectId]))[0] ?? null,
+    briefs: async (_who, _projectId, id) => rows<DneskaiBriefRow>(`select id,user_id,project_id,run_id,event_id,target_date::text,rank,category,member_ids,lead_candidate_id,member_hash,status,code,brief,${iso('scheduled_at')} scheduled_at,calendar_entry_id,job_id,${iso('created_at')} created_at,${iso('updated_at')} updated_at from marketing_dneskai_briefs where run_id=$1 order by rank`, [id]),
+    members: async (who, projectId, ids) => rows('select id,status,target_date::text,content_hash,candidate from marketing_dneskai_candidates where user_id=$1 and project_id=$2 and id=any($3)', [who, projectId, ids]),
+    owedMedia: async (who, projectId, ids) => new Set((await rows<{ id: string }>("select id from unnest($3::text[]) id where not exists(select 1 from marketing_media_collections m where m.user_id=$1 and m.project_id=$2 and m.candidate_id=id and m.status<>'pending')", [who, projectId, ids])).map((row) => row.id)),
+    media: async (who, projectId, candidateId) => ({ candidateId, assets: (await rows<{ asset_id: string; sha256: string; position: number; origin_kind: DneskaiMediaAssetView['originKind']; origin_url: string; credit: string; width: number; height: number }>(
+      'select a.id asset_id,a.sha256,l.position,l.origin_kind,l.origin_url,l.credit,a.width,a.height from marketing_media_asset_links l join marketing_media_assets a on a.id=l.asset_id where l.user_id=$1 and l.project_id=$2 and l.candidate_id=$3 order by l.position', [who, projectId, candidateId]))
+      .map((row) => ({ assetId: row.asset_id, sha256: row.sha256, position: row.position, originKind: row.origin_kind, originUrl: row.origin_url, credit: row.credit, width: row.width, height: row.height, mime: 'image/jpeg', bytes: 1000, fetchedAt: instant, ...dneskaiMediaCapabilities(row), duplicateOfAssetId: null, duplicateOfSha256: null, purged: false, previewUrl: null })) }) as never,
+    coverage: async () => [],
+    phashes: async () => new Map(),
+    takenSlots: async () => [],
+    account: async (who) => (await rows<{ remote_account_id: string; handle: string }>("select remote_account_id,handle from marketing_accounts where user_id=$1 and brand='dneskai' and platform='instagram' and verified_at is not null", [who]))[0] ?? null,
+    knowledge: async () => [],
+  };
+}
+
+beforeAll(async () => {
+  db = await createBriefsDatabase([owner], [{ id: project, owner }], instant);
+  rpc = briefsRpcClient(db); store = pgliteStore();
+  runId = (await rows<{ r: { id: string } }>('select marketing_dneskai_admit($1,$2,$3,$4) r', [owner, project, '2026-10-20', json([{ id: 'openai-blog', kind: 'rss', maxItems: 10 }])]))[0]!.r.id;
+  await db.query('select marketing_dneskai_claim($1,$2,$3)', [owner, runId, fence]);
+  await db.query("update marketing_dneskai_stages set status='ok',cost_usd=0 where run_id=$1", [runId]);
+  await insertCandidates(db, owner, project, runId, [lead, verge, tool]);
+  await db.query('select marketing_dneskai_finish($1,$2,$3,$4,null,$5)', [owner, runId, fence, 'complete', json(dneskaiFinishEvents(groupDneskaiEvents([lead, verge, tool])))]);
+}, 60000);
+afterAll(async () => { await db?.close(); });
+
+describe('one collection becomes briefs and guarded jobs without any Quorum call (#115)', () => {
+  it('waits for media, then builds briefs that wait for a verified account without creating a job', async () => {
+    const input = { owner, project, runId };
+    expect(await createDneskaiBriefsWithStore(store, input)).toEqual({ created: [], skipped: [], pending: true });
+    // The media collector (#114) finished: the lead has one stored picture, the others none.
+    const [asset] = await rows<{ id: string }>("insert into marketing_media_assets(user_id,project_id,sha256,candidate_id,source_id,external_id,origin_url,origin_kind,position,width,height,mime,bytes,storage_path,credit) values($1,$2,$3,$4,'openai-blog','lead','https://images.example.test/lead.jpg','og-image',0,1600,900,'image/jpeg',1000,$5,'Obrázek: OpenAI') returning id",
+      [owner, project, picture, lead.id, `marketing-media/${owner}/${picture}.jpg`]);
+    await db.query("insert into marketing_media_asset_links(user_id,project_id,candidate_id,asset_id,origin_url,origin_kind,position,credit) values($1,$2,$3,$4,'https://images.example.test/lead.jpg','og-image',0,'Obrázek: OpenAI')", [owner, project, lead.id, asset!.id]);
+    for (const [id, status] of [[lead.id, 'complete'], [verge.id, 'empty'], [tool.id, 'empty']]) await db.query('insert into marketing_media_collections(user_id,project_id,candidate_id,status,asset_count) values($1,$2,$3,$4,$5)', [owner, project, id, status, status === 'complete' ? 1 : 0]);
+    const result = await createDneskaiBriefsWithStore(store, input);
+    expect(result.pending).toBe(false);
+    expect(result.created.map((item) => item.jobId)).toEqual([null, null]);
+    const briefs = await store.briefs(owner, project, runId);
+    expect(briefs.map((row) => [row.rank, row.status, row.code, row.scheduled_at])).toEqual([[1, 'pending', 'account-unavailable', '2026-10-21T06:00:00+00:00'], [2, 'pending', 'account-unavailable', '2026-10-21T10:30:00+00:00']]);
+    expect(briefs[0]!.brief).toMatchObject({ evidence: [{ candidateId: lead.id }, { candidateId: verge.id }], media: [{ assetSha256: picture, candidateId: lead.id, credit: 'Obrázek: OpenAI' }], suggestedFormat: 'carousel' });
+    expect(await rows('select * from marketing_jobs')).toEqual([]);
+  });
+
+  it('admits each brief through the DNESKAi daily campaign, one calendar entry and marketing_enqueue_job', async () => {
+    await db.query("insert into marketing_accounts(user_id,brand,platform,remote_account_id,handle,verified_at,enabled) values($1,'dneskai','instagram','17840000000000000','dneskai',now(),false)", [owner]);
+    const result = await createDneskaiBriefsWithStore(store, { owner, project, runId });
+    expect(result.skipped).toEqual([]);
+    expect(result.created).toHaveLength(2);
+    const jobs = await rows<{ id: string; status: string; request: { calendarEntryId: string; generation: { source: unknown; scheduledAt: string } } }>('select id,status,request from marketing_jobs order by created_at');
+    expect(jobs.map((job) => job.status)).toEqual(['queued', 'queued']);
+    expect(result.created.map((item) => item.jobId).sort()).toEqual(jobs.map((job) => job.id).sort());
+    const packet = parseSourcePacket(jobs[0]!.request.generation.source);
+    expect(packet).toMatchObject({ kind: 'brief', brand: 'dneskai', canonicalUrl: lead.url });
+    const campaigns = await rows<{ name: string; status: string; brand: string }>('select name,status,brand from marketing_campaigns');
+    expect(campaigns).toEqual([{ name: 'DNESKAi daily', status: 'active', brand: 'dneskai' }]);
+    const entries = await rows<{ kind: string; platform: string; local_time: string; date: string; status: string }>('select kind,platform,local_time,date::text,status from marketing_calendar_entries order by local_time');
+    expect(entries).toEqual([{ kind: 'carousel', platform: 'instagram', local_time: '08:00', date: '2026-10-21', status: 'planned' }, { kind: 'carousel', platform: 'instagram', local_time: '12:30', date: '2026-10-21', status: 'planned' }]);
+    for (const job of jobs) expect((await rows<{ ok: boolean }>('select marketing_calendar_job_current($1,$2) ok', [owner, json(job.request)]))[0]!.ok).toBe(true);
+    expect((await store.briefs(owner, project, runId)).map((row) => row.status)).toEqual(['queued', 'queued']);
+    // Idempotent: nothing new on a second call.
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId })).toEqual({ created: [], skipped: [], pending: false });
+    expect(await rows('select id from marketing_jobs')).toHaveLength(2);
+  });
+
+  it('re-reads a brief from the store and makes it ineligible when a member changes', async () => {
+    const job = (await rows<{ request: { generation: { source: unknown } } }>("select request from marketing_jobs where request->'generation'->'source'->>'canonicalUrl'=$1", [lead.url]))[0]!;
+    const packet = parseSourcePacket(job.request.generation.source);
+    const now = new Date('2026-10-20T21:00:00Z');
+    expect(await refreshDneskaiBriefPacket(rpc as never, owner, packet, now)).toEqual({ packet: { ...packet, observedAt: now.toISOString() } });
+    await db.query("update marketing_dneskai_candidates set status='rejected' where id=$1", [verge.id]);
+    expect(await refreshDneskaiBriefPacket(rpc as never, owner, packet, now)).toMatchObject({ packet: { eligible: false, eligibilityReason: 'brief-members-changed' } });
+    expect(await refreshDneskaiBriefPacket(rpc as never, '99999999-9999-4999-8999-999999999999', packet, now)).toEqual({ held: 'source-unavailable' });
+    await db.query("update marketing_dneskai_candidates set status='selected' where id=$1", [verge.id]);
+  });
+
+  it('offers an edit the brief’s pictures plus the deck’s own, never another brief’s', async () => {
+    const packet = parseSourcePacket((await rows<{ request: { generation: { source: unknown } } }>("select request from marketing_jobs where request->'generation'->'source'->>'canonicalUrl'=$1", [lead.url]))[0]!.request.generation.source);
+    const from = (table: string) => {
+      const filters: Array<[string, string, unknown]> = [];
+      const chain = { select: () => chain, eq: (column: string, value: unknown) => { filters.push(['=', column, value]); return chain; }, neq: (column: string, value: unknown) => { filters.push(['<>', column, value]); return chain; },
+        limit: async () => ({ data: await rows(`select brief from ${table} where ${filters.map(([op, column], index) => `${column}${op}$${index + 1}`).join(' and ')}`, filters.map(([, , value]) => value)), error: null }) };
+      return chain;
+    };
+    const own = 'd'.repeat(64);
+    const deck = { slides: [{ images: [{ slot: 'image-1', assetSha256: own }] }] };
+    expect(await listDneskaiBriefAssetHashes({ from } as never, owner, { sources: [{ sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash }], deck } as never)).toEqual([picture, own]);
+    expect(await listDneskaiBriefAssetHashes({ from } as never, owner, { sources: [{ sourceId: packet.sourceId, sourceRevision: 'e'.repeat(64), contentHash: packet.contentHash }], deck } as never)).toEqual([own]);
+  });
+
+  it('never takes over another active DNESKAi campaign, refuses a taken slot and closes a repeat as a duplicate', async () => {
+    await setBriefsTestTime(db, instant);
+    const [brief] = await store.briefs(owner, project, runId);
+    await db.query("update marketing_campaigns set status='archived'");
+    await db.query("insert into marketing_campaigns(user_id,brand,name,starts_on,ends_on,source_snapshot,source_hash,status) values($1,'dneskai','Imported plan','2026-10-01','2026-12-31','{}',$2,'active')", [owner, 'f'.repeat(64)]);
+    await db.query("update marketing_dneskai_briefs set status='ready',job_id=null where id=$1", [brief!.id]);
+    const source = (await rows<{ id: string }>("select id from marketing_sources where source_id=$1", [brief!.event_id]))[0]!.id;
+    expect(await rpc.rpc('marketing_dneskai_admit_brief', { p_owner: owner, p_brief: brief!.id, p_source: source })).toMatchObject({ error: { message: expect.stringContaining('brief campaign conflict') } });
+    const [, second] = await store.briefs(owner, project, runId);
+    expect(await rpc.rpc('marketing_dneskai_prepare_brief', { p_owner: owner, p_brief: brief!.id, p_value: { ...(brief!.brief as object), scheduledAt: second!.scheduled_at }, p_scheduled_at: second!.scheduled_at, p_status: 'ready', p_code: null }))
+      .toMatchObject({ error: { message: expect.stringMatching(/marketing_dneskai_brief_slot|brief invalid/) } });
+    expect((await rpc.rpc('marketing_dneskai_skip_brief', { p_owner: owner, p_brief: brief!.id, p_code: 'collection-already-covered', p_duplicate_of: 'revision-test-only' })).error).toBeNull();
+    const members = await rows<{ status: string; candidate: DneskaiCandidate }>('select status,candidate from marketing_dneskai_candidates where id=any($1)', [brief!.member_ids]);
+    expect(members.every((row) => row.status === 'duplicate' && row.candidate.reason === 'collection-already-covered' && row.candidate.duplicateOf === 'revision-test-only')).toBe(true);
+  });
+});
