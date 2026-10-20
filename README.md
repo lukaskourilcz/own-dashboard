@@ -142,6 +142,7 @@ The migrations, in the order they run:
 46. `20261013165236_marketing_dneskai_collection.sql` — owner-scoped DNESKAi research collection, fenced daily runs and bounded provider reservations; no approval or publication.
 47. `20261013181506_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
 48. `20261015234547_oslo_career_preferences.sql` — synchronized Czech Career opt-in, OFF by default; preserves existing records.
+49. `20261020110000_marketing_account_tokens.sql` — one long-lived Meta token per marketing account, readable only through service-role functions; the owner sees expiry, refresh time and scopes.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 
