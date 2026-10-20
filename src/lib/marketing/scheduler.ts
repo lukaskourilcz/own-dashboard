@@ -125,7 +125,10 @@ export interface MarketingSchedulerPorts {
   /** A queued DNESKAi publication in its window, or a claimed one waiting for its container. */
   publicationWork(): Promise<boolean>;
   publishDue(dryRun: boolean, signal: AbortSignal): Promise<{ outcomes: SchedulerPublishOutcome[] }>;
-  /** The DNESKAi publication in `reconciliation` checked longest ago, if not checked since `checkedBefore`. */
+  /**
+   * The DNESKAi publication in `reconciliation` checked longest ago, if not checked since `checkedBefore`;
+   * when there is none, a claimed one whose lease expired.
+   */
   nextReconciliation(checkedBefore: string): Promise<string | null>;
   /** Stamps last_checked_at and runs the read-only reconciliation. */
   reconcile(publicationId: string): Promise<{ status: string; errorCode: string | null }>;

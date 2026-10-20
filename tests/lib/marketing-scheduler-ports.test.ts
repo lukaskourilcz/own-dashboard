@@ -89,6 +89,13 @@ describe('scheduler ports', () => {
     expect(log[1].calls[0][0]).toBe('update');
     expect(mocks.reconcile).toHaveBeenCalledWith(db, owner, other);
   });
+  it('reads a claim whose lease expired when no publication is in reconciliation', async () => {
+    const { db, log } = fakeDb({ marketing_publications: [{ id: other, status: 'claimed' }] });
+    expect(await createMarketingSchedulerPorts(db, owner, {}).nextReconciliation('2026-10-20T20:00:00.000Z')).toBe(other);
+    expect(log[0].calls).toContainEqual(['eq', ['status', 'reconciliation']]);
+    expect(log[1].calls).toEqual(expect.arrayContaining([['eq', ['status', 'claimed']], ['lt', ['lease_until', expect.any(String)]], ['or', ['last_checked_at.is.null,last_checked_at.lt."2026-10-20T20:00:00.000Z"']]]));
+    expect(await createMarketingSchedulerPorts(fakeDb({ marketing_publications: [{ id: other, status: 'queued' }] }).db, owner, {}).nextReconciliation('2026-10-20T20:00:00.000Z')).toBeNull();
+  });
   it('offers approved and ready revisions with their asset URLs for renewal', async () => {
     const asset = (url: string) => ({ url, sha256: 'a'.repeat(64) });
     const { db } = fakeDb({ marketing_revisions: [

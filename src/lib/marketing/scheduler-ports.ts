@@ -97,11 +97,17 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       return { outcomes: result.outcomes.map((outcome) => ({ publicationId: outcome.publicationId, status: outcome.status, errorCode: outcome.errorCode ?? null })) };
     },
     async nextReconciliation(checkedBefore) {
-      const { data, error } = await publications().eq("status", "reconciliation").or(`last_checked_at.is.null,last_checked_at.lt."${checkedBefore}"`)
-        .order("last_checked_at", { ascending: true, nullsFirst: true }).limit(1);
-      if (error) throw new Error("reconciliation-state-unavailable");
-      const row = (data ?? [])[0] as { id?: unknown } | undefined;
-      return typeof row?.id === "string" ? row.id : null;
+      const oldest = async (query: ReturnType<typeof publications>) => {
+        const { data, error } = await query.or(`last_checked_at.is.null,last_checked_at.lt."${checkedBefore}"`)
+          .order("last_checked_at", { ascending: true, nullsFirst: true }).limit(1);
+        if (error) throw new Error("reconciliation-state-unavailable");
+        const row = (data ?? [])[0] as { id?: unknown } | undefined;
+        return typeof row?.id === "string" ? row.id : null;
+      };
+      // A claim whose lease ran out (the function died mid-publish) becomes `reconciliation` only when
+      // marketing_claim_due runs for another publication; until then it is read here, GET-only, as well.
+      return (await oldest(publications().eq("status", "reconciliation")))
+        ?? oldest(publications().eq("status", "claimed").lt("lease_until", new Date().toISOString()));
     },
     async reconcile(publicationId) {
       const { error } = await db.from("marketing_publications").update({ last_checked_at: new Date().toISOString() }).eq("user_id", owner).eq("id", publicationId);
