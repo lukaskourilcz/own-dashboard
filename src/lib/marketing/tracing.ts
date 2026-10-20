@@ -48,6 +48,12 @@ const diagnosticsSchema = z.strictObject({
   latency_ms: z.number().nonnegative(), input_tokens: z.number().int().nonnegative(), output_tokens: z.number().int().nonnegative(),
   estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(z.string().regex(/^[a-z-]{1,80}$/)).max(30),
 });
+/** A failed trace keeps both attempts' issue codes and its final code, within the 30 the metadata holds. */
+function failedIssueCodes(generationIssues: ReadonlySet<string>, issues: readonly string[]): string[] {
+  const final = issues.at(-1);
+  const earlier = [...new Set([...generationIssues, ...issues.slice(0, -1)])].filter((code) => code !== final);
+  return final === undefined ? earlier.slice(0, 30) : [...earlier.slice(0, 29), final];
+}
 const finishSchema = z.strictObject({ status: z.enum(["review", "failed"]), revision_hash: hash.nullable(), attempts: z.number().int().min(0).max(3), input_tokens: z.number().int().nonnegative(), output_tokens: z.number().int().nonnegative(), estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(z.string().regex(/^[a-z-]{1,80}$/)).max(30) });
 const preparedSchema = z.strictObject({ revision_id: z.uuid(), revision_hash: hash, asset_hashes: z.array(hash).max(10), template_sha256: hash, render_latency_ms: z.number().nonnegative() });
 const fullMetadataSchema = metadataSchema.extend(finishSchema.shape).extend({ asset_hashes: z.array(hash).max(10).optional(), template_sha256: hash.optional(), render_latency_ms: z.number().nonnegative().optional() });
@@ -96,7 +102,7 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
           await safeWrite(() => client.createRun({ id: child, name: `marketing-${event.name}`, run_type: event.name === "generation" ? "llm" : "tool", parent_run_id: id, trace_id: id, inputs: {}, project_name: config.projectName, start_time: Date.now() - event.latencyMs, end_time: Date.now(), extra: { metadata } }));
         },
         async finish(event) {
-          const metadata = finishSchema.parse({ status: event.status, revision_hash: event.revisionHash, attempts: event.usage.attempts, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.usage.estimatedCostUsd, issue_codes: event.status === "failed" ? [...new Set([...generationIssues, ...event.issues])] : event.issues });
+          const metadata = finishSchema.parse({ status: event.status, revision_hash: event.revisionHash, attempts: event.usage.attempts, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.usage.estimatedCostUsd, issue_codes: event.status === "failed" ? failedIssueCodes(generationIssues, event.issues) : event.issues });
           await safeWrite(() => client.updateRun(id, { end_time: Date.now(), outputs: {}, error: event.status === "failed" ? "marketing-generation-failed" : undefined, extra: { metadata: { ...marketingTraceMetadata(input), ...metadata } } }));
         },
       };
