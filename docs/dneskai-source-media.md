@@ -17,6 +17,10 @@ stavem `selected`. Plánovač (#120) ji zavolá hned po doběhnutí sběru, ješ
 noc: odkazy na Instagram CDN vyprší za 24 až 48 hodin a uložené odkazy z 13. 10. už
 vracejí 403.
 
+Které kandidáty předat, řekne `pendingDneskaiMediaCandidates(db, owner, project)`:
+vybrané kandidáty pro dnešní nebo pozdější pražský den, jejichž stahování nezačalo nebo
+ještě není hotové, nejvýše osm. Plánovač volá sběr, dokud seznam není prázdný.
+
 Volání má časový rozpočet (výchozí 50 s). Když dojde, nové stahování nezačne, výsledek
 má `complete: false` a další volání pokračuje jen otevřenými pozicemi. Hotový kandidát
 se znovu nestahuje vůbec: opakovaný běh nic nestáhne ani nenačte stránku znovu.
@@ -70,7 +74,7 @@ změny; sha256 těchto bytů je identita média.
 
 Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service role
 (`marketing_media_begin`, `_set_plan`, `_record_asset`, `_finish`, `_lookup`,
-`_claim_purge`, `_unmark_purge`). Nový sha256 se zapíše až po nahrání objektu.
+`_pending_candidates`, `_claim_purge`, `_unmark_purge`). Nový sha256 se zapíše až po nahrání objektu.
 
 ## Duplicity a rozlišení
 

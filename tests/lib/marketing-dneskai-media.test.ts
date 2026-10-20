@@ -6,7 +6,7 @@ import { candidate } from '@/lib/marketing/dneskai-providers';
 import { contentHash } from '@/lib/marketing/hashes';
 import { dneskaiCheapIdentity } from '@/lib/marketing/dneskai-registry';
 import { inspectDneskaiImage, phashDistance } from '@/lib/marketing/dneskai-media-image';
-import { collectDneskaiMedia, createDneskaiMediaLoader, purgeUnusedDneskaiMedia, type DneskaiMediaDatabase, type DneskaiMediaObjectStore } from '@/lib/marketing/dneskai-media';
+import { collectDneskaiMedia, createDneskaiMediaLoader, pendingDneskaiMediaCandidates, purgeUnusedDneskaiMedia, type DneskaiMediaDatabase, type DneskaiMediaObjectStore } from '@/lib/marketing/dneskai-media';
 import { createMediaDatabase, serviceRpcClient, setTestTime } from './marketing-dneskai-media-db';
 import { scene } from './marketing-dneskai-media-fixture';
 
@@ -197,6 +197,18 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
     const second = await collectDneskaiMedia(client(), owner, project, [id], { ...deps, budgetMs: 60_000 });
     expect(second).toMatchObject({ complete: true, candidates: [{ status: 'complete', assets: 3, downloaded: 2 }] });
     expect(urls.map((url) => web.count(url))).toEqual([1, 1, 1]);
+  });
+
+  it('tells the scheduler which selected candidates still owe media, until none is left', async () => {
+    expect(await pendingDneskaiMediaCandidates(client(), owner, project)).toEqual([]);
+    const web = new FixtureWeb().serve(`${IG}late.jpg`, { body: A });
+    const fresh = await insertCandidate('instagram:technology', 'OFFLINE-late', 'https://www.instagram.com/p/OFFLINE-late/', [`${IG}late.jpg`]);
+    const stale = await insertCandidate('instagram:technology', 'OFFLINE-stale', 'https://www.instagram.com/p/OFFLINE-stale/', [`${IG}stale.jpg`]);
+    await pg.query("update marketing_dneskai_candidates set target_date='2026-10-19' where id=$1", [stale]);
+    expect(await pendingDneskaiMediaCandidates(client(), owner, project)).toEqual([fresh]);
+    await collectDneskaiMedia(client(), owner, project, [fresh], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() });
+    expect(await pendingDneskaiMediaCandidates(client(), owner, project)).toEqual([]);
+    expect(web.count(`${IG}stale.jpg`)).toBe(0);
   });
 
   it('refuses malformed input before any work', async () => {

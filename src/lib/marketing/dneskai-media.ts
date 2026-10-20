@@ -55,14 +55,15 @@ const sha256Of = (bytes: Uint8Array) => createHash('sha256').update(bytes).diges
 
 export function supabaseMediaObjectStore(db: DneskaiMediaDatabase): DneskaiMediaObjectStore {
   const files = () => db.storage.from(DNESKAI_MEDIA_BUCKET);
+  let privateBucket: Promise<boolean> | undefined;
+  const bucketIsPrivate = () => privateBucket ??= db.storage.getBucket(DNESKAI_MEDIA_BUCKET).then(({ data, error }) => !error && !!data && !data.public, () => false);
   const get = async (name: string) => {
     const { data, error } = await files().download(name);
     return error || !data ? null : Buffer.from(await data.arrayBuffer());
   };
   return {
     async put(name, bytes, contentType, metadata) {
-      const { data: bucket, error: bucketError } = await db.storage.getBucket(DNESKAI_MEDIA_BUCKET);
-      if (bucketError || !bucket || bucket.public) throw new DneskaiMediaError('media-private-bucket-required');
+      if (!await bucketIsPrivate()) { privateBucket = undefined; throw new DneskaiMediaError('media-private-bucket-required'); }
       // Never overwrite: an object already under this name is accepted only after its bytes are verified.
       const { error } = await files().upload(name, bytes, { upsert: false, contentType, cacheControl: '3600', metadata });
       if (!error) return 'stored';
@@ -365,6 +366,15 @@ async function recordEntry(db: DneskaiMediaDatabase, owner: string, project: str
     // The bytes are stored; recording them on a later pass is idempotent.
     throw new FetchFailure('media-record-failed', true);
   }
+}
+
+/**
+ * The selected candidates (for today or a later Prague day) whose media are not collected yet or still
+ * pending, at most eight: the scheduler (#120) passes them to `collectDneskaiMedia` until the list is empty.
+ */
+export async function pendingDneskaiMediaCandidates(db: DneskaiMediaDatabase, owner: string, project: string): Promise<string[]> {
+  z.uuid().parse(owner); z.uuid().parse(project);
+  return z.array(z.string().min(1).max(200)).max(8).parse(await rpc(db, 'marketing_media_pending_candidates', { p_owner: owner, p_project: project }));
 }
 
 /**

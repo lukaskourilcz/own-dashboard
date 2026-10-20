@@ -233,6 +233,18 @@ create function public.marketing_media_lookup(p_owner uuid,p_sha256 text) return
  from public.marketing_media_assets where user_id=p_owner and sha256=p_sha256
 $$;
 
+-- What the scheduler still owes media for: selected candidates for today or a later Prague day whose
+-- collection has not started or is still pending, newest first, at most eight (one collector call).
+create function public.marketing_media_pending_candidates(p_owner uuid,p_project uuid) returns jsonb language sql stable set search_path='' as $$
+ select coalesce(jsonb_agg(pending.id order by pending.updated_at desc,pending.id),'[]') from (
+  select c.id,c.updated_at from public.marketing_dneskai_candidates c
+  left join public.marketing_media_collections m on m.user_id=c.user_id and m.project_id=c.project_id and m.candidate_id=c.id
+  where c.user_id=p_owner and c.project_id=p_project and c.status='selected'
+   and c.target_date>=(clock_timestamp() at time zone 'Europe/Prague')::date and (m.status is null or m.status='pending')
+  order by c.updated_at desc,c.id limit 8
+ ) pending
+$$;
+
 -- Retention: marks assets that no revision deck draws and no candidate linked within the window as purged,
 -- and returns their storage paths for deletion. Rows stay; a later fetch of the same bytes re-uploads.
 create function public.marketing_media_claim_purge(p_owner uuid,p_older_than_days integer,p_limit integer) returns jsonb language plpgsql set search_path='' as $$
@@ -267,5 +279,5 @@ begin
  get diagnostics n=row_count;return n;
 end $$;
 
-revoke all on function public.marketing_media_begin(uuid,uuid,text,uuid),public.marketing_media_set_plan(uuid,uuid,text,uuid,jsonb,text,text),public.marketing_media_record_asset(uuid,uuid,text,uuid,jsonb),public.marketing_media_finish(uuid,uuid,text,uuid,text,jsonb),public.marketing_media_lookup(uuid,text),public.marketing_media_claim_purge(uuid,integer,integer),public.marketing_media_unmark_purge(uuid,jsonb) from public,anon,authenticated;
-grant execute on function public.marketing_media_begin(uuid,uuid,text,uuid),public.marketing_media_set_plan(uuid,uuid,text,uuid,jsonb,text,text),public.marketing_media_record_asset(uuid,uuid,text,uuid,jsonb),public.marketing_media_finish(uuid,uuid,text,uuid,text,jsonb),public.marketing_media_lookup(uuid,text),public.marketing_media_claim_purge(uuid,integer,integer),public.marketing_media_unmark_purge(uuid,jsonb) to service_role;
+revoke all on function public.marketing_media_begin(uuid,uuid,text,uuid),public.marketing_media_set_plan(uuid,uuid,text,uuid,jsonb,text,text),public.marketing_media_record_asset(uuid,uuid,text,uuid,jsonb),public.marketing_media_finish(uuid,uuid,text,uuid,text,jsonb),public.marketing_media_lookup(uuid,text),public.marketing_media_pending_candidates(uuid,uuid),public.marketing_media_claim_purge(uuid,integer,integer),public.marketing_media_unmark_purge(uuid,jsonb) from public,anon,authenticated;
+grant execute on function public.marketing_media_begin(uuid,uuid,text,uuid),public.marketing_media_set_plan(uuid,uuid,text,uuid,jsonb,text,text),public.marketing_media_record_asset(uuid,uuid,text,uuid,jsonb),public.marketing_media_finish(uuid,uuid,text,uuid,text,jsonb),public.marketing_media_lookup(uuid,text),public.marketing_media_pending_candidates(uuid,uuid),public.marketing_media_claim_purge(uuid,integer,integer),public.marketing_media_unmark_purge(uuid,jsonb) to service_role;
