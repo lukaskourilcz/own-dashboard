@@ -28,13 +28,40 @@ Only generated titles/captions and generated article slide prose receive style r
 
 Focused offline tests verify verbatim provenance, bounded instructions in the actual invocation for both brands, one-call valid drafts, unchanged usage/cost arithmetic, immutable authored exercises/challenges, existing fabricated-number/schema refusals, and consent/source/admission holds before invocation. Those tests make zero provider calls. Style instructions do not prove human quality or general factual entailment; the owner still reviews the exact final prose and evidence before approving its hash.
 
-## Templates and Claude Design
+## DNESKAi slides: the vendored carousel studio
 
-`templates/marketing/{dneskai,devshark}/template.json` records `marketing-template/1`, a template digest, renderer version and approval. Both templates now derive from authentic owner-exported Claude Design projects, with `authoring: claude-design`, `approved: false`, `approval: null`. They cannot render publication assets. `derived-layout.json` binds the actual archive SHA-256, selected exported source-file hashes, adapted geometry, palette and asset hashes into the deployed template digest. Template versions are `dneskai-editorial/2` and `devshark-editorial/2`; renderer version is `design-editorial-svg/2`.
+Since #117, DNESKAi has no layout of its own in this repository. Every DNESKAi slide renders through `renderDneskaiSlide` in `@boardlessai/carousel-studio`, the Design Lab engine from Quorum (quorum#603), vendored as built output in `vendor/carousel-studio/` and installed as `"@boardlessai/carousel-studio": "file:vendor/carousel-studio"`. The single-layout template `dneskai-editorial/2` (Claude Design, never approved), its derived layout and its brand and logo copies are deleted, and the staging approval receipt accepts devShark entries only. A DNESKAi entry in `MARKETING_PILOT_TEMPLATE_APPROVALS` now fails the whole receipt closed.
+
+`src/lib/marketing/dneskai-render.ts` implements the `RenderDneskaiDeck` port from `dneskai-ports.ts` through `createDneskaiDeckRenderer({ storage })`:
+
+- Each `DneskaiSlide` (`dneskai-slides.ts`) maps to the studio input: type, variant, words, `sources`, the photographs loaded with `loadMedia(assetSha256)` together with their crop, the slide's place in the deck (`{ index, count }`) and locale `cs`. The studio writes the folio, the sources title and the disclosure. A photograph used on several slides is loaded once per deck.
+- The gate is the studio's plus one rule. `text-clipped`, which the studio only reports, refuses here: cut Czech copy never ships. Missing or undecodable photographs, a full-bleed photograph whose shorter side is under 900 px or whose crop stretches it more than 1.5×, a bad crop and a loader failure (`media-asset-unavailable`) refuse as well. One blocking problem on any slide refuses the whole deck, returns every problem with its slide, code, field and message, and stores nothing. `image-upscaled` renders and is reported.
+- Each slide becomes a baseline JPEG: exactly 1080 × 1350, quality 92, 4:4:4 chroma, sRGB with an embedded sRGB profile, at most 8 MiB. The encoder output is read back and checked before upload.
+- Assets come back in slide order in `AssetSchema` shape with the slide's alt text, together with each slide's render key.
+
+`validateDneskaiDeck(deck, loadMedia)` returns the same problems without rendering or storing anything; generation (#116) uses it to fit copy.
+
+### Render cache
+
+A slide's render key is `sha256(canonicalJson(…))` over the vendored engine (version, Quorum commit and tree hash), OwnDashboard's render policy (`dneskai-render/1`), the encoder (sharp and libvips versions plus the JPEG settings), the words, the variant, every photograph's asset hash and crop, and the slide's position. The studio's template choice and payload are pure functions of exactly these inputs, so the key hashes the inputs and a cache hit loads and decodes no photograph. The alt text is not drawn and is not part of the key.
+
+`createDneskaiSlideStorage(db, owner)` in `worker-runtime.ts` keeps one immutable object per owner and key at `<owner>/marketing/dneskai/slides/<renderKey>.jpg` in the private `marketing-assets` bucket. It shares the devShark upload path: private-bucket check, `upsert: false`, size, type and metadata check, re-download with a sha256 comparison, then a seven-day signed URL. `find` verifies the stored bytes against the recorded sha256 before it signs; a tampered or foreign object fails instead of being replaced. Metadata records the owner, render key, JPEG sha256, renderer version and policy, studio template id and version, PNG and SVG hashes and any non-blocking problems, so a cache hit reports what the original render reported. Nothing revision-specific goes into an object, which is what lets every revision that draws the same slide reuse it. An unchanged deck therefore loads, renders and uploads nothing; editing one slide re-renders that slide only; an engine, policy or encoder change re-renders each slide once.
+
+### Worker routing
+
+`runMarketingWorkerJob` sends a DNESKAi Instagram draft to the deck renderer only when the draft carries a deck (generation v5, #116, attaches it). A DNESKAi draft without one fails with `dneskai-deck-required`; there is no layout fallback. A refused deck fails the job with `dneskai-render-refused`. `executeMarketingJob` binds the default renderer to the job owner and to `loadDneskaiMedia`, the stored-media loader from #114; without a loader the job fails with `dneskai-renderer-unavailable`. DNESKAi jobs cannot be admitted yet: the legacy job template schema is devShark-only, and #116 defines the DNESKAi job.
+
+### Updating the vendored studio
+
+`vendor/carousel-studio/UPSTREAM.md` pins the Quorum commit and the tree hash and lists what was copied and why. Never edit the vendored files. `scripts/vendor-carousel-studio.sh check` verifies the tree; `scripts/vendor-carousel-studio.sh <quorum-checkout> <commit>` rebuilds a commit from `git archive` in a scratch directory and proves it equals the committed tree; adding `--write` replaces the tree and updates the pin. Then update `DNESKAI_STUDIO` in `dneskai-render.ts` (the vendor test fails until the commit and tree hash agree) and run `tests/lib/carousel-studio-vendor.test.ts` and `tests/lib/marketing-dneskai-render.test.ts`. The vendor test also reproduces all ten pinned DNESKAi golden PNG hashes with OwnDashboard's own sharp 0.35.5 and zod 4.6.7; npm dedupes both, and resvg 2.6.2, into one copy because the trimmed manifest widens upstream's exact pins to caret ranges.
+
+## Templates and Claude Design (devShark)
+
+`templates/marketing/devshark/template.json` records `marketing-template/1`, a template digest, renderer version and approval. It derives from an authentic owner-exported Claude Design project, with `authoring: claude-design`, `approved: false`, `approval: null`. It cannot render publication assets. `derived-layout.json` binds the actual archive SHA-256, selected exported source-file hashes, adapted geometry, palette and asset hashes into the deployed template digest. The template version is `devshark-editorial/2`; the renderer version is `design-editorial-svg/2`. The digest, layout and output are unchanged by #117.
 
 The devShark source is Direction B Mixed Colours from project `c0bf3c06-2e9c-4244-a279-aa96bce7bf07`, archive SHA `eaddeced6e28df466fe65d6b1dd87a449331c7bc17578d70d662a1f4dcb286cb`. The bounded adaptation retains the pale/ink/green/ink sequence, bottom surfacing fins, rotating waterline, closing-only white wordmark, Manrope display, Inter body and JetBrains One Dark code. It uses the source's 72 px display variant for authored exercise headings, pins the footer to the kit's Inter 400 face, and omits optional grain. It never imports sample launch prices, user counts, test outcomes or product UI.
 
-The DNESKAi source is Design Review R2 from project `4c6f6a01-5f7c-4f22-9b54-a549e1da189d`, archive SHA `78801c2471b31b24d5bf57fc62765374ec0d97d89e52131e80b5f98c7b734b09`. That export is a web brand review, not a carousel. The social adaptation retains paper, the ink rule, Grotesk lead headlines, Serif 600 secondary headlines/body roles, Plex metadata and the original exported wordmark. The selected design-system page and mark remain in the repo; unrelated article photographs/screenshots have been removed. The owner reviews this social adaptation before approval. Exported HTML/JSX is inspected as source data and never executed by the renderer.
+The DNESKAi Design Review R2 export (project `4c6f6a01-5f7c-4f22-9b54-a549e1da189d`, archive SHA `78801c2471b31b24d5bf57fc62765374ec0d97d89e52131e80b5f98c7b734b09`) stays in `templates/marketing/claude-design/dneskai/` as provenance only. It was a web brand review, never a carousel, and since #117 no renderer reads it. The Space Grotesk, Source Serif 4 and IBM Plex Mono files in `templates/marketing/fonts/` stay too: `font-metrics.json` and `provenance.json` are part of the devShark template digest, and removing them would change that digest.
 
 Claude's current Design documentation describes artifact authoring, design-system import, ZIP/standalone HTML/PDF/PPTX exports and Claude Code handoff. We found no documented generic Claude Design API. `ChatAnthropic` generates copy; it does not replace the Design export workflow.
 
@@ -42,7 +69,7 @@ The owner must review the bounded layouts against the retained authentic Design 
 
 The original outlined logos, palettes, eight OFL font files and measured glyph advances come from `marketing-quorum/studio`. The copied brand manifests identify source repositories/commits and original approval dates; `provenance.json` pins font hashes, upstream metrics and actual Design export provenance. Quorum files remain unchanged. No raster generator, Higgsfield, Dots, paid account, generated product UI or fake screenshot participates.
 
-## Deterministic JPEG rendering and storage
+## Deterministic JPEG rendering and storage (devShark)
 
 `renderMarketingPreview(input)` allows local review of pending templates and rejects production environments. `renderMarketingAssets(input, storage)` requires a trusted Design-approved template. Instagram emits 1080 × 1350 JPEG slides, quality 92 with 4:4:4 chroma sampling, at most five slides and 8 MiB per JPEG. The renderer uses explicit pinned font files with system fonts disabled and validates original asset/font checksums.
 
@@ -76,4 +103,4 @@ Focused tests cover consent/hash/eligibility isolation, references, immutable ex
 - [LangSmith input/output redaction](https://docs.langchain.com/langsmith/mask-inputs-outputs)
 - [LangSmith TypeScript client reference](https://reference.langchain.com/javascript/langsmith)
 
-Pinned dependencies: `@langchain/anthropic 1.5.12`, `@langchain/core 1.2.17`, `langsmith 0.10.11`, `@resvg/resvg-js 2.6.2`, `sharp 0.35.5`. SDK signatures and runtime options were checked against installed declarations/implementation in addition to documentation.
+Pinned dependencies: `@langchain/anthropic 1.5.12`, `@langchain/core 1.2.17`, `langsmith 0.10.11`, `@resvg/resvg-js 2.6.2`, `sharp 0.35.5`, and `@boardlessai/carousel-studio 1.0.0` vendored from Quorum `72b7a5e`. SDK signatures and runtime options were checked against installed declarations/implementation in addition to documentation.
