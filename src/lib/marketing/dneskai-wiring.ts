@@ -1,7 +1,7 @@
 import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { ContentRevision } from "./contracts";
-import type { ListBriefAssetHashes, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
+import type { CreateDneskaiBriefs, ListBriefAssetHashes, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { createDneskaiDeckRenderer } from "./dneskai-render";
 import { createDneskaiMediaLoader } from "./dneskai-media";
 import { createDneskaiSlideStorage } from "./worker-runtime";
@@ -31,4 +31,10 @@ export function getBriefAssetHashLister(db: Database, owner: string): ListBriefA
   return async (revision: ContentRevision) => {
     return revision.deck ? dneskaiDeckAssetHashes(revision.deck) : [];
   };
+}
+
+/** Brief creation for a finished run (#115). Until it is wired the scheduler records `briefs-unwired` and moves on. */
+export function getCreateDneskaiBriefs(db: Database): CreateDneskaiBriefs {
+  void db;
+  return async () => { throw new Error("briefs-unwired"); };
 }

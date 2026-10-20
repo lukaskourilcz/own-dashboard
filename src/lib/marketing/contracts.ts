@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DneskaiDeckSchema } from "./dneskai-slides";
+import { DneskaiBriefSchema } from "./dneskai-brief";
 
 export const MARKETING_SOURCE_VERSION = "marketing-source/1";
 /** Legacy and devShark revisions: rendered assets only, no slide deck. */
@@ -30,7 +31,8 @@ export const EvidenceSchema = z.strictObject({
 export const SourcePacketSchema = z.strictObject({
   schemaVersion: z.literal(MARKETING_SOURCE_VERSION),
   brand: BrandSchema,
-  kind: z.enum(["article", "question", "coding-task", "instagram-reference"]),
+  /** `brief` (#115): a DNESKAi social brief built in OwnDashboard from selected research candidates. */
+  kind: z.enum(["article", "question", "coding-task", "instagram-reference", "brief"]),
   sourceId: id,
   sourceRevision: id,
   contentHash: hash,
@@ -52,6 +54,8 @@ export const SourcePacketSchema = z.strictObject({
     evidence: z.array(EvidenceSchema).max(30),
     image: z.strictObject({ url: httpsUrl, alt: z.string().max(1000), licence: z.string().min(1).max(500) }).nullable(),
   }),
+  /** Present exactly when kind is `brief`: the event, its evidence and its stored source media. */
+  brief: DneskaiBriefSchema.optional(),
 });
 export type SourcePacket = z.infer<typeof SourcePacketSchema>;
 
@@ -67,6 +71,13 @@ export function parseSourcePacket(value: unknown): SourcePacket {
     throw new Error("A question requires options and an authored answer and explanation.");
   }
   if (packet.kind === "article" && !packet.content.evidence.length) throw new Error("An article requires source evidence.");
+  if (packet.kind === "brief") {
+    if (packet.brand !== "dneskai") throw new Error("Source kind does not belong to this brand.");
+    if (!packet.brief || packet.brief.eventId !== packet.sourceId) throw new Error("A brief packet carries its own brief.");
+    if (!packet.content.evidence.length) throw new Error("A brief requires source evidence.");
+  } else if (packet.brief) {
+    throw new Error("Only a brief packet carries a brief.");
+  }
   return packet;
 }
 
