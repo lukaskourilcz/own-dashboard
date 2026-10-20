@@ -64,7 +64,8 @@ export type MarketingWorkerResult = GeneratedMarketingDraft & { revisionHash: st
 /** Observation freshness is rechecked separately; it is not a new content identity. */
 export function marketingJobIdentityHash(request: MarketingJobRequest): string {
  const source=parseSourcePacket(request.generation.source);
- return contentHash({...request,generation:{...request.generation,source:{...source,observedAt:null}}});
+ // A fresh observation of the same source, the brief inside a brief packet included, is the same job.
+ return contentHash({...request,generation:{...request.generation,source:{...source,observedAt:null,...(source.brief?{brief:{...source.brief,observedAt:null}}:{})}}});
 }
 export type MarketingJobStatus = "queued" | "running" | "review" | "failed" | "reconciliation";
 export interface DurableMarketingQueue {

@@ -72,6 +72,18 @@ describe("the DNESKAi deck job request (#116)", () => {
     expect(MarketingWorkerRequestSchema.safeParse(request).success).toBe(false);
     expect(marketingJobIdentityHash(request)).toMatch(/^[a-f0-9]{64}$/);
   });
+  it("keeps the job identity across a fresh observation of the same brief, and not across changed media", () => {
+    const request = job();
+    const source = request.generation.source as { observedAt: string; brief: { observedAt: string; media: { credit: string }[] } };
+    const later = new Date(Date.parse(source.observedAt) + 60000).toISOString();
+    const observed = structuredClone(request);
+    Object.assign(observed.generation.source as object, { observedAt: later });
+    (observed.generation.source as typeof source).brief.observedAt = later;
+    expect(marketingJobIdentityHash(observed)).toBe(marketingJobIdentityHash(request));
+    const changed = structuredClone(request);
+    (changed.generation.source as typeof source).brief.media[0]!.credit = "Obrázek: test-only.example";
+    expect(marketingJobIdentityHash(changed)).not.toBe(marketingJobIdentityHash(request));
+  });
   it("refuses a template, knowledge, Threads and a source that is not a DNESKAi brief", () => {
     const request = job();
     const knowledge = [{ id: "51550112-b4b7-4556-a604-8431b24401e8", brand: "dneskai" as const, presentation: "Test-only." }];
