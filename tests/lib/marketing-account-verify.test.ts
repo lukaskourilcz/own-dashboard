@@ -52,6 +52,7 @@ describe('verifyInstagramAccount', () => {
     ['no token expiry', env({ MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: undefined }), 'access-token-expiry-unverified'],
     ['an expired token', env({ MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: '2026-10-20T11:59:59Z' }), 'access-token-expired'],
     ['a missing publishing scope', env({ MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: 'instagram_business_basic' }), 'publishing-scopes-unverified'],
+    ['more scopes than the store accepts', env({ MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: ['instagram_business_basic', 'instagram_business_content_publish', ...Array.from({ length: 19 }, (_, index) => `scope_${String.fromCharCode(97 + index)}`)].join(',') }), 'verified-scopes-invalid'],
   ] as const)('refuses %s before calling Meta', async (_label, configured, code) => {
     const { db, rpc } = admin(); const fetcher = fetcherFor(profile());
     await expect(verifyInstagramAccount(db, owner, 'dneskai', { env: configured, fetcher, now })).rejects.toMatchObject({ code });

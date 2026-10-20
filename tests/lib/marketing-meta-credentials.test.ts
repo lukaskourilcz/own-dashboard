@@ -98,6 +98,8 @@ describe('refreshInstagramToken', () => {
     ['an expired token', stored({ expiresAt: at(-1) }), {}, 'held', 'access-token-expired'],
     ['a Facebook Login token', stored({ loginMode: 'facebook' }), {}, 'held', 'refresh-instagram-login-required'],
     ['no token at all', null, { MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }, 'held', 'access-token-missing'],
+    ['scopes the store would refuse', null, { MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: Array.from({ length: 21 }, (_, index) => `scope_${String.fromCharCode(97 + index)}`).join(',') }, 'held', 'verified-scopes-invalid'],
+    ['a malformed scope', null, { MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: 'instagram_business_basic,Instagram-Business-Content-Publish' }, 'held', 'verified-scopes-invalid'],
   ] as const)('does not call Meta for %s', async (_label, token, patch, status, code) => {
     const fetcher = meta(Response.json({}));
     expect(await refreshInstagramToken(database(token).db, owner, account, { env: env(patch), now, fetcher })).toEqual({ status, accountId: account.id, code });

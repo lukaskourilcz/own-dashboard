@@ -39,6 +39,11 @@ export const INSTAGRAM_REFRESH_ENDPOINT = 'https://graph.instagram.com/refresh_a
 const tokenValue = z.string().regex(/^\S{20,4096}$/);
 const loginMode = z.enum(['instagram', 'facebook', 'threads']);
 const scope = z.string().regex(/^[a-z_]{1,64}$/);
+/** The token store accepts at most 20 scopes of this shape; checked before any write or refresh. */
+export const META_SCOPE_LIMIT = 20;
+export function metaScopesStorable(scopes: readonly string[]): boolean {
+  return scopes.length <= META_SCOPE_LIMIT && scopes.every(value => scope.safeParse(value).success);
+}
 const StoredRowSchema = z.object({ access_token: tokenValue, expires_at: z.string().min(1), refreshed_at: z.string().min(1), scopes: z.array(scope).max(20), login_mode: loginMode });
 const MetadataRowSchema = z.object({ account_id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), expires_at: z.string().min(1), refreshed_at: z.string().min(1), scopes: z.array(scope).max(20), login_mode: loginMode });
 const RefreshResponseSchema = z.object({ access_token: tokenValue, token_type: z.string().max(20).optional(), expires_in: z.number().int().positive().max(90 * 24 * 60 * 60) });
@@ -164,6 +169,8 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   // value only has its expiry, and long-lived tokens are issued for 60 days.
   const issued = current.refreshedAt ? instant(current.refreshedAt) : expires - INSTAGRAM_LONG_LIVED_TOKEN_MS;
   if (!Number.isFinite(issued) || now.getTime() - issued < INSTAGRAM_TOKEN_MIN_AGE_MS) return outcome('skipped', 'access-token-too-new');
+  // A refreshed token that the store would refuse must never be requested.
+  if (!metaScopesStorable(current.scopes)) return outcome('held', 'verified-scopes-invalid');
   const url = new URL(INSTAGRAM_REFRESH_ENDPOINT);
   url.searchParams.set('grant_type', 'ig_refresh_token');
   url.searchParams.set('access_token', current.accessToken);

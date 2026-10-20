@@ -1,7 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import type { createAdminClient } from '@/lib/supabase/admin';
-import { bootstrapMetaCredential, INSTAGRAM_LOGIN_SCOPES } from './meta-credentials';
+import { bootstrapMetaCredential, INSTAGRAM_LOGIN_SCOPES, metaScopesStorable } from './meta-credentials';
 
 /**
  * Owner-triggered verification of the DNESKAi Instagram account (#121).
@@ -51,6 +51,8 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
   if (!Number.isFinite(expires)) fail('access-token-expiry-unverified');
   if (expires <= now.getTime()) fail('access-token-expired');
   if (INSTAGRAM_LOGIN_SCOPES.some(scope => !bootstrap.scopes.includes(scope))) fail('publishing-scopes-unverified');
+  // The store refuses more than 20 scopes or a malformed one; refuse here first so nothing is sent or written.
+  if (!metaScopesStorable(bootstrap.scopes)) fail('verified-scopes-invalid');
 
   const url = new URL(`https://graph.instagram.com/${version}/me`);
   url.searchParams.set('fields', 'user_id,username,account_type');
