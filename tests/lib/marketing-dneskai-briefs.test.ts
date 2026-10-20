@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
+import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, dneskaiSitewidePictures, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 import { dneskaiBriefSourcePacket } from '@/lib/marketing/dneskai-brief-source';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
 import { dneskaiEventId, dneskaiEventMemberHash } from '@/lib/marketing/dneskai-events';
@@ -95,11 +95,22 @@ describe('repetition against the last 14 days', () => {
     expect(dneskaiBriefRepeat(brief, [{ id: 'r2', duplicateOf: 'r2', urls: [], assetSha256s: [sha(1)] }], phashes)).toMatchObject({ by: 'media' });
     expect(dneskaiBriefRepeat(brief, [{ id: 'r3', duplicateOf: 'r3', urls: [], assetSha256s: [sha(3)] }], phashes)).toMatchObject({ by: 'media' });
     expect(dneskaiBriefRepeat(brief, [{ id: 'r4', duplicateOf: 'r4', urls: ['https://example.test/news/two'], assetSha256s: [sha(4)] }], phashes)).toBeNull();
+    // An ignored picture (a site-wide card) is not compared; the URLs still are.
+    expect(dneskaiBriefRepeat(brief, [{ id: 'r2', duplicateOf: 'r2', urls: [], assetSha256s: [sha(1)] }], phashes, new Set([sha(1)]))).toBeNull();
+    expect(dneskaiBriefRepeat(brief, [{ id: 'r1', duplicateOf: 'r1', urls: ['https://example.test/news/one/'], assetSha256s: [sha(1)] }], phashes, new Set([sha(1)]))).toMatchObject({ by: 'url' });
+  });
+
+  it('treats a picture three articles of one site carry as a site-wide card, not the same reports on three sites', () => {
+    const arxiv = ['https://arxiv.org/abs/2610.00001', 'https://arxiv.org/abs/2610.00002v2', 'https://www.arxiv.org/abs/2610.00003?utm_source=x'].map((url) => ({ sha256: sha(1), url }));
+    const story = ['https://www.theverge.com/news/1', 'https://techcrunch.com/2026/10/20/x', 'https://arstechnica.com/ai/x'].map((url) => ({ sha256: sha(2), url }));
+    expect([...dneskaiSitewidePictures([...arxiv, ...story])]).toEqual([sha(1)]);
+    // Two articles of one site, or one article listed twice, are not enough.
+    expect(dneskaiSitewidePictures([...arxiv.slice(0, 2), { sha256: sha(1), url: 'https://arxiv.org/abs/2610.00001/' }]).size).toBe(0);
   });
 });
 
 type Calls = Array<[string, ...unknown[]]>;
-function fakeStore(rows: DneskaiBriefRow[], members: DneskaiCandidate[], options: { owed?: string[]; account?: boolean; coverage?: Parameters<typeof dneskaiBriefRepeat>[1]; media?: Record<string, DneskaiMediaAssetView[]> } = {}) {
+function fakeStore(rows: DneskaiBriefRow[], members: DneskaiCandidate[], options: { owed?: string[]; account?: boolean; coverage?: Parameters<typeof dneskaiBriefRepeat>[1]; media?: Record<string, DneskaiMediaAssetView[]>; articles?: Array<{ sha256: string; url: string }> } = {}) {
   const calls: Calls = [];
   const requests: unknown[] = [];
   const store: DneskaiBriefStore = {
@@ -110,6 +121,7 @@ function fakeStore(rows: DneskaiBriefRow[], members: DneskaiCandidate[], options
     media: async (_owner, _project, id) => ({ assets: options.media?.[id] ?? [] }) as unknown as DneskaiMediaCandidateView,
     coverage: async () => [...(options.coverage ?? [])],
     phashes: async () => new Map(),
+    pictureArticles: async (_owner, _project, sha256s, exclude) => { calls.push(['pictureArticles', [...sha256s], [...exclude]]); return options.articles ?? []; },
     takenSlots: async () => [],
     account: async () => options.account ? { remote_account_id: '17840000000000000', handle: 'dneskai' } : null,
     prepare: async (_owner, id, brief, scheduledAt, status, code) => { calls.push(['prepare', id, status, code, scheduledAt]); const row = rows.find((item) => item.id === id)!; Object.assign(row, { status, code, ...(brief ? { brief, scheduled_at: scheduledAt } : {}) }); },
@@ -173,6 +185,18 @@ describe('createDneskaiBriefs over a store', () => {
     const { store, calls } = fakeStore(rows, [a1, a2], { account: true, coverage: [{ id: 'rev', duplicateOf: 'revision-1', urls: [a2.url], assetSha256s: [] }] });
     expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [{ eventId: rows[0]!.event_id, code: 'collection-already-covered' }], pending: false });
     expect(calls).toEqual([['skip', rows[0]!.id, 'collection-already-covered', 'revision-1']]);
+  });
+
+  it('repeats on a recent post’s picture, but not on a site-wide card that other articles of the site carry', async () => {
+    const coverage = [{ id: 'rev', duplicateOf: 'revision-1', urls: ['https://example.test/other-story'], assetSha256s: [sha(9)] }];
+    const repeated = fakeStore([briefRow(ids('a', 1), 1, [a1, a2])], [a1, a2], { account: true, coverage, media: { [a1.id]: [asset(9, 0)] }, articles: [{ sha256: sha(9), url: 'https://openai.example.test/one' }] });
+    expect((await createDneskaiBriefsWithStore(repeated.store, { owner, project, runId }, { now })).skipped).toEqual([{ eventId: dneskaiEventId(a1.id), code: 'collection-already-covered' }]);
+    expect(repeated.calls.find(([name]) => name === 'pictureArticles')).toEqual(['pictureArticles', [sha(9)], [a1.id, a2.id]]);
+    const card = fakeStore([briefRow(ids('a', 1), 1, [a1, a2])], [a1, a2], { account: true, coverage, media: { [a1.id]: [asset(9, 0)] },
+      articles: ['one', 'two', 'three'].map((slug) => ({ sha256: sha(9), url: `https://openai.example.test/${slug}` })) });
+    const result = await createDneskaiBriefsWithStore(card.store, { owner, project, runId }, { now });
+    expect(result.skipped).toEqual([]);
+    expect(result.created).toHaveLength(1);
   });
 
   it('leaves the slot of a skipped repeat to the next event', async () => {

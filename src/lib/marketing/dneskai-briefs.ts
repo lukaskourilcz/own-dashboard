@@ -41,6 +41,11 @@ export const DNESKAI_REPEAT_WINDOW_DAYS = 14;
  * collector's near-duplicate marker (6): distinct carousel slides built on one template measure 4–6 bits apart.
  */
 export const DNESKAI_REPEAT_PHASH_MAX_DISTANCE = 3;
+/**
+ * A picture that at least this many different articles of one site carry is a site-wide card (a logo or the
+ * site's default share image), not a photograph of one event, so it never makes a brief a repeat.
+ */
+export const DNESKAI_SITEWIDE_PICTURE_ARTICLES = 3;
 /** Revisions that count as prepared or published for the repetition check. */
 export const DNESKAI_COVERING_REVISION_STATUSES = ['review', 'approved', 'publishing', 'published', 'reconciliation', 'returned', 'skipped'] as const;
 
@@ -129,11 +134,11 @@ export type DneskaiCoverage = { id: string; duplicateOf: string; urls: readonly 
 /**
  * A brief repeats recent coverage when one of its evidence URLs (canonicalized) was a source or evidence URL of
  * the coverage, or when one of its pictures is a picture the coverage drew: the same bytes, or the same
- * photograph recompressed (pHash distance ≤ 3).
+ * photograph recompressed (pHash distance ≤ 3). Pictures in `ignore` (site-wide cards) are not compared.
  */
-export function dneskaiBriefRepeat(brief: Pick<DneskaiBrief, 'evidence' | 'media'>, coverage: readonly DneskaiCoverage[], phashes: ReadonlyMap<string, string | null>): { coverage: DneskaiCoverage; by: 'url' | 'media' } | null {
+export function dneskaiBriefRepeat(brief: Pick<DneskaiBrief, 'evidence' | 'media'>, coverage: readonly DneskaiCoverage[], phashes: ReadonlyMap<string, string | null>, ignore: ReadonlySet<string> = new Set()): { coverage: DneskaiCoverage; by: 'url' | 'media' } | null {
   const urls = new Set(brief.evidence.flatMap((item) => dneskaiPrimaryUrlKey(item.url) ?? []));
-  const pictures = brief.media.map((item) => item.assetSha256);
+  const pictures = brief.media.map((item) => item.assetSha256).filter((sha) => !ignore.has(sha));
   const near = (left: string, right: string) => {
     if (left === right) return true;
     const a = phashes.get(left), b = phashes.get(right);
@@ -147,6 +152,23 @@ export function dneskaiBriefRepeat(brief: Pick<DneskaiBrief, 'evidence' | 'media
     if (pictures.some((sha) => item.assetSha256s.some((other) => near(sha, other)))) return { coverage: item, by: 'media' };
   }
   return null;
+}
+
+/**
+ * The pictures that at least three different articles of one site carry (`DNESKAI_SITEWIDE_PICTURE_ARTICLES`),
+ * from the article URLs of the reports that carry each picture.
+ */
+export function dneskaiSitewidePictures(articles: ReadonlyArray<{ sha256: string; url: string }>): Set<string> {
+  const byPicture = new Map<string, Map<string, Set<string>>>();
+  for (const article of articles) {
+    const key = dneskaiPrimaryUrlKey(article.url);
+    if (!key) continue;
+    const host = key.split('/', 1)[0]!;
+    const hosts = byPicture.get(article.sha256) ?? new Map<string, Set<string>>();
+    byPicture.set(article.sha256, hosts);
+    hosts.set(host, (hosts.get(host) ?? new Set()).add(key));
+  }
+  return new Set([...byPicture].filter(([, hosts]) => [...hosts.values()].some((keys) => keys.size >= DNESKAI_SITEWIDE_PICTURE_ARTICLES)).map(([sha]) => sha));
 }
 
 export type DneskaiBriefRow = {
@@ -169,6 +191,8 @@ export interface DneskaiBriefStore {
   media(owner: string, project: string, candidateId: string): Promise<DneskaiMediaCandidateView | null>;
   coverage(owner: string, project: string, since: Date, runId: string): Promise<DneskaiCoverage[]>;
   phashes(owner: string, sha256s: readonly string[]): Promise<Map<string, string | null>>;
+  /** The article URLs of the reports (other than `exclude`) whose collected media include each picture. */
+  pictureArticles(owner: string, project: string, sha256s: readonly string[], exclude: readonly string[]): Promise<Array<{ sha256: string; url: string }>>;
   /** Scheduled instants of other DNESKAi posts and briefs on that Prague day (not this run's briefs). */
   takenSlots(owner: string, project: string, targetDate: string, runId: string): Promise<string[]>;
   account(owner: string): Promise<{ remote_account_id: string; handle: string } | null>;
@@ -291,7 +315,12 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       if ('code' in outcome) { await skip(row, outcome.code); continue; }
       const recent = await (coverage ??= store.coverage(input.owner, input.project, new Date(clock().getTime() - DNESKAI_REPEAT_WINDOW_DAYS * 86400000), input.runId));
       const phashes = await store.phashes(input.owner, [...new Set([...outcome.brief.media.map((item) => item.assetSha256), ...recent.flatMap((item) => item.assetSha256s)])]);
-      const repeat = dneskaiBriefRepeat(outcome.brief, recent, phashes);
+      let repeat = dneskaiBriefRepeat(outcome.brief, recent, phashes);
+      // A site-wide card (a publisher's logo or default share image) is not the same photograph of the same event.
+      if (repeat?.by === 'media') {
+        const sitewide = dneskaiSitewidePictures(await store.pictureArticles(input.owner, input.project, outcome.brief.media.map((item) => item.assetSha256), row.member_ids));
+        if (sitewide.size) repeat = dneskaiBriefRepeat(outcome.brief, recent, phashes, sitewide);
+      }
       if (repeat) { await skip(row, 'collection-already-covered', repeat.coverage.duplicateOf); continue; }
       slots.take(slot);
       try { await store.prepare(input.owner, row.id, outcome.brief, slot, verified ? 'ready' : 'pending', verified ? null : 'account-unavailable'); }
@@ -387,6 +416,21 @@ export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { en
         for (const row of rows) result.set(row.sha256, row.phash);
       }
       return result;
+    },
+    async pictureArticles(owner, project, sha256s, exclude) {
+      if (!sha256s.length) return [];
+      const assets = (await read(db.from('marketing_media_assets').select('id,sha256').eq('user_id', owner).eq('project_id', project).in('sha256', [...sha256s]).limit(200))) as Array<{ id: string; sha256: string }> ?? [];
+      if (!assets.length) return [];
+      const shaById = new Map(assets.map((asset) => [asset.id, asset.sha256]));
+      const links = (await read(db.from('marketing_media_asset_links').select('asset_id,candidate_id').eq('user_id', owner).eq('project_id', project).in('asset_id', [...shaById.keys()]).limit(1000))) as Array<{ asset_id: string; candidate_id: string }> ?? [];
+      const skip = new Set(exclude);
+      const ids = [...new Set(links.map((link) => link.candidate_id).filter((id) => !skip.has(id)))].slice(0, 200);
+      const urls = new Map<string, string>();
+      for (const part of chunks(ids, 100)) {
+        const rows = (await read(db.from('marketing_dneskai_candidates').select('id,candidate').eq('user_id', owner).eq('project_id', project).in('id', part))) as Array<{ id: string; candidate: unknown }> ?? [];
+        for (const row of rows) { const parsed = DneskaiCandidateSchema.safeParse(row.candidate); if (parsed.success) urls.set(row.id, parsed.data.url); }
+      }
+      return links.flatMap((link) => { const url = urls.get(link.candidate_id), sha256 = shaById.get(link.asset_id); return url && sha256 ? [{ sha256, url }] : []; });
     },
     async takenSlots(owner, project, targetDate, runId) {
       const start = pragueScheduledAt(targetDate, '00:00');

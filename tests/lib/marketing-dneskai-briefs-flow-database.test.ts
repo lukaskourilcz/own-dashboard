@@ -156,6 +156,9 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     // This run's own briefs are not coverage of themselves; another run's queued briefs are.
     expect(coverage.filter((item) => item.duplicateOf === lead.id)).toHaveLength(1);
     expect((await store.coverage(owner, project, new Date('2026-10-07T00:00:00Z'), runId)).filter((item) => item.duplicateOf === lead.id)).toHaveLength(0);
+    // The articles that carry a picture, for the site-wide card rule: the event's own reports are left out.
+    expect(await store.pictureArticles(owner, project, [picture], [])).toEqual([{ sha256: picture, url: lead.url }]);
+    expect(await store.pictureArticles(owner, project, [picture], [lead.id, verge.id])).toEqual([]);
     await db.query('delete from marketing_revisions');
   });
 
