@@ -34,6 +34,17 @@ HTML publishers that block static fetching or require scripts remain unavailable
 
 No source needs a bridge exception. Tubefilter sits behind a Sucuri challenge that sometimes answers non-browser clients with a 307 "You are being redirected" page; when it does, the native result is `reader-disabled` for that run. The bridge cannot do better there: its adapter finds no `<article>` elements on Tubefilter even when the page is served.
 
+## Estimated dates, cursor and limits (#112)
+
+`dateEstimated: true` means `publishedAt` is an upper bound, never the publisher's own timestamp:
+
+- a stated day without a time becomes the last instant that day still holds anywhere (next day 11:59:59 UTC), and a month permalink the last instant of that month, both clamped to the fetch time;
+- an item with no date at all gets its `fetchedAt` (in `collectDneskaiFeed`, for both providers) instead of being held forever.
+
+Freshness treats the estimate exactly like a real date: `pendingDneskaiCandidates` admits items up to 30 days old to Jev, and `marketing_dneskai_finish` selects news (`ai-news`, `tech-news`) up to 48 hours old, both on `publishedAt`. Because the bound is never earlier than the truth, an estimated item can look fresher than it is, by up to 36 hours for a stated day. An undated item is fresh only in the run that first stores it: the same canonical URL is never inserted again, so later runs cannot refresh it. Article-page enrichment replaces most estimates on the newest entries. The Sources tab labels an estimate "estimated, latest possible".
+
+A read that stopped only at its cap reports `collection-source-item-cap`: a full page, every item dated (an estimate counts), no other provider code than `item-cap`/`upstream-cap`, and at least one item in the window. The database then moves the source cursor to the newest accepted item, so the next run starts there. Items the cap cut off below that point are not fetched later; for RSS they usually leave the feed anyway. Any other partial result, an error or invalid URLs leave the cursor where it was. Feeds take 20 items per run and Instagram profiles 10; `free-feeds/registry.json` carries 20 so the native binding check accepts the new cap, while Quorum's own `config/sources.json` keeps 10 for its pipelines. Through the bridge, API sources (arXiv, HN, Bluesky, Spaceflight, Stack Exchange) therefore still return at most 10.
+
 ## Image references
 
 `dneskai-feed/1` items may carry `imageUrl` and `dateEstimated`. Both are optional, so a bridge response without them still parses. `imageUrl` is an image the adapter saw without an extra request: RSS `enclosure` (image types), `media:content`, `media:thumbnail`, the card image of an HTML listing, or the `og:image` of an article page the adapter already read for its date. It must be public HTTPS and at most 2,048 characters. The collection keeps it as the candidate's `mediaUrls`; nothing downloads it. Downloading and storing media is #114.

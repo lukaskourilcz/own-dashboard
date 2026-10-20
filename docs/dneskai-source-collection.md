@@ -45,11 +45,26 @@ publikační nebo globální scraping plán jiných projektů BoardlessAI.
 | Sobota | robotic, theapplehub | Marketing: Digiday, Social Media Today, Tubefilter |
 | Neděle | techcrunch, theapplehub, insidertech | Zbývající zdroje a týdenní přehled |
 
-Sběr uchovává čas poslední úplné úspěšné kontroly každého zdroje. Při chybě nebo
-dosažení limitu tento čas neposouvá. Připnuté a opakované Instagram příspěvky
-kontroluje podle skutečného ID a data. Chybějící datum zveřejnění nenahrazuje
-časem stažení. Rotace může zprávy z některých účtů zpozdit o několik dnů; datum
-zůstává viditelné a starý příspěvek nesmí vystupovat jako dnešní zpráva.
+Sběr uchovává čas poslední úspěšné kontroly každého zdroje (kurzor, od 20. října
+2026, #112). Úplná kontrola pod limitem ho posune na začátek běhu. Kontrola, která
+skončila jen na limitu položek (`collection-source-item-cap`), ho posune na čas
+nejnovější přijaté položky (`publishedAt`, u položky bez data `fetchedAt`), nikdy
+za aktuální čas. Další běh tak čte jen novější položky; starší položky za limitem
+už nedohání. Chyba, neplatná URL a jiný částečný výsledek kurzor neposouvají.
+Připnuté a opakované Instagram příspěvky kontroluje podle skutečného ID a data.
+
+Položka bez data dostane čas stažení jako horní odhad a příznak `dateEstimated`.
+Den nebo měsíc bez času je horní odhad: nejpozdější okamžik, kdy v některém časovém
+pásmu ještě platí uvedené datum, nejvýše čas stažení. Pravidla aktuálnosti (vstup do
+Jev do 30 dnů, výběr zpráv do 48 hodin) platí pro odhad stejně jako pro přesné datum.
+Kandidát se stejnou URL se znovu nevkládá, takže položka bez data je čerstvá jen
+v běhu, který ji poprvé uložil. Záložka Zdroje odhad označí. Rotace může zprávy
+z některých účtů zpozdit o několik dnů; datum zůstává viditelné a starý příspěvek
+nesmí vystupovat jako dnešní zpráva.
+
+Denní feedy vracejí nejvýše 20 položek, Instagram 10 na profil a 50 za den.
+Kandidát nese nejvýše 10 odkazů na média. Jev dostane po sběru `ceil(nových / 8)`
+dávek, nejvýše 16; běh bez nových kandidátů žádnou dávku nevytvoří.
 
 ## Náklady a přístupy
 
