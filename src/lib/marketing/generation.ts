@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
-import { contentHash } from "./hashes";
+import { contentHash, revisionContentHash } from "./hashes";
 import type { MarketingTracer } from "./tracing";
 import { marketingHumanizerInstructions } from "./humanizer";
 import { fitMarketingText } from "./render";
@@ -236,7 +236,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
         promptVersion: MARKETING_PROMPT_VERSION, model: model.model, traceId: trace?.id ?? null,
       });
       const slides = challenge?.slides ?? sourceSlides(parsed.data, source);
-      await trace?.finish({ status: "review", revisionHash: contentHash(revision), usage, issues: [] });
+      await trace?.finish({ status: "review", revisionHash: revisionContentHash(revision), usage, issues: [] });
       return { revision, slides, usage, traceId: trace?.id ?? null };
     }
     throw new MarketingGenerationError("copy-validation-failed");

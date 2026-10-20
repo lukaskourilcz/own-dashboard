@@ -7,7 +7,7 @@ import { createClaudeMarketingModel, DEFAULT_GENERATION_BUDGET, MarketingGenerat
 import { createMarketingTracer, LANGSMITH_EU_ENDPOINT, type MarketingTracer } from "./tracing";
 import { validateMarketingTemplate, MarketingRenderError, type MarketingTemplate, type MarketingAssetStorage } from "./render";
 import { parseSourcePacket, sourceUsable, revisionReadiness, parseContentRevision, type SourcePacket } from "./contracts";
-import { contentHash, revisionHash } from "./hashes";
+import { contentHash, revisionContentHash } from "./hashes";
 import { authenticateAutomation } from "./automation-auth";
 import { ingestSource } from "./store";
 import { marketingPilotConfiguration, MarketingPilotError, MARKETING_PILOT_JOB_RESERVATION_USD } from "./pilot";
@@ -196,7 +196,7 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
       },
     });
     const revision = parseContentRevision(result.revision);
-    if (signal.aborted || revisionReadiness(revision).length || revisionHash(revision) !== result.revisionHash) throw new MarketingWorkerRuntimeError("job-result-invalid");
+    if (signal.aborted || revisionReadiness(revision).length || revisionContentHash(revision) !== result.revisionHash) throw new MarketingWorkerRuntimeError("job-result-invalid");
   } catch (failure) {
     // No automatic replay; never persist provider response/credentials/exception text.
     const knownCode = pilotUnavailable ? "pilot-admission-unavailable" : knowledgeUnavailable ? "knowledge-reference-unavailable" : failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError || failure instanceof MarketingPilotError || failure instanceof MarketingTemplateApprovalError

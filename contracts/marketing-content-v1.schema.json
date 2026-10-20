@@ -4,7 +4,10 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "const": "marketing-content/1"
+      "enum": [
+        "marketing-content/1",
+        "marketing-content/2"
+      ]
     },
     "brand": {
       "type": "string",
@@ -192,6 +195,158 @@
           "type": "null"
         }
       ]
+    },
+    "deck": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "dneskai-slides/1"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "carousel",
+            "single-image"
+          ]
+        },
+        "slides": {
+          "minItems": 1,
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cover-photo",
+                  "figure",
+                  "split",
+                  "statement",
+                  "sources",
+                  "single"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "enum": [
+                  "accent",
+                  "ink",
+                  "photo",
+                  "type"
+                ]
+              },
+              "headline": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 700
+              },
+              "kicker": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "credit": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "sources": {
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "images": {
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "slot": {
+                      "type": "string",
+                      "pattern": "^image-[1-9]$"
+                    },
+                    "assetSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "crop": {
+                      "type": "object",
+                      "properties": {
+                        "focal": {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "y": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "zoom": {
+                          "type": "number",
+                          "minimum": 1,
+                          "maximum": 4
+                        },
+                        "fit": {
+                          "type": "string",
+                          "enum": [
+                            "cover",
+                            "contain"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "focal"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "slot",
+                    "assetSha256"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "alt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "type",
+              "headline",
+              "images",
+              "alt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "format",
+        "slides"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

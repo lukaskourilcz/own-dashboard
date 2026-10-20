@@ -1,7 +1,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { parseContentRevision, parseSourcePacket, publishedStoryReceipt, revisionReadiness, sourceUsable, type MarketingRevisionRow, type PublicationRow, type SourcePacket, type ContentRevision } from './contracts';
-import { contentHash, revisionHash } from './hashes';
+import { contentHash, revisionContentHash } from './hashes';
 
 export const MARKETING_SOURCE_MAX_AGE_MS = 15 * 60_000;
 export type MarketingPublishAccount = { id: string; user_id: string; brand: ContentRevision['brand']; platform: ContentRevision['account']['platform'];
@@ -55,7 +55,7 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   const advisory = options.enablementAdvisory === true;
   let revision: ContentRevision;
   try { revision = parseContentRevision(row.revision); } catch { return 'invalid-revision'; }
-  const hash = revisionHash(revision);
+  const hash = revisionContentHash(revision);
   if (!['approved', 'publishing'].includes(row.status) || !timestampValid(row.approved_at, now) || row.approved_hash !== hash || row.content_hash !== hash) return 'exact-approval-required';
   if (!row.ready || revisionReadiness(revision).length) return 'final-assets-required';
   if (account.user_id !== row.user_id || account.remote_account_id !== revision.account.id || account.brand !== revision.brand || account.platform !== revision.account.platform ||
@@ -302,7 +302,7 @@ export async function reconcileMarketingPublication(input: PublishMarketingInput
   if (input.publication.user_id !== input.revisionRow.user_id || input.account.user_id !== input.revisionRow.user_id || input.publication.revision_id !== input.revisionRow.id || input.publication.platform !== input.account.platform ||
       input.account.brand !== input.revisionRow.revision.brand || input.account.remote_account_id !== input.revisionRow.revision.account.id || (input.account.platform === 'threads') !== (input.config.loginMode === 'threads')) return result('held', 'publication-binding-mismatch');
   const story = input.revisionRow.revision.format === 'story' && input.account.platform === 'instagram';
-  if (story && revisionHash(input.revisionRow.revision) !== input.revisionRow.content_hash) return result('held', 'revision-identity-mismatch');
+  if (story && revisionContentHash(input.revisionRow.revision) !== input.revisionRow.content_hash) return result('held', 'revision-identity-mismatch');
   // A persisted numeric publish acknowledgement is historical evidence even
   // after the Story expires or credentials change. It never causes a POST.
   if (publishedStoryReceipt(input.revisionRow.revision, input.publication)) return result('published', null, input.publication.remote_container_id, input.publication.remote_media_id, input.publication.remote_url);
@@ -383,7 +383,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       if (!idValid(data.id as string)) throw new MetaFailure('container-identity-unavailable'); return data.id as string;
     };
     if (!container) {
-      container = `intent:${revisionHash(revision)}`;
+      container = `intent:${revisionContentHash(revision)}`;
       await save('container-create-intent', result('pending', 'container-create-intent', container));
       sideEffectStarted = true;
       // Story text is rendered in the JPEG. The stored caption is internal
@@ -430,7 +430,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     if (status !== 'FINISHED') return result('reconciliation', 'remote-published-media-id-required', container);
     const fresh = await input.revalidate();
     const refreshedGate = publicationGate(fresh, input.config, clock());
-    if (refreshedGate || revisionHash(fresh.revisionRow.revision) !== revisionHash(revision) || fresh.account.remote_account_id !== input.account.remote_account_id) return result('held', refreshedGate ?? 'approval-changed-before-publish', container);
+    if (refreshedGate || revisionContentHash(fresh.revisionRow.revision) !== revisionContentHash(revision) || fresh.account.remote_account_id !== input.account.remote_account_id) return result('held', refreshedGate ?? 'approval-changed-before-publish', container);
     if (revision.format === 'story') {
       const storyAccountGate = await verifyRemoteAccount({ ...input, ...fresh });
       if (storyAccountGate) return result('held', storyAccountGate, container);
