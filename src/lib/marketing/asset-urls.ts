@@ -23,7 +23,10 @@ function trustedOrigin(value: string | undefined): string {
     return url.origin;
   } catch { return hold("asset-storage-origin-required"); }
 }
-function assetKey(value: string, owner: string, sha256: string, origin: string): { key: string; revisionId: string; templateSha256: string } {
+type AssetKey =
+  | { key: string; kind: "revision"; revisionId: string; templateSha256: string }
+  | { key: string; kind: "dneskai-slide"; renderKey: string };
+function assetKey(value: string, owner: string, sha256: string, origin: string): AssetKey {
   try {
     if (value !== value.trim() || /[\x00-\x20\x7f\\]/.test(value)) return hold("asset-url-untrusted");
     const url = new URL(value);
@@ -36,10 +39,24 @@ function assetKey(value: string, owner: string, sha256: string, origin: string):
     if (!rawPath || rawPath !== url.pathname || /(?:^|\/)\.{1,2}(?:\/|$)|%2e|%2f|%5c/i.test(rawPath)) return hold("asset-url-untrusted");
     const key = decodeURIComponent(url.pathname.slice(prefix.length));
     // Slide positions 1-10: a DNESKAi carousel has up to ten slides.
+    // A DNESKAi studio slide is cached by its render key (#117), so one stored JPEG can serve several revisions.
+    // Its identity is the sha256 recorded in the object's metadata and re-hashed below, never the key itself.
+    const slide = /^([a-f0-9-]{36})\/marketing\/dneskai\/slides\/([a-f0-9]{64})\.jpg$/.exec(key);
+    if (slide) {
+      if (slide[1] !== owner) return hold("asset-url-untrusted");
+      return { key, kind: "dneskai-slide", renderKey: slide[2] };
+    }
     const match = /^([a-f0-9-]{36})\/marketing\/(?:dneskai|devshark)\/([a-f0-9-]{36})\/([a-f0-9]{64})\/(?:[1-9]|10)-([a-f0-9]{64})\.jpg$/.exec(key);
     if (!match || match[1] !== owner || !z.uuid().safeParse(match[2]).success || match[4] !== sha256) return hold("asset-url-untrusted");
-    return { key, revisionId: match[2], templateSha256: match[3] };
+    return { key, kind: "revision", revisionId: match[2], templateSha256: match[3] };
   } catch { return hold("asset-url-untrusted"); }
+}
+
+function storedProofValid(item: AssetKey, metadata: Record<string, unknown>): boolean {
+  if (item.kind === "dneskai-slide") return metadata.renderKey === item.renderKey;
+  return metadata.revisionId === item.revisionId && metadata.templateSha256 === item.templateSha256 &&
+    /^[a-f0-9]{64}$/.test(String(metadata.designExportSha256 ?? "")) && /^[a-f0-9]{64}$/.test(String(metadata.svgSha256 ?? "")) &&
+    typeof metadata.rendererVersion === "string" && !!metadata.rendererVersion && metadata.rendererVersion.length <= 120;
 }
 
 /** Renew only previously prepared private assets. No URL is fetched, uploaded
@@ -64,9 +81,7 @@ export async function refreshMarketingAssetUrls(db: Database, ownerId: string, a
       const { data: info, error } = await files.info(item.key);
       const metadata = info?.metadata;
       if (error || !info || info.name !== item.key || info.bucketId !== bucket || !Number.isInteger(info.size) || !info.size || info.size > maxBytes || info.contentType !== "image/jpeg" ||
-        metadata?.ownerId !== ownerId || metadata.sha256 !== item.asset.sha256 || metadata.revisionId !== item.revisionId || metadata.templateSha256 !== item.templateSha256 ||
-        !/^[a-f0-9]{64}$/.test(String(metadata.designExportSha256 ?? "")) || !/^[a-f0-9]{64}$/.test(String(metadata.svgSha256 ?? "")) ||
-        typeof metadata.rendererVersion !== "string" || !metadata.rendererVersion || metadata.rendererVersion.length > 120) return hold("stored-asset-proof-invalid");
+        metadata?.ownerId !== ownerId || metadata.sha256 !== item.asset.sha256 || !storedProofValid(item, metadata)) return hold("stored-asset-proof-invalid");
       const downloaded = await files.download(item.key, {}, { cache: "no-store" });
       if (downloaded.error || !downloaded.data || downloaded.data.size !== info.size || downloaded.data.size > maxBytes || downloaded.data.type.split(";")[0] !== "image/jpeg") return hold("stored-asset-download-invalid");
       const bytes = Buffer.from(await downloaded.data.arrayBuffer());

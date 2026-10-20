@@ -90,6 +90,33 @@ describe("owner-only renewal of verified immutable private marketing JPEGs", () 
   });
 });
 
+describe("renewal of cached DNESKAi studio slides (#117)", () => {
+  const renderKey = "e".repeat(64);
+  const slideKey = `${owner}/marketing/dneskai/slides/${renderKey}.jpg`;
+  function slideDatabase(metadata: Record<string, unknown> = { ownerId: owner, sha256, renderKey }) {
+    const info = { name: slideKey, bucketId: "marketing-assets", size: bytes.length, contentType: "image/jpeg", metadata };
+    const files = { info: vi.fn(async () => ({ data: info, error: null })), download: vi.fn(async () => ({ data: new Blob([bytes], { type: "image/jpeg" }), error: null })),
+      createSignedUrl: vi.fn(async () => ({ data: { signedUrl: url(slideKey, "renewed-test-only-token") }, error: null })), upload: vi.fn(), remove: vi.fn() };
+    const storage = { getBucket: vi.fn(async () => ({ data: { public: false }, error: null })), from: vi.fn(() => files) };
+    return { db: { storage } as unknown as Parameters<typeof refreshMarketingAssetUrls>[0], files };
+  }
+  it("renews a render-key slide after re-verifying the bytes against the recorded sha256", async () => {
+    const mock = slideDatabase();
+    const renewed = await refreshMarketingAssetUrls(mock.db, owner, [{ ...asset(), url: url(slideKey) }], { supabaseUrl: origin });
+    expect(renewed[0]?.url).toBe(url(slideKey, "renewed-test-only-token"));
+    expect(mock.files.download).toHaveBeenCalledWith(slideKey, {}, { cache: "no-store" });
+  });
+  it("holds a slide whose recorded render key, owner or sha256 differ and refuses another owner's slide path", async () => {
+    for (const metadata of [{ ownerId: owner, sha256, renderKey: "f".repeat(64) }, { ownerId: other, sha256, renderKey }, { ownerId: owner, sha256: "d".repeat(64), renderKey }]) {
+      const mock = slideDatabase(metadata);
+      await expect(refreshMarketingAssetUrls(mock.db, owner, [{ ...asset(), url: url(slideKey) }], { supabaseUrl: origin })).rejects.toThrow("stored-asset-proof-invalid");
+      expect(mock.files.createSignedUrl).not.toHaveBeenCalled();
+    }
+    const foreign = slideDatabase();
+    await expect(refreshMarketingAssetUrls(foreign.db, owner, [{ ...asset(), url: url(slideKey.replace(owner, other)) }], { supabaseUrl: origin })).rejects.toThrow("asset-url-untrusted");
+    expect(foreign.files.info).not.toHaveBeenCalled();
+  });
+});
 describe("in-place renewal of a stored revision (#118)", () => {
   function storedDatabase(row: { revision: unknown; content_hash: string; status: string } | null, rpcResult: { data: unknown; error: unknown } = { data: null, error: null }) {
     const mock = database();

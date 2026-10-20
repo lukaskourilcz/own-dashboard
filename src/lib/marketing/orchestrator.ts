@@ -9,6 +9,7 @@ import { trustedMarketingTemplate } from './template-registry';
 import { pragueScheduledAt } from './clock';
 import { publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type PublisherState } from './publisher';
 import { resolveMetaPublisherConfig } from './meta-credentials';
+import { createDneskaiMediaLoader } from './dneskai-media';
 export { metaConfiguration } from './meta-credentials';
 type Database=ReturnType<typeof createAdminClient>;
 export function marketingSlotId(owner:string,brand:string,platform:string,scheduledAt:string,version=1,entryId?:string):string{
@@ -90,7 +91,7 @@ async function publishingState(db:Database,owner:string,revisionId:string,refres
  return {revisionRow:row as MarketingRevisionRow,account:account as MarketingPublishAccount,sources};
 }
 export async function executeOrchestratedMarketingJob(db:Database,owner:string,id:string){
- return executeMarketingJob(db,owner,id,{refreshSource});
+ return executeMarketingJob(db,owner,id,{refreshSource,loadDneskaiMedia:createDneskaiMediaLoader(db,owner)});
 }
 /** `options.preflight` adds the read-only Meta checks to a dry run and stops before the container-create intent. */
 export async function publishDueMarketing(db:Database,owner:string,brand:MarketingBrand,dryRun=true,signal=AbortSignal.timeout(55000),publicationId?:string,options:{preflight?:boolean}={}){

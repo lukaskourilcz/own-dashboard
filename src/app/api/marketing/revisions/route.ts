@@ -50,7 +50,7 @@ export async function POST(request:Request){
    if(current.deck){
     // Resolve every dependency before writing: an unwired renderer or media store refuses the edit and the current revision keeps its state.
     let wiring;
-    try{wiring={render:getRenderDneskaiDeck(),loadMedia:getDneskaiMediaLoader(admin,user.id),listBriefAssetHashes:getBriefAssetHashLister(admin,user.id)};}
+    try{wiring={render:getRenderDneskaiDeck(admin),loadMedia:getDneskaiMediaLoader(admin,user.id),listBriefAssetHashes:getBriefAssetHashLister(admin,user.id)};}
     catch(failure){const code=failure instanceof Error&&unwired.has(failure.message)?failure.message:'renderer-unavailable';return NextResponse.json({error:code},{status:503});}
     let revision:ContentRevision;
     try{revision=await prepareDneskaiRevisionEdit(current,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck},wiring.listBriefAssetHashes);}
