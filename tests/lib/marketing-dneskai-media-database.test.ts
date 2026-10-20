@@ -1,6 +1,6 @@
-import { PGlite } from '@electric-sql/pglite';
-import { readFileSync } from 'node:fs';
+import type { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createMediaDatabase, setTestTime } from './marketing-dneskai-media-db';
 
 // Real migration SQL in an isolated WASM database. Every URL, hash and candidate is a synthetic fixture.
 const owner = '11111111-1111-4111-8111-111111111111';
@@ -19,7 +19,7 @@ async function as<T>(role: 'authenticated' | 'anon' | 'service_role', sub: strin
   await db.exec(`set role ${role}`);
   try { return await action(); } finally { await db.exec('reset role'); }
 }
-const at = (instant: string) => db.query("select set_config('marketing.test_time',$1,false)", [instant]);
+const at = (instant: string) => setTestTime(db, instant);
 const service = <T>(sql: string, params: unknown[]) => as('service_role', null, async () => (await db.query<{ r: T }>(sql, params)).rows[0]?.r as T);
 const begin = (candidate: string, f = fence, user = owner) => service<Record<string, unknown>>('select marketing_media_begin($1,$2,$3,$4) r', [user, project, candidate, f]);
 const setPlan = (candidate: string, plan: unknown, page = 'not-applicable', error: string | null = null, f = fence) =>
@@ -37,33 +37,7 @@ async function insertCandidate(id: string, status = 'selected', user = owner, pr
 }
 
 beforeAll(async () => {
-  db = new PGlite();
-  // Mirrors Supabase defaults: new tables and functions are granted to API roles unless revoked.
-  await db.exec(`create schema auth; create schema storage; create role anon; create role authenticated; create role service_role bypassrls;
-    alter default privileges in schema public grant all on tables to anon,authenticated,service_role;
-    alter default privileges in schema public grant execute on functions to anon,authenticated,service_role;
-    grant usage on schema auth,storage,public to anon,authenticated,service_role;
-    create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
-    create table auth.users(id uuid primary key);
-    create function storage.foldername(text) returns text[] language sql immutable as $$ select (string_to_array($1,'/'))[1:array_length(string_to_array($1,'/'),1)-1] $$;
-    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
-    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,metadata jsonb default '{}',unique(bucket_id,name));
-    alter table storage.objects enable row level security;
-    grant execute on function auth.uid(),storage.foldername(text) to anon,authenticated,service_role;
-    grant all on storage.objects to anon,authenticated,service_role;
-    -- Deliberately broad pre-existing feature policy: the restrictive guards must still hold.
-    create policy existing_feature_access on storage.objects for all to anon,authenticated using(true) with check(true);
-    create table public.projects(id uuid primary key,user_id uuid,portfolio_key text,repo_full_name text,parent_id uuid,previous_repo_full_names text[] default '{}');
-    create table public.user_preferences(hidden_project_tabs text[] default '{}');
-    create table public.ai_links(id uuid primary key,user_id uuid not null);
-    create schema marketing_private; create table marketing_private.generation_pilots(user_id uuid primary key,starts_at timestamptz,expires_at timestamptz);
-    create or replace function pg_catalog.clock_timestamp() returns timestamptz language sql volatile as $$ select current_setting('marketing.test_time')::timestamptz $$;`);
-  await at('2026-10-20T21:00:00Z');
-  await db.query('insert into auth.users values($1),($2)', [owner, other]);
-  await db.query("insert into projects(id,user_id,portfolio_key) values($1,$2,'aifirst'),($3,$4,'aifirst')", [project, owner, foreignProject, other]);
-  for (const file of ['20261012225640_marketing_control_surface.sql', '20261013001528_marketing_private_assets.sql', '20261013165236_marketing_dneskai_collection.sql', '20261020130000_dneskai_source_media.sql']) {
-    await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
-  }
+  db = await createMediaDatabase([owner, other], [{ id: project, owner }, { id: foreignProject, owner: other }], '2026-10-20T21:00:00Z');
   await db.query("insert into marketing_dneskai_runs(id,user_id,project_id,date,target_date) values($1,$2,$3,'2026-10-20','2026-10-21')", [run, owner, project]);
   for (const id of ['cand-a', 'cand-b', 'cand-c', 'cand-d', 'cand-e']) await insertCandidate(id);
   await insertCandidate('cand-held', 'held');
