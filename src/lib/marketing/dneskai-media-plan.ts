@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { DneskaiCandidate, DneskaiSource } from './dneskai-contracts';
 import { parseSafeHttpsUrl } from './free-feeds/security/url';
+import { DNESKAI_MEDIA_ORIGIN_KINDS, type DneskaiMediaOriginKind } from './dneskai-media-contracts';
 
 /**
  * Which source pictures the DNESKAi media collector (#114) fetches for a selected candidate, in what
@@ -13,8 +14,7 @@ import { parseSafeHttpsUrl } from './free-feeds/security/url';
  * under 300 px are never fetched.
  */
 
-export const DNESKAI_MEDIA_ORIGIN_KINDS = ['instagram-display', 'instagram-child', 'og-image', 'article-figure', 'feed-image'] as const;
-export type DneskaiMediaOriginKind = (typeof DNESKAI_MEDIA_ORIGIN_KINDS)[number];
+export { DNESKAI_MEDIA_ORIGIN_KINDS, type DneskaiMediaOriginKind };
 export interface DneskaiMediaPlanEntry {
   /** Zero-based place in the original carousel or article. */
   position: number;

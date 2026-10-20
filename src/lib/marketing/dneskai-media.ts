@@ -2,16 +2,17 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { DneskaiCandidateSchema, type DneskaiCandidate } from './dneskai-contracts';
+import { DneskaiCandidateSchema } from './dneskai-contracts';
 import { DNESKAI_SOURCES } from './dneskai-registry';
 import { safeFetch, SourceHttpError, UnsafeUrlError } from './free-feeds/security/url';
 import { SOURCE_USER_AGENT } from './free-feeds/sources/adapters/util';
 import { DneskaiMediaImageError, inspectDneskaiImage } from './dneskai-media-image';
 import {
   DNESKAI_MEDIA_ORIGIN_KINDS, dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, extractArticleMedia,
-  instagramMediaPlan, isInstagramMediaHost, publisherImageHostPolicy, type DneskaiMediaOriginKind, type DneskaiMediaPlanEntry,
+  instagramMediaPlan, isInstagramMediaHost, publisherImageHostPolicy, type DneskaiMediaPlanEntry,
 } from './dneskai-media-plan';
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
+import { DNESKAI_MEDIA_READ_VERSION, DneskaiMediaReadSchema, type DneskaiMediaCandidateView, type DneskaiMediaRead } from './dneskai-media-contracts';
 
 /**
  * DNESKAi source media (#114): downloads the pictures of selected research candidates once, stores the
@@ -387,49 +388,12 @@ export async function purgeUnusedDneskaiMedia(db: DneskaiMediaDatabase, owner: s
   return { purged: claimed.length, errorCode: null };
 }
 
-export const DNESKAI_MEDIA_READ_VERSION = 'dneskai-media/1';
-export interface DneskaiMediaAssetView {
-  assetId: string;
-  sha256: string;
-  /** Zero-based place in the original carousel or article. */
-  position: number;
-  originKind: DneskaiMediaOriginKind;
-  originUrl: string;
-  credit: string;
-  width: number;
-  height: number;
-  mime: string;
-  bytes: number;
-  fetchedAt: string;
-  fullBleedCapable: boolean;
-  insetCapable: boolean;
-  /** Set when a larger copy of the same picture exists; that one is canonical. */
-  duplicateOfAssetId: string | null;
-  duplicateOfSha256: string | null;
-  purged: boolean;
-  /** Short-lived signed link for the owner's preview; null when purged, unsigned or not requested. */
-  previewUrl: string | null;
-}
-export interface DneskaiMediaCandidateView {
-  candidateId: string;
-  sourceId: string;
-  title: string;
-  url: string;
-  candidateStatus: DneskaiCandidate['status'];
-  /** The text is an Instagram caption, never a transcript of the video (#115, #116). */
-  captionOnly: boolean;
-  mediaType: 'image' | 'carousel' | 'video' | null;
-  /** null: media were never collected for this candidate. */
-  collection: null | { status: 'pending' | 'complete' | 'partial' | 'failed' | 'empty'; pageStatus: string; pageError: string | null; attemptedAt: string | null; completedAt: string | null; skipped: Array<{ position: number; code: string }> };
-  assets: DneskaiMediaAssetView[];
-}
-
 const LinkRowSchema = z.object({
   candidate_id: z.string(), position: z.number().int(), origin_url: z.string(), origin_kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), credit: z.string(),
-  asset: z.object({ id: z.uuid(), sha256: z.string(), width: z.number().int(), height: z.number().int(), mime: z.string(), bytes: z.number().int(), storage_path: z.string(), fetched_at: z.string(), duplicate_of_asset_id: z.uuid().nullable(), purged_at: z.string().nullable() }),
+  asset: z.object({ id: z.uuid(), sha256: z.string(), width: z.number().int(), height: z.number().int(), mime: z.enum(['image/jpeg', 'image/png', 'image/webp']), bytes: z.number().int(), storage_path: z.string(), fetched_at: z.string(), duplicate_of_asset_id: z.uuid().nullable(), purged_at: z.string().nullable() }),
 });
 const CollectionRowSchema = z.object({
-  candidate_id: z.string(), status: z.enum(['pending', 'complete', 'partial', 'failed', 'empty']), page_status: z.string(), page_error: z.string().nullable(),
+  candidate_id: z.string(), status: z.enum(['pending', 'complete', 'partial', 'failed', 'empty']), page_status: z.enum(['not-applicable', 'pending', 'ok', 'failed']), page_error: z.string().nullable(),
   attempted_at: z.string().nullable(), completed_at: z.string().nullable(), skipped: z.array(z.object({ position: z.number().int(), code: z.string() }).loose()),
 });
 
@@ -438,13 +402,13 @@ const CollectionRowSchema = z.object({
  * capability flags and duplicate marker, plus the collection state, so a missing picture is visible.
  * Reads through the caller's client, so a session client sees only the owner's rows (RLS).
  */
-export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, project: string, options: { candidateId?: string; sign?: boolean; store?: DneskaiMediaObjectStore } = {}) {
+export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, project: string, options: { candidateId?: string; sign?: boolean; store?: DneskaiMediaObjectStore } = {}): Promise<DneskaiMediaRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
   const query = db.from('marketing_dneskai_candidates').select('id,status,candidate').eq('user_id', owner).eq('project_id', project);
   const { data: candidateRows, error } = await (options.candidateId ? query.eq('id', options.candidateId) : query.eq('status', 'selected').order('updated_at', { ascending: false }).limit(8));
   if (error) throw new DneskaiMediaError('media-read-unavailable');
   const candidates = (candidateRows ?? []).flatMap((row) => { const parsed = DneskaiCandidateSchema.safeParse(row.candidate); return parsed.success && parsed.data.id === row.id ? [parsed.data] : []; });
-  if (!candidates.length) return { schemaVersion: DNESKAI_MEDIA_READ_VERSION, candidates: [] as DneskaiMediaCandidateView[] };
+  if (!candidates.length) return { schemaVersion: DNESKAI_MEDIA_READ_VERSION, candidates: [] };
   const ids = candidates.map((candidate) => candidate.id);
   const [collections, links] = await Promise.all([
     db.from('marketing_media_collections').select('candidate_id,status,page_status,page_error,attempted_at,completed_at,skipped').eq('user_id', owner).eq('project_id', project).in('candidate_id', ids),
@@ -465,7 +429,7 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
   const names = live.map((row) => objectName(owner, row.asset.storage_path));
   const urls = options.sign ? await (options.store ?? supabaseMediaObjectStore(db)).sign(names, DNESKAI_MEDIA_PREVIEW_SECONDS).catch(() => names.map(() => null)) : [];
   const previews = new Map(live.map((row, index) => [`${row.candidate_id}:${row.asset.id}`, urls[index] ?? null]));
-  return {
+  return DneskaiMediaReadSchema.parse({
     schemaVersion: DNESKAI_MEDIA_READ_VERSION,
     candidates: candidates.map((candidate): DneskaiMediaCandidateView => {
       const collection = collectionRows.get(candidate.id);
@@ -482,6 +446,5 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
         })),
       };
     }),
-  };
+  });
 }
-
