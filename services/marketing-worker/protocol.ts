@@ -4,6 +4,8 @@ import { MarketingTemplateSchema, renderMarketingAssets, renderAuthoredMarketing
 import { parseSourcePacket, sourceUsable, revisionReadiness } from "../../src/lib/marketing/contracts";
 import { contentHash, revisionHash } from "../../src/lib/marketing/hashes";
 import type { MarketingTracer } from "../../src/lib/marketing/tracing";
+import type { DneskaiDeck } from "../../src/lib/marketing/dneskai-slides";
+import type { DneskaiDeckRenderResult } from "../../src/lib/marketing/dneskai-ports";
 
 export const MarketingWorkerRequestSchema = z.strictObject({
   schemaVersion: z.literal("marketing-job/1"), idempotencyKey: z.uuid(),
@@ -71,12 +73,28 @@ export function createMarketingWorkerHandler(dependencies: {
     }
   };
 }
+/** The owner-bound deck renderer (`RenderDneskaiDeck` from dneskai-render.ts with owner and media loader applied). */
+export type RenderDneskaiRevisionDeck = (input: { revisionId: string; deck: DneskaiDeck; signal?: AbortSignal }) => Promise<DneskaiDeckRenderResult>;
+/** Generation v5 (#116) attaches the slide deck to a DNESKAi draft. */
+type DraftWithDeck = GeneratedMarketingDraft & { deck?: DneskaiDeck };
+/**
+ * DNESKAi renders through the carousel studio and only from a deck. A DNESKAi draft without one
+ * (the retired article path) has nothing this worker may render; it never falls back to a layout.
+ */
+export async function renderDneskaiRevisionAssets(draft: DraftWithDeck, revisionId: string, render: RenderDneskaiRevisionDeck | undefined, signal?: AbortSignal) {
+  if (!draft.deck) throw new MarketingRenderError("dneskai-deck-required");
+  if (!render) throw new MarketingRenderError("dneskai-renderer-unavailable");
+  const result = await render({ revisionId, deck: draft.deck, signal });
+  if (result.status !== "rendered") throw new MarketingRenderError("dneskai-render-refused");
+  return result.assets;
+}
 /** The durable runner supplies a fenced claim and persists the returned result before acknowledging it. */
 export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dependencies: {
   model: MarketingModel; tracer?: MarketingTracer; storage: MarketingAssetStorage;
   budget?: GenerationBudget; signal?: AbortSignal;
   reloadSource(sourceId: string): Promise<unknown>;
   reloadTemplate?(version: string): Promise<MarketingTemplate | null>;
+  renderDneskaiDeck?: RenderDneskaiRevisionDeck;
 }): Promise<MarketingWorkerResult> {
   const job = MarketingWorkerRequestSchema.parse(request);
   if (dependencies.reloadTemplate) {
@@ -96,12 +114,12 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
     // Exercise authored layout/files/native encoders before the first paid attempt. No upload or revision write.
     await renderAuthoredMarketingPreflight({ source: expected, account: job.generation.account, scheduledAt: job.generation.scheduledAt, template: job.template, revisionId: job.generation.revisionId, signal: dependencies.signal });
   }
-  const draft = await generateMarketingDraft({ ...job.generation, source: expected }, dependencies);
+  const draft: DraftWithDeck = await generateMarketingDraft({ ...job.generation, source: expected }, dependencies);
   const renderStartedAt = Date.now();
   try {
-    const assets = draft.revision.account.platform === "instagram"
-      ? await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId }, dependencies.storage)
-      : [];
+    const assets = draft.revision.account.platform !== "instagram" ? []
+      : draft.revision.brand === "dneskai" ? await renderDneskaiRevisionAssets(draft, job.generation.revisionId, dependencies.renderDneskaiDeck, dependencies.signal)
+      : await renderMarketingAssets({ draft, template: job.template, revisionId: job.generation.revisionId }, dependencies.storage);
     await assertCurrentSource();
     const revision = { ...draft.revision, assets };
     if (revisionReadiness(revision).length) throw new Error("revision-not-ready");

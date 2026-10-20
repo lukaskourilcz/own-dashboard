@@ -12,7 +12,8 @@ import { authenticateAutomation } from "./automation-auth";
 import { ingestSource } from "./store";
 import { marketingPilotConfiguration, MarketingPilotError, MARKETING_PILOT_JOB_RESERVATION_USD } from "./pilot";
 import { resolveTrustedMarketingTemplate, MarketingTemplateApprovalError } from "./template-registry";
-import type { DneskaiSlideStorage } from "./dneskai-render";
+import { createDneskaiDeckRenderer, type DneskaiSlideStorage } from "./dneskai-render";
+import type { LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
@@ -191,6 +192,10 @@ export type ExecuteMarketingDependencies = {
   model?: MarketingModel; tracer?: MarketingTracer; storage?: MarketingAssetStorage;
   resolveTemplate?: typeof resolveMarketingTemplate;
   run?: typeof runMarketingWorkerJob;
+  /** The stored source media (#114). Without it a DNESKAi deck is refused as `dneskai-renderer-unavailable`. */
+  loadDneskaiMedia?: LoadDneskaiMediaBytes;
+  /** Defaults to the carousel studio renderer over `createDneskaiSlideStorage`. */
+  renderDneskaiDeck?: RenderDneskaiDeck;
 };
 export async function executeMarketingJob(db: Database, ownerId: string, jobId: string, dependencies: ExecuteMarketingDependencies) {
   assertOwner(ownerId); z.uuid().parse(jobId);
@@ -240,6 +245,8 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
       model: guardedModel, tracer, storage: dependencies.storage ?? createMarketingAssetStorage(db, ownerId, request.generation.scheduledAt, { signal }),
       signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...(pilot ? { maxCostUsd: Math.min(DEFAULT_GENERATION_BUDGET.maxCostUsd, MARKETING_PILOT_JOB_RESERVATION_USD) } : {}) },
       reloadTemplate: templateResolver(dependencies.resolveTemplate, env),
+      renderDneskaiDeck: dependencies.loadDneskaiMedia ? (input) => (dependencies.renderDneskaiDeck
+        ?? createDneskaiDeckRenderer({ storage: (owner, slideSignal) => createDneskaiSlideStorage(db, owner, { signal: slideSignal }) }))({ ...input, owner: ownerId, loadMedia: dependencies.loadDneskaiMedia! }) : undefined,
       reloadSource: async (sourceId) => {
         if (sourceId !== originalSource.sourceId || signal.aborted) throw new MarketingWorkerRuntimeError("source-refresh-failed");
         const current = parseSourcePacket(await dependencies.refreshSource(originalSource, signal));
