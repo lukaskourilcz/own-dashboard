@@ -92,3 +92,45 @@ describe('read-only DNESKAi source checks', () => {
     expect(fetcher).toHaveBeenCalledTimes(1); expect(fetcher.mock.calls[0]?.[1]).not.toHaveProperty('method');
   });
 });
+describe('DNESKAi events in Sources (#115)', () => {
+  const member = (id: string, role: 'primary' | 'supporting', patch: Record<string, unknown> = {}) => ({ candidateId: id, sourceId: 'qa-rss', title: `EVENT-${id}`, url: `https://example.invalid/${id}`, status: 'selected' as const, reason: null, role, ...patch });
+  function withEvents(): DneskaiCollectionState {
+    const value = state();
+    value.events = [
+      { eventId: 'b'.repeat(64), targetDate: '2026-10-14', status: 'selected', reason: null, brief: { id: '22222222-2222-4222-8222-222222222222', rank: 2, status: 'pending', code: 'account-unavailable', scheduledAt: '2026-10-14T10:30:00.000Z', suggestedFormat: 'carousel', evidenceCount: 1, mediaCount: 0, jobId: null }, members: [member('second', 'primary')] },
+      { eventId: 'a'.repeat(64), targetDate: '2026-10-14', status: 'selected', reason: null, brief: { id: '11111111-1111-4111-8111-111111111111', rank: 1, status: 'queued', code: null, scheduledAt: '2026-10-14T06:00:00.000Z', suggestedFormat: 'carousel', evidenceCount: 2, mediaCount: 3, jobId: '33333333-3333-4333-8333-333333333333' }, members: [member('first', 'primary'), member('first-support', 'supporting', { title: 'SUPPORTING-REPORT' })] },
+      { eventId: 'c'.repeat(64), targetDate: null, status: 'duplicate', reason: 'collection-already-covered', brief: null, members: [member('covered', 'primary', { status: 'duplicate' }), member('covered-2', 'supporting', { status: 'duplicate' })] },
+      { eventId: 'd'.repeat(64), targetDate: null, status: 'held', reason: 'PRIVATE-REASON-CODE', brief: null, members: [member('held', 'primary', { status: 'held' })] },
+    ];
+    return value;
+  }
+  it.each(['en', 'cs'] as const)('lists tomorrow’s events in rank order with primary, supporting reports, brief state and slot (%s)', lang => {
+    const t = dneskaiSources[lang];
+    render(<DneskaiSourceRecords state={withEvents()} lang={lang} now={now} />);
+    const tomorrow = container.querySelector('[aria-labelledby="dneskai-tomorrow-title"]')!;
+    expect(tomorrow.textContent).toContain('2 / 4');
+    const items = [...tomorrow.querySelectorAll(':scope ol > li')];
+    expect(items.map(item => item.querySelector('a')?.textContent)).toEqual(['EVENT-first', 'EVENT-second']);
+    expect(items[0]!.textContent).toContain(t.primarySource); expect(items[0]!.textContent).toContain(t.briefQueued);
+    expect(items[0]!.querySelector(`ul[aria-label="${t.supportingReports}"]`)?.textContent).toContain('SUPPORTING-REPORT');
+    expect(items[1]!.textContent).toContain(t.briefAccount);
+    expect(items[0]!.querySelector('time[datetime="2026-10-14T06:00:00.000Z"]')).not.toBeNull();
+    // The flat candidate list is replaced, not shown in addition.
+    expect(tomorrow.textContent).not.toContain('Offline research only');
+  });
+  it.each(['en', 'cs'] as const)('explains held and duplicate events in words, never in codes (%s)', lang => {
+    const t = dneskaiSources[lang];
+    render(<DneskaiSourceRecords state={withEvents()} lang={lang} now={now} />);
+    const others = container.querySelector('[aria-labelledby="dneskai-events-title"]')!;
+    expect(others.textContent).toContain(t.otherEvents);
+    expect(others.textContent).toContain(t.eventStatus.duplicate); expect(others.textContent).toContain(t.eventReasons['collection-already-covered']);
+    expect(others.textContent).toContain(`${t.reports}: 2`);
+    expect(others.textContent).toContain(t.eventStatus.held); expect(others.textContent).toContain(t.reasonUnknown);
+    expect(container.textContent).not.toContain('PRIVATE-REASON-CODE'); expect(container.textContent).not.toContain('collection-already-covered');
+    expect(container.querySelectorAll('img,button,input')).toHaveLength(0);
+  });
+  it('keeps EN and CS event strings in parity', () => {
+    expect(Object.keys(dneskaiSources.cs.eventReasons).sort()).toEqual(Object.keys(dneskaiSources.en.eventReasons).sort());
+    expect(Object.keys(dneskaiSources.cs.eventStatus).sort()).toEqual(Object.keys(dneskaiSources.en.eventStatus).sort());
+  });
+});

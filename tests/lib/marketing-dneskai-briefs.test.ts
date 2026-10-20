@@ -190,3 +190,18 @@ describe('createDneskaiBriefs over a store', () => {
     expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [], pending: true });
   });
 });
+
+describe('other events for the Sources tab', () => {
+  it('groups unselected reports into one held or duplicate event each, primary first, without the briefed ones', async () => {
+    const { dneskaiOtherEventViews } = await import('@/lib/marketing/dneskai-brief-read');
+    const a = syntheticCandidate('techcrunch-ai', 'o1', 'Synthetic robot dog learns to open doors', { status: 'duplicate', reason: 'collection-already-covered', fetchedAt: '2026-10-20T20:00:00Z' });
+    const b = syntheticCandidate('mit-tech-review', 'o2', 'Synthetic robot dog learns to open doors', { status: 'new', fetchedAt: '2026-10-20T20:05:00Z' });
+    const c = syntheticCandidate('wired-ai', 'o3', 'Synthetic satellite outage explained', { status: 'held', reason: 'collection-review-relevance', fetchedAt: '2026-10-20T19:00:00Z' });
+    const briefed = syntheticCandidate('openai-blog', 'o4', 'Synthetic launch already briefed', { status: 'new' });
+    const views = dneskaiOtherEventViews([a, b, c, briefed], new Set([briefed.id]));
+    expect(views.map((view) => [view.status, view.reason, view.members.map((member) => [member.candidateId, member.role])])).toEqual([
+      ['duplicate', 'collection-already-covered', [[b.id, 'primary'], [a.id, 'supporting']]],
+      ['held', 'collection-review-relevance', [[c.id, 'primary']]],
+    ]);
+  });
+});

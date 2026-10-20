@@ -80,3 +80,42 @@ export function briefsRpcClient(db: PGlite) {
     },
   };
 }
+
+/**
+ * A minimal PostgREST stand-in over PGlite for plain-column reads: `from(table).select(columns)` with eq, neq, in,
+ * gte, gt, lte, lt, not(…,'is',null), order, limit, maybeSingle and single. Rows come back through to_jsonb, so
+ * dates and timestamps have the JSON shapes Supabase returns. Embedded relations are not supported.
+ */
+export function pgliteRestClient(db: PGlite) {
+  const rpc = briefsRpcClient(db);
+  const from = (table: string) => {
+    let columns = '*'; const where: string[] = []; const values: unknown[] = []; const orders: string[] = []; let limit: number | null = null; let single: 'maybe' | 'one' | null = null;
+    const add = (sql: (index: number) => string, value: unknown) => { values.push(value); where.push(sql(values.length)); return builder; };
+    const run = async () => {
+      const sql = `select to_jsonb(x) as row from (select ${columns} from public.${table}${where.length ? ` where ${where.join(' and ')}` : ''}${orders.length ? ` order by ${orders.join(',')}` : ''}${limit !== null ? ` limit ${limit}` : ''}) x`;
+      try {
+        const rows = (await db.query<{ row: Record<string, unknown> }>(sql, values)).rows.map((row) => row.row);
+        if (single === 'one' && rows.length !== 1) return { data: null, error: { message: 'not exactly one row' } };
+        return { data: single ? rows[0] ?? null : rows, error: null };
+      } catch (error) { return { data: null, error: { message: error instanceof Error ? error.message : String(error) } }; }
+    };
+    const builder = {
+      select(value: string) { if (/[()!]/.test(value)) throw new Error(`embedded select unsupported: ${value}`); columns = value; return builder; },
+      eq: (column: string, value: unknown) => add((index) => `${column}=$${index}`, value),
+      neq: (column: string, value: unknown) => add((index) => `${column}<>$${index}`, value),
+      in: (column: string, value: unknown[]) => add((index) => `${column}::text=any($${index}::text[])`, value.map(String)),
+      gte: (column: string, value: unknown) => add((index) => `${column}>=$${index}`, value),
+      gt: (column: string, value: unknown) => add((index) => `${column}>$${index}`, value),
+      lte: (column: string, value: unknown) => add((index) => `${column}<=$${index}`, value),
+      lt: (column: string, value: unknown) => add((index) => `${column}<$${index}`, value),
+      not(column: string, operator: string, value: unknown) { if (operator !== 'is' || value !== null) throw new Error('unsupported not'); where.push(`${column} is not null`); return builder; },
+      order(column: string, options: { ascending?: boolean } = {}) { orders.push(`${column} ${options.ascending === false ? 'desc' : 'asc'}`); return builder; },
+      limit(value: number) { limit = value; return builder; },
+      maybeSingle() { single = 'maybe'; return builder; },
+      single() { single = 'one'; return builder; },
+      then<T>(resolve: (value: Awaited<ReturnType<typeof run>>) => T, reject?: (reason: unknown) => T) { return run().then(resolve, reject); },
+    };
+    return builder;
+  };
+  return { from, rpc: rpc.rpc, calls: rpc.calls };
+}
