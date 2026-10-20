@@ -213,3 +213,25 @@ describe('reconciliation after an ambiguous media_publish', () => {
     expect(state.calls).toHaveLength(0);
   });
 });
+
+describe('dry-run preflight', () => {
+  it('runs only read-only checks and stops before the container-create intent', async () => {
+    const { input, calls, checkpoints } = fixture();
+    expect(await publishMarketingRevision({ ...input, dryRun: true })).toMatchObject({ status: 'dry-run', errorCode: null });
+    expect(calls).toHaveLength(0);
+    const preflight = await publishMarketingRevision({ ...input, dryRun: true, preflight: true, publication: { ...input.publication, status: 'queued', lease_until: null } });
+    expect(preflight).toEqual({ status: 'dry-run', errorCode: null, remoteContainerId: null, remoteMediaId: null, remoteUrl: null });
+    expect(calls.every(call => call.method === 'GET')).toBe(true);
+    expect(calls.map(call => call.url.pathname.split('/').at(-1))).toEqual(['17841400000000001', 'slide-1.jpg', 'slide-2.jpg', 'slide-3.jpg', 'content_publishing_limit']);
+    expect(checkpoints).toHaveLength(0);
+  });
+  it('reports a failing check as a hold without writing anything', async () => {
+    const quota = fixture({ graph: ({ url }) => url.pathname.endsWith('/content_publishing_limit') ? Response.json({ data: [{ quota_usage: 50, config: { quota_total: 50 } }] }) : undefined });
+    expect(await publishMarketingRevision({ ...quota.input, preflight: true, dryRun: undefined })).toMatchObject({ status: 'held', errorCode: 'publishing-quota-exhausted' });
+    const image = fixture({ assets: [{ bytes: portrait, width: 1080, height: 1350 }, { bytes: png, width: 1080, height: 1350 }] });
+    expect(await publishMarketingRevision({ ...image.input, preflight: true, dryRun: true })).toMatchObject({ status: 'held', errorCode: 'asset-format-unsupported' });
+    const account = fixture({ graph: ({ url }) => url.pathname.endsWith('/17841400000000001') ? Response.json({ id: '1', user_id: '17841400000000999', username: 'dneskai' }) : undefined });
+    expect(await publishMarketingRevision({ ...account.input, preflight: true, dryRun: true })).toMatchObject({ status: 'held', errorCode: 'remote-account-mismatch' });
+    for (const state of [quota, image, account]) { expect(state.posts()).toHaveLength(0); expect(state.checkpoints).toHaveLength(0); }
+  });
+});

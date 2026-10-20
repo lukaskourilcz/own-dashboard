@@ -91,7 +91,8 @@ async function publishingState(db:Database,owner:string,revisionId:string,refres
 export async function executeOrchestratedMarketingJob(db:Database,owner:string,id:string){
  return executeMarketingJob(db,owner,id,{refreshSource});
 }
-export async function publishDueMarketing(db:Database,owner:string,brand:MarketingBrand,dryRun=true,signal=AbortSignal.timeout(55000),publicationId?:string){
+/** `options.preflight` adds the read-only Meta checks to a dry run and stops before the container-create intent. */
+export async function publishDueMarketing(db:Database,owner:string,brand:MarketingBrand,dryRun=true,signal=AbortSignal.timeout(55000),publicationId?:string,options:{preflight?:boolean}={}){
  if(!dryRun&&(process.env.MARKETING_PUBLISH_ENABLED!=='true'||process.env[`MARKETING_${brand.toUpperCase()}_PUBLISH_ENABLED`]!=='true'))throw new Error('publishing-held');
  let dueQuery=db.from('marketing_publications').select('id,revision_id,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','queued').lte('scheduled_at',new Date().toISOString()).gte('scheduled_at',new Date(Date.now()-15*60000).toISOString()).order('scheduled_at').limit(1);if(publicationId)dueQuery=dueQuery.eq('id',publicationId);
  const {data:due,error}=await dueQuery;
@@ -110,7 +111,7 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
   let container=publication.remote_container_id,code=publication.error_code;
   // The stored account token wins over the environment bootstrap; a held credential stops at the gate.
   const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);
-  const outcome=await publishMarketingRevision({...state,publication,config,dryRun,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
+  const outcome=await publishMarketingRevision({...state,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
    if(checkpoint.stage==='outcome'){
     const {error:receiptError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:publication.id,p_expected_container:container,p_expected_error:code,p_status:checkpoint.status,p_container:checkpoint.remoteContainerId,p_media:checkpoint.remoteMediaId,p_url:checkpoint.remoteUrl,p_error:checkpoint.errorCode});
     if(receiptError)throw new Error('publication-receipt-fence-lost');

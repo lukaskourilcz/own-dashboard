@@ -27,6 +27,8 @@ export type PublishOutcome = { status: 'held' | 'dry-run' | 'pending' | 'publish
 export type PublisherCheckpoint = PublishOutcome & { stage: 'container-create-intent' | 'container-created' | 'publish-intent' | 'outcome' };
 export type PublisherState = { revisionRow: MarketingRevisionRow; account: MarketingPublishAccount; sources: SourcePacket[] };
 export type PublishMarketingInput = PublisherState & { publication: PublicationRow & { user_id: string; lease_until?: string | null };
+  /** With a dry run, also run the read-only remote checks (account, asset bytes, quota) and stop before the container-create intent. */
+  preflight?: boolean;
   config: MetaPublisherConfig; dryRun?: boolean; now?: Date; signal?: AbortSignal; fetcher?: typeof fetch; wait?: (ms: number) => Promise<void>;
   checkpoint: (checkpoint: PublisherCheckpoint) => Promise<void>; revalidate: () => Promise<PublisherState> };
 
@@ -195,6 +197,16 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     }
   }
 }
+/** The provider's quota_total is authoritative (Meta's reference documents 50 posts per 24 hours, its guide 100); no number is assumed when it is absent. */
+async function publishingQuotaGate(input: PublishMarketingInput): Promise<string | null> {
+  const threads = input.account.platform === 'threads';
+  const quota = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publishing_limit' : 'content_publishing_limit'}`, 'GET', { fields: 'quota_usage,config' });
+  const limit = Array.isArray(quota.data) ? quota.data[0] as Record<string, unknown> | undefined : quota;
+  const quotaConfig = limit?.config;
+  const total = quotaConfig && typeof quotaConfig === 'object' && 'quota_total' in quotaConfig ? quotaConfig.quota_total : null;
+  if (!limit || typeof limit.quota_usage !== 'number' || !Number.isInteger(limit.quota_usage) || limit.quota_usage < 0 || typeof total !== 'number' || !Number.isInteger(total) || total <= 0) return 'publishing-quota-unavailable';
+  return limit.quota_usage >= total ? 'publishing-quota-exhausted' : null;
+}
 async function containerStatus(input: PublishMarketingInput, container: string): Promise<string> {
   const threads = input.account.platform === 'threads';
   const data = await graph(input, container, 'GET', { fields: threads ? 'id,status' : 'id,status_code' });
@@ -314,7 +326,19 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
   if (previous.status === 'published' || previous.remote_media_id || previous.status === 'reconciliation' || previous.error_code === 'publish-intent' || previous.remote_container_id?.startsWith('intent:')) return reconcileMarketingPublication(input);
   const gate = publicationGate(input, input.config, clock());
   if (gate) return result('held', gate, previous.remote_container_id);
-  if (input.dryRun !== false) return result('dry-run', null, previous.remote_container_id);
+  if (input.dryRun !== false) {
+    if (!input.preflight) return result('dry-run', null, previous.remote_container_id);
+    // GET requests only: no checkpoint, claim or container. Any failure is a hold, never a recorded outcome.
+    try {
+      const preflightGate = await verifyRemoteAccount(input);
+      if (preflightGate) return result('held', preflightGate, previous.remote_container_id);
+      await verifyAssets(input);
+      const quotaGate = await publishingQuotaGate(input);
+      return result(quotaGate ? 'held' : 'dry-run', quotaGate, previous.remote_container_id);
+    } catch (error) {
+      return result('held', error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'preflight-unavailable', previous.remote_container_id);
+    }
+  }
   if (previous.status !== 'claimed' || !previous.lease_until || !Number.isFinite(Date.parse(previous.lease_until)) || Date.parse(previous.lease_until) <= clock().getTime()) return result('held', 'publication-claim-required');
   const revision = input.revisionRow.revision;
   let container = previous.remote_container_id;
@@ -329,14 +353,8 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     if (accountGate) return result('held', accountGate, container);
     await verifyAssets(input);
     const threads = input.account.platform === 'threads';
-    const quota = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publishing_limit' : 'content_publishing_limit'}`, 'GET', { fields: 'quota_usage,config' });
-    const limit = Array.isArray(quota.data) ? quota.data[0] as Record<string, unknown> | undefined : quota;
-    const quotaConfig = limit?.config;
-    const total = quotaConfig && typeof quotaConfig === 'object' && 'quota_total' in quotaConfig ? quotaConfig.quota_total : null;
-    // The provider's quota_total is authoritative (the reference documents 50
-    // per 24 hours, the guide 100); no number is assumed when it is absent.
-    if (!limit || typeof limit.quota_usage !== 'number' || !Number.isInteger(limit.quota_usage) || limit.quota_usage < 0 || typeof total !== 'number' || !Number.isInteger(total) || total <= 0) return result('held', 'publishing-quota-unavailable', container);
-    if (limit.quota_usage >= total) return result('held', 'publishing-quota-exhausted', container);
+    const quotaGate = await publishingQuotaGate(input);
+    if (quotaGate) return result('held', quotaGate, container);
     const createPath = `${input.account.remote_account_id}/${threads ? 'threads' : 'media'}`;
     const create = async (params: Record<string, string>) => {
       const data = await graph(input, createPath, 'POST', params);
