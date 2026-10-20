@@ -99,6 +99,14 @@ Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service r
   aspoň stejně velký. Když je největší, převezme menší kanonické do 6 bitů a z jejich
   duplicit jen ty, které jsou do 6 bitů i od něj. Ostatní se přesunou k jinému
   kanonickému do 6 bitů, nebo zůstanou samostatné.
+- Značka duplicity je jen nápověda. Různé slidy jednoho carouselu na stejné šabloně
+  (bílé nebo černé pozadí, jiný titulek) mají pHash 4 až 6 bitů od sebe, takže je
+  značka spojí, i když jde o různé obrázky. Co nabídnout dál (#115, #116, #119), určuje
+  `dneskaiOfferableMediaAssets` v `dneskai-media-contracts.ts`: vynechá smazané a jen
+  opakovanou kopii téhož obrázku u stejného kandidáta složí do větší. U Instagramu je to
+  hlavní obrázek nebo varianta se stejným názvem souboru na CDN, u feedu `og:image` nebo
+  obrázek z feedu proti obrázku v těle. Dva obrázky z těla článku ani dva různé slidy
+  se nikdy neskládají.
 - `fullBleedCapable` = kratší strana ≥ 900 px (cover, single). `insetCapable` = šířka
   ≥ 600 px (obrázek v rámu). Menší obrázky se uloží a UI je ukáže jako malé.
 

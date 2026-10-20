@@ -70,3 +70,31 @@ export const DneskaiMediaReadSchema = z.strictObject({
   candidates: z.array(DneskaiMediaCandidateViewSchema).max(8),
 });
 export type DneskaiMediaRead = z.infer<typeof DneskaiMediaReadSchema>;
+
+const CARD_KINDS: ReadonlySet<DneskaiMediaOriginKind> = new Set(['og-image', 'feed-image']);
+const fileName = (url: string) => { try { return new URL(url).pathname.split('/').pop()?.toLowerCase() ?? ''; } catch { return ''; } };
+/** Two linked pictures of one candidate that are the same picture repeated, not two pictures that look alike. */
+function repeatedPicture(copy: DneskaiMediaAssetView, canonical: DneskaiMediaAssetView) {
+  const instagram = copy.originKind.startsWith('instagram-');
+  if (instagram !== canonical.originKind.startsWith('instagram-')) return false;
+  // Instagram names a media file once: displayUrl and images[] / childPosts[] renditions share it.
+  if (instagram) return fileName(copy.originUrl) !== '' && fileName(copy.originUrl) === fileName(canonical.originUrl);
+  // A feed's social card or feed image repeats a body figure; two body figures are two figures.
+  return CARD_KINDS.has(copy.originKind) || CARD_KINDS.has(canonical.originKind);
+}
+
+/**
+ * The pictures of one candidate that the brief (#115), generation (#116) and review (#119) should offer, in
+ * original order. A purged picture has no bytes. A near-duplicate marker alone never hides a picture:
+ * distinct carousel slides built on one template measure 4-6 bits apart. Only a repeated copy is folded
+ * into its larger copy when both belong to this candidate: an Instagram display image or rendition with
+ * the same CDN file name, or a feed's social card or feed image against a body figure.
+ */
+export function dneskaiOfferableMediaAssets(candidate: Pick<DneskaiMediaCandidateView, 'assets'>): DneskaiMediaAssetView[] {
+  const live = candidate.assets.filter((asset) => !asset.purged);
+  const byId = new Map(live.map((asset) => [asset.assetId, asset]));
+  return live.filter((asset) => {
+    const canonical = asset.duplicateOfAssetId ? byId.get(asset.duplicateOfAssetId) : undefined;
+    return !canonical || !repeatedPicture(asset, canonical);
+  });
+}
