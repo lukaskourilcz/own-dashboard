@@ -37,8 +37,19 @@ export const DNESKAI_MEDIA_PREVIEW_SECONDS = 60 * 60;
 export const DNESKAI_MEDIA_MAX_ATTEMPTS = 3;
 /** Storage deletes per request during retention. */
 export const DNESKAI_MEDIA_PURGE_CHUNK = 100;
+/** Per storage call: an upload has no abort signal, so it is raced against this deadline. */
+export const DNESKAI_MEDIA_STORAGE_TIMEOUT_MS = 15_000;
 const DEFAULT_BUDGET_MS = 50_000;
-const LEASE_SAFETY_MS = DNESKAI_MEDIA_FETCH_TIMEOUT_MS + 5_000;
+/** Upper bound of `budgetMs`: one call stays well inside the 120 s claim of the candidate it works on. */
+export const DNESKAI_MEDIA_MAX_BUDGET_MS = 90_000;
+/** The claim `marketing_media_begin` takes on a candidate (`interval '120 seconds'`). */
+const LEASE_MS = 120_000;
+/** No candidate or download starts with less budget than one fetch and a little slack. */
+const BUDGET_RESERVE_MS = DNESKAI_MEDIA_FETCH_TIMEOUT_MS + 5_000;
+/** The slowest a picture can be: its URL and fallback both time out, then the upload does. */
+const ENTRY_WORST_MS = 2 * DNESKAI_MEDIA_FETCH_TIMEOUT_MS + DNESKAI_MEDIA_STORAGE_TIMEOUT_MS + 10_000;
+/** Kept free at the end of a claim for the record and finish calls and for clock skew to the database. */
+const LEASE_MARGIN_MS = 10_000;
 
 export class DneskaiMediaError extends Error {
   constructor(readonly code: string) { super(code); this.name = 'DneskaiMediaError'; }
@@ -54,26 +65,34 @@ export interface DneskaiMediaObjectStore {
 }
 
 const sha256Of = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new DneskaiMediaError('media-storage-timeout')), ms); });
+  return Promise.race([Promise.resolve(promise), expired]).finally(() => clearTimeout(timer));
+}
 
 export function supabaseMediaObjectStore(db: DneskaiMediaDatabase): DneskaiMediaObjectStore {
   const files = () => db.storage.from(DNESKAI_MEDIA_BUCKET);
   let privateBucket: Promise<boolean> | undefined;
-  const bucketIsPrivate = () => privateBucket ??= db.storage.getBucket(DNESKAI_MEDIA_BUCKET).then(({ data, error }) => !error && !!data && !data.public, () => false);
+  const bucketIsPrivate = () => privateBucket ??= withTimeout(db.storage.getBucket(DNESKAI_MEDIA_BUCKET), DNESKAI_MEDIA_STORAGE_TIMEOUT_MS).then(({ data, error }) => !error && !!data && !data.public, () => false);
   const get = async (name: string) => {
-    const { data, error } = await files().download(name);
+    const { data, error } = await files().download(name, {}, { signal: AbortSignal.timeout(DNESKAI_MEDIA_STORAGE_TIMEOUT_MS) });
     return error || !data ? null : Buffer.from(await data.arrayBuffer());
   };
   return {
     async put(name, bytes, contentType, metadata) {
       if (!await bucketIsPrivate()) { privateBucket = undefined; throw new DneskaiMediaError('media-private-bucket-required'); }
       // Never overwrite: an object already under this name is accepted only after its bytes are verified.
-      const { error } = await files().upload(name, bytes, { upsert: false, contentType, cacheControl: '3600', metadata });
+      // An upload that outlives its deadline may still land; the next pass finds it and verifies it.
+      const { error } = await withTimeout(files().upload(name, bytes, { upsert: false, contentType, cacheControl: '3600', metadata }), DNESKAI_MEDIA_STORAGE_TIMEOUT_MS);
       if (!error) return 'stored';
       const existing = await get(name);
       if (existing && sha256Of(existing) === sha256Of(bytes)) return 'exists';
       throw new DneskaiMediaError('media-storage-failed');
     },
     get,
+    // No deadline here: a delete that timed out locally may still happen, and an unmarked row without
+    // bytes is worse than a slow retention pass.
     async remove(names) {
       for (let index = 0; index < names.length; index += 100) {
         const { error } = await files().remove(names.slice(index, index + 100) as string[]);
@@ -92,7 +111,8 @@ export function supabaseMediaObjectStore(db: DneskaiMediaDatabase): DneskaiMedia
 
 async function rpc<T>(db: DneskaiMediaDatabase, name: string, args: Record<string, unknown>): Promise<T> {
   const { data, error } = await db.rpc(name, args);
-  if (error) throw new DneskaiMediaError('media-store-unavailable');
+  // A lost claim concerns one candidate only; anything else means the database is not answering.
+  if (error) throw new DneskaiMediaError(/media fence unavailable/.test(error.message ?? '') ? 'media-lease-lost' : 'media-store-unavailable');
   return data as T;
 }
 const objectName = (owner: string, storagePath: string) => {
@@ -130,7 +150,10 @@ export interface DneskaiMediaDependencies {
   signal?: AbortSignal;
   /** Milliseconds clock for the time budget. */
   now?: () => number;
-  /** Work stops starting new downloads once less than one fetch timeout of this budget is left. */
+  /**
+   * Work stops starting new downloads once less than one fetch timeout of this budget is left. Capped at
+   * DNESKAI_MEDIA_MAX_BUDGET_MS; a download also never starts unless it can finish inside the claim.
+   */
   budgetMs?: number;
   concurrency?: number;
 }
@@ -218,22 +241,34 @@ export async function collectDneskaiMedia(db: DneskaiMediaDatabase, owner: strin
   const ids = CandidateIdsSchema.parse(candidateIds);
   const store = deps.store ?? supabaseMediaObjectStore(db);
   const now = deps.now ?? Date.now;
-  const deadline = now() + (deps.budgetMs ?? DEFAULT_BUDGET_MS);
+  const requested = deps.budgetMs ?? DEFAULT_BUDGET_MS;
+  const budget = Number.isNaN(requested) ? DEFAULT_BUDGET_MS : Math.max(0, Math.min(requested, DNESKAI_MEDIA_MAX_BUDGET_MS));
+  const deadline = now() + budget;
   const signal = deps.signal ?? new AbortController().signal;
   const outcomes: DneskaiMediaOutcome[] = [];
   let complete = true;
   for (const candidateId of ids) {
-    if (signal.aborted || deadline - now() < LEASE_SAFETY_MS) { complete = false; break; }
-    const outcome = await collectCandidate(db, owner, project, candidateId, { ...deps, store, signal }, () => deadline - now());
+    if (signal.aborted || deadline - now() < BUDGET_RESERVE_MS) { complete = false; break; }
+    let outcome: DneskaiMediaOutcome;
+    try {
+      outcome = await collectCandidate(db, owner, project, candidateId, { ...deps, store, signal, now }, () => deadline - now());
+    } catch (error) {
+      if (!(error instanceof DneskaiMediaError) || error.code !== 'media-lease-lost') throw error;
+      // The claim ran out before the pass finished; the row stays pending and the next call resumes it.
+      outcome = { candidateId, status: 'pending', assets: 0, downloaded: 0, reused: 0, skipped: [{ position: -1, code: 'media-lease-lost' }] };
+    }
     if (outcome.status === 'pending' || outcome.status === 'busy') complete = false;
     outcomes.push(outcome);
   }
   return { complete, candidates: outcomes };
 }
 
-async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project: string, candidateId: string, deps: DneskaiMediaDependencies & { store: DneskaiMediaObjectStore; signal: AbortSignal }, remaining: () => number): Promise<DneskaiMediaOutcome> {
+async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project: string, candidateId: string, deps: DneskaiMediaDependencies & { store: DneskaiMediaObjectStore; signal: AbortSignal; now: () => number }, remaining: () => number): Promise<DneskaiMediaOutcome> {
   const fence = randomUUID();
   const base = { candidateId, assets: 0, downloaded: 0, reused: 0, skipped: [] as DneskaiMediaOutcome['skipped'] };
+  // Taken before the claim is asked for, so this end is never later than the database's own lease end.
+  const leaseEnds = deps.now() + LEASE_MS;
+  const leaseLeft = () => leaseEnds - deps.now();
   const begun = BeginSchema.parse(await rpc(db, 'marketing_media_begin', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence }));
   if (!begun.claimed) {
     if (begun.reason === 'collection-finished' && begun.state) return { ...base, status: begun.state.status, assets: begun.state.asset_count, skipped: begun.state.skipped.map(({ position, code }) => ({ position, code })) };
@@ -295,7 +330,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   let stopped = false;
   const limit = limiter(Math.max(1, Math.min(deps.concurrency ?? 2, 4)));
   const tasks = plan.filter(open).map((entry) => ({ entry, prepared: limit(async () => {
-    if (deps.signal.aborted || remaining() < LEASE_SAFETY_MS) return null;
+    if (deps.signal.aborted || remaining() < BUDGET_RESERVE_MS || leaseLeft() < ENTRY_WORST_MS + LEASE_MARGIN_MS) return null;
     try { return await prepareEntry(owner, entry, allowHost, deps, db); }
     catch (error) { return error instanceof FetchFailure ? error : new FetchFailure(error instanceof DneskaiMediaError ? error.code : 'media-fetch-failed', true); }
   }) }));

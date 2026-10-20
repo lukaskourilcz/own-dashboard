@@ -48,13 +48,14 @@ type Reply = { status?: number; type?: string; body?: Uint8Array | string; locat
 class FixtureWeb {
   routes = new Map<string, Reply[]>();
   requests: string[] = [];
-  /** Advanced per request, for the time-budget test. */
+  /** Advanced by `step` per request, for the time-budget tests. */
   clock = 0;
+  step = 2_000;
   serve(url: string, ...replies: Reply[]) { this.routes.set(url, replies); return this; }
   fetch: typeof fetch = async (input) => {
     const url = String(input);
     this.requests.push(url);
-    this.clock += 2_000;
+    this.clock += this.step;
     const replies = this.routes.get(url);
     const reply = replies && (replies.length > 1 ? replies.shift()! : replies[0]!);
     if (!reply) return new Response('not found', { status: 404, headers: { 'content-type': 'text/plain' } });
@@ -223,6 +224,56 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
     await expect(collectDneskaiMedia(client(), owner, project, [])).rejects.toThrow();
     await expect(collectDneskaiMedia(client(), owner, project, ['a', 'a'])).rejects.toThrow();
     await expect(collectDneskaiMedia(client(), owner, project, Array.from({ length: 9 }, (_, index) => `c${index}`))).rejects.toThrow();
+  });
+
+  // Distinct sizes per seed, so no two of these tests share bytes.
+  const pictures = (count: number, seed: number) => Promise.all(Array.from({ length: count }, (_, index) => scene(((index + seed) % 5) as 0 | 1 | 2 | 3 | 4, 1000 + 10 * (index + seed), 1000).jpeg({ quality: 80 }).toBuffer()));
+  async function slowCarousel(name: string, count: number, web: FixtureWeb, seed: number) {
+    const urls = Array.from({ length: count }, (_, index) => `${IG}${name}-${index}.jpg`);
+    const bytes = await pictures(count, seed);
+    urls.forEach((url, index) => web.serve(url, { body: bytes[index]! }));
+    return { id: await insertCandidate('instagram:robotic', `OFFLINE-${name}`, `https://www.instagram.com/p/OFFLINE-${name}/`, urls), urls };
+  }
+
+  it('starts no download that could outlast the 120 s claim, whatever budget is left', async () => {
+    const web = new FixtureWeb();
+    web.step = 10_000;
+    const { id, urls } = await slowCarousel('lease', 8, web, 0);
+    const deps = { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore(), concurrency: 1, now: () => web.clock, budgetMs: 90_000 };
+    // Downloads start at 0, 10, …, 50 s into the claim; the seventh would start with 60 s of it left.
+    expect(await collectDneskaiMedia(client(), owner, project, [id], deps)).toMatchObject({ complete: false, candidates: [{ status: 'pending', downloaded: 6 }] });
+    expect(await collectDneskaiMedia(client(), owner, project, [id], deps)).toMatchObject({ complete: true, candidates: [{ status: 'complete', downloaded: 2 }] });
+    expect(urls.map((url) => web.count(url))).toEqual(urls.map(() => 1));
+  });
+
+  it('caps the time budget at 90 s', async () => {
+    const web = new FixtureWeb();
+    web.step = 10_000;
+    const first = await slowCarousel('cap-a', 6, web, 10);
+    const second = await slowCarousel('cap-b', 6, web, 20);
+    const deps = { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore(), concurrency: 1, now: () => web.clock, budgetMs: 600_000 };
+    // The second candidate starts 60 s in: two downloads fit before 70 s, where 20 s of the 90 s remain.
+    expect(await collectDneskaiMedia(client(), owner, project, [first.id, second.id], deps)).toMatchObject({ complete: false, candidates: [{ status: 'complete', downloaded: 6 }, { status: 'pending', downloaded: 2 }] });
+    expect(await collectDneskaiMedia(client(), owner, project, [second.id], deps)).toMatchObject({ complete: true, candidates: [{ status: 'complete', downloaded: 4 }] });
+  });
+
+  it('leaves a candidate pending when its claim runs out and carries on with the next one', async () => {
+    const web = new FixtureWeb();
+    const slow = await slowCarousel('slow-upload', 1, web, 30);
+    const next = await slowCarousel('after-slow', 1, web, 40);
+    const store = new MemoryStore();
+    const put = store.put.bind(store);
+    let stalls = 1;
+    // The upload takes longer than the claim: the database clock moves past its 120 s.
+    store.put = async (...args) => { if (stalls-- > 0) await setTestTime(pg, '2026-10-20T21:32:30Z'); return put(...args); };
+    const deps = { fetchImpl: web.fetch, resolveImpl: publicDns, store, concurrency: 1 };
+    expect(await collectDneskaiMedia(client(), owner, project, [slow.id, next.id], deps)).toEqual({ complete: false, candidates: [
+      { candidateId: slow.id, status: 'pending', assets: 0, downloaded: 0, reused: 0, skipped: [{ position: -1, code: 'media-lease-lost' }] },
+      { candidateId: next.id, status: 'complete', assets: 1, downloaded: 1, reused: 0, skipped: [] }] });
+    // The bytes that landed late are verified and recorded on the next pass, not uploaded twice.
+    expect(await collectDneskaiMedia(client(), owner, project, [slow.id], deps)).toMatchObject({ complete: true, candidates: [{ status: 'complete', assets: 1, reused: 1 }] });
+    expect(store.objects.size).toBe(2);
+    await setTestTime(pg, instant);
   });
 });
 

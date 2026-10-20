@@ -21,9 +21,16 @@ Které kandidáty předat, řekne `pendingDneskaiMediaCandidates(db, owner, proj
 vybrané kandidáty pro dnešní nebo pozdější pražský den, jejichž stahování nezačalo nebo
 ještě není hotové, nejvýše osm. Plánovač volá sběr, dokud seznam není prázdný.
 
-Volání má časový rozpočet (výchozí 50 s). Když dojde, nové stahování nezačne, výsledek
-má `complete: false` a další volání pokračuje jen otevřenými pozicemi. Hotový kandidát
-se znovu nestahuje vůbec: opakovaný běh nic nestáhne ani nenačte stránku znovu.
+Volání má časový rozpočet (výchozí 50 s, nejvýše 90 s). Když dojde, nové stahování
+nezačne, výsledek má `complete: false` a další volání pokračuje jen otevřenými pozicemi.
+Hotový kandidát se znovu nestahuje vůbec: opakovaný běh nic nestáhne ani nenačte stránku
+znovu.
+
+Kandidát je po dobu jednoho průchodu zamčený na 120 s (`marketing_media_begin`).
+Stahování obrázku začne, jen když by i v nejhorším případě (adresa i záložní adresa
+vyprší po 15 s, nahrání do úložiště po 15 s) skončilo před koncem zámku. Když zámek
+přesto vyprší, kandidát zůstane `pending` s kódem `media-lease-lost` a volání pokračuje
+dalším kandidátem.
 
 ## Co se stahuje
 
@@ -140,7 +147,8 @@ ho načte přes `loadDneskaiMedia` v `dneskai-client.ts`.
 | `media-http-403`, `-404`, `-410` | odkaz vypršel nebo neexistuje | ne |
 | `media-http-429`, `-5xx`, `media-timeout`, `media-fetch-failed` | přechodná chyba | ano, celkem 3× |
 | `media-too-large`, `media-undecodable`, `media-host-unsafe`, `media-redirect-refused` | soubor nebo adresa nevyhovuje | ne |
-| `media-storage-failed`, `media-record-failed` | úložiště nebo databáze | ano, celkem 3× |
+| `media-storage-failed`, `media-record-failed` | úložiště nebo databáze (i nahrání delší než 15 s) | ano, celkem 3× |
+| `media-lease-lost` | zámek kandidáta vypršel dřív, než průchod skončil; jen ve výsledku volání | ano, další volání |
 | `media-page-*` | totéž pro stránku článku | podle chyby, celkem 3× |
 
 Testy: `tests/lib/marketing-dneskai-media*.test.ts`. Síť v nich nahrazuje vložený
