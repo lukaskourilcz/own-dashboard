@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    // The vendored studio is built output loaded by Node itself, as in production
+    // (serverExternalPackages in next.config.ts); Vite never transforms it.
+    server: { deps: { external: [/\/vendor\/carousel-studio\//] } },
   },
 });
