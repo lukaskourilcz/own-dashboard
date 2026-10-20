@@ -34,6 +34,8 @@ function fakeModel(answers: Array<{ copy: unknown; usage: { inputTokens: number;
   return { model: "claude-sonnet-5-5", pricing: { inputPerMillionUsd: 2, outputPerMillionUsd: 10 }, invoke } satisfies MarketingModel;
 }
 const clean = vi.fn(async (): Promise<DneskaiSlideRenderProblem[]> => []);
+/** The daily ceiling's admission, admitting every call. */
+const admit = vi.fn(async (input: { attempt: number; maxCostUsd: number }) => { void input; });
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe("marketing-copy/5 prompt (#116)", () => {
@@ -268,7 +270,7 @@ describe("code-set picture credits", () => {
 });
 
 describe("generation from a brief", () => {
-  const dependencies = (model: MarketingModel, extra: Partial<GenerationDependencies> = {}): GenerationDependencies => ({ model, now, loadDneskaiMedia: loadMedia, validateDneskaiDeck: clean, evidencePublishers: dneskaiEvidencePublishers, ...extra });
+  const dependencies = (model: MarketingModel, extra: Partial<GenerationDependencies> = {}): GenerationDependencies => ({ model, now, loadDneskaiMedia: loadMedia, validateDneskaiDeck: clean, evidencePublishers: dneskaiEvidencePublishers, admitPaidCall: admit, ...extra });
   it("builds a marketing-content/2 deck revision from one call, at Sonnet 5.5 cost", async () => {
     const packet = briefPacket(briefFixture(pictures));
     const model = fakeModel([{ copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
@@ -342,10 +344,22 @@ describe("generation from a brief", () => {
     await generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model));
     expect(model.invoke.mock.calls[1]![0].prompt).toContain("Post [output-truncated]: The answer was cut off at the output limit.");
   });
-  it("never retries when usage is unknown", async () => {
+  it("never retries when usage is unknown and records the job's whole maximum", async () => {
     const model = fakeModel([{ copy: { invalid: true }, usage: null }]);
-    await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model))).rejects.toThrow("usage-unavailable");
+    const onUsage = vi.fn();
+    await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model, { onUsage }))).rejects.toThrow("usage-unavailable");
     expect(model.invoke).toHaveBeenCalledTimes(1);
+    // Unknown usage counts as the job's full reservation for the DNESKAi daily ceiling.
+    expect(onUsage).toHaveBeenLastCalledWith({ attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: DEFAULT_GENERATION_BUDGET.maxCostUsd });
+    const failing = { ...fakeModel([]), invoke: vi.fn(async () => { throw new Error("socket hang up"); }) };
+    const afterRetry = vi.fn();
+    const wrong = validCopy(pictures); wrong.slides[0]!.body = "Navíc.";
+    const twice = fakeModel([{ copy: wrong, usage: { inputTokens: 3000, outputTokens: 1500 } }]);
+    twice.invoke.mockImplementationOnce(async () => ({ copy: wrong, usage: { inputTokens: 3000, outputTokens: 1500 } })).mockImplementationOnce(async () => { throw new Error("socket hang up"); });
+    await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(failing, { onUsage }))).rejects.toThrow();
+    expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ estimatedCostUsd: DEFAULT_GENERATION_BUDGET.maxCostUsd }));
+    await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(twice, { onUsage: afterRetry }))).rejects.toThrow();
+    expect(afterRetry.mock.calls.map(([usage]) => usage.estimatedCostUsd)).toEqual([0.021, DEFAULT_GENERATION_BUDGET.maxCostUsd]);
   });
   it("refuses knowledge, Threads, another template, a missing media loader and a refused daily budget before any call", async () => {
     const input = briefInput(briefPacket(briefFixture(pictures)));
@@ -354,6 +368,8 @@ describe("generation from a brief", () => {
       [{ ...input, account: { ...ACCOUNT, platform: "threads" } }, {}, "brief-instagram-only"],
       [{ ...input, templateVersion: "dneskai-photo/1" }, {}, "template-revision-mismatch"],
       [input, { loadDneskaiMedia: undefined }, "dneskai-media-loader-required"],
+      // Without the daily ceiling's admission no brief call is made.
+      [input, { admitPaidCall: undefined }, "dneskai-daily-generation-budget-unavailable"],
     ];
     for (const [value, extra, code] of cases) {
       const model = fakeModel([{ copy: validCopy(pictures), usage: { inputTokens: 1, outputTokens: 1 } }]);
@@ -385,7 +401,7 @@ describe("the real studio gate on a code-assembled deck", () => {
     const brief = singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]);
     for (const sha256 of [pictures.hero.sha256, pictures.post.sha256]) {
       const model = fakeModel([{ copy: singlePhoto(sha256), usage: { inputTokens: 3000, outputTokens: 600 } }]);
-      const draft = await generateMarketingDraft(briefInput(briefPacket(brief)), { model, now, loadDneskaiMedia: loadMedia, evidencePublishers: dneskaiEvidencePublishers });
+      const draft = await generateMarketingDraft(briefInput(briefPacket(brief)), { model, now, loadDneskaiMedia: loadMedia, evidencePublishers: dneskaiEvidencePublishers, admitPaidCall: admit });
       expect(model.invoke).toHaveBeenCalledTimes(1);
       expect(draft.deck!.slides[0]!.credit).toBe(sha256 === pictures.hero.sha256 ? "@testonly-blog.net (Bluesky)" : "techcommunity.test-only.com");
       expect((await validateDneskaiDeck(draft.deck!, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);

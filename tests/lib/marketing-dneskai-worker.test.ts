@@ -98,9 +98,10 @@ describe("deck -> revision -> render in the worker", () => {
     const recordPreparedRevision = vi.fn(async () => true);
     const tracer = { start: vi.fn(async () => ({ id: "66666666-6666-4666-8666-666666666666", stage: vi.fn(async () => {}), finish: vi.fn(async () => {}) })), recordPreparedRevision };
     const provider = model();
+    const admitPaidCall = vi.fn(async (input: { attempt: number; maxCostUsd: number }) => { void input; });
     const result = await runMarketingWorkerJob(request, { model: provider, tracer, storage: { put: vi.fn() }, reloadSource, loadDneskaiMedia,
-      renderDneskaiDeck: (input) => renderDneskaiDeck(input) });
-    expect(provider.invoke).toHaveBeenCalledTimes(1); expect(reloadSource).toHaveBeenCalledTimes(2);
+      renderDneskaiDeck: (input) => renderDneskaiDeck(input), admitPaidCall });
+    expect(provider.invoke).toHaveBeenCalledTimes(1); expect(reloadSource).toHaveBeenCalledTimes(2); expect(admitPaidCall).toHaveBeenCalledTimes(1);
     const revision = parseContentRevision(result.revision);
     expect(revision).toMatchObject({ schemaVersion: MARKETING_DECK_CONTENT_VERSION, format: "carousel", promptVersion: MARKETING_BRIEF_PROMPT_ID, templateVersion: DNESKAI_DECK_TEMPLATE_VERSION });
     expect(revision.assets).toHaveLength(revision.deck!.slides.length);

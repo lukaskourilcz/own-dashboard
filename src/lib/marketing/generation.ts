@@ -337,6 +337,8 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (!/^claude-[a-z0-9.-]+$/.test(model.model)) throw new MarketingGenerationError("claude-only");
   if (![model.pricing.inputPerMillionUsd, model.pricing.outputPerMillionUsd].every((rate) => Number.isFinite(rate) && rate > 0)) throw new MarketingGenerationError("pricing-required");
   if (source.kind === "brief" && !dependencies.loadDneskaiMedia) throw new MarketingGenerationError("dneskai-media-loader-required");
+  // A brief call without the daily ceiling's admission is never made (#116); the worker always wires it.
+  if (source.kind === "brief" && !dependencies.admitPaidCall) throw new MarketingGenerationError("dneskai-daily-generation-budget-unavailable");
   const profile: GenerationProfile<MarketingCopy | BriefResult> = source.kind === "brief"
     ? await briefProfile(input, source, model, budget, dependencies) as GenerationProfile<MarketingCopy | BriefResult>
     : legacyProfile(input, source, model, challenge) as GenerationProfile<MarketingCopy | BriefResult>;
@@ -351,6 +353,12 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
   const usage = { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
   const report = () => { try { dependencies.onUsage?.({ ...usage }); } catch {} };
+  // Billing may have happened without a usage figure. A brief job then records its whole maximum, which the DNESKAi
+  // daily ceiling counts; the article and exercise paths keep counting the attempt's own reservation.
+  const ambiguous = (reservation: number) => {
+    usage.estimatedCostUsd = source.kind === "brief" ? Math.max(usage.estimatedCostUsd + reservation, budget.maxCostUsd) : usage.estimatedCostUsd + reservation;
+    report();
+  };
   const failedValidationIssues = new Set<string>();
   let retryFeedback = "";
   try {
@@ -369,14 +377,14 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
         result = await model.invoke({ ...prompts, prompt: prompts.prompt + retryFeedback, maxOutputTokens: budget.maxOutputTokens, signal, ...(profile.output ? { output: profile.output } : {}) });
       } catch (failure) {
         // Billing may already have happened. Never retry an ambiguous transport/provider failure.
-        usage.estimatedCostUsd += reservation; report();
+        ambiguous(reservation);
         if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
         if (failure instanceof MarketingGenerationError) throw failure;
         const providerFailure = classifyMarketingProviderError(failure);
         throw new MarketingGenerationError(providerFailure.code, providerFailure);
       }
       if (!result.usage || ![result.usage.inputTokens, result.usage.outputTokens].every((n) => Number.isInteger(n) && n >= 0)) {
-        usage.estimatedCostUsd += reservation; report();
+        ambiguous(reservation);
         throw new MarketingGenerationError("usage-unavailable");
       }
       usage.inputTokens += result.usage.inputTokens;

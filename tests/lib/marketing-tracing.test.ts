@@ -68,6 +68,17 @@ describe("redacted LangSmith EU SDK tracing", () => {
     expect(update.extra.metadata.issue_codes).toEqual(["model-code-forbidden", "unknown-evidence", "unsupported-number", "copy-validation-failed"]);
     expect(update.outputs).toEqual({}); expect(JSON.stringify(update)).not.toContain("TEST PRIVATE");
   });
+  it("keeps a failed root within 30 issue codes, its final code last", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const trace = await tracer.start(start);
+    const codes = (prefix: string) => Array.from({ length: 20 }, (_, index) => `${prefix}-${"abcdefghijklmnopqrstuvwxyz"[index]}`);
+    await trace!.stage({ name: "generation", attempt: 1, latencyMs: 1, usage, costUsd: usage.estimatedCostUsd, issues: codes("first") });
+    await trace!.stage({ name: "generation", attempt: 2, latencyMs: 1, usage, costUsd: usage.estimatedCostUsd, issues: codes("second") });
+    await trace!.finish({ status: "failed", revisionHash: null, usage: { ...usage, attempts: 2 }, issues: [...codes("first").slice(0, 29), "copy-validation-failed"] });
+    const metadata = mocks.updateRun.mock.calls.at(-1)![1].extra.metadata;
+    expect(metadata.issue_codes).toHaveLength(30);
+    expect(metadata.issue_codes.at(-1)).toBe("copy-validation-failed");
+  });
   it("binds exact prepared asset/revision hashes and refuses mismatched owner feedback", async () => {
     const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
     const traceId = "67a15323-4a6f-4463-a03b-c4c010015d80";
