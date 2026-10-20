@@ -118,6 +118,17 @@ describe('DNESKAi events in Sources (#115)', () => {
     // The flat candidate list is replaced, not shown in addition.
     expect(tomorrow.textContent).not.toContain('Offline research only');
   });
+  it.each(['en', 'cs'] as const)('says why a ready brief waits for its retry, in words (%s)', lang => {
+    const t = dneskaiSources[lang];
+    const value = withEvents();
+    value.events![0]!.brief = { ...value.events![0]!.brief!, status: 'ready', code: 'job-request-invalid' };
+    value.events![1]!.brief = { ...value.events![1]!.brief!, status: 'ready', code: 'PRIVATE-WORKER-CODE', jobId: null };
+    render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
+    const items = [...container.querySelector('[aria-labelledby="dneskai-tomorrow-title"]')!.querySelectorAll(':scope ol > li')];
+    expect(items[1]!.textContent).toContain(`${t.briefRetry} · ${t.eventReasons['job-request-invalid']}`);
+    expect(items[0]!.textContent).toContain(t.briefRetry);
+    expect(container.textContent).not.toContain('PRIVATE-WORKER-CODE'); expect(container.textContent).not.toContain('job-request-invalid');
+  });
   it.each(['en', 'cs'] as const)('explains held and duplicate events in words, never in codes (%s)', lang => {
     const t = dneskaiSources[lang];
     render(<DneskaiSourceRecords state={withEvents()} lang={lang} now={now} />);

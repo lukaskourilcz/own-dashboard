@@ -47,7 +47,7 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
   const events = state.events;
   const link = (member: { url: string; title: string }) => { const url = sourceExternalUrl(member.url); return url ? <a href={url} target="_blank" rel="noopener noreferrer" className="focus-ring rounded underline">{member.title || t.unnamed}</a> : member.title || t.unnamed; };
   const reasonText = (code: string | null) => code ? t.eventReasons[code] ?? t.blockers[code] ?? t.reasonUnknown : null;
-  const briefLabel = (brief: NonNullable<DneskaiEventView['brief']>) => brief.status === 'queued' ? t.briefQueued : brief.status === 'ready' ? (brief.code ? t.briefRetry : t.briefReady)
+  const briefLabel = (brief: NonNullable<DneskaiEventView['brief']>) => brief.status === 'queued' ? t.briefQueued : brief.status === 'ready' ? (brief.code ? [t.briefRetry, t.eventReasons[brief.code]].filter(Boolean).join(' · ') : t.briefReady)
     : brief.status === 'pending' ? (brief.code === 'account-unavailable' ? t.briefAccount : t.briefMedia) : reasonText(brief.code) ?? t.reasonUnknown;
   const eventItem = (event: DneskaiEventView) => {
     const [primary, ...supporting] = event.members;
