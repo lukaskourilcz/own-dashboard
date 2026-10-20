@@ -10,6 +10,7 @@ import devsharkTemplate from "../../../templates/marketing/devshark/template.jso
 import { AssetSchema, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash } from "./hashes";
 import { MarketingSlideSchema, authoredMarketingText, authoredCodingChallenge, type GeneratedMarketingDraft, type MarketingSlide } from "./generation";
+import type { DneskaiRenderProblem } from "./dneskai-ports";
 
 const sha = z.string().regex(/^[a-f0-9]{64}$/);
 /**
@@ -31,7 +32,8 @@ export interface MarketingAssetStorage {
   put(input: { key: string; bytes: Buffer; sha256: string; contentType: "image/jpeg"; metadata: Record<string, string> }): Promise<{ url: string; sha256: string }>;
 }
 export class MarketingRenderError extends Error {
-  constructor(public readonly code: string) { super(code); this.name = "MarketingRenderError"; }
+  /** `problems`: the refused DNESKAi deck's per-slide problems (`dneskai-render-refused`). */
+  constructor(public readonly code: string, public readonly problems?: readonly DneskaiRenderProblem[]) { super(code); this.name = "MarketingRenderError"; }
 }
 export const MARKETING_RENDER_FAILURE_CODES = ["template-hash-mismatch", "claude-design-approval-required", "template-revision-mismatch", "unsupported-render-format", "unsupported-glyph", "code-line-overflow", "word-overflow", "text-overflow", "brand-asset-hash-mismatch", "font-hash-mismatch", "design-asset-hash-mismatch", "fin-content-overflow", "code-height-overflow", "body-height-overflow", "asset-too-large", "asset-dimensions-invalid", "stored-asset-hash-mismatch", "preview-disabled-in-production", "render-input-invalid", "brand-asset-unavailable", "font-unavailable", "design-asset-unavailable", "render-rasterizer-unavailable", "render-jpeg-encoder-unavailable", "render-rasterization-failed", "render-jpeg-encoding-failed", "asset-metadata-unavailable", "render-layout-invalid", "asset-storage-failed", "render-preflight-timeout", "render-preflight-source-unavailable", "render-preflight-source-kind-unsupported", "dneskai-deck-required", "dneskai-renderer-unavailable", "dneskai-render-refused"] as const;
 export const MARKETING_PREPARATION_FAILURE_CODES = [...MARKETING_RENDER_FAILURE_CODES, "worker-timeout", "asset-input-invalid", "private-asset-bucket-required", "stored-asset-metadata-mismatch", "existing-asset-conflict", "asset-signing-failed", "schedule-outside-asset-window", "render-preparation-failed", "source-superseded", "revision-not-ready"] as const;

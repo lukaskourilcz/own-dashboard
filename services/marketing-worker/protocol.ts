@@ -85,8 +85,16 @@ export async function renderDneskaiRevisionAssets(draft: DraftWithDeck, revision
   if (!draft.deck) throw new MarketingRenderError("dneskai-deck-required");
   if (!render) throw new MarketingRenderError("dneskai-renderer-unavailable");
   const result = await render({ revisionId, deck: draft.deck, signal });
-  if (result.status !== "rendered") throw new MarketingRenderError("dneskai-render-refused");
+  // The per-slide problems travel with the code, so the job result can say what to fix.
+  if (result.status !== "rendered") throw new MarketingRenderError("dneskai-render-refused", result.problems);
   return result.assets;
+}
+/**
+ * Checked before the paid generation: a DNESKAi Instagram job without a deck renderer (no media
+ * loader wired) could only fail after paying for its copy.
+ */
+export function assertDneskaiRendererAvailable(source: { brand: string }, platform: string, render: RenderDneskaiRevisionDeck | undefined) {
+  if (platform === "instagram" && source.brand === "dneskai" && !render) throw new MarketingRenderError("dneskai-renderer-unavailable");
 }
 /** The durable runner supplies a fenced claim and persists the returned result before acknowledging it. */
 export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dependencies: {
@@ -103,6 +111,7 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
   }
   validateMarketingTemplate(job.template as MarketingTemplate, true);
   const expected = parseSourcePacket(job.generation.source);
+  assertDneskaiRendererAvailable(expected, job.generation.account.platform, dependencies.renderDneskaiDeck);
   const authorityFields = ["brand", "kind", "sourceId", "sourceRevision", "canonicalUrl", "locale", "contentHash"] as const;
   const assertCurrentSource = async () => {
     const current = parseSourcePacket(await dependencies.reloadSource(expected.sourceId));
@@ -132,6 +141,6 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
       // Diagnostics are best effort; a trace outage never changes or retries the failed preparation.
       try { await dependencies.tracer?.recordPreparationFailure?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, code }); } catch {}
     }
-    throw new MarketingRenderError(code);
+    throw new MarketingRenderError(code, failure instanceof MarketingRenderError ? failure.problems : undefined);
   }
 }

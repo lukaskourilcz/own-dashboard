@@ -186,6 +186,15 @@ export function createDneskaiSlideStorage(db: Database, ownerId: string, options
     },
   };
 }
+const DneskaiFailureProblemSchema = z.strictObject({ slide: z.number().int().min(-1).max(9), code: z.string().regex(/^[a-z0-9-]{1,64}$/), blocking: z.boolean(), field: z.string().max(80).nullable(), message: z.string().max(600) });
+/** At most 40 problems of a refused deck, each in the renderer's shape; anything else is dropped. */
+function dneskaiFailureProblems(problems: readonly unknown[] | undefined) {
+  return (problems ?? []).slice(0, 40).flatMap((problem) => {
+    const value = problem as Record<string, unknown>;
+    const parsed = DneskaiFailureProblemSchema.safeParse({ slide: value.slide, code: value.code, blocking: value.blocking, field: value.field ?? null, message: value.message });
+    return parsed.success ? [parsed.data] : [];
+  });
+}
 export type SourceRefresh = (source: SourcePacket, signal: AbortSignal) => Promise<unknown>;
 export type ExecuteMarketingDependencies = {
   refreshSource: SourceRefresh; env?: Environment; signal?: AbortSignal;
@@ -263,7 +272,9 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
       ? failure.code : failure instanceof Error && ["source-superseded", "template-superseded"].includes(failure.message) ? failure.message : "worker-execution-failed";
     const { data: finishedStatus, error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: null, p_error: knownCode });
     if (finishError || finishedStatus !== "failed") throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
-    return { claimed: true, status: "failed" as const, errorCode: knownCode };
+    // A refused DNESKAi deck says what to fix: the renderer's own bounded problems, never exception text.
+    const problems = failure instanceof MarketingRenderError && knownCode === failure.code ? dneskaiFailureProblems(failure.problems) : [];
+    return { claimed: true, status: "failed" as const, errorCode: knownCode, ...(problems.length ? { problems } : {}) };
   }
   // A lost/ambiguous final commit must not become a second failure write or a second model call.
   const { data: finishedStatus, error: finishError } = await db.rpc("marketing_finish_job", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_result: result, p_error: null });
