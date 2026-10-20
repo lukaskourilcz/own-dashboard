@@ -161,7 +161,9 @@ Since #121 the environment `ACCESS_TOKEN` is the bootstrap value. The owner's **
 button (`POST /api/marketing/accounts/verify`) stores it in `marketing_account_tokens`, and the
 publisher and reconciliation use the stored token while it is unexpired. A missing, expired or
 unreadable credential holds with `access-token-missing`, `access-token-expired`,
-`access-token-expiry-unverified` or `credential-store-unavailable` before any Graph request.
+`access-token-expiry-unverified` or `credential-store-unavailable` before any Graph request. A live
+run resolves the credential before `marketing_claim_due`, so such a hold leaves the publication
+queued and unclaimed rather than recording it as failed.
 `refreshInstagramToken` renews an Instagram Login token that is at least 24 hours old. Owner setup:
 [external setup §11](external-setup.md#11-instagram-publishing-for-dneskai-121).
 

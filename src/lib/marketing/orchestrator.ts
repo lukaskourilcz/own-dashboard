@@ -98,9 +98,15 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
  const {data:due,error}=await dueQuery;
  if(error)throw new Error('publication-state-unavailable');
  // Recheck live producer before a claim; an unavailable source creates no send.
- for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand)await publishingState(db,owner,publication.revision_id,true,signal);}
+ // A credential that cannot be used now (expired, missing, store unreadable)
+ // also stops before the claim: the publication stays queued instead of being
+ // recorded as failed by the post-claim hold below.
+ let credentialHold:{publicationId:string;code:string}|null=null;
+ for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand){await publishingState(db,owner,publication.revision_id,true,signal);
+  if(!dryRun&&!credentialHold){const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);if(config.credentialHold)credentialHold={publicationId:publication.id,code:config.credentialHold};}}}
  let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').eq('error_code','container-pending').gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
  if(pending.error)throw new Error('publication-state-unavailable');
+ if(credentialHold&&!pending.data?.length)return {outcomes:[{publicationId:credentialHold.publicationId,status:'held' as const,errorCode:credentialHold.code,remoteContainerId:null,remoteMediaId:null,remoteUrl:null}]};
  let dryQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','queued').lte('scheduled_at',new Date().toISOString()).limit(1);if(publicationId)dryQuery=dryQuery.eq('id',publicationId);
  const claimed=pending.data?.length?pending:dryRun?await dryQuery:await db.rpc('marketing_claim_due',{p_owner:owner,p_limit:1,p_brand:brand,...(publicationId?{p_publication:publicationId}:{})});
  if(claimed.error)throw new Error('publication-claim-failed');
