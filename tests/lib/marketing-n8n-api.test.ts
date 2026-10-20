@@ -142,6 +142,14 @@ describe("authenticated n8n marketing operation boundary", () => {
     expect((await POST(request({ operation: "publish", brand: "dneskai", dryRun: false }))).status).toBe(200);
     expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", false, expect.any(AbortSignal),undefined);
   });
+  it("forwards a read-only preflight only with a dry run", async () => {
+    expect((await POST(request({ operation: "publish", brand: "dneskai", preflight: true, publicationId: sourceId }))).status).toBe(200);
+    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", true, expect.any(AbortSignal), sourceId, { preflight: true });
+    mocks.publish.mockClear();
+    const live = await POST(request({ operation: "publish", brand: "dneskai", dryRun: false, preflight: true }));
+    expect(live.status).toBe(400); expect(await live.json()).toEqual({ error: "invalid-request" });
+    expect(mocks.publish).not.toHaveBeenCalled();
+  });
   it("forwards bounded discovery parameters and returns only released planned slots in active owned campaigns", async () => {
     const state = database({ marketing_campaigns: [{ id: "own-campaign", user_id: owner, brand: "devshark", status: "active" }, { id: "foreign-campaign", user_id: other, brand: "devshark", status: "active" }], marketing_calendar_entries: [
       { id: "owned-slot", user_id: owner, campaign_id: "own-campaign", date: "2026-10-15", kind: "carousel", platform: "instagram", status: "planned", needs_review: false },

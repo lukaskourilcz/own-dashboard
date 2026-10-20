@@ -90,7 +90,7 @@ cannot supply an owner ID. Operations are:
 | `execute` | Saved `jobId`; run the bounded durable generation worker. The workflow disables automatic retries and queries status after any uncertain response. |
 | `status` | Original saved `jobId`; read the recorded job outcome. |
 | `publication-plan` | Optional exact `publicationId` or `brand`; requery owned queued publications with exact approved hash, ready assets, and a future schedule within 24 hours; return up to eight `{publicationId,brand,scheduledAt}` rows. A hook provides no approval evidence. |
-| `publish` | `brand`, optional exact `publicationId`, `dryRun:true` by default; the server selects and rechecks due publications. It requires a separate approval of the complete revision and final assets. |
+| `publish` | `brand`, optional exact `publicationId`, `dryRun:true` by default; the server selects and rechecks due publications. It requires a separate approval of the complete revision and final assets. `preflight:true` (only with a dry run) adds the read-only Meta checks described below. |
 | `reconcile` | Actual returned `publicationId`, or `brand` after timeout; query recorded remote state without creating or publishing another container. |
 
 Read/refresh/status/reconcile and idempotent enqueue requests allow three HTTP attempts with a
@@ -168,6 +168,14 @@ unreadable credential holds with `access-token-missing`, `access-token-expired`,
 `MARKETING_PUBLISH_ENABLED` and each `MARKETING_<BRAND>_PUBLISH_ENABLED` flag must remain false
 until the owner authorizes cutover. Each account also requires `enabled=true` and a recorded
 verification. `MARKETING_APPROVED_ASSET_HOSTS` declares the exact public final-asset hosts.
+
+A plain dry run makes no request. A preflight (`publish` with `dryRun:true, preflight:true`) runs
+the same gate except those two switches, then reads the remote profile, downloads and decodes
+every asset and reads the publishing quota. It stops before the container-create intent: no POST,
+no claim and no checkpoint. A switch that is still off comes back in `advisories`
+(`account-disabled`, `publishing-disabled`) with `status:"dry-run"`, so the verified, disabled
+account from #121 can be checked before the pilot. Any other failed check is a `held` result with
+its code and is not recorded.
 
 The adapter verifies the complete revision hash against both stored content hash and approval,
 the approved remote account ID/handle, ready final assets and exact source identity/revision/hash.
