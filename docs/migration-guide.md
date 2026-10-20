@@ -598,3 +598,35 @@ Order: apply the migration before deploying the code. The new collector calls `m
 Rollback: roll the application back first, then drop the five brief functions, the two private helpers and
 `marketing_dneskai_briefs`, and re-run `marketing_dneskai_finish` from `20261013165236_marketing_dneskai_collection.sql`
 after dropping the six-argument version. Candidates selected as event members stay `selected`; nothing was published.
+
+## Marketing scheduler (2026-10-20)
+
+`20261020160000_marketing_scheduler.sql` and `20261020160100_marketing_scheduler_cron.sql` belong to #120 and
+replace the n8n timers with Supabase pg_cron ([marketing scheduling](marketing-scheduling.md)).
+
+- `marketing_ticks` (owner read, service-role write): one row per accepted tick, keyed by the tick id the caller
+  sends, with `kind`, `started_at`, `finished_at`, `did` and `errors`.
+- `marketing_scheduler_state` (owner read, service-role write): one lease per category (`holder`, `lease_until`),
+  `next_allowed_at` for backoff and a small `state` object.
+- Service-role functions: `marketing_scheduler_begin_tick` (false for a tick id seen before),
+  `marketing_scheduler_finish_tick`, `marketing_scheduler_acquire` (`busy` or `backoff` when refused),
+  `marketing_scheduler_release` (only by the current holder), `marketing_scheduler_save_state` (state under a
+  live lease, used for the token mark) and `marketing_scheduler_prune_ticks`.
+- The cron migration creates pg_cron (`pg_catalog`), pg_net and pgcrypto (`extensions`) when the engine offers
+  them, adds `marketing_private.scheduler_signature` and the security-definer
+  `marketing_private.scheduler_post(kind)`, and schedules `marketing-tick-minute` (`*/5 * * * *`) and
+  `marketing-tick-daily` (`18 2 * * *`, between two minute ticks). `scheduler_post` reads `marketing_scheduler_url` and
+  `marketing_scheduler_secret` from Vault and returns without sending anything while either is missing, so the
+  migration needs no values. No API role may execute either private function.
+
+Verify after applying: `select jobname, schedule from cron.job where jobname like 'marketing-tick-%'` lists two
+jobs; `select marketing_private.scheduler_post('minute')` returns null before the Vault secrets exist; after they
+exist a row appears in `marketing_ticks` within five minutes. `tests/lib/marketing-scheduler-database.test.ts`
+runs both migrations in PGlite with stand-ins for Vault, pg_net and pg_cron.
+
+Order: deploy the code with `MARKETING_SCHEDULER_SECRET` first, then apply both migrations, then create the two
+Vault secrets. Ticks that arrive before the deploy answer 404 or 401 and change nothing.
+
+Rollback: `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');`,
+then drop the two private functions, the five `marketing_scheduler_*` functions and both tables. The extensions
+may stay; other features can use them.

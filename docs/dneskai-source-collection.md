@@ -4,7 +4,9 @@ Owner schválil tento režim 13. října 2026. OwnDashboard je ovládací místo
 `https://own-dashboard-tau.vercel.app/`. V projektu DNESKAi záložka **Zdroje**
 ukazuje rozvrh, výsledky kontrol, problémy a vybraná témata.
 
-Každý den ve 22:00 Europe/Prague n8n zahájí sběr pro následující den. Plán počítá
+Každý den ve 22:00 Europe/Prague zahájí sběr pro následující den plánovač v Supabase
+(pg_cron, [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120)); popis je v
+[marketing-scheduling.md](marketing-scheduling.md). Plán počítá
 se čtyřmi odlišnými tématy. Pokud kvalitních témat není dost, přehled ukáže méně
 návrhů. Samotný výběr tématu neschvaluje text, obrázky ani publikování.
 Pravidelný sběr zatím není zapnutý; následující rozvrh popisuje připravené chování.
@@ -91,7 +93,13 @@ za minutu zvuku. Před doplněním přepisů je nutné ověřit konkrétní tari
 
 ## n8n a uvedení do provozu
 
-Export `workflows/marketing/dneskai-source-collection.json` míří na požadovanou
+> **Historický stav.** Po nasazení #120 sběr nespouští n8n, ale tick plánovače
+> `POST /api/marketing/tick` volaný z pg_cron každých pět minut. Tick po 22:00 přijme
+> dnešní běh a dokud běží, provede jeden `tickDneskaiCollection` za tick, bez n8n
+> executions. Export níže je v `workflows/marketing/retired/`. Aktuální popis:
+> [marketing-scheduling.md](marketing-scheduling.md).
+
+Export `workflows/marketing/retired/dneskai-source-collection.json` míří na požadovanou
 doménu. Zahájí sběr ve 22:00 v Europe/Prague. Každých pět minut do 23:55
 provede jeden krátký krok stejného denního běhu. Dokončený běh se znovu
 nescrapuje ani neplatí. Databáze omezuje běh na 40 převzetí; automatický rozvrh
