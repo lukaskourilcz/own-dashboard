@@ -195,7 +195,8 @@ function dneskaiFailureProblems(problems: readonly unknown[] | undefined) {
     return parsed.success ? [parsed.data] : [];
   });
 }
-export type SourceRefresh = (source: SourcePacket, signal: AbortSignal) => Promise<unknown>;
+/** The third argument scopes a DNESKAi brief re-read to the job's owner (#115); other sources ignore it. */
+export type SourceRefresh = (source: SourcePacket, signal: AbortSignal, scope?: { owner: string; db: Database }) => Promise<unknown>;
 export type ExecuteMarketingDependencies = {
   refreshSource: SourceRefresh; env?: Environment; signal?: AbortSignal;
   model?: MarketingModel; tracer?: MarketingTracer; storage?: MarketingAssetStorage;
@@ -258,7 +259,7 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
         ?? createDneskaiDeckRenderer({ storage: (owner, slideSignal) => createDneskaiSlideStorage(db, owner, { signal: slideSignal }) }))({ ...input, owner: ownerId, loadMedia: dependencies.loadDneskaiMedia! }) : undefined,
       reloadSource: async (sourceId) => {
         if (sourceId !== originalSource.sourceId || signal.aborted) throw new MarketingWorkerRuntimeError("source-refresh-failed");
-        const current = parseSourcePacket(await dependencies.refreshSource(originalSource, signal));
+        const current = parseSourcePacket(await dependencies.refreshSource(originalSource, signal, { owner: ownerId, db }));
         if (current.brand !== originalSource.brand || current.sourceId !== originalSource.sourceId) throw new MarketingWorkerRuntimeError("source-refresh-mismatch");
         await ingestSource(db, ownerId, current, current.brand);
         return current;

@@ -22,7 +22,8 @@ export async function synchronizeMarketingSources(db:Database,owner:string,brand
  let discoveryCursor=cursor;
  if(brand==='devshark'&&!sourceIds&&!cursor){const {data:head,error}=await db.from('marketing_events').select('payload').eq('user_id',owner).eq('kind','source-discovery-devshark').order('created_at',{ascending:false}).limit(1).maybeSingle();if(error)throw new Error('source-cursor-state-unavailable');discoveryCursor=head?.payload?.cursor??undefined;}
  let refreshed;
- try{refreshed=await refreshMarketingSources({brand,sourceIds,cursor:discoveryCursor,signal,previousPackets:previous?.data?.map(row=>parseSourcePacket(row.packet))});}
+ // owner and db scope a DNESKAi brief re-read to this owner's brief store (#115); other sources ignore them.
+ try{refreshed=await refreshMarketingSources({brand,sourceIds,cursor:discoveryCursor,signal,previousPackets:previous?.data?.map(row=>parseSourcePacket(row.packet)),owner,db});}
  catch(error){if(!sourceIds&&brand==='devshark'&&discoveryCursor&&error instanceof SourceRefreshError&&error.code==='source-cursor-stale')refreshed=await refreshMarketingSources({brand,signal});else throw error;}
 
  for(const packet of refreshed.packets)await ingestSource(db,owner,packet,brand);
