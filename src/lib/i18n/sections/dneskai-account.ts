@@ -1,6 +1,6 @@
 const en = {
   title: 'Instagram account',
-  intro: 'Publishing to @dneskai uses the Instagram Login token installed on the server. Verification checks the account and stores the token. Publishing stays off until you enable it.',
+  intro: 'Publishing to @dneskai uses an Instagram Login token. Verification checks the account with the valid token that expires later, the stored one or the one installed on the server, and stores it. Publishing stays off until you enable it.',
   verify: 'Verify account', verifying: 'Verifying…', loading: 'Loading account status…', unavailable: 'Account status could not be loaded. Try again.',
   preview: 'Preview only. Account status is not loaded.',
   notVerified: 'Not verified', verified: 'Verified', publishingOn: 'Publishing enabled', publishingOff: 'Publishing disabled',
@@ -29,6 +29,7 @@ const en = {
     'meta-request-failed': 'Instagram could not be reached. Try again later.',
     'meta-invalid-response': 'Instagram returned an unexpected answer.',
     'account-store-failed': 'The account could not be saved. Try again.',
+    'credential-store-unavailable': 'The stored token could not be read. Nothing was sent to Instagram. Try again.',
     'rate-limited': 'Too many attempts. Wait a few minutes and try again.',
   } as Record<string, string>,
   metaHttp: (status: string) => `Instagram rejected the request (HTTP ${status}). Check the token and its permissions.`,
@@ -36,7 +37,7 @@ const en = {
 };
 const cs: typeof en = {
   title: 'Instagramový účet',
-  intro: 'Publikování na @dneskai používá token Instagram Login uložený na serveru. Ověření zkontroluje účet a uloží token. Publikování zůstane vypnuté, dokud ho nezapnete.',
+  intro: 'Publikování na @dneskai používá token Instagram Login. Ověření zkontroluje účet platným tokenem s pozdějším koncem platnosti, uloženým nebo tím na serveru, a uloží ho. Publikování zůstane vypnuté, dokud ho nezapnete.',
   verify: 'Ověřit účet', verifying: 'Ověřuji…', loading: 'Načítám stav účtu…', unavailable: 'Stav účtu nelze načíst. Zkuste to znovu.',
   preview: 'Pouze náhled. Stav účtu nenačítáme.',
   notVerified: 'Neověřeno', verified: 'Ověřeno', publishingOn: 'Publikování zapnuto', publishingOff: 'Publikování vypnuto',
@@ -65,6 +66,7 @@ const cs: typeof en = {
     'meta-request-failed': 'Instagram není dostupný. Zkuste to později.',
     'meta-invalid-response': 'Instagram vrátil neočekávanou odpověď.',
     'account-store-failed': 'Účet se nepodařilo uložit. Zkuste to znovu.',
+    'credential-store-unavailable': 'Uložený token nelze načíst. Na Instagram se nic neodeslalo. Zkuste to znovu.',
     'rate-limited': 'Příliš mnoho pokusů. Počkejte několik minut a zkuste to znovu.',
   },
   metaHttp: (status: string) => `Instagram požadavek odmítl (HTTP ${status}). Zkontrolujte token a jeho oprávnění.`,

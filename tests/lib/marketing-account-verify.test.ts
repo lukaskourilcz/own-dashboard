@@ -20,10 +20,20 @@ const env = (patch: Record<string, string | undefined> = {}) => ({ MARKETING_OWN
   MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: 'instagram_business_basic,instagram_business_content_publish', ...patch });
 const stored = { accountId, remoteAccountId: '17841400000000001', handle: 'dneskai', verifiedAt: '2026-10-20T12:00:00.123456+00:00', enabled: false, tokenStored: true,
   token: { expiresAt: '2026-12-10T00:00:00+00:00', refreshedAt: '2026-10-20T12:00:00.123456+00:00', scopes: ['instagram_business_basic', 'instagram_business_content_publish'], loginMode: 'instagram' } };
-function admin(result: { data: unknown; error: unknown } = { data: stored, error: null }) {
-  const rpc = vi.fn(async () => result);
-  return { db: { rpc } as unknown as ReturnType<typeof createAdminClient>, rpc };
+type StoredToken = { access_token: string; expires_at: string; refreshed_at: string; scopes: string[]; login_mode: string };
+/** `store` is the existing account row and its stored token; by default nothing has been verified yet. */
+function admin(result: { data: unknown; error: unknown } = { data: stored, error: null }, store: { token?: StoredToken | null; readError?: boolean; lookupError?: boolean } = {}) {
+  const rpc = vi.fn(async (name: string) => name !== 'marketing_read_account_token' ? result
+    : store.readError ? { data: null, error: { message: 'TEST-ONLY database detail' } } : { data: store.token ? [store.token] : [], error: null });
+  const filters: Array<[string, unknown]> = [];
+  const query = { select: () => query, eq: (key: string, value: unknown) => { filters.push([key, value]); return query; },
+    maybeSingle: async () => ({ data: store.token !== undefined || store.readError ? { id: accountId } : null, error: store.lookupError ? { message: 'TEST-ONLY database detail' } : null }) };
+  const from = vi.fn(() => query);
+  return { db: { rpc, from } as unknown as ReturnType<typeof createAdminClient>, rpc, from, filters };
 }
+const storedToken = (patch: Partial<StoredToken> = {}): StoredToken => ({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', expires_at: '2027-01-15T00:00:00+00:00', refreshed_at: '2026-11-16T00:00:00+00:00',
+  scopes: ['instagram_business_basic', 'instagram_business_content_publish'], login_mode: 'instagram', ...patch });
+const bearer = (fetcher: ReturnType<typeof fetcherFor>) => ((fetcher.mock.calls[0] as [string, RequestInit])[1].headers as Record<string, string>).Authorization;
 const profile = (patch: Record<string, unknown> = {}) => Response.json({ id: '1234567', user_id: '17841400000000001', username: 'dneskai', account_type: 'BUSINESS', ...patch });
 const fetcherFor = (response: Response | (() => never)) => vi.fn(async () => typeof response === 'function' ? response() : response) as unknown as typeof fetch & ReturnType<typeof vi.fn>;
 
@@ -68,6 +78,37 @@ describe('verifyInstagramAccount', () => {
     const { db, rpc } = admin(); const fetcher = fetcherFor(response as Response | (() => never));
     await expect(verifyInstagramAccount(db, owner, 'dneskai', { env: env(), fetcher, now })).rejects.toMatchObject({ code });
     expect(fetcher).toHaveBeenCalledTimes(1); expect(rpc).not.toHaveBeenCalled();
+  });
+  it('verifies with a refreshed stored token once the environment token has expired', async () => {
+    const later = new Date('2026-12-20T12:00:00Z');
+    const { db, rpc, filters } = admin(undefined, { token: storedToken() }); const fetcher = fetcherFor(profile());
+    await verifyInstagramAccount(db, owner, 'dneskai', { env: env(), fetcher, now: later });
+    expect(bearer(fetcher)).toBe('Bearer TEST-ONLY-REFRESHED-TOKEN-0002');
+    expect(filters).toEqual([['user_id', owner], ['brand', 'dneskai'], ['platform', 'instagram']]);
+    expect(rpc).toHaveBeenCalledWith('marketing_read_account_token', { p_owner: owner, p_account: accountId });
+    expect(rpc).toHaveBeenLastCalledWith('marketing_verify_account', expect.objectContaining({ p_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', p_expires_at: '2027-01-15T00:00:00.000Z' }));
+    const missing = fetcherFor(profile());
+    await verifyInstagramAccount(admin(undefined, { token: storedToken() }).db, owner, 'dneskai', { env: env({ MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }), fetcher: missing, now });
+    expect(bearer(missing)).toBe('Bearer TEST-ONLY-REFRESHED-TOKEN-0002');
+  });
+  it('uses whichever valid token expires later, so a newly installed environment token is verified and stored', async () => {
+    const newer = fetcherFor(profile()); const older = admin(undefined, { token: storedToken({ expires_at: '2026-11-01T00:00:00+00:00' }) });
+    await verifyInstagramAccount(older.db, owner, 'dneskai', { env: env(), fetcher: newer, now });
+    expect(bearer(newer)).toBe(`Bearer ${token}`);
+    expect(older.rpc).toHaveBeenLastCalledWith('marketing_verify_account', expect.objectContaining({ p_token: token, p_expires_at: '2026-12-10T00:00:00.000Z' }));
+    const refreshed = fetcherFor(profile());
+    await verifyInstagramAccount(admin(undefined, { token: storedToken() }).db, owner, 'dneskai', { env: env(), fetcher: refreshed, now });
+    expect(bearer(refreshed)).toBe('Bearer TEST-ONLY-REFRESHED-TOKEN-0002');
+  });
+  it.each([
+    ['an expired stored token and no environment token', { token: storedToken({ expires_at: '2026-10-01T00:00:00+00:00' }) }, { MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }, 'access-token-expired', 409],
+    ['an unreadable token store', { readError: true }, {}, 'credential-store-unavailable', 503],
+    ['an unreadable account row', { lookupError: true }, {}, 'credential-store-unavailable', 503],
+  ] as const)('refuses %s before calling Meta', async (_label, store, patch, code, status) => {
+    const { db, rpc } = admin(undefined, store); const fetcher = fetcherFor(profile());
+    await expect(verifyInstagramAccount(db, owner, 'dneskai', { env: env(patch), fetcher, now })).rejects.toMatchObject({ code, status });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_verify_account');
   });
   it('reports a failed store without leaking the database error', async () => {
     const { db } = admin({ data: null, error: { message: 'TEST-ONLY database detail' } });

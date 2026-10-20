@@ -8,7 +8,8 @@ import type { MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-cl
 
 /**
  * POST /api/marketing/accounts/verify (#121): the owner checks the Instagram
- * account behind the bootstrap token and records it with enabled=false. Only
+ * account with the valid token that expires later (stored or bootstrap) and
+ * records it; a new account starts with enabled=false. Only
  * the configured marketing owner may bind the deployment's token. Responses
  * carry codes and non-secret metadata, never the token or Meta's error text.
  */
