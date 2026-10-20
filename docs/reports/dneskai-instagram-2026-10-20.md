@@ -302,3 +302,19 @@ Kritéria úspěchu: receipt existuje a shoduje se s GET; schválený hash odpov
 - `p1-lightroom-vista-sheet.jpg`, `p2-beam-press-sheet.jpg`, `p3-deepseek-fault-sheet.jpg`, `p4-spotify-single-sheet.jpg`: dnešní studio engine beze změn (1 obrazový slot, mono, textové karty; p3 ukazuje stav „bez použitelného obrázku“, p4 je single-image oznámení).
 - Zdrojové obrázky prototypů: Adobe (přes The Verge, 20. 10. 2026) a Hugging Face / Reflection AI (16. 10. 2026). Texty jsou české návrhy sestavené z uvedených článků, nejsou redakčně schválené.
 - Primární dokumentace čtená 20. 10. 2026: developers.facebook.com (Instagram Platform content publishing, IG Login, app modes, Threads), n8n.io/pricing a docs (Wait, sub-workflows), apify.com (pricing, instagram-scraper), vercel.com/docs (functions limitations, cron, OG, Blob), platform.claude.com/docs (pricing), typesafe.ai, hostinger.com (VPS, n8n hosting), templated.io, bannerbear.com, placid.app, abyssale.com, canva.dev (Connect API).
+
+## Dodatek 20. 10. 2026: rozhodnutí vlastníka a issues
+
+Vlastník rozhodl: (1) články pozastavit, jen socials; (2) rozšířit studio engine; (3) nativní feedy; (4) časování přes pg_cron v Supabase, ne n8n; (5) Sonnet 5.5; (6) Apify plán později; (7) obrázky ze zdrojů i bez vyjasněných práv, ukládá se původ a credit; (8) screenshoty reference později; (9) staging retirovat a uklidit, nemazat; (10) pilot ano.
+
+Práce je rozepsaná pro Claude Opus 5.5 v epicu [own-dashboard#110](https://github.com/lukaskourilcz/own-dashboard/issues/110) s pořadím podle závislostí:
+
+| Vlna | Issue |
+|---|---|
+| 1 | [quorum#602](https://github.com/lukaskourilcz/quorum/issues/602) pauza článků · [#111](https://github.com/lukaskourilcz/own-dashboard/issues/111) nativní feedy · [#112](https://github.com/lukaskourilcz/own-dashboard/issues/112) kurzor sběru · [#113](https://github.com/lukaskourilcz/own-dashboard/issues/113) retire stagingu · [#121](https://github.com/lukaskourilcz/own-dashboard/issues/121) Meta účet · [quorum#603](https://github.com/lukaskourilcz/quorum/issues/603) studio v2 |
+| 2 | [#114](https://github.com/lukaskourilcz/own-dashboard/issues/114) média · [#115](https://github.com/lukaskourilcz/own-dashboard/issues/115) události a brief · [#117](https://github.com/lukaskourilcz/own-dashboard/issues/117) vendorovat renderer |
+| 3 | [#116](https://github.com/lukaskourilcz/own-dashboard/issues/116) generování v5 · [#118](https://github.com/lukaskourilcz/own-dashboard/issues/118) revize a hash · [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120) pg_cron ticker |
+| 4 | [#119](https://github.com/lukaskourilcz/own-dashboard/issues/119) UI · [#122](https://github.com/lukaskourilcz/own-dashboard/issues/122) LangSmith |
+| 5 | [#123](https://github.com/lukaskourilcz/own-dashboard/issues/123) pilot · [#124](https://github.com/lukaskourilcz/own-dashboard/issues/124) Threads (backlog) |
+
+Změny proti odst. 5 a 8 plynoucí z rozhodnutí: rights gate se nezavádí (jen credit a původ); časování nedělá n8n, ale pg_cron tick endpoint (#120); n8n workflows `staging source check`, `DNESKAi daily preparation`, `daily marketing preparation` a `source reconciliation` byly 20. 10. archivovány, dva pilotní workflows bez MCP přístupu archivuje vlastník.
