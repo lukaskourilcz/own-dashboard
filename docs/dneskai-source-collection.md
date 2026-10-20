@@ -92,7 +92,7 @@ za minutu zvuku. Před doplněním přepisů je nutné ověřit konkrétní tari
 
 ## n8n a uvedení do provozu
 
-> **Historický stav.** Od 20. 10. 2026 (#120) sběr nespouští n8n, ale tick plánovače
+> **Historický stav.** Po nasazení #120 sběr nespouští n8n, ale tick plánovače
 > `POST /api/marketing/tick` volaný z pg_cron každých pět minut. Tick po 22:00 přijme
 > dnešní běh a dokud běží, provede jeden `tickDneskaiCollection` za tick, bez n8n
 > executions. Export níže je v `workflows/marketing/retired/`. Aktuální popis:

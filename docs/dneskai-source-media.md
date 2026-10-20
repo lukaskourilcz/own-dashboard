@@ -18,10 +18,11 @@ noc: odkazy na Instagram CDN vyprší za 24 až 48 hodin a uložené odkazy z 13
 vracejí 403. Kandidát sebraný v jednom běhu a vybraný až v pozdějším může mít odkazy
 starší než den a skončit jako `media-http-403`.
 
-Volá ji tick plánovače (#120, [marketing-scheduling.md](marketing-scheduling.md)): každých
-pět minut jedno `collectDneskaiMedia` s rozpočtem nejvýše 40 s, po `busy` čeká 125 s a po
-chybě deset minut. Retenci `purgeUnusedDneskaiMedia(db, owner, 30)` spouští denní tick
-jen tehdy, když žádný kandidát nedrží zámek sběru médií.
+Po nasazení plánovače (#120, [marketing-scheduling.md](marketing-scheduling.md)) ji volá
+jeho tick: každých pět minut jedno `collectDneskaiMedia` s rozpočtem nejvýše 40 s, po `busy`
+čeká 125 s a po chybě deset minut. Retenci `purgeUnusedDneskaiMedia(db, owner, 30)` spouští
+denní tick jen tehdy, když žádný kandidát nedrží zámek sběru médií. Dokud plánovač nasazený
+není, žádná cesta v aplikaci tyto funkce nespouští.
 
 Které kandidáty předat, řekne `pendingDneskaiMediaCandidates(db, owner, project)`:
 vybrané kandidáty pro dnešní nebo pozdější pražský den, jejichž stahování nezačalo nebo
