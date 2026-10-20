@@ -535,3 +535,37 @@ Rollback: roll the application back first, then re-run `marketing_approve_revisi
 `marketing_private.render_report_blocks` and the `render_report` column. A rolled-back release computes the hash
 with URLs again, so a revision approved under this release would hold at the publisher as
 `exact-approval-required` until it is edited and approved again.
+
+## DNESKAi events and briefs (2026-10-20)
+
+`20261020150000_dneskai_events_briefs.sql` belongs to #115 ([events and briefs](dneskai-briefs.md)).
+
+- `marketing_dneskai_briefs` (owner read, service-role writes, the collection ownership trigger): one row per
+  selected event and target day, unique per owner, project, `event_id` and `target_date`, with rank 1–4, category,
+  up to eight member candidate ids, the lead candidate, `member_hash`, status `pending | ready | queued | skipped`,
+  a code, the brief document (validated in TypeScript), the slot, the calendar entry and the job. A partial unique
+  index keeps one brief per slot.
+- `marketing_dneskai_finish` is dropped and recreated with a sixth argument `p_events jsonb default null` (the
+  TypeScript grouping). Its body is the current one from `20261013165236` with the selection changed to at most
+  four events, one per category first; a covered event's open reports become duplicates; every classified report
+  of a chosen event is selected (at most eight); `selected_count` counts the day's briefs. Without `p_events` every
+  candidate is its own event, which is the former selection.
+- `marketing_private.dneskai_event_id` and `marketing_private.dneskai_member_hash` compute the same identities as
+  `src/lib/marketing/dneskai-events.ts`.
+- Service-role functions: `marketing_dneskai_prepare_brief`, `marketing_dneskai_skip_brief` (optionally marks the
+  members `duplicate` with `collection-already-covered`), `marketing_dneskai_admit_brief` (ensures the active
+  "DNESKAi daily" campaign, never taking over another active DNESKAi campaign, and one planned calendar entry bound
+  to the brief's source head), `marketing_dneskai_brief_queued` and `marketing_dneskai_brief_source` (the refresh
+  read with the current member hash).
+
+Verify after applying: anon and authenticated cannot execute the new functions or the private helpers; the owner
+reads only their brief rows and cannot write them; a five-argument `marketing_dneskai_finish` call still works.
+`tests/lib/marketing-dneskai-briefs-database.test.ts` and `tests/lib/marketing-dneskai-briefs-flow-database.test.ts`
+run these checks and one collection night end to end against every migration in PGlite.
+
+Order: apply the migration before deploying the code. The new collector calls `marketing_dneskai_finish` with
+`p_events`; the code deployed before it calls it without, which the default keeps working.
+
+Rollback: roll the application back first, then drop the five brief functions, the two private helpers and
+`marketing_dneskai_briefs`, and re-run `marketing_dneskai_finish` from `20261013165236_marketing_dneskai_collection.sql`
+after dropping the six-argument version. Candidates selected as event members stay `selected`; nothing was published.
