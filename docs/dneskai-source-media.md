@@ -24,7 +24,10 @@ nespouští.
 
 Které kandidáty předat, řekne `pendingDneskaiMediaCandidates(db, owner, project)`:
 vybrané kandidáty pro dnešní nebo pozdější pražský den, jejichž stahování nezačalo nebo
-ještě není hotové, nejvýše osm. Plánovač volá sběr, dokud seznam není prázdný.
+ještě není hotové, nejvýše osm. Plánovač volá sběr, dokud seznam není prázdný, ale
+ne hned znovu: kandidát `busy` drží jiný průchod, takže další pokus má smysl až po konci
+jeho zámku (120 s). Průchod s přechodnou chybou (429, 5xx, timeout) má plánovač opakovat
+s odstupem několika minut, jinak všechny tři pokusy proběhnou během pár sekund.
 
 Volání má časový rozpočet (výchozí 50 s, nejvýše 90 s). Když dojde, nové stahování
 nezačne, výsledek má `complete: false` a další volání pokračuje jen otevřenými pozicemi.
