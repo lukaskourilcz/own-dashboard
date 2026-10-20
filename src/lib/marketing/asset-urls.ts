@@ -2,7 +2,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { AssetSchema, type ContentRevision } from "./contracts";
+import { AssetSchema, parseContentRevision, type ContentRevision } from "./contracts";
+import { revisionContentHash } from "./hashes";
 
 type Database = ReturnType<typeof createAdminClient>;
 type Asset = ContentRevision["assets"][number];
@@ -34,14 +35,16 @@ function assetKey(value: string, owner: string, sha256: string, origin: string):
     const rawPath = /^https:\/\/[^/?#]+([^?#]*)/.exec(value)?.[1];
     if (!rawPath || rawPath !== url.pathname || /(?:^|\/)\.{1,2}(?:\/|$)|%2e|%2f|%5c/i.test(rawPath)) return hold("asset-url-untrusted");
     const key = decodeURIComponent(url.pathname.slice(prefix.length));
-    const match = /^([a-f0-9-]{36})\/marketing\/(?:dneskai|devshark)\/([a-f0-9-]{36})\/([a-f0-9]{64})\/[1-5]-([a-f0-9]{64})\.jpg$/.exec(key);
+    // Slide positions 1-10: a DNESKAi carousel has up to ten slides.
+    const match = /^([a-f0-9-]{36})\/marketing\/(?:dneskai|devshark)\/([a-f0-9-]{36})\/([a-f0-9]{64})\/(?:[1-9]|10)-([a-f0-9]{64})\.jpg$/.exec(key);
     if (!match || match[1] !== owner || !z.uuid().safeParse(match[2]).success || match[4] !== sha256) return hold("asset-url-untrusted");
     return { key, revisionId: match[2], templateSha256: match[3] };
   } catch { return hold("asset-url-untrusted"); }
 }
 
 /** Renew only previously prepared private assets. No URL is fetched, uploaded
- * or replaced. New URLs form part of the edited revision's new approval hash. */
+ * or replaced. The stored bytes are re-hashed against `sha256` before any new
+ * URL is signed; the URLs themselves are not part of the approval hash. */
 export async function refreshMarketingAssetUrls(db: Database, ownerId: string, assets: Asset[], options: { supabaseUrl?: string } = {}): Promise<Asset[]> {
   if (!z.uuid().safeParse(ownerId).success) return hold("asset-owner-invalid");
   const parsed = z.array(AssetSchema).max(10).safeParse(assets);
@@ -82,4 +85,36 @@ export async function refreshMarketingAssetUrls(db: Database, ownerId: string, a
     if (error instanceof MarketingAssetUrlError) throw error;
     return hold("asset-storage-unavailable"); // Never expose native credentials or exception text.
   }
+}
+
+/**
+ * Writes renewed signed URLs into the stored revision itself (#118). The bytes behind every asset are re-verified
+ * first; `marketing_renew_revision_asset_urls` then checks in SQL that only `assets[].url` changed and that each URL
+ * signs the same object. `content_hash`, `approved_hash` and the approval stay, and no revision is created.
+ */
+export async function renewStoredRevisionAssetUrls(db: Database, ownerId: string, revisionId: string, options: { supabaseUrl?: string } = {}):
+  Promise<{ revisionId: string; contentHash: string; renewed: number }> {
+  if (!z.uuid().safeParse(ownerId).success) return hold("asset-owner-invalid");
+  if (!z.uuid().safeParse(revisionId).success) return hold("asset-input-invalid");
+  let stored: { revision: unknown; content_hash: string; status: string } | null;
+  try {
+    const { data, error } = await db.from("marketing_revisions").select("revision,content_hash,status").eq("user_id", ownerId).eq("id", revisionId).maybeSingle();
+    if (error) return hold("asset-storage-unavailable");
+    stored = data;
+  } catch { return hold("asset-storage-unavailable"); }
+  if (!stored) return hold("revision-unavailable");
+  if (!["review", "approved"].includes(stored.status)) return hold("revision-not-renewable");
+  let revision: ContentRevision;
+  try { revision = parseContentRevision(stored.revision); } catch { return hold("asset-input-invalid"); }
+  // A row whose stored hash is not the URL-free identity was not written by this release: do not touch it.
+  if (revisionContentHash(revision) !== stored.content_hash) return hold("revision-identity-mismatch");
+  if (!revision.assets.length) return { revisionId, contentHash: stored.content_hash, renewed: 0 };
+  const assets = await refreshMarketingAssetUrls(db, ownerId, revision.assets, options);
+  if (revisionContentHash({ ...revision, assets }) !== stored.content_hash) return hold("revision-identity-mismatch");
+  try {
+    const { data, error } = await db.rpc("marketing_renew_revision_asset_urls", { p_owner: ownerId, p_revision: revisionId, p_expected_hash: stored.content_hash, p_assets: assets });
+    const result = data as { contentHash?: unknown; renewed?: unknown } | null;
+    if (error || !result || result.contentHash !== stored.content_hash || result.renewed !== assets.length) return hold("asset-url-renewal-refused");
+  } catch { return hold("asset-url-renewal-refused"); }
+  return { revisionId, contentHash: stored.content_hash, renewed: assets.length };
 }

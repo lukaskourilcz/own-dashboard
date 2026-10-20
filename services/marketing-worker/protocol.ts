@@ -2,7 +2,7 @@ import { z } from "zod";
 import { GenerationInputSchema, generateMarketingDraft, type GeneratedMarketingDraft, type MarketingModel, type GenerationBudget } from "../../src/lib/marketing/generation";
 import { MarketingTemplateSchema, renderMarketingAssets, renderAuthoredMarketingPreflight, validateMarketingTemplate, MarketingRenderError, marketingPreparationFailureCode, type MarketingAssetStorage, type MarketingTemplate } from "../../src/lib/marketing/render";
 import { parseSourcePacket, sourceUsable, revisionReadiness } from "../../src/lib/marketing/contracts";
-import { contentHash, revisionHash } from "../../src/lib/marketing/hashes";
+import { contentHash, revisionContentHash } from "../../src/lib/marketing/hashes";
 import type { MarketingTracer } from "../../src/lib/marketing/tracing";
 import type { DneskaiDeck } from "../../src/lib/marketing/dneskai-slides";
 import type { DneskaiDeckRenderResult } from "../../src/lib/marketing/dneskai-ports";
@@ -132,7 +132,7 @@ export async function runMarketingWorkerJob(request: MarketingWorkerRequest, dep
     await assertCurrentSource();
     const revision = { ...draft.revision, assets };
     if (revisionReadiness(revision).length) throw new Error("revision-not-ready");
-    const finalHash = revisionHash(revision);
+    const finalHash = revisionContentHash(revision);
     if (draft.traceId) await dependencies.tracer?.recordPreparedRevision?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, revisionHash: finalHash, assetHashes: assets.map((asset) => asset.sha256), templateSha256: job.template.templateSha256, latencyMs: Date.now() - renderStartedAt });
     return { ...draft, revision, revisionHash: finalHash };
   } catch (failure) {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import sharp from 'sharp';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { parseContentRevision, parseSourcePacket } from './contracts';
-import { contentHash, revisionHash } from './hashes';
+import { contentHash, revisionContentHash } from './hashes';
 import { pragueScheduledAt } from './clock';
 import { refreshSource } from './source-refresh';
 import { ingestSource } from './store';
@@ -82,7 +82,7 @@ export async function importMarketingOfflineDraft(db:Database,ownerId:string,val
   const revision=parseContentRevision({schemaVersion:'marketing-content/1',brand:'devshark',title:source.content.title,caption:prepared.caption,format,sources:[{sourceId:source.sourceId,sourceRevision:source.sourceRevision,contentHash:source.contentHash}],knowledgeIds:[],assets,account:{id:account.remote_account_id,platform:format==='thread'?'threads':'instagram',handle:account.handle},scheduledAt,timeZone:'Europe/Prague',templateVersion:prepared.templateVersion,promptVersion:'authored-weekly-offline-import/1',model:'none-offline-authored',traceId:null});
   const receipt:MarketingOfflineImportReceipt={schemaVersion:'marketing-offline-import/1',manifestSha256:input.manifestSha256,identityHash:prepared.identityHash,role:input.role,templateSha256:prepared.templateSha256,sourceContentHash:source.contentHash,assetHashes:assets.map(asset=>asset.sha256),svgHashes:prepared.descriptors.map(asset=>asset.svg.sha256),holdCode:OFFLINE_IMPORT_HOLD,templateApproved:false,providerCalls:0};
   assertLiveScope();
-  const {data,error}=await db.rpc('marketing_import_offline_revision',{p_owner:ownerId,p_id:revisionId,p_campaign:input.campaignId,p_entry:input.entryId,p_version:input.entryVersion,p_role:input.role,p_identity:prepared.identityHash,p_revision:revision,p_hash:revisionHash(revision),p_receipt:receipt,p_pilot:pilot});
+  const {data,error}=await db.rpc('marketing_import_offline_revision',{p_owner:ownerId,p_id:revisionId,p_campaign:input.campaignId,p_entry:input.entryId,p_version:input.entryVersion,p_role:input.role,p_identity:prepared.identityHash,p_revision:revision,p_hash:revisionContentHash(revision),p_receipt:receipt,p_pilot:pilot});
   if(error||!data)reject('offline-import-save-failed');
   return{revisionId:String(data),duplicate:false,ready:false,status:'review' as const,holdCode:OFFLINE_IMPORT_HOLD,providerCalls:0 as const};
 }

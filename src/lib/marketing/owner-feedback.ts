@@ -2,7 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import { createMarketingTracer,LANGSMITH_EU_ENDPOINT,type OwnerFeedback } from './tracing';
 import { parseContentRevision } from './contracts';
-import { revisionHash } from './hashes';
+import { revisionContentHash } from './hashes';
 import type { createAdminClient } from '@/lib/supabase/admin';
 
 export type MarketingOwnerFeedbackScope={db:ReturnType<typeof createAdminClient>;ownerId:string};
@@ -18,11 +18,11 @@ export async function recordMarketingOwnerFeedback(value:z.infer<typeof Input>,e
    const {data:reviewed,error:reviewedError}=await scope.db.from('marketing_revisions').select('id,content_hash,revision').eq('user_id',owner).eq('id',input.revisionId).maybeSingle();
    if(reviewedError||!reviewed||reviewed.id!==input.revisionId||reviewed.content_hash!==input.revisionHash)return false;
    const reviewedRevision=parseContentRevision(reviewed.revision);
-   if(reviewedRevision.traceId!==input.traceId||revisionHash(reviewedRevision)!==input.revisionHash)return false;
+   if(reviewedRevision.traceId!==input.traceId||revisionContentHash(reviewedRevision)!==input.revisionHash)return false;
    const {data:generated,error:generatedError}=await scope.db.from('marketing_revisions').select('id,content_hash,revision').eq('user_id',owner).eq('revision->>traceId',input.traceId).order('created_at',{ascending:true}).limit(1).maybeSingle();
    if(generatedError||!generated)return false;
    const generatedRevision=parseContentRevision(generated.revision);
-   if(generatedRevision.traceId!==input.traceId||revisionHash(generatedRevision)!==generated.content_hash)return false;
+   if(generatedRevision.traceId!==input.traceId||revisionContentHash(generatedRevision)!==generated.content_hash)return false;
    feedback.generatedRevisionId=z.uuid().parse(generated.id);
    feedback.generatedRevisionHash=z.string().regex(/^[a-f0-9]{64}$/).parse(generated.content_hash);
   }

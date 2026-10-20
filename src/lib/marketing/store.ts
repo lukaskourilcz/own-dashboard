@@ -2,7 +2,7 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { parseContentRevision, parseSourcePacket, revisionReadiness, sourceUsable, type ContentRevision } from './contracts';
-import { contentHash, revisionHash } from './hashes';
+import { contentHash, revisionContentHash } from './hashes';
 
 type Database = ReturnType<typeof createAdminClient>;
 export async function ingestSource(db:Database,ownerId:string,value:unknown,brand:string|null) {
@@ -17,7 +17,7 @@ export async function ingestSource(db:Database,ownerId:string,value:unknown,bran
 export async function saveRevision(db:Database,ownerId:string,value:unknown,options:{id?:string;replacesId?:string|null;slides?:unknown[]}={}) {
  const revision=parseContentRevision(value);
  const ready=revisionReadiness(revision).length===0;
- const {data,error}=await db.rpc('marketing_save_revision',{p_owner:ownerId,p_id:options.id??randomUUID(),p_revision:revision,p_hash:revisionHash(revision),p_ready:ready,p_slides:options.slides??[],p_replace:options.replacesId??null});
+ const {data,error}=await db.rpc('marketing_save_revision',{p_owner:ownerId,p_id:options.id??randomUUID(),p_revision:revision,p_hash:revisionContentHash(revision),p_ready:ready,p_slides:options.slides??[],p_replace:options.replacesId??null});
  if(error) throw new Error('revision-save-failed');
  return {id:data,ready};
 }

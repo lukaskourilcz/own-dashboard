@@ -1,7 +1,14 @@
 import { z } from "zod";
+import { DneskaiDeckSchema } from "./dneskai-slides";
 
 export const MARKETING_SOURCE_VERSION = "marketing-source/1";
+/** Legacy and devShark revisions: rendered assets only, no slide deck. */
 export const MARKETING_CONTENT_VERSION = "marketing-content/1";
+/**
+ * DNESKAi Instagram revisions built from a brief (#116, #118): they carry the slide deck that names every source
+ * image by its sha256 and crop. The deck is part of the approval hash; delivery URLs are not.
+ */
+export const MARKETING_DECK_CONTENT_VERSION = "marketing-content/2";
 export const MARKETING_APPROVAL_VERSION = "marketing-approval/1";
 export const MARKETING_PUBLICATION_VERSION = "marketing-publication/1";
 export const BrandSchema = z.enum(["dneskai", "devshark"]);
@@ -72,7 +79,7 @@ export const AssetSchema = z.strictObject({
   alt: z.string().max(1000),
 });
 export const ContentRevisionSchema = z.strictObject({
-  schemaVersion: z.literal(MARKETING_CONTENT_VERSION),
+  schemaVersion: z.enum([MARKETING_CONTENT_VERSION, MARKETING_DECK_CONTENT_VERSION]),
   brand: BrandSchema,
   title: z.string().min(1).max(300),
   caption: z.string().min(1).max(2200),
@@ -89,6 +96,22 @@ export const ContentRevisionSchema = z.strictObject({
   promptVersion: id,
   model: id,
   traceId: z.uuid().nullable(),
+  /**
+   * The DNESKAi slide deck (`dneskai-slides/1`). Required on `marketing-content/2`, absent on `marketing-content/1`.
+   * Assets are its rendered JPEGs in slide order; the deck keeps the source images' hashes and crops.
+   */
+  deck: DneskaiDeckSchema.optional(),
+}).superRefine((revision, context) => {
+  if (revision.schemaVersion === MARKETING_CONTENT_VERSION) {
+    if (revision.deck) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no deck", path: ["deck"] });
+    return;
+  }
+  if (revision.brand !== "dneskai") context.addIssue({ code: "custom", message: "a deck revision belongs to DNESKAi", path: ["brand"] });
+  if (revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "a deck revision publishes to Instagram", path: ["account", "platform"] });
+  if (!revision.deck) { context.addIssue({ code: "custom", message: "a marketing-content/2 revision requires a deck", path: ["deck"] }); return; }
+  const expected = revision.format === "carousel" ? "carousel" : revision.format === "post" ? "single-image" : null;
+  if (expected === null) context.addIssue({ code: "custom", message: "a deck revision is a carousel or a post", path: ["format"] });
+  else if (revision.deck.format !== expected) context.addIssue({ code: "custom", message: "deck format must match the revision format", path: ["deck", "format"] });
 });
 export type ContentRevision = z.infer<typeof ContentRevisionSchema>;
 export type MarketingBrand = z.infer<typeof BrandSchema>;
@@ -152,6 +175,12 @@ export function revisionReadiness(revision: ContentRevision): string[] {
     else if (revision.assets[0].width !== 1080 || revision.assets[0].height !== 1920) issues.push("story-image-dimensions-required");
   }
   if (revision.account.platform === "threads" && revision.caption.length > 500) issues.push("threads-caption-too-long");
+  if (revision.deck) {
+    // One rendered 4:5 JPEG per slide, in slide order; an unrendered deck cannot be approved.
+    if (!revision.assets.length) issues.push("deck-render-required");
+    else if (revision.assets.length !== revision.deck.slides.length) issues.push("deck-assets-mismatch");
+    if (revision.assets.some((asset) => asset.mimeType !== "image/jpeg")) issues.push("deck-assets-jpeg-required");
+  }
   return issues;
 }
 
@@ -168,7 +197,35 @@ export type MarketingRevisionRow = {
   approved_hash: string | null;
   feedback: string | null;
   created_at: string;
+  /** The last deck render of a DNESKAi revision (#118); null for legacy revisions and before a render. */
+  render_report?: DneskaiRenderReport | null;
 };
+
+/** A render problem as stored on a revision. Blocking problems hold approval and publication. */
+export const DneskaiRenderProblemSchema = z.strictObject({
+  slide: z.number().int().min(-1).max(9),
+  code: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+  blocking: z.boolean(),
+  message: z.string().max(500),
+});
+export const DNESKAI_RENDER_REPORT_VERSION = "dneskai-render-report/1";
+export const DneskaiRenderReportSchema = z.strictObject({
+  schemaVersion: z.literal(DNESKAI_RENDER_REPORT_VERSION),
+  status: z.enum(["rendered", "refused", "failed"]),
+  problems: z.array(DneskaiRenderProblemSchema).max(100),
+  renderKeys: z.array(z.string().min(1).max(200)).max(10),
+  renderedAt: timestamp,
+});
+export type DneskaiRenderReport = z.infer<typeof DneskaiRenderReportSchema>;
+/**
+ * Mirrors `marketing_private.render_report_blocks`: anything but a clean `rendered` report blocks, and a stored
+ * report that does not parse counts as blocking because it cannot be shown to be clean. No report (legacy) is clear.
+ */
+export function renderReportBlocks(report: unknown): boolean {
+  if (report === null || report === undefined) return false;
+  const parsed = DneskaiRenderReportSchema.safeParse(report);
+  return !parsed.success || parsed.data.status !== "rendered" || parsed.data.problems.some((problem) => problem.blocking);
+}
 
 export type PublicationRow = {
   id: string; revision_id: string; platform: "instagram" | "threads";

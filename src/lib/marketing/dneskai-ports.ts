@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { AssetSchema } from "./contracts";
+import type { AssetSchema, ContentRevision } from "./contracts";
 import type { DneskaiDeck } from "./dneskai-slides";
 
 /**
@@ -39,3 +39,10 @@ export type RenderDneskaiDeck = (input: {
   loadMedia: LoadDneskaiMediaBytes;
   signal?: AbortSignal;
 }) => Promise<DneskaiDeckRenderResult>;
+
+/**
+ * The sha256 of every stored medium in the media pool of the brief a revision was generated from (#114, #115).
+ * An owner edit may only place images from this pool; an unknown brief resolves to an empty list, never to
+ * another brief's media.
+ */
+export type ListBriefAssetHashes = (revision: ContentRevision) => Promise<string[]>;
