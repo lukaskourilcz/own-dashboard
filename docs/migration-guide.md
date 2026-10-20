@@ -549,14 +549,18 @@ with URLs again, so a revision approved under this release would hold at the pub
   TypeScript grouping). Its body is the current one from `20261013165236` with the selection changed to at most
   four events, one per category first; a covered event's open reports become duplicates; every classified report
   of a chosen event is selected (at most eight); `selected_count` counts the day's briefs. Without `p_events` every
-  candidate is its own event, which is the former selection.
+  candidate is its own event, which is the former selection. An event counts as covered when it holds a selected
+  report, or a Jev duplicate whose link leaves the event and ends at a selected report or a DNESKAi revision; a Jev
+  duplicate of a held, rejected or open report covers nothing.
 - `marketing_private.dneskai_event_id` and `marketing_private.dneskai_member_hash` compute the same identities as
-  `src/lib/marketing/dneskai-events.ts`.
+  `src/lib/marketing/dneskai-events.ts`. `marketing_private.dneskai_covering_id` follows a Jev `duplicateOf` link
+  through duplicate reports (at most eight links) to the selected report or revision it ends at, or returns null.
 - Service-role functions: `marketing_dneskai_prepare_brief`, `marketing_dneskai_skip_brief` (optionally marks the
   members `duplicate` with `collection-already-covered`), `marketing_dneskai_admit_brief` (ensures the active
   "DNESKAi daily" campaign, never taking over another active DNESKAi campaign, and one planned calendar entry bound
-  to the brief's source head), `marketing_dneskai_brief_queued` and `marketing_dneskai_brief_source` (the refresh
-  read with the current member hash).
+  to the brief's source head; when the brief's current entry version already has its job, it returns that job
+  instead), `marketing_dneskai_brief_queued` and `marketing_dneskai_brief_source` (the refresh read with the current
+  member hash).
 
 Verify after applying: anon and authenticated cannot execute the new functions or the private helpers; the owner
 reads only their brief rows and cannot write them; a five-argument `marketing_dneskai_finish` call still works.

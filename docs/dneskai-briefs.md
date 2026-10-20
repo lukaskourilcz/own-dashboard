@@ -44,17 +44,31 @@ Pravidla 2 a 3 spojují jen zprávy publikované do 72 hodin od sebe.
 
 `marketing_dneskai_finish` (migrace `20261020150000_dneskai_events_briefs.sql`) dostává
 seskupení jako `p_events` (jen události se dvěma a více zprávami; jednotlivá zpráva je
-událost sama o sobě). Seskupení počítá `createDneskaiCollectionStore().finish` ze
-zpráv ve stavu `new`, `duplicate` a `selected` za posledních 30 dní. SQL ho ověří:
-každá událost je pojmenovaná svou kotvou a žádná zpráva není ve dvou.
+událost sama o sobě). SQL ho ověří: každá událost je pojmenovaná svou kotvou a žádná
+zpráva není ve dvou.
+
+Seskupení počítá `createDneskaiCollectionStore().finish` (`finishEvents`). Čte od
+nejnovějších, po stránkách po tisíci řádcích (`DNESKAI_EVENT_READS`):
+
+- otevřené zprávy (`new`) za 30 dní, nejvýše 2000,
+- vybrané zprávy (`selected`) za 30 dní, nejvýše 1000,
+- duplicity (`duplicate`) za 7 dní, nejvýše 1000.
+
+Posílá jen události, ve kterých je aspoň jedna otevřená zpráva; jiné vybrat nejde. Nad
+300 událostí vyhrají ty s naposledy sebranou zprávou. Když čtení nebo seznam událostí
+narazí na limit, běh dostane kód `collection-event-window-partial` (pokud už nemá jiný)
+a záložka Zdroje ho ukáže slovy. 3000 zpráv se seskupí zhruba za půl sekundy.
 
 - Událost vede její nejlepší způsobilá zpráva (dosavadní podmínky: kategorie mimo
   `other`, relevance ≥ 0,85, bez duplicity, datum do 48 h u zpráv a do 30 dní jinak).
 - Nejvýše čtyři události: nejdřív jedna za každou kategorii, pak podle relevance.
   Méně je v pořádku, nic se nedoplňuje.
-- Událost, ve které už je dříve vybraná zpráva nebo Jev duplicita něčeho mimo ni, byla
-  pokrytá dřív. Nevybere se a její otevřené zprávy dostanou `duplicate` s důvodem
-  `collection-already-covered`.
+- Událost byla pokrytá dřív, když v ní je dříve vybraná zpráva, nebo Jev duplicita,
+  jejíž odkaz vede mimo událost a končí u vybrané zprávy nebo u revize DNESKAi.
+  `marketing_private.dneskai_covering_id` sleduje `duplicateOf` přes duplicity, nejvýše
+  osm kroků. Jev duplicita zadržené, odmítnuté nebo ještě otevřené zprávy nepokrývá nic.
+  Pokrytá událost se nevybere a její otevřené zprávy dostanou `duplicate` s důvodem
+  `collection-already-covered` a `duplicateOf` na zprávu nebo revizi, která ji pokryla.
 - Všechny klasifikované zprávy vybrané události dostanou `selected` a cílový den, aby
   pro ně sběr médií stáhl obrázky. Nejvýše osm; další se složí do vedoucí zprávy
   (`collection-event-member-overflow`).
@@ -101,6 +115,11 @@ posledních 14 dní (`review`, `approved`, `publishing`, `published`, `reconcili
 - nebo stejná fotka v jiném rozlišení: pHash do 3 bitů. Přísnější než značka duplicity
   v #114 (6 bitů), protože různé slidy jedné šablony leží 4 až 6 bitů od sebe.
 
+Obrázek, který nesou aspoň tři různé články jednoho webu (`dneskaiSitewidePictures`,
+`DNESKAI_SITEWIDE_PICTURE_ARTICLES`), je karta celého webu, třeba logo arXivu jako
+`og:image`. Do porovnání obrázků se nepočítá. Zprávy téže události se do těch tří
+nepočítají, shoda URL platí dál.
+
 Opakování zadání nevytvoří: řádek přejde do `skipped` s kódem
 `collection-already-covered` a jeho zprávy dostanou `duplicate` s `duplicateOf` na
 revizi nebo zprávu, která téma pokryla.
@@ -123,13 +142,19 @@ revizi nebo zprávu, která téma pokryla.
    zdroje. Jinou aktivní kampaň DNESKAi nikdy nepřevezme (`campaign-conflict`).
 4. `enqueueMarketingJob` → `marketing_enqueue_job`: platí `marketing_calendar_job_current`
    i limit 8 úloh za 24 hodin. Požadavek nenese šablonu ani znalosti; `templateVersion`
-   je verze vendorovaného studia (#116).
+   je verze vendorovaného studia. Takový požadavek přijímá až `DneskaiDeckJobRequestSchema`
+   z #116. Na samotné větvi #115 `enqueueMarketingJob` parsuje `MarketingWorkerRequestSchema`
+   se šablonou devShark, zařazení skončí `job-request-invalid` a zadání zůstane `ready`.
+   Úloha vznikne až po sloučení #116.
 5. `marketing_dneskai_brief_queued` zapíše `job_id`, stav `queued`.
 
 Bez ověřeného řádku `marketing_accounts` pro dneskai/instagram zadání vznikne, ale
 zůstane `pending` s kódem `account-unavailable` a úloha se nevytvoří. Další volání ho
 zařadí, jakmile účet existuje. Selhání fronty nechá zadání `ready` s kódem a další volání
-to zkusí znovu.
+to zkusí znovu. Když úloha vznikla, ale zápis `job_id` selhal, vrátí
+`marketing_dneskai_admit_brief` při dalším volání úlohu aktuální verze kalendářní
+položky a zadání si ji zapíše. Druhá úloha nevznikne, ani když položka mezitím opustila
+stav `planned`.
 
 ## Obnova zdroje
 
@@ -140,6 +165,8 @@ zbývající ID článků. Rozhoduje `kind` předchozího paketu.
 - Worker před generováním i po ní: `executeMarketingJob` předává vlastníka a klienta
   jako třetí argument `refreshSource`.
 - Publikační brána a její preflight: `synchronizeMarketingSources(db, owner, …)`.
+- Offline import (`importMarketingOfflineDraft`) a preflight renderu
+  (`runMarketingRenderPreflight`) předávají vlastníka a klienta stejně jako worker.
 - Obnovený paket má čerstvé `observedAt` a jinak stejnou identitu.
 - Zadání, jehož vybrané zprávy už nejsou ty, ze kterých vzniklo (jiný `memberHash` nebo
   méně zpráv), vrátí `eligible: false` s `brief-members-changed`; přeskočené zadání
@@ -154,7 +181,7 @@ zbývající ID článků. Rozhoduje `kind` předchozího paketu.
 | `pending` | `account-unavailable` | zadání hotové, chybí ověřený účet `@dneskai` |
 | `ready` | – / kód chyby | zadání hotové, zařazení se zopakuje |
 | `queued` | – | úloha generování existuje (`job_id`) |
-| `skipped` | `collection-already-covered` | opakování za 14 dní |
+| `skipped` | `collection-already-covered` | opakování příspěvku nebo zadání z posledních 14 dní |
 | `skipped` | `brief-members-changed`, `brief-slot-unavailable`, `brief-slot-passed`, `brief-target-date-passed`, `brief-evidence-unavailable`, `brief-expired`, `brief-invalid` | zadání nevzniklo nebo už neplatí |
 
 ## Rozhraní
@@ -174,6 +201,8 @@ zbývající ID článků. Rozhoduje `kind` předchozího paketu.
 - n8n operace `enqueue` s hotovým jobem volá `refreshSource` bez vlastníka, takže brief
   přes ni neprojde (`source-recheck-unavailable`). Zadání zařazuje jen
   `createDneskaiBriefs`.
-- Obecný `og:image` vydavatele (stejná karta pro všechny články) by se ve shodě obrázků
-  projevil jako opakování. Zatím jsme ho nepozorovali; kdyby se objevil, přeskočené
-  zadání to ukáže s důvodem.
+- Karta celého webu se pozná až ve chvíli, kdy ji nesou tři články. Do té doby může
+  shoda obrázku přeskočit zadání jako opakování.
+- Nad limity čtení (2000 otevřených, 1000 vybraných, 1000 duplicit) se zprávy
+  neseskupí a jedna událost se může vybrat dvakrát. Běh to ukáže kódem
+  `collection-event-window-partial`.
