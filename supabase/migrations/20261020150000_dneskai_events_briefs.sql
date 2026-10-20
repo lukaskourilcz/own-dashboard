@@ -56,8 +56,23 @@ create function marketing_private.dneskai_member_hash(p_owner uuid,p_project uui
  select encode(sha256(convert_to('dneskai-event-members/1'||chr(10)||coalesce(string_agg(c.id||':'||c.content_hash,chr(10) order by c.id||':'||c.content_hash collate "C"),''),'UTF8')),'hex')
  from public.marketing_dneskai_candidates c where c.user_id=p_owner and c.project_id=p_project and c.id=any(p_ids)
 $$;
-revoke all on function marketing_private.dneskai_event_id(text),marketing_private.dneskai_member_hash(uuid,uuid,text[]) from public,anon,authenticated;
-grant execute on function marketing_private.dneskai_event_id(text),marketing_private.dneskai_member_hash(uuid,uuid,text[]) to service_role;
+-- What a Jev duplicate link really points at: follow duplicateOf through duplicate reports (at most eight links)
+-- and return the end only when it is a selected report or a DNESKAi revision of the owner. A link that ends at a
+-- held, rejected, new or unknown report covers nothing, so a report Jev folded into an unselected one never hides
+-- a later eligible report of the same event.
+create function marketing_private.dneskai_covering_id(p_owner uuid,p_project uuid,p_target text) returns text language sql stable set search_path='' as $$
+ with recursive chain(id,depth) as (
+  select p_target,0 where p_target is not null
+  union all
+  select c.candidate->>'duplicateOf',chain.depth+1 from chain join public.marketing_dneskai_candidates c on c.user_id=p_owner and c.project_id=p_project and c.id=chain.id
+  where c.status='duplicate' and coalesce(c.candidate->>'duplicateOf','')<>'' and chain.depth<8
+ ), terminal as (select id from chain order by depth desc limit 1)
+ select t.id from terminal t
+ where exists(select 1 from public.marketing_dneskai_candidates c where c.user_id=p_owner and c.project_id=p_project and c.id=t.id and c.status='selected')
+  or (t.id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' and exists(select 1 from public.marketing_revisions v where v.user_id=p_owner and v.brand='dneskai' and v.id=t.id::uuid))
+$$;
+revoke all on function marketing_private.dneskai_event_id(text),marketing_private.dneskai_member_hash(uuid,uuid,text[]),marketing_private.dneskai_covering_id(uuid,uuid,text) from public,anon,authenticated;
+grant execute on function marketing_private.dneskai_event_id(text),marketing_private.dneskai_member_hash(uuid,uuid,text[]),marketing_private.dneskai_covering_id(uuid,uuid,text) to service_role;
 
 -- Changed signature: p_events carries the TypeScript grouping (only events with two or more members).
 -- A call without it treats every candidate as its own event, which is the former selection.
@@ -83,7 +98,9 @@ begin
   end if;
   -- Changed: up to four EVENTS, one per category first, then relevance; fewer is fine. An event is led by its
   -- best eligible report (the former candidate conditions). An event that already contains a selected
-  -- report, or a Jev duplicate of something outside the event, was covered before and is never selected.
+  -- report, or a Jev duplicate whose link leaves the event and ends at a selected report or a DNESKAi revision
+  -- (dneskai_covering_id), was covered before and is never selected. A Jev duplicate of a held, rejected or
+  -- still open report covers nothing.
   with pool as (
    select c.id,c.status,c.candidate,coalesce(membership->>c.id,marketing_private.dneskai_event_id(c.id)) as event_id
    from public.marketing_dneskai_candidates c where c.user_id=p_owner and c.project_id=r.project_id and (c.status='new' or membership?c.id)
@@ -95,9 +112,10 @@ begin
    select distinct on(event_id) event_id,id as lead_id,candidate->>'category' as category,(candidate->>'relevance')::numeric as relevance,(candidate->>'publishedAt')::timestamptz as published_at
    from eligible order by event_id,(candidate->>'relevance')::numeric desc,(candidate->>'publishedAt')::timestamptz desc,id collate "C"
   ), scored as (
-   select l.*,(select coalesce(case when p.status='selected' then p.id else p.candidate->>'duplicateOf' end,p.id) from pool p where p.event_id=l.event_id and
-     (p.status='selected' or (p.status='duplicate' and not exists(select 1 from pool q where q.event_id=l.event_id and q.id=p.candidate->>'duplicateOf')))
-     order by p.id collate "C" limit 1) as covered_by
+   select l.*,(select x.covering from (select case when p.status='selected' then p.id else marketing_private.dneskai_covering_id(p_owner,r.project_id,p.candidate->>'duplicateOf') end as covering,p.id
+     from pool p where p.event_id=l.event_id and (p.status='selected' or (p.status='duplicate'
+      and not exists(select 1 from pool q where q.event_id=l.event_id and q.id=p.candidate->>'duplicateOf')))) x
+     where x.covering is not null order by x.id collate "C" limit 1) as covered_by
    from leads l
   ), ranked as (
    select s.*,row_number() over(partition by category order by relevance desc,published_at desc,event_id) as category_rank from scored s where covered_by is null
