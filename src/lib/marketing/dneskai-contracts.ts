@@ -33,6 +33,29 @@ export const DneskaiSourceStateSchema = z.strictObject({
   lastAttemptAt: z.iso.datetime({ offset: true }).nullable(), status: z.enum(['never', 'ok', 'partial', 'error', 'held']),
   errorCode: z.string().nullable(), itemCount: z.number().int().nonnegative(), costUsd: z.number().nonnegative().nullable(),
 });
+/**
+ * One news event as the owner sees it (#115): its reports with the chosen primary first, why it was selected,
+ * held or treated as a duplicate, and, for a selected event, its brief. Browser-safe.
+ */
+export const DneskaiEventMemberViewSchema = z.strictObject({
+  candidateId: z.string().min(1).max(200), sourceId: z.string().min(1).max(100), title: z.string().max(500), url: z.url(),
+  status: z.enum(['new', 'held', 'duplicate', 'rejected', 'selected']), reason: z.string().max(200).nullable(), role: z.enum(['primary', 'supporting']),
+});
+export const DneskaiEventViewSchema = z.strictObject({
+  eventId: z.string().min(1).max(200), targetDate: z.iso.date().nullable(),
+  status: z.enum(['selected', 'held', 'duplicate', 'rejected', 'new']), reason: z.string().max(200).nullable(),
+  brief: z.strictObject({
+    id: z.uuid(), rank: z.number().int().min(1).max(4), status: z.enum(['pending', 'ready', 'queued', 'skipped']), code: z.string().max(64).nullable(),
+    scheduledAt: z.iso.datetime({ offset: true }).nullable(), suggestedFormat: z.enum(['carousel', 'single-image']).nullable(),
+    evidenceCount: z.number().int().min(0).max(30), mediaCount: z.number().int().min(0).max(30), jobId: z.uuid().nullable(),
+  }).nullable(),
+  members: z.array(DneskaiEventMemberViewSchema).min(1).max(30),
+});
+export type DneskaiEventView = z.infer<typeof DneskaiEventViewSchema>;
+export const DNESKAI_BRIEFS_READ_VERSION = 'dneskai-briefs/1' as const;
+export const DneskaiBriefsReadSchema = z.strictObject({ schemaVersion: z.literal(DNESKAI_BRIEFS_READ_VERSION), events: z.array(DneskaiEventViewSchema).max(60) });
+export type DneskaiBriefsRead = z.infer<typeof DneskaiBriefsReadSchema>;
+
 export const DneskaiCollectionStateSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_COLLECTION_VERSION), timeZone: z.literal('Europe/Prague'), localTime: z.literal('22:00'),
   dailyTarget: z.literal(4), approvalRequired: z.literal(true), enabled: z.boolean(), blockers: z.array(z.string()),
@@ -41,6 +64,8 @@ export const DneskaiCollectionStateSchema = z.strictObject({
   runs: z.array(z.strictObject({ id: z.string(), date: z.iso.date(), targetDate: z.iso.date(),
     status: z.enum(['running', 'complete', 'partial', 'held', 'failed']), selectedCount: z.number().int().min(0).max(4),
     costUsd: z.number().nonnegative().nullable(), errorCode: z.string().nullable() })).max(14),
+  /** Selected events with their briefs, then other recent events (#115). Absent from responses before #115. */
+  events: z.array(DneskaiEventViewSchema).max(60).optional(),
 });
 export type DneskaiCollectionState = z.infer<typeof DneskaiCollectionStateSchema>;
 

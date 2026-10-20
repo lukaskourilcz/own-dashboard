@@ -51,7 +51,7 @@ export async function importMarketingOfflineDraft(db:Database,ownerId:string,val
   if(scope.error||scope.data!==true)reject('offline-import-disabled');
   assertLiveScope();
   let fresh;
-  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal));}catch{reject('offline-import-source-unavailable');}
+  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal,{owner:ownerId,db}));}catch{reject('offline-import-source-unavailable');}
   assertLiveScope();assertOfflineSource(fresh,clock());assertOfflineSourceBinding(source,fresh);
   assertLiveScope();
   const sourceRecord=await ingestSource(db,ownerId,fresh,'devshark').catch(()=>reject('offline-import-source-unavailable'));
@@ -75,7 +75,7 @@ export async function importMarketingOfflineDraft(db:Database,ownerId:string,val
   }catch(error){if(error instanceof MarketingOfflineImportError)throw error;reject('offline-import-storage-unavailable');}
   // Authoritative second read after upload; SQL rechecks the persisted source head atomically as well.
   assertLiveScope();
-  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal));}catch{reject('offline-import-source-unavailable');}
+  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal,{owner:ownerId,db}));}catch{reject('offline-import-source-unavailable');}
   assertLiveScope();assertOfflineSource(fresh,clock());assertOfflineSourceBinding(source,fresh);
   assertLiveScope();
   await ingestSource(db,ownerId,fresh,'devshark').catch(()=>reject('offline-import-source-unavailable'));

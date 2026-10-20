@@ -5,7 +5,7 @@ import type { CreateDneskaiBriefs, ListBriefAssetHashes, LoadDneskaiMediaBytes, 
 import { createDneskaiDeckRenderer } from "./dneskai-render";
 import { createDneskaiMediaLoader } from "./dneskai-media";
 import { createDneskaiSlideStorage } from "./worker-runtime";
-import { dneskaiDeckAssetHashes } from "./dneskai-slides";
+import { createDneskaiBriefs, listDneskaiBriefAssetHashes } from "./dneskai-briefs";
 
 /**
  * Concrete implementations behind the DNESKAi ports, resolved per request by the routes that edit and render
@@ -23,18 +23,14 @@ export function getDneskaiMediaLoader(db: Database, owner: string): LoadDneskaiM
 }
 
 /**
- * The media pool an owner edit may draw from. Until briefs exist (#115) the pool is the set of pictures the
- * revision already places, so an edit can reorder, recrop or drop images but never introduce a foreign one.
+ * The media pool an owner edit may draw from: the pictures of the brief the revision was generated from
+ * (`revision.sources[0]`, #115) plus the pictures the deck already places, never another brief's.
  */
 export function getBriefAssetHashLister(db: Database, owner: string): ListBriefAssetHashes {
-  void db; void owner;
-  return async (revision: ContentRevision) => {
-    return revision.deck ? dneskaiDeckAssetHashes(revision.deck) : [];
-  };
+  return async (revision: ContentRevision) => listDneskaiBriefAssetHashes(db, owner, revision);
 }
 
-/** Brief creation for a finished run (#115). Until it is wired the scheduler records `briefs-unwired` and moves on. */
+/** Brief creation for a finished run (#115): events become briefs and guarded generation jobs. */
 export function getCreateDneskaiBriefs(db: Database): CreateDneskaiBriefs {
-  void db;
-  return async () => { throw new Error("briefs-unwired"); };
+  return createDneskaiBriefs(db);
 }

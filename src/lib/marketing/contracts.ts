@@ -75,6 +75,9 @@ export function parseSourcePacket(value: unknown): SourcePacket {
     if (packet.brand !== "dneskai") throw new Error("Source kind does not belong to this brand.");
     if (!packet.brief || packet.brief.eventId !== packet.sourceId) throw new Error("A brief packet carries its own brief.");
     if (!packet.content.evidence.length) throw new Error("A brief requires source evidence.");
+    // The packet identity is the brief's: its members, its primary evidence, its category and its lifetime.
+    if (packet.sourceRevision !== packet.brief.memberHash || packet.canonicalUrl !== packet.brief.evidence[0]?.url
+      || packet.content.category !== packet.brief.category || packet.expiresAt !== packet.brief.expiresAt) throw new Error("A brief packet must match its brief.");
   } else if (packet.brief) {
     throw new Error("Only a brief packet carries a brief.");
   }
