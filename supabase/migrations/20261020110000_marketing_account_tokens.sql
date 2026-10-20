@@ -43,6 +43,20 @@ language sql stable set search_path='' as $$
 $$;
 revoke all on function public.marketing_account_token_metadata_json(public.marketing_account_tokens) from public,anon,authenticated,service_role;
 
+-- Every token input is checked here, before a row exists, with messages that
+-- carry no value. A failing table constraint would otherwise echo the whole
+-- row, token included, in the error DETAIL ("Failing row contains ...") that
+-- reaches the server log and the PostgREST error body.
+create function public.marketing_account_token_input_check(p_token text,p_expires_at timestamptz,p_scopes text[],p_login_mode text)
+returns void language plpgsql stable set search_path='' as $$
+begin
+ if p_token is null or char_length(p_token) not between 20 and 4096 or p_token ~ '\s' then raise exception 'invalid token'; end if;
+ if p_expires_at is null or p_expires_at<=now() then raise exception 'token expired'; end if;
+ if p_scopes is not null and (cardinality(p_scopes)>20 or exists(select 1 from unnest(p_scopes) s where s is null or s !~ '^[a-z_]{1,64}$')) then raise exception 'invalid scopes'; end if;
+ if p_login_mode is null or p_login_mode not in ('instagram','facebook','threads') then raise exception 'invalid login mode'; end if;
+end $$;
+revoke all on function public.marketing_account_token_input_check(text,timestamptz,text[],text) from public,anon,authenticated,service_role;
+
 -- The verified account row and its bootstrap token commit together. A token
 -- that is still valid and expires later than the submitted one (a refreshed
 -- token) is kept, so re-verifying with the older bootstrap value never
@@ -55,7 +69,7 @@ declare a public.marketing_accounts; t public.marketing_account_tokens; identity
 begin
  if p_owner is null or p_brand not in ('dneskai','devshark') or p_platform not in ('instagram','threads') then raise exception 'invalid account'; end if;
  if p_remote_account_id is null or p_remote_account_id !~ '^[0-9]{1,100}$' or p_handle is null or p_handle !~ '^[A-Za-z0-9._]{1,30}$' then raise exception 'invalid account'; end if;
- if p_expires_at is null or p_expires_at<=now() then raise exception 'token expired'; end if;
+ perform public.marketing_account_token_input_check(p_token,p_expires_at,p_scopes,p_login_mode);
  perform pg_advisory_xact_lock(hashtextextended('marketing-account:'||p_owner::text||':'||p_brand||':'||p_platform,0));
  select * into a from public.marketing_accounts where user_id=p_owner and brand=p_brand and platform=p_platform for update;
  if found then
@@ -93,7 +107,7 @@ declare a public.marketing_accounts; t public.marketing_account_tokens;
 begin
  select * into a from public.marketing_accounts where id=p_account and user_id=p_owner for share;
  if not found then raise exception 'account unavailable'; end if;
- if p_expires_at is null or p_expires_at<=now() then raise exception 'token expired'; end if;
+ perform public.marketing_account_token_input_check(p_token,p_expires_at,p_scopes,p_login_mode);
  select * into t from public.marketing_account_tokens where account_id=a.id for update;
  if found then
   if p_expected_refreshed_at is null or t.refreshed_at<>p_expected_refreshed_at then raise exception 'token changed'; end if;

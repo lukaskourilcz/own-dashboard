@@ -55,6 +55,8 @@ describe('marketing account tokens: no direct reads, service-role functions only
     }
     const { rows } = await db.query<{ anon: boolean; authenticated: boolean }>("select has_function_privilege('anon','marketing_account_token_status()','EXECUTE') anon,has_function_privilege('authenticated','marketing_account_token_status()','EXECUTE') authenticated");
     expect(rows[0]).toEqual({ anon: false, authenticated: true });
+    const check = await db.query<Record<string, boolean>>("select has_function_privilege('anon',$1,'EXECUTE') anon,has_function_privilege('authenticated',$1,'EXECUTE') authenticated,has_function_privilege('service_role',$1,'EXECUTE') service", ['marketing_account_token_input_check(text,timestamptz,text[],text)']);
+    expect(check.rows[0]).toEqual({ anon: false, authenticated: false, service: false });
   });
   it('round-trips a verified account and its token through service-role functions only', async () => {
     const result = await verify(bootstrap, inDays(50));
@@ -107,7 +109,28 @@ describe('marketing account tokens: no direct reads, service-role functions only
     await expect(verify('TEST-ONLY-EXPIRED-TOKEN-0006', inDays(-1))).rejects.toThrow('token expired');
     await expect(verify('TEST-ONLY-MALFORMED-TOKEN-07', inDays(5), 'not-numeric')).rejects.toThrow('invalid account');
     await expect(verify('TEST-ONLY-MALFORMED-TOKEN-08', inDays(5), '1', '@dneskai')).rejects.toThrow('invalid account');
-    await expect(verify('short', inDays(5))).rejects.toThrow();
+    await expect(verify('short', inDays(5))).rejects.toThrow('invalid token');
     await expect(as('service_role', null, () => db.query("select marketing_verify_account($1,'dneskai','instagram','17841400000000002','dneskai.cz','TEST-ONLY-THREADS-TOKEN-0009',$2,'{threads_basic}','threads')", [owner, inDays(5)]))).rejects.toThrow('login mode mismatch');
+  });
+  it('refuses bad token input with a message and detail that never carry the token', async () => {
+    const secret = 'TEST-ONLY-SECRET-TOKEN-VALUE-1';
+    const failure = async (run: () => Promise<unknown>) => {
+      try { await run(); } catch (error) { const { message, detail, hint, where } = error as { message: string; detail?: string; hint?: string; where?: string }; return { message, text: JSON.stringify({ message, detail, hint, where }) }; }
+      throw new Error('expected a refusal');
+    };
+    const tooMany = `{${Array.from({ length: 21 }, (_, index) => `scope_${String.fromCharCode(97 + index)}`).join(',')}}`;
+    const cases: Array<[string, () => Promise<unknown>]> = [
+      ['invalid scopes', () => as('service_role', null, () => db.query("select marketing_verify_account($1,'dneskai','instagram','17841400000000002','dneskai.cz',$2,$3,$4,'instagram')", [owner, secret, inDays(5), tooMany]))],
+      ['invalid scopes', () => as('service_role', null, () => db.query("select marketing_verify_account($1,'dneskai','instagram','17841400000000002','dneskai.cz',$2,$3,'{Bad-Scope}','instagram')", [owner, secret, inDays(5)]))],
+      ['invalid login mode', () => as('service_role', null, () => db.query("select marketing_verify_account($1,'dneskai','instagram','17841400000000002','dneskai.cz',$2,$3,null,'oauth')", [owner, secret, inDays(5)]))],
+      ['invalid token', () => as('service_role', null, () => db.query("select marketing_verify_account($1,'dneskai','instagram','17841400000000002','dneskai.cz',$2,$3,null,'instagram')", [owner, `${secret} with space`, inDays(5)]))],
+      ['invalid scopes', () => as('service_role', null, () => db.query("select marketing_store_account_token($1,$2,null,$3,$4,$5,'instagram')", [owner, accountId, secret, inDays(5), tooMany]))],
+    ];
+    for (const [code, run] of cases) {
+      const refused = await failure(run);
+      expect(refused.message).toBe(code);
+      expect(refused.text).not.toContain('TEST-ONLY');
+    }
+    expect((await readToken()).map(row => row.access_token)).toEqual(['TEST-ONLY-OTHER-ACCOUNT-0005']);
   });
 });
