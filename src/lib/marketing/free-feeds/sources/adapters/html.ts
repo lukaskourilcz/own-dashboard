@@ -6,7 +6,7 @@ import type {
   SourceItem
 } from "../types";
 import { fetchReadable, linksFromMarkdown } from "./reader";
-import { fetchText, makeItem, safeImageUrl } from "./util";
+import { dayUpperBound, fetchText, makeItem, midnightDay, safeImageUrl, type SourceDate } from "./util";
 
 /**
  * The number of distinct summaries below which a page is treated as having none.
@@ -32,18 +32,8 @@ const URL_DAY = /\/(20\d{2})\/(\d{2})\/(\d{2})\//;
 const URL_MONTH = /\/(20\d{2})\/(\d{2})\//;
 const NAVIGATION_PATH = /^\/(?:$|about|careers?|jobs|contact|search|login|signup|subscribe|newsletters?|privacy|terms|legal|policies|press(?:-kit)?|tags?|topics?|category|categories|author|authors|page|feed|rss)(?:\/|$)/i;
 
-type ListingDate = { publishedAt: string; estimated: boolean };
+type ListingDate = SourceDate;
 type Draft = { url: string; title: string; rank: number; summary: string; date: ListingDate | undefined; imageUrl: string | undefined };
-
-/** The latest instant that still carries a calendar day (UTC-12 end of day), clamped to `now`. */
-function dayUpperBound(year: number, month: number, day: number, now: Date): ListingDate | undefined {
-  const start = Date.UTC(year, month - 1, day);
-  const check = new Date(start);
-  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return undefined;
-  // A date in the future is not a publication date; the caller rejects it like any future timestamp.
-  if (start > now.getTime() + 14 * 3_600_000) return undefined;
-  return { publishedAt: new Date(Math.min(start + 36 * 3_600_000 - 1_000, now.getTime())).toISOString(), estimated: true };
-}
 
 function monthUpperBound(year: number, month: number, now: Date): ListingDate | undefined {
   if (month < 1 || month > 12) return undefined;
@@ -52,10 +42,16 @@ function monthUpperBound(year: number, month: number, now: Date): ListingDate | 
   return { publishedAt: new Date(Math.min(Date.UTC(year, month, 1) + 12 * 3_600_000 - 1_000, now.getTime())).toISOString(), estimated: true };
 }
 
-/** A visible or machine date. A date without a time of day becomes an upper bound, never midnight. */
+/**
+ * A visible or machine date. A date without a time of day becomes an upper bound, never midnight,
+ * and so does a timestamp written at exactly midnight (`2026-10-18T00:00:00.000Z`): anthropic.com
+ * writes its day-only dates that way in `article:published_time` and JSON-LD.
+ */
 export function parseListingDate(value: string | undefined, now: Date): ListingDate | undefined {
   const text = value?.replace(/\s+/g, " ").trim();
   if (!text) return undefined;
+  const midnight = midnightDay(text);
+  if (midnight) return dayUpperBound(midnight.year, midnight.month, midnight.day, now);
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text)) {
     const parsed = Date.parse(text);
     return Number.isNaN(parsed) ? undefined : { publishedAt: new Date(parsed).toISOString(), estimated: false };
@@ -241,16 +237,19 @@ const POST_DATE_CLASS = /(?:post|entry|article|publish(?:ed)?)[-_]?date|date[-_]
 
 /**
  * Publication time and share image from one article page's own metadata: `article:published_time`,
- * `datePublished` (meta or JSON-LD) and `<time datetime>` give the exact time; a visible post date
- * gives a day-precision upper bound. Related-story dates further down the page are ignored.
+ * `datePublished` (meta or JSON-LD) and `<time datetime>` give the exact time when they carry a real
+ * time of day. A date-only or midnight value in the declared metadata (meta tags, JSON-LD), or else
+ * a visible post date, gives a day-precision upper bound. Related-story dates are ignored.
  */
 export function articleMetadata(html: string, base: URL, now: Date): { date?: ListingDate; imageUrl?: string } {
   const $ = cheerio.load(html);
-  const candidates = [
-    $("meta[property='article:published_time']").attr("content"),
-    $("meta[name='article:published_time']").attr("content"),
-    $("meta[itemprop='datePublished']").attr("content"),
-    $("time[datetime]").first().attr("datetime")
+  // `declared` marks the page's publication metadata. The first `<time datetime>` may belong to a
+  // related story, so it can give an exact time (as before) but never a day bound.
+  const candidates: { value: string | undefined; declared: boolean }[] = [
+    { value: $("meta[property='article:published_time']").attr("content"), declared: true },
+    { value: $("meta[name='article:published_time']").attr("content"), declared: true },
+    { value: $("meta[itemprop='datePublished']").attr("content"), declared: true },
+    { value: $("time[datetime]").first().attr("datetime"), declared: false }
   ];
   for (const script of $("script[type='application/ld+json']").toArray()) {
     try {
@@ -260,7 +259,7 @@ export function articleMetadata(html: string, base: URL, now: Date): { date?: Li
         if (Array.isArray(value)) stack.push(...value);
         else if (value && typeof value === "object") {
           const record = value as Record<string, unknown>;
-          if (typeof record.datePublished === "string") candidates.push(record.datePublished);
+          if (typeof record.datePublished === "string") candidates.push({ value: record.datePublished, declared: true });
           if (Array.isArray(record["@graph"])) stack.push(...record["@graph"]);
         }
       }
@@ -269,10 +268,14 @@ export function articleMetadata(html: string, base: URL, now: Date): { date?: Li
     }
   }
   let date: ListingDate | undefined;
-  for (const candidate of candidates) {
-    const parsed = parseListingDate(candidate, now);
-    if (parsed && !parsed.estimated && Date.parse(parsed.publishedAt) <= now.getTime()) { date = parsed; break; }
+  let day: ListingDate | undefined;
+  for (const { value, declared } of candidates) {
+    const parsed = parseListingDate(value, now);
+    if (!parsed || Date.parse(parsed.publishedAt) > now.getTime()) continue;
+    if (!parsed.estimated) { date = parsed; break; }
+    if (declared) day ??= parsed;
   }
+  date ??= day;
   if (!date) {
     for (const element of $("[class]").toArray()) {
       const node = $(element);
@@ -319,7 +322,8 @@ export async function enrichArticles(items: readonly SourceItem[], context: Sour
         const rest: SourceItem = { ...entry.item };
         delete rest.dateEstimated;
         const current = entry.item.publishedAt ? Date.parse(entry.item.publishedAt) : Infinity;
-        // An exact time always wins; a day bound wins only when it is tighter than the listing's.
+        // A real time of day always wins (parseListingDate never reports midnight as exact). A day
+        // bound is an upper bound like the listing's, so it wins only when it is the tighter one.
         const better = meta.date && (!meta.date.estimated || Date.parse(meta.date.publishedAt) < current) ? meta.date : undefined;
         result[entry.index] = {
           ...(better ? rest : entry.item),

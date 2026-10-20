@@ -18,6 +18,41 @@ function safeIsoDate(value: string | number | Date | undefined): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+export type SourceDate = { publishedAt: string; estimated: boolean };
+
+/**
+ * The latest instant that still carries a calendar day anywhere (end of the day at UTC-12),
+ * clamped to `now`. A day more than UTC+14 ahead of `now` is not a publication date.
+ */
+export function dayUpperBound(year: number, month: number, day: number, now: Date): SourceDate | undefined {
+  const start = Date.UTC(year, month - 1, day);
+  const check = new Date(start);
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return undefined;
+  if (start > now.getTime() + 14 * 3_600_000) return undefined;
+  return { publishedAt: new Date(Math.min(start + 36 * 3_600_000 - 1_000, now.getTime())).toISOString(), estimated: true };
+}
+
+const MONTH_ABBREVIATIONS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+const ISO_MIDNIGHT = /^(\d{4})-(\d{2})-(\d{2})T00:00(?::00(?:[.,]0+)?)?(?:Z|[+-]\d{2}(?::?\d{2})?)?$/i;
+const RFC822_MIDNIGHT = /^(?:[a-z]{3},?\s+)?(\d{1,2})\s+([a-z]{3})[a-z]*\s+(\d{4})\s+00:00(?::00)?(?:\s*(?:[a-z]{1,5}|[+-]\d{4}))?$/i;
+
+/**
+ * The calendar day of a timestamp written at exactly midnight, in ISO 8601
+ * (`2026-10-18T00:00:00.000Z`, `2026-10-18T00:00:00+02:00`) or RFC 822 (`Sat, 18 Oct 2026 00:00:00 GMT`).
+ * A publisher that knows only the day writes it this way, so the value is the start of the day the
+ * post appeared on, a lower bound. Read as an exact time it puts a post published later that day
+ * before a window it is inside, and the window filter then drops it for good.
+ */
+export function midnightDay(value: string | undefined): { year: number; month: number; day: number } | undefined {
+  const text = value?.trim();
+  if (!text) return undefined;
+  const iso = ISO_MIDNIGHT.exec(text);
+  if (iso) return { year: Number(iso[1]), month: Number(iso[2]), day: Number(iso[3]) };
+  const rfc = RFC822_MIDNIGHT.exec(text);
+  const month = rfc ? MONTH_ABBREVIATIONS.indexOf(rfc[2]!.toLowerCase()) + 1 : 0;
+  return rfc && month ? { year: Number(rfc[3]), month, day: Number(rfc[1]) } : undefined;
+}
+
 export function makeItem(
   url: string,
   fields: {
@@ -28,6 +63,8 @@ export function makeItem(
     externalId?: string;
     imageUrl?: string;
     dateEstimated?: boolean;
+    /** The date as the publisher wrote it, when `publishedAt` was already normalised from it. */
+    dateText?: string;
   },
   source: SourceConfig,
   now: Date
@@ -46,7 +83,17 @@ export function makeItem(
   const author = sanitizeExternalContent(fields.author ?? "", 200).text || null;
 
   const imageUrl = safeImageUrl(fields.imageUrl);
-  const publishedAt = safeIsoDate(fields.publishedAt);
+  let publishedAt = safeIsoDate(fields.publishedAt);
+  let dateEstimated = Boolean(publishedAt && fields.dateEstimated);
+  // A day written as midnight becomes the day's upper bound, like a listing date without a time.
+  // Numeric timestamps (HN, Stack Exchange) are real instants and stay exact.
+  const written = fields.dateText ?? (typeof fields.publishedAt === "string" ? fields.publishedAt : undefined);
+  const day = publishedAt && !dateEstimated ? midnightDay(written) : undefined;
+  const bound = day ? dayUpperBound(day.year, day.month, day.day, now) : undefined;
+  if (bound) {
+    publishedAt = bound.publishedAt;
+    dateEstimated = true;
+  }
   return SourceItemSchema.parse({
     sourceId: source.id,
     externalId: fields.externalId ?? stableId(canonical.toString()),
@@ -62,7 +109,7 @@ export function makeItem(
       ...new Set([...title.promptInjectionSignals, ...summary.promptInjectionSignals])
     ].slice(0, 20),
     ...(imageUrl ? { imageUrl } : {}),
-    ...(publishedAt && fields.dateEstimated ? { dateEstimated: true } : {})
+    ...(publishedAt && dateEstimated ? { dateEstimated: true } : {})
   });
 }
 

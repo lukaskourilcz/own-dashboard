@@ -54,6 +54,8 @@ export function projectRssItem(
       title: item.title,
       summary: item.contentSnippet ?? item.content ?? item.summary,
       publishedAt: item.isoDate ?? item.pubDate,
+      // isoDate is normalised to UTC; the written pubDate still shows a day-only "00:00:00 -0400".
+      dateText: item.pubDate,
       author: item.creator ?? item.author,
       externalId: item.guid ?? item.id,
       imageUrl: rssImageUrl(item)

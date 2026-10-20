@@ -31,6 +31,11 @@ describe('native publisher HTML extraction', () => {
   expect(parseListingDate('6 October 2026', now)).toEqual({ publishedAt: '2026-10-07T11:59:59.000Z', estimated: true });
   expect(parseListingDate('2026-10-20', now)).toEqual({ publishedAt: now.toISOString(), estimated: true });
   expect(parseListingDate('2026-10-18T16:49:35.513Z', now)).toEqual({ publishedAt: '2026-10-18T16:49:35.513Z', estimated: false });
+  // Midnight is how a day-only date is written as a timestamp: it is the day's start, not the post's time.
+  for (const midnight of ['2026-10-18T00:00:00.000Z', '2026-10-18T00:00:00Z', '2026-10-18T00:00Z', '2026-10-18T00:00:00+02:00', '2026-10-18T00:00:00-0700']) {
+   expect(parseListingDate(midnight, now)).toEqual({ publishedAt: '2026-10-19T11:59:59.000Z', estimated: true });
+  }
+  expect(parseListingDate('2026-10-18T00:00:01Z', now)).toEqual({ publishedAt: '2026-10-18T00:00:01.000Z', estimated: false });
   expect(parseListingDate('Feb 30, 2026', now)).toBeUndefined();
   expect(parseListingDate('Dec 24, 2026', now)).toBeUndefined();
  });
@@ -63,6 +68,43 @@ describe('native publisher HTML extraction', () => {
   expect(articleMetadata('<script type="application/ld+json">{"@graph":[{"@type":"NewsArticle","datePublished":"2026-10-19T19:20:51+00:00"}]}</script>', base, now).date).toEqual({ publishedAt: '2026-10-19T19:20:51.000Z', estimated: false });
   expect(articleMetadata('<div class="embed-relatedstory-date">May 1, 2026</div><div class="roscoe-post-date">October 19, 2026</div>', base, now).date).toEqual({ publishedAt: '2026-10-20T11:59:59.000Z', estimated: true });
   expect(articleMetadata('<meta property="og:image" content="http://insecure.test/a.jpg">', base, now)).toEqual({});
+ });
+ it('reads a midnight article timestamp as the day it names, not as an exact time', () => {
+  const base = new URL('https://www.anthropic.com/news/offline-fund');
+  // The anthropic.com article shape seen live on 20 October 2026, with offline values.
+  const page = '<meta property="article:published_time" content="2026-10-18T00:00:00.000Z"><meta property="og:image" content="https://www.anthropic.com/images/offline.png">'
+   + '<script type="application/ld+json">{"@type":"NewsArticle","datePublished":"2026-10-18T00:00:00.000Z"}</script><time dateTime="2026-10-18">Oct 18, 2026</time>';
+  expect(articleMetadata(page, base, now)).toEqual({ date: { publishedAt: '2026-10-19T11:59:59.000Z', estimated: true }, imageUrl: 'https://www.anthropic.com/images/offline.png' });
+  // A date-only first <time> may be a related story's; only declared metadata gives a day bound.
+  expect(articleMetadata('<time datetime="2026-05-01">May 1, 2026</time>', base, now)).toEqual({});
+  // A real time of day in the declared metadata is still exact.
+  expect(articleMetadata('<meta property="article:published_time" content="2026-10-18T21:30:00Z"><time dateTime="2026-10-18"></time>', base, now).date).toEqual({ publishedAt: '2026-10-18T21:30:00.000Z', estimated: false });
+ });
+ it('keeps an Anthropic post published after the previous run but dated at midnight UTC', async () => {
+  // The previous Prague 22:00 run read up to 19:55 UTC; the post appeared later on 18 October.
+  const runAt = new Date('2026-10-19T20:00:00Z'), cursor = '2026-10-18T19:55:00Z';
+  const article = '<meta property="article:published_time" content="2026-10-18T00:00:00.000Z"><script type="application/ld+json">{"datePublished":"2026-10-18T00:00:00.000Z"}</script><time dateTime="2026-10-18">Oct 18, 2026</time>';
+  for (const articleResponse of [() => html(article), () => new Response('', { status: 503 })]) {
+   const fetcher = vi.fn<typeof fetch>(async input => String(input) === 'https://www.anthropic.com/news'
+    ? html('<ul><li><a href="/news/offline-fund"><h3>Offline public benefit announcement</h3></a><time>Oct 18, 2026</time></li><li><a href="/news/offline-older"><h3>Offline earlier announcement</h3></a><time>Oct 17, 2026</time></li></ul>')
+    : articleResponse());
+   const result = await collectNativeDneskaiFeed(source('anthropic-news'), cursor, { now: runAt, signal, fetcher, resolve });
+   // With or without the article page, the post keeps the day's upper bound and says it is estimated.
+   expect(result.sources[0]).toMatchObject({ status: 'ok', errorCode: null, items: [{ url: 'https://www.anthropic.com/news/offline-fund', publishedAt: '2026-10-19T11:59:59.000Z', dateEstimated: true }] });
+   expect(result.sources[0].items).toHaveLength(1);
+  }
+ });
+ it('reads midnight RSS dates as day bounds, in UTC or the publisher offset, and keeps real times exact', async () => {
+  const runAt = new Date('2026-10-19T20:00:00Z'), cursor = '2026-10-18T19:55:00Z';
+  const entry = (id: string, date: string) => `<item><guid>${id}</guid><title>Offline feed item ${id}</title><link>https://huggingface.co/blog/${id}</link><pubDate>${date}</pubDate></item>`;
+  const body = `<?xml version="1.0"?><rss version="2.0"><channel><title>t</title><link>https://huggingface.co/blog</link>${entry('utc-midnight', 'Sun, 18 Oct 2026 00:00:00 GMT')}${entry('local-midnight', 'Sun, 18 Oct 2026 00:00:00 -0400')}${entry('exact-before', 'Sun, 18 Oct 2026 16:09:19 GMT')}${entry('exact-after', 'Mon, 19 Oct 2026 09:00:00 GMT')}</channel></rss>`;
+  const projected = await parseRssFeed(body, config('hf-blog'), runAt);
+  expect(projected.map(item => [item.externalId, item.publishedAt, item.dateEstimated ?? false])).toEqual([
+   ['utc-midnight', '2026-10-19T11:59:59.000Z', true], ['local-midnight', '2026-10-19T11:59:59.000Z', true],
+   ['exact-before', '2026-10-18T16:09:19.000Z', false], ['exact-after', '2026-10-19T09:00:00.000Z', false]]);
+  const fetcher = vi.fn<typeof fetch>(async () => new Response(body, { headers: { 'content-type': 'application/rss+xml' } }));
+  const result = await collectNativeDneskaiFeed(source('hf-blog'), cursor, { now: runAt, signal, fetcher, resolve });
+  expect(result.sources[0].items.map(item => item.externalId).sort()).toEqual(['exact-after', 'local-midnight', 'utc-midnight']);
  });
  it('enriches only the newest in-window estimates on the publisher host and keeps listing values on failure', async () => {
   const rows = Array.from({ length: ARTICLE_ENRICHMENT_LIMIT }, (_, i) => `<li><a href="https://www.niemanlab.org/2026/10/offline-${i}/">Offline Nieman story number ${i}</a></li>`).join('')
