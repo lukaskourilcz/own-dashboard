@@ -1,0 +1,24 @@
+{
+  "name": "@boardlessai/carousel-studio",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./dneskai-slide": {
+      "types": "./dist/dneskai-slide.d.ts",
+      "default": "./dist/dneskai-slide.js"
+    },
+    "./fonts": {
+      "types": "./dist/fonts.d.ts",
+      "default": "./dist/fonts.js"
+    }
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "sharp": "^0.35.4",
+    "zod": "^4.4.3"
+  }
+}

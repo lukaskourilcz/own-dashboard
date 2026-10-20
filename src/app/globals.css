@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Built output of the vendored carousel studio (vendor/carousel-studio): not app markup, never scanned for classes. */
+@source not "../../vendor";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

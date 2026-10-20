@@ -1,0 +1,448 @@
+{
+  "schemaVersion": "brand-kit/1",
+  "venture": "caught-up",
+  "studioBrand": "caught-up",
+  "displayName": "DNESKAi",
+  "status": "approved",
+  "approvedOn": "2026-09-27",
+  "source": {
+    "kind": "repository",
+    "repository": "lukaskourilcz/aifirst",
+    "ref": "main",
+    "commit": "978cf71eaa07e6465dea9055a92a7ad918844405",
+    "documents": [
+      "design_handoff_dneskai_logo/README.md",
+      "docs/design/BRAND_SYSTEM.md",
+      "docs/design/DESIGN_SYSTEM.md"
+    ]
+  },
+  "logotype": {
+    "viewBox": [
+      50,
+      -708,
+      4217.817852834741,
+      708
+    ],
+    "aspectRatio": 5.96,
+    "outlined": true,
+    "clearSpace": {
+      "ratioOfHeight": 0.27,
+      "basis": "The height of the dot over the i, about 27 % of the logotype's height, on every side."
+    },
+    "minimumHeightPx": 16,
+    "sizes": [
+      {
+        "place": "Navigation, desktop",
+        "size": "20 px high"
+      },
+      {
+        "place": "Navigation, mobile",
+        "size": "18 px high"
+      },
+      {
+        "place": "Footer and compact places",
+        "size": "16-18 px high"
+      },
+      {
+        "place": "Print (black mono)",
+        "size": "16 px high"
+      },
+      {
+        "place": "Open Graph header",
+        "size": "40 px high"
+      }
+    ]
+  },
+  "palettes": [
+    {
+      "id": "light",
+      "label": "Logotype on white or paper",
+      "grounds": [
+        "#ffffff",
+        "#f7f7f5"
+      ],
+      "colors": [
+        {
+          "role": "DNESK",
+          "value": "#2f5ae6"
+        },
+        {
+          "role": "Ai",
+          "value": "#1a3ab0"
+        },
+        {
+          "role": "K × A overlap",
+          "value": "#10266f"
+        }
+      ]
+    },
+    {
+      "id": "dark",
+      "label": "Logotype on near-black",
+      "grounds": [
+        "#14161a"
+      ],
+      "colors": [
+        {
+          "role": "DNESK",
+          "value": "#4d6ff0"
+        },
+        {
+          "role": "Ai",
+          "value": "#9db2ff"
+        },
+        {
+          "role": "K × A overlap",
+          "value": "#d2dcff"
+        }
+      ]
+    },
+    {
+      "id": "mono",
+      "label": "One-colour logotype",
+      "grounds": [],
+      "colors": [
+        {
+          "role": "Black mono",
+          "value": "#14161a"
+        },
+        {
+          "role": "White mono",
+          "value": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "square",
+      "label": "Square mark",
+      "grounds": [
+        "#14161a"
+      ],
+      "colors": [
+        {
+          "role": "Ground",
+          "value": "#14161a"
+        },
+        {
+          "role": "Letters",
+          "value": "#ffffff"
+        },
+        {
+          "role": "Cursor",
+          "value": "#2f5ae6"
+        }
+      ]
+    }
+  ],
+  "carouselPalette": {
+    "background": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md; the white ground the light logotype is approved for."
+    },
+    "surface": {
+      "value": "#f7f7f5",
+      "source": "--surface-page in DESIGN_SYSTEM.md; the paper ground the light logotype is approved for."
+    },
+    "surface-strong": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md."
+    },
+    "foreground": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md."
+    },
+    "muted": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts)."
+    }
+  },
+  "carouselFonts": {
+    "headline": {
+      "family": "Space Grotesk",
+      "source": "BRAND_SYSTEM.md: display headlines, section headings, navigation and controls."
+    },
+    "body": {
+      "family": "Source Serif 4",
+      "source": "BRAND_SYSTEM.md: article prose, deks, definitions and descriptive card copy."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: dates, issue identifiers, source ids, tags, captions and measured values."
+    }
+  },
+  "carouselStyle": {
+    "flat": true,
+    "squareCorners": true,
+    "logo": "every-slide",
+    "grounds": [],
+    "groundSequence": [],
+    "neutrals": []
+  },
+  "rules": [
+    "Use the production files as they are. The name is drawn as outlines; never redraw it or set it in a font.",
+    "Keep the proportions: the viewBox is 50 -708 4217.8 708, about 5.96 : 1.",
+    "Clear space on every side equals the height of the dot over the i, about 27 % of the logotype's height.",
+    "Minimum height is 16 px. Below that, use the square mark.",
+    "The light file goes on white or paper (#ffffff, #f7f7f5), the dark file on #14161a, the white mono on solid blue or a photograph, and the black mono in one-colour print.",
+    "The square mark is for favicons, app icons, social avatars and any other square format.",
+    "Production files never crop the square mark to a circle; the platform does that for avatars.",
+    "The blinking square is only for SVG inlined on the web. Favicons and avatars use the static file."
+  ],
+  "doNots": [
+    "Do not recolour the logotype.",
+    "Do not add shadows or gradients.",
+    "Do not resize the Ai.",
+    "Do not set the name in a font.",
+    "Do not stretch or squash the logotype.",
+    "Do not use gradients, glass, glow, neon or cyberpunk ornament; surfaces are flat.",
+    "Do not round panels: zero radii, no decorative elevation."
+  ],
+  "socialRules": [],
+  "typography": [
+    "The logotype is Poppins Black converted to outlines. Poppins is not a web font here and does not need to be installed.",
+    "Space Grotesk sets display headlines, section headings, navigation and controls.",
+    "Source Serif 4 sets article prose, deks, definitions and descriptive card copy.",
+    "IBM Plex Mono sets dates, issue identifiers, source ids, tags, captions and measured values.",
+    "Carousels set headlines in Space Grotesk, words in Source Serif 4 and labels in IBM Plex Mono, from the OFL files in studio/fonts."
+  ],
+  "assets": [
+    {
+      "role": "logo-on-light",
+      "kind": "logotype",
+      "label": "Logo on light",
+      "file": "DNESKAi-logo.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "3fc530282b94b0e104c918ae771d252c601f826526f734a3f174529f9cdaee03",
+      "bytes": 9934,
+      "sourcePath": "public/brand/DNESKAi-logo.svg",
+      "use": "White or paper surfaces (#ffffff, #f7f7f5).",
+      "grounds": [
+        "#ffffff",
+        "#f7f7f5"
+      ],
+      "onPhoto": false,
+      "inks": [
+        "#2f5ae6",
+        "#1a3ab0",
+        "#10266f"
+      ],
+      "viewBox": [
+        50,
+        -708,
+        4217.817852834741,
+        708
+      ],
+      "minimumSize": "16 px high",
+      "logoSlot": true
+    },
+    {
+      "role": "logo-on-dark",
+      "kind": "logotype",
+      "label": "Logo on dark",
+      "file": "DNESKAi-logo-dark.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "401b30e8117b59579a09f87deb3e224464ca59197050496df04fe28b162d9c33",
+      "bytes": 9934,
+      "sourcePath": "public/brand/DNESKAi-logo-dark.svg",
+      "use": "Near-black surfaces (#14161a).",
+      "grounds": [
+        "#14161a"
+      ],
+      "onPhoto": false,
+      "inks": [
+        "#4d6ff0",
+        "#9db2ff",
+        "#d2dcff"
+      ],
+      "viewBox": [
+        50,
+        -708,
+        4217.817852834741,
+        708
+      ],
+      "minimumSize": "16 px high",
+      "logoSlot": true
+    },
+    {
+      "role": "logo-mono-white",
+      "kind": "logotype",
+      "label": "Logo, white mono",
+      "file": "DNESKAi-logo-mono-white.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "102ad59c646d0ee9593c64a8214554b79afec48c16325ee2b679545fc1458bfe",
+      "bytes": 9579,
+      "sourcePath": "public/brand/DNESKAi-logo-mono-white.svg",
+      "use": "Solid blue or a photograph.",
+      "grounds": [],
+      "onPhoto": true,
+      "inks": [
+        "#ffffff"
+      ],
+      "viewBox": [
+        50,
+        -708,
+        4217.817852834741,
+        708
+      ],
+      "minimumSize": "16 px high",
+      "logoSlot": true
+    },
+    {
+      "role": "logo-mono-black",
+      "kind": "logotype",
+      "label": "Logo, black mono",
+      "file": "DNESKAi-logo-mono-black.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "fe28148717c8f14cb962a55230578d76656ebfd04f075bbb539ad194a3c60d55",
+      "bytes": 9579,
+      "sourcePath": "public/brand/DNESKAi-logo-mono-black.svg",
+      "use": "One-colour print.",
+      "grounds": [],
+      "onPhoto": false,
+      "inks": [
+        "#14161a"
+      ],
+      "viewBox": [
+        50,
+        -708,
+        4217.817852834741,
+        708
+      ],
+      "minimumSize": "16 px high",
+      "logoSlot": true
+    },
+    {
+      "role": "square",
+      "kind": "mark",
+      "label": "Square mark",
+      "file": "DNESKAi-square.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "5aabe8408ee811a5b69464d0bb1a9ffa6a92a9878f39eeaee73f0da85ad997f2",
+      "bytes": 9834,
+      "sourcePath": "public/brand/DNESKAi-square.svg",
+      "use": "Favicon, app icons, social avatars and any square format.",
+      "grounds": [],
+      "onPhoto": false,
+      "inks": [
+        "#14161a",
+        "#ffffff",
+        "#2f5ae6"
+      ],
+      "viewBox": [
+        -311.7307692307693,
+        -1549.2307692307693,
+        3288.4615384615386,
+        3288.4615384615386
+      ],
+      "logoSlot": false
+    },
+    {
+      "role": "square-animated",
+      "kind": "mark",
+      "label": "Square mark, blinking",
+      "file": "DNESKAi-square-blink.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "958230efe1917affdd4bfcf5963bc4a3d3878a3d87fe912fa7e648f84edc1841",
+      "bytes": 9834,
+      "sourcePath": "public/brand/DNESKAi-square-blink.svg",
+      "use": "Blinking cursor. Only for SVG inlined on the web.",
+      "grounds": [],
+      "onPhoto": false,
+      "inks": [
+        "#14161a",
+        "#ffffff",
+        "#2f5ae6"
+      ],
+      "viewBox": [
+        -311.7307692307693,
+        -1549.2307692307693,
+        3288.4615384615386,
+        3288.4615384615386
+      ],
+      "logoSlot": false
+    },
+    {
+      "role": "square-png",
+      "kind": "icon",
+      "label": "Square mark, 512 px PNG",
+      "file": "DNESKAi-square-512.png",
+      "mediaType": "image/png",
+      "sha256": "f8295f7fa293d6ebd176a4dc078acfbdbfea190512d1370eb88eaef65c4ec31c",
+      "bytes": 19220,
+      "sourcePath": "public/brand/png/DNESKAi-square-512.png",
+      "use": "The square mark at 512 px, for platforms that take only raster avatars.",
+      "grounds": [],
+      "onPhoto": false,
+      "inks": [
+        "#14161a",
+        "#ffffff",
+        "#2f5ae6"
+      ],
+      "pixels": {
+        "width": 512,
+        "height": 512
+      },
+      "logoSlot": false
+    },
+    {
+      "role": "og-light",
+      "kind": "share-card",
+      "label": "Share card, light",
+      "file": "DNESKAi-og.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "9d16018be516bc9ab97e31be66c51616eafd7c1d65c647a8fe1c61a496e5ad3a",
+      "bytes": 10056,
+      "sourcePath": "public/brand/DNESKAi-og.svg",
+      "use": "Default 1200 × 630 share card on white.",
+      "grounds": [],
+      "onPhoto": false,
+      "inks": [
+        "#ffffff",
+        "#2f5ae6",
+        "#1a3ab0",
+        "#10266f"
+      ],
+      "viewBox": [
+        0,
+        0,
+        1200,
+        630
+      ],
+      "logoSlot": false
+    },
+    {
+      "role": "og-dark",
+      "kind": "share-card",
+      "label": "Share card, dark",
+      "file": "DNESKAi-og-dark.svg",
+      "mediaType": "image/svg+xml",
+      "sha256": "c44a2a827697c02c8d75ad0210e33feacb9063a3dde7781b5786f3fa7b3560ed",
+      "bytes": 10056,
+      "sourcePath": "public/brand/DNESKAi-og-dark.svg",
+      "use": "Default 1200 × 630 share card on #14161a.",
+      "grounds": [],
+      "onPhoto": false,
+      "inks": [
+        "#14161a",
+        "#4d6ff0",
+        "#9db2ff",
+        "#d2dcff"
+      ],
+      "viewBox": [
+        0,
+        0,
+        1200,
+        630
+      ],
+      "logoSlot": false
+    }
+  ]
+}

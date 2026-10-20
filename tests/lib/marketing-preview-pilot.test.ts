@@ -45,7 +45,7 @@ describe('retired preview pilot notice (#113)', () => {
     const { assertMarketingOfflineImportConfiguration } = await import('@/lib/marketing/offline-import');
     const production = { VERCEL_ENV: 'production' };
     expect(marketingPilotConfiguration(owner, { ...production, ...generation }, now)).toBeNull();
-    expect(trustedMarketingTemplate('dneskai', { ...production, MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' })).toEqual(currentMarketingTemplate('dneskai'));
+    expect(trustedMarketingTemplate('devshark', { ...production, MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' })).toEqual(currentMarketingTemplate('devshark'));
     expect(() => dneskaiCollectionPilotConfiguration(owner, project, { ...production, ...collection }, now)).toThrow('collection-pilot-invalid');
     const secret = 'offline-collection-only-secret'.repeat(2);
     expect(authenticateDneskaiCollectionPilot(new Request('https://own.example', { headers: { Authorization: `Bearer ${secret}` } }), project, { ...production, ...collection, MARKETING_DNESKAI_COLLECTION_SECRET: secret }, now)).toBeNull();

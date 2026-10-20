@@ -189,6 +189,70 @@ describe("immutable private JPEG storage", () => {
   });
 });
 
+describe("DNESKAi deck rendering seam (#117)", () => {
+  const deck = { schemaVersion: "dneskai-slides/1" as const, format: "single-image" as const, slides: [{ type: "single" as const, variant: "type" as const, headline: "Test-only", images: [], alt: "Test-only" }] };
+  const draft = (withDeck: boolean) => {
+    const input = request();
+    const revision = { schemaVersion: "marketing-content/1" as const, brand: "dneskai" as const, title: "Test-only", caption: "Test-only", format: "carousel" as const,
+      sources: [{ sourceId: "test-only", sourceRevision: "test-only-v1", contentHash: contentHash(content) }], knowledgeIds: [], assets: [], account: input.generation.account,
+      scheduledAt: input.generation.scheduledAt, timeZone: "Europe/Prague" as const, templateVersion: "test-only", promptVersion: "test-only", model: model.model, traceId: null };
+    return { revision, slides: [], traceId: null, usage: { attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 }, ...(withDeck ? { deck } : {}) };
+  };
+  it("renders a DNESKAi revision only from its deck and never falls back to a layout", async () => {
+    const { renderDneskaiRevisionAssets } = await import("../../services/marketing-worker/protocol");
+    const asset = { url: "https://example.supabase.co/storage/v1/object/sign/test-only", sha256: "a".repeat(64), mimeType: "image/jpeg" as const, width: 1080, height: 1350, alt: "Test-only" };
+    const rendered = vi.fn(async () => ({ status: "rendered" as const, assets: [asset], renderKeys: ["b".repeat(64)], problems: [] }));
+    await expect(renderDneskaiRevisionAssets(draft(false), revisionId, rendered)).rejects.toThrow("dneskai-deck-required");
+    await expect(renderDneskaiRevisionAssets(draft(true), revisionId, undefined)).rejects.toThrow("dneskai-renderer-unavailable");
+    const problems = [{ slide: 0, code: "text-clipped", blocking: true, field: "headline", message: "Test-only" }];
+    await expect(renderDneskaiRevisionAssets(draft(true), revisionId, async () => ({ status: "refused", assets: [], renderKeys: [], problems }))).rejects.toMatchObject({ code: "dneskai-render-refused", problems });
+    expect(await renderDneskaiRevisionAssets(draft(true), revisionId, rendered)).toEqual([asset]);
+    expect(rendered).toHaveBeenCalledTimes(1); expect(rendered).toHaveBeenCalledWith({ revisionId, deck, signal: undefined });
+  });
+  it("refuses a DNESKAi Instagram job without a deck renderer before the paid generation", async () => {
+    const { assertDneskaiRendererAvailable, runMarketingWorkerJob } = await import("../../services/marketing-worker/protocol");
+    const render = vi.fn();
+    expect(() => assertDneskaiRendererAvailable({ brand: "dneskai" }, "instagram", undefined)).toThrow("dneskai-renderer-unavailable");
+    expect(() => assertDneskaiRendererAvailable({ brand: "dneskai" }, "instagram", render)).not.toThrow();
+    expect(() => assertDneskaiRendererAvailable({ brand: "dneskai" }, "threads", undefined)).not.toThrow();
+    expect(() => assertDneskaiRendererAvailable({ brand: "devshark" }, "instagram", undefined)).not.toThrow();
+    // The job schema still admits only devShark templates (#116 adds DNESKAi's), so the source alone says DNESKAi here.
+    const article = { ...content, difficulty: null, options: [], answer: null, explanation: null, evidence: [{ url: "https://example.com/test-only", title: "Test-only", excerpt: "Test-only", checkedAt: new Date().toISOString() }] };
+    const input = request(); Object.assign(input.generation.source as object, { brand: "dneskai", kind: "article", canonicalUrl: "https://dneskai.vercel.app/articles/test-only", locale: "cs", content: article, contentHash: contentHash(article) });
+    const invoke = vi.fn(); const reloadSource = vi.fn(async () => input.generation.source);
+    await expect(runMarketingWorkerJob(input, { model: { ...model, invoke }, storage: { put: vi.fn() }, reloadSource })).rejects.toThrow("dneskai-renderer-unavailable");
+    expect(invoke).not.toHaveBeenCalled(); expect(reloadSource).not.toHaveBeenCalled();
+  });
+  it("returns a refused deck's per-slide problems with the failed job, bounded to the renderer's shape", async () => {
+    const { MarketingRenderError } = await import("@/lib/marketing/render");
+    const { db, rpc } = database(); const input = request();
+    rpc.mockImplementation(async (name) => ({ data: name === "marketing_claim_job" ? input : name === "marketing_finish_job" ? "failed" : null, error: null }));
+    const problems = [
+      { slide: 0, code: "unsupported-glyph", blocking: true, field: "headline", message: "Test-only" },
+      { slide: 2, code: "image-upscaled", blocking: false, message: "Test-only" },
+      { slide: 1, code: "Not A Code", blocking: true, field: null, message: "dropped" },
+    ];
+    const run = vi.fn(async () => { throw new MarketingRenderError("dneskai-render-refused", problems); });
+    expect(await executeMarketingJob(db, owner, jobId, { env, model, refreshSource: vi.fn(), run, storage: { put: vi.fn() } })).toEqual({ claimed: true, status: "failed", errorCode: "dneskai-render-refused", problems: [
+      { slide: 0, code: "unsupported-glyph", blocking: true, field: "headline", message: "Test-only" },
+      { slide: 2, code: "image-upscaled", blocking: false, field: null, message: "Test-only" },
+    ] });
+    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_error: "dneskai-render-refused", p_result: null }));
+  });
+  it("binds the deck renderer to the job owner and the stored-media loader, and offers none without a loader", async () => {
+    const { db, rpc } = database(); const input = request();
+    rpc.mockImplementation(async (name) => ({ data: name === "marketing_claim_job" ? input : name === "marketing_finish_job" ? "failed" : null, error: null }));
+    const offered: unknown[] = [];
+    const stop = vi.fn(async (_request, deps) => { offered.push(deps.renderDneskaiDeck); if (deps.renderDneskaiDeck) await deps.renderDneskaiDeck({ revisionId, deck, signal: deps.signal }); throw new Error("test-only-stop"); });
+    await executeMarketingJob(db, owner, jobId, { env, model, refreshSource: vi.fn(), run: stop, storage: { put: vi.fn() } });
+    expect(offered).toEqual([undefined]);
+    const loadDneskaiMedia = vi.fn(async () => Buffer.alloc(0));
+    const renderDneskaiDeck = vi.fn(async () => ({ status: "refused" as const, assets: [] as [], renderKeys: [] as [], problems: [] }));
+    expect(await executeMarketingJob(db, owner, jobId, { env, model, refreshSource: vi.fn(), run: stop, storage: { put: vi.fn() }, loadDneskaiMedia, renderDneskaiDeck })).toEqual({ claimed: true, status: "failed", errorCode: "worker-execution-failed" });
+    expect(renderDneskaiDeck).toHaveBeenCalledWith({ revisionId, deck, signal: expect.any(AbortSignal), owner, loadMedia: loadDneskaiMedia });
+  });
+});
+
 describe("Threads text worker path", () => {
   it("refreshes sources twice, preserves caption readiness and skips JPEG upload", async () => {
     const { runMarketingWorkerJob } = await import("../../services/marketing-worker/protocol");

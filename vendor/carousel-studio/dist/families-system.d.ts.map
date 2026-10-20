@@ -1,0 +1,1 @@
+{"version":3,"file":"families-system.d.ts","sourceRoot":"","sources":["../src/families-system.ts"],"names":[],"mappings":"AAAA,OAAO,EAYL,KAAK,UAAU,EAChB,MAAM,iBAAiB,CAAC;AAmBzB,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,cAAc,CAAC;AAkB/C;;;;;;;;;GASG;AAEH,eAAO,MAAM,eAAe,EAAE,QAAQ,CAAC,MAAM,CAAC,OAAO,CAAC,UAAU,EAAE,UAAU,GAAG,UAAU,GAAG,QAAQ,GAAG,aAAa,GAAG,OAAO,CAAC,EAAE,UAAU,CAAC,CAoP3I,CAAC"}
