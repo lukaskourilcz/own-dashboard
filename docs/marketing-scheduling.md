@@ -57,7 +57,7 @@ At 02:15 UTC. It runs only these duties; the minute tick that fires at the same 
 
 | Duty | What |
 |---|---|
-| renewal | For approved and ready DNESKAi revisions, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. |
+| renewal | For the newest 50 approved or ready-for-review revisions of any brand, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. |
 | purge | `purgeUnusedDneskaiMedia(db, owner, 30)` under the media lease, and only when no media candidate is claimed by a collection pass. |
 | retention | Deletes `marketing_ticks` rows older than 14 days. |
 

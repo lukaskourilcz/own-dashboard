@@ -122,7 +122,7 @@ export interface MarketingSchedulerPorts {
   reconcile(publicationId: string): Promise<{ status: string; errorCode: string | null }>;
   tokenMetadata(): Promise<MetaTokenMetadata[]>;
   refreshToken(token: MetaTokenMetadata, signal: AbortSignal): Promise<InstagramTokenRefreshOutcome>;
-  /** Approved and ready-for-review DNESKAi revisions with the signed URLs of their assets. */
+  /** Approved and ready-for-review revisions of the owner (newest 50) with the signed URLs of their assets. */
   renewableRevisions(): Promise<Array<{ id: string; assetUrls: string[] }>>;
   renewRevision(revisionId: string): Promise<{ renewed: number }>;
 }

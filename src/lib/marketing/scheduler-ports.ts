@@ -103,7 +103,8 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     tokenMetadata: () => listMetaTokenMetadata(db, owner),
     refreshToken: (token, signal) => refreshInstagramToken(db, owner, { id: token.accountId, user_id: owner, brand: token.brand, platform: token.platform }, { signal, env }),
     async renewableRevisions() {
-      const { data, error } = await db.from("marketing_revisions").select("id,status,ready,assets:revision->assets").eq("user_id", owner).eq("brand", "dneskai")
+      // Every brand: a devShark revision published through its own workflow needs live URLs just the same.
+      const { data, error } = await db.from("marketing_revisions").select("id,status,ready,assets:revision->assets").eq("user_id", owner)
         .in("status", ["review", "approved"]).order("created_at", { ascending: false }).limit(50);
       if (error) throw new Error("revision-state-unavailable");
       return (data ?? []).flatMap((row) => {
