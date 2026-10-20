@@ -147,7 +147,9 @@ export async function resolveMetaPublisherConfig(db: Database, owner: string, ac
  * Meta documents this endpoint only with the token as the `access_token`
  * query parameter, so that is the one request here that carries it in the URL.
  * The URL is never logged or returned. A network failure, unreadable response
- * or failed store is reported as `uncertain` and is not retried.
+ * or failed store is reported as `uncertain` and is not retried. When the
+ * stored token has expired, a live bootstrap token is refreshed into the same
+ * row (compare-and-set on the expired row's refreshed_at).
  */
 export async function refreshInstagramToken(db: Database, owner: string, account: MetaCredentialAccount,
   options: { env?: Environment; now?: Date; fetcher?: typeof fetch; signal?: AbortSignal } = {}): Promise<InstagramTokenRefreshOutcome> {
@@ -159,7 +161,11 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   try { stored = await readStoredMetaToken(db, owner, account.id); }
   catch { return outcome('held', 'credential-store-unavailable'); }
   const bootstrap = bootstrapMetaCredential(account.brand, account.platform, options.env ?? process.env);
-  const current = stored ?? (bootstrap.accessToken ? { accessToken: bootstrap.accessToken, expiresAt: bootstrap.expiresAt, refreshedAt: null, scopes: bootstrap.scopes, loginMode: bootstrap.loginMode } : null);
+  const fromEnvironment = bootstrap.accessToken ? { accessToken: bootstrap.accessToken, expiresAt: bootstrap.expiresAt, refreshedAt: null, scopes: bootstrap.scopes, loginMode: bootstrap.loginMode } : null;
+  // The same order as chooseMetaCredential: the stored token while unexpired,
+  // then a live bootstrap, so refresh renews the token the publisher would use.
+  const live = (expiresAt: string) => Number.isFinite(instant(expiresAt)) && instant(expiresAt) > now.getTime();
+  const current = stored && live(stored.expiresAt) ? stored : fromEnvironment && live(fromEnvironment.expiresAt) ? fromEnvironment : stored ?? fromEnvironment;
   if (!current) return outcome('held', 'access-token-missing');
   if (current.loginMode !== 'instagram') return outcome('held', 'refresh-instagram-login-required');
   const expires = instant(current.expiresAt);

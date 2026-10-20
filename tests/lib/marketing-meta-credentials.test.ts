@@ -93,9 +93,19 @@ describe('refreshInstagramToken', () => {
     expect(await refreshInstagramToken(db, owner, account, { env: env({ MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: at(59.5 * day) }), now, fetcher: young })).toMatchObject({ status: 'skipped', code: 'access-token-too-new' });
     expect(young).not.toHaveBeenCalled();
   });
+  it('refreshes a live bootstrap into the row of an expired stored token, as the publisher would use it', async () => {
+    const expired = stored({ expiresAt: at(-1), scopes: ['instagram_business_basic'] }); const { db, rpc } = database(expired);
+    const fetcher = meta(Response.json({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0005', expires_in: 5_184_000 }));
+    expect(await refreshInstagramToken(db, owner, account, { env: env(), now, fetcher })).toMatchObject({ status: 'refreshed', expiresAt: at(60 * day) });
+    expect(new URL((fetcher.mock.calls[0] as [string])[0]).searchParams.get('access_token')).toBe('TEST-ONLY-BOOTSTRAP-TOKEN-0001');
+    expect(rpc).toHaveBeenLastCalledWith('marketing_store_account_token', expect.objectContaining({ p_expected_refreshed_at: expired.refreshedAt, p_token: 'TEST-ONLY-REFRESHED-TOKEN-0005',
+      p_scopes: ['instagram_business_basic', 'instagram_business_content_publish'] }));
+    expect(chooseMetaCredential(expired, bootstrapMetaCredential('dneskai', 'instagram', env()), now)).toMatchObject({ source: 'environment' });
+  });
   it.each([
     ['a token younger than 24 hours', stored({ refreshedAt: at(-23 * 3_600_000) }), {}, 'skipped', 'access-token-too-new'],
-    ['an expired token', stored({ expiresAt: at(-1) }), {}, 'held', 'access-token-expired'],
+    ['an expired token with an expired bootstrap', stored({ expiresAt: at(-1) }), { MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: at(-day) }, 'held', 'access-token-expired'],
+    ['an expired token without a bootstrap', stored({ expiresAt: at(-1) }), { MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }, 'held', 'access-token-expired'],
     ['a Facebook Login token', stored({ loginMode: 'facebook' }), {}, 'held', 'refresh-instagram-login-required'],
     ['no token at all', null, { MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }, 'held', 'access-token-missing'],
     ['scopes the store would refuse', null, { MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: Array.from({ length: 21 }, (_, index) => `scope_${String.fromCharCode(97 + index)}`).join(',') }, 'held', 'verified-scopes-invalid'],
