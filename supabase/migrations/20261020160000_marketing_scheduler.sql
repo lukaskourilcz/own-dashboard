@@ -98,6 +98,19 @@ begin
  return found;
 end $$;
 
+-- Replaces the state of a category while the caller still holds its live lease, without ending it.
+-- The token step stores "this refresh may be in flight" here before it sends the request, so a lost
+-- answer is never retried even when the release afterwards fails.
+create function public.marketing_scheduler_save_state(p_owner uuid,p_category text,p_holder uuid,p_state jsonb) returns boolean
+language plpgsql set search_path='' as $$
+begin
+ if p_owner is null or p_category is null or p_holder is null then raise exception 'lease input invalid'; end if;
+ if jsonb_typeof(p_state) is distinct from 'object' then raise exception 'lease state invalid'; end if;
+ update public.marketing_scheduler_state set state=p_state,updated_at=clock_timestamp()
+  where user_id=p_owner and category=p_category and holder=p_holder and lease_until>clock_timestamp();
+ return found;
+end $$;
+
 -- Retention for the measurement table: the daily tick removes rows older than p_days (14).
 create function public.marketing_scheduler_prune_ticks(p_owner uuid,p_days integer) returns integer
 language plpgsql set search_path='' as $$
@@ -111,7 +124,7 @@ end $$;
 
 revoke all on function public.marketing_scheduler_begin_tick(uuid,uuid,text),public.marketing_scheduler_finish_tick(uuid,uuid,jsonb,jsonb),
  public.marketing_scheduler_acquire(uuid,text,uuid,integer),public.marketing_scheduler_release(uuid,text,uuid,timestamptz,jsonb),
- public.marketing_scheduler_prune_ticks(uuid,integer) from public,anon,authenticated;
+ public.marketing_scheduler_save_state(uuid,text,uuid,jsonb),public.marketing_scheduler_prune_ticks(uuid,integer) from public,anon,authenticated;
 grant execute on function public.marketing_scheduler_begin_tick(uuid,uuid,text),public.marketing_scheduler_finish_tick(uuid,uuid,jsonb,jsonb),
  public.marketing_scheduler_acquire(uuid,text,uuid,integer),public.marketing_scheduler_release(uuid,text,uuid,timestamptz,jsonb),
- public.marketing_scheduler_prune_ticks(uuid,integer) to service_role;
+ public.marketing_scheduler_save_state(uuid,text,uuid,jsonb),public.marketing_scheduler_prune_ticks(uuid,integer) to service_role;

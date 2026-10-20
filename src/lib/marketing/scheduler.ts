@@ -96,6 +96,8 @@ export interface MarketingSchedulerStore {
   acquire(lease: MarketingSchedulerLease, holder: string, seconds: number): Promise<SchedulerLeaseResult>;
   /** `state` omitted keeps the stored state; `nextAllowedAt` null clears a backoff. */
   release(lease: MarketingSchedulerLease, holder: string, update: { nextAllowedAt: string | null; state?: Record<string, unknown> }): Promise<boolean>;
+  /** Replaces the state while `holder` still holds the live lease; false when it no longer does. */
+  saveState(lease: MarketingSchedulerLease, holder: string, state: Record<string, unknown>): Promise<boolean>;
   pruneTicks(days: number): Promise<number>;
 }
 
@@ -154,7 +156,11 @@ type StepOutcome = {
   /** Written on release when present; otherwise the stored state stays. */
   state?: Record<string, unknown>;
 };
-type StepContext = { state: Record<string, unknown>; signal: AbortSignal; remainingMs: () => number; now: () => Date };
+type StepContext = {
+  state: Record<string, unknown>; signal: AbortSignal; remainingMs: () => number; now: () => Date;
+  /** Stores state under the held lease before the step finishes; false when it could not. */
+  saveState: (state: Record<string, unknown>) => Promise<boolean>;
+};
 type Step = {
   category: MarketingTickCategory;
   lease: MarketingSchedulerLease | null;
@@ -366,7 +372,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
         dueTokens = (await ports.tokenMetadata()).filter((token) => token.platform === "instagram" && instagramTokenRefreshDue(token, clock()));
         return dueTokens.length ? null : { status: "noop" };
       },
-      async run({ state, signal: abort, now }): Promise<StepOutcome> {
+      async run({ state, signal: abort, now, saveState }): Promise<StepOutcome> {
         const at = now().getTime();
         // An uncertain refresh is never retried for the same stored token; a new token (account verification) lifts it.
         const uncertain = Object.fromEntries(Object.entries(stringRecord(state.uncertain)).filter(([account, refreshedAt]) => dueTokens.some((token) => token.accountId === account && token.refreshedAt === refreshedAt)));
@@ -375,15 +381,19 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
         if (!token) {
           return { status: "skipped", code: Object.keys(uncertain).length ? "token-refresh-uncertain" : "token-refresh-backoff", state: { uncertain, backoff } };
         }
+        const detail = { accountId: token.accountId };
+        // The refresh is marked uncertain before it is sent: if its answer, or the release below, is
+        // lost, the next tick still finds the mark and never sends a second refresh for this token.
+        const marked = { ...uncertain, [token.accountId]: token.refreshedAt };
+        if (!(await saveState({ uncertain: marked, backoff }).catch(() => false))) return { status: "error", code: "scheduler-state-unavailable", detail };
         let outcome: InstagramTokenRefreshOutcome;
         try { outcome = await ports.refreshToken(token, abort); }
         catch { outcome = { status: "uncertain", accountId: token.accountId, code: "refresh-request-uncertain" }; }
-        const detail = { accountId: token.accountId };
         if (outcome.status === "refreshed") {
           delete backoff[token.accountId];
           return { status: "done", detail: { ...detail, expiresAt: outcome.expiresAt }, state: { uncertain, backoff } };
         }
-        if (outcome.status === "uncertain") return { status: "error", code: outcome.code, detail, state: { uncertain: { ...uncertain, [token.accountId]: token.refreshedAt }, backoff } };
+        if (outcome.status === "uncertain") return { status: "error", code: outcome.code, detail, state: { uncertain: marked, backoff } };
         const wait = outcome.status === "failed" ? TOKEN_FAILED_BACKOFF_MS : TOKEN_HELD_BACKOFF_MS;
         return { status: outcome.status === "failed" ? "error" : "skipped", code: outcome.code, detail, state: { uncertain, backoff: { ...backoff, [token.accountId]: iso(at + wait) } } };
       },
@@ -457,7 +467,9 @@ async function runStep(step: Step, context: { store: MarketingSchedulerStore; ho
     if (!lease.acquired) return record({ status: lease.reason, code: lease.reason === "busy" ? "lease-held" : "backoff-active", pending: true, detail: { until: lease.until } });
   }
   let outcome: StepOutcome;
-  try { outcome = await step.run({ state: lease?.acquired ? lease.state : {}, signal, remainingMs: remaining, now: clock }); }
+  const held = step.lease && lease?.acquired ? step.lease : null;
+  const saveState = (state: Record<string, unknown>) => held ? store.saveState(held, holder, state) : Promise.resolve(false);
+  try { outcome = await step.run({ state: lease?.acquired ? lease.state : {}, signal, remainingMs: remaining, now: clock, saveState }); }
   catch (error) { outcome = { status: "error", code: schedulerFailureCode(error, step.category) }; }
   if (step.lease && lease?.acquired) {
     // A failed release leaves the lease to expire on its own (90 s); the next tick is five minutes away.
@@ -490,6 +502,9 @@ export function createMarketingSchedulerStore(db: Database, owner: string): Mark
     },
     async release(lease, holder, update) {
       return (await rpc("marketing_scheduler_release", { p_owner: owner, p_category: lease, p_holder: holder, p_next_allowed_at: update.nextAllowedAt, p_state: update.state ?? null })) === true;
+    },
+    async saveState(lease, holder, state) {
+      return (await rpc("marketing_scheduler_save_state", { p_owner: owner, p_category: lease, p_holder: holder, p_state: state })) === true;
     },
     async pruneTicks(days) {
       const removed = await rpc("marketing_scheduler_prune_ticks", { p_owner: owner, p_days: days });

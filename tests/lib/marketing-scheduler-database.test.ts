@@ -176,6 +176,25 @@ describe('tick record and category leases (20261020160000)', () => {
     await setTime(instant);
   });
 
+  it('saves state mid-lease for the live holder only', async () => {
+    const acquire = (holder: string) => service<Record<string, unknown>>('select marketing_scheduler_acquire($1,$2,$3,$4) r', [owner, 'token', holder, 90]);
+    const save = (holder: string, state: unknown) => service<boolean>('select marketing_scheduler_save_state($1,$2,$3,$4) r', [owner, 'token', holder, JSON.stringify(state)]);
+    const stored = async () => (await db.query<{ state: unknown; holder: string | null }>("select state,holder from marketing_scheduler_state where user_id=$1 and category='token'", [owner])).rows[0];
+    await setTime('2026-10-21T00:00:00Z');
+    expect(await acquire(holderA)).toMatchObject({ acquired: true });
+    expect(await save(holderA, { uncertain: { a: '2026-09-01T00:00:00Z' } })).toBe(true);
+    // The lease stays held; another holder cannot write.
+    expect(await stored()).toEqual({ state: { uncertain: { a: '2026-09-01T00:00:00Z' } }, holder: holderA });
+    expect(await save(holderB, { lost: true })).toBe(false);
+    // Once the lease ran out the old holder cannot write either, and the next holder reads the mark.
+    await setTime('2026-10-21T00:01:31Z');
+    expect(await save(holderA, { late: true })).toBe(false);
+    expect(await acquire(holderB)).toMatchObject({ acquired: true, state: { uncertain: { a: '2026-09-01T00:00:00Z' } } });
+    await expect(service('select marketing_scheduler_save_state($1,$2,$3,$4) r', [owner, 'token', holderB, '[]'])).rejects.toThrow('lease state invalid');
+    expect(await service('select marketing_scheduler_release($1,$2,$3,$4,$5) r', [owner, 'token', holderB, null, '{}'])).toBe(true);
+    await setTime(instant);
+  });
+
   it('serialises two concurrent acquisitions of the same category', async () => {
     const tasks = [holderA, holderB].map((holder) => service<{ acquired: boolean }>('select marketing_scheduler_acquire($1,$2,$3,$4) r', [owner, 'generation', holder, 90]));
     const results = await Promise.all(tasks);
@@ -199,7 +218,7 @@ describe('tick record and category leases (20261020160000)', () => {
     expect(await as('authenticated', other, async () => (await db.query('select * from marketing_scheduler_state where user_id=$1', [owner])).rows)).toEqual([]);
     await expect(as('authenticated', owner, () => db.query("insert into marketing_ticks(id,user_id,kind) values(gen_random_uuid(),$1,'minute')", [owner]))).rejects.toThrow();
     await expect(as('authenticated', owner, () => db.query("update marketing_scheduler_state set next_allowed_at=null"))).rejects.toThrow();
-    for (const fn of ['marketing_scheduler_begin_tick(uuid,uuid,text)', 'marketing_scheduler_finish_tick(uuid,uuid,jsonb,jsonb)', 'marketing_scheduler_acquire(uuid,text,uuid,integer)', 'marketing_scheduler_release(uuid,text,uuid,timestamptz,jsonb)', 'marketing_scheduler_prune_ticks(uuid,integer)']) {
+    for (const fn of ['marketing_scheduler_begin_tick(uuid,uuid,text)', 'marketing_scheduler_finish_tick(uuid,uuid,jsonb,jsonb)', 'marketing_scheduler_acquire(uuid,text,uuid,integer)', 'marketing_scheduler_release(uuid,text,uuid,timestamptz,jsonb)', 'marketing_scheduler_save_state(uuid,text,uuid,jsonb)', 'marketing_scheduler_prune_ticks(uuid,integer)']) {
       for (const role of ['anon', 'authenticated']) expect((await db.query<{ allowed: boolean }>(`select has_function_privilege('${role}','${fn}','execute') allowed`)).rows[0].allowed).toBe(false);
       expect((await db.query<{ allowed: boolean }>(`select has_function_privilege('service_role','${fn}','execute') allowed`)).rows[0].allowed).toBe(true);
     }
@@ -229,6 +248,8 @@ describe('the TypeScript store over the real functions', () => {
     expect(await store.acquire('token', holderB, 90)).toMatchObject({ acquired: false, reason: 'backoff' });
     await setTime('2026-10-20T20:06:01Z');
     expect(await store.acquire('token', holderB, 90)).toMatchObject({ acquired: true, state: { uncertain: { [owner]: '2026-09-01T00:00:00Z' } } });
+    expect(await store.saveState('token', holderB, { uncertain: {} })).toBe(true);
+    expect(await store.saveState('token', holderA, { uncertain: {} })).toBe(false);
     expect(await store.release('token', holderB, { nextAllowedAt: null })).toBe(true);
     expect(await store.finishTick(tick, [{ category: 'retention', status: 'noop', ms: 1 }], [])).toBe(true);
     expect(await store.pruneTicks(14)).toBe(0);
@@ -243,7 +264,7 @@ describe('the TypeScript store over the real functions', () => {
     const nothing = async () => false;
     const ports = {
       store, dneskaiProject: async () => owner,
-      collectionRuns: async () => [{ id: holderA, date: '2026-10-20', status: 'running' as const }],
+      collectionRuns: async () => [{ id: holderA, date: '2026-10-20', status: 'running' as const, pilot: false }],
       tickCollection: async () => { collections++; await gate; return { runId: holderA, status: 'running' as const, continue: false }; },
       pendingMedia: async () => [], createBriefs: async () => { throw new Error('briefs-unwired'); }, queuedGenerationJobs: async () => [],
       publicationWork: nothing, publicationDueSoon: nothing, nextReconciliation: async () => null, tokenMetadata: async () => [],

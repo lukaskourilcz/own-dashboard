@@ -46,6 +46,12 @@ function memoryStore(clock: Clock) {
       if (update.state) row.state = structuredClone(update.state);
       return true;
     },
+    async saveState(lease, holder, state) {
+      const row = leases.get(lease);
+      if (!row || row.holder !== holder || row.until <= clock.at) return false;
+      row.state = structuredClone(state);
+      return true;
+    },
     async pruneTicks() { return 3; },
   };
   return store;
@@ -329,6 +335,26 @@ describe('Instagram token refresh', () => {
     token = dueToken(iso(evening - 2 * 86_400_000)); outcome = 'refreshed';
     expect(step(await h.tick(), 'token')).toMatchObject({ status: 'done', detail: { accountId: account } });
     expect(h.called('refreshToken')).toHaveLength(2);
+  });
+  it('marks the refresh before sending it, so a lost release never leads to a second refresh', async () => {
+    const clock = new Clock(evening), store = memoryStore(clock);
+    const release = store.release.bind(store);
+    store.release = async (lease, holder, update) => { if (lease === 'token') throw new Error('scheduler-state-unavailable'); return release(lease, holder, update); };
+    const h = harness({ tokenMetadata: async () => [dueToken()], refreshToken: async (value) => ({ status: 'uncertain', accountId: value.accountId, code: 'refresh-request-uncertain' }) }, clock, store);
+    expect(step(await h.tick(), 'token')).toMatchObject({ status: 'error', code: 'refresh-request-uncertain' });
+    // The release failed; the lease runs out on its own and the mark written before the request remains.
+    clock.advance(5 * 60_000);
+    expect(step(await h.tick(), 'token')).toMatchObject({ status: 'skipped', code: 'token-refresh-uncertain' });
+    expect(h.called('refreshToken')).toHaveLength(1);
+  });
+  it('sends no refresh when the mark cannot be stored', async () => {
+    const clock = new Clock(evening), store = memoryStore(clock);
+    store.saveState = async () => { throw new Error('scheduler-state-unavailable'); };
+    const h = harness({ tokenMetadata: async () => [dueToken()] }, clock, store);
+    const result = await h.tick();
+    expect(step(result, 'token')).toMatchObject({ status: 'error', code: 'scheduler-state-unavailable', detail: { accountId: account } });
+    expect(h.called('refreshToken')).toEqual([]);
+    expect(store.leases.get('token')?.holder).toBeNull();
   });
   it('waits a day after a refused refresh and skips tokens that are not due', async () => {
     const h = harness({ tokenMetadata: async () => [dueToken()], refreshToken: async (value) => ({ status: 'failed', accountId: value.accountId, code: 'refresh-http-400' }) }, new Clock(evening));
