@@ -48,11 +48,16 @@ jednou a druhá pozice dostane kód `media-duplicate-bytes`.
 Nejvýše osm obrázků. Bere se největší varianta ze `srcset`; u WordPressu
 (`/wp-content/uploads/`) se nejdřív zkusí adresa bez parametrů zmenšení a při
 neúspěchu adresa vydavatele. Hosty jsou jen doména vydavatele (stránky nebo zdroje
-v registru), jeho známé CDN (`PUBLISHER_IMAGE_DOMAINS` v `dneskai-media-plan.ts`) a
-obrázkové hosty redakčních systémů (WordPress Jetpack, Contentful, Sanity, Substack).
+v registru) a jeho známé CDN (`PUBLISHER_IMAGE_DOMAINS` v `dneskai-media-plan.ts`).
+Obrázkové proxy (WordPress Jetpack `i0.wp.com/<host>/…`, Substack
+`substackcdn.com/image/fetch/…`, GitHub camo) zmenšují libovolný veřejný obrázek, proto
+u nich rozhoduje host, který nesou: musí to být doména vydavatele nebo jeho CDN.
 Neznámý host se přeskočí jako `media-host-not-publisher`, nehádá se. Vynechávají se
 avatary, loga, ikony, autorské a sdílecí bloky, navigace, patička, SVG, GIF a obrázky
-deklarované nebo skutečně menší než 300 px.
+deklarované nebo skutečně menší než 300 px. Logo nebo ikona se poznají podle složky
+(`/avatars/`, `/icons/`) nebo krátkého názvu souboru (`logo.png`, `site-logo-dark.png`,
+`favicon-32x32.png`). Redakční fotka s popisným názvem, který logo jen zmiňuje
+(`openai-logo-GettyImages-1234.jpg`), se stáhne.
 
 Když stránka vrátí přechodnou chybu (timeout, 429, 5xx), zkusí se v dalším běhu,
 celkem nejvýše třikrát. Potom, nebo hned při trvalé chybě (403, 404), zůstane jen

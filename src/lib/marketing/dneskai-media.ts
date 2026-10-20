@@ -9,7 +9,7 @@ import { SOURCE_USER_AGENT } from './free-feeds/sources/adapters/util';
 import { DneskaiMediaImageError, inspectDneskaiImage } from './dneskai-media-image';
 import {
   DNESKAI_MEDIA_ORIGIN_KINDS, dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, extractArticleMedia,
-  instagramMediaPlan, isInstagramMediaHost, publisherImageHostPolicy, type DneskaiMediaPlanEntry,
+  instagramImageUrlPolicy, instagramMediaPlan, publisherImageUrlPolicy, type DneskaiImageUrlPolicy, type DneskaiMediaPlanEntry,
 } from './dneskai-media-plan';
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
 import { DNESKAI_MEDIA_READ_VERSION, DneskaiMediaReadSchema, type DneskaiMediaCandidateView, type DneskaiMediaRead } from './dneskai-media-contracts';
@@ -189,9 +189,10 @@ function classifyFetchError(error: unknown, signal: AbortSignal): FetchFailure {
 }
 
 const IMAGE_CONTENT_TYPES = ['image/jpg', 'application/octet-stream', 'binary/octet-stream'];
-async function fetchBytes(url: string, allowHost: (hostname: string) => boolean, deps: DneskaiMediaDependencies, signal: AbortSignal) {
-  const host = new URL(url).hostname;
-  if (!allowHost(host)) throw new FetchFailure('media-host-not-publisher', false);
+async function fetchBytes(url: string, allowImage: DneskaiImageUrlPolicy, deps: DneskaiMediaDependencies, signal: AbortSignal) {
+  const parsed = new URL(url);
+  const host = parsed.hostname;
+  if (!allowImage(parsed)) throw new FetchFailure('media-host-not-publisher', false);
   try {
     const response = await safeFetch(url, {
       allowHosts: [host], method: 'GET', maxBytes: DNESKAI_MEDIA_FETCH_MAX_BYTES, maxRedirects: 2, timeoutMs: DNESKAI_MEDIA_FETCH_TIMEOUT_MS,
@@ -289,7 +290,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   }
   const candidate = parsed.data;
   const instagram = source.kind === 'instagram';
-  const allowHost = instagram ? isInstagramMediaHost : publisherImageHostPolicy(source, candidate.url);
+  const allowImage = instagram ? instagramImageUrlPolicy : publisherImageUrlPolicy(source, candidate.url);
   let plan = state.plan as DneskaiMediaPlanEntry[] | null;
   if (!plan) {
     if (instagram) {
@@ -299,7 +300,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
       // The article page is read once; its pictures and their order are then fixed for every later pass.
       try {
         const page = await fetchArticle(candidate.url, deps, deps.signal);
-        plan = extractArticleMedia(page.html, page.url, { allowHost, feedImages: candidate.mediaUrls });
+        plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls });
         await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'ok', p_page_error: null });
       } catch (error) {
         if (error instanceof DneskaiMediaError) throw error;
@@ -310,7 +311,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
           return { ...base, status: 'pending', skipped: [{ position: -1, code: failure.code }] };
         }
         // No readable page: the feed's own image is all the publisher offered.
-        plan = extractArticleMedia('', candidate.url, { allowHost, feedImages: candidate.mediaUrls });
+        plan = extractArticleMedia('', candidate.url, { allowImage, feedImages: candidate.mediaUrls });
         await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'failed', p_page_error: failure.code });
       }
     }
@@ -331,7 +332,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   const limit = limiter(Math.max(1, Math.min(deps.concurrency ?? 2, 4)));
   const tasks = plan.filter(open).map((entry) => ({ entry, prepared: limit(async () => {
     if (deps.signal.aborted || remaining() < BUDGET_RESERVE_MS || leaseLeft() < ENTRY_WORST_MS + LEASE_MARGIN_MS) return null;
-    try { return await prepareEntry(owner, entry, allowHost, deps, db); }
+    try { return await prepareEntry(owner, entry, allowImage, deps, db); }
     catch (error) { return error instanceof FetchFailure ? error : new FetchFailure(error instanceof DneskaiMediaError ? error.code : 'media-fetch-failed', true); }
   }) }));
   for (const { entry, prepared } of tasks) {
@@ -370,14 +371,14 @@ function limiter(concurrency: number) {
 
 type PreparedEntry = { originUrl: string; image: Awaited<ReturnType<typeof inspectDneskaiImage>>; uploaded: boolean; reused: boolean };
 /** Fetches, inspects and (when new) uploads one picture. The row is written only after the object exists. */
-async function prepareEntry(owner: string, entry: DneskaiMediaPlanEntry, allowHost: (hostname: string) => boolean, deps: DneskaiMediaDependencies & { store: DneskaiMediaObjectStore; signal: AbortSignal }, db: DneskaiMediaDatabase): Promise<PreparedEntry> {
+async function prepareEntry(owner: string, entry: DneskaiMediaPlanEntry, allowImage: DneskaiImageUrlPolicy, deps: DneskaiMediaDependencies & { store: DneskaiMediaObjectStore; signal: AbortSignal }, db: DneskaiMediaDatabase): Promise<PreparedEntry> {
   let originUrl = entry.url, bytes: Uint8Array;
-  try { bytes = await fetchBytes(entry.url, allowHost, deps, deps.signal); }
+  try { bytes = await fetchBytes(entry.url, allowImage, deps, deps.signal); }
   catch (error) {
     // A full-size rendition that is missing, refused or too large falls back to the publisher's own URL.
     if (!entry.fallbackUrl) throw error;
     originUrl = entry.fallbackUrl;
-    bytes = await fetchBytes(entry.fallbackUrl, allowHost, deps, deps.signal);
+    bytes = await fetchBytes(entry.fallbackUrl, allowImage, deps, deps.signal);
   }
   let image: PreparedEntry['image'];
   try { image = await inspectDneskaiImage(bytes); }

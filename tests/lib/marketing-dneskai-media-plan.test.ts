@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
   dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, dneskaiPublisherName, extractArticleMedia, fullSizeImageUrl,
-  instagramMediaPlan, isInstagramMediaHost, largestSrcsetCandidate, publisherImageHostPolicy, registrableDomain,
+  instagramMediaPlan, isInstagramMediaHost, largestSrcsetCandidate, publisherImageUrlPolicy, registrableDomain,
 } from '@/lib/marketing/dneskai-media-plan';
 import { DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
 
@@ -47,7 +47,7 @@ describe('DNESKAi media plan: what is fetched, in what order', () => {
   it('extracts social-card, feed and body pictures in publisher order, largest rendition, without chrome', () => {
     const verge = source('the-verge');
     const plan = extractArticleMedia(ARTICLE, 'https://www.theverge.com/2026/10/20/offline-test', {
-      allowHost: publisherImageHostPolicy(verge, 'https://www.theverge.com/2026/10/20/offline-test'),
+      allowImage: publisherImageUrlPolicy(verge, 'https://www.theverge.com/2026/10/20/offline-test'),
       feedImages: ['https://www.theverge.com/wp-content/uploads/2026/10/hero.jpg', 'https://www.theverge.com/feed-only.jpg'],
     });
     expect(plan).toEqual([
@@ -63,22 +63,43 @@ describe('DNESKAi media plan: what is fetched, in what order', () => {
   it('caps a feed candidate at eight pictures and never fetches off-publisher hosts', () => {
     const figures = Array.from({ length: 12 }, (_, index) => `<figure><img src="https://www.anthropic.com/images/figure-${index}.png" alt="Figure ${index}"></figure>`).join('');
     const html = `<html><body><main><p>OFFLINE TEST body</p>${figures}<img src="https://cdn.sanity.io/images/x/y/hero.png"><img src="https://evil.example/a.png"></main></body></html>`;
-    const plan = extractArticleMedia(html, 'https://www.anthropic.com/news/offline-test', { allowHost: publisherImageHostPolicy(source('anthropic-news'), 'https://www.anthropic.com/news/offline-test') });
+    const plan = extractArticleMedia(html, 'https://www.anthropic.com/news/offline-test', { allowImage: publisherImageUrlPolicy(source('anthropic-news'), 'https://www.anthropic.com/news/offline-test') });
     expect(plan).toHaveLength(8);
     expect(plan.every((entry) => entry.url.startsWith('https://www.anthropic.com/images/'))).toBe(true);
-    const empty = extractArticleMedia('', 'https://www.anthropic.com/news/offline-test', { allowHost: () => true, feedImages: ['http://insecure.example/a.jpg', 'https://10.0.0.1/a.jpg'] });
+    const empty = extractArticleMedia('', 'https://www.anthropic.com/news/offline-test', { allowImage: () => true, feedImages: ['http://insecure.example/a.jpg', 'https://10.0.0.1/a.jpg'] });
     expect(empty).toEqual([]);
   });
 
   it('knows the publisher domains and CDNs, nothing else', () => {
-    const ars = publisherImageHostPolicy(source('ars-technica'), 'https://arstechnica.com/ai/2026/10/offline-test/');
-    expect(['arstechnica.com', 'cdn.arstechnica.net', 'i0.wp.com'].map(ars)).toEqual([true, true, true]);
-    expect(['arstechnica.net.evil.example', 'gravatar.com', 'images.ctfassets.net.example'].map(ars)).toEqual([false, false, false]);
+    const check = (policy: (url: URL) => boolean, urls: string[]) => urls.map((url) => policy(new URL(url)));
+    const ars = publisherImageUrlPolicy(source('ars-technica'), 'https://arstechnica.com/ai/2026/10/offline-test/');
+    expect(check(ars, ['https://arstechnica.com/a.jpg', 'https://cdn.arstechnica.net/a.jpg', 'https://i0.wp.com/arstechnica.com/wp-content/uploads/a.jpg', 'https://i2.wp.com/cdn.arstechnica.net/a.jpg'])).toEqual([true, true, true, true]);
+    expect(check(ars, ['https://arstechnica.net.evil.example/a.jpg', 'https://gravatar.com/a.jpg', 'https://images.ctfassets.net.example/a.jpg'])).toEqual([false, false, false]);
+    // An image proxy speaks for the host it carries, never for itself; another tenant of a hosted CMS is not the publisher.
+    expect(check(ars, ['https://i0.wp.com/evil.example.org/tracker.jpg', 'https://i0.wp.com/i1.wp.com/arstechnica.com/a.jpg', 'https://i0.wp.com/', 'https://s0.wp.com/a.jpg',
+      'https://images.ctfassets.net/space/a.jpg', 'https://cdn.sanity.io/images/project/a.jpg', 'https://substackcdn.com/image/fetch/w_1456/https%3A%2F%2Farstechnica.com%2Fa.jpg'])).toEqual([false, false, false, false, false, false, true]);
+    const substack = publisherImageUrlPolicy(source('interconnects'), 'https://www.interconnects.ai/p/offline-test');
+    expect(check(substack, ['https://substackcdn.com/image/fetch/$s_!x!,w_1456,c_limit,f_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa.png',
+      'https://substackcdn.com/image/fetch/w_1456/https%3A%2F%2Fevil.example%2Fa.png', 'https://substackcdn.com/image/youtube/w_728/abc', 'https://substackcdn.com/image/fetch/w_1456/not-a-url'])).toEqual([true, false, false, false]);
+    const hex = (url: string) => [...new TextEncoder().encode(url)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    const github = publisherImageUrlPolicy(source('github-ai-releases'), 'https://github.com/example/repo/releases/tag/v1');
+    expect(check(github, [`https://camo.githubusercontent.com/abc/${hex('https://github.com/user-attachments/assets/a.png')}`, `https://camo.githubusercontent.com/abc/${hex('https://evil.example/a.png')}`, 'https://camo.githubusercontent.com/abc/zz'])).toEqual([true, false, false]);
     // An aggregator's candidate links to another publisher: that page's own domain counts.
-    const hn = publisherImageHostPolicy(source('hn-frontpage'), 'https://blog.example.org/post');
-    expect(['static.example.org', 'news.ycombinator.com', 'other.example'].map(hn)).toEqual([true, false, false]);
+    const hn = publisherImageUrlPolicy(source('hn-frontpage'), 'https://blog.example.org/post');
+    expect(check(hn, ['https://static.example.org/a.jpg', 'https://news.ycombinator.com/a.jpg', 'https://other.example/a.jpg'])).toEqual([true, false, false]);
     expect(registrableDomain('regmedia.co.uk')).toBe('regmedia.co.uk');
     expect(registrableDomain('www.theregister.com')).toBe('theregister.com');
+  });
+
+  it('skips chrome by folder or short file name, but keeps editorial photos whose names mention a logo or icon', () => {
+    const page = 'https://techcrunch.com/2026/10/20/offline-test/';
+    const uploads = 'https://techcrunch.com/wp-content/uploads/2026/10/';
+    const html = `<html><head><meta property="og:image" content="${uploads}openai-logo-GettyImages-1234.jpg?w=1200"></head><body><article><p>OFFLINE TEST body</p>
+      ${['sam-altman-icon-award.jpg', 'meta-logo-on-a-phone-screen.jpg', 'site-logo-dark.png', 'logo-150x150.png', 'favicon-32x32.png', 'apple-touch-icon-180x180.png', 'jane-doe-headshot.jpg']
+        .map((name) => `<figure><img src="${uploads}${name}" alt="OFFLINE"></figure>`).join('')}
+      <figure><img src="https://techcrunch.com/avatars/jane.jpg" alt="OFFLINE"></figure><figure><img src="https://techcrunch.com/icons/award.png" alt="OFFLINE"></figure></article></body></html>`;
+    const plan = extractArticleMedia(html, page, { allowImage: publisherImageUrlPolicy(source('techcrunch-ai'), page) });
+    expect(plan.map((entry) => entry.fallbackUrl ?? entry.url)).toEqual([`${uploads}openai-logo-GettyImages-1234.jpg?w=1200`, `${uploads}sam-altman-icon-award.jpg`, `${uploads}meta-logo-on-a-phone-screen.jpg`]);
   });
 
   it('reads srcset like a browser, including commas inside URLs and density descriptors', () => {

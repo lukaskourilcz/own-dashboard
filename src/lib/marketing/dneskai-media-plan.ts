@@ -46,9 +46,13 @@ export function dneskaiCaptionOnly(candidate: Pick<DneskaiCandidate, 'sourceId' 
 }
 function safePath(url: string) { try { return new URL(url).pathname; } catch { return ''; } }
 
+/** Decides whether one image URL may be fetched for a candidate. */
+export type DneskaiImageUrlPolicy = (url: URL) => boolean;
+
 /** Instagram's own CDNs; the scraper hands back their signed, expiring URLs. */
 const INSTAGRAM_MEDIA_DOMAINS = ['cdninstagram.com', 'fbcdn.net'];
 export function isInstagramMediaHost(hostname: string) { return INSTAGRAM_MEDIA_DOMAINS.some((domain) => matchesDomain(hostname, domain)); }
+export const instagramImageUrlPolicy: DneskaiImageUrlPolicy = (url) => isInstagramMediaHost(url.hostname);
 
 export function instagramMediaPlan(candidate: Pick<DneskaiCandidate, 'mediaUrls'>): DneskaiMediaPlanEntry[] {
   return [...new Set(candidate.mediaUrls)].slice(0, DNESKAI_MEDIA_INSTAGRAM_LIMIT)
@@ -76,7 +80,7 @@ const PUBLISHER_IMAGE_DOMAINS: Readonly<Record<string, readonly string[]>> = {
   'ars-technica': ['arstechnica.net'],
   'deepmind-blog': ['googleusercontent.com', 'storage.googleapis.com'],
   'google-research': ['googleusercontent.com', 'storage.googleapis.com'],
-  'interconnects': ['substackcdn.com', 'substack-post-media.s3.amazonaws.com'],
+  'interconnects': ['substack-post-media.s3.amazonaws.com'],
   'meta-ai': ['fbcdn.net'],
   'openai-blog': ['ctfassets.net'],
   'social-media-today': ['divecdn.com'],
@@ -85,14 +89,43 @@ const PUBLISHER_IMAGE_DOMAINS: Readonly<Record<string, readonly string[]>> = {
   'github-ai-releases': ['githubusercontent.com', 'githubassets.com'],
   'bluesky-language-models': ['cdn.bsky.app'],
 };
-/** Hosted-CMS image hosts that serve only what the site itself uploaded (WordPress Jetpack, Contentful, Sanity, Substack). */
-const CMS_IMAGE_DOMAINS = ['wp.com', 'ctfassets.net', 'cdn.sanity.io', 'substackcdn.com'];
+/**
+ * Image proxies that resize any public picture: WordPress Jetpack (`i0.wp.com/<host>/<path>`), Substack
+ * (`substackcdn.com/image/fetch/<options>/<encoded URL>`) and GitHub's camo (`camo.githubusercontent.com/
+ * <digest>/<hex URL>`). Their own host says nothing about whose picture it is, so the proxied host decides.
+ */
+function proxiedImageHost(url: URL): string | null | undefined {
+  const host = url.hostname.toLowerCase();
+  const segments = url.pathname.split('/').slice(1);
+  try {
+    if (/^i[0-3]\.wp\.com$/.test(host)) return /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(segments[0] ?? '') ? segments[0]!.toLowerCase() : null;
+    if (matchesDomain(host, 'substackcdn.com')) {
+      if (segments[0] !== 'image' || segments[1] !== 'fetch') return null;
+      const target = segments.slice(2).find((segment) => /^https?%3A/i.test(segment));
+      return target ? new URL(decodeURIComponent(target)).hostname.toLowerCase() : null;
+    }
+    if (host === 'camo.githubusercontent.com') {
+      const hex = segments[1] ?? '';
+      return /^(?:[0-9a-f]{2})+$/i.test(hex) ? new URL(new TextDecoder().decode(Uint8Array.from(hex.match(/../g)!, (pair) => parseInt(pair, 16)))).hostname.toLowerCase() : null;
+    }
+  } catch { return null; }
+  return undefined;
+}
 
-/** Which image hosts count as the publisher's own for one candidate page. */
-export function publisherImageHostPolicy(source: Pick<DneskaiSource, 'id' | 'url'>, pageUrl: string) {
+/**
+ * Which image URLs count as the publisher's own for one candidate page: its domain (page or registered
+ * source), a CDN it is known to serve its images from, or an image proxy carrying one of those.
+ */
+export function publisherImageUrlPolicy(source: Pick<DneskaiSource, 'id' | 'url'>, pageUrl: string): DneskaiImageUrlPolicy {
   const own = new Set([registrableDomain(new URL(pageUrl).hostname), registrableDomain(new URL(source.url).hostname)]);
-  const known = [...(PUBLISHER_IMAGE_DOMAINS[source.id] ?? []), ...CMS_IMAGE_DOMAINS];
-  return (hostname: string) => own.has(registrableDomain(hostname)) || known.some((domain) => matchesDomain(hostname, domain));
+  const known = PUBLISHER_IMAGE_DOMAINS[source.id] ?? [];
+  const publisherHost = (hostname: string) => own.has(registrableDomain(hostname)) || known.some((domain) => matchesDomain(hostname, domain));
+  return (url) => {
+    const proxied = proxiedImageHost(url);
+    if (proxied === undefined) return publisherHost(url.hostname);
+    // A proxy inside a proxy is refused.
+    return proxied !== null && proxiedImageHost(new URL(`https://${proxied}/`)) === undefined && publisherHost(proxied);
+  };
 }
 
 /** Registry names carry a section or an author; the credit names the publisher. */
@@ -151,19 +184,34 @@ export function fullSizeImageUrl(raw: string): { url: string; fallbackUrl?: stri
 
 const EXCLUDED_EXTENSION = /\.(?:svgz?|gif|ico|avif|bmp|tiff?|heic)$/i;
 const EXCLUDED_FORMAT_QUERY = /(?:^|[?&])(?:format|fm|f)=(?:svg|gif|avif)(?:&|$)/i;
-const EXCLUDED_TOKENS = /(?:^|[^a-z])(?:avatars?|gravatar|authors?|byline|headshots?|logos?|logotype|icons?|favicons?|sprites?|badges?|emojis?|spinner|loader|placeholder|blank|spacer|tracking|beacon)(?:[^a-z]|$)/i;
+const CHROME_WORDS = 'avatars?|gravatar|authors?|bylines?|headshots?|logos?|logotype|icons?|favicons?|sprites?|badges?|emojis?|spinner|loader|placeholder|blank|spacer|tracking|beacon|pixel';
+const EXCLUDED_TOKENS = new RegExp(`(?:^|[^a-z])(?:${CHROME_WORDS})(?:[^a-z]|$)`, 'i');
+const CHROME_WORD = new RegExp(`^(?:${CHROME_WORDS})$`, 'i');
+const SIZE_TOKEN = /^(?:\d+x\d+|\d+w|\d+x|\d{1,2})$/;
+/**
+ * Chrome by path: a folder named for it (`/avatars/`, `/icons/`) or a short file name built around it
+ * (`logo.png`, `site-logo-dark.png`, `favicon-32x32.png`). A descriptive editorial file name that merely
+ * mentions a logo or an icon (`openai-logo-GettyImages-1234.jpg`) is a photograph and stays.
+ */
+function chromePath(pathname: string) {
+  const segments = pathname.toLowerCase().split('/').filter(Boolean);
+  const file = segments.pop() ?? '';
+  if (segments.some((segment) => CHROME_WORD.test(segment))) return true;
+  const words = file.replace(/\.[a-z0-9]+$/, '').split(/[^a-z0-9]+/).filter((word) => word && !SIZE_TOKEN.test(word));
+  return words.length <= 3 && words.some((word) => CHROME_WORD.test(word));
+}
 const EXCLUDED_ALT = /(?:^|[^a-z])(?:avatar|headshot of the author|author photo|profile (?:photo|picture)|icon|favicon|emoji|spinner|placeholder)(?:[^a-z]|$)/i;
 const EXCLUDED_CONTAINER = /(?:^|[^a-z])(?:author|byline|avatar|logo|related|recirc|newsletter|share|social|comments?|promo|advert|ads?|sponsor|sidebar|footer|nav|breadcrumbs?|icons?)(?:[^a-z]|$)/i;
 const EXCLUDED_ELEMENTS = 'nav, footer, aside, form, noscript, [role=navigation], [role=contentinfo], [role=complementary]';
 
-function usableImageUrl(raw: string | undefined, base: URL, allowHost: (hostname: string) => boolean): string | undefined {
+function usableImageUrl(raw: string | undefined, base: URL, allowImage: DneskaiImageUrlPolicy): string | undefined {
   const value = raw?.trim();
   if (!value || /^(?:data|blob):/i.test(value)) return undefined;
   try {
     const url = parseSafeHttpsUrl(new URL(value, base).href);
     url.hash = '';
-    if (url.href.length > 2048 || EXCLUDED_EXTENSION.test(url.pathname) || EXCLUDED_FORMAT_QUERY.test(url.search) || EXCLUDED_TOKENS.test(url.pathname)) return undefined;
-    return allowHost(url.hostname) ? url.href : undefined;
+    if (url.href.length > 2048 || EXCLUDED_EXTENSION.test(url.pathname) || EXCLUDED_FORMAT_QUERY.test(url.search) || chromePath(url.pathname)) return undefined;
+    return allowImage(url) ? url.href : undefined;
   } catch { return undefined; }
 }
 const declaredSmall = (value: string | undefined) => value !== undefined && /^\d+$/.test(value.trim()) && Number(value) < 300;
@@ -172,14 +220,14 @@ const declaredSmall = (value: string | undefined) => value !== undefined && /^\d
  * The article's pictures in publisher order: social-card meta images, the feed's own image, then every
  * figure and image of the article body, deduplicated, at most `limit`.
  */
-export function extractArticleMedia(html: string, pageUrl: string, options: { allowHost: (hostname: string) => boolean; feedImages?: readonly string[]; limit?: number }): DneskaiMediaPlanEntry[] {
+export function extractArticleMedia(html: string, pageUrl: string, options: { allowImage: DneskaiImageUrlPolicy; feedImages?: readonly string[]; limit?: number }): DneskaiMediaPlanEntry[] {
   const $ = cheerio.load(html);
   const page = new URL(pageUrl);
   const baseHref = $('base[href]').first().attr('href');
   let base = page;
   try { if (baseHref) { const declared = new URL(baseHref, page); if (declared.protocol === 'https:') base = declared; } } catch { /* the page URL stays the base */ }
   const found: Array<{ url: string; kind: DneskaiMediaOriginKind }> = [];
-  const push = (raw: string | undefined, kind: DneskaiMediaOriginKind) => { const url = usableImageUrl(raw, base, options.allowHost); if (url) found.push({ url, kind }); };
+  const push = (raw: string | undefined, kind: DneskaiMediaOriginKind) => { const url = usableImageUrl(raw, base, options.allowImage); if (url) found.push({ url, kind }); };
 
   for (const selector of ["meta[property='og:image']", "meta[property='og:image:secure_url']", "meta[property='og:image:url']", "meta[name='twitter:image']", "meta[name='twitter:image:src']", "meta[property='twitter:image']"]) {
     $(selector).each((_, element) => push($(element).attr('content'), 'og-image'));
