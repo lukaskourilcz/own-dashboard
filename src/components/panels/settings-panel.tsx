@@ -72,6 +72,7 @@ import { saveUserPreferences } from "@/lib/preference-client";
 import {
   DNESKAI_PROJECT_TABS,
   PROJECT_WORKSPACE_TABS,
+  isDneskaiProjectTab,
   type ProjectTabId,
 } from "@/lib/project-workspace-tabs";
 import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
@@ -308,6 +309,12 @@ export function SettingsPanel({
     } satisfies Record<ProjectTabId, string>;
     return labels[tab];
   };
+  // A DNESKAi tab can share its label with a Navigation switch ("Calendar"), so
+  // its switch names the project. The Sources label already does.
+  const projectTabSwitchName = (tab: ProjectTabId) =>
+    isDneskaiProjectTab(tab)
+      ? t.settings.projectTabInDneskai(projectTabLabel(tab))
+      : projectTabLabel(tab);
   const projectTabRow = (tab: ProjectTabId, describedBy?: string) => {
     const alwaysVisible = tab === "overview";
     return (
@@ -322,7 +329,7 @@ export function SettingsPanel({
           <Switch
             checked={!hiddenProjectTabs.includes(tab)}
             onCheckedChange={() => toggleProjectTab(tab)}
-            aria-label={projectTabLabel(tab)}
+            aria-label={projectTabSwitchName(tab)}
             aria-describedby={describedBy}
           />
         )}

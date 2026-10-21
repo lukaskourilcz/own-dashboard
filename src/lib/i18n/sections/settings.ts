@@ -62,6 +62,8 @@ type SettingsStrings = {
   projectSections: string;
   projectSectionsDesc: string;
   projectSectionsDneskai: string;
+  /** The switch name of a DNESKAi tab, so it differs from a Navigation switch with the same label. */
+  projectTabInDneskai: (tab: string) => string;
   engagementDesc: string;
   engagementFor: (project: string) => string;
   engagementSaving: string;
@@ -143,6 +145,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     projectSectionsDesc:
       "Choose which tabs appear inside every project workspace. Overview always stays visible.",
     projectSectionsDneskai: "Only in the DNESKAi project",
+    projectTabInDneskai: (tab) => `${tab} (DNESKAi)`,
     engagementDesc:
       "Own or Freelance places an active project above or below the Freelance divider in the sidebar and in Projects.",
     engagementFor: (project) => `Own or Freelance: ${project}`,
@@ -226,6 +229,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     projectSectionsDesc:
       "Vyber, které záložky se zobrazí uvnitř každého projektu. Přehled zůstává vždy viditelný.",
     projectSectionsDneskai: "Jen v projektu DNESKAi",
+    projectTabInDneskai: (tab) => `${tab} (DNESKAi)`,
     engagementDesc:
       "Vlastní nebo Freelance určuje, jestli se aktivní projekt v postranním panelu a v Projektech zobrazí nad oddělovačem Freelance, nebo pod ním.",
     engagementFor: (project) => `Vlastní nebo Freelance: ${project}`,
