@@ -174,6 +174,7 @@ ho načte přes `loadDneskaiMedia` v `dneskai-client.ts`.
 | `media-http-429`, `-5xx`, `media-timeout`, `media-fetch-failed` | přechodná chyba | ano, celkem 3× |
 | `media-too-large`, `media-undecodable`, `media-host-unsafe`, `media-redirect-refused` | soubor nebo adresa nevyhovuje | ne |
 | `media-storage-failed`, `media-record-failed` | úložiště nebo databáze (i nahrání delší než 15 s) | ano, celkem 3× |
+| `media-decoder-unavailable` | na serveru se nenačetl dekodér obrázků (sharp nebo jeho knihovna libvips); o obrázku to nic neříká | ano, celkem 3× |
 | `media-lease-lost` | zámek kandidáta vypršel dřív, než průchod skončil; jen ve výsledku volání | ano, další volání |
 | `media-page-*` | totéž pro stránku článku | podle chyby, celkem 3× |
 

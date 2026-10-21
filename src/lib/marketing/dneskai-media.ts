@@ -382,7 +382,11 @@ async function prepareEntry(owner: string, entry: DneskaiMediaPlanEntry, allowIm
   }
   let image: PreparedEntry['image'];
   try { image = await inspectDneskaiImage(bytes); }
-  catch (error) { throw new FetchFailure(error instanceof DneskaiMediaImageError ? error.code : 'media-undecodable', false); }
+  catch (error) {
+    const code = error instanceof DneskaiMediaImageError ? error.code : 'media-undecodable';
+    // A decoder that did not load says nothing about the picture: a later pass tries it again.
+    throw new FetchFailure(code, code === 'media-decoder-unavailable');
+  }
   let existing: z.infer<typeof LookupSchema>;
   try { existing = await lookupAsset(db, owner, image.sha256); } catch { throw new FetchFailure('media-record-failed', true); }
   if (existing && !existing.purgedAt) return { originUrl, image, uploaded: false, reused: true };

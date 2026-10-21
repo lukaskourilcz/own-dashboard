@@ -28,6 +28,20 @@ describe('DNESKAi source picture inspection', () => {
     expect(sniffDneskaiImage(Buffer.from('GIF89a'))).toBeNull();
   });
 
+  it('reports a decoder that does not load as its own code, not as an unreadable picture', async () => {
+    const bytes = await scene(0, 1200, 900).jpeg().toBuffer();
+    vi.resetModules();
+    vi.doMock('sharp', () => { throw new Error('TEST-ONLY libvips-cpp.so: cannot open shared object file'); });
+    try {
+      const { inspectDneskaiImage: inspect, DneskaiMediaImageError } = await import('@/lib/marketing/dneskai-media-image');
+      const failure = await inspect(bytes).catch((error: unknown) => error);
+      expect(failure).toBeInstanceOf(DneskaiMediaImageError);
+      expect(failure).toMatchObject({ code: 'media-decoder-unavailable', message: 'media-decoder-unavailable' });
+      // A file that is no picture at all is still refused before the decoder is needed.
+      await expect(inspect(Buffer.from('GIF89a'))).rejects.toThrow('media-excluded-format');
+    } finally { vi.doUnmock('sharp'); vi.resetModules(); }
+  });
+
   it('gives the same photograph at another size or quality a near hash, and another picture a far one', async () => {
     const original = await inspectDneskaiImage(await scene(0, 2400, 1800).jpeg({ quality: 92 }).toBuffer());
     const resized = await inspectDneskaiImage(await scene(0, 1080, 810).webp({ quality: 60 }).toBuffer());

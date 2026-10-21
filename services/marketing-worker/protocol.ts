@@ -7,7 +7,7 @@ import type { MarketingTracer } from "../../src/lib/marketing/tracing";
 import type { DneskaiDeck } from "../../src/lib/marketing/dneskai-slides";
 import type { DneskaiDeckRenderResult } from "../../src/lib/marketing/dneskai-ports";
 import { DNESKAI_DECK_TEMPLATE_VERSION } from "../../src/lib/marketing/dneskai-generation";
-import { DNESKAI_STUDIO } from "../../src/lib/marketing/dneskai-render";
+import { DNESKAI_STUDIO, preflightDneskaiJpegEncoder } from "../../src/lib/marketing/dneskai-render";
 
 const jobFields = {
   schemaVersion: z.literal("marketing-job/1"), idempotencyKey: z.uuid(),
@@ -152,6 +152,15 @@ export async function renderDneskaiRevisionAssets(draft: DraftWithDeck, revision
 export function assertDneskaiRendererAvailable(source: { brand: string }, platform: string, render: RenderDneskaiRevisionDeck | undefined) {
   if (platform === "instagram" && source.brand === "dneskai" && !render) throw new MarketingRenderError("dneskai-renderer-unavailable");
 }
+/**
+ * Also before the paid generation, like devShark's authored preflight: a runtime that cannot load or run
+ * sharp and libvips would pay for a DNESKAi deck it can never encode. One 1 × 1 JPEG in memory, no upload.
+ */
+export async function assertDneskaiJpegEncoderAvailable(source: { brand: string }, platform: string) {
+  if (platform !== "instagram" || source.brand !== "dneskai") return;
+  try { await preflightDneskaiJpegEncoder(); }
+  catch { throw new MarketingRenderError("render-jpeg-encoder-unavailable"); }
+}
 /** The durable runner supplies a fenced claim and persists the returned result before acknowledging it. */
 export async function runMarketingWorkerJob(request: MarketingJobRequest, dependencies: {
   model: MarketingModel; tracer?: MarketingTracer; storage: MarketingAssetStorage;
@@ -174,6 +183,7 @@ export async function runMarketingWorkerJob(request: MarketingJobRequest, depend
   }
   const expected = parseSourcePacket(job.generation.source);
   assertDneskaiRendererAvailable(expected, job.generation.account.platform, dependencies.renderDneskaiDeck);
+  await assertDneskaiJpegEncoderAvailable(expected, job.generation.account.platform);
   const authorityFields = ["brand", "kind", "sourceId", "sourceRevision", "canonicalUrl", "locale", "contentHash"] as const;
   const assertCurrentSource = async () => {
     const current = parseSourcePacket(await dependencies.reloadSource(expected.sourceId));
