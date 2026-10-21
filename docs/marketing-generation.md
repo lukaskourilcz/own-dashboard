@@ -133,7 +133,7 @@ A DNESKAi brief generation adds to its root run `event_id_hash` and `member_hash
 
 `recordPreparedRevision` adds render latency, asset hashes and the final revision hash to the same trace after source revalidation. The adapter returns private EU trace links and never enables public sharing. A missing trace means diagnostics are unavailable.
 
-A tracing outage stops nothing. In `generation.ts` a tracer that rejects, throws or hangs counts as no trace. The worker records the rendered revision on the trace as best effort (`services/marketing-worker/protocol.ts`), from the root metadata this tracer just wrote, so it does not wait for LangSmith to index the run. Owner feedback is sent only after the owner's action has succeeded, and its result is ignored. `tests/lib/marketing-tracing-outage.test.ts` covers refused writes while rendering and during approve, return and skip.
+A tracing outage stops nothing. In `generation.ts` a tracer that rejects, throws or hangs counts as no trace. The worker records the rendered revision on the trace as best effort (`services/marketing-worker/protocol.ts`), from the root metadata this tracer just wrote, so it does not wait for LangSmith to index the run. Owner feedback is sent only after the owner's action has succeeded, and its result is ignored. `tests/lib/marketing-tracing-outage.test.ts` covers refused writes while rendering and during approve, return, skip and edit.
 
 `generation-benchmark.ts` performs offline deterministic evaluations. `templates/marketing/benchmarks` contains real authored devShark question/task and DNESKAi held article packets with original unavailable eligibility. The actual task fixture lacks an authored explanation but supports challenge-only rendering; its unverified source eligibility still holds production admission. Synthetic fixtures exist only in tests. `writeBenchmarkExamples(existingDatasetId, results)` can export hashes/QA codes to an existing EU dataset, with no source or copy text. It has not been invoked; the owner configures dataset scope, retention and access before a pilot.
 
@@ -149,6 +149,8 @@ A tracing outage stops nothing. In `generation.ts` a tracer that rejects, throws
 | skipped | 0 | `skipped` | the same, and `reason: "skip"` |
 
 An edit sends `owner-edit` without a score, with the kinds of that save alone. Edit kinds (`owner-edits.ts`) are counts per kind: `text-headline`; `text-body` (a body, kicker, credit or alt text, per field); `caption`; `image-swap`; `crop` (the same picture with another crop); `reorder` (the fewest moves); `remove-slide`; `schedule`. The stored decks keep no edit indexes, so slides are matched by type, variant and image slots with the fewest field changes. The feedback id is derived from the key, the decision and the revision id and hash, so a repeated decision cannot add a record under a second id. The owner's free-text note stays in OwnDashboard.
+
+Feedback binds only to a hash the trace itself recorded. If LangSmith was down while a post rendered, its root keeps the hash from before rendering, and every later decision on that post is dropped as `trace-revision-mismatch`: no feedback rather than feedback on a hash the trace cannot prove. A post approved, then edited and approved again, carries one `owner-review` per decided revision on the same trace, because each revision hash has its own feedback id. Anything that aggregates these scores takes the latest `owner-review` per trace.
 
 ### Owner-edits evaluation set
 
