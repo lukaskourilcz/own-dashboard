@@ -10,6 +10,7 @@ import type { DneskaiCandidate } from '@/lib/marketing/dneskai-contracts';
 import type { DneskaiMediaAssetView } from '@/lib/marketing/dneskai-media-contracts';
 import { briefsRpcClient, createBriefsDatabase, insertCandidates, pgliteRestClient, setBriefsTestTime, syntheticCandidate } from './marketing-dneskai-briefs-db';
 import { readDneskaiBriefs } from '@/lib/marketing/dneskai-brief-read';
+import { createDneskaiCollectionStore } from '@/lib/marketing/dneskai-store';
 vi.mock('server-only', () => ({}));
 
 // One collection night end to end in isolated WASM Postgres: real migration SQL, OFFLINE clock, synthetic data.
@@ -181,5 +182,25 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     expect((await rpc.rpc('marketing_dneskai_skip_brief', { p_owner: owner, p_brief: brief!.id, p_code: 'collection-already-covered', p_duplicate_of: 'revision-test-only' })).error).toBeNull();
     const members = await rows<{ status: string; candidate: DneskaiCandidate }>('select status,candidate from marketing_dneskai_candidates where id=any($1)', [brief!.member_ids]);
     expect(members.every((row) => row.status === 'duplicate' && row.candidate.reason === 'collection-already-covered' && row.candidate.duplicateOf === 'revision-test-only')).toBe(true);
+  });
+
+  it('gives Jev the approved and published DNESKAi posts as history, although they carry no project', async () => {
+    const other = '99999999-9999-4999-8999-999999999999';
+    await db.query('insert into auth.users values($1)', [other]);
+    const posts = [['01', owner, 'dneskai', 'published'], ['02', owner, 'dneskai', 'approved'], ['03', owner, 'dneskai', 'publishing'], ['04', owner, 'dneskai', 'review'],
+      ['05', owner, 'devshark', 'published'], ['06', other, 'dneskai', 'published']] as const;
+    for (const [n, user, brand, status] of posts) {
+      await db.query('insert into marketing_revisions(id,user_id,brand,revision,content_hash,ready,status) values($1,$2,$3,$4,$5,true,$6)',
+        [`aaaaaaaa-0000-4000-8000-0000000000${n}`, user, brand, json({ title: `Synthetic post ${n}`, caption: `Synthetic caption ${n}.` }), contentHash(n), status]);
+    }
+    // marketing_save_revision writes no project on a DNESKAi revision.
+    expect(await rows('select id from marketing_revisions where project_id is not null')).toEqual([]);
+    const history = await createDneskaiCollectionStore(pgliteRestClient(db) as never).history(owner, project);
+    const posted = history.filter((item) => item.id.startsWith('aaaaaaaa-0000-'));
+    expect(posted.map((item) => item.id).sort()).toEqual(['01', '02', '03'].map((n) => `aaaaaaaa-0000-4000-8000-0000000000${n}`));
+    expect(posted.find((item) => item.id.endsWith('01'))).toEqual({ id: 'aaaaaaaa-0000-4000-8000-000000000001', title: 'Synthetic post 01', text: 'Synthetic caption 01.' });
+    // The selected reports of the project are still history too.
+    expect(history.map((item) => item.id)).toContain(tool.id);
+    await db.query('delete from marketing_revisions');
   });
 });
