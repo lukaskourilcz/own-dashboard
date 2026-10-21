@@ -335,8 +335,8 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       try { await store.prepare(input.owner, row.id, outcome.brief, slot, verified ? 'ready' : 'pending', verified ? null : 'account-unavailable'); }
       catch (error) {
         const code = error instanceof DneskaiBriefError ? error.code : 'brief-store-unavailable';
-        // Another brief took the slot meanwhile: the next call assigns the next free one.
-        if (code === 'brief-slot-taken') result.pending = true;
+        // Another brief took the slot meanwhile, or the store failed: the next call builds it again with the next free slot.
+        if (code === 'brief-slot-taken' || DNESKAI_BRIEF_RETRYABLE_CODES.has(code)) result.pending = true;
         result.skipped.push({ eventId: row.event_id, code }); continue;
       }
       brief = outcome.brief;

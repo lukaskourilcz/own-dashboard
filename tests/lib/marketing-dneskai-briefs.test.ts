@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, dneskaiSitewidePictures, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
+import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, DneskaiBriefError, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, dneskaiSitewidePictures, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 import { dneskaiBriefSourcePacket } from '@/lib/marketing/dneskai-brief-source';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
 import { dneskaiEventId, dneskaiEventMemberHash } from '@/lib/marketing/dneskai-events';
@@ -288,6 +288,21 @@ describe('createDneskaiBriefs over a store', () => {
       expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-slot-passed' });
       expect(requests).toEqual([]);
       expect(calls.filter(([name]) => name === 'admit' || name === 'ingest')).toEqual([]);
+    });
+
+    it('builds a brief again on the next tick when storing it first failed in the store', async () => {
+      const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+      const { store, requests } = fakeStore(rows, [a1, a2], { account: true });
+      const prepare = store.prepare;
+      let failing = true;
+      store.prepare = async (...args) => { if (failing) { failing = false; throw new DneskaiBriefError('brief-store-unavailable'); } return prepare(...args); };
+      const { tick } = scheduled(store, '2026-10-20T21:00:00Z');
+      expect(await tick()).toMatchObject({ status: 'noop', pending: true, detail: { created: 0, skipped: 1 } });
+      expect(rows[0]).toMatchObject({ status: 'pending', brief: null });
+      expect(await tick()).toMatchObject({ status: 'done', detail: { created: 1, jobs: 1 } });
+      expect(rows[0]).toMatchObject({ status: 'queued', scheduled_at: '2026-10-21T06:00:00.000Z' });
+      expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
+      expect(requests).toHaveLength(1);
     });
 
     it('retries a job admission the daily budget refused on the next tick', async () => {
