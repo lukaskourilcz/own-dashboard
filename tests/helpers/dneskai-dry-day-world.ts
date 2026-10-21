@@ -156,8 +156,10 @@ export class FakeApify {
     const run = /^\/v2\/actor-runs\/([A-Za-z0-9]+)$/.exec(url.pathname);
     if (run && this.runs.has(run[1]!)) {
       const known = this.runs.get(run[1]!)!;
-      return json({ data: { id: run[1], actId: this.actorId, buildNumber: this.build, userId: 'fixtureUser', defaultDatasetId: known.dataset, status: 'SUCCEEDED',
-        finishedAt: new Date(Date.parse(known.startedAt) + 40_000).toISOString(), usageTotalUsd: 0.0081 } });
+      // A real run takes a minute or two: the first read finds it still running.
+      const running = this.clock().getTime() - Date.parse(known.startedAt) < 60_000;
+      return json({ data: { id: run[1], actId: this.actorId, buildNumber: this.build, userId: 'fixtureUser', defaultDatasetId: known.dataset, status: running ? 'RUNNING' : 'SUCCEEDED',
+        finishedAt: running ? null : new Date(Date.parse(known.startedAt) + 40_000).toISOString(), usageTotalUsd: running ? null : 0.0081 } });
     }
     const items = /^\/v2\/datasets\/([A-Za-z0-9]+)\/items$/.exec(url.pathname);
     if (items) {
@@ -242,6 +244,8 @@ export function fixtureCopy(offer: Offer) {
 }
 export class FakeAnthropic {
   readonly requests: Array<{ model: string; system: string; prompt: string; outputConfig: unknown }> = [];
+  /** Briefs (matched on their title) whose first answer draws a character the body face does not carry. */
+  constructor(readonly unsupportedGlyphFirst: RegExp | null = null) {}
   handler: Handler = async (request, url) => {
     if (url.pathname !== '/v1/messages' || request.headers.get('x-api-key') !== 'sk-ant-TEST-ONLY') return json({ type: 'error', error: { type: 'authentication_error', message: 'fixture' } }, 401);
     const body = JSON.parse(await request.text()) as { model: string; system: string | Array<{ text: string }>; messages: Array<{ content: string | Array<{ type: string; text?: string }> }>; output_config?: unknown };
@@ -252,6 +256,10 @@ export class FakeAnthropic {
     const end = prompt.indexOf('\nYour previous answer');
     const offer = JSON.parse(end < 0 ? prompt : prompt.slice(0, end)) as Offer;
     const copy = fixtureCopy(offer);
+    if (end < 0 && this.unsupportedGlyphFirst?.test(offer.brief.title)) {
+      // The copy gate lets a bullet through; only the renderer's glyph gate knows Source Serif 4 cannot draw it.
+      copy.slides[1] = { ...copy.slides[1]!, body: 'Každý uložený údaj • prohlédnout • opravit • smazat.' };
+    }
     return json({ id: `msg_fixture_${this.requests.length}`, type: 'message', role: 'assistant', model: body.model, content: [{ type: 'text', text: JSON.stringify(copy) }],
       stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: Math.ceil(Buffer.byteLength(prompt) / 3) + 2400, output_tokens: Math.ceil(JSON.stringify(copy).length / 3) } });
   };

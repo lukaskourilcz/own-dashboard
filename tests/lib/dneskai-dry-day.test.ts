@@ -64,7 +64,7 @@ const clock = () => new Date();
 const internet = new FakeInternet(clock);
 const apify = new FakeApify(clock, ENV.MARKETING_DNESKAI_APIFY_ACTOR_ID!, ENV.MARKETING_DNESKAI_APIFY_BUILD!);
 const jev = new FakeJev();
-const anthropic = new FakeAnthropic();
+const anthropic = new FakeAnthropic(/shared memory/i);
 const graph = new FakeGraph(clock, internet, IG_TOKEN, IG_USER, '9900000000000001', 'dneskai');
 const ticks: Array<{ at: string; result: MarketingTickResult; ms: number }> = [];
 const at = (iso: string) => vi.setSystemTime(new Date(iso));
@@ -188,8 +188,12 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(jobs.every((job) => job.template === DNESKAI_RENDERER_VERSION)).toBe(true);
     const generated = ticks.filter((entry) => step(entry.result, 'generation')?.status === 'done').map((entry) => step(entry.result, 'generation')!.detail);
     expect(generated.map((detail) => [detail?.claimed, detail?.jobStatus])).toEqual([[true, 'review'], [true, 'review']]);
-    expect(anthropic.requests).toHaveLength(2);
+    // The memory brief's first answer drew a bullet the body face cannot carry: the renderer's glyph gate refused it
+    // and the second call got the problem as an instruction naming the slide, the field and the code point.
+    expect(anthropic.requests).toHaveLength(3);
     expect(anthropic.requests.every((request) => request.model === 'claude-sonnet-5-5' && JSON.stringify(request.outputConfig).includes('json_schema'))).toBe(true);
+    const retry = anthropic.requests.find((request) => request.prompt.includes('Your previous answer could not be used'))!;
+    expect(retry.prompt).toMatch(/- Slide 2 \(split with picture [a-f0-9]{12}…\), body \[unsupported-glyph\]: The body uses characters the typeface cannot draw; use plain Czech letters and punctuation \(U\+2022\)\./);
     // No prompt carries a URL: code writes the source lines.
     expect(anthropic.requests.some((request) => /https?:\/\//.test(request.prompt))).toBe(false);
 
@@ -221,7 +225,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(Number(spent)).toBeCloseTo(recorded.reduce((sum, row) => sum + Number(row.usd), 0), 6);
     expect(Number(spent)).toBeGreaterThan(0);
     expect(Number(spent)).toBeLessThan(1);
-    expect(await count('select count(*)::int n from marketing_private.dneskai_generation_spend where user_id=$1 and reserved_usd=0.25 and calls=1')).toBe(2);
+    expect(await sql('select reserved_usd::text,calls from marketing_private.dneskai_generation_spend where user_id=$1 order by calls', [OWNER])).toEqual([{ reserved_usd: '0.2500', calls: 1 }, { reserved_usd: '0.2500', calls: 2 }]);
     // Every tick is recorded once with what it did.
     const recordedTicks = await sql<{ kind: string; did: unknown[]; finished_at: string | null }>('select kind,did,finished_at::text from public.marketing_ticks where user_id=$1', [OWNER]);
     expect(recordedTicks).toHaveLength(ticks.length);
