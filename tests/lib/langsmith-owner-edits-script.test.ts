@@ -8,8 +8,9 @@ import { revisionContentHash } from "@/lib/marketing/hashes";
 import type { ContentRevision } from "@/lib/marketing/contracts";
 import { deckRevision } from "./marketing-dneskai-revision-fixture";
 
-const sdk = vi.hoisted(() => ({ hasDataset: vi.fn(), readDataset: vi.fn(), createDataset: vi.fn(), listExamples: vi.fn(), createExamples: vi.fn(), updateExamples: vi.fn() }));
+const sdk = vi.hoisted(() => ({ configs: [] as Record<string, unknown>[], hasDataset: vi.fn(), readDataset: vi.fn(), createDataset: vi.fn(), listExamples: vi.fn(), createExamples: vi.fn(), updateExamples: vi.fn() }));
 vi.mock("langsmith", () => ({ Client: class {
+  constructor(config: Record<string, unknown>) { sdk.configs.push(config); }
   hasDataset = sdk.hasDataset; readDataset = sdk.readDataset; createDataset = sdk.createDataset; listExamples = sdk.listExamples; createExamples = sdk.createExamples; updateExamples = sdk.updateExamples;
 } }));
 
@@ -107,9 +108,14 @@ describe("scripts/langsmith-owner-edits.ts (#122)", () => {
     sdk.createDataset.mockResolvedValue({ id: "99999999-9999-4999-8999-999999999999" });
     sdk.listExamples.mockImplementation(async function* () { yield { id: "not-ours" }; });
     sdk.createExamples.mockResolvedValue([]);
+    sdk.configs.length = 0;
     const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    expect(sdk.configs.map((config) => config.timeout_ms)).toEqual([1000]);
     const { records } = buildOwnerEditRecords(fixtureRows(), { includeText: true });
     expect(await tracer.upsertOwnerEditExamples(OWNER_EDITS_DATASET, records.map((record) => record.example))).toEqual({ created: 4, updated: 0 });
+    // The upload gets its own EU client with a longer request timeout and still no retries.
+    expect(sdk.configs).toHaveLength(2);
+    expect(sdk.configs[1]).toMatchObject({ apiUrl: "https://eu.api.smith.langchain.com", hideInputs: true, hideOutputs: true, timeout_ms: 15000, callerOptions: { maxRetries: 0 } });
     expect(sdk.createDataset).toHaveBeenCalledWith(OWNER_EDITS_DATASET, expect.objectContaining({ metadata: { dataset_kind: "dneskai-owner-edits/1" } }));
     const sent = sdk.createExamples.mock.calls[0]![0];
     expect(sent[0]).toMatchObject({ dataset_id: "99999999-9999-4999-8999-999999999999", inputs: { model: "claude-sonnet-5-5" }, outputs: { decision: "approved", score: 0.5, edit_kinds: { caption: 1 } } });
@@ -122,5 +128,6 @@ describe("scripts/langsmith-owner-edits.ts (#122)", () => {
     await expect(tracer.upsertOwnerEditExamples(OWNER_EDITS_DATASET, [{ ...records[0]!.example, caption: "PRIVATE TEST" } as never])).rejects.toThrow();
     sdk.hasDataset.mockRejectedValue(new Error("TEST outage"));
     expect(await tracer.upsertOwnerEditExamples(OWNER_EDITS_DATASET, records.map((record) => record.example))).toBeNull();
+    expect(sdk.configs).toHaveLength(2);
   });
 });

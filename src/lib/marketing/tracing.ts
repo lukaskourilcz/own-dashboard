@@ -16,6 +16,8 @@ export const LANGSMITH_EU_ENDPOINT = "https://eu.api.smith.langchain.com";
 export const LANGSMITH_DIAGNOSTIC_DEADLINE_MS = 3000;
 /** A dataset upload sends one request per batch of examples; it runs only from the owner's terminal. */
 const LANGSMITH_DATASET_DEADLINE_MS = 60000;
+/** A batch of 100 examples or a page of the listing may take longer than the one second a trace write gets. */
+const LANGSMITH_DATASET_REQUEST_TIMEOUT_MS = 15000;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const CODE = /^[a-z0-9-]{1,80}$/;
 const code = z.string().regex(CODE);
@@ -143,7 +145,7 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
   if (!config.apiKey || !/^[a-zA-Z0-9_-]{1,80}$/.test(config.projectName)) throw new Error("langsmith-configuration-required");
   if (config.endpoint && config.endpoint !== LANGSMITH_EU_ENDPOINT) throw new Error("langsmith-eu-required");
   const { Client } = await import("langsmith");
-  const client = new Client({
+  const connect = (timeoutMs: number) => new Client({
     apiKey: config.apiKey, apiUrl: LANGSMITH_EU_ENDPOINT, webUrl: "https://eu.smith.langchain.com", hideInputs: true, hideOutputs: true,
     hideMetadata: (metadata) => {
       const combined = fullMetadataSchema.safeParse(metadata);
@@ -155,8 +157,11 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
       const finish = finishSchema.safeParse(metadata);
       return finish.success ? finish.data : {};
     },
-    anonymizer: () => ({}), omitTracedRuntimeInfo: true, autoBatchTracing: false, debug: false, tracingMode: "langsmith", disablePromptCache: true, timeout_ms: 1000, callerOptions: { maxRetries: 0 },
+    anonymizer: () => ({}), omitTracedRuntimeInfo: true, autoBatchTracing: false, debug: false, tracingMode: "langsmith", disablePromptCache: true, timeout_ms: timeoutMs, callerOptions: { maxRetries: 0 },
   });
+  const client = connect(1000);
+  // Only the owner's dataset upload uses the longer request timeout; traces and feedback keep one second.
+  let datasetClient: InstanceType<typeof Client> | undefined;
   const safeWrite = async (write: () => Promise<unknown>, deadlineMs = LANGSMITH_DIAGNOSTIC_DEADLINE_MS): Promise<boolean> => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -266,6 +271,7 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
       const name = z.string().regex(/^[a-z0-9-]{1,80}$/).parse(datasetName);
       const rows = z.array(OwnerEditExampleSchema).max(5000).parse(examples);
       let result: { created: number; updated: number } | null = null;
+      const client = datasetClient ??= connect(LANGSMITH_DATASET_REQUEST_TIMEOUT_MS);
       const written = await safeWrite(async () => {
         const dataset = await client.hasDataset({ datasetName: name })
           ? await client.readDataset({ datasetName: name })
