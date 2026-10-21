@@ -125,13 +125,68 @@ Threads jobs skip rendering and retain a caption of at most 500 characters with 
 
 ## LangSmith EU diagnostics
 
-`createMarketingTracer` uses the explicit LangSmith SDK with `https://eu.api.smith.langchain.com` and EU web links. Configure an EU workspace/key; a hostname alone does not migrate a US workspace. Global LangChain/LangSmith tracing and verbose console tracing must remain disabled. The model call also runs inside a disabled traceable context. Native n8n workflow tracing does not represent this worker.
+`createMarketingTracer` uses the explicit LangSmith SDK with `https://eu.api.smith.langchain.com` and EU web links. Configure an EU workspace/key; a hostname alone does not migrate a US workspace. Global LangChain/LangSmith tracing and verbose console tracing must remain disabled. The model call also runs inside a disabled traceable context. Native n8n workflow tracing does not represent this worker. LangSmith is diagnostics and evaluation. The approval record is `marketing_revisions.approved_hash` and nothing else.
 
-The adapter hides inputs/outputs, filters metadata, disables runtime/environment metadata, prompt cache and debug logs, and uses one-second diagnostic transport timeouts with no retry. It records source ID/revision hashes, exact source content hash, stored revision UUID, model, hashed prompt/template versions, knowledge UUIDs, attempts, latency, token usage, estimated cost and bounded QA codes. Raw source/copy, URLs, credentials, owner notes and exception text do not enter traces. Resolve the source ID/revision hashes against OwnDashboard's stored source records.
+The adapter hides inputs/outputs, filters metadata through strict schemas, disables runtime/environment metadata, prompt cache and debug logs, and uses one-second request timeouts with no retry; each diagnostic step also gives up after three seconds (`LANGSMITH_DIAGNOSTIC_DEADLINE_MS`). It records source ID/revision hashes, exact source content hash, stored revision UUID, model, hashed prompt/template versions, knowledge UUIDs, attempts, latency, token usage, estimated cost and bounded QA codes. Raw source/copy, URLs, credentials, owner notes and exception text do not enter traces. Resolve the source ID/revision hashes against OwnDashboard's stored source records.
 
-`recordPreparedRevision` adds render latency, asset hashes and the final revision hash to the same trace after source revalidation. `recordOwnerFeedback` verifies the trace's exact revision UUID/hash before sending an approval/returned/skipped decision and quality score. Free-text owner feedback remains local. The adapter returns private EU trace links and never enables public sharing. Diagnostics failures return false/null so they cannot authorize or block a draft. A missing trace means diagnostics are unavailable.
+A DNESKAi brief generation adds to its root run `event_id_hash` and `member_hash_hash` (sha256 of the brief's event id and member hash; `printf %s "$eventId" | sha256sum` finds the trace of a known brief) and `media_count` (the source pictures the brief offered). When it finishes, the root also carries `format`, `slide_types` (slides per type), `deck_media_count` (distinct pictures used), `attempts`, `estimated_cost_usd` and `retry_reasons` (the issue codes of the attempts that were answered with a retry). Each attempt is a child run with its tokens, cost and issue codes. Captions, slide text, credits, evidence text and URLs never enter a trace. `tests/lib/marketing-tracing-brief.test.ts` walks every payload and fails on any field outside the allowlist and on any string that is not a hash, a UUID or a short code; a value passed as an issue code that is not a code is dropped.
+
+`recordPreparedRevision` adds render latency, asset hashes and the final revision hash to the same trace after source revalidation. The adapter returns private EU trace links and never enables public sharing. A missing trace means diagnostics are unavailable.
+
+A tracing outage stops nothing. In `generation.ts` a tracer that rejects, throws or hangs counts as no trace. The worker records the rendered revision on the trace as best effort (`services/marketing-worker/protocol.ts`), from the root metadata this tracer just wrote, so it does not wait for LangSmith to index the run. Owner feedback is sent only after the owner's action has succeeded, and its result is ignored. `tests/lib/marketing-tracing-outage.test.ts` covers refused writes while rendering and during approve, return and skip.
 
 `generation-benchmark.ts` performs offline deterministic evaluations. `templates/marketing/benchmarks` contains real authored devShark question/task and DNESKAi held article packets with original unavailable eligibility. The actual task fixture lacks an authored explanation but supports challenge-only rendering; its unverified source eligibility still holds production admission. Synthetic fixtures exist only in tests. `writeBenchmarkExamples(existingDatasetId, results)` can export hashes/QA codes to an existing EU dataset, with no source or copy text. It has not been invoked; the owner configures dataset scope, retention and access before a pilot.
+
+### Owner feedback
+
+`recordMarketingOwnerFeedback` (`owner-feedback.ts`) runs after approve, return, skip and edit in `POST /api/marketing/revisions`. It walks the decided revision's `replaces_id` chain back to the generated revision: the owner's rows only, the same trace, every stored hash rechecked, at most 20 saves. It then sends one `owner-review` feedback to that generation's trace, after the trace's own revision UUID and hash have been checked:
+
+| Decision | score | value | `sourceInfo` |
+| --- | --- | --- | --- |
+| approved, no edits | 1 | `approved` | reviewed and generated revision ids and hashes, `edit_kinds: {}`, `edit_count: 0` |
+| approved after edits | 0.5 | `approved` | the same, with the chain's edit kinds |
+| returned | 0 | `returned` | the same |
+| skipped | 0 | `skipped` | the same, and `reason: "skip"` |
+
+An edit sends `owner-edit` without a score, with the kinds of that save alone. Edit kinds (`owner-edits.ts`) are counts per kind: `text-headline`; `text-body` (a body, kicker, credit or alt text, per field); `caption`; `image-swap`; `crop` (the same picture with another crop); `reorder` (the fewest moves); `remove-slide`; `schedule`. The stored decks keep no edit indexes, so slides are matched by type, variant and image slots with the fewest field changes. The feedback id is derived from the key, the decision and the revision id and hash, so a repeated decision cannot add a record under a second id. The owner's free-text note stays in OwnDashboard.
+
+### Owner-edits evaluation set
+
+`scripts/langsmith-owner-edits.ts` builds the evaluation set from the owner's decisions. Bundle it into the git-ignored `work/` and run it under the `react-server` condition, which turns the `server-only` marker into an empty module outside Next.js:
+
+```bash
+npx esbuild scripts/langsmith-owner-edits.ts --bundle --platform=node --packages=external --format=cjs --outfile=work/langsmith-owner-edits.cjs
+export NEXT_PUBLIC_SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… DASHBOARD_OWNER_ID=<auth user uuid>
+node --conditions=react-server work/langsmith-owner-edits.cjs --dry      # counts only, writes nothing
+node --conditions=react-server work/langsmith-owner-edits.cjs            # work/langsmith/dneskai-owner-edits-<date>.jsonl
+LANGSMITH_API_KEY=… LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com \
+  node --conditions=react-server work/langsmith-owner-edits.cjs --no-text --upload
+```
+
+It reads the owner's DNESKAi `marketing_revisions` with the service role and only selects. A revision is decided when it is approved (its `approved_hash` equals its content hash, also after publication), returned or skipped. Each JSONL line holds the example below and, unless `--no-text`, the generated and the decided title, caption and slide text, so the edits can be read side by side on this machine. `--dry` prints the decisions, the share approved without edits, the mean score, the edit kinds, the models and the skipped rows, and writes nothing. `--fixture rows.json` reads exported rows instead of Supabase. An existing output file is never overwritten.
+
+Nothing leaves the machine without `--upload`. With it, the `dneskai-owner-edits` dataset in the EU workspace is created when missing, and each example is created or updated by an id derived from the decision and the revision hash. Inputs: `generated_revision_hash`, `model`, `prompt_version_hash`. Outputs: `revision_hash`, `decision`, `score`, `edit_kinds`, `edit_count`, `chain_length`, `caption_length_delta`, `slide_text_length_delta`. Metadata: `trace_id`. No text. A chain the script cannot prove (a missing parent, a hash mismatch, more than 20 saves) is counted as skipped, never guessed; owner-authored and imported revisions name no Claude model and are skipped as `not-generated`.
+
+For interactive trace review, the owner can connect LangSmith's MCP server to Claude Code with their own EU key, in their own Claude Code configuration. It reads traces, feedback and datasets from the terminal; the production path never uses it, and no key or MCP configuration belongs in this repository.
+
+### Model A/B evaluation
+
+After 20 approved posts, compare Claude Sonnet 5.5 with Claude Haiku 5.5 offline on the same saved briefs, with nothing published:
+
+```bash
+npx esbuild scripts/dneskai-model-ab.ts --bundle --platform=node --packages=external --format=cjs --outfile=work/dneskai-model-ab.cjs
+node --conditions=react-server work/dneskai-model-ab.cjs --briefs work/briefs.json          # dry plan, no model call
+MARKETING_AI_CONSENT=true ANTHROPIC_API_KEY=… \
+  node --conditions=react-server work/dneskai-model-ab.cjs --briefs work/briefs.json --live --media-dir work/media
+```
+
+`--briefs` is a local JSON export: an array of briefs, of `marketing_dneskai_briefs` rows with their `brief`, or `{ "briefs": [...] }`. `--media-dir` holds the brief's source pictures named by their sha256; each is checked against its name when loaded. Defaults: model A `claude-sonnet-5-5` at 2/10 USD and model B `claude-haiku-5-5` at 0.10/0.50 USD per million input/output tokens (the Claude API list prices of 6 October 2026; pass `--price-a`/`--price-b` when they change or for another model), 20 briefs (`--limit`), and a 1.00 USD ceiling that `--ceiling-usd` can only lower.
+
+The dry plan builds the exact `marketing-copy/5` prompt for each brief and prints per model the expected cost (one accepted attempt, prompt bytes ÷ 3 as tokens, 1,500 output tokens), the cost with one retry, and the worst case generation reserves (one token per byte, 2,500 output tokens, two attempts, at most 0.25 USD per job), with how many briefs fit one ceiling day. On 20 copies of a test brief of about 4,400 estimated input tokens it printed: Sonnet 5.5 expected 0.48 USD, worst case 2.26 USD; Haiku 5.5 expected 0.02 USD, worst case 0.11 USD; eight briefs per 1.00 USD day at the worst case, so three days for all 20.
+
+`--live` runs `generateMarketingDraft` with the real studio fit gate, as the worker does, at each brief's observation time, for model A and then model B. A brief starts only while the run's reserved worst case for both models stays within the ceiling; the run then stops at `ceiling-reached` rather than give one model a brief the other never saw. Nothing is published, stored in Supabase or traced. This spend is not counted in `marketing_dneskai_generation_spent`, so run it on a day production does not need its ceiling, or lower `--ceiling-usd` by what production spent that day. The result file (`work/dneskai-model-ab-<date>.json`) holds per model the drafts produced, the retries, the retries caused by `text-clipped`, the mean attempts and the cost, and every draft for reading side by side. The share approved without edits needs the owner: read the drafts, and compare with the owner-edits set of the production model.
+
+Result: not run yet. It waits for 20 approved posts and the owner's go for a live run of at most 1.00 USD.
 
 ## Worker integration and verification
 
