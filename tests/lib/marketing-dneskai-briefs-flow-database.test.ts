@@ -15,6 +15,8 @@ vi.mock('server-only', () => ({}));
 // One collection night end to end in isolated WASM Postgres: real migration SQL, OFFLINE clock, synthetic data.
 const owner = '11111111-1111-4111-8111-111111111111', project = '22222222-2222-4222-8222-222222222222', fence = '55555555-5555-4555-8555-555555555555';
 const instant = '2026-10-20T20:30:00Z';
+// The JavaScript clock of the slot choice is the database clock: slots are chosen relative to it, never to the real time.
+const clock = { now: () => new Date(instant) };
 let db: PGlite; let rpc: ReturnType<typeof briefsRpcClient>; let store: DneskaiBriefStore; let runId: string;
 const json = JSON.stringify;
 const rows = async <T,>(sql: string, args: unknown[] = []) => (await db.query<T>(sql, args)).rows;
@@ -52,6 +54,8 @@ function pgliteStore(): DneskaiBriefStore {
 
 beforeAll(async () => {
   db = await createBriefsDatabase([owner], [{ id: project, owner }], instant);
+  // The job admission reads now() (a brief's source expires 48 hours after it was observed), so it is pinned as well.
+  await db.exec("create or replace function pg_catalog.now() returns timestamptz language sql stable as $$ select current_setting('marketing.test_time')::timestamptz $$");
   rpc = briefsRpcClient(db); store = pgliteStore();
   runId = (await rows<{ r: { id: string } }>('select marketing_dneskai_admit($1,$2,$3,$4) r', [owner, project, '2026-10-20', json([{ id: 'openai-blog', kind: 'rss', maxItems: 10 }])]))[0]!.r.id;
   await db.query('select marketing_dneskai_claim($1,$2,$3)', [owner, runId, fence]);
@@ -64,13 +68,13 @@ afterAll(async () => { await db?.close(); });
 describe('one collection becomes briefs and guarded jobs without any Quorum call (#115)', () => {
   it('waits for media, then builds briefs that wait for a verified account without creating a job', async () => {
     const input = { owner, project, runId };
-    expect(await createDneskaiBriefsWithStore(store, input)).toEqual({ created: [], skipped: [], pending: true });
+    expect(await createDneskaiBriefsWithStore(store, input, clock)).toEqual({ created: [], skipped: [], pending: true });
     // The media collector (#114) finished: the lead has one stored picture, the others none.
     const [asset] = await rows<{ id: string }>("insert into marketing_media_assets(user_id,project_id,sha256,candidate_id,source_id,external_id,origin_url,origin_kind,position,width,height,mime,bytes,storage_path,credit) values($1,$2,$3,$4,'openai-blog','lead','https://images.example.test/lead.jpg','og-image',0,1600,900,'image/jpeg',1000,$5,'Obrázek: OpenAI') returning id",
       [owner, project, picture, lead.id, `marketing-media/${owner}/${picture}.jpg`]);
     await db.query("insert into marketing_media_asset_links(user_id,project_id,candidate_id,asset_id,origin_url,origin_kind,position,credit) values($1,$2,$3,$4,'https://images.example.test/lead.jpg','og-image',0,'Obrázek: OpenAI')", [owner, project, lead.id, asset!.id]);
     for (const [id, status] of [[lead.id, 'complete'], [verge.id, 'empty'], [tool.id, 'empty']]) await db.query('insert into marketing_media_collections(user_id,project_id,candidate_id,status,asset_count) values($1,$2,$3,$4,$5)', [owner, project, id, status, status === 'complete' ? 1 : 0]);
-    const result = await createDneskaiBriefsWithStore(store, input);
+    const result = await createDneskaiBriefsWithStore(store, input, clock);
     expect(result.pending).toBe(false);
     expect(result.created.map((item) => item.jobId)).toEqual([null, null]);
     const briefs = await store.briefs(owner, project, runId);
@@ -86,7 +90,7 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
 
   it('admits each brief through the DNESKAi daily campaign, one calendar entry and marketing_enqueue_job', async () => {
     await db.query("insert into marketing_accounts(user_id,brand,platform,remote_account_id,handle,verified_at,enabled) values($1,'dneskai','instagram','17840000000000000','dneskai',now(),false)", [owner]);
-    const result = await createDneskaiBriefsWithStore(store, { owner, project, runId });
+    const result = await createDneskaiBriefsWithStore(store, { owner, project, runId }, clock);
     expect(result.skipped).toEqual([]);
     expect(result.created).toHaveLength(2);
     const jobs = await rows<{ id: string; status: string; request: { calendarEntryId: string; generation: { source: unknown; scheduledAt: string } } }>('select id,status,request from marketing_jobs order by created_at');
@@ -101,7 +105,7 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     for (const job of jobs) expect((await rows<{ ok: boolean }>('select marketing_calendar_job_current($1,$2) ok', [owner, json(job.request)]))[0]!.ok).toBe(true);
     expect((await store.briefs(owner, project, runId)).map((row) => row.status)).toEqual(['queued', 'queued']);
     // Idempotent: nothing new on a second call.
-    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId })).toEqual({ created: [], skipped: [], pending: false });
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, clock)).toEqual({ created: [], skipped: [], pending: false });
     expect(await rows('select id from marketing_jobs')).toHaveLength(2);
   });
 
@@ -111,7 +115,7 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     // marketing_dneskai_brief_queued failed after marketing_enqueue_job succeeded; the entry moved on since.
     await db.query("update marketing_dneskai_briefs set status='ready',job_id=null where id=$1", [brief!.id]);
     await db.query("update marketing_calendar_entries set status='drafted' where id=$1", [brief!.calendar_entry_id]);
-    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId })).toEqual({ created: [{ briefId: brief!.id, eventId: brief!.event_id, jobId: brief!.job_id }], skipped: [], pending: false });
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, clock)).toEqual({ created: [{ briefId: brief!.id, eventId: brief!.event_id, jobId: brief!.job_id }], skipped: [], pending: false });
     expect(await rows<{ id: string }>('select id from marketing_jobs order by id')).toEqual(jobs);
     expect((await store.briefs(owner, project, runId))[0]).toMatchObject({ status: 'queued', job_id: brief!.job_id, code: null });
     await db.query("update marketing_calendar_entries set status='planned' where id=$1", [brief!.calendar_entry_id]);
