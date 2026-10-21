@@ -6,7 +6,7 @@ import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowDown, ArrowUp, GripVertical, ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, GripVertical, ImageIcon, ImageOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -271,7 +271,7 @@ function SlideRow({ id, index, count, item, post, lang, selected, onSelect, onMo
     <button type="button" onClick={onSelect} aria-current={selected ? 'true' : undefined} aria-label={t.editor.select(index + 1)}
       className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded text-left focus-ring md:min-h-8">
       {thumb ? <Image unoptimized src={thumb.url} alt="" width={thumb.width} height={thumb.height} loading="lazy" sizes="2rem" className="h-10 w-8 shrink-0 rounded-sm border border-border object-cover" />
-        : <span className="flex h-10 w-8 shrink-0 items-center justify-center rounded-sm border border-dashed border-border-strong text-[9px] text-foreground-muted">{t.editor.newSlide}</span>}
+        : <span title={t.editor.newSlide} className="flex h-10 w-8 shrink-0 items-center justify-center rounded-sm border border-dashed border-border-strong text-foreground-muted"><ImageOff className="size-3.5" aria-hidden /></span>}
       <span className="min-w-0 text-xs"><span className="block font-medium tabular">{index + 1}/{count}</span><span className="block truncate text-foreground-muted">{t.slideTypes[item.slide.type]}</span></span>
     </button>
     <Button type="button" variant="ghost" size="icon-sm" className={icon} aria-label={`${t.editor.moveUp}: ${t.card.problemSlide(index + 1)}`} disabled={index === 0} onClick={() => onMove(-1)}><ArrowUp /></Button>
