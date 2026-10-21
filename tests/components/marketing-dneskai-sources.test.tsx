@@ -78,15 +78,17 @@ describe('read-only DNESKAi source checks', () => {
     const value = state(); value.sources[0].url = 'javascript:alert(1)'; value.candidates[0].url = 'https://user:secret@example.invalid';
     render(<DneskaiSourceRecords state={value} lang="en" now={now} />); expect(container.querySelectorAll('a,img')).toHaveLength(0);
   });
-  it('loads nothing in public preview and exposes only final Marketing navigation', () => {
-    const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); render(<DneskaiSources projectId="qa-project" lang="cs" disabled />);
+  it('loads nothing in public preview and only switches to the review tab', () => {
+    const fetcher = vi.fn(); const onOpenReview = vi.fn(); vi.stubGlobal('fetch', fetcher); render(<DneskaiSources projectId="qa-project" lang="cs" onOpenReview={onOpenReview} disabled />);
     expect(fetcher).not.toHaveBeenCalled(); expect(container.textContent).toContain(dneskaiSources.cs.preview);
-    expect(container.querySelector('button')?.disabled).toBe(true); expect(container.querySelector('a')?.getAttribute('href')).toBe('/marketing');
+    expect(container.querySelector('button')?.disabled).toBe(true); expect(container.querySelectorAll('a')).toHaveLength(0);
+    const review = [...container.querySelectorAll('button')].find(button => button.textContent === dneskaiSources.cs.openReview);
+    expect(review?.disabled).toBe(false); act(() => review?.click()); expect(onOpenReview).toHaveBeenCalledTimes(1);
     expect(container.querySelectorAll('input,select,textarea,img')).toHaveLength(0);
   });
   it('shows loading and a truthful read-only error without exposing server detail', async () => {
     let resolve!: (response: Response) => void; const fetcher = vi.fn<(url: unknown, options?: RequestInit) => Promise<Response>>(() => new Promise<Response>(done => { resolve = done; })); vi.stubGlobal('fetch', fetcher);
-    render(<DneskaiSources projectId="qa-project" lang="en" />); expect(container.textContent).toContain(dneskaiSources.en.loading);
+    render(<DneskaiSources projectId="qa-project" lang="en" onOpenReview={() => {}} />); expect(container.textContent).toContain(dneskaiSources.en.loading);
     await act(async () => { resolve(Response.json({ secret: 'PRIVATE-SERVER-DETAIL' }, { status: 403 })); await new Promise(done => setTimeout(done, 20)); });
     expect(container.querySelector('[role="alert"]')?.textContent).toBe(dneskaiSources.en.unavailable); expect(container.textContent).not.toContain('PRIVATE-SERVER-DETAIL');
     expect(fetcher).toHaveBeenCalledTimes(1); expect(fetcher.mock.calls[0]?.[1]).not.toHaveProperty('method');

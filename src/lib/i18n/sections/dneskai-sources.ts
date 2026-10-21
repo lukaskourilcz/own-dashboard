@@ -1,7 +1,7 @@
 const en = {
   title: 'Sources', intro: 'DNESKAi checks rotating sources at 22:00 Europe/Prague and selects up to four research topics for the next day.',
-  approval: 'Selected topics are research candidates. Review the final article, image and exact social post in Marketing before publication.',
-  openMarketing: 'Open final Marketing review', refresh: 'Refresh status', loading: 'Loading source checks…', unavailable: 'Source checks could not be loaded. Check access and configuration, then try again.',
+  approval: 'Selected topics are research candidates. Before publication, review the final slides and the exact caption of each post.',
+  openReview: 'Open “For review today”', refresh: 'Refresh status', loading: 'Loading source checks…', unavailable: 'Source checks could not be loaded. Check access and configuration, then try again.',
   preview: 'Preview only. Private source state is not loaded.', disabled: 'Collection is disabled', enabled: 'Collection is enabled', configuration: 'Configuration needs attention',
   empty: 'No source registry is available', noChecks: 'No checks recorded today', today: 'Today’s checks', registry: 'Source registry', planned: 'Next rotation start (22:00)', days: 'Rotation days',
   attempt: 'Last attempt', success: 'Last successful check', newestPublished: 'Newest source publication', lastImport: 'Last import', importedAt: 'Imported', estimated: 'estimated, latest possible', count: 'Items captured', cost: 'Recorded cost (USD)', unknownCost: 'Unknown', never: 'Not checked',
@@ -34,8 +34,8 @@ const en = {
 };
 const cs: typeof en = {
   title: 'Zdroje', intro: 'DNESKAi kontroluje střídající se zdroje ve 22:00 Europe/Prague a vybere nejvýše čtyři témata k průzkumu pro další den.',
-  approval: 'Vybraná témata jsou kandidáti k průzkumu. Před publikováním zkontrolujte finální článek, obrázek a přesný sociální příspěvek v Marketingu.',
-  openMarketing: 'Otevřít finální kontrolu v Marketingu', refresh: 'Obnovit stav', loading: 'Načítám kontroly zdrojů…', unavailable: 'Kontroly zdrojů nelze načíst. Zkontrolujte přístup a nastavení a zkuste to znovu.',
+  approval: 'Vybraná témata jsou kandidáti k průzkumu. Před publikováním zkontrolujte finální slidy a přesný popisek každého příspěvku.',
+  openReview: 'Otevřít „Dnes ke schválení“', refresh: 'Obnovit stav', loading: 'Načítám kontroly zdrojů…', unavailable: 'Kontroly zdrojů nelze načíst. Zkontrolujte přístup a nastavení a zkuste to znovu.',
   preview: 'Pouze náhled. Soukromý stav zdrojů nenačítáme.', disabled: 'Sběr je vypnutý', enabled: 'Sběr je zapnutý', configuration: 'Nastavení vyžaduje kontrolu',
   empty: 'Registr zdrojů není dostupný', noChecks: 'Dnes zatím nejsou zaznamenané kontroly', today: 'Dnešní kontroly', registry: 'Registr zdrojů', planned: 'Příští začátek rotace (22:00)', days: 'Dny střídání',
   attempt: 'Poslední pokus', success: 'Poslední úspěšná kontrola', newestPublished: 'Nejnovější zveřejnění ve zdroji', lastImport: 'Poslední import', importedAt: 'Importováno', estimated: 'odhad, nejpozději', count: 'Zachycené položky', cost: 'Evidované náklady (USD)', unknownCost: 'Neznámé', never: 'Zatím nekontrolováno',
