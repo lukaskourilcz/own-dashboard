@@ -110,7 +110,7 @@ describe("vendored @boardlessai/carousel-studio", () => {
   it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {
     const config = readFileSync(path.join(root, "next.config.ts"), "utf8");
     expect(config).toContain('const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/carousel-studio/brand-kits/**/*"];');
-    expect(config).toContain('"/api/marketing/**": carouselStudioFiles,');
+    expect(config).toContain('"/api/marketing/**": [...carouselStudioFiles, sharpLibvips],');
     const picomatch = createRequire(path.join(root, "package.json"))("next/dist/compiled/picomatch") as (glob: string) => (value: string) => boolean;
     for (const route of ["/api/marketing/jobs/[id]/execute", "/api/marketing/n8n", "/api/marketing/revisions"]) expect(picomatch("/api/marketing/**")(route)).toBe(true);
   });

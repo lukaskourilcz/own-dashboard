@@ -61,15 +61,18 @@ const securityHeaders = [
 // Without them the deployed rasteriser finds no fonts (system fonts are switched off), which is
 // how Quorum's render route answered 500 in production.
 const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/carousel-studio/brand-kits/**/*"];
+// The trace keeps sharp's native addon but drops the libvips library it links against, and sharp
+// then fails to load (docs/marketing-render-preflight.md). Every marketing function that can reach
+// sharp (the job runner, the scheduled tick, revisions, media collection, offline import) gets it.
+const sharpLibvips = "./node_modules/@img/sharp-libvips-*/lib/**/*";
 
 const nextConfig: NextConfig = {
   // Native bindings loaded through platform-suffixed specifiers no bundler can resolve.
   serverExternalPackages: ["sharp", "@resvg/resvg-js"],
   outputFileTracingIncludes: {
-    "/api/marketing/offline-import": ["./node_modules/@img/sharp-libvips-*/lib/**/*"],
-    "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg", "./node_modules/@img/sharp-libvips-*/lib/**/*"],
-    "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg", "./node_modules/@img/sharp-libvips-*/lib/**/*"],
-    "/api/marketing/**": carouselStudioFiles,
+    "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
+    "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
+    "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
