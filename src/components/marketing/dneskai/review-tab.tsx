@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError, type DneskaiEditResult } from '@/lib/marketing/dneskai-workspace-client';
 import {
-  dneskaiJobState, dneskaiPostState, dneskaiReviewQueue, dneskaiStateContext, pragueDate, pragueDayAfter, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
+  dneskaiJobState, dneskaiPostState, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, pragueDate, pragueDayAfter, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiSlideStrip } from './slide-strip';
 import { DneskaiStateChip } from './state-chip';
@@ -25,8 +25,10 @@ export const pragueDateTime = (iso: string, lang: Lang) => new Intl.DateTimeForm
  * that approves this exact version by its hash; drafting jobs for the coming days; and what was already decided for
  * today and tomorrow. Approve, return and skip go through the existing revisions route.
  */
-export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, onRefresh }: {
+export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, onRefresh, renderFailed, addRenderFailed }: {
   read: DneskaiWorkspaceRead; projectId: string; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void;
+  /** Versions an edit saved whose slides did not attach (502 render-attach-failed): a problem at once, not after the grace period. */
+  renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void;
 }) {
   const t = dneskaiWorkspace[lang];
   const queryClient = useQueryClient();
@@ -34,8 +36,6 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
   const [message, setMessage] = useState<{ text: string; code?: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [editor, setEditor] = useState<{ id: string; slide: number } | null>(null);
-  // Versions an edit saved whose slides did not attach (502 render-attach-failed): a problem at once, not after the grace period.
-  const [renderFailed, setRenderFailed] = useState<ReadonlySet<string>>(() => new Set());
   const context = dneskaiStateContext(read, renderFailed);
   // The control that opened the editor gets focus back on close; after a save replaced its card, the heading does.
   const opener = useRef<HTMLElement | null>(null);
@@ -82,9 +82,9 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
   }
   const onSaved = useCallback((result: DneskaiEditResult) => { setEditor((current) => current ? { id: result.id, slide: current.slide } : current); }, []);
   const onRenderFailed = useCallback((id: string) => {
-    setRenderFailed((current) => new Set(current).add(id));
+    addRenderFailed(id);
     setEditor((current) => current ? { id, slide: current.slide } : current);
-  }, []);
+  }, [addRenderFailed]);
 
   return <section aria-labelledby="dneskai-review-title" className="min-w-0 space-y-5" data-testid="dneskai-review">
     <div ref={heading}><TabHeader id="dneskai-review-title" title={t.review.title} intro={t.review.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} focusable /></div>
@@ -144,7 +144,8 @@ function PostCard({ post, read, renderFailed, lang, busy, onEdit, onApprove, onD
 }) {
   const t = dneskaiWorkspace[lang];
   const id = useId();
-  const state = dneskaiPostState(post, dneskaiStateContext(read, renderFailed));
+  const context = dneskaiStateContext(read, renderFailed);
+  const state = dneskaiPostState(post, context);
   const [loaded, setLoaded] = useState(false);
   const onLoadedChange = useCallback((value: boolean) => setLoaded(value), []);
   const [mode, setMode] = useState<'idle' | 'return' | 'skip'>('idle');
@@ -159,7 +160,7 @@ function PostCard({ post, read, renderFailed, lang, busy, onEdit, onApprove, onD
       <DneskaiStateChip detail={state} lang={lang} />
     </header>
     <div className="min-w-0 space-y-4 p-4">
-      <DneskaiSlideStrip post={post} lang={lang} onOpenSlide={post.deck ? onEdit : undefined} onLoadedChange={onLoadedChange} />
+      <DneskaiSlideStrip post={post} lang={lang} onOpenSlide={post.deck ? onEdit : undefined} onLoadedChange={onLoadedChange} renderFailed={dneskaiRenderFailed(post, context)} />
       {post.renderReport && <DneskaiRenderProblems problems={post.renderReport.problems} lang={lang} />}
       {state.state === 'problem' && !post.renderReport?.problems.length && <DneskaiCodeText code={state.code} lang={lang} />}
       <div className="min-w-0 space-y-1 text-sm">

@@ -11,11 +11,13 @@ import { cn } from '@/lib/utils';
  * with intrinsic dimensions, and a visible state when a preview does not load. `onLoadedChange` reports whether
  * every slide has loaded, so approval can wait until the owner has seen them all.
  */
-export function DneskaiSlideStrip({ post, lang, onOpenSlide, onLoadedChange, selected, className, label, compact = false }: {
+export function DneskaiSlideStrip({ post, lang, onOpenSlide, onLoadedChange, selected, className, label, compact = false, renderFailed = false }: {
   post: Pick<DneskaiWorkspacePost, 'id' | 'assets' | 'deck' | 'title'>; lang: 'en' | 'cs'; onOpenSlide?: (index: number) => void;
   onLoadedChange?: (loaded: boolean) => void; selected?: number; className?: string; label?: string;
   /** One scrolling row of small slides (the editor); they load at once, so approval never waits for a scroll. */
   compact?: boolean;
+  /** The render was refused or failed, or never attached (`dneskaiRenderFailed`): no slides will appear for this version. */
+  renderFailed?: boolean;
 }) {
   const t = dneskaiWorkspace[lang];
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
@@ -23,7 +25,7 @@ export function DneskaiSlideStrip({ post, lang, onOpenSlide, onLoadedChange, sel
   const keys = post.assets.map((asset, index) => `${index}:${asset.sha256}`);
   const allLoaded = keys.length > 0 && keys.every((key) => loaded.has(key));
   useEffect(() => { onLoadedChange?.(allLoaded); }, [allLoaded, onLoadedChange]);
-  if (!post.assets.length) return <p className={cn('rounded-md border border-dashed border-border-strong p-3 text-xs text-foreground-muted', className)}>{t.card.notRendered}</p>;
+  if (!post.assets.length) return <p className={cn('rounded-md border border-dashed border-border-strong p-3 text-xs text-foreground-muted', className)}>{renderFailed ? t.card.renderFailed : t.card.notRendered}</p>;
   const count = post.assets.length;
   return <ol aria-label={label ?? `${t.card.slides}: ${post.title}`} tabIndex={compact ? 0 : undefined}
     className={cn(compact ? 'flex gap-2 overflow-x-auto pb-1 focus-ring [&>li]:w-20 [&>li]:shrink-0 sm:[&>li]:w-24' : 'grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,8rem))]', className)}>

@@ -11,9 +11,9 @@ import { TabHeader } from './review-tab';
 type Lang = 'en' | 'cs';
 
 /** The next seven Prague days, each slot with what is planned in it and its state (#119). */
-export function DneskaiCalendarTab({ read, lang, preview, refreshing, onRefresh }: { read: DneskaiWorkspaceRead; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void }) {
+export function DneskaiCalendarTab({ read, lang, preview, refreshing, onRefresh, renderFailed }: { read: DneskaiWorkspaceRead; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed?: ReadonlySet<string> }) {
   const t = dneskaiWorkspace[lang];
-  const days = dneskaiCalendarDays(read);
+  const days = dneskaiCalendarDays(read, renderFailed);
   const dayName = (date: string) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
   return <section aria-labelledby="dneskai-calendar-title" className="min-w-0 space-y-5" data-testid="dneskai-calendar">
     <TabHeader id="dneskai-calendar-title" title={t.calendar.title} intro={t.calendar.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} />

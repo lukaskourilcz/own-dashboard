@@ -154,10 +154,11 @@ describe('DNESKAi post editor (#119)', () => {
   it('reads a version this session saw fail as a problem at once, and follows the successor of a replaced version', async () => {
     const fresh = read.posts.findIndex((item) => item.title === 'Lokální model na notebooku');
     const post = open(fresh); await settle();
-    expect(document.body.textContent).toContain(t.states.preparing);
+    expect(document.body.textContent).toContain(t.states.preparing); expect(document.body.textContent).toContain(t.card.notRendered);
     expect(document.querySelector('[data-testid="dneskai-editor-main"]')!.textContent).toContain(t.card.approve);
     open(fresh, 0, vi.fn(), { renderFailed: new Set([post.id]) }); await settle();
     expect(document.body.textContent).toContain(t.states.problem);
+    expect(document.body.textContent).toContain(t.card.renderFailed); expect(document.body.textContent).not.toContain(t.card.notRendered);
     expect(document.querySelector('[data-testid="dneskai-editor-main"]')!.textContent).toBe(t.editor.rerender);
     // The open version was superseded by a save that then timed out: the editor shows its successor.
     read = { ...read, posts: read.posts.map((item) => item.id === post.id ? { ...item, replacesId: 'd0e5ca10-0000-4000-8000-0000000000fd' } : item) };

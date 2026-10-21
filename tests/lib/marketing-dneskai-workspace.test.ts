@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
-  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostState, dneskaiPublished, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
+  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostState, dneskaiPublished, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
   DNESKAI_POST_STATES, DNESKAI_RENDER_ATTACH_GRACE_MS, DNESKAI_STATE_TONES, pragueDstDay, type DneskaiWorkspacePost,
 } from '@/lib/marketing/dneskai-workspace';
 import {
@@ -58,6 +58,11 @@ describe('DNESKAi post states (#119)', () => {
     expect(dneskaiPostState(fresh, { ...context, renderFailed: new Set([fresh.id]) })).toMatchObject({ state: 'problem', code: 'render-attach-failed' });
     expect(dneskaiPostState(fresh, { ...context, renderFailed: new Set(['d0e5ca10-0000-4000-8000-0000000000ee']) }).state).toBe('preparing');
     expect(dneskaiJobState({ status: 'running', errorCode: null }).state).toBe('preparing');
+    // The slide strip says the slides failed for a stored refused or failed report and for a render that never attached.
+    expect(dneskaiRenderFailed(fresh, context)).toBe(false); expect(dneskaiRenderFailed(fresh, { ...context, renderFailed: new Set([fresh.id]) })).toBe(true);
+    expect(dneskaiRenderFailed(base({ ready: false, assets: [], renderReport: { ...post(3).renderReport!, status: 'refused' } }), context)).toBe(true);
+    expect(dneskaiRenderFailed(base({ ready: false, assets: [], renderReport: { ...post(3).renderReport!, status: 'failed', problems: [] } }), context)).toBe(true);
+    expect(dneskaiRenderFailed(base({}), context)).toBe(false);
     expect(dneskaiJobState({ status: 'failed', errorCode: null })).toMatchObject({ state: 'problem', code: 'generation-failed' });
     expect(dneskaiJobState({ status: 'reconciliation', errorCode: null })).toMatchObject({ state: 'problem', code: 'worker-lease-expired' });
     for (const lang of ['en', 'cs'] as const) for (const state of DNESKAI_POST_STATES) {

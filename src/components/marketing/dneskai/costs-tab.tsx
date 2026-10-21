@@ -20,8 +20,8 @@ type Lang = 'en' | 'cs';
  * collection runs, posts waiting for review that cannot be approved, failed or uncertain jobs and publications, and
  * the scheduler's last 24 hours. Read-only.
  */
-export function DneskaiCostsTab({ read, review = 'loading', lang, preview, refreshing, onRefresh, now = new Date() }: {
-  read: DneskaiCostsRead; review?: DneskaiWorkspaceRead | 'loading' | 'unavailable'; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date;
+export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, preview, refreshing, onRefresh, now = new Date() }: {
+  read: DneskaiCostsRead; review?: DneskaiWorkspaceRead | 'loading' | 'unavailable'; renderFailed?: ReadonlySet<string>; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date;
 }) {
   const t = dneskaiWorkspace[lang];
   const usd = (value: number) => new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
@@ -66,7 +66,7 @@ export function DneskaiCostsTab({ read, review = 'loading', lang, preview, refre
       </li>)}</ul>}
     </section>
 
-    <BlockedPosts review={review} lang={lang} />
+    <BlockedPosts review={review} renderFailed={renderFailed} lang={lang} />
 
     <section aria-labelledby="dneskai-jobs-title" className="min-w-0 space-y-2">
       <h3 id="dneskai-jobs-title" className="text-sm font-semibold">{t.costs.jobs}</h3>
@@ -102,10 +102,10 @@ export function DneskaiCostsTab({ read, review = 'loading', lang, preview, refre
 }
 
 /** Undecided posts in a problem state: a refused render, a render that never attached, a version that cannot be approved. */
-function BlockedPosts({ review, lang }: { review: DneskaiWorkspaceRead | 'loading' | 'unavailable'; lang: Lang }) {
+function BlockedPosts({ review, renderFailed, lang }: { review: DneskaiWorkspaceRead | 'loading' | 'unavailable'; renderFailed?: ReadonlySet<string>; lang: Lang }) {
   const t = dneskaiWorkspace[lang];
   const blocked = typeof review === 'string' ? [] : review.posts.filter(dneskaiNeedsReview)
-    .map((post) => ({ post, detail: dneskaiPostState(post, dneskaiStateContext(review)) })).filter(({ detail }) => detail.state === 'problem')
+    .map((post) => ({ post, detail: dneskaiPostState(post, dneskaiStateContext(review, renderFailed)) })).filter(({ detail }) => detail.state === 'problem')
     .sort((a, b) => Date.parse(a.post.scheduledAt) - Date.parse(b.post.scheduledAt));
   return <section aria-labelledby="dneskai-blocked-title" className="min-w-0 space-y-2">
     <h3 id="dneskai-blocked-title" className="text-sm font-semibold">{t.costs.posts}</h3>
