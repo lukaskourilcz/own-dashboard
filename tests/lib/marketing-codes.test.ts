@@ -8,7 +8,8 @@ import { DNESKAI_RENDER_FAILURE_CODES } from '@/lib/marketing/dneskai-render';
 
 const root = path.resolve(__dirname, '../..');
 const read = (file: string) => readFileSync(path.join(root, file), 'utf8');
-const marketingFiles = readdirSync(path.join(root, 'src/lib/marketing')).filter((file) => file.endsWith('.ts')).map((file) => `src/lib/marketing/${file}`);
+// Every module under src/lib/marketing, subfolders included, so a code added in a new folder is checked too.
+const marketingFiles = (readdirSync(path.join(root, 'src/lib/marketing'), { recursive: true }) as string[]).filter((file) => file.endsWith('.ts')).map((file) => `src/lib/marketing/${file.split(path.sep).join('/')}`);
 const quoted = String.raw`["'\`]([a-z][a-z0-9-]*)["'\`]`;
 const collect = (source: string, pattern: RegExp) => [...source.matchAll(pattern)].map((match) => match[1]!).filter((code) => !code.endsWith('-'));
 
@@ -26,6 +27,8 @@ function emittedCodes(): Map<string, string> {
     add(file, collect(source, new RegExp(String.raw`\b(?:fail|hold)\(${quoted}`, 'g')));
     add(file, collect(source, new RegExp(String.raw`result\('(?:held|failed|reconciliation|pending)', ?${quoted}`, 'g')));
     add(file, collect(source, new RegExp(String.raw`(?:errorCode|code): ?${quoted}`, 'g')));
+    // A native feed's result envelope: every literal in `envelope('error', a ? 'x' : 'y')`.
+    for (const call of source.matchAll(/envelope\('error', ?([^\n]*?)\);/g)) add(file, collect(call[1]!, new RegExp(quoted, 'g')));
   }
   const route = read('src/app/api/marketing/revisions/route.ts');
   add('revisions/route.ts', collect(route, /:'([a-z][a-z0-9-]+)'/g).filter((code) => /^(?:revision|render|schedule|source|account|campaign)-/.test(code)));
@@ -51,6 +54,7 @@ describe('marketing code texts (#119)', () => {
   });
 
   it('has text for every code the marketing modules emit', () => {
+    expect(marketingFiles.some((file) => file.startsWith('src/lib/marketing/free-feeds/'))).toBe(true);
     const missing = [...emittedCodes()].filter(([code]) => !marketingCodeKnown(code)).map(([code, file]) => `${code} (${file})`);
     expect(missing).toEqual([]);
   });
@@ -63,6 +67,7 @@ describe('marketing code texts (#119)', () => {
       'deck-asset-outside-brief', 'deck-edit-slide-count', 'deck-edit-slots-changed', 'deck-edit-slide-invalid', 'deck-edit-invalid', 'deck-edit-unsupported', 'render-attach-failed',
       'text-clipped', 'unsupported-glyph', 'text-unplaced', 'image-low-resolution', 'render-blocked', 'revision-not-ready',
       'account-unavailable', 'meta-http-400', 'access-token-expired', 'remote-account-handle-mismatch',
+      'source-disabled', 'reader-disabled', 'empty-source', 'collection-timeout', 'source-rate-limited', 'fetch-failed',
       'yield-to-publication', 'tick-budget-exhausted', 'publishing-failed', 'collection-failed', 'container-error', 'remote-container-in_progress'];
     expect(named.filter((code) => !marketingCodeKnown(code))).toEqual([]);
   });

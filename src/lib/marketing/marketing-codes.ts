@@ -242,6 +242,13 @@ const CODES = {
   'stored-asset-hash-or-mime-invalid': ['investigate', 'A stored image is not the expected JPEG.', 'Uložený obrázek není očekávaný JPEG.'],
   'stored-asset-proof-invalid': ['investigate', 'A stored image is missing its proof of origin.', 'Uloženému obrázku chybí doklad o původu.'],
   'offline-import-review-required': ['investigate', 'An imported draft needs its template and sources verified before approval.', 'Importovaný návrh potřebuje před schválením ověřit šablonu a podklady.'],
+  // Native source feeds (#111, #112): one source's collection result.
+  'source-disabled': ['none', 'This source is switched off in the source list.', 'Tento zdroj je v seznamu zdrojů vypnutý.'],
+  'reader-disabled': ['config', 'The page reader is switched off, so this source returned nothing.', 'Čtečka stránek je vypnutá, proto zdroj nic nevrátil.'],
+  'empty-source': ['auto', 'The source returned no items.', 'Zdroj nevrátil žádné položky.'],
+  'collection-timeout': ['auto', 'The source did not answer in time.', 'Zdroj neodpověděl včas.'],
+  'source-rate-limited': ['auto', 'The source refused requests for a while because of too many requests.', 'Zdroj dočasně odmítá požadavky, protože jich dostal příliš mnoho.'],
+  'fetch-failed': ['auto', 'The source could not be downloaded.', 'Zdroj se nepodařilo stáhnout.'],
   // Source media (#114).
   'media-lease-lost': ['wait', 'Another run took over collecting these pictures.', 'Sběr těchto obrázků převzal jiný běh.'],
   'media-asset-hash-mismatch': ['investigate', 'A stored picture does not match its fingerprint.', 'Uložený obrázek neodpovídá svému otisku.'],
