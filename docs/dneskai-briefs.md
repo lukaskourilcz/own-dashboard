@@ -81,8 +81,10 @@ a záložka Zdroje ho ukáže slovy. 3000 zpráv se seskupí zhruba za půl seku
 `createDneskaiBriefs` (`src/lib/marketing/dneskai-briefs.ts`), port
 `CreateDneskaiBriefs`, zapojený v `getCreateDneskaiBriefs(db)`. Plánovač (#120) ho volá
 po sběru médií s `{ owner, project, runId }`; je idempotentní a druhé volání nic nového
-nevytvoří. `pending: true` znamená, že některá vybraná zpráva ještě čeká na média
-(`pendingDneskaiMediaCandidates` nebo nedokončený `marketing_media_collections`).
+nevytvoří. `pending: true` znamená, že některé zadání ještě čeká: jeho zpráva na média
+(`pendingDneskaiMediaCandidates` nebo nedokončený `marketing_media_collections`), na
+ověřený účet, nebo na zařazení, které selhalo s kódem, jenž může pominout (viz
+[Zařazení do fronty](#zařazení-do-fronty)).
 
 Pro každou událost v pořadí:
 
@@ -101,8 +103,10 @@ Pro každou událost v pořadí:
    `pragueScheduledAt`, takže 25. 10. 2026 (konec letního času) dává 07:00, 11:30,
    16:00 a 19:00 UTC. Události dostávají časy v pořadí svého pořadí výběru, i ta, která
    ještě čeká na média. Čas se přeskočí, když je do hodiny od jiného příspěvku nebo
-   zadání téhož dne, nebo když do něj zbývá méně než 30 minut. Den, jehož poslední čas
-   už minul, se uzavře (`brief-target-date-passed`).
+   zadání téhož dne, nebo když do něj zbývá méně než 30 minut. Stejná hranice platí pro
+   zadání, které čas už má a čeká na účet nebo na nové zařazení: méně než 30 minut před
+   svým časem se přeskočí (`brief-slot-passed`). Den, do jehož posledního času zbývá
+   méně než 30 minut, se uzavře (`brief-target-date-passed`).
 
 ### Opakování za 14 dní
 
@@ -150,11 +154,31 @@ revizi nebo zprávu, která téma pokryla.
 
 Bez ověřeného řádku `marketing_accounts` pro dneskai/instagram zadání vznikne, ale
 zůstane `pending` s kódem `account-unavailable` a úloha se nevytvoří. Další volání ho
-zařadí, jakmile účet existuje. Selhání fronty nechá zadání `ready` s kódem a další volání
-to zkusí znovu. Když úloha vznikla, ale zápis `job_id` selhal, vrátí
-`marketing_dneskai_admit_brief` při dalším volání úlohu aktuální verze kalendářní
-položky a zadání si ji zapíše. Druhá úloha nevznikne, ani když položka mezitím opustila
-stav `planned`.
+zařadí, jakmile účet existuje. Selhání zařazení nechá zadání `ready` s kódem chyby.
+
+Plánovač volá znovu jen tehdy, když výsledek zůstane `pending: true`. Kromě čekání na
+média to platí pro:
+
+- zadání, které čeká na ověřený účet (`account-unavailable`),
+- selhání zařazení s kódem z `DNESKAI_BRIEF_RETRYABLE_CODES`: `job-budget-exhausted`,
+  `marketing-consent-required`, `job-enqueue-failed`, `marketing-account-unavailable`,
+  `brief-store-unavailable` a `brief-source-save-failed`,
+- selhání prvního uložení zadání s kódem `brief-slot-taken` nebo s kódem z téhož
+  seznamu. Řádek zůstane `pending` bez zadání a další volání ho sestaví znovu s dalším
+  volným časem.
+
+Krok plánovače nemá pro zadání žádný odklad, takže se pokus opakuje jednou za
+pětiminutový tik. Končí, když do času zadání zbývá méně než 30 minut
+(`brief-slot-passed`), nebo když do posledního času cílového dne zbývá méně než
+30 minut (`brief-target-date-passed`). Jiné kódy zařazení (`job-request-invalid`,
+`template-revision-mismatch`, `source-unavailable`, `campaign-conflict`,
+`brief-entry-changed` a další) nechají zadání `ready` a plánovač kvůli nim znovu
+nevolá. Zopakují se jen při volání, které drží otevřené jiné zadání téhož běhu.
+
+Když úloha vznikla, ale zápis `job_id` selhal, vrátí `marketing_dneskai_admit_brief`
+při dalším volání úlohu aktuální verze kalendářní položky a zadání si ji zapíše, pokud
+do jeho času zbývá aspoň 30 minut. Druhá úloha nevznikne, ani když položka mezitím
+opustila stav `planned`.
 
 ## Obnova zdroje
 
@@ -177,9 +201,10 @@ zbývající ID článků. Rozhoduje `kind` předchozího paketu.
 
 | Stav | Kód | Význam |
 |---|---|---|
-| `pending` | – | čeká na média ze zdrojů |
-| `pending` | `account-unavailable` | zadání hotové, chybí ověřený účet `@dneskai` |
-| `ready` | – / kód chyby | zadání hotové, zařazení se zopakuje |
+| `pending` | – | čeká na média ze zdrojů, nebo se po selhání prvního uložení sestaví znovu |
+| `pending` | `account-unavailable` | zadání hotové, chybí ověřený účet `@dneskai`; plánovač to zkouší každý tik |
+| `ready` | – / kód z `DNESKAI_BRIEF_RETRYABLE_CODES` | zadání hotové, zařazení se zopakuje při dalším tiku |
+| `ready` | jiný kód chyby | zadání hotové, zařazení selhalo a plánovač ho sám nezopakuje |
 | `queued` | – | úloha generování existuje (`job_id`) |
 | `skipped` | `collection-already-covered` | opakování příspěvku nebo zadání z posledních 14 dní |
 | `skipped` | `brief-members-changed`, `brief-slot-unavailable`, `brief-slot-passed`, `brief-target-date-passed`, `brief-evidence-unavailable`, `brief-expired`, `brief-invalid` | zadání nevzniklo nebo už neplatí |

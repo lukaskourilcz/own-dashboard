@@ -266,8 +266,9 @@ export const DNESKAI_BRIEF_RETRYABLE_CODES: ReadonlySet<string> = new Set(['job-
  * media collection). For each selected event in rank order: wait while a member still owes media; skip a repeat
  * of the last 14 days (its reports become duplicates, `collection-already-covered`); build the brief with a slot;
  * then admit it as a job, or hold it as `account-unavailable` when no verified @dneskai account exists.
- * `pending` stays true while a brief waits for media, for the account or for a retryable admission; the
- * target-day check below ends that once the day has no slot left.
+ * `pending` stays true while a brief waits for media, for the account, or for a retryable store write or admission.
+ * A held brief stops waiting once its slot is under 30 minutes away, and the target-day check below once the day
+ * has no slot left.
  */
 export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, input: Parameters<CreateDneskaiBriefs>[0], options: { now?: () => Date } = {}): ReturnType<CreateDneskaiBriefs> {
   z.uuid().parse(input.owner); z.uuid().parse(input.project); z.uuid().parse(input.runId);
