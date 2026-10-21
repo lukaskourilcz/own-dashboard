@@ -74,7 +74,8 @@ pg_cron writes one `cron.job_run_details` row per run (`cron.log_run` is on in S
 deletes them. A third job, `marketing-cron-history-prune` (`43 3 * * *`, UTC), runs inside the
 database and calls no endpoint. It deletes rows older than 14 days (by `end_time`) of the three
 marketing jobs and of jobs that no longer exist, such as a tick job that was unscheduled and
-scheduled again under a new `jobid`. Any other job keeps its history.
+scheduled again under a new `jobid`. Any other job keeps its history, including an unnamed one
+(`cron.schedule(schedule, command)` stores `jobname` as null).
 
 ## Time budget
 

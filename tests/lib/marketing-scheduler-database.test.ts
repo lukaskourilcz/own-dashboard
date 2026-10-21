@@ -79,21 +79,23 @@ describe('pg_cron schedule (20261020160100)', () => {
     expect(await jobs()).toEqual(expected);
   });
 
-  it('prunes run history older than fourteen days for its own jobs and removed jobs, and leaves other jobs alone', async () => {
+  it('prunes run history older than fourteen days for its own jobs and removed jobs, and leaves other jobs, unnamed ones included, alone', async () => {
     const jobid = async (name: string) => (await db.query<{ jobid: number }>('select jobid from cron.job where jobname=$1', [name])).rows[0].jobid;
     const foreign = (await db.query<{ jobid: number }>("select cron.schedule('purge-cron-runs','0 3 * * *','select public.purge_old_cron_runs()') jobid")).rows[0].jobid;
+    // cron.schedule(schedule, command) stores jobname null; such a job keeps its history too.
+    const unnamed = (await db.query<{ jobid: number }>("insert into cron.job(jobname,schedule,command) values(null,'0 4 * * *','select 1') returning jobid")).rows[0].jobid;
     const [minute, daily, prune] = [await jobid('marketing-tick-minute'), await jobid('marketing-tick-daily'), await jobid('marketing-cron-history-prune')];
     const removed = Number(minute) + 1000;
     const rows: Array<[string, number, string | null]> = [
       ['minute-old', minute, '15 days'], ['minute-recent', minute, '13 days'], ['minute-running', minute, null],
       ['daily-old', daily, '15 days'], ['prune-old', prune, '20 days'], ['removed-old', removed, '15 days'],
-      ['removed-recent', removed, '1 day'], ['foreign-old', foreign, '15 days'],
+      ['removed-recent', removed, '1 day'], ['foreign-old', foreign, '15 days'], ['unnamed-old', unnamed, '15 days'],
     ];
     for (const [status, id, age] of rows) await db.query('insert into cron.job_run_details(jobid,status,start_time,end_time) values($1,$2,now()-interval \'20 days\',now()-$3::interval)', [id, status, age]);
     const command = (await db.query<{ command: string }>("select command from cron.job where jobname='marketing-cron-history-prune'")).rows[0].command;
     await db.exec(command);
-    expect((await db.query<{ status: string }>('select status from cron.job_run_details order by runid')).rows.map((row) => row.status)).toEqual(['minute-recent', 'minute-running', 'removed-recent', 'foreign-old']);
-    await db.exec("delete from cron.job_run_details; select cron.unschedule('purge-cron-runs');");
+    expect((await db.query<{ status: string }>('select status from cron.job_run_details order by runid')).rows.map((row) => row.status)).toEqual(['minute-recent', 'minute-running', 'removed-recent', 'foreign-old', 'unnamed-old']);
+    await db.exec("delete from cron.job_run_details; select cron.unschedule('purge-cron-runs'); delete from cron.job where jobname is null;");
   });
 
   it('contains no secret or URL value and sends nothing until Vault holds a usable URL and secret', async () => {
