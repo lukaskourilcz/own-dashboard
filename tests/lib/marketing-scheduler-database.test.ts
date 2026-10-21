@@ -42,6 +42,9 @@ beforeAll(async () => {
     -- Vault: the function reads only name and decrypted_secret.
     create schema vault; create table vault.secrets(id uuid primary key default gen_random_uuid(),name text unique,secret text not null,created_at timestamptz default now());
     create view vault.decrypted_secrets as select id,name,secret as decrypted_secret,created_at from vault.secrets;
+    -- Vault 0.3 signatures; create_secret fails on a name that exists, as the unique index makes it.
+    create function vault.create_secret(new_secret text,new_name text default null,new_description text default '',new_key_id uuid default null) returns uuid language sql as $$ insert into vault.secrets(name,secret) values(new_name,new_secret) returning id $$;
+    create function vault.update_secret(secret_id uuid,new_secret text default null,new_name text default null,new_description text default null,new_key_id uuid default null) returns void language sql as $$ update vault.secrets set secret=coalesce(new_secret,secret) where id=secret_id $$;
     -- pg_net: same signature as net.http_post 0.20; records the bytes pg_net would send (body::text).
     create schema net; create table net.captured(id bigserial primary key,url text,body text,headers jsonb,timeout_milliseconds integer);
     create function net.http_post(url text,body jsonb default '{}'::jsonb,params jsonb default '{}'::jsonb,headers jsonb default '{"Content-Type": "application/json"}'::jsonb,timeout_milliseconds integer default 5000)
@@ -144,6 +147,29 @@ describe('pg_cron schedule (20261020160100)', () => {
       const digest = (await db.query<{ r: string }>('select marketing_private.scheduler_signature($1,$2,$3) r', [secret, '1792526700', body])).rows[0].r;
       expect(digest).toBe(createHmac('sha256', secret).update(`1792526700.${body}`).digest('hex'));
     }
+  });
+
+  it('documents Vault SQL that a second run cannot fail and that rotates by the stored id', async () => {
+    const tickUrl = 'https://own-dashboard-tau.vercel.app/api/marketing/tick', rotated = `${secret}-rotated`;
+    const header = readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8').split('\n').filter((line) => line.startsWith('--')).map((line) => line.slice(2)).join('\n');
+    const stored = async () => (await db.query<{ name: string; secret: string }>('select name,secret from vault.secrets order by name')).rows;
+    for (const source of [header, readFileSync('docs/marketing-scheduling.md', 'utf8')]) {
+      await db.exec('delete from vault.secrets');
+      const statements = [...source.matchAll(/select vault\.(create|update)_secret\([\s\S]*?;/g)].map(([sql, verb]) => ({ verb, sql: sql.replace('<the value of MARKETING_SCHEDULER_SECRET>', secret).replace('<new value>', rotated) }));
+      expect(statements.map((statement) => statement.verb)).toEqual(['create', 'create', 'update']);
+      const create = statements.filter((statement) => statement.verb === 'create').map((statement) => statement.sql).join('\n');
+      const rotate = statements[2]!.sql;
+      await db.exec(rotate);
+      expect(await stored()).toEqual([]);
+      await db.exec(create);
+      await db.exec(create);
+      expect(await stored()).toEqual([{ name: 'marketing_scheduler_secret', secret }, { name: 'marketing_scheduler_url', secret: tickUrl }]);
+      // The names are the ones scheduler_post reads.
+      expect(await post('minute')).toEqual(expect.any(Number));
+      await db.exec(rotate);
+      expect(await stored()).toEqual([{ name: 'marketing_scheduler_secret', secret: rotated }, { name: 'marketing_scheduler_url', secret: tickUrl }]);
+    }
+    await db.exec('delete from vault.secrets; delete from net.captured;');
   });
 
   it('keeps the request builder away from every API role', async () => {

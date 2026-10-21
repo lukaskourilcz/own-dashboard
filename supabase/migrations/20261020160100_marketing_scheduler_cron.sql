@@ -17,11 +17,19 @@
 -- exactly the bytes pg_net sends (the jsonb body rendered as text).
 --
 -- The endpoint URL and the secret live in Supabase Vault and never in this file. Until both exist
--- every job run returns without sending anything. Set them once in the SQL editor:
---   select vault.create_secret('https://own-dashboard-tau.vercel.app/api/marketing/tick', 'marketing_scheduler_url');
---   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret');
--- Rotate the secret (Vercel env first, then):
---   select vault.update_secret((select id from vault.secrets where name = 'marketing_scheduler_secret'), '<new value>');
+-- every job run returns without sending anything. Add them once on the Vault page of the Supabase
+-- Dashboard (Integrations, Vault) as marketing_scheduler_url and marketing_scheduler_secret, and
+-- rotate by editing the entry there. In the SQL editor use only statements that cannot fail: Postgres
+-- logs a failing statement with its full text (log_min_error_statement = error), and a plain
+-- vault.create_secret for a name that exists fails, so the secret would land in the database log.
+-- A second run of these creates nothing:
+--   select vault.create_secret('https://own-dashboard-tau.vercel.app/api/marketing/tick', 'marketing_scheduler_url')
+--    where not exists (select 1 from vault.secrets where name = 'marketing_scheduler_url');
+--   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret')
+--    where not exists (select 1 from vault.secrets where name = 'marketing_scheduler_secret');
+-- Rotate the secret (Vercel env first, then) by the id of the existing row; without one nothing is called:
+--   select vault.update_secret(id, '<new value>') from vault.secrets where name = 'marketing_scheduler_secret';
+-- Delete the SQL editor snippet afterwards; it keeps the value in plain text.
 -- Stop both ticks (the prune job may keep running; it sends nothing):
 --   select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');
 -- Stop the prune job too: select cron.unschedule('marketing-cron-history-prune');

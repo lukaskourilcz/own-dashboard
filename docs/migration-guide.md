@@ -629,7 +629,8 @@ exist a row appears in `marketing_ticks` within five minutes. `tests/lib/marketi
 runs both migrations in PGlite with stand-ins for Vault, pg_net and pg_cron.
 
 Order: deploy the code with `MARKETING_SCHEDULER_SECRET` first, then apply both migrations, then create the two
-Vault secrets. Ticks that arrive before the deploy answer 404 or 401 and change nothing.
+Vault secrets on the Dashboard's Vault page ([turning it on](marketing-scheduling.md#turning-it-on); SQL only in
+the form there that cannot fail). Ticks that arrive before the deploy answer 404 or 401 and change nothing.
 
 Rollback: `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');
 select cron.unschedule('marketing-cron-history-prune');`, then drop the two private functions, the five

@@ -153,21 +153,37 @@ slot, all without a single n8n execution.
 2. Apply `20261020160000_marketing_scheduler.sql`, then `20261020160100_marketing_scheduler_cron.sql`.
    The second creates pg_cron and pg_net and schedules the two tick jobs and the prune job. The
    ticks send nothing yet.
-3. In the Supabase SQL editor:
+3. On the Vault page of the Supabase Dashboard (Integrations → Vault), add two secrets:
+   `marketing_scheduler_url` with `https://own-dashboard-tau.vercel.app/api/marketing/tick` and
+   `marketing_scheduler_secret` with the value of `MARKETING_SCHEDULER_SECRET`.
+
+   The SQL editor works too, but only with statements that cannot fail. Postgres logs a failing
+   statement with its full text (`log_min_error_statement = error`), and a plain
+   `vault.create_secret` for a name that already exists fails, which would put the secret into the
+   database log. A second run of these two creates nothing:
 
    ```sql
-   select vault.create_secret('https://own-dashboard-tau.vercel.app/api/marketing/tick', 'marketing_scheduler_url');
-   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret');
+   select vault.create_secret('https://own-dashboard-tau.vercel.app/api/marketing/tick', 'marketing_scheduler_url')
+    where not exists (select 1 from vault.secrets where name = 'marketing_scheduler_url');
+   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret')
+    where not exists (select 1 from vault.secrets where name = 'marketing_scheduler_secret');
    ```
+
+   Delete the SQL editor snippet afterwards; it keeps the value in plain text.
 
    The function sends only to an `https` URL whose path is exactly `/api/marketing/tick`, and only
    with a secret of at least 32 characters without spaces.
 4. Within five minutes `marketing_ticks` gets its first row. With every switch off it reads
    `collection-disabled`, `generation-consent-required` and no-ops.
 
-Rotate the secret by changing it in Vercel, deploying, then
-`select vault.update_secret((select id from vault.secrets where name = 'marketing_scheduler_secret'), '<new value>');`.
-Ticks between the two steps answer 401 and do nothing.
+Rotate the secret by changing it in Vercel, deploying, then editing `marketing_scheduler_secret` on the
+Vault page. In SQL, update it by the id of the existing row; when there is none, nothing is called:
+
+```sql
+select vault.update_secret(id, '<new value>') from vault.secrets where name = 'marketing_scheduler_secret';
+```
+
+Delete that snippet too. Ticks between the two steps answer 401 and do nothing.
 
 ## Pausing
 
