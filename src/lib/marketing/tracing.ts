@@ -95,7 +95,7 @@ const deckShapeSchema = z.strictObject({
 const finishSchema = z.strictObject({
   status: z.enum(["review", "failed"]), revision_hash: hash.nullable(), attempts: z.number().int().min(0).max(3), input_tokens: z.number().int().nonnegative(),
   output_tokens: z.number().int().nonnegative(), estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(code).max(30),
-  // Issue codes of the attempts that were answered with a retry.
+  // Issue codes of the generation attempts that a later attempt followed, so a final failed attempt adds none.
   retry_reasons: z.array(code).max(30).optional(),
   ...deckShapeSchema.shape,
 });
@@ -180,12 +180,17 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
       const id = randomUUID();
       if (!await safeWrite(() => client.createRun({ id, name: "marketing-generation", run_type: "chain", inputs: {}, project_name: config.projectName, start_time: Date.now(), extra: { metadata } }))) return null;
       const generationIssues = new Set<string>();
+      // Issue codes per generation attempt: an attempt's codes are retry reasons once a later attempt was made.
+      const attemptIssues = new Map<number, string[]>();
       return {
         id,
         async stage(event) {
           try {
             const metadata = diagnosticsSchema.parse({ stage: event.name, attempt: event.attempt, latency_ms: event.latencyMs, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.costUsd, issue_codes: [...new Set(codes(event.issues))].slice(0, 30) });
-            if (event.name === "generation") for (const issue of metadata.issue_codes) generationIssues.add(issue);
+            if (event.name === "generation") {
+              for (const issue of metadata.issue_codes) generationIssues.add(issue);
+              attemptIssues.set(metadata.attempt, metadata.issue_codes);
+            }
             const child = randomUUID();
             await safeWrite(() => client.createRun({ id: child, name: `marketing-${event.name}`, run_type: event.name === "generation" ? "llm" : "tool", parent_run_id: id, trace_id: id, inputs: {}, project_name: config.projectName, start_time: Date.now() - event.latencyMs, end_time: Date.now(), extra: { metadata } }));
           } catch { /* Diagnostics never decide a generation. */ }
@@ -193,7 +198,7 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
         async finish(event) {
           try {
             const issues = codes(event.issues);
-            const retryReasons = [...generationIssues].slice(0, 30);
+            const retryReasons = [...new Set([...attemptIssues].filter(([attempt]) => attempt < event.usage.attempts).flatMap(([, values]) => values))].slice(0, 30);
             // The deck shape never costs the finish: status, revision hash and cost are sent whatever the deck holds.
             const shape = (() => { try { return event.deck ? deckShapeSchema.safeParse(dneskaiDeckTraceShape(event.deck)) : null; } catch { return null; } })();
             const finished = finishSchema.parse({ status: event.status, revision_hash: event.revisionHash, attempts: event.usage.attempts, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.usage.estimatedCostUsd,

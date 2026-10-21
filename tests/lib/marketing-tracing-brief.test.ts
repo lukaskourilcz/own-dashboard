@@ -96,8 +96,25 @@ describe("redacted brief traces (#122)", () => {
     await trace!.stage({ name: "generation", attempt: 1, latencyMs: 1, usage: { inputTokens: 1, outputTokens: 1 }, costUsd: 0, issues: ["text-clipped", "TEST PRIVATE Slide 2 text", "image-1-missing"] });
     await trace!.finish({ status: "failed", revisionHash: null, usage: { attempts: 1, inputTokens: 1, outputTokens: 1, estimatedCostUsd: 0 }, issues: ["https://test-only.example/", "copy-validation-failed"] });
     expect(sdk.createRun.mock.calls[1]![0].extra.metadata.issue_codes).toEqual(["text-clipped", "image-1-missing"]);
-    expect(sdk.updateRun.mock.calls[0]![1].extra.metadata).toMatchObject({ status: "failed", issue_codes: ["text-clipped", "image-1-missing", "copy-validation-failed"], retry_reasons: ["text-clipped", "image-1-missing"] });
+    const finished = sdk.updateRun.mock.calls[0]![1].extra.metadata;
+    expect(finished).toMatchObject({ status: "failed", issue_codes: ["text-clipped", "image-1-missing", "copy-validation-failed"] });
+    // One attempt and no retry: its codes are issue codes, never retry reasons.
+    expect(finished).not.toHaveProperty("retry_reasons");
     expect(JSON.stringify(payloads())).not.toContain("TEST PRIVATE");
+  });
+  it("counts as retry reasons only the codes of attempts a later attempt followed", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const trace = await tracer.start({ revisionId: REVISION_ID, source: briefPacket(briefFixture(pictures)), model: "claude-sonnet-5-5", promptVersion: MARKETING_BRIEF_PROMPT_ID, templateVersion: "dneskai-photo/1", knowledgeIds: [] });
+    await trace!.stage({ name: "generation", attempt: 1, latencyMs: 1, usage: { inputTokens: 1, outputTokens: 1 }, costUsd: 0, issues: ["text-clipped"] });
+    await trace!.stage({ name: "generation", attempt: 2, latencyMs: 1, usage: { inputTokens: 1, outputTokens: 1 }, costUsd: 0, issues: ["image-1-missing"] });
+    await trace!.finish({ status: "failed", revisionHash: null, usage: { attempts: 2, inputTokens: 2, outputTokens: 2, estimatedCostUsd: 0 }, issues: ["text-clipped", "image-1-missing", "copy-validation-failed"] });
+    expect(sdk.updateRun.mock.calls[0]![1].extra.metadata).toMatchObject({ status: "failed", retry_reasons: ["text-clipped"], issue_codes: ["text-clipped", "image-1-missing", "copy-validation-failed"] });
+    // An attempt whose retry failed before validation (a provider error on attempt 2) was still answered with a retry.
+    sdk.updateRun.mockClear();
+    const provider = await tracer.start({ revisionId: REVISION_ID, source: briefPacket(briefFixture(pictures)), model: "claude-sonnet-5-5", promptVersion: MARKETING_BRIEF_PROMPT_ID, templateVersion: "dneskai-photo/1", knowledgeIds: [] });
+    await provider!.stage({ name: "generation", attempt: 1, latencyMs: 1, usage: { inputTokens: 1, outputTokens: 1 }, costUsd: 0, issues: ["unknown-asset"] });
+    await provider!.finish({ status: "failed", revisionHash: null, usage: { attempts: 2, inputTokens: 1, outputTokens: 1, estimatedCostUsd: 0.25 }, issues: ["unknown-asset", "provider-unavailable"] });
+    expect(sdk.updateRun.mock.calls[0]![1].extra.metadata).toMatchObject({ retry_reasons: ["unknown-asset"] });
   });
 });
 
