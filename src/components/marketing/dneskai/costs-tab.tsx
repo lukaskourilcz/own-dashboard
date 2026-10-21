@@ -93,7 +93,7 @@ export function DneskaiCostsTab({ read, review = 'loading', lang, preview, refre
         <h4 className="text-xs font-semibold text-foreground-muted">{t.costs.recentTicks}</h4>
         <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.ticks.recent.map((tick) => <li key={tick.id} className="min-w-0 space-y-1 px-3 py-2.5 text-xs">
           <p><time dateTime={tick.startedAt} className="tabular">{pragueDateTime(tick.startedAt, lang)}</time> · {t.costs.tickKind[tick.kind]}{!tick.finishedAt && <span className="text-warning"> · {t.costs.unfinished}</span>}</p>
-          <p className="text-foreground-muted">{tick.did.map((step) => `${t.costs.steps[step.category] ?? step.category}: ${t.costs.stepStatus[step.status] ?? step.status}`).join(' · ')}</p>
+          <p className="text-foreground-muted">{tick.did.map((step) => `${t.costs.steps[step.category] ?? t.costs.otherStep}: ${t.costs.stepStatus[step.status] ?? step.status}`).join(' · ')}</p>
           {tick.errors.map((error, index) => <DneskaiCodeText key={`${error.category}-${index}`} code={error.code} lang={lang} />)}
         </li>)}</ul>
       </>}
@@ -123,7 +123,8 @@ function BlockedPosts({ review, lang }: { review: DneskaiWorkspaceRead | 'loadin
 function TokenSection({ lang, preview, now }: { lang: Lang; preview: boolean; now: Date }) {
   const t = dneskaiWorkspace[lang];
   const account = dneskaiAccount[lang];
-  const query = useQuery({ queryKey: qk.marketingAccounts, retry: false, staleTime: 30_000, refetchOnWindowFocus: false,
+  // The preview's demo account stays under its own key, so the Sources tab's account panel never shows it.
+  const query = useQuery({ queryKey: preview ? [...qk.marketingAccounts, 'preview'] : qk.marketingAccounts, retry: false, staleTime: 30_000, refetchOnWindowFocus: false,
     queryFn: async ({ signal }) => (await dneskaiWorkspaceApi(preview)).loadAccounts(signal) });
   const record = query.data?.find((item) => item.brand === 'dneskai' && item.platform === 'instagram') ?? null;
   const state = record ? marketingTokenState(record.token, now) : null;
