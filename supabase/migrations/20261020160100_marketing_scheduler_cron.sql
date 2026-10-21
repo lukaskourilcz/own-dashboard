@@ -3,6 +3,11 @@
 -- Two jobs call marketing_private.scheduler_post(kind):
 --   marketing-tick-minute  every 5 minutes (UTC)  -> POST {"tick": <uuid>, "kind": "minute"}
 --   marketing-tick-daily   02:18 UTC every day    -> POST {"tick": <uuid>, "kind": "daily"}
+-- A third, marketing-cron-history-prune at 03:43 UTC, deletes cron.job_run_details rows older than
+-- 14 days. Supabase runs pg_cron with cron.log_run on and nothing else prunes that table, so the
+-- 289 runs a day would otherwise stay forever. It deletes only the history of these three jobs and of
+-- jobs that no longer exist (a tick job that was unscheduled and scheduled again gets a new jobid);
+-- any other job keeps its history.
 -- The daily minute sits between two minute ticks: the 02:15 one has finished (the route stops at 60 s)
 -- and its 90 s category leases have expired even if it died, and the 02:20 one has not started, so the
 -- media purge never finds the media lease held by a minute tick.
@@ -17,8 +22,9 @@
 --   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret');
 -- Rotate the secret (Vercel env first, then):
 --   select vault.update_secret((select id from vault.secrets where name = 'marketing_scheduler_secret'), '<new value>');
--- Stop both jobs:
+-- Stop both ticks (the prune job may keep running; it sends nothing):
 --   select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');
+-- Stop the prune job too: select cron.unschedule('marketing-cron-history-prune');
 -- Start them again by re-running the last block of this file. docs/marketing-scheduling.md has the rest.
 --
 -- Supabase installs pg_cron in pg_catalog (its tables in the cron schema), pg_net and pgcrypto in
@@ -71,5 +77,6 @@ begin
  if to_regnamespace('cron') is not null then
   perform cron.schedule('marketing-tick-minute','*/5 * * * *',$command$select marketing_private.scheduler_post('minute')$command$);
   perform cron.schedule('marketing-tick-daily','18 2 * * *',$command$select marketing_private.scheduler_post('daily')$command$);
+  perform cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where jobname not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
  end if;
 end $schedule$;

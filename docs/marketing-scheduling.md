@@ -19,7 +19,7 @@ pg_cron (Supabase)                      Vercel (OwnDashboard)
 
 - Migrations: `20261020160000_marketing_scheduler.sql` (tick record, category leases, their
   functions) and `20261020160100_marketing_scheduler_cron.sql` (extensions, the signed request,
-  the two jobs).
+  the two tick jobs and the run-history prune).
 - Route: `src/app/api/marketing/tick/route.ts`. Body `{"tick": "<uuid>", "kind": "minute" | "daily"}`.
 - The request carries the same signature as every other automation call: `Authorization: Bearer
   <secret>`, `X-Marketing-Timestamp` (Unix seconds, accepted within ±300 s) and
@@ -69,6 +69,12 @@ find the media lease held by a minute tick. It runs only these duties.
 | renewal | For the newest 50 approved or ready-for-review revisions of any brand, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. A revision refused with a code that cannot change (`revision-identity-mismatch`, for example one stored before #118, `revision-not-renewable`, `revision-unavailable`, `asset-input-invalid`) is set aside for seven days (`detail.setAside`); any other failure is tried again the next day, while its URLs still have a day left. |
 | purge | `purgeUnusedDneskaiMedia(db, owner, 30)` under the media lease, and only when no media candidate is claimed by a collection pass. A day it is refused (`busy`, `backoff`, `media-collection-in-progress`) waits for the next daily tick; retention is 30 days, so one day later costs nothing. |
 | retention | Deletes `marketing_ticks` rows older than 14 days. |
+
+pg_cron writes one `cron.job_run_details` row per run (`cron.log_run` is on in Supabase) and never
+deletes them. A third job, `marketing-cron-history-prune` (`43 3 * * *`, UTC), runs inside the
+database and calls no endpoint. It deletes rows older than 14 days (by `end_time`) of the three
+marketing jobs and of jobs that no longer exist, such as a tick job that was unscheduled and
+scheduled again under a new `jobid`. Any other job keeps its history.
 
 ## Time budget
 
@@ -129,7 +135,8 @@ slot, all without a single n8n execution.
 
 ## Expected volume and cost
 
-- pg_cron: 288 minute runs and 1 daily run a day, $0. pg_net: the same 289 HTTP requests.
+- pg_cron: 288 minute runs, 1 daily run and 1 prune run a day, $0; `cron.job_run_details` holds
+  about 14 × 290 rows. pg_net: 289 HTTP requests a day (the prune job sends none).
 - Vercel: 289 function invocations a day. A tick with nothing to do makes a handful of small reads.
   A category takes its lease only after a cheap read found work for it (briefs also reads its stored
   state under the lease).
@@ -144,7 +151,8 @@ slot, all without a single n8n execution.
 1. Set `MARKETING_SCHEDULER_SECRET` (at least 32 random characters, used nowhere else) in the
    Production environment of Vercel and deploy. `MARKETING_OWNER_ID` must already be set.
 2. Apply `20261020160000_marketing_scheduler.sql`, then `20261020160100_marketing_scheduler_cron.sql`.
-   The second creates pg_cron and pg_net and schedules both jobs. They send nothing yet.
+   The second creates pg_cron and pg_net and schedules the two tick jobs and the prune job. The
+   ticks send nothing yet.
 3. In the Supabase SQL editor:
 
    ```sql
@@ -170,7 +178,8 @@ Ticks between the two steps answer 401 and do nothing.
 | generation | `MARKETING_AI_CONSENT` not `true` |
 | live publishing | either `MARKETING_PUBLISH_ENABLED` or `MARKETING_DNESKAI_PUBLISH_ENABLED` not `true` (dry runs continue) |
 | one account | `marketing_accounts.enabled = false`; the publisher refuses it (`account-unverified-or-disabled`) |
-| every tick, at once | `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');` |
+| every tick, at once | `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');` (the prune job can keep running; it sends nothing) |
+| the run-history prune | `select cron.unschedule('marketing-cron-history-prune');` |
 | every tick, from Vercel | remove `MARKETING_SCHEDULER_SECRET`; each tick answers 401 and does nothing |
 
 To start the jobs again after `cron.unschedule`, run the last `do $schedule$ … $schedule$` block of
@@ -187,7 +196,8 @@ To start the jobs again after `cron.unschedule`, run the last `do $schedule$ …
 - `tests/lib/marketing-scheduler-database.test.ts`: both migrations in PGlite with pgcrypto and
   stand-ins for Vault, pg_net and pg_cron. It checks that the request is signed over the exact bytes
   pg_net sends and that `authenticateAutomation` accepts it as `scheduler`, that nothing is sent
-  without Vault values or to another path, the job definitions, leases, replay and RLS.
+  without Vault values or to another path, the job definitions, which run-history rows the prune
+  job deletes, leases, replay and RLS.
 - `tests/lib/marketing-scheduler-ports.test.ts`: the wiring to the owning modules.
 
 A real pg_cron run, a real pg_net request and the Vault read are verified only in Supabase.
