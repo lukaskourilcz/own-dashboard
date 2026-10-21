@@ -81,9 +81,10 @@ a souhlasu, v plánovaném, ručním i pilotním běhu. Jiná hodnota nebo chyb�
 proměnná fázi pozastaví před rezervací s nulovou cenou a kódem
 `collection-apify-disabled`; těsně před spuštěním aktoru se přepínač čte znovu.
 Běh Apify, který už byl spuštěný, se dočte, aby jeho rezervace dostala skutečnou
-cenu. Jev se řídí jen `MARKETING_DNESKAI_PAID_ENABLED` a souhlasem, takže běh bez
-Apify klasifikuje kandidáty z bezplatných feedů, skončí jako `partial` a vybere
-události. Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.
+cenu. Jev přepínač Apify nečte; řídí se `MARKETING_DNESKAI_PAID_ENABLED` (v ručním
+běhu platným `MARKETING_DNESKAI_MANUAL_RUN`) a souhlasem, takže běh bez Apify
+klasifikuje kandidáty z bezplatných feedů, skončí jako `partial` a vybere události.
+Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.
 
 Jev dostává jen omezené veřejné zdrojové texty a související veřejné kandidáty.
 Nedostává přihlašovací údaje, vlastníkovy poznámky, finance ani soukromé projekty.
