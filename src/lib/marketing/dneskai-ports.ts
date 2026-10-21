@@ -52,7 +52,8 @@ export type ListBriefAssetHashes = (revision: ContentRevision) => Promise<string
 /**
  * Turns the events selected by a finished collection run into briefs and queued generation jobs (#115). Called by
  * the scheduler (#120) after the run's media are collected. Idempotent per event and target date: a second call
- * creates nothing new. `pending` is true while some selected event still waits for its media.
+ * creates nothing new. `pending` is true while some selected event still waits for its media, for a verified
+ * account, for a retried brief write or for a retryable job admission, and its slot is still 30 minutes away.
  */
 export type CreateDneskaiBriefs = (input: {
   owner: string;

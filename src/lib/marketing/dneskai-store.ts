@@ -39,11 +39,13 @@ export function createDneskaiCollectionStore(db:DneskaiDatabase):DneskaiCollecti
   claimStage:(owner,runId,fence,sourceId,paid)=>rpc('marketing_dneskai_claim_stage',{p_owner:owner,p_run:runId,p_fence:fence,p_source:sourceId,p_paid:paid}) as Promise<DneskaiStage|null>,
   async saveStage(owner,runId,fence,sourceId,result){await rpc('marketing_dneskai_save_stage',{p_owner:owner,p_run:runId,p_fence:fence,p_source:sourceId,p_result:{...result,items:result.items.map(item=>({...item,...(()=>{const identity=dneskaiCheapIdentity(item);return{canonicalUrlHash:contentHash(identity.canonicalUrl),normalizedTextHash:contentHash(identity.normalizedText)};})()}))}});},
   candidates,
+  // DNESKAi revisions carry no project (marketing_save_revision copies the previous one's, null for a first draft),
+  // so posts are scoped by owner and brand, as the brief coverage and marketing_private.dneskai_covering_id are.
   async history(owner,project){
    const [selected,published,approved]=await Promise.all([
     db.from('marketing_dneskai_candidates').select('candidate').eq('user_id',owner).eq('project_id',project).eq('status','selected').order('updated_at',{ascending:false}).limit(7),
-    db.from('marketing_revisions').select('id,revision').eq('user_id',owner).eq('project_id',project).eq('brand','dneskai').eq('status','published').order('created_at',{ascending:false}).limit(6),
-    db.from('marketing_revisions').select('id,revision').eq('user_id',owner).eq('project_id',project).eq('brand','dneskai').in('status',['approved','publishing']).order('created_at',{ascending:false}).limit(7),
+    db.from('marketing_revisions').select('id,revision').eq('user_id',owner).eq('brand','dneskai').eq('status','published').order('created_at',{ascending:false}).limit(6),
+    db.from('marketing_revisions').select('id,revision').eq('user_id',owner).eq('brand','dneskai').in('status',['approved','publishing']).order('created_at',{ascending:false}).limit(7),
    ]);if(selected.error||published.error||approved.error)throw new Error('collection-store-unavailable');
    const history=[...(selected.data??[]).map(row=>({id:row.candidate.id,title:row.candidate.title,text:row.candidate.text.slice(0,500)})),...(published.data??[]).map(row=>({id:row.id,title:String(row.revision.title).slice(0,500),text:String(row.revision.caption).slice(0,500)})),...(approved.data??[]).map(row=>({id:row.id,title:String(row.revision.title).slice(0,500),text:String(row.revision.caption).slice(0,500)}))];return[...new Map(history.map(item=>[item.id,item])).values()].slice(0,20);
   },

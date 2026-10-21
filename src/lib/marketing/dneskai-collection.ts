@@ -2,7 +2,7 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { dueDneskaiSources,DNESKAI_SOURCES,dneskaiCheapIdentity } from './dneskai-registry';
-import { collectDneskaiFeed,startDneskaiInstagram,pollDneskaiInstagram,classifyDneskaiCandidates,jevRequest,DneskaiProviderError,type DneskaiApifyRegistration,type ProviderEnvironment } from './dneskai-providers';
+import { collectDneskaiFeed,startDneskaiInstagram,pollDneskaiInstagram,classifyDneskaiCandidates,jevRequest,DneskaiProviderError,type DneskaiApifyRegistration,type JevHistory,type ProviderEnvironment } from './dneskai-providers';
 import { pragueMarketingDate } from './weekly-planning';
 import { marketingPilotConfiguration } from './pilot';
 import { dneskaiCollectionPilotConfiguration } from './dneskai-pilot';
@@ -66,7 +66,7 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
    continue;
   }
   const priorBatch=all.filter(item=>item.status==='new'&&item.category!==null&&item.reason===null).map(item=>({id:item.id,title:item.title,text:item.text}));
-  const history=[...new Map([...(await store.history(owner,input.projectId)),...priorBatch].map(item=>[item.id,item])).values()].slice(0,148);
+  const history=dneskaiJevHistory(items,[...new Map([...(await store.history(owner,input.projectId)),...priorBatch].map(item=>[item.id,item])).values()]);
   try{jevRequest(items,history);}catch{await store.finish(owner,run.id,fence,'held','collection-jev-input-limit');return{runId:run.id,status:'held',continue:false};} // Validate the plan before a paid reservation.
   let claimed;try{claimed=await store.claimStage(owner,run.id,fence,classification.source_id,true);}catch{await store.finish(owner,run.id,fence,'held','collection-paid-admission-blocked');return{runId:run.id,status:'held',continue:false};}
   if(!claimed)continue;operations++;
@@ -80,6 +80,17 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  const covered=current.every(stage=>stage.status==='ok'||(stage.kind==='jev'&&stage.error_code==='collection-no-new-candidates'));
  const status=covered&&!pending.length?'complete':current.some(stage=>stage.status==='ok')?'partial':'held';
  const result=await store.finish(owner,run.id,fence,status,pending.length?'collection-classification-pending':status==='complete'?null:'collection-review-incomplete');return{runId:result.id,status:result.status,continue:false};
+}
+/**
+ * The comparison records one Jev call gets: the stored history (selected reports, approved and published posts),
+ * then the classified open reports, most recently updated first, cut to the longest prefix jevRequest accepts. Its
+ * byte limits trip well below 148 long Czech records, so the oldest open reports give way instead of the run being held.
+ */
+export function dneskaiJevHistory(items:readonly import('./dneskai-contracts').DneskaiCandidate[],history:readonly JevHistory[]){
+ const fits=(count:number)=>{try{jevRequest(items,history.slice(0,count));return true;}catch{return false;}};
+ let low=0,high=Math.min(148,history.length);if(fits(high))return history.slice(0,high);
+ while(high-low>1){const middle=(low+high)>>1;if(fits(middle))low=middle;else high=middle;}
+ return history.slice(0,low);
 }
 /** Jev classifies eight candidates per paid call; at most 16 calls per run (the former fixed stage count). */
 export const DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16;
