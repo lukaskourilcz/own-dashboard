@@ -284,6 +284,18 @@ function parseDeck(value: DneskaiDeck): DneskaiDeck {
   return parsed.data;
 }
 
+/**
+ * One white pixel through the slide encoder's chain, in memory: the worker runs it before a paid generation,
+ * so a runtime whose sharp or libvips does not load fails before any copy is paid for. Throws on any failure.
+ */
+export async function preflightDneskaiJpegEncoder(): Promise<void> {
+  const sharp = await sharpModule();
+  const jpeg = await sharp({ create: { width: 1, height: 1, channels: 3, background: "#ffffff" } }).toColourspace("srgb")
+    .jpeg({ quality: DNESKAI_SLIDE_JPEG.quality, chromaSubsampling: DNESKAI_SLIDE_JPEG.chromaSubsampling, progressive: false })
+    .withIccProfile("srgb").toBuffer();
+  if ((await sharp(jpeg).metadata()).format !== "jpeg") throw new DneskaiRenderError("render-jpeg-encoding-failed");
+}
+
 /** Baseline sRGB JPEG for Instagram, checked after encoding: format, exact size, 4:4:4, colour space and byte cap. */
 export async function encodeDneskaiSlideJpeg(png: Buffer): Promise<Buffer> {
   const sharp = await sharpModule();

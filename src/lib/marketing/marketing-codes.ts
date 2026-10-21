@@ -111,6 +111,7 @@ const CODES = {
   // Render infrastructure (DneskaiRenderError, MarketingRenderError).
   'render-input-invalid': ['investigate', 'The slides could not be read by the renderer.', 'Vykreslování nedokázalo slidy přečíst.'],
   'render-rasterizer-unavailable': ['config', 'The renderer or its fonts are not available.', 'Vykreslování nebo jeho písma nejsou dostupná.'],
+  'render-jpeg-encoder-unavailable': ['config', 'The server could not load its JPEG encoder.', 'Server nedokázal načíst kodér JPEG.'],
   'render-rasterization-failed': ['retry', 'Drawing the slide failed.', 'Kreslení slidu selhalo.'],
   'render-jpeg-encoding-failed': ['retry', 'The slide could not be saved as JPEG.', 'Slide se nepodařilo uložit jako JPEG.'],
   'render-validation-failed': ['regenerate', 'The generated slides did not pass the renderer’s check.', 'Vygenerované slidy neprošly kontrolou vykreslení.'],

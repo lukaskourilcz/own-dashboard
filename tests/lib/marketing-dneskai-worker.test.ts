@@ -128,6 +128,28 @@ describe("deck -> revision -> render in the worker", () => {
     await expect(runMarketingWorkerJob(job(), { model: provider, storage: { put: vi.fn() }, reloadSource: vi.fn(async () => job().generation.source), renderDneskaiDeck: (input) => renderDneskaiDeck(input) })).rejects.toThrow("dneskai-media-loader-required");
     expect(provider.invoke).not.toHaveBeenCalled();
   });
+  it("never reserves or pays for a deck job when the JPEG encoder does not load", async () => {
+    const request = job();
+    const provider = model();
+    const admitPaidCall = vi.fn(async () => {});
+    const reloadSource = vi.fn(async () => request.generation.source);
+    const { db, rpc } = database();
+    // The deployed failure: sharp's native library is missing from the function, so the module does not load.
+    vi.resetModules();
+    vi.doMock("sharp", () => { throw new Error("TEST-ONLY libvips-cpp.so: cannot open shared object file"); });
+    try {
+      const broken = await import("../../services/marketing-worker/protocol");
+      await expect(broken.runMarketingWorkerJob(request, { model: provider, storage: { put: vi.fn() }, reloadSource, loadDneskaiMedia, renderDneskaiDeck: (input) => renderDneskaiDeck(input), admitPaidCall }))
+        .rejects.toMatchObject({ code: "render-jpeg-encoder-unavailable", message: "render-jpeg-encoder-unavailable" });
+      const runtime = await import("@/lib/marketing/worker-runtime");
+      expect(await runtime.executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck }))
+        .toEqual({ claimed: true, status: "failed", errorCode: "render-jpeg-encoder-unavailable" });
+    } finally { vi.doUnmock("sharp"); vi.resetModules(); }
+    expect(provider.invoke).not.toHaveBeenCalled(); expect(admitPaidCall).not.toHaveBeenCalled(); expect(reloadSource).not.toHaveBeenCalled();
+    expect(renderDneskaiDeck).not.toHaveBeenCalled();
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain("marketing_reserve_dneskai_generation");
+    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_error: "render-jpeg-encoder-unavailable", p_result: null }));
+  });
 });
 
 describe("the DNESKAi daily generation ceiling at the paid call", () => {
