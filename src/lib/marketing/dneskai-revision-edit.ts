@@ -91,6 +91,8 @@ function storedProblems(problems: unknown): DneskaiRenderProblem[] {
     // Only an explicit `false` is advisory.
     blocking: problem?.blocking !== false,
     message: String(problem?.message ?? "").slice(0, 500),
+    // Kept so the review UI can point at the field (#119); anything that is not a plain field name is dropped.
+    ...(typeof problem?.field === "string" && /^[a-z][a-z0-9-]*(?:\[\d\])?$/.test(problem.field) && problem.field.length <= 80 ? { field: problem.field } : {}),
   }));
 }
 

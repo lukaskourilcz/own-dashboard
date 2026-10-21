@@ -221,6 +221,8 @@ export const DneskaiRenderProblemSchema = z.strictObject({
   code: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
   blocking: z.boolean(),
   message: z.string().max(500),
+  /** The slide field or image slot it is about (`headline`, `sources[1]`, `image-1`), when the renderer named one (#119). */
+  field: z.string().max(80).regex(/^[a-z][a-z0-9-]*(?:\[\d\])?$/).nullable().optional(),
 });
 export const DNESKAI_RENDER_REPORT_VERSION = "dneskai-render-report/1";
 export const DneskaiRenderReportSchema = z.strictObject({
