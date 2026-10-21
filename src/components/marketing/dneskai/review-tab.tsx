@@ -186,11 +186,11 @@ function PostCard({ post, read, renderFailed, lang, busy, onEdit, onApprove, onD
         <Button variant="ghost" disabled={busy} aria-expanded={mode === 'skip'} onClick={() => setMode(mode === 'skip' ? 'idle' : 'skip')}>{t.card.skip}</Button>
       </div>
       {block && <p id={`${id}-block`} className="text-xs text-foreground-muted">{block}</p>}
-      {mode === 'return' && <form className="space-y-2" onSubmit={(event) => { event.preventDefault(); void onDecide('returned', feedback).then((done) => { if (done) { setMode('idle'); setFeedback(''); } }); }}>
+      {mode === 'return' && <form className="space-y-2" onSubmit={(event) => { event.preventDefault(); if (!feedback.trim()) return; void onDecide('returned', feedback).then((done) => { if (done) { setMode('idle'); setFeedback(''); } }); }}>
         <label htmlFor={`${id}-feedback`} className="text-xs font-medium text-foreground-muted">{t.card.feedback}</label>
-        <Textarea id={`${id}-feedback`} value={feedback} maxLength={2000} rows={3} aria-describedby={`${id}-feedback-help`} onChange={(event) => setFeedback(event.target.value)} />
+        <Textarea id={`${id}-feedback`} value={feedback} maxLength={2000} rows={3} required aria-describedby={`${id}-feedback-help`} onChange={(event) => setFeedback(event.target.value)} />
         <p id={`${id}-feedback-help`} className="text-xs text-foreground-muted">{t.card.feedbackHelp}</p>
-        <div className="flex flex-wrap gap-2"><Button type="submit" variant="outline" disabled={busy}>{t.card.sendReturn}</Button><Button type="button" variant="ghost" onClick={() => setMode('idle')}>{t.card.cancel}</Button></div>
+        <div className="flex flex-wrap gap-2"><Button type="submit" variant="outline" disabled={busy || !feedback.trim()}>{t.card.sendReturn}</Button><Button type="button" variant="ghost" onClick={() => setMode('idle')}>{t.card.cancel}</Button></div>
       </form>}
       {mode === 'skip' && <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t.card.skip}>
         <p className="text-sm">{t.card.skipConfirm}</p>

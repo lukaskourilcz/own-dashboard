@@ -1,5 +1,6 @@
 'use client';
 
+import { ExternalLink } from 'lucide-react';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiCalendarDays, pragueDstDay, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,8 @@ export function DneskaiCalendarTab({ read, lang, preview, refreshing, onRefresh 
         {entry.kind === 'free' ? <span className="text-xs leading-5">{t.calendar.free}</span> : <div className="min-w-0 space-y-1">
           <p className="break-words text-sm leading-5">{entry.kind === 'post' ? entry.post.title : entry.job.title || t.calendar.job}</p>
           <DneskaiStateChip detail={entry.state} lang={lang} />
+          {entry.kind === 'post' && entry.state.state === 'published' && entry.post.publication?.remoteUrl && <a href={entry.post.publication.remoteUrl} target="_blank" rel="noopener noreferrer"
+            aria-label={`${t.published.open}: ${entry.post.title}`} className="inline-flex min-h-11 items-center gap-1 rounded text-xs text-information underline focus-ring md:min-h-6">{t.published.open}<ExternalLink className="size-3.5" aria-hidden /></a>}
           {entry.state.state === 'problem' && <DneskaiCodeText code={entry.state.code} lang={lang} />}
         </div>}
       </li>)}</ul>
