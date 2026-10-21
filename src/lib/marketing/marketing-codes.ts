@@ -253,6 +253,7 @@ const CODES = {
   'media-lease-lost': ['wait', 'Another run took over collecting these pictures.', 'Sběr těchto obrázků převzal jiný běh.'],
   'media-asset-hash-mismatch': ['investigate', 'A stored picture does not match its fingerprint.', 'Uložený obrázek neodpovídá svému otisku.'],
   'media-candidate-invalid': ['investigate', 'The topic record for these pictures is not valid.', 'Záznam tématu pro tyto obrázky není platný.'],
+  'media-decoder-unavailable': ['auto', 'The server could not load its picture decoder.', 'Server nedokázal načíst dekodér obrázků.'],
   'media-duplicate-bytes': ['none', 'The same picture was already stored.', 'Stejný obrázek už je uložený.'],
   'media-excluded-format': ['media', 'The picture format is not supported.', 'Formát obrázku není podporovaný.'],
   'media-excluded-small': ['media', 'The picture is too small to use.', 'Obrázek je příliš malý.'],

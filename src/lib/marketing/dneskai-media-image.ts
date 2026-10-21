@@ -22,7 +22,7 @@ export const DNESKAI_MEDIA_MAX_PIXELS = 64_000_000;
 export const DNESKAI_MEDIA_MIN_SIDE = 300;
 
 export class DneskaiMediaImageError extends Error {
-  constructor(readonly code: 'media-excluded-format' | 'media-excluded-small' | 'media-undecodable' | 'media-too-many-pixels') { super(code); }
+  constructor(readonly code: 'media-excluded-format' | 'media-excluded-small' | 'media-undecodable' | 'media-too-many-pixels' | 'media-decoder-unavailable') { super(code); }
 }
 
 /** Same signatures as the studio's `sniffImageFormat`. */
@@ -91,14 +91,17 @@ export function phashDistance(left: string, right: string): number {
   return count;
 }
 
-/** Reads one downloaded picture. Throws `DneskaiMediaImageError` for anything that must not be stored. */
+/**
+ * Reads one downloaded picture. Throws `DneskaiMediaImageError` for anything that must not be stored, and
+ * `media-decoder-unavailable` when sharp itself does not load: that is the runtime's fault, not the picture's.
+ */
 export async function inspectDneskaiImage(input: Uint8Array): Promise<DneskaiInspectedImage> {
   const bytes = Buffer.from(input.buffer, input.byteOffset, input.byteLength);
   const format = sniffDneskaiImage(bytes);
   if (!format) throw new DneskaiMediaImageError('media-excluded-format');
-  const { default: sharp } = await import('sharp');
   let width: number, height: number, grey: Buffer;
   try {
+    const { default: sharp } = await import('sharp').catch(() => { throw new DneskaiMediaImageError('media-decoder-unavailable'); });
     const meta = await sharp(bytes, { limitInputPixels: false }).metadata();
     if (!meta.width || !meta.height) throw new DneskaiMediaImageError('media-undecodable');
     if (meta.width * meta.height > DNESKAI_MEDIA_MAX_PIXELS) throw new DneskaiMediaImageError('media-too-many-pixels');

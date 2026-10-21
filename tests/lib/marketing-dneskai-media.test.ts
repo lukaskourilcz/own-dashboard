@@ -179,6 +179,26 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
     expect((await assetsOf(id))[0]).toMatchObject({ sha256: sha(C), credit: 'Foto: @meta.ai' });
   });
 
+  it('retries a picture whose decoder did not load instead of dropping it as unreadable', async () => {
+    const picture = await scene(3, 1100, 1400).jpeg({ quality: 85 }).toBuffer();
+    const url = `${IG}decoder.jpg`;
+    const web = new FixtureWeb().serve(url, { body: picture });
+    const id = await insertCandidate('instagram:meta.ai', 'OFFLINE-decoder', 'https://www.instagram.com/p/OFFLINE-decoder/', [url], { instagram: { ownerUsername: 'meta.ai', mediaType: 'image' } });
+    const store = new MemoryStore();
+    const deps = { fetchImpl: web.fetch, resolveImpl: publicDns, store };
+    // The deployed failure: sharp's native library is missing from the function, so the module does not load.
+    vi.resetModules();
+    vi.doMock('sharp', () => { throw new Error('TEST-ONLY libvips-cpp.so: cannot open shared object file'); });
+    try {
+      const broken = await import('@/lib/marketing/dneskai-media');
+      expect(await broken.collectDneskaiMedia(client(), owner, project, [id], deps)).toMatchObject({ complete: false, candidates: [{ status: 'pending', assets: 0, skipped: [{ position: 0, code: 'media-decoder-unavailable' }] }] });
+    } finally { vi.doUnmock('sharp'); vi.resetModules(); }
+    expect(store.puts).toEqual([]);
+    expect(await collectDneskaiMedia(client(), owner, project, [id], deps)).toMatchObject({ complete: true, candidates: [{ status: 'complete', assets: 1, skipped: [] }] });
+    expect(web.count(url)).toBe(2);
+    expect((await assetsOf(id))[0]).toMatchObject({ sha256: sha(picture), width: 1100, height: 1400 });
+  });
+
   it('retries an unreadable article page at most three times, then keeps the feed image', async () => {
     const page = 'https://openai.com/index/offline-test/';
     const web = new FixtureWeb().serve(page, { status: 503, type: 'text/plain', body: 'busy' }).serve('https://images.ctfassets.net/OFFLINE/feed.jpg', { body: heroLarge });
