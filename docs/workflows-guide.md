@@ -29,20 +29,7 @@ The paid generation pipeline's three admitted jobs produced no finished stored d
 another paid attempt needs a new owner-approved allowance. Preview headline/image
 selection does not authorize production magazine delivery.
 
-DNESKAi has a registry of 42 sources, with daily sources and rotating day groups.
-The prepared n8n schedule starts at 22:00 Europe/Prague and continues every five
-minutes until 23:55, targeting up to four distinct next-day research topics.
-Daily collection remains disabled. The completed bounded production collection
-stored 70 candidates and selected zero of four topics. Jev evaluates relevance
-and duplicates; wider editorial evaluation remains tracked in
-[#108](https://github.com/lukaskourilcz/own-dashboard/issues/108).
-The web keeps its single daily BoardlessAI article and existing delivery path.
-Socials can cover more research topics; collecting them does not create extra
-web articles. Selected events become social briefs and generation jobs in
-OwnDashboard without an article ([events and briefs](dneskai-briefs.md), #115);
-an approved article remains a valid source. Source/template
-approval does not approve exact final copy, graphics, account or publication
-time. The guide does not claim that source-port work in #104 has cut over.
+DNESKAi changed after this date; see the DNESKAi section below.
 
 The Sunday devShark plan covers seven days, with one Instagram feed post,
 two Threads posts and three Stories per day. Prepared offline assets still need
@@ -56,6 +43,47 @@ coverage. Reach, saves, shares and replies remain uncollected. Missing measureme
 never become zero values or performance gains. Tiny samples cannot establish a
 winning format. Recent Saved acquisition is deferred under
 [#101](https://github.com/lukaskourilcz/own-dashboard/issues/101).
+
+## DNESKAi on 21 October 2026
+
+Scheduling runs in Supabase ([marketing scheduling](marketing-scheduling.md), #120).
+pg_cron calls `POST /api/marketing/tick` every five minutes and once a day, and a
+tick runs at most one unit of work per step. After 22:00 Europe/Prague it collects
+the free news feeds, through the Quorum bridge by default or directly with
+`MARKETING_DNESKAI_FEED_PROVIDER=native`, and continues every five minutes until
+the run is finished.
+
+Events come only from Jev, the paid TypeSafe classification of relevance and
+duplicates. It runs only while `MARKETING_AI_CONSENT` and
+`MARKETING_DNESKAI_PAID_ENABLED` are `true` and `TYPESAFE_API_KEY` is set; the same
+switches also gate the paid Apify Instagram sources. Without Jev the feeds are still
+collected, but the run ends `partial` (with `collection-classification-pending`
+while new items wait): no event is selected and no brief, generation job or post
+is made. With it, up to four selected events get their source pictures and a brief
+([events and briefs](dneskai-briefs.md), #115), and once `@dneskai` is verified
+one generation job each. Claude Sonnet
+writes the copy and the carousel studio renders the slides. The owner reviews
+each exact post in the DNESKAi project's „Dnes ke schválení“ (“For review today”)
+tab. A post is published only after that exact approval and only while both
+publish switches are on.
+
+While `MARKETING_DNESKAI_COLLECTION_ENABLED` is not `true`, collection, media and
+briefs are a recorded skip that costs nothing; without `MARKETING_AI_CONSENT`
+generation is skipped the same way. Publishing is never skipped: while either
+publish switch is off, each due slot gets a dry run with no Meta write. Collection
+and live publishing stay off until the pilot
+([#123](https://github.com/lukaskourilcz/own-dashboard/issues/123)).
+
+The DNESKAi n8n workflows are retired
+([retired exports](../workflows/marketing/retired/README.md)). By the owner's
+decision of 20 October 2026 ([quorum#602](https://github.com/lukaskourilcz/quorum/issues/602))
+DNESKAi articles are paused: BoardlessAI
+writes no DNESKAi article, and the posts come from the news collection alone.
+The completed bounded production collection stored 70 candidates and selected
+zero of four topics. Wider editorial evaluation remains tracked in
+[#108](https://github.com/lukaskourilcz/own-dashboard/issues/108). Selecting an
+event approves nothing; the owner approves the exact rendered revision, including
+its copy, graphics, account and publication time.
 
 This is versioned explanatory content with an explicit verification date, not a
 live operational status monitor. Future implementation changes must update both

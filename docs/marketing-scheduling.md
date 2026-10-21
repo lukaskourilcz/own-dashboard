@@ -19,7 +19,7 @@ pg_cron (Supabase)                      Vercel (OwnDashboard)
 
 - Migrations: `20261020160000_marketing_scheduler.sql` (tick record, category leases, their
   functions) and `20261020160100_marketing_scheduler_cron.sql` (extensions, the signed request,
-  the two jobs).
+  the two tick jobs and the run-history prune).
 - Route: `src/app/api/marketing/tick/route.ts`. Body `{"tick": "<uuid>", "kind": "minute" | "daily"}`.
 - The request carries the same signature as every other automation call: `Authorization: Bearer
   <secret>`, `X-Marketing-Timestamp` (Unix seconds, accepted within ±300 s) and
@@ -39,7 +39,7 @@ one after another. Each unit is wrapped, so a failure is recorded and the next c
 |---|---|---|---|---|
 | 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s). Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; inside the tick `MARKETING_DNESKAI_PAID_ENABLED` holds Apify and Jev, and Apify also needs `MARKETING_DNESKAI_APIFY_ENABLED` |
 | 2 | media | `pendingDneskaiMediaCandidates` is not empty | one `collectDneskaiMedia` for up to eight candidates, budget at most 40 s. A `busy` candidate waits 125 s (its claim lasts 120 s), a failed pass waits 10 minutes. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
-| 3 | briefs | the newest finished run of the last two days | `getCreateDneskaiBriefs(db)` for that run. Once a call reports `pending: false` the run is left alone. A call stays `pending` while a brief waits for media, for a verified account, or for a job admission that failed with a code in `DNESKAI_BRIEF_RETRYABLE_CODES`. The step has no backoff, so it calls once per five-minute tick until that brief's slot, or the target day's last slot, is under 30 minutes away. Until #115 wires it, `briefs-unwired` is a recorded skip. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
+| 3 | briefs | the newest finished run of the last two days | `getCreateDneskaiBriefs(db)` (#115) for that run. Once a call reports `pending: false` the run is left alone. A call stays `pending` while a brief waits for media, for a verified account, or for a job admission that failed with a code in `DNESKAI_BRIEF_RETRYABLE_CODES`. The step has no backoff, so it calls once per five-minute tick until that brief's slot, or the target day's last slot, is under 30 minutes away. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 4 | generation | a queued `marketing_jobs` row of brand `dneskai` | `executeMarketingJob` for the oldest one. A job that throws before it is claimed is set aside for an hour so younger jobs still run. | `MARKETING_AI_CONSENT` (and the generation module's own limits) |
 | 5 | publishing | a queued DNESKAi publication inside its 15-minute window, or a claimed one waiting for its container | `publishDueMarketing(db, owner, 'dneskai', dryRun, signal)`. Live only when `MARKETING_PUBLISH_ENABLED` and `MARKETING_DNESKAI_PUBLISH_ENABLED` are both `true`; otherwise a dry run with no Meta write. | both publish switches; `marketing_accounts.enabled` is enforced by the publisher |
 | 6 | reconciliation | a DNESKAi publication in `reconciliation` not checked for 30 minutes; when there is none, a `claimed` one whose lease expired (the function died mid-publish), which only `marketing_claim_due` would otherwise move to `reconciliation` | `reconcileStoredMarketingPublication`: Graph GET requests only, and the receipt when the media is found | none (read-only) |
@@ -69,6 +69,13 @@ find the media lease held by a minute tick. It runs only these duties.
 | renewal | For the newest 50 approved or ready-for-review revisions of any brand, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. A revision refused with a code that cannot change (`revision-identity-mismatch`, for example one stored before #118, `revision-not-renewable`, `revision-unavailable`, `asset-input-invalid`) is set aside for seven days (`detail.setAside`); any other failure is tried again the next day, while its URLs still have a day left. |
 | purge | `purgeUnusedDneskaiMedia(db, owner, 30)` under the media lease, and only when no media candidate is claimed by a collection pass. A day it is refused (`busy`, `backoff`, `media-collection-in-progress`) waits for the next daily tick; retention is 30 days, so one day later costs nothing. |
 | retention | Deletes `marketing_ticks` rows older than 14 days. |
+
+pg_cron writes one `cron.job_run_details` row per run (`cron.log_run` is on in Supabase) and never
+deletes them. A third job, `marketing-cron-history-prune` (`43 3 * * *`, UTC), runs inside the
+database and calls no endpoint. It deletes rows older than 14 days (by `end_time`) of the three
+marketing jobs and of jobs that no longer exist, such as a tick job that was unscheduled and
+scheduled again under a new `jobid`. Any other job keeps its history, including an unnamed one
+(`cron.schedule(schedule, command)` stores `jobname` as null).
 
 ## Time budget
 
@@ -129,7 +136,8 @@ slot, all without a single n8n execution.
 
 ## Expected volume and cost
 
-- pg_cron: 288 minute runs and 1 daily run a day, $0. pg_net: the same 289 HTTP requests.
+- pg_cron: 288 minute runs, 1 daily run and 1 prune run a day, $0; `cron.job_run_details` holds
+  about 14 × 290 rows. pg_net: 289 HTTP requests a day (the prune job sends none).
 - Vercel: 289 function invocations a day. A tick with nothing to do makes a handful of small reads.
   A category takes its lease only after a cheap read found work for it (briefs also reads its stored
   state under the lease).
@@ -144,29 +152,46 @@ slot, all without a single n8n execution.
 1. Set `MARKETING_SCHEDULER_SECRET` (at least 32 random characters, used nowhere else) in the
    Production environment of Vercel and deploy. `MARKETING_OWNER_ID` must already be set.
 2. Apply `20261020160000_marketing_scheduler.sql`, then `20261020160100_marketing_scheduler_cron.sql`.
-   The second creates pg_cron and pg_net and schedules both jobs. They send nothing yet.
-3. In the Supabase SQL editor:
+   The second creates pg_cron and pg_net and schedules the two tick jobs and the prune job. The
+   ticks send nothing yet.
+3. On the Vault page of the Supabase Dashboard (Integrations → Vault), add two secrets:
+   `marketing_scheduler_url` with `https://own-dashboard-tau.vercel.app/api/marketing/tick` and
+   `marketing_scheduler_secret` with the value of `MARKETING_SCHEDULER_SECRET`.
+
+   The SQL editor works too, but only with statements that cannot fail. Postgres logs a failing
+   statement with its full text (`log_min_error_statement = error`), and a plain
+   `vault.create_secret` for a name that already exists fails, which would put the secret into the
+   database log. A second run of these two creates nothing:
 
    ```sql
-   select vault.create_secret('https://own-dashboard-tau.vercel.app/api/marketing/tick', 'marketing_scheduler_url');
-   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret');
+   select vault.create_secret('https://own-dashboard-tau.vercel.app/api/marketing/tick', 'marketing_scheduler_url')
+    where not exists (select 1 from vault.secrets where name = 'marketing_scheduler_url');
+   select vault.create_secret('<the value of MARKETING_SCHEDULER_SECRET>', 'marketing_scheduler_secret')
+    where not exists (select 1 from vault.secrets where name = 'marketing_scheduler_secret');
    ```
+
+   Delete the SQL editor snippet afterwards; it keeps the value in plain text.
 
    The function sends only to an `https` URL whose path is exactly `/api/marketing/tick`, and only
    with a secret of at least 32 characters without spaces.
 4. Within five minutes `marketing_ticks` gets its first row. With every switch off it reads
    `collection-disabled`, `generation-consent-required` and no-ops.
 
-Rotate the secret by changing it in Vercel, deploying, then
-`select vault.update_secret((select id from vault.secrets where name = 'marketing_scheduler_secret'), '<new value>');`.
-Ticks between the two steps answer 401 and do nothing.
+Rotate the secret by changing it in Vercel, deploying, then editing `marketing_scheduler_secret` on the
+Vault page. In SQL, update it by the id of the existing row; when there is none, nothing is called:
+
+```sql
+select vault.update_secret(id, '<new value>') from vault.secrets where name = 'marketing_scheduler_secret';
+```
+
+Delete that snippet too. Ticks between the two steps answer 401 and do nothing.
 
 ## Pausing
 
 | To stop | Do |
 |---|---|
 | sources, media and briefs | `MARKETING_DNESKAI_COLLECTION_ENABLED` not `true` |
-| paid sources only | `MARKETING_DNESKAI_PAID_ENABLED` not `true` (free feeds still run) |
+| paid sources only | `MARKETING_DNESKAI_PAID_ENABLED` not `true` (free feeds still run, but without Jev no event is selected, so no brief or generation follows) |
 | Instagram (Apify) only | `MARKETING_DNESKAI_APIFY_ENABLED` not `true`: each queued Instagram stage is held with nothing reserved (`collection-apify-disabled`); free feeds and Jev still run, and the run still selects events |
 | generation | `MARKETING_AI_CONSENT` not `true` |
 | live publishing | either `MARKETING_PUBLISH_ENABLED` or `MARKETING_DNESKAI_PUBLISH_ENABLED` not `true` (dry runs continue) |
@@ -174,6 +199,8 @@ Ticks between the two steps answer 401 and do nothing.
 | every tick, at once | `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');` |
 | every tick, from Vercel | remove `MARKETING_SCHEDULER_SECRET`; each tick answers 401 and does nothing |
 
+Unscheduling the two ticks leaves `marketing-cron-history-prune` running; it sends nothing. To stop it
+too: `select cron.unschedule('marketing-cron-history-prune');`.
 To start the jobs again after `cron.unschedule`, run the last `do $schedule$ … $schedule$` block of
 `20261020160100_marketing_scheduler_cron.sql` again; `cron.schedule` replaces a job of the same name.
 
@@ -188,7 +215,8 @@ To start the jobs again after `cron.unschedule`, run the last `do $schedule$ …
 - `tests/lib/marketing-scheduler-database.test.ts`: both migrations in PGlite with pgcrypto and
   stand-ins for Vault, pg_net and pg_cron. It checks that the request is signed over the exact bytes
   pg_net sends and that `authenticateAutomation` accepts it as `scheduler`, that nothing is sent
-  without Vault values or to another path, the job definitions, leases, replay and RLS.
+  without Vault values or to another path, the job definitions, which run-history rows the prune
+  job deletes, leases, replay and RLS.
 - `tests/lib/marketing-scheduler-ports.test.ts`: the wiring to the owning modules.
 
 A real pg_cron run, a real pg_net request and the Vault read are verified only in Supabase.

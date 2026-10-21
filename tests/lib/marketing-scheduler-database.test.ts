@@ -42,6 +42,9 @@ beforeAll(async () => {
     -- Vault: the function reads only name and decrypted_secret.
     create schema vault; create table vault.secrets(id uuid primary key default gen_random_uuid(),name text unique,secret text not null,created_at timestamptz default now());
     create view vault.decrypted_secrets as select id,name,secret as decrypted_secret,created_at from vault.secrets;
+    -- Vault 0.3 signatures; create_secret fails on a name that exists, as the unique index makes it.
+    create function vault.create_secret(new_secret text,new_name text default null,new_description text default '',new_key_id uuid default null) returns uuid language sql as $$ insert into vault.secrets(name,secret) values(new_name,new_secret) returning id $$;
+    create function vault.update_secret(secret_id uuid,new_secret text default null,new_name text default null,new_description text default null,new_key_id uuid default null) returns void language sql as $$ update vault.secrets set secret=coalesce(new_secret,secret) where id=secret_id $$;
     -- pg_net: same signature as net.http_post 0.20; records the bytes pg_net would send (body::text).
     create schema net; create table net.captured(id bigserial primary key,url text,body text,headers jsonb,timeout_milliseconds integer);
     create function net.http_post(url text,body jsonb default '{}'::jsonb,params jsonb default '{}'::jsonb,headers jsonb default '{"Content-Type": "application/json"}'::jsonb,timeout_milliseconds integer default 5000)
@@ -50,7 +53,9 @@ beforeAll(async () => {
     create schema cron; create table cron.job(jobid bigserial primary key,jobname text unique,schedule text,command text);
     create function cron.schedule(job_name text,schedule text,command text) returns bigint language sql as $$
       insert into cron.job(jobname,schedule,command) values(job_name,schedule,command) on conflict(jobname) do update set schedule=excluded.schedule,command=excluded.command returning jobid $$;
-    create function cron.unschedule(job_name text) returns boolean language sql as $$ with removed as (delete from cron.job where jobname=job_name returning 1) select exists(select 1 from removed) $$;`);
+    create function cron.unschedule(job_name text) returns boolean language sql as $$ with removed as (delete from cron.job where jobname=job_name returning 1) select exists(select 1 from removed) $$;
+    -- pg_cron's run log (cron.log_run): the columns the prune job reads.
+    create table cron.job_run_details(runid bigserial primary key,jobid bigint not null,status text,start_time timestamptz,end_time timestamptz);`);
   await setTime(instant);
   await db.query('insert into auth.users values($1),($2)', [owner, other]);
   for (const file of migrations) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
@@ -58,9 +63,10 @@ beforeAll(async () => {
 afterAll(async () => await db.close());
 
 describe('pg_cron schedule (20261020160100)', () => {
-  it('schedules exactly the two tick jobs, and re-running the file replaces rather than duplicates them', async () => {
+  it('schedules exactly the two tick jobs and the history prune, and re-running the file replaces rather than duplicates them', async () => {
     const jobs = async () => (await db.query<{ jobname: string; schedule: string; command: string }>('select jobname,schedule,command from cron.job order by jobname')).rows;
     const expected = [
+      { jobname: 'marketing-cron-history-prune', schedule: '43 3 * * *', command: expect.stringMatching(/^delete from cron\.job_run_details where /) },
       { jobname: 'marketing-tick-daily', schedule: '18 2 * * *', command: "select marketing_private.scheduler_post('daily')" },
       { jobname: 'marketing-tick-minute', schedule: '*/5 * * * *', command: "select marketing_private.scheduler_post('minute')" },
     ];
@@ -68,9 +74,28 @@ describe('pg_cron schedule (20261020160100)', () => {
     await db.exec(readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8'));
     expect(await jobs()).toEqual(expected);
     expect(await db.query("select cron.unschedule('marketing-tick-minute')")).toBeTruthy();
-    expect((await jobs()).map((job) => job.jobname)).toEqual(['marketing-tick-daily']);
+    expect((await jobs()).map((job) => job.jobname)).toEqual(['marketing-cron-history-prune', 'marketing-tick-daily']);
     await db.exec(readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8'));
     expect(await jobs()).toEqual(expected);
+  });
+
+  it('prunes run history older than fourteen days for its own jobs and removed jobs, and leaves other jobs, unnamed ones included, alone', async () => {
+    const jobid = async (name: string) => (await db.query<{ jobid: number }>('select jobid from cron.job where jobname=$1', [name])).rows[0].jobid;
+    const foreign = (await db.query<{ jobid: number }>("select cron.schedule('purge-cron-runs','0 3 * * *','select public.purge_old_cron_runs()') jobid")).rows[0].jobid;
+    // cron.schedule(schedule, command) stores jobname null; such a job keeps its history too.
+    const unnamed = (await db.query<{ jobid: number }>("insert into cron.job(jobname,schedule,command) values(null,'0 4 * * *','select 1') returning jobid")).rows[0].jobid;
+    const [minute, daily, prune] = [await jobid('marketing-tick-minute'), await jobid('marketing-tick-daily'), await jobid('marketing-cron-history-prune')];
+    const removed = Number(minute) + 1000;
+    const rows: Array<[string, number, string | null]> = [
+      ['minute-old', minute, '15 days'], ['minute-recent', minute, '13 days'], ['minute-running', minute, null],
+      ['daily-old', daily, '15 days'], ['prune-old', prune, '20 days'], ['removed-old', removed, '15 days'],
+      ['removed-recent', removed, '1 day'], ['foreign-old', foreign, '15 days'], ['unnamed-old', unnamed, '15 days'],
+    ];
+    for (const [status, id, age] of rows) await db.query('insert into cron.job_run_details(jobid,status,start_time,end_time) values($1,$2,now()-interval \'20 days\',now()-$3::interval)', [id, status, age]);
+    const command = (await db.query<{ command: string }>("select command from cron.job where jobname='marketing-cron-history-prune'")).rows[0].command;
+    await db.exec(command);
+    expect((await db.query<{ status: string }>('select status from cron.job_run_details order by runid')).rows.map((row) => row.status)).toEqual(['minute-recent', 'minute-running', 'removed-recent', 'foreign-old', 'unnamed-old']);
+    await db.exec("delete from cron.job_run_details; select cron.unschedule('purge-cron-runs'); delete from cron.job where jobname is null;");
   });
 
   it('contains no secret or URL value and sends nothing until Vault holds a usable URL and secret', async () => {
@@ -124,6 +149,29 @@ describe('pg_cron schedule (20261020160100)', () => {
       const digest = (await db.query<{ r: string }>('select marketing_private.scheduler_signature($1,$2,$3) r', [secret, '1792526700', body])).rows[0].r;
       expect(digest).toBe(createHmac('sha256', secret).update(`1792526700.${body}`).digest('hex'));
     }
+  });
+
+  it('documents Vault SQL that a second run cannot fail and that rotates by the stored id', async () => {
+    const tickUrl = 'https://own-dashboard-tau.vercel.app/api/marketing/tick', rotated = `${secret}-rotated`;
+    const header = readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8').split('\n').filter((line) => line.startsWith('--')).map((line) => line.slice(2)).join('\n');
+    const stored = async () => (await db.query<{ name: string; secret: string }>('select name,secret from vault.secrets order by name')).rows;
+    for (const source of [header, readFileSync('docs/marketing-scheduling.md', 'utf8')]) {
+      await db.exec('delete from vault.secrets');
+      const statements = [...source.matchAll(/select vault\.(create|update)_secret\([\s\S]*?;/g)].map(([sql, verb]) => ({ verb, sql: sql.replace('<the value of MARKETING_SCHEDULER_SECRET>', secret).replace('<new value>', rotated) }));
+      expect(statements.map((statement) => statement.verb)).toEqual(['create', 'create', 'update']);
+      const create = statements.filter((statement) => statement.verb === 'create').map((statement) => statement.sql).join('\n');
+      const rotate = statements[2]!.sql;
+      await db.exec(rotate);
+      expect(await stored()).toEqual([]);
+      await db.exec(create);
+      await db.exec(create);
+      expect(await stored()).toEqual([{ name: 'marketing_scheduler_secret', secret }, { name: 'marketing_scheduler_url', secret: tickUrl }]);
+      // The names are the ones scheduler_post reads.
+      expect(await post('minute')).toEqual(expect.any(Number));
+      await db.exec(rotate);
+      expect(await stored()).toEqual([{ name: 'marketing_scheduler_secret', secret: rotated }, { name: 'marketing_scheduler_url', secret: tickUrl }]);
+    }
+    await db.exec('delete from vault.secrets; delete from net.captured;');
   });
 
   it('keeps the request builder away from every API role', async () => {
