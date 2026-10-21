@@ -683,3 +683,46 @@ set hidden_project_tabs = array(
 )
 where hidden_project_tabs && array['dneskai-review','dneskai-calendar','dneskai-published','dneskai-costs']::text[];
 ```
+
+## Production apply of the DNESKAi social release (2026-10-21)
+
+Migrations `20261020100000` through `20261021100000` were applied to production project `gcctapykhrdyxikieemn` on
+21 October 2026 through the Supabase MCP `apply_migration` tool, one call per file in filename order. The tool
+records the apply time as the version, so production's history names them with 2026-10-21 timestamps. That tool
+holds any statement that drops an object or deletes rows for a confirmation, and this session could not answer it,
+so three files went in differently:
+
+- `20261020150000_dneskai_events_briefs.sql` is recorded as three entries: `dneskai_events_briefs` (table and
+  identity helpers), `dneskai_events_briefs_finish` and `dneskai_events_briefs_functions`. Instead of
+  `drop function public.marketing_dneskai_finish(uuid,uuid,uuid,text,text)`, the five-argument function was renamed to
+  `marketing_dneskai_finish_retired_20261021` and every grant on it was revoked. The six-argument function is the
+  only `marketing_dneskai_finish`, so callers with five arguments resolve to it as before. Rollback: drop the
+  six-argument function and rename the retired one back.
+- `20261020160000_marketing_scheduler.sql` is recorded as `marketing_scheduler` (tables),
+  `marketing_scheduler_functions` and nothing else: `marketing_scheduler_prune_ticks` is not in production yet.
+- `20261020160100_marketing_scheduler_cron.sql` went in without the `marketing-cron-history-prune` job.
+
+A fingerprint of every function body, constraint, index, policy, trigger, grant, bucket and cron job these
+migrations define matched the PGlite build of the repository exactly, apart from those two missing objects.
+`restrict_pg_net_browser_roles` changed nothing: Supabase grants `net.http_post` to `PUBLIC` as `supabase_admin`,
+which the `postgres` role cannot revoke. The `net` schema is not exposed through the API.
+
+Until the owner runs the statements below in the SQL editor, `marketing_ticks` and `cron.job_run_details` keep every
+row, and the daily tick records an error for its last step, `retention`, which prunes the ticks. Nothing else
+depends on them. Both statements are safe to run again.
+
+```sql
+create or replace function public.marketing_scheduler_prune_ticks(p_owner uuid,p_days integer) returns integer
+language plpgsql set search_path='' as $$
+declare removed integer;
+begin
+ if p_owner is null or p_days is null or p_days not between 1 and 365 then raise exception 'tick retention invalid'; end if;
+ delete from public.marketing_ticks where user_id=p_owner and started_at<clock_timestamp()-make_interval(days=>p_days);
+ get diagnostics removed=row_count;
+ return removed;
+end $$;
+revoke all on function public.marketing_scheduler_prune_ticks(uuid,integer) from public,anon,authenticated;
+grant execute on function public.marketing_scheduler_prune_ticks(uuid,integer) to service_role;
+
+select cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where coalesce(jobname,'') not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
+```
