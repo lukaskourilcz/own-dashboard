@@ -88,8 +88,10 @@ other 12 production variables serve ordinary collection and stay.
 
 Deleting a credential cannot be undone, so deletion stays with the owner. The retired workflow exports and
 their n8n states are listed in [`workflows/marketing/retired/README.md`](../workflows/marketing/retired/README.md).
-Two of them, the isolated DNESKAi pilot worker (`1hB4ROPAlWm3YSXn`) and DNESKAi production verification
-(`MK0xn98gIXofmZSn`), have no MCP access and still need to be archived by hand.
+Three of them, the isolated DNESKAi pilot worker (`1hB4ROPAlWm3YSXn`), DNESKAi production verification
+(`MK0xn98gIXofmZSn`) and DNESKAi rotating sources at 22:00 (`JyX8hAYI8sKMDPIc`), have no MCP access and
+still need to be archived by hand. The fourth n8n timer, the approved UTC publication planner
+(`8SOaq5tjMgnMQqEF`), was archived on 2026-10-21.
 
 ## Branch `codex/marketing-automation` (planned)
 
@@ -99,7 +101,10 @@ the history. This is planned, not done, at the time of writing.
 
 ## Owner actions
 
-1. Archive the two n8n workflows that MCP could not reach: `1hB4ROPAlWm3YSXn` and `MK0xn98gIXofmZSn`.
+1. Archive the three n8n workflows that MCP cannot reach: `1hB4ROPAlWm3YSXn`, `MK0xn98gIXofmZSn` and
+   `JyX8hAYI8sKMDPIc`. The release session archived the publication planner `8SOaq5tjMgnMQqEF` on
+   2026-10-21. The pg_cron tick from [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120),
+   live since 2026-10-21 13:40 UTC, replaces all four.
 2. Rename the three credentials above with a `RETIRED` prefix.
 3. After the pilot (#123): delete the 59 preview variables, the two production variables
    `MARKETING_DNESKAI_MANUAL_RUN` and `MARKETING_DNESKAI_MANUAL_SECRET`, the three credentials and, when no
@@ -107,5 +112,3 @@ the history. This is planned, not done, at the time of writing.
 4. Decide on the Supabase branch `marketing-staging-20261013` after reviewing its pilot ledger. Deleting it
    removes the record of the three $0.25 reservations ($0.75 in total) and the unresolved $0.04 collection
    stage.
-5. `DNESKAi rotating sources at 22:00` and `approved UTC publication planner` stay inactive until the
-   pg_cron ticker from [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120) is live; #120 archives them.
