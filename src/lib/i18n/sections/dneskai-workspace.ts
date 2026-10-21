@@ -19,7 +19,7 @@ const en = {
     noAccount: 'The @dneskai account is not verified. Approval waits until it is verified in Sources.',
   },
   card: {
-    slides: 'Slides', slide: (index: number, count: number) => `Slide ${index} of ${count}`, openSlide: (index: number) => `Open slide ${index} in the editor`,
+    slides: 'Slides', slideCount: (count: number) => count === 1 ? '1 slide' : `${count} slides`, slide: (index: number, count: number) => `Slide ${index} of ${count}`, openSlide: (index: number) => `Open slide ${index} in the editor`,
     notRendered: 'The slides are not rendered yet.', imageFailed: 'Preview did not load', caption: 'Caption', characters: (count: number) => `${count} characters`,
     sources: 'Sources', account: 'Account', scheduled: 'Planned', returnedNote: 'Returned with a note:',
     approve: 'Approve and schedule', version: (hash: string) => `version ${hash}`, edit: 'Edit', return: 'Return for changes', skip: 'Skip',
@@ -79,7 +79,7 @@ const en = {
     jobStatus: { queued: 'Waiting', running: 'Drafting', review: 'Ready', failed: 'Failed', reconciliation: 'Uncertain' } as Record<string, string>,
   },
   details: 'Details', detailRevision: 'Revision', detailHash: 'Content hash', detailTrace: 'Trace', detailTemplate: 'Template version', detailAssets: 'Rendered slides (sha256)',
-  detailSources: 'Source pictures (sha256)', detailPublication: 'Publication', detailJob: 'Job', detailCode: 'Recorded code', none: 'none',
+  detailSources: 'Source pictures (sha256)', detailPublication: 'Publication', detailJob: 'Job', detailRun: 'Collection run', detailCode: 'Recorded code', none: 'none',
 };
 
 const cs: typeof en = {
@@ -98,7 +98,7 @@ const cs: typeof en = {
     noAccount: 'Účet @dneskai není ověřený. Schválení počká, až ho ověříte v záložce Zdroje.',
   },
   card: {
-    slides: 'Slidy', slide: (index: number, count: number) => `Slide ${index} z ${count}`, openSlide: (index: number) => `Otevřít slide ${index} v editoru`,
+    slides: 'Slidy', slideCount: (count: number) => count === 1 ? '1 slide' : count < 5 ? `${count} slidy` : `${count} slidů`, slide: (index: number, count: number) => `Slide ${index} z ${count}`, openSlide: (index: number) => `Otevřít slide ${index} v editoru`,
     notRendered: 'Slidy ještě nejsou vykreslené.', imageFailed: 'Náhled se nenačetl', caption: 'Popisek', characters: (count: number) => `${count} znaků`,
     sources: 'Zdroje', account: 'Účet', scheduled: 'Plán', returnedNote: 'Vráceno s poznámkou:',
     approve: 'Schválit a zařadit', version: (hash: string) => `verze ${hash}`, edit: 'Upravit', return: 'Vrátit k úpravě', skip: 'Přeskočit',
@@ -158,7 +158,7 @@ const cs: typeof en = {
     jobStatus: { queued: 'Čeká', running: 'Píše se', review: 'Hotovo', failed: 'Selhalo', reconciliation: 'Nejisté' },
   },
   details: 'Podrobnosti', detailRevision: 'Revize', detailHash: 'Otisk obsahu', detailTrace: 'Trasa', detailTemplate: 'Verze šablony', detailAssets: 'Vykreslené slidy (sha256)',
-  detailSources: 'Zdrojové obrázky (sha256)', detailPublication: 'Publikace', detailJob: 'Úloha', detailCode: 'Zaznamenaný kód', none: 'žádné',
+  detailSources: 'Zdrojové obrázky (sha256)', detailPublication: 'Publikace', detailJob: 'Úloha', detailRun: 'Běh sběru', detailCode: 'Zaznamenaný kód', none: 'žádné',
 };
 
 export const dneskaiWorkspace = { en, cs };

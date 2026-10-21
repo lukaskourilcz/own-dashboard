@@ -32,7 +32,8 @@ export function demoFieldLimits(slide: Pick<DneskaiSlide, 'type' | 'variant' | '
 }
 
 const id = (n: number) => `d0e5ca10-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const hash = (n: number) => n.toString(16).padStart(4, '0').repeat(16);
+/** A deterministic, varied 64-hex stand-in for a content hash (the demo never hashes real content). */
+const hash = (n: number) => Array.from({ length: 8 }, (_, part) => (((Math.imul(n * 2654435761 + part * 40503, 2246822519) >>> 0) ^ (n * 97 + part)) >>> 0).toString(16).padStart(8, '0').slice(-8)).join('');
 const slidesOf = (name: DeckName): DneskaiSlide[] => assets.decks[name].map((entry) => structuredClone(entry.slide) as DneskaiSlide);
 const rendersOf = (name: DeckName) => assets.decks[name].map((entry, index) => ({ url: entry.render.file, sha256: entry.render.sha256, width: entry.render.width, height: entry.render.height, alt: (entry.slide as DneskaiSlide).alt ?? `Slide ${index + 1}` }));
 const deckOf = (name: DeckName, slides = slidesOf(name)): DneskaiDeck => ({ schemaVersion: DNESKAI_SLIDES_VERSION, format: slides.length === 1 && slides[0]!.type === 'single' ? 'single-image' : 'carousel', slides });

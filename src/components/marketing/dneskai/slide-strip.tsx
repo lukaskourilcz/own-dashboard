@@ -11,9 +11,11 @@ import { cn } from '@/lib/utils';
  * with intrinsic dimensions, and a visible state when a preview does not load. `onLoadedChange` reports whether
  * every slide has loaded, so approval can wait until the owner has seen them all.
  */
-export function DneskaiSlideStrip({ post, lang, onOpenSlide, onLoadedChange, selected, className, label }: {
+export function DneskaiSlideStrip({ post, lang, onOpenSlide, onLoadedChange, selected, className, label, compact = false }: {
   post: Pick<DneskaiWorkspacePost, 'id' | 'assets' | 'deck' | 'title'>; lang: 'en' | 'cs'; onOpenSlide?: (index: number) => void;
   onLoadedChange?: (loaded: boolean) => void; selected?: number; className?: string; label?: string;
+  /** One scrolling row of small slides (the editor); they load at once, so approval never waits for a scroll. */
+  compact?: boolean;
 }) {
   const t = dneskaiWorkspace[lang];
   const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
@@ -23,13 +25,14 @@ export function DneskaiSlideStrip({ post, lang, onOpenSlide, onLoadedChange, sel
   useEffect(() => { onLoadedChange?.(allLoaded); }, [allLoaded, onLoadedChange]);
   if (!post.assets.length) return <p className={cn('rounded-md border border-dashed border-border-strong p-3 text-xs text-foreground-muted', className)}>{t.card.notRendered}</p>;
   const count = post.assets.length;
-  return <ol aria-label={label ?? `${t.card.slides}: ${post.title}`} className={cn('grid grid-cols-[repeat(auto-fill,minmax(5.75rem,8.5rem))] gap-2', className)}>
+  return <ol aria-label={label ?? `${t.card.slides}: ${post.title}`} tabIndex={compact ? 0 : undefined}
+    className={cn(compact ? 'flex gap-2 overflow-x-auto pb-1 focus-ring [&>li]:w-20 [&>li]:shrink-0 sm:[&>li]:w-24' : 'grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,8rem))]', className)}>
     {post.assets.map((asset, index) => {
       const key = keys[index]!;
       const type = post.deck?.slides[index]?.type;
       const caption = `${index + 1}/${count}${type ? ` · ${t.slideTypes[type]}` : ''}`;
       const picture = <span className="relative block overflow-hidden rounded-md border border-border bg-surface-inset">
-        <Image unoptimized src={asset.url} alt={onOpenSlide ? '' : asset.alt} width={asset.width} height={asset.height} loading="lazy" sizes="9rem"
+        <Image unoptimized src={asset.url} alt={onOpenSlide ? '' : asset.alt} width={asset.width} height={asset.height} loading={compact ? 'eager' : 'lazy'} sizes="9rem"
           className={cn('block h-auto w-full', failed.has(key) && 'invisible')}
           onLoad={() => setLoaded((previous) => new Set(previous).add(key))}
           onError={() => { setFailed((previous) => new Set(previous).add(key)); setLoaded((previous) => { const next = new Set(previous); next.delete(key); return next; }); }} />

@@ -6,6 +6,8 @@
  * `tests/lib/marketing-codes.test.ts` fails when a code that the marketing modules emit has no text here, or when
  * a listed code lacks its English or Czech text. A code nobody listed still reads as the generic text below.
  */
+import { dneskaiSources } from '@/lib/i18n/sections/dneskai-sources';
+
 export type MarketingCodeLang = 'en' | 'cs';
 type Text = { en: string; cs: string };
 
@@ -441,8 +443,17 @@ const GENERIC: Entry = ['investigate', 'Something did not finish as expected.', 
 
 export type MarketingCodeDescription = { code: string | null; known: boolean; happened: string; next: string };
 
+/** Collection and event codes already have owner text in the Sources tab's dictionary; reuse it instead of a second copy. */
+function sourcesEntry(code: string): Entry | null {
+  const en = dneskaiSources.en.blockers[code] ?? dneskaiSources.en.eventReasons[code];
+  const cs = dneskaiSources.cs.blockers[code] ?? dneskaiSources.cs.eventReasons[code];
+  return en && cs ? [code.startsWith('brief-') ? 'source' : 'auto', en, cs] : null;
+}
+
 function entryFor(code: string): Entry | null {
   if (Object.hasOwn(CODES, code)) return CODES[code as MarketingCode];
+  const sources = sourcesEntry(code);
+  if (sources) return sources;
   for (const pattern of PATTERNS) { const match = pattern.test.exec(code); if (match) return pattern.text(match); }
   return null;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -32,6 +32,14 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
   const [message, setMessage] = useState<{ text: string; code?: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [editor, setEditor] = useState<{ id: string; slide: number } | null>(null);
+  // The control that opened the editor gets focus back on close; after a save replaced its card, the heading does.
+  const opener = useRef<HTMLElement | null>(null);
+  const heading = useRef<HTMLDivElement>(null);
+  const openEditor = (id: string, slide: number) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setEditor({ id, slide }); };
+  const returnFocus = useCallback(() => {
+    const target = opener.current?.isConnected ? opener.current : heading.current?.querySelector<HTMLElement>('h2');
+    target?.focus();
+  }, []);
   const queue = dneskaiReviewQueue(read);
   const soon = new Set([read.today, pragueDayAfter(read.today, 1)]);
   const decided = read.posts.filter((post) => !queue.posts.includes(post) && post.status !== 'superseded' && soon.has(pragueDate(post.scheduledAt)));
@@ -70,12 +78,12 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
   const onSaved = useCallback((result: DneskaiEditResult) => { setEditor((current) => current ? { id: result.id, slide: current.slide } : current); }, []);
 
   return <section aria-labelledby="dneskai-review-title" className="min-w-0 space-y-5" data-testid="dneskai-review">
-    <TabHeader id="dneskai-review-title" title={t.review.title} intro={t.review.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
+    <div ref={heading}><TabHeader id="dneskai-review-title" title={t.review.title} intro={t.review.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} focusable /></div>
     {!verified && <p className="border-l-2 border-warning pl-3 text-sm">{t.review.noAccount}</p>}
     <div aria-live="polite">{message && (message.code ? <div role="alert"><DneskaiCodeText code={message.code} lang={lang} /></div> : <p role="status" className="text-sm text-success">{message.text}</p>)}</div>
     {queue.posts.length === 0 && queue.jobs.length === 0 ? <EmptyState align="start" title={t.review.empty} description={t.review.emptyDescription} className="rounded-lg border border-border bg-surface" />
       : <div className="space-y-4">{queue.posts.map((post) => <PostCard key={post.id} post={post} read={read} lang={lang} busy={busy === post.id}
-        onEdit={(slide) => setEditor({ id: post.id, slide })} onApprove={() => void approve(post)} onDecide={(action, feedback) => decide(post, action, feedback)} />)}</div>}
+        onEdit={(slide) => openEditor(post.id, slide)} onApprove={() => void approve(post)} onDecide={(action, feedback) => decide(post, action, feedback)} />)}</div>}
     {queue.jobs.length > 0 && <section aria-labelledby="dneskai-preparing-title" className="space-y-2">
       <h3 id="dneskai-preparing-title" className="text-sm font-semibold">{t.review.preparingTitle}</h3>
       <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{queue.jobs.map((job) => <JobRow key={job.id} job={job} lang={lang} />)}</ul>
@@ -92,17 +100,17 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
       })}</ul>
     </section>}
     <DneskaiPostEditor open={!!editor} onOpenChange={(open) => { if (!open) setEditor(null); }} postId={editor?.id ?? null} initialSlide={editor?.slide ?? 0} read={read}
-      projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onApprove={approve} approving={!!editor && busy === editor.id} />
+      projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onApprove={approve} approving={!!editor && busy === editor.id} returnFocus={returnFocus} />
   </section>;
 }
 
-export function TabHeader({ id, title, intro, lang, refreshing, onRefresh, preview, unreadable = 0 }: {
-  id: string; title: string; intro: string; lang: Lang; refreshing: boolean; onRefresh: () => void; preview: boolean; unreadable?: number;
+export function TabHeader({ id, title, intro, lang, refreshing, onRefresh, preview, unreadable = 0, focusable = false }: {
+  id: string; title: string; intro: string; lang: Lang; refreshing: boolean; onRefresh: () => void; preview: boolean; unreadable?: number; focusable?: boolean;
 }) {
   const t = dneskaiWorkspace[lang];
   return <div className="space-y-2">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0"><h2 id={id} className="text-sm font-semibold">{title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{intro}</p></div>
+      <div className="min-w-0"><h2 id={id} tabIndex={focusable ? -1 : undefined} className="rounded text-sm font-semibold focus-ring">{title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{intro}</p></div>
       <Button variant="outline" className="min-h-11 md:min-h-8" disabled={refreshing} aria-busy={refreshing} onClick={onRefresh}>{refreshing ? t.refreshing : t.refresh}</Button>
     </div>
     {preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{t.preview}</p>}
@@ -137,17 +145,15 @@ function PostCard({ post, read, lang, busy, onEdit, onApprove, onDecide }: {
     <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
       <div className="min-w-0">
         <h3 id={`${id}-title`} className="break-words text-sm font-semibold">{post.title}</h3>
-        <p className="mt-0.5 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time> · @{post.account.handle}{post.deck ? ` · ${post.deck.slides.length} ${t.card.slides.toLowerCase()}` : ''}</p>
+        <p className="mt-0.5 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time> · @{post.account.handle}{post.deck ? ` · ${t.card.slideCount(post.deck.slides.length)}` : ''}</p>
       </div>
       <DneskaiStateChip detail={state} lang={lang} />
     </header>
-    <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <div className="min-w-0 space-y-3">
-        <DneskaiSlideStrip post={post} lang={lang} onOpenSlide={post.deck ? onEdit : undefined} onLoadedChange={onLoadedChange} />
-        {post.renderReport && <DneskaiRenderProblems problems={post.renderReport.problems} lang={lang} />}
-        {state.state === 'problem' && !post.renderReport?.problems.length && <DneskaiCodeText code={state.code} lang={lang} />}
-      </div>
-      <div className="min-w-0 space-y-3 text-sm">
+    <div className="min-w-0 space-y-4 p-4">
+      <DneskaiSlideStrip post={post} lang={lang} onOpenSlide={post.deck ? onEdit : undefined} onLoadedChange={onLoadedChange} />
+      {post.renderReport && <DneskaiRenderProblems problems={post.renderReport.problems} lang={lang} />}
+      {state.state === 'problem' && !post.renderReport?.problems.length && <DneskaiCodeText code={state.code} lang={lang} />}
+      <div className="min-w-0 space-y-1 text-sm">
         {post.status === 'returned' && post.feedback && <p className="border-l-2 border-warning pl-2 text-xs"><span className="font-medium">{t.card.returnedNote}</span> {post.feedback}</p>}
         <details>
           <summary className="inline-flex min-h-11 cursor-pointer items-center rounded text-xs font-semibold focus-ring md:min-h-6">{t.card.caption} · <span className="ml-1 font-normal text-foreground-muted tabular">{t.card.characters([...post.caption].length)}</span></summary>
@@ -164,7 +170,7 @@ function PostCard({ post, read, lang, busy, onEdit, onApprove, onDecide }: {
     <footer className="space-y-3 border-t border-border px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <Button disabled={!!block || busy} aria-describedby={block ? `${id}-block` : undefined} onClick={onApprove} data-testid="dneskai-approve">
-          {busy ? t.card.approving : t.card.approve}<span className="font-mono text-[11px] opacity-80">· {t.card.version(shortHash(post.contentHash))}</span>
+          {busy ? t.card.approving : t.card.approve}<span className="font-mono text-[11px]">· {t.card.version(shortHash(post.contentHash))}</span>
         </Button>
         {post.deck && <Button variant="outline" disabled={busy} onClick={() => onEdit(0)}>{t.card.edit}</Button>}
         <Button variant="ghost" disabled={busy} aria-expanded={mode === 'return'} onClick={() => setMode(mode === 'return' ? 'idle' : 'return')}>{t.card.return}</Button>

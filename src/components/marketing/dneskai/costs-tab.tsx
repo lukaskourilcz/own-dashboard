@@ -58,7 +58,7 @@ export function DneskaiCostsTab({ read, lang, preview, refreshing, onRefresh, no
       {read.runs.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noRuns}</p> : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.runs.map((run) => <li key={run.id} className="min-w-0 space-y-1 px-3 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>{day(run.date)} · <span className="text-foreground-muted">{t.costs.runFor(day(run.targetDate))}</span></span>
           <span className="flex items-center gap-2 text-xs"><span className="tabular text-foreground-muted">{t.costs.cost}: {run.costUsd === null ? t.costs.unknownCost : usd(run.costUsd)}</span><StatusBadge value={`run-${run.status}`} label={t.costs.runStatus[run.status] ?? run.status} tone={tone(run.status)} /></span></div>
-        {run.errorCode && <DneskaiCodeText code={run.errorCode} lang={lang} tone={run.status === 'failed' ? 'risk' : 'muted'} details={[[t.detailJob, run.id]]} />}
+        {run.errorCode && <DneskaiCodeText code={run.errorCode} lang={lang} tone={run.status === 'failed' ? 'risk' : 'muted'} details={[[t.detailRun, run.id]]} />}
       </li>)}</ul>}
     </section>
 

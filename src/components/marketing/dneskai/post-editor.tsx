@@ -48,27 +48,34 @@ export function dneskaiApprovalBlock(post: DneskaiWorkspacePost, read: Pick<Dnes
  * and ordering slides, and the caption, time and account. Saving renders a new version; the one main button is then
  * „Approve and schedule“ with the new version's hash. Radix keeps focus inside and Escape returns it to the opener.
  */
-export function DneskaiPostEditor({ open, onOpenChange, postId, initialSlide, read, projectId, lang, preview, onSaved, onApprove, approving }: {
+export function DneskaiPostEditor({ open, onOpenChange, postId, initialSlide, read, projectId, lang, preview, onSaved, onApprove, approving, returnFocus }: {
   open: boolean; onOpenChange: (open: boolean) => void; postId: string | null; initialSlide: number; read: DneskaiWorkspaceRead; projectId: string; lang: Lang; preview: boolean;
   onSaved: (result: DneskaiEditResult, previousId: string) => void; onApprove: (post: DneskaiWorkspacePost) => Promise<boolean>; approving: boolean;
+  /** Where focus goes when the editor closes: the control that opened it, or a stable fallback when that is gone. */
+  returnFocus?: () => void;
 }) {
   const t = dneskaiWorkspace[lang];
   const post = postId ? read.posts.find((item) => item.id === postId) ?? null : null;
-  return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-h-[94dvh] w-[calc(100%-1rem)] max-w-6xl p-4 sm:p-5" data-testid="dneskai-post-editor">
+  // Kept here, not in the body: a save switches the editor to the new version, which remounts the body.
+  const [notice, setNotice] = useState('');
+  return <Dialog open={open} onOpenChange={(next) => { if (!next) setNotice(''); onOpenChange(next); }}>
+    <DialogContent className="max-h-[94dvh] w-[calc(100%-1rem)] max-w-6xl p-4 sm:p-5" data-testid="dneskai-post-editor"
+      onCloseAutoFocus={(event) => { if (returnFocus) { event.preventDefault(); returnFocus(); } }}>
       <DialogHeader>
         <DialogTitle>{t.editor.title}</DialogTitle>
         <DialogDescription>{post ? `${post.title} · ${t.editor.description}` : t.editor.description}</DialogDescription>
       </DialogHeader>
-      {post ? <EditorBody key={post.id} post={post} read={read} initialSlide={initialSlide} projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onApprove={onApprove} approving={approving} onClose={() => onOpenChange(false)} />
+      {post ? <EditorBody key={post.id} post={post} read={read} initialSlide={initialSlide} projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onApprove={onApprove} approving={approving}
+        notice={notice} setNotice={setNotice} onClose={() => { setNotice(''); onOpenChange(false); }} />
         : <p role="status" className="py-6 text-sm text-foreground-muted">{t.editor.waiting}</p>}
     </DialogContent>
   </Dialog>;
 }
 
-function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSaved, onApprove, approving, onClose }: {
+function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSaved, onApprove, approving, onClose, notice, setNotice }: {
   post: DneskaiWorkspacePost; read: DneskaiWorkspaceRead; initialSlide: number; projectId: string; lang: Lang; preview: boolean;
   onSaved: (result: DneskaiEditResult, previousId: string) => void; onApprove: (post: DneskaiWorkspacePost) => Promise<boolean>; approving: boolean; onClose: () => void;
+  notice: string; setNotice: (notice: string) => void;
 }) {
   const t = dneskaiWorkspace[lang];
   const id = useId();
@@ -78,7 +85,6 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
   const [selected, setSelected] = useState(() => Math.min(Math.max(initialSlide, 0), Math.max(0, (post.deck?.slides.length ?? 1) - 1)));
   const [swapSlot, setSwapSlot] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState('');
   const [problems, setProblems] = useState<DraftProblem[]>([]);
   const [failure, setFailure] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -122,10 +128,11 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
     setSaving(true); setFailure(null); setNotice(t.editor.saving);
     try {
       const result = await (await dneskaiWorkspaceApi(preview)).edit(request);
-      await queryClient.invalidateQueries({ queryKey: keys.review });
-      void queryClient.invalidateQueries({ queryKey: keys.costs });
-      onSaved(result, post.id);
+      // The editor moves to the new version at once and waits for it; the old one is superseded.
       setNotice(result.ready ? t.editor.saved : t.editor.savedBlocked);
+      onSaved(result, post.id);
+      void queryClient.invalidateQueries({ queryKey: keys.review });
+      void queryClient.invalidateQueries({ queryKey: keys.costs });
     } catch (error) {
       setFailure(error instanceof DneskaiWorkspaceRequestError ? error.code : 'decision-failed');
       setNotice('');
@@ -145,11 +152,11 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
       <span className="tabular">{new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Prague' }).format(new Date(post.scheduledAt))}</span>
       <span>@{post.account.handle}</span>
     </div>
-    <DneskaiSlideStrip post={post} lang={lang} selected={selected} onLoadedChange={onLoadedChange} label={`${t.card.slides}: ${post.title}`}
+    <DneskaiSlideStrip compact post={post} lang={lang} selected={selected} onLoadedChange={onLoadedChange} label={`${t.card.slides}: ${post.title}`}
       onOpenSlide={(index) => { const at = draft.slides.findIndex((item) => item.from === index); if (at >= 0) setSelected(at); }} />
     {post.renderReport && <DneskaiRenderProblems problems={post.renderReport.problems} lang={lang} />}
 
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,18rem)]">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)_minmax(0,18rem)]">
       <section aria-labelledby={`${id}-slides`} className="min-w-0 space-y-2">
         <h3 id={`${id}-slides`} className="text-xs font-semibold">{t.editor.slides}</h3>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}
@@ -225,7 +232,7 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
         ? <Button type="submit" disabled={saving} aria-busy={saving} data-testid="dneskai-editor-main">{saving ? t.editor.saving : t.editor.save}</Button>
         : <div className="flex flex-col items-stretch gap-1 sm:items-end">
           <Button type="button" disabled={!!block || approving} data-testid="dneskai-editor-main" aria-describedby={block ? `${id}-block` : undefined} onClick={() => void onApprove(post).then((done) => { if (done) onClose(); })}>
-            {approving ? t.card.approving : t.card.approve}<span className="font-mono text-[11px] opacity-80">· {t.card.version(shortHash(post.contentHash))}</span>
+            {approving ? t.card.approving : t.card.approve}<span className="font-mono text-[11px]">· {t.card.version(shortHash(post.contentHash))}</span>
           </Button>
           {block && <p id={`${id}-block`} className="text-xs text-foreground-muted">{block}</p>}
         </div>}
