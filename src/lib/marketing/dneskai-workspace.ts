@@ -154,6 +154,11 @@ export function pragueDayAfter(date: string, offset: number): string {
   return new Date(Date.parse(`${date}T12:00:00Z`) + offset * 86_400_000).toISOString().slice(0, 10);
 }
 
+/** Whether the Prague day is 23 or 25 hours long: the clocks change that night (for example 2026-10-25). */
+export function pragueDstDay(date: string): boolean {
+  return Date.parse(pragueScheduledAt(pragueDayAfter(date, 1), '00:00')) - Date.parse(pragueScheduledAt(date, '00:00')) !== 86_400_000;
+}
+
 export type DneskaiCalendarEntry =
   | { kind: 'post'; at: string; time: string; post: DneskaiWorkspacePost; state: DneskaiPostStateDetail }
   | { kind: 'job'; at: string; time: string; job: DneskaiWorkspaceJob; state: DneskaiPostStateDetail }

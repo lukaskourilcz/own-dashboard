@@ -1,19 +1,13 @@
 'use client';
 
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { pragueScheduledAt } from '@/lib/marketing/clock';
-import { dneskaiCalendarDays, pragueDayAfter, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiCalendarDays, pragueDstDay, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { DneskaiStateChip } from './state-chip';
 import { DneskaiCodeText } from './code-text';
 import { TabHeader } from './review-tab';
 
 type Lang = 'en' | 'cs';
-
-/** Whether the Prague day is 23 or 25 hours long: the clocks change that night. */
-export function pragueDstDay(date: string): boolean {
-  return Date.parse(pragueScheduledAt(pragueDayAfter(date, 1), '00:00')) - Date.parse(pragueScheduledAt(date, '00:00')) !== 86_400_000;
-}
 
 /** The next seven Prague days, each slot with what is planned in it and its state (#119). */
 export function DneskaiCalendarTab({ read, lang, preview, refreshing, onRefresh }: { read: DneskaiWorkspaceRead; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void }) {
