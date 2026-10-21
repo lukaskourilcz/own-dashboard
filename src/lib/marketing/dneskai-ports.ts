@@ -21,6 +21,8 @@ export interface DneskaiRenderProblem {
   code: string;
   blocking: boolean;
   message: string;
+  /** The slide field or image slot it is about, when known (`headline`, `sources[1]`, `image-1`). */
+  field?: string | null;
 }
 
 export type DneskaiDeckRenderResult =
