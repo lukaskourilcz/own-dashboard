@@ -26,7 +26,7 @@ export function DneskaiFocalPicker({ lang, label, src, width, height, focal, zoo
       onClick={(event) => { const rect = box.current?.getBoundingClientRect(); if (rect) onFocal(focalFromPoint(rect, event.clientX, event.clientY)); }}
       onKeyDown={(event) => { const next = moveFocal(focal, event.key); if (next) { event.preventDefault(); onFocal(next); } }}>
       <Image unoptimized src={src} alt="" width={width} height={height} loading="lazy" sizes="24rem" className="pointer-events-none block h-auto w-full select-none" draggable={false} />
-      <span aria-hidden className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-primary/80 shadow-elevated"
+      <span aria-hidden className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary-foreground bg-primary shadow-elevated"
         style={{ left: `${focal.x * 100}%`, top: `${focal.y * 100}%` }} />
     </div> : <p className="rounded-md border border-dashed border-border-strong p-3 text-xs text-foreground-muted">{t.sourceMissing}</p>}
     <p id={`${id}-help`} className="text-xs text-foreground-muted">{t.focalHelp}</p>
