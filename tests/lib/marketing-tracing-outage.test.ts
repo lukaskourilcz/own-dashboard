@@ -7,7 +7,10 @@ import type { DneskaiDeckRenderResult } from "@/lib/marketing/dneskai-ports";
 import type { DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
 import type { MarketingModel } from "@/lib/marketing/generation";
 import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
-import { deckRevision } from "./marketing-dneskai-revision-fixture";
+import { a, b, c, deckRevision } from "./marketing-dneskai-revision-fixture";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getBriefAssetHashLister, getDneskaiMediaLoader, getRenderDneskaiDeck } from "@/lib/marketing/dneskai-wiring";
+import type { ContentRevision } from "@/lib/marketing/contracts";
 
 const mocks = vi.hoisted(() => ({ user: vi.fn(), notify: vi.fn(async () => ({ status: "skipped" })), readRun: vi.fn(), createRun: vi.fn(), updateRun: vi.fn(), createFeedback: vi.fn() }));
 vi.mock("server-only", () => ({}));
@@ -91,5 +94,45 @@ describe("a tracing outage never stops an owner decision (#122)", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
     expect(mocks.readRun).toHaveBeenCalledTimes(1);
+  });
+  describe("edits", () => {
+    const saved = "66666666-6666-4666-8666-666666666666";
+    /** The owner's rows by id: the reviewed revision, and the replacement the admin client saved and attached. */
+    function editDbs() {
+      const calls: { name: string; args: Record<string, unknown> }[] = [];
+      const admin = { rpc: vi.fn(async (name: string, args: Record<string, unknown>) => { calls.push({ name, args }); return { data: name === "marketing_save_revision" ? saved : null, error: null }; }) };
+      const replacement = () => {
+        const save = calls.find((call) => call.name === "marketing_save_revision")!.args;
+        const attach = calls.find((call) => call.name === "marketing_attach_revision_render")!.args;
+        return { id: saved, revision: { ...(save.p_revision as ContentRevision), assets: deckRevision().assets }, content_hash: attach.p_hash, replaces_id: current };
+      };
+      const rows = (id: unknown) => id === current ? { id: current, revision, content_hash: revisionContentHash(revision), replaces_id: null } : id === saved ? replacement() : null;
+      const from = () => {
+        const filters: Record<string, unknown> = {};
+        const query = { select: () => query, eq: (column: string, value: unknown) => { filters[column] = value; return query; },
+          maybeSingle: async () => ({ data: rows(filters.id), error: null }), single: async () => ({ data: { revision, slides: [], offline_import_receipt: null }, error: null }) };
+        return query;
+      };
+      return { user: { auth: { getUser: async () => ({ data: { user: { id: "11111111-1111-4111-8111-111111111111" } } }) }, from, rpc: vi.fn() }, admin, calls };
+    }
+    beforeEach(() => {
+      vi.mocked(getRenderDneskaiDeck).mockReturnValue(vi.fn(async () => ({ status: "rendered", assets: deckRevision().assets, renderKeys: [], problems: [] })) as never);
+      vi.mocked(getDneskaiMediaLoader).mockReturnValue(vi.fn(async () => Buffer.from("test-only")) as never);
+      vi.mocked(getBriefAssetHashLister).mockReturnValue(vi.fn(async () => [a, b, c]) as never);
+    });
+    it.each([
+      ["a caption and schedule edit", {}],
+      ["a deck edit", { deck: { slides: [{ from: 1, headline: "TEST PRIVATE headline" }, { from: 0 }, { from: 2 }] } }],
+    ])("saves, renders and attaches %s while LangSmith is down", async (_, patch) => {
+      const dbs = editDbs(); mocks.user.mockReturnValue(dbs.user); vi.mocked(createAdminClient).mockReturnValue(dbs.admin as never);
+      const response = await POST(request({ action: "edit", id: current, caption: "TEST PRIVATE caption", scheduledAt: new Date(Date.now() + 86400000).toISOString(), ...patch }));
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      const attach = dbs.calls.find((call) => call.name === "marketing_attach_revision_render")!.args;
+      expect(body).toMatchObject({ id: saved, ready: true, contentHash: attach.p_hash, render: { status: "rendered", problems: [] } });
+      // The owner-edit feedback reached LangSmith, which refused it; the edit stands.
+      expect(mocks.readRun).toHaveBeenCalledWith(revision.traceId);
+      expect(mocks.createFeedback).not.toHaveBeenCalled();
+    });
   });
 });
