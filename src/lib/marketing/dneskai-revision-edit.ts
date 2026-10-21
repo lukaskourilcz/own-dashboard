@@ -1,10 +1,10 @@
 import "server-only";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, parseContentRevision, revisionReadiness,
+import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, parseContentRevision, revisionReadiness, storedRenderKeys, storedRenderProblems,
   type ContentRevision, type DneskaiRenderReport } from "./contracts";
 import { DneskaiDeckSchema, DneskaiSlideImageSchema, dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
-import type { DneskaiRenderProblem, ListBriefAssetHashes, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
+import type { ListBriefAssetHashes, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { revisionContentHash } from "./hashes";
 
 type Database = ReturnType<typeof createAdminClient>;
@@ -78,24 +78,6 @@ export async function prepareDneskaiRevisionEdit(original: ContentRevision, inpu
   } catch { return fail("revision-edit-invalid"); }
 }
 
-const problemCode = (value: unknown) => {
-  const code = String(value ?? "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
-  return code || "render-problem";
-};
-/** Renderer output is bounded before it is stored; anything unreadable becomes one blocking problem. */
-function storedProblems(problems: unknown): DneskaiRenderProblem[] {
-  if (!Array.isArray(problems)) return [{ slide: -1, code: "render-problems-unreadable", blocking: true, message: "The renderer returned no readable problem list." }];
-  return problems.slice(0, 100).map((problem: Partial<DneskaiRenderProblem> | null) => ({
-    slide: Number.isInteger(problem?.slide) && problem!.slide! >= -1 && problem!.slide! <= 9 ? problem!.slide! : -1,
-    code: problemCode(problem?.code),
-    // Only an explicit `false` is advisory.
-    blocking: problem?.blocking !== false,
-    message: String(problem?.message ?? "").slice(0, 500),
-    // Kept so the review UI can point at the field (#119); anything that is not a plain field name is dropped.
-    ...(typeof problem?.field === "string" && /^[a-z][a-z0-9-]*(?:\[\d\])?$/.test(problem.field) && problem.field.length <= 80 ? { field: problem.field } : {}),
-  }));
-}
-
 export type DneskaiRenderAttachment = { ready: boolean; contentHash: string; report: DneskaiRenderReport };
 
 /**
@@ -117,7 +99,7 @@ export async function renderAndAttachDneskaiRevision(db: Database, owner: string
     report = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: "failed", renderKeys: [], renderedAt,
       problems: [{ slide: -1, code: "render-unavailable", blocking: true, message: "The renderer did not return a result." }] };
   } else {
-    const problems = storedProblems(result.problems);
+    const problems = storedRenderProblems(result.problems);
     if (result.status === "rendered" && !problems.some((problem) => problem.blocking)) {
       const assets = z.array(AssetSchema).max(10).safeParse(result.assets);
       let candidate: ContentRevision | null = null;
@@ -126,7 +108,7 @@ export async function renderAndAttachDneskaiRevision(db: Database, owner: string
       if (candidate && !issues.length) { content = candidate; ready = true; }
       else problems.push(...issues.map((code) => ({ slide: -1, code, blocking: true, message: "The rendered assets do not satisfy the revision." })));
     }
-    const renderKeys = ready && Array.isArray(result.renderKeys) ? result.renderKeys.filter((key) => typeof key === "string" && /^[A-Za-z0-9:._-]{1,200}$/.test(key)).slice(0, 10) : [];
+    const renderKeys = ready ? storedRenderKeys(result.renderKeys) : [];
     report = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: ready ? "rendered" : "refused", problems: problems.slice(0, 100), renderKeys, renderedAt };
   }
   report = DneskaiRenderReportSchema.parse(report);

@@ -214,8 +214,15 @@ describe("DNESKAi deck rendering seam (#117)", () => {
     await expect(renderDneskaiRevisionAssets(draft(true), revisionId, undefined)).rejects.toThrow("dneskai-renderer-unavailable");
     const problems = [{ slide: 0, code: "text-clipped", blocking: true, field: "headline", message: "Test-only" }];
     await expect(renderDneskaiRevisionAssets(draft(true), revisionId, async () => ({ status: "refused", assets: [], renderKeys: [], problems }))).rejects.toMatchObject({ code: "dneskai-render-refused", problems });
-    expect(await renderDneskaiRevisionAssets(draft(true), revisionId, rendered)).toEqual([asset]);
+    const now = () => new Date("2026-10-21T08:00:00Z");
+    expect(await renderDneskaiRevisionAssets(draft(true), revisionId, rendered, undefined, now)).toEqual({ assets: [asset],
+      report: { schemaVersion: "dneskai-render-report/1", status: "rendered", problems: [], renderKeys: ["b".repeat(64)], renderedAt: "2026-10-21T08:00:00.000Z" } });
     expect(rendered).toHaveBeenCalledTimes(1); expect(rendered).toHaveBeenCalledWith({ revisionId, deck, signal: undefined });
+    // Advisories travel into the stored report; a blocking problem on a "rendered" result still refuses.
+    const advisory = { slide: 0, code: "credit-trimmed", blocking: false, field: "credit", message: "Test-only" };
+    const advised = await renderDneskaiRevisionAssets(draft(true), revisionId, async () => ({ status: "rendered" as const, assets: [asset], renderKeys: [], problems: [advisory] }), undefined, now);
+    expect(advised.report.problems).toEqual([advisory]);
+    await expect(renderDneskaiRevisionAssets(draft(true), revisionId, async () => ({ status: "rendered" as const, assets: [asset], renderKeys: [], problems }))).rejects.toMatchObject({ code: "dneskai-render-refused" });
   });
   it("refuses a DNESKAi Instagram job without a deck renderer before the paid generation", async () => {
     const { assertDneskaiRendererAvailable, runMarketingWorkerJob } = await import("../../services/marketing-worker/protocol");

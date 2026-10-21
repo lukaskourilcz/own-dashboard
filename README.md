@@ -151,6 +151,7 @@ The migrations, in the order they run:
 55. `20261020160000_marketing_scheduler.sql` — the scheduler's tick record (`marketing_ticks`, kept 14 days) and one lease per category with backoff and small state; service-role functions only.
 56. `20261020160100_marketing_scheduler_cron.sql` — pg_cron, pg_net and pgcrypto; a Vault-configured, signed request to `/api/marketing/tick` every five minutes and daily at 02:18 UTC that sends nothing until both Vault secrets exist.
 57. `20261020170000_dneskai_daily_generation_budget.sql` — the DNESKAi daily generation ceiling: a private spend ledger and a service-role function that reserves a job's maximum before every paid DNESKAi model call and refuses it when the last 24 hours plus that maximum would pass the configured ceiling.
+58. `20261021090000_marketing_job_render_report.sql` — a finished generation job stores the studio's render report beside the DNESKAi revision it saves, so the review shows advisories on a generated post as it already did after an owner edit.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 

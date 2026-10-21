@@ -630,3 +630,21 @@ Vault secrets. Ticks that arrive before the deploy answer 404 or 401 and change 
 Rollback: `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');`,
 then drop the two private functions, the five `marketing_scheduler_*` functions and both tables. The extensions
 may stay; other features can use them.
+
+## Render report on generated DNESKAi revisions (2026-10-21)
+
+`20261021090000_marketing_job_render_report.sql` replaces `marketing_finish_job` with the same body plus one step:
+when the job result carries `renderReport`, the function writes it to `marketing_revisions.render_report` of the
+revision it has just saved. The worker sends a report only for a DNESKAi deck it rendered, so devShark and legacy
+jobs leave the column null as before. A report that fails the column check rolls the whole finish back, and the
+job ends in reconciliation instead of review.
+
+Verify after applying: `anon` and `authenticated` still cannot execute `marketing_finish_job`; a DNESKAi job that
+finishes in review has a `render_report` with `status` `rendered`. `tests/lib/dneskai-dry-day.test.ts` checks the
+second point against the migrations in PGlite.
+
+Order: apply before deploying the code that sends the report. Old code with the new migration sends no report and
+behaves as before; new code with the old function stores the report in `marketing_jobs.result` only.
+
+Rollback: re-run `marketing_finish_job` from `20261012232949_marketing_durable_jobs.sql`. Stored reports stay; they
+were written by this release and remain valid.

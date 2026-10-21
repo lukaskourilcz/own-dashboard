@@ -243,6 +243,30 @@ export function renderReportBlocks(report: unknown): boolean {
   return !parsed.success || parsed.data.status !== "rendered" || parsed.data.problems.some((problem) => problem.blocking);
 }
 
+const renderProblemCode = (value: unknown) => {
+  const code = String(value ?? "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
+  return code || "render-problem";
+};
+type StoredRenderProblem = z.infer<typeof DneskaiRenderProblemSchema>;
+/** Renderer output is bounded before it is stored; anything unreadable becomes one blocking problem. */
+export function storedRenderProblems(problems: unknown): StoredRenderProblem[] {
+  if (!Array.isArray(problems)) return [{ slide: -1, code: "render-problems-unreadable", blocking: true, message: "The renderer returned no readable problem list." }];
+  return problems.slice(0, 100).map((problem: Partial<StoredRenderProblem> | null) => ({
+    slide: Number.isInteger(problem?.slide) && problem!.slide! >= -1 && problem!.slide! <= 9 ? problem!.slide! : -1,
+    code: renderProblemCode(problem?.code),
+    // Only an explicit `false` is advisory.
+    blocking: problem?.blocking !== false,
+    message: String(problem?.message ?? "").slice(0, 500),
+    // Kept so the review UI can point at the field (#119); anything that is not a plain field name is dropped.
+    ...(typeof problem?.field === "string" && /^[a-z][a-z0-9-]*(?:\[\d\])?$/.test(problem.field) && problem.field.length <= 80 ? { field: problem.field } : {}),
+  }));
+}
+
+/** Only render keys the report schema can carry; anything else is dropped rather than stored. */
+export function storedRenderKeys(keys: unknown): string[] {
+  return Array.isArray(keys) ? keys.filter((key): key is string => typeof key === "string" && /^[A-Za-z0-9:._-]{1,200}$/.test(key)).slice(0, 10) : [];
+}
+
 export type PublicationRow = {
   id: string; revision_id: string; platform: "instagram" | "threads";
   status: "queued" | "claimed" | "published" | "failed" | "reconciliation" | "cancelled";

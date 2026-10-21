@@ -47,6 +47,8 @@ The flow (`src/lib/marketing/dneskai-revision-edit.ts`):
 3. `saveRevision` stores the new revision with `replaces_id`, `status review`, `ready false`. The old revision becomes `superseded`, loses its approval and its queued publication is cancelled, so the old hash cannot be approved or published any more.
 4. `renderAndAttachDneskaiRevision` calls `RenderDneskaiDeck` with `LoadDneskaiMediaBytes` and passes the result to `marketing_attach_revision_render`. A clean render attaches one JPEG per slide, stores the new `content_hash` and sets `ready true`. A refused or failed render keeps the revision unready with no assets and records the problems in `marketing_revisions.render_report`.
 
+A generated revision gets its report from the job instead: the worker renders the deck inside the job and sends `renderReport` in the result, and `marketing_finish_job` (migration `20261021090000`) stores it on the revision it saves. A rendered result never carries a blocking problem; the worker refuses one as `dneskai-render-refused`.
+
 The response is `{ id, ready, contentHash, render: { status, problems } }`. Legacy revisions keep the caption/schedule edit with renewed asset URLs; a deck edit on them is refused with `deck-edit-unsupported`.
 
 ## Approval and publication gates

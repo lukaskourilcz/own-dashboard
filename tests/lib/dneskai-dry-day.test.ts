@@ -207,6 +207,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     for (const [row, brief] of [[morning, translation!], [noon, memory!]] as const) {
       const revision = parseContentRevision(row.revision);
       expect(row).toMatchObject({ status: 'review', ready: true });
+      // The job stores the studio's report with the revision, so the review shows its advisories without an edit.
+      expect(row.render_report).toMatchObject({ schemaVersion: 'dneskai-render-report/1', status: 'rendered' });
+      expect((row.render_report as { problems: { blocking: boolean }[] }).problems.every((problem) => !problem.blocking)).toBe(true);
       expect(revision.schemaVersion).toBe('marketing-content/2');
       expect(row.content_hash).toBe(revisionContentHash(revision));
       expect(revision.sources[0]).toMatchObject({ sourceId: brief.eventId, sourceRevision: brief.memberHash });
