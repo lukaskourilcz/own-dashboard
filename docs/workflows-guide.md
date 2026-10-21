@@ -57,16 +57,22 @@ Events come only from Jev, the paid TypeSafe classification of relevance and
 duplicates. It runs only while `MARKETING_AI_CONSENT` and
 `MARKETING_DNESKAI_PAID_ENABLED` are `true` and `TYPESAFE_API_KEY` is set; the same
 switches also gate the paid Apify Instagram sources. Without Jev the feeds are still
-collected, but the run ends `partial` (with `collection-classification-pending` while
-new items wait): no event is selected and no brief, generation job or post is made. With it, up to four
-selected events get their source pictures and a brief ([events and briefs](dneskai-briefs.md),
-#115), and once `@dneskai` is verified one generation job each. Claude Sonnet
+collected, but the run ends `partial` (with `collection-classification-pending`
+while new items wait): no event is selected and no brief, generation job or post
+is made. With it, up to four selected events get their source pictures and a brief
+([events and briefs](dneskai-briefs.md), #115), and once `@dneskai` is verified
+one generation job each. Claude Sonnet
 writes the copy and the carousel studio renders the slides. The owner reviews
 each exact post in the DNESKAi project's „Dnes ke schválení“ (“For review today”)
 tab. A post is published only after that exact approval and only while both
-publish switches are on; until then the tick makes a dry run with no Meta write.
-Collection, generation and publishing each have their own switch, and a step that
-is switched off is a recorded skip that costs nothing.
+publish switches are on.
+
+While `MARKETING_DNESKAI_COLLECTION_ENABLED` is not `true`, collection, media and
+briefs are a recorded skip that costs nothing; without `MARKETING_AI_CONSENT`
+generation is skipped the same way. Publishing is never skipped: while either
+publish switch is off, each due slot gets a dry run with no Meta write. Collection
+and live publishing stay off until the pilot
+([#123](https://github.com/lukaskourilcz/own-dashboard/issues/123)).
 
 The DNESKAi n8n workflows are retired
 ([retired exports](../workflows/marketing/retired/README.md)). By the owner's

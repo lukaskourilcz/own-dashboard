@@ -49,6 +49,8 @@ describe('owner workflow guide', () => {
       'jen přesně schválenou verzi a jen při zapnutém publikování', 'devShark zatím nemá aktivní plán publikování',
       'Implementaci jsme ověřili 21. října 2026',
       'Nejvýše čtyři události podle placené klasifikace Jev', 'žádná událost se nevybere a nevznikne žádné zadání ani příspěvek',
+      'Publikování se nepřeskakuje: dokud je vypnuté, běží jen jako zkušební běh bez zápisu do Meta',
+      'Až do dne pilotu zůstanou sběr i živé publikování vypnuté',
     ] : [
       'one Instagram feed post, two Threads posts and three Stories per day',
       'live staging import is awaiting verification', 'inactive drafts with placeholder connections',
@@ -60,11 +62,15 @@ describe('owner workflow guide', () => {
       'only the exact approved version and only while publishing is switched on', 'devShark has no active publishing schedule yet',
       'Implementation reviewed on 21 October 2026',
       'Up to four events chosen by the paid Jev classification', 'no event is selected and no brief or post is made',
+      'Publishing is never skipped: while it is switched off, it runs only as a dry run with no Meta write',
+      'Until the pilot day, collection and live publishing stay switched off',
     ]) expect(container.textContent).toContain(fact);
     // n8n no longer schedules or coordinates anything, and BoardlessAI writes no DNESKAi article.
     expect(container.textContent).not.toMatch(lang === 'cs' ? /n8n řídí|do 23:55|článek z BoardlessAI|zkontrolované články DNESKAi/ : /n8n coordinates|until 23:55|article from BoardlessAI|reviewed DNESKAi articles/);
     // Events, and everything after them, depend on the paid Jev classification; no copy may hide it.
     expect(container.textContent).not.toMatch(lang === 'cs' ? /Jev vyhodnocuje relevanci/ : /Jev evaluates relevance/);
+    // Publishing is never a skipped step: switched off, it is a dry run.
+    expect(container.textContent).not.toMatch(lang === 'cs' ? /vypnutý krok se přeskočí|publikování mají vlastní vypínač/ : /step that is switched off is skipped|publishing each have their own switch/);
     // Marketing points DNESKAi review to its project tab.
     for (const text of [workflows[lang].areas.marketing.owner, workflows[lang].nextDescription]) expect(text).toContain(lang === 'cs' ? '„Dnes ke schválení“' : '“For review today”');
     // The DNESKAi review lives in its project workspace; only devShark still reviews in Marketing.
