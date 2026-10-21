@@ -37,7 +37,7 @@ one after another. Each unit is wrapped, so a failure is recorded and the next c
 
 | # | Category | Runs when | One unit | Switch |
 |---|---|---|---|---|
-| 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s). Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; `MARKETING_DNESKAI_PAID_ENABLED` inside the tick holds Apify and Jev |
+| 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s). Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; inside the tick `MARKETING_DNESKAI_PAID_ENABLED` holds Apify and Jev, and Apify also needs `MARKETING_DNESKAI_APIFY_ENABLED` |
 | 2 | media | `pendingDneskaiMediaCandidates` is not empty | one `collectDneskaiMedia` for up to eight candidates, budget at most 40 s. A `busy` candidate waits 125 s (its claim lasts 120 s), a failed pass waits 10 minutes. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 3 | briefs | the newest finished run of the last two days | `getCreateDneskaiBriefs(db)` for that run. Once a call reports `pending: false` the run is left alone. Until #115 wires it, `briefs-unwired` is a recorded skip. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 4 | generation | a queued `marketing_jobs` row of brand `dneskai` | `executeMarketingJob` for the oldest one. A job that throws before it is claimed is set aside for an hour so younger jobs still run. | `MARKETING_AI_CONSENT` (and the generation module's own limits) |
@@ -167,6 +167,7 @@ Ticks between the two steps answer 401 and do nothing.
 |---|---|
 | sources, media and briefs | `MARKETING_DNESKAI_COLLECTION_ENABLED` not `true` |
 | paid sources only | `MARKETING_DNESKAI_PAID_ENABLED` not `true` (free feeds still run) |
+| Instagram (Apify) only | `MARKETING_DNESKAI_APIFY_ENABLED` not `true`: each queued Instagram stage is held with nothing reserved (`collection-apify-disabled`); free feeds and Jev still run, and the run still selects events |
 | generation | `MARKETING_AI_CONSENT` not `true` |
 | live publishing | either `MARKETING_PUBLISH_ENABLED` or `MARKETING_DNESKAI_PUBLISH_ENABLED` not `true` (dry runs continue) |
 | one account | `marketing_accounts.enabled = false`; the publisher refuses it (`account-unverified-or-disabled`) |

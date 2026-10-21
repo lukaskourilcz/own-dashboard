@@ -75,6 +75,16 @@ Návrhový denní strop sběru je 0,25 USD. Rezervace vzniká před placeným po
 neznámý výsledek se nepočítá jako nulová spotřeba. Původní pilotní rozpočet a jeho
 vyčerpané tři generovací pokusy nedávají právo spouštět nové placené sběry.
 
+Apify má vlastní přepínač `MARKETING_DNESKAI_APIFY_ENABLED`. Instagramovou fázi
+spustí jen hodnota přesně `true`, a to navíc k `MARKETING_DNESKAI_PAID_ENABLED`
+a souhlasu, v plánovaném, ručním i pilotním běhu. Jiná hodnota nebo chybějící
+proměnná fázi pozastaví před rezervací s nulovou cenou a kódem
+`collection-apify-disabled`; těsně před spuštěním aktoru se přepínač čte znovu.
+Běh Apify, který už byl spuštěný, se dočte, aby jeho rezervace dostala skutečnou
+cenu. Jev se řídí jen `MARKETING_DNESKAI_PAID_ENABLED` a souhlasem, takže běh bez
+Apify klasifikuje kandidáty z bezplatných feedů, skončí jako `partial` a vybere
+události. Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.
+
 Jev dostává jen omezené veřejné zdrojové texty a související veřejné kandidáty.
 Nedostává přihlašovací údaje, vlastníkovy poznámky, finance ani soukromé projekty.
 Jeho relevance nebo confidence není důkaz pravdivosti. Zdrojové texty jsou
@@ -162,7 +172,9 @@ Workflow předává pokračování jen samo sobě a při chybě HTTP nic neopaku
 Platnost server kontroluje znovu před placenou operací.
 
 `MARKETING_DNESKAI_COLLECTION_ENABLED` a `MARKETING_DNESKAI_PAID_ENABLED` mohou
-zůstat `false`. Jednorázový režim neuděluje právo vytvářet další běhy a nemění
+zůstat `false`. Instagramové fáze ale i zde potřebují
+`MARKETING_DNESKAI_APIFY_ENABLED=true`, jinak zůstanou pozastavené bez rezervace.
+Jednorázový režim neuděluje právo vytvářet další běhy a nemění
 publikování. Zprovoznění vyžaduje schválený nový rozpočet a přístup n8n; samotná
 šablona ani lokální testy nejsou důkazem dokončeného produkčního průchodu.
 
