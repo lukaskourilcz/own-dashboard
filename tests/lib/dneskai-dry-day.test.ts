@@ -186,6 +186,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(jobs.map((job) => job.status)).toEqual(['review', 'review']);
     expect(new Set(jobs.map((job) => job.id))).toEqual(new Set(briefs.map((row) => row.job_id)));
     expect(jobs.every((job) => job.template === DNESKAI_RENDERER_VERSION)).toBe(true);
+    // Both jobs were queued by the briefs step, then executed one per tick by the generation step.
+    expect(ticks.filter((entry) => step(entry.result, 'briefs')?.status === 'done').map((entry) => step(entry.result, 'briefs')!.detail)).toEqual([
+      { runId: expect.any(String), created: 2, jobs: 2, skipped: 0 }]);
     const generated = ticks.filter((entry) => step(entry.result, 'generation')?.status === 'done').map((entry) => step(entry.result, 'generation')!.detail);
     expect(generated.map((detail) => [detail?.claimed, detail?.jobStatus])).toEqual([[true, 'review'], [true, 'review']]);
     // The memory brief's first answer drew a bullet the body face cannot carry: the renderer's glyph gate refused it
@@ -258,8 +261,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const deck = noon.revision.deck!;
     const spare = (await briefRows())[1]!.brief.media.find((item) => !deck.slides.some((slide) => slide.images.some((image) => image.assetSha256 === item.assetSha256)))!;
     expect(spare.credit).toBe(deck.slides[2]!.credit);
+    // The pilot's owner edit (#123 step 4): one slide's text, one picture swapped, a focal point moved and a new time.
     const response = await ownerRequest({
-      action: 'edit', id: noon.id, caption: noon.revision.caption, scheduledAt: noon.revision.scheduledAt,
+      action: 'edit', id: noon.id, caption: noon.revision.caption, scheduledAt: '2026-10-27T11:40:00.000Z',
       deck: { slides: [
         { from: 0, images: [{ slot: 'image-1', assetSha256: deck.slides[0]!.images[0]!.assetSha256, crop: { focal: { x: 0.3, y: 0.45 } } }] },
         { from: 1, headline: 'Paměť projektu teď vidí a upravuje celý tým' },
@@ -275,6 +279,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const rows = await revisionRows();
     edited = rows.find((row) => row.id === body.id)!;
     expect(edited).toMatchObject({ replaces_id: noon.id, status: 'review', ready: true, content_hash: body.contentHash });
+    expect(edited.revision.scheduledAt).toBe('2026-10-27T11:40:00.000Z');
     expect(rows.find((row) => row.id === noon.id)!.status).toBe('superseded');
     expect(body.contentHash).not.toBe(noon.content_hash);
     // Only the three changed slides were rendered; the statement and the sources slide came from the render cache.
@@ -292,7 +297,8 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(stale.status).toBe(409);
     const fresh = await ownerRequest({ action: 'approve', id: edited.id, expectedHash: edited.content_hash });
     expect(fresh.status).toBe(200);
-    expect(await count("select count(*)::int n from public.marketing_publications where user_id=$1 and status='queued'")).toBe(2);
+    expect(await sql("select scheduled_at::text from public.marketing_publications where user_id=$1 and status='queued' order by scheduled_at", [OWNER])).toEqual([
+      { scheduled_at: '2026-10-27 07:00:00+00' }, { scheduled_at: '2026-10-27 11:40:00+00' }]);
   }, 300_000);
 
   it('publishes at the slot: a dry run while the switches are off, then live through the Graph API', async () => {
@@ -312,6 +318,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(published).toMatchObject({ status: 'published', error_code: null, remote_media_id: graph.media[0]!.id, remote_url: graph.media[0]!.permalink });
     expect(graph.fetchedImages).toHaveLength(5);
     expect(graph.fetchedImages.every((image) => image.format === 'jpeg' && image.width === 1080 && image.height === 1350)).toBe(true);
+    // The bytes Meta fetched are the approved ones: the approval binds content_hash, which binds every asset sha256.
+    const [approvedRow] = await sql<{ approved_hash: string; content_hash: string; status: string }>('select approved_hash,content_hash,status from public.marketing_revisions where id=$1', [morning.id]);
+    expect(approvedRow).toEqual({ approved_hash: morning.content_hash, content_hash: morning.content_hash, status: 'published' });
+    expect(graph.fetchedImages.map((image) => image.sha256)).toEqual(morning.revision.assets.map((asset) => asset.sha256));
     const carousel = [...graph.containers.values()].find((container) => container.children)!;
     expect(carousel.children).toHaveLength(5);
     expect(carousel.caption).toBe(morning.revision.caption);
@@ -320,7 +330,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
 
   it('a publish whose media_publish times out ends in reconciliation and is matched from the media list, never published twice', async () => {
     graph.hangNextPublish = true;
-    at('2026-10-27T11:30:30.000Z');
+    at('2026-10-27T11:40:30.000Z');
     const result = await tick();
     expect(step(result, 'publishing')).toMatchObject({ status: 'done', detail: { dryRun: false, outcomes: 1, reconciliation: 1 } });
     const publishCalls = () => internet.calls.filter((call) => call.host === 'graph.instagram.com' && call.method === 'POST' && call.url.endsWith('/media_publish'));
@@ -330,7 +340,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
       'select status,remote_media_id,remote_url,error_code,remote_container_id from public.marketing_publications where revision_id=$1', [edited.id]);
     if (row!.status !== 'published') {
       // The reconciliation category reads it again on a later tick, GET requests only.
-      at('2026-10-27T12:05:30.000Z');
+      at('2026-10-27T12:15:30.000Z');
       await tick();
       [row] = await sql('select status,remote_media_id,remote_url,error_code,remote_container_id from public.marketing_publications where revision_id=$1', [edited.id]);
     }
@@ -340,6 +350,23 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(publishCalls().filter((call) => new URLSearchParams(call.body).get('creation_id') === container)).toHaveLength(1);
     expect(internet.unknown).toEqual([]);
   }, 300_000);
+
+  it('refreshes the stored Instagram token once fewer than ten days remain, and the next Graph call uses the new token (#121)', async () => {
+    at('2026-12-12T08:00:00.000Z');
+    const before = await sql<{ refreshed_at: string }>('select refreshed_at::text from public.marketing_account_tokens where user_id=$1', [OWNER]);
+    const result = await tick();
+    expect(step(result, 'token')).toMatchObject({ status: 'done' });
+    expect(Date.parse(String(step(result, 'token')!.detail!.expiresAt))).toBe(Date.parse('2027-02-10T08:00:00Z'));
+    expect(graph.refreshes).toBe(1);
+    const after = await sql<{ refreshed_at: string; expires_at: string }>('select refreshed_at::text,expires_at::text from public.marketing_account_tokens where user_id=$1', [OWNER]);
+    expect(after).toEqual([{ refreshed_at: '2026-12-12 08:00:00+00', expires_at: '2027-02-10 08:00:00+00' }]);
+    expect(after[0]!.refreshed_at).not.toBe(before[0]!.refreshed_at);
+    // The bootstrap value in the environment is now stale; the stored token is the one Meta accepts.
+    expect(await verifyInstagramAccount(admin as never, OWNER, 'dneskai')).toMatchObject({ handle: 'dneskai', enabled: true });
+    at('2026-12-12T08:05:00.000Z');
+    expect(step(await tick(), 'token')).toMatchObject({ status: 'noop' });
+    expect(graph.refreshes).toBe(1);
+  }, 120_000);
 
   it('saves the rendered slides and a contact sheet for visual review', async () => {
     for (const file of saved) writeFileSync(`${OUT}/${file.name}`, file.bytes);

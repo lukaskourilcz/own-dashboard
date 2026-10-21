@@ -270,16 +270,21 @@ type Container = { id: string; children?: string[]; imageUrl?: string; caption?:
 export class FakeGraph {
   readonly containers = new Map<string, Container>();
   readonly media: Array<{ id: string; caption: string; timestamp: string; permalink: string; media_type: string }> = [];
-  readonly fetchedImages: Array<{ url: string; width: number; height: number; format: string }> = [];
+  readonly fetchedImages: Array<{ url: string; width: number; height: number; format: string; sha256: string }> = [];
   /** Container ids whose media_publish is answered only after the caller gave up (the request times out). */
   readonly hangOnPublish = new Set<string>();
   hangNextPublish = false;
+  refreshes = 0;
   private next = 17900000000001;
-  constructor(readonly clock: () => Date, readonly internet: FakeInternet, readonly token: string, readonly userId: string, readonly appScopedId: string, readonly handle: string) {}
+  constructor(readonly clock: () => Date, readonly internet: FakeInternet, public token: string, readonly userId: string, readonly appScopedId: string, readonly handle: string) {}
   private id() { return String(this.next++); }
   handler: Handler = async (request, url) => {
     const segments = url.pathname.split('/').filter(Boolean);
-    if (segments[0] === 'refresh_access_token') return json({ access_token: `${this.token}-refreshed`, token_type: 'bearer', expires_in: 5184000 });
+    if (segments[0] === 'refresh_access_token') {
+      if (url.searchParams.get('grant_type') !== 'ig_refresh_token' || url.searchParams.get('access_token') !== this.token) return json({ error: { message: 'Invalid OAuth access token', code: 190 } }, 400);
+      this.token = `${this.token}-refreshed`; this.refreshes++;
+      return json({ access_token: this.token, token_type: 'bearer', expires_in: 5184000 });
+    }
     if (!/^v\d+\.\d+$/.test(segments[0] ?? '')) return json({ error: { message: 'version' } }, 400);
     if (request.headers.get('authorization') !== `Bearer ${this.token}`) return json({ error: { message: 'Invalid OAuth access token', code: 190 } }, 401);
     const node = segments[1]!, edge = segments[2];
@@ -302,7 +307,7 @@ export class FakeGraph {
       if (!response.ok) return json({ error: { message: 'image unreachable' } }, 400);
       const bytes = Buffer.from(await response.arrayBuffer());
       const meta = await sharp(bytes).metadata();
-      this.fetchedImages.push({ url: image, width: meta.width ?? 0, height: meta.height ?? 0, format: meta.format ?? '' });
+      this.fetchedImages.push({ url: image, width: meta.width ?? 0, height: meta.height ?? 0, format: meta.format ?? '', sha256: sha256(bytes) });
       if (meta.format !== 'jpeg' || meta.width !== 1080 || meta.height !== 1350) return json({ error: { message: 'image invalid' } }, 400);
       const id = this.id();
       this.containers.set(id, { id, imageUrl: image, status: 'FINISHED', alt: form.get('alt_text') ?? undefined });
