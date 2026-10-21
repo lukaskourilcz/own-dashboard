@@ -90,7 +90,7 @@ Deleting a credential cannot be undone, so deletion stays with the owner. The re
 their n8n states are listed in [`workflows/marketing/retired/README.md`](../workflows/marketing/retired/README.md).
 Three of them, the isolated DNESKAi pilot worker (`1hB4ROPAlWm3YSXn`), DNESKAi production verification
 (`MK0xn98gIXofmZSn`) and DNESKAi rotating sources at 22:00 (`JyX8hAYI8sKMDPIc`), have no MCP access and
-still need to be archived by hand. The fourth n8n timer, the approved UTC publication planner
+still need to be archived by hand. The fourth workflow, the approved UTC publication planner
 (`8SOaq5tjMgnMQqEF`), was archived on 2026-10-21.
 
 ## Branch `codex/marketing-automation` (planned)

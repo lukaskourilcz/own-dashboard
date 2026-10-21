@@ -25,7 +25,10 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appDirectory = path.join(root, '.next/server/app');
 
-/** Every route handler that can load sharp (tests/lib/marketing-render-packaging.test.ts lists the same set). */
+/**
+ * The route handlers that render or inspect images. More marketing handlers reach sharp through their imports;
+ * tests/lib/marketing-render-packaging.test.ts guards the shared `/api/marketing/**` include that covers them all.
+ */
 const routes = [
   '/api/marketing/tick',
   '/api/marketing/revisions',
