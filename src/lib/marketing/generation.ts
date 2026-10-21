@@ -316,6 +316,10 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   };
 }
 
+/** Diagnostics never decide a generation (#122): a tracer that throws or rejects counts as no trace. */
+async function diagnostic<T>(call: () => Promise<T> | undefined): Promise<T | undefined> {
+  try { return await call(); } catch { return undefined; }
+}
 export async function generateMarketingDraft(value: GenerationInput, dependencies: GenerationDependencies): Promise<GeneratedMarketingDraft> {
   const input = GenerationInputSchema.parse(value);
   if (!input.consent) throw new MarketingGenerationError("consent-required");
@@ -350,7 +354,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (attemptInput("") > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
   const reservationFor = (inputBytes: number) => cost({ inputTokens: inputBytes, outputTokens: budget.maxOutputTokens }, model.pricing);
   if (reservationFor(attemptInput("")) > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
-  const trace = await dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) });
+  const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) })) ?? null;
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
   const usage = { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
   const report = () => { try { dependencies.onUsage?.({ ...usage }); } catch {} };
@@ -396,7 +400,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
       const outcome = await profile.evaluate(result.copy, { signal, feedbackBytes: budget.maxInputTokens - baseBytes, ...(result.stopReason ? { stopReason: result.stopReason } : {}) });
       const issues = outcome.ok ? [] : outcome.issues;
-      await trace?.stage({ name: "generation", attempt, latencyMs: Date.now() - startedAt, usage: result.usage, costUsd: cost(result.usage, model.pricing), issues });
+      await diagnostic(() => trace?.stage({ name: "generation", attempt, latencyMs: Date.now() - startedAt, usage: result.usage!, costUsd: cost(result.usage!, model.pricing), issues }));
       if (!outcome.ok) {
         for (const issue of issues) failedValidationIssues.add(issue);
         retryFeedback = outcome.feedback;
@@ -405,14 +409,14 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       }
       if (!sourceUsable(source, now())) throw new MarketingGenerationError("source-unavailable");
       const draft = profile.finish(outcome.value, trace?.id ?? null, usage);
-      await trace?.finish({ status: "review", revisionHash: revisionContentHash(draft.revision), usage, issues: [] });
+      await diagnostic(() => trace?.finish({ status: "review", revisionHash: revisionContentHash(draft.revision), usage, issues: [], deck: draft.deck ?? null }));
       return draft;
     }
     throw new MarketingGenerationError("copy-validation-failed");
   } catch (error) {
     const code = error instanceof MarketingGenerationError ? error.code : "generation-failed";
     // The trace keeps at most 30 issue codes.
-    await trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...[...failedValidationIssues].slice(0, 29), code] });
+    await diagnostic(() => trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...[...failedValidationIssues].slice(0, 29), code] }));
     throw new MarketingGenerationError(code, error instanceof MarketingGenerationError ? error.providerFailure : undefined);
   }
 }
