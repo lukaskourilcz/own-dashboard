@@ -73,6 +73,10 @@ export const STORIES = {
     published: 'Mon, 26 Oct 2026 17:20:00 +0000' },
   b: { source: 'instagram:meta.ai', url: 'https://www.instagram.com/p/DfixtureTr4n/', caption: 'Live translation is rolling out in the Meta AI app. Speak in one language and hear the reply in another during voice chats, starting with English, Spanish, French, German and Italian. Tap the globe icon in a voice chat to try it.',
     published: '2026-10-26T18:40:00.000Z' },
+  /** Tuesday's follow-up of event A: a new URL and headline that Jev does not link, and the same share image as a2. */
+  a3: { source: 'techcrunch-ai', url: 'https://techcrunch.com/2026/10/27/what-claude-team-memory-means-for-admins/', title: 'What Claude team memory means for workspace admins',
+    summary: 'A day after the launch, administrators ask how long Claude keeps team memory and who can export it. Anthropic points to its workspace settings and says memory is still off by default.',
+    published: 'Tue, 27 Oct 2026 15:00:00 +0000', visibleFrom: '2026-10-27T15:00:00Z' },
 } as const;
 /** Reports Jev rejects: real-looking feed items about other things. */
 export const NOISE = [
@@ -118,7 +122,10 @@ export async function routePublishers(internet: FakeInternet) {
     return new Response('not found', { status: 404 });
   });
   internet.route('techcrunch.com', (request, url) => {
-    if (url.pathname === '/category/artificial-intelligence/feed/') return xml(rss('TechCrunch AI', [{ title: STORIES.a2.title, link: STORIES.a2.url, pubDate: STORIES.a2.published, description: STORIES.a2.summary, image: `${PICTURES.techcrunchCover.url}?resize=1200,675` }]));
+    if (url.pathname === '/category/artificial-intelligence/feed/') return xml(rss('TechCrunch AI', [
+      ...(internet.clock().getTime() >= Date.parse(STORIES.a3.visibleFrom) ? [{ title: STORIES.a3.title, link: STORIES.a3.url, pubDate: STORIES.a3.published, description: STORIES.a3.summary, image: `${PICTURES.techcrunchCover.url}?resize=1200,675` }] : []),
+      { title: STORIES.a2.title, link: STORIES.a2.url, pubDate: STORIES.a2.published, description: STORIES.a2.summary, image: `${PICTURES.techcrunchCover.url}?resize=1200,675` }]));
+    if (url.pathname === new URL(STORIES.a3.url).pathname) return html(page(STORIES.a3.title, `${PICTURES.techcrunchCover.url}?w=1200`, '2026-10-27T15:00:00+00:00', `<p>${STORIES.a3.summary}</p>`));
     if (url.pathname === new URL(STORIES.a2.url).pathname) return html(page(STORIES.a2.title, `${PICTURES.techcrunchCover.url}?w=1200`, '2026-10-26T17:20:00+00:00',
       `<p>${STORIES.a2.summary}</p><p><img src="${PICTURES.techcrunchFigure.url}?w=680" alt="An administrator panel" width="680" height="850"></p>`));
     return imageHost(request, url);
@@ -132,6 +139,11 @@ export async function routePublishers(internet: FakeInternet) {
       ? xml(rss(host, items.map((item) => ({ title: item.title, link: item.url, pubDate: item.published, description: `${item.title}. A fixture report outside DNESKAi's scope.` }))))
       : new Response('not found', { status: 404 }));
   }
+  // Tuesday's other sources answer with nothing new.
+  for (const [host, feed] of [['huggingface.co', '/blog/feed.xml'], ['restofworld.org', '/feed/latest/'], ['simonwillison.net', '/atom/everything/']] as const) {
+    internet.route(host, (_request, url) => url.pathname === feed ? xml(rss(host, [])) : new Response('not found', { status: 404 }));
+  }
+  internet.route('api.github.com', (_request, url) => /^\/repos\/[^/]+\/[^/]+\/releases$/.test(url.pathname) ? json([]) : json({ message: 'Not Found' }, 404));
   internet.route('hacker-news.firebaseio.com', (_request, url) => url.pathname === '/v0/topstories.json' ? json([HN_STORY.id])
     : url.pathname === `/v0/item/${HN_STORY.id}.json` ? json({ ...HN_STORY, type: 'story', text: 'Asking for a friend who stares at code all day.' }) : json(null, 404));
   return images;
@@ -180,7 +192,7 @@ type JevState = { items: Array<{ id: string; title: string; text: string }>; his
 type JevQuestion = { type: string; criteria: Record<string, string> };
 /** A report of the shared-memory event: Jev links it to the first earlier report of the same event. */
 const isEventA = (title: string) => /shared memory/i.test(title);
-const inScope = (title: string) => isEventA(title) || /live translation/i.test(title);
+const inScope = (title: string) => isEventA(title) || /live translation|team memory/i.test(title);
 function distribution(keys: string[], choice: string, mass: number) {
   const rest = keys.filter((key) => key !== choice);
   const share = rest.length ? Math.floor(((1 - mass) / rest.length) * 1e6) / 1e6 : 0;

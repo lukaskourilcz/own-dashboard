@@ -351,6 +351,30 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(internet.unknown).toEqual([]);
   }, 300_000);
 
+  it('the next night, a follow-up report that reuses a published picture is a repeat: its brief is skipped and nothing is generated', async () => {
+    const before = await snapshot();
+    let time = Date.parse('2026-10-27T21:00:30.000Z');
+    for (let index = 0; index < 24; index++) {
+      at(new Date(time).toISOString());
+      const result = await tick();
+      const [run] = await sql<{ status: string }>("select status from public.marketing_dneskai_runs where user_id=$1 and date='2026-10-27'", [OWNER]);
+      if (run && run.status !== 'running' && !result.next.pending.length) break;
+      time += 5 * 60_000;
+    }
+    expect(internet.unknown).toEqual([]);
+    const [run] = await sql<{ status: string; selected_count: number }>("select status,selected_count from public.marketing_dneskai_runs where user_id=$1 and date='2026-10-27'", [OWNER]);
+    expect(run!.selected_count).toBe(1);
+    expect([...apify.runs.values()].map((entry) => entry.profile).slice(4).sort()).toEqual(['activeprogrammer', 'meta.ai', 'mosseri', 'tiffintech']);
+    const [followUp] = await sql<{ status: string; reason: string | null; duplicate_of: string | null }>(
+      "select status,candidate->>'reason' as reason,candidate->>'duplicateOf' as duplicate_of from public.marketing_dneskai_candidates where user_id=$1 and candidate->>'url'=$2", [OWNER, STORIES.a3.url]);
+    expect(followUp).toMatchObject({ status: 'duplicate', reason: 'collection-already-covered' });
+    const briefs = await sql<{ status: string; code: string | null; job_id: string | null }>("select status,code,job_id from public.marketing_dneskai_briefs where user_id=$1 and target_date='2026-10-28'", [OWNER]);
+    expect(briefs).toEqual([{ status: 'skipped', code: 'collection-already-covered', job_id: null }]);
+    const after = await snapshot();
+    expect({ jobs: after.jobs, revisions: after.revisions, anthropic: after.anthropic, assetUploads: after.assetUploads, mediaAssets: after.mediaAssets })
+      .toEqual({ jobs: before.jobs, revisions: before.revisions, anthropic: before.anthropic, assetUploads: before.assetUploads, mediaAssets: before.mediaAssets });
+  }, 300_000);
+
   it('refreshes the stored Instagram token once fewer than ten days remain, and the next Graph call uses the new token (#121)', async () => {
     at('2026-12-12T08:00:00.000Z');
     const before = await sql<{ refreshed_at: string }>('select refreshed_at::text from public.marketing_account_tokens where user_id=$1', [OWNER]);
