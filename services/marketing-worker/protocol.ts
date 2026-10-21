@@ -190,7 +190,10 @@ export async function runMarketingWorkerJob(request: MarketingJobRequest, depend
     const revision = { ...draft.revision, assets };
     if (revisionReadiness(revision).length) throw new Error("revision-not-ready");
     const finalHash = revisionContentHash(revision);
-    if (draft.traceId) await dependencies.tracer?.recordPreparedRevision?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, revisionHash: finalHash, assetHashes: assets.map((asset) => asset.sha256), templateSha256: template?.templateSha256 ?? DNESKAI_STUDIO.treeSha256, latencyMs: Date.now() - renderStartedAt });
+    // Best effort like the failure record below: a trace outage never fails a rendered revision (#122).
+    if (draft.traceId) {
+      try { await dependencies.tracer?.recordPreparedRevision?.({ traceId: draft.traceId, revisionId: job.generation.revisionId, revisionHash: finalHash, assetHashes: assets.map((asset) => asset.sha256), templateSha256: template?.templateSha256 ?? DNESKAI_STUDIO.treeSha256, latencyMs: Date.now() - renderStartedAt }); } catch {}
+    }
     return { ...draft, revision, revisionHash: finalHash };
   } catch (failure) {
     const code = marketingPreparationFailureCode(failure);
