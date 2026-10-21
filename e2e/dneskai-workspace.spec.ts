@@ -47,7 +47,7 @@ for (const lang of ['cs', 'en'] as const) {
     const axe = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-review"]').withTags(AXE_TAGS).analyze();
     expect(axe.violations).toEqual([]);
     expect(errors).toEqual([]);
-    await page.screenshot({ path: `/tmp/dneskai-review-${lang}-${info.project.name}.png`, fullPage: true });
+    await page.screenshot({ path: info.outputPath(`dneskai-review-${lang}.png`), fullPage: true });
   });
 }
 
@@ -111,6 +111,53 @@ test('editing a slide renders a new version and the main button carries the new 
   await main.click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('status').filter({ hasText: /Schváleno a zařazeno/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('returning a post for changes needs a note, which stays on the card', async ({ page }) => {
+  const errors = watchConsole(page);
+  const t = dneskaiWorkspace.cs;
+  await openWorkspace(page, 'cs', 'review');
+  const post = firstPost(page);
+  const title = (await post.getByRole('heading', { level: 3 }).textContent())!;
+  await post.getByRole('button', { name: t.card.return, exact: true }).click();
+  const send = post.getByRole('button', { name: t.card.sendReturn, exact: true });
+  await expect(send).toBeDisabled();
+  await post.getByLabel(t.card.feedback, { exact: true }).fill('Zkraťte titulek na jednu větu.');
+  await expect(send).toBeEnabled();
+  await send.click();
+  await expect(page.getByRole('status').filter({ hasText: t.card.returned })).toBeVisible();
+  const returned = page.getByTestId('dneskai-post').filter({ hasText: title });
+  await expect(returned.getByText(t.states.returned, { exact: true })).toBeVisible();
+  await expect(returned.getByText('Zkraťte titulek na jednu větu.')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('a version whose slides never attached reads as an error with a next step and renders again from the editor', async ({ page }) => {
+  const errors = watchConsole(page);
+  const t = dneskaiWorkspace.cs;
+  await openWorkspace(page, 'cs', 'costs');
+  // Errors and costs lists every post for review that cannot be approved, with what happened.
+  const blocked = page.getByTestId('dneskai-blocked-posts');
+  await expect(blocked.locator('li', { hasText: 'Co stojí jeden dotaz' }).getByText(/slidy se k ní nepřipojily/)).toBeVisible();
+  await expect(blocked.locator('li', { hasText: 'Proč verzovat prompty' })).toBeVisible();
+  await expect(blocked.locator('li', { hasText: 'Lokální model na notebooku' })).toHaveCount(0);
+  await page.getByRole('tab', { name: t.tabs.review, exact: true }).click();
+  const stuck = page.getByTestId('dneskai-post').filter({ hasText: 'Co stojí jeden dotaz' });
+  await expect(stuck.getByText(t.states.problem, { exact: true })).toBeVisible();
+  await expect(stuck.getByText(/slidy se k ní nepřipojily/)).toBeVisible();
+  await expect(stuck.getByTestId('dneskai-approve')).toBeDisabled();
+  await expect(stuck.getByText(t.card.blockedAttach)).toBeVisible();
+  // A version saved moments ago is still on its way.
+  await expect(page.getByTestId('dneskai-post').filter({ hasText: 'Lokální model na notebooku' }).getByText(t.states.preparing, { exact: true })).toBeVisible();
+  await stuck.getByRole('button', { name: t.card.edit, exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: t.editor.title });
+  const main = dialog.getByTestId('dneskai-editor-main');
+  await expect(main).toHaveText(t.editor.rerender);
+  await main.click();
+  await expect(dialog.getByText(t.editor.saved)).toBeVisible({ timeout: 15_000 });
+  await expect(main).toContainText(t.card.approve);
+  await expect(main).toBeEnabled();
   expect(errors).toEqual([]);
 });
 
