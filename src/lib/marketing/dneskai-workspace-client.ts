@@ -97,5 +97,6 @@ export function dneskaiWorkspaceKeys(projectId: string) {
     review: [...qk.dneskaiReview, projectId] as const,
     costs: [...qk.dneskaiCosts, projectId] as const,
     media: (candidateId: string) => [...qk.dneskaiMedia, projectId, candidateId] as const,
+    renderFailed: [...qk.dneskaiRenderFailed, projectId] as const,
   };
 }

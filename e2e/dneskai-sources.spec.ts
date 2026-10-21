@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { dneskaiSources } from '../src/lib/i18n/sections/dneskai-sources';
 import { dneskaiAccount } from '../src/lib/i18n/sections/dneskai-account';
+import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]['page'];
 for (const lang of ['en', 'cs'] as const) {
   test(`DNESKAi Sources is project-only, lazy and read-only in authentic preview (${lang})`, async ({ page }, info) => {
@@ -22,7 +23,8 @@ for (const lang of ['en', 'cs'] as const) {
     const panel = page.getByTestId('dneskai-sources'); await expect(panel).toBeVisible();
     await expect(panel.getByText(dneskaiSources[lang].preview, { exact: true })).toBeVisible();
     await expect(panel.getByRole('button', { name: dneskaiSources[lang].refresh, exact: true })).toBeDisabled();
-    await expect(panel.getByRole('link', { name: dneskaiSources[lang].openMarketing })).toHaveAttribute('href', '/marketing');
+    await expect(panel.getByRole('link')).toHaveCount(0);
+    await expect(panel.getByRole('button', { name: dneskaiSources[lang].openReview, exact: true })).toBeEnabled();
     await expect(panel.locator('img,input,textarea,select')).toHaveCount(0);
     const account = page.getByTestId('dneskai-instagram-account'); await expect(account).toBeVisible();
     await expect(account.getByText(dneskaiAccount[lang].preview, { exact: true })).toBeVisible();
@@ -32,5 +34,10 @@ for (const lang of ['en', 'cs'] as const) {
     const axe = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-sources"]').include('[data-testid="dneskai-instagram-account"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations).toEqual([]); expect(errors).toEqual([]);
     await page.screenshot({ path: `/tmp/marketing-dneskai-sources-${lang}-${info.project.name}.png`, fullPage: true });
+    // Final review is the workspace tab „Dnes ke schválení“; the control switches to it and focus follows to its tab.
+    await panel.getByRole('button', { name: dneskaiSources[lang].openReview, exact: true }).click();
+    const review = page.getByRole('tab', { name: dneskaiWorkspace[lang].tabs.review, exact: true });
+    await expect(review).toHaveAttribute('aria-selected', 'true'); await expect(review).toBeFocused();
+    await expect(page.getByTestId('dneskai-sources')).toHaveCount(0); await expect(page.getByTestId('dneskai-review')).toBeVisible();
   });
 }

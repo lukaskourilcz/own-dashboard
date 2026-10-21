@@ -63,6 +63,8 @@ export const qk = {
   dneskaiReview: ["marketing", "dneskai-review"] as const,
   dneskaiCosts: ["marketing", "dneskai-costs"] as const,
   dneskaiMedia: ["marketing", "dneskai-media"] as const,
+  // Not a server read: the versions this browser session saw fail to attach their render, shared by the tabs.
+  dneskaiRenderFailed: ["marketing", "dneskai-render-failed"] as const,
   marketingAccounts: ["marketing", "accounts"] as const,
   marketingKnowledge: ["marketing", "knowledge"] as const,
   marketingCalendars: ["github", "marketing-calendars"] as const,

@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -11,15 +10,16 @@ import { loadDneskaiSources, nextDneskaiSourceCheck, sourceExternalUrl } from '@
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 import type { DneskaiCollectionState, DneskaiEventView } from '@/lib/marketing/dneskai-contracts';
 
-type Props = { projectId: string; lang: 'en' | 'cs'; disabled?: boolean; now?: Date };
-export function DneskaiSources({ projectId, lang, disabled = false, now = new Date() }: Props) {
+/** `onOpenReview` switches the project workspace to „Dnes ke schválení“, where the final review happens. */
+type Props = { projectId: string; lang: 'en' | 'cs'; onOpenReview: () => void; disabled?: boolean; now?: Date };
+export function DneskaiSources({ projectId, lang, onOpenReview, disabled = false, now = new Date() }: Props) {
   const t = dneskaiSources[lang];
   const query = useQuery({ queryKey: [...qk.dneskaiSources, projectId], enabled: !disabled, retry: false, staleTime: 30000,
     queryFn: ({ signal }) => loadDneskaiSources(projectId, signal) });
   return <section aria-labelledby="dneskai-sources-title" className="min-w-0 space-y-5" data-testid="dneskai-sources">
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 id="dneskai-sources-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
       <Button variant="outline" className="min-h-11" disabled={disabled || query.isFetching} onClick={() => void query.refetch()}>{t.refresh}</Button></div>
-    <div className="space-y-2 border-l-2 border-information pl-3"><p className="text-sm">{t.approval}</p><Link prefetch={false} className="focus-ring inline-flex min-h-11 items-center rounded text-sm text-information underline" href="/marketing">{t.openMarketing}</Link></div>
+    <div className="space-y-2 border-l-2 border-information pl-3"><p className="text-sm">{t.approval}</p><button type="button" className="focus-ring inline-flex min-h-11 items-center rounded text-sm text-information underline" onClick={onOpenReview}>{t.openReview}</button></div>
     {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p> : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : query.data ? <DneskaiSourceRecords state={query.data} lang={lang} now={now} /> : null}
   </section>;
 }

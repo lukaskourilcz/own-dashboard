@@ -137,6 +137,9 @@ export function dneskaiRenderAttachFailed(post: StatePost, context: DneskaiState
   return !!context.renderFailed?.has(post.id) || context.now - Date.parse(post.createdAt) >= DNESKAI_RENDER_ATTACH_GRACE_MS;
 }
 
+/** Whether a post's slides failed to render: a refused or failed stored render report, or a render that never attached. */
+export const dneskaiRenderFailed = (post: StatePost, context: DneskaiStateContext) => renderBlocking(post.renderReport) || dneskaiRenderAttachFailed(post, context);
+
 /**
  * The state of one post, from its revision, render and publication. A deck still waiting for its render is
  * preparing until the grace period ends; a render that never attached, a refused or failed render, a failed job and

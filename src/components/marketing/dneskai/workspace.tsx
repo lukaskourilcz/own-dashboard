@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys } from '@/lib/marketing/dneskai-workspace-client';
 import { dneskaiAwaitingRender, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -23,6 +24,21 @@ function useReviewRead(projectId: string, preview: boolean) {
 }
 
 /**
+ * The versions this session saw fail to attach their render (502 render-attach-failed with the saved id). Nothing is
+ * stored for them, so the set lives in the query cache: every tab and every tab switch reads it as a problem at once.
+ */
+function useRenderFailed(projectId: string) {
+  const queryClient = useQueryClient();
+  const key = dneskaiWorkspaceKeys(projectId).renderFailed;
+  const { data } = useQuery<ReadonlySet<string>>({ queryKey: key, initialData: () => new Set(), staleTime: Infinity, gcTime: Infinity,
+    queryFn: () => queryClient.getQueryData<ReadonlySet<string>>(key) ?? new Set() });
+  const add = useCallback((id: string) => {
+    queryClient.setQueryData<ReadonlySet<string>>(dneskaiWorkspaceKeys(projectId).renderFailed, (current) => new Set(current).add(id));
+  }, [queryClient, projectId]);
+  return [data, add] as const;
+}
+
+/**
  * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Today, Calendar and Published share the review
  * read; Errors and costs has its own. In the preview the reads come from the in-memory demo, never from a server.
  */
@@ -33,10 +49,12 @@ export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false }: {
 function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean }) {
   const t = dneskaiWorkspace[lang];
   const query = useReviewRead(projectId, preview);
+  const [renderFailed, addRenderFailed] = useRenderFailed(projectId);
   if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
   const props = { read: query.data, lang, preview, refreshing: query.isFetching, onRefresh: () => void query.refetch() };
-  return tab === 'dneskai-review' ? <DneskaiReviewTab {...props} projectId={projectId} /> : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} /> : <DneskaiPublishedTab {...props} />;
+  return tab === 'dneskai-review' ? <DneskaiReviewTab {...props} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
+    : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} />;
 }
 
 function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang; preview: boolean }) {
@@ -45,8 +63,9 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
     queryFn: async ({ signal }) => (await dneskaiWorkspaceApi(preview)).loadCosts(projectId, signal) });
   // The posts that cannot be approved come from the review read, shared with the other tabs.
   const review = useReviewRead(projectId, preview);
+  const [renderFailed] = useRenderFailed(projectId);
   if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
-  return <DneskaiCostsTab read={query.data} review={review.isPending ? 'loading' : review.isError ? 'unavailable' : review.data} lang={lang} preview={preview}
+  return <DneskaiCostsTab read={query.data} review={review.isPending ? 'loading' : review.isError ? 'unavailable' : review.data} renderFailed={renderFailed} lang={lang} preview={preview}
     refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
 }

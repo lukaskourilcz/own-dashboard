@@ -20,7 +20,7 @@ const en = {
   },
   card: {
     slides: 'Slides', slideCount: (count: number) => count === 1 ? '1 slide' : `${count} slides`, slide: (index: number, count: number) => `Slide ${index} of ${count}`, openSlide: (index: number) => `Open slide ${index} in the editor`,
-    notRendered: 'The slides are not rendered yet.', imageFailed: 'Preview did not load', caption: 'Caption', characters: (count: number) => `${count} characters`,
+    notRendered: 'The slides are not rendered yet.', renderFailed: 'The slides failed to render.', imageFailed: 'Preview did not load', caption: 'Caption', characters: (count: number) => `${count} characters`,
     sources: 'Sources', account: 'Account', scheduled: 'Planned', returnedNote: 'Returned with a note:',
     approve: 'Approve and schedule', version: (hash: string) => `version ${hash}`, edit: 'Edit', return: 'Return for changes', skip: 'Skip',
     skipConfirm: 'Skip this post? It will not be published.', skipYes: 'Skip post', back: 'Back',
@@ -101,7 +101,7 @@ const cs: typeof en = {
   },
   card: {
     slides: 'Slidy', slideCount: (count: number) => count === 1 ? '1 slide' : count < 5 ? `${count} slidy` : `${count} slidů`, slide: (index: number, count: number) => `Slide ${index} z ${count}`, openSlide: (index: number) => `Otevřít slide ${index} v editoru`,
-    notRendered: 'Slidy ještě nejsou vykreslené.', imageFailed: 'Náhled se nenačetl', caption: 'Popisek', characters: (count: number) => `${count} znaků`,
+    notRendered: 'Slidy ještě nejsou vykreslené.', renderFailed: 'Slidy se nepodařilo vykreslit.', imageFailed: 'Náhled se nenačetl', caption: 'Popisek', characters: (count: number) => `${count} znaků`,
     sources: 'Zdroje', account: 'Účet', scheduled: 'Plán', returnedNote: 'Vráceno s poznámkou:',
     approve: 'Schválit a zařadit', version: (hash: string) => `verze ${hash}`, edit: 'Upravit', return: 'Vrátit k úpravě', skip: 'Přeskočit',
     skipConfirm: 'Přeskočit tento příspěvek? Nepublikuje se.', skipYes: 'Přeskočit příspěvek', back: 'Zpět',

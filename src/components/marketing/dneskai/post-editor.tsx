@@ -17,7 +17,7 @@ import {
   swapSlideImage, type DeckDraft, type DraftProblem,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError, type DneskaiEditResult } from '@/lib/marketing/dneskai-workspace-client';
-import { dneskaiPostState, dneskaiStateContext, renderBlocking, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiPostState, dneskaiRenderFailed, dneskaiStateContext, renderBlocking, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiFieldLimit } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { DneskaiSlideStrip } from './slide-strip';
@@ -112,7 +112,8 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
 
   const request = useMemo(() => { try { return dneskaiEditRequest(post, draft, draft.accountId && draft.accountId !== currentAccount?.id ? draft.accountId : null); } catch { return null; } }, [post, draft, currentAccount]);
   const dirty = !request || !!request.deck || request.caption !== post.caption || request.scheduledAt !== post.scheduledAt || !!request.accountId;
-  const detail = dneskaiPostState(post, dneskaiStateContext(read, renderFailed));
+  const context = dneskaiStateContext(read, renderFailed);
+  const detail = dneskaiPostState(post, context);
   // A version whose slides never attached can be saved unchanged: that renders it again as a new version.
   const rerender = detail.code === 'render-attach-failed';
   const block = dneskaiApprovalBlock(post, read, loaded, lang, renderFailed);
@@ -167,7 +168,7 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
       <span className="tabular">{new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Prague' }).format(new Date(post.scheduledAt))}</span>
       <span>@{post.account.handle}</span>
     </div>
-    <DneskaiSlideStrip compact post={post} lang={lang} selected={selected} onLoadedChange={onLoadedChange} label={`${t.card.slides}: ${post.title}`}
+    <DneskaiSlideStrip compact post={post} lang={lang} selected={selected} onLoadedChange={onLoadedChange} label={`${t.card.slides}: ${post.title}`} renderFailed={dneskaiRenderFailed(post, context)}
       onOpenSlide={(index) => { const at = draft.slides.findIndex((item) => item.from === index); if (at >= 0) setSelected(at); }} />
     {post.renderReport && <DneskaiRenderProblems problems={post.renderReport.problems} lang={lang} />}
     {detail.state === 'problem' && !post.renderReport?.problems.length && <DneskaiCodeText code={detail.code} lang={lang} />}
