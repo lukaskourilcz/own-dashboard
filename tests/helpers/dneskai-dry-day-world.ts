@@ -266,7 +266,7 @@ export class FakeGraph {
   /** Container ids whose media_publish is answered only after the caller gave up (the request times out). */
   readonly hangOnPublish = new Set<string>();
   hangNextPublish = false;
-  private next = 18000000000000001;
+  private next = 17900000000001;
   constructor(readonly clock: () => Date, readonly internet: FakeInternet, readonly token: string, readonly userId: string, readonly appScopedId: string, readonly handle: string) {}
   private id() { return String(this.next++); }
   handler: Handler = async (request, url) => {
