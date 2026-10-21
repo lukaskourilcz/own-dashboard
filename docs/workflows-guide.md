@@ -49,9 +49,18 @@ winning format. Recent Saved acquisition is deferred under
 Scheduling runs in Supabase ([marketing scheduling](marketing-scheduling.md), #120).
 pg_cron calls `POST /api/marketing/tick` every five minutes and once a day, and a
 tick runs at most one unit of work per step. After 22:00 Europe/Prague it collects
-the free news feeds and continues every five minutes until the run is finished.
-Up to four selected events then get their source pictures, a brief and one
-generation job ([events and briefs](dneskai-briefs.md), #115). Claude Sonnet
+the free news feeds, through the Quorum bridge by default or directly with
+`MARKETING_DNESKAI_FEED_PROVIDER=native`, and continues every five minutes until
+the run is finished.
+
+Events come only from Jev, the paid TypeSafe classification of relevance and
+duplicates. It runs only while `MARKETING_AI_CONSENT` and
+`MARKETING_DNESKAI_PAID_ENABLED` are `true` and `TYPESAFE_API_KEY` is set; the same
+switches also gate the paid Apify Instagram sources. Without Jev the feeds are still
+collected, but the run ends `partial` (with `collection-classification-pending` while
+new items wait): no event is selected and no brief, generation job or post is made. With it, up to four
+selected events get their source pictures and a brief ([events and briefs](dneskai-briefs.md),
+#115), and once `@dneskai` is verified one generation job each. Claude Sonnet
 writes the copy and the carousel studio renders the slides. The owner reviews
 each exact post in the DNESKAi project's „Dnes ke schválení“ (“For review today”)
 tab. A post is published only after that exact approval and only while both
@@ -65,8 +74,7 @@ decision of 20 October 2026 ([quorum#602](https://github.com/lukaskourilcz/quoru
 DNESKAi articles are paused: BoardlessAI
 writes no DNESKAi article, and the posts come from the news collection alone.
 The completed bounded production collection stored 70 candidates and selected
-zero of four topics. Jev evaluates relevance and duplicates; wider editorial
-evaluation remains tracked in
+zero of four topics. Wider editorial evaluation remains tracked in
 [#108](https://github.com/lukaskourilcz/own-dashboard/issues/108). Selecting an
 event approves nothing; the owner approves the exact rendered revision, including
 its copy, graphics, account and publication time.
