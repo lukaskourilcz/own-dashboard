@@ -61,7 +61,7 @@ beforeEach(() => {
         render_report: { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [{ slide: 1, code: 'image-upscaled', blocking: false, message: 'advisory', field: 'image-1' }], renderKeys: [], renderedAt: '2026-10-20T21:00:00Z' } },
       { id: '44444444-4444-4444-8444-444444444444', user_id: owner, brand: 'dneskai', replaces_id: null, status: 'review', ready: false, content_hash: sha(501), created_at: '2026-10-20T21:00:00Z', approved_at: null, feedback: null, revision: { broken: 'PRIVATE' }, render_report: null },
     ],
-    marketing_accounts: [{ id: '55555555-5555-4555-8555-555555555555', user_id: owner, brand: 'dneskai', platform: 'instagram', handle: '@dneskai', verified_at: '2026-10-20T10:00:00Z', enabled: false }],
+    marketing_accounts: [{ id: '55555555-5555-4555-8555-555555555555', user_id: owner, brand: 'dneskai', platform: 'instagram', remote_account_id: '17841400000000000', handle: '@dneskai', verified_at: '2026-10-20T10:00:00Z', enabled: false }],
     marketing_jobs: [{ id: '66666666-6666-4666-8666-666666666666', user_id: owner, status: 'running', error_code: null, created_at: '2026-10-20T21:30:00Z', title: 'Druhé smyšlené téma', scheduled_at: pragueScheduledAt(tomorrow, '12:30'), revision_id: '77777777-7777-4777-8777-777777777777', brand: 'dneskai', cost_usd: null },
       { id: '88888888-8888-4888-8888-888888888888', user_id: owner, status: 'failed', error_code: 'dneskai-daily-generation-budget-exhausted', created_at: new Date().toISOString(), title: 'Třetí téma', scheduled_at: pragueScheduledAt(tomorrow, '17:00'), revision_id: null, brand: 'dneskai', cost_usd: '0.25' }],
     marketing_publications: [],
@@ -86,7 +86,7 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(post!.renderReport?.problems[0]).toMatchObject({ field: 'image-1', blocking: false });
     expect(dneskaiPostState(post!).state).toBe('review');
     expect(read.jobs.map((job) => [job.status, job.errorCode])).toEqual([['running', null], ['failed', 'dneskai-daily-generation-budget-exhausted']]);
-    expect(read.accounts).toEqual([{ id: '55555555-5555-4555-8555-555555555555', handle: 'dneskai', verified: true, enabled: false }]);
+    expect(read.accounts).toEqual([{ id: '55555555-5555-4555-8555-555555555555', remoteId: '17841400000000000', handle: 'dneskai', verified: true, enabled: false }]);
     expect(read.slots).toEqual(['08:00', '12:30', '17:00', '20:00']);
     expect(JSON.stringify(body)).not.toContain('PRIVATE');
     expect(mocks.filters.filter(([, op, field]) => op === 'eq' && field === 'user_id').every(([, , , value]) => value === owner)).toBe(true);

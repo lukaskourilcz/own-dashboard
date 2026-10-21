@@ -91,7 +91,7 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
   generatedAt: timestamp,
   /** The daily Instagram slots in Europe/Prague. */
   slots: z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)).max(8),
-  accounts: z.array(z.strictObject({ id: uuid, handle: z.string().min(1).max(100), verified: z.boolean(), enabled: z.boolean() })).max(4),
+  accounts: z.array(z.strictObject({ id: uuid, remoteId: z.string().min(1).max(200), handle: z.string().min(1).max(100), verified: z.boolean(), enabled: z.boolean() })).max(4),
   posts: z.array(DneskaiWorkspacePostSchema).max(60),
   jobs: z.array(DneskaiWorkspaceJobSchema).max(20),
   /** Stored rows that could not be read; shown as a count, never silently dropped. */

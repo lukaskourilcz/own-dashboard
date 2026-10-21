@@ -74,7 +74,7 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
   const [revisionResult, accountResult, jobResult] = await Promise.all([
     db.from('marketing_revisions').select('id,replaces_id,status,ready,content_hash,created_at,approved_at,feedback,revision,render_report')
       .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT),
-    db.from('marketing_accounts').select('id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4),
+    db.from('marketing_accounts').select('id,remote_account_id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4),
     db.from('marketing_jobs').select('id,status,error_code,created_at,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,revision_id:request->generation->>revisionId,brand:request->generation->source->>brand')
       .eq('user_id', owner).in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60),
   ]);
@@ -121,8 +121,8 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
       title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt });
     return job.success ? [job.data] : [];
   }).slice(0, 20);
-  const accounts = rows(accountResult as { data: Array<{ id: string; handle: string; verified_at: string | null; enabled: boolean }> | null; error: unknown }, 'dneskai-workspace-unavailable')
-    .map((account) => ({ id: account.id, handle: account.handle.replace(/^@/, ''), verified: !!account.verified_at, enabled: !!account.enabled }));
+  const accounts = rows(accountResult as { data: Array<{ id: string; remote_account_id: string; handle: string; verified_at: string | null; enabled: boolean }> | null; error: unknown }, 'dneskai-workspace-unavailable')
+    .map((account) => ({ id: account.id, remoteId: account.remote_account_id, handle: account.handle.replace(/^@/, ''), verified: !!account.verified_at, enabled: !!account.enabled }));
   return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs, unreadable });
 }
 
