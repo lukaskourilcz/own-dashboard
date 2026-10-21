@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { LANGSMITH_DIAGNOSTIC_DEADLINE_MS, createMarketingTracer, marketingTraceMetadata, traceIdentifierHash, type MarketingTracer } from "@/lib/marketing/tracing";
+import { LANGSMITH_DIAGNOSTIC_DEADLINE_MS, createMarketingTracer, marketingTraceMetadata, traceIdentifierHash, type MarketingTracer, type TraceFinish as DneskaiFinish } from "@/lib/marketing/tracing";
+import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "@/lib/marketing/dneskai-slides";
 import { generateMarketingDraft, type GenerationDependencies, type MarketingModel } from "@/lib/marketing/generation";
 import { MARKETING_BRIEF_PROMPT_ID } from "@/lib/marketing/dneskai-generation";
 import { contentHash } from "@/lib/marketing/hashes";
@@ -42,6 +43,7 @@ const SAFE_KEYS = new Set([
   "revision_id", "source_id_hash", "source_revision_hash", "source_content_hash", "brand", "locale", "model", "prompt_version_hash", "template_version_hash", "knowledge_ids",
   "event_id_hash", "member_hash_hash", "media_count", "stage", "attempt", "latency_ms", "input_tokens", "output_tokens", "estimated_cost_usd", "issue_codes",
   "status", "revision_hash", "attempts", "retry_reasons", "format", "slide_types", "deck_media_count", "cover-photo", "figure", "split", "statement", "sources", "single",
+  "asset_hashes", "template_sha256", "render_latency_ms",
 ]);
 /** Fails on any field or string a redacted trace may not carry. */
 function assertRedacted(value: unknown, path = "payload"): void {
@@ -95,6 +97,69 @@ describe("redacted brief traces (#122)", () => {
     await trace!.finish({ status: "failed", revisionHash: null, usage: { attempts: 1, inputTokens: 1, outputTokens: 1, estimatedCostUsd: 0 }, issues: ["https://test-only.example/", "copy-validation-failed"] });
     expect(sdk.createRun.mock.calls[1]![0].extra.metadata.issue_codes).toEqual(["text-clipped", "image-1-missing"]);
     expect(sdk.updateRun.mock.calls[0]![1].extra.metadata).toMatchObject({ status: "failed", issue_codes: ["text-clipped", "image-1-missing", "copy-validation-failed"], retry_reasons: ["text-clipped", "image-1-missing"] });
+    expect(JSON.stringify(payloads())).not.toContain("TEST PRIVATE");
+  });
+});
+
+/** A carousel whose slides hold the given numbers of distinct pictures, with TEST PRIVATE text on every slide; `DneskaiDeckSchema` accepts it. */
+const pictureHash = (index: number) => createHash("sha256").update(`test-only picture ${index}`).digest("hex");
+const words = (index: number) => ({ headline: `TEST PRIVATE headline ${index}`, body: `TEST PRIVATE body ${index}`, kicker: "TEST PRIVATE", alt: `TEST PRIVATE alt ${index}` });
+function deckWithPictures(slides: { type: DneskaiSlide["type"]; pictures: number }[]): DneskaiDeck {
+  let next = 0;
+  return DneskaiDeckSchema.parse({
+    schemaVersion: DNESKAI_SLIDES_VERSION, format: "carousel",
+    slides: slides.map((slide, index) => slide.type === "sources"
+      ? { type: "sources", headline: "", sources: ["TEST PRIVATE https://test-only.example/"], images: [], alt: `TEST PRIVATE sources ${index}` }
+      : { type: slide.type, ...words(index), credit: "TEST PRIVATE credit", images: Array.from({ length: slide.pictures }, (_, image) => ({ slot: `image-${image + 1}`, assetSha256: pictureHash(next++) })) }),
+  });
+}
+
+describe("the deck shape never costs a trace its finish (#122)", () => {
+  const start = async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const trace = await tracer.start({ revisionId: REVISION_ID, source: briefPacket(briefFixture(pictures)), model: "claude-sonnet-5-5", promptVersion: MARKETING_BRIEF_PROMPT_ID, templateVersion: "dneskai-photo/1", knowledgeIds: [] });
+    return { tracer, trace: trace! };
+  };
+  const finish = (deck: DneskaiFinish["deck"]): DneskaiFinish => ({ status: "review", revisionHash: "a".repeat(64), usage: { attempts: 1, inputTokens: 3000, outputTokens: 1500, estimatedCostUsd: 0.021 }, issues: [], deck });
+  it("finishes, records the rendered revision and takes owner feedback for a carousel of 12 distinct pictures", async () => {
+    // Cover photo, five split pairs, one figure and the sources slide: 8 slides, 12 pictures (the first offer holds 12).
+    const deck = deckWithPictures([{ type: "cover-photo", pictures: 1 }, ...Array.from({ length: 5 }, () => ({ type: "split" as const, pictures: 2 })), { type: "figure", pictures: 1 }, { type: "sources", pictures: 0 }]);
+    const { tracer, trace } = await start();
+    await trace.finish(finish(deck));
+    expect(sdk.updateRun).toHaveBeenCalledTimes(1);
+    const finished = sdk.updateRun.mock.calls[0]![1].extra.metadata;
+    expect(finished).toMatchObject({ status: "review", revision_hash: "a".repeat(64), attempts: 1, estimated_cost_usd: 0.021, format: "carousel", slide_types: { "cover-photo": 1, split: 5, figure: 1, sources: 1 }, deck_media_count: 12 });
+    // The render step finds the finished root it wrote, and owner feedback binds to the rendered hash.
+    const rendered = "b".repeat(64);
+    await expect(tracer.recordPreparedRevision!({ traceId: trace.id, revisionId: REVISION_ID, revisionHash: rendered, assetHashes: Array.from({ length: 8 }, (_, index) => pictureHash(100 + index)), templateSha256: "c".repeat(64), latencyMs: 40 })).resolves.toBe(true);
+    expect(sdk.readRun).not.toHaveBeenCalled();
+    const root = sdk.updateRun.mock.calls[1]![1].extra.metadata;
+    expect(root).toMatchObject({ revision_hash: rendered, deck_media_count: 12 });
+    sdk.readRun.mockResolvedValue({ id: trace.id, extra: { metadata: root } });
+    sdk.createFeedback.mockResolvedValue(undefined);
+    await expect(tracer.recordOwnerFeedback({ traceId: trace.id, revisionId: REVISION_ID, revisionHash: rendered, decision: "approved", qualityScore: 1 })).resolves.toBe(true);
+    expect(sdk.createFeedback).toHaveBeenCalledTimes(1);
+    for (const payload of payloads()) assertRedacted(payload);
+    expect(JSON.stringify([payloads(), sdk.createFeedback.mock.calls])).not.toContain("TEST PRIVATE");
+  });
+  it("counts up to the 40 distinct pictures the deck contract allows", async () => {
+    const deck = deckWithPictures(Array.from({ length: 10 }, () => ({ type: "figure" as const, pictures: 4 })));
+    const { trace } = await start();
+    await trace.finish(finish(deck));
+    expect(sdk.updateRun.mock.calls[0]![1].extra.metadata).toMatchObject({ slide_types: { figure: 10 }, deck_media_count: 40 });
+  });
+  it("leaves out a deck shape it cannot describe and still sends status, hash and cost", async () => {
+    const deck = deckWithPictures([{ type: "figure", pictures: 1 }, { type: "sources", pictures: 0 }]);
+    const unknown = { ...deck, slides: [...deck.slides, { ...deck.slides[0]!, type: "TEST PRIVATE poll" }] } as unknown as DneskaiDeck;
+    const { trace } = await start();
+    await trace.finish(finish(unknown));
+    await trace.finish(finish({ format: "carousel", slides: null } as unknown as DneskaiDeck));
+    expect(sdk.updateRun).toHaveBeenCalledTimes(2);
+    for (const call of sdk.updateRun.mock.calls) {
+      const metadata = call[1].extra.metadata;
+      expect(metadata).toMatchObject({ status: "review", revision_hash: "a".repeat(64), estimated_cost_usd: 0.021 });
+      for (const field of ["format", "slide_types", "deck_media_count"]) expect(metadata).not.toHaveProperty(field);
+    }
     expect(JSON.stringify(payloads())).not.toContain("TEST PRIVATE");
   });
 });

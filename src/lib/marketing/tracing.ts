@@ -84,14 +84,20 @@ function failedIssueCodes(generationIssues: ReadonlySet<string>, issues: readonl
   const earlier = [...new Set([...generationIssues, ...issues.slice(0, -1)])].filter((value) => value !== final);
   return final === undefined ? earlier.slice(0, 30) : [...earlier.slice(0, 29), final];
 }
+/** `DneskaiDeckSchema` holds at most 10 slides of at most 4 pictures each, so a valid deck uses at most 40 distinct pictures. */
+const DECK_MEDIA_MAX = 10 * 4;
+/** For a brief, the shape of the deck. Checked on its own: a shape it cannot describe is left out, the finish is still sent. */
+const deckShapeSchema = z.strictObject({
+  format: z.enum(["carousel", "single-image"]).optional(),
+  slide_types: z.strictObject({ "cover-photo": slideCount, figure: slideCount, split: slideCount, statement: slideCount, sources: slideCount, single: slideCount }).optional(),
+  deck_media_count: z.number().int().min(0).max(DECK_MEDIA_MAX).optional(),
+});
 const finishSchema = z.strictObject({
   status: z.enum(["review", "failed"]), revision_hash: hash.nullable(), attempts: z.number().int().min(0).max(3), input_tokens: z.number().int().nonnegative(),
   output_tokens: z.number().int().nonnegative(), estimated_cost_usd: z.number().nonnegative(), issue_codes: z.array(code).max(30),
-  // Issue codes of the attempts that were answered with a retry; and, for a brief, the shape of the deck.
+  // Issue codes of the attempts that were answered with a retry.
   retry_reasons: z.array(code).max(30).optional(),
-  format: z.enum(["carousel", "single-image"]).optional(),
-  slide_types: z.strictObject({ "cover-photo": slideCount, figure: slideCount, split: slideCount, statement: slideCount, sources: slideCount, single: slideCount }).optional(),
-  deck_media_count: z.number().int().min(0).max(10).optional(),
+  ...deckShapeSchema.shape,
 });
 const preparedSchema = z.strictObject({ revision_id: z.uuid(), revision_hash: hash, asset_hashes: z.array(hash).max(10), template_sha256: hash, render_latency_ms: z.number().nonnegative() });
 const fullMetadataSchema = metadataSchema.extend(finishSchema.shape).extend({ asset_hashes: z.array(hash).max(10).optional(), template_sha256: hash.optional(), render_latency_ms: z.number().nonnegative().optional() });
@@ -188,9 +194,11 @@ export async function createMarketingTracer(config: { apiKey: string; projectNam
           try {
             const issues = codes(event.issues);
             const retryReasons = [...generationIssues].slice(0, 30);
+            // The deck shape never costs the finish: status, revision hash and cost are sent whatever the deck holds.
+            const shape = (() => { try { return event.deck ? deckShapeSchema.safeParse(dneskaiDeckTraceShape(event.deck)) : null; } catch { return null; } })();
             const finished = finishSchema.parse({ status: event.status, revision_hash: event.revisionHash, attempts: event.usage.attempts, input_tokens: event.usage.inputTokens, output_tokens: event.usage.outputTokens, estimated_cost_usd: event.usage.estimatedCostUsd,
               issue_codes: event.status === "failed" ? failedIssueCodes(generationIssues, issues) : [...new Set(issues)].slice(0, 30),
-              ...(retryReasons.length ? { retry_reasons: retryReasons } : {}), ...(event.deck ? dneskaiDeckTraceShape(event.deck) : {}) });
+              ...(retryReasons.length ? { retry_reasons: retryReasons } : {}), ...(shape?.success ? shape.data : {}) });
             const full = fullMetadataSchema.parse({ ...metadata, ...finished });
             remember(id, full);
             await safeWrite(() => client.updateRun(id, { end_time: Date.now(), outputs: {}, error: event.status === "failed" ? "marketing-generation-failed" : undefined, extra: { metadata: full } }));
