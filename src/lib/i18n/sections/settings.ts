@@ -61,6 +61,7 @@ type SettingsStrings = {
   preferenceSyncUnavailable: string;
   projectSections: string;
   projectSectionsDesc: string;
+  projectSectionsDneskai: string;
   engagementDesc: string;
   engagementFor: (project: string) => string;
   engagementSaving: string;
@@ -141,6 +142,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     projectSections: "Project workspace sections",
     projectSectionsDesc:
       "Choose which tabs appear inside every project workspace. Overview always stays visible.",
+    projectSectionsDneskai: "Only in the DNESKAi project",
     engagementDesc:
       "Own or Freelance places an active project above or below the Freelance divider in the sidebar and in Projects.",
     engagementFor: (project) => `Own or Freelance: ${project}`,
@@ -223,6 +225,7 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     projectSections: "Sekce projektového workspace",
     projectSectionsDesc:
       "Vyber, které záložky se zobrazí uvnitř každého projektu. Přehled zůstává vždy viditelný.",
+    projectSectionsDneskai: "Jen v projektu DNESKAi",
     engagementDesc:
       "Vlastní nebo Freelance určuje, jestli se aktivní projekt v postranním panelu a v Projektech zobrazí nad oddělovačem Freelance, nebo pod ním.",
     engagementFor: (project) => `Vlastní nebo Freelance: ${project}`,

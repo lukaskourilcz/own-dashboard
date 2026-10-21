@@ -41,6 +41,9 @@ import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   PROJECT_WORKSPACE_TABS,
+  isDneskaiProjectTab,
+  type DneskaiProjectTab,
+  type ProjectTabId,
   type ProjectWorkspaceTab,
 } from "@/lib/project-workspace-tabs";
 import { useProjectTabVisibility } from "@/lib/use-prefs";
@@ -83,9 +86,6 @@ const DneskaiInstagramAccount = dynamic(() => import('@/components/marketing/dne
 const DneskaiWorkspaceTab = dynamic(() => import('@/components/marketing/dneskai/workspace').then(module => module.DneskaiWorkspaceTab), {
   loading: function WorkspaceLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
 });
-const DNESKAI_TABS = ["dneskai-review", "dneskai-calendar", "dneskai-published", "dneskai-costs"] as const;
-type DneskaiTab = (typeof DNESKAI_TABS)[number];
-const isDneskaiTab = (value: string): value is DneskaiTab => (DNESKAI_TABS as readonly string[]).includes(value);
 
 type Props = {
   project: Project;
@@ -142,7 +142,7 @@ export function ProjectWorkspace(props: Props) {
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
-  const [tab, setTab] = useState<ProjectWorkspaceTab | DneskaiTab>("overview");
+  const [selectedTab, setTab] = useState<ProjectTabId>("overview");
   const { isProjectTabHidden } = useProjectTabVisibility();
 
   // Repo-sourced tasks (from NEEDED.md) resolve through the shared matcher:
@@ -198,20 +198,29 @@ export function ProjectWorkspace(props: Props) {
   };
   const dneskai = isDneskaiProject(project);
   const dneskaiLabels = dneskaiWorkspace[lang].tabs;
-  const projectTabs: Array<{ id: ProjectWorkspaceTab | DneskaiTab; label: string }> = PROJECT_WORKSPACE_TABS.filter(
+  const projectTabs: Array<{ id: ProjectTabId; label: string }> = PROJECT_WORKSPACE_TABS.filter(
     (item) => (item !== "sources" || dneskai) && (item === "overview" || !isProjectTabHidden(item)),
   ).map((id) => ({ id, label: tabLabels[id] }));
-  // DNESKAi's daily work sits right after Overview: review, calendar, sources, published, errors and costs. These
-  // four are not part of the hideable tab preference; Sources keeps its place in it.
+  const dneskaiTabLabels: Record<DneskaiProjectTab, string> = {
+    "dneskai-review": dneskaiLabels.review,
+    "dneskai-calendar": dneskaiLabels.calendar,
+    "dneskai-published": dneskaiLabels.published,
+    "dneskai-costs": dneskaiLabels.costs,
+  };
+  const dneskaiTab = (id: DneskaiProjectTab) => isProjectTabHidden(id) ? [] : [{ id, label: dneskaiTabLabels[id] }];
+  // DNESKAi's daily work sits right after Overview: review, calendar, sources, published, errors and costs. Settings
+  // can hide each of them like any other project tab.
   const tabs = dneskai ? [
     projectTabs[0]!,
-    { id: "dneskai-review" as const, label: dneskaiLabels.review },
-    { id: "dneskai-calendar" as const, label: dneskaiLabels.calendar },
+    ...dneskaiTab("dneskai-review"),
+    ...dneskaiTab("dneskai-calendar"),
     ...projectTabs.filter((item) => item.id === "sources"),
-    { id: "dneskai-published" as const, label: dneskaiLabels.published },
-    { id: "dneskai-costs" as const, label: dneskaiLabels.costs },
+    ...dneskaiTab("dneskai-published"),
+    ...dneskaiTab("dneskai-costs"),
     ...projectTabs.slice(1).filter((item) => item.id !== "sources"),
   ] : projectTabs;
+  // A tab hidden in Settings, or one this project does not have, opens Overview instead.
+  const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : "overview";
 
   const healthLabel = health.health === "healthy" ? p.healthy : health.health === "attention" ? p.attentionStatus : p.atRisk;
   const localHealthReason = (reason: string) => {
@@ -254,7 +263,7 @@ export function ProjectWorkspace(props: Props) {
     {tab === "tasks" && <div className="space-y-4"><RecordCard title={p.projectTasks} icon={ListTodo} info={p.tasksFromNeededInfo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><div><div className="mb-2 flex items-center gap-1.5"><SectionLabel>{p.projectNotes}</SectionLabel><Tooltip content={p.notesInfo}><span className="inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip></div><NotesPanel notes={props.notes} setNotes={props.setNotes} projects={[project]} projectId={project.id} embedded /></div></div>}
     {tab === "activity" && <div className="space-y-4">{project.repo_full_name && <ProjectGithubActivity repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} />}<RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} /></div>}
     {tab === "communication" && <ProjectCommunicationPanel projectId={project.id} communications={projectCommunications} setCommunications={props.setCommunications} />}
-    {isDneskaiTab(tab) && dneskai && <DneskaiWorkspaceTab tab={tab} projectId={project.id} lang={lang} preview={props.isPreview} />}
+    {isDneskaiProjectTab(tab) && dneskai && <DneskaiWorkspaceTab tab={tab} projectId={project.id} lang={lang} preview={props.isPreview} />}
     {tab === "sources" && isDneskaiProject(project) && <div className="space-y-8"><DneskaiInstagramAccount lang={lang} disabled={props.isPreview} /><DneskaiSources projectId={project.id} lang={lang} disabled={props.isPreview} /></div>}
     {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
     {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.monthlyCost} icon={CircleDollarSign} info={p.costsInfo} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.invoices} icon={FileText} info={p.invoicesInfo} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} info={p.subscriptionsInfo} empty={p.noRelatedRecords} items={projectSubscriptions.map(({ subscription, share, monthly }) => ({ id: subscription.id, primary: subscription.name, secondary: `${formatCurrency(subscription.amount, subscription.currency)} · ${t.subscriptions.cycle[subscription.billing_cycle]} · ${Math.round(share * 100)}% → ${formatCurrency(monthly, displayCurrency)}${t.subscriptions.perMo}` }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} info={p.transactionsInfo} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /></div></div>}

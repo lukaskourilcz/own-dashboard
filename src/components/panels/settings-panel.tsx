@@ -18,7 +18,7 @@ import {
   SlidersHorizontal,
   Sun,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -70,9 +70,11 @@ import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { saveUserPreferences } from "@/lib/preference-client";
 import {
+  DNESKAI_PROJECT_TABS,
   PROJECT_WORKSPACE_TABS,
-  type ProjectWorkspaceTab,
+  type ProjectTabId,
 } from "@/lib/project-workspace-tabs";
+import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
 
 type NavRowItem = { value: string; icon: typeof Sun };
 
@@ -276,7 +278,8 @@ export function SettingsPanel({
   const { showCzechCareer, setShowCzechCareer } = useCzechCareerVisibility();
   const { hiddenProjectTabs, setHiddenProjectTabs } =
     useProjectTabVisibility();
-  const toggleProjectTab = (tab: ProjectWorkspaceTab) => {
+  const dneskaiTabsHeadingId = useId();
+  const toggleProjectTab = (tab: ProjectTabId) => {
     if (tab === "overview") return;
     const next = hiddenProjectTabs.includes(tab)
       ? hiddenProjectTabs.filter((item) => item !== tab)
@@ -284,7 +287,8 @@ export function SettingsPanel({
     setHiddenProjectTabs(next);
     savePreferences({ hidden_project_tabs: next });
   };
-  const projectTabLabel = (tab: ProjectWorkspaceTab) => {
+  const projectTabLabel = (tab: ProjectTabId) => {
+    const dneskaiLabels = dneskaiWorkspace[lang].tabs;
     const labels = {
       overview: t.professional.projectOverview,
       tasks: t.professional.projectTasks,
@@ -297,8 +301,33 @@ export function SettingsPanel({
       sources: t.professional.projectSources,
       scaling: t.professional.projectScaling,
       monetization: t.professional.projectMonetization,
-    } satisfies Record<ProjectWorkspaceTab, string>;
+      "dneskai-review": dneskaiLabels.review,
+      "dneskai-calendar": dneskaiLabels.calendar,
+      "dneskai-published": dneskaiLabels.published,
+      "dneskai-costs": dneskaiLabels.costs,
+    } satisfies Record<ProjectTabId, string>;
     return labels[tab];
+  };
+  const projectTabRow = (tab: ProjectTabId, describedBy?: string) => {
+    const alwaysVisible = tab === "overview";
+    return (
+      <li
+        key={tab}
+        className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
+      >
+        <span className="text-sm font-medium">{projectTabLabel(tab)}</span>
+        {alwaysVisible ? (
+          <SectionLabel>{t.settings.alwaysVisible}</SectionLabel>
+        ) : (
+          <Switch
+            checked={!hiddenProjectTabs.includes(tab)}
+            onCheckedChange={() => toggleProjectTab(tab)}
+            aria-label={projectTabLabel(tab)}
+            aria-describedby={describedBy}
+          />
+        )}
+      </li>
+    );
   };
 
   const activeProjectsList = projects.filter((p) => p.is_active);
@@ -538,28 +567,18 @@ export function SettingsPanel({
               {t.settings.projectSectionsDesc}
             </p>
             <ul className="divide-y divide-border rounded-md border border-border">
-              {PROJECT_WORKSPACE_TABS.map((tab) => {
-                const alwaysVisible = tab === "overview";
-                return (
-                  <li
-                    key={tab}
-                    className="flex min-h-11 items-center justify-between gap-3 px-3 py-2"
-                  >
-                    <span className="text-sm font-medium">
-                      {projectTabLabel(tab)}
-                    </span>
-                    {alwaysVisible ? (
-                      <SectionLabel>{t.settings.alwaysVisible}</SectionLabel>
-                    ) : (
-                      <Switch
-                        checked={!hiddenProjectTabs.includes(tab)}
-                        onCheckedChange={() => toggleProjectTab(tab)}
-                        aria-label={projectTabLabel(tab)}
-                      />
-                    )}
-                  </li>
-                );
-              })}
+              {PROJECT_WORKSPACE_TABS.map((tab) => projectTabRow(tab))}
+            </ul>
+            <div id={dneskaiTabsHeadingId}>
+              <SectionLabel>{t.settings.projectSectionsDneskai}</SectionLabel>
+            </div>
+            <ul
+              aria-labelledby={dneskaiTabsHeadingId}
+              className="divide-y divide-border rounded-md border border-border"
+            >
+              {DNESKAI_PROJECT_TABS.map((tab) =>
+                projectTabRow(tab, dneskaiTabsHeadingId),
+              )}
             </ul>
           </CardContent>
         </Card>
