@@ -10,12 +10,16 @@ const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 async function openWorkspace(page: Page, lang: 'en' | 'cs', tab: keyof typeof dneskaiWorkspace.en.tabs, theme: 'light' | 'dark' = 'light') {
   const requests: string[] = [];
   page.on('request', (request) => { if (/\/api\/marketing\/(dneskai|revisions|accounts)/.test(request.url())) requests.push(request.url()); });
-  await page.route('**/api/vercel/analytics?**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ kind: 'unconfigured' }) }));
   await gotoPreview(page, { lang, theme });
   await page.goto('/dev-preview?project=dneskai');
   await page.getByRole('tab', { name: dneskaiWorkspace[lang].tabs[tab], exact: true }).click();
   return requests;
 }
+// Project Overview asks for traffic metadata as soon as any project opens. Stub it before the first navigation of
+// every test: the review test opens devShark first, and an unstubbed request answers 401 into the console watcher.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/vercel/analytics?**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ kind: 'unconfigured' }) }));
+});
 const noOverflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 const firstPost = (page: Page) => page.getByTestId('dneskai-post').first();
 
