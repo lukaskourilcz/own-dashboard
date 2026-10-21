@@ -4,8 +4,8 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
-  dneskaiCalendarDays, dneskaiJobState, dneskaiPostState, dneskaiPublished, dneskaiReviewQueue, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
-  DNESKAI_POST_STATES, DNESKAI_STATE_TONES, pragueDstDay, type DneskaiWorkspacePost,
+  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostState, dneskaiPublished, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
+  DNESKAI_POST_STATES, DNESKAI_RENDER_ATTACH_GRACE_MS, DNESKAI_STATE_TONES, pragueDstDay, type DneskaiWorkspacePost,
 } from '@/lib/marketing/dneskai-workspace';
 import {
   createDeckDraft, dneskaiCreditLine, dneskaiEditRequest, draftProblems, focalFromPoint, mediaFits, mediaResolution, moveFocal, moveSlide, orderedMediaPool, removeSlide,
@@ -24,6 +24,8 @@ const now = new Date('2026-10-24T09:00:00Z');
 const read = () => createDneskaiWorkspaceFixture(now);
 const post = (n: number) => read().posts.find((item) => item.id.endsWith(String(n).padStart(12, '0')))!;
 const base = (patch: Partial<DneskaiWorkspacePost>): DneskaiWorkspacePost => ({ ...post(1), ...patch });
+const context = { now: now.getTime() };
+const ago = (ms: number) => new Date(now.getTime() - ms).toISOString();
 
 describe('DNESKAi post states (#119)', () => {
   it('maps every revision, render and publication combination to one state with text and tone', () => {
@@ -38,13 +40,23 @@ describe('DNESKAi post states (#119)', () => {
       [{ status: 'reconciliation', publication: { ...post(7).publication!, errorCode: null } }, 'problem', 'read-only-reconciliation'],
       [{ status: 'failed', publication: { ...post(7).publication!, status: 'failed', errorCode: 'access-token-expired' } }, 'problem', 'access-token-expired'],
       [{ status: 'skipped' }, 'skipped', null],
-      [{ ready: false, assets: [], renderReport: null }, 'preparing', null],
+      [{ ready: false, assets: [], renderReport: null, createdAt: ago(20_000) }, 'preparing', null],
+      [{ ready: false, assets: [], renderReport: null, createdAt: ago(DNESKAI_RENDER_ATTACH_GRACE_MS - 1) }, 'preparing', null],
+      // Saved by an edit, never attached: the attach call failed or the route ran out of time after saving.
+      [{ ready: false, assets: [], renderReport: null, createdAt: ago(DNESKAI_RENDER_ATTACH_GRACE_MS) }, 'problem', 'render-attach-failed'],
+      [{ ready: false, assets: [], renderReport: null, createdAt: ago(10 * 3_600_000) }, 'problem', 'render-attach-failed'],
+      // A returned version keeps its owner state; a stored render report is never read as a missing attach.
+      [{ status: 'returned', ready: false, assets: [], renderReport: null, createdAt: ago(10 * 3_600_000) }, 'returned', null],
       [{ ready: false, assets: [], renderReport: post(3).renderReport }, 'problem', 'text-clipped'],
       [{ ready: false, renderReport: { ...post(3).renderReport!, status: 'failed', problems: [] } }, 'problem', 'render-unavailable'],
       [{ ready: false, deck: null, renderReport: null }, 'problem', 'revision-not-ready'],
     ];
-    for (const [patch, state, code] of cases) expect(dneskaiPostState(base(patch)), JSON.stringify(patch).slice(0, 80)).toMatchObject({ state, code });
-    expect(dneskaiPostState(base({ status: 'publishing', publication: { ...post(5).publication!, status: 'claimed' } })).publishing).toBe(true);
+    for (const [patch, state, code] of cases) expect(dneskaiPostState(base(patch), context), JSON.stringify(patch).slice(0, 80)).toMatchObject({ state, code });
+    expect(dneskaiPostState(base({ status: 'publishing', publication: { ...post(5).publication!, status: 'claimed' } }), context).publishing).toBe(true);
+    // A version this session saw fail to attach (502 with its id) is a problem at once, inside the grace period too.
+    const fresh = base({ ready: false, assets: [], renderReport: null, createdAt: ago(5_000) });
+    expect(dneskaiPostState(fresh, { ...context, renderFailed: new Set([fresh.id]) })).toMatchObject({ state: 'problem', code: 'render-attach-failed' });
+    expect(dneskaiPostState(fresh, { ...context, renderFailed: new Set(['d0e5ca10-0000-4000-8000-0000000000ee']) }).state).toBe('preparing');
     expect(dneskaiJobState({ status: 'running', errorCode: null }).state).toBe('preparing');
     expect(dneskaiJobState({ status: 'failed', errorCode: null })).toMatchObject({ state: 'problem', code: 'generation-failed' });
     expect(dneskaiJobState({ status: 'reconciliation', errorCode: null })).toMatchObject({ state: 'problem', code: 'worker-lease-expired' });
@@ -59,7 +71,12 @@ describe('DNESKAi post states (#119)', () => {
     const fixture = read();
     expect(fixture.today).toBe('2026-10-24');
     const queue = dneskaiReviewQueue(fixture);
-    expect(queue.posts.map((item) => item.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty', 'Tři zkratky pro terminál', 'Nová verze se vykresluje']);
+    expect(queue.posts.map((item) => item.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty', 'Tři zkratky pro terminál', 'Co stojí jeden dotaz', 'Lokální model na notebooku']);
+    // The fixtures show both sides of the grace period, measured from the read's own clock.
+    expect(queue.posts.slice(-2).map((item) => dneskaiPostState(item, dneskaiStateContext(fixture)))).toEqual([
+      { state: 'problem', code: 'render-attach-failed', publishing: false }, { state: 'preparing', code: null, publishing: false }]);
+    expect(dneskaiAwaitingRender(fixture)).toBe(true);
+    expect(dneskaiAwaitingRender({ ...fixture, generatedAt: new Date(now.getTime() + DNESKAI_RENDER_ATTACH_GRACE_MS).toISOString() })).toBe(false);
     expect(queue.jobs.map((job) => job.status)).toEqual(['running', 'failed']);
     expect(dneskaiPublished(fixture).map((item) => item.title)).toEqual(['Pět otázek před nasazením asistenta']);
     const days = dneskaiCalendarDays(fixture);
@@ -69,6 +86,8 @@ describe('DNESKAi post states (#119)', () => {
     expect(days[1]!.entries.filter((entry) => entry.kind === 'post').map((entry) => entry.kind === 'post' && entry.post.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty']);
     expect(days[1]!.entries.find((entry) => entry.time === '20:00')?.kind).toBe('job');
     expect(days[0]!.entries.find((entry) => entry.time === '08:00')).toMatchObject({ kind: 'post', state: { state: 'problem', code: 'meta-request-uncertain' } });
+    expect(days[3]!.entries.find((entry) => entry.time === '12:30')).toMatchObject({ kind: 'post', state: { state: 'problem', code: 'render-attach-failed' } });
+    expect(days[3]!.entries.find((entry) => entry.time === '17:00')).toMatchObject({ kind: 'post', state: { state: 'preparing', code: null } });
     expect(pragueDstDay('2026-10-25')).toBe(true);
     expect(pragueDstDay('2026-10-24')).toBe(false);
     expect(pragueDstDay('2026-03-29')).toBe(true);

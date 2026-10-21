@@ -11,7 +11,8 @@ import { qk } from '@/lib/queries/keys';
  * deterministic `/dev-preview` harness can stand in for the server (`src/lib/demo/dneskai-workspace-demo.ts`).
  */
 export class DneskaiWorkspaceRequestError extends Error {
-  constructor(readonly code: string, readonly status: number) { super(code); this.name = 'DneskaiWorkspaceRequestError'; }
+  /** `revisionId`: the version an edit saved before it failed (502 render-attach-failed), so the editor can move to it. */
+  constructor(readonly code: string, readonly status: number, readonly revisionId: string | null = null) { super(code); this.name = 'DneskaiWorkspaceRequestError'; }
 }
 
 export const DneskaiEditResultSchema = z.strictObject({
@@ -37,13 +38,15 @@ export interface DneskaiWorkspaceApi {
 const codeShape = /^[a-z][a-z0-9_-]{0,99}$/;
 async function failure(response: Response): Promise<DneskaiWorkspaceRequestError> {
   let code = 'decision-failed';
+  let revisionId: string | null = null;
   try {
-    const body = await response.json() as { error?: unknown; reason?: unknown };
+    const body = await response.json() as { error?: unknown; reason?: unknown; id?: unknown };
     // An approval refusal names its reason (`render-blocked`, `revision-changed`, …); prefer it over the generic code.
     const reason = typeof body.reason === 'string' && codeShape.test(body.reason) ? body.reason : null;
     code = reason ?? (typeof body.error === 'string' && codeShape.test(body.error) ? body.error : code);
+    revisionId = z.uuid().safeParse(body.id).data ?? null;
   } catch { /* the generic code stays */ }
-  return new DneskaiWorkspaceRequestError(response.status === 429 ? 'rate-limited' : code, response.status);
+  return new DneskaiWorkspaceRequestError(response.status === 429 ? 'rate-limited' : code, response.status, revisionId);
 }
 async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
   const response = await fetch(url, { cache: 'no-store', signal });

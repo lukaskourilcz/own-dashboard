@@ -112,11 +112,37 @@ export function renderBlocking(report: DneskaiRenderReport | null): boolean {
 }
 
 export type DneskaiPostStateDetail = { state: DneskaiPostState; code: string | null; publishing: boolean };
+
+/**
+ * How long an edited version may wait for its render before it reads as failed. POST /api/marketing/revisions saves
+ * the new version unready, then renders and attaches it within its 60 s limit; nothing renders it later.
+ */
+export const DNESKAI_RENDER_ATTACH_GRACE_MS = 2 * 60_000;
+
+/**
+ * What a post's state depends on besides the post: the instant the read was built (`generatedAt`), and the versions
+ * this browser session saw fail to attach (the edit answered 502 render-attach-failed with the saved id).
+ */
+export type DneskaiStateContext = { now: number; renderFailed?: ReadonlySet<string> };
+export const dneskaiStateContext = (read: Pick<DneskaiWorkspaceRead, 'generatedAt'>, renderFailed?: ReadonlySet<string>): DneskaiStateContext =>
+  ({ now: Date.parse(read.generatedAt), renderFailed });
+
+type StatePost = Pick<DneskaiWorkspacePost, 'id' | 'status' | 'ready' | 'renderReport' | 'publication' | 'deck' | 'assets' | 'createdAt'>;
+/**
+ * An edited deck version whose render never attached: unready, with no render report and no slides, and either known
+ * to have failed or older than the grace period. The attach call failed or the route ran out of time after saving it.
+ */
+export function dneskaiRenderAttachFailed(post: StatePost, context: DneskaiStateContext): boolean {
+  if (post.status !== 'review' || post.ready || !post.deck || post.renderReport !== null || post.assets.length > 0) return false;
+  return !!context.renderFailed?.has(post.id) || context.now - Date.parse(post.createdAt) >= DNESKAI_RENDER_ATTACH_GRACE_MS;
+}
+
 /**
  * The state of one post, from its revision, render and publication. A deck still waiting for its render is
- * preparing; a refused or failed render, a failed job and an uncertain publication are a problem with a code.
+ * preparing until the grace period ends; a render that never attached, a refused or failed render, a failed job and
+ * an uncertain publication are a problem with a code.
  */
-export function dneskaiPostState(post: Pick<DneskaiWorkspacePost, 'status' | 'ready' | 'renderReport' | 'publication' | 'deck'>): DneskaiPostStateDetail {
+export function dneskaiPostState(post: StatePost, context: DneskaiStateContext): DneskaiPostStateDetail {
   const publication = post.publication;
   const problemCode = publication?.errorCode ?? null;
   if (post.status === 'published' || publication?.status === 'published') return { state: 'published', code: null, publishing: false };
@@ -132,6 +158,7 @@ export function dneskaiPostState(post: Pick<DneskaiWorkspacePost, 'status' | 're
     const blocking = post.renderReport!.problems.find((problem) => problem.blocking);
     return { state: 'problem', code: blocking?.code ?? (post.renderReport!.status === 'failed' ? 'render-unavailable' : 'render-refused'), publishing: false };
   }
+  if (dneskaiRenderAttachFailed(post, context)) return { state: 'problem', code: 'render-attach-failed', publishing: false };
   if (!post.ready) return { state: post.deck ? 'preparing' : 'problem', code: post.deck ? null : 'revision-not-ready', publishing: false };
   return { state: 'review', code: null, publishing: false };
 }
@@ -140,6 +167,12 @@ export function dneskaiPostState(post: Pick<DneskaiWorkspacePost, 'status' | 're
 export function dneskaiJobState(job: Pick<DneskaiWorkspaceJob, 'status' | 'errorCode'>): DneskaiPostStateDetail {
   if (job.status === 'queued' || job.status === 'running') return { state: 'preparing', code: null, publishing: false };
   return { state: 'problem', code: job.errorCode ?? (job.status === 'reconciliation' ? 'worker-lease-expired' : 'generation-failed'), publishing: false };
+}
+
+/** Whether a post in the read still waits for its render; the review reads again until each attaches or reads as failed. */
+export function dneskaiAwaitingRender(read: Pick<DneskaiWorkspaceRead, 'posts' | 'generatedAt'>): boolean {
+  const context = dneskaiStateContext(read);
+  return read.posts.some((post) => dneskaiPostState(post, context).state === 'preparing');
 }
 
 /** Whether the owner can act on a post in Today for review: everything not yet decided. */
@@ -172,14 +205,15 @@ const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone:
  * time order. A slot holds the post scheduled at it; posts at other times (an owner-edited time) keep their own row.
  * Superseded revisions never appear; a skipped one frees its slot.
  */
-export function dneskaiCalendarDays(input: { today: string; slots: readonly string[]; posts: readonly DneskaiWorkspacePost[]; jobs: readonly DneskaiWorkspaceJob[] }): DneskaiCalendarDay[] {
+export function dneskaiCalendarDays(input: { today: string; generatedAt: string; slots: readonly string[]; posts: readonly DneskaiWorkspacePost[]; jobs: readonly DneskaiWorkspaceJob[] }, renderFailed?: ReadonlySet<string>): DneskaiCalendarDay[] {
   const days = Array.from({ length: 7 }, (_, index) => pragueDayAfter(input.today, index));
+  const context = dneskaiStateContext(input, renderFailed);
   const visible = input.posts.filter((post) => post.status !== 'superseded' && post.status !== 'skipped');
   return days.map((date) => {
     const entries: DneskaiCalendarEntry[] = [];
     for (const post of visible) {
       const at = post.publication?.scheduledAt ?? post.scheduledAt;
-      if (pragueDate(at) === date) entries.push({ kind: 'post', at, time: pragueTime(at), post, state: dneskaiPostState(post) });
+      if (pragueDate(at) === date) entries.push({ kind: 'post', at, time: pragueTime(at), post, state: dneskaiPostState(post, context) });
     }
     for (const job of input.jobs) {
       if (job.scheduledAt && pragueDate(job.scheduledAt) === date && !entries.some((entry) => entry.at === job.scheduledAt)) {

@@ -17,7 +17,7 @@ import {
   swapSlideImage, type DeckDraft, type DraftProblem,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError, type DneskaiEditResult } from '@/lib/marketing/dneskai-workspace-client';
-import { dneskaiPostState, renderBlocking, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiPostState, dneskaiStateContext, renderBlocking, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiFieldLimit } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { DneskaiSlideStrip } from './slide-strip';
@@ -31,12 +31,13 @@ type Lang = 'en' | 'cs';
 const shortHash = (hash: string) => hash.slice(0, 7);
 
 /** Whether the owner may approve this exact version now, and if not, why. */
-export function dneskaiApprovalBlock(post: DneskaiWorkspacePost, read: Pick<DneskaiWorkspaceRead, 'accounts'>, loaded: boolean, lang: Lang): string | null {
+export function dneskaiApprovalBlock(post: DneskaiWorkspacePost, read: Pick<DneskaiWorkspaceRead, 'accounts' | 'generatedAt'>, loaded: boolean, lang: Lang, renderFailed?: ReadonlySet<string>): string | null {
   const t = dneskaiWorkspace[lang].card;
-  const state = dneskaiPostState(post).state;
+  const detail = dneskaiPostState(post, dneskaiStateContext(read, renderFailed));
   if (post.status !== 'review') return t.blockedStatus;
   if (renderBlocking(post.renderReport)) return t.blockedRender;
-  if (!post.ready || state === 'preparing') return t.blockedPreparing;
+  if (detail.code === 'render-attach-failed') return t.blockedAttach;
+  if (!post.ready || detail.state === 'preparing') return t.blockedPreparing;
   if (!read.accounts.some((account) => account.verified && account.remoteId === post.account.id)) return t.blockedAccount;
   if (!loaded) return t.blockedImages;
   return null;
@@ -48,14 +49,19 @@ export function dneskaiApprovalBlock(post: DneskaiWorkspacePost, read: Pick<Dnes
  * and ordering slides, and the caption, time and account. Saving renders a new version; the one main button is then
  * „Approve and schedule“ with the new version's hash. Radix keeps focus inside and Escape returns it to the opener.
  */
-export function DneskaiPostEditor({ open, onOpenChange, postId, initialSlide, read, projectId, lang, preview, onSaved, onApprove, approving, returnFocus }: {
+export function DneskaiPostEditor({ open, onOpenChange, postId, initialSlide, read, projectId, lang, preview, onSaved, onRenderFailed, renderFailed, onApprove, approving, returnFocus }: {
   open: boolean; onOpenChange: (open: boolean) => void; postId: string | null; initialSlide: number; read: DneskaiWorkspaceRead; projectId: string; lang: Lang; preview: boolean;
   onSaved: (result: DneskaiEditResult, previousId: string) => void; onApprove: (post: DneskaiWorkspacePost) => Promise<boolean>; approving: boolean;
+  /** An edit saved a new version, then its render did not attach (502 render-attach-failed): the editor moves to that version. */
+  onRenderFailed?: (id: string, previousId: string) => void;
+  /** Versions this session saw fail to attach; they read as a problem at once instead of after the grace period. */
+  renderFailed?: ReadonlySet<string>;
   /** Where focus goes when the editor closes: the control that opened it, or a stable fallback when that is gone. */
   returnFocus?: () => void;
 }) {
   const t = dneskaiWorkspace[lang];
-  const post = postId ? read.posts.find((item) => item.id === postId) ?? null : null;
+  // A failed save may still have replaced the open version (a timeout after saving); then the editor follows its successor.
+  const post = postId ? read.posts.find((item) => item.id === postId) ?? read.posts.find((item) => item.replacesId === postId && item.status !== 'superseded') ?? null : null;
   // Kept here, not in the body: a save switches the editor to the new version, which remounts the body.
   const [notice, setNotice] = useState('');
   return <Dialog open={open} onOpenChange={(next) => { if (!next) setNotice(''); onOpenChange(next); }}>
@@ -66,15 +72,17 @@ export function DneskaiPostEditor({ open, onOpenChange, postId, initialSlide, re
         <DialogDescription>{post ? `${post.title} · ${t.editor.description}` : t.editor.description}</DialogDescription>
       </DialogHeader>
       {post ? <EditorBody key={post.id} post={post} read={read} initialSlide={initialSlide} projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onApprove={onApprove} approving={approving}
+        onRenderFailed={onRenderFailed} renderFailed={renderFailed}
         notice={notice} setNotice={setNotice} onClose={() => { setNotice(''); onOpenChange(false); }} />
         : <p role="status" className="py-6 text-sm text-foreground-muted">{t.editor.waiting}</p>}
     </DialogContent>
   </Dialog>;
 }
 
-function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSaved, onApprove, approving, onClose, notice, setNotice }: {
+function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSaved, onRenderFailed, renderFailed, onApprove, approving, onClose, notice, setNotice }: {
   post: DneskaiWorkspacePost; read: DneskaiWorkspaceRead; initialSlide: number; projectId: string; lang: Lang; preview: boolean;
   onSaved: (result: DneskaiEditResult, previousId: string) => void; onApprove: (post: DneskaiWorkspacePost) => Promise<boolean>; approving: boolean; onClose: () => void;
+  onRenderFailed?: (id: string, previousId: string) => void; renderFailed?: ReadonlySet<string>;
   notice: string; setNotice: (notice: string) => void;
 }) {
   const t = dneskaiWorkspace[lang];
@@ -104,7 +112,10 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
 
   const request = useMemo(() => { try { return dneskaiEditRequest(post, draft, draft.accountId && draft.accountId !== currentAccount?.id ? draft.accountId : null); } catch { return null; } }, [post, draft, currentAccount]);
   const dirty = !request || !!request.deck || request.caption !== post.caption || request.scheduledAt !== post.scheduledAt || !!request.accountId;
-  const block = dneskaiApprovalBlock(post, read, loaded, lang);
+  const detail = dneskaiPostState(post, dneskaiStateContext(read, renderFailed));
+  // A version whose slides never attached can be saved unchanged: that renders it again as a new version.
+  const rerender = detail.code === 'render-attach-failed';
+  const block = dneskaiApprovalBlock(post, read, loaded, lang, renderFailed);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const ids = draft.slides.map((item) => `slide-${item.from}`);
   const minimum = post.deck?.format === 'single-image' ? 1 : 2;
@@ -124,7 +135,7 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
     event.preventDefault();
     const found = draftProblems(post, draft);
     if (found.length) { setProblems(found); setNotice(''); return; }
-    if (!dirty || !request) { setNotice(t.editor.unchanged); return; }
+    if ((!dirty && !rerender) || !request) { setNotice(t.editor.unchanged); return; }
     setSaving(true); setFailure(null); setNotice(t.editor.saving);
     try {
       const result = await (await dneskaiWorkspaceApi(preview)).edit(request);
@@ -136,6 +147,10 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
     } catch (error) {
       setFailure(error instanceof DneskaiWorkspaceRequestError ? error.code : 'decision-failed');
       setNotice('');
+      // The server may have saved a new version and superseded this one before failing; read again either way.
+      if (error instanceof DneskaiWorkspaceRequestError && error.code === 'render-attach-failed' && error.revisionId) onRenderFailed?.(error.revisionId, post.id);
+      void queryClient.invalidateQueries({ queryKey: keys.review });
+      void queryClient.invalidateQueries({ queryKey: keys.costs });
     } finally { setSaving(false); }
   }
 
@@ -148,13 +163,14 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
 
   return <form onSubmit={save} className="space-y-4" aria-busy={saving} noValidate>
     <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
-      <DneskaiStateChip detail={dneskaiPostState(post)} lang={lang} />
+      <DneskaiStateChip detail={detail} lang={lang} />
       <span className="tabular">{new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Prague' }).format(new Date(post.scheduledAt))}</span>
       <span>@{post.account.handle}</span>
     </div>
     <DneskaiSlideStrip compact post={post} lang={lang} selected={selected} onLoadedChange={onLoadedChange} label={`${t.card.slides}: ${post.title}`}
       onOpenSlide={(index) => { const at = draft.slides.findIndex((item) => item.from === index); if (at >= 0) setSelected(at); }} />
     {post.renderReport && <DneskaiRenderProblems problems={post.renderReport.problems} lang={lang} />}
+    {detail.state === 'problem' && !post.renderReport?.problems.length && <DneskaiCodeText code={detail.code} lang={lang} />}
 
     <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)_minmax(0,18rem)]">
       <section aria-labelledby={`${id}-slides`} className="min-w-0 space-y-2">
@@ -228,8 +244,8 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
 
     <div className="flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-end">
       <Button type="button" variant="ghost" onClick={onClose}>{t.editor.close}</Button>
-      {dirty
-        ? <Button type="submit" disabled={saving} aria-busy={saving} data-testid="dneskai-editor-main">{saving ? t.editor.saving : t.editor.save}</Button>
+      {dirty || rerender
+        ? <Button type="submit" disabled={saving} aria-busy={saving} data-testid="dneskai-editor-main">{saving ? t.editor.saving : dirty ? t.editor.save : t.editor.rerender}</Button>
         : <div className="flex flex-col items-stretch gap-1 sm:items-end">
           <Button type="button" disabled={!!block || approving} data-testid="dneskai-editor-main" aria-describedby={block ? `${id}-block` : undefined} onClick={() => void onApprove(post).then((done) => { if (done) onClose(); })}>
             {approving ? t.card.approving : t.card.approve}<span className="font-mono text-[11px]">· {t.card.version(shortHash(post.contentHash))}</span>

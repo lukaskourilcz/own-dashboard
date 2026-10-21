@@ -43,8 +43,8 @@ const photo = (name: keyof typeof assets.photos, candidateId: string, position: 
   return { assetSha256: item.sha256, candidateId, position, credit, width: item.width, height: item.height, originKind: position === 0 ? 'og-image' : 'article-figure',
     fullBleedCapable: Math.min(item.width, item.height) >= 900, insetCapable: item.width >= 600 };
 };
-/** The fixed renders a refused preview post shows once its problems are edited away, by post id. */
-export const demoSlides: Record<string, ReturnType<typeof rendersOf>> = { [id(3)]: rendersOf('g') };
+/** The renders a preview post without stored slides shows once it is saved again (refused, or never attached), by post id. */
+export const demoSlides: Record<string, ReturnType<typeof rendersOf>> = { [id(3)]: rendersOf('g'), [id(9)]: rendersOf('c'), [id(10)]: rendersOf('b') };
 
 export function demoAccounts(now: Date): MarketingAccountStatus[] {
   return [{ id: 'd0e5ca10-0000-4000-8000-0000000000aa', brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verifiedAt: new Date(now.getTime() - 2 * 86_400_000).toISOString(), enabled: false,
@@ -99,7 +99,10 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     base(7, 'f', { title: 'Kdy ověřit odpověď modelu', status: 'reconciliation', approvedAt: created(20), scheduledAt: at(0, '08:00'),
       publication: { id: id(107), status: 'reconciliation', scheduledAt: at(0, '08:00'), remoteUrl: null, errorCode: 'meta-request-uncertain', lastCheckedAt: at(0, '08:31'), publishedAt: null } }),
     base(8, 'd', { title: 'Schválený příspěvek bez zařazení', status: 'approved', approvedAt: created(1), scheduledAt: at(3, '08:00') }),
-    base(9, 'c', { title: 'Nová verze se vykresluje', ready: false, assets: [], renderReport: null, scheduledAt: at(3, '12:30') }),
+    // An edited version whose slides never attached (hours old, no render report): a problem, saved again from the editor.
+    base(9, 'c', { title: 'Co stojí jeden dotaz', ready: false, assets: [], renderReport: null, scheduledAt: at(3, '12:30') }),
+    // An edited version saved 20 seconds before the read: its render is still on its way.
+    base(10, 'b', { title: 'Lokální model na notebooku', ready: false, assets: [], renderReport: null, createdAt: new Date(now.getTime() - 20_000).toISOString(), scheduledAt: at(3, '17:00') }),
   ];
   return {
     schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: ['08:00', '12:30', '17:00', '20:00'],

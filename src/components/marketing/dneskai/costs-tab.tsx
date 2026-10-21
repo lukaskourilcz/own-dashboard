@@ -8,17 +8,21 @@ import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
 import { marketingTokenState } from '@/lib/marketing/accounts-client';
 import { dneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import { qk } from '@/lib/queries/keys';
-import type { DneskaiCostsRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiNeedsReview, dneskaiPostState, dneskaiStateContext, type DneskaiCostsRead, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiCodeText } from './code-text';
+import { DneskaiStateChip } from './state-chip';
 import { TabHeader, pragueDateTime } from './review-tab';
 
 type Lang = 'en' | 'cs';
 
 /**
  * „Chyby a náklady“ (#119): the 24-hour generation spend against the daily limit, the Instagram token, cost per day,
- * collection runs, failed or uncertain jobs and publications, and the scheduler's last 24 hours. Read-only.
+ * collection runs, posts waiting for review that cannot be approved, failed or uncertain jobs and publications, and
+ * the scheduler's last 24 hours. Read-only.
  */
-export function DneskaiCostsTab({ read, lang, preview, refreshing, onRefresh, now = new Date() }: { read: DneskaiCostsRead; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date }) {
+export function DneskaiCostsTab({ read, review = 'loading', lang, preview, refreshing, onRefresh, now = new Date() }: {
+  read: DneskaiCostsRead; review?: DneskaiWorkspaceRead | 'loading' | 'unavailable'; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date;
+}) {
   const t = dneskaiWorkspace[lang];
   const usd = (value: number) => new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
   const day = (date: string) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
@@ -62,6 +66,8 @@ export function DneskaiCostsTab({ read, lang, preview, refreshing, onRefresh, no
       </li>)}</ul>}
     </section>
 
+    <BlockedPosts review={review} lang={lang} />
+
     <section aria-labelledby="dneskai-jobs-title" className="min-w-0 space-y-2">
       <h3 id="dneskai-jobs-title" className="text-sm font-semibold">{t.costs.jobs}</h3>
       {read.jobs.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noJobs}</p> : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.jobs.map((job) => <li key={job.id} className="min-w-0 space-y-1 px-3 py-2.5">
@@ -92,6 +98,25 @@ export function DneskaiCostsTab({ read, lang, preview, refreshing, onRefresh, no
         </li>)}</ul>
       </>}
     </section>
+  </section>;
+}
+
+/** Undecided posts in a problem state: a refused render, a render that never attached, a version that cannot be approved. */
+function BlockedPosts({ review, lang }: { review: DneskaiWorkspaceRead | 'loading' | 'unavailable'; lang: Lang }) {
+  const t = dneskaiWorkspace[lang];
+  const blocked = typeof review === 'string' ? [] : review.posts.filter(dneskaiNeedsReview)
+    .map((post) => ({ post, detail: dneskaiPostState(post, dneskaiStateContext(review)) })).filter(({ detail }) => detail.state === 'problem')
+    .sort((a, b) => Date.parse(a.post.scheduledAt) - Date.parse(b.post.scheduledAt));
+  return <section aria-labelledby="dneskai-blocked-title" className="min-w-0 space-y-2">
+    <h3 id="dneskai-blocked-title" className="text-sm font-semibold">{t.costs.posts}</h3>
+    {review === 'loading' ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
+      : review === 'unavailable' ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
+        : blocked.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noPosts}</p>
+          : <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="dneskai-blocked-posts">{blocked.map(({ post, detail }) => <li key={post.id} className="min-w-0 space-y-1 px-3 py-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="min-w-0 break-words">{post.title}</span>
+              <span className="flex items-center gap-2 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time><DneskaiStateChip detail={detail} lang={lang} /></span></div>
+            <DneskaiCodeText code={detail.code} lang={lang} details={[[t.detailRevision, post.id], [t.detailHash, post.contentHash]]} />
+          </li>)}</ul>}
   </section>;
 }
 

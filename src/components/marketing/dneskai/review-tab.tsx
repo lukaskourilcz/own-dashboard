@@ -7,7 +7,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Textarea } from '@/components/ui/textarea';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError, type DneskaiEditResult } from '@/lib/marketing/dneskai-workspace-client';
-import { dneskaiJobState, dneskaiPostState, dneskaiReviewQueue, pragueDate, pragueDayAfter, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import {
+  dneskaiJobState, dneskaiPostState, dneskaiReviewQueue, dneskaiStateContext, pragueDate, pragueDayAfter, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
+} from '@/lib/marketing/dneskai-workspace';
 import { DneskaiSlideStrip } from './slide-strip';
 import { DneskaiStateChip } from './state-chip';
 import { DneskaiRenderProblems } from './render-problems';
@@ -32,6 +34,9 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
   const [message, setMessage] = useState<{ text: string; code?: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [editor, setEditor] = useState<{ id: string; slide: number } | null>(null);
+  // Versions an edit saved whose slides did not attach (502 render-attach-failed): a problem at once, not after the grace period.
+  const [renderFailed, setRenderFailed] = useState<ReadonlySet<string>>(() => new Set());
+  const context = dneskaiStateContext(read, renderFailed);
   // The control that opened the editor gets focus back on close; after a save replaced its card, the heading does.
   const opener = useRef<HTMLElement | null>(null);
   const heading = useRef<HTMLDivElement>(null);
@@ -76,13 +81,17 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
     } finally { setBusy(null); }
   }
   const onSaved = useCallback((result: DneskaiEditResult) => { setEditor((current) => current ? { id: result.id, slide: current.slide } : current); }, []);
+  const onRenderFailed = useCallback((id: string) => {
+    setRenderFailed((current) => new Set(current).add(id));
+    setEditor((current) => current ? { id, slide: current.slide } : current);
+  }, []);
 
   return <section aria-labelledby="dneskai-review-title" className="min-w-0 space-y-5" data-testid="dneskai-review">
     <div ref={heading}><TabHeader id="dneskai-review-title" title={t.review.title} intro={t.review.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} focusable /></div>
     {!verified && <p className="border-l-2 border-warning pl-3 text-sm">{t.review.noAccount}</p>}
     <div aria-live="polite">{message && (message.code ? <div role="alert"><DneskaiCodeText code={message.code} lang={lang} /></div> : <p role="status" className="text-sm text-success">{message.text}</p>)}</div>
     {queue.posts.length === 0 && queue.jobs.length === 0 ? <EmptyState align="start" title={t.review.empty} description={t.review.emptyDescription} className="rounded-lg border border-border bg-surface" />
-      : <div className="space-y-4">{queue.posts.map((post) => <PostCard key={post.id} post={post} read={read} lang={lang} busy={busy === post.id}
+      : <div className="space-y-4">{queue.posts.map((post) => <PostCard key={post.id} post={post} read={read} renderFailed={renderFailed} lang={lang} busy={busy === post.id}
         onEdit={(slide) => openEditor(post.id, slide)} onApprove={() => void approve(post)} onDecide={(action, feedback) => decide(post, action, feedback)} />)}</div>}
     {queue.jobs.length > 0 && <section aria-labelledby="dneskai-preparing-title" className="space-y-2">
       <h3 id="dneskai-preparing-title" className="text-sm font-semibold">{t.review.preparingTitle}</h3>
@@ -91,7 +100,7 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
     {decided.length > 0 && <section aria-labelledby="dneskai-decided-title" className="space-y-2">
       <h3 id="dneskai-decided-title" className="text-sm font-semibold">{t.review.decided}</h3>
       <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{decided.map((post) => {
-        const state = dneskaiPostState(post);
+        const state = dneskaiPostState(post, context);
         return <li key={post.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm">
           <span className="min-w-0 break-words">{post.title}</span>
           <span className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time><DneskaiStateChip detail={state} lang={lang} /></span>
@@ -100,7 +109,7 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
       })}</ul>
     </section>}
     <DneskaiPostEditor open={!!editor} onOpenChange={(open) => { if (!open) setEditor(null); }} postId={editor?.id ?? null} initialSlide={editor?.slide ?? 0} read={read}
-      projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onApprove={approve} approving={!!editor && busy === editor.id} returnFocus={returnFocus} />
+      projectId={projectId} lang={lang} preview={preview} onSaved={onSaved} onRenderFailed={onRenderFailed} renderFailed={renderFailed} onApprove={approve} approving={!!editor && busy === editor.id} returnFocus={returnFocus} />
   </section>;
 }
 
@@ -129,18 +138,18 @@ function JobRow({ job, lang }: { job: DneskaiWorkspaceJob; lang: Lang }) {
   </li>;
 }
 
-function PostCard({ post, read, lang, busy, onEdit, onApprove, onDecide }: {
-  post: DneskaiWorkspacePost; read: DneskaiWorkspaceRead; lang: Lang; busy: boolean; onEdit: (slide: number) => void; onApprove: () => void;
+function PostCard({ post, read, renderFailed, lang, busy, onEdit, onApprove, onDecide }: {
+  post: DneskaiWorkspacePost; read: DneskaiWorkspaceRead; renderFailed: ReadonlySet<string>; lang: Lang; busy: boolean; onEdit: (slide: number) => void; onApprove: () => void;
   onDecide: (action: 'returned' | 'skipped', feedback?: string) => Promise<boolean>;
 }) {
   const t = dneskaiWorkspace[lang];
   const id = useId();
-  const state = dneskaiPostState(post);
+  const state = dneskaiPostState(post, dneskaiStateContext(read, renderFailed));
   const [loaded, setLoaded] = useState(false);
   const onLoadedChange = useCallback((value: boolean) => setLoaded(value), []);
   const [mode, setMode] = useState<'idle' | 'return' | 'skip'>('idle');
   const [feedback, setFeedback] = useState('');
-  const block = dneskaiApprovalBlock(post, read, loaded, lang);
+  const block = dneskaiApprovalBlock(post, read, loaded, lang, renderFailed);
   return <article aria-labelledby={`${id}-title`} className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface" data-testid="dneskai-post">
     <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
       <div className="min-w-0">

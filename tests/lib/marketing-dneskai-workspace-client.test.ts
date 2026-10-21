@@ -37,6 +37,13 @@ describe('DNESKAi workspace client (#119)', () => {
   it('validates the edit result and the review read before the UI sees them', async () => {
     stub(Response.json({ id: 'not-a-uuid' }));
     await expect(liveDneskaiWorkspaceApi.edit({ action: 'edit', id: '00000000-0000-4000-8000-000000000002', caption: 'x', scheduledAt: '2099-01-01T00:00:00.000Z' })).rejects.toMatchObject({ code: 'render-attach-failed' });
+    // A saved version whose render did not attach comes back with its id, so the editor can move to it.
+    stub(Response.json({ id: '00000000-0000-4000-8000-000000000003', ready: false, error: 'render-attach-failed' }, { status: 502 }));
+    await expect(liveDneskaiWorkspaceApi.edit({ action: 'edit', id: '00000000-0000-4000-8000-000000000002', caption: 'x', scheduledAt: '2099-01-01T00:00:00.000Z' }))
+      .rejects.toMatchObject({ code: 'render-attach-failed', status: 502, revisionId: '00000000-0000-4000-8000-000000000003' });
+    stub(Response.json({ id: 'nope', error: 'render-attach-failed' }, { status: 502 }));
+    await expect(liveDneskaiWorkspaceApi.edit({ action: 'edit', id: '00000000-0000-4000-8000-000000000002', caption: 'x', scheduledAt: '2099-01-01T00:00:00.000Z' }))
+      .rejects.toMatchObject({ code: 'render-attach-failed', revisionId: null });
     const read = createDneskaiWorkspaceFixture(new Date('2026-10-24T09:00:00Z'));
     const calls = stub(Response.json(read));
     await expect(liveDneskaiWorkspaceApi.loadReview('22222222-2222-4222-8222-222222222222')).resolves.toMatchObject({ today: '2026-10-24' });

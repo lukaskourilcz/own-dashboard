@@ -39,11 +39,11 @@ beforeEach(() => {
 });
 afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); vi.unstubAllGlobals(); document.body.innerHTML = ''; });
 
-function open(postIndex: number, slide = 0, onSaved = vi.fn()) {
+function open(postIndex: number, slide = 0, onSaved = vi.fn(), extra: { onRenderFailed?: (id: string, previousId: string) => void; renderFailed?: ReadonlySet<string>; postId?: string } = {}) {
   const post = read.posts[postIndex]!;
   act(() => root.render(<QueryClientProvider client={client}>
-    <DneskaiPostEditor open onOpenChange={() => {}} postId={post.id} initialSlide={slide} read={read} projectId={project} lang="en" preview={false}
-      onSaved={onSaved} onApprove={async () => true} approving={false} />
+    <DneskaiPostEditor open onOpenChange={() => {}} postId={extra.postId ?? post.id} initialSlide={slide} read={read} projectId={project} lang="en" preview={false}
+      onSaved={onSaved} onApprove={async () => true} approving={false} onRenderFailed={extra.onRenderFailed} renderFailed={extra.renderFailed} />
   </QueryClientProvider>));
   return post;
 }
@@ -120,6 +120,50 @@ describe('DNESKAi post editor (#119)', () => {
         onSaved={onSaved} onApprove={async () => true} approving={false} />
     </QueryClientProvider>));
     expect(document.body.textContent).toContain(t.editor.waiting);
+  });
+
+  it('after a render that did not attach, reads the review again and moves to the saved version', async () => {
+    const saved = 'd0e5ca10-0000-4000-8000-0000000000fe';
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.startsWith('/api/marketing/dneskai/media')) return Response.json({ schemaVersion: 'dneskai-media/1', candidates: [] });
+      posted.push(JSON.parse(String(init?.body)));
+      return Response.json({ id: saved, ready: false, error: 'render-attach-failed' }, { status: 502 });
+    }));
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const onRenderFailed = vi.fn(); const onSaved = vi.fn();
+    const post = open(0, 0, onSaved, { onRenderFailed }); await settle();
+    type(labelled(editor(), t.fields.headline)!, 'Benchmark čtěte s metodikou');
+    await act(async () => { document.querySelector<HTMLButtonElement>('[data-testid="dneskai-editor-main"]')!.click(); await new Promise((done) => setTimeout(done, 20)); });
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(onRenderFailed).toHaveBeenCalledWith(saved, post.id);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['marketing', 'dneskai-review', project] });
+    expect(document.querySelector('[role="alert"]')!.textContent).toContain('its slides were not attached');
+  });
+
+  it('offers Render again for a version whose slides never attached and sends it unchanged', async () => {
+    const stuck = read.posts.findIndex((item) => item.title === 'Co stojí jeden dotaz');
+    const post = open(stuck); await settle();
+    expect(document.body.textContent).toContain(t.states.problem);
+    expect(document.body.textContent).toContain('its slides were not attached');
+    const main = document.querySelector<HTMLButtonElement>('[data-testid="dneskai-editor-main"]')!;
+    expect(main.textContent).toBe(t.editor.rerender);
+    await act(async () => { main.click(); await new Promise((done) => setTimeout(done, 20)); });
+    expect(posted).toEqual([{ action: 'edit', id: post.id, caption: post.caption, scheduledAt: post.scheduledAt }]);
+  });
+
+  it('reads a version this session saw fail as a problem at once, and follows the successor of a replaced version', async () => {
+    const fresh = read.posts.findIndex((item) => item.title === 'Lokální model na notebooku');
+    const post = open(fresh); await settle();
+    expect(document.body.textContent).toContain(t.states.preparing);
+    expect(document.querySelector('[data-testid="dneskai-editor-main"]')!.textContent).toContain(t.card.approve);
+    open(fresh, 0, vi.fn(), { renderFailed: new Set([post.id]) }); await settle();
+    expect(document.body.textContent).toContain(t.states.problem);
+    expect(document.querySelector('[data-testid="dneskai-editor-main"]')!.textContent).toBe(t.editor.rerender);
+    // The open version was superseded by a save that then timed out: the editor shows its successor.
+    read = { ...read, posts: read.posts.map((item) => item.id === post.id ? { ...item, replacesId: 'd0e5ca10-0000-4000-8000-0000000000fd' } : item) };
+    open(fresh, 0, vi.fn(), { postId: 'd0e5ca10-0000-4000-8000-0000000000fd' }); await settle();
+    expect(document.body.textContent).toContain(post.title);
+    expect(document.body.textContent).not.toContain(t.editor.waiting);
   });
 
   it('refuses to send a draft the editor can see is wrong and names the slide and field', async () => {

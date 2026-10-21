@@ -5,7 +5,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { g
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ rpc: mocks.rpc }) }));
 import { GET as review } from '@/app/api/marketing/dneskai/review/route';
 import { GET as costs } from '@/app/api/marketing/dneskai/costs/route';
-import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, dneskaiPostState } from '@/lib/marketing/dneskai-workspace';
+import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, dneskaiPostState, dneskaiStateContext } from '@/lib/marketing/dneskai-workspace';
 import { dneskaiSlideFieldLimits } from '@/lib/marketing/dneskai-workspace-read';
 import { MARKETING_DECK_CONTENT_VERSION } from '@/lib/marketing/contracts';
 import { DNESKAI_SLIDES_VERSION } from '@/lib/marketing/dneskai-slides';
@@ -84,7 +84,7 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(post).toMatchObject({ id: revisionId, contentHash: sha(500), title: 'Smyšlený příspěvek', brief: { eventId, media: [{ assetSha256: sha(1), credit: 'Foto: smyšlený zdroj' }] } });
     expect(post!.fields).toEqual([[{ field: 'headline', max: 110 }, { field: 'kicker', max: 56 }, { field: 'credit', max: 80 }], [{ field: 'headline', max: 170 }, { field: 'body', max: 240 }], []]);
     expect(post!.renderReport?.problems[0]).toMatchObject({ field: 'image-1', blocking: false });
-    expect(dneskaiPostState(post!).state).toBe('review');
+    expect(dneskaiPostState(post!, dneskaiStateContext(read)).state).toBe('review');
     expect(read.jobs.map((job) => [job.status, job.errorCode])).toEqual([['running', null], ['failed', 'dneskai-daily-generation-budget-exhausted']]);
     expect(read.accounts).toEqual([{ id: '55555555-5555-4555-8555-555555555555', remoteId: '17841400000000000', handle: 'dneskai', verified: true, enabled: false }]);
     expect(read.slots).toEqual(['08:00', '12:30', '17:00', '20:00']);

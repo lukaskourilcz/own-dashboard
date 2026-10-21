@@ -120,9 +120,9 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     if (!(scheduled > Date.now()) || scheduled > Date.now() + 6 * 86_400_000) throw new DneskaiWorkspaceRequestError('schedule-outside-asset-window', 409);
     const problems = demoProblems(post, slides);
     const ready = problems.length === 0;
-    // The kept slides keep their stored images; a fixed refused post shows its prepared fixed render.
-    const fixed = demoSlides[post.id];
-    const assets = !ready ? [] : post.assets.length ? (request.deck ? request.deck.slides.map((change) => post.assets[change.from]!) : post.assets) : fixed ?? [];
+    // The kept slides keep their stored images; a post without stored slides shows its prepared render.
+    const stored = post.assets.length ? post.assets : demoSlides[post.id] ?? [];
+    const assets = !ready ? [] : request.deck ? request.deck.slides.flatMap((change) => stored[change.from] ?? []) : stored;
     const account = request.accountId ? read().accounts.find((item) => item.id === request.accountId) : null;
     const next: DneskaiWorkspacePost = {
       ...clone(post), id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
