@@ -31,8 +31,15 @@ const en = {
     'account-store-failed': 'The account could not be saved. Try again.',
     'credential-store-unavailable': 'The stored token could not be read. Nothing was sent to Instagram. Try again.',
     'rate-limited': 'Too many attempts. Wait a few minutes and try again.',
+    'account-not-verified': 'Verify the account before enabling publishing.',
+    'account-unavailable': 'The account is no longer connected. Verify it again.',
+    'invalid-request': 'The request was not valid. Reload the page and try again.',
   } as Record<string, string>,
   metaHttp: (status: string) => `Instagram rejected the request (HTTP ${status}). Check the token and its permissions.`,
+  enable: 'Enable publishing', disable: 'Stop publishing', switching: 'Saving…',
+  enableHelp: 'Approved posts go out at their scheduled time only while publishing is enabled here and on the server.',
+  enabledNow: 'Publishing enabled for this account.', disabledNow: 'Publishing stopped for this account. Approved posts wait.',
+  confirmEnable: 'Approved posts will be published to Instagram at their scheduled time. Enable?',
   failed: 'Verification failed. Try again.',
 };
 const cs: typeof en = {
@@ -68,8 +75,15 @@ const cs: typeof en = {
     'account-store-failed': 'Účet se nepodařilo uložit. Zkuste to znovu.',
     'credential-store-unavailable': 'Uložený token nelze načíst. Na Instagram se nic neodeslalo. Zkuste to znovu.',
     'rate-limited': 'Příliš mnoho pokusů. Počkejte několik minut a zkuste to znovu.',
+    'account-not-verified': 'Před zapnutím publikování účet ověřte.',
+    'account-unavailable': 'Účet už není připojený. Ověřte ho znovu.',
+    'invalid-request': 'Požadavek nebyl platný. Načtěte stránku znovu a zkuste to znovu.',
   },
   metaHttp: (status: string) => `Instagram požadavek odmítl (HTTP ${status}). Zkontrolujte token a jeho oprávnění.`,
+  enable: 'Zapnout publikování', disable: 'Zastavit publikování', switching: 'Ukládám…',
+  enableHelp: 'Schválené příspěvky odcházejí v naplánovaný čas jen tehdy, když je publikování zapnuté tady i na serveru.',
+  enabledNow: 'Publikování na tento účet je zapnuté.', disabledNow: 'Publikování na tento účet je zastavené. Schválené příspěvky čekají.',
+  confirmEnable: 'Schválené příspěvky se v naplánovaný čas zveřejní na Instagramu. Zapnout?',
   failed: 'Ověření se nezdařilo. Zkuste to znovu.',
 };
 export const dneskaiAccount = { en, cs };

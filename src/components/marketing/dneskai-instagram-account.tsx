@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
-import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
+import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, setMarketingAccountEnabled, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
 
 type Lang = 'en' | 'cs';
 type Props = { lang: Lang; disabled?: boolean; now?: Date };
@@ -22,7 +22,7 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now = new Date
       <Button variant="outline" className="min-h-11" disabled={disabled || verify.isPending} aria-busy={verify.isPending} onClick={() => verify.mutate()}>{verify.isPending ? t.verifying : t.verify}</Button></div>
     <div aria-live="polite">{verify.isSuccess ? <p role="status" className="text-sm text-success">{verificationMessage(verify.data, lang)}</p> : verify.isError ? <p role="alert" className="text-sm text-risk">{verificationError(verify.error, lang)}</p> : null}</div>
     {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
-      : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : <DneskaiInstagramAccountRecord account={account} lang={lang} now={now} />}
+      : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : <><DneskaiInstagramAccountRecord account={account} lang={lang} now={now} />{account ? <DneskaiPublishingSwitch account={account} lang={lang} now={now} /> : null}</>}
   </section>;
 }
 
@@ -59,5 +59,27 @@ export function DneskaiInstagramAccountRecord({ account, lang, now }: { account:
       <div><dt className="text-foreground-muted">{t.tokenRefreshed}</dt><dd className="tabular">{at(account.token?.refreshedAt)}</dd></div>
       <div className="min-w-0"><dt className="text-foreground-muted">{t.scopes}</dt><dd className="break-words font-mono">{account.token?.scopes.length ? account.token.scopes.join(', ') : t.notRecorded}</dd></div>
     </dl>
+  </div>;
+}
+
+/** The owner's account switch for publishing. Enabling needs a verified account and a valid stored token and asks first. */
+export function DneskaiPublishingSwitch({ account, lang, now }: { account: MarketingAccountStatus; lang: Lang; now: Date }) {
+  const t = dneskaiAccount[lang];
+  const client = useQueryClient();
+  const toggle = useMutation({ mutationFn: (enabled: boolean) => setMarketingAccountEnabled(account.id, enabled), onSettled: () => client.invalidateQueries({ queryKey: qk.marketingAccounts }) });
+  const tokenUsable = ['valid', 'expiring'].includes(marketingTokenState(account.token, now));
+  const canEnable = !account.enabled && !!account.verifiedAt && tokenUsable;
+  const onClick = () => {
+    if (account.enabled) { toggle.mutate(false); return; }
+    if (typeof window !== 'undefined' && !window.confirm(t.confirmEnable)) return;
+    toggle.mutate(true);
+  };
+  return <div className="space-y-2 border-t border-border pt-3" data-testid="dneskai-publishing-switch">
+    <p className="text-sm text-foreground-muted">{t.enableHelp}</p>
+    <Button variant={account.enabled ? 'outline' : 'default'} className="min-h-11" disabled={toggle.isPending || (!account.enabled && !canEnable)} aria-busy={toggle.isPending} onClick={onClick}>
+      {toggle.isPending ? t.switching : account.enabled ? t.disable : t.enable}
+    </Button>
+    <div aria-live="polite">{toggle.isSuccess ? <p role="status" className="text-sm text-success">{toggle.data.enabled ? t.enabledNow : t.disabledNow}</p>
+      : toggle.isError ? <p role="alert" className="text-sm text-risk">{verificationError(toggle.error, lang)}</p> : null}</div>
   </div>;
 }

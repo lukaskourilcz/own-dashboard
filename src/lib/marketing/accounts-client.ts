@@ -39,3 +39,8 @@ export async function verifyMarketingAccount(brand: 'dneskai', platform: 'instag
   if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
   return MarketingAccountVerifyResponseSchema.parse(await response.json());
 }
+export async function setMarketingAccountEnabled(accountId: string, enabled: boolean): Promise<MarketingAccountStatus> {
+  const response = await fetch('/api/marketing/accounts/enable', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId, enabled }) });
+  if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
+  return z.strictObject({ account: MarketingAccountStatusSchema }).parse(await response.json()).account;
+}
