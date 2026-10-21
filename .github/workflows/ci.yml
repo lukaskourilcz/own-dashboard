@@ -41,6 +41,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key-for-build
         run: npm run build
 
+      - name: Check render traces
+        # Each marketing route that renders or inspects images must trace libvips, the sharp addon and
+        # the vendored studio fonts into its function (#117, docs/marketing-render-preflight.md).
+        run: npm run check:render-traces
+
   e2e:
     # ubuntu-latest moved to 26.04, where Playwright 1.56 cannot install Chromium. Pinned until Playwright is upgraded.
     runs-on: ubuntu-24.04

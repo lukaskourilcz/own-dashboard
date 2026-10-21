@@ -25,7 +25,7 @@ SQL never computes the hash. `marketing_save_revision`, `marketing_approve_revis
 2. re-downloads every stored JPEG, checks its proof metadata and that its sha256 equals `assets[].sha256`, then signs a seven-day URL for the same key;
 3. calls `marketing_renew_revision_asset_urls(owner, revision, expected_hash, assets)`.
 
-The SQL function (service role only) refuses unless the revision without URLs is identical, the asset count and order match, and each new URL is a signed `marketing-assets` URL for the same object path. It rewrites `revision.assets` only. `content_hash`, `approved_hash`, `status`, `ready` and the queued publication stay; no revision is created. Nothing calls the renewal on a schedule yet: the publishing ticker (#120) should run it for approved revisions whose URLs expire before their slot.
+The SQL function (service role only) refuses unless the revision without URLs is identical, the asset count and order match, and each new URL is a signed `marketing-assets` URL for the same object path. It rewrites `revision.assets` only. `content_hash`, `approved_hash`, `status`, `ready` and the queued publication stay; no revision is created. The daily tick (#120, `renewal` in `src/lib/marketing/scheduler.ts`) runs it for revisions whose signed URLs expire within 48 hours. A revision that can never be renewed, such as one stored before #118, is set aside for a week.
 
 ## Owner edits
 
@@ -42,7 +42,7 @@ The SQL function (service role only) refuses unless the revision without URLs is
 
 The flow (`src/lib/marketing/dneskai-revision-edit.ts`):
 
-1. The route resolves the renderer, media loader and pool lister from `src/lib/marketing/dneskai-wiring.ts`. Until they are wired each factory throws `renderer-unwired` or `media-unwired`, and the route answers 503 before writing anything.
+1. The route resolves the renderer, media loader and pool lister from `src/lib/marketing/dneskai-wiring.ts` before writing anything. If one cannot be created, the route answers 503 `renderer-unavailable`; if the pool or the media cannot be read while the edit is prepared, it answers 503 `media-unavailable`. Both happen before anything is written, and the current revision keeps its state. A failure carrying the legacy `renderer-unwired` or `media-unwired` code is passed through unchanged.
 2. `prepareDneskaiRevisionEdit` applies and validates the edit and drops the old assets.
 3. `saveRevision` stores the new revision with `replaces_id`, `status review`, `ready false`. The old revision becomes `superseded`, loses its approval and its queued publication is cancelled, so the old hash cannot be approved or published any more.
 4. `renderAndAttachDneskaiRevision` calls `RenderDneskaiDeck` with `LoadDneskaiMediaBytes` and passes the result to `marketing_attach_revision_render`. A clean render attaches one JPEG per slide, stores the new `content_hash` and sets `ready true`. A refused or failed render keeps the revision unready with no assets and records the problems in `marketing_revisions.render_report`.

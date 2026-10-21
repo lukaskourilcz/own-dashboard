@@ -40,7 +40,7 @@ library loads as empty and DNESKAi slides never read one), `golden/manifest.json
 Upstream pins `sharp` 0.35.4, `zod` 4.4.3 and `@resvg/resvg-js` ^2.6.2. The trimmed `package.json`
 turns the exact pins into caret ranges (`^0.35.4`, `^4.4.3`) so that OwnDashboard's own `sharp`
 0.35.5, `zod` 4.6.7 and `@resvg/resvg-js` 2.6.2 satisfy them. `npm ls` shows all three deduped
-to the root `node_modules`, so there is one sharp and one libvips in a function. All ten pinned
+to the root `node_modules`, so there is one sharp and one libvips in a function. All eleven pinned
 DNESKAi golden hashes reproduce with these versions (`tests/lib/carousel-studio-vendor.test.ts`).
 A future sharp minor (0.36) falls outside the range and npm would nest the pinned version; re-vendor
 or widen the range on purpose, and let the golden test decide.

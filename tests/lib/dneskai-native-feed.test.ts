@@ -68,6 +68,18 @@ describe('native DNESKAi free-feed collection', () => {
   expect(String(fetcher.mock.calls[0][0])).toContain(query);
   expect(fetcher.mock.calls.every(call => !new Headers(call[1]?.headers).has('authorization'))).toBe(true);
  });
+ it('waits up to 20 s for the arXiv API, longer than the 8 s every other request gets', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+   const arxiv = DNESKAI_SOURCES.find(row => row.id === 'arxiv-cs-ai')!, rss = DNESKAI_SOURCES.find(row => row.id === 'openai-blog')!;
+   const slow = (body: string, type: string) => vi.fn<typeof fetch>(() => new Promise(done => setTimeout(() => done(new Response(body, { headers: { 'content-type': type } })), 12_000)));
+   const read = collectNativeDneskaiFeed(arxiv, since, { now, signal, fetcher: slow(xml(item('paper')), 'application/atom+xml'), resolve });
+   const other = collectNativeDneskaiFeed(rss, since, { now, signal, fetcher: slow(xml(item('post')), 'application/rss+xml'), resolve });
+   await vi.advanceTimersByTimeAsync(12_000);
+   expect((await read).sources[0]).toMatchObject({ status: 'ok', items: [{ externalId: 'paper' }] });
+   expect((await other).sources[0]).toMatchObject({ status: 'error', errorCode: 'fetch-failed', items: [] });
+  } finally { vi.useRealTimers(); }
+ });
  it('keeps HN per-item failure evidence and refuses HTML reader escalation', async () => {
   const hn = DNESKAI_SOURCES.find(row => row.id === 'hn-frontpage')!;
   const fetcher = vi.fn<typeof fetch>(async input => String(input).includes('topstories') ? Response.json([1, 2]) : String(input).includes('item/1') ? Response.json({ id: 1, type: 'story', title: 'Offline HN story', time: 1791964800 }) : new Response('Unavailable', { status: 503 }));

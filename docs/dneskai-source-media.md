@@ -18,6 +18,10 @@ noc: odkazy na Instagram CDN vyprší za 24 až 48 hodin a uložené odkazy z 13
 vracejí 403. Kandidát sebraný v jednom běhu a vybraný až v pozdějším může mít odkazy
 starší než den a skončit jako `media-http-403`.
 
+První nativní noc (21. 10.) vrátil web OpenAI na načtení stránky článku `media-page-http-403`
+u obou vybraných událostí z `openai-blog`. Jeho RSS nenese obrázek, takže tyto události
+zůstaly bez fotografie; stránky Anthropic a TechCrunch prošly.
+
 Po nasazení plánovače (#120, [marketing-scheduling.md](marketing-scheduling.md)) ji volá
 jeho tick: každých pět minut jedno `collectDneskaiMedia` s rozpočtem nejvýše 40 s, po `busy`
 čeká 125 s a po chybě deset minut. Retenci `purgeUnusedDneskaiMedia(db, owner, 30)` spouští

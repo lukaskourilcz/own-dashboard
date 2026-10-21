@@ -9,7 +9,8 @@ Každý den ve 22:00 Europe/Prague zahájí sběr pro následující den plánov
 [marketing-scheduling.md](marketing-scheduling.md). Plán počítá
 se čtyřmi odlišnými tématy. Pokud kvalitních témat není dost, přehled ukáže méně
 návrhů. Samotný výběr tématu neschvaluje text, obrázky ani publikování.
-Pravidelný sběr zatím není zapnutý; následující rozvrh popisuje připravené chování.
+Pravidelný sběr běží v produkci od 21. října 2026, každou noc od 22:00 Prahy.
+Oddíly s datem níže zachycují stav k danému dni.
 
 ```mermaid
 flowchart TD
@@ -94,8 +95,8 @@ nedůvěryhodná data, nikoli pokyny pro přístup k nástrojům. Jev nemůže n
 Přímé feedy a API používají stávající adaptéry. Tato cesta nepoužívá placené
 Firecrawl/Jina záložní čtení. Uchovává odkazy na média, automaticky nenačítá náhledy
 všech kandidátů. Obrázky vybraných témat stahuje samostatný krok s původem a creditem,
-bez gate práv (rozhodnutí vlastníka 7, #110). Zatím ho nic nevolá; plánovač (#120) ho
-spustí tutéž noc po sběru. Viz [obrázky ze zdrojů](dneskai-source-media.md).
+bez gate práv (rozhodnutí vlastníka 7, #110). Spouští ho plánovač (#120) tutéž noc
+po sběru, v kroku `media` pětiminutového ticku. Viz [obrázky ze zdrojů](dneskai-source-media.md).
 
 Přepis zvuku Reels zatím není zapnutý ani implementovaný v této sběrné cestě.
 Položky bez použitelného textu čekají na kontrolu. Dřívější odhad za přepis jednoho
@@ -299,10 +300,11 @@ kategorii, hodnocení a důvod vyřazení; původní text a zdroj se měnit nesm
 
 ## Následující session
 
-Přesun sběrných a redakčních modulů z BoardlessAI do OwnDashboardu je samostatný
-[úkol #104](https://github.com/lukaskourilcz/own-dashboard/issues/104). Současné
-ověření ještě používá Quorum. K vypnutí původních běhů dojde až po ověřeném
-přechodu; tento úkol jejich nastavení nemění.
+Přesun sběrných a redakčních modulů z BoardlessAI do OwnDashboardu
+([úkol #104](https://github.com/lukaskourilcz/own-dashboard/issues/104)) proběhl v epicu #110:
+od 21. října sbírá OwnDashboard nativními adaptéry. Most v Quorum zůstává jako rollback,
+dokud po kontrole první noci nevypneme jeho `DNESKAI_COLLECTION_ENABLED`
+([nativní feedy](dneskai-native-feeds.md)).
 
 ### Apify datum z databáze
 

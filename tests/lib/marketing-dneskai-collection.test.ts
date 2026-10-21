@@ -1,5 +1,5 @@
 import { describe,it,expect,vi } from 'vitest';
-import { tickDneskaiCollection,pendingDneskaiCandidates,type DneskaiCollectionDependencies } from '@/lib/marketing/dneskai-collection';
+import { tickDneskaiCollection,pendingDneskaiCandidates,DNESKAI_FEED_TIMEOUT_MS,type DneskaiCollectionDependencies } from '@/lib/marketing/dneskai-collection';
 import { candidate,jevRequest } from '@/lib/marketing/dneskai-providers';
 import { dneskaiCollectionBlockers,type DneskaiCollectionStore,type DneskaiRun,type DneskaiStage } from '@/lib/marketing/dneskai-store';
 vi.mock('server-only',()=>({}));
@@ -80,6 +80,21 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
   const pollInstagram=vi.fn(async()=>({running:false as const,run:{id:'TEST',actId:'test-only',userId:'TEST',buildNumber:'1.2.3',defaultDatasetId:'TEST',status:'SUCCEEDED' as const,usageTotalUsd:0.02},items:[item(1,'instagram:mosseri')],complete:false,errorCode:'collection-source-item-cap'}));
   await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,pollInstagram});
   expect(f.saveStage.mock.calls[0][4]).toMatchObject({status:'partial',errorCode:'collection-source-item-cap'});
+ });
+ it('starts a free source only with its whole timeout left, except the first of a call',async()=>{
+  // The first native night cut arXiv off at the old 8 s; a slow source now waits for the next call instead.
+  expect(DNESKAI_FEED_TIMEOUT_MS).toBe(25_000);
+  const f=fixture([stage('openai-blog','feed'),stage('anthropic-news','feed'),stage('deepmind-blog','feed')],[]);
+  let t=1_800_000_000_000;const realTime=vi.spyOn(Date,'now').mockImplementation(()=>t);
+  const slow=vi.fn(async()=>{t+=21_000;return{items:[],complete:true,errorCode:null};}),fast=vi.fn(async()=>({items:[],complete:true,errorCode:null}));
+  try{
+   expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed:slow})).toMatchObject({status:'running',continue:true});
+   expect(slow).toHaveBeenCalledTimes(1);expect(f.stages.map(row=>row.status)).toEqual(['ok','queued','queued']);
+   await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,feed:slow});
+   expect(slow).toHaveBeenCalledTimes(2);
+   expect(await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,feed:fast})).toMatchObject({continue:false});
+   expect(fast).toHaveBeenCalledTimes(1);expect(f.stages.map(row=>row.status)).toEqual(['ok','ok','ok']);
+  }finally{realTime.mockRestore();}
  });
  it('terminal daily admission returns exact persisted state without feeds/providers',async()=>{const f=fixture([]);f.run.status='complete';const feed=vi.fn(),jev=vi.fn();expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev})).toEqual({runId,status:'complete',continue:false});expect(f.store.claimStage).not.toHaveBeenCalled();expect(feed).not.toHaveBeenCalled();expect(jev).not.toHaveBeenCalled();});
  it('cheap dedup precedes paid batching and source round-robin prevents a hot source starving others',()=>{const first=item(1,'openai-blog'),duplicate={...first,id:'different',url:'https://other.example.test/path'},items=[first,duplicate,item(2,'openai-blog'),item(3,'anthropic-news'),item(4,'deepmind-blog')];expect(pendingDneskaiCandidates(items,now).map(item=>item.sourceId).slice(0,3)).toEqual(['openai-blog','anthropic-news','deepmind-blog']);expect(pendingDneskaiCandidates(items,now)).toHaveLength(4);expect(pendingDneskaiCandidates([{...first,publishedAt:null},{...first,publishedAt:'2026-01-01T00:00:00Z'}],now)).toEqual([]);});
