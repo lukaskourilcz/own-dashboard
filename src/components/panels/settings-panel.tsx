@@ -583,7 +583,9 @@ export function SettingsPanel({
               ).map((tab) => projectTabRow(tab))}
             </ul>
             <div id={dneskaiTabsHeadingId}>
-              <SectionLabel>{t.settings.projectSectionsDneskai}</SectionLabel>
+              <SectionLabel className="normal-case tracking-normal">
+                {t.settings.projectSectionsDneskai}
+              </SectionLabel>
             </div>
             <ul
               aria-labelledby={dneskaiTabsHeadingId}
