@@ -9,7 +9,7 @@ import {
 } from "@/lib/nav-tabs";
 import {
   normalizeHiddenProjectTabs,
-  type ProjectWorkspaceTab,
+  type ProjectTabId,
 } from "@/lib/project-workspace-tabs";
 
 /**
@@ -240,10 +240,10 @@ export function sortByNavOrder<T extends { value: string }>(
 
 const HIDDEN_PROJECT_TABS_KEY = "hiddenProjectTabs";
 const projectTabListeners = new Set<() => void>();
-const EMPTY_PROJECT_TABS: readonly ProjectWorkspaceTab[] = Object.freeze([]);
-let hiddenProjectTabsCache: readonly ProjectWorkspaceTab[] | null = null;
+const EMPTY_PROJECT_TABS: readonly ProjectTabId[] = Object.freeze([]);
+let hiddenProjectTabsCache: readonly ProjectTabId[] | null = null;
 
-function readHiddenProjectTabs(): readonly ProjectWorkspaceTab[] {
+function readHiddenProjectTabs(): readonly ProjectTabId[] {
   if (hiddenProjectTabsCache != null) return hiddenProjectTabsCache;
   if (typeof window === "undefined") return EMPTY_PROJECT_TABS;
   try {
@@ -263,8 +263,8 @@ function subscribeProjectTabs(cb: () => void): () => void {
 }
 
 export function useProjectTabVisibility(): {
-  hiddenProjectTabs: readonly ProjectWorkspaceTab[];
-  isProjectTabHidden: (tab: ProjectWorkspaceTab) => boolean;
+  hiddenProjectTabs: readonly ProjectTabId[];
+  isProjectTabHidden: (tab: ProjectTabId) => boolean;
   setHiddenProjectTabs: (tabs: string[]) => void;
 } {
   const hiddenProjectTabs = useSyncExternalStore(
