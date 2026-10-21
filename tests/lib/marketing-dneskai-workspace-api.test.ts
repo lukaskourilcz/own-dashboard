@@ -91,6 +91,14 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(JSON.stringify(body)).not.toContain('PRIVATE');
     expect(mocks.filters.filter(([, op, field]) => op === 'eq' && field === 'user_id').every(([, , , value]) => value === owner)).toBe(true);
   });
+  it('counts a malformed account row instead of failing the whole read', async () => {
+    mocks.tables.marketing_accounts = [...mocks.tables.marketing_accounts!, { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', user_id: owner, brand: 'dneskai', platform: 'instagram', remote_account_id: '1', handle: '@', verified_at: null, enabled: false }];
+    const response = await get(review, `projectId=${project}`);
+    expect(response.status).toBe(200);
+    const read = DneskaiWorkspaceReadSchema.parse(await response.json());
+    expect(read.accounts.map((account) => account.handle)).toEqual(['dneskai']);
+    expect(read.unreadable).toBe(2);
+  });
   it('keeps every undecided post when newer receipts would fill the 60-post bound', async () => {
     const yesterday = pragueScheduledAt(new Date(Date.parse(`${pragueMarketingDate(new Date())}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10), '08:00');
     const receipts = Array.from({ length: 70 }, (_, n) => ({ ...mocks.tables.marketing_revisions![0]!, id: `cccccccc-cccc-4ccc-8ccc-${String(n).padStart(12, '0')}`, status: 'published',
@@ -132,6 +140,17 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     const short = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}&range=2d`)).json());
     expect(short.days.map((day) => day.date)).toEqual(read.days.slice(0, 2).map((day) => day.date));
     for (const range of ['8d', '0d', '7', 'week']) expect((await get(costs, `projectId=${project}&range=${range}`)).status).toBe(400);
+  });
+  it('counts a malformed run or tick instead of failing the whole read', async () => {
+    mocks.rpc.mockResolvedValue({ data: 0.5, error: null });
+    mocks.tables.marketing_dneskai_runs = [...mocks.tables.marketing_dneskai_runs!, { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', user_id: owner, project_id: project, date: pragueMarketingDate(new Date()), target_date: tomorrow, status: 'complete', cost_usd: '0.04', error_code: null, created_at: 'not a time' }];
+    mocks.tables.marketing_ticks = [...mocks.tables.marketing_ticks!, { id: 'not-a-uuid', user_id: owner, kind: 'minute', started_at: new Date().toISOString(), finished_at: null, did: [], errors: [] }];
+    const response = await get(costs, `projectId=${project}`);
+    expect(response.status).toBe(200);
+    const read = DneskaiCostsReadSchema.parse(await response.json());
+    expect(read.runs).toHaveLength(1);
+    expect(read.ticks.total).toBe(2);
+    expect(read.unreadable).toBe(2);
   });
   it('shows an unreadable spend and a malformed ceiling as codes, not as zero', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'PRIVATE' } });

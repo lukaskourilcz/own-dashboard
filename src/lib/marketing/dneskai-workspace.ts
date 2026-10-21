@@ -94,7 +94,7 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
   accounts: z.array(z.strictObject({ id: uuid, remoteId: z.string().min(1).max(200), handle: z.string().min(1).max(100), verified: z.boolean(), enabled: z.boolean() })).max(4),
   posts: z.array(DneskaiWorkspacePostSchema).max(60),
   jobs: z.array(DneskaiWorkspaceJobSchema).max(20),
-  /** Stored rows that could not be read; shown as a count, never silently dropped. */
+  /** Stored rows (revisions, accounts) that could not be read; shown as a count, never silently dropped. */
   unreadable: z.number().int().nonnegative(),
 });
 export type DneskaiWorkspaceRead = z.infer<typeof DneskaiWorkspaceReadSchema>;
@@ -262,6 +262,8 @@ export const DneskaiCostsReadSchema = z.strictObject({
   runs: z.array(z.strictObject({ id: uuid, date: z.iso.date(), targetDate: z.iso.date(), status: z.enum(['running', 'complete', 'partial', 'held', 'failed']), costUsd: usd.nullable(), errorCode: code.nullable(), createdAt: timestamp })).max(14),
   jobs: z.array(z.strictObject({ id: uuid, status: z.enum(['queued', 'running', 'review', 'failed', 'reconciliation']), errorCode: code.nullable(), createdAt: timestamp, costUsd: usd.nullable(), title: z.string().max(300), scheduledAt: timestamp.nullable() })).max(30),
   publications: z.array(z.strictObject({ id: uuid, revisionId: uuid, status: z.enum(DNESKAI_PUBLICATION_STATUSES), errorCode: code.nullable(), scheduledAt: timestamp, lastCheckedAt: timestamp.nullable(), title: z.string().max(300) })).max(20),
+  /** Stored rows (runs, jobs, publications, ticks) that could not be read; shown as a count, never a failed read. */
+  unreadable: z.number().int().nonnegative(),
   ticks: z.strictObject({
     total: z.number().int().nonnegative(),
     withErrors: z.number().int().nonnegative(),

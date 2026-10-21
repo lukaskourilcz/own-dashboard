@@ -134,6 +134,7 @@ export function createDneskaiCostsFixture(now: Date): DneskaiCostsRead {
       { id: id(204), status: 'reconciliation', errorCode: 'worker-lease-expired', createdAt: ago(1600), costUsd: null, title: 'Ukázkové téma s nejistým výsledkem', scheduledAt: pragueScheduledAt(today, '20:00') },
     ],
     publications: [{ id: id(107), revisionId: id(7), status: 'reconciliation', errorCode: 'meta-request-uncertain', scheduledAt: pragueScheduledAt(today, '08:00'), lastCheckedAt: ago(30), title: 'Kdy ověřit odpověď modelu' }],
+    unreadable: 0,
     ticks: {
       total: 1386, withErrors: 2, lastStartedAt: ago(1),
       recent: [

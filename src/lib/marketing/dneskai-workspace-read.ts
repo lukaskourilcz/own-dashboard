@@ -129,8 +129,13 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
       title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt });
     return job.success ? [job.data] : [];
   }).slice(0, 20);
+  // One account row that does not parse is counted as unreadable, not a failed read.
   const accounts = rows(accountResult as { data: Array<{ id: string; remote_account_id: string; handle: string; verified_at: string | null; enabled: boolean }> | null; error: unknown }, 'dneskai-workspace-unavailable')
-    .map((account) => ({ id: account.id, remoteId: account.remote_account_id, handle: account.handle.replace(/^@/, ''), verified: !!account.verified_at, enabled: !!account.enabled }));
+    .flatMap((account) => {
+      const parsed = DneskaiWorkspaceReadSchema.shape.accounts.element.safeParse({ id: account.id, remoteId: account.remote_account_id, handle: String(account.handle ?? '').replace(/^@/, ''), verified: !!account.verified_at, enabled: !!account.enabled });
+      if (parsed.success) return [parsed.data];
+      unreadable += 1; return [];
+    });
   return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs, unreadable });
 }
 
@@ -148,6 +153,14 @@ export type DneskaiCostRange = (typeof DNESKAI_COST_RANGES)[number];
  */
 export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation'], range: DneskaiCostRange = '7d'): Promise<DneskaiCostsRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
+  // Rows are checked one at a time: a malformed run, job, publication or tick is counted, never a failed read.
+  let unreadable = 0;
+  const keep = <T>(schema: z.ZodType<T>, items: unknown[]): T[] => items.flatMap((item) => {
+    const parsed = schema.safeParse(item);
+    if (parsed.success) return [parsed.data];
+    unreadable += 1; return [];
+  });
+  const shape = DneskaiCostsReadSchema.shape;
   const dayCount = DNESKAI_COST_RANGES.indexOf(z.enum(DNESKAI_COST_RANGES).parse(range)) + 1;
   const today = pragueMarketingDate(now);
   const weekStart = pragueScheduledAt(pragueDayAfter(today, 1 - dayCount), '00:00');
@@ -160,14 +173,14 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
       .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation']).order('scheduled_at', { ascending: false }).limit(20),
     db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors').eq('user_id', owner).gte('started_at', dayAgo).order('started_at', { ascending: false }).limit(1500),
   ]);
-  const runs = rows(runResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => ({
+  const runs = keep(shape.runs.element, rows(runResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => ({
     id: row.id, date: row.date, targetDate: row.target_date, status: row.status, costUsd: money(row.cost_usd), errorCode: safeCode(row.error_code), createdAt: iso(row.created_at),
-  }));
+  })));
   const allJobs = rows(jobResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').filter((row) => row.brand === 'dneskai');
-  const jobs = allJobs.filter((row) => row.status === 'failed' || row.status === 'reconciliation').slice(0, 30).map((row) => ({
+  const jobs = keep(shape.jobs.element, allJobs.filter((row) => row.status === 'failed' || row.status === 'reconciliation').slice(0, 30).map((row) => ({
     id: row.id, status: row.status, errorCode: marketingJobErrorCode(row.error_code), createdAt: iso(row.created_at), costUsd: money(row.cost_usd),
     title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt: iso(row.scheduled_at),
-  }));
+  })));
   const days = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index)).map((date) => {
     const dayRuns = runs.filter((run) => run.date === date);
     const dayJobs = allJobs.filter((row) => typeof row.created_at === 'string' && pragueMarketingDate(new Date(row.created_at)) === date && row.status !== 'queued');
@@ -176,12 +189,12 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     return { date, collectionUsd: runCosts.reduce<number>((sum, cost) => sum + (cost ?? 0), 0), generationUsd: jobCosts.reduce<number>((sum, cost) => sum + (cost ?? 0), 0),
       unknown: [...runCosts, ...jobCosts].filter((cost) => cost === null).length };
   });
-  const publications = rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
+  const publications = keep(shape.publications.element, rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
     const revision = (Array.isArray(row.marketing_revisions) ? row.marketing_revisions[0] : row.marketing_revisions) as { title?: unknown } | undefined;
     return { id: row.id, revisionId: row.revision_id, status: row.status, errorCode: safeCode(row.error_code), scheduledAt: iso(row.scheduled_at), lastCheckedAt: iso(row.last_checked_at),
       title: typeof revision?.title === 'string' ? revision.title.slice(0, 300) : '' };
-  });
-  const ticks = rows(tickResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
+  }));
+  const ticks = keep(shape.ticks.shape.recent.element, rows(tickResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
     const did = z.array(TickStepSchema).safeParse(row.did); const errors = z.array(TickErrorSchema).safeParse(row.errors);
     return {
       id: row.id, kind: row.kind, startedAt: iso(row.started_at), finishedAt: iso(row.finished_at),
@@ -189,11 +202,11 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
         status: (['done', 'noop', 'skipped', 'busy', 'backoff', 'deferred', 'error'] as const).find((status) => status === step.status) ?? 'error', code: safeCode(step.code) })),
       errors: (errors.success ? errors.data : []).slice(0, 20).flatMap((error) => /^[a-z]{1,20}$/.test(error.category) ? [{ category: error.category, code: safeCode(error.code) ?? `${error.category}-failed` }] : []),
     };
-  });
+  }));
   // The recent list shows ticks that did something or failed; the minute ticks that found nothing to do are counted only.
   const recent = ticks.filter((tick) => tick.errors.length || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);
   return DneskaiCostsReadSchema.parse({
-    schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(), generation, days, runs, jobs, publications,
+    schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(), generation, days, runs, jobs, publications, unreadable,
     ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },
   });
 }
