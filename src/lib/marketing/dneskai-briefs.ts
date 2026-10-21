@@ -302,7 +302,8 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       const stored = DneskaiBriefSchema.safeParse(row.brief);
       if (!stored.success) { await skip(row, 'brief-invalid'); continue; }
       brief = stored.data;
-      if (Date.parse(brief.scheduledAt) <= clock().getTime()) { await skip(row, 'brief-slot-passed'); continue; }
+      // A held or retried brief keeps the lead a new one gets: generation and the owner's review need the time.
+      if (Date.parse(brief.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }
       if (Date.parse(brief.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }
       // Still held as account-unavailable: nothing new to report, but the next call admits it once the account is verified.
       if (!verified) { result.pending = true; continue; }

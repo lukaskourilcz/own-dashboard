@@ -272,6 +272,24 @@ describe('createDneskaiBriefs over a store', () => {
       expect(createBriefs).toHaveBeenCalledTimes(3);
     });
 
+    it('does not admit a held brief whose slot is less than 30 minutes away when the account is verified', async () => {
+      const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+      const options = { account: false };
+      const { store, requests, calls } = fakeStore(rows, [a1, a2], options);
+      const { tick, clock } = scheduled(store, '2026-10-20T21:00:00Z');
+      expect(await tick()).toMatchObject({ pending: true });
+      expect(rows[0]).toMatchObject({ scheduled_at: '2026-10-21T06:00:00.000Z' });
+      // 07:57 in Prague: three minutes before the brief's 08:00 slot.
+      options.account = true;
+      clock.at = Date.parse('2026-10-21T05:57:00Z');
+      const late = await tick();
+      expect(late).toMatchObject({ status: 'noop', detail: { created: 0, jobs: 0, skipped: 1 } });
+      expect(late.pending).toBeUndefined();
+      expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-slot-passed' });
+      expect(requests).toEqual([]);
+      expect(calls.filter(([name]) => name === 'admit' || name === 'ingest')).toEqual([]);
+    });
+
     it('retries a job admission the daily budget refused on the next tick', async () => {
       const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
       const { store, requests } = fakeStore(rows, [a1, a2], { account: true });
