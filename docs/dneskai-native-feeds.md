@@ -168,5 +168,5 @@ With the window a run gets after the 22:00 Prague collection of 18 October (`sin
 
 Result: on the route that reached each publisher, native matches the bridge item for item or returns strictly more usable items (Anthropic, Meta, Tubefilter, Rest of World). No source needs to stay on the bridge. Two sources (GitHub, Stack Exchange) could not be reached from this sandbox by either path and need the first production run as evidence.
 
-Cutover (owner/integrator): set `MARKETING_DNESKAI_FEED_PROVIDER=native` in production, run one manual collection (`MARKETING_DNESKAI_MANUAL_RUN`), and check the Sources tab. The code default stays `bridge`; unsetting the variable or setting `bridge` is the rollback. Turn off Quorum's `DNESKAI_COLLECTION_ENABLED` only after that run.
+Cutover (owner/integrator): once the pg_cron ticker runs ([marketing scheduling](marketing-scheduling.md)), set `MARKETING_DNESKAI_FEED_PROVIDER=native` and `MARKETING_DNESKAI_COLLECTION_ENABLED=true` in production and redeploy. The tick admits and runs the night's collection after 22:00 Prague; check the Sources tab of the DNESKAi project the next morning. The code default stays `bridge`; unsetting the variable or setting `bridge` is the rollback. Turn off Quorum's `DNESKAI_COLLECTION_ENABLED` only after that run.
 
