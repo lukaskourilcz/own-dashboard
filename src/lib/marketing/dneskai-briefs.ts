@@ -255,12 +255,19 @@ export async function enqueueBriefJob(store: DneskaiBriefStore, owner: string, r
 
 const memberHash = (members: ReadonlyArray<{ id: string; content_hash: string }>) =>
   createHash('sha256').update(`dneskai-event-members/1\n${members.map((member) => `${member.id}:${member.content_hash}`).sort().join('\n')}`).digest('hex');
+/**
+ * Admission failures the same brief can get past later in its day: the rolling job budget frees up, the owner
+ * records consent or verifies the account again, or a store or queue failure passes.
+ */
+export const DNESKAI_BRIEF_RETRYABLE_CODES: ReadonlySet<string> = new Set(['job-budget-exhausted', 'marketing-consent-required', 'job-enqueue-failed', 'marketing-account-unavailable', 'brief-store-unavailable', 'brief-source-save-failed']);
 
 /**
  * Creates the briefs of a finished collection run (`CreateDneskaiBriefs`, called by the scheduler #120 after
  * media collection). For each selected event in rank order: wait while a member still owes media; skip a repeat
  * of the last 14 days (its reports become duplicates, `collection-already-covered`); build the brief with a slot;
  * then admit it as a job, or hold it as `account-unavailable` when no verified @dneskai account exists.
+ * `pending` stays true while a brief waits for media, for the account or for a retryable admission; the
+ * target-day check below ends that once the day has no slot left.
  */
 export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, input: Parameters<CreateDneskaiBriefs>[0], options: { now?: () => Date } = {}): ReturnType<CreateDneskaiBriefs> {
   z.uuid().parse(input.owner); z.uuid().parse(input.project); z.uuid().parse(input.runId);
@@ -297,7 +304,8 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       brief = stored.data;
       if (Date.parse(brief.scheduledAt) <= clock().getTime()) { await skip(row, 'brief-slot-passed'); continue; }
       if (Date.parse(brief.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }
-      if (!verified) continue; // still held as account-unavailable; nothing new to report
+      // Still held as account-unavailable: nothing new to report, but the next call admits it once the account is verified.
+      if (!verified) { result.pending = true; continue; }
       if (row.status === 'pending') await store.prepare(input.owner, row.id, null, null, 'ready', null);
     } else {
       if (row.member_ids.some((id) => owed.has(id))) { const reserved = slots.peek(); if (reserved) slots.take(reserved); result.pending = true; continue; }
@@ -332,15 +340,16 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       }
       brief = outcome.brief;
       // No verified @dneskai account: the brief exists and waits; no job is created.
-      if (!verified) { result.created.push({ briefId: row.id, eventId: row.event_id, jobId: null }); continue; }
+      if (!verified) { result.created.push({ briefId: row.id, eventId: row.event_id, jobId: null }); result.pending = true; continue; }
     }
     try {
       const job = await enqueueBriefJob(store, input.owner, row, brief, verified);
       result.created.push({ briefId: row.id, eventId: row.event_id, jobId: job.jobId });
     } catch (error) {
       const code = error instanceof DneskaiBriefError || error instanceof MarketingWorkerRuntimeError ? error.code : error instanceof z.ZodError ? 'job-request-invalid' : 'job-enqueue-failed';
-      // The brief stays ready and says why; the next call retries the same admission.
+      // The brief stays ready and says why; the next call retries the same admission when the failure can pass.
       await store.prepare(input.owner, row.id, null, null, 'ready', code).catch(() => undefined);
+      if (DNESKAI_BRIEF_RETRYABLE_CODES.has(code)) result.pending = true;
       result.skipped.push({ eventId: row.event_id, code });
     }
   }

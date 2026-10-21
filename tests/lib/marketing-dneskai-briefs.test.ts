@@ -6,6 +6,8 @@ import { dneskaiEventId, dneskaiEventMemberHash } from '@/lib/marketing/dneskai-
 import { GenerationInputSchema } from '@/lib/marketing/generation';
 import type { DneskaiMediaAssetView, DneskaiMediaCandidateView } from '@/lib/marketing/dneskai-media-contracts';
 import type { DneskaiCandidate } from '@/lib/marketing/dneskai-contracts';
+import { runMarketingTick, type MarketingSchedulerPorts, type MarketingSchedulerStore } from '@/lib/marketing/scheduler';
+import { MarketingWorkerRuntimeError } from '@/lib/marketing/worker-runtime';
 import { syntheticCandidate } from './marketing-dneskai-briefs-db';
 vi.mock('server-only', () => ({}));
 
@@ -153,12 +155,12 @@ describe('createDneskaiBriefs over a store', () => {
     expect(calls).toEqual([['prepare', rows[1]!.id, 'pending', 'account-unavailable', '2026-10-21T10:30:00.000Z']]);
   });
 
-  it('holds a built brief as account-unavailable without a job, and a second call creates nothing new', async () => {
+  it('holds a built brief as account-unavailable without a job, and a second call creates nothing new but keeps waiting', async () => {
     const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
     const { store, calls } = fakeStore(rows, [a1, a2], { account: false });
-    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [{ briefId: rows[0]!.id, eventId: rows[0]!.event_id, jobId: null }], skipped: [], pending: false });
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [{ briefId: rows[0]!.id, eventId: rows[0]!.event_id, jobId: null }], skipped: [], pending: true });
     expect(rows[0]).toMatchObject({ status: 'pending', code: 'account-unavailable', scheduled_at: '2026-10-21T06:00:00.000Z' });
-    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [], pending: false });
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [], pending: true });
     expect(calls.filter(([name]) => name === 'enqueue' || name === 'admit')).toEqual([]);
   });
 
@@ -220,6 +222,85 @@ describe('createDneskaiBriefs over a store', () => {
     const { store } = fakeStore([], []);
     store.run = async () => ({ id: runId, date: '2026-10-20', target_date: '2026-10-21', status: 'running' });
     expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [], pending: true });
+  });
+
+  it.each([['job-budget-exhausted', true], ['marketing-consent-required', true], ['job-enqueue-failed', true], ['source-unavailable', false], ['template-revision-mismatch', false]] as const)(
+    'stays pending after a %s admission failure only when it can pass (%s)', async (code, pending) => {
+      const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+      const { store } = fakeStore(rows, [a1, a2], { account: true });
+      store.enqueue = async () => { throw new MarketingWorkerRuntimeError(code); };
+      expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [{ eventId: rows[0]!.event_id, code }], pending });
+      expect(rows[0]).toMatchObject({ status: 'ready', code });
+    });
+
+  describe('under the five-minute scheduler tick', () => {
+    /** The briefs step of runMarketingTick over this store; every other category has nothing to do. */
+    function scheduled(store: DneskaiBriefStore, start: string) {
+      const clock = { at: Date.parse(start) };
+      const leases = new Map<string, Record<string, unknown>>();
+      const schedulerStore: MarketingSchedulerStore = {
+        beginTick: async () => true, finishTick: async () => true, saveState: async () => true, pruneTicks: async () => 0,
+        acquire: async (lease) => ({ acquired: true, until: new Date(clock.at + 90_000).toISOString(), state: structuredClone(leases.get(lease) ?? {}) }),
+        release: async (lease, _holder, update) => { if (update.state) leases.set(lease, structuredClone(update.state)); return true; },
+      };
+      const createBriefs = vi.fn((input: Parameters<MarketingSchedulerPorts['createBriefs']>[0]) => createDneskaiBriefsWithStore(store, input, { now: () => new Date(clock.at) }));
+      const ports = {
+        store: schedulerStore, dneskaiProject: async () => project, createBriefs, collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'complete', pilot: false }],
+        pendingMedia: async () => [], publicationWork: async () => false, nextReconciliation: async () => null, tokenMetadata: async () => [],
+      } as unknown as MarketingSchedulerPorts;
+      let ticks = 0;
+      const tick = async () => {
+        const result = await runMarketingTick({ owner, env: { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true' }, ports, now: () => new Date(clock.at) }, { tick: `aaaaaaaa-aaaa-4aaa-8aaa-${String(++ticks).padStart(12, '0')}`, kind: 'minute' });
+        clock.at += 5 * 60_000;
+        return result.did.find((step) => step.category === 'briefs')!;
+      };
+      return { tick, createBriefs, clock };
+    }
+
+    it('admits a brief held for the account on the first tick after the owner verifies it', async () => {
+      const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+      const options = { account: false };
+      const { store, requests } = fakeStore(rows, [a1, a2], options);
+      const { tick, createBriefs } = scheduled(store, '2026-10-20T21:00:00Z');
+      expect(await tick()).toMatchObject({ status: 'done', pending: true, detail: { created: 1, jobs: 0 } });
+      expect(await tick()).toMatchObject({ status: 'noop', pending: true, detail: { created: 0 } });
+      options.account = true;
+      expect(await tick()).toMatchObject({ status: 'done', detail: { created: 1, jobs: 1 } });
+      expect(rows[0]).toMatchObject({ status: 'queued', job_id: '99999999-9999-4999-8999-999999999999' });
+      expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
+      expect(requests).toHaveLength(1);
+      expect(createBriefs).toHaveBeenCalledTimes(3);
+    });
+
+    it('retries a job admission the daily budget refused on the next tick', async () => {
+      const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+      const { store, requests } = fakeStore(rows, [a1, a2], { account: true });
+      const enqueue = store.enqueue;
+      let refused = true;
+      store.enqueue = async (who, request) => { if (refused) throw new MarketingWorkerRuntimeError('job-budget-exhausted'); return enqueue(who, request); };
+      const { tick } = scheduled(store, '2026-10-20T21:00:00Z');
+      expect(await tick()).toMatchObject({ status: 'noop', pending: true, detail: { created: 0, skipped: 1 } });
+      expect(rows[0]).toMatchObject({ status: 'ready', code: 'job-budget-exhausted' });
+      refused = false;
+      expect(await tick()).toMatchObject({ status: 'done', detail: { created: 1, jobs: 1 } });
+      expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
+      expect(requests).toHaveLength(1);
+    });
+
+    it('stops calling once the target day has no slot left for a brief that never got its account', async () => {
+      const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+      const { store } = fakeStore(rows, [a1, a2], { account: false });
+      const { tick, createBriefs, clock } = scheduled(store, '2026-10-20T21:00:00Z');
+      expect(await tick()).toMatchObject({ pending: true });
+      // 20:00 in Prague on the target day: the last slot is less than 30 minutes away.
+      clock.at = Date.parse('2026-10-21T18:00:00Z');
+      const closing = await tick();
+      expect(closing).toMatchObject({ status: 'noop', detail: { skipped: 1 } });
+      expect(closing.pending).toBeUndefined();
+      expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-target-date-passed' });
+      expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
+      expect(createBriefs).toHaveBeenCalledTimes(2);
+    });
   });
 });
 

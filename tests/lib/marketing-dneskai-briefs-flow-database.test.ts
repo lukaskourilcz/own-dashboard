@@ -75,7 +75,8 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     await db.query("insert into marketing_media_asset_links(user_id,project_id,candidate_id,asset_id,origin_url,origin_kind,position,credit) values($1,$2,$3,$4,'https://images.example.test/lead.jpg','og-image',0,'Obrázek: OpenAI')", [owner, project, lead.id, asset!.id]);
     for (const [id, status] of [[lead.id, 'complete'], [verge.id, 'empty'], [tool.id, 'empty']]) await db.query('insert into marketing_media_collections(user_id,project_id,candidate_id,status,asset_count) values($1,$2,$3,$4,$5)', [owner, project, id, status, status === 'complete' ? 1 : 0]);
     const result = await createDneskaiBriefsWithStore(store, input, clock);
-    expect(result.pending).toBe(false);
+    // Built, but still waiting for the account: the scheduler must call again.
+    expect(result.pending).toBe(true);
     expect(result.created.map((item) => item.jobId)).toEqual([null, null]);
     const briefs = await store.briefs(owner, project, runId);
     expect(briefs.map((row) => [row.rank, row.status, row.code, row.scheduled_at])).toEqual([[1, 'pending', 'account-unavailable', '2026-10-21T06:00:00+00:00'], [2, 'pending', 'account-unavailable', '2026-10-21T10:30:00+00:00']]);
