@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "test-results/**",
     // Immutable original Design exports are provenance, never application code.
     "templates/marketing/claude-design/**",
+    // Vendored build output of @boardlessai/carousel-studio; see vendor/carousel-studio/UPSTREAM.md.
+    "vendor/**",
   ]),
 ]);
 

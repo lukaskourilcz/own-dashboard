@@ -3,7 +3,7 @@ import type { MarketingBrand } from './contracts';
 import { z } from 'zod';
 import { marketingPilotConfiguration } from './pilot';
 
-export type AutomationPrincipal = { ownerId: string; brand: MarketingBrand | null; role: 'source' | 'worker' | 'publisher' };
+export type AutomationPrincipal = { ownerId: string; brand: MarketingBrand | null; role: 'source' | 'worker' | 'publisher' | 'scheduler' };
 export function authenticateAutomation(request: Request, body: string, env: Record<string,string|undefined> = process.env, now=Date.now()): AutomationPrincipal | null {
  const ownerId=env.MARKETING_OWNER_ID;
  if(!ownerId||!z.uuid().safeParse(ownerId).success||!Number.isFinite(now)) return null;
@@ -16,6 +16,8 @@ export function authenticateAutomation(request: Request, body: string, env: Reco
  const configs: Array<[string|undefined,MarketingBrand|null,AutomationPrincipal['role']]>=[
   [env.MARKETING_DNESKAI_SECRET,'dneskai','source'],[env.MARKETING_DEVSHARK_SECRET,'devshark','source'],
   [env.MARKETING_WORKER_SECRET,null,'worker'],[env.MARKETING_PUBLISH_SECRET,null,'publisher'],
+  // The pg_cron ticker (#120). Every route checks the role it accepts, so this secret opens only /api/marketing/tick.
+  [env.MARKETING_SCHEDULER_SECRET,null,'scheduler'],
  ];
  for(const [secret,brand,role] of configs){
   if(!secret || secret.length<32) continue;

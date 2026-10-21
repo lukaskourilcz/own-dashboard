@@ -1,0 +1,653 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "404-media",
+      "kind": "rss",
+      "name": "404 Media",
+      "url": "https://www.404media.co/rss/",
+      "weight": 0.75,
+      "tags": [
+        "platforms",
+        "ai",
+        "content",
+        "investigative"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "anthropic-news",
+      "kind": "html",
+      "name": "Anthropic",
+      "url": "https://www.anthropic.com/news",
+      "weight": 0.85,
+      "tags": [
+        "ai",
+        "primary-source"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "ars-technica",
+      "kind": "rss",
+      "name": "Ars Technica",
+      "url": "https://feeds.arstechnica.com/arstechnica/index",
+      "weight": 0.6,
+      "tags": [
+        "tech",
+        "news"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "arxiv-cs-ai",
+      "kind": "arxiv",
+      "name": "arXiv cs.AI",
+      "url": "https://export.arxiv.org/api/query",
+      "weight": 0.6,
+      "tags": [
+        "ai",
+        "research"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20,
+      "query": "cat:cs.AI"
+    },
+    {
+      "id": "arxiv-cs-lg",
+      "kind": "arxiv",
+      "name": "arXiv cs.LG",
+      "url": "https://export.arxiv.org/api/query",
+      "weight": 0.6,
+      "tags": [
+        "ml",
+        "research"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20,
+      "query": "cat:cs.LG"
+    },
+    {
+      "id": "bluesky-language-models",
+      "kind": "bluesky",
+      "name": "Bluesky \u00b7 language models",
+      "url": "https://api.bsky.app/xrpc/app.bsky.feed.searchPosts",
+      "weight": 0.55,
+      "tags": [
+        "social",
+        "ai"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20,
+      "query": "language model"
+    },
+    {
+      "id": "deepmind-blog",
+      "kind": "rss",
+      "name": "Google DeepMind",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "weight": 0.85,
+      "tags": [
+        "ai",
+        "primary-source"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "digiday",
+      "kind": "rss",
+      "name": "Digiday",
+      "url": "https://digiday.com/feed/",
+      "weight": 0.6,
+      "tags": [
+        "platforms",
+        "media",
+        "monetization",
+        "advertising"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "github-ai-releases",
+      "kind": "github",
+      "name": "GitHub \u00b7 AI releases",
+      "url": "https://api.github.com/",
+      "weight": 0.7,
+      "tags": [
+        "ai",
+        "oss",
+        "releases"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20,
+      "repos": [
+        "openai/openai-python",
+        "anthropics/anthropic-sdk-python",
+        "huggingface/transformers",
+        "vllm-project/vllm",
+        "ollama/ollama",
+        "ggml-org/llama.cpp",
+        "langchain-ai/langchain"
+      ]
+    },
+    {
+      "id": "google-research",
+      "kind": "rss",
+      "name": "Google Research",
+      "url": "https://research.google/blog/rss/",
+      "weight": 0.85,
+      "tags": [
+        "ai",
+        "primary-source"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "hf-blog",
+      "kind": "rss",
+      "name": "Hugging Face",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "weight": 0.7,
+      "tags": [
+        "ai",
+        "oss"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "hn-frontpage",
+      "kind": "hn",
+      "name": "Hacker News (front page)",
+      "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
+      "weight": 0.5,
+      "tags": [
+        "general",
+        "tech"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "import-ai",
+      "kind": "rss",
+      "name": "Import AI (Jack Clark)",
+      "url": "https://jack-clark.net/feed/",
+      "weight": 0.75,
+      "tags": [
+        "ai",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "interconnects",
+      "kind": "rss",
+      "name": "Interconnects (Nathan Lambert)",
+      "url": "https://www.interconnects.ai/feed",
+      "weight": 0.75,
+      "tags": [
+        "ai",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "meta-ai",
+      "kind": "html",
+      "name": "Meta AI",
+      "url": "https://ai.meta.com/blog/",
+      "weight": 0.85,
+      "tags": [
+        "ai",
+        "primary-source"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "mit-tech-review",
+      "kind": "rss",
+      "name": "MIT Technology Review",
+      "url": "https://www.technologyreview.com/feed/",
+      "weight": 0.75,
+      "tags": [
+        "tech",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "nieman-lab",
+      "kind": "html",
+      "name": "Nieman Lab",
+      "url": "https://www.niemanlab.org/",
+      "weight": 0.7,
+      "tags": [
+        "platforms",
+        "media",
+        "journalism",
+        "ai",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "openai-blog",
+      "kind": "rss",
+      "name": "OpenAI",
+      "url": "https://openai.com/news/rss.xml",
+      "weight": 0.85,
+      "tags": [
+        "ai",
+        "primary-source"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "platformer",
+      "kind": "rss",
+      "name": "Platformer (Casey Newton)",
+      "url": "https://www.platformer.news/rss/",
+      "weight": 0.75,
+      "tags": [
+        "platforms",
+        "policy",
+        "ai",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "rest-of-world",
+      "kind": "rss",
+      "name": "Rest of World",
+      "url": "https://restofworld.org/feed/latest/",
+      "weight": 0.6,
+      "tags": [
+        "tech",
+        "global"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "simonw",
+      "kind": "rss",
+      "name": "Simon Willison",
+      "url": "https://simonwillison.net/atom/everything/",
+      "weight": 0.75,
+      "tags": [
+        "ai",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "social-media-today",
+      "kind": "rss",
+      "name": "Social Media Today",
+      "url": "https://www.socialmediatoday.com/feeds/news/",
+      "weight": 0.55,
+      "tags": [
+        "platforms",
+        "social-media",
+        "creator-economy"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "spaceflight-news",
+      "kind": "spaceflight",
+      "name": "Spaceflight News",
+      "url": "https://api.spaceflightnewsapi.net/v4/articles/",
+      "weight": 0.55,
+      "tags": [
+        "space",
+        "tech",
+        "news"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "stackexchange-ml",
+      "kind": "stackexchange",
+      "name": "Stack Overflow \u00b7 machine-learning",
+      "url": "https://api.stackexchange.com/2.3/questions",
+      "weight": 0.5,
+      "tags": [
+        "ai",
+        "community",
+        "dev"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20,
+      "query": "machine-learning",
+      "site": "stackoverflow"
+    },
+    {
+      "id": "stratechery",
+      "kind": "rss",
+      "name": "Stratechery (Ben Thompson)",
+      "url": "https://stratechery.com/feed/",
+      "weight": 0.75,
+      "tags": [
+        "tech",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "techcrunch-ai",
+      "kind": "rss",
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "weight": 0.6,
+      "tags": [
+        "ai",
+        "business"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "tensorfeed",
+      "kind": "rss",
+      "name": "TensorFeed (AI news)",
+      "url": "https://tensorfeed.ai/feed.xml",
+      "weight": 0.7,
+      "tags": [
+        "ai",
+        "news",
+        "aggregator"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "the-register",
+      "kind": "rss",
+      "name": "The Register",
+      "url": "https://www.theregister.com/?lab_viewport=rss",
+      "weight": 0.6,
+      "tags": [
+        "tech",
+        "news",
+        "non-us"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "the-verge",
+      "kind": "rss",
+      "name": "The Verge",
+      "url": "https://www.theverge.com/rss/index.xml",
+      "weight": 0.6,
+      "tags": [
+        "tech",
+        "news"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "tubefilter",
+      "kind": "html",
+      "name": "Tubefilter",
+      "url": "https://www.tubefilter.com/",
+      "weight": 0.6,
+      "tags": [
+        "platforms",
+        "youtube",
+        "creator-economy",
+        "video",
+        "monetization"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "variety",
+      "kind": "rss",
+      "name": "Variety",
+      "url": "https://variety.com/feed/",
+      "weight": 0.55,
+      "tags": [
+        "platforms",
+        "media",
+        "streaming",
+        "entertainment"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    },
+    {
+      "id": "wired-ai",
+      "kind": "rss",
+      "name": "Wired (AI)",
+      "url": "https://www.wired.com/feed/tag/ai/latest/rss",
+      "weight": 0.6,
+      "tags": [
+        "tech",
+        "analysis"
+      ],
+      "enabled": true,
+      "stage": [
+        "VALIDATION",
+        "AUDIENCE",
+        "MONETIZATION",
+        "OPTIMIZATION"
+      ],
+      "maxItems": 20
+    }
+  ],
+  "disabledByDefault": [
+    {
+      "kind": "authenticated_reddit",
+      "reason": "Requires current authenticated Data API access and HUMAN_APPROVAL"
+    }
+  ]
+}

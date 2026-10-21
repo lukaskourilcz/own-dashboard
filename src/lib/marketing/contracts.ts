@@ -1,7 +1,15 @@
 import { z } from "zod";
+import { DneskaiDeckSchema } from "./dneskai-slides";
+import { DneskaiBriefSchema } from "./dneskai-brief";
 
 export const MARKETING_SOURCE_VERSION = "marketing-source/1";
+/** Legacy and devShark revisions: rendered assets only, no slide deck. */
 export const MARKETING_CONTENT_VERSION = "marketing-content/1";
+/**
+ * DNESKAi Instagram revisions built from a brief (#116, #118): they carry the slide deck that names every source
+ * image by its sha256 and crop. The deck is part of the approval hash; delivery URLs are not.
+ */
+export const MARKETING_DECK_CONTENT_VERSION = "marketing-content/2";
 export const MARKETING_APPROVAL_VERSION = "marketing-approval/1";
 export const MARKETING_PUBLICATION_VERSION = "marketing-publication/1";
 export const BrandSchema = z.enum(["dneskai", "devshark"]);
@@ -23,7 +31,8 @@ export const EvidenceSchema = z.strictObject({
 export const SourcePacketSchema = z.strictObject({
   schemaVersion: z.literal(MARKETING_SOURCE_VERSION),
   brand: BrandSchema,
-  kind: z.enum(["article", "question", "coding-task", "instagram-reference"]),
+  /** `brief` (#115): a DNESKAi social brief built in OwnDashboard from selected research candidates. */
+  kind: z.enum(["article", "question", "coding-task", "instagram-reference", "brief"]),
   sourceId: id,
   sourceRevision: id,
   contentHash: hash,
@@ -45,6 +54,8 @@ export const SourcePacketSchema = z.strictObject({
     evidence: z.array(EvidenceSchema).max(30),
     image: z.strictObject({ url: httpsUrl, alt: z.string().max(1000), licence: z.string().min(1).max(500) }).nullable(),
   }),
+  /** Present exactly when kind is `brief`: the event, its evidence and its stored source media. */
+  brief: DneskaiBriefSchema.optional(),
 });
 export type SourcePacket = z.infer<typeof SourcePacketSchema>;
 
@@ -60,6 +71,16 @@ export function parseSourcePacket(value: unknown): SourcePacket {
     throw new Error("A question requires options and an authored answer and explanation.");
   }
   if (packet.kind === "article" && !packet.content.evidence.length) throw new Error("An article requires source evidence.");
+  if (packet.kind === "brief") {
+    if (packet.brand !== "dneskai") throw new Error("Source kind does not belong to this brand.");
+    if (!packet.brief || packet.brief.eventId !== packet.sourceId) throw new Error("A brief packet carries its own brief.");
+    if (!packet.content.evidence.length) throw new Error("A brief requires source evidence.");
+    // The packet identity is the brief's: its members, its primary evidence, its category and its lifetime.
+    if (packet.sourceRevision !== packet.brief.memberHash || packet.canonicalUrl !== packet.brief.evidence[0]?.url
+      || packet.content.category !== packet.brief.category || packet.expiresAt !== packet.brief.expiresAt) throw new Error("A brief packet must match its brief.");
+  } else if (packet.brief) {
+    throw new Error("Only a brief packet carries a brief.");
+  }
   return packet;
 }
 
@@ -72,7 +93,7 @@ export const AssetSchema = z.strictObject({
   alt: z.string().max(1000),
 });
 export const ContentRevisionSchema = z.strictObject({
-  schemaVersion: z.literal(MARKETING_CONTENT_VERSION),
+  schemaVersion: z.enum([MARKETING_CONTENT_VERSION, MARKETING_DECK_CONTENT_VERSION]),
   brand: BrandSchema,
   title: z.string().min(1).max(300),
   caption: z.string().min(1).max(2200),
@@ -81,12 +102,30 @@ export const ContentRevisionSchema = z.strictObject({
   knowledgeIds: z.array(z.uuid()).max(30),
   assets: z.array(AssetSchema).max(10),
   account: z.strictObject({ id, platform: PlatformSchema, handle: z.string().min(1).max(100) }),
+  /** Instagram co-authors invited on the post. Present only when a revision records a documented collaboration. */
+  collaborators: z.array(z.string().regex(/^[A-Za-z0-9._]{1,30}$/)).min(1).max(3).optional(),
   scheduledAt: timestamp,
   timeZone: z.literal("Europe/Prague"),
   templateVersion: id,
   promptVersion: id,
   model: id,
   traceId: z.uuid().nullable(),
+  /**
+   * The DNESKAi slide deck (`dneskai-slides/1`). Required on `marketing-content/2`, absent on `marketing-content/1`.
+   * Assets are its rendered JPEGs in slide order; the deck keeps the source images' hashes and crops.
+   */
+  deck: DneskaiDeckSchema.optional(),
+}).superRefine((revision, context) => {
+  if (revision.schemaVersion === MARKETING_CONTENT_VERSION) {
+    if (revision.deck) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no deck", path: ["deck"] });
+    return;
+  }
+  if (revision.brand !== "dneskai") context.addIssue({ code: "custom", message: "a deck revision belongs to DNESKAi", path: ["brand"] });
+  if (revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "a deck revision publishes to Instagram", path: ["account", "platform"] });
+  if (!revision.deck) { context.addIssue({ code: "custom", message: "a marketing-content/2 revision requires a deck", path: ["deck"] }); return; }
+  const expected = revision.format === "carousel" ? "carousel" : revision.format === "post" ? "single-image" : null;
+  if (expected === null) context.addIssue({ code: "custom", message: "a deck revision is a carousel or a post", path: ["format"] });
+  else if (revision.deck.format !== expected) context.addIssue({ code: "custom", message: "deck format must match the revision format", path: ["deck", "format"] });
 });
 export type ContentRevision = z.infer<typeof ContentRevisionSchema>;
 export type MarketingBrand = z.infer<typeof BrandSchema>;
@@ -150,6 +189,12 @@ export function revisionReadiness(revision: ContentRevision): string[] {
     else if (revision.assets[0].width !== 1080 || revision.assets[0].height !== 1920) issues.push("story-image-dimensions-required");
   }
   if (revision.account.platform === "threads" && revision.caption.length > 500) issues.push("threads-caption-too-long");
+  if (revision.deck) {
+    // One rendered 4:5 JPEG per slide, in slide order; an unrendered deck cannot be approved.
+    if (!revision.assets.length) issues.push("deck-render-required");
+    else if (revision.assets.length !== revision.deck.slides.length) issues.push("deck-assets-mismatch");
+    if (revision.assets.some((asset) => asset.mimeType !== "image/jpeg")) issues.push("deck-assets-jpeg-required");
+  }
   return issues;
 }
 
@@ -166,7 +211,61 @@ export type MarketingRevisionRow = {
   approved_hash: string | null;
   feedback: string | null;
   created_at: string;
+  /** The last deck render of a DNESKAi revision (#118); null for legacy revisions and before a render. */
+  render_report?: DneskaiRenderReport | null;
 };
+
+/** A render problem as stored on a revision. Blocking problems hold approval and publication. */
+export const DneskaiRenderProblemSchema = z.strictObject({
+  slide: z.number().int().min(-1).max(9),
+  code: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+  blocking: z.boolean(),
+  message: z.string().max(500),
+  /** The slide field or image slot it is about (`headline`, `sources[1]`, `image-1`), when the renderer named one (#119). */
+  field: z.string().max(80).regex(/^[a-z][a-z0-9-]*(?:\[\d\])?$/).nullable().optional(),
+});
+export const DNESKAI_RENDER_REPORT_VERSION = "dneskai-render-report/1";
+export const DneskaiRenderReportSchema = z.strictObject({
+  schemaVersion: z.literal(DNESKAI_RENDER_REPORT_VERSION),
+  status: z.enum(["rendered", "refused", "failed"]),
+  problems: z.array(DneskaiRenderProblemSchema).max(100),
+  renderKeys: z.array(z.string().min(1).max(200)).max(10),
+  renderedAt: timestamp,
+});
+export type DneskaiRenderReport = z.infer<typeof DneskaiRenderReportSchema>;
+/**
+ * Mirrors `marketing_private.render_report_blocks`: anything but a clean `rendered` report blocks, and a stored
+ * report that does not parse counts as blocking because it cannot be shown to be clean. No report (legacy) is clear.
+ */
+export function renderReportBlocks(report: unknown): boolean {
+  if (report === null || report === undefined) return false;
+  const parsed = DneskaiRenderReportSchema.safeParse(report);
+  return !parsed.success || parsed.data.status !== "rendered" || parsed.data.problems.some((problem) => problem.blocking);
+}
+
+const renderProblemCode = (value: unknown) => {
+  const code = String(value ?? "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
+  return code || "render-problem";
+};
+type StoredRenderProblem = z.infer<typeof DneskaiRenderProblemSchema>;
+/** Renderer output is bounded before it is stored; anything unreadable becomes one blocking problem. */
+export function storedRenderProblems(problems: unknown): StoredRenderProblem[] {
+  if (!Array.isArray(problems)) return [{ slide: -1, code: "render-problems-unreadable", blocking: true, message: "The renderer returned no readable problem list." }];
+  return problems.slice(0, 100).map((problem: Partial<StoredRenderProblem> | null) => ({
+    slide: Number.isInteger(problem?.slide) && problem!.slide! >= -1 && problem!.slide! <= 9 ? problem!.slide! : -1,
+    code: renderProblemCode(problem?.code),
+    // Only an explicit `false` is advisory.
+    blocking: problem?.blocking !== false,
+    message: String(problem?.message ?? "").slice(0, 500),
+    // Kept so the review UI can point at the field (#119); anything that is not a plain field name is dropped.
+    ...(typeof problem?.field === "string" && /^[a-z][a-z0-9-]*(?:\[\d\])?$/.test(problem.field) && problem.field.length <= 80 ? { field: problem.field } : {}),
+  }));
+}
+
+/** Only render keys the report schema can carry; anything else is dropped rather than stored. */
+export function storedRenderKeys(keys: unknown): string[] {
+  return Array.isArray(keys) ? keys.filter((key): key is string => typeof key === "string" && /^[A-Za-z0-9:._-]{1,200}$/.test(key)).slice(0, 10) : [];
+}
 
 export type PublicationRow = {
   id: string; revision_id: string; platform: "instagram" | "threads";

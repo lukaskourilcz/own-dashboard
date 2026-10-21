@@ -17,11 +17,11 @@ const now = new Date('2026-10-13T12:00:00.000Z');
 const config = { NODE_ENV: 'production', VERCEL_ENV: 'preview', MARKETING_OWNER_ID: owner, MARKETING_PILOT_OWNER_ID: owner,
   MARKETING_PILOT_STARTS_AT: '2026-10-13T10:00:00.000Z', MARKETING_PILOT_EXPIRES_AT: '2026-10-15T10:00:00.000Z',
   MARKETING_AI_CONSENT: 'true', ANTHROPIC_API_KEY: 'TEST-ONLY-NO-PROVIDER-CREDENTIAL', MARKETING_CLAUDE_MODEL: 'claude-sonnet-4-6', MARKETING_CLAUDE_INPUT_USD_PER_MTOK: '3', MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK: '15' };
-function approval(brand: 'dneskai' | 'devshark') {
+function approval(brand: 'devshark') {
   return { brand, approvedBy: owner, approvedAt: now.toISOString(), templateSha256: currentMarketingTemplate(brand).templateSha256,
     designExportSha256: marketingTemplateDefinition(brand).style.design.archiveSha256 };
 }
-const env = () => ({ ...config, MARKETING_PILOT_TEMPLATE_APPROVALS: JSON.stringify([approval('devshark'), approval('dneskai')]) });
+const env = () => ({ ...config, MARKETING_PILOT_TEMPLATE_APPROVALS: JSON.stringify([approval('devshark')]) });
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(now); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 describe('private staging template approval registry; synthetic owner receipts only', () => {
@@ -31,9 +31,9 @@ describe('private staging template approval registry; synthetic owner receipts o
     expect(resolveTrustedMarketingTemplate('missing-version', ordinary)).toBeNull();
     expect(await resolveMarketingTemplate('devshark-editorial/2', { env: ordinary })).toEqual(currentMarketingTemplate('devshark'));
   });
-  it('overlays exactly the two current digests/Design exports without changing public manifests or renderer definitions', async () => {
+  it('overlays exactly the current devShark digest/Design export without changing public manifests or renderer definitions', async () => {
     const values = env();
-    for (const brand of ['devshark', 'dneskai'] as const) {
+    for (const brand of ['devshark'] as const) {
       const original = currentMarketingTemplate(brand), definitionHash = contentHash(marketingTemplateDefinition(brand));
       const template = trustedMarketingTemplate(brand, values);
       expect(template).toEqual({ ...original, approved: true, approval: { approvedBy: owner, approvedAt: now.toISOString(), templateSha256: original.templateSha256, designExportSha256: approval(brand).designExportSha256 } });
@@ -42,27 +42,45 @@ describe('private staging template approval registry; synthetic owner receipts o
       expect(currentMarketingTemplate(brand)).toEqual(original); expect(original.approved).toBe(false); expect(original.approval).toBeNull();
     }
     expect(trustedMarketingTemplate('devshark', values).templateSha256).toBe('41a8ff3a7bacbd8935e754fbafea8eafa0874ab5f50fa207504a432f2d39ba23');
-    expect(trustedMarketingTemplate('dneskai', values).templateSha256).toBe('e19dc4f3bf14c82ff429ae28bc08f975d174a37fd9ef4e09c839d8d30feec1d5');
   });
-  it('keeps missing brands pending and allows an active empty receipt without inventing approvals', () => {
-    const partial = { ...env(), MARKETING_PILOT_TEMPLATE_APPROVALS: JSON.stringify([approval('devshark')]) };
-    expect(trustedMarketingTemplate('devshark', partial).approved).toBe(true);
-    expect(trustedMarketingTemplate('dneskai', partial)).toEqual(currentMarketingTemplate('dneskai'));
+  it('allows an active empty receipt without inventing approvals', () => {
+    expect(trustedMarketingTemplate('devshark', env()).approved).toBe(true);
     expect(trustedMarketingTemplate('devshark', { ...env(), MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' }).approved).toBe(false);
   });
-  it('rejects non-preview, expired, future-start, foreign-owner and incomplete pilot contexts even for an empty receipt', () => {
+  it('has no DNESKAi template to approve: a DNESKAi entry fails the whole receipt closed (#117)', () => {
+    const dneskai = { ...approval('devshark'), brand: 'dneskai' };
+    for (const approvals of [[dneskai], [approval('devshark'), dneskai]]) {
+      const values = { ...env(), MARKETING_PILOT_TEMPLATE_APPROVALS: JSON.stringify(approvals) };
+      expect(() => trustedMarketingTemplate('devshark', values)).toThrow('pilot-template-approval-invalid');
+      expect(() => resolveTrustedMarketingTemplate('dneskai-editorial/2', values)).toThrow('pilot-template-approval-invalid');
+    }
+    expect(resolveTrustedMarketingTemplate('dneskai-editorial/2', { VERCEL_ENV: 'production' })).toBeNull();
+  });
+  it('rejects expired, future-start, foreign-owner and incomplete pilot contexts in Preview even for an empty receipt', () => {
     for (const invalid of [
-      { ...env(), VERCEL_ENV: 'production' }, { ...env(), VERCEL_ENV: undefined }, { ...env(), MARKETING_OWNER_ID: undefined },
+      { ...env(), MARKETING_OWNER_ID: undefined },
       { ...env(), MARKETING_OWNER_ID: randomUUID() }, { ...env(), MARKETING_PILOT_OWNER_ID: undefined },
       { ...env(), MARKETING_PILOT_EXPIRES_AT: now.toISOString() }, { ...env(), MARKETING_PILOT_STARTS_AT: '2026-10-13T13:00:00.000Z' },
       { ...env(), MARKETING_PILOT_EXPIRES_AT: '2026-10-16T10:00:00.000Z' },
     ]) expect(() => trustedMarketingTemplate('devshark', invalid)).toThrow('pilot-template-approval-invalid');
-    expect(() => trustedMarketingTemplate('devshark', { VERCEL_ENV: 'production', MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' })).toThrow('pilot-template-approval-invalid');
+  });
+  it('ignores a retired receipt outside Preview: repository manifests apply and nothing is approved or blocked (#113)', async () => {
+    for (const retired of [
+      { ...env(), VERCEL_ENV: 'production' }, { ...env(), VERCEL_ENV: undefined }, { VERCEL_ENV: 'production', MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' },
+      { ...env(), VERCEL_ENV: 'production', MARKETING_PILOT_TEMPLATE_APPROVALS: '{malformed-test-only' }, { ...env(), VERCEL_ENV: 'development', MARKETING_PILOT_EXPIRES_AT: now.toISOString() },
+    ]) {
+      for (const brand of ['devshark'] as const) {
+        expect(trustedMarketingTemplate(brand, retired)).toEqual(currentMarketingTemplate(brand));
+        expect(trustedMarketingTemplate(brand, retired).approved).toBe(false);
+      }
+      expect(resolveTrustedMarketingTemplate('missing-version', retired)).toBeNull();
+      expect(await resolveMarketingTemplate('devshark-editorial/2', { env: retired })).toEqual(currentMarketingTemplate('devshark'));
+    }
   });
   it('rejects malformed, partial, extra-field, duplicate and oversized receipts with a fixed non-private error', () => {
     const entry = approval('devshark');
     for (const raw of ['', '{private-test-value', 'null', '{}', JSON.stringify([{ brand: 'devshark' }]), JSON.stringify([{ ...entry, notes: 'private-test-value' }]),
-      JSON.stringify([entry, entry]), JSON.stringify([entry, approval('dneskai'), entry]), ' '.repeat(4097)]) {
+      JSON.stringify([entry, entry]), JSON.stringify([entry, { ...entry, brand: 'dneskai' }, entry]), ' '.repeat(4097)]) {
       const values = { ...env(), MARKETING_PILOT_TEMPLATE_APPROVALS: raw };
       expect(() => trustedMarketingTemplate('devshark', values)).toThrow('pilot-template-approval-invalid');
       expect(() => resolveTrustedMarketingTemplate('missing-version', values)).toThrow('pilot-template-approval-invalid');
@@ -72,11 +90,12 @@ describe('private staging template approval registry; synthetic owner receipts o
     for (const change of [
       { approvedBy: randomUUID() }, { approvedAt: 'not-a-date' }, { approvedAt: '2026-10-13T09:59:59.999Z' },
       { approvedAt: '2026-10-13T12:00:00.001Z' }, { approvedAt: config.MARKETING_PILOT_EXPIRES_AT },
-      { designExportSha256: approval('dneskai').designExportSha256 }, { templateSha256: '0'.repeat(64) }, { brand: 'unknown' },
+      { designExportSha256: 'f'.repeat(64) }, { templateSha256: '0'.repeat(64) }, { brand: 'unknown' },
     ]) {
       const values = { ...env(), MARKETING_PILOT_TEMPLATE_APPROVALS: JSON.stringify([{ ...approval('devshark'), ...change }]) };
-      // A bad entry blocks other brands too; resolution cannot cherry-pick around it.
-      expect(() => trustedMarketingTemplate('dneskai', values)).toThrow('pilot-template-approval-invalid');
+      // A bad entry blocks resolution entirely; nothing can cherry-pick around it.
+      expect(() => trustedMarketingTemplate('devshark', values)).toThrow('pilot-template-approval-invalid');
+      expect(() => resolveTrustedMarketingTemplate('missing-version', values)).toThrow('pilot-template-approval-invalid');
     }
   });
 });

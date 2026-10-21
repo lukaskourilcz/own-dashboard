@@ -85,11 +85,14 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     // destination reads a finished week.
     "lastWeekCalendar",
   ],
-  // A project workspace renders every related record, including the
-  // subscription allocations behind its Finance tab and the competitor
-  // research behind its Competition tab.
   marketing: ["projects", "aiLinks", "projectLinks"],
   workflows: [],
+  // A project workspace renders every related record, including the
+  // subscription allocations behind its Finance tab and the competitor
+  // research behind its Competition tab. The DNESKAi workspace tabs (#119)
+  // add no entity here: each reads its own bounded, owner-scoped route only
+  // when it opens (qk.dneskaiReview, qk.dneskaiCosts, qk.dneskaiMedia per
+  // project) and approve/edit/return/skip invalidate exactly those keys.
   projects: [
     "subscriptions",
     "subscriptionAllocations",

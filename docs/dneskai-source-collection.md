@@ -4,7 +4,9 @@ Owner schválil tento režim 13. října 2026. OwnDashboard je ovládací místo
 `https://own-dashboard-tau.vercel.app/`. V projektu DNESKAi záložka **Zdroje**
 ukazuje rozvrh, výsledky kontrol, problémy a vybraná témata.
 
-Každý den ve 22:00 Europe/Prague n8n zahájí sběr pro následující den. Plán počítá
+Každý den ve 22:00 Europe/Prague zahájí sběr pro následující den plánovač v Supabase
+(pg_cron, [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120)); popis je v
+[marketing-scheduling.md](marketing-scheduling.md). Plán počítá
 se čtyřmi odlišnými tématy. Pokud kvalitních témat není dost, přehled ukáže méně
 návrhů. Samotný výběr tématu neschvaluje text, obrázky ani publikování.
 Pravidelný sběr zatím není zapnutý; následující rozvrh popisuje připravené chování.
@@ -14,16 +16,17 @@ flowchart TD
   A[22:00: denní zdroje a dnešní skupina] --> B[Nové texty a odkazy na média]
   B --> C[Kontrola ID a již zpracovaného obsahu]
   C --> D[Jev: relevance a podobné události]
-  D --> E[Nejvýše čtyři témata na zítřek]
+  D --> E[Nejvýše čtyři události na zítřek]
   D --> F[Ostatní kandidáti a důvody vyřazení]
-  E --> G[Navazující redakční zpracování BoardlessAI]
-  G --> H[Finální text a grafika]
+  E --> G[Zadání z událostí a obrázků v OwnDashboardu]
+  G --> H[Text a slidy z jednoho volání modelu]
   H --> I[Vlastník schválí přesnou verzi v OwnDashboardu]
   I --> J[Stávající řízené publikování]
 ```
 
-Tato změna implementuje sběr a výběr témat. Navazující tvorba grafiky, převod do
-hotové revize a připojení Threads zůstávají odložené podle zadání. Ve výběru nejsou
+Tato změna implementuje sběr a výběr témat. Od #115 se vybírají události, ne
+jednotlivé zprávy, a z každé vznikne zadání bez článku: viz
+[události a zadání](dneskai-briefs.md). Připojení Threads zůstává odložené. Ve výběru nejsou
 tlačítka, která by mohla schválit budoucí, dosud nevytvořený příspěvek. Stávající
 marketingový schvalovací postup váže souhlas na přesný text, média, účet a termín;
 změna revize vyžaduje nové schválení.
@@ -45,17 +48,43 @@ publikační nebo globální scraping plán jiných projektů BoardlessAI.
 | Sobota | robotic, theapplehub | Marketing: Digiday, Social Media Today, Tubefilter |
 | Neděle | techcrunch, theapplehub, insidertech | Zbývající zdroje a týdenní přehled |
 
-Sběr uchovává čas poslední úplné úspěšné kontroly každého zdroje. Při chybě nebo
-dosažení limitu tento čas neposouvá. Připnuté a opakované Instagram příspěvky
-kontroluje podle skutečného ID a data. Chybějící datum zveřejnění nenahrazuje
-časem stažení. Rotace může zprávy z některých účtů zpozdit o několik dnů; datum
-zůstává viditelné a starý příspěvek nesmí vystupovat jako dnešní zpráva.
+Sběr uchovává čas poslední úspěšné kontroly každého zdroje (kurzor, od 20. října
+2026, #112). Úplná kontrola pod limitem ho posune na začátek běhu. Kontrola, která
+skončila jen na limitu položek (`collection-source-item-cap`), ho posune na čas
+nejnovější přijaté položky (`publishedAt`, u položky bez data `fetchedAt`), nikdy
+za aktuální čas. Další běh tak čte jen novější položky; starší položky za limitem
+už nedohání. Chyba, neplatná URL a jiný částečný výsledek kurzor neposouvají.
+Připnuté a opakované Instagram příspěvky kontroluje podle skutečného ID a data.
+
+Položka bez data dostane čas stažení jako horní odhad a příznak `dateEstimated`.
+Den nebo měsíc bez času je horní odhad: nejpozdější okamžik, kdy v některém časovém
+pásmu ještě platí uvedené datum, nejvýše čas stažení. Pravidla aktuálnosti (vstup do
+Jev do 30 dnů, výběr zpráv do 48 hodin) platí pro odhad stejně jako pro přesné datum.
+Kandidát se stejnou URL se znovu nevkládá, takže položka bez data je čerstvá jen
+v běhu, který ji poprvé uložil. Záložka Zdroje odhad označí. Rotace může zprávy
+z některých účtů zpozdit o několik dnů; datum zůstává viditelné a starý příspěvek
+nesmí vystupovat jako dnešní zpráva.
+
+Denní feedy vracejí nejvýše 20 položek, Instagram 10 na profil a 50 za den.
+Kandidát nese nejvýše 10 odkazů na média. Jev dostane po sběru `ceil(nových / 8)`
+dávek, nejvýše 16; běh bez nových kandidátů žádnou dávku nevytvoří.
 
 ## Náklady a přístupy
 
 Návrhový denní strop sběru je 0,25 USD. Rezervace vzniká před placeným požadavkem;
 neznámý výsledek se nepočítá jako nulová spotřeba. Původní pilotní rozpočet a jeho
 vyčerpané tři generovací pokusy nedávají právo spouštět nové placené sběry.
+
+Apify má vlastní přepínač `MARKETING_DNESKAI_APIFY_ENABLED`. Instagramovou fázi
+spustí jen hodnota přesně `true`, a to navíc k `MARKETING_DNESKAI_PAID_ENABLED`
+a souhlasu, v plánovaném, ručním i pilotním běhu. Jiná hodnota nebo chybějící
+proměnná fázi pozastaví před rezervací s nulovou cenou a kódem
+`collection-apify-disabled`; těsně před spuštěním aktoru se přepínač čte znovu.
+Běh Apify, který už byl spuštěný, se dočte, aby jeho rezervace dostala skutečnou
+cenu. Jev přepínač Apify nečte; řídí se `MARKETING_DNESKAI_PAID_ENABLED` (v ručním
+běhu platným `MARKETING_DNESKAI_MANUAL_RUN`) a souhlasem, takže běh bez Apify
+klasifikuje kandidáty z bezplatných feedů, skončí jako `partial` a vybere události.
+Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.
 
 Jev dostává jen omezené veřejné zdrojové texty a související veřejné kandidáty.
 Nedostává přihlašovací údaje, vlastníkovy poznámky, finance ani soukromé projekty.
@@ -64,8 +93,9 @@ nedůvěryhodná data, nikoli pokyny pro přístup k nástrojům. Jev nemůže n
 
 Přímé feedy a API používají stávající adaptéry. Tato cesta nepoužívá placené
 Firecrawl/Jina záložní čtení. Uchovává odkazy na média, automaticky nenačítá náhledy
-všech kandidátů. Navazující stahování a ověření práv k médiím patří jen k vybraným
-tématům; URL obrázku sama nedokládá oprávnění k opětovnému publikování.
+všech kandidátů. Obrázky vybraných témat stahuje samostatný krok s původem a creditem,
+bez gate práv (rozhodnutí vlastníka 7, #110). Zatím ho nic nevolá; plánovač (#120) ho
+spustí tutéž noc po sběru. Viz [obrázky ze zdrojů](dneskai-source-media.md).
 
 Přepis zvuku Reels zatím není zapnutý ani implementovaný v této sběrné cestě.
 Položky bez použitelného textu čekají na kontrolu. Dřívější odhad za přepis jednoho
@@ -74,7 +104,13 @@ za minutu zvuku. Před doplněním přepisů je nutné ověřit konkrétní tari
 
 ## n8n a uvedení do provozu
 
-Export `workflows/marketing/dneskai-source-collection.json` míří na požadovanou
+> **Historický stav.** Po nasazení #120 sběr nespouští n8n, ale tick plánovače
+> `POST /api/marketing/tick` volaný z pg_cron každých pět minut. Tick po 22:00 přijme
+> dnešní běh a dokud běží, provede jeden `tickDneskaiCollection` za tick, bez n8n
+> executions. Export níže je v `workflows/marketing/retired/`. Aktuální popis:
+> [marketing-scheduling.md](marketing-scheduling.md).
+
+Export `workflows/marketing/retired/dneskai-source-collection.json` míří na požadovanou
 doménu. Zahájí sběr ve 22:00 v Europe/Prague. Každých pět minut do 23:55
 provede jeden krátký krok stejného denního běhu. Dokončený běh se znovu
 nescrapuje ani neplatí. Databáze omezuje běh na 40 převzetí; automatický rozvrh
@@ -108,7 +144,7 @@ Před spuštěním je potřeba:
 4. Ověřit rozpočet a provider konfiguraci, provést jeden omezený živý sběr a
    porovnat výsledek s dashboardem. Mockované testy nejsou dokladem živého běhu.
 5. Předložit výsledek vlastníkovi před produkčním nasazením. Potom zapnout pouze
-   nový plán sběru; staré `daily-preparation` nesmí paralelně spouštět jiný režim.
+   nový plán sběru; staré `retired/daily-preparation` nesmí paralelně spouštět jiný režim.
 
 Schválení provozu sběru nenahrazuje schválení čtyř finálních příspěvků. Publikování
 zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schválené revize.
@@ -117,7 +153,7 @@ zůstává ve stávajícím samostatném workflow s kontrolou konkrétní schvá
 
 ### Jednorázové produkční ověření bez denního rozvrhu
 
-`workflows/marketing/dneskai-production-verification.json` je samostatná šablona
+`workflows/marketing/retired/dneskai-production-verification.json` (od 20. 10. 2026 retirovaný) je samostatná šablona
 pro ruční start a interní pokračování. Nepoužívá původní stagingový worker,
 časovač, veřejný webhook ani přístupové cookie Preview. Po importu je neaktivní.
 
@@ -137,7 +173,9 @@ Workflow předává pokračování jen samo sobě a při chybě HTTP nic neopaku
 Platnost server kontroluje znovu před placenou operací.
 
 `MARKETING_DNESKAI_COLLECTION_ENABLED` a `MARKETING_DNESKAI_PAID_ENABLED` mohou
-zůstat `false`. Jednorázový režim neuděluje právo vytvářet další běhy a nemění
+zůstat `false`. Instagramové fáze ale i zde potřebují
+`MARKETING_DNESKAI_APIFY_ENABLED=true`, jinak zůstanou pozastavené bez rezervace.
+Jednorázový režim neuděluje právo vytvářet další běhy a nemění
 publikování. Zprovoznění vyžaduje schválený nový rozpočet a přístup n8n; samotná
 šablona ani lokální testy nejsou důkazem dokončeného produkčního průchodu.
 
@@ -246,7 +284,7 @@ před požadavky na poskytovatele. Neznámá spotřeba zastaví další placené
 Samostatný [interní n8n worker](https://bambambaklawa.app.n8n.cloud/workflow/1hB4ROPAlWm3YSXn)
 je uložený neaktivní, bez přístupového údaje a bez spuštění. Zpětný export potvrdil
 devět uzlů, vlastní interní pokračování, limit 120 sekund, vypnuté ukládání dat a MCP.
-Jeho [export a postup](../workflows/marketing/dneskai-collection-pilot-worker.md)
+Jeho [export a postup](../workflows/marketing/retired/dneskai-collection-pilot-worker.md)
 nepoužívají časovač ani veřejný webhook. Interní pokračování vyžaduje publikovanou
 verzi tohoto pomocného workflow; původní pravidelný návrh zůstává vypnutý.
 

@@ -15,7 +15,8 @@ describe('marketing integration access',()=>{
 
 const starts=Date.parse('2026-10-13T09:11:07Z');
 const expires=Date.parse('2026-10-15T09:10:00Z');
-const pilotEnv:Record<string,string|undefined>={...env,MARKETING_N8N_SECRET:secret,
+// The pilot tuple is read only on Vercel Preview (#113); these cases describe that Preview behaviour.
+const pilotEnv:Record<string,string|undefined>={...env,VERCEL_ENV:'preview',MARKETING_N8N_SECRET:secret,
  MARKETING_PILOT_OWNER_ID:env.MARKETING_OWNER_ID,MARKETING_PILOT_STARTS_AT:new Date(starts).toISOString(),MARKETING_PILOT_EXPIRES_AT:new Date(expires).toISOString()};
 const body='{"action":"source"}';
 function signed(at:number,credential=secret){return new Request('https://example.test/api/marketing/automation',{method:'POST',headers:signAutomationBody(body,credential,at),body});}
@@ -39,6 +40,19 @@ describe('bounded marketing pilot key admission',()=>{
   const values={...pilotEnv,...patch};
   expect(authenticateN8n(n8n(),values,new Date(starts))).toBeNull();
   expect(authenticateAutomation(signed(starts),body,values,starts)).toBeNull();
+  // Outside Preview the same retired tuple is ignored and never blocks ordinary automation.
+  for(const VERCEL_ENV of ['production','development',undefined]){
+   const retired={...values,VERCEL_ENV};
+   expect(authenticateN8n(n8n(),retired,new Date(starts))).toBe(env.MARKETING_OWNER_ID);
+   expect(authenticateAutomation(signed(starts),body,retired,starts)).toEqual({ownerId:env.MARKETING_OWNER_ID,brand:'devshark',role:'source'});
+  }
+ });
+ it('ignores an expired retired tuple outside Preview while wrong keys still fail',()=>{
+  const retired={...pilotEnv,VERCEL_ENV:'production'};
+  expect(authenticateN8n(n8n(),retired,new Date(expires+86400000))).toBe(env.MARKETING_OWNER_ID);
+  expect(authenticateAutomation(signed(expires+86400000),body,retired,expires+86400000)).toEqual({ownerId:env.MARKETING_OWNER_ID,brand:'devshark',role:'source'});
+  expect(authenticateN8n(n8n('wrong-secret'),retired,new Date(expires+86400000))).toBeNull();
+  expect(authenticateAutomation(signed(expires+86400000,'wrong-secret'),body,retired,expires+86400000)).toBeNull();
  });
  it.each([
   ['MARKETING_DNESKAI_SECRET','dneskai','source'],['MARKETING_DEVSHARK_SECRET','devshark','source'],

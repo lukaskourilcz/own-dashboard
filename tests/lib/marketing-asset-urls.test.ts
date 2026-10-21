@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { refreshMarketingAssetUrls } from "@/lib/marketing/asset-urls";
-import { contentHash } from "@/lib/marketing/hashes";
+import { refreshMarketingAssetUrls, renewStoredRevisionAssetUrls } from "@/lib/marketing/asset-urls";
+import { contentHash, revisionContentHash } from "@/lib/marketing/hashes";
 import type { ContentRevision } from "@/lib/marketing/contracts";
 const origin = "https://test-only-project.supabase.co";
 const owner = "11111111-1111-4111-8111-111111111111";
@@ -15,6 +15,10 @@ const sha256 = createHash("sha256").update(bytes).digest("hex");
 const key = `${owner}/marketing/devshark/${revision}/${template}/1-${sha256}.jpg`;
 const url = (path = key, token = "old-test-only-token") => `${origin}/storage/v1/object/sign/marketing-assets/${path}?token=${token}`;
 const asset = (): ContentRevision["assets"][number] => ({ url: url(), sha256, mimeType: "image/jpeg", width: 1080, height: 1350, alt: "Test-only slide" });
+const stored = (): ContentRevision => ({ schemaVersion: "marketing-content/1", brand: "devshark", title: "Test-only post", caption: "Test-only caption", format: "post",
+  sources: [{ sourceId: "question:test-only", sourceRevision: "v1", contentHash: template }], knowledgeIds: [], assets: [asset()],
+  account: { id: "12345678", platform: "instagram", handle: "test-only" }, scheduledAt: "2099-10-21T06:00:00Z", timeZone: "Europe/Prague",
+  templateVersion: "test-only/1", promptVersion: "test-only/1", model: "test-only", traceId: null });
 function database() {
   const proof = { ownerId: owner, sha256, revisionId: revision, templateSha256: template, designExportSha256: "b".repeat(64), svgSha256: "c".repeat(64), rendererVersion: "test-only" };
   const info = { name: key, bucketId: "marketing-assets", size: bytes.length, contentType: "image/jpeg", metadata: proof };
@@ -25,11 +29,12 @@ function database() {
 }
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 describe("owner-only renewal of verified immutable private marketing JPEGs", () => {
-  it("renews native signed URLs after verifying stored proof/bytes, preserves assets and changes revision identity", async () => {
+  it("renews native signed URLs after verifying stored proof/bytes, preserves assets and keeps the approval identity", async () => {
     const mock = database(); const input = asset(); const before = structuredClone(input); const arbitraryFetch = vi.fn(); vi.stubGlobal("fetch", arbitraryFetch);
     const renewed = await refreshMarketingAssetUrls(mock.db, owner, [input], { supabaseUrl: origin });
     expect(input).toEqual(before); expect(renewed).toEqual([{ ...before, url: url(key, "renewed-test-only-token") }]);
     expect(contentHash({ assets: renewed })).not.toBe(contentHash({ assets: [input] }));
+    expect(revisionContentHash({ ...stored(), assets: renewed })).toBe(revisionContentHash(stored()));
     expect(mock.storage.from).toHaveBeenCalledWith("marketing-assets"); expect(mock.files.info).toHaveBeenCalledWith(key);
     expect(mock.files.download).toHaveBeenCalledWith(key, {}, { cache: "no-store" }); expect(mock.files.createSignedUrl).toHaveBeenCalledWith(key, 604800);
     expect(arbitraryFetch).not.toHaveBeenCalled(); expect(mock.files.upload).not.toHaveBeenCalled(); expect(mock.files.remove).not.toHaveBeenCalled();
@@ -82,5 +87,63 @@ describe("owner-only renewal of verified immutable private marketing JPEGs", () 
     await expect(refreshMarketingAssetUrls(mock.db, owner, [asset()], { supabaseUrl: "http://localhost" })).rejects.toThrow("asset-storage-origin-required");
     await expect(refreshMarketingAssetUrls(mock.db, owner, [{ ...asset(), mimeType: "video/mp4" }], { supabaseUrl: origin })).rejects.toThrow("asset-mime-unsupported");
     await expect(refreshMarketingAssetUrls(mock.db, "not-an-owner", [asset()], { supabaseUrl: origin })).rejects.toThrow("asset-owner-invalid");
+  });
+});
+
+describe("renewal of cached DNESKAi studio slides (#117)", () => {
+  const renderKey = "e".repeat(64);
+  const slideKey = `${owner}/marketing/dneskai/slides/${renderKey}.jpg`;
+  function slideDatabase(metadata: Record<string, unknown> = { ownerId: owner, sha256, renderKey }) {
+    const info = { name: slideKey, bucketId: "marketing-assets", size: bytes.length, contentType: "image/jpeg", metadata };
+    const files = { info: vi.fn(async () => ({ data: info, error: null })), download: vi.fn(async () => ({ data: new Blob([bytes], { type: "image/jpeg" }), error: null })),
+      createSignedUrl: vi.fn(async () => ({ data: { signedUrl: url(slideKey, "renewed-test-only-token") }, error: null })), upload: vi.fn(), remove: vi.fn() };
+    const storage = { getBucket: vi.fn(async () => ({ data: { public: false }, error: null })), from: vi.fn(() => files) };
+    return { db: { storage } as unknown as Parameters<typeof refreshMarketingAssetUrls>[0], files };
+  }
+  it("renews a render-key slide after re-verifying the bytes against the recorded sha256", async () => {
+    const mock = slideDatabase();
+    const renewed = await refreshMarketingAssetUrls(mock.db, owner, [{ ...asset(), url: url(slideKey) }], { supabaseUrl: origin });
+    expect(renewed[0]?.url).toBe(url(slideKey, "renewed-test-only-token"));
+    expect(mock.files.download).toHaveBeenCalledWith(slideKey, {}, { cache: "no-store" });
+  });
+  it("holds a slide whose recorded render key, owner or sha256 differ and refuses another owner's slide path", async () => {
+    for (const metadata of [{ ownerId: owner, sha256, renderKey: "f".repeat(64) }, { ownerId: other, sha256, renderKey }, { ownerId: owner, sha256: "d".repeat(64), renderKey }]) {
+      const mock = slideDatabase(metadata);
+      await expect(refreshMarketingAssetUrls(mock.db, owner, [{ ...asset(), url: url(slideKey) }], { supabaseUrl: origin })).rejects.toThrow("stored-asset-proof-invalid");
+      expect(mock.files.createSignedUrl).not.toHaveBeenCalled();
+    }
+    const foreign = slideDatabase();
+    await expect(refreshMarketingAssetUrls(foreign.db, owner, [{ ...asset(), url: url(slideKey.replace(owner, other)) }], { supabaseUrl: origin })).rejects.toThrow("asset-url-untrusted");
+    expect(foreign.files.info).not.toHaveBeenCalled();
+  });
+});
+describe("in-place renewal of a stored revision (#118)", () => {
+  function storedDatabase(row: { revision: unknown; content_hash: string; status: string } | null, rpcResult: { data: unknown; error: unknown } = { data: null, error: null }) {
+    const mock = database();
+    const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle: vi.fn(async () => ({ data: row, error: null })) };
+    const rpc = vi.fn(async (_name: string, args: { p_assets: unknown[] }) => rpcResult.data === null && !rpcResult.error ? { data: { contentHash: row?.content_hash, renewed: args.p_assets.length }, error: null } : rpcResult);
+    const db = { ...mock.db, from: vi.fn(() => query), rpc } as unknown as Parameters<typeof renewStoredRevisionAssetUrls>[0];
+    return { ...mock, db, rpc, query };
+  }
+  it("re-verifies the bytes, renews through the SQL function and keeps the stored hash", async () => {
+    const hash = revisionContentHash(stored());
+    const mock = storedDatabase({ revision: stored(), content_hash: hash, status: "approved" });
+    expect(await renewStoredRevisionAssetUrls(mock.db, owner, revision, { supabaseUrl: origin })).toEqual({ revisionId: revision, contentHash: hash, renewed: 1 });
+    expect(mock.files.download).toHaveBeenCalledWith(key, {}, { cache: "no-store" });
+    expect(mock.rpc).toHaveBeenCalledWith("marketing_renew_revision_asset_urls", { p_owner: owner, p_revision: revision, p_expected_hash: hash, p_assets: [{ ...asset(), url: url(key, "renewed-test-only-token") }] });
+  });
+  it("refuses unusable rows before signing and maps a refused SQL check to one code", async () => {
+    const hash = revisionContentHash(stored());
+    await expect(renewStoredRevisionAssetUrls(storedDatabase(null).db, owner, revision, { supabaseUrl: origin })).rejects.toThrow("revision-unavailable");
+    const superseded = storedDatabase({ revision: stored(), content_hash: hash, status: "superseded" });
+    await expect(renewStoredRevisionAssetUrls(superseded.db, owner, revision, { supabaseUrl: origin })).rejects.toThrow("revision-not-renewable");
+    const legacyHash = storedDatabase({ revision: stored(), content_hash: contentHash(stored()), status: "review" });
+    await expect(renewStoredRevisionAssetUrls(legacyHash.db, owner, revision, { supabaseUrl: origin })).rejects.toThrow("revision-identity-mismatch");
+    expect(legacyHash.files.createSignedUrl).not.toHaveBeenCalled();
+    const refused = storedDatabase({ revision: stored(), content_hash: hash, status: "review" }, { data: null, error: { message: "renewal changes more than urls" } });
+    await expect(renewStoredRevisionAssetUrls(refused.db, owner, revision, { supabaseUrl: origin })).rejects.toThrow("asset-url-renewal-refused");
+    const textOnly = storedDatabase({ revision: { ...stored(), assets: [], account: { ...stored().account, platform: "threads" }, format: "thread" }, content_hash: revisionContentHash({ ...stored(), assets: [], account: { ...stored().account, platform: "threads" }, format: "thread" }), status: "review" });
+    expect((await renewStoredRevisionAssetUrls(textOnly.db, owner, revision, { supabaseUrl: origin })).renewed).toBe(0);
+    expect(textOnly.rpc).not.toHaveBeenCalled();
   });
 });

@@ -24,7 +24,7 @@ const Input=z.discriminatedUnion('operation',[
  z.strictObject({operation:z.literal('weekly-report'),brand:BrandSchema.optional(),weekStartsOn:z.iso.date()}),
  z.strictObject({operation:z.enum(['knowledge-run','knowledge-poll','knowledge-abort']),sourceId:z.uuid()}),
  z.strictObject({operation:z.literal('publication-plan'),publicationId:z.uuid().optional(),brand:BrandSchema.optional()}),
- z.strictObject({operation:z.literal('publish'),brand:BrandSchema,dryRun:z.boolean().default(true),publicationId:z.uuid().optional()}),
+ z.strictObject({operation:z.literal('publish'),brand:BrandSchema,dryRun:z.boolean().default(true),preflight:z.boolean().optional(),publicationId:z.uuid().optional()}),
  z.strictObject({operation:z.literal('reconcile'),publicationId:z.uuid().optional(),brand:BrandSchema.optional()}),
 ]);
 function discoveryDates(input:Extract<z.infer<typeof Input>,{operation:'discover'}>,today:string):string[]{
@@ -97,7 +97,7 @@ export async function POST(request:Request){
     const job=MarketingWorkerRequestSchema.parse(input.job);
     const {parseSourcePacket}=await import('@/lib/marketing/contracts');const packet=parseSourcePacket(job.generation.source);
     if(packet.brand!==input.brand)throw new Error('source-brand-mismatch');
-    const current=await refreshSource(packet,signal);
+    const current=await refreshSource(packet,signal,{owner,db});
     if(current.brand!==packet.brand||current.kind!==packet.kind||current.sourceId!==packet.sourceId||current.sourceRevision!==packet.sourceRevision||current.contentHash!==packet.contentHash||current.canonicalUrl!==packet.canonicalUrl||current.locale!==packet.locale||contentHash(current.content)!==packet.contentHash)throw new Error('source-superseded');
     await ingestSource(db,owner,current,input.brand);
     return Response.json(await enqueueMarketingJob(db,owner,{...job,generation:{...job.generation,source:current}}));
@@ -120,7 +120,11 @@ export async function POST(request:Request){
    const publications=(data??[]).flatMap(row=>{const revision=Array.isArray(row.marketing_revisions)?row.marketing_revisions[0]:row.marketing_revisions;return revision&&(!revision.campaign_id||active.has(revision.campaign_id))&&revision.approved_hash===revision.content_hash?[{publicationId:row.id,brand:revision.brand,scheduledAt:row.scheduled_at}]:[];});
    return Response.json({publications});
   }
-  if(input.operation==='publish')return Response.json(await publishDueMarketing(db,owner,input.brand,input.dryRun,signal,input.publicationId));
+  if(input.operation==='publish'){
+   // A preflight is a read-only dry run (#121); it is never combined with a live run.
+   if(input.preflight&&!input.dryRun)return Response.json({error:'invalid-request'},{status:400});
+   return Response.json(input.preflight?await publishDueMarketing(db,owner,input.brand,true,signal,input.publicationId,{preflight:true}):await publishDueMarketing(db,owner,input.brand,input.dryRun,signal,input.publicationId));
+  }
   if(input.operation!=='reconcile')return Response.json({error:'invalid-request'},{status:400});
   if(input.publicationId)return Response.json(await reconcileStoredMarketingPublication(db,owner,input.publicationId));
   if(!input.brand)return Response.json({error:'reconciliation-scope-required'},{status:400});

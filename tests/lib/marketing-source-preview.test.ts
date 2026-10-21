@@ -78,9 +78,23 @@ describe('protected producer share preflight; offline fixtures only', () => {
     expect((await refreshMarketingSources({ brand: 'dneskai', sourceIds: ['held-test-only'], env: dneEnv, now, fetcher })).held).toEqual([{ sourceId: 'held-test-only', reason: 'article-not-approved-or-unavailable' }]);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
-  it('rejects production, inactive/partial/foreign owner configuration and mismatched origins before any request', async () => {
+  it('ignores a retired share outside Preview: no share preflight or cookie, only the ordinary signed request (#113)', async () => {
+    for (const retired of [{ ...env, VERCEL_ENV: 'production' }, { ...env, VERCEL_ENV: undefined }, { ...env, VERCEL_ENV: 'production', MARKETING_PILOT_EXPIRES_AT: now.toISOString() },
+      { ...env, VERCEL_ENV: 'development', MARKETING_DEVSHARK_SOURCE_PREVIEW_SHARE_TOKEN: 'bad\r\nvalue' }]) {
+      expect(sourceRefreshConfig('devshark', retired)).toEqual({ url: env.MARKETING_DEVSHARK_SOURCE_URL, secret });
+      const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+        const target = new URL(String(url)), headers = new Headers(init?.headers);
+        expect(target.searchParams.has('_vercel_share')).toBe(false); expect(target.href).toBe(clean().href);
+        expect(headers.get('Cookie')).toBeNull(); expect(headers.get('Authorization')).toBe(`Bearer ${secret}`); expect(init?.redirect).toBe('error');
+        return Response.json({ packets: [] });
+      });
+      await refreshMarketingSources({ brand: 'devshark', env: retired, now, fetcher });
+      expect(fetcher).toHaveBeenCalledTimes(1); expect(JSON.stringify(fetcher.mock.calls)).not.toContain(token);
+    }
+  });
+  it('rejects inactive/partial/foreign owner configuration and mismatched origins in Preview before any request', async () => {
     for (const invalid of [
-      { ...env, VERCEL_ENV: 'production' }, { ...env, VERCEL_ENV: undefined }, { ...env, MARKETING_OWNER_ID: undefined },
+      { ...env, MARKETING_OWNER_ID: undefined },
       { ...env, MARKETING_OWNER_ID: '22222222-2222-4222-8222-222222222222' }, { ...env, MARKETING_PILOT_EXPIRES_AT: now.toISOString() },
       { ...env, MARKETING_PILOT_STARTS_AT: '2026-10-13T10:00:00.000Z' }, { ...env, MARKETING_PILOT_EXPIRES_AT: undefined },
       { ...env, MARKETING_DEVSHARK_SOURCE_PREVIEW_SHARE_TOKEN: undefined }, { ...env, MARKETING_DEVSHARK_SOURCE_PREVIEW_ORIGIN: undefined },

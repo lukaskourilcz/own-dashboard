@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 type Node = { name: string; type: string; typeVersion: number; parameters: Record<string, unknown>; retryOnFail?: boolean; onError?: string };
-const workflow = JSON.parse(readFileSync('workflows/marketing/dneskai-collection-pilot-worker.json', 'utf8')) as {
+const workflow = JSON.parse(readFileSync('workflows/marketing/retired/dneskai-collection-pilot-worker.json', 'utf8')) as {
   active: boolean; nodes: Node[]; settings: Record<string, unknown>; pinData: Record<string, unknown>;
   connections: Record<string, { main: { node: string }[][] }>;
 };
@@ -38,7 +38,7 @@ function evaluate(name: string, value: unknown, options: { clock?: number; scope
 }
 function scope(value: unknown = {}) { return evaluate(scopeName, value)[0].json; }
 
-describe('isolated native collection continuation, offline VM only', () => {
+describe('retired isolated native collection continuation, offline VM only', () => {
   it('has only manual/internal triggers, one bounded POST, a time wait and detached self-call', () => {
     expect(workflow.active).toBe(false);
     expect(workflow.nodes).toHaveLength(9);

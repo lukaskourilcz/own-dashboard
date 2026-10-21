@@ -5,7 +5,7 @@ import { marketingPilotConfiguration } from './pilot';
 export function authenticateN8n(request:Request,env:Record<string,string|undefined>=process.env,now=new Date()):string|null {
  const owner=z.uuid().safeParse(env.MARKETING_OWNER_ID);const expected=env.MARKETING_N8N_SECRET;
  if(!owner.success||!Number.isFinite(now.getTime()))return null;
- // An absent pilot tuple preserves ordinary admission; a partial one throws.
+ // An absent pilot tuple preserves ordinary admission; in Preview a partial one throws. Elsewhere it is retired and ignored.
  try{marketingPilotConfiguration(owner.data,env,now);}catch{return null;}
  const supplied=request.headers.get('authorization')?.replace(/^Bearer /,'');
  if(!expected||expected.length<32||!supplied)return null;

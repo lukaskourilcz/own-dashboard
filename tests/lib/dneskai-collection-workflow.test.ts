@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
-const workflow = JSON.parse(readFileSync('workflows/marketing/dneskai-source-collection.json', 'utf8'));
+const workflow = JSON.parse(readFileSync('workflows/marketing/retired/dneskai-source-collection.json', 'utf8'));
 const progress = workflow.nodes.find((node: { name: string }) => node.name === 'Collection progress').parameters.jsCode;
 const runId = '11111111-1111-4111-8111-111111111111';
 function execute(value: unknown, index = 0) {
@@ -10,7 +10,8 @@ function execute(value: unknown, index = 0) {
     $input: { all: () => [{ json: value }] }, $runIndex: index,
   }, { timeout: 1000 })));
 }
-describe('DNESKAi evening collection workflow', () => {
+// Retired under #120: the pg_cron tick replaced this n8n timer. The export keeps its guarantees.
+describe('DNESKAi evening collection workflow (retired)', () => {
   it('targets the requested domain at22Prague with no publisher, no stored payloads and no unsafe request retries', () => {
     expect(workflow.active).toBe(false);
     expect(workflow.settings).toMatchObject({ timezone: 'Europe/Prague', saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false });

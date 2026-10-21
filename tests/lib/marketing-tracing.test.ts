@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { createMarketingTracer, marketingTraceMetadata, LANGSMITH_EU_ENDPOINT } from "@/lib/marketing/tracing";
+import { createMarketingTracer, derivedUuid, marketingTraceMetadata, LANGSMITH_EU_ENDPOINT } from "@/lib/marketing/tracing";
 import { createClaudeMarketingModel } from "@/lib/marketing/generation";
 import { parseSourcePacket } from "@/lib/marketing/contracts";
 import { contentHash } from "@/lib/marketing/hashes";
@@ -54,7 +54,8 @@ describe("redacted LangSmith EU SDK tracing", () => {
     expect(await tracer.start(start)).toBeNull();
     const feedback = { traceId: "67a15323-4a6f-4463-a03b-c4c010015d80", revisionId: start.revisionId, revisionHash: "a".repeat(64), decision: "returned" as const, qualityScore: 0.25 };
     expect(await tracer.recordOwnerFeedback(feedback)).toBe(true);
-    expect(mocks.createFeedback).toHaveBeenCalledWith(feedback.traceId, "owner-review", { score: 0.25, value: "returned", sourceInfo: { revision_id: feedback.revisionId, revision_hash: feedback.revisionHash } });
+    expect(mocks.createFeedback).toHaveBeenCalledWith(feedback.traceId, "owner-review", { score: 0.25, value: "returned", sourceInfo: { revision_id: feedback.revisionId, revision_hash: feedback.revisionHash },
+      feedbackId: derivedUuid("owner-feedback", "owner-review", "returned", feedback.revisionId, feedback.revisionHash) });
     await expect(tracer.recordOwnerFeedback({ ...feedback, comment: "TEST PRIVATE OWNER NOTE" } as typeof feedback)).rejects.toThrow();
   });
   it("retains deduplicated generation reasons in the failed root even when child ingestion fails", async () => {
@@ -67,6 +68,17 @@ describe("redacted LangSmith EU SDK tracing", () => {
     const update = mocks.updateRun.mock.calls[0][1];
     expect(update.extra.metadata.issue_codes).toEqual(["model-code-forbidden", "unknown-evidence", "unsupported-number", "copy-validation-failed"]);
     expect(update.outputs).toEqual({}); expect(JSON.stringify(update)).not.toContain("TEST PRIVATE");
+  });
+  it("keeps a failed root within 30 issue codes, its final code last", async () => {
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const trace = await tracer.start(start);
+    const codes = (prefix: string) => Array.from({ length: 20 }, (_, index) => `${prefix}-${"abcdefghijklmnopqrstuvwxyz"[index]}`);
+    await trace!.stage({ name: "generation", attempt: 1, latencyMs: 1, usage, costUsd: usage.estimatedCostUsd, issues: codes("first") });
+    await trace!.stage({ name: "generation", attempt: 2, latencyMs: 1, usage, costUsd: usage.estimatedCostUsd, issues: codes("second") });
+    await trace!.finish({ status: "failed", revisionHash: null, usage: { ...usage, attempts: 2 }, issues: [...codes("first").slice(0, 29), "copy-validation-failed"] });
+    const metadata = mocks.updateRun.mock.calls.at(-1)![1].extra.metadata;
+    expect(metadata.issue_codes).toHaveLength(30);
+    expect(metadata.issue_codes.at(-1)).toBe("copy-validation-failed");
   });
   it("binds exact prepared asset/revision hashes and refuses mismatched owner feedback", async () => {
     const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
@@ -100,12 +112,15 @@ describe("redacted LangSmith EU SDK tracing", () => {
   it("binds edited feedback to original immutable metadata while sending the exact reviewed tuple", async () => {
     const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
     const metadataBefore = structuredClone((await mocks.readRun()).extra.metadata);
-    const feedback = { traceId: "67a15323-4a6f-4463-a03b-c4c010015d80", revisionId: "3e4382f1-1c71-4aac-9e0d-33aef28f355f", revisionHash: "b".repeat(64), decision: "edited" as const, qualityScore: 0,
-      generatedRevisionId: start.revisionId, generatedRevisionHash: "a".repeat(64) };
+    const feedback = { traceId: "67a15323-4a6f-4463-a03b-c4c010015d80", revisionId: "3e4382f1-1c71-4aac-9e0d-33aef28f355f", revisionHash: "b".repeat(64), decision: "edited" as const,
+      editKinds: { caption: 1, "text-headline": 2 }, generatedRevisionId: start.revisionId, generatedRevisionHash: "a".repeat(64) };
     expect(await tracer.recordOwnerFeedback(feedback)).toBe(true);
-    expect(mocks.createFeedback).toHaveBeenCalledWith(feedback.traceId, "owner-review", { score: 0, value: "edited", sourceInfo: {
+    // An edit is not a decision: its own key, its kinds as counts and no score.
+    expect(mocks.createFeedback).toHaveBeenCalledWith(feedback.traceId, "owner-edit", { value: "edited", sourceInfo: {
       revision_id: feedback.revisionId, revision_hash: feedback.revisionHash, generated_revision_id: start.revisionId, generated_revision_hash: "a".repeat(64),
-    } });
+      edit_kinds: { caption: 1, "text-headline": 2 }, edit_count: 3,
+    }, feedbackId: derivedUuid("owner-feedback", "owner-edit", "edited", feedback.revisionId, feedback.revisionHash) });
+    await expect(tracer.recordOwnerFeedback({ ...feedback, qualityScore: 0 })).rejects.toThrow("owner-score-invalid");
     expect(mocks.updateRun).not.toHaveBeenCalled();
     expect((await mocks.readRun()).extra.metadata).toEqual(metadataBefore);
     mocks.createFeedback.mockClear();

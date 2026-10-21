@@ -1,4 +1,5 @@
 import { DneskaiCollectionStateSchema, type DneskaiSource } from './dneskai-contracts';
+import { DneskaiMediaReadSchema } from './dneskai-media-contracts';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueScheduledAt } from './clock';
 
@@ -21,4 +22,11 @@ export async function loadDneskaiSources(projectId: string, signal?: AbortSignal
   const state = DneskaiCollectionStateSchema.parse(await response.json());
   if (state.sources.length > 200 || state.sourceStates.length > 200) throw new Error('dneskai-source-state-unavailable');
   return state;
+}
+/** The media tray of one candidate, or of the currently selected candidates when none is named (#114). */
+export async function loadDneskaiMedia(projectId: string, candidateId?: string, signal?: AbortSignal) {
+  const query = new URLSearchParams({ projectId, ...(candidateId ? { candidateId } : {}) });
+  const response = await fetch(`/api/marketing/dneskai/media?${query}`, { cache: 'no-store', signal });
+  if (!response.ok) throw new Error('dneskai-media-unavailable');
+  return DneskaiMediaReadSchema.parse(await response.json());
 }

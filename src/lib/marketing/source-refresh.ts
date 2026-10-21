@@ -6,12 +6,19 @@ import { signAutomationBody } from './automation-auth';
 import { MARKETING_SOURCE_MAX_AGE_MS } from './publisher';
 import { marketingPilotConfiguration } from './pilot';
 import { dneskaiCollectionPilotConfiguration } from './dneskai-pilot';
+import { previewPilotRetired } from './preview-pilot';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { DneskaiBriefSourceError, refreshDneskaiBriefPacket, type DneskaiBriefDatabase } from './dneskai-brief-source';
 
 type SourcePreviewShare = { token: string; origin: string };
 export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
 export type SourceRefreshResult = { packets: SourcePacket[]; held: Array<{ sourceId: string; reason: string }>;
   observedAt: string; noEditionDates: string[]; nextCursor: string | null; dropped: number };
-export type SourceRefreshOptions = { config?: SourceRefreshConfig; fetcher?: typeof fetch; now?: Date; signal?: AbortSignal; env?: Record<string, string | undefined> };
+/**
+ * `owner` (and optionally `db`) scope a DNESKAi brief refresh (#115): a brief is re-read from the owner's
+ * `marketing_dneskai_briefs`, never from the Quorum bridge. Without an owner a brief source is held.
+ */
+export type SourceRefreshOptions = { config?: SourceRefreshConfig; fetcher?: typeof fetch; now?: Date; signal?: AbortSignal; env?: Record<string, string | undefined>; owner?: string; db?: DneskaiBriefDatabase };
 export class SourceRefreshError extends Error { constructor(readonly code: string) { super(code); } }
 
 export function sourceRefreshConfig(brand: MarketingBrand, env: Record<string, string | undefined> = process.env): SourceRefreshConfig {
@@ -20,7 +27,8 @@ export function sourceRefreshConfig(brand: MarketingBrand, env: Record<string, s
   const secret = env[`${prefix}_SOURCE_SECRET`];
   if (!url || !secret || secret.length < 32) throw new SourceRefreshError('source-integration-unconfigured');
   const token = env[`${prefix}_SOURCE_PREVIEW_SHARE_TOKEN`], origin = env[`${prefix}_SOURCE_PREVIEW_ORIGIN`];
-  if (token === undefined && origin === undefined) return { url, secret };
+  // Outside Preview the retired share is never sent; the request is the ordinary signed one.
+  if ((token === undefined && origin === undefined) || previewPilotRetired('source-preview', env)) return { url, secret };
   if (!token || !origin) throw new SourceRefreshError('source-preview-configuration-invalid');
   const config = { url, secret, previewShare: { token, origin } };
   validatePreviewShare(config.previewShare, endpoint(config), env);
@@ -139,10 +147,11 @@ async function request(input: SourceRefreshOptions, url: URL, options: RequestIn
     return JSON.parse(raw) as unknown;
   } catch { throw new SourceRefreshError('source-response-invalid'); }
 }
-function validatedPacket(raw: unknown, brand: MarketingBrand, now: Date): SourcePacket {
+function validatedPacket(raw: unknown, brand: MarketingBrand, now: Date, local = false): SourcePacket {
   const packet = parseSourcePacket(raw);
   if (packet.brand !== brand || contentHash(packet.content) !== packet.contentHash) throw new SourceRefreshError('source-packet-invalid');
-  if ((brand === 'dneskai' && packet.kind !== 'article') || (brand === 'devshark' && !['question', 'coding-task'].includes(packet.kind))) throw new SourceRefreshError('source-kind-invalid');
+  // The bridge serves approved articles only; a brief comes only from the local producer.
+  if ((brand === 'dneskai' && packet.kind !== (local ? 'brief' : 'article')) || (brand === 'devshark' && !['question', 'coding-task'].includes(packet.kind))) throw new SourceRefreshError('source-kind-invalid');
   const observed = Date.parse(packet.observedAt);
   if (observed > now.getTime() + 60000 || observed < now.getTime() - MARKETING_SOURCE_MAX_AGE_MS) throw new SourceRefreshError('source-observation-stale');
   return packet;
@@ -154,19 +163,35 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
   const deadline = AbortSignal.timeout(50000);
   input = { ...input, signal: input.signal ? AbortSignal.any([input.signal, deadline]) : deadline };
   const now = input.now ?? new Date();
-  const config = input.config ?? sourceRefreshConfig(input.brand, input.env);
-  const base = endpoint(config);
-  if (config.previewShare) validatePreviewShare(config.previewShare, base, input.env ?? process.env);
   if (input.sourceIds && (!input.sourceIds.length || input.sourceIds.length > 20 || input.sourceIds.some(id => !id || id.length > 200))) throw new SourceRefreshError('source-query-invalid');
   const result: SourceRefreshResult = { packets: [], held: [], observedAt: now.toISOString(), noEditionDates: [], nextCursor: null, dropped: 0 };
-  const append = (value: unknown, expectedId?: string) => {
+  const append = (value: unknown, expectedId?: string, local = false) => {
     try {
-      const packet = validatedPacket(value, input.brand, now);
+      const packet = validatedPacket(value, input.brand, now, local);
       if (expectedId && packet.sourceId !== expectedId) { result.held.push({ sourceId: expectedId, reason: 'source-identity-changed' }); return; }
       result.packets.push(packet);
       if (!sourceUsable(packet, now)) result.held.push({ sourceId: packet.sourceId, reason: packet.eligible ? 'source-expired' : 'source-ineligible' });
     } catch { result.dropped++; if (expectedId) result.held.push({ sourceId: expectedId, reason: 'source-packet-invalid' }); }
   };
+  // DNESKAi briefs (#115) are refreshed from the owner's own brief store; only the remaining ids reach the bridge.
+  const briefs = input.brand === 'dneskai' ? [...new Set(input.sourceIds ?? [])].flatMap(id => {
+    const previous = input.previousPackets?.find(packet => packet.sourceId === id);
+    return previous?.kind === 'brief' ? [previous] : [];
+  }) : [];
+  for (const previous of briefs) {
+    if (!input.owner) { result.dropped++; result.held.push({ sourceId: previous.sourceId, reason: 'brief-owner-required' }); continue; }
+    let refreshed;
+    try { refreshed = await refreshDneskaiBriefPacket(input.db ?? createAdminClient(), input.owner, previous, now); }
+    catch (error) { throw new SourceRefreshError(error instanceof DneskaiBriefSourceError ? error.code : 'source-current-unavailable'); }
+    if ('held' in refreshed) { result.held.push({ sourceId: previous.sourceId, reason: refreshed.held }); continue; }
+    append(refreshed.packet, previous.sourceId, true);
+  }
+  const bridgeIds = input.sourceIds?.filter(id => !briefs.some(packet => packet.sourceId === id));
+  if (bridgeIds && !bridgeIds.length) return result;
+  input = { ...input, ...(bridgeIds ? { sourceIds: bridgeIds } : {}) };
+  const config = input.config ?? sourceRefreshConfig(input.brand, input.env);
+  const base = endpoint(config);
+  if (config.previewShare) validatePreviewShare(config.previewShare, base, input.env ?? process.env);
   if (input.brand === 'dneskai') {
     if (base.pathname !== '/admin/api/marketing-source' || base.search) throw new SourceRefreshError('source-integration-invalid');
     const body = JSON.stringify({ action: 'sources', ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}) });

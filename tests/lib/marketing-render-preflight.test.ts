@@ -46,6 +46,8 @@ describe('Preview-only authenticated authored render diagnostic, no model/job/st
     for (const asset of result.assets) expect(asset).toEqual({ sha256: expect.stringMatching(/^[a-f0-9]{64}$/), svgSha256: expect.stringMatching(/^[a-f0-9]{64}$/), width: 1080, height: 1350, bytes: expect.any(Number) });
     expect(result.assets.every(asset => asset.bytes > 10000 && asset.bytes < 8 * 1024 * 1024)).toBe(true);
     expect(refresh).toHaveBeenCalledTimes(2); expect(fetch).not.toHaveBeenCalled();
+    // Owner-scoped, so a DNESKAi brief source is re-read from the owner's brief store (#115).
+    for (const call of refresh.mock.calls as unknown[][]) { expect((call[2] as { owner?: string }).owner).toBe(owner); expect((call[2] as { db?: unknown }).db).toBe(state.db); }
     expect(state.queries).toHaveLength(2);
     for (const query of state.queries) expect(query.filters).toEqual(expect.arrayContaining([['user_id', owner], ['brand', 'devshark']]));
     const serialized = JSON.stringify(result);

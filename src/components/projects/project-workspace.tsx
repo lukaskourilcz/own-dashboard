@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import {
   Activity,
@@ -40,11 +41,16 @@ import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
+  DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
+  isDneskaiProjectTab,
+  type DneskaiProjectTab,
+  type ProjectTabId,
   type ProjectWorkspaceTab,
 } from "@/lib/project-workspace-tabs";
 import { useProjectTabVisibility } from "@/lib/use-prefs";
 import { isDneskaiProject } from "@/lib/marketing/dneskai-registry";
+import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
 import type {
   AiCategory,
   AiLink,
@@ -74,6 +80,13 @@ import type {
 
 const DneskaiSources = dynamic(() => import('@/components/marketing/dneskai-sources').then(module => module.DneskaiSources), {
   loading: function SourcesLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
+});
+const DneskaiInstagramAccount = dynamic(() => import('@/components/marketing/dneskai-instagram-account').then(module => module.DneskaiInstagramAccount), {
+  loading: function AccountLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
+});
+// The DNESKAi workspace tabs (#119) load their code and their reads only when one of them opens.
+const DneskaiWorkspaceTab = dynamic(() => import('@/components/marketing/dneskai/workspace').then(module => module.DneskaiWorkspaceTab), {
+  loading: function WorkspaceLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
 });
 
 type Props = {
@@ -131,7 +144,10 @@ export function ProjectWorkspace(props: Props) {
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
-  const [tab, setTab] = useState<ProjectWorkspaceTab>("overview");
+  const [selectedTab, setTab] = useState<ProjectTabId>("overview");
+  const tablist = useRef<HTMLDivElement>(null);
+  // Sources sends the owner to the final review; focus moves to the selected tab instead of being lost with the panel.
+  const openDneskaiReview = () => { flushSync(() => setTab("dneskai-review")); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); };
   const { isProjectTabHidden } = useProjectTabVisibility();
 
   // Repo-sourced tasks (from NEEDED.md) resolve through the shared matcher:
@@ -185,9 +201,27 @@ export function ProjectWorkspace(props: Props) {
     scaling: p.projectScaling,
     monetization: p.projectMonetization,
   };
-  const tabs = PROJECT_WORKSPACE_TABS.filter(
-    (item) => (item !== "sources" || isDneskaiProject(project)) && (item === "overview" || !isProjectTabHidden(item)),
+  const dneskai = isDneskaiProject(project);
+  const dneskaiLabels = dneskaiWorkspace[lang].tabs;
+  const projectTabs: Array<{ id: ProjectTabId; label: string }> = PROJECT_WORKSPACE_TABS.filter(
+    (item) => (item !== "sources" || dneskai) && (item === "overview" || !isProjectTabHidden(item)),
   ).map((id) => ({ id, label: tabLabels[id] }));
+  const dneskaiTabLabels: Record<DneskaiProjectTab, string> = {
+    "dneskai-review": dneskaiLabels.review,
+    "dneskai-calendar": dneskaiLabels.calendar,
+    "dneskai-published": dneskaiLabels.published,
+    "dneskai-costs": dneskaiLabels.costs,
+  };
+  const dneskaiTab = (id: DneskaiProjectTab) => isProjectTabHidden(id) ? [] : [{ id, label: dneskaiTabLabels[id] }];
+  // DNESKAi's daily work sits right after Overview: review, calendar, sources, published, errors and costs. Settings
+  // lists them in the same order and can hide each of them like any other project tab.
+  const tabs = dneskai ? [
+    projectTabs[0]!,
+    ...DNESKAI_WORKSPACE_TAB_ORDER.flatMap((id) => id === "sources" ? projectTabs.filter((item) => item.id === "sources") : dneskaiTab(id)),
+    ...projectTabs.slice(1).filter((item) => item.id !== "sources"),
+  ] : projectTabs;
+  // A tab hidden in Settings, or one this project does not have, opens Overview instead.
+  const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : "overview";
 
   const healthLabel = health.health === "healthy" ? p.healthy : health.health === "attention" ? p.attentionStatus : p.atRisk;
   const localHealthReason = (reason: string) => {
@@ -207,7 +241,7 @@ export function ProjectWorkspace(props: Props) {
       eyebrow={parentProject ? t.portfolio.subsectionOf(parentProject.name) : organization?.name ?? (registryEntry ? t.portfolio.coreProject : p.projectWorkspace)}
       action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
     />
-    <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1" role="tablist" aria-label={p.projectWorkspace}>
+    <div ref={tablist} className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1" role="tablist" aria-label={p.projectWorkspace}>
       {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
     </div>
 
@@ -230,7 +264,8 @@ export function ProjectWorkspace(props: Props) {
     {tab === "tasks" && <div className="space-y-4"><RecordCard title={p.projectTasks} icon={ListTodo} info={p.tasksFromNeededInfo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><div><div className="mb-2 flex items-center gap-1.5"><SectionLabel>{p.projectNotes}</SectionLabel><Tooltip content={p.notesInfo}><span className="inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip></div><NotesPanel notes={props.notes} setNotes={props.setNotes} projects={[project]} projectId={project.id} embedded /></div></div>}
     {tab === "activity" && <div className="space-y-4">{project.repo_full_name && <ProjectGithubActivity repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} />}<RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} /></div>}
     {tab === "communication" && <ProjectCommunicationPanel projectId={project.id} communications={projectCommunications} setCommunications={props.setCommunications} />}
-    {tab === "sources" && isDneskaiProject(project) && <DneskaiSources projectId={project.id} lang={lang} disabled={props.isPreview} />}
+    {isDneskaiProjectTab(tab) && dneskai && <DneskaiWorkspaceTab tab={tab} projectId={project.id} lang={lang} preview={props.isPreview} />}
+    {tab === "sources" && isDneskaiProject(project) && <div className="space-y-8"><DneskaiInstagramAccount lang={lang} disabled={props.isPreview} /><DneskaiSources projectId={project.id} lang={lang} onOpenReview={openDneskaiReview} disabled={props.isPreview} /></div>}
     {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
     {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.monthlyCost} icon={CircleDollarSign} info={p.costsInfo} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.invoices} icon={FileText} info={p.invoicesInfo} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} info={p.subscriptionsInfo} empty={p.noRelatedRecords} items={projectSubscriptions.map(({ subscription, share, monthly }) => ({ id: subscription.id, primary: subscription.name, secondary: `${formatCurrency(subscription.amount, subscription.currency)} · ${t.subscriptions.cycle[subscription.billing_cycle]} · ${Math.round(share * 100)}% → ${formatCurrency(monthly, displayCurrency)}${t.subscriptions.perMo}` }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} info={p.transactionsInfo} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /></div></div>}
     {tab === "competition" && <ProjectCompetition project={project} competitors={props.competitors} setCompetitors={props.setCompetitors} />}

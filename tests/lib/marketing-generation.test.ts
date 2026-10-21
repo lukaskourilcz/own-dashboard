@@ -5,7 +5,6 @@ import { generateMarketingDraft, generationPrompt, authoredMarketingText, author
 import { parseSourcePacket, type ContentRevision } from "@/lib/marketing/contracts";
 import { contentHash } from "@/lib/marketing/hashes";
 import { fitMarketingText, marketingTemplateDigest, pendingMarketingTemplate, renderMarketingAssets, renderMarketingPreview, validateMarketingTemplate } from "@/lib/marketing/render";
-import dnesTemplate from "../../templates/marketing/dneskai/template.json";
 import devTemplate from "../../templates/marketing/devshark/template.json";
 import sharp from "sharp";
 import { evaluateMarketingBenchmark } from "@/lib/marketing/generation-benchmark";
@@ -145,9 +144,8 @@ describe("bounded source-derived generation", () => {
 
 describe("deterministic brand rendering", () => {
   it("binds template digest to current original brand assets and fonts", () => {
-    expect(dnesTemplate.templateSha256).toBe(marketingTemplateDigest("dneskai"));
     expect(devTemplate.templateSha256).toBe(marketingTemplateDigest("devshark"));
-    expect(() => validateMarketingTemplate(pendingMarketingTemplate("dneskai"), true)).toThrow("claude-design-approval-required");
+    expect(() => validateMarketingTemplate(pendingMarketingTemplate("devshark"), true)).toThrow("claude-design-approval-required");
   });
   it("preserves Czech diacritics and fails on text or code overflow and missing glyphs", () => {
     const text = "Příliš žluťoučký kůň úpěl ďábelské ódy.";
@@ -157,14 +155,14 @@ describe("deterministic brand rendering", () => {
     expect(() => fitMarketingText({ value: "const a\u0301 = 1;", faceId: "jetbrains-mono-400", fontSize: 28, width: 856, maxLines: 10, code: true })).toThrow("unsupported-glyph");
     expect(() => fitMarketingText({ value: "🦈", faceId: "manrope-800", fontSize: 62, width: 904, maxLines: 3 })).toThrow("unsupported-glyph");
   });
-  it("renders reproducible 1080x1350 JPEG with original outlined logo and no system font fallback", async () => {
-    const template = pendingMarketingTemplate("dneskai");
-    const draft = { revision: revision("dneskai"), slides: [{ headline: "Test české sazby", body: "Příliš žluťoučký kůň úpěl ďábelské ódy.", code: null, evidenceIndexes: [0] }, { headline: "Čitelnost", body: "Test českých znaků a řádků.", code: null, evidenceIndexes: [0] }] };
+  it("renders reproducible 1080x1350 JPEG with original brand assets and no system font fallback", async () => {
+    const template = pendingMarketingTemplate("devshark");
+    const draft = { revision: revision("devshark"), slides: [{ headline: "Test-only layout", body: "Read the question once.", code: null, evidenceIndexes: [] }, { headline: "Review", body: "Read the authored explanation.", code: null, evidenceIndexes: [] }] };
     const a = await renderMarketingPreview({ draft, template, revisionId: input.revisionId });
     const b = await renderMarketingPreview({ draft, template, revisionId: input.revisionId });
     expect(a.map((slide) => slide.sha256)).toEqual(b.map((slide) => slide.sha256));
     expect(a[0].svg).toContain("data:image/svg+xml;base64,");
-    expect(a[0].svg).toContain("žluťoučký");
+    expect(a[0].svg).toContain("Read the question once.");
     expect(await sharp(a[0].jpeg).metadata()).toEqual(expect.objectContaining({ format: "jpeg", width: 1080, height: 1350 }));
   }, 60000);
   it("fails closed before storage when production template approval is missing", async () => {
@@ -231,22 +229,5 @@ describe("real authored review preview", () => {
       await mkdir(process.env.MARKETING_QA_PREVIEW_DIR, { recursive: true });
       await Promise.all(previews.map((preview, i) => writeFile(path.join(process.env.MARKETING_QA_PREVIEW_DIR!, `devshark-${i + 1}.jpg`), preview.jpeg)));
     }
-  }, 60000);
-});
-
-
-describe("DNESKAi Design R2 social adaptation preview", () => {
-  it("renders real held authored article excerpts with lead/secondary font roles", async () => {
-    const source = parseSourcePacket(realArticle);
-    const paragraphs = source.content.body.split("\n\n");
-    const draft = { revision: { ...revision("dneskai"), sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }] }, slides: [
-      { headline: source.content.title, body: authoredMarketingText(paragraphs[0], null), code: null, evidenceIndexes: [0] },
-      { headline: "Souvislosti článku", body: authoredMarketingText(paragraphs[1].split(/(?<=[.!?])\s+/)[0], null), code: null, evidenceIndexes: [0] },
-    ] };
-    const previews = await renderMarketingPreview({ draft, template: pendingMarketingTemplate("dneskai"), revisionId: input.revisionId });
-    expect(previews[0].svg).toContain('font-family="Space Grotesk"');
-    expect(previews[1].svg).toContain('font-family="Source Serif 4"');
-    expect(source.eligible).toBe(false);
-    if (process.env.MARKETING_QA_PREVIEW_DIR) await Promise.all(previews.map((preview, i) => writeFile(path.join(process.env.MARKETING_QA_PREVIEW_DIR!, `dneskai-held-${i + 1}.jpg`), preview.jpeg)));
   }, 60000);
 });

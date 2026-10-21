@@ -1,7 +1,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  DNESKAI_PROJECT_TABS,
+  PROJECT_TAB_IDS,
   PROJECT_WORKSPACE_TABS,
+  isDneskaiProjectTab,
   normalizeHiddenProjectTabs,
 } from "@/lib/project-workspace-tabs";
 
@@ -53,6 +56,34 @@ describe("synchronized user preferences", () => {
     expect(PROJECT_WORKSPACE_TABS).toContain("knowledge");
   });
 
+  it("keeps the DNESKAi tabs hideable and drops unknown DNESKAi-like ids", () => {
+    expect(
+      normalizeHiddenProjectTabs([
+        "dneskai-review",
+        "dneskai-calendar",
+        "dneskai-published",
+        "dneskai-costs",
+        "dneskai-review",
+        "dneskai-unknown",
+        "DNESKAI-COSTS",
+        "sources",
+      ]),
+    ).toEqual([
+      "dneskai-review",
+      "dneskai-calendar",
+      "dneskai-published",
+      "dneskai-costs",
+      "sources",
+    ]);
+    expect(normalizeHiddenProjectTabs("dneskai-review")).toEqual([]);
+    expect(PROJECT_TAB_IDS).toEqual([
+      ...PROJECT_WORKSPACE_TABS,
+      ...DNESKAI_PROJECT_TABS,
+    ]);
+    expect(DNESKAI_PROJECT_TABS.every(isDneskaiProjectTab)).toBe(true);
+    expect(PROJECT_WORKSPACE_TABS.some(isDneskaiProjectTab)).toBe(false);
+  });
+
   it("keeps the preferences row own-only and available to authenticated users", () => {
     expect(sql).toMatch(/user_preferences enable row level security/i);
     expect(sql).toMatch(
@@ -64,8 +95,8 @@ describe("synchronized user preferences", () => {
   });
 
   it("constrains hidden project tabs to exactly the workspace tabs", () => {
-    expect(latestTabCheck).toBe("20261013165236_marketing_dneskai_collection.sql");
-    expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_WORKSPACE_TABS]);
+    expect(latestTabCheck).toBe("20261021100000_dneskai_hideable_project_tabs.sql");
+    expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_TAB_IDS]);
     expect(checkedTabs(tabCheckSql)).not.toContain("operations");
     expect(checkedTabs(tabCheckSql)).toContain("competition");
     // Rows holding a removed id are cleaned before the stricter check applies.

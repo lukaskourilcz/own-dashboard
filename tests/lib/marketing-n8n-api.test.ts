@@ -62,7 +62,7 @@ describe("authenticated n8n marketing operation boundary", () => {
     mocks.refresh.mockResolvedValue(current); mocks.enqueue.mockResolvedValue({ status: "held" });
     const response = await POST(request({ operation: "enqueue", brand: "devshark", job: rawJob() }));
     expect(response.status).toBe(200); expect(await response.json()).toEqual({ status: "held" });
-    expect(mocks.refresh).toHaveBeenCalledWith(sourceFixture, expect.any(AbortSignal));
+    expect(mocks.refresh).toHaveBeenCalledWith(sourceFixture, expect.any(AbortSignal), { owner, db: expect.anything() });
     expect(mocks.ingest).toHaveBeenCalledWith(expect.anything(), owner, current, "devshark");
     expect(mocks.enqueue).toHaveBeenCalledWith(expect.anything(), owner, rawJob(current));
     expect(current.eligible).toBe(false);
@@ -141,6 +141,14 @@ describe("authenticated n8n marketing operation boundary", () => {
     expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "devshark", true, expect.any(AbortSignal),undefined);
     expect((await POST(request({ operation: "publish", brand: "dneskai", dryRun: false }))).status).toBe(200);
     expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", false, expect.any(AbortSignal),undefined);
+  });
+  it("forwards a read-only preflight only with a dry run", async () => {
+    expect((await POST(request({ operation: "publish", brand: "dneskai", preflight: true, publicationId: sourceId }))).status).toBe(200);
+    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", true, expect.any(AbortSignal), sourceId, { preflight: true });
+    mocks.publish.mockClear();
+    const live = await POST(request({ operation: "publish", brand: "dneskai", dryRun: false, preflight: true }));
+    expect(live.status).toBe(400); expect(await live.json()).toEqual({ error: "invalid-request" });
+    expect(mocks.publish).not.toHaveBeenCalled();
   });
   it("forwards bounded discovery parameters and returns only released planned slots in active owned campaigns", async () => {
     const state = database({ marketing_campaigns: [{ id: "own-campaign", user_id: owner, brand: "devshark", status: "active" }, { id: "foreign-campaign", user_id: other, brand: "devshark", status: "active" }], marketing_calendar_entries: [

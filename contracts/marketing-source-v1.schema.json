@@ -19,7 +19,8 @@
         "article",
         "question",
         "coding-task",
-        "instagram-reference"
+        "instagram-reference",
+        "brief"
       ]
     },
     "sourceId": {
@@ -224,6 +225,215 @@
         "explanation",
         "evidence",
         "image"
+      ],
+      "additionalProperties": false
+    },
+    "brief": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "dneskai-brief/1"
+        },
+        "eventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "memberHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "targetDate": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "ai-news",
+            "tech-news",
+            "marketing",
+            "tool",
+            "ai-project"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "evidence": {
+          "minItems": 1,
+          "maxItems": 30,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "candidateId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "sourceId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "url": {
+                "type": "string",
+                "maxLength": 2048,
+                "format": "uri"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "excerpt": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "publishedAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dateEstimated": {
+                "type": "boolean"
+              },
+              "captionOnly": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "candidateId",
+              "sourceId",
+              "url",
+              "title",
+              "excerpt",
+              "publishedAt",
+              "dateEstimated",
+              "captionOnly"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "media": {
+          "maxItems": 30,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "assetSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "candidateId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "position": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 99
+              },
+              "credit": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "width": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 20000
+              },
+              "height": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 20000
+              },
+              "originKind": {
+                "type": "string",
+                "enum": [
+                  "instagram-display",
+                  "instagram-child",
+                  "og-image",
+                  "article-figure",
+                  "feed-image"
+                ]
+              },
+              "fullBleedCapable": {
+                "type": "boolean"
+              },
+              "insetCapable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "assetSha256",
+              "candidateId",
+              "position",
+              "credit",
+              "width",
+              "height",
+              "originKind",
+              "fullBleedCapable",
+              "insetCapable"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "suggestedFormat": {
+          "type": "string",
+          "enum": [
+            "carousel",
+            "single-image"
+          ]
+        },
+        "scheduledAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "timeZone": {
+          "type": "string",
+          "const": "Europe/Prague"
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "eventId",
+        "memberHash",
+        "targetDate",
+        "category",
+        "title",
+        "evidence",
+        "media",
+        "suggestedFormat",
+        "scheduledAt",
+        "timeZone",
+        "observedAt",
+        "expiresAt"
       ],
       "additionalProperties": false
     }

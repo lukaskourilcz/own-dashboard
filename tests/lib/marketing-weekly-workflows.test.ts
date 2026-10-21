@@ -15,9 +15,9 @@ function execute(workflow:Workflow,name:string,input:Array<{json:Record<string,u
  const raw=vm.runInNewContext(`(()=>{${source}\n})()`,{$input:{all:()=>input},$now:clock(now)},{timeout:1000});
  return JSON.parse(JSON.stringify(raw)) as Array<{json:Record<string,unknown>;pairedItem?:{item:number}}>;
 }
-describe('actual inactive n8n Code snippets with native item envelopes and explicit capability holds',()=>{
+describe('retired DNESKAi daily preparation export',()=>{
  it('prepares DNESKAi for Prague today only and refuses to silently truncate overcapacity or use held sources',async()=>{
-  const daily=await load('daily-preparation');
+  const daily=await load('retired/daily-preparation');
   expect(execute(daily,'Brand calendar scopes',[],'2026-10-13T22:30:00Z')).toEqual([{json:{operation:'discover',brand:'dneskai',date:'2026-10-14'}}]);
   const response={brand:'dneskai',entries:[{id:'TEST-ONLY-ENTRY',platform:'instagram'}],packets:[{eligible:true}],planning:{calendarHasMore:false},heldEntries:[]};
   expect(execute(daily,'Actual calendar entries',[{json:response}])).toEqual([{json:{operation:'enqueue',brand:'dneskai',entryId:'TEST-ONLY-ENTRY',platform:'instagram'},pairedItem:{item:0}}]);
@@ -31,6 +31,8 @@ describe('actual inactive n8n Code snippets with native item envelopes and expli
   expect(execute(daily,'Daily preparation holds',[{json:{...response,packets:[{eligible:false}]}}])[0].json).toMatchObject({status:'held',holdCode:'fresh-approved-source-required'});
   expect(execute(daily,'Actual calendar entries',[{json:{...response,brand:'devshark'}}])).toEqual([]);
  });
+});
+describe('actual inactive n8n Code snippets with native item envelopes and explicit capability holds',()=>{
  it('plans Sunday itself through Saturday and exposes42 requested deliverables without enqueue/execute/provider nodes',async()=>{
   const weekly=await load('devshark-weekly-preparation');
   const expected=['2026-10-18','2026-10-19','2026-10-20','2026-10-21','2026-10-22','2026-10-23','2026-10-24'];
@@ -54,7 +56,7 @@ describe('actual inactive n8n Code snippets with native item envelopes and expli
   expect(execute(review,'Read-only weekly report',[{json:{error:marker}}])[0].json).toMatchObject({status:'held',coverage:'unavailable',sampleSize:null,errorCode:'weekly-report-unavailable',providerMetrics:null});
  });
  it('preserves inactive/no-save/redirect refusal/placeholder auth and no retries for paid execution',async()=>{
-  for(const file of ['daily-preparation','devshark-weekly-preparation','weekly-review']){
+  for(const file of ['retired/daily-preparation','devshark-weekly-preparation','weekly-review']){
    const workflow=await load(file);expect(workflow.active).toBe(false);expect(workflow.settings).toMatchObject({timezone:'Europe/Prague',saveDataSuccessExecution:'none',saveDataErrorExecution:'none',saveManualExecutions:false,saveExecutionProgress:false});
    for(const node of workflow.nodes.filter(node=>node.type==='n8n-nodes-base.httpRequest')){expect(node.parameters.genericAuthType).toBe('httpHeaderAuth');expect(node.parameters.url).toContain('example.invalid');if(node.name.startsWith('Execute'))expect(node.retryOnFail).toBe(false);}
    expect(JSON.stringify(workflow)).not.toContain('n8n-nodes-base.executeCommand');

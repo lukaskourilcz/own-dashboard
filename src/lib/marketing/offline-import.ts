@@ -3,20 +3,21 @@ import { z } from 'zod';
 import sharp from 'sharp';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { parseContentRevision, parseSourcePacket } from './contracts';
-import { contentHash, revisionHash } from './hashes';
+import { contentHash, revisionContentHash } from './hashes';
 import { pragueScheduledAt } from './clock';
 import { refreshSource } from './source-refresh';
 import { ingestSource } from './store';
 import { createMarketingAssetStorage } from './worker-runtime';
 import { currentMarketingTemplate } from './render';
 import { marketingPilotConfiguration } from './pilot';
+import { previewPilotRetired } from './preview-pilot';
 import { assertOfflineSource, assertOfflineSourceBinding, offlineImportSlot, validateMarketingOfflineImport, OFFLINE_IMPORT_HOLD, MarketingOfflineImportError, type MarketingOfflineImportReceipt } from './offline-import-validation';
 
 type Database=ReturnType<typeof createAdminClient>;
 type Environment=Record<string,string|undefined>;
 function reject(code:ConstructorParameters<typeof MarketingOfflineImportError>[0]):never {throw new MarketingOfflineImportError(code);}
 export function assertMarketingOfflineImportConfiguration(ownerId:string,env:Environment=process.env,now=new Date()) {
-  if(env.MARKETING_OFFLINE_IMPORT_ENABLED!=='true'||env.VERCEL_ENV!=='preview'||!z.uuid().safeParse(ownerId).success||ownerId!==env.MARKETING_OWNER_ID)reject('offline-import-disabled');
+  if(previewPilotRetired('offline-import',env)||env.MARKETING_OFFLINE_IMPORT_ENABLED!=='true'||!z.uuid().safeParse(ownerId).success||ownerId!==env.MARKETING_OWNER_ID)reject('offline-import-disabled');
   try{const pilot=marketingPilotConfiguration(ownerId,env,now);if(!pilot)reject('offline-import-disabled');return pilot;}catch{reject('offline-import-disabled');}
 }
 export async function importMarketingOfflineDraft(db:Database,ownerId:string,value:unknown,options:{env?:Environment;now?:Date;clock?:()=>Date;refresh?:typeof refreshSource;storage?:ReturnType<typeof createMarketingAssetStorage>;inspectJpeg?:(bytes:Buffer)=>Promise<{width?:number;height?:number;format?:string;orientation?:number;pages?:number}>;signal?:AbortSignal}={}){
@@ -50,7 +51,7 @@ export async function importMarketingOfflineDraft(db:Database,ownerId:string,val
   if(scope.error||scope.data!==true)reject('offline-import-disabled');
   assertLiveScope();
   let fresh;
-  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal));}catch{reject('offline-import-source-unavailable');}
+  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal,{owner:ownerId,db}));}catch{reject('offline-import-source-unavailable');}
   assertLiveScope();assertOfflineSource(fresh,clock());assertOfflineSourceBinding(source,fresh);
   assertLiveScope();
   const sourceRecord=await ingestSource(db,ownerId,fresh,'devshark').catch(()=>reject('offline-import-source-unavailable'));
@@ -74,14 +75,14 @@ export async function importMarketingOfflineDraft(db:Database,ownerId:string,val
   }catch(error){if(error instanceof MarketingOfflineImportError)throw error;reject('offline-import-storage-unavailable');}
   // Authoritative second read after upload; SQL rechecks the persisted source head atomically as well.
   assertLiveScope();
-  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal));}catch{reject('offline-import-source-unavailable');}
+  try{fresh=parseSourcePacket(await(options.refresh??refreshSource)(source,signal,{owner:ownerId,db}));}catch{reject('offline-import-source-unavailable');}
   assertLiveScope();assertOfflineSource(fresh,clock());assertOfflineSourceBinding(source,fresh);
   assertLiveScope();
   await ingestSource(db,ownerId,fresh,'devshark').catch(()=>reject('offline-import-source-unavailable'));
   const revision=parseContentRevision({schemaVersion:'marketing-content/1',brand:'devshark',title:source.content.title,caption:prepared.caption,format,sources:[{sourceId:source.sourceId,sourceRevision:source.sourceRevision,contentHash:source.contentHash}],knowledgeIds:[],assets,account:{id:account.remote_account_id,platform:format==='thread'?'threads':'instagram',handle:account.handle},scheduledAt,timeZone:'Europe/Prague',templateVersion:prepared.templateVersion,promptVersion:'authored-weekly-offline-import/1',model:'none-offline-authored',traceId:null});
   const receipt:MarketingOfflineImportReceipt={schemaVersion:'marketing-offline-import/1',manifestSha256:input.manifestSha256,identityHash:prepared.identityHash,role:input.role,templateSha256:prepared.templateSha256,sourceContentHash:source.contentHash,assetHashes:assets.map(asset=>asset.sha256),svgHashes:prepared.descriptors.map(asset=>asset.svg.sha256),holdCode:OFFLINE_IMPORT_HOLD,templateApproved:false,providerCalls:0};
   assertLiveScope();
-  const {data,error}=await db.rpc('marketing_import_offline_revision',{p_owner:ownerId,p_id:revisionId,p_campaign:input.campaignId,p_entry:input.entryId,p_version:input.entryVersion,p_role:input.role,p_identity:prepared.identityHash,p_revision:revision,p_hash:revisionHash(revision),p_receipt:receipt,p_pilot:pilot});
+  const {data,error}=await db.rpc('marketing_import_offline_revision',{p_owner:ownerId,p_id:revisionId,p_campaign:input.campaignId,p_entry:input.entryId,p_version:input.entryVersion,p_role:input.role,p_identity:prepared.identityHash,p_revision:revision,p_hash:revisionContentHash(revision),p_receipt:receipt,p_pilot:pilot});
   if(error||!data)reject('offline-import-save-failed');
   return{revisionId:String(data),duplicate:false,ready:false,status:'review' as const,holdCode:OFFLINE_IMPORT_HOLD,providerCalls:0 as const};
 }

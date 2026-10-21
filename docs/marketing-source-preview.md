@@ -1,5 +1,7 @@
 # Protected preview producer access
 
+> **Retired 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)).** Outside Vercel Preview the share variables below are ignored: no preflight, no cookie, only the ordinary source request, and the process logs one `pilot-retired` line. See [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
+
 The source adapter supports a temporary share token for one exact producer deployment origin during the active staging pilot. It leaves deployment protection and source application authentication enabled. Configure these server-only values for each protected brand:
 
 | Brand | Token variable | Origin variable |

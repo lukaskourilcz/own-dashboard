@@ -1,4 +1,6 @@
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { cp, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import os from 'node:os';
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
@@ -10,17 +12,68 @@ async function configuredIncludes() {
   // Inspect config syntax only; never evaluate its environment/Sentry branches.
   const source = ts.createSourceFile('next.config.ts', await readFile('next.config.ts', 'utf8'), ts.ScriptTarget.Latest, true);
   let object: ts.ObjectLiteralExpression | undefined;
+  const constants = new Map<string, ts.Expression>();
   function visit(node: ts.Node) {
     if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'outputFileTracingIncludes' && ts.isObjectLiteralExpression(node.initializer)) object = node.initializer;
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) constants.set(node.name.text, node.initializer);
     ts.forEachChild(node, visit);
   }
   visit(source);
+  // String literals, arrays of them, and the named constants and spreads the config builds them from.
+  const strings = (node: ts.Expression): string[] => ts.isStringLiteral(node) ? [node.text]
+    : ts.isIdentifier(node) && constants.has(node.text) ? strings(constants.get(node.text)!)
+    : ts.isArrayLiteralExpression(node) ? node.elements.flatMap(element => strings(ts.isSpreadElement(element) ? element.expression : element)) : [];
   const includes: Record<string, string[]> = {};
   for (const property of object?.properties ?? []) {
-    if (!ts.isPropertyAssignment(property) || !ts.isStringLiteral(property.name) || !ts.isArrayLiteralExpression(property.initializer)) continue;
-    includes[property.name.text] = property.initializer.elements.filter(ts.isStringLiteral).map(value => value.text);
+    if (!ts.isPropertyAssignment(property) || !ts.isStringLiteral(property.name)) continue;
+    includes[property.name.text] = strings(property.initializer);
   }
   return includes;
+}
+const picomatch = createRequire(path.resolve('package.json'))('next/dist/compiled/picomatch') as (glob: string, options: { dot: boolean; contains: boolean }) => (value: string) => boolean;
+/** What Next adds to one route's trace: the includes of every key whose glob matches the route (next/dist/build/collect-build-traces.js). */
+function routeIncludes(includes: Record<string, string[]>, route: string) {
+  return Object.entries(includes).filter(([glob]) => picomatch(glob, { dot: true, contains: true })(route)).flatMap(([, patterns]) => patterns);
+}
+const graph = new Map<string, { sharp: boolean; files: string[] }>();
+/** The runtime imports of one project module: static and re-exports without `type`, plus `import()` calls. */
+function moduleImports(file: string) {
+  const known = graph.get(file);
+  if (known) return known;
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+  const specifiers: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isImportDeclaration(node) && !node.importClause?.isTypeOnly && ts.isStringLiteral(node.moduleSpecifier)) specifiers.push(node.moduleSpecifier.text);
+    if (ts.isExportDeclaration(node) && !node.isTypeOnly && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) specifiers.push(node.moduleSpecifier.text);
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0])) specifiers.push(node.arguments[0].text);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  const files = specifiers.flatMap((specifier) => {
+    const base = specifier.startsWith('@/') ? path.resolve('src', specifier.slice(2)) : specifier.startsWith('.') ? path.resolve(path.dirname(file), specifier) : null;
+    const found = base && [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`].find((candidate) => /\.tsx?$/.test(candidate) && existsSync(candidate));
+    return found ? [found] : [];
+  });
+  const entry = { sharp: specifiers.includes('sharp'), files };
+  graph.set(file, entry);
+  return entry;
+}
+function reachesSharp(file: string) {
+  const seen = new Set([file]), queue = [file];
+  for (let next = queue.shift(); next; next = queue.shift()) {
+    const entry = moduleImports(next);
+    if (entry.sharp) return true;
+    for (const imported of entry.files) if (!seen.has(imported)) { seen.add(imported); queue.push(imported); }
+  }
+  return false;
+}
+/** Every App Router route handler, as the route path Next matches include globs against. */
+function routeHandlers() {
+  const app = path.resolve('src/app');
+  return (readdirSync(app, { recursive: true }) as string[]).filter((file) => /(^|[\\/])route\.tsx?$/.test(file)).map((file) => ({
+    file: path.join(app, file),
+    route: `/${path.dirname(file).split(path.sep).filter((segment) => segment !== '.' && !segment.startsWith('(') && !segment.startsWith('@')).join('/')}`,
+  }));
 }
 function probeResult(result: Pick<SpawnSyncReturns<string>, 'status' | 'signal' | 'error' | 'stdout'>, missingLibraryExpected = false) {
   // A native loader may terminate instead of throwing JS. Only the negative probe may normalize that.
@@ -44,10 +97,14 @@ describe('marketing native JPEG runtime package closure, no provider/source/cred
     }
     expect(() => probeResult({ status: null, signal: null, stdout: '', error: new Error('TEST-ONLY-SPAWN-FAILED') }, true)).toThrow();
   });
-  it('requires libvips runtime assets omitted by the observed NFT and includes them only on the rendering and JPEG-import routes', async () => {
+  it('traces libvips into every route handler that can load sharp, and into any marketing route added later', async () => {
     const includes = await configuredIncludes();
-    const routes = Object.entries(includes).filter(([, patterns]) => patterns.includes(libvipsInclude)).map(([route]) => route).sort();
-    expect(routes).toEqual(['/api/marketing/jobs/*/execute', '/api/marketing/n8n', '/api/marketing/offline-import']);
+    expect(includes['/api/marketing/**']).toContain(libvipsInclude);
+    const routes = routeHandlers().filter(({ file }) => reachesSharp(file)).map(({ route }) => route);
+    expect(routes).toEqual(expect.arrayContaining(['/api/marketing/dneskai/media', '/api/marketing/jobs/[id]/execute', '/api/marketing/n8n', '/api/marketing/offline-import', '/api/marketing/revisions', '/api/marketing/tick']));
+    expect(routes.filter((route) => !routeIncludes(includes, route).includes(libvipsInclude))).toEqual([]);
+  });
+  it('requires the libvips runtime assets omitted by the observed NFT', async () => {
     const temporary = await mkdtemp(path.join(os.tmpdir(), 'marketing-native-package-test-'));
     try {
       const installed = path.resolve('node_modules'), target = path.join(temporary, 'node_modules');

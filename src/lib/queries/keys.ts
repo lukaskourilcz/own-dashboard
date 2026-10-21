@@ -59,6 +59,13 @@ export const qk = {
   detectedTools: ["github", "detected-tools"] as const,
   marketingState: ["marketing", "state"] as const,
   dneskaiSources: ["marketing", "dneskai-sources"] as const,
+  // The DNESKAi workspace tabs (#119), each followed by the project id; lazy, one per tab.
+  dneskaiReview: ["marketing", "dneskai-review"] as const,
+  dneskaiCosts: ["marketing", "dneskai-costs"] as const,
+  dneskaiMedia: ["marketing", "dneskai-media"] as const,
+  // Not a server read: the versions this browser session saw fail to attach their render, shared by the tabs.
+  dneskaiRenderFailed: ["marketing", "dneskai-render-failed"] as const,
+  marketingAccounts: ["marketing", "accounts"] as const,
   marketingKnowledge: ["marketing", "knowledge"] as const,
   marketingCalendars: ["github", "marketing-calendars"] as const,
   calendarList: ["calendar", "list"] as const,
