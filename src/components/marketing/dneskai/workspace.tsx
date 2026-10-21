@@ -8,8 +8,9 @@ import { DneskaiReviewTab } from './review-tab';
 import { DneskaiCalendarTab } from './calendar-tab';
 import { DneskaiPublishedTab } from './published-tab';
 import { DneskaiCostsTab } from './costs-tab';
+import type { DneskaiProjectTab } from '@/lib/project-workspace-tabs';
 
-export type DneskaiWorkspaceTabId = 'dneskai-review' | 'dneskai-calendar' | 'dneskai-published' | 'dneskai-costs';
+export type DneskaiWorkspaceTabId = DneskaiProjectTab;
 type Lang = 'en' | 'cs';
 const options = { staleTime: 30_000, retry: false, refetchOnWindowFocus: false } as const;
 /** While a post waits for its render, read again every 30 s until it attaches or reads as failed. */

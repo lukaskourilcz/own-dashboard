@@ -648,3 +648,33 @@ behaves as before; new code with the old function stores the report in `marketin
 
 Rollback: re-run `marketing_finish_job` from `20261012232949_marketing_durable_jobs.sql`. Stored reports stay; they
 were written by this release and remain valid.
+
+## Hideable DNESKAi project tabs (2026-10-21)
+
+`20261021100000_dneskai_hideable_project_tabs.sql` recreates `user_preferences_hidden_project_tabs_check` with the
+eleven tabs from `20261013165236_marketing_dneskai_collection.sql` followed by `dneskai-review`, `dneskai-calendar`,
+`dneskai-published` and `dneskai-costs`. That is `PROJECT_TAB_IDS` in `src/lib/project-workspace-tabs.ts`, which
+Settings, the workspace and `normalizeHiddenProjectTabs` share. It updates no row: every stored value satisfied the
+previous check, and the new one only adds ids.
+
+Verify after applying: `pg_get_constraintdef` of the check lists the fifteen ids; hiding Calendar under "Only in the
+DNESKAi project" in Settings saves and stays hidden after a reload on another device.
+`tests/lib/project-tabs-database.test.ts` runs the migration chain in PGlite and checks that the four ids save, that
+an unknown id is rejected and that the migration applies again over stored rows.
+
+Order: apply before deploying the code. New code against the old check fails to save any hidden-tab change once a
+DNESKAi tab is hidden; the choice then stays on that device only. Old code with the new check drops the DNESKAi ids
+when it reads them and never writes them.
+
+Rollback: roll the application back first. Then remove the four ids from stored rows and re-run the two
+`user_preferences_hidden_project_tabs_check` statements at the top of
+`20261013165236_marketing_dneskai_collection.sql`:
+
+```sql
+update public.user_preferences
+set hidden_project_tabs = array(
+  select tab from unnest(hidden_project_tabs) as tab
+  where tab <> all (array['dneskai-review','dneskai-calendar','dneskai-published','dneskai-costs']::text[])
+)
+where hidden_project_tabs && array['dneskai-review','dneskai-calendar','dneskai-published','dneskai-costs']::text[];
+```
