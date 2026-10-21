@@ -44,13 +44,17 @@ describe('owner workflow guide', () => {
       'Denní sběr zůstává vypnutý', 'po pěti minutách do 23:55', 'nula ze čtyř témat',
       'Vzdálenější termíny zůstávají v backlogu', 'aktuální finální článek z BoardlessAI',
       'Dosah, uložení, sdílení ani odpovědi jsme zatím nezměřili', 'schválení přesných verzí',
+      'Kontrola přesného social příspěvku na kartě „Dnes ke schválení“ projektu DNESKAi',
     ] : [
       'one Instagram feed post, two Threads posts and three Stories per day',
       'live staging import is awaiting verification', 'inactive drafts with placeholder connections',
       'Daily collection remains disabled', 'every five minutes until 23:55', 'zero of four topics',
       'Later dates stay in the backlog', 'timely final article from BoardlessAI',
       'Reach, saves, shares and replies have not been collected', 'exact owner approval',
+      'Exact social post review in the DNESKAi project’s “For review today” tab',
     ]) expect(container.textContent).toContain(fact);
+    // The DNESKAi review lives in its project workspace; only devShark still reviews in Marketing.
+    expect(workflows[lang].marketingFlows[0]!.steps.join(' ')).not.toMatch(/Marketing/);
     expect(container.querySelectorAll('button,input,img,iframe')).toHaveLength(0);
     const link = container.querySelector<HTMLAnchorElement>('a[href="/projects"]')!;
     act(() => link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
