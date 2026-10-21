@@ -91,6 +91,16 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(JSON.stringify(body)).not.toContain('PRIVATE');
     expect(mocks.filters.filter(([, op, field]) => op === 'eq' && field === 'user_id').every(([, , , value]) => value === owner)).toBe(true);
   });
+  it('keeps every undecided post when newer receipts would fill the 60-post bound', async () => {
+    const yesterday = pragueScheduledAt(new Date(Date.parse(`${pragueMarketingDate(new Date())}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10), '08:00');
+    const receipts = Array.from({ length: 70 }, (_, n) => ({ ...mocks.tables.marketing_revisions![0]!, id: `cccccccc-cccc-4ccc-8ccc-${String(n).padStart(12, '0')}`, status: 'published',
+      content_hash: sha(600 + n), created_at: '2026-10-21T08:00:00Z', revision: { ...revision, scheduledAt: yesterday } }));
+    mocks.tables.marketing_revisions = [...receipts, ...mocks.tables.marketing_revisions!];
+    const read = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
+    expect(read.posts).toHaveLength(60);
+    expect(read.posts[0]!.id).toBe(revisionId);
+    expect(read.posts.filter((post) => post.status === 'published')).toHaveLength(59);
+  });
   it('refuses a signed-out read, a bad project or date, a foreign project and hides database errors', async () => {
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
     expect((await get(review, `projectId=${project}`)).status).toBe(401);
@@ -118,6 +128,10 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(read.ticks).toMatchObject({ total: 2, withErrors: 1 });
     expect(read.ticks.recent[0]?.errors).toEqual([{ category: 'token', code: 'token-failed' }]);
     expect(JSON.stringify(read)).not.toContain('PRIVATE');
+    expect(read.days).toHaveLength(7);
+    const short = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}&range=2d`)).json());
+    expect(short.days.map((day) => day.date)).toEqual(read.days.slice(0, 2).map((day) => day.date));
+    for (const range of ['8d', '0d', '7', 'week']) expect((await get(costs, `projectId=${project}&range=${range}`)).status).toBe(400);
   });
   it('shows an unreadable spend and a malformed ceiling as codes, not as zero', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'PRIVATE' } });

@@ -66,7 +66,12 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
   };
 }
 
-/** The workspace read for one Prague day: everything undecided, the next seven days and the last 30 days of receipts. */
+/**
+ * The workspace read for one Prague day, from the 150 newest DNESKAi revisions that are not superseded: posts still
+ * waiting for a decision, then posts planned from today through the next seven days, then receipts of the last 30
+ * days, newest first, up to 60 posts in all. At four posts a day that keeps every undecided post and the coming week
+ * and leaves room for roughly the last week of receipts; older receipts drop off first.
+ */
 export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now)): Promise<DneskaiWorkspaceRead> {
   z.uuid().parse(owner); z.iso.date().parse(today);
   const windowStart = Date.parse(pragueScheduledAt(pragueDayAfter(today, -30), '00:00'));
@@ -89,7 +94,10 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
       if (undecided || (at >= windowStart && at < windowEnd)) parsed.push({ row, revision });
     } catch { unreadable += 1; }
   }
-  const selected = parsed.slice(0, POST_LIMIT);
+  // Undecided first, then the coming days, then past receipts: the 60-post bound drops the oldest history first.
+  const todayStart = Date.parse(pragueScheduledAt(today, '00:00'));
+  const rank = ({ row, revision }: { row: RevisionRow; revision: ContentRevision }) => row.status === 'review' || row.status === 'returned' ? 0 : Date.parse(revision.scheduledAt) >= todayStart ? 1 : 2;
+  const selected = [0, 1, 2].flatMap((tier) => parsed.filter((item) => rank(item) === tier)).slice(0, POST_LIMIT);
   const ids = selected.map((item) => item.row.id);
   const eventIds = [...new Set(selected.flatMap((item) => item.revision.sources[0]?.sourceId ?? []).filter((id) => /^[a-f0-9]{64}$/.test(id)))];
   const [publicationResult, eventResult, briefResult] = await Promise.all([
@@ -129,14 +137,20 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
 const TickStepSchema = z.object({ category: z.string(), status: z.string(), code: z.string().optional() });
 const TickErrorSchema = z.object({ category: z.string(), code: z.string() });
 
+/** The cost ranges GET /api/marketing/dneskai/costs accepts: one to seven Prague days, today included. */
+export const DNESKAI_COST_RANGES = ['1d', '2d', '3d', '4d', '5d', '6d', '7d'] as const;
+export type DneskaiCostRange = (typeof DNESKAI_COST_RANGES)[number];
+
 /**
- * Errors and costs: the last 14 collection runs with their cost and code, DNESKAi jobs that failed or are uncertain,
- * failed and uncertain publications, the scheduler ticks of the last 24 hours and the 24-hour generation spend.
+ * Errors and costs: the last 14 collection runs with their cost and code, DNESKAi jobs of the range that failed or are
+ * uncertain, failed and uncertain publications, the scheduler ticks of the last 24 hours and the 24-hour generation
+ * spend. `range` sets how many Prague days the cost table and the job list cover (default seven).
  */
-export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation']): Promise<DneskaiCostsRead> {
+export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation'], range: DneskaiCostRange = '7d'): Promise<DneskaiCostsRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
+  const dayCount = DNESKAI_COST_RANGES.indexOf(z.enum(DNESKAI_COST_RANGES).parse(range)) + 1;
   const today = pragueMarketingDate(now);
-  const weekStart = pragueScheduledAt(pragueDayAfter(today, -6), '00:00');
+  const weekStart = pragueScheduledAt(pragueDayAfter(today, 1 - dayCount), '00:00');
   const dayAgo = new Date(now.getTime() - 86_400_000).toISOString();
   const [runResult, jobResult, publicationResult, tickResult] = await Promise.all([
     db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14),
@@ -154,7 +168,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     id: row.id, status: row.status, errorCode: marketingJobErrorCode(row.error_code), createdAt: iso(row.created_at), costUsd: money(row.cost_usd),
     title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt: iso(row.scheduled_at),
   }));
-  const days = Array.from({ length: 7 }, (_, index) => pragueDayAfter(today, -index)).map((date) => {
+  const days = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index)).map((date) => {
     const dayRuns = runs.filter((run) => run.date === date);
     const dayJobs = allJobs.filter((row) => typeof row.created_at === 'string' && pragueMarketingDate(new Date(row.created_at)) === date && row.status !== 'queued');
     const jobCosts = dayJobs.map((row) => money(row.cost_usd));
