@@ -41,7 +41,7 @@ beforeEach(() => { vi.clearAllMocks(); });
 describe("marketing-copy/5 prompt (#116)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("aa2dcebd50a8485b195c60a34469a8d2a0586f815b3809c2a8ec9ad52abac7d6");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("7f9ae1382c30257ab2c583a0004dfc8419848e673a0fa3dadf74971fc85f4ed0");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/5+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("states the factual, captionOnly, picture, format and register rules and embeds the Czech Humanizer review", () => {
