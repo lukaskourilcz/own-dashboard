@@ -50,6 +50,8 @@ export async function collectDneskaiFeed(source:DneskaiSource,since:string,optio
  }
  if(response.sources.length!==1||response.sources[0].sourceId!==source.id||response.sources[0].items.length>source.maxItems)throw new DneskaiProviderError('collection-bridge-binding-invalid');
  const result=response.sources[0],items:DneskaiCandidate[]=[];let invalidUrls=0;
+ // The stage keeps only the collection code; the provider's own machine code goes to the function log.
+ if(result.status!=='ok')console.warn(JSON.stringify({event:'dneskai-feed-incomplete',sourceId:source.id,status:result.status,code:/^[a-z0-9,-]{1,200}$/.test(result.errorCode??'')?result.errorCode:null}));
  for(const item of result.items){
   try{safeUrl(item.url);}catch{invalidUrls++;continue;}
   if(item.publishedAt!==null&&Date.parse(item.publishedAt)<=Date.parse(since))continue;
