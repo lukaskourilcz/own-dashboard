@@ -70,12 +70,16 @@ import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { saveUserPreferences } from "@/lib/preference-client";
 import {
-  DNESKAI_PROJECT_TABS,
+  DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
   isDneskaiProjectTab,
   type ProjectTabId,
 } from "@/lib/project-workspace-tabs";
 import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
+
+// Settings lists the tabs only the DNESKAi project shows under their own
+// heading, in its workspace order, and leaves them out of the general list.
+const dneskaiOnlyTabs = new Set<ProjectTabId>(DNESKAI_WORKSPACE_TAB_ORDER);
 
 type NavRowItem = { value: string; icon: typeof Sun };
 
@@ -574,7 +578,9 @@ export function SettingsPanel({
               {t.settings.projectSectionsDesc}
             </p>
             <ul className="divide-y divide-border rounded-md border border-border">
-              {PROJECT_WORKSPACE_TABS.map((tab) => projectTabRow(tab))}
+              {PROJECT_WORKSPACE_TABS.filter(
+                (tab) => !dneskaiOnlyTabs.has(tab),
+              ).map((tab) => projectTabRow(tab))}
             </ul>
             <div id={dneskaiTabsHeadingId}>
               <SectionLabel>{t.settings.projectSectionsDneskai}</SectionLabel>
@@ -583,7 +589,7 @@ export function SettingsPanel({
               aria-labelledby={dneskaiTabsHeadingId}
               className="divide-y divide-border rounded-md border border-border"
             >
-              {DNESKAI_PROJECT_TABS.map((tab) =>
+              {DNESKAI_WORKSPACE_TAB_ORDER.map((tab) =>
                 projectTabRow(tab, dneskaiTabsHeadingId),
               )}
             </ul>

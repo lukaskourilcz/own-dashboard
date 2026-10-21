@@ -40,6 +40,7 @@ import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
+  DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
   isDneskaiProjectTab,
   type DneskaiProjectTab,
@@ -209,14 +210,10 @@ export function ProjectWorkspace(props: Props) {
   };
   const dneskaiTab = (id: DneskaiProjectTab) => isProjectTabHidden(id) ? [] : [{ id, label: dneskaiTabLabels[id] }];
   // DNESKAi's daily work sits right after Overview: review, calendar, sources, published, errors and costs. Settings
-  // can hide each of them like any other project tab.
+  // lists them in the same order and can hide each of them like any other project tab.
   const tabs = dneskai ? [
     projectTabs[0]!,
-    ...dneskaiTab("dneskai-review"),
-    ...dneskaiTab("dneskai-calendar"),
-    ...projectTabs.filter((item) => item.id === "sources"),
-    ...dneskaiTab("dneskai-published"),
-    ...dneskaiTab("dneskai-costs"),
+    ...DNESKAI_WORKSPACE_TAB_ORDER.flatMap((id) => id === "sources" ? projectTabs.filter((item) => item.id === "sources") : dneskaiTab(id)),
     ...projectTabs.slice(1).filter((item) => item.id !== "sources"),
   ] : projectTabs;
   // A tab hidden in Settings, or one this project does not have, opens Overview instead.
