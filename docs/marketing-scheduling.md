@@ -194,10 +194,11 @@ Delete that snippet too. Ticks between the two steps answer 401 and do nothing.
 | generation | `MARKETING_AI_CONSENT` not `true` |
 | live publishing | either `MARKETING_PUBLISH_ENABLED` or `MARKETING_DNESKAI_PUBLISH_ENABLED` not `true` (dry runs continue) |
 | one account | `marketing_accounts.enabled = false`; the publisher refuses it (`account-unverified-or-disabled`) |
-| every tick, at once | `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');` (the prune job can keep running; it sends nothing) |
-| the run-history prune | `select cron.unschedule('marketing-cron-history-prune');` |
+| every tick, at once | `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');` |
 | every tick, from Vercel | remove `MARKETING_SCHEDULER_SECRET`; each tick answers 401 and does nothing |
 
+Unscheduling the two ticks leaves `marketing-cron-history-prune` running; it sends nothing. To stop it
+too: `select cron.unschedule('marketing-cron-history-prune');`.
 To start the jobs again after `cron.unschedule`, run the last `do $schedule$ … $schedule$` block of
 `20261020160100_marketing_scheduler_cron.sql` again; `cron.schedule` replaces a job of the same name.
 
