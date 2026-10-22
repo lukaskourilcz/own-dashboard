@@ -63,7 +63,7 @@ const en = {
       'recovery-unavailable': 'The action failed. Refresh and try again.',
     } as Record<string, string>,
   },
-  kinds: { instagram: 'Instagram', rss: 'RSS', html: 'Website', hn: 'Hacker News', arxiv: 'arXiv', bluesky: 'Bluesky', spaceflight: 'Spaceflight', github: 'GitHub', stackexchange: 'Stack Exchange' },
+  kinds: { instagram: 'Instagram', rss: 'RSS', html: 'Website', hn: 'Hacker News', hnsearch: 'Hacker News search', arxiv: 'arXiv', bluesky: 'Bluesky', spaceflight: 'Spaceflight', github: 'GitHub', stackexchange: 'Stack Exchange' },
   weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
 };
 const cs: typeof en = {
@@ -131,7 +131,7 @@ const cs: typeof en = {
       'recovery-unavailable': 'Akce se nepovedla. Obnovte stav a zkuste to znovu.',
     },
   },
-  kinds: { instagram: 'Instagram', rss: 'RSS', html: 'Web', hn: 'Hacker News', arxiv: 'arXiv', bluesky: 'Bluesky', spaceflight: 'Spaceflight', github: 'GitHub', stackexchange: 'Stack Exchange' },
+  kinds: { instagram: 'Instagram', rss: 'RSS', html: 'Web', hn: 'Hacker News', hnsearch: 'Hledání v Hacker News', arxiv: 'arXiv', bluesky: 'Bluesky', spaceflight: 'Spaceflight', github: 'GitHub', stackexchange: 'Stack Exchange' },
   weekdays: ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'],
 };
 export const dneskaiSources = { en, cs };

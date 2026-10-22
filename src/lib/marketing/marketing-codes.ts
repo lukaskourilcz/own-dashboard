@@ -67,6 +67,10 @@ const CODES = {
   'account-unavailable': ['account', 'The chosen account is not a verified @dneskai Instagram account.', 'Vybraný účet není ověřený instagramový účet @dneskai.'],
   'account-platform-changed': ['edit', 'The post cannot move to another platform.', 'Příspěvek nelze přesunout na jinou platformu.'],
   'revision-edit-invalid': ['edit', 'The edited post is not valid.', 'Upravený příspěvek není platný.'],
+  'engagement-keyword-invalid': ['edit', 'The keyword must be one word of Latin letters or digits, at most 24.', 'Klíčové slovo musí být jedno slovo z latinských písmen nebo číslic, nejvýš 24.'],
+  'engagement-message-missing': ['edit', 'The DM message is empty.', 'Zpráva do DM je prázdná.'],
+  'engagement-message-too-long': ['edit', 'The DM message is longer than 1,000 characters.', 'Zpráva do DM je delší než 1 000 znaků.'],
+  'engagement-reply-too-long': ['edit', 'The public reply is longer than 200 characters.', 'Veřejná odpověď je delší než 200 znaků.'],
   'engagement-disabled': ['config', 'Editing the comment keyword and message is switched off on the server.', 'Úprava klíčového slova a zprávy je na serveru vypnutá.'],
   'engagement-unsupported': ['investigate', 'This post has no slide deck, so it cannot carry a comment keyword.', 'Tento příspěvek nemá slidy, proto nemůže mít klíčové slovo.'],
   'render-attach-failed': ['rerender', 'The new version was saved, but its slides were not attached: the attachment failed or the render ran out of time. It cannot be approved.', 'Nová verze se uložila, ale slidy se k ní nepřipojily: připojení selhalo nebo vykreslování nestihlo časový limit. Nelze ji schválit.'],
@@ -532,6 +536,12 @@ const CODES = {
   'access-token-invalid': ['account', 'Instagram no longer accepts the stored token.', 'Instagram uložený token už nepřijímá.'],
   'meta-rate-limited': ['retry', 'Instagram asked to slow down; the next tick continues.', 'Instagram požádal o zpomalení; pokračuje další běh.'],
   'reminders-disabled': ['none', 'Review reminders are switched off.', 'Připomínky kontroly jsou vypnuté.'],
+  'scouting-not-due': ['none', 'Scouting runs between 22:00 and 08:00 Prague time.', 'Hledání námětů běží mezi 22:00 a 8:00 pražského času.'],
+  'scouting-not-this-slot': ['none', 'Scouting runs once an hour; this tick was not its turn.', 'Hledání námětů běží jednou za hodinu; tento běh na řadě nebyl.'],
+  'scouting-reports-unavailable': ['retry', 'The night\'s reports could not be read for scouting.', 'Noční zprávy se pro hledání námětů nepodařilo načíst.'],
+  'scouting-library-unavailable': ['retry', 'The link library could not be read for scouting.', 'Knihovnu odkazů se pro hledání námětů nepodařilo načíst.'],
+  'scouting-topics-unavailable': ['retry', 'The existing topics could not be read, so no topic was added.', 'Stávající náměty se nepodařilo načíst, žádný námět nepřibyl.'],
+  'scouting-write-failed': ['retry', 'The new topics could not be saved. The next hour tries again.', 'Nové náměty se nepodařilo uložit. Další hodina to zkusí znovu.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;

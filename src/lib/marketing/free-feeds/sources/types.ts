@@ -4,6 +4,7 @@ export const SOURCE_KINDS = [
   "rss",
   "html",
   "hn",
+  "hnsearch",
   "arxiv",
   "bluesky",
   "spaceflight",
