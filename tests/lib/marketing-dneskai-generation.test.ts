@@ -10,19 +10,10 @@ import { MARKETING_DECK_CONTENT_VERSION, parseContentRevision } from "@/lib/mark
 import { DneskaiDeckSchema } from "@/lib/marketing/dneskai-slides";
 import { validateDneskaiDeck, type DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
 import { dneskaiEvidencePublishers } from "@/lib/marketing/dneskai-publishers";
-import { ACCOUNT, BRIEF_NOW, briefFixture, briefInput, briefPacket, briefPictures, validCopy as fixtureCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
+import { ACCOUNT, BRIEF_NOW, briefFixture, briefInput, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 
 vi.mock("server-only", () => ({}));
 
-/**
- * The shared fixture's answer with its cover kicker removed: the first slide carries its headline alone (owner rule,
- * 22 October 2026), so the fixture's kicker is now a `text-unplaced` issue. `fixtureCopy` keeps it for the tests of that rule.
- */
-const validCopy = (set: BriefPictures): DneskaiCopy => {
-  const copy = fixtureCopy(set);
-  const { kicker, ...cover } = copy.slides[0]!; void kicker;
-  return { ...copy, slides: [cover, ...copy.slides.slice(1)] };
-};
 let pictures: BriefPictures;
 let publishers: string[];
 beforeAll(async () => {
@@ -229,8 +220,9 @@ describe("deterministic gates before render", () => {
       [0, "text-unplaced", "body"], [1, "text-unplaced", "kicker"], [2, "text-too-long", "headline"], [3, "alt-repeats-headline", "alt"]]);
   });
   it("keeps the cover and a single slide to the headline alone: a kicker or body there is text-unplaced", () => {
-    // The shared fixture still writes a kicker on its cover.
-    expect(validateDneskaiCopy(fixtureCopy(pictures), offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "kicker"]]);
+    const kicker = validCopy(pictures);
+    kicker.slides[0] = { ...kicker.slides[0]!, kicker: "Nástroj" };
+    expect(validateDneskaiCopy(kicker, offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "kicker"]]);
     const cover = validCopy(pictures);
     cover.slides[0] = { ...cover.slides[0]!, kicker: "Nástroj", body: "Funkce je v aplikaci pro iOS i Android." };
     expect(validateDneskaiCopy(cover, offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "body"], [0, "text-unplaced", "kicker"]]);
@@ -349,8 +341,8 @@ describe("deck assembly by code", () => {
       validCopy(pictures).slides.map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt]));
   });
   it("keeps only the fields the slide type places, so the cover and a single slide keep the headline alone", () => {
-    const copy = fixtureCopy(pictures);
-    copy.slides[0] = { ...copy.slides[0]!, body: "Text, který titulní slide neukáže." };
+    const copy = validCopy(pictures);
+    copy.slides[0] = { ...copy.slides[0]!, kicker: "Nástroj", body: "Text, který titulní slide neukáže." };
     copy.slides[1] = { ...copy.slides[1]!, kicker: "Štítek" };
     const deck = buildDneskaiDeck(copy, offerFor());
     expect(deck.slides[0]).toEqual({ type: "cover-photo", headline: copy.slides[0]!.headline, images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: copy.slides[0]!.alt });
