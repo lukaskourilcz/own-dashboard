@@ -27,7 +27,7 @@ export function DneskaiKitTiles({ kits, chosen, onChoose, lang }: { kits: readon
             aria-label={`${kit.key} ${t.names[kit.id]}${kit.current ? `, ${t.current}` : ''}${kit.renderable ? '' : `, ${t.unavailable}`}${kit.fits === false ? `, ${t.shorten}` : ''}`} />
           <span className="relative block aspect-[4/5] overflow-hidden rounded-sm border border-border bg-surface-inset">
             {kit.cover ? <Image unoptimized src={kit.cover.url} alt="" width={kit.cover.width} height={kit.cover.height} sizes="96px" className="absolute inset-0 size-full" />
-              : <span className="absolute inset-0 flex items-center justify-center p-1 text-center text-[10px] leading-tight">{t.unavailable}</span>}
+              : <span className="absolute inset-0 flex items-center justify-center p-1 text-center text-[10px] leading-tight">{!kit.renderable ? t.unavailable : selected ? t.onStage : t.pick}</span>}
           </span>
           <span aria-hidden className="flex items-baseline justify-between gap-1"><span className="font-medium"><span className="tabular text-foreground-muted">{kit.key}</span> {t.names[kit.id]}</span></span>
           {kit.fits !== null && <span aria-hidden className={cn('block', kit.fits ? 'text-success' : 'text-warning')}>{kit.fits ? t.fits : t.shorten}</span>}

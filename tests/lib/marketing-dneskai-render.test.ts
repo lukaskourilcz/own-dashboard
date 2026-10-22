@@ -151,6 +151,17 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
       key({ ...deck.slides[0], images: [{ ...deck.slides[0].images[0], crop: { focal: { x: 0.4, y: 0.6 }, zoom: 2 } }] }),
       key(deck.slides[0], undefined, { ...encoder, vips: "0.0.0" }),
     ]) expect(changed).not.toBe(base);
+    // The kit is keyed only when it is not editorial, so every editorial key is the one it was before kits existed.
+    expect(dneskaiRenderKey(deck.slides[0], { index: 0, count: 7 }, encoder, "editorial")).toBe(base);
+    expect(dneskaiRenderKey(deck.slides[0], { index: 0, count: 7 }, encoder, "bold")).not.toBe(base);
+  });
+
+  it("writes editorial by leaving the kit out and refuses an explicit one", () => {
+    const base = { schemaVersion: "dneskai-slides/1", format: "carousel", slides: [{ type: "statement", headline: "A", images: [], alt: "A" }, { type: "statement", headline: "B", images: [], alt: "B" }] };
+    expect(DneskaiDeckSchema.safeParse(base).success).toBe(true);
+    expect(DneskaiDeckSchema.safeParse({ ...base, kit: "bold" }).success).toBe(true);
+    expect(DneskaiDeckSchema.safeParse({ ...base, kit: "editorial" }).success).toBe(false);
+    expect(DneskaiDeckSchema.safeParse({ ...base, kit: "clipping" }).success).toBe(false);
   });
 
   it("refuses the whole deck on clipped Czech copy and stores nothing", async () => {

@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, DNESKAI_STUDIO, type DneskaiTextField } from "@/lib/marketing/dneskai-render";
-import type { DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
+import { DNESKAI_RENDERABLE_KIT_IDS, type DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
 
 const root = path.resolve(__dirname, "../..");
 const vendor = path.join(root, "vendor/carousel-studio");
@@ -105,6 +105,19 @@ describe("vendored @boardlessai/carousel-studio", () => {
       }
       expect({ id, fields: [...drawn].sort() }).toEqual({ id, fields: [...DNESKAI_PLACED_FIELDS[type]].sort() });
     }
+  });
+
+  it("offers exactly the kits the vendored studio registers, each placing every field a deck carries", async () => {
+    const slide = await import("@boardlessai/carousel-studio/dneskai-slide");
+    expect([...slide.DNESKAI_KITS.keys()]).toEqual([...DNESKAI_RENDERABLE_KIT_IDS]);
+    expect(DNESKAI_RENDERABLE_KIT_IDS[0]).toBe("editorial");
+    // One copy deck sets in every kit, so a kit switch can never strand text the new kit does not draw.
+    for (const kit of slide.DNESKAI_KITS.values()) {
+      for (const type of Object.keys(DNESKAI_PLACED_FIELDS) as DneskaiSlideType[]) {
+        expect({ kit: kit.id, type, fields: [...kit.placedFields[type]].sort() }).toEqual({ kit: kit.id, type, fields: [...DNESKAI_PLACED_FIELDS[type]].sort() });
+      }
+    }
+    expect(slide.dneskaiKit("editorial")!.fieldFaces).toEqual(DNESKAI_FIELD_FACES);
   });
 
   it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {

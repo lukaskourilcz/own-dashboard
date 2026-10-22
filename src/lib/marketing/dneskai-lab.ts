@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
-import { DneskaiSlideTypeSchema, DneskaiSlideVariantSchema } from './dneskai-slides';
+import { DNESKAI_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import {
   dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, renderBlocking,
@@ -17,7 +17,7 @@ import {
  * which is the `editorial` kit; the other four have no renderer in OwnDashboard yet, so their tiles say so rather than
  * show a picture nobody rendered.
  */
-export const DNESKAI_KITS = ['editorial', 'bold', 'explainer', 'magazine', 'ticker'] as const;
+export const DNESKAI_KITS = DNESKAI_KIT_IDS;
 export const DneskaiKitSchema = z.enum(DNESKAI_KITS);
 export type DneskaiKit = z.infer<typeof DneskaiKitSchema>;
 /** A `dneskai-slides/1` deck has no kit field; it was drawn by the only look there is, which becomes `editorial`. */
@@ -26,13 +26,12 @@ export const DNESKAI_DEFAULT_KIT: DneskaiKit = 'editorial';
  * The kits the vendored studio (vendor/carousel-studio, `caught-up`) can render and fit today. Additional kits need approved visual designs and a matching renderer before vendoring;
  * until then their covers stay unrendered.
  */
-export const DNESKAI_RENDERABLE_KITS: readonly DneskaiKit[] = ['editorial'];
+export const DNESKAI_RENDERABLE_KITS: readonly DneskaiKit[] = DNESKAI_RENDERABLE_KIT_IDS;
 export const dneskaiKitRenderable = (kit: DneskaiKit) => DNESKAI_RENDERABLE_KITS.includes(kit);
 
 /** The kit a deck was rendered with. v1 decks read as `editorial`; a v2 deck (`kit` field) names its own. */
 export function dneskaiDeckKit(deck: DneskaiDeck | null): DneskaiKit {
-  const named = (deck as { kit?: unknown } | null)?.kit;
-  return DneskaiKitSchema.safeParse(named).data ?? DNESKAI_DEFAULT_KIT;
+  return dneskaiKitOf(deck);
 }
 
 export type DneskaiLabAsset = DneskaiWorkspacePost['assets'][number];

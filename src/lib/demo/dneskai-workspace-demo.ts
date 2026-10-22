@@ -8,7 +8,7 @@ import { applyDneskaiDeckEdit, DneskaiRevisionEditError } from '@/lib/marketing/
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiMediaRead } from '@/lib/marketing/dneskai-media-contracts';
 import { z } from 'zod';
-import type { DneskaiSlide } from '@/lib/marketing/dneskai-slides';
+import { dneskaiKitOf, type DneskaiSlide } from '@/lib/marketing/dneskai-slides';
 
 /**
  * The deterministic stand-in for the DNESKAi workspace server in `/dev-preview` and the guest tour (#119). It keeps
@@ -40,6 +40,14 @@ function find(id: string): DneskaiWorkspacePost {
 }
 
 /** The server's edit contract, shared (`applyDneskaiDeckEdit`), with the fixture brief as the pool. */
+/** The deck an edit produces, with its kit: the request's when it switches kit, otherwise the post's. Editorial is never written. */
+function editedDeck(post: DneskaiWorkspacePost, request: Pick<DneskaiEditRequest, 'deck'>, slides: DneskaiSlide[]) {
+  const { kit: _kept, ...deck } = post.deck!;
+  void _kept;
+  const kit = request.deck?.kit ?? dneskaiKitOf(post.deck);
+  return { ...deck, ...(kit !== 'editorial' ? { kit } : {}), slides };
+}
+
 function applyEdit(post: DneskaiWorkspacePost, request: DneskaiEditRequest): DneskaiSlide[] {
   if (!post.deck) return [];
   if (!request.deck) return clone(post.deck.slides);
@@ -125,7 +133,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async renderPreview(request, signal) {
     const post = find(request.id);
     const slides = applyEdit(post, { action: 'edit', id: request.id, caption: post.caption, scheduledAt: post.scheduledAt, deck: request.deck });
-    return previewAt('/api/dev-preview/dneskai-preview', { deck: { ...post.deck!, slides }, slide: request.slide }, signal);
+    return previewAt('/api/dev-preview/dneskai-preview', { deck: editedDeck(post, { deck: request.deck }, slides), slide: request.slide }, signal);
   },
   async decide(id, action, feedback) {
     await pause(200);
@@ -144,7 +152,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     let ready = problems.length === 0;
     let assets = clone(post.assets);
     if (post.deck && (request.deck || !post.ready || post.assets.length !== slides.length)) {
-      const response = await fetch('/api/dev-preview/dneskai-render', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...post.deck, slides }) });
+      const response = await fetch('/api/dev-preview/dneskai-render', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editedDeck(post, request, slides)) });
       if (!response.ok) throw new DneskaiWorkspaceRequestError('render-unavailable', response.status);
       const rendered = z.object({ ready: z.boolean(), assets: z.array(z.object({ url: z.string().startsWith('data:image/jpeg;base64,'), sha256: z.string().regex(/^[a-f0-9]{64}$/), width: z.literal(1080), height: z.literal(1350), alt: z.string() })), problems: z.array(z.object({ slide: z.number(), code: z.string(), blocking: z.boolean(), message: z.string(), field: z.string().nullable() })) }).parse(await response.json());
       ready = rendered.ready;
@@ -157,7 +165,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
       ...clone(post), id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
       caption: request.caption, scheduledAt: new Date(request.scheduledAt).toISOString(),
       account: account ? { id: account.remoteId, handle: account.handle, platform: 'instagram' } : post.account,
-      deck: post.deck ? { ...post.deck, slides } : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
+      deck: post.deck ? editedDeck(post, request, slides) : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
       contentHash: '0'.repeat(64),
     };

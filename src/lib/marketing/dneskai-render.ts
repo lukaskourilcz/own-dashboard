@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
-import { DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 
@@ -132,7 +132,21 @@ function characterList(characters: string[]): string {
  * (`unsupported-glyph`). The face check uses the studio's own metric tables, which are also what
  * its fitter measures by, so a character outside them could neither be measured nor drawn.
  */
-function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts): DneskaiSlideRenderProblem[] {
+type FieldFaces = Readonly<Record<DneskaiTextField, { family: string; weight: number; uppercase: boolean }>>;
+
+/**
+ * The faces a kit sets each written field in, from the vendored studio's own kit registry, so a re-vendor
+ * can never leave OwnDashboard checking glyphs against another kit's faces. A kit the studio does not
+ * register is refused as invalid input.
+ */
+async function kitFieldFaces(kit: DneskaiKitId): Promise<FieldFaces> {
+  if (kit === "editorial") return DNESKAI_FIELD_FACES;
+  const found = (await studio()).dneskaiKit(kit);
+  if (!found) throw new DneskaiRenderError("render-input-invalid");
+  return found.fieldFaces;
+}
+
+function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces: FieldFaces = DNESKAI_FIELD_FACES): DneskaiSlideRenderProblem[] {
   const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
   const written = [
     ...TEXT_FIELDS.flatMap((field) => slide[field]?.trim() ? [{ field, name: field as string, value: slide[field]! }] : []),
@@ -144,7 +158,7 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts): Dnesk
       problems.push({ slide: index, code: "text-unplaced", blocking: true, field: name, message: `A ${slide.type} slide does not draw a ${field}, so this text would be approved but never shown. Remove it or use a slide type that draws it.` });
       continue;
     }
-    const face = DNESKAI_FIELD_FACES[field];
+    const face = faces[field];
     const missing = metrics.missingCommittedGlyphs(metrics.resolveFace(face.family, face.weight), drawnText(value, face.uppercase))
       .filter((character) => !/\s/u.test(character));
     if (missing.length) {
@@ -158,8 +172,10 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts): Dnesk
  * The slide as the studio takes it. Code writes the folio, the sources title and the disclosure;
  * DNESKAi is Czech-only.
  */
-export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = []): DneskaiSlideInput {
+export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = [], kit: DneskaiKitId = "editorial"): DneskaiSlideInput {
   return {
+    // Absent is the editorial kit; naming it would change nothing but is left out like everywhere else.
+    ...(kit !== "editorial" ? { kit } : {}),
     type: slide.type,
     ...(slide.variant ? { variant: slide.variant } : {}),
     headline: slide.headline,
@@ -182,7 +198,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
  * studio takes them, trimmed and with blank source lines dropped, so an edit to the surrounding
  * whitespace is a hit. The alt text is not drawn and is not part of the key.
  */
-export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }): string {
+export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }, kit: DneskaiKitId = "editorial"): string {
   const images = [...slide.images].sort((left, right) => left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0)
     .map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, crop: image.crop ?? null }));
   return sha256(canonicalJson({
@@ -197,6 +213,8 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     },
     position: { index: position.index, count: position.count },
     locale: "cs",
+    // Keyed only when not editorial, so every editorial key stays what it was before kits existed.
+    ...(kit !== "editorial" ? { kit } : {}),
   }));
 }
 
@@ -259,10 +277,10 @@ const TEXT_PROBLEM_CODES = new Set(["text-unplaced", "unsupported-glyph", "text-
  * deck renders with (`split` with `image-2` is the paired one); the image problems that empty
  * file raises are dropped, as are all others about pictures.
  */
-export async function dneskaiSlideTextProblems(slide: DneskaiSlide, position: Position): Promise<DneskaiSlideRenderProblem[]> {
-  const [engine, metrics] = await Promise.all([studio(), fonts()]);
+export async function dneskaiSlideTextProblems(slide: DneskaiSlide, position: Position, kit: DneskaiKitId = "editorial"): Promise<DneskaiSlideRenderProblem[]> {
+  const [engine, metrics, faces] = await Promise.all([studio(), fonts(), kitFieldFaces(kit)]);
   const stand: DneskaiImageInput[] = slide.images.map((image) => ({ slot: image.slot, bytes: new Uint8Array(0) }));
-  const found = [...textProblems(slide, position.index, metrics), ...await studioProblems(engine, dneskaiStudioInput(slide, position, stand), position.index)];
+  const found = [...textProblems(slide, position.index, metrics, faces), ...await studioProblems(engine, dneskaiStudioInput(slide, position, stand, kit), position.index)];
   return found.filter((problem) => TEXT_PROBLEM_CODES.has(problem.code));
 }
 
@@ -272,15 +290,16 @@ export async function dneskaiSlideTextProblems(slide: DneskaiSlide, position: Po
  */
 export async function validateDneskaiDeck(value: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal): Promise<DneskaiSlideRenderProblem[]> {
   const deck = parseDeck(value);
-  const [engine, metrics] = await Promise.all([studio(), fonts()]);
+  const kit = dneskaiKitOf(deck);
+  const [engine, metrics, faces] = await Promise.all([studio(), fonts(), kitFieldFaces(kit)]);
   const load = mediaLoader(loadMedia);
   const problems: DneskaiSlideRenderProblem[] = [];
   for (const [index, slide] of deck.slides.entries()) {
-    problems.push(...textProblems(slide, index, metrics));
+    problems.push(...textProblems(slide, index, metrics, faces));
     const loaded = await slideImages(slide, index, load, signal);
     problems.push(...loaded.problems);
     if (loaded.problems.length) continue;
-    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images), index));
+    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images, kit), index));
   }
   return problems;
 }
@@ -349,14 +368,15 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
     const deck = parseDeck(input.deck);
     const abortCheck = () => { if (input.signal?.aborted) throw new DneskaiRenderError("worker-timeout"); };
     abortCheck();
-    const metrics = await fonts();
+    const kit = dneskaiKitOf(deck);
+    const [metrics, faces] = await Promise.all([fonts(), kitFieldFaces(kit)]);
     const storage = dependencies.storage(input.owner, input.signal);
     const count = deck.slides.length;
     // The text gate needs no media and no render; when it refuses, the slides are only validated.
-    const ownProblems = deck.slides.map((slide, index) => textProblems(slide, index, metrics));
+    const ownProblems = deck.slides.map((slide, index) => textProblems(slide, index, metrics, faces));
     const refusedByText = ownProblems.some((found) => found.length > 0);
     const encoder = await dneskaiEncoderIdentity();
-    const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder));
+    const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder, kit));
     const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));
     abortCheck();
 
@@ -372,7 +392,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
       problems.push(...loaded.problems);
       if (loaded.problems.length) { rendered.push(null); continue; }
       const engine = await studio();
-      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images);
+      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images, kit);
       if (refusedByText) {
         // The deck is refused already: report the studio's problems too, without drawing a slide nobody keeps.
         problems.push(...await studioProblems(engine, studioInput, index));
@@ -454,10 +474,11 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   const abortCheck = () => { if (options.signal?.aborted) throw new DneskaiRenderError("worker-timeout"); };
   abortCheck();
   const position = { index, count: deck.slides.length };
-  const metrics = await fonts();
+  const kit = dneskaiKitOf(deck);
+  const [metrics, faces] = await Promise.all([fonts(), kitFieldFaces(kit)]);
   const encoder = await dneskaiEncoderIdentity();
-  const renderKey = dneskaiRenderKey(slide, position, encoder);
-  const own = textProblems(slide, index, metrics);
+  const renderKey = dneskaiRenderKey(slide, position, encoder, kit);
+  const own = textProblems(slide, index, metrics, faces);
   const hit = previewCache.get(renderKey);
   if (hit && !own.length) {
     previewCache.delete(renderKey); previewCache.set(renderKey, hit);
@@ -467,7 +488,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   abortCheck();
   const engine = await studio();
   if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false };
-  const input = dneskaiStudioInput(slide, position, loaded.images);
+  const input = dneskaiStudioInput(slide, position, loaded.images, kit);
   if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false };
   let result;
   try { result = await engine.renderDneskaiSlide(input); }

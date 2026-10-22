@@ -65,6 +65,23 @@ describe('review-10 edit contract: variants and type moves', () => {
   });
 });
 
+describe('kit switches', () => {
+  it('switches the whole post, writes editorial by omission and refuses a kit OwnDashboard cannot draw', async () => {
+    const renderable = await import('@/lib/marketing/dneskai-slides');
+    const other = renderable.DNESKAI_KIT_IDS.find((kit) => kit !== 'editorial' && !renderable.DNESKAI_RENDERABLE_KIT_IDS.includes(kit));
+    if (other) expect(await code(() => applyDneskaiDeckEdit(deck(), { kit: other, slides: keep(3) }))).toBe('kit-unavailable');
+    const drawn = renderable.DNESKAI_RENDERABLE_KIT_IDS.find((kit) => kit !== 'editorial');
+    if (drawn) {
+      const switched = applyDneskaiDeckEdit(deck(), { kit: drawn, slides: keep(3) });
+      expect(switched.kit).toBe(drawn);
+      // Without a kit the edit keeps the deck's kit; back to editorial removes the field.
+      expect(applyDneskaiDeckEdit(switched, { slides: keep(3) }).kit).toBe(drawn);
+      expect('kit' in applyDneskaiDeckEdit(switched, { kit: 'editorial', slides: keep(3) })).toBe(false);
+    }
+    expect('kit' in applyDneskaiDeckEdit(deck(), { kit: 'editorial', slides: keep(3) })).toBe(false);
+  });
+});
+
 describe('review-10 edit contract: inserted slides', () => {
   const figure = (assetSha256: string) => ({ insert: { type: 'figure' as const, headline: 'Nový slide', body: 'Vlastní text.', alt: 'Popis obrázku', images: [{ slot: 'image-1', assetSha256 }] } });
   const deckWithB = (): DneskaiDeck => ({ ...deck(), slides: [deck().slides[0]!, { ...deck().slides[1]!, images: [{ slot: 'image-1', assetSha256: a }] }, deck().slides[2]!] });

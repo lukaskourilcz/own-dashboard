@@ -1,5 +1,5 @@
 import type { DneskaiBriefMedia } from './dneskai-brief';
-import type { DneskaiImageCrop, DneskaiSlide, DneskaiSlideImage } from './dneskai-slides';
+import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSlide, type DneskaiSlideImage } from './dneskai-slides';
 import { pragueLocalInput, pragueScheduledAt } from './clock';
 import {
   dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
@@ -23,7 +23,8 @@ export const DNESKAI_FOCAL_STEP = 0.02;
 
 /** `from` is the slide's index in the saved revision, or null for a slide the owner inserted. */
 export type DraftSlide = { from: number | null; slide: DneskaiSlide; fields: DneskaiFieldLimit[] };
-export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null };
+/** `kit`: the kit the post is drawn in (kits are per post); switching it is an edit like any other. */
+export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const round = (value: number) => Math.round(value * 1000) / 1000;
@@ -49,6 +50,7 @@ export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | 
     caption: post.caption,
     scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
+    kit: dneskaiKitOf(post.deck),
   };
 }
 
@@ -260,7 +262,7 @@ export function scheduledIso(local: string): string | null {
 
 export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null };
 export type DneskaiSlideInsertEdit = { insert: { type: 'figure' | 'split' | 'statement'; variant?: 'accent' | 'ink'; headline: string; body?: string; kicker?: string; alt: string; images: DneskaiSlideImage[] } };
-export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; deck?: { slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> } };
+export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; deck?: { kit?: DneskaiKitId; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> } };
 
 const sameImages = (a: readonly DneskaiSlideImage[], b: readonly DneskaiSlideImage[]) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -272,7 +274,8 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
   const scheduledAt = scheduledIso(draft.scheduledLocal);
   if (!scheduledAt) throw new Error('schedule-invalid');
   const original = post.deck?.slides ?? [];
-  let changed = draft.slides.length !== original.length;
+  const kitChanged = draft.kit !== dneskaiKitOf(post.deck);
+  let changed = kitChanged || draft.slides.length !== original.length;
   const slides = draft.slides.map(({ from, slide, fields }, position): DneskaiSlideEdit | DneskaiSlideInsertEdit => {
     if (from === null) {
       changed = true;
@@ -312,7 +315,7 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
   return {
     action: 'edit', id: post.id, caption: draft.caption, scheduledAt,
     ...(accountId ? { accountId } : {}),
-    ...(changed ? { deck: { slides } } : {}),
+    ...(changed ? { deck: { ...(kitChanged ? { kit: draft.kit } : {}), slides } } : {}),
   };
 }
 

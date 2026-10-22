@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DneskaiDeckSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
   DNESKAI_INSERT_SHAPES, DNESKAI_PLACED_FIELDS, dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
   dneskaiSlideFieldLimits, dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
@@ -42,7 +42,8 @@ export const DneskaiSlideInsertSchema = z.strictObject({
   }),
 });
 export const DneskaiDeckEditEntrySchema = z.union([DneskaiSlideEditSchema, DneskaiSlideInsertSchema]);
-export const DneskaiDeckEditSchema = z.strictObject({ slides: z.array(DneskaiDeckEditEntrySchema).min(1).max(10) });
+/** `kit` switches the whole post to another kit (kits are per post); absent keeps the deck's kit. */
+export const DneskaiDeckEditSchema = z.strictObject({ kit: DneskaiKitIdSchema.optional(), slides: z.array(DneskaiDeckEditEntrySchema).min(1).max(10) });
 export type DneskaiDeckEdit = z.infer<typeof DneskaiDeckEditSchema>;
 export type DneskaiSlideEditEntry = z.infer<typeof DneskaiSlideEditSchema>;
 export type DneskaiSlideInsert = z.infer<typeof DneskaiSlideInsertSchema>["insert"];
@@ -128,6 +129,7 @@ function inserted(entry: DneskaiSlideInsert, deck: DneskaiDeck, pool: DneskaiEdi
 export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, pool: DneskaiEditPool | null = null): DneskaiDeck {
   const edit = DneskaiDeckEditSchema.safeParse(value);
   if (!edit.success) return fail("deck-edit-invalid");
+  if (edit.data.kit && !DNESKAI_RENDERABLE_KIT_IDS.includes(edit.data.kit)) return fail("kit-unavailable");
   if (dneskaiDeckEditNeedsPool(deck, edit.data) && !pool) return fail("deck-edit-pool-unavailable");
   const used = new Set<number>();
   // Pictures the kept slides show: an inserted slide may not repeat one.
@@ -167,6 +169,10 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   });
   if (deck.format === "carousel" && (slides.length < 2 || slides.length > 10)) return fail("deck-edit-slide-count");
   if (deck.format === "single-image" && slides.length !== 1) return fail("deck-edit-slide-count");
-  const parsed = DneskaiDeckSchema.safeParse({ ...deck, slides });
+  // Editorial is written by leaving `kit` out, so a deck switched back to it hashes as it did before.
+  const { kit: _previous, ...rest } = deck;
+  void _previous;
+  const kit = edit.data.kit ?? dneskaiKitOf(deck);
+  const parsed = DneskaiDeckSchema.safeParse({ ...rest, ...(kit !== "editorial" ? { kit } : {}), slides });
   return parsed.success ? parsed.data : fail("deck-edit-invalid");
 }

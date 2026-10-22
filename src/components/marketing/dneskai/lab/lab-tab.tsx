@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
-import { dneskaiFitSlide, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, DNESKAI_KITS, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
+import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
@@ -135,7 +135,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
   const savedSlides = post.deck?.slides ?? [];
   const stageSlides: DneskaiStageSlide[] = draft.slides.map((item, index) => {
-    const unchanged = draft.slides.length === savedSlides.length && item.from === index && !!savedSlides[index] && dneskaiSlidePixelsKey(item.slide) === dneskaiSlidePixelsKey(savedSlides[index]!);
+    const unchanged = draft.kit === lab.kit && draft.slides.length === savedSlides.length && item.from === index && !!savedSlides[index] && dneskaiSlidePixelsKey(item.slide) === dneskaiSlidePixelsKey(savedSlides[index]!);
     const saved = unchanged ? lab.slides[index] : undefined;
     return { index, type: item.slide.type, render: saved?.render ?? null, problems: saved?.problems ?? [], draft: unchanged ? null : item.from === null ? 'added' : 'changed', alt: item.slide.alt };
   });
@@ -184,12 +184,12 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       try {
         const slides = draft.slides.map((item) => dneskaiFitSlide(item.slide));
         setFit({ status: 'checking', result: null });
-        const result = await (await dneskaiWorkspaceApi(props.preview)).fit({ kit: lab.kit, slides }, abort.signal);
+        const result = await (await dneskaiWorkspaceApi(props.preview)).fit({ kit: draft.kit, slides }, abort.signal);
         if (!abort.signal.aborted) setFit({ status: 'ready', result });
       } catch { if (!abort.signal.aborted) setFit({ status: 'unavailable', result: null }); }
     }, 300);
     return () => { window.clearTimeout(timer); abort.abort(); };
-  }, [draft.slides, lab.kit, props.preview, props.guest]);
+  }, [draft.slides, draft.kit, props.preview, props.guest]);
   const onLoaded = (url: string, ok: boolean) => setLoaded((before) => before.get(url) === ok ? before : new Map(before).set(url, ok));
   const allLoaded = lab.slides.length > 0 && lab.slides.every((item) => item.render && loaded.get(item.render.url) === true);
   const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
@@ -216,6 +216,12 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       await refresh();
     } finally { setBusyAction(null); }
   }
+  // A kit switch is a draft edit: every slide shows as a render-only preview in the new kit until it is saved.
+  function chooseKit(kit: DneskaiKit) {
+    if (props.guest || busy || !editable) return;
+    if (!dneskaiKitRenderable(kit)) { setMessage(t.kits.unavailableNotice(t.kits.names[kit])); return; }
+    if (kit !== draft.kit) { setDraft({ ...draft, kit }); setFit({ status: 'checking', result: null }); }
+  }
   function shortcut(event: React.KeyboardEvent) {
     if (busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true],[role=dialog]')) return;
     const key = event.key.toLowerCase();
@@ -223,7 +229,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     const position = order.findIndex((item) => item.post.id === post.id);
     if (['j', 'k', 'arrowdown', 'arrowup'].includes(key)) onChoose(order[Math.max(0, Math.min(order.length - 1, position + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
     else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(draft.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
-    else if (/^[1-5]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; if (kit !== lab.kit) setMessage(t.kits.unavailableNotice(t.kits.names[kit])); }
+    else if (/^[1-5]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; chooseKit(kit); }
     else if (key === 'a') void perform('approve');
     else if (key === 'd') { if (!dirty) onBatch(); }
     else if (key === 'e') fieldRef.current?.focus();
@@ -241,7 +247,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
       <div className="min-w-0 space-y-5">
-        <DneskaiKitTiles kits={lab.kits} chosen={lab.kit} onChoose={() => undefined} lang={props.lang} />
+        <DneskaiKitTiles kits={lab.kits} chosen={draft.kit} onChoose={chooseKit} lang={props.lang} />
         <fieldset disabled={props.guest || busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
           <legend className="sr-only">{t.post.title}</legend>
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />

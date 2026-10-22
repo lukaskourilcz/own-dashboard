@@ -143,6 +143,15 @@ describe('the post editor logic', () => {
     expect(draftProblems(original, far, null, now)).toContainEqual({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
   });
 
+  it('sends the kit with every slide position when the owner switches kit, and nothing about kits otherwise', () => {
+    const original = post(1);
+    const draft = createDeckDraft(original);
+    expect(draft.kit).toBe('editorial');
+    expect(dneskaiEditRequest(original, draft).deck).toBeUndefined();
+    const request = dneskaiEditRequest(original, { ...draft, kit: 'ticker' });
+    expect(request.deck).toEqual({ kit: 'ticker', slides: original.deck!.slides.map((_, from) => ({ from })) });
+  });
+
   it('builds the minimal edit request: unchanged slides carry only their position, cleared optional text is removed', () => {
     const original = post(1);
     let draft = createDeckDraft(original, 'd0e5ca10-0000-4000-8000-0000000000aa');
