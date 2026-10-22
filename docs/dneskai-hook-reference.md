@@ -83,5 +83,5 @@ The DNESKAi deck itself follows playbook:69-74: cover, second cover, one beat pe
 
 Both were open when this page was written (playbook:161-167); the owner settled them on 22 October 2026:
 
-- Register: option B without the family tag. The prompt asks for a factual cover hook and the humanizer's Czech voice carves it out (see [marketing-generation.md](marketing-generation.md#dneskai-briefs-generation-v5)).
-- The hashtag ceiling: a caption carries at most five, `#dneskai` first (`dneskaiHashtags`).
+- Register: option B without the family tag. The prompt asks for a factual cover hook and the humanizer's Czech voice carves it out (see [marketing-generation.md](marketing-generation.md#dneskai-briefs-generation-v6)).
+- The hashtag ceiling: a caption carries at most 10, `#dneskai` first (`dneskaiHashtags`).

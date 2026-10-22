@@ -163,10 +163,9 @@ Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service r
   uvádějí autora. Credit se počítá pro každý obrázek zvlášť při sběru a ukládá se do
   `marketing_media_asset_links.credit`; dřív uložené obrázky si credit nechávají.
 
-Credit není nikdy prázdný a má nejvýše 120 znaků, stejně jako pole `credit` slidu. Na
-slide ho kód zkrátí na řádek šablony (80 znaků, 30 u single photo): bez štítku, bez
-platformy v závorce a u agentury nakonec bez vydavatele (`Getty Images`). Popisek
-a slide se zdroji nesou plný credit.
+Credit není nikdy prázdný a má nejvýše 120 znaků. Zůstává v databázi
+(`marketing_media_asset_links.credit`) jako původ obrázku. Od 22. 10. 2026 ho neukazuje
+žádný slide ani popisek příspěvku (pravidla vlastníka, `.claude/skills/dneskai-post-content/SKILL.md`).
 
 ## Popisek Reelu
 
