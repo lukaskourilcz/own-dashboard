@@ -86,6 +86,11 @@ export interface DneskaiStackItem {
     key: string;
     /** Visual space above the item, ink to ink: a named gap reads the kit's table, a number is units. Ignored on the first item. */
     gap: DneskaiGapName | number;
+    /**
+     * Pixels the item moves up after its gap: for the item under a glyph whose ink stops well above
+     * its baseline, such as a quotation mark, which the line-box arithmetic cannot see. Absent: 0.
+     */
+    pull?: number;
 }
 export type DneskaiFlow = {
     kind: "cover-static";
@@ -116,10 +121,26 @@ export type DneskaiFlow = {
     kind: "single-type";
 } | {
     kind: "single-photo";
-} | {
+}
+/**
+ * `floor` stands the group's last line on the area's floor, whatever the kit's optical share.
+ * `follow`: the stops of every image shade, by index from `from` up to but not including `to`,
+ * that move with the group. They are declared for the group at its declared frames; when the
+ * group lands lower they move down by as much, each held between the stop before it and the
+ * first fixed stop after it, so the shade deepens where the words actually start and the
+ * picture stays clear above them. The stop at `under`, the one the words were checked on, never
+ * passes the top of any text frame over the picture, an empty one included. Absent: shades stay
+ * as declared.
+ */
+ | {
     kind: "stack";
-    anchor: "centre" | "top";
+    anchor: "centre" | "top" | "floor";
     items: readonly DneskaiStackItem[];
+    follow?: {
+        from: number;
+        to: number;
+        under: number;
+    };
 };
 export interface DneskaiLayoutMetrics {
     readonly unit: number;

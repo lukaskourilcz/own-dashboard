@@ -1,7 +1,7 @@
 import { kitStyleFor, kitStyleWithLook } from '../kit-style.js';
 import { CAROUSEL_BRANDS } from '../library.js';
 import { resolveFace } from '../fonts.js';
-import { DNESKAI_CODE_OWNED_SLOTS, DNESKAI_MAX_THUMBNAILS, DNESKAI_SLIDE_TYPES, DNESKAI_TEMPLATE_ROLES, DNESKAI_TEXT_FIELDS, dneskaiRoleOf } from './contract.js';
+import { DNESKAI_CODE_OWNED_SLOTS, DNESKAI_MAX_THUMBNAILS, DNESKAI_SLIDE_TYPES, DNESKAI_TEMPLATE_ROLES, DNESKAI_TEXT_FIELDS, dneskaiImageSlots, dneskaiRoleOf } from './contract.js';
 const fieldOf = (slot) => {
     if (DNESKAI_CODE_OWNED_SLOTS.includes(slot))
         return null;
@@ -20,6 +20,10 @@ export function defineDneskaiKit(input) {
             throw new Error(`Duplicate DNESKAi template ${t.id} or role ${key}`);
         if (t.schemaVersion !== 'carousel-template/2' || t.slides.length !== 1 || t.canvas?.master !== 'instagram-portrait' || !row.flow)
             throw new Error(`Invalid DNESKAi kit template ${t.id}`);
+        // The image layers are the contract's slots for the role in this kit, in order, with their optional flags.
+        const images = t.slides[0].layers.flatMap(layer => layer.type === 'image' ? [{ slot: layer.slot, optional: layer.optional }] : []);
+        if (JSON.stringify(images) !== JSON.stringify(dneskaiImageSlots(row.role, row.thumbnails ?? 0, input.id)))
+            throw new Error(`Kit ${input.id} template ${t.id} has image slots ${JSON.stringify(images)}, not the contract's for ${key}`);
         templates.set(t.id, t);
         roles.set(t.id, row.role);
         flows.set(t.id, row.flow);

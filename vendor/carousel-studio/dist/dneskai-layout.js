@@ -171,11 +171,11 @@ function stack(metrics, items) {
     let y = 0;
     let previous = null;
     let first = null;
-    for (const { key, block, gap } of items) {
+    for (const { key, block, gap, pull } of items) {
         if (!block)
             continue;
         if (previous)
-            y += Math.max(0, gap * metrics.unit - previous.inkBottom - block.inkTop);
+            y += Math.max(0, gap * metrics.unit - previous.inkBottom - block.inkTop) - (pull ?? 0);
         tops.set(key, y);
         y += block.height;
         previous = block;
@@ -327,11 +327,32 @@ function stacked(input, flow) {
             throw new Error(`Flow item ${item.key} names no layer on ${template.id}`);
         if (block)
             heights.set(item.key, block.height);
-        return { key: item.key, block, gap: typeof item.gap === "number" ? item.gap : input.metrics.gaps[item.gap] };
+        return { key: item.key, block, gap: typeof item.gap === "number" ? item.gap : input.metrics.gaps[item.gap], ...(item.pull ? { pull: item.pull } : {}) };
     });
     const group = stack(input.metrics, items), places = new Map();
-    placeStack(template, group, flow.anchor === "top" ? input.metrics.area.top : centredTop(group.height, input.metrics), heights, places, others);
-    return moved(template, places);
+    const top = flow.anchor === "top" ? input.metrics.area.top : flow.anchor === "floor" ? Math.max(input.metrics.area.top, input.metrics.area.bottom - group.height + group.inkBottom) : centredTop(group.height, input.metrics);
+    placeStack(template, group, top, heights, places, others);
+    if (flow.follow === undefined)
+        return moved(template, places);
+    // How far the group's first element landed below its declared frame.
+    const [firstKey, firstOffset] = [...group.tops][0] ?? [];
+    const firstLayer = firstKey === undefined ? undefined : textLayer(template, firstKey) ?? imageLayer(template, firstKey) ?? others.get(firstKey);
+    const drop = firstLayer && firstOffset !== undefined ? Math.round(top + firstOffset) - Math.round(px.y(firstLayer)) : 0;
+    const { from, to, under } = flow.follow;
+    // Every text frame as it will stand, an empty one where it was declared: the last moving stop
+    // never passes the highest of them, so each still stands on the shade it was checked on.
+    const textTops = layersOf(template).flatMap(layer => layer.type === "text" ? [Math.round(places.get(layer)?.y ?? px.y(layer))] : []);
+    return moved(template, places, layer => {
+        if (layer.type !== "image" || !layer.shade || drop === 0)
+            return layer;
+        const declared = layer.shade.stops, ceiling = declared[to]?.at ?? 1, last = declared[under]?.at ?? 0;
+        const highest = Math.min(...textTops.filter(y => y >= px.y(layer) && y < px.y(layer) + px.height(layer)));
+        const room = Number.isFinite(highest) ? Math.max(0, (highest - px.y(layer)) / px.height(layer) - last) : Infinity;
+        const shift = Math.min(drop / px.height(layer), room);
+        const stops = [];
+        declared.forEach((stop, index) => stops.push(index < from || index >= to ? stop : { ...stop, at: Math.round(Math.min(ceiling, Math.max(stops[index - 1]?.at ?? 0, stop.at + shift)) * 10_000) / 10_000 }));
+        return { ...layer, shade: { ...layer.shade, stops } };
+    });
 }
 /**
  * Sources: the title, the sources, then the thumbnails and the disclosure directly under them,

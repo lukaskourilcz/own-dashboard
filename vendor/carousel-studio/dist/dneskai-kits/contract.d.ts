@@ -1,4 +1,4 @@
-export declare const DNESKAI_KIT_IDS: readonly ["editorial", "bold", "explainer", "magazine", "ticker"];
+export declare const DNESKAI_KIT_IDS: readonly ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
 export type DneskaiKitId = (typeof DNESKAI_KIT_IDS)[number];
 export declare const DNESKAI_DEFAULT_KIT: DneskaiKitId;
 export declare const DNESKAI_SLIDE_TYPES: readonly ["cover-photo", "figure", "split", "statement", "sources", "single"];
@@ -23,9 +23,12 @@ export declare const DNESKAI_TEXT_FIELDS: readonly ["headline", "body", "kicker"
 export type DneskaiTextField = (typeof DNESKAI_TEXT_FIELDS)[number];
 /**
  * Slots code writes: never a field OwnDashboard gates. `folio` stays named so a template from before
- * the owner's 22 October 2026 decision still parses; no current template places it.
+ * the owner's 22 October 2026 decision still parses; no current template places it. `quote-mark`
+ * is the pair of quotation marks a kit may set above a quoted headline (`DNESKAI_QUOTE_MARK`).
  */
-export declare const DNESKAI_CODE_OWNED_SLOTS: readonly ["folio", "title", "images-label", "disclosure"];
+export declare const DNESKAI_CODE_OWNED_SLOTS: readonly ["folio", "title", "images-label", "disclosure", "quote-mark"];
+/** What the `quote-mark` slot holds in every locale: an opening and a closing double quotation mark. */
+export declare const DNESKAI_QUOTE_MARK = "\u201C\u201D";
 /**
  * The character limit of every text slot of every role, which every kit's templates must set
  * exactly and in this order. One deck written inside these limits sets without clipping in all
@@ -39,8 +42,19 @@ export declare const DNESKAI_CODE_OWNED_SLOTS: readonly ["folio", "title", "imag
  * the role keeps its templates so an older deck still renders.
  */
 export declare const DNESKAI_TEXT_LIMITS: Readonly<Record<DneskaiTemplateRole, Readonly<Record<string, number>>>>;
-/** The image slots a role carries, each with its `optional` flag; sources carries `image-1` to `image-N`, all required. */
-export declare function dneskaiImageSlots(role: DneskaiTemplateRole, thumbnails?: number): readonly {
+/**
+ * Extra image slots a kit may declare for a role, every one optional, after the role's shared
+ * slots. A kit absent here carries exactly the shared slots. The spotlight cover takes a second
+ * picture, drawn as a circular inset; without it the cover draws no circle. The slide API refuses
+ * a slot the resolved template has no layer for (`image-unexpected`), so `image-2` on a cover is
+ * accepted only by a kit listed here.
+ */
+export declare const DNESKAI_OPTIONAL_IMAGE_SLOTS: Readonly<Partial<Record<DneskaiKitId, Readonly<Partial<Record<DneskaiTemplateRole, readonly string[]>>>>>>;
+/**
+ * The image slots a role carries, each with its `optional` flag; sources carries `image-1` to
+ * `image-N`, all required. Given a kit, the kit's optional slots for the role follow the shared ones.
+ */
+export declare function dneskaiImageSlots(role: DneskaiTemplateRole, thumbnails?: number, kit?: DneskaiKitId): readonly {
     slot: string;
     optional: boolean;
 }[];

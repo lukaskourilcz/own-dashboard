@@ -1,7 +1,7 @@
 import { dneskaiKit } from "./dneskai-kits/registry.js";
-import { DNESKAI_DEFAULT_KIT, DNESKAI_VARIANTS, DNESKAI_INK_VARIANT } from "./dneskai-kits/contract.js";
+import { DNESKAI_DEFAULT_KIT, DNESKAI_VARIANTS, DNESKAI_INK_VARIANT, DNESKAI_QUOTE_MARK } from "./dneskai-kits/contract.js";
 export { DNESKAI_KITS, dneskaiKit } from "./dneskai-kits/registry.js";
-export { DNESKAI_KIT_IDS, DNESKAI_DEFAULT_KIT, DNESKAI_SLIDE_TYPES, DNESKAI_VARIANTS, DNESKAI_TEMPLATE_ROLES, dneskaiRoleOf, DNESKAI_TEXT_FIELDS, DNESKAI_CODE_OWNED_SLOTS, DNESKAI_TEXT_LIMITS, dneskaiImageSlots, DNESKAI_TEMPLATE_VARIANTS } from "./dneskai-kits/contract.js";
+export { DNESKAI_KIT_IDS, DNESKAI_DEFAULT_KIT, DNESKAI_SLIDE_TYPES, DNESKAI_VARIANTS, DNESKAI_TEMPLATE_ROLES, dneskaiRoleOf, DNESKAI_TEXT_FIELDS, DNESKAI_CODE_OWNED_SLOTS, DNESKAI_TEXT_LIMITS, dneskaiImageSlots, DNESKAI_OPTIONAL_IMAGE_SLOTS, DNESKAI_TEMPLATE_VARIANTS } from "./dneskai-kits/contract.js";
 import { createHash } from "node:crypto";
 import { CONNECTOR_MAX_SLIDES, MASTER_CANVAS, MASTER_FORMAT } from "./canvas.js";
 import { layoutDneskaiSlide } from "./dneskai-layout.js";
@@ -14,7 +14,7 @@ import { ImageCropSchema } from "./schema.js";
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
- * strings code owns (the sources slide's title and its disclosure), decodes and crops
+ * strings code owns (the sources slide's title and its disclosure, a quotation mark), decodes and crops
  * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
  * the words and pictures they carry and the height left over is set around them on purpose), and
  * renders through the same engine and gates as every other Design Lab slide.
@@ -120,6 +120,7 @@ function strings(input, template) {
         title: fixed.title,
         "images-label": fixed.imagesLabel,
         disclosure: fixed.disclosure,
+        "quote-mark": DNESKAI_QUOTE_MARK,
         ...Object.fromEntries(Array.from({ length: DNESKAI_MAX_SOURCES }, (_, index) => [dneskaiSourceSlot(index), sourceLines(input)[index]?.text ?? ""]))
     };
     return Object.fromEntries(template.requiredSlots.map((slot) => [slot, all[slot] ?? ""]));

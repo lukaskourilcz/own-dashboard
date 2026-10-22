@@ -147,7 +147,13 @@ function layerSvg(input) {
         // so `slice` and `meet` place it without cutting anything further.
         const fit = input.payload.images?.[layer.slot]?.fit ?? layer.fit;
         let border = "";
-        if (layer.border) {
+        if (layer.border && layer.clip === "circle") {
+            // A circular window takes a ring on the disc's edge, drawn outside it like the frame's
+            // hairline, so it never covers a pixel of the picture.
+            const line = layer.border.width;
+            border = `<circle cx="${round(x + w / 2)}" cy="${round(y + h / 2)}" r="${round(Math.min(w, h) / 2 + line / 2)}" fill="none" stroke="${color(layer.border.colorToken)}" stroke-width="${line}"/>`;
+        }
+        else if (layer.border) {
             const drawn = fit === "contain" ? containedRect(bytes, { x, y, w, h }) : { x, y, w, h };
             const line = layer.border.width;
             border = `<rect x="${round(drawn.x - line / 2)}" y="${round(drawn.y - line / 2)}" width="${round(drawn.w + line)}" height="${round(drawn.h + line)}" fill="none" stroke="${color(layer.border.colorToken)}" stroke-width="${line}"/>`;

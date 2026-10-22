@@ -1,4 +1,4 @@
-export const DNESKAI_KIT_IDS = ["editorial", "bold", "explainer", "magazine", "ticker"];
+export const DNESKAI_KIT_IDS = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
 export const DNESKAI_DEFAULT_KIT = "editorial";
 export const DNESKAI_SLIDE_TYPES = ["cover-photo", "figure", "split", "statement", "sources", "single"];
 /** The variants each slide type takes: today's table from `resolveTemplate`, shared by every kit. */
@@ -21,9 +21,12 @@ export function dneskaiRoleOf(type, variant, imageSlots) {
 export const DNESKAI_TEXT_FIELDS = ["headline", "body", "kicker", "credit", "sources"];
 /**
  * Slots code writes: never a field OwnDashboard gates. `folio` stays named so a template from before
- * the owner's 22 October 2026 decision still parses; no current template places it.
+ * the owner's 22 October 2026 decision still parses; no current template places it. `quote-mark`
+ * is the pair of quotation marks a kit may set above a quoted headline (`DNESKAI_QUOTE_MARK`).
  */
-export const DNESKAI_CODE_OWNED_SLOTS = ["folio", "title", "images-label", "disclosure"];
+export const DNESKAI_CODE_OWNED_SLOTS = ["folio", "title", "images-label", "disclosure", "quote-mark"];
+/** What the `quote-mark` slot holds in every locale: an opening and a closing double quotation mark. */
+export const DNESKAI_QUOTE_MARK = "\u201c\u201d";
 /**
  * The character limit of every text slot of every role, which every kit's templates must set
  * exactly and in this order. One deck written inside these limits sets without clipping in all
@@ -46,13 +49,27 @@ export const DNESKAI_TEXT_LIMITS = {
     "single-photo": { headline: 110 },
     "single-type": { headline: 120 }
 };
-/** The image slots a role carries, each with its `optional` flag; sources carries `image-1` to `image-N`, all required. */
-export function dneskaiImageSlots(role, thumbnails = 0) {
+/**
+ * Extra image slots a kit may declare for a role, every one optional, after the role's shared
+ * slots. A kit absent here carries exactly the shared slots. The spotlight cover takes a second
+ * picture, drawn as a circular inset; without it the cover draws no circle. The slide API refuses
+ * a slot the resolved template has no layer for (`image-unexpected`), so `image-2` on a cover is
+ * accepted only by a kit listed here.
+ */
+export const DNESKAI_OPTIONAL_IMAGE_SLOTS = {
+    spotlight: { "cover-photo": ["image-2"] }
+};
+/**
+ * The image slots a role carries, each with its `optional` flag; sources carries `image-1` to
+ * `image-N`, all required. Given a kit, the kit's optional slots for the role follow the shared ones.
+ */
+export function dneskaiImageSlots(role, thumbnails = 0, kit) {
+    const extra = (kit ? DNESKAI_OPTIONAL_IMAGE_SLOTS[kit]?.[role] ?? [] : []).map(slot => ({ slot, optional: true }));
     if (role === "sources")
         return Array.from({ length: thumbnails }, (_, n) => ({ slot: `image-${n + 1}`, optional: false }));
     if (role === "statement" || role === "single-type")
-        return [];
-    return [{ slot: "image-1", optional: false }, ...(role === "split-pair" ? [{ slot: "image-2", optional: false }] : [])];
+        return extra;
+    return [{ slot: "image-1", optional: false }, ...(role === "split-pair" ? [{ slot: "image-2", optional: false }] : []), ...extra];
 }
 /** The slide variant ids a role's template declares: statement `["INK"]`, every other role `[]`. */
 export const DNESKAI_TEMPLATE_VARIANTS = Object.fromEntries(DNESKAI_TEMPLATE_ROLES.map(role => [role, role === "statement" ? ["INK"] : []]));

@@ -7,15 +7,15 @@ Vercel build of OwnDashboard needs no Quorum checkout, no pnpm workspace and no 
 ## Pin
 
 - Repository: `lukaskourilcz/quorum`, directory `studio/`, package `@boardlessai/carousel-studio` 1.0.0
-- Commit: `1c9aa857722f61bfe5adf5a9e9d517a933a79724`
-- Commit date: `2026-10-22T17:01:18Z`
+- Commit: `893a4953a91ce878f5b8736a83bc0357374dc461`
+- Commit date: `2026-10-22T17:24:42Z`
 - Vendored: `2026-10-22`
-- Tree sha256: `b5670677ee2b25e4b248c1e3271d7a4ebcffec7e8aece75d6beb0af78eac8c93`
+- Tree sha256: `fdacdb3ff9f6b909b6ca3712279efb63c6b3390385aaa1c7e17532dab688faa1`
 
-Note on this pin: commit `1c9aa85` is Quorum `fable/dneskai-slide-content` on top of the five DNESKAi kits: by the
-owner's rule of 22 October 2026 no kit draws a page count or a picture credit, and the cover and single templates
-hold only the headline. Every kit's golden pins were re-recorded for it. `--write` updates the four lines above;
-rewrite this note by hand.
+Note on this pin: commit `893a495` is Quorum `main` with six DNESKAi kits: editorial (default), bold, explainer,
+magazine, ticker and spotlight (the owner's photo-led reference, with an optional circular second picture on the
+cover). By the owner's rule of 22 October 2026 no kit draws a page count or a picture credit, and the cover and single
+templates hold only the headline. `--write` updates the four lines above; rewrite this note by hand.
 
 The tree hash covers every file in this directory except this one: sha256 over the sorted
 `sha256sum` lines of the files, as `scripts/vendor-carousel-studio.sh` computes it.

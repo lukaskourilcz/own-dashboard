@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "dneskai-photo-golden/1",
+  "canvas": {
+    "width": 1080,
+    "height": 1350
+  },
+  "updatedAt": "2026-10-22",
+  "entries": [
+    {
+      "name": "acceptance-1-cover-photo",
+      "templateId": "dneskai-spotlight-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "75a6453c93a7d4323e6cac4e78f9e21dafe31d57b5fab9d4a3a1a61509c2d9a5"
+    },
+    {
+      "name": "acceptance-2-figure",
+      "templateId": "dneskai-spotlight-figure",
+      "version": "1.1.0",
+      "pngHash": "10230dd2b6cdfb157827f3fd1e785ae27a6b9615e0afa4c19649789937dd6919"
+    },
+    {
+      "name": "acceptance-3-figure",
+      "templateId": "dneskai-spotlight-figure",
+      "version": "1.1.0",
+      "pngHash": "2762ce233195adf5e09c03ebb8242a55ee1e1fe0a933c30bcb72ca2fa5891b33"
+    },
+    {
+      "name": "acceptance-4-split",
+      "templateId": "dneskai-spotlight-split-pair",
+      "version": "1.1.0",
+      "pngHash": "bf4802a914b0d3e4242069dd87094cf069d0276c58b1f4846749e1bb5bec0bcf"
+    },
+    {
+      "name": "acceptance-5-statement",
+      "templateId": "dneskai-spotlight-statement",
+      "version": "1.1.0",
+      "pngHash": "5360f5a6781b186d717e2063967f33e36ebb4013ed3bcbc0ef3d8722519d95bd"
+    },
+    {
+      "name": "acceptance-6-figure",
+      "templateId": "dneskai-spotlight-figure",
+      "version": "1.1.0",
+      "pngHash": "328bbceb88ffd9aede22daf9eeb302a193f0689da11ff283835c4af8b9f2eab6"
+    },
+    {
+      "name": "acceptance-7-sources",
+      "templateId": "dneskai-spotlight-sources-4",
+      "version": "1.1.0",
+      "pngHash": "a4ac9c0b4bd60de209c0445980426584702c11855e282abd2716096220be7129"
+    },
+    {
+      "name": "cover-photo",
+      "templateId": "dneskai-spotlight-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "e37b8205280dff2a8950bf480f5893445bde6ed48b86bfe8f5c6bc60f2f9c505"
+    },
+    {
+      "name": "cover-photo-crop",
+      "templateId": "dneskai-spotlight-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "f9b25f2847008e92eef0b4b391f4ff7bf39dfb5e2debe46178ad11da389c6a8d"
+    },
+    {
+      "name": "figure",
+      "templateId": "dneskai-spotlight-figure",
+      "version": "1.1.0",
+      "pngHash": "8fd274b276c5944cb4dde1fb1d5009fdef0ac76e118485e4af1de9973ede7aa1"
+    },
+    {
+      "name": "split",
+      "templateId": "dneskai-spotlight-split",
+      "version": "1.1.0",
+      "pngHash": "d530d2db241e1670f1a69ab0cc39626aa9f0637abdfe2744b5c634664bfce97a"
+    },
+    {
+      "name": "split-pair",
+      "templateId": "dneskai-spotlight-split-pair",
+      "version": "1.1.0",
+      "pngHash": "a3705bd1c462a210f51d36fc4b4b794ef9a33e2635fd375bd42af3f648b8ec8a"
+    },
+    {
+      "name": "statement",
+      "templateId": "dneskai-spotlight-statement",
+      "version": "1.1.0",
+      "pngHash": "96581cb5abd46845e794ccd569fef65dcf3272162962b422c03fca8c9f718a07"
+    },
+    {
+      "name": "statement-ink",
+      "templateId": "dneskai-spotlight-statement",
+      "version": "1.1.0",
+      "pngHash": "39883bb37115ce892cf62be639669c30f28e13fef8e62a2153f3e0bc1eff5650"
+    },
+    {
+      "name": "sources",
+      "templateId": "dneskai-spotlight-sources-4",
+      "version": "1.1.0",
+      "pngHash": "09e4b9cf35f9e459bc2e433b0a9cdf8591472e8c98973ed7c75d3dc899a7dcb7"
+    },
+    {
+      "name": "single-photo",
+      "templateId": "dneskai-spotlight-single-photo",
+      "version": "1.1.0",
+      "pngHash": "e48b84bc9ce9bf9e6b32f407d8f5325d05a6e4ec09a976b8938514d1f155780e"
+    },
+    {
+      "name": "single-photo-focal",
+      "templateId": "dneskai-spotlight-single-photo",
+      "version": "1.1.0",
+      "pngHash": "6b2efdc2cecd6265337362b4a4b0123f3bef7352e3f714384bebebf4a5791f28"
+    },
+    {
+      "name": "single-type",
+      "templateId": "dneskai-spotlight-single-type",
+      "version": "1.1.0",
+      "pngHash": "6f084fef72076803c221d72a7c23e6437ef7fa4cfac56099ebe5603758d5b1d6"
+    },
+    {
+      "name": "spotlight-cover-inset",
+      "templateId": "dneskai-spotlight-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "afdaf31ab5ad6298d7d0037aad74d73d345d82a60232492af350cb2ede033b1d"
+    }
+  ]
+}

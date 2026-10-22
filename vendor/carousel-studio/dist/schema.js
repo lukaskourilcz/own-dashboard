@@ -218,7 +218,8 @@ const ImageLayerSchema = FrameSchema.extend({
     /**
      * v2 only: a hairline around the picture as drawn — the frame for `cover`, the contained
      * rectangle for `contain` — so a wide chart in a tall frame is framed where it is, not where its
-     * frame is. Drawn outside the picture's edge, so it never covers a pixel of it.
+     * frame is. Drawn outside the picture's edge, so it never covers a pixel of it. With
+     * `clip: "circle"` it is a ring on the disc's edge instead.
      */
     border: z.object({ colorToken: TokenNameSchema, width: z.number().finite().min(0.5).max(12) }).optional()
 });
