@@ -643,6 +643,17 @@ describe('scouting step (#151)', () => {
     expect(step(quiet, 'scouting')).toMatchObject({ status: 'noop' });
   });
 
+  it('continues FACT or HYPE in the same step only with its switch (#152)', async () => {
+    const factOrHype = vi.fn(async () => ({ started: 1, transcribed: 0, classified: 0, refused: 0, failed: 0 }));
+    const quiet = async () => ({ reports: 0, library: 0, inserted: 0, skipped: 0 });
+    const off = await harness({ scoutTopics: quiet, factOrHype }, new Clock(night)).tick(scoutingOn);
+    expect(factOrHype).not.toHaveBeenCalled();
+    expect(step(off, 'scouting')).toMatchObject({ status: 'noop' });
+    const on = await harness({ scoutTopics: quiet, factOrHype }, new Clock(night)).tick({ ...scoutingOn, DNESKAI_FACT_OR_HYPE_ENABLED: 'true' });
+    expect(factOrHype).toHaveBeenCalledWith(project, expect.any(Date), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(step(on, 'scouting')).toMatchObject({ status: 'done', detail: expect.objectContaining({ fohStarted: 1 }) });
+  });
+
   it('waits outside the night and outside its slot', async () => {
     const scoutTopics = vi.fn(async () => result);
     expect(step(await harness({ scoutTopics }).tick(scoutingOn), 'scouting')).toMatchObject({ status: 'noop', code: 'scouting-not-due' });
