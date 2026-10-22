@@ -10,7 +10,7 @@ import { notifyMarketingApproval } from '@/lib/marketing/approval-notification';
 import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
 import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision } from '@/lib/marketing/dneskai-revision-edit';
-import { getBriefAssetHashLister, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
+import { getBriefAssetHashLister, getBriefPoolLoader, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
 import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 export const maxDuration=60;
 const Input=z.discriminatedUnion('action',[
@@ -67,10 +67,10 @@ export async function POST(request:Request){
    if(current.deck){
     // Resolve every dependency before writing: an unwired renderer or media store refuses the edit and the current revision keeps its state.
     let wiring;
-    try{wiring={render:getRenderDneskaiDeck(admin),loadMedia:getDneskaiMediaLoader(admin,user.id),listBriefAssetHashes:getBriefAssetHashLister(admin,user.id)};}
+    try{wiring={render:getRenderDneskaiDeck(admin),loadMedia:getDneskaiMediaLoader(admin,user.id),listBriefAssetHashes:getBriefAssetHashLister(admin,user.id),loadBriefPool:getBriefPoolLoader(admin,user.id)};}
     catch(failure){const code=failure instanceof Error&&unwired.has(failure.message)?failure.message:'renderer-unavailable';return NextResponse.json({error:code},{status:503});}
     let revision:ContentRevision;
-    try{revision=await prepareDneskaiRevisionEdit(current,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck},wiring.listBriefAssetHashes);}
+    try{revision=await prepareDneskaiRevisionEdit(current,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck},wiring.listBriefAssetHashes,wiring.loadBriefPool);}
     catch(failure){
      if(failure instanceof DneskaiRevisionEditError)return NextResponse.json({error:failure.code},{status:409});
      return NextResponse.json({error:failure instanceof Error&&unwired.has(failure.message)?failure.message:'media-unavailable'},{status:503});

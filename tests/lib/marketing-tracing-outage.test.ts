@@ -17,7 +17,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/marketing/approval-notification", () => ({ notifyMarketingApproval: mocks.notify }));
-vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: vi.fn(), getDneskaiMediaLoader: vi.fn(), getBriefAssetHashLister: vi.fn() }));
+vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: vi.fn(), getDneskaiMediaLoader: vi.fn(), getBriefAssetHashLister: vi.fn(), getBriefPoolLoader: vi.fn() }));
 vi.mock("langsmith", () => ({ Client: class { readRun = mocks.readRun; createRun = mocks.createRun; updateRun = mocks.updateRun; createFeedback = mocks.createFeedback; } }));
 import { POST } from "@/app/api/marketing/revisions/route";
 

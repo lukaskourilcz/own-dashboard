@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
 import { DneskaiSlideTypeSchema, DneskaiSlideVariantSchema } from './dneskai-slides';
+import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import {
   dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, renderBlocking,
   type DneskaiFieldLimit, type DneskaiPostStateDetail, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
@@ -263,3 +264,29 @@ export function dneskaiFitSlide(slide: { type: DneskaiSlideType; variant?: strin
     ...(slide.credit !== undefined ? { credit: slide.credit } : {}), images: slide.images.map((image) => image.slot),
   });
 }
+
+/* ---- render-only preview before saving (POST /api/marketing/dneskai/preview, REN-01) ------------------------ */
+
+export const DNESKAI_PREVIEW_VERSION = 'dneskai-preview/1';
+/**
+ * One slide of the owner's unsaved draft: the revision being edited, the draft as the same `edit` deck the save would
+ * send, and which slide of the edited deck to draw. The server applies the edit with the save's rules and renders that
+ * slide in memory. Nothing is stored, no revision is written, nothing can be approved from it.
+ */
+export const DneskaiPreviewRequestSchema = z.strictObject({
+  id: z.uuid(),
+  deck: DneskaiDeckEditSchema,
+  slide: z.number().int().min(0).max(9),
+});
+export type DneskaiPreviewRequest = z.infer<typeof DneskaiPreviewRequestSchema>;
+export const DneskaiPreviewResultSchema = z.strictObject({
+  schemaVersion: z.literal(DNESKAI_PREVIEW_VERSION),
+  /** Always true: a preview is an unsaved draft. It carries no content hash and no stored asset, so nothing binds to it. */
+  draft: z.literal(true),
+  slide: z.number().int().min(0).max(9),
+  status: z.enum(['rendered', 'refused']),
+  /** The slide's real pixels, downscaled (`data:image/webp;base64,…`); null when refused. */
+  image: z.string().startsWith('data:image/webp;base64,').max(2_000_000).nullable(),
+  problems: z.array(z.strictObject({ code: z.string().regex(/^[a-z][a-z0-9-]*$/).max(80), field: z.string().max(80).nullable(), blocking: z.boolean() })).max(30),
+});
+export type DneskaiPreviewResult = z.infer<typeof DneskaiPreviewResultSchema>;

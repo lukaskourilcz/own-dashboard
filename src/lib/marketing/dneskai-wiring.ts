@@ -1,11 +1,11 @@
 import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { ContentRevision } from "./contracts";
-import type { CreateDneskaiBriefs, ListBriefAssetHashes, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
+import type { CreateDneskaiBriefs, ListBriefAssetHashes, LoadDneskaiBriefPool, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { createDneskaiDeckRenderer } from "./dneskai-render";
 import { createDneskaiMediaLoader } from "./dneskai-media";
 import { createDneskaiSlideStorage } from "./worker-runtime";
-import { createDneskaiBriefs, listDneskaiBriefAssetHashes } from "./dneskai-briefs";
+import { createDneskaiBriefs, listDneskaiBriefAssetHashes, listDneskaiBriefPool } from "./dneskai-briefs";
 
 /**
  * Concrete implementations behind the DNESKAi ports, resolved per request by the routes that edit and render
@@ -28,6 +28,11 @@ export function getDneskaiMediaLoader(db: Database, owner: string): LoadDneskaiM
  */
 export function getBriefAssetHashLister(db: Database, owner: string): ListBriefAssetHashes {
   return async (revision: ContentRevision) => listDneskaiBriefAssetHashes(db, owner, revision);
+}
+
+/** The brief's pictures with their capability flags and primary source, for type moves and inserted slides (review-10). */
+export function getBriefPoolLoader(db: Database, owner: string): LoadDneskaiBriefPool {
+  return async (revision: ContentRevision) => listDneskaiBriefPool(db, owner, revision);
 }
 
 /** Brief creation for a finished run (#115): events become briefs and guarded generation jobs. */

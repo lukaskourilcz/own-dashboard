@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { AssetSchema, ContentRevision } from "./contracts";
 import type { DneskaiDeck } from "./dneskai-slides";
+import type { DneskaiEditPool } from "./dneskai-deck-edit";
 
 /**
  * Seams between the DNESKAi modules that are built in parallel:
@@ -48,6 +49,12 @@ export type RenderDneskaiDeck = (input: {
  * another brief's media.
  */
 export type ListBriefAssetHashes = (revision: ContentRevision) => Promise<string[]>;
+
+/**
+ * The brief's pictures with their capability flags and its primary source (review-10): what an owner edit that
+ * moves a picture slide to another type or inserts a slide is checked against. Empty when the brief is gone.
+ */
+export type LoadDneskaiBriefPool = (revision: ContentRevision) => Promise<DneskaiEditPool>;
 
 /**
  * Turns the events selected by a finished collection run into briefs and queued generation jobs (#115). Called by

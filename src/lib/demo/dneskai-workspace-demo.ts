@@ -2,8 +2,9 @@
 
 import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos } from './dneskai-workspace-fixtures';
 import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
-import { DneskaiWorkspaceRequestError, fitAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
+import { DneskaiWorkspaceRequestError, fitAt, previewAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
+import { applyDneskaiDeckEdit, DneskaiRevisionEditError } from '@/lib/marketing/dneskai-deck-edit';
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiMediaRead } from '@/lib/marketing/dneskai-media-contracts';
 import { z } from 'zod';
@@ -38,31 +39,18 @@ function find(id: string): DneskaiWorkspacePost {
   return post;
 }
 
+/** The server's edit contract, shared (`applyDneskaiDeckEdit`), with the fixture brief as the pool. */
 function applyEdit(post: DneskaiWorkspacePost, request: DneskaiEditRequest): DneskaiSlide[] {
-  const slides = post.deck?.slides ?? [];
-  if (!request.deck) return clone(slides);
-  const used = new Set<number>();
-  const next = request.deck.slides.map((change) => {
-    const source = slides[change.from];
-    if (!source || used.has(change.from)) throw new DneskaiWorkspaceRequestError('deck-edit-slide-invalid', 409);
-    used.add(change.from);
-    const slide = clone(source);
-    if (change.headline !== undefined) slide.headline = change.headline;
-    if (change.body === null) delete slide.body; else if (change.body !== undefined) slide.body = change.body;
-    if (change.kicker === null) delete slide.kicker; else if (change.kicker !== undefined) slide.kicker = change.kicker;
-    if (change.credit !== undefined) slide.credit = change.credit;
-    if (change.alt !== undefined) slide.alt = change.alt;
-    if (change.images) {
-      const pool = new Set((post.brief?.media ?? []).map((item) => item.assetSha256));
-      if (change.images.some((image) => !pool.has(image.assetSha256))) throw new DneskaiWorkspaceRequestError('deck-asset-outside-brief', 409);
-      if (change.images.map((image) => image.slot).sort().join() !== source.images.map((image) => image.slot).sort().join()) throw new DneskaiWorkspaceRequestError('deck-edit-slots-changed', 409);
-      slide.images = clone(change.images);
-    }
-    return slide;
-  });
-  if (post.deck?.format === 'carousel' && (next.length < 2 || next.length > 10)) throw new DneskaiWorkspaceRequestError('deck-edit-slide-count', 409);
-  if (post.deck?.format === 'single-image' && next.length !== 1) throw new DneskaiWorkspaceRequestError('deck-edit-slide-count', 409);
-  return next;
+  if (!post.deck) return [];
+  if (!request.deck) return clone(post.deck.slides);
+  const pool = { media: post.brief?.media ?? [], primaryCandidateId: post.brief?.evidence[0]?.candidateId ?? null };
+  let slides: DneskaiSlide[];
+  try { slides = applyDneskaiDeckEdit(post.deck, request.deck, pool).slides; }
+  catch (error) { throw new DneskaiWorkspaceRequestError(error instanceof DneskaiRevisionEditError ? error.code : 'deck-edit-invalid', 409); }
+  const hashes = new Set(pool.media.map((item) => item.assetSha256));
+  const own = new Set(post.deck.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)));
+  if (slides.some((slide) => slide.images.some((image) => !hashes.has(image.assetSha256) && !own.has(image.assetSha256)))) throw new DneskaiWorkspaceRequestError('deck-asset-outside-brief', 409);
+  return slides;
 }
 
 /** The preview's stand-in for the renderer's gate: too-long words and too-small pictures, as the studio refuses them. */
@@ -123,6 +111,12 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   fit: (request, signal) => fitAt('/api/dev-preview/dneskai-fit', request, signal),
   // The fixture's only uncertain publication may have reached media_publish, so the preview refuses as the server would.
   async requeuePublication() { await pause(200); throw new DneskaiWorkspaceRequestError('publication-may-be-published', 409); },
+  // The real in-memory render of one draft slide, after the shared edit rules, through the fixture-only twin route.
+  async renderPreview(request, signal) {
+    const post = find(request.id);
+    const slides = applyEdit(post, { action: 'edit', id: request.id, caption: post.caption, scheduledAt: post.scheduledAt, deck: request.deck });
+    return previewAt('/api/dev-preview/dneskai-preview', { deck: { ...post.deck!, slides }, slide: request.slide }, signal);
+  },
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);

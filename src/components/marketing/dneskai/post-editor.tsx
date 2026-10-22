@@ -263,7 +263,7 @@ function SlideRow({ id, index, count, item, post, lang, selected, onSelect, onMo
 }) {
   const t = dneskaiWorkspace[lang];
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const thumb = post.assets[item.from];
+  const thumb = item.from !== null ? post.assets[item.from] : undefined;
   const icon = 'size-11 md:size-8';
   return <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} data-testid="dneskai-editor-slide"
     className={cn('flex min-w-0 items-center gap-1 rounded-md border p-1', selected ? 'border-primary bg-surface-selected' : 'border-border bg-surface', isDragging && 'z-10 opacity-80')}>
