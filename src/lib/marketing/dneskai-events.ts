@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { DneskaiCandidate } from './dneskai-contracts';
+import { dneskaiSourceTier } from './dneskai-registry';
 
 /**
  * DNESKAi events (#115): reports of one news event, grouped without any paid call. Two candidates belong to
@@ -288,19 +289,8 @@ export function dneskaiFinishEvents<T extends DneskaiEventInput>(events: readonl
   return kept.map((event) => ({ eventId: event.eventId, anchorId: event.anchorId, memberIds: event.members.slice(0, DNESKAI_FINISH_EVENT_MEMBER_LIMIT).map((member) => member.id) }));
 }
 
-/**
- * How directly a source reports an event. 0: the original publisher or its own account (lab and vendor blogs,
- * GitHub releases, arXiv). 1: newsrooms and authors with their own reporting. 2: aggregators and reposts
- * (Hacker News, TechCrunch, news-roundup Instagram accounts). Unknown sources count as 1.
- */
-const PUBLISHER_SOURCES = new Set(['anthropic-news', 'openai-blog', 'deepmind-blog', 'google-research', 'hf-blog', 'meta-ai', 'github-ai-releases',
-  'arxiv-cs-ai', 'arxiv-cs-lg', 'instagram:mosseri', 'instagram:meta.ai']);
-const AGGREGATOR_SOURCES = new Set(['hn-frontpage', 'techcrunch-ai', 'tensorfeed', 'bluesky-language-models', 'stackexchange-ml', 'spaceflight-news',
-  'instagram:technology', 'instagram:insidertech', 'instagram:evolving.ai', 'instagram:techcrunch', 'instagram:theapplehub', 'instagram:robotic',
-  'instagram:activeprogrammer', 'instagram:tiffintech']);
-export function dneskaiSourceTier(sourceId: string): 0 | 1 | 2 {
-  return PUBLISHER_SOURCES.has(sourceId) ? 0 : AGGREGATOR_SOURCES.has(sourceId) ? 2 : 1;
-}
+/** How directly a source reports an event (0 publisher, 1 newsroom, 2 aggregator) is a registry field (audit C6). */
+export { dneskaiSourceTier };
 
 /**
  * Orders an event's reports with the chosen primary first: the original publisher or account before a

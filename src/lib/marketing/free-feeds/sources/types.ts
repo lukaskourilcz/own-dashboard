@@ -22,8 +22,6 @@ export const SourceItemSchema = z.object({
   author: z.string().max(200).nullable(),
   summary: z.string().max(2_000),
   fetchedAt: z.string().datetime(),
-  weight: z.number().min(0).max(1),
-  tags: z.array(z.string().min(1)).max(12),
   promptInjectionSignals: z.array(z.string()).max(20),
   /** A publisher image URL the adapter saw for free (RSS media, card image, og:image). Never downloaded here. */
   imageUrl: z.string().url().startsWith("https://").max(2048).optional(),
@@ -35,6 +33,7 @@ export const SourceItemSchema = z.object({
 });
 export type SourceItem = z.infer<typeof SourceItemSchema>;
 
+/** Adapter configuration, derived from `dneskai-registry.ts` by `dneskai-native-feed.ts`. */
 export const SourceConfigSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
@@ -44,13 +43,7 @@ export const SourceConfigSchema = z
     query: z.string().min(1).optional(),
     repos: z.array(z.string().regex(/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/)).optional(),
     site: z.string().min(1).optional(),
-    weight: z.number().min(0).max(1),
-    tags: z.array(z.string().min(1)).min(1).max(12),
-    enabled: z.boolean(),
-    stage: z.array(z.string()).min(1),
-    maxItems: z.number().int().min(1).max(50),
-    credentialEnv: z.string().regex(/^[A-Z][A-Z0-9_]+$/).optional(),
-    missingCredential: z.literal("skip").optional()
+    maxItems: z.number().int().min(1).max(50)
   })
   .superRefine((source, context) => {
     if (source.kind === "github" && !source.repos?.length) {
@@ -72,24 +65,8 @@ export const SourceConfigSchema = z
         path: ["query"]
       });
     }
-    if (source.credentialEnv && source.missingCredential !== "skip") {
-      context.addIssue({
-        code: "custom",
-        message: "credentialed sources must self-skip when the credential is missing",
-        path: ["missingCredential"]
-      });
-    }
   });
 export type SourceConfig = z.infer<typeof SourceConfigSchema>;
-
-export const SourceRegistrySchema = z.object({
-  schemaVersion: z.literal(1),
-  sources: z.array(SourceConfigSchema).length(32),
-  disabledByDefault: z.array(
-    z.object({ kind: z.string().min(1), reason: z.string().min(1) })
-  )
-});
-export type SourceRegistry = z.infer<typeof SourceRegistrySchema>;
 
 export interface SourceFetchContext {
   allowHosts: readonly string[];
