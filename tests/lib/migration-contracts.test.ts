@@ -174,4 +174,13 @@ describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
     expect(sql.match(/as restrictive/g)).toHaveLength(5);
     expect(guide).toMatch(/20261023130000_dneskai_reel_bucket\.sql[\s\S]*unapplied|DNESKAi Reel bucket, 23 October 2026 \(unapplied\)/);
   });
+
+  it("keep the audio library own-only with service-role writes (#164)", () => {
+    const sql = code("20261023130100_dneskai_audio_tracks.sql");
+    expect(sql).toMatch(/values\('marketing-audio','marketing-audio',false,20971520,/);
+    expect(sql).toMatch(/revoke all on public\.marketing_audio_tracks from public,anon,authenticated/);
+    expect(sql).toMatch(/grant select on public\.marketing_audio_tracks to authenticated/);
+    expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_audio_tracks to authenticated/);
+    expect(guide).toMatch(/DNESKAi audio library, 23 October 2026 \(unapplied\)/);
+  });
 });

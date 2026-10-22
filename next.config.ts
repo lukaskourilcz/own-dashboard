@@ -75,6 +75,8 @@ const nextConfig: NextConfig = {
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
     // The reel renderer (#163) spawns the ffmpeg-static executable, which no import reaches.
     "/api/marketing/dneskai/render-reel": ["./node_modules/ffmpeg-static/ffmpeg"],
+    // The audio library (#164) measures each upload with the same binary.
+    "/api/marketing/dneskai/audio": ["./node_modules/ffmpeg-static/ffmpeg"],
     // The Design Lab's fixture-only fit route runs the same studio fitter as /api/marketing/dneskai/fit.
     "/api/dev-preview/dneskai-fit": [...carouselStudioFiles, sharpLibvips],
     "/api/dev-preview/dneskai-render": [...carouselStudioFiles, sharpLibvips, "./public/demo/dneskai/original-*.jpg"],

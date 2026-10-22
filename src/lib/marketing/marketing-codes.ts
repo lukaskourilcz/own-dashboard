@@ -503,6 +503,12 @@ const CODES = {
   'reel-ffmpeg-unavailable': ['config', 'The video encoder is not available on this server.', 'Na tomto serveru není dostupný kodér videa.'],
   'reel-compose-failed': ['retry', 'The Reel frames could not be prepared from the slides.', 'Ze slidů nešlo připravit snímky Reelu.'],
   'reel-encode-failed': ['retry', 'The video encoder stopped with an error.', 'Kodér videa skončil chybou.'],
+  // Audio library (#164): Zdroje → Hudba.
+  'audio-library-unavailable': ['retry', 'The audio library could not be read or written.', 'Hudební knihovnu nešlo načíst ani uložit.'],
+  'audio-upload-missing': ['retry', 'The uploaded file did not arrive; upload it again.', 'Nahraný soubor nedorazil; nahrajte ho znovu.'],
+  'audio-upload-invalid': ['edit', 'The file is not audio between 1 second and 15 minutes long, or it is larger than 20 MB.', 'Soubor není zvuk o délce 1 sekunda až 15 minut, nebo je větší než 20 MB.'],
+  'audio-track-unavailable': ['reload', 'This track is no longer in the library.', 'Tato skladba už v knihovně není.'],
+  'audio-track-write-failed': ['retry', 'The track could not be saved.', 'Skladbu se nepodařilo uložit.'],
   'reel-timeout': ['retry', 'Making the Reel took too long and was stopped.', 'Výroba Reelu trvala příliš dlouho a byla zastavena.'],
   'regenerate-unavailable': ['config', 'Regenerating is switched off on this server, so nothing was generated or spent.', 'Přegenerování je na tomto serveru vypnuté, nic se nevygenerovalo ani neutratilo.'],
   'regenerate-not-reviewable': ['reload', 'Only a post in review or a returned post can be regenerated.', 'Přegenerovat lze jen příspěvek ke kontrole nebo vrácený příspěvek.'],

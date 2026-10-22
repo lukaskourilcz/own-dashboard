@@ -67,6 +67,7 @@ export const qk = {
   dneskaiTopics: ["marketing", "dneskai-topics"] as const,
   // Not a server read: the versions this browser session saw fail to attach their render, shared by the tabs.
   dneskaiRenderFailed: ["marketing", "dneskai-render-failed"] as const,
+  dneskaiAudio: ["marketing", "dneskai-audio"] as const,
   marketingAccounts: ["marketing", "accounts"] as const,
   marketingKnowledge: ["marketing", "knowledge"] as const,
   marketingCalendars: ["github", "marketing-calendars"] as const,

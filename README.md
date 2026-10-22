@@ -174,6 +174,7 @@ The migrations, in the order they run:
 76. `20261022190000_dneskai_regenerate_with_note.sql` — unapplied, a finished regeneration job supersedes the returned or in-review version it replaces (owner decision 8); called only with `DNESKAI_REGENERATE_ENABLED=true`.
 77. `20261023100000_dneskai_topics.sql` — unapplied, `marketing_dneskai_topics` (náměty: title-only topics the owner approves before anything is paid for) with own-only reads and three owner functions to approve, reject, restore, edit and create; read only with `DNESKAI_TOPICS_ENABLED=true`.
 78. `20261023130000_dneskai_reel_bucket.sql` — unapplied, the private `marketing-reels` bucket (MP4 only, 64 MiB) for rendered DNESKAi Reels, owner-prefix reads and no browser writes; used only with `MARKETING_DNESKAI_REELS_ENABLED=true`.
+79. `20261023130100_dneskai_audio_tracks.sql` — unapplied, the DNESKAi audio library: `marketing_audio_tracks` (own-only reads, service-role writes) and the private `marketing-audio` bucket; used only with `MARKETING_DNESKAI_REELS_ENABLED=true`.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
