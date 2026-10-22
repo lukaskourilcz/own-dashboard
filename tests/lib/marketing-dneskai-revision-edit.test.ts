@@ -145,6 +145,27 @@ describe("an edit that leaves the deck unchanged (review-03)", () => {
     expect(result.contentHash).not.toBe(revisionContentHash(deckRevision()));
   });
 
+  it("sets, keeps and removes the engagement without a render, and each change moves the content hash (#157)", async () => {
+    const engagement = { keyword: "SKILL", replyMessage: "Návod: otevřete aplikaci a začněte.", publicReply: "Poslali jsme vám to do zpráv." };
+    const same = { caption: deckRevision().caption, scheduledAt: deckRevision().scheduledAt };
+    const set = await edited({ ...same, engagement });
+    expect(set.engagement).toEqual(engagement);
+    expect(set.deck).toEqual((await edited(same)).deck);
+    expect(reusableDneskaiRender(deckRevision(), clean, set)).toEqual({ assets: deckRevision().assets, report: clean });
+    const withEngagement = { ...deckRevision(), engagement };
+    const kept = await prepareDneskaiRevisionEdit(withEngagement, { ...same, caption: "Jen nový caption." }, pool());
+    expect(kept.engagement).toEqual(engagement);
+    const removed = await prepareDneskaiRevisionEdit(withEngagement, { ...same, engagement: null }, pool());
+    expect(removed).not.toHaveProperty("engagement");
+    const rekeyed = await prepareDneskaiRevisionEdit(withEngagement, { ...same, engagement: { ...engagement, keyword: "NAVOD" } }, pool());
+    for (const next of [kept, removed, rekeyed]) expect(reusableDneskaiRender(withEngagement, clean, next)).not.toBeNull();
+    const hash = (next: ContentRevision) => revisionContentHash({ ...next, assets: deckRevision().assets });
+    expect(hash(set)).not.toBe(hash(await edited(same)));
+    expect(hash(removed)).not.toBe(hash(set));
+    expect(hash(rekeyed)).not.toBe(hash(set));
+    expect(await code(() => prepareDneskaiRevisionEdit(deckRevision(), { ...same, engagement: { ...engagement, keyword: "dvě slova" } }, pool()))).toBe("revision-edit-invalid");
+  });
+
   it("still renders a changed deck", async () => {
     const next = await edited({ caption: "x", scheduledAt: "2099-10-21T06:00:00Z", deck: { slides: [{ from: 1 }, { from: 0 }, { from: 2 }] } });
     const render = vi.fn<RenderDneskaiDeck>(async () => ({ status: "rendered", assets: rendered, renderKeys: [], problems: [] }));

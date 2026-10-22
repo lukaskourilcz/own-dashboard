@@ -13,9 +13,8 @@ import { cn } from '@/lib/utils';
 export function DneskaiKitTiles({ kits, chosen, onChoose, lang }: { kits: readonly DneskaiLabKit[]; chosen: DneskaiKit; onChoose: (kit: DneskaiKit) => void; lang: 'en' | 'cs' }) {
   const t = dneskaiLab[lang].kits;
   const id = useId();
-  const anyUnavailable = kits.some((kit) => !kit.renderable);
-  return <fieldset className="min-w-0 space-y-2" aria-describedby={anyUnavailable ? `${id}-help` : undefined} data-testid="dneskai-kit-tiles">
-    <legend className="text-xs font-semibold">{t.label}</legend>
+  return <fieldset className="min-w-0 space-y-2" data-testid="dneskai-kit-tiles">
+    <legend className="sr-only">{t.label}</legend>
     <div className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-6 lg:overflow-visible">
       {kits.map((kit) => {
         const selected = kit.id === chosen;
@@ -34,7 +33,5 @@ export function DneskaiKitTiles({ kits, chosen, onChoose, lang }: { kits: readon
         </label>;
       })}
     </div>
-    {anyUnavailable && <p id={`${id}-help`} className="text-xs text-foreground-muted">{t.unavailableHelp}</p>}
-    <p className="text-xs text-foreground-muted">{t.switchNeedsApproval}</p>
   </fieldset>;
 }
