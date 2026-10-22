@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
 import { DNESKAI_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
+import { pragueScheduledAt } from './clock';
 import {
   dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, renderBlocking,
   type DneskaiFieldLimit, type DneskaiPostStateDetail, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
@@ -78,7 +79,11 @@ export type DneskaiLabPost = {
 };
 
 export type DneskaiLabJob = { job: DneskaiWorkspaceJob; state: DneskaiPostStateDetail; deadline: DneskaiLabDeadline | null };
-export type DneskaiLabDay = { date: string; posts: DneskaiLabPost[]; jobs: DneskaiLabJob[]; approvable: Array<{ id: string; contentHash: string }> };
+export type DneskaiLabDay = {
+  date: string; posts: DneskaiLabPost[]; jobs: DneskaiLabJob[]; approvable: Array<{ id: string; contentHash: string }>;
+  /** Topics of the day that wait for the scheduler, earliest first (owner decision 9, „Generate now“). */
+  waiting: NonNullable<DneskaiWorkspaceRead['waiting']>;
+};
 
 /** A post whose slot is closer than this reads in the warning tone. */
 export const DNESKAI_LAB_URGENT_MINUTES = 30;
@@ -160,7 +165,8 @@ export function dneskaiLabDay(read: DneskaiWorkspaceRead, date: string, now: num
     .map((job) => ({ job, state: dneskaiJobState(job), deadline: job.scheduledAt ? dneskaiLabDeadline(job.scheduledAt, now) : null }))
     .sort((a, b) => Date.parse(a.job.scheduledAt!) - Date.parse(b.job.scheduledAt!));
   const approvable = posts.filter((item) => item.block === null && !item.deadline.passed).map((item) => ({ id: item.revision.id, contentHash: item.revision.contentHash }));
-  return { date, posts, jobs, approvable };
+  const waiting = (read.waiting ?? []).filter((brief) => pragueDate(brief.scheduledAt) === date).sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt));
+  return { date, posts, jobs, approvable, waiting };
 }
 
 /** The days the Lab queue shows: today and tomorrow (the night's collection prepares tomorrow's posts). */
@@ -179,6 +185,47 @@ export function dneskaiLabProfileCovers(read: Pick<DneskaiWorkspaceRead, 'posts'
     .slice(0, limit)
     .map((post) => post.assets[0]!);
 }
+
+/* ---- moved, approve again (owner decision 6, 22 October 2026) ------------- */
+
+/** A moved post's new slot is at least this far ahead: the tick runs every 5 minutes and the owner needs a moment. */
+export const DNESKAI_MOVE_LEAD_MINUTES = 15;
+/** Another scheduled DNESKAi post this close to a slot takes it, as in the brief allocator. */
+export const DNESKAI_MOVE_CLEARANCE_MINUTES = 60;
+
+/**
+ * The next free daily slot for a post that missed its own: one of the DNESKAi slots of today or tomorrow (Prague), at
+ * least 15 minutes ahead and not within an hour of another scheduled post. Null when both days are full or over. The
+ * server repeats this with its own reads before it moves anything (`approve-at`).
+ */
+export function dneskaiNextFreeSlot(input: { today: string; slots: readonly string[]; taken: readonly string[]; now: number }): string | null {
+  const earliest = input.now + DNESKAI_MOVE_LEAD_MINUTES * 60_000;
+  for (const date of [input.today, pragueDayAfter(input.today, 1)]) {
+    for (const time of [...input.slots].sort()) {
+      let at: string;
+      try { at = pragueScheduledAt(date, time); } catch { continue; }
+      const ms = Date.parse(at);
+      if (ms < earliest) continue;
+      if (input.taken.some((value) => Math.abs(Date.parse(value) - ms) < DNESKAI_MOVE_CLEARANCE_MINUTES * 60_000)) continue;
+      return at;
+    }
+  }
+  return null;
+}
+
+/** Statuses whose time holds a slot: everything still planned or already out, the post being moved excepted. */
+const SLOT_HOLDING = new Set(['review', 'approved', 'publishing', 'published', 'reconciliation', 'returned']);
+/** The instants other posts, drafting jobs and waiting topics hold, as the browser sees them in the read. */
+export function dneskaiTakenSlots(read: Pick<DneskaiWorkspaceRead, 'posts' | 'jobs' | 'waiting'>, exceptId: string): string[] {
+  return [
+    ...read.posts.filter((post) => post.id !== exceptId && SLOT_HOLDING.has(post.status)).map((post) => post.publication?.scheduledAt ?? post.scheduledAt),
+    ...read.jobs.filter((job) => job.status === 'queued' || job.status === 'running').flatMap((job) => job.scheduledAt ? [job.scheduledAt] : []),
+    ...(read.waiting ?? []).map((brief) => brief.scheduledAt),
+  ];
+}
+
+/** A post in review whose slot passed without approval: the Lab offers to move it to the next free slot and approve it. */
+export const dneskaiMissedSlot = (lab: Pick<DneskaiLabPost, 'post' | 'deadline'>) => lab.post.status === 'review' && lab.deadline.passed;
 
 /* ---- approve the day ---------------------------------------------------- */
 
