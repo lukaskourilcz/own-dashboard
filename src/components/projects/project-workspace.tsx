@@ -51,6 +51,7 @@ import {
 import { useProjectTabVisibility } from "@/lib/use-prefs";
 import { isDneskaiProject } from "@/lib/marketing/dneskai-registry";
 import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
+import { DneskaiOverflowMenu } from "@/components/marketing/dneskai/overflow-menu";
 import type {
   AiCategory,
   AiLink,
@@ -144,7 +145,7 @@ export function ProjectWorkspace(props: Props) {
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
-  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => 'overview');
+  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => '');
   const setTab = (tab: ProjectTabId) => {
     const url = new URL(window.location.href); url.searchParams.set('projectTab', tab);
     window.history.replaceState(window.history.state, '', url); window.dispatchEvent(new Event('project-tab'));
@@ -218,15 +219,14 @@ export function ProjectWorkspace(props: Props) {
     "dneskai-costs": dneskaiLabels.costs,
   };
   const dneskaiTab = (id: DneskaiProjectTab) => isProjectTabHidden(id) ? [] : [{ id, label: dneskaiTabLabels[id] }];
-  // DNESKAi's daily work sits right after Overview: review, calendar, sources, published, errors and costs. Settings
-  // lists them in the same order and can hide each of them like any other project tab.
-  const tabs = dneskai ? [
-    projectTabs[0]!,
-    ...DNESKAI_WORKSPACE_TAB_ORDER.flatMap((id) => id === "sources" ? projectTabs.filter((item) => item.id === "sources") : dneskaiTab(id)),
-    ...projectTabs.slice(1).filter((item) => item.id !== "sources"),
-  ] : projectTabs;
-  // A tab hidden in Settings, or one this project does not have, opens Overview instead.
-  const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : "overview";
+  // DNESKAi shows four tabs: review (the default), calendar, posts and sources (#169). Settings lists them in the same
+  // order and can hide each. The general project sections sit in the overflow menu; the one that is open joins the strip.
+  const dneskaiStrip = DNESKAI_WORKSPACE_TAB_ORDER.flatMap((id) => id === "sources" ? projectTabs.filter((item) => item.id === "sources") : dneskaiTab(id));
+  const dneskaiSections = projectTabs.filter((item) => item.id !== "sources");
+  const openSection = dneskai ? dneskaiSections.find((item) => item.id === selectedTab) : undefined;
+  const tabs = dneskai ? [...dneskaiStrip, ...(openSection ? [openSection] : [])] : projectTabs;
+  // A tab hidden in Settings, or one this project does not have, opens the first tab instead.
+  const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : (tabs[0]?.id ?? "overview");
 
   const healthLabel = health.health === "healthy" ? p.healthy : health.health === "attention" ? p.attentionStatus : p.atRisk;
   const localHealthReason = (reason: string) => {
@@ -246,8 +246,12 @@ export function ProjectWorkspace(props: Props) {
       eyebrow={parentProject ? t.portfolio.subsectionOf(parentProject.name) : organization?.name ?? (registryEntry ? t.portfolio.coreProject : p.projectWorkspace)}
       action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
     />
-    <div ref={tablist} className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1" role="tablist" aria-label={p.projectWorkspace}>
-      {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
+    <div className="mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
+      <div ref={tablist} className="flex min-w-0 flex-1 gap-1 overflow-x-auto" role="tablist" aria-label={p.projectWorkspace}>
+        {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
+      </div>
+      {dneskai && <DneskaiOverflowMenu projectId={project.id} lang={lang} preview={!!props.isPreview} sections={dneskaiSections} activeSection={openSection?.id ?? null}
+        onSection={(id) => { flushSync(() => setTab(id)); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); }} onOpenReview={openDneskaiReview} />}
     </div>
 
     {tab === "overview" && <div className="space-y-4">
@@ -284,7 +288,7 @@ function RecordCard({ title, icon: Icon, empty, items, info }: { title: string; 
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}{info && <Tooltip content={info}><span className="ml-0.5 inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip>}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
 }
 
-function readProjectTab(): string { return new URLSearchParams(window.location.search).get('projectTab') ?? 'overview'; }
+function readProjectTab(): string { return new URLSearchParams(window.location.search).get('projectTab') ?? ''; }
 function subscribeProjectTab(onChange: () => void) {
   window.addEventListener('popstate', onChange); window.addEventListener('project-tab', onChange);
   return () => { window.removeEventListener('popstate', onChange); window.removeEventListener('project-tab', onChange); };

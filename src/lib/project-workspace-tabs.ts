@@ -37,15 +37,16 @@ export const PROJECT_TAB_IDS = [
 export type ProjectTabId = (typeof PROJECT_TAB_IDS)[number];
 
 /**
- * The tabs only the DNESKAi project shows, in its workspace order right after
- * Overview. Sources is a general tab id that no other project shows.
+ * The four tabs the DNESKAi workspace strip shows, in order (#169). Review opens
+ * by default. Sources is a general tab id that no other project shows.
+ * `dneskai-costs` keeps its id (the database check lists it) but left the strip:
+ * Errors and costs opens from the overflow menu.
  */
 export const DNESKAI_WORKSPACE_TAB_ORDER = [
   "dneskai-review",
   "dneskai-calendar",
-  "sources",
   "dneskai-published",
-  "dneskai-costs",
+  "sources",
 ] as const satisfies readonly ProjectTabId[];
 
 const PROJECT_TAB_ID_SET = new Set<string>(PROJECT_TAB_IDS);
