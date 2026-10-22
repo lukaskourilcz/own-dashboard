@@ -211,7 +211,7 @@ describe('channel control (#170)', () => {
     expect(group.getAttribute('role')).toBe('group');
     expect(group.getAttribute('aria-label')).toBe(c.label);
     const buttons = [...group.querySelectorAll('button')];
-    expect(buttons.map((button) => button.firstChild?.textContent)).toEqual([c.instagram, c.threads, c.linkedin]);
+    expect(buttons.map((button) => button.textContent)).toEqual([c.instagram, c.threads, c.linkedin]);
     expect(buttons.map((button) => button.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
     expect(buttons.map((button) => button.getAttribute('aria-disabled'))).toEqual([null, 'true', 'true']);
     for (const button of buttons.slice(1)) expect(document.getElementById(button.getAttribute('aria-describedby')!)!.textContent).toBe(c.notConnected);

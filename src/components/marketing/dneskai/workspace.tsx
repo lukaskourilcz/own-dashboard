@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
@@ -85,14 +85,15 @@ const CHANNELS = ['instagram', 'threads', 'linkedin'] as const;
  */
 function ReviewExperience({ guest, ...props }: LabProps & { guest: boolean }) {
   const t = dneskaiLab[props.lang].channels;
-  return <div className="space-y-4">
+  return <div className="min-w-0 space-y-4" data-testid="dneskai-review">
     <div role="group" aria-label={t.label} className="inline-flex rounded-md border border-border bg-surface-secondary p-0.5" data-testid="dneskai-channels">
       {CHANNELS.map((channel) => channel === 'instagram'
         ? <Button key={channel} variant="subtle" size="sm" aria-pressed="true">{t[channel]}</Button>
         // aria-disabled, not disabled: the button stays focusable so keyboard users reach the tooltip.
         : <Tooltip key={channel} content={t.notConnected}><Button variant="ghost" size="sm" aria-pressed="false" aria-disabled="true" aria-describedby={`dneskai-channel-${channel}-note`}
             className="cursor-not-allowed opacity-50 hover:bg-transparent hover:text-foreground-muted" onClick={(event) => event.preventDefault()}>
-            {t[channel]}<span id={`dneskai-channel-${channel}-note`} className="sr-only">{t.notConnected}</span></Button></Tooltip>)}
+            {t[channel]}</Button></Tooltip>)}
+      {CHANNELS.slice(1).map((channel) => <span key={channel} id={`dneskai-channel-${channel}-note`} hidden>{t.notConnected}</span>)}
     </div>
     <DneskaiLabTab {...props} guest={guest} />
   </div>;

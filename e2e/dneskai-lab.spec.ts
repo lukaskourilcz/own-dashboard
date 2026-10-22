@@ -94,7 +94,8 @@ test('public Lab tour is read-only and never calls a fixture renderer or marketi
   await expect(lab.getByText(dneskaiLab.en.publicTour).first()).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
   await expect(page.getByTestId('dneskai-slide-inspector').getByRole('textbox',{name:'Headline',exact:true})).toBeDisabled();
-  await expect(page.getByRole('button',{name:'List',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'List',exact:true})).toHaveCount(0);
+  await expect(page.getByTestId('dneskai-channels').getByRole('button',{name:/^Threads/})).toHaveAttribute('aria-disabled','true');
   const axe=await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-lab"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
   expect(axe.violations).toEqual([]);expect(calls).toEqual([]);
 });
