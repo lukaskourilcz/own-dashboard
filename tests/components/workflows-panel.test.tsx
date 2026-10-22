@@ -42,12 +42,14 @@ describe('owner workflow guide', () => {
       'každý den jeden příspěvek do Instagram feedu, dva příspěvky na Threads a tři Stories',
       'živý import do stagingu čeká na ověření', 'neaktivní návrhy se zástupným připojením',
       'Supabase pg_cron volá OwnDashboard každých pět minut', 'n8n workflows pro DNESKAi jsme vyřadili',
-      'po pěti minutách, dokud běh neskončí', 'nula ze čtyř témat',
+      'po pěti minutách, dokud běh neskončí', '„Zopakovat zařazení“ u zadání, jehož zařazení selhalo, funguje už teď',
       'Vzdálenější termíny zůstávají v backlogu', 'jsou články DNESKAi pozastavené a připravují se jen social příspěvky',
       'Dosah, uložení, sdílení ani odpovědi jsme zatím nezměřili', 'schválení přesných verzí',
-      'Kontrola přesného social příspěvku na kartě „Dnes ke schválení“ projektu DNESKAi',
+      'Kontrola přesného příspěvku v Design Labu na kartě „Dnes ke schválení“ projektu DNESKAi',
+      '„Přesunout na další volný čas“ a „Uvolnit zprávy“ zůstávají vypnuté', 'neuložený náhled za 0 $: bez volání modelu a bez uloženého souboru',
+      'Schválit můžete jen uloženou verzi', '„Vzdát a zařadit znovu“ v Chybách a nákladech', 'tato akce zůstává vypnutá',
       'jen přesně schválenou verzi a jen při zapnutém publikování', 'devShark zatím nemá aktivní plán publikování',
-      'Implementaci jsme ověřili 21. října 2026',
+      'Implementaci jsme ověřili 22. října 2026',
       'Nejvýše čtyři události podle placené klasifikace Jev', 'žádná událost se nevybere a nevznikne žádné zadání ani příspěvek',
       'Publikování se nepřeskakuje: dokud je vypnuté, běží jen jako zkušební běh bez zápisu do Meta',
       'Sběr běží každou noc od 21. října 2026; živé publikování zůstane vypnuté až do dne pilotu',
@@ -55,12 +57,14 @@ describe('owner workflow guide', () => {
       'one Instagram feed post, two Threads posts and three Stories per day',
       'live staging import is awaiting verification', 'inactive drafts with placeholder connections',
       'Supabase pg_cron calls OwnDashboard every five minutes', 'The DNESKAi n8n workflows are retired',
-      'every five minutes until the run is finished', 'zero of four topics',
+      'every five minutes until the run is finished', '“Retry queueing” for a brief whose admission failed works today',
       'Later dates stay in the backlog', 'DNESKAi articles are paused and only social posts are prepared',
       'Reach, saves, shares and replies have not been collected', 'exact owner approval',
-      'Exact social post review in the DNESKAi project’s “For review today” tab',
+      'Exact post review in the Design Lab on the DNESKAi project’s “For review today” tab',
+      '“Move to next free slot” and “Release reports” stay switched off', 'unsaved draft preview for $0: no model call, no stored file',
+      'You can approve only a saved version', '“Give up and queue again” in Errors and costs', 'this action stays switched off',
       'only the exact approved version and only while publishing is switched on', 'devShark has no active publishing schedule yet',
-      'Implementation reviewed on 21 October 2026',
+      'Implementation reviewed on 22 October 2026',
       'Up to four events chosen by the paid Jev classification', 'no event is selected and no brief or post is made',
       'Publishing is never skipped: while it is switched off, it runs only as a dry run with no Meta write',
       'Collection has run every night since 21 October 2026; live publishing stays switched off until the pilot day',
@@ -71,6 +75,9 @@ describe('owner workflow guide', () => {
     expect(container.textContent).not.toMatch(lang === 'cs' ? /Jev vyhodnocuje relevanci/ : /Jev evaluates relevance/);
     // Publishing is never a skipped step: switched off, it is a dry run.
     expect(container.textContent).not.toMatch(lang === 'cs' ? /vypnutý krok se přeskočí|publikování mají vlastní vypínač/ : /step that is switched off is skipped|publishing each have their own switch/);
+    // Claude Design is devShark's layout only; DNESKAi renders through the studio bundled into OwnDashboard.
+    expect(workflows[lang].marketingFlows[2]!.steps[2]).toMatch(/^devShark: .*Claude Design[^;]*; DNESKAi: .*Editorial/);
+    expect(container.textContent).not.toMatch(lang === 'cs' ? /nula ze čtyř témat/ : /zero of four topics/);
     // Marketing points DNESKAi review to its project tab.
     for (const text of [workflows[lang].areas.marketing.owner, workflows[lang].nextDescription]) expect(text).toContain(lang === 'cs' ? '„Dnes ke schválení“' : '“For review today”');
     // The DNESKAi review lives in its project workspace; only devShark still reviews in Marketing.
