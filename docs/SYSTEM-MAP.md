@@ -168,7 +168,8 @@ expiry) and recovery actions. "Publikované" lists receipts; "Chyby a náklady" 
 `ffmpeg-static`: 3.5 s per slide, 0.5 s crossfades, a gentle zoom, AAC audio or a silent track. The route
 `/api/marketing/dneskai/render-reel` (`maxDuration` 300 on Vercel Pro with Fluid Compute) stores it once per
 revision hash and audio in the private `marketing-reels` bucket and returns a signed URL. Behind
-`MARKETING_DNESKAI_REELS_ENABLED`. Details: `docs/dneskai-source-media.md`.
+`MARKETING_DNESKAI_REELS_ENABLED`. The owner's audio library lives in Zdroje → Hudba; the Lab post card picks a
+track, which joins the revision and its hash. Details: `docs/dneskai-source-media.md`.
 
 ### Publishing
 
@@ -198,6 +199,7 @@ Costs show in "Chyby a náklady".
 | `marketing_campaigns`, `marketing_calendar_entries` | Daily campaign and slot entries a job is bound to |
 | `marketing_jobs` | Generation jobs: request, fence, lease, result (deck, revision, usage) |
 | `marketing_revisions` | Every version of a post: content, `content_hash`, render report, status, `approved_hash` |
+| `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
 | `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only) |
 | `marketing_ticks`, `marketing_scheduler_state` | Scheduler record and leases |

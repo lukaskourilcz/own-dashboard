@@ -83,7 +83,8 @@ export function dneskaiReelKey(input: { revisionHash: string; audioId: string | 
   return sha256(canonicalJson({ schemaVersion: "dneskai-reel-key/1", policy: DNESKAI_REEL_POLICY, reel: DNESKAI_REEL, revisionHash: input.revisionHash, audio: input.audioId ?? "silent" }));
 }
 
-async function defaultFfmpegPath(): Promise<string> {
+/** The ffmpeg-static executable, or `reel-ffmpeg-unavailable`. */
+export async function dneskaiFfmpegPath(): Promise<string> {
   try {
     const found = (await import("ffmpeg-static")).default as unknown;
     if (typeof found === "string" && found) return found;
@@ -184,7 +185,7 @@ export async function renderDneskaiReel(input: DneskaiReelInput): Promise<Dneska
   const count = input.slides.length;
   if (count < 1 || count > DNESKAI_REEL.maxSlides || input.slides.some((slide) => !Buffer.isBuffer(slide) || !slide.length)
     || (input.audio && (!input.audio.bytes.length || !/^[A-Za-z0-9-]{1,64}$/.test(input.audio.id)))) throw new DneskaiReelRenderError("reel-input-invalid");
-  const binary = input.ffmpegPath ?? await defaultFfmpegPath();
+  const binary = input.ffmpegPath ?? await dneskaiFfmpegPath();
   const dir = await mkdtemp(path.join(tmpdir(), "dneskai-reel-"));
   try {
     const frames = await Promise.all(input.slides.map((slide) => composeDneskaiReelFrame(slide)));

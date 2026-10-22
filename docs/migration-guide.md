@@ -813,3 +813,17 @@ No table, function or existing policy changes.
 Replayed only in PGlite (`tests/lib/dneskai-reel-bucket.test.ts`). Apply it with the CLI like the other prepared
 files (`npx supabase db push --linked`); the route answers 404 until `MARKETING_DNESKAI_REELS_ENABLED=true`, and with
 the switch on but the bucket missing it answers 503 `reel-bucket-required`.
+
+## DNESKAi audio library, 23 October 2026 (unapplied)
+
+`20261023130100_dneskai_audio_tracks.sql` (#164) adds `marketing_audio_tracks` and the private `marketing-audio`
+bucket (20 MiB per file; MP3, M4A/AAC, WAV and Ogg). A row holds the title, artist, source
+(`meta-sound-collection`, `pixabay`, `original` or `instagram-library`), the licence note, the page the file came
+from, the stored file or the Instagram audio id, the duration, up to five mood tags and the enabled switch. Checks:
+a stored track has a file under `marketing-audio/<owner>/<id>.<ext>` and a source URL; an Instagram library track has
+an id and no file. The owner reads only their own rows and files; every write goes through
+`/api/marketing/dneskai/audio` with the service role. The browser uploads the file to a signed upload URL for one
+exact path, then the route checks the stored file before it records the row.
+
+Replayed only in PGlite (`tests/lib/dneskai-audio-database.test.ts`). Apply it with the other prepared files
+(`npx supabase db push --linked`). The route and Zdroje → Hudba stay hidden until `MARKETING_DNESKAI_REELS_ENABLED=true`.
