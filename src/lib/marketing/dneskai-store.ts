@@ -8,7 +8,7 @@ import type { JevHistory } from './dneskai-providers';
 import { previewPilotRetired } from './preview-pilot';
 import { DNESKAI_FINISH_EVENT_LIMIT,dneskaiEventCategory,dneskaiFinishEvents,groupDneskaiEvents } from './dneskai-events';
 import { dneskaiOtherEventViews,dneskaiSelectionEligible,readDneskaiBriefs } from './dneskai-brief-read';
-import { dneskaiRecoveryCapabilities } from './dneskai-evidence-rollout';
+import { dneskaiRecoveryCapabilities,dneskaiSelectionV2Enabled } from './dneskai-evidence-rollout';
 export type DneskaiDatabase=ReturnType<typeof createAdminClient>;
 export type DneskaiRun={collection_pilot_owner?:string|null;jev_stage_count?:number|null;id:string;user_id:string;project_id:string;date:string;target_date:string;status:'running'|'complete'|'partial'|'held'|'failed';fence:string|null;tick_count:number;selected_count:number;cost_usd:number|null;error_code:string|null};
 export type DneskaiStage={run_id:string;source_id:string;kind:'feed'|'instagram'|'jev';status:'queued'|'running'|'polling'|'ok'|'partial'|'error'|'held';since_at:string;registration:unknown;reserved_usd:number;cost_usd:number|null;error_code:string|null};
@@ -23,6 +23,8 @@ export interface DneskaiCollectionStore{
  finish(owner:string,runId:string,fence:string,status:DneskaiRun['status'],errorCode:string|null):Promise<DneskaiRun>;
  /** Creates `count` Jev stages once per run, after the source stages; returns the planned count. */
  planJev(owner:string,runId:string,fence:string,count:number):Promise<number>;
+ /** Decision 13: returns recent Jev holds to the queue once, before the Jev plan (migration 20261022180100). */
+ requeueHeld?(owner:string,runId:string,fence:string):Promise<number>;
 }
 export async function requireDneskaiProject(db:DneskaiDatabase,owner:string,projectId:string){
  z.uuid().parse(owner);z.uuid().parse(projectId);
@@ -53,6 +55,7 @@ export function createDneskaiCollectionStore(db:DneskaiDatabase):DneskaiCollecti
   // A grouping that did not read every report says so on the run (collection-event-window-partial) unless the run already carries a code.
   async finish(owner,runId,fence,status,errorCode){const grouping=status==='running'?null:await finishEvents(db,owner,runId);return rpc('marketing_dneskai_finish',{p_owner:owner,p_run:runId,p_fence:fence,p_status:status,p_error:errorCode??(grouping?.partial?'collection-event-window-partial':null),...(grouping?{p_events:grouping.events}:{})}) as Promise<DneskaiRun>;},
   planJev:(owner,runId,fence,count)=>rpc('marketing_dneskai_plan_jev',{p_owner:owner,p_run:runId,p_fence:fence,p_count:count}) as Promise<number>,
+  requeueHeld:(owner,runId,fence)=>rpc('marketing_dneskai_requeue_held',{p_owner:owner,p_run:runId,p_fence:fence}) as Promise<number>,
  };
 }
 /**
@@ -97,6 +100,6 @@ export async function readDneskaiCollectionState(db:DneskaiDatabase,owner:string
  const byId=new Map((states.data??[]).map(row=>[row.source_id,row]));
  // Events (#115): the selected ones with their briefs, then other recent ones. An unreadable brief store hides only this part.
  const briefed=await readDneskaiBriefs(db,owner,project).catch(()=>null);
- const events=briefed?[...briefed.events,...dneskaiOtherEventViews(candidates.slice(0,200),new Set(briefed.events.flatMap(event=>event.members.map(member=>member.candidateId))))].slice(0,60):undefined;
+ const events=briefed?[...briefed.events,...dneskaiOtherEventViews(candidates.slice(0,200),new Set(briefed.events.flatMap(event=>event.members.map(member=>member.candidateId))),undefined,undefined,dneskaiSelectionV2Enabled(env))].slice(0,60):undefined;
  return DneskaiCollectionStateSchema.parse({schemaVersion:'dneskai-collection/1',timeZone:'Europe/Prague',localTime:'22:00',dailyTarget:4,approvalRequired:true,enabled:env.MARKETING_DNESKAI_COLLECTION_ENABLED==='true',blockers:[...dneskaiCollectionBlockers(env),...(candidates.length>200?['collection-candidate-window-partial']:[]),...((states.data??[]).some(row=>row.status==='partial'&&row.error_code!=='collection-source-item-cap')?['collection-cursor-recovery-required']:[])],sources:DNESKAI_SOURCES,sourceStates:DNESKAI_SOURCES.map(source=>{const state=byId.get(source.id);return{sourceId:source.id,lastSuccessAt:state?.last_success_at??null,lastAttemptAt:state?.last_attempt_at??null,status:state?.status??'never',errorCode:state?.error_code??null,itemCount:state?.item_count??0,costUsd:state?.cost_usd??null};}),candidates:candidates.slice(0,200),runs:(runs.data??[]).map(run=>({id:run.id,date:run.date,targetDate:run.target_date,status:run.status,selectedCount:run.selected_count,costUsd:run.cost_usd,errorCode:run.error_code})),...(events?{events}:{}),recovery:dneskaiRecoveryCapabilities(env)});
 }

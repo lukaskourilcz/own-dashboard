@@ -88,11 +88,19 @@ událostech s podobnými titulky 1,47 s.
   volitelné `category` v `p_events`. Nasazená funkce klíč ignoruje a bere kategorii vedoucí
   zprávy; teprve neaplikovaná migrace `20261022160000_dneskai_event_majority_category.sql`
   ji použije, a jen když ji nese aspoň jedna způsobilá zpráva události. Vedoucí zpráva,
-  okno 48 h / 30 dní každé zprávy a pravidlo jedné události za kategorii se nemění;
-  `tool` a `ai-project` zůstávají dvě kategorie (to je volba vlastníka). Každá zpráva
-  dál ukazuje svůj vlastní štítek od Jeva.
-- Nejvýše čtyři události: nejdřív jedna za každou kategorii, pak podle relevance.
-  Méně je v pořádku, nic se nedoplňuje.
+  okno 48 h / 30 dní každé zprávy se nemění; `tool` a `ai-project` zůstávají jako štítek
+  dvě kategorie. Každá zpráva dál ukazuje svůj vlastní štítek od Jeva.
+- Nejvýše čtyři události. Nasazená funkce bere nejdřív jednu za každou kategorii, pak
+  podle relevance. Méně je v pořádku, nic se nedoplňuje.
+- Výběr podle relevance (rozhodnutí vlastníka 11 a 12 z 22. 10. 2026, připraveno v
+  neaplikované migraci `20261022180000_dneskai_relevance_first_selection.sql`): události
+  se seřadí podle relevance vedoucí zprávy, pak podle novějšího data. Zprávy (`ai-news`,
+  `tech-news`) soutěží jen relevancí; `tool`, `ai-project` a `marketing` sdílejí jedno
+  místo denně, takže projde jen nejrelevantnější z nich. Slabý projekt s AI tak už
+  nevytlačí silnou zprávu. Hranice 0,85, okna 48 h / 30 dní, seskupení, pokrytí a limit
+  čtyř událostí zůstávají. Pořadí 1 je nejrelevantnější událost a dostane první volný čas.
+  Pravidlo platí od aplikace migrace; vysvětlení v záložce Zdroje („Proč ne“) ho popíše
+  až se zapnutým `DNESKAI_SELECTION_V2_ENABLED`.
 - Událost byla pokrytá dřív, když v ní je dříve vybraná zpráva, nebo Jev duplicita,
   jejíž odkaz vede mimo událost a končí u vybrané zprávy nebo u revize DNESKAi.
   `marketing_private.dneskai_covering_id` sleduje `duplicateOf` přes duplicity, nejvýše
@@ -105,6 +113,31 @@ událostech s podobnými titulky 1,47 s.
 - Za každou vybranou událost vznikne řádek `marketing_dneskai_briefs` ve stavu
   `pending`. `selected_count` běhu počítá události, ne zprávy.
 - Zadržení starých a nedatovaných zpráv zůstává beze změny.
+
+### Druhá šance pro zadržené zprávy (rozhodnutí 13)
+
+Zpráva, kterou Jev zadržel ke kontrole (`collection-review-*`), dostane jednu automatickou
+druhou kontrolu. Připravuje to neaplikovaná migrace `20261022180100_dneskai_held_requeue.sql`
+a sběr ji volá jen se zapnutým `DNESKAI_SELECTION_V2_ENABLED`. Večerní běh před naplánováním
+dávek Jeva (`marketing_dneskai_requeue_held`) vrátí do fronty nejvýše 16 takových zpráv,
+nejrelevantnější první, když:
+
+- je Jev zadržel před méně než 48 hodinami,
+- mají text a vyšly za posledních 30 dní, ne v budoucnosti (stejná pravidla jako ruční
+  „Znovu zkontrolovat“, `marketing_dneskai_release_candidate`),
+- ještě nikdy nebyly vrácené (`requeued_at`, sloupec se nikdy nemaže).
+
+Zpráva dostane stav `new` a smaže se jí klasifikace; titulek, text, URL a data zůstanou.
+Jev ji posoudí v dávkách téže noci pod stávajícími limity (nejvýše 16 dávek, $0,25 denně);
+navíc jsou to nejvýše dvě dávky po $0,003. Když ji Jev zadrží znovu, zůstane zadržená.
+Opakovaný tick téhož běhu už nic nevrátí. Vrácení není schválení.
+
+### Podobné titulky (rozhodnutí 14)
+
+Bez změny: `Meta releases Llama 4 8B` a `Meta releases Llama 4 70B` jsou jedna událost,
+protože sdílejí číslo vydání `4` a titulky se shodují z 5 ze 7 tokenů. Bez sdíleného čísla
+(`Llama 8B` a `Llama 70B`) je velikost jiné číslo a zprávy zůstanou dvě. Obojí hlídá
+`tests/lib/marketing-dneskai-events.test.ts`.
 
 ## Zadání
 

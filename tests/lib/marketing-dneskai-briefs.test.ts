@@ -473,6 +473,24 @@ describe('other events for the Sources tab', () => {
     expect(eligible).toContain(`(candidate->>'relevance')::numeric>=${DNESKAI_SELECTION_RELEVANCE_FLOOR}`);
     expect(eligible).toContain(`candidate->>'category' in('ai-news','tech-news') then interval '${DNESKAI_SELECTION_NEWS_WINDOW_HOURS} hours' else interval '${DNESKAI_SELECTION_WINDOW_DAYS} days'`);
     expect(eligible).toContain("candidate->>'category'<>'other'");
+    // 20261022180000 (decisions 11 and 12) keeps the same eligibility and changes only the ranking that the
+    // relevance-first explanation names: at most one event outside ai-news and tech-news, then relevance.
+    const prior = readFileSync(new URL('../../supabase/migrations/20261022160000_dneskai_event_majority_category.sql', import.meta.url), 'utf8');
+    const next = readFileSync(new URL('../../supabase/migrations/20261022180000_dneskai_relevance_first_selection.sql', import.meta.url), 'utf8');
+    const eligibleOf = (body: string) => body.slice(body.indexOf('), eligible as ('), body.indexOf('), heads as ('));
+    expect(eligibleOf(next)).toBe(eligibleOf(prior));
+    expect(next).toContain("from ranked where news or slot_rank=1 order by relevance desc,published_at desc,event_id limit 4");
+  });
+
+  it('names the relevance-first rule for an eligible, unpicked event when selection v2 is on', async () => {
+    const { dneskaiOtherEventViews, dneskaiEventSelection } = await import('@/lib/marketing/dneskai-brief-read');
+    const now = new Date('2026-10-21T20:00:00Z');
+    const item = syntheticCandidate('openai-blog', 'v2', 'Synthetic agent launch', { status: 'new', reason: null, duplicateOf: null, publishedAt: '2026-10-21T10:00:00Z', fetchedAt: '2026-10-21T10:00:00Z', category: 'tool', relevance: 0.9 });
+    expect(dneskaiEventSelection([item], 'new', now)).toMatchObject({ code: 'selection-not-picked' });
+    expect(dneskaiEventSelection([item], 'new', now, true)).toMatchObject({ code: 'selection-not-picked-relevance', category: 'tool' });
+    expect(dneskaiOtherEventViews([item], new Set(), 30, now, true)[0]!.selection).toMatchObject({ code: 'selection-not-picked-relevance' });
+    // A rule the report fails keeps its own code under either policy.
+    expect(dneskaiEventSelection([{ ...item, relevance: 0.5 }], 'new', now, true)).toMatchObject({ code: 'selection-below-floor' });
   });
 });
 
