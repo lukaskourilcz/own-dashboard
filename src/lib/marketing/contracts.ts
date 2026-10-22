@@ -115,9 +115,15 @@ export const ContentRevisionSchema = z.strictObject({
    * Assets are its rendered JPEGs in slide order; the deck keeps the source images' hashes and crops.
    */
   deck: DneskaiDeckSchema.optional(),
+  /**
+   * The audio library track a Reel of this post plays (#164, `marketing_audio_tracks.id`). Part of the approval hash, so
+   * the owner approves the exact track. Absent: a Reel takes the next track in rotation; a carousel ignores it.
+   */
+  audio: z.strictObject({ trackId: z.uuid() }).optional(),
 }).superRefine((revision, context) => {
   if (revision.schemaVersion === MARKETING_CONTENT_VERSION) {
     if (revision.deck) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no deck", path: ["deck"] });
+    if (revision.audio) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no audio", path: ["audio"] });
     return;
   }
   if (revision.brand !== "dneskai") context.addIssue({ code: "custom", message: "a deck revision belongs to DNESKAi", path: ["brand"] });
