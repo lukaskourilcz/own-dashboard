@@ -31,6 +31,10 @@ export const DNESKAI_CAPTION_LIMIT = 2200;
 export const DNESKAI_SOURCES_SLIDE = { lines: 4, thumbnails: 4, lineChars: 190 } as const;
 /** The DNESKAi hashtag base set from the studio's `copy.ts` (`HASHTAG_BASE["caught-up"]`). */
 export const DNESKAI_HASHTAG_BASE = ["ai", "umelainteligence", "technologie", "aitech", "dneskai"] as const;
+/** Instagram's hashtag limit per post since 18 December 2025. */
+export const DNESKAI_HASHTAG_LIMIT = 5;
+/** The brand tag every DNESKAi caption carries first. */
+export const DNESKAI_BRAND_HASHTAG = "dneskai";
 
 /** The templates' text ceilings live in the browser-safe layout tables (`dneskai-slide-layout.ts`). */
 export { DNESKAI_TEXT_LIMITS, dneskaiTemplateId };
@@ -42,13 +46,15 @@ const whitespace = (value: string) => value.replace(/\s+/gu, " ").trim();
 const distinct = <T>(values: T[]) => [...new Set(values)];
 const CREDIT_LABEL = /^(?:Foto|Obrázek):\s+/u;
 const CREDIT_PLATFORM = /\s+\((?:Bluesky|GitHub|Instagram)\)$/u;
+/** „Getty Images přes TechCrunch“: the agency took the photograph, the publisher ran it. */
+const CREDIT_VIA = /\s+přes\s+.+$/u;
 /** Code points, which the studio's grapheme count never exceeds: a credit that fits by this count fits the layer. */
 const characters = (value: string) => [...value.normalize("NFC")].length;
 /**
  * The credit line of one slide, fitted by code to the credit layer of its template, which the model cannot
  * change: the full credits („Obrázek: @simonwillison.net (Bluesky)“), then without the „Foto:“/„Obrázek:“
- * label, then also without the platform in brackets. Each form names the same author; nothing is cut
- * mid-name. `null` when even the shortest form does not fit `limit` characters. The credit layers are set in
+ * label, then also without the platform in brackets, then an agency credit („Getty Images přes TechCrunch“)
+ * without the publisher that ran it. Each form names the picture's author; nothing is cut mid-name. `null` when even the shortest form does not fit `limit` characters. The credit layers are set in
  * the monospace face at one size, and the studio checks that their character limit fits one line, so the
  * count is the whole test. The caption and the sources slide keep the full credits.
  */
@@ -57,7 +63,8 @@ export function fitDneskaiCredit(credits: readonly string[], limit: number): str
   if (!full.length) return "";
   const unlabelled = full.map((credit) => credit.replace(CREDIT_LABEL, ""));
   const bare = unlabelled.map((credit) => credit.replace(CREDIT_PLATFORM, ""));
-  for (const form of [full, unlabelled, bare]) {
+  const agency = bare.map((credit) => credit.replace(CREDIT_VIA, ""));
+  for (const form of [full, unlabelled, bare, agency]) {
     const line = distinct(form).join(" · ");
     if (characters(line) <= limit) return line;
   }
@@ -88,7 +95,7 @@ export const DneskaiCopySlideSchema = z.strictObject({
 export const DneskaiCopySchema = z.strictObject({
   title: z.string().min(1).max(160),
   caption: z.string().min(1).max(1500),
-  hashtags: z.array(z.string().min(1).max(40)).max(10),
+  hashtags: z.array(z.string().min(1).max(40)).max(DNESKAI_HASHTAG_LIMIT),
   format: z.enum(["carousel", "single-image"]),
   slides: z.array(DneskaiCopySlideSchema).min(1).max(DNESKAI_MAX_CONTENT_SLIDES),
 });
@@ -109,6 +116,7 @@ const SYSTEM_RULES = [
   "Facts: use only what the evidence titles and excerpts state. Add no background knowledge, names, dates, prices or numbers of your own; every number you write must appear in the evidence. Keep each claim as strong as its source: an announcement stays an announcement, a plan stays a plan, a report stays a report, and say who claims it. Say what is unconfirmed when the evidence leaves it open.",
   "Evidence with captionOnly true is the text an author posted under an Instagram post or Reel. It is not a transcript: never write that the person said, explained or showed something in the video; write what they posted, wrote or announced.",
   "Register: natural Czech editorial prose, calm, direct and skeptical. Name the actor, the change and what remains uncertain. No hype, no clickbait, no exclamation marks, no rhetorical questions, no emoji, no markdown, no URLs, no hashtags in the title, caption or slides, no greetings and no call to follow or comment. Use Czech quotation marks „ “ and plain punctuation; no symbols such as ✓, →, • or ™, which the typefaces cannot draw. Never nest quotations and never use the low single quote ‚ or ‘ as a quotation mark; rephrase instead.",
+  "Cover hook: the headline of the first slide (of the single slide in a single-image post) states the most concrete and surprising true fact of the story as a plain declarative sentence: a number, a date, a named actor or a precise change, exactly as strong as the evidence states it. The next slide or the caption backs it up from the evidence. Never a question, an exclamation, a teaser that withholds the subject, a superlative, \"first\" or \"breaking\" unless the evidence says so, or anything the evidence does not carry. Every other slide stays calm and plain.",
   "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. fullBleedCapable, insetCapable and singlePhotoCapable say which slides a picture and its credit fit. Use each picture at most once. Omit crop: the editor sets the focal point.",
   "Formats: a carousel normally has 4 to 7 slides you write; code appends a final sources slide, so never write one. A single-image post is exactly one slide of type single. Use only the formats the rules allow.",
   "Slide types, with character targets (the renderer refuses text that does not fit, and code adds the picture credit):",
@@ -119,9 +127,9 @@ const SYSTEM_RULES = [
   `- single: the only slide of a single-image post. variant photo: image-1 with singlePhotoCapable true, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].headline)}, optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].body)}, optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].kicker)}. variant type: no picture, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].headline)}, optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].body)}, optional kicker up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].kicker)}.`,
   "Follow rules.firstSlide for the first carousel slide and rules.singleVariant for a single slide. Show pictures on at least rules.minimumPictureSlides carousel slides. Images use slots image-1, then image-2.",
   "alt: one or two Czech sentences for a reader who cannot see the slide: what kind of slide it is, its message, and whose picture it carries, named from its credit, without describing the picture. Never repeat the headline as the alt text.",
-  "caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what is still open. Code appends the sources, picture credits and hashtags. hashtags: up to 8 topic tags, Latin letters and digits only, lowercase, without #.",
+  `caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what is still open. Its first sentence, at most 125 characters, states the cover's fact in fuller form under the same rules as the cover hook. Code appends the sources, picture credits and hashtags. hashtags: up to ${DNESKAI_HASHTAG_LIMIT - 1} topic tags, the most specific first (product, company, field), Latin letters and digits only, lowercase, without #; code adds #${DNESKAI_BRAND_HASHTAG} and keeps the post at ${DNESKAI_HASHTAG_LIMIT} hashtags.`,
   "title: a short internal working title for the editor.",
-  `Local response limits remain mandatory: title 1-160 characters; caption 1-1500; headline 1-200; body 1-700; kicker 1-80; alt 1-200; at most 10 hashtags; 1-${DNESKAI_MAX_CONTENT_SLIDES} slides; at most 2 images per slide.`,
+  `Local response limits remain mandatory: title 1-160 characters; caption 1-1500; headline 1-200; body 1-700; kicker 1-80; alt 1-200; at most ${DNESKAI_HASHTAG_LIMIT} hashtags; 1-${DNESKAI_MAX_CONTENT_SLIDES} slides; at most 2 images per slide.`,
 ].join("\n");
 
 /** The exact system prompt of every brief call, the Humanizer's Czech embedded review included. */
@@ -273,9 +281,46 @@ const UNSAFE_TEXT = /https?:\/\/|www\.|<[^>]+>|[\u0000-\u0008\u000b-\u001f]|[\p{
 // 20 is not 2026, 2 is not 2.5, and a plain date component is not a percentage.
 const NUMBER = /(?<![\p{L}\p{N}])\d+(?:[ \u00a0\u202f]\d{3})*(?:[.,]\d+)?(?:[ \u00a0\u202f]?%)?(?!\p{N}|[.,]\d)/gu;
 const numericToken = (value: string) => value.replace(/[ \u00a0\u202f]/g, "").replace(",", ".");
-function supportedNumber(number: string, corpus: string) {
-  const wanted=numericToken(number);
-  return (corpus.match(NUMBER)??[]).some(token=>numericToken(token)===wanted);
+
+/** Each word as written and with a capital first letter, for a case-sensitive pattern. */
+const capitalized = (words: string) => words.split("|").flatMap((word) => [word, word[0]!.toLocaleUpperCase("cs") + word.slice(1)]).join("|");
+const CS_MONTHS = capitalized("leden|ledna|lednu|únor|února|únoru|březen|března|březnu|duben|dubna|dubnu|květen|května|květnu|červenec|července|červenci|červen|června|červnu|srpen|srpna|srpnu|září|říjen|října|říjnu|listopad|listopadu|prosinec|prosince|prosinci");
+const EN_MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec";
+const SPACE = "[ \\u00a0\\u202f]";
+const DAY = "(?:0?[1-9]|[12]\\d|3[01])", MONTH = "(?:0?[1-9]|1[0-2])", YEAR = "(?:19|20)\\d{2}", ORDINAL = "(?:st|nd|rd|th)?";
+/**
+ * Calendar dates as Czech and English sources write them: „22. 10. 2026“, „22.10.2026“, „22. října 2026“,
+ * „v říjnu 2026“, „v roce 2026“, „October 22, 2026“, „22 Oct 2026“, „2026-10-22“ and „10/22/2026“. A numeric
+ * date needs a real day and month and either spaces or a year, so a version such as „5.5.“ or „1.2.3“ is not one.
+ */
+const DATE_FORMS = [
+  `${YEAR}-[01]\\d-[0-3]\\d(?:T[\\d:.]+(?:Z|[+-]\\d{2}:?\\d{2})?)?`,
+  `${DAY}\\.(?:${SPACE}${MONTH}\\.(?:${SPACE}${YEAR})?|${MONTH}\\.${YEAR})`,
+  `${DAY}\\.${SPACE}?(?:${CS_MONTHS})(?:${SPACE}${YEAR})?`,
+  `(?:${CS_MONTHS})${SPACE}${YEAR}`,
+  `(?:${capitalized("v roce|roku|rok").replaceAll(" ", SPACE)})${SPACE}${YEAR}`,
+  `(?:${EN_MONTHS})\\.?${SPACE}${DAY}${ORDINAL}(?:,?${SPACE}${YEAR})?`,
+  `${DAY}${ORDINAL}${SPACE}(?:of${SPACE})?(?:${EN_MONTHS})\\.?(?:,?${SPACE}${YEAR})?`,
+  `(?:${EN_MONTHS})\\.?,?${SPACE}${YEAR}`,
+  `${DAY}/${DAY}/${YEAR}`,
+];
+const DATE = new RegExp(`(?<![\\p{L}\\p{N}.])(?:${DATE_FORMS.map((form) => `(?:${form})`).join("|")})(?![\\p{L}\\p{N}]|[.,]\\d)`, "gu");
+/** The numbers of a text, split into those inside a date and the rest. */
+function numbersOf(text: string): { dated: string[]; plain: string[] } {
+  const dated = (text.match(DATE) ?? []).flatMap((date) => date.match(NUMBER) ?? []);
+  return { dated, plain: text.replace(DATE, " ").match(NUMBER) ?? [] };
+}
+/**
+ * The numbers of `text` the corpus does not support. A number that appears in the evidence only inside a date
+ * supports the same number only where the text also writes it as a date: „22. 10. 2026“ supports „22. října“
+ * and „v roce 2026“, never „22 %“ or „2026 firem“.
+ */
+export function dneskaiUnsupportedNumbers(text: string, corpus: string): string[] {
+  const evidence = numbersOf(corpus);
+  const anywhere = new Set([...evidence.dated, ...evidence.plain].map(numericToken));
+  const facts = new Set(evidence.plain.map(numericToken));
+  const written = numbersOf(text);
+  return distinct([...written.dated.filter((number) => !anywhere.has(numericToken(number))), ...written.plain.filter((number) => !facts.has(numericToken(number)))]);
 }
 
 const sameText = (left: string, right: string) => whitespace(left).toLocaleLowerCase("cs") === whitespace(right).toLocaleLowerCase("cs");
@@ -345,7 +390,7 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
   ];
   for (const entry of prose) {
     if (UNSAFE_TEXT.test(entry.value)) issues.push(issue("unsafe-text", entry.slide, entry.field, "Remove URLs, markup, control characters and emoji."));
-    const unsupported = [...new Set(entry.value.match(NUMBER) ?? [])].filter((number) => !supportedNumber(number, offer.corpus));
+    const unsupported = dneskaiUnsupportedNumbers(entry.value, offer.corpus);
     if (unsupported.length) issues.push(issue("unsupported-number", entry.slide, entry.field, `${unsupported.length === 1 ? "A number does" : `${unsupported.length} numbers do`} not appear in the evidence; remove ${unsupported.length === 1 ? "it" : "them"} or use only numbers the evidence states.`));
   }
   if (/(^|\s)#[\p{L}\p{N}]/u.test(copy.caption)) issues.push(issue("caption-hashtag", null, "caption", "Put hashtags only in the hashtags field."));
@@ -369,10 +414,14 @@ export async function loadDneskaiGlyphFilter(): Promise<DneskaiGlyphFilter> {
 export function normalizeDneskaiHashtag(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, "");
 }
-/** The studio's `completeHashtags("caught-up", …)`: the proposed tags, then the base set, at most ten. */
+/**
+ * The caption's hashtags, at most five (Instagram's limit since 18 December 2025): #dneskai first, then the
+ * model's topic tags in its order (most specific first), then the base set only while room is left. This
+ * departs from the studio's `completeHashtags("caught-up", …)`, which still fills up to ten.
+ */
 export function dneskaiHashtags(proposed: readonly string[]): string[] {
   const cleaned = proposed.map(normalizeDneskaiHashtag).filter((tag) => tag.length >= 2 && tag.length <= 30);
-  return [...new Set([...cleaned, ...DNESKAI_HASHTAG_BASE])].slice(0, 10);
+  return distinct([DNESKAI_BRAND_HASHTAG, ...cleaned, ...DNESKAI_HASHTAG_BASE]).slice(0, DNESKAI_HASHTAG_LIMIT);
 }
 
 /** Every distinct picture the written slides use, in first-use order, from the offer. */
