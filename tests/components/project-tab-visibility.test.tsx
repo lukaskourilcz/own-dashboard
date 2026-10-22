@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { act } from 'react';
+import { Storage } from 'happy-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,8 +21,8 @@ vi.mock('@/components/projects/project-links-section', () => ({ ProjectLinksSect
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 let container: HTMLDivElement; let root: Root; let client: QueryClient;
-beforeEach(() => { localStorage.clear(); container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); });
-afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); document.documentElement.lang = ''; });
+beforeEach(() => { vi.stubGlobal('localStorage', new Storage()); localStorage.clear(); container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); });
+afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); document.documentElement.lang = ''; vi.unstubAllGlobals(); });
 
 const project = {
   id: 'project-dneskai', user_id: 'owner', name: 'DNESKAi', slug: 'dneskai', repo_full_name: null, url: null, notes: '', color: null,

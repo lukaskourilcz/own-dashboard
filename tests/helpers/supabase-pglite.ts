@@ -19,6 +19,8 @@ import { readdirSync, readFileSync } from 'node:fs';
  * sets (`setDatabaseTime`) before every statement it wants to run "at" a JavaScript instant.
  */
 export const SUPABASE_STANDINS = `
+-- Match Supabase/PostgREST UTC serialization regardless of the host process time zone.
+set timezone = 'UTC';
 create role anon; create role authenticated; create role service_role bypassrls;
 create schema auth; create schema storage; create schema extensions; create schema vault; create schema net; create schema cron;
 create extension pgcrypto with schema extensions;

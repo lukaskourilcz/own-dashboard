@@ -17,7 +17,8 @@ export const BRIEF_MIGRATIONS = ['20261012225640_marketing_control_surface.sql',
 
 export async function createBriefsDatabase(users: readonly string[], projects: ReadonlyArray<{ id: string; owner: string }>, instant: string) {
   const db = new PGlite();
-  await db.exec(`create schema auth; create schema storage; create role anon; create role authenticated; create role service_role bypassrls;
+  await db.exec(`set timezone = 'UTC';
+    create schema auth; create schema storage; create role anon; create role authenticated; create role service_role bypassrls;
     alter default privileges in schema public grant all on tables to anon,authenticated,service_role;
     alter default privileges in schema public grant execute on functions to anon,authenticated,service_role;
     grant usage on schema auth,storage,public to anon,authenticated,service_role;
