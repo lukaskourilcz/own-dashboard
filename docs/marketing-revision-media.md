@@ -9,11 +9,13 @@ An approval belongs to exact bytes, crops and text. A signed delivery URL is a t
 - `marketing-content/1`: devShark and legacy DNESKAi article revisions. No `deck`.
 - `marketing-content/2`: DNESKAi Instagram revisions from a brief. `deck` (`dneskai-slides/1`, `src/lib/marketing/dneskai-slides.ts`) is required. A `carousel` carries `deck.format: carousel` with 2–10 slides; a `post` carries `deck.format: single-image` with one `single` slide. Brand must be `dneskai` and the account Instagram.
 
+`engagement` (#157) is optional on both versions and allowed only on an Instagram account: `{ keyword, replyMessage, publicReply? }`. The keyword is one word of Latin letters and digits, 1 to 24 characters, stored upper case; `replyMessage` is the DM text, 1 to 1,000 characters; `publicReply` is the line posted under the matched comment, 1 to 200 characters, and absent means no public reply. A brief job may carry it in `generation.engagement`; the drafted revision copies it unchanged and the model never sees it. Regenerate with a note copies it from the version it replaces.
+
 The deck names each source image by `assetSha256` (the stored bytes in `marketing_media_assets`, #114) with its crop (`focal {x, y}`, optional `zoom`, `fit`). `assets[]` are the rendered 1080×1350 JPEGs, one per slide in slide order. Readiness holds a deck revision without assets (`deck-render-required`), with a different asset count (`deck-assets-mismatch`) or with non-JPEG assets.
 
 ## Approval hash
 
-`revisionContentHash(revision)` in `src/lib/marketing/hashes.ts` is sha256 over the canonical JSON of the revision with `assets[].url` removed and nothing else. It covers every `ContentRevisionSchema` field: schema version, brand, title, caption, format, sources, knowledge IDs, each asset's sha256, MIME type, dimensions and alt text, account, collaborators, scheduled time and time zone, template version, prompt version, model, trace ID and the deck (slide text, image hashes, crops, order). Anything later stored on the revision, such as a kit ID or fit flags, changes the hash and needs a new approval unless it is kept outside the revision. It is what `content_hash` stores and what `approved_hash` binds. `revisionHash` is the same function under its old name.
+`revisionContentHash(revision)` in `src/lib/marketing/hashes.ts` is sha256 over the canonical JSON of the revision with `assets[].url` removed and nothing else. It covers every `ContentRevisionSchema` field: schema version, brand, title, caption, format, sources, knowledge IDs, each asset's sha256, MIME type, dimensions and alt text, account, collaborators, engagement (keyword and both messages), scheduled time and time zone, template version, prompt version, model, trace ID and the deck (slide text, image hashes, crops, order). Anything later stored on the revision, such as a kit ID or fit flags, changes the hash and needs a new approval unless it is kept outside the revision. It is what `content_hash` stores and what `approved_hash` binds. `revisionHash` is the same function under its old name.
 
 SQL never computes the hash. `marketing_save_revision`, `marketing_approve_revision`, `marketing_claim_due` and the publication fences compare stored values only.
 
@@ -29,7 +31,7 @@ The SQL function (service role only) refuses unless the revision without URLs is
 
 ## Owner edits
 
-`POST /api/marketing/revisions` with `action: "edit"` takes `caption`, `scheduledAt`, an optional `accountId` (a verified `marketing_accounts` row of the same brand and platform) and, for a deck revision, an optional `deck` edit:
+`POST /api/marketing/revisions` with `action: "edit"` takes `caption`, `scheduledAt`, an optional `accountId` (a verified `marketing_accounts` row of the same brand and platform) and, for a deck revision, an optional `deck` edit and an optional `engagement`:
 
 ```json
 { "slides": [
@@ -39,6 +41,8 @@ The SQL function (service role only) refuses unless the revision without URLs is
 ```
 
 `from` is the slide's index in the edited revision; entry order is the new order and an omitted slide is removed. A slide can change `headline`, `body` and `kicker` (`null` removes), `credit`, `alt` and the images of its existing slots (swap the asset, change the crop). Type, variant and sources stay as generated. The server refuses duplicate or unknown slides, changed slots, a carousel outside 2–10 slides, an invalid deck, and any image whose sha256 is not in the brief's media pool (`ListBriefAssetHashes`, `src/lib/marketing/dneskai-ports.ts`).
+
+`engagement` (#157) is accepted only with `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` (otherwise 409 `engagement-disabled`) and only on a deck revision (`engagement-unsupported`). An object replaces the saved keyword and messages; the route trims them and upper-cases the keyword before the check, so `skill` is saved as `SKILL`. `null` removes them. Leaving the field out keeps what the revision carries. An engagement-only edit does not change the deck, so it reuses the rendered JPEGs like a caption-only edit, and its new hash needs a new approval.
 
 The flow (`src/lib/marketing/dneskai-revision-edit.ts`):
 
