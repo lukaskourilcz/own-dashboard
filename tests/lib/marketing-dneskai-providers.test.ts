@@ -1,3 +1,4 @@
+import { instagramMediaUrls } from '@/lib/marketing/dneskai-providers';
 import { describe,it,expect,vi } from 'vitest';
 import { candidate,collectDneskaiFeed,jevRequest,classifyDneskaiCandidates,startDneskaiInstagram,pollDneskaiInstagram } from '@/lib/marketing/dneskai-providers';
 import { DNESKAI_SOURCES,dueDneskaiSources,isDneskaiProject,dneskaiCheapIdentity } from '@/lib/marketing/dneskai-registry';
@@ -198,4 +199,16 @@ describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
   expect(second.criteria.c0).toBe('`items[0]`');expect(second.criteria).not.toHaveProperty('c1');
  });
 
+});
+
+describe('Instagram carousel URL admission',()=>{
+ it('keeps the tenth child when the display and images repeat its first rendition',()=>{
+  const children=Array.from({length:10},(_,i)=>({displayUrl:`https://scontent.cdninstagram.com/v/slide-${i}.jpg?rendition=original`}));
+  const urls=instagramMediaUrls({childPosts:children,displayUrl:'https://other.cdninstagram.com/v/slide-0.jpg?rendition=display',images:children.map(child=>child.displayUrl.replace('original','small'))});
+  expect(urls).toEqual(children.map(child=>child.displayUrl));
+ });
+ it('falls back to images and a display-only picture without folding unrelated hosts by filename',()=>{
+  expect(instagramMediaUrls({images:['https://cdn.example.test/a.jpg'],displayUrl:'https://other.example.test/a.jpg'})).toHaveLength(2);
+  expect(instagramMediaUrls({displayUrl:'https://scontent.cdninstagram.com/only.jpg'})).toEqual(['https://scontent.cdninstagram.com/only.jpg']);
+ });
 });

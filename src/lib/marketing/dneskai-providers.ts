@@ -84,6 +84,16 @@ export function candidate(sourceId:string,externalId:string,title:string,text:st
  * Apify's instagram-scraper `type` (Image | Video | Sidecar) and `productType` (clips for a Reel, igtv).
  * Unknown values leave the type unset; the media read model then treats the caption as caption only.
  */
+/** Keep real carousel children before fallback renditions; the ten-reference ceiling is unchanged. */
+export function instagramMediaUrls(item: { displayUrl?: string; images?: readonly string[]; childPosts?: readonly { displayUrl?: string }[] }): string[] {
+ const children=(item.childPosts??[]).flatMap(child=>child.displayUrl?[child.displayUrl]:[]);
+ const seen=new Set<string>();
+ return [...children,...(item.images??[]),...(item.displayUrl?[item.displayUrl]:[])].filter(raw=>{
+  const url=new URL(raw),file=url.pathname.split('/').pop();
+  const key=/(?:^|\.)(?:cdninstagram\.com|fbcdn\.net)$/.test(url.hostname)&&file?`instagram-file:${file}`:url.href;
+  if(seen.has(key))return false;seen.add(key);return true;
+ }).slice(0,DNESKAI_MEDIA_URL_LIMIT);
+}
 export function instagramItemDetail(item:{ownerUsername:string;type?:string|null;productType?:string|null;childPosts?:readonly {type?:string|null}[]}):DneskaiInstagramItem{
  const product=(item.productType??'').toLowerCase(),type=(item.type??'').toLowerCase();
  const mediaType=type==='video'||product==='clips'||product==='igtv'?'video' as const:type==='sidecar'?'carousel' as const:type==='image'?'image' as const:undefined;
@@ -118,7 +128,7 @@ export async function pollDneskaiInstagram(source:DneskaiSource,registration:Dne
  const username=new URL(source.url).pathname.split('/').filter(Boolean)[0];
  // A collaborator is authoritative only on the exact requested profile result. Tags and mentions are not authorship.
  if(data.some(item=>(item.ownerUsername!==username&&!(item.inputUrl===source.url&&item.coauthorProducers?.some(author=>author.username===username)))||item.error||!['www.instagram.com','instagram.com'].includes(new URL(item.url).hostname)))throw new DneskaiProviderError('collection-apify-item-binding-invalid');
- const items=data.filter(item=>Date.parse(item.timestamp)>Date.parse(since)&&Date.parse(item.timestamp)<=options.now.getTime()).map(item=>candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,options.now.toISOString(),[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])],false,instagramItemDetail(item)));
+ const items=data.filter(item=>Date.parse(item.timestamp)>Date.parse(since)&&Date.parse(item.timestamp)<=options.now.getTime()).map(item=>candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,options.now.toISOString(),instagramMediaUrls(item),false,instagramItemDetail(item)));
  // A full page with posts in the window stopped only at the cap: the cursor moves to the newest post.
  return{running:false as const,run,items,complete:data.length<source.maxItems,errorCode:data.length>=source.maxItems?items.length?'collection-source-item-cap':'collection-source-partial':null};
 }

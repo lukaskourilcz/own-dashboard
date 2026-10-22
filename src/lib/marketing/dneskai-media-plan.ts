@@ -8,8 +8,7 @@ import { DNESKAI_MEDIA_ORIGIN_KINDS, type DneskaiMediaOriginKind } from './dnesk
  * Which source pictures the DNESKAi media collector (#114) fetches for a selected candidate, in what
  * order, and how each is credited. Pure: no network, storage or clock.
  *
- * Instagram: every `mediaUrls` entry in collection order (display image first, then the carousel
- * children), at most ten. Feed: the article page's og:image / twitter:image, the feed's own image and
+ * Instagram: carousel children first, then unique fallback image/display renditions, at most ten. Feed: the article page's og:image / twitter:image, the feed's own image and
  * the figures in the article body, in publisher order, at most eight, from the publisher's own domain
  * or a CDN it is known to serve its images from. Avatars, logos, icons, SVG, GIF and pictures declared
  * under 300 px are never fetched.
