@@ -1,6 +1,6 @@
 import { describe,it,expect,vi } from 'vitest';
-import { tickDneskaiCollection,pendingDneskaiCandidates,DNESKAI_FEED_TIMEOUT_MS,type DneskaiCollectionDependencies } from '@/lib/marketing/dneskai-collection';
-import { candidate,jevRequest } from '@/lib/marketing/dneskai-providers';
+import { tickDneskaiCollection,pendingDneskaiCandidates,dneskaiApifyStartRefused,DNESKAI_FEED_TIMEOUT_MS,type DneskaiCollectionDependencies } from '@/lib/marketing/dneskai-collection';
+import { candidate,jevRequest,DneskaiProviderError } from '@/lib/marketing/dneskai-providers';
 import { dneskaiCollectionBlockers,type DneskaiCollectionStore,type DneskaiRun,type DneskaiStage } from '@/lib/marketing/dneskai-store';
 vi.mock('server-only',()=>({}));
 const owner='11111111-1111-4111-8111-111111111111',project='22222222-2222-4222-8222-222222222222',runId='33333333-3333-4333-8333-333333333333';
@@ -31,6 +31,25 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
  it('classifies all17 in bounded batches and includes earlier accepted batch in semantic history',async()=>{const f=fixture(Array.from({length:16},(_,i)=>stage(`__jev:${String(i).padStart(2,'0')}`))),jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,jev});expect(result.continue).toBe(false);expect(jev).toHaveBeenCalledTimes(3);expect(jev.mock.calls.map(call=>call[0].length)).toEqual([8,8,1]);expect(jev.mock.calls[1][1].map(item=>item.id)).toContain(f.items[0].id);expect(jev.mock.calls[2][1]).toHaveLength(16);expect(f.claimStage.mock.calls.filter(call=>call[4])).toHaveLength(3);});
  it('keeps data beyond128 explicitly pending/partial rather than truncating it as complete',async()=>{const f=fixture(Array.from({length:16},(_,i)=>stage(`__jev:${String(i).padStart(2,'0')}`)),Array.from({length:135},(_,i)=>item(i))),jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));let result;for(let i=0;i<4;i++)result=await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,jev});expect(jev).toHaveBeenCalledTimes(16);expect(result).toMatchObject({status:'partial',continue:false});expect(f.run.error_code).toBe('collection-classification-pending');expect(f.items.filter(item=>item.category===null)).toHaveLength(7);});
  it('stops new paid work after ambiguous actor start and retains unknown reservation',async()=>{const f=fixture([stage('instagram:mosseri','instagram'),stage('instagram:meta.ai','instagram'),stage('__jev:00')]),startInstagram=vi.fn(async()=>{throw new Error('raw private error');}),jev=vi.fn();await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,startInstagram,jev});expect(startInstagram).toHaveBeenCalledTimes(1);expect(f.stages[0]).toMatchObject({status:'held',reserved_usd:0.04,cost_usd:null});await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,startInstagram,jev});expect(startInstagram).toHaveBeenCalledTimes(1);expect(jev).not.toHaveBeenCalled();expect(f.stages[1].error_code).toBe('collection-cost-unresolved');});
+ it('settles a start Apify definitely refused at zero, so the next profile and Jev still run',async()=>{
+  const f=fixture([stage('instagram:mosseri','instagram'),stage('instagram:meta.ai','instagram'),stage('__jev:00')]);
+  const startInstagram=vi.fn(async()=>{throw new DneskaiProviderError('provider-http-400-invalid-input');});
+  const jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.001}));
+  await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,startInstagram,jev});
+  expect(startInstagram).toHaveBeenCalledTimes(2);
+  expect(f.stages.slice(0,2).map(row=>[row.status,row.reserved_usd,row.cost_usd,row.error_code])).toEqual([['held',0.04,0,'provider-http-400-invalid-input'],['held',0.04,0,'provider-http-400-invalid-input']]);
+  expect(jev).toHaveBeenCalled();
+  expect(f.stages.some(row=>row.error_code==='collection-cost-unresolved')).toBe(false);
+ });
+ it.each(['provider-http-429-rate-limit-exceeded','provider-http-400','provider-http-500-internal-server-error','provider-response-ambiguous','collection-apify-binding-invalid'])('keeps the cost unknown after an ambiguous start (%s)',async code=>{
+  const f=fixture([stage('instagram:mosseri','instagram'),stage('instagram:meta.ai','instagram'),stage('__jev:00')]),startInstagram=vi.fn(async()=>{throw new DneskaiProviderError(code);}),jev=vi.fn();
+  await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,startInstagram,jev});
+  expect(startInstagram).toHaveBeenCalledTimes(1);expect(f.stages[0]).toMatchObject({status:'held',reserved_usd:0.04,cost_usd:null,error_code:code});expect(jev).not.toHaveBeenCalled();
+ });
+ it('treats only pre-request refusals and Apify-typed 4xx answers as definite',()=>{
+  for(const code of ['collection-apify-unconfigured','collection-instagram-input-invalid','provider-http-400-invalid-input','provider-http-404-actor-not-found','provider-http-402-not-enough-usage-to-run-paid-actor'])expect(dneskaiApifyStartRefused(code)).toBe(true);
+  for(const code of ['provider-http-408','provider-http-409-invalid-request','provider-http-429-rate-limit-exceeded','provider-http-403','provider-http-failed','collection-paid-outcome-ambiguous'])expect(dneskaiApifyStartRefused(code)).toBe(false);
+ });
  it('rechecks midnight after durable paid reservation before provider call',async()=>{const f=fixture([stage('instagram:mosseri','instagram')]),startInstagram=vi.fn(),clock=vi.fn(()=>now);const original=f.store.claimStage;f.store.claimStage=async(...args)=>{const result=await original(...args);clock.mockReturnValue(new Date('2026-10-13T22:00:01Z'));return result;};await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:clock,startInstagram});expect(startInstagram).not.toHaveBeenCalled();expect(f.stages[0].error_code).toBe('collection-day-or-consent-changed');});
  it('gives Jev the longest history its byte limits accept instead of holding a heavy day',async()=>{
   // Synthetic Czech text at the field limits: diacritics take two UTF-8 bytes, so the state limit trips below 148 records.

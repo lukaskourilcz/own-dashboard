@@ -52,7 +52,11 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
    if(!paid){const result=await(dependencies.feed??collectDneskaiFeed)(source,claimed.since_at,{env,signal:AbortSignal.any([signal,AbortSignal.timeout(DNESKAI_FEED_TIMEOUT_MS)]),now:clock(),...(pilot?{collectionPilot:{owner,project:input.projectId}}:{})});await store.saveStage(owner,run.id,fence,source.id,{status:result.complete?'ok':'partial',items:result.items,complete:result.complete,costUsd:0,errorCode:result.errorCode});}
    else if(stage.status==='queued'){if(!apifyEnabled(env)||!paidAllowed(owner,env,clock(),input.projectId,Boolean(pilot),input.manual?input.runId:undefined)||run.date!==pragueMarketingDate(clock())||signal.aborted){await store.saveStage(owner,run.id,fence,source.id,{status:'held',items:[],complete:false,costUsd:0,errorCode:apifyEnabled(env)?'collection-day-or-consent-changed':'collection-apify-disabled'});continue;}const registration=await(dependencies.startInstagram??startDneskaiInstagram)(source,claimed.since_at,{env,signal});await store.saveStage(owner,run.id,fence,source.id,{status:'polling',items:[],complete:false,costUsd:null,errorCode:null,registration});}
    else{const result=await(dependencies.pollInstagram??pollDneskaiInstagram)(source,claimed.registration as DneskaiApifyRegistration,claimed.since_at,{env,signal,now:clock()});await store.saveStage(owner,run.id,fence,source.id,{status:result.running?'polling':result.complete?'ok':result.errorCode==='collection-source-item-cap'?'partial':'held',items:result.running?[]:result.items,complete:!result.running&&result.complete,costUsd:result.running?null:result.run.usageTotalUsd??null,errorCode:result.running?null:result.errorCode??null,registration:result.run});}
-  }catch(error){const code=error instanceof DneskaiProviderError?error.code:paid?'collection-paid-outcome-ambiguous':'collection-source-failed';await store.saveStage(owner,run.id,fence,source.id,{status:paid?'held':'error',items:[],complete:false,costUsd:paid?null:0,errorCode:code});if(paid)break;}
+  }catch(error){const code=error instanceof DneskaiProviderError?error.code:paid?'collection-paid-outcome-ambiguous':'collection-source-failed';
+   // A start that Apify definitely refused created no run and cost nothing: it settles at 0 so later paid work is not frozen.
+   // Every other paid failure (network, timeout, 5xx, 429, a poll of a run that exists) keeps the unknown cost.
+   const refused=paid&&stage.status==='queued'&&dneskaiApifyStartRefused(code);
+   await store.saveStage(owner,run.id,fence,source.id,{status:paid?'held':'error',items:[],complete:false,costUsd:paid&&!refused?null:0,errorCode:code});if(paid&&!refused)break;}
  }
  let current=await store.stages(owner,run.id);
  if(current.some(stage=>stage.kind!=='jev'&&['queued','running','polling'].includes(stage.status))){const updated=await store.finish(owner,run.id,fence,'running',null);return{runId:updated.id,status:'running',continue:true,retryAfterSeconds:15};}
@@ -97,6 +101,13 @@ export function dneskaiJevHistory(items:readonly import('./dneskai-contracts').D
  while(high-low>1){const middle=(low+high)>>1;if(fits(middle))low=middle;else high=middle;}
  return history.slice(0,low);
 }
+/**
+ * Codes that prove an Instagram start created no Apify run: configuration or input refused before any request, or
+ * a 4xx answer that carries Apify's own machine error type (the run was rejected, never queued). 408, 409 and 429
+ * are not definite, and neither is a 4xx without Apify's machine type; those keep the cost unknown.
+ */
+const APIFY_REFUSED_BEFORE_REQUEST=new Set(['collection-apify-unconfigured','collection-instagram-input-invalid']);
+export function dneskaiApifyStartRefused(code:string){return APIFY_REFUSED_BEFORE_REQUEST.has(code)||/^provider-http-(400|401|402|403|404|413|422)-[a-z0-9-]+$/.test(code);}
 /** Jev classifies eight candidates per paid call; at most 16 calls per run (the former fixed stage count). */
 export const DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16;
 export function dneskaiJevStageCount(pending:number){return pending>0?Math.min(DNESKAI_JEV_MAX_STAGES,Math.ceil(pending/DNESKAI_JEV_BATCH)):0;}

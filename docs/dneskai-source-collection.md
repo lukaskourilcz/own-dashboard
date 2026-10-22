@@ -73,7 +73,11 @@ dávek, nejvýše 16; běh bez nových kandidátů žádnou dávku nevytvoří.
 ## Náklady a přístupy
 
 Návrhový denní strop sběru je 0,25 USD. Rezervace vzniká před placeným požadavkem;
-neznámý výsledek se nepočítá jako nulová spotřeba. Původní pilotní rozpočet a jeho
+neznámý výsledek se nepočítá jako nulová spotřeba. Výjimkou je start Apify, který
+Apify jednoznačně odmítl: chybná konfigurace nebo vstup ještě před požadavkem, nebo
+odpověď 4xx s vlastním strojovým kódem Apify (kromě 408, 409 a 429). Běh tehdy
+nevznikl, fáze se uzavře s náklady 0 a kódem chyby a další placená práce pokračuje.
+Síťová chyba, timeout, 5xx, 429 i 4xx bez kódu Apify nechávají náklady neznámé. Původní pilotní rozpočet a jeho
 vyčerpané tři generovací pokusy nedávají právo spouštět nové placené sběry.
 
 Apify má vlastní přepínač `MARKETING_DNESKAI_APIFY_ENABLED`. Instagramovou fázi
