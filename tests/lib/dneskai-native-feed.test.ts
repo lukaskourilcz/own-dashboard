@@ -36,6 +36,12 @@ describe('native DNESKAi free-feed collection', () => {
   expect(result.sources[0].errorCode).toContain(code);
   expect(result.sources[0].items.every(row => row.externalId !== 'injection')).toBe(true);
  });
+ it('keeps release notes that only mention tool calls or system prompts', async () => {
+  const body = xml(item('vllm', '2026-10-14T08:00:00Z', 'vLLM v0.32.0 adds parallel tool call parsing') + item('ollama', '2026-10-14T07:00:00Z', 'Ollama v0.40.7 keeps the system prompt with tool calls'));
+  const result = await collectNativeDneskaiFeed(source, since, { now, signal, fetcher: feed(body), resolve });
+  expect(result.sources[0]).toMatchObject({ status: 'ok', errorCode: null });
+  expect(result.sources[0].items.map(row => row.externalId)).toEqual(['vllm', 'ollama']);
+ });
  it('holds capped results and rejects oversized bodies, redirects and private DNS before fetch', async () => {
   const result = await collectNativeDneskaiFeed({ ...source, maxItems: 2 }, since, { now, signal, fetcher: feed(xml(item('a') + item('b') + item('c'))), resolve });
   expect(result.sources[0]).toMatchObject({ status: 'partial', errorCode: 'item-cap' });
