@@ -7,9 +7,12 @@ import type { NavTab } from "@/lib/nav-tabs";
 export function AppToolbar({
   tab,
   projectName,
+  onBack,
 }: {
   tab: NavTab;
   projectName?: string;
+  /** Inside a project workspace the section title returns to the list; it is the only back control (#171). */
+  onBack?: () => void;
 }) {
   const t = useDict();
   const title = t.nav.sections[tab];
@@ -29,7 +32,18 @@ export function AppToolbar({
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-baseline gap-2">
           <h1 className="shrink-0 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-            {title}
+            {projectName && onBack ? (
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded hover:underline focus-ring"
+                data-testid="toolbar-back"
+              >
+                {title}
+              </button>
+            ) : (
+              title
+            )}
           </h1>
           {projectName && (
             <>

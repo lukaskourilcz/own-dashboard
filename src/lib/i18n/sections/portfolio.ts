@@ -1,5 +1,4 @@
 type PortfolioStrings = {
-  coreProject: string;
   subsection: string;
   subsectionOf: (parent: string) => string;
   competitionTitle: string;
@@ -112,7 +111,6 @@ type PortfolioStrings = {
 
 export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
   en: {
-    coreProject: "Core project",
     subsection: "Subsection",
     subsectionOf: (parent) => `Part of ${parent}`,
     competitionTitle: "Competition",
@@ -225,7 +223,6 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     },
   },
   cs: {
-    coreProject: "Hlavní projekt",
     subsection: "Podsekce",
     subsectionOf: (parent) => `Součást ${parent}`,
     competitionTitle: "Konkurence",
