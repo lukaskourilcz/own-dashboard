@@ -57,6 +57,27 @@ tick. Each precheck still runs once per tick: the order is chosen from its answe
 
 A paused category is a recorded `skipped` with its code and costs $0. Nothing is called for it.
 
+### Reels (#165)
+
+With `MARKETING_DNESKAI_REELS_ENABLED=true`, a DNESKAi post whose format is `reel` (a carousel deck the owner
+switched to Reel in the Lab, or an education post generated as one) publishes as the rendered slideshow:
+
+- **Render ahead.** A queued Reel within 45 minutes of its slot counts as publishing work. The step asks this
+  deployment's `/api/marketing/dneskai/render-reel` (signed as the scheduler, `async: true`) for its MP4 and does not
+  wait: the route answers 202 and renders in `after()` within its own 300 s. A post without its own track gets the
+  next enabled library track after the previous Reel's. Each stored Reel is recorded as a `dneskai-reel-rendered`
+  row in `marketing_events`, which is how the publisher and the rotation find it.
+- **No claim without the video.** At its slot a Reel whose MP4 is not stored yet stays queued with
+  `reel-render-pending` and the render is asked for again; the next tick inside the 15-minute window publishes it.
+  Switched off, a Reel stays queued as `reels-disabled`. Neither claims, so neither turns into a failure.
+- **Publishing.** The publisher downloads the MP4 and checks its size and sha256, then creates one container:
+  `media_type=REELS`, `video_url`, `cover_url` = slide 1, `share_to_feed=true`, the caption. A video container is
+  polled up to six times three seconds apart; still `IN_PROGRESS`, it stays `container-pending` for the next tick,
+  inside the same claim and window. Then one `media_publish`, as for every post.
+- **Quota.** The publisher refuses at 50 posts in 24 hours (`content_publishing_limit`), even if the account reports
+  a higher total.
+- **Reconciliation** matches a Reel listed as `VIDEO` or `REELS`.
+
 Collection, media, briefs and generation wait for that tick (`deferred: yield-to-publication`) while
 publishing is live and either a queued DNESKAi publication is due now or within five minutes, or a
 claimed carousel is waiting for its container (`container-pending`) or for a fresh container attempt
@@ -275,7 +296,7 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `DNESKAI_TOPICS_ENABLED` | off | Topics (náměty): `GET` and `POST /api/marketing/dneskai/topics` and their read model; off answers 404 | Off until migration `20261023100000` |
 | `DNESKAI_SCOUTING_ENABLED` | off | Collection also reads the education sources (never sent to Jev); the tick's `scouting` step turns them and library links rated 4 or 5 into proposed topics, hourly 22:00–08:00 | Needs `DNESKAI_TOPICS_ENABLED` and migration `20261023100000` |
 | `DNESKAI_FACT_OR_HYPE_ENABLED` | off | Scouting step: transcripts of FACT or HYPE reels (Apify, $0.05 each, own ceiling `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, default $0.50) and one Claude call each for tool and verdict | Needs scouting and migration `20261023100100` |
-| `MARKETING_DNESKAI_REELS_ENABLED` | off | Reels: the render route `/api/marketing/dneskai/render-reel` (#163); with #165 also publishing a revision as a Reel | Off until migration `20261023130000` |
+| `MARKETING_DNESKAI_REELS_ENABLED` | off | Reels: the render route (#163), Zdroje → Hudba and the Lab's music picker (#164), the Formát switch, Reel generation for education posts and Reel publishing (#165) | Off until migrations `20261023130000` and `20261023130100` |
 | `DNESKAI_ENGAGEMENT_EDITOR_ENABLED` | off | Lab: the comment keyword, DM message and public reply editor; `engagement` in `action: "edit"` | Off, needs no migration |
 | `DNESKAI_RICH_EVIDENCE_ENABLED` | off | Fetched article text and picture descriptions in media collection and brief/2 | Off until the evidence migrations |
 | `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` | off | The research runner (`dneskai-apify-research.ts`); it also needs `MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN` to equal the plan id | Off, waits for an approved plan |

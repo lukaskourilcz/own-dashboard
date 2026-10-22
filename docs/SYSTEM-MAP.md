@@ -170,7 +170,9 @@ expiry) and recovery actions. "Publikované" lists receipts; "Chyby a náklady" 
 `/api/marketing/dneskai/render-reel` (`maxDuration` 300 on Vercel Pro with Fluid Compute) stores it once per
 revision hash and audio in the private `marketing-reels` bucket and returns a signed URL. Behind
 `MARKETING_DNESKAI_REELS_ENABLED`. The owner's audio library lives in Zdroje → Hudba; the Lab post card picks a
-track, which joins the revision and its hash. Details: `docs/dneskai-source-media.md`.
+track, which joins the revision and its hash. A carousel post can switch to "Reel" in the Lab (education posts start as
+one); the publishing step renders its MP4 up to 45 minutes before the slot and publishes it as `media_type=REELS`
+with slide 1 as the cover. Details: `docs/dneskai-source-media.md`, `docs/marketing-scheduling.md#reels-165`.
 
 ### Publishing
 

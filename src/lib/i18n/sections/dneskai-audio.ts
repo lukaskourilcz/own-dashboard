@@ -54,6 +54,11 @@ const en = {
     copied: 'Copied',
     copyFailed: 'Copying failed; select the name and copy it by hand.',
   },
+  format: {
+    label: 'Format',
+    carousel: 'Carousel', reel: 'Reel',
+    help: 'A Reel is these slides as a video with music, 3.5 seconds each. Changing the format makes a new version that needs its own approval.',
+  },
 };
 
 const cs: typeof en = {
@@ -108,6 +113,11 @@ const cs: typeof en = {
     copy: (title: string) => `Zkopírovat název skladby ${title}`,
     copied: 'Zkopírováno',
     copyFailed: 'Kopírování selhalo; označte název a zkopírujte ho ručně.',
+  },
+  format: {
+    label: 'Formát',
+    carousel: 'Karusel', reel: 'Reel',
+    help: 'Reel jsou tyto slidy jako video s hudbou, každý 3,5 sekundy. Změna formátu vytvoří novou verzi, kterou je třeba znovu schválit.',
   },
 };
 
