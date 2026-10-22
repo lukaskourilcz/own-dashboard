@@ -22,6 +22,8 @@ import { CountedField } from '../post-editor';
 import { DneskaiCodeText } from '../code-text';
 import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
+import { DneskaiEngagementEditor } from './engagement-editor';
+import { DneskaiTopicsList } from './topics-list';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
@@ -73,6 +75,7 @@ export function DneskaiLabTab(props: Props) {
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {props.preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{props.guest ? t.publicTour : dneskaiWorkspace[props.lang].preview}</p>}
+    <DneskaiTopicsList projectId={props.projectId} lang={props.lang} preview={props.preview} />
     <div className="grid min-w-0 gap-4 xl:grid-cols-[13rem_minmax(0,1fr)]">
       <nav onKeyDown={(event) => {
         if (event.altKey || event.ctrlKey || event.metaKey || !active) return;
@@ -145,9 +148,9 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== account?.id ? draft.accountId : null); } catch { return null; } })();
   // Only a post that can still be edited has unsaved changes; once approved, the draft is no longer an edit.
   const editable = ['review', 'returned'].includes(post.status);
-  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId || request.audioTrackId !== undefined || request.format !== undefined);
+  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId || request.audioTrackId !== undefined || request.engagement !== undefined || request.format !== undefined);
   // Publish now replaces the time itself, so a draft that differs only in its time may use it.
-  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId && request.audioTrackId === undefined && request.format === undefined;
+  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId && request.audioTrackId === undefined && request.engagement === undefined && request.format === undefined;
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
   // REN-01: a draft slide whose pixels differ from the saved JPEG (other words, pictures, crop, type, place or deck
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
@@ -225,7 +228,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return;
     if (action === 'save') {
       const problems = draftProblems(post, draft, fit.status === 'ready' ? fit.result : null);
-      if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? 'deck-edit-invalid'); return; }
+      if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? problems.find((problem) => problem.field.startsWith('engagement.'))?.code ?? 'deck-edit-invalid'); return; }
     }
     setBusyAction(action); setError(null); setMessage('');
     try {
@@ -292,6 +295,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview} lang={props.lang} />}
+          {props.read.capabilities?.engagement && <DneskaiEngagementEditor id={`${id}-engagement`} draft={draft} onDraft={setDraft} handle={post.account.handle} lang={props.lang} />}
           <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>

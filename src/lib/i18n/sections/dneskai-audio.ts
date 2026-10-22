@@ -46,6 +46,14 @@ const en = {
     help: 'Used when this post publishes as a Reel. A carousel has no music.',
     none: 'The music library is empty. Upload tracks in Sources → Music.',
   },
+  hint: {
+    badge: 'Add music in the app',
+    help: 'Instagram cannot add music to a published carousel through the API. In the Instagram app open the post, tap ⋯ → Edit, then add music; it takes about 30 seconds. Use a track from the music library.',
+    track: 'Suggested track',
+    copy: (title: string) => `Copy the track name ${title}`,
+    copied: 'Copied',
+    copyFailed: 'Copying failed; select the name and copy it by hand.',
+  },
   format: {
     label: 'Format',
     carousel: 'Carousel', reel: 'Reel',
@@ -97,6 +105,14 @@ const cs: typeof en = {
     rotation: (next: string | null) => next ? `Automaticky: další v pořadí (${next})` : 'Automaticky: další v pořadí',
     help: 'Použije se, když příspěvek vyjde jako Reel. Karusel hudbu nemá.',
     none: 'Hudební knihovna je prázdná. Nahrajte skladby v Zdroje → Hudba.',
+  },
+  hint: {
+    badge: 'Přidat hudbu v aplikaci',
+    help: 'Instagram přes API hudbu ke zveřejněnému karuselu přidat neumí. V aplikaci Instagram otevřete příspěvek, klepněte na ⋯ → Upravit a přidejte hudbu; trvá to asi 30 sekund. Použijte skladbu z hudební knihovny.',
+    track: 'Navržená skladba',
+    copy: (title: string) => `Zkopírovat název skladby ${title}`,
+    copied: 'Zkopírováno',
+    copyFailed: 'Kopírování selhalo; označte název a zkopírujte ho ručně.',
   },
   format: {
     label: 'Formát',
