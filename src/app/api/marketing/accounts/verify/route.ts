@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
   try {
     const verified = await verifyInstagramAccount(createAdminClient(), user.id, input.brand, { signal: request.signal });
-    const body: MarketingAccountVerifyResponse = { accountType: verified.accountType, tokenStored: verified.tokenStored,
+    const body: MarketingAccountVerifyResponse = { accountType: verified.accountType, tokenStored: verified.tokenStored, ...(verified.page ? { page: verified.page } : {}),
       account: { id: verified.accountId, brand: verified.brand, platform: verified.platform, handle: verified.handle, verifiedAt: verified.verifiedAt, enabled: verified.enabled, token: verified.token } };
     return Response.json(body, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {

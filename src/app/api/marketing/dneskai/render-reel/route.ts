@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -7,14 +8,18 @@ import { authenticateAutomation } from '@/lib/marketing/automation-auth';
 import { boundedRequestText } from '@/lib/marketing/http';
 import { DneskaiReelRenderError } from '@/lib/marketing/dneskai-reel-render';
 import { DneskaiAudioError, loadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio';
-import { DneskaiReelError, createDneskaiReelStorage, dneskaiReelForRevision, dneskaiReelsEnabled, loadDneskaiSlideBytes } from '@/lib/marketing/dneskai-reel';
+import { DneskaiReelError, createDneskaiReelStorage, recordDneskaiReel, dneskaiReelForRevision, dneskaiReelsEnabled, loadDneskaiSlideBytes } from '@/lib/marketing/dneskai-reel';
 
 export const runtime = 'nodejs';
 /** A 7-slide render took about 25 s on an M2 (docs/dneskai-source-media.md); 300 s leaves room on one Vercel vCPU. */
 export const maxDuration = 300;
 
 const headers = { 'Cache-Control': 'no-store' };
-const RequestSchema = z.strictObject({ revisionId: z.uuid() });
+/**
+ * `audioTrackId` and `async` are for the scheduler only (#165): the rotation's track for a post without its own
+ * choice, and an answer of 202 before the render, which then runs in `after()` within this function's 300 s.
+ */
+const RequestSchema = z.strictObject({ revisionId: z.uuid(), audioTrackId: z.uuid().nullable().optional(), async: z.literal(true).optional() });
 /** Leaves 20 s of the function's 300 s for storage and the answer. */
 const RENDER_BUDGET_MS = 280_000;
 
@@ -38,7 +43,9 @@ export async function POST(request: Request) {
   catch { return Response.json({ error: 'invalid-request' }, { status: 400, headers }); }
 
   let owner: string | null = null;
+  let automation = false;
   if (request.headers.get('x-marketing-signature')) {
+    automation = true;
     const principal = authenticateAutomation(request, raw);
     if (!principal) return Response.json({ error: 'unauthorized' }, { status: 401, headers });
     if (principal.role !== 'scheduler' && principal.role !== 'publisher') return Response.json({ error: 'forbidden' }, { status: 403, headers });
@@ -54,20 +61,38 @@ export async function POST(request: Request) {
 
   let input: z.infer<typeof RequestSchema>;
   try { input = RequestSchema.parse(JSON.parse(raw)); } catch { return Response.json({ error: 'invalid-request' }, { status: 400, headers }); }
+  if (!automation && (input.audioTrackId !== undefined || input.async)) return Response.json({ error: 'invalid-request' }, { status: 400, headers });
+  const ownerId = owner;
   const db = createAdminClient();
-  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(RENDER_BUDGET_MS)]);
-  try {
-    const reel = await dneskaiReelForRevision(db, owner, input.revisionId, {
-      loadSlide: (renderKey) => loadDneskaiSlideBytes(db, owner, renderKey),
-      // The track the owner approved (#164). A revision without one renders silent here; the publisher (#165) picks
-      // the next track in rotation before it asks for the Reel.
-      loadAudio: async (revision) => revision.audio ? loadDneskaiAudioTrack(db, owner, revision.audio.trackId) : null,
-      storage: createDneskaiReelStorage(db, owner),
+  const render = async (signal: AbortSignal) => {
+    const reel = await dneskaiReelForRevision(db, ownerId, input.revisionId, {
+      loadSlide: (renderKey) => loadDneskaiSlideBytes(db, ownerId, renderKey),
+      // The track the owner approved (#164); without one, the rotation's track the scheduler names, or silence.
+      loadAudio: async (revision) => {
+        const trackId = revision.audio?.trackId ?? input.audioTrackId ?? null;
+        return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId) : null;
+      },
+      storage: createDneskaiReelStorage(db, ownerId),
       signal,
     });
+    // The publisher finds the Reel of a revision through this record, whichever track it carries (#165).
+    await recordDneskaiReel(db, ownerId, input.revisionId, { reelKey: reel.reelKey, revisionHash: reel.revisionHash, audioId: reel.audioId, sha256: reel.sha256, bytes: reel.bytes });
+    return reel;
+  };
+  const codeOf = (failure: unknown) => failure instanceof DneskaiAudioError ? 'reel-audio-unavailable' : failure instanceof DneskaiReelError || failure instanceof DneskaiReelRenderError ? failure.code : 'reel-storage-failed';
+  if (input.async) {
+    // The caller (the 60 s tick) does not wait; this function keeps its own 300 s for the render.
+    after(async () => {
+      try { await render(AbortSignal.timeout(RENDER_BUDGET_MS)); }
+      catch (failure) { console.warn(JSON.stringify({ event: 'dneskai-reel-render-failed', code: codeOf(failure) })); }
+    });
+    return Response.json({ status: 'rendering' }, { status: 202, headers });
+  }
+  try {
+    const reel = await render(AbortSignal.any([request.signal, AbortSignal.timeout(RENDER_BUDGET_MS)]));
     return Response.json({ reelKey: reel.reelKey, url: reel.url, sha256: reel.sha256, bytes: reel.bytes, durationSeconds: reel.durationSeconds, silent: reel.silent, cached: reel.cached }, { headers });
   } catch (failure) {
-    const code = failure instanceof DneskaiAudioError ? 'reel-audio-unavailable' : failure instanceof DneskaiReelError || failure instanceof DneskaiReelRenderError ? failure.code : 'reel-storage-failed';
+    const code = codeOf(failure);
     return Response.json({ error: code }, { status: STATUS[code] ?? 500, headers });
   }
 }

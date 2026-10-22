@@ -10,7 +10,7 @@ import { DNESKAI_POST_FILTERS, dneskaiPostList, formatDneskaiDayTime, dneskaiPos
 import { DneskaiCodeText, DneskaiDetails } from './code-text';
 import { dneskaiStateText, dneskaiStateTint } from './state-chip';
 import { cn } from '@/lib/utils';
-import { TabHeader } from './review-tab';
+import { TabHeader } from './tab-header';
 import { DneskaiMusicHint } from './music-hint';
 import { DneskaiEngagementReceipt, DneskaiEngagementSummary } from './engagement-receipt';
 

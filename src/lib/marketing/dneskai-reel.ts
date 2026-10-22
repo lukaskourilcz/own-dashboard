@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { DneskaiRenderReportSchema, parseContentRevision } from "./contracts";
 import { DNESKAI_REEL, DNESKAI_REEL_POLICY, dneskaiReelDuration, dneskaiReelKey, renderDneskaiReel, type DneskaiReelAudio } from "./dneskai-reel-render";
+import { signAutomationBody } from "./automation-auth";
 import { MARKETING_ASSET_BUCKET, MARKETING_ASSET_URL_SECONDS, dneskaiSlideObjectKey } from "./worker-runtime";
 
 /**
@@ -104,7 +105,7 @@ export type DneskaiReelDependencies = {
   signal?: AbortSignal;
 };
 
-export type DneskaiReelOutcome = StoredDneskaiReel & { cached: boolean; durationSeconds: number; silent: boolean; revisionHash: string };
+export type DneskaiReelOutcome = StoredDneskaiReel & { cached: boolean; durationSeconds: number; silent: boolean; revisionHash: string; audioId: string | null };
 
 /**
  * The reel of one revision: read it, take its rendered slides in order, reuse the stored MP4 for the same reel key
@@ -127,7 +128,7 @@ export async function dneskaiReelForRevision(db: Database, ownerId: string, revi
   const reelKey = dneskaiReelKey({ revisionHash, audioId: audio?.id ?? null });
   const found = await dependencies.storage.find(reelKey);
   const durationSeconds = dneskaiReelDuration(slideCount);
-  if (found) return { ...found, cached: true, durationSeconds, silent: !audio, revisionHash };
+  if (found) return { ...found, cached: true, durationSeconds, silent: !audio, revisionHash, audioId: audio?.id ?? null };
   let slides: Buffer[];
   try { slides = await Promise.all(report.data.renderKeys.map((key) => dependencies.loadSlide(key))); }
   catch { throw new DneskaiReelError("reel-slides-unavailable"); }
@@ -137,5 +138,71 @@ export async function dneskaiReelForRevision(db: Database, ownerId: string, revi
     bytes: rendered.bytes,
     metadata: { revisionId, revisionHash, audioId: audio?.id ?? "silent", policy: DNESKAI_REEL_POLICY, durationSeconds: String(rendered.durationSeconds) },
   });
-  return { ...stored, cached: false, durationSeconds: rendered.durationSeconds, silent: rendered.silent, revisionHash };
+  return { ...stored, cached: false, durationSeconds: rendered.durationSeconds, silent: rendered.silent, revisionHash, audioId: audio?.id ?? null };
+}
+
+/* ---- the render record (#165) --------------------------------------------------------------------------------- */
+
+/**
+ * Every stored Reel is recorded as a `marketing_events` row (`dneskai-reel-rendered`, delivered at once, so nothing
+ * treats it as a pending notice) on its revision. The publisher finds a revision's Reel through it, whatever track the
+ * rotation picked, and the rotation reads the track of the last Reel from it. No schema change.
+ */
+export const DNESKAI_REEL_EVENT = "dneskai-reel-rendered";
+const ReelRecordSchema = z.object({
+  reelKey: z.string().regex(/^[a-f0-9]{64}$/), revisionHash: z.string().regex(/^[a-f0-9]{64}$/),
+  audioId: z.uuid().nullable(), sha256: z.string().regex(/^[a-f0-9]{64}$/), bytes: z.number().int().positive(),
+});
+export type DneskaiReelRecord = z.infer<typeof ReelRecordSchema>;
+
+export async function recordDneskaiReel(db: Database, ownerId: string, revisionId: string, reel: DneskaiReelRecord): Promise<void> {
+  z.uuid().parse(ownerId);
+  const existing = await db.from("marketing_events").select("id").eq("user_id", ownerId).eq("revision_id", revisionId).eq("kind", DNESKAI_REEL_EVENT)
+    .eq("payload->>reelKey", reel.reelKey).limit(1);
+  if (existing.error) throw new DneskaiReelError("reel-storage-failed");
+  if (existing.data?.length) return;
+  const { error } = await db.from("marketing_events").insert({ user_id: ownerId, revision_id: revisionId, kind: DNESKAI_REEL_EVENT, payload: ReelRecordSchema.parse(reel), delivered_at: new Date().toISOString() });
+  if (error) throw new DneskaiReelError("reel-storage-failed");
+}
+
+/** The newest Reel recorded for this revision and content hash, re-checked and signed from storage; null if none. */
+export async function findDneskaiReelForRevision(db: Database, ownerId: string, revisionId: string, revisionHash: string, storage = createDneskaiReelStorage(db, ownerId)): Promise<(StoredDneskaiReel & { audioId: string | null }) | null> {
+  z.uuid().parse(ownerId);
+  const { data, error } = await db.from("marketing_events").select("payload").eq("user_id", ownerId).eq("revision_id", revisionId).eq("kind", DNESKAI_REEL_EVENT)
+    .order("created_at", { ascending: false }).limit(5);
+  if (error) throw new DneskaiReelError("reel-storage-failed");
+  for (const row of data ?? []) {
+    const record = ReelRecordSchema.safeParse((row as { payload: unknown }).payload);
+    if (!record.success || record.data.revisionHash !== revisionHash) continue;
+    const stored = await storage.find(record.data.reelKey);
+    if (stored && stored.sha256 === record.data.sha256) return { ...stored, audioId: record.data.audioId };
+  }
+  return null;
+}
+
+/** The track of the most recent Reel of another revision, for the rotation; null before the first Reel. */
+export async function lastDneskaiReelAudio(db: Database, ownerId: string, exceptRevisionId: string): Promise<string | null> {
+  const { data, error } = await db.from("marketing_events").select("revision_id,payload").eq("user_id", ownerId).eq("kind", DNESKAI_REEL_EVENT)
+    .neq("revision_id", exceptRevisionId).order("created_at", { ascending: false }).limit(1);
+  if (error) throw new DneskaiReelError("reel-storage-failed");
+  const record = ReelRecordSchema.safeParse((data?.[0] as { payload?: unknown } | undefined)?.payload);
+  return record.success ? record.data.audioId : null;
+}
+
+/**
+ * Asks this deployment's render route for a revision's Reel, signed as the scheduler, and returns once the route has
+ * accepted the job (202): the render itself runs in that function's own 300 s, not in the 60 s tick (#165).
+ */
+export async function requestDneskaiReelRender(input: { origin: string; revisionId: string; audioTrackId: string | null; env?: Record<string, string | undefined>; fetcher?: typeof fetch }): Promise<boolean> {
+  const secret = (input.env ?? process.env).MARKETING_SCHEDULER_SECRET;
+  let origin: URL;
+  try { origin = new URL(input.origin); } catch { return false; }
+  if (!secret || secret.length < 32 || origin.protocol !== "https:" && origin.hostname !== "localhost" && origin.hostname !== "127.0.0.1") return false;
+  const body = JSON.stringify({ revisionId: input.revisionId, audioTrackId: input.audioTrackId, async: true });
+  try {
+    const response = await (input.fetcher ?? fetch)(new URL("/api/marketing/dneskai/render-reel", origin).href, {
+      method: "POST", body, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000), headers: signAutomationBody(body, secret),
+    });
+    return response.status === 202 || response.ok;
+  } catch { return false; }
 }

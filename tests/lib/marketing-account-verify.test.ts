@@ -56,7 +56,9 @@ describe('verifyInstagramAccount', () => {
   });
   it.each([
     ['a different owner', env({ MARKETING_OWNER_ID: '22222222-2222-4222-8222-222222222222' }), 'marketing-owner-required'],
-    ['Facebook Login', env({ MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE: 'facebook' }), 'instagram-login-required'],
+    // #166: Facebook Login is a second mode; it needs its own scopes, and an unknown mode is still refused.
+    ['Facebook Login without its scopes', env({ MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE: 'facebook' }), 'publishing-scopes-unverified'],
+    ['an unknown login mode', env({ MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE: 'basic-display' }), 'instagram-login-required'],
     ['no API version', env({ MARKETING_DNESKAI_INSTAGRAM_API_VERSION: 'latest' }), 'api-version-unverified'],
     ['no token', env({ MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }), 'access-token-missing'],
     ['no token expiry', env({ MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: undefined }), 'access-token-expiry-unverified'],
@@ -172,5 +174,40 @@ describe('owner account routes', () => {
     expect((await GET()).status).toBe(503);
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
     expect((await GET()).status).toBe(401);
+  });
+});
+
+describe('verifyInstagramAccount with Facebook Login (#166)', () => {
+  const fbEnv = (patch: Record<string, string | undefined> = {}) => env({ MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE: 'facebook',
+    MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: 'instagram_basic,instagram_content_publish,pages_read_engagement,pages_show_list', ...patch });
+  const fbStored = { ...stored, token: { ...stored.token, scopes: ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement', 'pages_show_list'], loginMode: 'facebook' } };
+  const page = (username = 'dneskai') => ({ id: '1010', name: 'DNESKAi', instagram_business_account: { id: '17841400000000001', username } });
+
+  it('finds the Page linked to @dneskai through /me/accounts and stores the Instagram id in facebook mode', async () => {
+    const { db, rpc } = admin({ data: fbStored, error: null });
+    const fetcher = fetcherFor(Response.json({ data: [{ id: '2020', name: 'Other page' }, page()] }));
+    const verified = await verifyInstagramAccount(db, owner, 'dneskai', { env: fbEnv(), fetcher, now });
+    expect(verified).toMatchObject({ handle: 'dneskai', accountType: 'PAGE_LINKED', page: { id: '1010', name: 'DNESKAi' }, token: { loginMode: 'facebook' } });
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://graph.facebook.com/v99.0/me/accounts?fields=id%2Cname%2Cinstagram_business_account%7Bid%2Cusername%7D&limit=25');
+    expect(url).not.toContain(token);
+    expect(init).toMatchObject({ headers: { Authorization: `Bearer ${token}` } });
+    expect(rpc).toHaveBeenCalledWith('marketing_verify_account', expect.objectContaining({ p_remote_account_id: '17841400000000001', p_handle: 'dneskai', p_login_mode: 'facebook' }));
+  });
+
+  it('reads the Page itself when the token is a Page token', async () => {
+    const { db } = admin({ data: fbStored, error: null });
+    const fetcher = vi.fn(async (url: string) => url.includes('/me/accounts') ? new Response('{}', { status: 400 }) : Response.json(page())) as unknown as typeof fetch & ReturnType<typeof vi.fn>;
+    expect(await verifyInstagramAccount(db, owner, 'dneskai', { env: fbEnv(), fetcher, now })).toMatchObject({ page: { id: '1010' } });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ['no Page linked to Instagram', { data: [{ id: '2020', name: 'Other page' }] }, 'facebook-page-link-required'],
+    ['a Page linked to another account', { data: [page('someone.else')] }, 'remote-account-handle-mismatch'],
+  ] as const)('refuses %s and stores nothing', async (_label, body, code) => {
+    const { db, rpc } = admin({ data: fbStored, error: null });
+    await expect(verifyInstagramAccount(db, owner, 'dneskai', { env: fbEnv(), fetcher: fetcherFor(Response.json(body)), now })).rejects.toMatchObject({ code });
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_verify_account');
   });
 });
