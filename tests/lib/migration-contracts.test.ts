@@ -192,3 +192,17 @@ describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
     expect(guide).toMatch(/DNESKAi trending audio, 23 October 2026 \(unapplied\)/);
   });
 });
+
+describe("2026-10-23 DNESKAi topic spend (#152)", () => {
+  const sql = code("20261023100100_dneskai_topic_spend.sql");
+  it("keeps the ledger service-only and counts topic model calls in the generation ceiling", () => {
+    expect(sql).toMatch(/revoke all on marketing_private\.dneskai_topic_spend from public,anon,authenticated,service_role;/);
+    for (const fn of ["marketing_reserve_dneskai_topic_spend", "marketing_settle_dneskai_topic_spend", "marketing_dneskai_topic_spent"]) {
+      expect(sql, fn).toMatch(new RegExp(`grant execute on function public\\.${fn}\\([^)]*\\) to service_role;`));
+      expect(sql, fn).not.toMatch(new RegExp(`grant execute on function public\\.${fn}\\([^)]*\\) to authenticated`));
+    }
+    expect(sql).toMatch(/create or replace function public\.marketing_dneskai_generation_spent/);
+    expect(sql).toMatch(/\+public\.marketing_dneskai_topic_spent\(p_owner,array\['classify','title'\]\)/);
+    expect(guide).toMatch(/20261023100100_dneskai_topic_spend\.sql/);
+  });
+});

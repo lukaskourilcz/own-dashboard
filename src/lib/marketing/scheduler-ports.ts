@@ -18,6 +18,8 @@ import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type Sched
 import { sendDneskaiReviewReminders } from "./dneskai-reminders";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
+import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
+import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
 
 /**
  * The real modules behind the scheduler's ports (#120). Each port calls one existing exported function or
@@ -104,6 +106,8 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       const config = await resolveMetaPublisherConfig(db, owner, account as MetaCredentialAccount, env);
       return ingestDneskaiAudioTrends(db, owner, { config, remoteAccountId: String((account as { remote_account_id: string }).remote_account_id), today: pragueMarketingDate(now), signal });
     },
+    factOrHype: (project, now, options) => advanceDneskaiFactOrHype(db, owner, project, now, { env, ...options,
+      model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();
