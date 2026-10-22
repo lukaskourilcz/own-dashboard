@@ -424,6 +424,14 @@ textarea {
 }
 
 /* focus ring used everywhere */
+/* DNESKAi card state (#173): the soft token as one flat layer over an opaque surface, so the contrast of text on the
+   card does not depend on what sits behind it. One utility per tone of DNESKAI_STATE_TONES. */
+@utility dneskai-tint-success { background-color: var(--surface); background-image: linear-gradient(var(--success-soft), var(--success-soft)); }
+@utility dneskai-tint-information { background-color: var(--surface); background-image: linear-gradient(var(--information-soft), var(--information-soft)); }
+@utility dneskai-tint-warning { background-color: var(--surface); background-image: linear-gradient(var(--warning-soft), var(--warning-soft)); }
+@utility dneskai-tint-risk { background-color: var(--surface); background-image: linear-gradient(var(--risk-soft), var(--risk-soft)); }
+@utility dneskai-tint-neutral { background-color: var(--surface-muted); }
+
 @utility focus-ring {
   outline: none;
   &:focus-visible {

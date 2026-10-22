@@ -17,7 +17,7 @@ import {
   swapSlideImage, type DeckDraft, type DraftProblem,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError, type DneskaiEditResult } from '@/lib/marketing/dneskai-workspace-client';
-import { dneskaiPostState, dneskaiRenderFailed, dneskaiStateContext, renderBlocking, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiPostState, dneskaiRenderFailed, dneskaiStateContext, formatDneskaiDayTime, renderBlocking, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiFieldLimit } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { DneskaiSlideStrip } from './slide-strip';
@@ -165,7 +165,7 @@ function EditorBody({ post, read, initialSlide, projectId, lang, preview, onSave
   return <form onSubmit={save} className="space-y-4" aria-busy={saving} noValidate>
     <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
       <DneskaiStateChip detail={detail} lang={lang} />
-      <span className="tabular">{new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Prague' }).format(new Date(post.scheduledAt))}</span>
+      <time dateTime={post.scheduledAt} className="tabular">{formatDneskaiDayTime(post.scheduledAt)}</time>
       <span>@{post.account.handle}</span>
     </div>
     <DneskaiSlideStrip compact post={post} lang={lang} selected={selected} onLoadedChange={onLoadedChange} label={`${t.card.slides}: ${post.title}`} renderFailed={dneskaiRenderFailed(post, context)}

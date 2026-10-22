@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Thirteen files are newer than anything production holds and none of them is applied: `20261022000000` through
-`20261022190000`. Apply them with the CLI, which records each file's own version:
+Sixteen files are newer than anything production holds and none of them is applied: `20261022000000` through
+`20261023130100`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the thirteen files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the sixteen files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -743,7 +743,8 @@ Do not apply them through the Supabase MCP `apply_migration` tool: it records th
 recreates the mismatch, and it holds the retention file's `delete` for a confirmation. `20261022141613` needs
 `20261022021835` first; filename order does that. After the push, set the server-only switches in Vercel Production
 and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`,
-`MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED` and `DNESKAI_REGENERATE_ENABLED`. The
+`MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED`, `DNESKAI_REGENERATE_ENABLED` and
+`DNESKAI_TOPICS_ENABLED`. The
 relevance-first selection (`20261022180000`) and the unknown-cost scope (`20261022171000`) take effect with the push
 itself and need no switch. `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner
 approves the research plan; the ledger alone spends nothing. The next daily tick then records no `retention` error.
@@ -801,6 +802,14 @@ Both stay unapplied and were replayed only in PGlite (`tests/lib/marketing-dnesk
 `20261022190000_dneskai_regenerate_with_note.sql` replaces `marketing_finish_job` with the body of `20261021124706` plus one step. When the finished job's request names `generation.replacesRevisionId`, and that revision is the owner's, of the same brand, still `review` or `returned` and has no claimed, published or uncertain publication, the new revision is saved through `marketing_save_revision` with it as the replaced revision: the old version becomes `superseded` and a queued publication of it is cancelled, as for an owner edit. A version the owner approved meanwhile keeps its approval; the new draft is saved beside it. Without the key the function behaves as before. Nothing here approves; the new revision is ready and in review.
 
 It stays unapplied. The app sends `replacesRevisionId` only from the Lab's „Regenerate with a note“, which the server refuses with `regenerate-unavailable` until `DNESKAI_REGENERATE_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-regenerate-database.test.ts`).
+
+### Prepared: DNESKAi topics (#150, plan A1)
+
+`20261023100000_dneskai_topics.sql` adds `marketing_dneskai_topics`. A topic (námět) is a working title the owner approves or rejects before the pipeline pays for enrichment, pictures or generation. Each row has a kind (`news`, `education`), a source kind (`feed`, `instagram`, `library`, `manual`) with a source reference unique per owner, the Czech title, an optional summary, an optional one-word keyword in Latin letters, an optional verdict (`fact`, `hype`, `unclear`), evidence as a JSON object, a status (`proposed`, `approved`, `rejected`, `expired`, `enriching`, `briefed`, `generated`), the Prague date it was proposed for, the approval time and an optional brief. The owner reads own rows through RLS and writes nothing directly; the pipeline writes with `service_role`. The project must belong to the row's owner (the collection ownership trigger).
+
+Three security-definer functions, executable by `authenticated` and scoped by `auth.uid()`, carry the owner's actions. `marketing_dneskai_topic_decide` approves a proposed topic, rejects a proposed or approved one, and restores a rejected or expired one to proposed. `marketing_dneskai_topic_edit` changes the title and keyword until enrichment starts. `marketing_dneskai_topic_create` adds a manual topic from an https URL, a title or both; the same URL (or, without one, the same title) cannot be added twice. None of them writes a brief, admits a job or spends money.
+
+It stays unapplied. Nothing proposes or consumes topics yet. The app reads the table and calls the functions only with the server-only `DNESKAI_TOPICS_ENABLED=true`; without it `GET` and `POST /api/marketing/dneskai/topics` answer 404. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-topics-database.test.ts`).
 
 ## DNESKAi Reel bucket, 23 October 2026 (unapplied)
 

@@ -28,6 +28,12 @@ Every kit follows the owner's post rules of 22 October 2026 (`.claude/skills/dne
 
 The Lab shows posts, not explanations. It has no visible heading or intro (an `sr-only` „Design Lab“ heading keeps the landmark named), no version chip next to the state, no Klávesové zkratky button, no account select, no „Sada“ label or kit help texts, no recovery link under the queue and no post title above the Feed / Profil / 1:1 control. Refresh is an icon button (`RefreshCw`) with an `aria-label` and a tooltip. The version hash stays on the approve button and in the Publish now and move dialogs; those dialogs name the account as plain text. Keyboard shortcuts still work (`?` still opens the list in the Lab) and are listed under ⋯ → Klávesové zkratky; recovery is under ⋯ → Obnova témat.
 
+## State as card tint, short dates (#173, 22 October 2026)
+
+Lab queue cards and Příspěvky cards carry no state chip. Their background is the soft token of the state's tone over an opaque surface: published success, scheduled and approved information, review and returned warning, problem risk, preparing and skipped the muted surface. `DNESKAI_STATE_TONES` stays the only state-to-tone mapping; `DNESKAI_TONE_TINTS` (in `state-chip.tsx`) maps a tone to its `dneskai-tint-*` utility in `globals.css`. The state words stay in the card's accessible name and in its tooltip, so colour is never the only carrier. The chip remains in the Calendar, the Errors and costs lists and above the Lab stage.
+
+Every DNESKAi date reads `DD/MM` in Europe/Prague through `formatDneskaiDay` (and `formatDneskaiDayTime` for `DD/MM HH:MM`), in the Lab, Kalendář (weekday name plus `DD/MM`), Příspěvky, Chyby a náklady and the post editor. Times stay `HH:MM`. The day headers of Dnes ke schválení read only „Dnes“ / „Zítra“.
+
 ## Expired time and Publish now (22 October 2026)
 
 The server refuses an edit whose time is not in the future or is more than six days ahead (`schedule-outside-asset-window`). A post opened after its time has passed therefore starts with the nearest possible time, at least 15 minutes ahead on a 5-minute mark (`dneskaiNextEditableTime`). A note under the time field names the original time. The editor checks the six-day window before sending.
@@ -52,6 +58,12 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 **Generate now (9).** The read lists topics of today and tomorrow whose brief is pending or ready with no job (`waiting`). The Lab day column shows each with „Vygenerovat hned“. `POST /api/marketing/dneskai/generate` checks the brief, the run (never a pilot run), the slot (30 minutes ahead) and the ceiling, takes the scheduler's briefs lease, runs the tick's own `createBriefs` for that run, and runs the admitted job as above. A refusal (`dneskai-daily-generation-budget-exhausted`, `brief-still-waiting`, `generate-now-busy` and others) is shown in words under the list.
 
 The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and the second paid action of a page is refused by a $1 stand-in ceiling. Design Lab stays inside the review tab (decision 10).
+
+## Topics (náměty, #150)
+
+A topic is a working title the owner approves before the pipeline pays for enrichment, pictures or generation (plan A1). `GET /api/marketing/dneskai/topics?projectId=` returns the owner's topics grouped by kind (`news`, `education`) and status: every open topic, the newest 120, and the rejected or expired ones of the last 14 days, the newest 40. Each topic carries its title, source (domain or Instagram handle), keyword, verdict and dates; `lastProposedAt` says when the pipeline last proposed one. `POST` takes `approve`, `reject` or `restore` with up to 40 `topicIds` and answers per topic, `edit` with a title and a keyword (or `null`), and `create` with a kind and a URL, a title or both. A topic that changed meanwhile answers `topic-status-changed`; the same manual URL twice answers `topic-exists`.
+
+The route answers 404 until `DNESKAI_TOPICS_ENABLED=true`, which waits for `20261023100000_dneskai_topics.sql`. Nothing proposes topics yet and nothing turns an approved topic into a brief yet; those are later steps of the plan.
 
 ## Authentic preview assets
 

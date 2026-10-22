@@ -150,6 +150,22 @@ describe("SECURITY DEFINER functions", () => {
   });
 });
 
+describe("2026-10-23 DNESKAi topics (#150)", () => {
+  const sql = code("20261023100000_dneskai_topics.sql");
+  it("keeps the topics table own-read with no direct owner writes", () => {
+    expect(sql).toMatch(/revoke all on public\.marketing_dneskai_topics from public,anon,authenticated;/);
+    expect(sql).toMatch(/grant select on public\.marketing_dneskai_topics to authenticated;/);
+    expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_dneskai_topics to authenticated/);
+    expect(sql).toMatch(/create policy owner_read on public\.marketing_dneskai_topics for select to authenticated using \(\(select auth\.uid\(\)\)=user_id\)/);
+  });
+  it("gives the owner actions to authenticated only, scoped by auth.uid()", () => {
+    for (const fn of ["marketing_dneskai_topic_decide", "marketing_dneskai_topic_edit", "marketing_dneskai_topic_create"]) {
+      expect(sql, fn).toMatch(new RegExp(`grant execute on function public\\.${fn}\\([^)]*\\) to authenticated;`));
+    }
+    expect(sql.match(/v_owner uuid:=\(select auth\.uid\(\)\)/g)).toHaveLength(3);
+  });
+});
+
 describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
   it("keep the reel bucket private and MP4-only, documented as unapplied", () => {
     const sql = code("20261023130000_dneskai_reel_bucket.sql");

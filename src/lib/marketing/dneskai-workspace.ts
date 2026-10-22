@@ -224,7 +224,20 @@ export type DneskaiCalendarEntry =
   | { kind: 'free'; at: string; time: string };
 export type DneskaiCalendarDay = { date: string; entries: DneskaiCalendarEntry[] };
 
-const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+/** HH:MM in Europe/Prague for a stored instant. */
+export const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+
+/**
+ * The one DNESKAi day format (#173): DD/MM in Europe/Prague, the same in Czech and English. Takes a calendar date
+ * (`YYYY-MM-DD`, already a Prague day) or a stored instant.
+ */
+export function formatDneskaiDay(value: string): string {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : pragueDate(value);
+  return `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+}
+
+/** DD/MM HH:MM in Europe/Prague for a stored instant. */
+export const formatDneskaiDayTime = (iso: string) => `${formatDneskaiDay(iso)} ${pragueTime(iso)}`;
 
 /**
  * Seven Prague days from `today`, each with its standard slots and every post or drafting job planned that day, in
@@ -336,3 +349,5 @@ export const DneskaiCostsReadSchema = z.strictObject({
   }),
 });
 export type DneskaiCostsRead = z.infer<typeof DneskaiCostsReadSchema>;
+/** Topics (náměty, #150): the schemas live in dneskai-topics.ts and are part of this read model. */
+export * from './dneskai-topics';
