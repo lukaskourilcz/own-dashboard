@@ -105,7 +105,8 @@ test('returning a post from the Lab needs a note, and Posts shows it as returned
   await expect(send).toBeDisabled();
   await dialog.getByLabel(l.actions.note, { exact: true }).fill('Zkraťte titulek na jednu větu.');
   await send.click();
-  await expect(page.getByTestId('dneskai-lab-session')).toContainText(l.actions.returned);
+  // The returned post leaves the approval queue, so the Lab moves on to the next post.
+  await expect(dialog).toBeHidden();
   await page.getByRole('tab', { name: t.tabs.published, exact: true }).click();
   await expect(page.getByTestId('dneskai-post-row').filter({ hasText: title })).toHaveAttribute('data-state', 'returned');
   expect(errors).toEqual([]);
