@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys } from '@/lib/marketing/dneskai-workspace-client';
@@ -51,12 +52,14 @@ export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false }: {
 
 function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean }) {
   const t = dneskaiWorkspace[lang];
+  const pathname = usePathname();
+  const guest = preview && pathname === '/guest';
   const query = useReviewRead(projectId, preview);
   const [renderFailed, addRenderFailed] = useRenderFailed(projectId);
   if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
   const props = { read: query.data, lang, preview, refreshing: query.isFetching, onRefresh: () => void query.refetch() };
-  return tab === 'dneskai-review' ? <ReviewExperience {...props} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
+  return tab === 'dneskai-review' ? <ReviewExperience {...props} guest={guest} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
     : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} />;
 }
 
@@ -73,11 +76,11 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
     refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
 }
 
-function ReviewExperience(props: Parameters<typeof DneskaiReviewTab>[0]) {
+function ReviewExperience({ guest, ...props }: Parameters<typeof DneskaiReviewTab>[0] & { guest: boolean }) {
   const [view, setView] = useState<'lab' | 'list'>('lab');
   const [dirty, setDirty] = useState(false);
   const t = dneskaiLab[props.lang];
   return <div className="space-y-4"><div role="group" aria-label={t.views.label} className="flex gap-1">
-    {(['lab', 'list'] as const).map((item) => <Button key={item} variant={view === item ? 'subtle' : 'ghost'} size="sm" aria-pressed={view === item} disabled={dirty && view !== item} onClick={() => setView(item)}>{t.views[item]}</Button>)}
-  </div>{view === 'lab' ? <DneskaiLabTab {...props} onDirtyChange={setDirty} /> : <DneskaiReviewTab {...props} />}</div>;
+    {(['lab', 'list'] as const).map((item) => <Button key={item} variant={view === item ? 'subtle' : 'ghost'} size="sm" aria-pressed={view === item} disabled={(dirty && view !== item) || (guest && item === 'list')} onClick={() => setView(item)}>{t.views[item]}</Button>)}
+  </div>{view === 'lab' ? <DneskaiLabTab {...props} guest={guest} onDirtyChange={setDirty} /> : <DneskaiReviewTab {...props} />}</div>;
 }

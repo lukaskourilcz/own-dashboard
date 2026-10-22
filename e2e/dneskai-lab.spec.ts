@@ -75,3 +75,16 @@ for (const width of [360, 430, 768, 1024, 1440, 1728]) test(`Lab reflows at ${wi
   await page.reload();await expect(page.getByTestId('dneskai-slide-inspector')).toContainText('Slide 2');
   await page.screenshot({path:info.outputPath(`lab-${width}.png`),fullPage:true});
 });
+
+test('public Lab tour is read-only and never calls a fixture renderer or marketing API', async ({ page }) => {
+  await gotoPreview(page);
+  const calls: string[]=[]; page.on('request',request=>{if (/\/api\/(dev-preview|marketing)\//.test(request.url())) calls.push(request.url());});
+  await page.goto('/guest?project=dneskai&lang=en&projectTab=dneskai-review');
+  const lab=page.getByTestId('dneskai-lab');await expect(lab).toBeVisible();
+  await expect(lab.getByText(dneskaiLab.en.publicTour).first()).toBeVisible();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+  await expect(page.getByTestId('dneskai-slide-inspector').getByRole('textbox',{name:'Headline',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'List',exact:true})).toBeDisabled();
+  const axe=await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-lab"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);expect(calls).toEqual([]);
+});

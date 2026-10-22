@@ -137,7 +137,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     let problems = demoProblems(post, slides);
     let ready = problems.length === 0;
     let assets = clone(post.assets);
-    if (request.deck && post.deck) {
+    if (post.deck && (request.deck || !post.ready || post.assets.length !== slides.length)) {
       const response = await fetch('/api/dev-preview/dneskai-render', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...post.deck, slides }) });
       if (!response.ok) throw new DneskaiWorkspaceRequestError('render-unavailable', response.status);
       const rendered = z.object({ ready: z.boolean(), assets: z.array(z.object({ url: z.string().startsWith('data:image/jpeg;base64,'), sha256: z.string().regex(/^[a-f0-9]{64}$/), width: z.literal(1080), height: z.literal(1350), alt: z.string() })), problems: z.array(z.object({ slide: z.number(), code: z.string(), blocking: z.boolean(), message: z.string(), field: z.string().nullable() })) }).parse(await response.json());

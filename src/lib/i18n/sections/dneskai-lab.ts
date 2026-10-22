@@ -3,6 +3,7 @@ import type { DneskaiKit, DneskaiLabApprovalBlock } from '@/lib/marketing/dneska
 /** The DNESKAi Design Lab (design-lab-spec.md). Every string exists in English and Czech with the same meaning. */
 const en = {
   title: 'Design Lab',
+  publicTour: 'Public tour with demo posts. Editing and approval are available in the private workspace.',
   specimens: { title: 'Editorial specimens', help: 'Six synthetic decks, 24 slides. The hatched tile shows a refused low-resolution source. Other kit designs await approval.' },
   savedPreview: 'The stage shows the saved version. Save to see the new render.',
   intro: 'Each post at the size the feed shows it. Check the slides, fix the text, approve the exact version.',
@@ -135,6 +136,7 @@ const en = {
 
 const cs: typeof en = {
   title: 'Design Lab',
+  publicTour: 'Veřejná ukázka příspěvků. Úpravy a schvalování jsou dostupné v soukromém pracovním prostoru.',
   specimens: { title: 'Ukázky sady Editorial', help: 'Šest syntetických sad, 24 slidů. Šrafovaný dílek ukazuje odmítnutý zdroj s nízkým rozlišením. Ostatní vizuální návrhy čekají na schválení.' },
   savedPreview: 'Náhled ukazuje uloženou verzi. Nové vykreslení uvidíte po uložení.',
   intro: 'Každý příspěvek ve velikosti, v jaké ho ukáže feed. Zkontrolujte slidy, opravte text a schvalte přesnou verzi.',

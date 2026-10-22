@@ -148,6 +148,7 @@ test('a version whose slides never attached reads as an error with a next step a
   await expect(blocked.locator('li', { hasText: 'Proč verzovat prompty' })).toBeVisible();
   await expect(blocked.locator('li', { hasText: 'Lokální model na notebooku' })).toHaveCount(0);
   await page.getByRole('tab', { name: t.tabs.review, exact: true }).click();
+  await page.getByRole('button', { name: 'Seznam', exact: true }).click();
   const stuck = page.getByTestId('dneskai-post').filter({ hasText: 'Co stojí jeden dotaz' });
   await expect(stuck.getByText(t.states.problem, { exact: true })).toBeVisible();
   await expect(stuck.getByText(/slidy se k ní nepřipojily/)).toBeVisible();
@@ -215,6 +216,7 @@ test('every DNESKAi tab reflows at 360, 430, 768 and 1280 px and passes axe', as
     await page.setViewportSize({ width, height: 900 });
     for (const [tab, id] of [[t.tabs.review, 'dneskai-review'], [t.tabs.calendar, 'dneskai-calendar'], [t.tabs.published, 'dneskai-published'], [t.tabs.costs, 'dneskai-costs']] as const) {
       await page.getByRole('tab', { name: tab, exact: true }).click();
+      if (id === 'dneskai-review') await page.getByRole('button', { name: 'Seznam', exact: true }).click();
       await expect(page.getByTestId(id)).toBeVisible();
       expect(await noOverflow(page), `${id} at ${width}px`).toBe(true);
       if (width === 360) {

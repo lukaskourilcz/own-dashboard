@@ -38,6 +38,6 @@ for (const lang of ['en', 'cs'] as const) {
     await panel.getByRole('button', { name: dneskaiSources[lang].openReview, exact: true }).click();
     const review = page.getByRole('tab', { name: dneskaiWorkspace[lang].tabs.review, exact: true });
     await expect(review).toHaveAttribute('aria-selected', 'true'); await expect(review).toBeFocused();
-    await expect(page.getByTestId('dneskai-sources')).toHaveCount(0); await expect(page.getByTestId('dneskai-review')).toBeVisible();
+    await expect(page.getByTestId('dneskai-sources')).toHaveCount(0); await expect(page.getByTestId('dneskai-lab')).toBeVisible();
   });
 }

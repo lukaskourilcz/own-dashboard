@@ -21,7 +21,7 @@ import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStageView } from './stage';
 
-type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void };
+type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
 function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
@@ -64,7 +64,7 @@ export function DneskaiLabTab(props: Props) {
       <Button variant="outline" size="sm" disabled={props.refreshing || dirty} onClick={props.onRefresh}>{dneskaiWorkspace[props.lang].refresh}</Button>
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
-    {props.preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{dneskaiWorkspace[props.lang].preview}</p>}
+    {props.preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{props.guest ? t.publicTour : dneskaiWorkspace[props.lang].preview}</p>}
     <div className="grid min-w-0 gap-4 xl:grid-cols-[13rem_minmax(0,1fr)]">
       <nav onKeyDown={(event) => {
         if (event.altKey || event.ctrlKey || event.metaKey || !active) return;
@@ -86,7 +86,7 @@ export function DneskaiLabTab(props: Props) {
           </ol>
           {day.jobs.map((item) => <p key={item.job.id} className="text-xs text-foreground-muted">{item.deadline?.time} · {t.queue.preparing}</p>)}
           {!day.posts.length && !day.jobs.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
-          <Button type="button" variant="outline" size="sm" className="w-full" disabled={dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
+          <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
         </section>)}
       </nav>
       {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} lab={active} slide={Math.min(chosen.slide, Math.max(0, active.slides.length - 1))}
@@ -127,6 +127,7 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
   const previews = useMemo(() => new Map(media.flatMap((entry) => (entry.data?.candidates ?? []).flatMap((candidate) => candidate.assets.flatMap((asset) => asset.previewUrl ? [[asset.sha256, asset.previewUrl] as const] : [])))), [media]);
   const mediaState = media.some((item) => item.isPending) ? 'loading' : media.some((item) => item.isError) ? 'unavailable' : 'ready';
   useEffect(() => {
+    if (props.guest) return;
     const abort = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
@@ -137,13 +138,13 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
       } catch { if (!abort.signal.aborted) setFit({ status: 'unavailable', result: null }); }
     }, 300);
     return () => { window.clearTimeout(timer); abort.abort(); };
-  }, [draft.slides, lab.kit, props.preview]);
+  }, [draft.slides, lab.kit, props.preview, props.guest]);
   const onLoaded = (url: string, ok: boolean) => setLoaded((before) => before.get(url) === ok ? before : new Map(before).set(url, ok));
   const allLoaded = lab.slides.length > 0 && lab.slides.every((item) => item.render && loaded.get(item.render.url) === true);
-  const block = dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
+  const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
   async function perform(action: 'approve' | 'save' | 'return' | 'skip') {
-    if (busy || (action === 'approve' && block)) return;
+    if (props.guest || busy || (action === 'approve' && block)) return;
     if (action === 'save' && (!request || draftProblems(post, draft).length)) { setError('deck-edit-invalid'); return; }
     setBusyAction(action); setError(null); setMessage('');
     try {
@@ -160,7 +161,9 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
   }
   function shortcut(event: React.KeyboardEvent) {
     if (busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true],[role=dialog]')) return;
-    const key = event.key.toLowerCase(), position = order.findIndex((item) => item.post.id === post.id);
+    const key = event.key.toLowerCase();
+    if (props.guest && ['a','d','e','r','s','1','2','3','4','5'].includes(key)) return;
+    const position = order.findIndex((item) => item.post.id === post.id);
     if (['j', 'k', 'arrowdown', 'arrowup'].includes(key)) onChoose(order[Math.max(0, Math.min(order.length - 1, position + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
     else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(lab.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
     else if (/^[1-5]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; if (kit !== lab.kit) setMessage(t.kits.unavailableNotice(t.kits.names[kit])); }
@@ -182,7 +185,7 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
       </div>
       <div className="min-w-0 space-y-5">
         <DneskaiKitTiles kits={lab.kits} chosen={lab.kit} onChoose={() => undefined} lang={props.lang} />
-        <fieldset disabled={busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
+        <fieldset disabled={props.guest || busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
           <legend className="sr-only">{t.post.title}</legend>
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
@@ -198,9 +201,9 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
       {block && <p id={`${id}-block`} className="text-xs text-foreground-muted">{block}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>
-        <Button variant="outline" disabled={busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>
+        <Button variant="outline" disabled={props.guest || busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>
         {dirty && <Button variant="ghost" disabled={busy} onClick={() => setDraft(createDeckDraft(post, account?.id ?? null))}>{t.actions.discard}</Button>}
-        <Button variant="ghost" disabled={busy || dirty || post.status !== 'review'} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
+        <Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
       </div>
     </div>
     <Dialog open={dialog !== null} onOpenChange={(open) => { if (!open && !busy) setDialog(null); }}><DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); rootRef.current?.focus(); }}>
