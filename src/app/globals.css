@@ -368,10 +368,6 @@ body {
   .mac-page-header > div:first-child {
     display: none;
   }
-
-  .mac-page-header.mac-project-header > div:first-child {
-    display: block;
-  }
 }
 
 button,

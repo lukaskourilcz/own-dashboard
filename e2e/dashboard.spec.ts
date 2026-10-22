@@ -123,7 +123,9 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     // The pre-rename slug still resolves to the DNESKAi workspace.
     await page.goto("/dev-preview?project=aifirst");
-    await expect(page.getByRole("heading", { level: 1, name: "DNESKAi" })).toBeVisible();
+    // No project header (#171): the toolbar breadcrumb "Projects › DNESKAi" carries the context.
+    await expect(page.locator("header").getByText("DNESKAi", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(["Projects"]);
     // DNESKAi shows its four tabs; the general project sections open from the More menu (#169).
     await expect(page.getByRole("tab")).toHaveText(["For review today", "Calendar", "Posts", "Sources (DNESKAi)"]);
     const more = page.getByTestId("dneskai-more");
@@ -148,10 +150,22 @@ test.describe("dashboard sections", () => {
     const sidebar = page.locator("aside");
 
     await sidebar.getByRole("link", { name: "DNESKAi", exact: true }).click();
-    await expect(
-      page.getByRole("heading", { level: 1, name: "DNESKAi" }),
-    ).toBeVisible();
+    await expect(page.locator("header").getByText("DNESKAi", { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/projects\/dneskai$/);
+    // Every project workspace opens straight on its tabs: no back button, eyebrow, summary or status badge (#171).
+    await expect(page.getByRole("button", { name: "All projects", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    // The breadcrumb's "Projects" is the keyboard way back to the table.
+    const back = page.locator("header").getByRole("button", { name: "Projects", exact: true });
+    await back.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/projects$/);
+    await page.goto("/dev-preview?project=devshark");
+    await expect(page.getByRole("tab").first()).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(["Projects"]);
+    await expect(page.getByRole("button", { name: "All projects", exact: true })).toHaveCount(0);
+
+    await sidebar.getByRole("link", { name: "DNESKAi", exact: true }).click();
 
     await sidebar.getByRole("button", { name: "Projects", exact: true }).click();
     await expect(
