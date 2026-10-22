@@ -1,6 +1,14 @@
 # DNESKAi Design Lab prototype
 
-The project's review tab now opens the Lab. A List control retains the previous review surface. Calendar, Sources, Published and Errors and costs keep their existing reads. The prototype uses the existing `dneskai-review` tab identity, preserving hidden-tab preferences; it does not require a tab migration.
+The project's review tab now opens the Lab. A List control retains the previous review surface. The prototype uses the existing `dneskai-review` tab identity, preserving hidden-tab preferences; it does not require a tab migration.
+
+## Workspace layout (#169, 22 October 2026)
+
+The DNESKAi workspace strip shows four tabs, in this order: **Dnes ke schválení** (For review today, opens by default), **Kalendář** (Calendar), **Příspěvky** (Posts) and **Zdroje** (Sources). Settings lists the same four under its DNESKAi heading, and each can be hidden; a hidden tab, or a project section that is not available, opens the first tab left.
+
+Příspěvky keeps the tab id `dneskai-published` (owner decision 5), so stored hidden-tab preferences and the `user_preferences_hidden_project_tabs_check` constraint stay valid without a migration. It lists every post that is not an older version of another, latest first, with its state, time, account, the Instagram link of a published post and the code of a post in error. Filter chips Vše / Čeká / Naplánované / Publikované / Chyby narrow the list (`dneskaiPostList`, `dneskaiPostMatches`); a post in review or returned has „Otevřít v Labu“, which opens it in the Design Lab.
+
+The `⋯` button (`aria-label` „Více“ / “More”) at the end of the tab row opens a menu. Up and Down move through it, Escape closes it and returns focus to the button. Four items open a dialog: **Chyby a náklady** (the former `dneskai-costs` tab, whose id stays in the database check), **Účet Instagram** (the account panel), **Obnova témat** (the Sources read with the owner recovery actions) and **Klávesové zkratky** (the Lab's shortcut list). Below them, under „Projekt“, the general project sections (Přehled, Úkoly & Poznámky, Aktivita, Komunikace, Repozitář, Finance, Konkurence, Znalosti, Škálování, Monetizace) select their tab; the open one joins the strip as a fifth tab. Sections hidden in Settings leave the menu as well.
 
 Open `/projects/<project-id-or-slug>?projectTab=dneskai-review&labPost=<revision-id>&labSlide=0`. Slide indexes are zero-based. The preview equivalent is `/dev-preview?project=dneskai&projectTab=dneskai-review`; query selection survives reload. `tab` remains the application shell's parameter, so the project selection is namespaced as `projectTab` rather than overloading it.
 
