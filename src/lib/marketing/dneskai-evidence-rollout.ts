@@ -25,3 +25,11 @@ export function dneskaiRecoveryCapabilities(env: Record<string, string | undefin
 export function dneskaiSelectionV2Enabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_SELECTION_V2_ENABLED === 'true';
 }
+
+/**
+ * Topics (náměty, #150). Only after 20261023100000_dneskai_topics.sql is applied: GET and POST
+ * /api/marketing/dneskai/topics answer 404 and readDneskaiTopics returns null while this is off.
+ */
+export function dneskaiTopicsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_TOPICS_ENABLED === 'true';
+}
