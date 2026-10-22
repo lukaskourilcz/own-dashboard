@@ -395,6 +395,29 @@ const CODES = {
   'refresh-request-uncertain': ['auto', 'Instagram did not answer the token refresh in time.', 'Instagram na obnovení tokenu neodpověděl včas.'],
   'refresh-response-invalid': ['auto', 'Instagram returned an unexpected refresh answer.', 'Instagram vrátil neočekávanou odpověď na obnovení.'],
   'refresh-store-failed': ['auto', 'The refreshed token could not be saved.', 'Obnovený token se nepodařilo uložit.'],
+  // Separate, disabled Apify research ledger.
+  "research-disabled": ["config", "Apify research is switched off.", "Výzkum přes Apify je vypnutý."],
+  "research-plan-not-approved": ["config", "The owner has not approved this research plan.", "Vlastník tento plán výzkumu neschválil."],
+  "research-apify-unconfigured": ["config", "The research collector connection is missing.", "Chybí připojení výzkumného sběru."],
+  "research-build-unpinned": ["config", "The research actor build is not pinned.", "Verze výzkumného aktéru není připnutá."],
+  "research-outside-window": ["none", "This research task is outside its planned dates.", "Tato výzkumná úloha je mimo plánované termíny."],
+  "research-daily-run-not-today": ["wait", "This daily research run belongs to another day.", "Tento denní výzkumný běh patří jinému dni."],
+  "research-plan-invalid": ["investigate", "The research plan failed validation.", "Plán výzkumu neprošel kontrolou."],
+  "research-item-unknown": ["investigate", "The requested research task is not in the plan.", "Požadovaná výzkumná úloha není v plánu."],
+  "research-run-out-of-range": ["investigate", "The research run number is outside the plan.", "Číslo výzkumného běhu je mimo plán."],
+  "research-ledger-unavailable": ["investigate", "The research budget ledger could not be read or updated.", "Účetní záznam výzkumu nelze přečíst nebo aktualizovat."],
+  "research-run-already-reserved": ["none", "This research run already has a reservation and will not start again.", "Tento výzkumný běh už má rezervaci a znovu se nespustí."],
+  "research-ceiling-reached": ["none", "The research budget cannot admit another run.", "Rozpočet výzkumu nemůže přijmout další běh."],
+  "research-start-ambiguous": ["investigate", "The research start is uncertain; its full cap remains reserved.", "Spuštění výzkumu je nejisté; celý limit zůstává rezervovaný."],
+  "research-apify-binding-invalid": ["investigate", "The collector returned a different research actor or build.", "Sběr vrátil jiného výzkumného aktéra nebo verzi."],
+  "research-settle-unavailable": ["investigate", "The research run or its final cost could not be verified.", "Výzkumný běh nebo jeho konečnou cenu nelze ověřit."],
+  "research-cost-unknown": ["investigate", "The research cost is unknown; its full cap remains reserved.", "Cena výzkumu není známá; celý limit zůstává rezervovaný."],
+  "research-cost-over-cap": ["investigate", "The reported research charge exceeds the run cap.", "Nahlášená cena výzkumu překračuje limit běhu."],
+  "research-run-failed": ["investigate", "The research run failed; its reported cost was recorded.", "Výzkumný běh selhal; nahlášená cena byla zaznamenaná."],
+  "research-dry-run": ["none", "The research plan was checked without starting a run.", "Plán výzkumu byl ověřen bez spuštění běhu."],
+  "research-started": ["wait", "The reserved research run has started.", "Rezervovaný výzkumný běh byl spuštěn."],
+  "research-settled": ["none", "The research run finished and its cost was recorded.", "Výzkumný běh skončil a jeho cena byla zaznamenaná."],
+  "research-targets-invalid": ["investigate", "The research targets do not match the approved plan.", "Cíle výzkumu neodpovídají schválenému plánu."],
   // Scheduler ticks (#120).
   'backoff-active': ['wait', 'The step waits after an earlier failure.', 'Krok po dřívější chybě chvíli čeká.'],
   'briefs-current': ['none', 'All briefs of the latest run exist.', 'Všechny podklady posledního sběru existují.'],
@@ -432,6 +455,7 @@ export const MARKETING_KNOWN_CODES = Object.keys(CODES) as MarketingCode[];
 
 /** Families that carry a variable part: an HTTP status, a remote state or a scheduler category. */
 const PATTERNS: Array<{ test: RegExp; text: (match: RegExpExecArray) => Entry }> = [
+  { test: /^research-apify-refused-(400|401|402|403|404|413|422)$/, text: (m) => ['investigate', `Apify refused the research start (HTTP ${m[1]}); no run was created.`, `Apify odmítlo spuštění výzkumu (HTTP ${m[1]}); žádný běh nevznikl.`] },
   { test: /^meta-http-(\d{3})$/, text: (m) => ['token', `Instagram rejected the request (HTTP ${m[1]}).`, `Instagram požadavek odmítl (HTTP ${m[1]}).`] },
   { test: /^media-(?:page-)?http-(\d{3})$/, text: (m) => ['media', `The source site refused the picture (HTTP ${m[1]}).`, `Zdrojový web obrázek odmítl (HTTP ${m[1]}).`] },
   { test: /^remote-container-([a-z_]+)$/, text: (m) => ['verify', `Instagram reports the post as ${m[1]!.replace(/_/g, ' ')}.`, `Instagram hlásí stav příspěvku ${m[1]!.replace(/_/g, ' ')}.`] },

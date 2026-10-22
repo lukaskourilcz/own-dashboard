@@ -727,6 +727,12 @@ grant execute on function public.marketing_scheduler_prune_ticks(uuid,integer) t
 select cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where coalesce(jobname,'') not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
 ```
 
+## DNESKAi research preparation, 22 October 2026 (unapplied)
+
+`20261022013957_dneskai_apify_research.sql` adds the separate private research ledger, atomic service-only reserve/mark/spent RPCs, and own-only public metric reads. It preserves all pipeline and staging ledgers. No cron or live route starts research. See [research operations](dneskai-apify-research.md).
+
+This migration has only been replayed in isolated PGlite tests. Production marketing migration versions differ from repository filenames; the dated audit records that mismatch. Reconcile history under an owner-approved release before applying any new migration. Do not follow the earlier generic `db push` procedure against production until then.
+
 ## Richer brief evidence, 22 October 2026 (unapplied)
 
 `20261022020702_dneskai_richer_brief_evidence.sql` adds bounded article prose to the owner-scoped media collection and a fenced service-only setter. Alt and figcaption metadata stay in the immutable image plan. `20261022020759_dneskai_brief_v2_compatibility.sql` accepts both brief document versions without rewriting stored briefs or changing grants.
@@ -736,3 +742,4 @@ Both migrations are local preparation. Reconcile production's divergent marketin
 ### Prepared: lapsed brief reports
 
 `20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied pending migration-history reconciliation.
+

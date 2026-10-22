@@ -153,9 +153,11 @@ The migrations, in the order they run:
 57. `20261020170000_dneskai_daily_generation_budget.sql` — the DNESKAi daily generation ceiling: a private spend ledger and a service-role function that reserves a job's maximum before every paid DNESKAi model call and refuses it when the last 24 hours plus that maximum would pass the configured ceiling.
 58. `20261021090000_marketing_job_render_report.sql` — a finished generation job stores the studio's render report beside the DNESKAi revision it saves, so the review shows advisories on a generated post as it already did after an owner edit.
 59. `20261021100000_dneskai_hideable_project_tabs.sql` — recreates the `user_preferences.hidden_project_tabs` check with the four DNESKAi workspace tabs (For review today, Calendar, Published, Errors and costs) after the eleven project tabs, so Settings can hide them. No row is rewritten.
-60. `20261022020702_dneskai_richer_brief_evidence.sql` — unapplied, bounded article prose stored under the existing media lease; source image alt metadata stays in the fixed plan.
-61. `20261022020759_dneskai_brief_v2_compatibility.sql` — unapplied, accept brief/2 while retaining strict brief/1 reads and old snapshots.
-62. `20261022021835_dneskai_release_lapsed_reports.sql` — future skips release only lapsed, never-generated reports; prepared, unapplied.
+60. `20261022013957_dneskai_apify_research.sql` — unapplied, isolated $150 research ledger and derived public metrics; no scheduler, production switch or pipeline budget changes.
+61. `20261022020702_dneskai_richer_brief_evidence.sql` — unapplied, bounded article prose stored under the existing media lease; source image alt metadata stays in the fixed plan.
+62. `20261022020759_dneskai_brief_v2_compatibility.sql` — unapplied, accept brief/2 while retaining strict brief/1 reads and old snapshots.
+63. `20261022021835_dneskai_release_lapsed_reports.sql` — future skips release only lapsed, never-generated reports; prepared, unapplied.
+
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 
