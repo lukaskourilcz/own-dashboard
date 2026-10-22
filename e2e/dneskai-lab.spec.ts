@@ -125,11 +125,16 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const lab = page.getByTestId('dneskai-lab'), inspector = page.getByTestId('dneskai-slide-inspector');
   const version = await page.getByTestId('dneskai-lab-approve').textContent();
-  // The cover's picture also fits a frame, so it may become a picture slide; its kicker has no place there.
+  // The cover shows only its headline (owner's post rules): no kicker or body field is offered on it.
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true })).toBeVisible();
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.kicker, exact: true })).toHaveCount(0);
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
+  // The cover's picture also fits a frame, so it may become a picture slide; with only a headline nothing is dropped,
+  // and the picture slide offers a body.
   const shape = inspector.getByTestId('dneskai-slide-shape');
   await expect(shape.locator('option')).toHaveText([t.slide.shapes['cover-photo'], t.slide.shapes.figure, t.slide.shapes.split]);
   await shape.selectOption('figure');
-  await expect(inspector.getByTestId('dneskai-inspector-notice')).toContainText(t.slide.fields.kicker);
+  await expect(inspector.getByTestId('dneskai-inspector-notice')).toHaveText('');
   await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toBeVisible();
   await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
   await shape.selectOption('cover-photo');
@@ -144,7 +149,8 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await inspector.getByTestId('dneskai-insert-add').click();
   await expect(page.getByTestId('dneskai-lab-session').getByRole('status').first()).toContainText(t.slide.insert.added(3));
   await expect(page.getByTestId('dneskai-slide-inspector')).toContainText('Slide 3');
-  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(8);
+  // Four written slides (no sources slide) plus the inserted one, between the previous and next buttons.
+  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(7);
   // Until the owner writes the new slide's words, the draft cannot be previewed or saved.
   await expect(page.getByTestId('dneskai-stage-draft')).toContainText(t.draft.unavailable);
   const fresh = page.getByTestId('dneskai-slide-inspector');
@@ -155,7 +161,7 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
   await expect(page.getByTestId('dneskai-lab-approve')).not.toHaveText(version!);
-  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(8);
+  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(7);
   await expect(page.getByTestId('dneskai-draft-badge')).toHaveCount(0);
   await page.getByTestId('dneskai-lab-approve').click();
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
