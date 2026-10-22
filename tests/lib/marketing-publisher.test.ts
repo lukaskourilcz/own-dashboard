@@ -41,7 +41,7 @@ function fixture(threads = false) {
       if (url.startsWith('https://assets.example.invalid/')) return new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/jpeg' } });
       if (url.includes('publishing_limit')) return Response.json({ data: [{ quota_usage: 0, config: { quota_total: 100 } }] });
       if (url.includes('publish') && method === 'POST') return Response.json({ id: '301' });
-      if (method === 'POST') { expect(checkpoints[0]?.stage).toBe('container-create-intent'); return Response.json({ id: '201' }); }
+      if (method === 'POST') { expect(checkpoints.some(row => row.stage === 'publish-intent')).toBe(false); return Response.json({ id: '201' }); }
       if (url.includes('/201?')) return Response.json({ id: '201', [threads ? 'status' : 'status_code']: 'FINISHED' });
       if (url.includes('/301?')) return Response.json({ id: '301', permalink: threads ? 'https://www.threads.net/@qa_only/post/qa' : 'https://www.instagram.com/p/qa' });
       return Response.json({ id: '101', username: 'qa_only' });
@@ -73,7 +73,7 @@ describe('guarded Meta publishing', () => {
     const { input, checkpoints, requests } = fixture();
     const outcome = await publishMarketingRevision(input);
     expect(outcome).toMatchObject({ status: 'published', remoteContainerId: '201', remoteMediaId: '301' });
-    expect(checkpoints.map(row => row.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome', 'outcome']);
+    expect(checkpoints.map(row => row.stage)).toEqual(['container-created', 'publish-intent', 'outcome', 'outcome']);
     expect(requests.filter(row => row.method === 'POST')).toHaveLength(2);
     expect(requests.every(row => !row.url.includes(input.config.accessToken))).toBe(true);
     expect(JSON.stringify(checkpoints)).not.toContain(input.config.accessToken);
@@ -132,19 +132,22 @@ describe('guarded Meta publishing', () => {
     expect(second.requests.some(request => request.url.includes('/301?'))).toBe(false);
     expect(second.checkpoints.filter(value => value.stage === 'outcome')).toHaveLength(0);
   });
-  it('aborts a pending poll wait at the shared deadline without another remote request', async () => {
+  it('aborts a pending poll wait at the shared deadline and leaves the containers for a fresh retry', async () => {
     const { input, requests, checkpoints } = fixture(); const fetcher = input.fetcher!; const controller = new AbortController(); input.signal = controller.signal;
     input.fetcher = async (url, options) => String(url).includes('/201?') ? Response.json({ id: '201', status_code: 'IN_PROGRESS' }) : fetcher(url, options);
     input.wait = () => { controller.abort(); return new Promise<void>(() => {}); };
-    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'reconciliation', errorCode: 'publication-deadline-exceeded', remoteContainerId: '201' });
-    expect(checkpoints.at(-1)).toMatchObject({ status: 'reconciliation', remoteContainerId: '201' });
+    // No publish intent exists yet, so the deadline is a retryable container failure, not an ambiguity.
+    expect(await publishMarketingRevision(input)).toEqual({ status: 'pending', errorCode: 'container-retry', retryCause: 'publication-deadline-exceeded', remoteContainerId: null, remoteMediaId: null, remoteUrl: null });
+    expect(checkpoints.at(-1)).toMatchObject({ stage: 'container-retry', status: 'pending', remoteContainerId: null });
     expect(requests.filter(request => request.method === 'POST')).toHaveLength(1);
     expect(requests.some(request => request.url.includes('media_publish'))).toBe(false);
   });
   it('does not write an outcome over a lost checkpoint fence', async () => {
     const { input, requests } = fixture(); const checkpoint = vi.fn(async () => { throw new Error('CAS lost'); }); input.checkpoint = checkpoint;
     expect(await publishMarketingRevision(input)).toMatchObject({ status: 'held', errorCode: 'checkpoint-fence-lost', remoteContainerId: null });
-    expect(checkpoint).toHaveBeenCalledTimes(1); expect(requests.filter(row => row.method === 'POST')).toHaveLength(0);
+    // The container exists only as an unpublished draft; the lost fence stops before media_publish.
+    expect(checkpoint).toHaveBeenCalledTimes(1); expect(requests.filter(row => row.method === 'POST')).toHaveLength(1);
+    expect(requests.some(row => row.url.includes('media_publish'))).toBe(false);
   });
   it('only reads a claimed publish intent and rejects a foreign publication owner', async () => {
     const { input, requests } = fixture();

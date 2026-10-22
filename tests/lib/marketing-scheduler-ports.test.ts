@@ -30,7 +30,7 @@ function fakeDb(tables: Record<string, Array<Record<string, unknown>> | { error:
       const rows = () => {
         const value = tables[table] ?? [];
         if (!Array.isArray(value)) return { data: null, error: { message: value.error } };
-        return { data: value.filter((row) => entry.calls.every(([name, args]) => name !== 'eq' || !(String(args[0]) in row) || row[String(args[0])] === args[1])), error: null };
+        return { data: value.filter((row) => entry.calls.every(([name, args]) => !(String(args[0]) in row) || (name === 'eq' ? row[String(args[0])] === args[1] : name !== 'in' || (args[1] as unknown[]).includes(row[String(args[0])])))), error: null };
       };
       const builder: Record<string, unknown> = new Proxy({}, {
         get(_target, property) {
@@ -159,8 +159,10 @@ describe('scheduler ports', () => {
     const reads = pending.calls('marketing_publications');
     // The queued read finds nothing; only the claimed continuation answers.
     expect(reads).toContainEqual(expect.arrayContaining([['eq', ['status', 'queued']]]));
-    expect(reads).toContainEqual(expect.arrayContaining([['eq', ['status', 'claimed']], ['eq', ['error_code', 'container-pending']], ['gt', ['lease_until', expect.any(String)]]]));
+    expect(reads).toContainEqual(expect.arrayContaining([['eq', ['status', 'claimed']], ['in', ['error_code', ['container-pending', 'container-retry']]], ['gt', ['lease_until', expect.any(String)]]]));
     expect(await createMarketingSchedulerPorts(fakeDb({ marketing_publications: [{ ...claimed, error_code: 'publish-intent' }] }).db, owner, {}).publicationDueSoon(300_000)).toBe(false);
+    // A claim whose containers failed transiently is continued the same way: the next tick recreates them.
+    expect(await createMarketingSchedulerPorts(fakeDb({ marketing_publications: [{ ...claimed, error_code: 'container-retry' }] }).db, owner, {}).publicationDueSoon(300_000)).toBe(true);
   });
 });
 

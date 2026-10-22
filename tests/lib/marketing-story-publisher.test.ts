@@ -26,7 +26,7 @@ function fixture(assetBytes = jpeg, accountType: unknown = 'BUSINESS') {
     if (url.hostname === 'assets.example.invalid') return new Response(new Uint8Array(assetBytes), { headers: { 'Content-Type': 'image/jpeg' } });
     if (url.pathname.endsWith('/101')) { profileReads++; return Response.json({ id: '101', username: 'qa_only', account_type: types[Math.min(profileReads - 1, 1)] }); }
     if (url.pathname.endsWith('/content_publishing_limit')) return Response.json({ data: [{ quota_usage: 0, config: { quota_total: 100 } }] });
-    if (url.pathname.endsWith('/media') && method === 'POST') { expect(checkpoints[0]).toMatchObject({ stage: 'container-create-intent' }); return Response.json({ id: '201' }); }
+    if (url.pathname.endsWith('/media') && method === 'POST') { expect(checkpoints.some(value => value.stage === 'publish-intent')).toBe(false); return Response.json({ id: '201' }); }
     if (url.pathname.endsWith('/201')) return Response.json({ id: '201', status_code: 'FINISHED' });
     if (url.pathname.endsWith('/media_publish') && method === 'POST') { expect(checkpoints.at(-1)).toMatchObject({ stage: 'publish-intent', remoteContainerId: '201' }); return Response.json({ id: '301' }); }
     if (url.pathname.endsWith('/301')) return Response.json({ id: '301', permalink: 'https://www.instagram.com/stories/qa_only/301/' });
@@ -55,7 +55,7 @@ describe('bounded Instagram single-JPEG Story capability, offline only', () => {
     expect(Object.fromEntries(posts[1].body)).toEqual({ creation_id: '201' });
     const profiles = requests.filter(v => v.url.pathname.endsWith('/101'));
     expect(profiles).toHaveLength(2); expect(profiles.every(v => v.url.searchParams.get('fields') === 'id,user_id,username,account_type')).toBe(true);
-    expect(checkpoints.map(v => v.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome']);
+    expect(checkpoints.map(v => v.stage)).toEqual(['container-created', 'publish-intent', 'outcome']);
     expect(checkpoints.at(-1)).toMatchObject({ status: 'published', remoteMediaId: '301', remoteUrl: null, errorCode: null });
     expect(posts[0].body.has('caption')).toBe(false); expect(posts[0].body.has('alt_text')).toBe(false); expect(posts[0].body.has('children')).toBe(false);
   });
@@ -106,10 +106,11 @@ describe('bounded Instagram single-JPEG Story capability, offline only', () => {
     expect(await publishMarketingRevision(replacement.input)).toMatchObject({ status: 'held', errorCode: 'approval-changed-before-publish' });
     expect(replacement.requests.filter(v => v.method === 'POST')).toHaveLength(1);
   });
-  it('requires a durable intent fence before any Story container creation', async () => {
+  it('requires a durable checkpoint fence before Story media_publish', async () => {
     const { input, requests } = fixture(); input.checkpoint = async () => { throw new Error('Offline QA fence lost'); };
     expect(await publishMarketingRevision(input)).toMatchObject({ status: 'held', errorCode: 'checkpoint-fence-lost', remoteContainerId: null });
-    expect(requests.some(v => v.method === 'POST')).toBe(false);
+    // Only the unpublished Story container was created; nothing was published.
+    expect(requests.filter(v => v.method === 'POST').map(v => new URL(v.url).pathname.split('/').at(-1))).toEqual(['media']);
   });
   it('records a numeric Story publish acknowledgement without requiring a permanent URL', async () => {
     const { input, requests } = fixture(); const original = input.fetcher!;

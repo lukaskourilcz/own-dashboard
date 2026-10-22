@@ -327,6 +327,7 @@ const CODES = {
   'container-create-intent': ['wait', 'Instagram is preparing the post.', 'Instagram příspěvek připravuje.'],
   'container-created': ['wait', 'Instagram accepted the images.', 'Instagram obrázky přijal.'],
   'container-pending': ['wait', 'Instagram is still processing the images.', 'Instagram obrázky ještě zpracovává.'],
+  'container-retry': ['wait', 'Preparing the images failed briefly. Nothing was published; they are prepared again from the start.', 'Příprava obrázků krátce selhala. Nic se nezveřejnilo; obrázky se připraví znovu od začátku.'],
   'container-identity-mismatch': ['verify', 'Instagram answered for a different post.', 'Instagram odpověděl k jinému příspěvku.'],
   'container-identity-unavailable': ['verify', 'Instagram did not confirm which post it prepared.', 'Instagram nepotvrdil, který příspěvek připravil.'],
   'container-status-unavailable': ['verify', 'Instagram did not report the processing state.', 'Instagram nesdělil stav zpracování.'],

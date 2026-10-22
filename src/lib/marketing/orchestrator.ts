@@ -7,7 +7,7 @@ import { SourceRefreshError,refreshMarketingSources,refreshSource } from './sour
 import { enqueueMarketingJob,executeMarketingJob } from './worker-runtime';
 import { trustedMarketingTemplate } from './template-registry';
 import { pragueScheduledAt } from './clock';
-import { publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type PublisherState } from './publisher';
+import { CONTAINER_RETRY_CODE,publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type PublisherState } from './publisher';
 import { resolveMetaPublisherConfig } from './meta-credentials';
 import { createDneskaiMediaLoader } from './dneskai-media';
 export { metaConfiguration } from './meta-credentials';
@@ -94,7 +94,7 @@ async function publishingState(db:Database,owner:string,revisionId:string,refres
 export async function executeOrchestratedMarketingJob(db:Database,owner:string,id:string){
  return executeMarketingJob(db,owner,id,{refreshSource,loadDneskaiMedia:createDneskaiMediaLoader(db,owner)});
 }
-/** `options.preflight` adds the read-only Meta checks to a dry run and stops before the container-create intent. */
+/** `options.preflight` adds the read-only Meta checks to a dry run and stops before any container. */
 export async function publishDueMarketing(db:Database,owner:string,brand:MarketingBrand,dryRun=true,signal=AbortSignal.timeout(55000),publicationId?:string,options:{preflight?:boolean}={}){
  if(!dryRun&&(process.env.MARKETING_PUBLISH_ENABLED!=='true'||process.env[`MARKETING_${brand.toUpperCase()}_PUBLISH_ENABLED`]!=='true'))throw new Error('publishing-held');
  let dueQuery=db.from('marketing_publications').select('id,revision_id,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','queued').lte('scheduled_at',new Date().toISOString()).gte('scheduled_at',new Date(Date.now()-15*60000).toISOString()).order('scheduled_at').limit(1);if(publicationId)dueQuery=dueQuery.eq('id',publicationId);
@@ -107,7 +107,7 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
  let credentialHold:{publicationId:string;code:string}|null=null;
  for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand){await publishingState(db,owner,publication.revision_id,true,signal);
   if(!dryRun&&!credentialHold){const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);if(config.credentialHold)credentialHold={publicationId:publication.id,code:config.credentialHold};}}}
- let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').eq('error_code','container-pending').gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
+ let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').in('error_code',['container-pending',CONTAINER_RETRY_CODE]).gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
  if(pending.error)throw new Error('publication-state-unavailable');
  if(credentialHold&&!pending.data?.length)return {outcomes:[{publicationId:credentialHold.publicationId,status:'held' as const,errorCode:credentialHold.code,remoteContainerId:null,remoteMediaId:null,remoteUrl:null}]};
  let dryQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','queued').lte('scheduled_at',new Date().toISOString()).limit(1);if(publicationId)dryQuery=dryQuery.eq('id',publicationId);

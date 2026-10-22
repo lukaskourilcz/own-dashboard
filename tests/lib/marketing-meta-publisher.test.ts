@@ -59,7 +59,7 @@ function fixture(options: { format?: 'carousel' | 'post'; assets?: Asset[]; coll
       if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json({ id: '1234567', user_id: '17841400000000001', username: 'dneskai' });
       if (url.pathname.endsWith('/content_publishing_limit')) return Response.json({ data: [{ quota_usage: 3, config: { quota_total: 50, quota_duration: 86400 } }] });
       if (url.pathname.endsWith('/media_publish') && method === 'POST') { expect(checkpoints.at(-1)).toMatchObject({ stage: 'publish-intent' }); return Response.json({ id: '90001' }); }
-      if (url.pathname.endsWith('/media') && method === 'POST') { expect(checkpoints[0]).toMatchObject({ stage: 'container-create-intent' }); return Response.json({ id: body.get('is_carousel_item') ? String(++nextChild) : '300' }); }
+      if (url.pathname.endsWith('/media') && method === 'POST') { expect(checkpoints.some(value => value.stage === 'publish-intent')).toBe(false); return Response.json({ id: body.get('is_carousel_item') ? String(++nextChild) : '300' }); }
       if (url.pathname.endsWith('/300')) return Response.json({ id: '300', status_code: 'FINISHED' });
       if (url.pathname.endsWith('/90001')) return Response.json({ id: '90001', permalink: 'https://www.instagram.com/p/offline-qa/' });
       throw new Error(`unexpected offline request ${method} ${url.pathname}`);
@@ -79,7 +79,7 @@ describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
     expect(Object.fromEntries(sent[3]!.body)).toEqual({ caption, media_type: 'CAROUSEL', children: '201,202,203' });
     expect(Object.fromEntries(sent[4]!.body)).toEqual({ creation_id: '300' });
     expect(sent.filter(call => call.url.pathname.endsWith('/media_publish'))).toHaveLength(1);
-    expect(checkpoints.map(value => value.stage)).toEqual(['container-create-intent', 'container-created', 'publish-intent', 'outcome', 'outcome']);
+    expect(checkpoints.map(value => value.stage)).toEqual(['container-created', 'publish-intent', 'outcome', 'outcome']);
     // The account check uses the Instagram Login professional ID, and the quota is read before any container.
     expect(calls.find(call => call.url.pathname.endsWith('/17841400000000001'))!.url.searchParams.get('fields')).toBe('id,user_id,username');
     expect(calls.findIndex(call => call.url.pathname.endsWith('/content_publishing_limit'))).toBeLessThan(calls.findIndex(call => call.method === 'POST'));
@@ -108,7 +108,7 @@ describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
     const { input, posts, checkpoints } = fixture({ graph: ({ url }) => url.pathname.endsWith('/300') ? Response.json({ id: '300', status_code: 'IN_PROGRESS' }) : undefined });
     expect(await publishMarketingRevision(input)).toMatchObject({ status: 'pending', errorCode: 'container-pending', remoteContainerId: '300' });
     expect(posts().some(call => call.url.pathname.endsWith('/media_publish'))).toBe(false);
-    expect(checkpoints.map(value => value.stage)).toEqual(['container-create-intent', 'container-created']);
+    expect(checkpoints.map(value => value.stage)).toEqual(['container-created']);
   });
   it.each(['ERROR', 'EXPIRED'])('records a %s container as a definite failure without media_publish', async status => {
     const { input, posts, checkpoints } = fixture({ graph: ({ url }) => url.pathname.endsWith('/300') ? Response.json({ id: '300', status_code: status }) : undefined });
@@ -158,6 +158,106 @@ describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
     expect(publicationGate(tags.input, tags.input.config, now)).toBe('caption-hashtag-limit');
     const mentions = fixture(); mentions.input.revisionRow.revision.caption = `${caption} ${Array.from({ length: 21 }, (_, i) => `@user${i}`).join(' ')} redakce@dneskai.cz`; mentions.reapprove();
     expect(publicationGate(mentions.input, mentions.input.config, now)).toBe('caption-mention-limit');
+  });
+});
+
+describe('container failures before media_publish (approval-04)', () => {
+  type Row = PublishMarketingInput['publication'];
+  // Stores checkpoints the way marketing_checkpoint_publication and marketing_finish_publication do, so
+  // consecutive ticks see what the database would hand them. A tick only continues a claimed row that waits
+  // for its container (`container-pending` or `container-retry`) or re-enters a reconciliation row.
+  const ticks = async (state: ReturnType<typeof fixture>, limit = 5) => {
+    const row: Row = { ...state.input.publication }; const record = state.input.checkpoint; const outcomes = [];
+    state.input.checkpoint = async value => {
+      await record(value);
+      row.remote_container_id = value.remoteContainerId; row.error_code = value.errorCode;
+      if (value.stage === 'outcome') Object.assign(row, { status: value.status, remote_media_id: value.remoteMediaId, remote_url: value.remoteUrl, lease_until: null });
+    };
+    for (let tick = 0; tick < limit; tick++) {
+      if (row.status === 'published' || row.status === 'failed') break;
+      if (row.status === 'claimed' && tick > 0 && !['container-pending', 'container-retry'].includes(row.error_code ?? '')) break;
+      const outcome = await publishMarketingRevision({ ...state.input, publication: { ...row } });
+      outcomes.push(outcome);
+      // The orchestrator records a post-claim hold as failed; reconciliation records only a verified result.
+      if (outcome.status === 'held' && outcome.errorCode !== 'checkpoint-fence-lost') row.status = 'failed';
+      if (row.status === 'reconciliation' && outcome.status === 'published') Object.assign(row, { status: 'published', remote_media_id: outcome.remoteMediaId, remote_url: outcome.remoteUrl });
+    }
+    return { row, outcomes, mediaPublish: state.posts().filter(call => call.url.pathname.endsWith('/media_publish')).length };
+  };
+  const failing = (index: number, mode: 'throw' | 500 | 400 | 429) => {
+    let seen = -1;
+    return fixture({ graph: () => {
+      seen++;
+      if (seen !== index) return undefined;
+      if (mode === 'throw') throw new DOMException('offline timeout', 'TimeoutError');
+      return Response.json({ error: { message: 'offline QA failure' } }, { status: mode });
+    } });
+  };
+  const graphPath = (call: Call) => call.url.pathname.split('/').at(-1);
+
+  it('turns a 5xx on the second carousel child into a retry, then recreates every container and publishes once', async () => {
+    const state = failing(3, 500);
+    const first = await publishMarketingRevision(state.input);
+    expect(first).toEqual({ status: 'pending', errorCode: 'container-retry', retryCause: 'meta-http-500', remoteContainerId: null, remoteMediaId: null, remoteUrl: null });
+    // No durable intent and no parent: the stored publication returns to "no container" and stays claimed.
+    expect(state.checkpoints).toEqual([{ stage: 'container-retry', status: 'pending', errorCode: 'container-retry', remoteContainerId: null, remoteMediaId: null, remoteUrl: null }]);
+    expect(state.posts().map(graphPath)).toEqual(['media', 'media']);
+    const before = state.calls.length;
+    const second = await publishMarketingRevision({ ...state.input, publication: { ...state.input.publication, error_code: 'container-retry' } });
+    expect(second).toMatchObject({ status: 'published', remoteMediaId: '90001' });
+    const retry = state.calls.slice(before);
+    // The retry runs the account, byte (sha256, geometry, sRGB) and quota checks again before its first POST.
+    expect(retry.slice(0, 5).map(graphPath)).toEqual(['17841400000000001', 'slide-1.jpg', 'slide-2.jpg', 'slide-3.jpg', 'content_publishing_limit']);
+    expect(retry.filter(call => call.method === 'POST').map(graphPath)).toEqual(['media', 'media', 'media', 'media', 'media_publish']);
+    expect(state.posts().filter(call => graphPath(call) === 'media_publish')).toHaveLength(1);
+  });
+  it('retries an uncertain parent container request and a lost status read of a stored container', async () => {
+    const parent = failing(5, 'throw');
+    expect(await publishMarketingRevision(parent.input)).toMatchObject({ status: 'pending', errorCode: 'container-retry', retryCause: 'meta-request-uncertain' });
+    expect(parent.posts().map(graphPath)).toEqual(['media', 'media', 'media', 'media']);
+    // A later tick that continues container-pending and cannot read the status forgets that container too.
+    const stored = fixture({ graph: ({ url }) => url.pathname.endsWith('/300') ? Response.json({ error: {} }, { status: 503 }) : undefined });
+    const outcome = await publishMarketingRevision({ ...stored.input, publication: { ...stored.input.publication, remote_container_id: '300', error_code: 'container-pending' } });
+    expect(outcome).toMatchObject({ status: 'pending', errorCode: 'container-retry', retryCause: 'meta-http-503', remoteContainerId: null });
+    expect(stored.posts()).toHaveLength(0);
+  });
+  it('records a definite 4xx container rejection as a plain failure, never as reconciliation', async () => {
+    const state = failing(2, 400);
+    expect(await publishMarketingRevision(state.input)).toEqual({ status: 'failed', errorCode: 'meta-http-400', remoteContainerId: null, remoteMediaId: null, remoteUrl: null });
+    expect(state.checkpoints.map(value => [value.stage, value.status])).toEqual([['outcome', 'failed']]);
+    expect(state.posts().some(call => graphPath(call) === 'media_publish')).toBe(false);
+  });
+  it('holds without forgetting anything when the retry checkpoint loses its fence', async () => {
+    const state = failing(3, 500); state.input.checkpoint = async () => { throw new Error('CAS lost'); };
+    expect(await publishMarketingRevision(state.input)).toMatchObject({ status: 'held', errorCode: 'checkpoint-fence-lost', remoteContainerId: null });
+    expect(state.posts().some(call => graphPath(call) === 'media_publish')).toBe(false);
+  });
+  it('re-checks the exact approval on a retry tick and holds a changed revision before any POST', async () => {
+    const state = fixture();
+    state.input.revisionRow.revision = { ...state.input.revisionRow.revision, caption: `${caption} (upraveno)` };
+    expect(await publishMarketingRevision({ ...state.input, publication: { ...state.input.publication, error_code: 'container-retry' } })).toMatchObject({ status: 'held', errorCode: 'exact-approval-required' });
+    expect(state.calls).toHaveLength(0);
+  });
+  it('re-checks the downloaded bytes on a retry tick', async () => {
+    const state = fixture({ assets: [{ bytes: portrait, width: 1080, height: 1350 }, { bytes: png, width: 1080, height: 1350 }] });
+    expect(await publishMarketingRevision({ ...state.input, publication: { ...state.input.publication, error_code: 'container-retry' } })).toMatchObject({ status: 'failed', errorCode: 'asset-format-unsupported' });
+    expect(state.posts()).toHaveLength(0);
+  });
+
+  // Graph requests on a 3-slide carousel: 0 account, 1 quota, 2-4 children, 5 parent, 6 status, 7 media_publish, 8 permalink.
+  const cases = Array.from({ length: 9 }, (_, index) => (['throw', 500, 429, 400] as const).map(mode => [index, mode] as const)).flat();
+  it.each(cases)('sends media_publish at most once over every tick when Graph request %i fails with %s', async (index, mode) => {
+    const { row, mediaPublish, outcomes } = await ticks(failing(index, mode));
+    expect(mediaPublish).toBeLessThanOrEqual(1);
+    if (index <= 1) expect(row).toMatchObject({ status: 'failed', remote_container_id: null });
+    else if (index <= 6) {
+      // Nothing was published: a transient failure recreates the containers, a definite one fails plainly.
+      expect(row.status).toBe(mode === 400 ? 'failed' : 'published');
+      expect(outcomes.some(outcome => outcome.status === 'reconciliation')).toBe(false);
+    } else if (index === 7) {
+      // An ambiguous media_publish is never retried: it stays with the read-only reconciliation.
+      expect(mediaPublish).toBe(1); expect(row).toMatchObject({ status: 'reconciliation', remote_container_id: '300', remote_media_id: null });
+    } else expect(row).toMatchObject({ status: 'published', remote_media_id: '90001' });
   });
 });
 
@@ -224,7 +324,7 @@ describe('reconciliation after an ambiguous media_publish', () => {
 });
 
 describe('dry-run preflight', () => {
-  it('runs only read-only checks and stops before the container-create intent', async () => {
+  it('runs only read-only checks and stops before any container', async () => {
     const { input, calls, checkpoints } = fixture();
     expect(await publishMarketingRevision({ ...input, dryRun: true })).toMatchObject({ status: 'dry-run', errorCode: null });
     expect(calls).toHaveLength(0);
