@@ -273,3 +273,35 @@ Tests: `tests/lib/dneskai-reel-render.test.ts` renders a 2-slide fixture with an
 it with ffprobe (container, codecs, 1080 × 1920, 30 fps, duration within 0.2 s, `moov` before `mdat`); CI installs
 ffprobe. `tests/lib/dneskai-reel.test.ts` covers the cache, the refusals, storage and the route;
 `tests/lib/dneskai-reel-bucket.test.ts` replays the bucket migration in PGlite.
+
+## Reels: audio library (#164)
+
+Zdroje → Hudba holds the tracks a Reel may play (`marketing_audio_tracks`, migration `20261023130100`, files in the
+private `marketing-audio` bucket). The owner uploads a file with its title, artist, source, the page it came from, a
+licence note and up to five mood tags; each track has a switch for the rotation and a 10-second preview. The Lab's
+post card has a "Hudba Reelu" select: one enabled track or the rotation. The choice is saved as
+`revision.audio.trackId`, so it is part of the content hash and approval binds the exact track. A post without a
+choice takes the next enabled track after the previous Reel's (`nextDneskaiAudioTrack`), so two consecutive posts
+never share a track while two or more are enabled. A carousel ignores the field.
+
+### Licences and what the owner records
+
+| Source | Why it is allowed | Record for each track |
+|---|---|---|
+| Meta Sound Collection (`meta-sound-collection`) | Meta's own library, cleared for use on Facebook and Instagram | The track's page in the collection, and the licence note "Meta Sound Collection" with the download date |
+| Pixabay Music (`pixabay`) | The Pixabay Content License allows use in videos on social media without attribution | The track's Pixabay page and "Pixabay Content License" with the download date |
+| Own recording (`original`) | Made by the owner | Where and when it was made |
+| Instagram library (`instagram-library`) | Licensed by Instagram itself; usable only through the Facebook Login audio API (C4, C5) | The Instagram audio id; no file. Not offered for upload yet |
+
+No commercial songs, and nothing from another source: a baked-in commercial song gets the Reel muted or blocked
+(plan, section 2). The source URL is required for every uploaded file, so the origin of each track can be checked
+later.
+
+### Upload path
+
+`POST /api/marketing/dneskai/audio` with `prepare` returns a signed upload URL for exactly
+`<owner>/<new id>.<ext>`; the browser uploads the file there, then `create` downloads it, measures it with the same
+ffmpeg as the renderer (audio stream, 1 s to 15 min, at most 20 MiB) and records the row. A file that fails is
+deleted. `toggle` switches a track. The route and both screens are hidden while `MARKETING_DNESKAI_REELS_ENABLED`
+is off. The render route (`/api/marketing/dneskai/render-reel`) bakes the approved track into the MP4 and keys the
+reel by it.
