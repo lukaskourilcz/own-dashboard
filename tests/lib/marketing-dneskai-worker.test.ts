@@ -159,7 +159,7 @@ describe("the DNESKAi daily generation ceiling at the paid call", () => {
     expect(await executeMarketingJob(db, owner, jobId, { env: { ...env, MARKETING_DNESKAI_DAILY_GENERATION_USD: "0.80" }, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck }))
       .toEqual({ claimed: true, status: "review", revisionId });
     const fence = rpc.mock.calls.find(([name]) => name === "marketing_claim_job")![1].p_fence;
-    expect(rpc).toHaveBeenCalledWith("marketing_reserve_dneskai_generation", { p_owner: owner, p_job: jobId, p_fence: fence, p_reservation: 0.25, p_ceiling: 0.8 });
+    expect(rpc).toHaveBeenCalledWith("marketing_reserve_dneskai_generation", { p_owner: owner, p_job: jobId, p_fence: fence, p_reservation: 0.13, p_ceiling: 0.8 });
     const order = rpc.mock.invocationCallOrder[rpc.mock.calls.findIndex(([name]) => name === "marketing_reserve_dneskai_generation")]!;
     expect(order).toBeLessThan(provider.invoke.mock.invocationCallOrder[0]!);
   }, 30000);
@@ -255,8 +255,8 @@ describe("the copy-validation retry on the next tick (GEN-14)", () => {
       .toEqual({ claimed: true, status: "review", revisionId });
     expect(provider.invoke).toHaveBeenCalledTimes(1);
     expect(provider.invoke.mock.calls[0]![0].prompt.endsWith(stored.resume.feedback)).toBe(true);
-    // Same reservation as an in-process retry: the job's whole $0.25 under the new fence.
-    expect(rpc).toHaveBeenCalledWith("marketing_reserve_dneskai_generation", expect.objectContaining({ p_job: jobId, p_reservation: 0.25 }));
+    // Same reservation as an in-process retry: the job's whole $0.13 under the new fence.
+    expect(rpc).toHaveBeenCalledWith("marketing_reserve_dneskai_generation", expect.objectContaining({ p_job: jobId, p_reservation: 0.13 }));
     const finish = rpc.mock.calls.find(([name]) => name === "marketing_finish_job")![1] as { p_result: { usage: unknown } };
     expect(finish.p_result.usage).toEqual({ attempts: 2, inputTokens: 6500, outputTokens: 3000, estimatedCostUsd: 0.043 });
   }, 30000);
@@ -286,13 +286,24 @@ describe("the copy-validation retry on the next tick (GEN-14)", () => {
   it("never retries a provider failure, deferred or not", async () => {
     const { db, rpc, jobs } = retryDatabase();
     const provider = model();
-    provider.invoke.mockRejectedValueOnce(Object.assign(new Error("test-only"), { status: 529 }));
+    provider.invoke.mockRejectedValueOnce(Object.assign(new Error("test-only"), { status: 500 }));
     const result = await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true });
     expect(result).toMatchObject({ claimed: true, status: "failed" });
     expect(provider.invoke).toHaveBeenCalledTimes(1);
     expect(jobs.update).not.toHaveBeenCalled();
-    // Billing was ambiguous: the brief job books its whole maximum.
-    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_result: { schemaVersion: "marketing-job-failure/1", usage: expect.objectContaining({ attempts: 1, estimatedCostUsd: 0.25 }) } }));
+    // A 500 may come after the model ran: the brief job books its whole maximum.
+    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_result: { schemaVersion: "marketing-job-failure/1", usage: expect.objectContaining({ attempts: 1, estimatedCostUsd: 0.13 }) } }));
+  }, 30000);
+  it("records $0 for a call the API rejected whole, and still does not retry (decision 16)", async () => {
+    const { db, rpc, jobs } = retryDatabase();
+    const provider = model();
+    provider.invoke.mockRejectedValueOnce(Object.assign(new Error("test-only"), { status: 529 }));
+    const result = await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true });
+    expect(result).toMatchObject({ claimed: true, status: "failed", errorCode: "provider-overloaded" });
+    expect(provider.invoke).toHaveBeenCalledTimes(1);
+    expect(jobs.update).not.toHaveBeenCalled();
+    // The failed job carries a measured $0, which the daily ledger counts instead of its reservation.
+    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_result: { schemaVersion: "marketing-job-failure/1", usage: { attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 } } }));
   }, 30000);
   it("refuses a stored state it cannot read and makes no call, so a job never gets a third attempt", async () => {
     for (const stored of [{ schemaVersion: "marketing-job-retry/1", resume: { attempt: 2, feedback: "x", issues: [], usage: { attempts: 2, inputTokens: 1, outputTokens: 1, estimatedCostUsd: 0.01 } } },

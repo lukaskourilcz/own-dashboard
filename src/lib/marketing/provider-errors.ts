@@ -30,3 +30,18 @@ export function classifyMarketingProviderError(value: unknown): MarketingProvide
     : providerCode ? errorCodes[providerCode] : 'provider-failed';
   return { code, httpStatus, providerCode };
 }
+
+/**
+ * Owner decision 16: HTTP answers the Messages API gives instead of running the model, so no token is billed.
+ * The request is rejected whole: invalid (400, including LangChain's CONTEXT_OVERFLOW, which it raises only for a
+ * 400 "prompt is too long"), unauthenticated (401), billing (402), forbidden (403), unknown model (404), too large
+ * (413), rate limited (429) or overloaded (529). The calls are non-streaming with retries off, so the status is the
+ * whole answer. Excluded on purpose: any failure without an HTTP status (a dropped connection, a timeout, an error
+ * event inside a response), 408, 409, 500, 502, 503, 504 and any other status, since the model may have run.
+ */
+const UNBILLED_HTTP_STATUSES: ReadonlySet<number> = new Set([400, 401, 402, 403, 404, 413, 429, 529]);
+export function marketingProviderFailureUnbilled(failure: MarketingProviderFailure | null | undefined): boolean {
+  if (!failure) return false;
+  if (failure.httpStatus !== null) return UNBILLED_HTTP_STATUSES.has(failure.httpStatus);
+  return failure.providerCode === 'CONTEXT_OVERFLOW';
+}

@@ -73,8 +73,8 @@ describe('actual installed Claude/LangChain/LangSmith setup with mocked HTTP; ze
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(stage).not.toHaveBeenCalled();
     expect(finish).toHaveBeenCalledWith({ status: 'failed', revisionHash: null, issues: ['provider-rate-limited'],
-      usage: { attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: expect.any(Number) } });
-    expect(finish.mock.calls[0][0].usage.estimatedCostUsd).toBeGreaterThan(0);
+      usage: { attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 } });
+    // Decision 16: the real SDK surfaces the HTTP 429, a whole-request rejection that billed nothing, so it books $0.
     expect(JSON.stringify(finish.mock.calls)).not.toContain('TEST_ONLY_PRIVATE');
   });
   it('uses explicit output rules and only fixed validation codes on a bounded second actual SDK request', async () => {

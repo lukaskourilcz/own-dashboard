@@ -238,7 +238,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(Number(spent)).toBeCloseTo(recorded.reduce((sum, row) => sum + Number(row.usd), 0), 6);
     expect(Number(spent)).toBeGreaterThan(0);
     expect(Number(spent)).toBeLessThan(1);
-    expect(await sql('select reserved_usd::text,calls from marketing_private.dneskai_generation_spend where user_id=$1 order by calls', [OWNER])).toEqual([{ reserved_usd: '0.2500', calls: 1 }, { reserved_usd: '0.2500', calls: 2 }]);
+    expect(await sql('select reserved_usd::text,calls from marketing_private.dneskai_generation_spend where user_id=$1 order by calls', [OWNER])).toEqual([{ reserved_usd: '0.1300', calls: 1 }, { reserved_usd: '0.1300', calls: 2 }]);
     // Every tick is recorded once with what it did.
     const recordedTicks = await sql<{ kind: string; did: unknown[]; finished_at: string | null }>('select kind,did,finished_at::text from public.marketing_ticks where user_id=$1', [OWNER]);
     expect(recordedTicks).toHaveLength(ticks.length);

@@ -52,7 +52,7 @@ describe("the dry plan (#122)", () => {
     const sonnet = briefCost(base, KNOWN_PRICING["claude-sonnet-5-5"]!);
     const reservation = ((base + DNESKAI_RETRY_INSTRUCTION_BYTES) * 2 + DNESKAI_AB_BUDGET.maxOutputTokens * 10) / 1_000_000;
     expect(sonnet.attemptReservationUsd).toBeCloseTo(reservation, 6);
-    expect(sonnet.worstUsd).toBeCloseTo(Math.min(2 * reservation, 0.25), 6);
+    expect(sonnet.worstUsd).toBeCloseTo(Math.min(2 * reservation, 0.13), 6);
     expect(sonnet.expectedUsd).toBeLessThan(sonnet.retryUsd);
     expect(sonnet.retryUsd).toBeLessThan(sonnet.worstUsd);
     const haiku = briefCost(base, KNOWN_PRICING["claude-haiku-5-5"]!);

@@ -444,6 +444,62 @@ describe("generation from a brief", () => {
     await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(twice, { onUsage: afterRetry }))).rejects.toThrow();
     expect(afterRetry.mock.calls.map(([usage]) => usage.estimatedCostUsd)).toEqual([0.021, DEFAULT_GENERATION_BUDGET.maxCostUsd]);
   });
+  it("records $0 for a call the API rejected whole and keeps the reservation for every other failure (decision 16)", async () => {
+    const { MarketingGenerationError } = await import("@/lib/marketing/generation");
+    const rejecting = (failure: unknown) => ({ ...fakeModel([]), invoke: vi.fn(async () => { throw failure; }) });
+    const unbilled: unknown[] = [
+      Object.assign(new Error("test-only"), { status: 400, error: { type: "error", error: { type: "invalid_request_error" } } }),
+      Object.assign(new Error("test-only"), { status: 401 }), Object.assign(new Error("test-only"), { status: 413 }),
+      Object.assign(new Error("test-only"), { status: 429, lc_error_code: "MODEL_RATE_LIMIT" }), Object.assign(new Error("test-only"), { status: 529 }),
+      Object.assign(new Error("test-only"), { lc_error_code: "CONTEXT_OVERFLOW" }),
+      new MarketingGenerationError("provider-rate-limited", { code: "provider-rate-limited", httpStatus: 429, providerCode: "rate_limit_error" }),
+      new MarketingGenerationError("unsafe-native-tracing-enabled"), new MarketingGenerationError("provider-sdk-setup-failed"),
+    ];
+    for (const failure of unbilled) {
+      const onUsage = vi.fn();
+      const model = rejecting(failure);
+      await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model, { onUsage }))).rejects.toThrow();
+      expect(model.invoke).toHaveBeenCalledTimes(1);
+      expect(onUsage).toHaveBeenLastCalledWith({ attempts: 1, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 });
+    }
+    const billed: unknown[] = [
+      new Error("socket hang up"), Object.assign(new Error("test-only"), { status: 500 }), Object.assign(new Error("test-only"), { status: 504 }),
+      Object.assign(new Error("test-only"), { status: 408 }),
+      // An error event inside a response has a type but no HTTP status: the model may have run.
+      Object.assign(new Error("test-only"), { error: { type: "error", error: { type: "overloaded_error" } } }),
+      new MarketingGenerationError("provider-overloaded", { code: "provider-overloaded", httpStatus: null, providerCode: "overloaded_error" }),
+      new MarketingGenerationError("generation-timeout"),
+    ];
+    for (const failure of billed) {
+      const onUsage = vi.fn();
+      await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(rejecting(failure), { onUsage }))).rejects.toThrow();
+      expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ estimatedCostUsd: DEFAULT_GENERATION_BUDGET.maxCostUsd }));
+    }
+    // After a measured first attempt, a rejected retry keeps the measured cost and adds nothing.
+    const wrong = validCopy(pictures); wrong.slides[0]!.body = "Navíc.";
+    const twice = fakeModel([]);
+    twice.invoke.mockImplementationOnce(async () => ({ copy: wrong, usage: { inputTokens: 3000, outputTokens: 1500 } })).mockImplementationOnce(async () => { throw Object.assign(new Error("test-only"), { status: 429 }); });
+    const afterRetry = vi.fn();
+    await expect(generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(twice, { onUsage: afterRetry }))).rejects.toThrow("provider-rate-limited");
+    expect(afterRetry.mock.calls.map(([usage]) => usage.estimatedCostUsd)).toEqual([0.021, 0.021]);
+  });
+  it("never lets one job pass $0.13 (decision 15)", async () => {
+    expect(DEFAULT_GENERATION_BUDGET.maxCostUsd).toBe(0.13);
+    // Two full attempts at the token limits cost exactly the ceiling.
+    const full = (DEFAULT_GENERATION_BUDGET.maxInputTokens * 2 + DEFAULT_GENERATION_BUDGET.maxOutputTokens * 10) / 1_000_000;
+    expect(DEFAULT_GENERATION_BUDGET.maxAttempts * full).toBeCloseTo(0.13, 10);
+    // A rich brief reserves its input in bytes; after an expensive first attempt the retry would not fit, so it is never made.
+    const base = briefFixture(pictures);
+    const rich = briefFixture(pictures, { evidence: Array.from({ length: 6 }, (_, i) => ({ ...base.evidence[0]!, candidateId: `rich-${i}`, excerpt: "Příliš žluťoučký kůň vysvětlil ověřené změny. ".repeat(40) })), media: base.media.map((m) => ({ ...m, candidateId: "rich-0" })) });
+    const wrong = validCopy(pictures); wrong.slides[0]!.body = "Navíc.";
+    const model = fakeModel([{ copy: wrong, usage: { inputTokens: 20000, outputTokens: 2500 } }]);
+    const onUsage = vi.fn();
+    await expect(generateMarketingDraft(briefInput(briefPacket(rich)), dependencies(model, { onUsage }))).rejects.toThrow("cost-budget-exceeded");
+    expect(model.invoke).toHaveBeenCalledTimes(1);
+    expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ estimatedCostUsd: 0.065 }));
+    expect(admit).toHaveBeenCalledTimes(1);
+    expect(admit).toHaveBeenCalledWith({ attempt: 1, maxCostUsd: 0.13 });
+  });
   it("refuses knowledge, Threads, another template, a missing media loader and a refused daily budget before any call", async () => {
     const input = briefInput(briefPacket(briefFixture(pictures)));
     const cases: Array<[Parameters<typeof generateMarketingDraft>[0], Partial<GenerationDependencies>, string]> = [
@@ -575,7 +631,7 @@ describe("brief input planning without relaxing budget admission", () => {
     const prompt=JSON.parse(provider.invoke.mock.calls[0]![0].prompt);
     expect(prompt.evidence).toHaveLength(6);
     expect(prompt.evidence.reduce((n:number,e:{excerpt:string})=>n+e.excerpt.length,0)).toBeGreaterThan(4000);
-    expect(admission).toHaveBeenCalledWith({attempt:1,maxCostUsd:0.25});
+    expect(admission).toHaveBeenCalledWith({attempt:1,maxCostUsd:0.13});
     const blocked=fakeModel([]);
     await expect(generateMarketingDraft(briefInput(source),{model:blocked,now,loadDneskaiMedia:loadMedia,admitPaidCall:admission,budget:{...DEFAULT_GENERATION_BUDGET,maxInputTokens:1000}})).rejects.toThrow("input-budget-exceeded");
     expect(blocked.invoke).not.toHaveBeenCalled();

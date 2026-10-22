@@ -166,6 +166,7 @@ The migrations, in the order they run:
 70. `20261022141512_dneskai_owner_recovery.sql` — unapplied, owner-only release of a held report to the next nightly review and reslot of a lapsed, unadmitted brief; called only with `DNESKAI_OWNER_RECOVERY_ENABLED=true`.
 71. `20261022141613_dneskai_release_lapsed_brief.sql` — unapplied, owner-only release of a lapsed brief's selected reports; refuses to apply before migration 68; called only with `DNESKAI_LAPSED_RELEASE_ENABLED=true`.
 72. `20261022160000_dneskai_event_majority_category.sql` — unapplied, `marketing_dneskai_finish` takes an event's optional majority category from `p_events` (SEL-10); the deployed function ignores it.
+73. `20261022171000_dneskai_collection_unresolved_scope.sql` — unapplied, an unknown collection cost blocks paid stages only on its own run and Prague day; the old reservation rows stay unchanged.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
