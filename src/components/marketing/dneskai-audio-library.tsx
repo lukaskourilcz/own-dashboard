@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-contracts';
@@ -53,7 +52,7 @@ function TrackList({ tracks, lang, preview, player }: { tracks: DneskaiAudioTrac
         <div className="min-w-0 flex-1 space-y-1">
           <p className="break-words text-sm font-medium">{track.title} <span className="font-normal text-foreground-muted">· {track.artist}</span></p>
           <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
-            <StatusBadge value={track.enabled ? 'enabled' : 'disabled'} label={track.enabled ? t.enabled : t.disabled} tone={track.enabled ? 'success' : 'neutral'} />
+            <span className="font-medium text-foreground">{track.enabled ? t.enabled : t.disabled}</span>
             <span>{t.sources[track.source]}</span>
             <span className="tabular" aria-label={`${t.duration} ${dneskaiAudioClock(track.durationMs)}`}>{dneskaiAudioClock(track.durationMs)}</span>
             {track.mood.length > 0 && <span>{t.mood}: {track.mood.join(', ')}</span>}
