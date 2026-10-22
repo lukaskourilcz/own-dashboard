@@ -53,6 +53,7 @@ tick. Each precheck still runs once per tick: the order is chosen from its answe
 | 5 | publishing | a queued DNESKAi publication inside its 15-minute window, or a claimed one waiting for its container | `publishDueMarketing(db, owner, 'dneskai', dryRun, signal)`. Live only when `MARKETING_PUBLISH_ENABLED` and `MARKETING_DNESKAI_PUBLISH_ENABLED` are both `true`; otherwise a dry run with no Meta write. | both publish switches; `marketing_accounts.enabled` is enforced by the publisher |
 | 6 | reconciliation | a DNESKAi publication in `reconciliation` not checked for 30 minutes; when there is none, a `claimed` one whose lease expired (the function died mid-publish), which only `marketing_claim_due` would otherwise move to `reconciliation` | `reconcileStoredMarketingPublication`: Graph GET requests only, and the receipt when the media is found | none (read-only) |
 | 7 | token | an Instagram token row for which `instagramTokenRefreshDue` is true (under ten days left, at least a day old) | `refreshInstagramToken` for one account. The refresh is marked uncertain in `marketing_scheduler_state` before the request is sent (`marketing_scheduler_save_state`); without that mark nothing is sent. `uncertain` is never retried for the same stored token, even when the answer or the release is lost; a new token from account verification lifts the block. `failed` waits a day, `held` an hour. | none: a refresh is a GET that publishes nothing, so a paused account keeps a live token |
+| 8 | reminder | always, when the ports wire it (owner decision 7) | `sendDneskaiReviewReminders`: in-app notifications for the day's first post ready for review and for the first unapproved slot of today within 60 minutes, each once (keyed per day and per slot). Holds no lease and calls no provider. `DNESKAI_REVIEW_REMINDERS_ENABLED=false` records `skipped: reminders-disabled` | none |
 
 A paused category is a recorded `skipped` with its code and costs $0. Nothing is called for it.
 
@@ -268,6 +269,8 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `MARKETING_PUBLICATION_REQUEUE_ENABLED` | off | "Give up and queue again" for a stranded publication (`/api/marketing/publications`) | Off until migration `20261022110000` |
 | `DNESKAI_OWNER_RECOVERY_ENABLED` | off | Sources: Re-review of held reports and Move to next free slot | Off until migration `20261022141512` |
 | `DNESKAI_LAPSED_RELEASE_ENABLED` | off | Sources: Release reports of a lapsed brief | Off until migrations `20261022021835` and `20261022141613` |
+| `DNESKAI_REVIEW_REMINDERS_ENABLED` | on | The tick's `reminder` step; only `false` turns it off | Live |
+| `DNESKAI_REGENERATE_ENABLED` | off | Lab: Regenerate with a note (`action: "regenerate"`) | Off until migration `20261022190000` |
 | `DNESKAI_RICH_EVIDENCE_ENABLED` | off | Fetched article text and picture descriptions in media collection and brief/2 | Off until the evidence migrations |
 | `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` | off | The research runner (`dneskai-apify-research.ts`); it also needs `MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN` to equal the plan id | Off, waits for an approved plan |
 | `MARKETING_OFFLINE_IMPORT_ENABLED` | off | Import of devShark's offline first-week assets; also needs the generation pilot window | Retired outside Preview |
