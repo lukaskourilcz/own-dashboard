@@ -10,4 +10,4 @@ Read `CLAUDE.md` for the product control surface and follow the focused workflow
 
 Keep project communications project-scoped and subscription renewal dates/classification explicit.
 
-DNESKAi posts follow `.claude/skills/dneskai-post-content/SKILL.md`: the first slide shows only its headline; no slide shows page counts, picture credits, a sources slide or any text about sources or verification; the caption names no sources or credits and carries at most 10 hashtags.
+DNESKAi posts follow `.claude/skills/dneskai-post-content/SKILL.md`: the first slide shows only its headline; no slide shows page counts, picture credits, a sources slide or any text about sources or verification; the caption names no sources or credits and carries at most 10 hashtags; its only call to comment is the code-written keyword line.

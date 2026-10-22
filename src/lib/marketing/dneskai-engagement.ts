@@ -1,3 +1,6 @@
+/** The public reply a new keyword starts with (owner decision 4, 22 October 2026); the owner may change or empty it. */
+export const DNESKAI_DEFAULT_PUBLIC_REPLY = 'Poslali jsme vám to do zpráv.';
+
 type Environment = Record<string, string | undefined>;
 
 /**

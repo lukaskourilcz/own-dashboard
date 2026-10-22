@@ -1,4 +1,5 @@
 import assets from './dneskai-preview-assets.json';
+import { dneskaiCaptionWithKeyword } from '@/lib/marketing/dneskai-caption';
 import { MARKETING_DECK_CONTENT_VERSION } from '@/lib/marketing/contracts';
 import { DNESKAI_SLIDES_VERSION, type DneskaiDeck, type DneskaiSlide } from '@/lib/marketing/dneskai-slides';
 import type { DneskaiBriefMedia } from '@/lib/marketing/dneskai-brief';
@@ -85,7 +86,7 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
       caption: caption(['Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn.', 'Než podle výsledku vyberete model, zjistěte, co test měří, porovnávejte stejné podmínky a ověřte rozptyl mezi běhy.']),
       renderReport: rendered([{ slide: 2, code: 'image-upscaled', blocking: false, message: 'The picture is enlarged slightly.', field: 'image-1' }]) }),
     base(2, 'b', { title: 'Tip dne: kontext místo proseb', scheduledAt: at(1, '12:30'), brief: brief('Ukázkový tip', 1),
-      caption: caption(['Model neodpoví lépe, když ho poprosíte. Odpoví lépe, když mu řeknete cíl, publikum a formát.']),
+      caption: dneskaiCaptionWithKeyword(caption(['Model neodpoví lépe, když ho poprosíte. Odpoví lépe, když mu řeknete cíl, publikum a formát.']), 'KONTEXT'),
       // An education post with a comment keyword (#157, #159); the news post above has none and offers to add one.
       engagement: { keyword: 'KONTEXT', publicReply: 'Poslali jsme vám to do zpráv.',
         replyMessage: 'Díky za komentář. Tady je postup ve třech krocích:\n\n1. Napište, k čemu výsledek potřebujete.\n2. Řekněte, kdo ho bude číst.\n3. Popište formát, třeba tabulku nebo pět bodů.\n\nStačí to v jedné zprávě, bez prosby a omluvy.' } }),

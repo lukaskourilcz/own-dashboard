@@ -28,7 +28,8 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now = new Date
 
 export function verificationMessage(result: MarketingAccountVerifyResponse, lang: Lang): string {
   const t = dneskaiAccount[lang];
-  return !result.tokenStored ? t.keptNewer : result.account.enabled ? t.verifiedEnabled : t.verifiedNow;
+  const message = !result.tokenStored ? t.keptNewer : result.account.enabled ? t.verifiedEnabled : t.verifiedNow;
+  return result.page ? `${message} ${t.page(result.page.name)}` : message;
 }
 export function verificationError(error: unknown, lang: Lang): string {
   const t = dneskaiAccount[lang];
@@ -57,6 +58,7 @@ export function DneskaiInstagramAccountRecord({ account, lang, now }: { account:
       <div><dt className="text-foreground-muted">{t.publishing}</dt><dd>{account.enabled ? t.publishingOn : t.publishingOff}</dd></div>
       <div><dt className="text-foreground-muted">{t.tokenExpires}</dt><dd className="tabular">{at(account.token?.expiresAt)}</dd></div>
       <div><dt className="text-foreground-muted">{t.tokenRefreshed}</dt><dd className="tabular">{at(account.token?.refreshedAt)}</dd></div>
+      <div><dt className="text-foreground-muted">{t.loginMode}</dt><dd>{account.token ? t.loginModes[account.token.loginMode] : t.notRecorded}</dd></div>
       <div className="min-w-0"><dt className="text-foreground-muted">{t.scopes}</dt><dd className="break-words font-mono">{account.token?.scopes.length ? account.token.scopes.join(', ') : t.notRecorded}</dd></div>
     </dl>
   </div>;

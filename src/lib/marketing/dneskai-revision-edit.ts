@@ -8,6 +8,7 @@ import { dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
 import { DneskaiRevisionEditError, applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 import type { ListBriefAssetHashes, LoadDneskaiBriefPool, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { revisionContentHash } from "./hashes";
+import { dneskaiCaptionWithKeyword } from "./dneskai-caption";
 
 type Database = ReturnType<typeof createAdminClient>;
 
@@ -47,7 +48,9 @@ export async function prepareDneskaiRevisionEdit(original: ContentRevision, inpu
   const engagement = input.engagement === undefined ? saved : input.engagement ?? undefined;
   const audio = input.audio === undefined ? savedAudio : input.audio ?? undefined;
   try {
-    return parseContentRevision({ ...rest, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(engagement ? { engagement } : {}), ...(audio ? { audio } : {}) });
+    // #158: the caption's keyword line follows the approved keyword (added, changed or removed); code owns that line.
+    const caption = dneskaiCaptionWithKeyword(input.caption, engagement?.keyword ?? null);
+    return parseContentRevision({ ...rest, caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(engagement ? { engagement } : {}), ...(audio ? { audio } : {}) });
   } catch { return fail("revision-edit-invalid"); }
 }
 

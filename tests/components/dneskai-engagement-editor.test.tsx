@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DneskaiEngagementEditor } from '@/components/marketing/dneskai/lab/engagement-editor';
 import { createDneskaiWorkspaceFixture } from '@/lib/demo/dneskai-workspace-fixtures';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
+import { dneskaiKeywordLine } from '@/lib/marketing/dneskai-caption';
 import { createDeckDraft, DNESKAI_DEFAULT_PUBLIC_REPLY, dneskaiEditRequest, dneskaiEngagementChanged, draftProblems, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
 import type { DneskaiWorkspacePost } from '@/lib/marketing/dneskai-workspace';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -57,6 +58,17 @@ describe('Lab engagement editor (#159)', () => {
     expect(dneskaiEditRequest(post, seen.draft!).engagement?.keyword).toBe('NAVOD');
     type(keyword, 'kontext');
     expect(dneskaiEngagementChanged(post, seen.draft!)).toBe(false);
+  });
+  it('keeps the caption’s keyword line in step with a valid keyword and drops it with the keyword (#158)', () => {
+    const post = education();
+    act(() => root.render(<Harness post={post} />));
+    const keyword = q<HTMLInputElement>('[data-testid="dneskai-engagement-keyword"]')!;
+    type(keyword, 'navod');
+    expect(seen.draft!.caption).toContain(dneskaiKeywordLine('NAVOD'));
+    type(keyword, 'na vod');
+    expect(seen.draft!.caption).toContain(dneskaiKeywordLine('NAVOD'));
+    act(() => q('[data-testid="dneskai-engagement-remove"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(seen.draft!.caption).not.toContain('Napište do komentáře');
   });
   it('previews the edited DM, sends no public reply when emptied, and flags an over-long message', () => {
     const post = education();
