@@ -1,12 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn(), media: vi.fn(), lister: vi.fn(), feedback: vi.fn(async () => false), refresh: vi.fn()}));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn(), media: vi.fn(), lister: vi.fn(), feedback: vi.fn(async () => false), refresh: vi.fn(), freeSlot: vi.fn(), regenerate: vi.fn()}));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
 vi.mock("@/lib/marketing/owner-feedback", () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
 vi.mock("@/lib/marketing/asset-urls", () => ({ refreshMarketingAssetUrls: mocks.refresh }));
 vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: () => mocks.render(), getDneskaiMediaLoader: (...args: unknown[]) => mocks.media(...args), getBriefAssetHashLister: (...args: unknown[]) => mocks.lister(...args), getBriefPoolLoader: () => async () => ({ media: [], primaryCandidateId: null }) }));
+vi.mock("@/lib/marketing/dneskai-move", () => ({ dneskaiServerNextFreeSlot: mocks.freeSlot }));
+vi.mock("@/lib/marketing/dneskai-paid-actions", () => ({
+  DNESKAI_REGENERATE_NOTE_MAX: 1000, regenerateDneskaiRevision: mocks.regenerate,
+  DneskaiPaidActionError: class DneskaiPaidActionError extends Error { constructor(readonly code: string, readonly status = 409) { super(code); } },
+}));
 import { POST } from "@/app/api/marketing/revisions/route";
+import { DneskaiPaidActionError } from "@/lib/marketing/dneskai-paid-actions";
 import { revisionContentHash } from "@/lib/marketing/hashes";
 import { DNESKAI_RENDER_REPORT_VERSION, type ContentRevision, type DneskaiRenderReport } from "@/lib/marketing/contracts";
 import { a, b, c, deckRevision, signed } from "./marketing-dneskai-revision-fixture";
@@ -226,5 +232,67 @@ describe("POST /api/marketing/revisions publish-now", () => {
     const response = await POST(request({ action: "publish-now", id: current, expectedHash: revisionContentHash(expired()) }));
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: "approval-unavailable", reason: "account-unverified", id: saved });
+  });
+});
+
+describe("POST /api/marketing/revisions approve-at (owner decision 6)", () => {
+  const missed = () => ({ ...deckRevision(), scheduledAt: "2026-10-22T10:30:00.000Z" }) as ContentRevision;
+  const slot = "2026-10-22T15:00:00.000Z";
+  function moveDb(revision: ContentRevision, options: { status?: string } = {}) {
+    const rpc = vi.fn(async (name: string) => name === "marketing_approve_revision" ? { data: "88888888-8888-4888-8888-888888888888", error: null } : { data: null, error: null });
+    const from = vi.fn(() => {
+      const query = { select: () => query, eq: () => query,
+        maybeSingle: async () => ({ data: { revision, render_report: cleanReport, content_hash: revisionContentHash(revision), status: options.status ?? "review", ready: true, project_id: "99999999-9999-4999-8999-999999999999" }, error: null }) };
+      return query;
+    });
+    return { auth: { getUser: async () => ({ data: { user: { id: owner } } }) }, from, rpc };
+  }
+
+  it("moves exactly the reviewed version to the server's free slot without re-rendering and approves the new hash", async () => {
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.freeSlot.mockResolvedValue(slot);
+    const db = moveDb(missed()); mocks.user.mockReturnValue(db);
+    const response = await POST(request({ action: "approve-at", id: current, expectedHash: revisionContentHash(missed()), scheduledAt: slot }));
+    expect(response.status).toBe(200);
+    expect(mocks.freeSlot).toHaveBeenCalledWith(admin.db, owner, "99999999-9999-4999-8999-999999999999", [missed().scheduledAt], expect.any(Date));
+    expect(mocks.render.mock.results[0]!.value).not.toHaveBeenCalled();
+    const moved = admin.calls.find((call) => call.name === "marketing_save_revision")!.args.p_revision as ContentRevision;
+    expect(moved).toMatchObject({ scheduledAt: slot, caption: missed().caption, deck: missed().deck, account: missed().account });
+    const attach = admin.calls.find((call) => call.name === "marketing_attach_revision_render")!;
+    expect(db.rpc).toHaveBeenCalledWith("marketing_approve_revision", { p_revision_id: saved, p_expected_hash: attach.args.p_hash });
+    expect(await response.json()).toMatchObject({ id: saved, scheduledAt: slot, scheduling: "tick" });
+  });
+
+  it("refuses before writing when the slot shown is no longer the free one, none is free, or the version changed", async () => {
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(moveDb(missed()));
+    mocks.freeSlot.mockResolvedValue("2026-10-22T18:00:00.000Z");
+    let response = await POST(request({ action: "approve-at", id: current, expectedHash: revisionContentHash(missed()), scheduledAt: slot }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "slot-unavailable", scheduledAt: "2026-10-22T18:00:00.000Z" });
+    mocks.freeSlot.mockResolvedValue(null);
+    response = await POST(request({ action: "approve-at", id: current, expectedHash: revisionContentHash(missed()), scheduledAt: slot }));
+    expect(await response.json()).toEqual({ error: "slot-none-free" });
+    response = await POST(request({ action: "approve-at", id: current, expectedHash: "0".repeat(64), scheduledAt: slot }));
+    expect(await response.json()).toEqual({ error: "approval-unavailable", reason: "revision-changed" });
+    mocks.user.mockReturnValue(moveDb(missed(), { status: "returned" }));
+    response = await POST(request({ action: "approve-at", id: current, expectedHash: revisionContentHash(missed()), scheduledAt: slot }));
+    expect(await response.json()).toEqual({ error: "approval-unavailable", reason: "revision-not-ready" });
+    expect(admin.calls).toEqual([]);
+  });
+});
+
+describe("POST /api/marketing/revisions regenerate (owner decision 8)", () => {
+  it("hands the note to the paid action and answers 202 with the job, or its refusal code", async () => {
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision()));
+    mocks.regenerate.mockResolvedValueOnce({ jobId: saved, status: "queued", scheduling: "tick", duplicate: false });
+    let response = await POST(request({ action: "regenerate", id: current, expectedHash: revisionContentHash(deckRevision()), note: "  Kratší titulek.  " }));
+    expect(response.status).toBe(202);
+    expect(mocks.regenerate).toHaveBeenCalledWith(expect.objectContaining({ owner, id: current, note: "Kratší titulek.", expectedHash: revisionContentHash(deckRevision()) }));
+    mocks.regenerate.mockRejectedValueOnce(new DneskaiPaidActionError("dneskai-daily-generation-budget-exhausted"));
+    response = await POST(request({ action: "regenerate", id: current, expectedHash: revisionContentHash(deckRevision()), note: "x" }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "dneskai-daily-generation-budget-exhausted" });
+    response = await POST(request({ action: "regenerate", id: current, expectedHash: revisionContentHash(deckRevision()), note: "   " }));
+    expect(response.status).toBe(400);
+    response = await POST(request({ action: "regenerate", id: current, expectedHash: revisionContentHash(deckRevision()), note: "x".repeat(1001) }));
+    expect(response.status).toBe(400);
+    expect(mocks.regenerate).toHaveBeenCalledTimes(2);
   });
 });
