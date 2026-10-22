@@ -2,6 +2,7 @@ import { fetchArxiv } from "./arxiv";
 import { fetchBluesky } from "./bluesky";
 import { fetchGithub } from "./github";
 import { fetchHn } from "./hn";
+import { fetchHnSearch } from "./hnsearch";
 import { fetchHtml } from "./html";
 import { fetchRss } from "./rss";
 import { fetchSpaceflight } from "./spaceflight";
@@ -25,6 +26,8 @@ export async function fetchSource(
       return fetchGithub(source, context);
     case "hn":
       return fetchHn(source, context);
+    case "hnsearch":
+      return fetchHnSearch(source, context);
     case "html":
       return fetchHtml(source, context);
     case "rss":

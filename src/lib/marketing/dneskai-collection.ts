@@ -1,11 +1,11 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { dueDneskaiSources,DNESKAI_SOURCES,dneskaiCheapIdentity } from './dneskai-registry';
+import { dueDneskaiSources,dneskaiSourceById,dneskaiCheapIdentity,isDneskaiEducationSource } from './dneskai-registry';
 import { collectDneskaiFeed,startDneskaiInstagram,pollDneskaiInstagram,classifyDneskaiCandidates,jevRequest,DneskaiProviderError,type DneskaiApifyRegistration,type JevHistory,type ProviderEnvironment } from './dneskai-providers';
 import { pragueMarketingDate } from './weekly-planning';
 import { marketingPilotConfiguration } from './pilot';
-import { dneskaiSelectionV2Enabled } from './dneskai-evidence-rollout';
+import { dneskaiScoutingEnabled,dneskaiSelectionV2Enabled } from './dneskai-evidence-rollout';
 import type { DneskaiCollectionStore,DneskaiRun } from './dneskai-store';
 /** The pg_cron tick's only input: the project, and the run to resume (absent: admit today's run after 22:00 Prague). */
 export const DneskaiCollectInput=z.strictObject({projectId:z.uuid(),runId:z.uuid().optional()});
@@ -23,7 +23,7 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  const input=DneskaiCollectInput.parse(value),env=dependencies.env??process.env,clock=dependencies.now??(()=>new Date()),now=clock(),store=dependencies.store;
  if(env.MARKETING_DNESKAI_COLLECTION_ENABLED!=='true')throw new Error('collection-disabled');
  const date=pragueMarketingDate(now);if(!input.runId&&new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Prague',hour:'2-digit',hourCycle:'h23'}).format(now)<'22')throw new Error('collection-not-due');
- const original=input.runId?{id:input.runId}:await store.admit(owner,input.projectId,date,dueDneskaiSources(date));if(input.runId&&original.id!==input.runId)throw new Error('collection-run-unavailable');const fence=randomUUID(),run=await store.claim(owner,original.id,fence);
+ const original=input.runId?{id:input.runId}:await store.admit(owner,input.projectId,date,dueDneskaiSources(date,{education:dneskaiScoutingEnabled(env)}));if(input.runId&&original.id!==input.runId)throw new Error('collection-run-unavailable');const fence=randomUUID(),run=await store.claim(owner,original.id,fence);
  if(!run)throw new Error('collection-run-unavailable');
  if(run.project_id!==input.projectId||run.user_id!==owner||run.collection_pilot_owner)throw new Error('collection-run-unavailable'); // A retained pilot run is never ticked.
  if(run.status!=='running'||run.fence!==fence)return{runId:run.id,status:run.status,continue:false};
@@ -35,7 +35,7 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
   const stage=stages[stageIndex];
   if(freeHandled.has(stage.source_id))continue;
   if(operations>=5||signal.aborted)break;if(!['queued','polling'].includes(stage.status)||stage.kind==='jev')continue;
-  const source=DNESKAI_SOURCES.find(source=>source.id===stage.source_id);if(!source)throw new Error('collection-source-unavailable');
+  const source=dneskaiSourceById(stage.source_id);if(!source)throw new Error('collection-source-unavailable');
   // The switch holds a stage before its reservation. A started run (polling) is still read: reading is free and records its cost.
   const paid=source.kind==='instagram',apifyOff=paid&&stage.status==='queued'&&!apifyEnabled(env);
   if(!paid){
@@ -49,7 +49,7 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
    await Promise.all(Array.from({length:Math.min(DNESKAI_FEED_CONCURRENCY,batch.length)},async()=>{
     while(cursor<batch.length&&!admissionFailed&&operations<5&&!signal.aborted){
      if(operations>0&&callEnds-Date.now()<DNESKAI_FEED_TIMEOUT_MS)break;
-     const next=batch[cursor++],freeSource=DNESKAI_SOURCES.find(row=>row.id===next.source_id);
+     const next=batch[cursor++],freeSource=dneskaiSourceById(next.source_id);
      if(!freeSource)throw new Error('collection-source-unavailable');
      freeHandled.add(next.source_id);operations++; // Reserve the shared operation before awaiting its claim.
      let claimed;
@@ -145,10 +145,10 @@ export function dneskaiStageSwitchedOff(stage:Pick<import('./dneskai-store').Dne
 /** Jev classifies eight candidates per paid call; at most 16 calls per run (the former fixed stage count). */
 export const DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16;
 export function dneskaiJevStageCount(pending:number){return pending>0?Math.min(DNESKAI_JEV_MAX_STAGES,Math.ceil(pending/DNESKAI_JEV_BATCH)):0;}
-/** Source round-robin and cheap identities precede every paid evaluation. Missing/stale date is held from paid input. */
+/** Source round-robin and cheap identities precede every paid evaluation. Missing/stale date is held from paid input. Reports of education sources (#151) become topics and never reach Jev. */
 export function pendingDneskaiCandidates(all:readonly import('./dneskai-contracts').DneskaiCandidate[],now:Date){
  const done=all.filter(item=>item.status==='selected'||item.status==='duplicate'||item.status==='rejected');const knownText=new Set(done.map(item=>dneskaiCheapIdentity(item).normalizedText));const knownUrls=new Set(done.map(item=>dneskaiCheapIdentity(item).canonicalUrl));
  const groups=new Map<string,import('./dneskai-contracts').DneskaiCandidate[]>();
- for(const item of [...all].sort((a,b)=>Date.parse(b.publishedAt??'')-Date.parse(a.publishedAt??''))){if(item.status!=='new'||item.category!==null||!item.publishedAt||Date.parse(item.publishedAt)>now.getTime()||Date.parse(item.publishedAt)<now.getTime()-30*86400000)continue;const identity=dneskaiCheapIdentity(item);if(!identity.normalizedText||knownText.has(identity.normalizedText)||knownUrls.has(identity.canonicalUrl))continue;knownText.add(identity.normalizedText);knownUrls.add(identity.canonicalUrl);const group=groups.get(item.sourceId)??[];group.push(item);groups.set(item.sourceId,group);}
+ for(const item of [...all].sort((a,b)=>Date.parse(b.publishedAt??'')-Date.parse(a.publishedAt??''))){if(isDneskaiEducationSource(item.sourceId)||item.status!=='new'||item.category!==null||!item.publishedAt||Date.parse(item.publishedAt)>now.getTime()||Date.parse(item.publishedAt)<now.getTime()-30*86400000)continue;const identity=dneskaiCheapIdentity(item);if(!identity.normalizedText||knownText.has(identity.normalizedText)||knownUrls.has(identity.canonicalUrl))continue;knownText.add(identity.normalizedText);knownUrls.add(identity.canonicalUrl);const group=groups.get(item.sourceId)??[];group.push(item);groups.set(item.sourceId,group);}
  const result:import('./dneskai-contracts').DneskaiCandidate[]=[];while([...groups.values()].some(group=>group.length)){for(const group of groups.values()){const item=group.shift();if(item)result.push(item);}}return result;
 }

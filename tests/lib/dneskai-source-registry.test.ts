@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DNESKAI_SOURCES, dneskaiFeedAdapter, dneskaiSourceTier } from '@/lib/marketing/dneskai-registry';
+import { DNESKAI_EDUCATION_SOURCES, DNESKAI_SOURCES, dneskaiFeedAdapter, dneskaiSourceTier } from '@/lib/marketing/dneskai-registry';
 import { DNESKAI_NATIVE_FEED_IDS, dneskaiNativeSourceConfig } from '@/lib/marketing/dneskai-native-feed';
 import { dneskaiSourceTier as eventTier } from '@/lib/marketing/dneskai-events';
 import before from '../fixtures/dneskai-registry-before-c6.json';
@@ -17,8 +17,10 @@ describe('one DNESKAi source registry', () => {
  });
  it('derives the same adapter configuration for every feed', () => {
   const adapters = before.adapters as Record<string, Record<string, unknown>>;
-  expect([...DNESKAI_NATIVE_FEED_IDS]).toEqual(Object.keys(adapters));
-  for (const id of DNESKAI_NATIVE_FEED_IDS) expect(dneskaiNativeSourceConfig(id)).toEqual(adapters[id]);
+  // The news feeds keep their configuration; the education feeds (#151) follow them.
+  const education = DNESKAI_EDUCATION_SOURCES.filter(source => source.kind !== 'instagram').map(source => source.id);
+  expect([...DNESKAI_NATIVE_FEED_IDS]).toEqual([...Object.keys(adapters), ...education]);
+  for (const id of Object.keys(adapters)) expect(dneskaiNativeSourceConfig(id)).toEqual(adapters[id]);
   expect(DNESKAI_SOURCES.filter(source => source.kind === 'instagram').every(source => dneskaiNativeSourceConfig(source.id) === undefined)).toBe(true);
   expect(dneskaiFeedAdapter('github-ai-releases')?.repos).toHaveLength(7);
   expect(dneskaiFeedAdapter('openai-blog')).toEqual({});
