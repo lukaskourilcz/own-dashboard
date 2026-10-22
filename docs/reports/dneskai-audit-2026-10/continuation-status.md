@@ -8,7 +8,7 @@ The maps and findings are preserved as evidence at the audited commits. They are
 | C4 | Definitely refused starts settle at zero | Unknown starts/polls retain their cap; historic ledgers untouched |
 | GEN-01, cost-11 | Brief offers/input checks use bytes/2 plus token overhead | Conservative heuristic, not a true tokenizer; dollar reservation and all ceilings unchanged |
 | GEN-09 | Whole numeric tokens and normalized grouping/decimal/percent notation | Date-as-evidence policy unchanged |
-| C1, briefs-02, M-03 | Encoded RSS, bounded fetched prose and publisher image descriptions reach brief/2 and the offer | Metadata is not vision or a transcript; prepared migrations unapplied |
+| C1, briefs-02, M-03 | Encoded RSS, bounded fetched prose and publisher image descriptions reach brief/2 and the offer | Metadata is not vision or a transcript; migrations unapplied and rich evidence defaults off until approved SQL rollout |
 | briefs-04 | Future lapsed, never-generated briefs release eligible selected reports | No historical cleanup; jobs, revisions, coverage and other active briefs retain protection |
 | M-06 | Child URLs precede fallback renditions and deduplicate before the ten-URL cap | Ten-reference cap remains |
 | M-09 | Publisher/CDN redirects recheck policy and public DNS/TLS pins per hop | Two image redirects; no arbitrary-host or private-address access |
@@ -23,7 +23,7 @@ The research runner remains off. Its private ledger reserves atomically against 
 
 ## Production snapshot
 
-A Supabase MCP SELECT on 22 October 2026 at 02:39 UTC returned zero DNESKAi account rows and latest migration `20261021125123`. No credentials, remote account IDs or private source text were queried. No write or migration was performed. A second SELECT confirmed all four 22 October briefs are pending with `account-unavailable` and no jobs. Their Prague slots are 08:00, 12:30, 17:00 and 20:00; the first 30-minute lead boundary is 07:30. They still need account registration before their lapse boundaries. Migration-history reconciliation is a prerequisite to any approved application/schema release.
+A Supabase MCP SELECT on 22 October 2026 at 02:39 UTC returned zero DNESKAi account rows and latest migration `20261021125123`. No credentials, remote account IDs or private source text were queried. No write or migration was performed. A second SELECT confirmed all four 22 October briefs are pending with `account-unavailable` and no jobs. Their Prague slots are 08:00, 12:30, 17:00 and 20:00; the first 30-minute lead boundary is 07:30. They still need account registration before their lapse boundaries. Migration-history reconciliation remains a prerequisite to applying the prepared SQL. The code can deploy first with `DNESKAI_RICH_EVIDENCE_ENABLED` unset/false: it omits the new column/RPC and keeps the brief/1 writer. After both evidence migrations are applied in an approved rollout, enable that server-only variable and redeploy.
 
 ## Remaining owner choices
 

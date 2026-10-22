@@ -86,7 +86,7 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     expect(read.events.map((event) => [event.status, event.brief?.rank, event.brief?.status, event.brief?.code, event.members.map((member) => [member.candidateId, member.role])])).toEqual([
       ['selected', 1, 'pending', 'account-unavailable', [[lead.id, 'primary'], [verge.id, 'supporting']]], ['selected', 2, 'pending', 'account-unavailable', [[tool.id, 'primary']]]]);
     expect(read.events[0]!.brief).toMatchObject({ scheduledAt: '2026-10-21T06:00:00.000Z', mediaCount: 1, evidenceCount: 2, suggestedFormat: 'carousel' });
-    expect(briefs[0]!.brief).toMatchObject({ evidence: [{ candidateId: lead.id }, { candidateId: verge.id }], media: [{ assetSha256: picture, candidateId: lead.id, credit: 'Obrázek: OpenAI' }], suggestedFormat: 'carousel' });
+    expect(briefs[0]!.brief).toMatchObject({ schemaVersion: 'dneskai-brief/1', evidence: [{ candidateId: lead.id }, { candidateId: verge.id }], media: [{ assetSha256: picture, candidateId: lead.id, credit: 'Obrázek: OpenAI' }], suggestedFormat: 'carousel' });
     expect(await rows('select * from marketing_jobs')).toEqual([]);
   });
 

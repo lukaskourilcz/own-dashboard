@@ -737,7 +737,7 @@ This migration has only been replayed in isolated PGlite tests. Production marke
 
 `20261022020702_dneskai_richer_brief_evidence.sql` adds bounded article prose to the owner-scoped media collection and a fenced service-only setter. Alt and figcaption metadata stay in the immutable image plan. `20261022020759_dneskai_brief_v2_compatibility.sql` accepts both brief document versions without rewriting stored briefs or changing grants.
 
-Both migrations are local preparation. Reconcile production's divergent marketing history before an approved coordinated application/code release. Do not use the earlier generic `db push` recipe on production until that owner decision is resolved. Existing brief/1 documents remain readable; new briefs use brief/2. No collection switch, paid ceiling or staging ledger changes.
+Both migrations are local preparation. Reconcile production's divergent marketing history before an approved coordinated application/code release. Do not use the earlier generic `db push` recipe on production until that owner decision is resolved. The app defaults to the existing media columns and brief/1 writer. After both migrations have been reconciled and applied, set server-only `DNESKAI_RICH_EVIDENCE_ENABLED=true` and redeploy to enable article prose and brief/2. Both document versions remain readable. No collection switch, paid ceiling or staging ledger changes.
 
 ### Prepared: lapsed brief reports
 

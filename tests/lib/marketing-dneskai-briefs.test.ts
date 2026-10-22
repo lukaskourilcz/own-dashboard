@@ -376,3 +376,14 @@ describe('brief/2 evidence with v1 compatibility',()=>{
   if('brief' in result)expect(result.brief.evidence[0]).not.toHaveProperty('articleText');
  });
 });
+
+
+it('builds a strict brief/1 without rich fields for an unmigrated production writer', () => {
+  const candidate = report('openai-blog', 'legacy-writer', 0, 'Short feed text.');
+  const outcome = buildDneskaiBrief({ eventId: dneskaiEventId(candidate.id), memberHash: dneskaiEventMemberHash([candidate]), targetDate: '2026-10-21', category: 'ai-news', scheduledAt: '2026-10-21T06:00:00Z', observedAt: new Date('2026-10-20T20:30:00Z'), richEvidence: false,
+    members: [{ candidate, articleText: 'Full article prose. '.repeat(60), media: [asset(20, 0, undefined, { sourceAltText: 'Source image description.' })] }] });
+  expect(outcome).toMatchObject({ brief: { schemaVersion: 'dneskai-brief/1', suggestedFormat: 'single-image' } });
+  if (!('brief' in outcome)) throw new Error(outcome.code);
+  expect(outcome.brief.evidence[0]).not.toHaveProperty('articleText');
+  expect(outcome.brief.media[0]).not.toHaveProperty('sourceAltText');
+});

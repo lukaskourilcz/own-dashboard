@@ -1,14 +1,15 @@
 import type { PGlite } from '@electric-sql/pglite';
 import { createHash } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { candidate } from '@/lib/marketing/dneskai-providers';
 import { contentHash } from '@/lib/marketing/hashes';
 import { dneskaiCheapIdentity } from '@/lib/marketing/dneskai-registry';
 import { inspectDneskaiImage, phashDistance } from '@/lib/marketing/dneskai-media-image';
-import { collectDneskaiMedia, createDneskaiMediaLoader, pendingDneskaiMediaCandidates, purgeUnusedDneskaiMedia, type DneskaiMediaDatabase, type DneskaiMediaObjectStore } from '@/lib/marketing/dneskai-media';
+import { collectDneskaiMedia, readDneskaiMedia, createDneskaiMediaLoader, pendingDneskaiMediaCandidates, purgeUnusedDneskaiMedia, type DneskaiMediaDatabase, type DneskaiMediaObjectStore } from '@/lib/marketing/dneskai-media';
 import { createMediaDatabase, serviceRpcClient, setTestTime } from './marketing-dneskai-media-db';
 import { scene } from './marketing-dneskai-media-fixture';
+import { pgliteRestClient } from './marketing-dneskai-briefs-db';
 
 // OFFLINE: every byte is drawn locally, every request goes to an injected fetcher and DNS resolver.
 // Hostnames look like the real CDNs so the host rules are exercised; nothing ever leaves the process.
@@ -86,6 +87,7 @@ beforeAll(async () => {
     scene(2, 1200, 900).jpeg({ quality: 70 }).toBuffer(), scene(2, 2400, 1800).jpeg({ quality: 92 }).toBuffer(), scene(3, 1200, 700).png().toBuffer(), scene(0, 200, 200).png().toBuffer(),
   ]);
 }, 60000);
+afterEach(() => vi.unstubAllEnvs());
 afterAll(async () => { await pg?.close(); });
 
 describe('collectDneskaiMedia: selected candidates, stored once, in order, with credit', () => {
@@ -109,6 +111,7 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
   });
 
   it('reads a feed article once, keeps publisher order, prefers the original upload and marks the smaller copy', async () => {
+    vi.stubEnv('DNESKAI_RICH_EVIDENCE_ENABLED', 'true');
     const page = 'https://www.theverge.com/2026/10/20/offline-test';
     const html = `<html><head><meta property="og:image" content="https://www.theverge.com/wp-content/uploads/2026/10/hero.jpg?quality=90&amp;strip=all"></head><body><article>
       <p>OFFLINE TEST body paragraph.</p><figure><img src="https://duet-cdn.vox-cdn.com/thumbor/hero-2400.jpg" alt="OFFLINE"></figure>
@@ -377,4 +380,30 @@ describe('bounded publisher image redirects', () => {
     const result=await collectDneskaiMedia(client(),owner,project,[id],{fetchImpl:web.fetch,resolveImpl:publicDns,store:new MemoryStore()});
     expect(result.candidates[0].assets).toBe(0);expect(web.count(target)).toBe(0);
   });
+});
+
+
+it('collects and reads media on the existing schema while rich evidence is disabled', async () => {
+  vi.stubEnv('DNESKAI_RICH_EVIDENCE_ENABLED', 'false');
+  const page = 'https://www.anthropic.com/news/OFFLINE-legacy-schema';
+  const id = await insertCandidate('anthropic-news', 'OFFLINE-legacy-schema', page, []);
+  const web = new FixtureWeb().serve(page, { type: 'text/html', body: '<article><p>OFFLINE source prose.</p></article>' });
+  await pg.exec('alter table marketing_media_collections rename column article_text to unapplied_article_text');
+  await pg.exec('alter function marketing_media_set_evidence(uuid,uuid,text,uuid,text) rename to unapplied_media_set_evidence');
+  try {
+    const collected = await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() });
+    expect(collected.candidates[0]).toMatchObject({ status: 'empty', assets: 0 });
+    const rest = pgliteRestClient(pg);
+    // No images in this fixture; the other queries execute their real SQL against the old columns.
+    const port = { from: (table: string) => table === 'marketing_media_asset_links' ? {
+      select() { return this; }, eq() { return this; }, in() { return this; }, order() { return this; },
+      limit() { return Promise.resolve({ data: [], error: null }); },
+    } : rest.from(table) };
+    const read = await readDneskaiMedia(port as unknown as DneskaiMediaDatabase, owner, project, { candidateId: id });
+    expect(read.candidates[0].collection?.status).toBe('empty');
+    expect(read.candidates[0]).not.toHaveProperty('articleText');
+  } finally {
+    await pg.exec('alter table marketing_media_collections rename column unapplied_article_text to article_text');
+    await pg.exec('alter function unapplied_media_set_evidence(uuid,uuid,text,uuid,text) rename to marketing_media_set_evidence');
+  }
 });
