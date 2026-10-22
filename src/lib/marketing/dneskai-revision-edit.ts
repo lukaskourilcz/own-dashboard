@@ -14,7 +14,8 @@ type Database = ReturnType<typeof createAdminClient>;
 export { DneskaiDeckEditSchema, DneskaiRevisionEditError, DneskaiSlideEditSchema, applyDneskaiDeckEdit, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 const fail = (code: string): never => { throw new DneskaiRevisionEditError(code); };
 
-export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit };
+/** `audio`: absent keeps the saved choice, null clears it (the Reel then takes the next track in rotation, #164). */
+export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; audio?: ContentRevision["audio"] | null };
 
 /**
  * The deck an owner edit produces, checked against the brief: the edit applied by `applyDneskaiDeckEdit`
@@ -41,8 +42,10 @@ export async function prepareDneskaiRevisionEdit(original: ContentRevision, inpu
   const account = input.account ?? original.account;
   if (account.platform !== original.account.platform) return fail("account-platform-changed");
   const deck = await editedDneskaiDeck(original, input.deck, listBriefAssetHashes, loadBriefPool);
+  const { audio: savedAudio, ...rest } = original;
+  const audio = input.audio === undefined ? savedAudio : input.audio ?? undefined;
   try {
-    return parseContentRevision({ ...original, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [] });
+    return parseContentRevision({ ...rest, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(audio ? { audio } : {}) });
   } catch { return fail("revision-edit-invalid"); }
 }
 

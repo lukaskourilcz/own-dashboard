@@ -8,6 +8,7 @@ import { parseContentRevision, type ContentRevision } from '@/lib/marketing/cont
 import { refreshMarketingAssetUrls } from '@/lib/marketing/asset-urls';
 import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
+import { dneskaiReelsEnabled } from '@/lib/marketing/dneskai-reel';
 import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from '@/lib/marketing/dneskai-revision-edit';
 import { getBriefAssetHashLister, getBriefPoolLoader, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
 import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
@@ -23,7 +24,7 @@ const Input=z.discriminatedUnion('action',[
  DneskaiApproveManyInputSchema,
  z.strictObject({action:z.enum(['returned','skipped']),id:z.uuid(),feedback:z.string().max(2000).optional()}),
  // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer unless the deck is unchanged; `accountId` is a marketing_accounts row.
- z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional()}),
+ z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional(),audioTrackId:z.uuid().nullable().optional()}),
  // „Publish now“: the exact saved version the owner reviewed (expectedHash), moved to DNESKAI_PUBLISH_NOW_LEAD_MS from now
  // and approved in the same request. The next scheduler tick (every 5 minutes) publishes it.
  z.strictObject({action:z.literal('publish-now'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
@@ -106,8 +107,14 @@ export async function POST(request:Request){
     account={id:chosen.remote_account_id,platform:chosen.platform,handle:chosen.handle};
    }
    const admin=createAdminClient();
+   // #164: the post's Reel track. Only an enabled track of the owner's library, and only while Reels are switched on.
+   if(input.audioTrackId!==undefined&&(!current.deck||!dneskaiReelsEnabled()))return NextResponse.json({error:'audio-track-unavailable'},{status:409});
+   if(input.audioTrackId){
+    const {data:track,error:trackError}=await db.from('marketing_audio_tracks').select('id,enabled,source').eq('id',input.audioTrackId).eq('user_id',user.id).maybeSingle();
+    if(trackError||!track||!track.enabled||track.source==='instagram-library')return NextResponse.json({error:'audio-track-unavailable'},{status:409});
+   }
    if(current.deck){
-    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck});
+    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,...(input.audioTrackId!==undefined?{audio:input.audioTrackId?{trackId:input.audioTrackId}:null}:{})});
     if(edited instanceof Response)return edited;
     return NextResponse.json({id:edited.id,ready:edited.ready,contentHash:edited.contentHash,render:{status:edited.report.status,problems:edited.report.problems}});
    }
@@ -150,7 +157,7 @@ async function moveAndApprove(db:Database,ownerId:string,id:string,current:Conte
  return NextResponse.json({id:edited.id,publicationId:data,scheduledAt,scheduling:'tick'});
 }
 /** Saves a DNESKAi deck edit as a new revision and attaches its render: the slides are reused when only caption, time or account changed. */
-async function editDneskaiDeck(db:Database,ownerId:string,id:string,current:ContentRevision,renderReport:unknown,edit:{caption:string;scheduledAt:string;account:ContentRevision['account'];deck?:z.infer<typeof DneskaiDeckEditSchema>}){
+async function editDneskaiDeck(db:Database,ownerId:string,id:string,current:ContentRevision,renderReport:unknown,edit:{caption:string;scheduledAt:string;account:ContentRevision['account'];deck?:z.infer<typeof DneskaiDeckEditSchema>;audio?:ContentRevision['audio']|null}){
  const admin=createAdminClient();
  // Resolve every dependency before writing: an unwired renderer or media store refuses the edit and the current revision keeps its state.
  let wiring;

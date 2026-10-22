@@ -131,9 +131,9 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== account?.id ? draft.accountId : null); } catch { return null; } })();
   // Only a post that can still be edited has unsaved changes; once approved, the draft is no longer an edit.
   const editable = ['review', 'returned'].includes(post.status);
-  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId);
+  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId || request.audioTrackId !== undefined);
   // Publish now replaces the time itself, so a draft that differs only in its time may use it.
-  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId;
+  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId && request.audioTrackId === undefined;
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
   // REN-01: a draft slide whose pixels differ from the saved JPEG (other words, pictures, crop, type, place or deck
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.

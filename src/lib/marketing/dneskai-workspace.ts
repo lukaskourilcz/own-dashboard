@@ -50,6 +50,8 @@ export const DneskaiWorkspacePostSchema = z.strictObject({
   templateVersion: z.string().min(1).max(200),
   traceId: uuid.nullable(),
   deck: DneskaiDeckSchema.nullable(),
+  /** The Reel track the owner chose (#164); absent means the next track in rotation. */
+  audio: z.strictObject({ trackId: uuid }).optional(),
   /** Per deck slide, the written fields its template draws and their limits. The owner edits only these. */
   fields: z.array(z.array(DneskaiFieldLimitSchema).max(4)).max(10),
   assets: z.array(z.strictObject({ url: imageUrl, sha256, width: z.number().int().positive(), height: z.number().int().positive(), alt: z.string().max(1000) })).max(10),

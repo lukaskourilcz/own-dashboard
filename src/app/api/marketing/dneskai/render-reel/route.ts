@@ -6,6 +6,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { authenticateAutomation } from '@/lib/marketing/automation-auth';
 import { boundedRequestText } from '@/lib/marketing/http';
 import { DneskaiReelRenderError } from '@/lib/marketing/dneskai-reel-render';
+import { DneskaiAudioError, loadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio';
 import { DneskaiReelError, createDneskaiReelStorage, dneskaiReelForRevision, dneskaiReelsEnabled, loadDneskaiSlideBytes } from '@/lib/marketing/dneskai-reel';
 
 export const runtime = 'nodejs';
@@ -58,14 +59,15 @@ export async function POST(request: Request) {
   try {
     const reel = await dneskaiReelForRevision(db, owner, input.revisionId, {
       loadSlide: (renderKey) => loadDneskaiSlideBytes(db, owner, renderKey),
-      // The audio library (#164) supplies the track; until then every reel is the silent variant.
-      loadAudio: async () => null,
+      // The track the owner approved (#164). A revision without one renders silent here; the publisher (#165) picks
+      // the next track in rotation before it asks for the Reel.
+      loadAudio: async (revision) => revision.audio ? loadDneskaiAudioTrack(db, owner, revision.audio.trackId) : null,
       storage: createDneskaiReelStorage(db, owner),
       signal,
     });
     return Response.json({ reelKey: reel.reelKey, url: reel.url, sha256: reel.sha256, bytes: reel.bytes, durationSeconds: reel.durationSeconds, silent: reel.silent, cached: reel.cached }, { headers });
   } catch (failure) {
-    const code = failure instanceof DneskaiReelError || failure instanceof DneskaiReelRenderError ? failure.code : 'reel-storage-failed';
+    const code = failure instanceof DneskaiAudioError ? 'reel-audio-unavailable' : failure instanceof DneskaiReelError || failure instanceof DneskaiReelRenderError ? failure.code : 'reel-storage-failed';
     return Response.json({ error: code }, { status: STATUS[code] ?? 500, headers });
   }
 }
