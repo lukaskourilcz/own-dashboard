@@ -290,45 +290,51 @@ describe("no text about sources or verification (owner rule, 22 October 2026)", 
   });
 });
 
-describe("the AI disclosure of a single-image caption (BRAND-02)", () => {
+describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", () => {
   const singleCopy = (caption = validCopy(pictures).caption): DneskaiCopy => ({ ...validCopy(pictures), caption, format: "single-image", slides: [
     { type: "single", variant: "photo", headline: "Lightroom na mobilu otevře zavřené oči", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide o nové funkci Lightroomu s obrázkem z článku The Verge." },
   ] });
-  const tail = (caption: string) => caption.split("\n\n").slice(-2);
-  it("uses the exact wording of the carousel's sources slide", async () => {
-    const { readFileSync } = await import("node:fs");
-    const studio = readFileSync("vendor/carousel-studio/dist/dneskai-slide.js", "utf8");
-    expect(studio).toContain(`disclosure: ${JSON.stringify(DNESKAI_AI_DISCLOSURE)}`);
+  const captionOf = (copy: DneskaiCopy) => { const result = assembleDneskaiCaption(copy, offerFor()); if (!("caption" in result)) throw new Error("caption expected"); return result.caption; };
+  const TAGS = "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech";
+  it("keeps the exact disclosure wording, naming no source", () => {
+    expect(DNESKAI_AI_DISCLOSURE).toBe("Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.");
   });
-  it("puts the disclosure before the hashtags of a single, and leaves the carousel caption as it was", () => {
-    const single = assembleDneskaiCaption(singleCopy(), offerFor());
-    if (!("caption" in single)) throw new Error("caption expected");
-    expect(tail(single.caption)).toEqual([DNESKAI_AI_DISCLOSURE, "#dneskai #adobe #lightroom #upravyfotek #ai"]);
-    expect(single.caption.split("\n\n").at(-3)).toBe("Obrázek: The Verge");
-    const carousel = assembleDneskaiCaption(validCopy(pictures), offerFor());
-    if (!("caption" in carousel)) throw new Error("caption expected");
-    expect(carousel.caption).not.toContain(DNESKAI_AI_DISCLOSURE);
+  it("is the body, then the disclosure, then the hashtags, for a carousel and a single alike", () => {
+    for (const copy of [validCopy(pictures), singleCopy()]) {
+      expect(captionOf(copy)).toBe([copy.caption, DNESKAI_AI_DISCLOSURE, TAGS].join("\n\n"));
+    }
   });
-  it("counts the disclosure in the 2,200-character gate: it drops sources first and refuses rather than cut it", () => {
-    const fits = (copy: DneskaiCopy) => { const result = assembleDneskaiCaption(copy, offerFor()); return "caption" in result ? result.caption : null; };
-    // The longest body with which the carousel keeps both sources (past the model's 1,500 so the gate is reached).
-    let size = DNESKAI_CAPTION_LIMIT;
-    while (size > 0 && !fits({ ...validCopy(pictures), caption: "a".repeat(size) })?.includes("Zdroje:")) size -= 1;
-    expect(size).toBeGreaterThan(1500);
-    // At the limit the single cannot carry two sources and the disclosure; it is refused rather than losing it.
-    expect("issue" in assembleDneskaiCaption(singleCopy("a".repeat(size)), offerFor())).toBe(true);
-    const body = "a".repeat(size - 30);
-    const carousel = fits({ ...validCopy(pictures), caption: body })!;
-    expect(carousel).toContain("Zdroje:\n");
-    const single = fits(singleCopy(body))!;
-    expect(carousel.length).toBeLessThanOrEqual(DNESKAI_CAPTION_LIMIT);
-    // The same body as a single makes room for the disclosure by citing one source, never by dropping it.
-    expect(single.length).toBeLessThanOrEqual(DNESKAI_CAPTION_LIMIT);
-    expect(single).toContain(DNESKAI_AI_DISCLOSURE);
-    expect(single).toContain("Zdroj:\n");
-    // A body that leaves no room for one source and the disclosure is refused with the room it has.
-    const refused = assembleDneskaiCaption(singleCopy("a".repeat(DNESKAI_CAPTION_LIMIT - 200)), offerFor());
-    expect("issue" in refused && refused.issue).toMatchObject({ code: "caption-too-long", detail: expect.stringContaining("the AI disclosure") });
+  it("names no source, link or picture credit", () => {
+    for (const copy of [validCopy(pictures), singleCopy()]) {
+      const caption = captionOf(copy);
+      expect(caption).not.toMatch(/Zdroj/u);
+      expect(caption).not.toMatch(/https?:\/\/|www\./u);
+      expect(caption).not.toMatch(/Obrázek:|Foto:/u);
+      for (const name of ["The Verge", "@technology", "theverge.com", "instagram.com"]) expect(caption).not.toContain(name);
+    }
+  });
+  it("carries at most ten hashtags, #dneskai first, in one last line", () => {
+    const copy = { ...validCopy(pictures), hashtags: Array.from({ length: 10 }, (_, index) => `tema${index}`) };
+    const lines = captionOf(copy).split("\n\n");
+    expect(lines.at(-2)).toBe(DNESKAI_AI_DISCLOSURE);
+    const tags = lines.at(-1)!.split(" ");
+    expect(tags).toHaveLength(DNESKAI_HASHTAG_LIMIT);
+    expect(tags[0]).toBe("#dneskai");
+    expect(tags.every((tag) => /^#[a-z0-9]+$/.test(tag))).toBe(true);
+  });
+  it("tidies the body's line breaks without touching its words", () => {
+    expect(captionOf({ ...validCopy(pictures), caption: "První odstavec.  \r\n\r\n\r\nDruhý odstavec." }).split("\n\n").slice(0, 2)).toEqual(["První odstavec.", "Druhý odstavec."]);
+  });
+  it("counts the disclosure and hashtags in the 2,200-character gate and refuses rather than cut them", () => {
+    const overhead = captionOf({ ...validCopy(pictures), caption: "a" }).length - 1;
+    const atLimit = assembleDneskaiCaption({ ...validCopy(pictures), caption: "a".repeat(DNESKAI_CAPTION_LIMIT - overhead) }, offerFor());
+    expect("caption" in atLimit && atLimit.caption.length).toBe(DNESKAI_CAPTION_LIMIT);
+    expect("caption" in atLimit && atLimit.caption.endsWith(`${DNESKAI_AI_DISCLOSURE}\n\n${TAGS}`)).toBe(true);
+    const refused = assembleDneskaiCaption({ ...validCopy(pictures), caption: "a".repeat(DNESKAI_CAPTION_LIMIT - overhead + 1) }, offerFor());
+    expect("issue" in refused && refused.issue).toEqual({ code: "caption-too-long", slide: null, field: "caption",
+      detail: `With the AI disclosure and hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${DNESKAI_CAPTION_LIMIT - overhead} characters.` });
+    const long = { ...validCopy(pictures), caption: "Dlouhá věta o funkci. ".repeat(100).trim() };
+    expect("issue" in assembleDneskaiCaption(long, offerFor())).toBe(true);
   });
 });
 
