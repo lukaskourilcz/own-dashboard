@@ -12,8 +12,8 @@ import { marketingHumanizerInstructions } from "./humanizer";
  * caption, the carousel or single-image structure, the choice of source pictures and the alt texts.
  *
  * The model writes words and picks pictures from the brief's media by their sha256. Code owns everything
- * that must not be invented or mistyped: the picture credits, the sources slide (source lines, thumbnails
- * of the pictures used) and the source lines, credits and hashtags of the caption. Every rule the model is
+ * that must not be invented or mistyped: the AI disclosure and the hashtags of the caption. No slide or caption
+ * carries a source, a credit or a page count (`.claude/skills/dneskai-post-content/SKILL.md`). Every rule the model is
  * given is checked here before anything is rendered, and the studio's own gate (`validateDneskaiDeck`)
  * then decides whether the words fit. This module has no I/O; `generation.ts` runs the call.
  */
@@ -24,11 +24,6 @@ export const DNESKAI_DECK_TEMPLATE_VERSION = DNESKAI_RENDERER_VERSION;
 export const DNESKAI_MAX_CONTENT_SLIDES = 7;
 /** Meta's caption limit. */
 export const DNESKAI_CAPTION_LIMIT = 2200;
-/**
- * The sources slide: the studio's four source lines of 190 characters (`DNESKAI_MAX_SOURCES`) and, of its
- * six thumbnails (`DNESKAI_MAX_THUMBNAILS`), the four a slide of the deck contract carries (`dneskai-slides.ts`).
- */
-export const DNESKAI_SOURCES_SLIDE = { lines: 4, thumbnails: 4, lineChars: 190 } as const;
 /** The DNESKAi hashtag base set from the studio's `copy.ts` (`HASHTAG_BASE["caught-up"]`). */
 export const DNESKAI_HASHTAG_BASE = ["ai", "umelainteligence", "technologie", "aitech", "dneskai"] as const;
 /** The owner's cap on hashtags per DNESKAi post (22 October 2026), enforced on generation and on every caption edit. */
@@ -56,7 +51,7 @@ const characters = (value: string) => [...value.normalize("NFC")].length;
  * label, then also without the platform in brackets, then an agency credit („Getty Images přes TechCrunch“)
  * without the publisher that ran it. Each form names the picture's author; nothing is cut mid-name. `null` when even the shortest form does not fit `limit` characters. The credit layers are set in
  * the monospace face at one size, and the studio checks that their character limit fits one line, so the
- * count is the whole test. The caption and the sources slide keep the full credits.
+ * count is the whole test. No template has a credit layer any more; the A/B script and older tests still read it.
  */
 export function fitDneskaiCredit(credits: readonly string[], limit: number): string | null {
   const full = distinct(credits.map(whitespace).filter(Boolean));
@@ -442,9 +437,8 @@ export function normalizeDneskaiHashtag(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, "");
 }
 /**
- * The caption's hashtags, at most five (Instagram's limit since 18 December 2025): #dneskai first, then the
- * model's topic tags in its order (most specific first), then the base set only while room is left. This
- * departs from the studio's `completeHashtags("caught-up", …)`, which still fills up to ten.
+ * The caption's hashtags, at most `DNESKAI_HASHTAG_LIMIT` (10, the owner's cap): #dneskai first, then the model's
+ * topic tags in its order (most specific first), then the base set only while room is left.
  */
 export function dneskaiHashtags(proposed: readonly string[]): string[] {
   const cleaned = proposed.map(normalizeDneskaiHashtag).filter((tag) => tag.length >= 2 && tag.length <= 30);
@@ -506,7 +500,7 @@ const RENDER_ADVICE: Record<string, string> = {
 };
 /**
  * The blocking problems the studio found in a deck, as retry instructions naming the slide and the field.
- * The sources slide is code-written and never sent back to the model.
+ * A legacy sources slide is code-written and never sent back to the model.
  */
 export function dneskaiRenderIssues(problems: readonly DneskaiSlideRenderProblem[], deck: DneskaiDeck): DneskaiCopyIssue[] {
   return problems.filter((problem) => problem.blocking && deck.slides[problem.slide]?.type !== "sources").map((problem) => {

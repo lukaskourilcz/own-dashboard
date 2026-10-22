@@ -308,7 +308,6 @@ function memoizedMedia(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
     return bytes;
   };
 }
-/** Narrower and narrower source lines for the code-written sources slide before giving up on it. */
 
 async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, budget: GenerationBudget, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
   const brief = source.brief!;
