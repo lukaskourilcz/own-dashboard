@@ -1,4 +1,4 @@
-# External marketing worker
+# Marketing worker protocol
 
 ## Current OwnDashboard path
 
@@ -8,11 +8,11 @@ The prepared continuation adds strict brief `/2` evidence while keeping `/1` rea
 
 These are local branch changes, with unapplied SQL migrations and unresolved production migration history. This document does not mark them deployed.
 
-## Optional external protocol (unprovisioned)
+## HTTP protocol
 
-`protocol.ts` exposes a Fetch-compatible authenticated HTTP handler and a separate durable job runner. Mount these in a provisioned Node runtime with the pinned fonts, template assets, `@resvg/resvg-js`, and `sharp`. Hosting has not been provisioned or verified for this service. n8n Cloud calls this HTTP interface; it cannot run `ExecuteCommand` or use native workflow LangSmith tracing.
+`protocol.ts` exposes a Fetch-compatible authenticated HTTP handler and a separate durable job runner. OwnDashboard mounts them in its own Node routes, authenticated as the signed `worker` automation role: `POST /api/marketing/jobs` admits a job, `GET /api/marketing/jobs/<UUID>` reads it (both through `marketingJobsHttpHandler` in `src/lib/marketing/worker-runtime.ts`) and `POST /api/marketing/jobs/<UUID>/execute` runs it. `next.config.ts` traces the pinned fonts and template assets into the execute route. The DNESKAi tick does not go through HTTP: it calls `executeMarketingJob` in-process. No separate worker host is provisioned, and the DNESKAi path needs none.
 
-POST the `marketing-job/1` envelope to `/jobs`. Use the revision UUID as `idempotencyKey`, include `generation` and the exact approved `template`. The handler resolves that version through a trusted server registry and rejects a caller-supplied approval that differs from the registry. A durable queue must commit the immutable request and hash before the handler returns 202. Repeating a matching key and hash returns the original job (200); a changed hash must fail. GET `/jobs/<UUID>` returns scoped status/result. Authenticate both operations, bind the integration to its owner on the server, and use TLS. Do not put tokens in URLs.
+POST the `marketing-job/1` envelope. Use the revision UUID as `idempotencyKey` and include `generation`. A template job (`MarketingWorkerRequestSchema`) also carries the exact approved `template`; the handler resolves that version through a trusted server registry and rejects a caller-supplied approval that differs from the registry. A DNESKAi deck job (`DneskaiDeckJobRequestSchema`) carries no template: the vendored carousel studio renders it, and its `templateVersion` must equal `DNESKAI_DECK_TEMPLATE_VERSION`. A durable queue must commit the immutable request and hash before the handler returns 202. Repeating a matching key and hash returns the original job (200); a changed hash must fail. GET `/jobs/<UUID>` returns scoped status/result. Authenticate both operations, bind the integration to its owner on the server, and use TLS. Do not put tokens in URLs.
 
 Implement `DurableMarketingQueue` with owner-scoped persistence. Workers claim a job with a lease and fencing token, record a provider-attempt reservation before making a call, and commit a result only while their fencing token is current. A crash or expired lease after provider admission must move the job to reconciliation; automatic replay can incur another bill. Neither the HTTP handler nor the runner provides a queue, lock, scheduler, database or crash recovery. Never use an in-memory queue or `setTimeout` after an HTTP response as a production adapter.
 
