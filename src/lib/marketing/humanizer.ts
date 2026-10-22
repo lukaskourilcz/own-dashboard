@@ -2,7 +2,7 @@ import { contentHash } from "./hashes";
 import type { SourcePacket } from "./contracts";
 import provenance from "../../../templates/marketing/humanizer/provenance.json";
 
-export const MARKETING_HUMANIZER_VERSION = "marketing-humanizer/1";
+export const MARKETING_HUMANIZER_VERSION = "marketing-humanizer/2";
 export const MARKETING_HUMANIZER_MAX_BYTES = 2500;
 const review = [
   "Inside this same structured response, draft the generated prose, review its wording and rhythm, and rewrite it before returning final JSON. Return no critique or intermediate draft.",
@@ -14,7 +14,7 @@ const review = [
   "Rewrite only generated title/caption and generated article slide prose. Authored question text, option order/text, answer, explanation, exact code and the complete public coding-task specification are immutable. Challenge-only title/caption/CTA are server-authored and stay unchanged. Do not repair or solve exercises.",
 ].join("\n");
 const voices = {
-  cs: "For DNESKAi use natural Czech editorial prose with Czech sentence rhythm and familiar words. Keep reporting neutral and precise; avoid translated English marketing slogans.",
+  cs: "For DNESKAi use natural Czech editorial prose with Czech sentence rhythm and familiar words. Keep reporting neutral and precise; avoid translated English marketing slogans. When the rules ask for a cover hook, a cover headline and first caption sentence that state the story's most concrete true fact are not a canned hook: keep them, plain and exact; remove only formulaic or withheld-subject openings.",
   en: "For devShark use plain English for developers learning from an authored exercise. Keep the generated caption approachable and specific; avoid promotional slogans or claimed product experience.",
 } as const;
 const definition = {

@@ -121,7 +121,8 @@ describe('the post editor logic', () => {
 
   it('sets the credit line exactly as generation does', () => {
     const sets: Array<[string[], number]> = [[['Foto: @simonwillison.net (Bluesky)'], 80], [['Foto: @simonwillison.net (Bluesky)'], 30], [['Foto: @simonwillison.net (Bluesky)'], 20],
-      [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 80], [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 30], [['Foto: a', 'Foto: a'], 80], [[], 80], [['Obrázek: velmi dlouhý vydavatel s dlouhým jménem'], 10]];
+      [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 80], [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 30], [['Foto: a', 'Foto: a'], 80], [[], 80], [['Obrázek: velmi dlouhý vydavatel s dlouhým jménem'], 10],
+      [['Foto: Getty Images přes TechCrunch'], 80], [['Foto: Getty Images přes TechCrunch'], 30], [['Foto: Bloomberg / Getty Images přes TechCrunch'], 30], [['Foto: Getty Images přes TechCrunch', 'Obrázek: TechCrunch'], 30]];
     for (const [credits, limit] of sets) expect(dneskaiCreditLine(credits, limit), `${credits.join('|')} ${limit}`).toBe(fitDneskaiCredit(credits, limit));
   });
 

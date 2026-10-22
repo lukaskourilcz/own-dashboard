@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  DNESKAI_AI_DISCLOSURE, DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_CAPTION_LIMIT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_BASE, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
-  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiRetryFeedback,
+  DNESKAI_AI_DISCLOSURE, DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_CAPTION_LIMIT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_LIMIT, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiUnsupportedNumbers, dneskaiRetryFeedback,
   loadDneskaiGlyphFilter, normalizeDneskaiCopy, normalizeDneskaiHashtag, validateDneskaiCopy, type DneskaiCopy, type DneskaiGlyphFilter,
 } from "@/lib/marketing/dneskai-generation";
 import { DEFAULT_GENERATION_BUDGET, claudeCallProfile, createClaudeMarketingModel, generateMarketingDraft, type GenerationDependencies, type MarketingModel } from "@/lib/marketing/generation";
@@ -41,8 +41,17 @@ beforeEach(() => { vi.clearAllMocks(); });
 describe("marketing-copy/5 prompt (#116)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("7f9ae1382c30257ab2c583a0004dfc8419848e673a0fa3dadf74971fc85f4ed0");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("d61a42dfc2c9e5ff82b6c013c9940ac4a613e5508a2d926cebff4b81143b8fe2");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/5+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
+  });
+  it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
+    for (const rule of ["Cover hook: the headline of the first slide", "most concrete and surprising true fact", "exactly as strong as the evidence states it", "Never a question, an exclamation, a teaser that withholds the subject",
+      "Every other slide stays calm and plain", "Its first sentence, at most 125 characters, states the cover's fact"]) expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain(rule);
+    // The calm register's bans and the truth rules stay word for word.
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("No hype, no clickbait, no exclamation marks, no rhetorical questions");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("every number you write must appear in the evidence");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("are not a canned hook");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("marketing-humanizer/2");
   });
   it("states the factual, captionOnly, picture, format and register rules and embeds the Czech Humanizer review", () => {
     for (const rule of ["every number you write must appear in the evidence", "captionOnly true", "never write that the person said", "you cannot see them", "by the exact assetSha256",
@@ -129,13 +138,23 @@ describe("marketing-copy/5 schema", () => {
       expect({ id, limits: Object.fromEntries(layers.map((layer) => [(layer as { slot: string }).slot, (layer as { maxChars: number }).maxChars])) }).toEqual({ id, limits });
     }
   });
-  it("forms hashtags exactly as the studio's copy rules do", async () => {
+  it("normalizes hashtags as the studio does and keeps at most five, #dneskai first, topic tags before the base set", async () => {
     const studio = await import("@boardlessai/carousel-studio");
-    for (const proposed of [["Umělá inteligence", "#OpenAI", "č"], [], Array.from({ length: 12 }, (_, index) => `tag${index}`), ["AI", "ai", "Dneskai"]]) {
-      expect(dneskaiHashtags(proposed)).toEqual(studio.completeHashtags("caught-up", proposed));
-    }
     expect(normalizeDneskaiHashtag("Úpravy fotek")).toBe(studio.normalizeHashtag("Úpravy fotek"));
-    expect(dneskaiHashtags([])).toEqual([...DNESKAI_HASHTAG_BASE]);
+    expect(DNESKAI_HASHTAG_LIMIT).toBe(5);
+    expect(dneskaiHashtags([])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);
+    expect(dneskaiHashtags(["Umělá inteligence", "#OpenAI", "č"])).toEqual(["dneskai", "umelainteligence", "openai", "ai", "technologie"]);
+    expect(dneskaiHashtags(Array.from({ length: 12 }, (_, index) => `tag${index}`))).toEqual(["dneskai", "tag0", "tag1", "tag2", "tag3"]);
+    expect(dneskaiHashtags(["AI", "ai", "Dneskai"])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);
+    expect(dneskaiHashtags(["Adobe", "Lightroom"])).toEqual(["dneskai", "adobe", "lightroom", "ai", "umelainteligence"]);
+  });
+  it("accepts at most five proposed hashtags and says five in the prompt", () => {
+    const copy = validCopy(pictures);
+    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: ["a1", "a2", "a3", "a4", "a5"] }).success).toBe(true);
+    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: ["a1", "a2", "a3", "a4", "a5", "a6"] }).success).toBe(false);
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("hashtags: up to 4 topic tags, the most specific first");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("at most 5 hashtags;");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).not.toContain("up to 8 topic tags");
   });
 });
 
@@ -205,7 +224,7 @@ describe("the AI disclosure of a single-image caption (BRAND-02)", () => {
   it("puts the disclosure before the hashtags of a single, and leaves the carousel caption as it was", () => {
     const single = assembleDneskaiCaption(singleCopy(), offerFor());
     if (!("caption" in single)) throw new Error("caption expected");
-    expect(tail(single.caption)).toEqual([DNESKAI_AI_DISCLOSURE, "#adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech #dneskai"]);
+    expect(tail(single.caption)).toEqual([DNESKAI_AI_DISCLOSURE, "#dneskai #adobe #lightroom #upravyfotek #ai"]);
     expect(single.caption.split("\n\n").at(-3)).toBe("Obrázek: The Verge");
     const carousel = assembleDneskaiCaption(validCopy(pictures), offerFor());
     if (!("caption" in carousel)) throw new Error("caption expected");
@@ -262,7 +281,7 @@ describe("deck and caption assembly by code", () => {
     expect(result.caption.endsWith([
       "Zdroje:\nThe Verge: https://www.theverge.com/test-only/lightroom-open-eyes\n@technology (Instagram): https://www.instagram.com/p/TESTONLY/",
       "Obrázek: The Verge · Foto: @technology",
-      "#adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech #dneskai",
+      "#dneskai #adobe #lightroom #upravyfotek #ai",
     ].join("\n\n"))).toBe(true);
     const long = { ...validCopy(pictures), caption: "Dlouhá věta o funkci. ".repeat(95).trim() };
     const refused = assembleDneskaiCaption(long, offerFor());
@@ -291,6 +310,10 @@ describe("code-set picture credits", () => {
     expect(fitDneskaiCredit(["Obrázek: The Verge", "Foto: @technology", "Obrázek: The Verge"], 80)).toBe("Obrázek: The Verge · Foto: @technology");
     expect(fitDneskaiCredit([`Obrázek: ${"a".repeat(60)}`, `Obrázek: ${"b".repeat(60)}`], 80)).toBeNull();
     expect(fitDneskaiCredit([], 30)).toBe("");
+    // An agency credit keeps the agency, the picture's author, when the publisher no longer fits (owner decision 21).
+    expect(fitDneskaiCredit(["Foto: Getty Images přes TechCrunch"], 80)).toBe("Foto: Getty Images přes TechCrunch");
+    expect(fitDneskaiCredit(["Foto: Getty Images přes TechCrunch"], 30)).toBe("Getty Images přes TechCrunch");
+    expect(fitDneskaiCredit(["Foto: Bloomberg / Getty Images přes TechCrunch"], 30)).toBe("Bloomberg / Getty Images");
   });
   it("offers a single photo only with a picture whose credit code can set on its short line", () => {
     const offer = dneskaiBriefOffer(singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]), publishers);
@@ -572,7 +595,14 @@ describe("whole numeric evidence tokens",()=>{
   it.each([["2,5","2.5"],["20 %","20%"],["1 234","1234"],["1\u202f234,5","1 234.5"]])("accepts equivalent decimal, percent and thousands notation %s / %s",(copy,evidence)=>{
     expect(unsupported(copy,evidence)).toEqual([]);
   });
-  it("preserves the current date policy for whole date components",()=>{
-    expect(unsupported("20","20. 10. 2026")).toEqual([]);
+  // Owner decision 18 (22 October 2026): a number that the evidence states only inside a date is not a fact.
+  it.each([["20","20. 10. 2026"],["22 %","Published 22. 10. 2026."],["2026 firem","22. října 2026"],["21 modelů","October 21, 2026"],["19 %","2026-10-19T08:00:00Z"],["10 lidí","10/22/2026"],["3","3.5.2026"]])("refuses %s supported only by the date %s",(copy,evidence)=>{
+    expect(unsupported(copy,evidence)).toHaveLength(1);
+  });
+  it.each([["20. října","20. 10. 2026"],["v roce 2026","22. 10. 2026"],["21. října 2026","October 21, 2026"],["22 % a 22. 10.","22 % firem, 22. 10. 2026"],["Opus 5.5","Claude Opus 5.5."],["verze 1.2.3","release 1.2.3"]])("accepts %s against %s",(copy,evidence)=>{
+    expect(unsupported(copy,evidence)).toEqual([]);
+  });
+  it("reports each unsupported number once, dated or not",()=>{
+    expect(dneskaiUnsupportedNumbers("22 % a 22 % a 23. října","22. 10. 2026")).toEqual(["23","22 %"]);
   });
 });
