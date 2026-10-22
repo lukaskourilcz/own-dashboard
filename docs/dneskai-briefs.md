@@ -30,10 +30,25 @@ patří k jedné události, když platí aspoň jedno:
 2. Mají stejnou primární URL po kanonizaci: bez schématu, `www.`/`m.`/`amp.`,
    sledovacích parametrů, fragmentu, `/amp` a koncového lomítka. Instagram a Hacker
    News se počítají i přes odkaz na článek v textu.
-3. Titulky (u Instagramu první řádek popisku, nejvýše 200 znaků) mají token Jaccard
-   ≥ 0,6 po odstranění českých a anglických stop-slov a sjednocení diakritiky, a
-   sdílejí aspoň dva tokeny. Různá čísla verzí nebo různá čísla vůbec spojení vylučují:
-   `Ollama 0.12.6` a `Ollama 0.12.7` jsou dvě události.
+3. Titulky (u Instagramu první řádek popisku, nejvýše 200 znaků) si odpovídají po
+   odstranění českých a anglických stop-slov a sjednocení diakritiky (SEL-07):
+   - token Jaccard ≥ 0,6 a aspoň dva sdílené tokeny, nebo
+   - token Jaccard ≥ 0,45 a aspoň tři sdílené tokeny, z nichž aspoň jeden je entita:
+     slovo s velkým písmenem uvnitř titulku psaného větou (`Gemini`, `Nova`) nebo
+     slovo se smíšenou velikostí písmen kdekoli (`OpenAI`, `GPT-6`, `iPhone`).
+
+   Čísla se před porovnáním sjednotí: `$40B`, `40 bn`, `40 billion` i `40 mld.` dají
+   `40` a `billion` (stejně `m`/`mn`/`milion` → `million`), měnová slova (`dollars`,
+   `USD`, `dolarů`, `Kč`) odpadnou, desetinná čárka je tečka a oddělovač tisíců zmizí.
+   Různá čísla verzí nebo různá čísla vůbec spojení vylučují: `Ollama 0.12.6` a
+   `Ollama 0.12.7` jsou dvě události. Rok (`2026`) a den vedle měsíce (`15 October`,
+   `15. října`) zůstávají tokeny, ale jako čísla, která spojení vylučují, se nepočítají.
+   `new`, `nova`, `novy`, `nove` jsou stop-slova, kromě případu, kdy stojí s velkým
+   písmenem uvnitř titulku psaného větou: `Amazon Nova` je token `nova`. Následuje-li
+   další slovo s velkým písmenem, vznikne z obou jeden token vedle toho druhého slova
+   (`New York` → `new-york`, `york`), takže `New York` a `New Delhi` nesdílí `new`.
+   V titulku psaném Title Case velké písmeno nic neznamená: `New` je tam stop-slovo
+   a entitou je jen slovo se smíšenou velikostí písmen.
 
 Pravidla 2 a 3 spojují jen zprávy publikované do 72 hodin od sebe.
 
