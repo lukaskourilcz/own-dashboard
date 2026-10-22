@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
-  DNESKAI_INSERT_SHAPES, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
+  DNESKAI_INSERT_SHAPES, dneskaiCoverInset, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
   dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
 } from "./dneskai-slide-layout";
 
@@ -127,6 +127,7 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   // Pictures the kept slides show: an inserted slide may not repeat one.
   const taken = new Set(edit.data.slides.flatMap((entry) => !isInsert(entry) && deck.slides[entry.from]?.type !== "sources" ? deck.slides[entry.from]?.images.map((image) => image.assetSha256) ?? [] : []));
   let sourcesSeen = false;
+  const kit = edit.data.kit ?? dneskaiKitOf(deck);
   const slides = edit.data.slides.map((change, index) => {
     if (isInsert(change)) {
       if (sourcesSeen) return fail("deck-edit-insert-after-sources");
@@ -144,9 +145,14 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
     delete next.credit;
     if (change.alt !== undefined) next.alt = change.alt;
     if (change.images !== undefined) {
-      // Swap a picture or its crop inside the slide's places; adding or dropping a place would change the template.
-      if (slotKey(change.images) !== slotKey(next.images) || new Set(change.images.map((image) => image.slot)).size !== change.images.length) return fail("deck-edit-slots-changed");
-      next.images = next.images.map((image) => structuredClone(change.images!.find((candidate) => candidate.slot === image.slot)!));
+      // Swap a picture or its crop inside the slide's places; adding or dropping a place would change the template. The
+      // one exception: a cover in a kit with an inset (spotlight) may add or drop its optional second picture.
+      const inset = next.type === "cover-photo" && dneskaiCoverInset(kit);
+      const allowed = inset ? ["image-1", "image-1,image-2"] : [slotKey(next.images)];
+      if (!allowed.includes(slotKey(change.images)) || new Set(change.images.map((image) => image.slot)).size !== change.images.length) return fail("deck-edit-slots-changed");
+      if (inset && new Set(change.images.map((image) => image.assetSha256)).size !== change.images.length) return fail("deck-edit-slots-changed");
+      next.images = inset ? [...change.images].sort((a, b) => a.slot.localeCompare(b.slot)).map((image) => structuredClone(image))
+        : next.images.map((image) => structuredClone(change.images!.find((candidate) => candidate.slot === image.slot)!));
     }
     if (shape) {
       // A moved slide's pictures must fit their new place, and no text may stay where the new type draws none.
@@ -165,7 +171,6 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   // Editorial is written by leaving `kit` out, so a deck switched back to it hashes as it did before.
   const { kit: _previous, ...rest } = deck;
   void _previous;
-  const kit = edit.data.kit ?? dneskaiKitOf(deck);
   const parsed = DneskaiDeckSchema.safeParse({ ...rest, ...(kit !== "editorial" ? { kit } : {}), slides });
   return parsed.success ? parsed.data : fail("deck-edit-invalid");
 }
