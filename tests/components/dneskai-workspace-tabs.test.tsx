@@ -8,6 +8,8 @@ import { DneskaiWorkspaceTab, type DneskaiWorkspaceTabId } from '@/components/ma
 import { DEMO_DNESKAI_PROJECT_ID, demoDneskaiWorkspaceApi, resetDemoDneskaiWorkspace } from '@/lib/demo/dneskai-workspace-demo';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
+import { DNESKAI_TONE_TINTS } from '@/components/marketing/dneskai/state-chip';
+import { DNESKAI_STATE_TONES } from '@/lib/marketing/dneskai-workspace';
 import { dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
 // A plain element stands in for next/image; the slide strips only need its src, size and alt.
@@ -162,5 +164,40 @@ describe('Design Lab chrome (#172)', () => {
     const kits = lab.querySelector<HTMLElement>('[data-testid="dneskai-kit-tiles"]')!;
     expect(kits.querySelector('legend')!.className).toContain('sr-only');
     expect(kits.querySelectorAll('p')).toHaveLength(0);
+  });
+});
+
+describe('state as card tint (#173)', () => {
+  it('maps each state to the tone the issue names, and each tone to one tint', () => {
+    expect(DNESKAI_STATE_TONES).toEqual({ published: 'success', scheduled: 'information', approved: 'information', review: 'warning', returned: 'warning', problem: 'risk', preparing: 'neutral', skipped: 'neutral' });
+    expect(Object.fromEntries(Object.entries(DNESKAI_TONE_TINTS).map(([tone, classes]) => [tone, classes.split(' ')[0]]))).toEqual({
+      success: 'dneskai-tint-success', information: 'dneskai-tint-information', warning: 'dneskai-tint-warning', risk: 'dneskai-tint-risk', neutral: 'dneskai-tint-neutral' });
+  });
+
+  it.each(['en', 'cs'] as const)('tints Posts cards and Lab queue cards, with the state in their name instead of a chip (%s)', async (lang) => {
+    const render = (tab: DneskaiWorkspaceTabId) => act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab={tab} projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
+    render('dneskai-published');
+    await wait(400);
+    const rows = [...container.querySelectorAll<HTMLElement>('[data-testid="dneskai-post-row"]')];
+    expect(rows.length).toBeGreaterThan(3);
+    for (const row of rows) {
+      const state = row.dataset.state as keyof typeof DNESKAI_STATE_TONES;
+      expect(row.className).toContain(`dneskai-tint-${DNESKAI_STATE_TONES[state]}`);
+      expect(row.getAttribute('aria-label')).toMatch(new RegExp(`: ${dneskaiWorkspace[lang].states[state]}$`));
+      expect(row.getAttribute('title')).toBe(dneskaiWorkspace[lang].states[state]);
+      expect(row.querySelector('.rounded-full')).toBeNull();
+    }
+    // The Lab's fit check would call the dev-preview fitter over HTTP; this test only reads the queue.
+    vi.spyOn(demoDneskaiWorkspaceApi, 'fit').mockReturnValue(new Promise(() => undefined));
+    render('dneskai-review');
+    await wait(400);
+    const queue = [...container.querySelectorAll<HTMLElement>('[data-testid="dneskai-lab-queue-post"]')];
+    expect(queue.length).toBeGreaterThan(0);
+    for (const card of queue) {
+      const state = card.dataset.stateTone as keyof typeof DNESKAI_STATE_TONES;
+      expect(card.className).toContain(`dneskai-tint-${DNESKAI_STATE_TONES[state]}`);
+      expect(card.getAttribute('aria-label')).toMatch(new RegExp(`, ${dneskaiWorkspace[lang].states[state]}$`));
+      expect(card.querySelector('.rounded-full')).toBeNull();
+    }
   });
 });

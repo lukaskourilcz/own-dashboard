@@ -262,6 +262,23 @@ Every project workspace now opens on its tab row. The back button „Všechny pr
 
 `/dev-preview` screenshots of DNESKAi (For review today) and devShark (Overview) were taken and inspected in CS and EN, light and dark, at 1440 px desktop and Pixel 5 mobile: no header above the tabs, no horizontal overflow, breadcrumb legible in both themes. `e2e/dashboard.spec.ts` (desktop and mobile) passed 28/28 together with the screenshot run; it checks that only the toolbar `h1` remains, that „All projects“ is gone on DNESKAi and devShark, and that the breadcrumb button returns to `/projects` from the keyboard.
 
+## DNESKAi state tints and short dates — 22 October 2026 (#173)
+
+Lab queue cards and Příspěvky cards show a post's state as their background (soft token over the opaque surface) instead of a chip; the state words stay in each card's accessible name and tooltip.
+
+Contrast (WCAG 2.2 AA, computed from the tokens in `globals.css`; the tint sits on `--surface`, so the page background behind the card does not change it):
+
+| Text on tint | Light: success / information / warning / risk / muted | Dark: success / information / warning / risk / muted |
+|---|---|---|
+| `--foreground` | 15.18 / 14.57 / 15.02 / 14.29 / 14.52 | 13.24 / 12.56 / 13.15 / 13.72 / 13.68 |
+| `--foreground-muted` | 6.26 / 6.00 / 6.19 / 5.89 / 5.98 | 7.11 / 6.74 / 7.06 / 7.37 / 7.35 |
+| `--foreground-muted`, `prefers-contrast: more` | 10.48 / 10.06 / 10.37 / 9.86 / 10.02 | 11.17 / 10.59 / 11.09 / 11.57 / 11.54 |
+| `--warning` (deadline note) | 5.15 / 4.94 / 5.09 / 4.85 / 4.92 | 7.51 / 7.12 / 7.46 / 7.78 / 7.76 |
+| `--information` (Instagram link) | 5.06 / 4.85 / 5.01 / 4.76 / 4.84 | 7.04 / 6.68 / 6.99 / 7.29 / 7.28 |
+| `--risk` (error code) | 5.97 / 5.73 / 5.91 / 5.62 / 5.71 | 5.91 / 5.60 / 5.87 / 6.12 / 6.10 |
+
+Every pair passes 4.5:1. A translucent tint laid straight on the page background (`#f3f4f6`) would have dropped `--success` text to 4.20:1, which is why the tint utilities paint `--surface` first. Axe (wcag2a–wcag22aa) passes on the Lab in English/light and Czech/dark and on Příspěvky in both, at desktop and Pixel 5 widths. Dates read `DD/MM` (`formatDneskaiDay`) in both languages. The macOS baselines in `e2e/dneskai-lab-visual.spec.ts-snapshots/` were regenerated for #169, #172 and this change and reviewed one by one.
+
 ## DNESKAi topics list (Náměty) — 22 October 2026
 
 The topics section at the top of the Design Lab (#154) was checked on `/dev-preview` with the synthetic topics in `src/lib/demo/dneskai-topics-fixtures.ts`. `e2e/dneskai-lab.spec.ts` runs it at 1280 and 360 px in English (light) and Czech (dark), in both browser projects: axe WCAG 2.2 AA on the section, no horizontal document scroll, no console errors and no request to a marketing API. The same flow approves and rejects by keyboard (↓, A, Z), approves two selected topics at once and restores one from the archive. Axe first flagged the approved row: its reduced opacity brought the chips and the source link below 4.5:1, so the row now uses full opacity. The visual baseline spec hides the section, so the committed Lab baselines stay valid; on macOS all 75 tests of the lab, visual and workspace specs passed (one skipped).

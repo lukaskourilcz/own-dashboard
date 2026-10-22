@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
-  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostList, dneskaiPostMatches, dneskaiPostState, dneskaiPublished, DNESKAI_POST_FILTERS, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
+  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostList, dneskaiPostMatches, formatDneskaiDay, formatDneskaiDayTime, dneskaiPostState, dneskaiPublished, DNESKAI_POST_FILTERS, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
   DNESKAI_POST_STATES, DNESKAI_RENDER_ATTACH_GRACE_MS, DNESKAI_STATE_TONES, pragueDstDay, type DneskaiWorkspacePost,
 } from '@/lib/marketing/dneskai-workspace';
 import {
@@ -277,5 +277,18 @@ describe('Příspěvky (#169)', () => {
       expect(dneskaiWorkspace.cs.published.filters[filter]).toBeTruthy(); expect(dneskaiWorkspace.en.published.filters[filter]).toBeTruthy();
     }
     expect(dneskaiWorkspace.cs.published.filters.waiting).toBe('Čeká');
+  });
+});
+
+describe('formatDneskaiDay (#173)', () => {
+  it('writes DD/MM for a Prague calendar date and for an instant, by the Prague day', () => {
+    expect(formatDneskaiDay('2026-10-05')).toBe('05/10');
+    expect(formatDneskaiDay('2026-12-31')).toBe('31/12');
+    // 23:30 UTC on 24 October is already 25 October in Prague (CEST, UTC+2).
+    expect(formatDneskaiDay('2026-10-24T23:30:00.000Z')).toBe('25/10');
+    // After the clocks change Prague is UTC+1: 22:59 UTC on 31 December is still 31/12, 23:00 is 01/01.
+    expect(formatDneskaiDay('2026-12-31T22:59:00.000Z')).toBe('31/12');
+    expect(formatDneskaiDay('2026-12-31T23:00:00.000Z')).toBe('01/01');
+    expect(formatDneskaiDayTime('2026-10-25T07:00:00.000Z')).toBe('25/10 08:00');
   });
 });

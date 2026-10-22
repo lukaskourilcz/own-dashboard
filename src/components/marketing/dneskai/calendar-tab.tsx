@@ -2,7 +2,7 @@
 
 import { ExternalLink } from 'lucide-react';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { dneskaiCalendarDays, pragueDstDay, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiCalendarDays, formatDneskaiDay, pragueDstDay, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { DneskaiStateChip } from './state-chip';
 import { DneskaiCodeText } from './code-text';
@@ -14,7 +14,7 @@ type Lang = 'en' | 'cs';
 export function DneskaiCalendarTab({ read, lang, preview, refreshing, onRefresh, renderFailed }: { read: DneskaiWorkspaceRead; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed?: ReadonlySet<string> }) {
   const t = dneskaiWorkspace[lang];
   const days = dneskaiCalendarDays(read, renderFailed);
-  const dayName = (date: string) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+  const dayName = (date: string) => `${new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))} ${formatDneskaiDay(date)}`;
   return <section aria-labelledby="dneskai-calendar-title" className="min-w-0 space-y-5" data-testid="dneskai-calendar">
     <TabHeader id="dneskai-calendar-title" title={t.calendar.title} intro={t.calendar.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} />
     <ol className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">{days.map((day) => <li key={day.date} className="min-w-0 rounded-lg border border-border bg-surface" data-testid="dneskai-calendar-day" data-date={day.date}>
