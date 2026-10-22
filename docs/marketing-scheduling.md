@@ -17,8 +17,8 @@ pg_cron (Supabase)                      Vercel (OwnDashboard)
                                                         record in marketing_ticks
 ```
 
-- Migrations: `20261020160000_marketing_scheduler.sql` (tick record, category leases, their
-  functions) and `20261020160100_marketing_scheduler_cron.sql` (extensions, the signed request,
+- Migrations: `20261021124400_marketing_scheduler.sql` (tick record, category leases, their
+  functions) and `20261021124628_marketing_scheduler_cron.sql` (extensions, the signed request,
   the two tick jobs and the run-history prune).
 - Route: `src/app/api/marketing/tick/route.ts`. Body `{"tick": "<uuid>", "kind": "minute" | "daily"}`.
 - The request carries the same signature as every other automation call: `Authorization: Bearer
@@ -181,7 +181,7 @@ The prepared lapse-release migration changes future skips only: reports return t
 
 1. Set `MARKETING_SCHEDULER_SECRET` (at least 32 random characters, used nowhere else) in the
    Production environment of Vercel and deploy. `MARKETING_OWNER_ID` must already be set.
-2. Apply `20261020160000_marketing_scheduler.sql`, then `20261020160100_marketing_scheduler_cron.sql`.
+2. Apply `20261021124400_marketing_scheduler.sql`, then `20261021124628_marketing_scheduler_cron.sql`.
    The second creates pg_cron and pg_net and schedules the two tick jobs and the prune job. The
    ticks send nothing yet.
 3. On the Vault page of the Supabase Dashboard (Integrations → Vault), add two secrets:
@@ -238,7 +238,7 @@ notification (cost-07); the next tick publishes the queued slot.
 Unscheduling the two ticks leaves `marketing-cron-history-prune` running; it sends nothing. To stop it
 too: `select cron.unschedule('marketing-cron-history-prune');`.
 To start the jobs again after `cron.unschedule`, run the last `do $schedule$ … $schedule$` block of
-`20261020160100_marketing_scheduler_cron.sql` again; `cron.schedule` replaces a job of the same name.
+`20261021124628_marketing_scheduler_cron.sql` again; `cron.schedule` replaces a job of the same name.
 
 ## Switches
 

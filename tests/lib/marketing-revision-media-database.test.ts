@@ -11,8 +11,8 @@ const owner = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
 const original = "33333333-3333-4333-8333-333333333333";
 const edited = "44444444-4444-4444-8444-444444444444";
-const migrations = ["20261012225640_marketing_control_surface", "20261012232949_marketing_durable_jobs", "20261013092409_marketing_staging_pilot_guard",
-  "20261013150816_marketing_offline_import", "20261013150933_marketing_story_receipts", "20261020140000_marketing_revision_media_identity"];
+const migrations = ["20261013193104_marketing_control_surface", "20261013193105_marketing_durable_jobs", "20261013193108_marketing_staging_pilot_guard",
+  "20261013193131_marketing_offline_import", "20261013193132_marketing_story_receipts", "20261021122551_marketing_revision_media_identity"];
 const revision = (): ContentRevision => ({ ...deckRevision(), sources: [{ sourceId: "brief:test-only", sourceRevision: "v1", contentHash: a }] });
 const unrendered = (): ContentRevision => ({ ...revision(), caption: "Upravený test-only caption.", assets: [] });
 const renewedAssets = (value = revision(), token = "renewed-test-only-token") => value.assets.map((asset, index) => ({ ...asset, url: signed(index + 1, token) }));

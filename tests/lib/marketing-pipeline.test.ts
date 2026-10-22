@@ -58,7 +58,7 @@ beforeAll(async () => {
     create table public.projects(id uuid primary key,user_id uuid not null);
     create table public.ai_links(id uuid primary key,user_id uuid not null);`);
   await database.query("insert into auth.users values($1)", [owner]);
-  for (const filename of ["20261012225640_marketing_control_surface.sql", "20261012232949_marketing_durable_jobs.sql"]) {
+  for (const filename of ["20261013193104_marketing_control_surface.sql", "20261013193105_marketing_durable_jobs.sql"]) {
     await database.exec(readFileSync(`supabase/migrations/${filename}`, "utf8"));
   }
 }, 30000);

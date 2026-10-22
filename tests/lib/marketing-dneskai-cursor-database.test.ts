@@ -7,7 +7,7 @@ import { dneskaiCheapIdentity } from '@/lib/marketing/dneskai-registry';
 vi.mock('server-only',()=>({}));
 
 // Replays the three applied-or-new collection migrations, unchanged, in isolated WASM Postgres.
-const MIGRATIONS=['20261013165236_marketing_dneskai_collection.sql','20261013181506_dneskai_collection_pilot.sql','20261020100000_dneskai_collection_cursor_limits.sql'];
+const MIGRATIONS=['20261013193134_marketing_dneskai_collection.sql','20261013193136_dneskai_collection_pilot.sql','20261021122104_dneskai_collection_cursor_limits.sql'];
 const owner='11111111-1111-4111-8111-111111111111',project='22222222-2222-4222-8222-222222222222',fence='55555555-5555-4555-8555-555555555555';
 const json=JSON.stringify;
 let db:PGlite;

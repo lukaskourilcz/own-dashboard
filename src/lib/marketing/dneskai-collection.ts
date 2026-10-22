@@ -85,7 +85,7 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  const allInitial=await store.candidates(owner,input.projectId);
  let pending=pendingDneskaiCandidates(allInitial,clock());
  // Jev stages exist only for work that exists: planned once, after every source stage has settled.
- // Runs admitted before 20261020100000 already carry 16 fixed stages and are left as they are.
+ // Runs admitted before 20261021122104 already carry 16 fixed stages and are left as they are.
  if(run.jev_stage_count==null&&!current.some(stage=>stage.kind==='jev')){await store.planJev(owner,run.id,fence,dneskaiJevStageCount(pending.length));current=await store.stages(owner,run.id);}
  for(const classification of current.filter(stage=>stage.kind==='jev'&&stage.status==='queued')){
   if(signal.aborted||operations>=5)break;

@@ -10,10 +10,10 @@ import { dneskaiCheapIdentity } from '@/lib/marketing/dneskai-registry';
  * briefs (#115) build on, executed unchanged and in order. The clock is simulated through `marketing.test_time`.
  * Every value is synthetic.
  */
-export const BRIEF_MIGRATIONS = ['20261012225640_marketing_control_surface.sql', '20261012232949_marketing_durable_jobs.sql', '20261013001528_marketing_private_assets.sql',
-  '20261013092409_marketing_staging_pilot_guard.sql', '20261013165236_marketing_dneskai_collection.sql', '20261013181506_dneskai_collection_pilot.sql',
-  '20261020100000_dneskai_collection_cursor_limits.sql', '20261020120000_scope_retired_pilot_ledgers.sql', '20261020130000_dneskai_source_media.sql',
-  '20261020140000_marketing_revision_media_identity.sql', '20261020150000_dneskai_events_briefs.sql', '20261022020702_dneskai_richer_brief_evidence.sql', '20261022020759_dneskai_brief_v2_compatibility.sql', '20261022021835_dneskai_release_lapsed_reports.sql'];
+export const BRIEF_MIGRATIONS = ['20261013193104_marketing_control_surface.sql', '20261013193105_marketing_durable_jobs.sql', '20261013193107_marketing_private_assets.sql',
+  '20261013193108_marketing_staging_pilot_guard.sql', '20261013193134_marketing_dneskai_collection.sql', '20261013193136_dneskai_collection_pilot.sql',
+  '20261021122104_dneskai_collection_cursor_limits.sql', '20261021122330_scope_retired_pilot_ledgers.sql', '20261021122453_dneskai_source_media.sql',
+  '20261021122551_marketing_revision_media_identity.sql', '20261021123547_dneskai_events_briefs.sql', '20261021124058_dneskai_events_briefs_finish.sql', '20261021124144_dneskai_events_briefs_functions.sql', '20261022020702_dneskai_richer_brief_evidence.sql', '20261022020759_dneskai_brief_v2_compatibility.sql', '20261022021835_dneskai_release_lapsed_reports.sql'];
 
 export async function createBriefsDatabase(users: readonly string[], projects: ReadonlyArray<{ id: string; owner: string }>, instant: string, migrations: readonly string[] = BRIEF_MIGRATIONS) {
   const db = new PGlite();

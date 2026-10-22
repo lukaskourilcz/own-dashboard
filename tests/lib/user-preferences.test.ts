@@ -95,7 +95,7 @@ describe("synchronized user preferences", () => {
   });
 
   it("constrains hidden project tabs to exactly the workspace tabs", () => {
-    expect(latestTabCheck).toBe("20261021100000_dneskai_hideable_project_tabs.sql");
+    expect(latestTabCheck).toBe("20261021124712_dneskai_hideable_project_tabs.sql");
     expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_TAB_IDS]);
     expect(checkedTabs(tabCheckSql)).not.toContain("operations");
     expect(checkedTabs(tabCheckSql)).toContain("competition");

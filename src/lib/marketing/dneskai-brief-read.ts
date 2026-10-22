@@ -55,7 +55,7 @@ export async function readDneskaiBriefs(db: Database, owner: string, project: st
 
 /**
  * The nightly selection's eligibility rules, mirrored from public.marketing_dneskai_finish
- * (supabase/migrations/20261020150000_dneskai_events_briefs.sql, `eligible`): a classified, on-topic, open report
+ * (supabase/migrations/20261021124058_dneskai_events_briefs_finish.sql, `eligible`): a classified, on-topic, open report
  * with relevance at least 0.85, published no later than now and within 48 hours (ai-news, tech-news) or 30 days.
  * Explanation only; the SQL stays the authority and nothing here selects anything.
  */

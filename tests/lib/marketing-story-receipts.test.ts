@@ -6,7 +6,7 @@ const owner = '11111111-1111-4111-8111-111111111111';
 const other = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 let db: PGlite; let next = 0;
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const migration = readFileSync('supabase/migrations/20261013150933_marketing_story_receipts.sql', 'utf8');
+const migration = readFileSync('supabase/migrations/20261013193132_marketing_story_receipts.sql', 'utf8');
 beforeAll(async () => {
   db = new PGlite();
   await db.exec(`create schema auth; create role anon; create role authenticated; create role service_role bypassrls;
@@ -14,7 +14,7 @@ beforeAll(async () => {
     create table projects(id uuid primary key,user_id uuid); create table ai_links(id uuid primary key,user_id uuid);
     alter default privileges in schema public grant execute on functions to anon,authenticated;`);
   await db.query('insert into auth.users values($1),($2)', [owner, other]);
-  for (const file of ['20261012225640_marketing_control_surface.sql', '20261012232949_marketing_durable_jobs.sql']) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
+  for (const file of ['20261013193104_marketing_control_surface.sql', '20261013193105_marketing_durable_jobs.sql']) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
   await db.exec(migration); await db.exec(migration);
 }, 30000);
 afterAll(async () => { await db?.close(); });

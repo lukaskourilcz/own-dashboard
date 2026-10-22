@@ -59,7 +59,7 @@ Pravidla 2 a 3 spojují jen zprávy publikované do 72 hodin od sebe.
 
 ## Výběr v SQL
 
-`marketing_dneskai_finish` (migrace `20261020150000_dneskai_events_briefs.sql`) dostává
+`marketing_dneskai_finish` (migrace `20261021123547_dneskai_events_briefs.sql`) dostává
 seskupení jako `p_events` (jen události se dvěma a více zprávami; jednotlivá zpráva je
 událost sama o sobě). SQL ověří jen tvar seskupení: nejvýše 300 událostí po 2–300
 zprávách, každá událost je pojmenovaná svou kotvou a žádná zpráva není ve dvou.

@@ -58,7 +58,7 @@ export const MARKETING_TICK_HARD_BUDGET_MS = 53_000;
 export const MARKETING_TICK_LEASE_SECONDS = 90;
 export const MARKETING_TICK_MEDIA_BUDGET_MS = 40_000;
 export const MARKETING_TICK_RETENTION_DAYS = 14;
-/** The pg_cron cadence of the minute tick (20261020160100_marketing_scheduler_cron.sql). */
+/** The pg_cron cadence of the minute tick (20261021124628_marketing_scheduler_cron.sql). */
 export const MARKETING_TICK_INTERVAL_MS = 5 * 60_000;
 /**
  * True in the five-minute slots where collection keeps its place ahead of a queued generation job: the
@@ -586,7 +586,8 @@ const LeaseSchema = z.union([
   z.object({ acquired: z.literal(false), reason: z.enum(["busy", "backoff"]), until: z.string().nullable() }),
 ]);
 
-/** The scheduler state through the service-role functions of 20261020160000_marketing_scheduler.sql. */
+/** The scheduler state through the service-role functions of 20261021124438_marketing_scheduler_functions.sql and
+ * 20261022000000_marketing_scheduler_retention.sql. */
 export function createMarketingSchedulerStore(db: Database, owner: string): MarketingSchedulerStore {
   z.uuid().parse(owner);
   const rpc = async (name: string, args: Record<string, unknown>) => {

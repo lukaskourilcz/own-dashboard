@@ -415,15 +415,15 @@ The groups and summaries of the owner's existing tips are data, not schema. They
 
 Apply only after the owner reviews the implementation and approves deployment. Do not use this migration list to activate publishing.
 
-1. `20261012225640_marketing_control_surface.sql`: adds isolated owned campaign/calendar/source/history/account/revision/publication/event tables. Browser writes are revoked; bounded approval/decision functions authenticate `auth.uid()`. Service integration credentials bind one owner. All function grants explicitly revoke Supabase default anon/authenticated privileges before restoring intended access.
-2. `20261012232949_marketing_durable_jobs.sql`: adds durable generation jobs, owner campaign/slot controls, replacement invalidation, exclusive leases and compare-and-set publisher checkpoints/receipts. Rebinding a slot retains its original plan, supersedes its old prepared revision and increments delivery identity; it approves no post.
-3. `20261012233059_marketing_knowledge_import.sql`: adds evidence/procedure sidecars to canonical `ai_links`; retains IDs/relationships, hashes, source timestamps and exact consent-bound provider plans. Import/analysis/review runs through owner-scoped server operations.
-4. `20261013001528_marketing_private_assets.sql`: provisions a private JPEG bucket capped at8 MiB, only owner-prefix reads, and restrictive browser write backstops. Service worker uses immutable upload keys and verifies stored hashes before signing.
-5. `20261013092409_marketing_staging_pilot_guard.sql`: adds an immutable service-only owner pilot tuple and permanent generation reservations in a private schema. Optional enqueue/claim parameters retain normal behavior for owners without a pilot; a configured pilot reserves at most3 jobs at$0.25 each and checks its fence/deadline before every paid attempt. Removing/changing environment settings or deleting/failing a job cannot reset the quota. See [pilot guard](marketing-pilot-guard.md).
-6. `20261013150816_marketing_offline_import.sql`: adds owner-readable import identities and service-only import functions. The original pilot window is checked before work and again after locks. Imported revisions retain an immutable review hold through caption edits; the migration enables no import or approval. See [offline import](marketing-offline-import.md).
-7. `20261013150933_marketing_story_receipts.sql`: replaces the service-only publication receipt function. A genuine numeric Story acknowledgement can be recorded without a permanent URL when its single JPEG has the required geometry. Feed and Threads still require a URL; ambiguous outcomes remain subject to reconciliation without another publish request.
-8. `20261013165236_marketing_dneskai_collection.sql`: adds owner-readable research runs, source cursors and candidates; service-only functions admit one run per project and Prague day and fence each tick. Paid reservations aggregate across the owner's projects, retain unknown costs and refuse new work under an existing generation pilot. At most four fresh, classified topics receive a tomorrow research date; these are unapproved topics, not articles or social revisions. The migration also adds the Sources workspace tab to the preference allowlist. Collection stays disabled until separately configured and authorized; it grants no approval, publication or extra pilot budget.
-9. `20261013181506_dneskai_collection_pilot.sql`: adds explicit Preview-only collection authorization. A server-configured owner/project/window is persisted immutably, expires within48hours and permits one lifetime collection run with at most $0.24 reserved provider spend. It cannot adopt an existing normal run, reset old generation reservations, or fall back to normal paid collection when pilot settings disappear. It also fixes classification updates to allow derived status/reason fields while preserving the authored source. Applying the schema alone does not grant a pilot; its separately approved configuration must be supplied by the server.
+1. `20261013193104_marketing_control_surface.sql`: adds isolated owned campaign/calendar/source/history/account/revision/publication/event tables. Browser writes are revoked; bounded approval/decision functions authenticate `auth.uid()`. Service integration credentials bind one owner. All function grants explicitly revoke Supabase default anon/authenticated privileges before restoring intended access.
+2. `20261013193105_marketing_durable_jobs.sql`: adds durable generation jobs, owner campaign/slot controls, replacement invalidation, exclusive leases and compare-and-set publisher checkpoints/receipts. Rebinding a slot retains its original plan, supersedes its old prepared revision and increments delivery identity; it approves no post.
+3. `20261013193106_marketing_knowledge_import.sql`: adds evidence/procedure sidecars to canonical `ai_links`; retains IDs/relationships, hashes, source timestamps and exact consent-bound provider plans. Import/analysis/review runs through owner-scoped server operations.
+4. `20261013193107_marketing_private_assets.sql`: provisions a private JPEG bucket capped at8 MiB, only owner-prefix reads, and restrictive browser write backstops. Service worker uses immutable upload keys and verifies stored hashes before signing.
+5. `20261013193108_marketing_staging_pilot_guard.sql`: adds an immutable service-only owner pilot tuple and permanent generation reservations in a private schema. Optional enqueue/claim parameters retain normal behavior for owners without a pilot; a configured pilot reserves at most3 jobs at$0.25 each and checks its fence/deadline before every paid attempt. Removing/changing environment settings or deleting/failing a job cannot reset the quota. See [pilot guard](marketing-pilot-guard.md).
+6. `20261013193131_marketing_offline_import.sql`: adds owner-readable import identities and service-only import functions. The original pilot window is checked before work and again after locks. Imported revisions retain an immutable review hold through caption edits; the migration enables no import or approval. See [offline import](marketing-offline-import.md).
+7. `20261013193132_marketing_story_receipts.sql`: replaces the service-only publication receipt function. A genuine numeric Story acknowledgement can be recorded without a permanent URL when its single JPEG has the required geometry. Feed and Threads still require a URL; ambiguous outcomes remain subject to reconciliation without another publish request.
+8. `20261013193134_marketing_dneskai_collection.sql`: adds owner-readable research runs, source cursors and candidates; service-only functions admit one run per project and Prague day and fence each tick. Paid reservations aggregate across the owner's projects, retain unknown costs and refuse new work under an existing generation pilot. At most four fresh, classified topics receive a tomorrow research date; these are unapproved topics, not articles or social revisions. The migration also adds the Sources workspace tab to the preference allowlist. Collection stays disabled until separately configured and authorized; it grants no approval, publication or extra pilot budget.
+9. `20261013193136_dneskai_collection_pilot.sql`: adds explicit Preview-only collection authorization. A server-configured owner/project/window is persisted immutably, expires within48hours and permits one lifetime collection run with at most $0.24 reserved provider spend. It cannot adopt an existing normal run, reset old generation reservations, or fall back to normal paid collection when pilot settings disappear. It also fixes classification updates to allow derived status/reason fields while preserving the authored source. Applying the schema alone does not grant a pilot; its separately approved configuration must be supplied by the server.
 
 Before applying, back up schema/data and verify a staging copy with own-only access and service-role credentials. No migration changes existing calendar content, approves templates/posts, connects accounts or enables schedules. Import both complete repository calendars as paused drafts; review counts and dated content before activation. Publishing flags and accounts remain disabled.
 
@@ -431,18 +431,18 @@ Rollback first disables per-brand/global publisher and n8n schedules. Retain app
 
 ## DNESKAi collection cursor and limits (2026-10-20)
 
-`20261020100000_dneskai_collection_cursor_limits.sql` replaces four collection functions with their latest bodies plus three changes, and adds one function and one column. Applied migrations stay untouched.
+`20261021122104_dneskai_collection_cursor_limits.sql` replaces four collection functions with their latest bodies plus three changes, and adds one function and one column. Applied migrations stay untouched.
 
 - `marketing_dneskai_save_stage`: a stage saved as `partial` with `collection-source-item-cap` (the provider stopped only at its item cap) moves `marketing_dneskai_source_states.last_success_at` to its newest accepted item (`publishedAt`, or `fetchedAt` when undated), never past now. A complete read still moves it to the run start. Errors, invalid URLs, other partial results, held or over-budget results and empty results leave it unchanged.
 - `marketing_dneskai_claim_stage`: Instagram stages take up to 10 items (was 7) and a Prague day up to 50 reserved Instagram items (was 35). The $0.04 stage reservation and the $0.25 daily ceiling are unchanged; 10 results at $2.30 per 1,000 cost $0.023.
 - `marketing_dneskai_admit` and `marketing_dneskai_admit_pilot` no longer create 16 fixed `__jev:00..15` stages. The new service-role function `marketing_dneskai_plan_jev(owner, run, fence, count)` creates `ceil(new candidates / 8)` stages (0 to 16) once per run, after every source stage has settled, and records the count in the new nullable `marketing_dneskai_runs.jev_stage_count`. Runs admitted before the migration keep their 16 stages.
 - The `reserved_items` check on `marketing_dneskai_stages` becomes `0..10`.
 
-Verify on a staging copy with `tests/lib/marketing-dneskai-cursor-database.test.ts` (PGlite replay of all three collection migrations): two consecutive runs over the same feed, where the second reads only from the first run's cursor and inserts no duplicate. No schedule, flag or account changes. Rollback: redeploying the previous app keeps working against the new functions except that it never calls `marketing_dneskai_plan_jev`, so its runs get no Jev stages; reapply the 20261013181506 function bodies before rolling the app back.
+Verify on a staging copy with `tests/lib/marketing-dneskai-cursor-database.test.ts` (PGlite replay of all three collection migrations): two consecutive runs over the same feed, where the second reads only from the first run's cursor and inserts no duplicate. No schedule, flag or account changes. Rollback: redeploying the previous app keeps working against the new functions except that it never calls `marketing_dneskai_plan_jev`, so its runs get no Jev stages; reapply the 20261013193136 function bodies before rolling the app back.
 
 ## DNESKAi source media (2026-10-20)
 
-`20261020130000_dneskai_source_media.sql` (#114) adds the private bucket `marketing-media` (JPEG, PNG and WebP, 32 MiB, owner-prefix reads, no browser writes; the same restrictive-guard pattern as `marketing-assets`, which is not changed) and three owner-readable tables: `marketing_media_assets` (one row per owner and sha256 with origin, position, size, MIME, storage path, credit, pHash, duplicate marker and `purged_at`), `marketing_media_asset_links` (each candidate that uses an asset) and `marketing_media_collections` (per-candidate plan, status and skipped positions). Links and collection rows reference `marketing_dneskai_candidates` and cascade with it; a trigger checks project and asset ownership even for service-role writes. Eight service-role functions do the work: `marketing_media_begin` (claims a selected candidate under a 120 s fence), `marketing_media_set_plan`, `marketing_media_record_asset` (new sha256 only after upload; pHash Hamming distance ≤ 6 to the canonical itself marks the smaller copy; groups stay flat and nearness is never chained), `marketing_media_finish`, `marketing_media_lookup`, `marketing_media_pending_candidates`, `marketing_media_claim_purge` and `marketing_media_unmark_purge`. No existing table, function or flag changes, and nothing is fetched until the scheduler calls the collector.
+`20261021122453_dneskai_source_media.sql` (#114) adds the private bucket `marketing-media` (JPEG, PNG and WebP, 32 MiB, owner-prefix reads, no browser writes; the same restrictive-guard pattern as `marketing-assets`, which is not changed) and three owner-readable tables: `marketing_media_assets` (one row per owner and sha256 with origin, position, size, MIME, storage path, credit, pHash, duplicate marker and `purged_at`), `marketing_media_asset_links` (each candidate that uses an asset) and `marketing_media_collections` (per-candidate plan, status and skipped positions). Links and collection rows reference `marketing_dneskai_candidates` and cascade with it; a trigger checks project and asset ownership even for service-role writes. Eight service-role functions do the work: `marketing_media_begin` (claims a selected candidate under a 120 s fence), `marketing_media_set_plan`, `marketing_media_record_asset` (new sha256 only after upload; pHash Hamming distance ≤ 6 to the canonical itself marks the smaller copy; groups stay flat and nearness is never chained), `marketing_media_finish`, `marketing_media_lookup`, `marketing_media_pending_candidates`, `marketing_media_claim_purge` and `marketing_media_unmark_purge`. No existing table, function or flag changes, and nothing is fetched until the scheduler calls the collector.
 
 Verify after applying: the bucket row is private with the three MIME types and `33554432`; anon reads nothing from the three tables, the owner reads only their rows and cannot write; anon and authenticated cannot execute the eight functions. `tests/lib/marketing-dneskai-media-database.test.ts` runs these checks against the migration in PGlite. Rollback: stop calling the collector, then drop the three tables, the eight functions and the trigger function `marketing_media_ownership` and, after removing its objects, the bucket and its six `marketing_media_*` storage policies. Media docs: [DNESKAi source media](dneskai-source-media.md).
 
@@ -454,7 +454,7 @@ Public role summaries and the employer directory ship in source. Personal Englis
 
 ## Retired staging pilot ledgers (2026-10-20)
 
-`20261020120000_scope_retired_pilot_ledgers.sql` changes five service-only functions for #113.
+`20261021122330_scope_retired_pilot_ledgers.sql` changes five service-only functions for #113.
 Before it, a generation or collection pilot row blocked the owner's ordinary job admission, collection
 admission and paid collection for good, expired or not. Now each block holds only while that pilot window
 is unexpired. No row is changed or removed: windows, the three $0.25 generation reservations, the lifetime
@@ -463,11 +463,11 @@ a changed one `pilot configuration changed`, and ordinary admission refuses to r
 The unknown-cost guard (`collection cost unresolved`) is unchanged. Function grants stay service-only.
 
 - `marketing_private.check_generation_pilot`, `marketing_enqueue_job` and `marketing_claim_job` are defined
-  only by `20261013092409` and are replaced whole. The two job wrappers now refuse a job the pilot reserved
+  only by `20261013193108` and are replaced whole. The two job wrappers now refuse a job the pilot reserved
   on the ordinary path (`pilot job retired`, on claim and on the enqueue duplicate path), so after expiry it
   cannot run without `marketing_check_pilot_attempt` and its $0.25 cap. The job and its reservation stay.
 - `marketing_dneskai_admit` and `marketing_dneskai_claim_stage` are also redefined by #112's
-  `20261020100000_dneskai_collection_cursor_limits.sql`, which sorts first. This migration does not restate
+  `20261021122104_dneskai_collection_cursor_limits.sql`, which sorts first. This migration does not restate
   them. It reads the current body with `pg_get_functiondef`, replaces exactly three pilot conditions and
   stops with `pilot predicate in … not found as expected` if a condition is missing or appears an
   unexpected number of times. A body that already has the scoped conditions is left alone, so a re-run is a
@@ -475,7 +475,7 @@ The unknown-cost guard (`collection cost unresolved`) is unchanged. Function gra
   `tests/lib/marketing-retired-pilot-ledger-database.test.ts` checks that against the body each earlier
   migration left.
 
-Apply in filename order. If `20261020100000` reaches a database after this migration, it restores the
+Apply in filename order. If `20261021122104` reaches a database after this migration, it restores the
 unscoped conditions; apply this file again afterwards. The read-only check on 2026-10-20 found no pilot
 ledger rows in production; they exist only in the Supabase branch `marketing-staging-20261013`. Verify
 after applying: `pg_get_functiondef('marketing_private.check_generation_pilot(uuid,jsonb,boolean)'::regprocedure)`
@@ -484,13 +484,13 @@ contains `generation_pilots where user_id=p_owner and clock_timestamp()<expires_
 `pg_get_functiondef('public.marketing_claim_job(uuid,uuid,uuid,jsonb)'::regprocedure)` contains
 `pilot job retired`, and `has_function_privilege('authenticated','public.marketing_dneskai_admit(uuid,uuid,date,jsonb)','execute')`
 is false. Rollback re-runs the latest earlier body of each function as `create or replace`: the three
-whole functions from `20261013092409_marketing_staging_pilot_guard.sql`, and admit and claim_stage from
-`20261020100000` when it is applied, otherwise from `20261013181506_dneskai_collection_pilot.sql`. No data
+whole functions from `20261013193108_marketing_staging_pilot_guard.sql`, and admit and claim_stage from
+`20261021122104` when it is applied, otherwise from `20261013193136_dneskai_collection_pilot.sql`. No data
 changes either way.
 
 ## Marketing account tokens (2026-10-20)
 
-`20261020110000_marketing_account_tokens.sql` adds `marketing_account_tokens`: one current long-lived Meta access token per `marketing_accounts` row, with `expires_at`, `refreshed_at`, `scopes` and `login_mode`. RLS is enabled with no policy, and every table privilege is revoked from `anon`, `authenticated` and `service_role`, so no API client can select the token. Service-role functions verify an account together with its token (`marketing_verify_account`), store a refreshed token with a compare-and-set on `refreshed_at` (`marketing_store_account_token`), read it for the publisher (`marketing_read_account_token`) and list non-secret metadata (`marketing_account_token_metadata`). The owner reads only expiry, refresh time, scopes and login mode through `marketing_account_token_status()`. A trigger rejects a token row whose owner or login mode does not match its account. Both writing functions check the token, expiry, scopes (at most 20, `^[a-z_]{1,64}$`) and login mode before any row exists and refuse with value-free messages (`invalid token`, `token expired`, `invalid scopes`, `invalid login mode`), so a table constraint can never print the token in an error detail. Verification never enables publishing: a new account starts with `enabled=false` and a changed remote identity sets it back to false.
+`20261021122220_marketing_account_tokens.sql` adds `marketing_account_tokens`: one current long-lived Meta access token per `marketing_accounts` row, with `expires_at`, `refreshed_at`, `scopes` and `login_mode`. RLS is enabled with no policy, and every table privilege is revoked from `anon`, `authenticated` and `service_role`, so no API client can select the token. Service-role functions verify an account together with its token (`marketing_verify_account`), store a refreshed token with a compare-and-set on `refreshed_at` (`marketing_store_account_token`), read it for the publisher (`marketing_read_account_token`) and list non-secret metadata (`marketing_account_token_metadata`). The owner reads only expiry, refresh time, scopes and login mode through `marketing_account_token_status()`. A trigger rejects a token row whose owner or login mode does not match its account. Both writing functions check the token, expiry, scopes (at most 20, `^[a-z_]{1,64}$`) and login mode before any row exists and refuse with value-free messages (`invalid token`, `token expired`, `invalid scopes`, `invalid login mode`), so a table constraint can never print the token in an error detail. Verification never enables publishing: a new account starts with `enabled=false` and a changed remote identity sets it back to false.
 
 Verify after applying: the owner and another signed-in user both get `permission denied` when selecting from the table; `marketing_account_token_status()` returns only the owner's metadata; anon and authenticated cannot execute the service functions. `tests/lib/marketing-account-tokens-database.test.ts` runs these checks against the migration in PGlite.
 
@@ -500,7 +500,7 @@ Rollback: roll the application back first, or together with the database, to a r
 
 ## Revision media identity (2026-10-20)
 
-`20261020140000_marketing_revision_media_identity.sql` belongs to #118. The server now stores `content_hash` as
+`20261021122551_marketing_revision_media_identity.sql` belongs to #118. The server now stores `content_hash` as
 `revisionContentHash`: sha256 of the canonical revision without `assets[].url`. SQL never computed the hash and
 still only compares stored values, so `marketing_save_revision`, `marketing_claim_due` and the publication fences
 are unchanged.
@@ -515,7 +515,7 @@ are unchanged.
   only) attaches rendered JPEGs once to an unready `review` revision with a deck and no assets. Only `assets` may
   differ from the stored revision. `ready=true` needs one asset per slide and a clean `rendered` report; a refused
   render keeps the content and hash and records the report.
-- `marketing_approve_revision` is replaced whole with the body from `20261012225640` plus two holds: a blocking
+- `marketing_approve_revision` is replaced whole with the body from `20261013193104` plus two holds: a blocking
   report (`render blocked`, via `marketing_private.render_report_blocks`) and a deck whose asset count differs from
   its slide count (`revision not ready`). Grants are restated: authenticated only.
 
@@ -530,7 +530,7 @@ edits and approvals keep working. Production holds no revisions (0 rows on 2026-
 invalidates no approval.
 
 Rollback: roll the application back first, then re-run `marketing_approve_revision` from
-`20261012225640_marketing_control_surface.sql`, drop `marketing_renew_revision_asset_urls`,
+`20261013193104_marketing_control_surface.sql`, drop `marketing_renew_revision_asset_urls`,
 `marketing_attach_revision_render`, `marketing_private.revision_without_urls`,
 `marketing_private.render_report_blocks` and the `render_report` column. A rolled-back release computes the hash
 with URLs again, so a revision approved under this release would hold at the publisher as
@@ -538,7 +538,7 @@ with URLs again, so a revision approved under this release would hold at the pub
 
 ## DNESKAi daily generation ceiling (2026-10-20)
 
-`20261020170000_dneskai_daily_generation_budget.sql` belongs to #116. It adds no column and changes no existing
+`20261021124651_dneskai_daily_generation_budget.sql` belongs to #116. It adds no column and changes no existing
 table or function.
 
 - `marketing_private.dneskai_generation_spend`: one row per DNESKAi generation job that made a paid call, with the
@@ -563,7 +563,7 @@ current application keeps DNESKAi generation refused, which is the safe directio
 
 ## DNESKAi events and briefs (2026-10-20)
 
-`20261020150000_dneskai_events_briefs.sql` belongs to #115 ([events and briefs](dneskai-briefs.md)).
+`20261021123547_dneskai_events_briefs.sql` belongs to #115 ([events and briefs](dneskai-briefs.md)).
 
 - `marketing_dneskai_briefs` (owner read, service-role writes, the collection ownership trigger): one row per
   selected event and target day, unique per owner, project, `event_id` and `target_date`, with rank 1–4, category,
@@ -571,7 +571,7 @@ current application keeps DNESKAi generation refused, which is the safe directio
   a code, the brief document (validated in TypeScript), the slot, the calendar entry and the job. A partial unique
   index keeps one brief per slot.
 - `marketing_dneskai_finish` is dropped and recreated with a sixth argument `p_events jsonb default null` (the
-  TypeScript grouping). Its body is the current one from `20261013165236` with the selection changed to at most
+  TypeScript grouping). Its body is the current one from `20261013193134` with the selection changed to at most
   four events, one per category first; a covered event's open reports become duplicates; every classified report
   of a chosen event is selected (at most eight); `selected_count` counts the day's briefs. Without `p_events` every
   candidate is its own event, which is the former selection. An event counts as covered when it holds a selected
@@ -596,12 +596,12 @@ Order: apply the migration before deploying the code. The new collector calls `m
 `p_events`; the code deployed before it calls it without, which the default keeps working.
 
 Rollback: roll the application back first, then drop the five brief functions, the two private helpers and
-`marketing_dneskai_briefs`, and re-run `marketing_dneskai_finish` from `20261013165236_marketing_dneskai_collection.sql`
+`marketing_dneskai_briefs`, and re-run `marketing_dneskai_finish` from `20261013193134_marketing_dneskai_collection.sql`
 after dropping the six-argument version. Candidates selected as event members stay `selected`; nothing was published.
 
 ## Marketing scheduler (2026-10-20)
 
-`20261020160000_marketing_scheduler.sql` and `20261020160100_marketing_scheduler_cron.sql` belong to #120 and
+`20261021124400_marketing_scheduler.sql` and `20261021124628_marketing_scheduler_cron.sql` belong to #120 and
 replace the n8n timers with Supabase pg_cron ([marketing scheduling](marketing-scheduling.md)).
 
 - `marketing_ticks` (owner read, service-role write): one row per accepted tick, keyed by the tick id the caller
@@ -638,7 +638,7 @@ select cron.unschedule('marketing-cron-history-prune');`, then drop the two priv
 
 ## Render report on generated DNESKAi revisions (2026-10-21)
 
-`20261021090000_marketing_job_render_report.sql` replaces `marketing_finish_job` with the same body plus one step:
+`20261021124706_marketing_job_render_report.sql` replaces `marketing_finish_job` with the same body plus one step:
 when the job result carries `renderReport`, the function writes it to `marketing_revisions.render_report` of the
 revision it has just saved. The worker sends a report only for a DNESKAi deck it rendered, so devShark and legacy
 jobs leave the column null as before. A report that fails the column check rolls the whole finish back, and the
@@ -651,13 +651,13 @@ second point against the migrations in PGlite.
 Order: apply before deploying the code that sends the report. Old code with the new migration sends no report and
 behaves as before; new code with the old function stores the report in `marketing_jobs.result` only.
 
-Rollback: re-run `marketing_finish_job` from `20261012232949_marketing_durable_jobs.sql`. Stored reports stay; they
+Rollback: re-run `marketing_finish_job` from `20261013193105_marketing_durable_jobs.sql`. Stored reports stay; they
 were written by this release and remain valid.
 
 ## Hideable DNESKAi project tabs (2026-10-21)
 
-`20261021100000_dneskai_hideable_project_tabs.sql` recreates `user_preferences_hidden_project_tabs_check` with the
-eleven tabs from `20261013165236_marketing_dneskai_collection.sql` followed by `dneskai-review`, `dneskai-calendar`,
+`20261021124712_dneskai_hideable_project_tabs.sql` recreates `user_preferences_hidden_project_tabs_check` with the
+eleven tabs from `20261013193134_marketing_dneskai_collection.sql` followed by `dneskai-review`, `dneskai-calendar`,
 `dneskai-published` and `dneskai-costs`. That is `PROJECT_TAB_IDS` in `src/lib/project-workspace-tabs.ts`, which
 Settings, the workspace and `normalizeHiddenProjectTabs` share. It updates no row: every stored value satisfied the
 previous check, and the new one only adds ids.
@@ -673,7 +673,7 @@ when it reads them and never writes them.
 
 Rollback: roll the application back first. Then remove the four ids from stored rows and re-run the two
 `user_preferences_hidden_project_tabs_check` statements at the top of
-`20261013165236_marketing_dneskai_collection.sql`:
+`20261013193134_marketing_dneskai_collection.sql`:
 
 ```sql
 update public.user_preferences
@@ -686,72 +686,87 @@ where hidden_project_tabs && array['dneskai-review','dneskai-calendar','dneskai-
 
 ## Production apply of the DNESKAi social release (2026-10-21)
 
-Migrations `20261020100000` through `20261021100000` were applied to production project `gcctapykhrdyxikieemn` on
-21 October 2026 through the Supabase MCP `apply_migration` tool, one call per file in filename order. The tool
-records the apply time as the version, so production's history names them with 2026-10-21 timestamps. That tool
-holds any statement that drops an object or deletes rows for a confirmation, and this session could not answer it,
-so three files went in differently:
+Migrations `20261021122104` through `20261021124712` (then named `20261020100000` through `20261021100000`) were
+applied to production project `gcctapykhrdyxikieemn` on 21 October 2026 through the Supabase MCP `apply_migration`
+tool, one call per file in filename order. The tool records the apply time as the version and holds any statement
+that drops an object or deletes rows for a confirmation, which that session could not answer. Three files therefore
+went in differently, and the repository now records them as production ran them (see the next section):
 
-- `20261020150000_dneskai_events_briefs.sql` is recorded as three entries: `dneskai_events_briefs` (table and
-  identity helpers), `dneskai_events_briefs_finish` and `dneskai_events_briefs_functions`. Instead of
+- The events and briefs release is three versions: `20261021123547` (table and identity helpers),
+  `20261021124058` (`marketing_dneskai_finish`) and `20261021124144` (brief functions). Instead of
   `drop function public.marketing_dneskai_finish(uuid,uuid,uuid,text,text)`, the five-argument function was renamed to
   `marketing_dneskai_finish_retired_20261021` and every grant on it was revoked. The six-argument function is the
   only `marketing_dneskai_finish`, so callers with five arguments resolve to it as before. Rollback: drop the
   six-argument function and rename the retired one back.
-- `20261020160000_marketing_scheduler.sql` is recorded as `marketing_scheduler` (tables),
-  `marketing_scheduler_functions` and nothing else: `marketing_scheduler_prune_ticks` is not in production yet.
-- `20261020160100_marketing_scheduler_cron.sql` went in without the `marketing-cron-history-prune` job.
+- The scheduler is `20261021124400` (tables) and `20261021124438` (functions) without
+  `marketing_scheduler_prune_ticks`, and `20261021124628` (cron) without the `marketing-cron-history-prune` job. Both
+  are in the pending `20261022000000_marketing_scheduler_retention.sql`.
+- `20261021125123_restrict_pg_net_browser_roles.sql` changed nothing: Supabase grants `net.http_post` to `PUBLIC` as
+  `supabase_admin`, which the `postgres` role cannot revoke. The `net` schema is not exposed through the API.
 
 A fingerprint of every function body, constraint, index, policy, trigger, grant, bucket and cron job these
-migrations define matched the PGlite build of the repository exactly, apart from those two missing objects.
-`restrict_pg_net_browser_roles` changed nothing: Supabase grants `net.http_post` to `PUBLIC` as `supabase_admin`,
-which the `postgres` role cannot revoke. The `net` schema is not exposed through the API.
-It exists only in production's history, as version `20261021125123` (the latest version a read-only query found on
-22 October 2026); `supabase/migrations` has no file for it. A fresh install therefore never runs it, which loses
-nothing because it changed nothing. `migration list --linked` shows it as a remote-only version, so `db push` refuses
-until that history is reconciled with the owner's approval. Do not recreate it as a file without that approval.
+migrations define matched the PGlite build of the repository exactly, apart from the two retention objects.
 
-Until the owner runs the statements below in the SQL editor, `marketing_ticks` and `cron.job_run_details` keep every
-row, and the daily tick records an error for its last step, `retention`, which prunes the ticks. Nothing else
-depends on them. Both statements are safe to run again.
+## Production history reconciled — 2026-10-22
 
-```sql
-create or replace function public.marketing_scheduler_prune_ticks(p_owner uuid,p_days integer) returns integer
-language plpgsql set search_path='' as $$
-declare removed integer;
-begin
- if p_owner is null or p_days is null or p_days not between 1 and 365 then raise exception 'tick retention invalid'; end if;
- delete from public.marketing_ticks where user_id=p_owner and started_at<clock_timestamp()-make_interval(days=>p_days);
- get diagnostics removed=row_count;
- return removed;
-end $$;
-revoke all on function public.marketing_scheduler_prune_ticks(uuid,integer) from public,anon,authenticated;
-grant execute on function public.marketing_scheduler_prune_ticks(uuid,integer) to service_role;
+Production's history and `supabase/migrations` list the same versions up to `20261021125123`. Nothing was written to
+production; the repository followed production, as the 2026-09-16 files did:
 
-select cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where coalesce(jobname,'') not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
+- 20 files were renamed to the versions production recorded: the nine 2026-10-12/13 marketing files to
+  `20261013193104`–`20261013193136`, and the eleven 2026-10-20/21 files to `20261021122104`–`20261021124712`.
+- The events and briefs file was split into `20261021123547_dneskai_events_briefs.sql`,
+  `20261021124058_dneskai_events_briefs_finish.sql` and `20261021124144_dneskai_events_briefs_functions.sql`, the
+  scheduler file into `20261021124400_marketing_scheduler.sql` and `20261021124438_marketing_scheduler_functions.sql`,
+  along the statements production recorded under each version. The rename above replaces the drop.
+- `20261021125123_restrict_pg_net_browser_roles.sql` was added. It runs its two revokes only where a `net` schema
+  exists, so PGlite and a fresh install without `pg_net` skip it.
+
+Checked by read-only queries on 22 October 2026: every applied file's SQL, comments and whitespace aside, has the
+same MD5 as the statements production stored under its version, except `20261015234547` and `20261021125123`, whose
+statements are the same with different comments or a guard. `marketing_scheduler_prune_ticks` and the
+`marketing-cron-history-prune` job are absent. `tests/lib/migration-contracts.test.ts` pins the production versions.
+
+### Applying the prepared migrations
+
+Nine files are newer than anything production holds and none of them is applied: `20261022000000` through
+`20261022160000`. Apply them with the CLI, which records each file's own version:
+
+```bash
+npx supabase link --project-ref gcctapykhrdyxikieemn
+npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
+npx supabase db push --linked --dry-run   # lists exactly the nine files, in filename order
+npx supabase db push --linked
+npx supabase migration list --linked      # both columns agree
 ```
+
+Do not apply them through the Supabase MCP `apply_migration` tool: it records the apply time as the version, which
+recreates the mismatch, and it holds the retention file's `delete` for a confirmation. `20261022141613` needs
+`20261022021835` first; filename order does that. After the push, set the server-only switches in Vercel Production
+and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`
+and `MARKETING_PUBLICATION_REQUEUE_ENABLED`. `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner
+approves the research plan; the ledger alone spends nothing. The next daily tick then records no `retention` error.
 
 ## DNESKAi research preparation, 22 October 2026 (unapplied)
 
 `20261022013957_dneskai_apify_research.sql` adds the separate private research ledger, atomic service-only reserve/mark/spent RPCs, and own-only public metric reads. It preserves all pipeline and staging ledgers. No cron or live route starts research. See [research operations](dneskai-apify-research.md).
 
-This migration has only been replayed in isolated PGlite tests. Production marketing migration versions differ from repository filenames; the dated audit records that mismatch. Reconcile history under an owner-approved release before applying any new migration. Do not follow the earlier generic `db push` procedure against production until then.
+This migration has only been replayed in isolated PGlite tests. Apply it with the others through [Applying the prepared migrations](#applying-the-prepared-migrations).
 
 ## Richer brief evidence, 22 October 2026 (unapplied)
 
 `20261022020702_dneskai_richer_brief_evidence.sql` adds bounded article prose to the owner-scoped media collection and a fenced service-only setter. Alt and figcaption metadata stay in the immutable image plan. `20261022020759_dneskai_brief_v2_compatibility.sql` accepts both brief document versions without rewriting stored briefs or changing grants.
 
-Both migrations are local preparation. Reconcile production's divergent marketing history before an approved coordinated application/code release. Do not use the earlier generic `db push` recipe on production until that owner decision is resolved. The app defaults to the existing media columns and brief/1 writer. After both migrations have been reconciled and applied, set server-only `DNESKAI_RICH_EVIDENCE_ENABLED=true` and redeploy to enable article prose and brief/2. Both document versions remain readable. No collection switch, paid ceiling or staging ledger changes.
+Both migrations are local preparation. Apply them with the others through [Applying the prepared migrations](#applying-the-prepared-migrations). The app defaults to the existing media columns and brief/1 writer. After both migrations have been reconciled and applied, set server-only `DNESKAI_RICH_EVIDENCE_ENABLED=true` and redeploy to enable article prose and brief/2. Both document versions remain readable. No collection switch, paid ceiling or staging ledger changes.
 
 ### Prepared: lapsed brief reports
 
-`20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied pending migration-history reconciliation.
+`20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied; see [Applying the prepared migrations](#applying-the-prepared-migrations).
 
 ## Publication re-queue, 22 October 2026 (unapplied)
 
 `20261022110000_marketing_requeue_unpublished_publication.sql` adds `marketing_requeue_publication(p_publication)` for the signed-in owner (audit finding approval-04). It accepts a publication in `reconciliation`, or a claim whose lease expired, only when it has no numeric container ID, no media ID, no URL and no `publish-intent`: such a row never reached `media_publish`. It sets the publication back to `queued` (`error_code='owner-requeued'`, container and lease cleared) and the revision back to `approved`, leaving `approved_at`, `approved_hash` and the content untouched, and records a `requeued` event. Every other row is refused with `publication may be published`, `publication not stranded` or `approval changed`.
 
-The deployed code needs nothing from this migration: container retries use the existing `marketing_checkpoint_publication`, and the route and panel stay off until `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. A missing function answers `publication-requeue-unavailable`. Replayed only in PGlite (`tests/lib/marketing-requeue-database.test.ts`). Apply it with the other prepared migrations after production's marketing history is reconciled under an owner-approved release.
+The deployed code needs nothing from this migration: container retries use the existing `marketing_checkpoint_publication`, and the route and panel stay off until `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. A missing function answers `publication-requeue-unavailable`. Replayed only in PGlite (`tests/lib/marketing-requeue-database.test.ts`). Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations).
 
 ### Prepared: owner recovery actions
 

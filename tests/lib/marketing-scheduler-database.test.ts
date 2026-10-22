@@ -14,7 +14,8 @@ const holderA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', holderB = 'bbbbbbbb-bbbb
 const secret = 'TEST-ONLY-scheduler-secret-0123456789abcdef';
 const url = 'https://own-dashboard.example.test/api/marketing/tick';
 const instant = '2026-10-20T20:05:00Z';
-const migrations = ['20261020160000_marketing_scheduler.sql', '20261020160100_marketing_scheduler_cron.sql'];
+// The scheduler release as production recorded it: tables, functions, cron, then the retention that came later.
+const migrations = ['20261021124400_marketing_scheduler.sql', '20261021124438_marketing_scheduler_functions.sql', '20261021124628_marketing_scheduler_cron.sql', '20261022000000_marketing_scheduler_retention.sql'];
 let db: PGlite;
 const setTime = (value: string) => db.query("select set_config('marketing.test_time',$1,false)", [value]);
 const as = async <T>(role: string, user: string | null, run: () => Promise<T>) => {
@@ -62,7 +63,7 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => await db.close());
 
-describe('pg_cron schedule (20261020160100)', () => {
+describe('pg_cron schedule (20261021124628, 20261022000000)', () => {
   it('schedules exactly the two tick jobs and the history prune, and re-running the file replaces rather than duplicates them', async () => {
     const jobs = async () => (await db.query<{ jobname: string; schedule: string; command: string }>('select jobname,schedule,command from cron.job order by jobname')).rows;
     const expected = [
@@ -71,11 +72,12 @@ describe('pg_cron schedule (20261020160100)', () => {
       { jobname: 'marketing-tick-minute', schedule: '*/5 * * * *', command: "select marketing_private.scheduler_post('minute')" },
     ];
     expect(await jobs()).toEqual(expected);
-    await db.exec(readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8'));
+    await db.exec(readFileSync(`supabase/migrations/${migrations[2]}`, 'utf8'));
+    await db.exec(readFileSync(`supabase/migrations/${migrations[3]}`, 'utf8'));
     expect(await jobs()).toEqual(expected);
     expect(await db.query("select cron.unschedule('marketing-tick-minute')")).toBeTruthy();
     expect((await jobs()).map((job) => job.jobname)).toEqual(['marketing-cron-history-prune', 'marketing-tick-daily']);
-    await db.exec(readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8'));
+    await db.exec(readFileSync(`supabase/migrations/${migrations[2]}`, 'utf8'));
     expect(await jobs()).toEqual(expected);
   });
 
@@ -99,7 +101,7 @@ describe('pg_cron schedule (20261020160100)', () => {
   });
 
   it('contains no secret or URL value and sends nothing until Vault holds a usable URL and secret', async () => {
-    const source = readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8');
+    const source = readFileSync(`supabase/migrations/${migrations[2]}`, 'utf8');
     expect(source).not.toMatch(/vault\.create_secret\('(?!<|https:\/\/own-dashboard-tau)/);
     expect(source).not.toMatch(/insert into vault/i);
     expect(await post('minute')).toBeNull();
@@ -153,7 +155,7 @@ describe('pg_cron schedule (20261020160100)', () => {
 
   it('documents Vault SQL that a second run cannot fail and that rotates by the stored id', async () => {
     const tickUrl = 'https://own-dashboard-tau.vercel.app/api/marketing/tick', rotated = `${secret}-rotated`;
-    const header = readFileSync(`supabase/migrations/${migrations[1]}`, 'utf8').split('\n').filter((line) => line.startsWith('--')).map((line) => line.slice(2)).join('\n');
+    const header = readFileSync(`supabase/migrations/${migrations[2]}`, 'utf8').split('\n').filter((line) => line.startsWith('--')).map((line) => line.slice(2)).join('\n');
     const stored = async () => (await db.query<{ name: string; secret: string }>('select name,secret from vault.secrets order by name')).rows;
     for (const source of [header, readFileSync('docs/marketing-scheduling.md', 'utf8')]) {
       await db.exec('delete from vault.secrets');
@@ -184,7 +186,7 @@ describe('pg_cron schedule (20261020160100)', () => {
   });
 });
 
-describe('tick record and category leases (20261020160000)', () => {
+describe('tick record and category leases (20261021124400, 20261021124438, 20261022000000)', () => {
   it('records a tick id once: a replay begins nothing and finishes nothing', async () => {
     const tick = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
     expect(await service('select marketing_scheduler_begin_tick($1,$2,$3) r', [owner, tick, 'minute'])).toBe(true);

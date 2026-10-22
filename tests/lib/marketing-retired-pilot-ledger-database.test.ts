@@ -11,9 +11,9 @@ const generation = { ownerId: owner, startsAt: '2026-10-13T10:00:00Z', expiresAt
 const collection = { ownerId: second, projectId: secondProject, startsAt: '2026-10-15T10:00:00Z', expiresAt: '2026-10-16T10:00:00Z' };
 const sources = [{ id: 'openai-blog', kind: 'rss', maxItems: 10 }, { id: 'instagram:mosseri', kind: 'instagram', maxItems: 7 }, { id: 'instagram:second', kind: 'instagram', maxItems: 7 }];
 const json = JSON.stringify;
-const scoping = '20261020120000_scope_retired_pilot_ledgers.sql';
-const base = ['20261012225640_marketing_control_surface.sql', '20261012232949_marketing_durable_jobs.sql', '20261013092409_marketing_staging_pilot_guard.sql',
-  '20261013165236_marketing_dneskai_collection.sql', '20261013181506_dneskai_collection_pilot.sql'];
+const scoping = '20261021122330_scope_retired_pilot_ledgers.sql';
+const base = ['20261013193104_marketing_control_surface.sql', '20261013193105_marketing_durable_jobs.sql', '20261013193108_marketing_staging_pilot_guard.sql',
+  '20261013193134_marketing_dneskai_collection.sql', '20261013193136_dneskai_collection_pilot.sql'];
 const scoped = {
   admit: 'public.marketing_dneskai_admit(uuid,uuid,date,jsonb)',
   claimStage: 'public.marketing_dneskai_claim_stage(uuid,uuid,uuid,text,boolean)',
@@ -38,7 +38,7 @@ const predicates: Record<'admit' | 'claimStage', [string, string][]> = {
 // before the scoping migration (#112's limits and Jev planning) must survive it, and one that sorts
 // after it and restores the unscoped checks fails here rather than in production.
 const definesScopedFunction = /create\s+(?:or\s+replace\s+)?function\s+(?:public\.|marketing_private\.)?(?:check_generation_pilot|marketing_dneskai_admit|marketing_dneskai_claim_stage|marketing_enqueue_job|marketing_claim_job)\s*\(/i;
-const later = readdirSync('supabase/migrations').filter(name => name.slice(0, 14) > '20261013181506' && definesScopedFunction.test(readFileSync(`supabase/migrations/${name}`, 'utf8'))).sort();
+const later = readdirSync('supabase/migrations').filter(name => name.slice(0, 14) > '20261013193136' && definesScopedFunction.test(readFileSync(`supabase/migrations/${name}`, 'utf8'))).sort();
 let db: PGlite;
 let before: Record<keyof typeof scoped, string>, after: Record<keyof typeof scoped, string>;
 const at = (instant: string) => db.query("select set_config('marketing.test_time',$1,false)", [instant]);

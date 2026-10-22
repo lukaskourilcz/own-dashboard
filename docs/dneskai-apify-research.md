@@ -18,7 +18,7 @@ Reserved, started and ambiguous rows count at the full run cap. A finished run c
 
 `createSupabaseResearchLedger` adapts these RPCs to the runner. Both reserve and mark use the service role on the server. Browser roles have no ledger access or execution grants. The public metrics table permits own-only reads, with service-only inserts and an owner/reservation foreign key.
 
-Production's migration history differs from the repository. Reconcile that history under a separately approved release before applying this new migration. Do not run `db push` on the linked project as a shortcut. No historical file, pilot reservation or pipeline budget is changed here.
+Production's migration history matches the repository since 22 October 2026; apply this file with the other prepared migrations through [migration-guide.md](migration-guide.md#applying-the-prepared-migrations). No historical file, pilot reservation or pipeline budget is changed here.
 
 ## Running and checking
 
