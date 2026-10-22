@@ -59,7 +59,7 @@ describe("engagement on the revision (#157)", () => {
   const engagement = { keyword: "SKILL", replyMessage: "Tady je návod, jak začít.", publicReply: "Poslali jsme vám to do zpráv." };
   it("accepts a keyword with its DM and optional public reply, and revisions without it", () => {
     expect(parseContentRevision({ ...revision, engagement }).engagement).toEqual(engagement);
-    const { publicReply: _omitted, ...withoutReply } = engagement;
+    const withoutReply = { keyword: engagement.keyword, replyMessage: engagement.replyMessage };
     expect(parseContentRevision({ ...revision, engagement: withoutReply }).engagement).toEqual(withoutReply);
     expect(parseContentRevision(revision).engagement).toBeUndefined();
   });
