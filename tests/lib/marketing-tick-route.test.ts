@@ -78,4 +78,33 @@ describe('POST /api/marketing/tick', () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: 'tick-unavailable' });
   });
+  it('logs one code-only line for every refused tick and nothing for an accepted one', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      await POST(signed());
+      expect(warn).not.toHaveBeenCalled();
+      await POST(signed(body, 'TEST-ONLY-wrong-secret-'.padEnd(48, 'x')));
+      await POST(signed(body, worker));
+      await POST(signed('not json'));
+      await POST(signed(JSON.stringify({ tick: '22222222-2222-4222-8222-222222222222', kind: 'daily', padding: 'x'.repeat(5000) })));
+      mocks.tick.mockRejectedValueOnce(new Error('scheduler-state-unavailable'));
+      await POST(signed());
+      mocks.tick.mockRejectedValueOnce(new Error('private connection string MUST NOT ESCAPE'));
+      await POST(signed());
+      vi.stubEnv('MARKETING_SCHEDULER_SECRET', undefined);
+      await POST(signed());
+      const lines = warn.mock.calls.map(([line]) => JSON.parse(String(line)));
+      expect(lines).toEqual([
+        { event: 'marketing-tick-rejected', status: 401, code: 'unauthorized', secretConfigured: true },
+        { event: 'marketing-tick-rejected', status: 403, code: 'forbidden' },
+        { event: 'marketing-tick-rejected', status: 400, code: 'tick-input-invalid' },
+        { event: 'marketing-tick-rejected', status: 413, code: 'payload-too-large' },
+        { event: 'marketing-tick-rejected', status: 503, code: 'tick-unavailable', cause: 'scheduler-state-unavailable' },
+        { event: 'marketing-tick-rejected', status: 503, code: 'tick-unavailable', cause: null },
+        { event: 'marketing-tick-rejected', status: 401, code: 'unauthorized', secretConfigured: false },
+      ]);
+      const logged = warn.mock.calls.flat().join('\n');
+      for (const secret of [scheduler, worker, 'MUST NOT ESCAPE', 'xxxxx']) expect(logged).not.toContain(secret);
+    } finally { warn.mockRestore(); }
+  });
 });

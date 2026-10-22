@@ -130,6 +130,17 @@ from cron.job_run_details d join cron.job j using (jobid)
 where j.jobname like 'marketing-tick-%' order by d.start_time desc limit 20;
 ```
 
+A tick the route refuses (400, 401, 403, 413) or cannot run (503) writes no `marketing_ticks` row, and
+pg_net keeps its answer for about six hours. The route therefore writes one JSON line to the Vercel
+function log: `{"event":"marketing-tick-rejected","status":401,"code":"unauthorized","secretConfigured":true}`.
+A 401 says whether a scheduler secret of at least 32 characters is configured; a 503 carries `cause` only
+when the error message is itself a code. Search the runtime logs for `marketing-tick-rejected`. A cron run
+whose `scheduler_post` found no Vault URL or secret sends nothing and reaches neither the route nor its
+log; comparing `cron.job_run_details` with `marketing_ticks` (the queries above) still shows that gap.
+
+The collection no-ops (`collection-not-due`, `collection-finished`, `collection-pilot-today`) carry
+`yieldMs` and `runsMs` in `detail`: how long the publication check and the run-list read took.
+
 The acceptance day of #120 reads as: collection `done` from 22:00 until `continue: false`, media and
 briefs `done`, generation `done` once per queued job, publishing `done` with `published: 1` in the
 slot, all without a single n8n execution.
