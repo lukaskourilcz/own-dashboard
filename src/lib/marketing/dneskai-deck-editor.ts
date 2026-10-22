@@ -37,8 +37,8 @@ export type EngagementDraft = { keyword: string; replyMessage: string; publicRep
 /** `audioTrackId`: the Reel track (#164); null leaves the choice to the rotation. */
 export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId; audioTrackId: string | null; engagement: EngagementDraft | null };
 
-/** The public reply a new keyword starts with (owner decision 4, 22 October 2026); the owner may change or empty it. */
-export const DNESKAI_DEFAULT_PUBLIC_REPLY = 'Poslali jsme vám to do zpráv.';
+import { DNESKAI_DEFAULT_PUBLIC_REPLY } from './dneskai-engagement';
+export { DNESKAI_DEFAULT_PUBLIC_REPLY };
 export function newEngagementDraft(): EngagementDraft {
   return { keyword: '', replyMessage: '', publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY };
 }

@@ -56,7 +56,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 | Bank (GoCardless) | Daily transaction sync | `src/lib/gocardless.ts`, `src/lib/bank*` | As configured; no new bank work planned |
 | Jina Reader | Link enrichment: only the submitted URL is sent | `src/lib/link-library.ts` | Live |
 | **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
-| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0 | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
+| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0; Facebook Login for Business is a prepared second mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
 | **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions | `src/lib/marketing/generation.ts`, `dneskai-generation.ts` | Key set, live |
 | **Jev** (typesafe.ai, `jev-1.13.0`) | Classifies collected stories (category, relevance, on-topic) | `src/lib/marketing/dneskai-providers.ts` | Live, about $0.002 a night |
 | Apify | Instagram profile collection and a research plan | `dneskai-collection.ts`, `dneskai-apify-research*.ts` | Token set, **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`) |
@@ -102,7 +102,7 @@ headlines become one event. The deployed SQL (`marketing_dneskai_finish`) picks 
 relevance. A prepared migration switches this to relevance first, with at most one non-news story a day, and gives
 held stories one automatic second review (section 8).
 
-### Generation (`marketing-copy/6`)
+### Generation (`marketing-copy/7`)
 
 One structured Claude call per brief (Claude Sonnet 5.5, $2/$10 per million tokens). The model writes the title,
 caption, hashtags and 4 to 7 slides (types `cover-photo`, `figure`, `split`, `statement`, or one `single`), and picks
