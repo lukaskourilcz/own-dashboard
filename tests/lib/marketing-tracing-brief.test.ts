@@ -6,7 +6,7 @@ import { generateMarketingDraft, type GenerationDependencies, type MarketingMode
 import { MARKETING_BRIEF_PROMPT_ID } from "@/lib/marketing/dneskai-generation";
 import { contentHash } from "@/lib/marketing/hashes";
 import type { DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
-import { BRIEF_NOW, REVISION_ID, briefFixture, briefInput, briefPacket, briefPictures, validCopy as fixtureCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
+import { BRIEF_NOW, REVISION_ID, briefFixture, briefInput, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 
 vi.mock("server-only", () => ({}));
 const sdk = vi.hoisted(() => ({ config: {} as Record<string, unknown>, createRun: vi.fn(), updateRun: vi.fn(), readRun: vi.fn(), createFeedback: vi.fn() }));
@@ -15,12 +15,6 @@ vi.mock("langsmith", () => ({ Client: class {
   createRun = sdk.createRun; updateRun = sdk.updateRun; readRun = sdk.readRun; createFeedback = sdk.createFeedback;
 } }));
 
-/** The fixture's answer under the owner's post rules: the cover shows its headline alone. */
-const validCopy = (from: BriefPictures) => {
-  const copy = fixtureCopy(from);
-  delete copy.slides[0]!.kicker;
-  return copy;
-};
 
 let pictures: BriefPictures;
 beforeAll(async () => { pictures = await briefPictures(); });

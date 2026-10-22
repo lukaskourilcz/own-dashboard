@@ -6,7 +6,7 @@ import { revisionContentHash } from "@/lib/marketing/hashes";
 import type { DneskaiDeckRenderResult } from "@/lib/marketing/dneskai-ports";
 import type { DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
 import type { MarketingModel } from "@/lib/marketing/generation";
-import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy as fixtureCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
+import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 import { a, b, c, deckRevision } from "./marketing-dneskai-revision-fixture";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBriefAssetHashLister, getDneskaiMediaLoader, getRenderDneskaiDeck } from "@/lib/marketing/dneskai-wiring";
@@ -34,12 +34,6 @@ const renderDneskaiDeck = vi.fn(async ({ deck }: { deck: { slides: { alt: string
   status: "rendered", renderKeys: deck.slides.map((_, index) => String(index).repeat(64).slice(0, 64)), problems: [],
   assets: deck.slides.map((slide, index) => ({ url: `https://test-only.supabase.co/storage/v1/object/sign/marketing-assets/slide-${index}.jpg?token=test-only`, sha256: String((index + 1) % 10).repeat(64), mimeType: "image/jpeg", width: 1080, height: 1350, alt: slide.alt })),
 }));
-/** The fixture's answer under the owner's post rules: the cover shows its headline alone. */
-const validCopy = (from: BriefPictures) => {
-  const copy = fixtureCopy(from);
-  delete copy.slides[0]!.kicker;
-  return copy;
-};
 const provider = (): MarketingModel => ({ model: "claude-sonnet-5-5", pricing: { inputPerMillionUsd: 2, outputPerMillionUsd: 10 }, invoke: vi.fn(async () => ({ copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } })) });
 function job() {
   const now = Date.now();

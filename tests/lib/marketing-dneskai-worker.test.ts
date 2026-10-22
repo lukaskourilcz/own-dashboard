@@ -11,7 +11,7 @@ import devDesign from "../../templates/marketing/devshark/derived-layout.json";
 import type { DneskaiDeckRenderResult } from "@/lib/marketing/dneskai-ports";
 import type { MarketingModel } from "@/lib/marketing/generation";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy as fixtureCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
+import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
@@ -19,12 +19,6 @@ const owner = "dbd55242-0c60-483d-8032-edeb348dfd0d";
 const jobId = "abbb84c0-bdcc-46ea-924a-e71db4773d28";
 const revisionId = "90246ac5-0587-407c-9048-3fce5f968a16";
 const env = { MARKETING_AI_CONSENT: "true", ANTHROPIC_API_KEY: "test-only-no-real-call" };
-/** The fixture's answer under the owner's post rules: the cover shows its headline alone. */
-const validCopy = (from: BriefPictures) => {
-  const copy = fixtureCopy(from);
-  delete copy.slides[0]!.kicker;
-  return copy;
-};
 let pictures: BriefPictures;
 beforeAll(async () => { pictures = await briefPictures(); });
 beforeEach(() => { vi.clearAllMocks(); current = null; });

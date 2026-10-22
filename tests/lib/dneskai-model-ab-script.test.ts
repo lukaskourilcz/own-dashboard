@@ -5,15 +5,9 @@ import {
 import { dneskaiBriefSourcePacket } from "@/lib/marketing/dneskai-brief-source";
 import { DNESKAI_RETRY_INSTRUCTION_BYTES } from "@/lib/marketing/dneskai-generation";
 import type { MarketingModel } from "@/lib/marketing/generation";
-import { briefFixture, briefPictures, validCopy as fixtureCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
+import { briefFixture, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 
 vi.mock("server-only", () => ({}));
-/** The fixture's answer under the owner's post rules: the cover shows its headline alone. */
-const validCopy = (from: BriefPictures) => {
-  const copy = fixtureCopy(from);
-  delete copy.slides[0]!.kicker;
-  return copy;
-};
 let pictures: BriefPictures;
 beforeAll(async () => { pictures = await briefPictures(); });
 const options = (argv: string[] = []) => parseAbOptions(["--briefs", "briefs.json", ...argv], new Date("2026-10-21T10:00:00Z"));
