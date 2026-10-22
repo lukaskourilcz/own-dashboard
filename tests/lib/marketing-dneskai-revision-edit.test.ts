@@ -38,11 +38,22 @@ describe("owner deck edits", () => {
     const next = await prepareDneskaiRevisionEdit(deckRevision(), { caption: "Nový caption.", scheduledAt: "2099-10-22T06:00:00Z", deck: { slides: [{ from: 2 }, { from: 0 }] } }, list);
     expect(list).toHaveBeenCalledWith(deckRevision());
     expect(next).toMatchObject({ caption: "Nový caption.", scheduledAt: "2099-10-22T06:00:00Z", assets: [], sources: deckRevision().sources, traceId: deckRevision().traceId });
-    expect(next.deck!.slides.map((slide) => slide.type)).toEqual(["sources", "cover-photo"]);
+    expect(next.deck!.slides.map((slide) => slide.type)).toEqual(["statement", "cover-photo"]);
     expect(await code(() => prepareDneskaiRevisionEdit(deckRevision(), { caption: "x", scheduledAt: "2099-10-22T06:00:00Z" }, pool([a])))).toBe("deck-asset-outside-brief");
     expect(await code(() => prepareDneskaiRevisionEdit(deckRevision(), { caption: "x", scheduledAt: "2099-10-22T06:00:00Z", deck: { slides: [{ from: 0, images: [{ slot: "image-1", assetSha256: "9".repeat(64) }] }, { from: 1 }] } }, pool()))).toBe("deck-asset-outside-brief");
     expect(await code(() => prepareDneskaiRevisionEdit(deckRevision(), { caption: "x", scheduledAt: "2099-10-22T06:00:00Z", account: { id: "1", platform: "threads", handle: "dneskai" } }, pool()))).toBe("account-platform-changed");
     expect(await code(() => prepareDneskaiRevisionEdit({ ...deckRevision(), schemaVersion: MARKETING_CONTENT_VERSION, deck: undefined }, { caption: "x", scheduledAt: "2099-10-22T06:00:00Z" }, pool()))).toBe("deck-edit-unsupported");
+  });
+  it("brings a deck saved before the 22 October 2026 rules into line on every edit", async () => {
+    const legacy = { ...deck(), slides: [
+      { ...deck().slides[0]!, kicker: "MODEL", credit: "Foto: The Verge" },
+      { ...deck().slides[1]!, credit: "Foto: The Verge · Obrázek: OpenAI" },
+      { type: "sources" as const, headline: "", sources: ["The Verge, 20. 10. 2026"], images: [], alt: "Zdroje" },
+    ] };
+    const next = await prepareDneskaiRevisionEdit({ ...deckRevision(), deck: legacy }, { caption: "x", scheduledAt: "2099-10-22T06:00:00Z" }, pool());
+    // No sources slide, no credit, and the cover keeps its headline alone; nothing else changes.
+    expect(next.deck!.slides).toEqual([deck().slides[0], deck().slides[1]]);
+    expect(next.assets).toEqual([]);
   });
 });
 
