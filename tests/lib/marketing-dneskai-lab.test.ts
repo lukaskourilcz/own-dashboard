@@ -90,7 +90,8 @@ describe('text fit before saving (studio fitter, no media, $0)', () => {
 
   it('says every field of a deck that renders fits, with its count and limit', async () => {
     const result = DneskaiFitResultSchema.parse(await fitDneskaiDeck(fitRequest()));
-    expect(result.slides.map((slide) => slide.fits)).toEqual([true, true, true, true, true]);
+    // The preview deck is the written slides only (cover, figure, split, statement): no sources slide.
+    expect(result.slides.map((slide) => slide.fits)).toEqual([true, true, true, true]);
     const cover = result.slides[0]!.fields.find((field) => field.field === 'headline')!;
     expect(cover).toMatchObject({ max: 110, overBy: 0, clipped: false, lines: null, fontSize: null, codes: [] });
     expect(cover.characters).toBe([...deck().slides[0]!.headline.trim()].length);
@@ -137,7 +138,7 @@ describe('POST /api/marketing/dneskai/fit', () => {
   it('answers the fit for the signed-in owner, rate-limited per owner', async () => {
     const response = await fitRoute(request(fitUrl, body()));
     expect(response.status).toBe(200);
-    expect(DneskaiFitResultSchema.parse(await response.json()).slides).toHaveLength(5);
+    expect(DneskaiFitResultSchema.parse(await response.json()).slides).toHaveLength(4);
     expect(mocks.limited).toHaveBeenCalledWith(owner, expect.objectContaining({ key: 'dneskai-fit' }));
   });
 
