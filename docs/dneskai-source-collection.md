@@ -35,7 +35,10 @@ změna revize vyžaduje nové schválení.
 ## Rozvrh
 
 Denně kontrolujeme Instagram `mosseri` a `meta.ai`, dále OpenAI, Anthropic,
-Google DeepMind, TechCrunch AI a Hacker News přes existující Quorum adaptéry.
+Google DeepMind, TechCrunch AI a Hacker News. Feedy čtou od 21. října 2026 vlastní
+adaptéry OwnDashboardu (`MARKETING_DNESKAI_FEED_PROVIDER=native`, viz
+[nativní feedy](dneskai-native-feeds.md)); do té doby je četly adaptéry Quorum přes
+podepsaný bridge, který Quorum týž večer vypnul.
 Ostatní existující zdroje mají pevné dny v registru. Rozvrh nesmí změnit
 publikační nebo globální scraping plán jiných projektů BoardlessAI.
 
@@ -96,7 +99,7 @@ Nedostává přihlašovací údaje, vlastníkovy poznámky, finance ani soukrom�
 Jeho relevance nebo confidence není důkaz pravdivosti. Zdrojové texty jsou
 nedůvěryhodná data, nikoli pokyny pro přístup k nástrojům. Jev nemůže nic publikovat.
 
-Přímé feedy a API používají stávající adaptéry. Tato cesta nepoužívá placené
+Přímé feedy a API čtou nativní adaptéry OwnDashboardu (dříve adaptéry Quorum). Tato cesta nepoužívá placené
 Firecrawl/Jina záložní čtení. Uchovává odkazy na média, automaticky nenačítá náhledy
 všech kandidátů. Obrázky vybraných témat stahuje samostatný krok s původem a creditem,
 bez gate práv (rozhodnutí vlastníka 7, #110). Spouští ho plánovač (#120) tutéž noc
