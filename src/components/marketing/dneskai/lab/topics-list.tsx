@@ -163,7 +163,7 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
   const valid = draft.trim() === '' || DNESKAI_TOPIC_KEYWORD.test(draft.trim());
   const proposed = topic.status === 'proposed';
   return <li data-topic-row={topic.id} tabIndex={tabStop ? 0 : -1} onFocus={(event) => { if (event.target === event.currentTarget) onFocus(); }} aria-labelledby={titleId}
-    className={cn('flex flex-col gap-2 py-2 focus-ring rounded-sm sm:flex-row sm:items-start', !proposed && 'opacity-80')}>
+    className="flex flex-col gap-2 py-2 focus-ring rounded-sm sm:flex-row sm:items-start">
     <div className="flex min-w-0 flex-1 items-start gap-2">
       {proposed ? <Checkbox className="mt-0.5" checked={selected} onCheckedChange={(value) => onSelect(value === true)} aria-label={t.select(topic.title)} disabled={busy} />
         : <span className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />}
