@@ -68,24 +68,6 @@ const apify = new FakeApify(clock, ENV.MARKETING_DNESKAI_APIFY_ACTOR_ID!, ENV.MA
 const jev = new FakeJev();
 const anthropic = new FakeAnthropic(/shared memory/i);
 const graph = new FakeGraph(clock, internet, IG_TOKEN, IG_USER, '9900000000000001', 'dneskai');
-/**
- * The world's answers were written for marketing-copy/5 and put a kicker on the cover. Under the owner's post rules
- * (22 October 2026) the first slide carries its headline alone, so the model here answers without that kicker.
- */
-function headlineOnlyCover(handler: typeof anthropic.handler): typeof anthropic.handler {
-  return async (request, url) => {
-    const response = await handler(request, url);
-    if (!response.ok) return response;
-    const message = await response.json() as { content: Array<{ type: string; text: string }> };
-    message.content = message.content.map((part) => {
-      if (part.type !== 'text') return part;
-      const copy = JSON.parse(part.text) as { slides: Array<{ type: string; kicker?: string }> };
-      copy.slides = copy.slides.map(({ kicker, ...slide }) => slide.type === 'cover-photo' ? slide : { ...slide, ...(kicker === undefined ? {} : { kicker }) });
-      return { ...part, text: JSON.stringify(copy) };
-    });
-    return Response.json(message, { status: response.status });
-  };
-}
 const ticks: Array<{ at: string; result: MarketingTickResult; ms: number }> = [];
 const at = (iso: string) => vi.setSystemTime(new Date(iso));
 const sql = <T = Record<string, unknown>>(text: string, params: unknown[] = []) => emulator.sql<T>(text, params);
@@ -134,7 +116,7 @@ beforeAll(async () => {
   db = await createMigratedDatabase({ owner: OWNER, instant: new Date() });
   emulator = new SupabaseEmulator(db, SUPABASE, { service: SERVICE_KEY, users: { [OWNER]: OWNER_SESSION } }, clock);
   internet.route(new URL(SUPABASE).hostname, (request) => emulator.fetch(request));
-  internet.route('api.apify.com', apify.handler).route('api.typesafe.ai', jev.handler).route('api.anthropic.com', headlineOnlyCover(anthropic.handler)).route('graph.instagram.com', graph.handler);
+  internet.route('api.apify.com', apify.handler).route('api.typesafe.ai', jev.handler).route('api.anthropic.com', anthropic.handler).route('graph.instagram.com', graph.handler);
   await routePublishers(internet);
   shared.fetch = internet.fetch;
   vi.stubGlobal('fetch', internet.fetch);
