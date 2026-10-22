@@ -1,4 +1,4 @@
-import type { ContentEngagement } from './contracts';
+import { ENGAGEMENT_KEYWORD_PATTERN, ENGAGEMENT_PUBLIC_REPLY_MAX, ENGAGEMENT_REPLY_MESSAGE_MAX, type ContentEngagement } from './contracts';
 import type { DneskaiBriefMedia } from './dneskai-brief';
 import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSlide, type DneskaiSlideImage } from './dneskai-slides';
 import { pragueLocalInput, pragueScheduledAt } from './clock';
@@ -29,7 +29,28 @@ export const DNESKAI_FOCAL_STEP = 0.02;
 /** `from` is the slide's index in the saved revision, or null for a slide the owner inserted. */
 export type DraftSlide = { from: number | null; slide: DneskaiSlide; fields: DneskaiFieldLimit[] };
 /** `kit`: the kit the post is drawn in (kits are per post); switching it is an edit like any other. */
-export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId };
+/**
+ * The comment keyword and DM reply as the owner types them (#159): raw text, checked by `draftProblems` and normalised
+ * by `dneskaiDraftEngagement`. An empty `publicReply` sends no public reply. `null` on the draft: the post has none.
+ */
+export type EngagementDraft = { keyword: string; replyMessage: string; publicReply: string };
+export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId; engagement: EngagementDraft | null };
+
+/** The public reply a new keyword starts with (owner decision 4, 22 October 2026); the owner may change or empty it. */
+export const DNESKAI_DEFAULT_PUBLIC_REPLY = 'Poslali jsme vám to do zpráv.';
+export function newEngagementDraft(): EngagementDraft {
+  return { keyword: '', replyMessage: '', publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY };
+}
+/** The keyword as the server stores it: trimmed and upper case. */
+export const dneskaiEngagementKeyword = (value: string) => value.trim().toUpperCase();
+/** The engagement the draft would save: trimmed, keyword upper-cased, an empty public reply left out. Not yet validated. */
+export function dneskaiDraftEngagement(draft: EngagementDraft | null): ContentEngagement | null {
+  if (!draft) return null;
+  const publicReply = draft.publicReply.trim();
+  return { keyword: dneskaiEngagementKeyword(draft.keyword), replyMessage: draft.replyMessage.trim(), ...(publicReply ? { publicReply } : {}) };
+}
+const engagementKey = (value: ContentEngagement | null | undefined) =>
+  value ? JSON.stringify([value.keyword, value.replyMessage, value.publicReply ?? null]) : 'null';
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const round = (value: number) => Math.round(value * 1000) / 1000;
@@ -56,6 +77,7 @@ export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | 
     scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
     kit: dneskaiKitOf(post.deck),
+    engagement: post.engagement ? { keyword: post.engagement.keyword, replyMessage: post.engagement.replyMessage, publicReply: post.engagement.publicReply ?? '' } : null,
   };
 }
 
@@ -240,7 +262,8 @@ export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
-export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'caption-hashtags-over-limit' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit' };
+export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'caption-hashtags-over-limit' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit'
+  | 'engagement-keyword-invalid' | 'engagement-message-missing' | 'engagement-message-too-long' | 'engagement-reply-too-long' };
 /**
  * What the editor itself can see is wrong before sending; the server and the renderer check the rest. With the fit
  * report for this exact draft (POST /api/marketing/dneskai/fit), a field the studio's fitter would cut is a problem
@@ -272,6 +295,14 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
   const scheduled = scheduledIso(draft.scheduledLocal);
   if (scheduled === null) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-invalid' });
   else if (Date.parse(scheduled) <= now.getTime() || Date.parse(scheduled) > now.getTime() + DNESKAI_SCHEDULE_WINDOW_MS) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
+  // The server's limits (ContentEngagementSchema) count UTF-16 units, so these do too.
+  const engagement = dneskaiDraftEngagement(draft.engagement);
+  if (engagement) {
+    if (!ENGAGEMENT_KEYWORD_PATTERN.test(engagement.keyword)) problems.push({ slide: null, field: 'engagement.keyword', code: 'engagement-keyword-invalid' });
+    if (!engagement.replyMessage) problems.push({ slide: null, field: 'engagement.replyMessage', code: 'engagement-message-missing' });
+    else if (engagement.replyMessage.length > ENGAGEMENT_REPLY_MESSAGE_MAX) problems.push({ slide: null, field: 'engagement.replyMessage', code: 'engagement-message-too-long' });
+    if ((engagement.publicReply?.length ?? 0) > ENGAGEMENT_PUBLIC_REPLY_MAX) problems.push({ slide: null, field: 'engagement.publicReply', code: 'engagement-reply-too-long' });
+  }
   return problems;
 }
 
@@ -291,7 +322,8 @@ const sameImages = (a: readonly DneskaiSlideImage[], b: readonly DneskaiSlideIma
 
 /**
  * The `edit` request for the draft. A slide entry names only what changed, so an untouched slide renders from the
- * same key and a resubmitted draft keeps the approval hash stable. The deck is left out when no slide changed.
+ * same key and a resubmitted draft keeps the approval hash stable. The deck is left out when no slide changed, and the
+ * engagement when the keyword and both messages are as saved (null when the owner removed them).
  */
 export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft, accountId: string | null = null): DneskaiEditRequest {
   const scheduledAt = scheduledIso(draft.scheduledLocal);
@@ -339,7 +371,13 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
     action: 'edit', id: post.id, caption: draft.caption, scheduledAt,
     ...(accountId ? { accountId } : {}),
     ...(changed ? { deck: { ...(kitChanged ? { kit: draft.kit } : {}), slides } } : {}),
+    ...(dneskaiEngagementChanged(post, draft) ? { engagement: dneskaiDraftEngagement(draft.engagement) } : {}),
   };
+}
+
+/** True when the draft's keyword, DM or public reply differs from the saved post's, after normalising (#159). */
+export function dneskaiEngagementChanged(post: Pick<DneskaiWorkspacePost, 'engagement'>, draft: Pick<DeckDraft, 'engagement'>): boolean {
+  return engagementKey(dneskaiDraftEngagement(draft.engagement)) !== engagementKey(post.engagement);
 }
 
 /** Which picture places a slide type asks for: a full-bleed picture or one that fits a frame. */
