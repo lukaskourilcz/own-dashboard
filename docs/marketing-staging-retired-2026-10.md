@@ -72,7 +72,7 @@ deployments that already exist: each keeps the values it was built with. Deploym
 
 Vercel project `own-dashboard`, target Production: `MARKETING_DNESKAI_MANUAL_RUN` and
 `MARKETING_DNESKAI_MANUAL_SECRET`. They belong to the 13 October production verification and pair with the
-n8n credential `OwnDashboard DNESKAi single production run 20261013`. `MARKETING_DNESKAI_MANUAL_RUN` is a
+n8n credential `RETIRED OwnDashboard DNESKAi single production run 20261013`. `MARKETING_DNESKAI_MANUAL_RUN` is a
 `dneskai-manual/1` scope for one pre-registered run, at most two hours long. The manual path that read it
 (`src/lib/marketing/dneskai-manual.ts`) was deleted on 22 October 2026 with the collection pilot, so both
 variables open nothing today. **Recommendation: delete both after the pilot, together with that credential.** The
@@ -87,15 +87,14 @@ can be deleted without effect; `MARKETING_N8N_SECRET` still opens the devShark a
 
 | Credential name | Recommended action |
 |---|---|
-| `OwnDashboard DNESKAi single production run 20261013` | Rename with a `RETIRED` prefix now; delete after the pilot. |
-| `OwnDashboard marketing staging — expires 2026-10-15 09:10 UTC` | Rename with a `RETIRED` prefix now; delete after the pilot. |
-| `OwnDashboard DNESKAi collection pilot — expires 2026-10-15 09:10 UTC` | Rename with a `RETIRED` prefix now; delete after the pilot. |
+| `RETIRED OwnDashboard DNESKAi single production run 20261013` | Renamed 2026-10-22; deletion deferred until after the pilot and owner authorization. |
+| `RETIRED OwnDashboard marketing staging — expires 2026-10-15 09:10 UTC` | Renamed 2026-10-22; deletion deferred until after the pilot and owner authorization. |
+| `RETIRED OwnDashboard DNESKAi collection pilot — expires 2026-10-15 09:10 UTC` | Renamed 2026-10-22; deletion deferred until after the pilot and owner authorization. |
 
 Deleting a credential cannot be undone, so deletion stays with the owner. The retired workflow exports and
 their n8n states are listed in [`workflows/marketing/retired/README.md`](../workflows/marketing/retired/README.md).
 Three of them, the isolated DNESKAi pilot worker (`1hB4ROPAlWm3YSXn`), DNESKAi production verification
-(`MK0xn98gIXofmZSn`) and DNESKAi rotating sources at 22:00 (`JyX8hAYI8sKMDPIc`), have no MCP access and
-still need to be archived by hand. The fourth workflow, the approved UTC publication planner
+(`MK0xn98gIXofmZSn`) and DNESKAi rotating sources at 22:00 (`JyX8hAYI8sKMDPIc`), were archived in Chrome on 2026-10-22. The fourth workflow, the approved UTC publication planner
 (`8SOaq5tjMgnMQqEF`), was archived on 2026-10-21.
 
 ## Branch `codex/marketing-automation` (planned)
@@ -106,11 +105,11 @@ the history. This is planned, not done, at the time of writing.
 
 ## Owner actions
 
-1. Archive the three n8n workflows that MCP cannot reach: `1hB4ROPAlWm3YSXn`, `MK0xn98gIXofmZSn` and
+1. Completed 2026-10-22 in Chrome: archived the three n8n workflows `1hB4ROPAlWm3YSXn`, `MK0xn98gIXofmZSn` and
    `JyX8hAYI8sKMDPIc`. The release session archived the publication planner `8SOaq5tjMgnMQqEF` on
    2026-10-21. The pg_cron tick from [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120),
    live since 2026-10-21 13:40 UTC, replaces all four.
-2. Rename the three credentials above with a `RETIRED` prefix.
+2. Completed 2026-10-22: renamed the three credentials above with a `RETIRED` prefix.
 3. After the pilot (#123): delete the 59 preview variables, the two production variables
    `MARKETING_DNESKAI_MANUAL_RUN` and `MARKETING_DNESKAI_MANUAL_SECRET`, the three credentials and, when no
    longer needed, the old preview deployments of `codex/marketing-automation`.
