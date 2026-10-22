@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Nine files are newer than anything production holds and none of them is applied: `20261022000000` through
-`20261022160000`. Apply them with the CLI, which records each file's own version:
+Thirteen files are newer than anything production holds and none of them is applied: `20261022000000` through
+`20261022190000`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the nine files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the thirteen files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -742,8 +742,10 @@ npx supabase migration list --linked      # both columns agree
 Do not apply them through the Supabase MCP `apply_migration` tool: it records the apply time as the version, which
 recreates the mismatch, and it holds the retention file's `delete` for a confirmation. `20261022141613` needs
 `20261022021835` first; filename order does that. After the push, set the server-only switches in Vercel Production
-and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`
-and `MARKETING_PUBLICATION_REQUEUE_ENABLED`. `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner
+and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`,
+`MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED` and `DNESKAI_REGENERATE_ENABLED`. The
+relevance-first selection (`20261022180000`) and the unknown-cost scope (`20261022171000`) take effect with the push
+itself and need no switch. `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner
 approves the research plan; the ledger alone spends nothing. The next daily tick then records no `retention` error.
 
 ## DNESKAi research preparation, 22 October 2026 (unapplied)
