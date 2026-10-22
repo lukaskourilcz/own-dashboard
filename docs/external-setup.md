@@ -179,6 +179,7 @@ The code connects one Instagram professional account through the Instagram API w
 - **Review reminders** need no setup. The pg_cron tick writes them into OwnDashboard's Notifications (Inbox), never to e-mail or another channel. Set the server-only `DNESKAI_REVIEW_REMINDERS_ENABLED=false` and redeploy to stop them; any other value leaves them on.
 - **Generate now** needs only `MARKETING_AI_CONSENT=true`, which generation already requires. It uses existing functions and the existing $1 daily ceiling.
 - **Regenerate with a note** needs `supabase/migrations/20261022190000_dneskai_regenerate_with_note.sql` and the server-only `DNESKAI_REGENERATE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-regenerate-with-a-note-owner-decision-8)), then set the variable and redeploy. Until then the Lab shows the button disabled with its reason and the route answers `regenerate-unavailable`.
+- **Topics (náměty)** need `supabase/migrations/20261023100000_dneskai_topics.sql` and the server-only `DNESKAI_TOPICS_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-dneskai-topics-150-plan-a1)), then set the variable and redeploy. Until then `/api/marketing/dneskai/topics` answers 404.
 
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
