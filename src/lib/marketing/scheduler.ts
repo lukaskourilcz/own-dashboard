@@ -484,7 +484,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   if (engagementWatch) minuteSteps.push({
     category: MARKETING_TICK_ENGAGEMENT, lease: "publishing",
     async precheck(): Promise<StepOutcome | null> {
-      return dneskaiEngagementWatchEnabled(env) ? null : { status: "skipped", code: "engagement-disabled" };
+      return dneskaiEngagementWatchEnabled(env) ? null : { status: "skipped", code: "engagement-watch-disabled" };
     },
     async run({ signal: abort, now, remainingMs }): Promise<StepOutcome> {
       const result = await engagementWatch({ signal: abort, now, remainingMs });

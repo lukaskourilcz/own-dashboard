@@ -631,7 +631,7 @@ describe('comment watcher step (#160)', () => {
     expect((await harness().tick()).did.map((entry) => entry.category)).not.toContain('engagement');
     const engagementWatch = vi.fn(async () => watched);
     const off = await harness({ engagementWatch }).tick();
-    expect(step(off, 'engagement')).toMatchObject({ status: 'skipped', code: 'engagement-disabled' });
+    expect(step(off, 'engagement')).toMatchObject({ status: 'skipped', code: 'engagement-watch-disabled' });
     expect(engagementWatch).not.toHaveBeenCalled();
   });
   it('runs before the reminder under the publishing lease and records counts only', async () => {

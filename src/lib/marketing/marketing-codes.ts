@@ -525,6 +525,12 @@ const CODES = {
   'invalid-generate-request': ['investigate', 'The request to generate now was not valid.', 'Požadavek na okamžité vygenerování nebyl platný.'],
   'reminder-state-unavailable': ['auto', 'The posts waiting for review could not be read for the reminder.', 'Příspěvky čekající na kontrolu nešlo pro připomínku načíst.'],
   'reminder-write-failed': ['auto', 'The review reminder could not be written.', 'Připomínku kontroly nešlo zapsat.'],
+  'engagement-watch-disabled': ['none', 'Replies to keyword comments are switched off on the server.', 'Odpovědi na komentáře s klíčovým slovem jsou na serveru vypnuté.'],
+  'engagement-scopes-unverified': ['account', 'The stored token lacks the comment permission (instagram_business_manage_comments).', 'Uloženému tokenu chybí oprávnění ke komentářům (instagram_business_manage_comments).'],
+  'engagement-messaging-disabled': ['account', 'Instagram refused the message: the account does not allow connected tools to send messages.', 'Instagram zprávu odmítl: účet nedovoluje propojeným nástrojům posílat zprávy.'],
+  'engagement-recipient-unavailable': ['none', 'The commenter cannot receive a message.', 'Komentujícímu nelze poslat zprávu.'],
+  'access-token-invalid': ['account', 'Instagram no longer accepts the stored token.', 'Instagram uložený token už nepřijímá.'],
+  'meta-rate-limited': ['retry', 'Instagram asked to slow down; the next tick continues.', 'Instagram požádal o zpomalení; pokračuje další běh.'],
   'reminders-disabled': ['none', 'Review reminders are switched off.', 'Připomínky kontroly jsou vypnuté.'],
 } as const satisfies Record<string, Entry>;
 
