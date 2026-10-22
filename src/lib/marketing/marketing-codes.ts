@@ -43,6 +43,8 @@ const CODES = {
   'source-changed': ['source', 'A source of this post changed after the draft was written.', 'Zdroj příspěvku se po napsání návrhu změnil.'],
   'account-unverified': ['account', 'The Instagram account is not verified.', 'Instagramový účet není ověřený.'],
   'campaign-inactive': ['investigate', 'The plan this post belongs to is not active, so it will not publish.', 'Plán, do kterého příspěvek patří, není aktivní, proto se nepublikuje.'],
+  'sources-unavailable': ['retry', 'The source list could not be read or changed.', 'Seznam zdrojů nešlo načíst ani změnit.'],
+  'collection-source-removed': ['none', 'The source was removed after the night started, so it was not read.', 'Zdroj byl odebrán po začátku noci, proto se nečetl.'],
   'approval-unavailable': ['reload', 'The approval was not recorded.', 'Schválení se nezaznamenalo.'],
   'decision-unavailable': ['reload', 'The decision was not recorded; the post may have changed meanwhile.', 'Rozhodnutí se nezaznamenalo; příspěvek se mezitím mohl změnit.'],
   'decision-failed': ['retry', 'The request did not reach the server or was refused.', 'Požadavek se nedostal na server nebo byl odmítnut.'],
