@@ -1,0 +1,707 @@
+{
+ "subsystem": "rendering",
+ "summary": "OwnDashboard renders DNESKAi decks through the vendored @boardlessai/carousel-studio (Quorum 852c2e9, tree af3c47dd, byte-identical to a fresh rebuild of that commit and unchanged on Quorum main 76314a3). The path is small and strict: dneskai-slides/1 (1-10 slides, a carousel needs 2+, a single post is one `single` slide, images by sha256 with focal/zoom 1-4/fit), a per-slide render key (dneskai-render-key/2: studio pin, policy dneskai-render/2, sharp/libvips + JPEG settings, trimmed words, variant, image hashes and crops, position), one immutable JPEG per key in the private marketing-assets bucket, and a gate that refuses the whole deck on clipped text, a glyph the field's face lacks, unplaced text or any studio blocking problem. Measured on this machine (Apple M2, 8 GB): a 7-slide deck renders and encodes in 0.63-0.95 s cold and 0.49-0.65 s warm (cover 161-236 ms warm, statement 31-52 ms), 820 KB of JPEG; five kits would be 35 slides, about 2.4-2.7 s of CPU and 4.1 MB. The 21 render/vendor/slides tests pass in 11.6 s. Weak points are around it, not in it: there is no render-only preview (every look at a crop is a saved revision), every design change crosses two repositories in about nine manual steps, the deck/key/tables have no kit dimension, storage round trips (4 per new slide, 3 per cache hit, sequential) not CPU would dominate a five-kit pre-render, the vendor script's --write breaks on macOS after it has already replaced the tree, only 4:5 is composed and nothing previews the 3:4 profile grid, and nothing purges rendered slides.",
+ "files": [
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-slides.ts",
+   "role": "Deck contract dneskai-slides/1 (zod): slide types, variants, image refs by sha256 with crop."
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+   "role": "Maps the contract to the studio input, OwnDashboard's text gate, render key, JPEG encoder and the RenderDneskaiDeck port."
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+   "role": "DNESKAI_TEXT_LIMITS (per editorial template id) and the retry advice built from render problems."
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+   "role": "createDneskaiSlideStorage: render-key cache in marketing-assets (find/put with re-download and sha256 check, 7-day signed URLs)."
+  },
+  {
+   "path": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+   "role": "Owner edit path: saves a new revision and renders synchronously with a 45 s abort (maxDuration 60)."
+  },
+  {
+   "path": "own-dashboard/vendor/carousel-studio/",
+   "role": "Vendored built studio: dist (41 .js modules), 17 font families / 46 faces (5.8 MB), brand-kits/caught-up, golden/dneskai-photo.json, trimmed package.json with ./dneskai-slide and ./fonts subpaths."
+  },
+  {
+   "path": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+   "role": "Pin (commit, tree hash), what is vendored, how to update."
+  },
+  {
+   "path": "own-dashboard/scripts/vendor-carousel-studio.sh",
+   "role": "check / rebuild-and-compare / --write re-vendor from a Quorum commit via git archive."
+  },
+  {
+   "path": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+   "role": "Tree hash, single sharp/resvg/zod, subpath-only imports, face/placed-field tables derived from templates, trace globs, 11 golden PNG hashes."
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-render.test.ts",
+   "role": "Renderer behaviour: JPEG, determinism, cache reuse, key inputs, clip/glyph/placement refusal, 900 px rule, timeout."
+  },
+  {
+   "path": "own-dashboard/next.config.ts",
+   "role": "serverExternalPackages sharp/resvg; outputFileTracingIncludes of studio fonts, kit and libvips into every /api/marketing/** function."
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/render.ts",
+   "role": "Separate devShark single-layout SVG renderer with its own fonts and Claude Design template approval (contrast)."
+  },
+  {
+   "path": "own-dashboard/scripts/dneskai-preview-fixtures.mjs",
+   "role": "Renders the /dev-preview fixture JPEGs (22 files in public/demo/dneskai) from synthetic photographs."
+  },
+  {
+   "path": "own-dashboard/docs/marketing-render-preflight.md",
+   "role": "Packaging notes for sharp/libvips and the studio trace; render-preflight diagnostic is devShark-only."
+  },
+  {
+   "path": "quorum/studio/src/dneskai-slide.ts",
+   "role": "Upstream renderDneskaiSlide/validateDneskaiSlide (hardcodes CAROUSEL_BRANDS['caught-up'])."
+  },
+  {
+   "path": "quorum/studio/src/dneskai-photo.ts",
+   "role": "The 14 DNESKAi templates, 4:5 master only (derive: [])."
+  }
+ ],
+ "facts": [
+  {
+   "fact": "The deck contract is dneskai-slides/1 with six slide types; 1-10 slides; a carousel needs at least 2 and no `single`; a single-image post is exactly one `single` slide.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-slides.ts:9 `DNESKAI_SLIDES_VERSION = \"dneskai-slides/1\"`; :11 `[\"cover-photo\", \"figure\", \"split\", \"statement\", \"sources\", \"single\"]`; :61 `slides: z.array(DneskaiSlideSchema).min(1).max(10)`; :63 `a single-image post is exactly one single slide`; :67 `a carousel needs at least two slides`"
+  },
+  {
+   "fact": "Images are referenced by the sha256 of stored source bytes with an optional crop {focal x/y 0-1, zoom 1-4, fit cover|contain}; at most 4 images per slide, slots image-1..9 distinct.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-slides.ts:22-26 `focal: z.strictObject({ x: unit, y: unit }), zoom: z.number().min(1).max(4).optional(), fit: z.enum([\"cover\", \"contain\"])`; :29-33; :45 `images: z.array(DneskaiSlideImageSchema).max(4)`"
+  },
+  {
+   "fact": "Variants: statement takes accent|ink, single takes photo|type; no other type takes a variant. There is no kit, look or design field in the slide or deck schema.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-slides.ts:16 `z.enum([\"accent\", \"ink\", \"photo\", \"type\"])`; :52-54; :58-61 deck = {schemaVersion, format, slides}"
+  },
+  {
+   "fact": "The vendored engine is pinned in code and in UPSTREAM.md to Quorum 852c2e9f with tree sha256 af3c47dd...; `scripts/vendor-carousel-studio.sh check` and a rebuild of 852c2e9 from the Quorum checkout both reproduce that tree hash; Quorum main 76314a3 has no studio change since 852c2e9.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:27-32 `commit: \"852c2e9f4fd4447ee602cd2df2c775bbba036fa2\", treeSha256: \"af3c47dd...\"`; vendor/carousel-studio/UPSTREAM.md:10,13; measured: `vendor-carousel-studio.sh check` and `vendor-carousel-studio.sh ../quorum 852c2e9f…` both print af3c47dd…; `git -C quorum log 852c2e9..76314a3 -- studio` is empty"
+  },
+  {
+   "fact": "OwnDashboard imports only the ./dneskai-slide and ./fonts subpaths, loaded lazily on first use; the vendor test fails on any other specifier.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:72 `import(\"@boardlessai/carousel-studio/dneskai-slide\")`; :77 `import(\"@boardlessai/carousel-studio/fonts\")`; tests/lib/carousel-studio-vendor.test.ts:76-78"
+  },
+  {
+   "fact": "JPEG: 1080x1350, quality 92, 4:4:4, baseline (progressive false), flattened on white, sRGB with ICC profile, at most 8 MiB; checked after encoding (format, size, subsampling, space, not progressive).",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:37 `{ width: 1080, height: 1350, quality: 92, chromaSubsampling: \"4:4:4\", maxBytes: 8 * 1024 * 1024 }`; :304-306; :312-313"
+  },
+  {
+   "fact": "The render key (dneskai-render-key/2) hashes the studio pin, policy dneskai-render/2, encoder versions plus JPEG settings, the trimmed words, variant, sorted image slots with asset hash and crop, the slide position {index,count} and locale. Alt text is excluded.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:196-211 `schemaVersion: \"dneskai-render-key/2\", studio: DNESKAI_STUDIO, policy: DNESKAI_RENDER_POLICY, encoder: { ...encoder, jpeg: DNESKAI_SLIDE_JPEG }, slide: {...}, position: {...}, locale: \"cs\"`"
+  },
+  {
+   "fact": "OwnDashboard's gate adds three blocking rules to the studio's: text-clipped (non-blocking in the studio), unsupported-glyph (checked against the field face's committed metric table), text-unplaced. One blocking problem anywhere refuses the whole deck and nothing is stored.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:224 `blocking: problem.blocking || problem.code === \"text-clipped\"`; :155; :162; :390 `if (problems.some((problem) => problem.blocking)) return { status: \"refused\", assets: [], renderKeys: [], problems };`"
+  },
+  {
+   "fact": "Slide type to template: cover-photo, figure, statement, single-photo, single-type are fixed ids; split picks split-pair when an image-2 slot is present; sources picks dneskai-sources-N by thumbnail count (0-6). 14 template ids in all.",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:194-200 `case \"split\": return byId(input.images?.some((image) => image.slot === \"image-2\") ? \"dneskai-split-pair\" : \"dneskai-split\");`; own-dashboard/tests/lib/carousel-studio-vendor.test.ts:88-93"
+  },
+  {
+   "fact": "The kit is hardcoded upstream: both validation and rendering pass CAROUSEL_BRANDS['caught-up'].",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:359 `brand: CAROUSEL_BRANDS[\"caught-up\"]` (carouselTextFits) and :417 (renderCarouselSlidePng)"
+  },
+  {
+   "fact": "Full-bleed rule: a bleed photograph needs a 900 px short side and at most 1350/900 = 1.5x upscale after cropping (blocking image-low-resolution); 1080/900 = 1.2x to 1.5x renders with a non-blocking image-upscaled; framed pictures above 1.5x are only reported.",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:35 `DNESKAI_BLEED_MIN_SHORT_SIDE = 900`; :44; :50; :71; :389-396"
+  },
+  {
+   "fact": "Three OwnDashboard tables mirror the vendored templates and are pinned by tests: DNESKAI_FIELD_FACES (field -> family/weight/uppercase), DNESKAI_PLACED_FIELDS (slide type -> drawn fields), DNESKAI_TEXT_LIMITS (7 editorial template ids -> maxChars).",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:104-110, :117-124; dneskai-generation.ts:39-47; tests/lib/carousel-studio-vendor.test.ts:102-106; tests/lib/marketing-dneskai-generation.test.ts:107-112"
+  },
+  {
+   "fact": "Rendered slides live at <owner>/marketing/dneskai/slides/<renderKey>.jpg in the private marketing-assets bucket. The only purge in the marketing code removes marketing-media source bytes; nothing deletes rendered slides (also approval-05 in map-approval.json). Production holds 0 objects in marketing-assets today.",
+   "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:202; dneskai-media.ts:436 `await store.remove(chunk.map((row) => objectName(owner, row.storagePath)))` (marketing-media only); grep -rn \"\\.remove(\" src/lib/marketing finds no other storage removal; production-evidence.md Q22: marketing-assets 0 objects"
+  },
+  {
+   "fact": "Slides are rendered one after another; cache lookups for all slides run in parallel, but each new slide's store is sequential and does upload, info, download (sha256 re-check) and sign; a cache hit does info, download and sign.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:353 `await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))))`; :359; :393-405; worker-runtime.ts:177-182; :218-224"
+  },
+  {
+   "fact": "The only owner-triggered render is POST /api/marketing/revisions: it saves a new revision, then renders and attaches synchronously with a 45 s abort inside a 60 s function.",
+   "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:14 `export const maxDuration=60;`; :64 `signal:AbortSignal.timeout(45000)`"
+  },
+  {
+   "fact": "Only the 4:5 master is composed: DNESKAi templates declare square, story and Threads formats but derive none.",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:125-128 DNESKAI_FORMATS; :152 `canvas: { master: MASTER_FORMAT, derive: [] }`; :12-14 `Composed for the 4:5 master alone`"
+  },
+  {
+   "fact": "Every /api/marketing/** function traces all studio fonts (17 families, 46 faces, 5.8 MB), the caught-up kit and libvips; the devShark routes also trace templates/marketing fonts.",
+   "evidence": "own-dashboard/next.config.ts:63, :73-75; measured: du -sh vendor/carousel-studio/fonts = 5.8M"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Slides per deck",
+   "value": "1-10; carousel >= 2; single-image exactly 1 `single`",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-slides.ts:61-68"
+  },
+  {
+   "name": "Images per slide",
+   "value": "<= 4 (schema); sources slide <= 6 thumbnails, <= 4 source lines (studio)",
+   "evidence": "dneskai-slides.ts:45, :44; quorum/studio/src/dneskai-photo.ts:245-246"
+  },
+  {
+   "name": "Crop zoom",
+   "value": "1-4",
+   "evidence": "dneskai-slides.ts:24"
+  },
+  {
+   "name": "JPEG",
+   "value": "1080x1350, q92, 4:4:4, baseline, sRGB, <= 8 MiB",
+   "evidence": "dneskai-render.ts:37"
+  },
+  {
+   "name": "Full-bleed minimum short side",
+   "value": "900 px",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:35"
+  },
+  {
+   "name": "Full-bleed max upscale (blocking)",
+   "value": "1.5x (1350/900); soft warning above 1.2x (1080/900)",
+   "evidence": "dneskai-slide.ts:44, :50"
+  },
+  {
+   "name": "Framed picture upscale warning",
+   "value": "> 1.5x (non-blocking)",
+   "evidence": "dneskai-slide.ts:71"
+  },
+  {
+   "name": "Studio image input",
+   "value": "<= 32 MiB, <= 64 megapixels, JPEG/PNG/WebP by signature",
+   "evidence": "dneskai-slide.ts:53, :65, :68"
+  },
+  {
+   "name": "Owner edit render timeout",
+   "value": "45 s abort in a 60 s function",
+   "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:14, :64"
+  },
+  {
+   "name": "Text limits (maxChars) per editorial template",
+   "value": "cover headline 110 / kicker 56 / credit 80; figure 110/260/80; split 110/330/28/80; split-pair 110/320/28/80; statement 170/240; single-photo 110/100/44/30; single-type 120/280/56/80",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:39-47"
+  },
+  {
+   "name": "Signed slide URL lifetime",
+   "value": "7 days",
+   "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:205-207 comment `Signed URLs last seven days`"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "7-slide fixture deck, render + JPEG encode (Apple M2, 8 GB, Node 26.8.2, sharp 0.35.5/libvips 8.18.7)",
+   "value": "Run 1: cold 952 ms render+encode (1098 ms pass), warm 486-613 ms; run 2: cold 632 ms, warm 534-646 ms. Per slide warm: cover-photo 161-236 ms, figure 68-89, split 58-81, split-pair 67-88, statement 33-52, statement/ink 31-41, sources 61-168. Import of the subpaths 126-139 ms. JPEG total 820,252 bytes (cover 186 KB). Peak RSS 240-304 MB. Measured, but the machine was shared with other agents (load average 70 a few minutes later), so these are upper bounds.",
+   "method": "Re-ran dneskai-audit-handoff/measurements/bench-render.mjs twice from the scratch folder (it resolves the vendored studio and sharp from own-dashboard/node_modules exactly as dneskai-render.ts does) with /usr/bin/time -l; outputs scratchpad a1/bench-1.json, bench-2.json"
+  },
+  {
+   "what": "Five kits of the same deck (pre-render estimate)",
+   "value": "35 slides, about 2.4-2.7 s CPU and 4.1 MB of JPEG per post; at 4 posts a day about 16 MB a day of new objects if all five kits are stored",
+   "method": "Estimated: 5 x the best warm pass from the bench (fiveKits field), 5 x measured JPEG bytes; storage growth = 4 posts x 4.1 MB"
+  },
+  {
+   "what": "Earlier partial measurement (22 Oct reader) for comparison",
+   "value": "Golden cases: cover 399 ms cold / 86 ms warm, figure 44, split 38, statement 21; 11 of 14 templates exercised, sources-0..3/5/6 never rendered by any golden",
+   "method": "dneskai-audit-handoff/measurements/measure-studio.json (PNG only, no JPEG encode)"
+  },
+  {
+   "what": "Render, vendor and slide-contract tests",
+   "value": "3 files, 21 tests, all passed in 11.55 s (golden reproduction 2.8 s, deterministic re-render 2.7 s). A wider run adding marketing-render-packaging and -native-import gave 25/26: the one failure (packaging test expecting sharp not to load from a copied tree) is an artefact of the symlinked node_modules in the scratch copy, not a code fault.",
+   "method": "rsync of the worktree into the scratch folder with node_modules linked to own-dashboard's installed packages; ./node_modules/.bin/vitest run tests/lib/carousel-studio-vendor.test.ts tests/lib/marketing-dneskai-render.test.ts tests/lib/marketing-dneskai-slides.test.ts --reporter=verbose"
+  },
+  {
+   "what": "Vendor tree integrity",
+   "value": "check: 0.2 s, matches af3c47dd; rebuild of 852c2e9 from the Quorum checkout: 11.7 s wall, byte-identical",
+   "method": "bash scripts/vendor-carousel-studio.sh check; bash scripts/vendor-carousel-studio.sh ../quorum 852c2e9f… (writes only to mktemp)"
+  },
+  {
+   "what": "vendor-carousel-studio.sh --write on macOS",
+   "value": "BSD sed rejects `sed -i \"s/…/\" file` (exit 1, `undefined label`), so --write would stop after replacing the vendor tree and before updating UPSTREAM.md",
+   "method": "Reproduced the script's exact sed -i form on a scratch file with /usr/bin/sed (BSD); the script itself was not run with --write"
+  },
+  {
+   "what": "Vendored payload",
+   "value": "7.8 MB total: fonts 5.8 MB (17 families, 46 faces), dist 1.9 MB (41 .js), brand-kits 128 KB",
+   "method": "du -sh vendor/carousel-studio/*; ls dist/*.js | wc -l"
+  }
+ ],
+ "findings": [
+  {
+   "id": "REN-01",
+   "title": "No render-only preview: the owner sees a crop or a different look only after saving a new revision and a synchronous re-render",
+   "category": "modernity",
+   "claim": "The renderer port requires an owner and a revision uuid and always stores what it renders; the only owner path that renders is POST /api/marketing/revisions, which first saves a new revision (superseding the old one and its approval) and then renders with a 45 s abort. There is no endpoint that renders a slide or deck to bytes in memory for a preview, although validateDneskaiDeck exists and a warm slide takes 31-236 ms.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 341,
+     "excerpt": "if (!z.uuid().safeParse(input.owner).success || !z.uuid().safeParse(input.revisionId).success) throw new DneskaiRenderError(\"render-input-invalid\");"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 405,
+     "excerpt": "stored = await storageStage(() => storage.put({ renderKey: renderKeys[index]!, bytes, sha256: digest, metadata }));"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 64,
+     "excerpt": "try{rendered=await renderAndAttachDneskaiRevision(admin,user.id,{revisionId:saved.id,revision},{render:wiring.render,loadMedia:wiring.loadMedia,signal:AbortSignal.timeout(45000)});}"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 266,
+     "excerpt": "export async function validateDneskaiDeck(value: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal): Promise<DneskaiSlideRenderProblem[]> {"
+    }
+   ],
+   "impactScore": 5,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Add an owner-authenticated preview route that runs the same gate and renderDneskaiSlide for one slide in memory (no storage, no revision), keyed by the existing render key for an in-process LRU, returning a downscaled JPEG/WebP plus problems. Save a revision only on 'Uložit'. Keep approval on stored bytes unchanged.",
+   "impactStatement": "Every focal-point nudge, zoom or (later) kit switch costs a save, a new revision, a lost approval and a full re-render before the owner sees it. A Design Lab with live crop and instant kit switch is impossible on this path; at 4 posts a day this is the biggest per-post owner-minute cost in rendering.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Reopened dneskai-render.ts:339-341 (port requires owner and revisionId uuids) and :393-411 (every new slide is stored). grep -rln 'renderDneskaiSlide|validateDneskaiDeck|createDneskaiDeckRenderer|getRenderDneskaiDeck' src/app finds only api/marketing/revisions/route.ts, which saves first (:51-62) and renders at :64 with AbortSignal.timeout(45000). No dev-preview or API route renders DNESKAi bytes without a revision.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 5,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Live crop and instant kit switch are the core of the Design Lab and need exactly this route; the gate and renderer already exist, so it is wiring, not engine work."
+   }
+  },
+  {
+   "id": "REN-02",
+   "title": "Any design change crosses two repositories in about nine manual steps",
+   "category": "simplicity",
+   "claim": "A template, kit or font change is made in quorum/studio (build, golden update, tests, merge), then re-vendored into OwnDashboard with the script, then DNESKAI_STUDIO is updated by hand, the UPSTREAM.md note is rewritten by hand, and DNESKAI_FIELD_FACES / DNESKAI_PLACED_FIELDS / DNESKAI_TEXT_LIMITS are edited when a layer changes, before the vendor, render and generation tests pass. The script itself reminds the operator of the manual edits.",
+   "evidence": [
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 76,
+     "excerpt": "Never edit files here by hand. With a Quorum checkout that has run `pnpm install`:"
+    },
+    {
+     "file": "own-dashboard/scripts/vendor-carousel-studio.sh",
+     "line": 100,
+     "excerpt": "echo \"Update DNESKAI_STUDIO in src/lib/marketing/dneskai-render.ts and the note under Pin in UPSTREAM.md.\""
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 30,
+     "excerpt": "commit: \"852c2e9f4fd4447ee602cd2df2c775bbba036fa2\","
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+     "line": 39,
+     "excerpt": "export const DNESKAI_TEXT_LIMITS = {"
+    },
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 17,
+     "excerpt": "they hold and keeps Czech ties (`keepWithNext: \"cs\"`). `--write` updates the four lines above; rewrite this note by hand."
+    }
+   ],
+   "impactScore": 4,
+   "effort": "L",
+   "risk": "medium",
+   "recommendation": "Owner decision on consolidation (brief 4.C). Whatever the option, derive the three tables from the vendored kit registry (ADR-final section 11) and let the script rewrite DNESKAI_STUDIO, so a re-vendor is one command plus tests.",
+   "impactStatement": "Five kits and their tuning mean dozens of such round trips; each one is roughly an hour of agent or owner time and two PRs (Quorum and OwnDashboard), and a forgotten table edit fails tests only in OwnDashboard. This is the main cost behind the consolidation question.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "UPSTREAM.md:74-92 describes the loop; vendor-carousel-studio.sh:100 prints the manual DNESKAI_STUDIO/UPSTREAM-note step; dneskai-render.ts:27-32 hardcodes the pin; dneskai-generation.ts:39-47 and dneskai-render.ts:104-124 are hand-kept tables pinned by tests. Nine is a count of distinct actions (edit+build, golden, test, merge in Quorum; --write; pin edit; note edit; table edits; vitest + commit), not a measured duration.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "L",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Consolidation option: (a) keep Quorum upstream, (b) move the studio source into OwnDashboard as a workspace package, (c) fork only the DNESKAi kit.",
+    "reason": "Every kit iteration pays this; it is the concrete cost the consolidation decision trades against."
+   }
+  },
+  {
+   "id": "REN-03",
+   "title": "The render path has no kit dimension: key, studio pin and the three per-template tables are single-kit",
+   "category": "quality",
+   "claim": "The render key covers studio pin, policy, encoder, words, variant, images and position but no kit or look; DNESKAI_FIELD_FACES hardcodes the caught-up faces, DNESKAI_PLACED_FIELDS is keyed by slide type and DNESKAI_TEXT_LIMITS by editorial template id. Upstream the kit is fixed to CAROUSEL_BRANDS['caught-up']. Five switchable kits need a kit id in the key and per-kit tables (or tables read from the kit registry); deck/contract changes are approval-06 in map-approval.json, five-kit validation is GEN-08 in map-generation.json.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 200,
+     "excerpt": "schemaVersion: \"dneskai-render-key/2\","
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 105,
+     "excerpt": "headline: { family: \"Space Grotesk\", weight: 700, uppercase: false },"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 117,
+     "excerpt": "export const DNESKAI_PLACED_FIELDS = {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+     "line": 40,
+     "excerpt": "\"dneskai-cover-photo\": { headline: 110, kicker: 56, credit: 80 },"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 417,
+     "excerpt": "brand: CAROUSEL_BRANDS[\"caught-up\"],"
+    }
+   ],
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "With the kit engine (ADR-final): bump to dneskai-render-key/3 with `kit` and the look file's hash, read faces/placed fields/limits from DNESKAI_KITS lazily, and key the text gate per kit. Keep editorial byte-identical so existing keys stay valid only if the key version policy says so (decide: re-render once, as every policy bump does).",
+   "impactStatement": "Without these, a second kit would either collide in the cache (same key, different pixels) or be refused by a text gate that checks the wrong face. Blocks owner goal 3 (five kits switchable per post).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-render.ts:196-211 key fields have no kit/look; :104-110 faces are the caught-up trio; :117-124 keyed by slide type; dneskai-generation.ts:39-47 keyed by editorial template ids; quorum/studio/src/dneskai-slide.ts:359 and :417 pass CAROUSEL_BRANDS['caught-up']. No other kit lookup exists in either repo on main (grep CAROUSEL_BRANDS in dneskai-*.ts). ADR-final section 11 plans the same changes.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Whether a render-key bump may re-render every existing slide once.",
+    "reason": "Prerequisite for five kits; small once the kit engine lands, but it touches cache, gate and approval hash together."
+   }
+  },
+  {
+   "id": "REN-04",
+   "title": "A five-kit pre-render is cheap in CPU but storage round trips would dominate: 4 sequential calls per new slide",
+   "category": "speed",
+   "claim": "Measured CPU for 35 slides is about 2.4-2.7 s, but each newly rendered slide is stored sequentially with upload, info, download (sha256 re-check) and sign, and every cache hit does info, download and sign. Five kits of a 7-slide deck mean 140 sequential storage calls on first render and 105 on an unchanged re-render, inside a job capped at 45 s together with two model attempts.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 177,
+     "excerpt": "const uploaded = await files.upload(key, bytes, { upsert: false, contentType: \"image/jpeg\", cacheControl: \"3600\", metadata });"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 180,
+     "excerpt": "const downloaded = await files.download(key);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 224,
+     "excerpt": "const downloaded = await store.download(key);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 393,
+     "excerpt": "for (const [index, slide] of deck.slides.entries()) {"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Render alternative kits outside the generation job (lazy on first view through the preview route of REN-01, or one kit per later tick), store with bounded parallelism (e.g. 4), and skip the re-download on find when the object's recorded sha256 and size match (verify bytes at publish time, which the publisher already does). Measure one real storage round trip on Preview before deciding.",
+   "impactStatement": "At an estimated 50-150 ms per Supabase storage call (not measured; production has 0 rendered objects), a five-kit first render adds about 7-21 s of I/O to the job and a re-render 5-16 s; that eats the job budget and risks worker-timeout on the second model attempt. Pre-rendering all kits in the generation job is therefore the wrong place; on demand or in a later tick fits.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Stores are sequential (dneskai-render.ts:393-405) and each put does upload, info, download, sign (worker-runtime.ts:177-182). But cache lookups run in parallel (dneskai-render.ts:353 Promise.all over all keys), so an unchanged re-render is 35 parallel finds of 3 sequential calls each, not 105 sequential calls. Per-call latency is an estimate; production has 0 objects in marketing-assets.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+      "line": 353,
+      "excerpt": "const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));"
+     }
+    ]
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Pre-render five kits overnight or render on demand.",
+    "reason": "Decides where kit alternatives get rendered; the claim about first renders holds and that is the case that matters."
+   }
+  },
+  {
+   "id": "REN-05",
+   "title": "vendor-carousel-studio.sh --write breaks on macOS after it has already replaced the vendored tree",
+   "category": "risk",
+   "claim": "The script deletes and replaces vendor/carousel-studio first and only then rewrites UPSTREAM.md with GNU `sed -i \"s/…/\"`. BSD sed on the owner's Mac reads the expression as the backup suffix and fails, so `set -e` stops with a new tree and a stale pin; the vendor test then fails on the tree hash.",
+   "evidence": [
+    {
+     "file": "own-dashboard/scripts/vendor-carousel-studio.sh",
+     "line": 91,
+     "excerpt": "find \"$vendor\" -mindepth 1 -maxdepth 1 ! -name UPSTREAM.md -exec rm -rf {} +"
+    },
+    {
+     "file": "own-dashboard/scripts/vendor-carousel-studio.sh",
+     "line": 95,
+     "excerpt": "sed -i \"s/^- Commit: \\`[0-9a-f]\\{40\\}\\`$/- Commit: \\`$commit\\`/;"
+    },
+    {
+     "file": "own-dashboard/scripts/vendor-carousel-studio.sh",
+     "line": 19,
+     "excerpt": "set -euo pipefail"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Use a portable rewrite (node -e or perl -pi, or `sed -i.bak` then remove the backup) and update UPSTREAM.md in the scratch output before swapping the tree in.",
+   "impactStatement": "A re-vendor on the owner's machine leaves the repository half-updated; recoverable with git checkout, but it costs a confused hour the first time and makes the cross-repo loop (REN-02) more fragile.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "vendor-carousel-studio.sh:91-92 replace the tree before :95 runs `sed -i \"s/...\" \"$upstream_doc\"`; with set -euo pipefail (:19) a sed failure exits. Reproduced the same sed -i form with macOS /usr/bin/sed: exit 1, 'undefined label'. No CI job runs --write (grep vendor-carousel .github finds none), so the Mac is where it runs.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "A tiny fix that saves a broken re-vendor during the coming kit work; low impact on its own."
+   }
+  },
+  {
+   "id": "REN-06",
+   "title": "Only 4:5 is composed and nothing shows the 3:4 profile-grid crop",
+   "category": "quality",
+   "claim": "DNESKAi templates declare square, story and Threads formats but derive none. The 72 px side margin is chosen to clear the 3:4 grid crop of a 4:5 post (about 34 px a side), but no surface in OwnDashboard previews a cover as the profile grid shows it.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/dneskai-photo.ts",
+     "line": 152,
+     "excerpt": "canvas: { master: MASTER_FORMAT, derive: [] },"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-photo.ts",
+     "line": 36,
+     "excerpt": "/** Margins: 72 px clears the 3:4 profile-grid crop of a 4:5 post (34 px a side) with room left. */"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-photo.ts",
+     "line": 125,
+     "excerpt": "const DNESKAI_FORMATS = {"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "In the Design Lab, show the last 9-12 covers plus today's candidates as a 3-column 3:4 grid by CSS crop of the stored 1080x1350 JPEGs (object-fit: cover, 1012x1350 centre). No new canvas or renderer work. Leave story/square derivation as a later kit decision.",
+   "impactStatement": "The owner cannot judge whether a day's covers read as a series in the grid (owner goal 2) without publishing. Stories and square need new compositions, so they are out of scope; the grid preview is not.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-photo.ts:152 derive: [] for every template (built by template()); :125-129 declare four formats; grep for aspect-[3/4], 'profile grid' and 3 / 4 in own-dashboard/src finds no grid preview. The 72 px margin comment is at :36-37.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "A CSS crop of stored JPEGs gives the owner the grid view the brand goal needs, at almost no cost."
+   }
+  },
+  {
+   "id": "REN-07",
+   "title": "Rendered slides are never purged; kits would multiply the growth",
+   "category": "cost",
+   "claim": "marketing-assets objects are immutable and no code deletes them (the daily purge covers marketing-media only). Measured 820 KB per 7-slide deck; storing five kits makes about 4.1 MB per post, plus a full deck per owner edit.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 202,
+     "excerpt": "return `${ownerId}/marketing/dneskai/slides/${renderKey}.jpg`;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+     "line": 436,
+     "excerpt": "await store.remove(chunk.map((row) => objectName(owner, row.storagePath)));"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Fold into the retention plan of approval-05: keep objects referenced by any revision or publication, purge unreferenced render-key objects after 30 days in the existing daily purge duty.",
+   "impactStatement": "Small money today (estimated 6 GB a year at 4 posts a day with five kits, inside Supabase Pro's included storage), but an unbounded store of unpublished alternatives is the kind of growth nobody notices until a bill or a backup does. Same root as approval-05.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Only dneskai-media.ts:436 removes storage objects, scoped to marketing-media rows; worker-runtime.ts has no remove for dneskai/slides. Growth figures are estimates from the measured 820 KB deck.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Real but already captured as approval-05 with the retention plan; a second finding adds nothing for the owner."
+   }
+  },
+  {
+   "id": "REN-08",
+   "title": "OwnDashboard carries two separate render stacks for Instagram images",
+   "category": "simplicity",
+   "claim": "Besides the vendored studio, src/lib/marketing/render.ts keeps a devShark-only single-layout SVG renderer with its own templates/marketing fonts and font-metrics.json and a Claude Design template-approval flow, traced separately into the job and n8n routes.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/render.ts",
+     "line": 17,
+     "excerpt": " * The single-layout SVG renderer and its Claude Design template. devShark only: DNESKAi slides"
+    },
+    {
+     "file": "own-dashboard/next.config.ts",
+     "line": 73,
+     "excerpt": "\"/api/marketing/jobs/*/execute\": [\"./templates/marketing/fonts/**/*.ttf\", \"./templates/marketing/*/*.svg\", \"./templates/marketing/claude-design/**/assets/*.svg\"],"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/template-registry.ts",
+     "line": 8,
+     "excerpt": "// devShark only: DNESKAi renders through the vendored carousel studio and has no Claude Design template to approve."
+    }
+   ],
+   "impactScore": 2,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Owner decision: if devShark Instagram is not coming back, retire render.ts and templates/marketing behind its own issue; if it is, move devShark onto the studio as another brand kit once kits exist.",
+   "impactStatement": "Two font sets, two metric tables and two approval models for one owner; any shared change (sharp, libvips, trace globs) has to be checked twice. Matters only if devShark posting is still wanted.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "render.ts:15-18 states devShark only; next.config.ts:73-74 trace templates/marketing for the job and n8n routes; template-registry.ts:8. The devShark path is still wired (worker-runtime resolveTemplate), so both stacks ship.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Whether devShark Instagram returns.",
+    "reason": "Not on the DNESKAi path and costs no owner minutes; raise it in the consolidation clean-up, not as a DNESKAi finding."
+   }
+  },
+  {
+   "id": "REN-09",
+   "title": "The render gates are strict, deterministic and tested; the Design Lab must reuse them, not bypass them",
+   "category": "risk",
+   "claim": "The gate refuses clipped copy, glyphs a face lacks, unplaced text, low-resolution bleeds and missing media for the whole deck; output is deterministic (golden PNG hashes reproduce with OwnDashboard's sharp and zod) and 21 tests pass. A live-preview or kit-switch shortcut that renders outside createDneskaiDeckRenderer would lose these guarantees.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 390,
+     "excerpt": "if (problems.some((problem) => problem.blocking)) return { status: \"refused\", assets: [], renderKeys: [], problems };"
+    },
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 118,
+     "excerpt": "it(\"reproduces every pinned DNESKAi golden PNG with OwnDashboard's sharp and zod\", async () => {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 381,
+     "excerpt": "if (result.truncatedSlots.length && !found.some((problem) => problem.code === \"text-clipped\")) {"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Make the preview route (REN-01) call textProblems + validate/render through the same module, and add a test that preview and stored render of the same key produce identical bytes.",
+   "impactStatement": "Protects the hard rules (approved copy is the copy that prints; no silent degradation). Losing it would re-open cut Czech text and empty-box glyphs.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-render.ts:390 refuses the deck on any blocking problem; :381-383 defence in depth for truncation; carousel-studio-vendor.test.ts:118-129 reproduces 11 golden hashes; measured 21/21 tests passing.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "A one-test guard that keeps the Design Lab honest about exact bytes; cheap to add with the preview route."
+   }
+  },
+  {
+   "id": "REN-10",
+   "title": "Brief 2.5's render timing overstates a 7-slide deck",
+   "category": "doc-drift",
+   "claim": "Brief 2.5 says about 0.04-0.28 s per slide warm and 1.3 s for 7 slides. Measured render plus JPEG encode for the 7-slide fixture deck: 0.63-0.95 s cold, 0.49-0.65 s warm, on a loaded machine.",
+   "evidence": [
+    {
+     "file": "dneskai-audit-handoff/brief.md",
+     "line": 152,
+     "excerpt": "- **Speed and cost:** about 0.04–0.28 s per slide warm, 1.3 s for 7 slides, $0 (no model, no external service)."
+    },
+    {
+     "file": "dneskai-audit-handoff/measurements/bench-render.mjs",
+     "line": 46,
+     "excerpt": "const deck = ["
+    }
+   ],
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Use the measured figures in the synthesis and the cost model.",
+   "impactStatement": "None for the owner beyond planning: render time is not a bottleneck at 4 posts a day; storage I/O is (REN-04).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "brief.md:152 says 1.3 s for 7 slides; bench runs measured 0.63-0.95 s cold and 0.49-0.65 s warm render+encode for the same 7-slide fixture deck.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Render time is not a bottleneck either way; use the measured numbers in the synthesis and move on."
+   }
+  }
+ ],
+ "openQuestions": [
+  "What does one Supabase storage round trip (upload/info/download/sign) cost from a Vercel function in fra1? Needed to size REN-04; production holds 0 rendered objects, so it can only be measured on Preview.",
+  "Does the owner want devShark Instagram back (keeps render.ts) or can it be retired (REN-08)?",
+  "When kits arrive, should the render-key bump re-render every existing slide once (as every policy bump does), or must editorial keys stay valid?",
+  "Consolidation option (a/b/c) decides whether REN-02's nine steps shrink to one repository (studio map STU-04)."
+ ],
+ "verification": {
+  "confirmed": 9,
+  "partly": 1,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 7,
+  "dropped": 3,
+  "quickWins": 2,
+  "verifiedAt": "2026-10-22T00:15:52Z",
+  "verifier": "A-map-1",
+  "repoCommit": "own-dashboard 8df25a5, quorum 76314a3, aifirst 0e88cf6",
+  "notes": [
+   "Both lenses applied by the mapping agent in a separate pass: every cited line reopened (scripted excerpt check: 34/34 exact), refuting code searched with grep across own-dashboard src/app, src/lib/marketing, next.config.ts and quorum/studio.",
+   "REN-04 corrected: cache lookups are parallel; only first-render stores are sequential.",
+   "Owner decisions: consolidation (REN-02); key bump re-render policy (REN-03); pre-render vs on-demand kits (REN-04); devShark renderer future (REN-08, dropped).",
+   "Measurements: bench-render.mjs re-run twice ($0), 21 vitest tests, vendor check and rebuild, BSD sed reproduction. Timings are upper bounds: the machine was shared with other agents."
+  ]
+ },
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-rendering.json"
+}
