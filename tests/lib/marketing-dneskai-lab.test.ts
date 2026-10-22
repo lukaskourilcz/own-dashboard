@@ -44,11 +44,11 @@ describe('Design Lab read model', () => {
     expect(dneskaiLabOrder([today!, tomorrow!]).length).toBe(today!.posts.length + tomorrow!.posts.length);
   });
 
-  it('lists five renderable kits per post; only the current kit has a cover, and no cover is ever invented for the others', () => {
+  it('lists six renderable kits per post; only the current kit has a cover, and no cover is ever invented for the others', () => {
     const post = read().posts[0]!;
     const kits = dneskaiLabKits(post);
     expect(kits.map((kit) => kit.id)).toEqual([...DNESKAI_KITS]);
-    expect(kits.map((kit) => kit.key)).toEqual([1, 2, 3, 4, 5]);
+    expect(kits.map((kit) => kit.key)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(kits[0]).toMatchObject({ id: 'editorial', current: true, renderable: true, cover: post.assets[0], fits: true });
     for (const kit of kits.slice(1)) expect(kit).toMatchObject({ current: false, renderable: true, cover: null, fits: null });
   });
