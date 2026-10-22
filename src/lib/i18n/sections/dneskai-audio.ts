@@ -46,6 +46,11 @@ const en = {
     help: 'Used when this post publishes as a Reel. A carousel has no music.',
     none: 'The music library is empty. Upload tracks in Sources → Music.',
   },
+  format: {
+    label: 'Format',
+    carousel: 'Carousel', reel: 'Reel',
+    help: 'A Reel is these slides as a video with music, 3.5 seconds each. Changing the format makes a new version that needs its own approval.',
+  },
 };
 
 const cs: typeof en = {
@@ -92,6 +97,11 @@ const cs: typeof en = {
     rotation: (next: string | null) => next ? `Automaticky: další v pořadí (${next})` : 'Automaticky: další v pořadí',
     help: 'Použije se, když příspěvek vyjde jako Reel. Karusel hudbu nemá.',
     none: 'Hudební knihovna je prázdná. Nahrajte skladby v Zdroje → Hudba.',
+  },
+  format: {
+    label: 'Formát',
+    carousel: 'Karusel', reel: 'Reel',
+    help: 'Reel jsou tyto slidy jako video s hudbou, každý 3,5 sekundy. Změna formátu vytvoří novou verzi, kterou je třeba znovu schválit.',
   },
 };
 

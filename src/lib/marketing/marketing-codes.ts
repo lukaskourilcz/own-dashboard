@@ -503,6 +503,12 @@ const CODES = {
   'reel-ffmpeg-unavailable': ['config', 'The video encoder is not available on this server.', 'Na tomto serveru není dostupný kodér videa.'],
   'reel-compose-failed': ['retry', 'The Reel frames could not be prepared from the slides.', 'Ze slidů nešlo připravit snímky Reelu.'],
   'reel-encode-failed': ['retry', 'The video encoder stopped with an error.', 'Kodér videa skončil chybou.'],
+  // Reels publishing (#165).
+  'revision-format-unsupported': ['edit', 'Only a carousel can switch to a Reel, and only while Reels are switched on.', 'Na Reel lze přepnout jen karusel, a jen když jsou Reely zapnuté.'],
+  'reels-disabled': ['config', 'Reels are switched off on this server, so this Reel waits and nothing is published.', 'Reely jsou na tomto serveru vypnuté, proto tento Reel čeká a nic se nepublikuje.'],
+  'reel-render-pending': ['wait', 'The Reel video is being made; the post publishes on a following run inside its window.', 'Video Reelu se vyrábí; příspěvek vyjde při některém dalším běhu v rámci svého okna.'],
+  'reel-render-unavailable': ['retry', 'The Reel video could not be requested, so the post waits.', 'Video Reelu nešlo vyžádat, proto příspěvek čeká.'],
+  'reel-render-required': ['investigate', 'The Reel had no stored video at publishing time, so nothing was sent.', 'Reel neměl při publikování uložené video, proto se nic neodeslalo.'],
   // Audio library (#164): Zdroje → Hudba.
   'audio-library-unavailable': ['retry', 'The audio library could not be read or written.', 'Hudební knihovnu nešlo načíst ani uložit.'],
   'audio-upload-missing': ['retry', 'The uploaded file did not arrive; upload it again.', 'Nahraný soubor nedorazil; nahrajte ho znovu.'],

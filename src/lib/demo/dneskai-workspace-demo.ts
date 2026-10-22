@@ -217,7 +217,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     void savedAudio;
     const next: DneskaiWorkspacePost = {
       ...unchanged, id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
-      caption: request.caption, scheduledAt: new Date(request.scheduledAt).toISOString(),
+      caption: request.caption, scheduledAt: new Date(request.scheduledAt).toISOString(), format: request.format ?? post.format,
       account: account ? { id: account.remoteId, handle: account.handle, platform: 'instagram' } : post.account,
       // #164: absent keeps the saved track, null returns the post to the rotation.
       ...(audioTrackId ? { audio: { trackId: audioTrackId } } : {}),
@@ -225,7 +225,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
       contentHash: '0'.repeat(64),
     };
-    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, audio: next.audio ?? null, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
+    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, audio: next.audio ?? null, format: next.format, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
     post.status = 'superseded';
     read().posts.unshift(next);
     return { id: next.id, ready: next.ready, contentHash: next.contentHash, render: { status: ready ? 'rendered' : 'refused', problems } };
