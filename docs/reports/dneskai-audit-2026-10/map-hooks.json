@@ -1,0 +1,1058 @@
+{
+  "subsystem": "hooks",
+  "summary": "Quorum holds a careful, evidence-tagged hook system (695 lines of docs, a shared engine with lint and gates, libraries of 50 quiz, 12 news and 16 MMA hooks), the GoVIRAL sends-first ranking, and four vendored MIT marketing skills at 7868cb9. None of it reaches the DNESKAi Instagram pipeline in OwnDashboard: the news library serves only Quorum's paused edition carousel, the vendored studio omits it, and OwnDashboard's copy schema has no hook field. The 12 news hooks are edition-promo lines and would not survive porting; the craft and news honesty rules would, and they already describe a 'calm plus hook cover' register that keeps every truth rule, apart from the blanket question ban and the Humanizer's 'canned hooks' line. The generic marketing skills mostly conflict with DNESKAi's register (follow/comment CTAs, rhetorical questions, first-person emotion); three carousel structures transfer. Consolidation is a cheap verbatim copy with an UPSTREAM.md and a sha256 pin test of the kind OwnDashboard already uses for the Humanizer. The register change itself is the owner's decision.",
+  "files": [
+    {
+      "path": "quorum/docs/hooks/README.md",
+      "role": "Index of the hook knowledge base, evidence tags, prime directives, update protocol"
+    },
+    {
+      "path": "quorum/docs/hooks/01-hook-psychology.md",
+      "role": "Mechanism catalog: 14 mechanisms with evidence tags and a lean-on order"
+    },
+    {
+      "path": "quorum/docs/hooks/02-hook-craft-rules.md",
+      "role": "Binding craft rules for slide-1 hooks and social copy: voice, limits, honesty, anti-patterns, Czech rules"
+    },
+    {
+      "path": "quorum/docs/hooks/03-metrics-and-testing.md",
+      "role": "Metrics, kill rules, cooldowns, pool arithmetic, A/B method, empty results log"
+    },
+    {
+      "path": "quorum/docs/hooks/04-schema-and-gates.md",
+      "role": "Hook schema, Tier A predicates, known bug classes, Tier B specs"
+    },
+    {
+      "path": "quorum/docs/hooks/05-surfaces.md",
+      "role": "Per-surface libraries, DNESKAi/Caught Up predicate vocabulary, extra news honesty rules"
+    },
+    {
+      "path": "quorum/docs/hooks/06-hook-brain.md",
+      "role": "Assignment contract: eligible set, channel cooldown max(2x,14), archetype variety, no-hook fallback"
+    },
+    {
+      "path": "quorum/studio/hooks/news.hooks.json",
+      "role": "The 12 DNESKAi/Caught Up news hooks (edition-level lines)"
+    },
+    {
+      "path": "quorum/studio/hooks/news.research.json",
+      "role": "Per-hook archetype, mechanism, citation, prediction, falsifiedIf, gate justification"
+    },
+    {
+      "path": "quorum/studio/hooks/hooks.predicates.spec.json",
+      "role": "Golden predicate vectors, quiz surface only (23 vectors)"
+    },
+    {
+      "path": "quorum/studio/src/hooks/",
+      "role": "Hook engine: schema, load, evaluate (quiz/news/mma predicates), lint (58/66 chars, 1.25x, 20 % archetype), assign"
+    },
+    {
+      "path": "quorum/studio/src/engagement.ts",
+      "role": "promisesEngagementReward: refuses a follow/like/share call paired with a reward"
+    },
+    {
+      "path": "quorum/orchestrator/src/social/pack.ts",
+      "role": "Only DNESKAi consumer of the news hook library: Quorum's edition carousel (articles paused)"
+    },
+    {
+      "path": "quorum/orchestrator/prompts/goviral.md",
+      "role": "GoVIRAL room prompt: five hook families, sends-first ranking, signal score words"
+    },
+    {
+      "path": "quorum/config/goviral-distribution-priors.json",
+      "role": "Signal weights and claim kinds; per-platform documentedSignals"
+    },
+    {
+      "path": "quorum/config/goviral-signal-scoring.json",
+      "role": "Trend signal score: growth 0.45, volume 0.25, breadth 0.3; exploding/regular/peaked"
+    },
+    {
+      "path": "quorum/config/goviral-growth-loops.json",
+      "role": "One growth loop per venture; DNESKAi loop built on the edition site"
+    },
+    {
+      "path": "quorum/config/goviral-sources.json",
+      "role": "Six reviewed Apify actor contracts with terms verdicts (2026-09-07)"
+    },
+    {
+      "path": "quorum/orchestrator/src/ventures/goviral/distribution-priors.ts",
+      "role": "signalFit arithmetic over documentedSignals"
+    },
+    {
+      "path": "quorum/.claude/skills/social/",
+      "role": "Vendored marketingskills social skill: hook formulas, carousel-frameworks.md, reverse-engineering.md, UPSTREAM.md divergence note"
+    },
+    {
+      "path": "quorum/.claude/skills/marketing-psychology/",
+      "role": "Vendored mental-model catalogue (455 lines)"
+    },
+    {
+      "path": "quorum/.claude/skills/copywriting/",
+      "role": "Vendored landing-page copy skill (252 lines)"
+    },
+    {
+      "path": "quorum/.claude/skills/content-strategy/",
+      "role": "Vendored content-strategy skill (365 lines); searchable vs shareable"
+    },
+    {
+      "path": "quorum/.claude/skills/caught-up-registers/SKILL.md",
+      "role": "House skill: Caught Up article and boardroom registers, enforced by STET"
+    },
+    {
+      "path": "quorum/orchestrator/src/edition/stet.ts",
+      "role": "Code gate for the article register (English and Czech rules)"
+    },
+    {
+      "path": "quorum/orchestrator/tests/architecture.test.ts",
+      "role": "Mirror parity of .claude and .agents skills; stop-slop upstream hashes"
+    },
+    {
+      "path": "quorum/state/marketing-calendar/caught-up.json",
+      "role": "Quorum's DNESKAi 30-day marketing calendar with 139 hookType entries"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+      "role": "marketing-copy/5 SYSTEM_RULES, copy schema, gates"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/humanizer.ts",
+      "role": "Embedded Humanizer review lines (marketing-humanizer/1)"
+    },
+    {
+      "path": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+      "role": "What the vendored studio leaves out (hook libraries)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-humanizer.test.ts",
+      "role": "Precedent: sha256 pin test for a vendored upstream skill"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "Hook definition: one line that opens a specific information gap the next slide is guaranteed to close.",
+      "evidence": "quorum/docs/hooks/01-hook-psychology.md:3-4 `A hook is one line that opens a **specific information gap the next slide is guaranteed to close**.`"
+    },
+    {
+      "fact": "Mechanism catalog (14): 1 information-gap curiosity (Loewenstein 1994, the core engine); 2 the clickbait tax, concrete beats vague (8,977-experiment meta-analysis, a constraint not a lever); 3 half-knowledge peak; 4 pretesting/productive failure; 5 illusion of explanatory depth (the one legitimate closed question); 6 loss aversion; 7 endowed progress and streaks; 8 precision effect (only with real data); 9 social norms and proof; 10 self-reference; 11 Zeigarnik (one ironic open loop at most); 12 von Restorff (vary archetypes, 20 % cap); 13 wear-out (cooldowns scale with intensity); 14 processing fluency (keep lines short).",
+      "evidence": "quorum/docs/hooks/01-hook-psychology.md:11,21,33,43,53,63,72,82,92,102,110,119,125,131 (section headings `## 1. Information-gap curiosity — the core engine` ... `## 14. Processing fluency (mostly a caution)`)"
+    },
+    {
+      "fact": "Lean-on order for the product: concrete gaps, IoED explain-challenges, half-knowledge, payoff-promise, precision stats once data exists, loss/streak carefully, one ironic open loop.",
+      "evidence": "quorum/docs/hooks/01-hook-psychology.md:141-151 `## What to lean on, in order (for this product)`"
+    },
+    {
+      "fact": "Craft voice: clipped, dry, confident; Czech tykani, native-first; no emoji, no exclamation marks, no hype adjectives; never beg for engagement.",
+      "evidence": "quorum/docs/hooks/02-hook-craft-rules.md:9-12 `No emoji. No exclamation marks. No hype adjectives` / `Never beg for engagement (\"comment below\", \"don't skip\").`"
+    },
+    {
+      "fact": "Hard limits: EN <= 58 chars, CS <= 66 chars, aim < 45, one line; CS <= 1.25x EN; no archetype above 20 % of a library. The lint enforces the same numbers.",
+      "evidence": "quorum/docs/hooks/02-hook-craft-rules.md:16-18; quorum/studio/src/hooks/lint.ts:11-16 `enChars: 58, csChars: 66, csRatio: 1.25, archetypeShare: 0.2`"
+    },
+    {
+      "fact": "Structural patterns: two-beat setup + turn (\"X. Y.\"), concrete noun anchor, open a gap the next slide closes, promise the payoff not the content, questions only when unanswerable from the hook or IoED-backed.",
+      "evidence": "quorum/docs/hooks/02-hook-craft-rules.md:22-29"
+    },
+    {
+      "fact": "Honesty rules: every claim licensed by a gate, tracked state or arithmetic; banned: fake timers, invented statistics, manufactured urgency or scarcity, unverifiable reader claims. Anti-pattern ban list of 7 (closed yes/no questions except IoED, bare difficulty labels, prohibition-only constraints, fake urgency, superlatives and engagement begging, calqued Czech, vague forward reference).",
+      "evidence": "quorum/docs/hooks/02-hook-craft-rules.md:31-54"
+    },
+    {
+      "fact": "Carousel deltas: stats must be real; the reveal is the payoff and slides 2-4 must cash it; concreteness wins in-feed even more; hashtags never in the hook; the final CTA slide gets no hook mechanics, a quiet one.",
+      "evidence": "quorum/docs/hooks/02-hook-craft-rules.md:92-106 `The final CTA slide gets no hook mechanics. It's an ad; let it be a quiet one.`"
+    },
+    {
+      "fact": "Extra news honesty rules: never tease what the item does not deliver; no false novelty (\"first\", \"breaking\", age claims forbidden); attribute uncertainty and gate on sourceCount.",
+      "evidence": "quorum/docs/hooks/05-surfaces.md:95-101"
+    },
+    {
+      "fact": "DNESKAi/Caught Up predicate vocabulary: always, sourceCount:N, primarySources:N, signalStrengthAtLeast:N, topicIn:X, hasNumber, all read from Quorum article frontmatter.",
+      "evidence": "quorum/docs/hooks/05-surfaces.md:53-62; quorum/studio/src/hooks/evaluate.ts:42-49 `export interface NewsSubject {`"
+    },
+    {
+      "fact": "Assignment: eligible set by truthRequires (conjunction), channel cooldown max(2 x cooldownDays, 14), no same archetype on consecutive posts, seeded deterministic pick, agent override only within the set, `no-hook` fallback renders the template headline and never relaxes a gate.",
+      "evidence": "quorum/docs/hooks/06-hook-brain.md:21-38,69-70; quorum/docs/hooks/03-metrics-and-testing.md:40-51"
+    },
+    {
+      "fact": "Metrics and kill rules: no directional read before about 2,000 impressions per hook per slice; kill on completion -2pp or next-day return -1pp; about 5-8k impressions per arm to detect a 2pp lift. The results log is empty.",
+      "evidence": "quorum/docs/hooks/03-metrics-and-testing.md:17,22-25,59-60,81-84"
+    },
+    {
+      "fact": "The news library is wired only into Quorum's edition carousel (`caught-up-carousel` channel), built from article frontmatter; hasNumber is a digit in the title or what_changed.",
+      "evidence": "quorum/orchestrator/src/social/pack.ts:145-165 `surface: \"news\", channel: \"caught-up-carousel\"`"
+    },
+    {
+      "fact": "GoVIRAL hook families (5): curiosity (an open loop), story (a specific moment), value (the thing itself in the first line), contrarian (a held belief named and disagreed with), social proof (what happened, with the number). Write the hook, do not describe it.",
+      "evidence": "quorum/orchestrator/prompts/goviral.md:24-29"
+    },
+    {
+      "fact": "GoVIRAL ranking: rate a play by what it is built to earn: sends, then time spent, then saves, then replies, then likes. Encoded weights: send 0.30, watch-time 0.20, save 0.18, reply 0.15, like 0.10, comment 0.07; a signal a platform does not document counts at undocumentedSignalFactor 0.5.",
+      "evidence": "quorum/orchestrator/prompts/goviral.md:54-55; quorum/config/goviral-distribution-priors.json:72-114 (weights), :121 undocumentedSignalFactor; quorum/orchestrator/src/ventures/goviral/distribution-priors.ts:214"
+    },
+    {
+      "fact": "GoVIRAL trend score: three components (relative growth 0.45, absolute volume 0.25, source breadth 0.30) renormalised to 0-100, status words exploding (>= 70), regular, peaked (growth <= -0.3); a missing component is absent, not zero.",
+      "evidence": "quorum/config/goviral-signal-scoring.json:5-14; quorum/orchestrator/prompts/goviral.md:82-90"
+    },
+    {
+      "fact": "Carousel frameworks (5): A Value-Stack 4-14 slides (exact count cover), B Problem-Proof 6-10 (result as fact, receipt last), C Hack List 6-10 (contrarian stat cover, numbered hacks), D Rant Callout 4-8 (provocative claim, fairness pivot), E Demo Walkthrough 5-11 (outcome first, overview before detail). Cross rules: slide 1 is the thumbnail; one visual template per carousel.",
+      "evidence": "quorum/.claude/skills/social/references/carousel-frameworks.md:9-20,24,42,62,81,100"
+    },
+    {
+      "fact": "Reverse-engineering method: 6 steps (niche ID of 10-20 creators, scrape 500-1000+ posts, analyze top 10 %, codify a playbook, layer voice, convert); step 2 names Apify and PhantomBuster. Quorum records this as a divergence: its quota-guarded Apify pipeline supersedes the step and no second account may be opened.",
+      "evidence": "quorum/.claude/skills/social/references/reverse-engineering.md:10-45; quorum/.claude/skills/social/UPSTREAM.md:15-22"
+    },
+    {
+      "fact": "Licences and pins: social, marketing-psychology, copywriting, content-strategy are vendored verbatim from coreyhaines31/marketingskills at 7868cb9251fad80a73d26e488a5ad5f6c4a9f335 (v2.10.0), MIT, Copyright (c) 2025 Corey Haines, each with LICENSE and UPSTREAM.md, mirrored into .agents/skills.",
+      "evidence": "quorum/.claude/skills/social/UPSTREAM.md:3-9; quorum/CLAUDE.md:249-252"
+    },
+    {
+      "fact": "The architecture test compares every file of the eight vendored marketing skills between .claude/skills and .agents/skills and requires UPSTREAM.md and LICENSE; only stop-slop is checked against upstream sha256 hashes.",
+      "evidence": "quorum/orchestrator/tests/architecture.test.ts:201-213, 217-231"
+    },
+    {
+      "fact": "Runtime prompts in Quorum never load skill files; GoVIRAL's craft rules are distilled into orchestrator/prompts/goviral.md.",
+      "evidence": "quorum/CLAUDE.md:254-256 `Runtime prompts do not load skill files`"
+    },
+    {
+      "fact": "OwnDashboard has none of the hook knowledge: no hook library, no hook docs, no marketing skills (its .claude/skills holds stop-slop, ui-ux-pro-max, find-skills, task-observer and house skills); the vendored studio omits studio/hooks on purpose.",
+      "evidence": "own-dashboard/vendor/carousel-studio/UPSTREAM.md:34-36 `Left out on purpose: ... the hook libraries in studio/hooks/`; ls own-dashboard/.claude/skills"
+    },
+    {
+      "fact": "OwnDashboard's DNESKAi register is prompt text only: calm, direct, skeptical; no hype, clickbait, exclamation marks, rhetorical questions, emoji, greetings or call to follow or comment. The copy schema has no hook or family field.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:122; :89-97 `DneskaiCopySlideSchema`"
+    },
+    {
+      "fact": "The Humanizer adaptation tells the model to remove canned hooks and avoid dramatic fragments and em/en dashes; its upstream (blader/humanizer 3.1.0 at 225a6f3) is pinned by sha256 in a test.",
+      "evidence": "own-dashboard/src/lib/marketing/humanizer.ts:10-11; own-dashboard/tests/lib/marketing-humanizer.test.ts:31-38"
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "Hook length EN / CS",
+      "value": "<= 58 / <= 66 characters, aim < 45, one line",
+      "evidence": "quorum/studio/src/hooks/lint.ts:11-12; docs/hooks/02-hook-craft-rules.md:16"
+    },
+    {
+      "name": "CS/EN length ratio",
+      "value": "<= 1.25x",
+      "evidence": "quorum/studio/src/hooks/lint.ts:14"
+    },
+    {
+      "name": "Archetype share per library",
+      "value": "<= 20 %",
+      "evidence": "quorum/studio/src/hooks/lint.ts:16"
+    },
+    {
+      "name": "Per-channel hook cooldown",
+      "value": "max(2 x cooldownDays, 14) days; news hooks carry 8, 10 or 12 -> 16, 20 or 24 days",
+      "evidence": "quorum/docs/hooks/06-hook-brain.md:69; studio/hooks/news.hooks.json:2-13"
+    },
+    {
+      "name": "Authored cooldown bands",
+      "value": "6-8 d utility, 10 d curiosity, 12-14 d jokes, 12-20 d loss/precision",
+      "evidence": "quorum/docs/hooks/03-metrics-and-testing.md:32-37"
+    },
+    {
+      "name": "Minimum read before judging a hook",
+      "value": "~2,000 impressions per hook per slice; 5-8k per arm for a 2pp lift",
+      "evidence": "quorum/docs/hooks/03-metrics-and-testing.md:17,59-60"
+    },
+    {
+      "name": "Kill rules",
+      "value": "completion -2pp or next-day return -1pp vs control",
+      "evidence": "quorum/docs/hooks/03-metrics-and-testing.md:23-24"
+    },
+    {
+      "name": "Pool starvation guard",
+      "value": ">= 5 hooks per relied-on gate",
+      "evidence": "quorum/docs/hooks/04-schema-and-gates.md:53"
+    },
+    {
+      "name": "News weight gate",
+      "value": "signalStrengthAtLeast:80; delivered editions scored 78-85",
+      "evidence": "quorum/studio/hooks/news.hooks.json:10-11; studio/src/hooks/evaluate.ts:38-40"
+    },
+    {
+      "name": "GoVIRAL signal weights",
+      "value": "send 0.30, watch-time 0.20, save 0.18, reply 0.15, like 0.10, comment 0.07; undocumented x0.5",
+      "evidence": "quorum/config/goviral-distribution-priors.json:74-114,121"
+    },
+    {
+      "name": "GoVIRAL trend score",
+      "value": "growth 0.45, volume 0.25, breadth 0.30; exploding >= 70; peaked growth <= -0.3",
+      "evidence": "quorum/config/goviral-signal-scoring.json:5-14"
+    },
+    {
+      "name": "OwnDashboard cover headline / kicker",
+      "value": "110 / 56 characters (prompt targets about 80 %)",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:40"
+    }
+  ],
+  "measurements": [
+    {
+      "what": "Hook libraries in Quorum",
+      "value": "quiz 50, news 12, mma 16 hooks; matches docs/hooks/README.md:8-9",
+      "method": "measured: python3 json.load of studio/hooks/*.hooks.json and len()"
+    },
+    {
+      "what": "News hook archetypes and evidence tags",
+      "value": "11 archetypes for 12 hooks (precision x2); tags verified 8, recalled 2, mechanism-only 1, practitioner 1",
+      "method": "measured: Counter over studio/hooks/news.research.json"
+    },
+    {
+      "what": "News hooks by gate",
+      "value": "8 always, 2 signalStrengthAtLeast:80, 2 hasNumber",
+      "method": "measured: read studio/hooks/news.hooks.json:2-13"
+    },
+    {
+      "what": "Predicate golden vectors",
+      "value": "23 vectors, all on the quiz surface; none for news or mma",
+      "method": "measured: json.load of studio/hooks/hooks.predicates.spec.json (surface field, vectors length)"
+    },
+    {
+      "what": "Hook knowledge base size",
+      "value": "7 files, 695 lines in docs/hooks",
+      "method": "measured: wc -l docs/hooks/*.md"
+    },
+    {
+      "what": "Vendored marketing skill sizes",
+      "value": "social SKILL.md 413 lines + 8 references (carousel-frameworks 141, reverse-engineering 195); marketing-psychology 455; copywriting 252; content-strategy 365; caught-up-registers 70",
+      "method": "measured: wc -l"
+    },
+    {
+      "what": "Quorum DNESKAi 30-day calendar hook types",
+      "value": "139 entries: list 35, number 30, promise 26, question 23, authority 9, story 8, contrarian 5, curiosity 2, negative 1",
+      "method": "measured: recursive Counter of hookType in state/marketing-calendar/caught-up.json"
+    },
+    {
+      "what": "News hook pool life at 4 posts a day on one channel",
+      "value": "about 3 days (12 hooks / 4 per day) before every line is resting 16-24 days and no-hook renders",
+      "method": "estimated: arithmetic from news.hooks.json cooldowns and 06-hook-brain.md:69; not run"
+    },
+    {
+      "what": "Library size needed for a 20-day rotation at 4 posts a day",
+      "value": "about 80 hooks per channel (4 x 20), plus slack for the archetype rule",
+      "method": "estimated: 05-surfaces.md:45 sizing rule items/day x cooldown days"
+    },
+    {
+      "what": "Quorum news hooks portable to a single-event OwnDashboard post",
+      "value": "6 of 12 plausibly true per event (what-changed, sources-under-it, uncertainty-named, no-takes, czech-first, and hasNumber pair only with an OD-side number check); 4 edition-only (whole-day, read-once, day-with-weight, earns-the-minutes); matters-too depends on the caption",
+      "method": "estimated: read of each line against OD single-event posts"
+    }
+  ],
+  "findings": [
+    {
+      "id": "HOOKS-01",
+      "title": "OwnDashboard has no hook mechanism: the cover headline is whatever the calm prompt produces, and Quorum's hook brain only serves its paused edition carousel",
+      "category": "quality",
+      "claim": "Quorum assigns a truth-gated hook to slide 1 only in its own edition pack (surface news, channel caught-up-carousel), which is idle since articles paused. OwnDashboard's DNESKAi path has no hook field in the copy schema, no hook library (the vendored studio omits studio/hooks on purpose) and no assignment step, so no part of the pipeline writes, tags or rotates a cover hook.",
+      "evidence": [
+        {
+          "file": "quorum/orchestrator/src/social/pack.ts",
+          "line": 147,
+          "excerpt": "surface: \"news\","
+        },
+        {
+          "file": "quorum/orchestrator/src/social/pack.ts",
+          "line": 148,
+          "excerpt": "channel: \"caught-up-carousel\","
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+          "line": 34,
+          "excerpt": "Left out on purpose: `src/`, `tests/`, `scripts/`, the hook libraries in `studio/hooks/` (a missing"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 89,
+          "excerpt": "export const DneskaiCopySlideSchema = z.strictObject({"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 92,
+          "excerpt": "headline: z.string().min(1).max(200),"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Register: whether a cover may carry a gap line (calm / calm plus hook cover / explainer)"
+      },
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Add an optional coverHook {line, family} to the cover slide in the copy schema, enforced by code (length <= 66, family from a fixed list, no family twice in a row, family share cap). Whether the line may be a gap rather than a summary is the owner's register decision.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Re-read pack.ts:145-165 (news surface, caught-up-carousel channel, edition frontmatter), UPSTREAM.md:34-36 and DneskaiCopySlideSchema at dneskai-generation.ts:89-97 (type, variant, headline, body, kicker, images, alt; no hook field). grep for promisesEngagementReward, readLibrary or a hook field in own-dashboard/src finds nothing; the only 'hook' hits are the Humanizer line and a render comment.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-02",
+      "title": "Quorum's 12 news hooks are edition-promo lines; a third of them are untrue on a single-event post and two cannot fire on today's OwnDashboard brief",
+      "category": "quality",
+      "claim": "The news library was written for one whole-day edition: 'A whole day in tech, without the scroll', 'Read it once. Stay current for the day', 'A day with real weight', 'Today earns the two minutes'. OwnDashboard posts one event per post. The two weight hooks gate on signal_strength, a desk score from Quorum article frontmatter that the OwnDashboard brief does not carry; a null score fails the gate. The lines also describe the product, not the event, so none opens a gap about the news itself.",
+      "evidence": [
+        {
+          "file": "quorum/studio/hooks/news.hooks.json",
+          "line": 2,
+          "excerpt": "{\"id\":\"whole-day\",\"cooldownDays\":8,\"truthRequires\":[\"always\"]"
+        },
+        {
+          "file": "quorum/studio/hooks/news.hooks.json",
+          "line": 8,
+          "excerpt": "{\"id\":\"read-once\""
+        },
+        {
+          "file": "quorum/studio/hooks/news.hooks.json",
+          "line": 10,
+          "excerpt": "\"truthRequires\":[\"signalStrengthAtLeast:80\"]"
+        },
+        {
+          "file": "quorum/studio/hooks/news.hooks.json",
+          "line": 11,
+          "excerpt": "{\"id\":\"earns-the-minutes\""
+        },
+        {
+          "file": "quorum/studio/hooks/news.research.json",
+          "line": 2,
+          "excerpt": "\"gateJustification\":\"always: every edition is a whole day of technology news, and none of it is a feed\""
+        },
+        {
+          "file": "quorum/studio/src/hooks/evaluate.ts",
+          "line": 119,
+          "excerpt": "return subject.signalStrength !== null && subject.signalStrength >= predicate.score;"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "medium",
+      "recommendation": "Do not port news.hooks.json. Port the engine ideas (gate licenses claim, family tag, cooldown) and write event-level lines per post, gated on what the brief carries (evidence count, a sourced number, category).",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Lines confirmed. The OwnDashboard brief (dneskai-brief.ts) carries no score field (grep relevance|signal|score finds nothing), so signalStrengthAtLeast:80 cannot fire on today's brief; but Jev already scores relevance 0-1 per candidate upstream, so a mapped score could be added. 'Can never fire' holds only for the current brief shape.",
+        "correctedLocations": [
+          "own-dashboard/src/lib/marketing/dneskai-brief.ts (no score field)"
+        ]
+      }
+    },
+    {
+      "id": "HOOKS-03",
+      "title": "A fixed library cannot feed four posts a day: the cooldown rule exhausts 12 lines in about three days and turns every cover into the no-hook fallback",
+      "category": "quality",
+      "claim": "Social assignment rests each hook max(2 x cooldownDays, 14) days per channel and refuses the previous archetype. News hooks carry 8-12 day cooldowns, so each line rests 16-24 days. The docs size a library as items/day x cooldown days; at 4 posts a day that is about 80 lines per channel. With 12, every line is resting by day three and the selector records no-hook.",
+      "evidence": [
+        {
+          "file": "quorum/docs/hooks/06-hook-brain.md",
+          "line": 69,
+          "excerpt": "| Social channel | studio, per channel per hook | `max(2 × cooldownDays, 14)`"
+        },
+        {
+          "file": "quorum/docs/hooks/03-metrics-and-testing.md",
+          "line": 49,
+          "excerpt": "- **Fallback policy:** if the library is empty, no gate holds, or cooldown/variety filters exhaust"
+        },
+        {
+          "file": "quorum/docs/hooks/05-surfaces.md",
+          "line": 45,
+          "excerpt": "6. **Size it by the pool arithmetic** (`03`): items/day × cooldown days."
+        },
+        {
+          "file": "quorum/studio/hooks/news.hooks.json",
+          "line": 6,
+          "excerpt": "\"cooldownDays\":12"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Use the family, not the line, as the rotated unit: the model writes the line for the event, code enforces the family rotation and cooldown. Keep no-hook (a plain truthful headline) as the fallback, as 03:77-79 asks.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "06-hook-brain.md:69 and 03:40-41 state max(2 x cooldownDays, 14) per channel; news cooldowns are 8-12 (news.hooks.json:2-13). 12 lines at 4 posts a day on one channel are all used after 12 posts (3 days), each then resting >= 16 days; 03:49-51 renders no-hook. The figure is arithmetic, not a run, and assumes one channel for all four slots.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-04",
+      "title": "Two DNESKAi registers disagree across repositories: Quorum's DNESKAi calendar uses question hooks and a follow CTA that OwnDashboard's prompt forbids",
+      "category": "doc-drift",
+      "claim": "Quorum's 30-day DNESKAi marketing calendar tags 23 of 139 entries as question hooks and its pinned post ends 'Sleduj @dneskai'. OwnDashboard's marketing-copy/5 forbids rhetorical questions and any call to follow or comment. The Quorum article register's approved fixture uses an em dash; OwnDashboard's Humanizer bans em and en dashes. Quorum's own craft rules sit between the two: questions allowed only when unanswerable from the hook or IoED-backed, no engagement begging.",
+      "evidence": [
+        {
+          "file": "quorum/state/marketing-calendar/caught-up.json",
+          "line": 509,
+          "excerpt": "\"cta\": \"Sleduj @dneskai; dnešní edice → link v biu\","
+        },
+        {
+          "file": "quorum/state/marketing-calendar/caught-up.json",
+          "line": 661,
+          "excerpt": "\"hookType\": \"question\","
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 122,
+          "excerpt": "no exclamation marks, no rhetorical questions, no emoji, no markdown, no URLs, no hashtags in the title, caption or slides, no greetings and no call to follow or comment"
+        },
+        {
+          "file": "quorum/.claude/skills/caught-up-registers/SKILL.md",
+          "line": 42,
+          "excerpt": "your bill just changed shape — and the pressure lands on Anthropic within the"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/humanizer.ts",
+          "line": 11,
+          "excerpt": "Use periods, commas, colons or parentheses instead of em/en dashes"
+        },
+        {
+          "file": "quorum/docs/hooks/02-hook-craft-rules.md",
+          "line": 28,
+          "excerpt": "- **Questions must be unanswerable from the hook** — with one exception: IoED"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Which DNESKAi register is canonical; whether the Quorum calendar is superseded for Instagram"
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "medium",
+      "recommendation": "Record one DNESKAi register in OwnDashboard (the owner's decision: calm, calm plus hook cover, or explainer) and mark Quorum's calendar as superseded for Instagram copy. Do not change the prompt register without that decision.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "caught-up.json:508-509 is an Instagram pinned post whose cta is 'Sleduj @dneskai'; 23 hookType question entries counted. dneskai-generation.ts:122 forbids rhetorical questions and follow/comment calls; caught-up-registers SKILL.md:34,41-43 accepts one em dash; humanizer.ts:11 bans em/en dashes. Quorum CLAUDE.md calls the calendar a plan, not a scheduler, so nothing publishes from it.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-05",
+      "title": "Quorum's craft and news honesty rules already define a 'calm plus hook cover' register that keeps every truth rule",
+      "category": "quality",
+      "claim": "The binding craft rules ban emoji, exclamation marks, hype and engagement begging, demand a concrete noun anchor and a gap the next slide closes, and keep questions only when unanswerable or IoED-backed. The news rules add: never tease what the item does not deliver, no false novelty, attribute uncertainty. These match marketing-copy/5 on every ban except the blanket ban on questions and the Humanizer's ban on 'canned hooks' and dramatic fragments, which also catches the two-beat 'X. Y.' turn.",
+      "evidence": [
+        {
+          "file": "quorum/docs/hooks/02-hook-craft-rules.md",
+          "line": 11,
+          "excerpt": "- No emoji. No exclamation marks. No hype adjectives"
+        },
+        {
+          "file": "quorum/docs/hooks/02-hook-craft-rules.md",
+          "line": 25,
+          "excerpt": "- **Open a gap the next slide closes.** If the reveal can't cash the check, rewrite."
+        },
+        {
+          "file": "quorum/docs/hooks/02-hook-craft-rules.md",
+          "line": 22,
+          "excerpt": "- **Two-beat setup + turn**: \"X. Y.\""
+        },
+        {
+          "file": "quorum/docs/hooks/05-surfaces.md",
+          "line": 95,
+          "excerpt": "- **News: never tease what the item doesn't deliver.**"
+        },
+        {
+          "file": "quorum/docs/hooks/05-surfaces.md",
+          "line": 98,
+          "excerpt": "- **News: no false novelty.**"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/humanizer.ts",
+          "line": 10,
+          "excerpt": "Remove canned hooks, staged candor"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/humanizer.ts",
+          "line": 11,
+          "excerpt": "Avoid invented not-X-but-Y contrasts, forced triads, dramatic fragments"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "medium",
+        "quickWin": true,
+        "ownerDecision": "Register change (prompt line 122 and Humanizer carve-out) needs the owner's approval"
+      },
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "medium",
+      "recommendation": "Offer the owner the 'calm plus hook cover' option as: keep every ban in dneskai-generation.ts:122; allow one declarative gap line on the cover that slide 2 must close; carve a tagged cover line out of humanizer.ts:10-11. Changing the Humanizer changes its policy fingerprint, so the pinned test must be updated in the same change.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "02-hook-craft-rules.md:11-12,22-29 and 05-surfaces.md:95-101 read as cited. Every ban in dneskai-generation.ts:122 (hype, exclamation, emoji, follow/comment) is also in 02; the real gaps are the blanket question ban versus 02:28-29 and humanizer.ts:10-11 ('canned hooks', 'dramatic fragments'). One more difference: 02:10 asks for tykani, which the OwnDashboard prompt does not mention.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-06",
+      "title": "The vendored generic marketing skills mostly conflict with the DNESKAi rules; only three carousel ideas transfer intact",
+      "category": "quality",
+      "claim": "The carousel frameworks close with 'comment a keyword, follow, link in bio' and save/share/follow CTAs; the reverse-engineering playbook lists question, agree-or-disagree and tag-someone CTAs and teaches first-person emotion; the social skill's hooks include 'Unpopular opinion' and first-person story; copywriting recommends rhetorical questions. What survives the DNESKAi truth and register rules: slide 1 as a standalone thumbnail, Problem-Proof's open loop closed by a receipt (the sources slide), Demo Walkthrough's overview-before-detail, and Value-Stack's exact count when the source enumerates.",
+      "evidence": [
+        {
+          "file": "quorum/.claude/skills/social/references/carousel-frameworks.md",
+          "line": 32,
+          "excerpt": "comment a keyword, follow, link in bio"
+        },
+        {
+          "file": "quorum/.claude/skills/social/references/reverse-engineering.md",
+          "line": 96,
+          "excerpt": "- Question: \"What would you add?\""
+        },
+        {
+          "file": "quorum/.claude/skills/social/references/reverse-engineering.md",
+          "line": 142,
+          "excerpt": "**Write from emotion**"
+        },
+        {
+          "file": "quorum/.claude/skills/social/SKILL.md",
+          "line": 102,
+          "excerpt": "- \"Unpopular opinion: [bold statement]\""
+        },
+        {
+          "file": "quorum/.claude/skills/copywriting/SKILL.md",
+          "line": 93,
+          "excerpt": "### Use Rhetorical Questions"
+        },
+        {
+          "file": "quorum/.claude/skills/social/references/carousel-frameworks.md",
+          "line": 19,
+          "excerpt": "- **Slide 1 is the thumbnail.**"
+        },
+        {
+          "file": "quorum/.claude/skills/social/references/carousel-frameworks.md",
+          "line": 54,
+          "excerpt": "**The open loop is the engine:**"
+        },
+        {
+          "file": "quorum/.claude/skills/social/references/carousel-frameworks.md",
+          "line": 112,
+          "excerpt": "**Overview-before-detail is the key move**"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Write a short house reference in OwnDashboard (DNESKAi hook families and carousel structures) that cites the vendored sources line by line and states which parts are excluded and why. Use the vendored text as a reference, never as prompt input.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Each cited line re-read: carousel-frameworks.md:32 (comment/follow/link close), :19, :54, :112; reverse-engineering.md:96, :142; social SKILL.md:102; copywriting SKILL.md:93. Value-Stack exact count (:34) also transfers when the source enumerates.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-07",
+      "title": "Moving the skills into OwnDashboard means verbatim vendoring with UPSTREAM.md, and OwnDashboard already has a stronger pin pattern than Quorum's architecture test",
+      "category": "simplicity",
+      "claim": "The four marketingskills folders are MIT at 7868cb9 and must travel with LICENSE and UPSTREAM.md. Quorum's architecture test only checks that the .claude and .agents copies agree byte for byte and that UPSTREAM.md and LICENSE exist; it never compares them with upstream (only stop-slop has upstream hashes). OwnDashboard's Humanizer test pins the upstream SKILL.md and LICENSE by sha256 and size, which is the pattern to reuse. Quorum keeps its copies (its CLAUDE.md lists them as shared skills), so the move is a copy, not a transfer.",
+      "evidence": [
+        {
+          "file": "quorum/.claude/skills/social/UPSTREAM.md",
+          "line": 4,
+          "excerpt": "- Commit: `7868cb9251fad80a73d26e488a5ad5f6c4a9f335` (v2.10.0)"
+        },
+        {
+          "file": "quorum/orchestrator/tests/architecture.test.ts",
+          "line": 207,
+          "excerpt": "expect(files, `${skill} lost its upstream notice`).toContain(\"UPSTREAM.md\");"
+        },
+        {
+          "file": "quorum/orchestrator/tests/architecture.test.ts",
+          "line": 211,
+          "excerpt": "const codexBytes = await readFile(path.join(codexRoot, skill, file));"
+        },
+        {
+          "file": "quorum/orchestrator/tests/architecture.test.ts",
+          "line": 231,
+          "excerpt": "differs from upstream 8da1f03`).toBe(sha256);"
+        },
+        {
+          "file": "own-dashboard/tests/lib/marketing-humanizer.test.ts",
+          "line": 35,
+          "excerpt": "expect(bytes.length).toBe(expected.bytes); expect(createHash(\"sha256\").update(bytes).digest(\"hex\")).toBe(expected.sha256);"
+        },
+        {
+          "file": "quorum/CLAUDE.md",
+          "line": 249,
+          "excerpt": "`coreyhaines31/marketingskills` at `7868cb9` (MIT): ai-seo, content-strategy,"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Consolidation option (a/b/c) decides whether the copy happens"
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Copy social (and only the other skills the playbook cites) into own-dashboard/.claude/skills verbatim with LICENSE and an UPSTREAM.md, and add a provenance.json plus a sha256 test like marketing-humanizer.test.ts. Copy docs/hooks/01, 02 and 05 as house docs (Quorum-owned, no licence issue) with a source line. Do not delete anything in Quorum.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "architecture.test.ts:201-213 compares .claude vs .agents bytes and requires UPSTREAM.md and LICENSE; only stop-slop is compared to upstream hashes (:217-231). marketing-humanizer.test.ts:31-38 pins upstream bytes and sha256. Quorum CLAUDE.md:241-252 keeps the skills as shared, so the move is a copy.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-08",
+      "title": "Quorum's Apify notes in the skill and GoVIRAL configs still describe a $5 free plan; the account is Starter with $150 of promo credit",
+      "category": "doc-drift",
+      "claim": "social/UPSTREAM.md says Free-plan credit is the budget guard and all six GoVIRAL actor contracts say '$5 Apify platform credit per month', while Quorum's own fixed-costs.json records Apify Starter with $19 plan credit and the account read on 22 October shows Starter plus $150 promotional credit expiring 2026-11-22.",
+      "evidence": [
+        {
+          "file": "quorum/.claude/skills/social/UPSTREAM.md",
+          "line": 20,
+          "excerpt": "`orchestrator/src/sources/apify.ts`) whose Free-plan credit is the budget guard,"
+        },
+        {
+          "file": "quorum/config/goviral-sources.json",
+          "line": 11,
+          "excerpt": "\"freeLimit\": \"$5 Apify platform credit per month, shared account-wide\","
+        },
+        {
+          "file": "quorum/config/fixed-costs.json",
+          "line": 13,
+          "excerpt": "Apify Starter verified in the owner’s Console on 2026-09-28: $19 plan credit"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "When vendoring social into OwnDashboard, write its UPSTREAM.md divergence note against OwnDashboard's own Apify guard (MARKETING_DNESKAI_APIFY_ENABLED, $0.04 per profile, $0.25 per day). Leave Quorum's files to a Quorum change.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "social/UPSTREAM.md:19-20 'Free-plan credit is the budget guard'; goviral-sources.json has the '$5 ... per month' freeLimit on all six actors (:11,22,33,44,56,67); fixed-costs.json:6,13 records Apify Starter with $19 credit; research/apify-account.md (API read 22 Oct) shows STARTER plus $150 promo expiring 2026-11-22.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-09",
+      "title": "GoVIRAL already holds six reviewed Apify actor contracts that the $150 research plan can reuse instead of re-reviewing actors",
+      "category": "cost",
+      "claim": "config/goviral-sources.json records six actors (Instagram search, hashtag, explore/trending, deep-dive instagram-scraper, two Threads scrapers) with price per 1,000 results, input contracts reviewed 2026-09-07 and a terms verdict of 'allowed' with a logged-out, public-data-only note. These are the reverse-engineering step's data sources the Apify research workstream needs.",
+      "evidence": [
+        {
+          "file": "quorum/config/goviral-sources.json",
+          "line": 4,
+          "excerpt": "\"$comment\": \"Actor input contracts reviewed 2026-09-07."
+        },
+        {
+          "file": "quorum/config/goviral-sources.json",
+          "line": 8,
+          "excerpt": "\"actorSlug\": \"apify/instagram-search-scraper\","
+        },
+        {
+          "file": "quorum/config/goviral-sources.json",
+          "line": 12,
+          "excerpt": "\"termsVerdict\": \"allowed\","
+        },
+        {
+          "file": "quorum/config/goviral-sources.json",
+          "line": 64,
+          "excerpt": "\"actorSlug\": \"apify/instagram-scraper\","
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Apify spend plan and switching anything on"
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Cite these contracts in the Apify spend plan as the starting actor list, re-check prices with fetch-actor-details only (no runs), and leave turning anything on to the owner.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "goviral-sources.json:3-4 verifiedAt 2026-09-07 and the review comment; six actorSlug entries (:8,19,30,41,52,64) each with termsVerdict allowed (:12,23,34,45,57,68). Prices and terms are five weeks old and must be re-checked read-only.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-10",
+      "title": "GoVIRAL's signal fit ranks a like above a save on Instagram, contradicting its own sends-then-saves rule and the carousel guidance",
+      "category": "quality",
+      "claim": "The prompt and priors rank sends > time spent > saves > replies > likes (save weight 0.18 > like 0.10), but Instagram's documentedSignals list omits save, and signalFit multiplies an undocumented signal by 0.5 and normalises by the declared weights. A save-only play therefore scores 0.5 signal fit and a like-only play 1.0. The carousel framework says judge carousels on saves and completion.",
+      "evidence": [
+        {
+          "file": "quorum/orchestrator/prompts/goviral.md",
+          "line": 54,
+          "excerpt": "**Rate a play by what it is built to earn.** Sends first, then time spent, then"
+        },
+        {
+          "file": "quorum/config/goviral-distribution-priors.json",
+          "line": 82,
+          "excerpt": "\"weight\": 0.18,"
+        },
+        {
+          "file": "quorum/config/goviral-distribution-priors.json",
+          "line": 157,
+          "excerpt": "\"documentedSignals\": [\"send\", \"watch-time\", \"like\", \"comment\"],"
+        },
+        {
+          "file": "quorum/orchestrator/src/ventures/goviral/distribution-priors.ts",
+          "line": 214,
+          "excerpt": "earned += weighted.weight * (platform.documentedSignals.includes(signal) ? 1 : priors.undocumentedSignalFactor);"
+        },
+        {
+          "file": "quorum/.claude/skills/social/references/carousel-frameworks.md",
+          "line": 141,
+          "excerpt": "Judge carousels on **saves and completion**, not likes"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Insights scopes, before any ranking can run in OwnDashboard"
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "If OwnDashboard adopts the ranking, carry the ordering, not the fit formula, or treat save as documented for carousels with its claimKind kept as industry-estimate. Measuring sends or saves at all needs Insights, which is an owner decision.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Arithmetic confirmed: signalFit (distribution-priors.ts:206-216) gives a save-only Instagram play 0.18*0.5/0.18 = 0.5 and a like-only play 1.0, because priors:157 omits save. But the omission is deliberate: priors:80-85 labels save an industry estimate that Meta's Feed page does not name. The contradiction is between the ordering weights and the fit formula, not an oversight; it affects GoVIRAL plays in Quorum, not OwnDashboard today.",
+        "correctedLocations": [
+          "quorum/config/goviral-distribution-priors.json:85 (save note)",
+          "quorum/orchestrator/src/ventures/goviral/distribution-priors.ts:206-216"
+        ]
+      }
+    },
+    {
+      "id": "HOOKS-11",
+      "title": "Two $0 copy gates that DNESKAi needs already exist in Quorum: the Czech STET register rules and the engagement-reward check, the latter even shipped in the vendored dist",
+      "category": "quality",
+      "claim": "Quorum enforces its calm article register in code (Czech rules for hype, bureaucratic filler, calques, empty adverbs, emoji, double exclamation, source-instruction leaks). The studio's promisesEngagementReward refuses a follow/like/share call paired with a reward and is present in OwnDashboard's vendored dist but never imported. OwnDashboard's register rules are prompt-only; its UNSAFE_TEXT gate checks only URLs, markup, control characters and emoji.",
+      "evidence": [
+        {
+          "file": "quorum/orchestrator/src/edition/stet.ts",
+          "line": 74,
+          "excerpt": "const CZECH_ARTICLE_RULES: readonly StetRule[] = ["
+        },
+        {
+          "file": "quorum/orchestrator/src/edition/stet.ts",
+          "line": 87,
+          "excerpt": "pattern: /(?<![\\p{L}\\p{N}_])(?:revoluční|průlomov(?:ý|á|é)|mění pravidla hry"
+        },
+        {
+          "file": "quorum/studio/src/engagement.ts",
+          "line": 19,
+          "excerpt": "export function promisesEngagementReward(text: string): boolean {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 291,
+          "excerpt": "const UNSAFE_TEXT = /https?:\\/\\/|www\\.|<[^>]+>|[\\u0000-\\u0008\\u000b-\\u001f]|[\\p{Extended_Pictographic}]/u;"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Port the Czech STET rule list into a dneskai copy gate and add an explicit check for any follow/comment/share ask (engagement.ts flags only reward pairs, so 'Sleduj nás' alone passes it). Exclamation and question marks need a single-character rule if the owner keeps the calm register.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "stet.ts:74-133 holds the Czech article rules (hype at :87, emoji, exclamation_inflation /!{2,}/ only); engagement.ts:15-21 flags a call only when paired with a reward; vendor/carousel-studio/dist/engagement.js exists; no own-dashboard/src import of promisesEngagementReward; UNSAFE_TEXT at dneskai-generation.ts:291 covers URLs, markup, control chars and emoji only. Overlaps GEN-07.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-12",
+      "title": "The news evaluator has no golden vectors; only the quiz surface is pinned",
+      "category": "risk",
+      "claim": "06-hook-brain.md says predicate semantics are pinned by committed vectors that studio CI asserts. The vector file covers the quiz surface only (23 vectors); the studio hooks test loads and parses the news library and its predicate names but does not pin evaluateNewsPredicate thresholds, such as a null signal score failing a gate.",
+      "evidence": [
+        {
+          "file": "quorum/docs/hooks/06-hook-brain.md",
+          "line": 75,
+          "excerpt": "`hooks.predicates.spec.json` vectors pin boundary cases as (item metadata, library slice) →"
+        },
+        {
+          "file": "quorum/studio/hooks/hooks.predicates.spec.json",
+          "line": 3,
+          "excerpt": "\"surface\": \"quiz\","
+        },
+        {
+          "file": "quorum/studio/tests/hooks.test.ts",
+          "line": 105,
+          "excerpt": "expect(news.hooks.length).toBe(12);"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "If the engine is copied, write vectors for the OwnDashboard surface's own predicates in the same change. Otherwise no action.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "True that hooks.predicates.spec.json covers the quiz surface only. False that news thresholds are untested: orchestrator/tests/hook-brain.test.ts:105-122 assigns from news frontmatter and asserts that a null signalStrength fails the weight gate. The gap is the golden vector file, not behaviour coverage.",
+        "correctedLocations": [
+          "quorum/orchestrator/tests/hook-brain.test.ts:105-122"
+        ]
+      }
+    },
+    {
+      "id": "HOOKS-13",
+      "title": "The hook testing apparatus cannot run for DNESKAi: it needs impressions, completion and next-day return that OwnDashboard does not collect",
+      "category": "simplicity",
+      "claim": "Every hook ships with a prediction and a falsifiedIf; nothing is judged before about 2,000 impressions per hook per slice, and kill rules use completion and next-day return. OwnDashboard collects no metrics (no Insights scopes), and the results log in 03 is still empty, so no hook in any surface has a [measured] tag.",
+      "evidence": [
+        {
+          "file": "quorum/docs/hooks/03-metrics-and-testing.md",
+          "line": 17,
+          "excerpt": "2. **Watch** — no directional reads before ~2,000 impressions per hook per surface slice."
+        },
+        {
+          "file": "quorum/docs/hooks/03-metrics-and-testing.md",
+          "line": 23,
+          "excerpt": "- Completion −2pp → stop/cut (over-promising)."
+        },
+        {
+          "file": "quorum/docs/hooks/03-metrics-and-testing.md",
+          "line": 83,
+          "excerpt": "*(append dated A/B readouts here"
+        },
+        {
+          "file": "quorum/docs/hooks/README.md",
+          "line": 43,
+          "excerpt": "- **[measured]** — reserved for effects confirmed by *our own* A/B data."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Request Instagram Insights scopes or not"
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "In OwnDashboard keep only the family tag per post and a manual or Insights-based readout later; adopt predictions and kill rules once a metric exists. Requesting Insights scopes is an owner decision.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "03-metrics-and-testing.md:17,22-25 and the empty results log at :81-84 read as cited; README.md:43 reserves [measured] for own A/B data; no research JSON entry carries citationConfidence measured (counted: news, mma, quiz have none). OwnDashboard has no Insights scopes (brief 2.7).",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "HOOKS-14",
+      "title": "Quorum's hook docs still call its studio the single brain for all social content, which OwnDashboard's DNESKAi pipeline no longer is",
+      "category": "doc-drift",
+      "claim": "06-hook-brain.md and the README describe the Carousel Studio/Design Lab as the assignment authority for all social content and say consumer apps do not own hook copy. DNESKAi Instagram copy is now generated in OwnDashboard with no hook assignment, and the vendored studio deliberately leaves the libraries out.",
+      "evidence": [
+        {
+          "file": "quorum/docs/hooks/06-hook-brain.md",
+          "line": 3,
+          "excerpt": "The Design Lab is the single brain behind all social content: it renders the images,"
+        },
+        {
+          "file": "quorum/docs/hooks/README.md",
+          "line": 23,
+          "excerpt": "These docs are **canonical and live in one place**: the quorum monorepo. The Carousel Studio is"
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+          "line": 35,
+          "excerpt": "library loads as empty and DNESKAi slides never read one)"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Note in the consolidation write-up that DNESKAi has no hook assignment anywhere; fix the Quorum docs in a Quorum change if the owner keeps Quorum as upstream.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "06-hook-brain.md:3-4 and README.md:23-24 read as cited; UPSTREAM.md:34-36 in OwnDashboard confirms DNESKAi slides never read a library. Quorum-only doc wording.",
+        "correctedLocations": []
+      }
+    }
+  ],
+  "openQuestions": [
+    "Which register does the owner want for DNESKAi covers: calm (today), calm plus hook cover, or explainer? Nothing in the prompt or Humanizer changes until that is decided.",
+    "Should Quorum's DNESKAi 30-day marketing calendar (question hooks, follow CTA) be marked superseded for Instagram, or is it still the owner's plan?",
+    "Will the owner request Instagram Insights scopes? Without them no hook family can ever be judged on sends, saves or completion.",
+    "Which vendored skills should OwnDashboard copy: only social, or also marketing-psychology, copywriting and content-strategy, which the DNESKAi playbook barely uses?",
+    "Should OwnDashboard reuse the GoVIRAL actor contracts for the Apify research plan, and should Quorum's $5 free-plan notes be corrected there?"
+  ],
+  "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-hooks.json",
+  "verification": {
+    "confirmed": 11,
+    "partly": 3,
+    "refuted": 0,
+    "notConfirmed": 0,
+    "kept": 12,
+    "dropped": 2,
+    "verifiedAt": "2026-10-22T00:07:24Z"
+  }
+}
