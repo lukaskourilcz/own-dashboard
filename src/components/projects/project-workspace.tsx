@@ -5,7 +5,6 @@ import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import {
   Activity,
-  ArrowLeft,
   BriefcaseBusiness,
   CircleDollarSign,
   ExternalLink,
@@ -27,13 +26,13 @@ import { ProjectPromptsCard } from "@/components/projects/project-prompts-card";
 import { ProjectCompetition } from "@/components/projects/project-competition";
 import { ReposPanel } from "@/components/panels/repos-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { SectionLabel } from "@/components/ui/page-header";
 import { Metric as OperationalMetric } from "@/components/ui/metric";
-import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
+import { EntityBadge } from "@/components/ui/status-badge";
 import { useDict, useLang } from "@/lib/i18n";
 import { convert } from "@/lib/fx";
 import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
-import { childProjects, portfolioEntryFor, projectSummary } from "@/lib/portfolio";
+import { childProjects, projectSummary } from "@/lib/portfolio";
 import { computeTotals } from "@/lib/invoices";
 import { assessProjectHealth } from "@/lib/project-health";
 import { taskBelongsToProject } from "@/lib/project-match";
@@ -124,7 +123,6 @@ type Props = {
   onOpenProject: (project: Project) => void;
   displayCurrency: string;
   repositoryIntegrationEnabled: boolean;
-  onBackToProjects: () => void;
   /** The public tour: registry descriptions are not shown there. */
   isPreview?: boolean;
 };
@@ -169,8 +167,6 @@ export function ProjectWorkspace(props: Props) {
   const projectSubscriptions = projectSubscriptionShares(props.subscriptions, props.subscriptionAllocations, displayCurrency).get(project.id) ?? [];
   const allocatedMonthly = sharesMonthly(projectSubscriptions);
   const subsections = childProjects(props.allProjects, project.id);
-  const parentProject = project.parent_id ? props.allProjects.find((item) => item.id === project.parent_id) : undefined;
-  const registryEntry = portfolioEntryFor(project);
   const projectTransactions = props.transactions.filter((transaction) => transaction.project_id === project.id);
   const projectOpportunities = props.opportunities.filter((opportunity) => opportunity.project_id === project.id);
   const projectDates = props.importantDates.filter((date) => date.project_id === project.id);
@@ -237,14 +233,6 @@ export function ProjectWorkspace(props: Props) {
   };
 
   return <div>
-    <button type="button" onClick={props.onBackToProjects} className="mb-3 inline-flex items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground focus-ring"><ArrowLeft className="h-3.5 w-3.5" />{p.backToProjects}</button>
-    <PageHeader
-      className="mac-project-header"
-      title={project.name}
-      description={projectSummary(project, lang, { preview: props.isPreview }) || p.projectWorkspace}
-      eyebrow={parentProject ? t.portfolio.subsectionOf(parentProject.name) : organization?.name ?? (registryEntry ? t.portfolio.coreProject : p.projectWorkspace)}
-      action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}
-    />
     <div className="mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
       <div ref={tablist} className="flex min-w-0 flex-1 gap-1 overflow-x-auto" role="tablist" aria-label={p.projectWorkspace}>
         {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
@@ -261,7 +249,7 @@ export function ProjectWorkspace(props: Props) {
         <OperationalMetric label={p.outstandingAmount} value={formatCurrency(outstanding, displayCurrency)} icon={BriefcaseBusiness} tone={outstanding > 0 ? "attention" : "default"} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p><div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p>{(project.dev_url || project.url) && <div className="flex flex-wrap gap-2">{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}<div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
         {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} />}
         {subsections.length > 0 && <Card><CardHeader><CardTitle>{t.portfolio.subsection}</CardTitle></CardHeader><CardContent><ul className="divide-y divide-border">{subsections.map((child) => <li key={child.id} className="flex items-center justify-between gap-3 py-2"><button type="button" onClick={() => props.onOpenProject(child)} className="focus-ring rounded text-sm font-medium hover:underline">{child.name}</button><span className="text-xs text-foreground-muted">{projectSummary(child, lang, { preview: props.isPreview })}</span></li>)}</ul></CardContent></Card>}
