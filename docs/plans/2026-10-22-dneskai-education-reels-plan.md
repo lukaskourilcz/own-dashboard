@@ -35,8 +35,8 @@ These come from the official Meta docs and the repository, checked on 22 October
 6. **The publisher already has `reel` and `story` branches** (`publisher.ts:109-112`) but nothing renders video and no
    Meta webhook exists. Briefs cannot exist without a nightly run, an event id and collected stories, so an
    owner-approved topic needs a schema change before it can become a brief.
-7. **Instagram caps hashtags at five** since December 2025 (announced by @creators, rollout gradual). Code still
-   emits ten.
+7. **Instagram caps hashtags at five** since December 2025 (announced by @creators, rollout gradual). The owner
+   keeps DNESKAi's cap at ten anyway (22 October 2026); the Graph API documents a limit of 30.
 8. **@itstundeanthony's engine is the keyword CTA, not music.** 42 of his last 80 posts ask for a keyword; those
    posts get a median of 410 comments against 53 for the rest. 74 of 80 use original audio. FACT or HYPE verdicts are
    spoken in the video, never written in the caption, so classifying them needs a transcript.
@@ -124,7 +124,7 @@ The content hash covers it automatically, so approval binds the exact message.
 three steps, cost, one caveat) under the same truth rules. The model never writes the CTA. `assembleDneskaiCaption`
 appends, before the disclosure, a code-owned line from the approved keyword: „Napište do komentáře „SKILL" a pošleme
 vám návod do zpráv." Update `.claude/skills/dneskai-post-content/SKILL.md`: the keyword line is code-authored and
-allowed; model text still carries no CTA. Cut `DNESKAI_HASHTAG_LIMIT` to 5.
+allowed; model text still carries no CTA. The hashtag cap stays at 10 (owner decision, 22 October 2026).
 
 **B3. Lab editor for engagement.** In the post card: keyword field (one word, Latin letters, validated, shown as a
 chip), DM message textarea with counter and a DM-bubble preview, public reply field (optional, default „Poslali jsme
