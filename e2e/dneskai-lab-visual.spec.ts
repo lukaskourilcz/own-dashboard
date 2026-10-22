@@ -29,8 +29,9 @@ async function openLab(page: Page, lang: 'en' | 'cs') {
   await expect(page.getByTestId('dneskai-lab-stage').getByTestId('dneskai-stage-slide')).toBeVisible();
   // The sticky action bar and the fixed mobile navigation follow the scroll position, so an element screenshot
   // taller than the viewport would paint them over whatever part was captured last. Pin the bar in place and
-  // hide the navigation, which other specs cover, for the comparison.
-  await page.addStyleTag({ content: '[data-testid="dneskai-lab"] .sticky { position: static !important; backdrop-filter: none !important; } [data-testid="mobile-nav"] { visibility: hidden !important; }' });
+  // hide the navigation, which other specs cover, for the comparison. The topics list (#154) has its own checks
+  // and screenshots in dneskai-lab.spec.ts and is hidden here too.
+  await page.addStyleTag({ content: '[data-testid="dneskai-lab"] .sticky { position: static !important; backdrop-filter: none !important; } [data-testid="mobile-nav"] { visibility: hidden !important; } [data-testid="dneskai-topics"] { display: none !important; }' });
   await settleImages(page);
   return lab;
 }

@@ -334,3 +334,41 @@ for (const lang of ['en', 'cs'] as const) test(`a waiting topic is generated now
   expect(axe.violations).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360]] as const) test(`Topics: approve, reject, restore and keyboard at ${width} px (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang].topics;
+  const writes: string[] = [];
+  page.on('request', (request) => { if (request.url().includes('/api/marketing/')) writes.push(request.url()); });
+  await page.setViewportSize({ width, height: 900 });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const topics = page.getByTestId('dneskai-topics');
+  await expect(topics).toBeVisible();
+  await expect(topics.getByRole('list', { name: t.listLabel(t.groups.news) })).toBeVisible();
+  await expect(topics.getByRole('list', { name: t.listLabel(t.groups.education) })).toBeVisible();
+  const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-topics"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await topics.screenshot({ path: info.outputPath(`topics-${lang}-${width}.png`) });
+  // Keyboard: the first row holds the tab stop; ↓ moves, A approves, Z rejects.
+  const rows = topics.locator('[data-topic-row]');
+  await rows.first().focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(rows.nth(1)).toBeFocused();
+  await page.keyboard.press('a');
+  await expect(topics.getByRole('status')).toHaveText(t.done.approve(1));
+  await expect(topics).toHaveAttribute('aria-busy', 'false');
+  await expect(rows.nth(1)).toBeFocused();
+  await page.keyboard.press('z');
+  await expect(topics.getByRole('status')).toHaveText(t.done.reject(1));
+  // Bulk approve, then restore from the disclosure.
+  const checkboxes = topics.getByRole('checkbox');
+  await checkboxes.first().click(); await checkboxes.nth(1).click();
+  await topics.getByTestId('dneskai-topics-approve-selected').click();
+  await expect(topics.getByRole('status')).toHaveText(t.done.approve(2));
+  await expect(topics).toHaveAttribute('aria-busy', 'false');
+  await topics.getByTestId('dneskai-topics-archive').locator('summary').click();
+  await topics.getByTestId('dneskai-topics-archive').getByRole('button', { name: t.restore }).first().click();
+  await expect(topics.getByRole('status')).toHaveText(t.done.restore(1));
+  expect(errors).toEqual([]); expect(writes).toEqual([]);
+});

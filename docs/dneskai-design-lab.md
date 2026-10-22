@@ -59,6 +59,14 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 
 The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and the second paid action of a page is refused by a $1 stand-in ceiling. Design Lab stays inside the review tab (decision 10).
 
+## Topics (náměty, #150)
+
+A topic is a working title the owner approves before the pipeline pays for enrichment, pictures or generation (plan A1). `GET /api/marketing/dneskai/topics?projectId=` returns the owner's topics grouped by kind (`news`, `education`) and status: every open topic, the newest 120, and the rejected or expired ones of the last 14 days, the newest 40. Each topic carries its title, source (domain or Instagram handle), keyword, verdict and dates; `lastProposedAt` says when the pipeline last proposed one. `POST` takes `approve`, `reject` or `restore` with up to 40 `topicIds` and answers per topic, `edit` with a title and a keyword (or `null`), and `create` with a kind and a URL, a title or both. A topic that changed meanwhile answers `topic-status-changed`; the same manual URL twice answers `topic-exists`.
+
+The route answers 404 until `DNESKAI_TOPICS_ENABLED=true`, which waits for `20261023100000_dneskai_topics.sql`. Nothing proposes topics yet and nothing turns an approved topic into a brief yet; those are later steps of the plan.
+
+**The list in the Lab (#154).** „Náměty“ sits at the top of Dnes ke schválení, above the queue (`src/components/marketing/dneskai/lab/topics-list.tsx`). Proposed and approved titles are grouped Zprávy and Vzdělávání. Each row shows the title, a kind chip, the source domain or handle, the verdict chip when there is one (Fact, Hype, Nejasné), the keyword as a chip that opens an inline field, and Schválit and Zamítnout. A checkbox per proposed row feeds „Schválit vybrané“. Arrow keys move between rows; A approves and Z rejects the focused row; the shortcuts dialog lists both. „Zobrazit zamítnuté a propadlé“ opens the archive with Obnovit per row. A decision moves the row at once and rolls back with a message if the server refuses; one topic that changed meanwhile is reported and the others go through. With nothing to decide the list says „Dnes žádné nové náměty“ and the time of the last proposal. When the server answers 404 (switch off) the section is not drawn. The reads use `qk.dneskaiTopics`; `/dev-preview` serves synthetic topics from `src/lib/demo/dneskai-topics-fixtures.ts`.
+
 ## Authentic preview assets
 
 `node scripts/dneskai-preview-fixtures.mjs` deterministically regenerates six abstract synthetic source images and sixteen full-size 1080 × 1350 JPEG slides with the vendored studio. The images and all copy are fixtures, not observations or source claims. Their originals are committed so the fixture renderer can verify each sha256 before rendering an edit.
