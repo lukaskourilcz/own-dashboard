@@ -1,5 +1,6 @@
 'use client';
 
+import { DneskaiAudioPicker } from './audio-picker';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -14,11 +15,11 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
-import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { CountedField } from '../post-editor';
 import { DneskaiCodeText } from '../code-text';
-import { DneskaiStateChip } from '../state-chip';
+import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiEngagementEditor } from './engagement-editor';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
@@ -82,16 +83,23 @@ export function DneskaiLabTab(props: Props) {
         choose(ordered[Math.max(0, Math.min(ordered.length - 1, at + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
       }} aria-label={t.queue.label} className="min-w-0 space-y-4" data-testid="dneskai-lab-queue">
         {days.map((day, index) => <section key={day.date} className="space-y-2">
-          <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow} <span className="font-normal text-foreground-muted tabular">{day.date}</span></h3>
+          <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow}</h3>
           <ol className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
-            {day.posts.map((item) => <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><button type="button" onClick={() => choose(item.post.id)} aria-current={active?.post.id === item.post.id ? 'true' : undefined}
-              className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', active?.post.id === item.post.id ? 'border-primary bg-surface-selected' : 'border-border hover:bg-surface-hover')} data-testid="dneskai-lab-queue-post">
-              <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs"><span className="tabular">{item.deadline.time}</span><DneskaiStateChip detail={item.state} lang={props.lang} /></span>
-              <span className="mt-1 block line-clamp-2 text-xs font-medium">{item.post.title}</span>
-              <span className={cn('mt-1 block text-[11px]', item.deadline.urgent || dneskaiMissedSlot(item) ? 'text-warning' : 'text-foreground-muted')}>{dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft)}</span>
-            </button></li>)}
+            {day.posts.map((item) => {
+              // #173: the card's tint carries the state; its words stay in the accessible name and the tooltip.
+              const state = dneskaiStateText(item.state, props.lang);
+              const note = dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft);
+              const current = active?.post.id === item.post.id;
+              return <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><Tooltip content={state} side="right"><button type="button" onClick={() => choose(item.post.id)} aria-current={current ? 'true' : undefined}
+                aria-label={`${item.deadline.time} ${item.post.title}, ${note}, ${state}`} data-state-tone={item.state.state}
+                className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', dneskaiStateTint(item.state), current ? 'border-primary ring-1 ring-primary' : 'hover:border-border-strong')} data-testid="dneskai-lab-queue-post">
+                <span className="block text-xs tabular">{item.deadline.time}</span>
+                <span className="mt-1 block line-clamp-2 text-xs font-medium">{item.post.title}</span>
+                <span className={cn('mt-1 block text-[11px]', item.deadline.urgent || dneskaiMissedSlot(item) ? 'text-warning' : 'text-foreground-muted')}>{note}</span>
+              </button></Tooltip></li>;
+            })}
           </ol>
-          {day.jobs.map((item) => <p key={item.job.id} className="text-xs text-foreground-muted">{item.deadline?.time} · {t.queue.preparing}</p>)}
+          {day.jobs.map((item) => <p key={item.job.id} className={cn('rounded-md border p-2 text-xs text-foreground-muted', DNESKAI_TONE_TINTS.neutral)}>{item.deadline?.time} · {t.queue.preparing}</p>)}
           {day.waiting.length > 0 && <GenerateNow {...props} waiting={day.waiting} />}
           {!day.posts.length && !day.jobs.length && !day.waiting.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
@@ -137,9 +145,9 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== account?.id ? draft.accountId : null); } catch { return null; } })();
   // Only a post that can still be edited has unsaved changes; once approved, the draft is no longer an edit.
   const editable = ['review', 'returned'].includes(post.status);
-  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId || request.engagement !== undefined);
+  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId || request.audioTrackId !== undefined || request.engagement !== undefined);
   // Publish now replaces the time itself, so a draft that differs only in its time may use it.
-  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId && request.engagement === undefined;
+  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId && request.audioTrackId === undefined && request.engagement === undefined;
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
   // REN-01: a draft slide whose pixels differ from the saved JPEG (other words, pictures, crop, type, place or deck
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
@@ -284,6 +292,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           {props.read.capabilities?.engagement && <DneskaiEngagementEditor id={`${id}-engagement`} draft={draft} onDraft={setDraft} handle={post.account.handle} lang={props.lang} />}
+          <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>
         </fieldset>
@@ -355,10 +364,10 @@ function ApproveDay({ day, onClose, ...props }: Props & { day: DneskaiLabDay; on
     } catch (failure) { setError(failure instanceof DneskaiWorkspaceRequestError ? failure.code : 'decision-failed'); }
     finally { await client.invalidateQueries({ queryKey: dneskaiWorkspaceKeys(props.projectId).review }); setBusy(false); }
   }
-  return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent className="max-w-3xl" data-testid="dneskai-approve-day"><DialogHeader><DialogTitle>{t.approveDay.title}</DialogTitle><DialogDescription>{t.approveDay.description(day.date)}</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent className="max-w-3xl" data-testid="dneskai-approve-day"><DialogHeader><DialogTitle>{t.approveDay.title}</DialogTitle><DialogDescription>{t.approveDay.description(formatDneskaiDay(day.date))}</DialogDescription></DialogHeader>
     <ul className="space-y-4">{posts.map((item) => <li key={item.post.id} className="space-y-2 border-b border-border pb-3"><p className="text-xs font-semibold">{item.deadline.time} · {item.post.title} <span className="font-normal text-foreground-muted">{t.actions.version(item.revision.shortHash)}</span></p>
       <div className="flex gap-2 overflow-x-auto">{item.slides.map((slide) => slide.render ? <Image unoptimized key={slide.index} src={slide.render.url} alt={slide.render.alt} width={slide.render.width} height={slide.render.height} className="h-40 w-32 shrink-0 object-contain" onLoad={() => setLoaded((before) => new Set(before).add(slide.render!.url))} onError={() => setLoaded((before) => { const next = new Set(before); next.delete(slide.render!.url); return next; })} /> : <p key={slide.index} className="text-xs">{t.stage.noRender}</p>)}</div>
-      <p className="whitespace-pre-wrap text-xs">{item.post.caption}</p><p className="text-xs text-foreground-muted">@{item.post.account.handle} · {item.post.scheduledAt}</p>
+      <p className="whitespace-pre-wrap text-xs">{item.post.caption}</p><p className="text-xs text-foreground-muted">@{item.post.account.handle} · <time dateTime={item.post.scheduledAt} className="tabular">{formatDneskaiDayTime(item.post.scheduledAt)}</time></p>
       {result?.results.find((entry) => entry.id === item.post.id && !entry.ok) && <div role="alert"><DneskaiCodeText code={result.results.find((entry) => entry.id === item.post.id)!.error ?? 'approval-unavailable'} lang={props.lang} /></div>}
     </li>)}</ul>
     {result && <p role="status" className="mt-3 text-sm">{t.approveDay.result(result.results.filter((item) => item.ok).length, result.results.filter((item) => !item.ok).length)}</p>}

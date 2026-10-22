@@ -221,3 +221,87 @@ Instagram ani placené API.
 RSS prefers `content:encoded`. The article page already fetched for its pictures also yields up to 4,000 sanitized characters of article/main prose; scripts, navigation and instruction-shaped content are excluded. Image alt text/figure captions are retained as untrusted publisher metadata (up to 1,000 characters), never as a vision observation. The collection lease fences this evidence before the image plan is fixed. Brief `/2` carries these fields into the bounded offer; `/1` stays readable. Caption-only social evidence cannot become article or video-transcript evidence.
 
 This requires the new, **unapplied** richer-evidence and brief-compatibility migrations listed in [migration-guide.md](migration-guide.md). Apply them through [migration-guide.md](migration-guide.md#applying-the-prepared-migrations). The owner settled agency credits on 22 October 2026 (decision 21); the rule is in [Credit](#credit) above.
+
+## Reels: slideshow video (#163)
+
+`renderDneskaiReel` in `src/lib/marketing/dneskai-reel-render.ts` turns a post's approved 1080 × 1350 slide JPEGs
+into one 1080 × 1920 MP4 that Instagram accepts as a Reel. sharp builds one still per slide: the slide at 1016 px
+wide, centred over a blurred, darkened copy of itself that fills the frame. ffmpeg then zooms each still from 1.00
+to 1.06 over its 3.5 s (`zoompan`; at full zoom 1019 px of width stay visible, so the slide's edges are never cut),
+joins them with 0.5 s crossfades (`xfade`) and encodes H.264 High, yuv420p, 30 fps, a closed 60-frame GOP at about
+8 Mbps, AAC 128 kbps 48 kHz stereo, `+faststart`. A track shorter than the video loops; every track is cut at the
+video's end with a 2 s fade-out. Without a track the MP4 carries a silent stereo track, for the trending-audio
+path (C5) where Instagram lays its own audio over the video. A deck of n slides lasts `3n + 0.5` seconds.
+
+`dneskaiReelForRevision` (`dneskai-reel.ts`) takes the slides of a revision's clean render from the render-key
+cache in `marketing-assets`, keys the reel by the revision's content hash and the audio track (or `silent`) under
+`DNESKAI_REEL_POLICY`, and renders only when no MP4 with that key is stored. The route
+`POST /api/marketing/dneskai/render-reel` (body `{ revisionId }`) runs it for the owner or for a signed scheduler
+or publisher call.
+
+### Where it runs: Vercel, not Fly.io
+
+Checked on 22 October 2026 through the Vercel API (read only): team `lukas-kourils-projects` is on the **Pro**
+plan, project `own-dashboard` has **Fluid Compute on** with a default function timeout of 300 s. Pro with Fluid
+allows `maxDuration` up to 800 s, so the route's 300 s fits. A function may be 250 MB uncompressed; the ffmpeg
+binary (ffmpeg 6.1.1, release `b6.1.1`) is 79.8 MB on Linux x64 (43.5 MB on macOS) and is the only large file the route adds.
+
+Measured locally on an Apple M2 with the real ffmpeg-static 5.3.0 build: a 7-slide reel (21.5 s, silent) took
+25.3 s with one ffmpeg thread and 26.4 s with ffmpeg's default, and came to 20.5 MB. The filter graph (zoom and
+crossfade) runs on one core, so a Vercel function with one vCPU should take one to three times as long, well inside
+300 s. Decision: the renderer stays in the Vercel route; the Fly.io fallback from the plan is not built. If a real
+render on Vercel ever comes close to the limit, the route's `RENDER_BUDGET_MS` (280 s) stops ffmpeg with
+`reel-timeout` and the Fly.io port can be added behind the same `dneskaiReelForRevision` dependency.
+
+### Storage
+
+The plan named the public `marketing-media` bucket. That bucket is private and its restrictive policies refuse
+anonymous reads, because it holds the downloaded source pictures. Reels therefore get their own private bucket,
+`marketing-reels` (migration `20261023130000`, MP4 only, 64 MiB), with the same owner-prefix read and browser-write
+guards as `marketing-assets`. Instagram receives a seven-day signed URL, which its cURL fetch reads like the signed
+slide URLs it already fetches. Each object is written once (`upsert: false`) under
+`<owner>/marketing/dneskai/reels/<reelKey>.mp4` and checked (size, type, owner, key, sha256) before it is signed.
+
+### Codes
+
+`reel-revision-unavailable` (404), `reel-revision-not-deck`, `reel-render-required`, `reel-input-invalid` (409),
+`reel-slides-unavailable`, `reel-audio-unavailable`, `reel-storage-failed`, `reel-bucket-required`,
+`reel-ffmpeg-unavailable` (503), `reel-compose-failed`, `reel-encode-failed` (500), `reel-timeout` (504). ffmpeg's
+own error text goes to the function log only (`dneskai-reel-ffmpeg-failed`, last 800 characters).
+
+Tests: `tests/lib/dneskai-reel-render.test.ts` renders a 2-slide fixture with and without a looped track and checks
+it with ffprobe (container, codecs, 1080 × 1920, 30 fps, duration within 0.2 s, `moov` before `mdat`); CI installs
+ffprobe. `tests/lib/dneskai-reel.test.ts` covers the cache, the refusals, storage and the route;
+`tests/lib/dneskai-reel-bucket.test.ts` replays the bucket migration in PGlite.
+
+## Reels: audio library (#164)
+
+Zdroje → Hudba holds the tracks a Reel may play (`marketing_audio_tracks`, migration `20261023130100`, files in the
+private `marketing-audio` bucket). The owner uploads a file with its title, artist, source, the page it came from, a
+licence note and up to five mood tags; each track has a switch for the rotation and a 10-second preview. The Lab's
+post card has a "Hudba Reelu" select: one enabled track or the rotation. The choice is saved as
+`revision.audio.trackId`, so it is part of the content hash and approval binds the exact track. A post without a
+choice takes the next enabled track after the previous Reel's (`nextDneskaiAudioTrack`), so two consecutive posts
+never share a track while two or more are enabled. A carousel ignores the field.
+
+### Licences and what the owner records
+
+| Source | Why it is allowed | Record for each track |
+|---|---|---|
+| Meta Sound Collection (`meta-sound-collection`) | Meta's own library, cleared for use on Facebook and Instagram | The track's page in the collection, and the licence note "Meta Sound Collection" with the download date |
+| Pixabay Music (`pixabay`) | The Pixabay Content License allows use in videos on social media without attribution | The track's Pixabay page and "Pixabay Content License" with the download date |
+| Own recording (`original`) | Made by the owner | Where and when it was made |
+| Instagram library (`instagram-library`) | Licensed by Instagram itself; usable only through the Facebook Login audio API (C4, C5) | The Instagram audio id; no file. Not offered for upload yet |
+
+No commercial songs, and nothing from another source: a baked-in commercial song gets the Reel muted or blocked
+(plan, section 2). The source URL is required for every uploaded file, so the origin of each track can be checked
+later.
+
+### Upload path
+
+`POST /api/marketing/dneskai/audio` with `prepare` returns a signed upload URL for exactly
+`<owner>/<new id>.<ext>`; the browser uploads the file there, then `create` downloads it, measures it with the same
+ffmpeg as the renderer (audio stream, 1 s to 15 min, at most 20 MiB) and records the row. A file that fails is
+deleted. `toggle` switches a track. The route and both screens are hidden while `MARKETING_DNESKAI_REELS_ENABLED`
+is off. The render route (`/api/marketing/dneskai/render-reel`) bakes the approved track into the MP4 and keys the
+reel by it.

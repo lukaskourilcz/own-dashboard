@@ -36,7 +36,12 @@ const routes = [
   '/api/marketing/dneskai/media',
   '/api/marketing/n8n',
   '/api/marketing/offline-import',
+  '/api/marketing/dneskai/render-reel',
+  '/api/marketing/dneskai/audio',
 ];
+/** Routes that also run the ffmpeg-static binary (#163): its executable must be in the function. */
+const ffmpegRoutes = new Set(['/api/marketing/dneskai/render-reel', '/api/marketing/dneskai/audio']);
+const ffmpegFile = 'node_modules/ffmpeg-static/ffmpeg';
 
 const addonPattern = /^node_modules\/@img\/sharp-([^/]+)\/lib\/sharp-\1-[^/]+\.node$/;
 const libvipsPattern = /^node_modules\/@img\/sharp-libvips-([^/]+)\/lib\/libvips-cpp\.so(\.\d+)*$/;
@@ -72,7 +77,10 @@ function checkRoute(route) {
   const fonts = files.filter((file) => fontPattern.test(file));
   if (fonts.length === 0) problems.push('no vendored studio font under vendor/carousel-studio/fonts/ (is "./vendor/carousel-studio/fonts/**/*" still in outputFileTracingIncludes?)');
 
-  for (const file of [...addons, ...matchingLibvips, ...fonts].filter(missingOnDisk)) problems.push(`listed but missing on disk: ${file}`);
+  const ffmpeg = ffmpegRoutes.has(route) ? files.filter((file) => file === ffmpegFile) : [];
+  if (ffmpegRoutes.has(route) && ffmpeg.length === 0) problems.push(`no ${ffmpegFile} (is "./node_modules/ffmpeg-static/ffmpeg" still in outputFileTracingIncludes?)`);
+
+  for (const file of [...addons, ...matchingLibvips, ...fonts, ...ffmpeg].filter(missingOnDisk)) problems.push(`listed but missing on disk: ${file}`);
 
   return { problems, files: files.length, addon: addons[0], libvips: matchingLibvips[0], fonts: fonts.length };
 }

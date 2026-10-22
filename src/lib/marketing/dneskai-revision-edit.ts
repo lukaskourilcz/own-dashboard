@@ -14,8 +14,9 @@ type Database = ReturnType<typeof createAdminClient>;
 export { DneskaiDeckEditSchema, DneskaiRevisionEditError, DneskaiSlideEditSchema, applyDneskaiDeckEdit, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 const fail = (code: string): never => { throw new DneskaiRevisionEditError(code); };
 
-/** `engagement`: left out keeps the saved keyword and messages, `null` removes them, an object replaces them (#157). */
-export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; engagement?: ContentEngagement | null };
+/** `engagement`: left out keeps the saved keyword and messages, `null` removes them, an object replaces them (#157).
+ * `audio`: absent keeps the saved choice, null clears it (the Reel then takes the next track in rotation, #164). */
+export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; engagement?: ContentEngagement | null; audio?: ContentRevision["audio"] | null };
 
 /**
  * The deck an owner edit produces, checked against the brief: the edit applied by `applyDneskaiDeckEdit`
@@ -42,10 +43,11 @@ export async function prepareDneskaiRevisionEdit(original: ContentRevision, inpu
   const account = input.account ?? original.account;
   if (account.platform !== original.account.platform) return fail("account-platform-changed");
   const deck = await editedDneskaiDeck(original, input.deck, listBriefAssetHashes, loadBriefPool);
-  const { engagement: saved, ...rest } = original;
+  const { engagement: saved, audio: savedAudio, ...rest } = original;
   const engagement = input.engagement === undefined ? saved : input.engagement ?? undefined;
+  const audio = input.audio === undefined ? savedAudio : input.audio ?? undefined;
   try {
-    return parseContentRevision({ ...rest, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(engagement ? { engagement } : {}) });
+    return parseContentRevision({ ...rest, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(engagement ? { engagement } : {}), ...(audio ? { audio } : {}) });
   } catch { return fail("revision-edit-invalid"); }
 }
 

@@ -61,8 +61,17 @@ for (const lang of ['cs', 'en'] as const) {
     expect(await noOverflow(page)).toBe(true);
     const axe = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-review"]').withTags(AXE_TAGS).analyze();
     expect(axe.violations).toEqual([]);
-    expect(errors).toEqual([]);
     await page.screenshot({ path: info.outputPath(`dneskai-review-${lang}.png`), fullPage: true });
+    // #173: Posts cards carry their state as a tint, named in the card; axe checks text contrast on every tint.
+    await page.getByRole('tab', { name: t.tabs.published, exact: true }).click();
+    const cards = page.getByTestId('dneskai-post-row');
+    await expect(cards.first()).toBeVisible();
+    await expect(page.getByTestId('dneskai-published').locator('.rounded-full')).toHaveCount(0);
+    await expect(page.locator('[data-testid="dneskai-post-row"][data-state="published"]')).toHaveAttribute('aria-label', new RegExp(`: ${t.states.published}$`));
+    const posts = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-published"]').withTags(AXE_TAGS).analyze();
+    expect(posts.violations).toEqual([]);
+    await page.screenshot({ path: info.outputPath(`dneskai-posts-${lang}.png`), fullPage: true });
+    expect(errors).toEqual([]);
   });
 }
 

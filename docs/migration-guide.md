@@ -801,3 +801,29 @@ Both stay unapplied and were replayed only in PGlite (`tests/lib/marketing-dnesk
 `20261022190000_dneskai_regenerate_with_note.sql` replaces `marketing_finish_job` with the body of `20261021124706` plus one step. When the finished job's request names `generation.replacesRevisionId`, and that revision is the owner's, of the same brand, still `review` or `returned` and has no claimed, published or uncertain publication, the new revision is saved through `marketing_save_revision` with it as the replaced revision: the old version becomes `superseded` and a queued publication of it is cancelled, as for an owner edit. A version the owner approved meanwhile keeps its approval; the new draft is saved beside it. Without the key the function behaves as before. Nothing here approves; the new revision is ready and in review.
 
 It stays unapplied. The app sends `replacesRevisionId` only from the Lab's „Regenerate with a note“, which the server refuses with `regenerate-unavailable` until `DNESKAI_REGENERATE_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-regenerate-database.test.ts`).
+
+## DNESKAi Reel bucket, 23 October 2026 (unapplied)
+
+`20261023130000_dneskai_reel_bucket.sql` creates the private `marketing-reels` bucket: MP4 only, 64 MiB per file,
+with the same owner-prefix read policy and restrictive browser guards as `marketing-assets`. The render route
+(`/api/marketing/dneskai/render-reel`, #163) writes one immutable object per reel key under
+`<owner>/marketing/dneskai/reels/<reelKey>.mp4` with the service role and hands Instagram a seven-day signed URL.
+No table, function or existing policy changes.
+
+Replayed only in PGlite (`tests/lib/dneskai-reel-bucket.test.ts`). Apply it with the CLI like the other prepared
+files (`npx supabase db push --linked`); the route answers 404 until `MARKETING_DNESKAI_REELS_ENABLED=true`, and with
+the switch on but the bucket missing it answers 503 `reel-bucket-required`.
+
+## DNESKAi audio library, 23 October 2026 (unapplied)
+
+`20261023130100_dneskai_audio_tracks.sql` (#164) adds `marketing_audio_tracks` and the private `marketing-audio`
+bucket (20 MiB per file; MP3, M4A/AAC, WAV and Ogg). A row holds the title, artist, source
+(`meta-sound-collection`, `pixabay`, `original` or `instagram-library`), the licence note, the page the file came
+from, the stored file or the Instagram audio id, the duration, up to five mood tags and the enabled switch. Checks:
+a stored track has a file under `marketing-audio/<owner>/<id>.<ext>` and a source URL; an Instagram library track has
+an id and no file. The owner reads only their own rows and files; every write goes through
+`/api/marketing/dneskai/audio` with the service role. The browser uploads the file to a signed upload URL for one
+exact path, then the route checks the stored file before it records the row.
+
+Replayed only in PGlite (`tests/lib/dneskai-audio-database.test.ts`). Apply it with the other prepared files
+(`npx supabase db push --linked`). The route and Zdroje → Hudba stay hidden until `MARKETING_DNESKAI_REELS_ENABLED=true`.

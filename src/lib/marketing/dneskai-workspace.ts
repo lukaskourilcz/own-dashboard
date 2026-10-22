@@ -50,6 +50,8 @@ export const DneskaiWorkspacePostSchema = z.strictObject({
   templateVersion: z.string().min(1).max(200),
   traceId: uuid.nullable(),
   deck: DneskaiDeckSchema.nullable(),
+  /** The Reel track the owner chose (#164); absent means the next track in rotation. */
+  audio: z.strictObject({ trackId: uuid }).optional(),
   /** Per deck slide, the written fields its template draws and their limits. The owner edits only these. */
   fields: z.array(z.array(DneskaiFieldLimitSchema).max(4)).max(10),
   assets: z.array(z.strictObject({ url: imageUrl, sha256, width: z.number().int().positive(), height: z.number().int().positive(), alt: z.string().max(1000) })).max(10),
@@ -222,7 +224,20 @@ export type DneskaiCalendarEntry =
   | { kind: 'free'; at: string; time: string };
 export type DneskaiCalendarDay = { date: string; entries: DneskaiCalendarEntry[] };
 
-const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+/** HH:MM in Europe/Prague for a stored instant. */
+export const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+
+/**
+ * The one DNESKAi day format (#173): DD/MM in Europe/Prague, the same in Czech and English. Takes a calendar date
+ * (`YYYY-MM-DD`, already a Prague day) or a stored instant.
+ */
+export function formatDneskaiDay(value: string): string {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : pragueDate(value);
+  return `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+}
+
+/** DD/MM HH:MM in Europe/Prague for a stored instant. */
+export const formatDneskaiDayTime = (iso: string) => `${formatDneskaiDay(iso)} ${pragueTime(iso)}`;
 
 /**
  * Seven Prague days from `today`, each with its standard slots and every post or drafting job planned that day, in
