@@ -1,29 +1,18 @@
 # What I need from you
 
-State on 22 October 2026, after `own-dashboard` main `ecb9716` went live. All the building I could do without you is done. What remains below needs your hands, your accounts or your opinion.
+Updated after browser setup on 22 October 2026. See [verified setup and exact continuation point](browser-setup-result.md). Product decisions below remain pending; setup completion does not prove the live publication chain.
 
 Each item says how long it takes and what it costs. Where you have to choose, I put my recommendation first so you can answer "yes, your pick" if you agree.
 
 ---
 
-## 1. Do today: DNESKAi can't post anything until you do these two
+## 1. Setup complete; publishing activation needs email verification
 
-### Connect `@dneskai` to Instagram publishing (about 45 min, free)
+Production Anthropic key: **set**. @dneskai is a Creator account, tester invitation accepted, six Instagram configuration values set, redeploy Ready and Sources verification successful at 16:17 Prague on 22 October. The owner explicitly retained all five scopes granted by Meta. Token expires 21 December 2026 at 15:07:44 Prague.
 
-The system has never seen your Instagram account. Production has 0 account rows, so each day's four prepared posts expire one by one without a draft.
+The owner requested publishing activation for testing. Vercel stopped at **Verify to reveal this value** for the Production publishing switch. Complete that email verification in Chrome, then the agent can set both Production switches, redeploy and enable only @dneskai. Publishing remains disabled until then. No final post has been approved or published.
 
-1. Make `@dneskai` a Business or Creator account.
-2. Give it a tester role on the Meta app (Development mode, Instagram Login).
-3. Generate the 60-day token and put the values into Vercel Production. The exact names are in `docs/external-setup.md` §11.
-4. Redeploy, then open DNESKAi → Zdroje and press **Ověřit účet**.
-
-Publishing stays off after this. You switch it on later, only for the pilot post.
-
-### Add the Anthropic key (5 min, then about $0.02 per post)
-
-In Vercel Production, add `ANTHROPIC_API_KEY` (mark it Sensitive) and redeploy. Leave the model setting empty; it defaults to Claude Sonnet 5.5. Spending can't pass the $1 per day ceiling that's already set.
-
-Once both are done, the next night's stories turn into real drafts you can open in the Design Lab.
+The [setup report](browser-setup-result.md) records app IDs, deployment, scopes, expiry and the exact resume steps. Do not recreate the key or app.
 
 ---
 
@@ -121,7 +110,7 @@ After 20 approved posts, compare Sonnet with Haiku on the same stories. It runs 
 
 ## 7. Cleanup (30 min, when convenient)
 
-- **n8n:** archive three old DNESKAi workflows and rename three staging credentials with a `RETIRED` prefix. After the pilot, delete them, plus the old Preview variables and the `codex/marketing-automation` branch. The names are in `docs/marketing-staging-retired-2026-10.md`. Deleting can't be undone.
+- **n8n — completed 22 October:** three old DNESKAi workflows archived; three staging credentials renamed with a `RETIRED` prefix. After the pilot, delete them, plus the old Preview variables and the `codex/marketing-automation` branch. The names are in `docs/marketing-staging-retired-2026-10.md`. Deleting can't be undone.
 - **Scheduler secret (optional, 10 min):** a session generated it, so replace it if you want one nobody else has seen. Steps are in `NEEDED.md`.
 
 ---

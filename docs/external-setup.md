@@ -133,12 +133,14 @@ The project's display name and slug do not follow the repository name; change th
 
 ## 11. Instagram publishing for @dneskai (#121)
 
+**Verified 22 October 2026:** Production key and Instagram configuration are set; Sources verifies @dneskai successfully. Publishing activation requested by the owner is pending Vercel email verification. The owner explicitly accepted the five granted scopes (basic, messages, content publish, insights, comments), superseding the two-scope setup plan for this account. See [current evidence and resume steps](reports/dneskai-audit-2026-10/browser-setup-result.md). The steps below are the setup reference; do not recreate completed credentials or the app.
+
 The code connects one Instagram professional account through the Instagram API with Instagram Login (host `graph.instagram.com`). The owner creates the account, the app and the token; nothing in this repository registers, buys or publishes. Publishing stays off throughout this setup: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the account's `enabled` column remain false until the pilot (#123).
 
 1. **Professional account.** In Instagram, switch `@dneskai` to a Business or Creator account. A personal account cannot publish through the API; verification refuses it with `professional-account-required`.
 2. **Meta app in Development mode.** In developers.facebook.com, use a Business-type app with the Instagram use case and *API setup with Instagram login*. Leave the app in Development mode. In that mode the app may publish to accounts that hold a role on it, so App Review is not needed for the owner's own account.
 3. **App role.** Add `@dneskai` as an Instagram tester under App roles and accept the invitation in the Instagram app. Without a role the token cannot publish.
-4. **Scopes.** Request exactly `instagram_business_basic` and `instagram_business_content_publish`. Do not add messaging, comments, insights or ads permissions.
+4. **Scopes.** For a fresh setup, request exactly `instagram_business_basic` and `instagram_business_content_publish`. Do not add messaging, comments, insights or ads permissions without an explicit owner decision. For the existing account, preserve the five-scope exception recorded above.
 5. **Long-lived token.** Generate the token for `@dneskai` in the Instagram login API setup. It is a long-lived Instagram User token valid for 60 days. A short-lived OAuth token must first be exchanged with `GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token`, which needs the app secret; do that on your own machine and never paste the secret or the token into the repository, an issue or a chat.
 6. **Expiry and scopes.** Open the token in Meta's Access Token Debugger and copy its expiry and granted scopes. Instagram Login has no API that lists a token's permissions (`debug_token` belongs to Facebook Login and needs an app token), so the server takes the scopes from `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES`. Record only what the debugger shows.
 7. **Production environment** (Vercel, Production, marked Sensitive):
@@ -151,7 +153,7 @@ The code connects one Instagram professional account through the Instagram API w
    | `MARKETING_DNESKAI_INSTAGRAM_API_VERSION` | The Graph API version you confirmed for the app. Meta's Instagram reference examples used `v26.0` on 20 October 2026. |
    | `MARKETING_DNESKAI_INSTAGRAM_API_VERSION_VERIFIED_AT` | ISO date and time when you checked that version. |
    | `MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT` | ISO expiry from the debugger, for example `2026-12-19T10:00:00Z`. |
-   | `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` | `instagram_business_basic,instagram_business_content_publish` |
+   | `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` | Actual granted scopes from the debugger. The original plan used basic + content_publish; the owner approved five for the current token, as recorded above. |
    | `MARKETING_DNESKAI_INSTAGRAM_HANDLE` | Optional. Set it only when the handle is not `dneskai`; verification refuses any other account. |
    | `MARKETING_APPROVED_ASSET_HOSTS` | The Supabase Storage host of the production project, `<project-ref>.supabase.co`. Meta downloads the signed JPEG URLs from it. |
 

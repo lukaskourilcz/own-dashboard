@@ -1,5 +1,8 @@
 # Browser agent prompt: connect @dneskai and add the production key
 
+> Historical execution instructions. The six tasks were completed on 22 October 2026. Read [the setup result and exact resume point](browser-setup-result.md) before continuing. The owner subsequently approved all five granted scopes and requested publishing activation; activation is pending Vercel email verification. Do not repeat key/app creation or treat the original two-scope plan as the current granted state.
+
+
 Written on 22 October 2026 for a browser agent working in Lukáš's own Chrome. Production runs `own-dashboard` main `ecb9716` or newer. The owner's full list is in [owner-todo.md](owner-todo.md). Section 1 there is what this prompt covers, plus the n8n archiving from section 7.
 
 Checked before writing (names only, no values): Vercel Production already has `MARKETING_OWNER_ID` and `MARKETING_APPROVED_ASSET_HOSTS`. It lacks `ANTHROPIC_API_KEY` (only a Preview copy exists, for branch `codex/marketing-automation`) and all six `MARKETING_DNESKAI_INSTAGRAM_*` values. Supabase has the token table and 0 `marketing_accounts` rows.
