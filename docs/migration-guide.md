@@ -726,3 +726,9 @@ grant execute on function public.marketing_scheduler_prune_ticks(uuid,integer) t
 
 select cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where coalesce(jobname,'') not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
 ```
+
+## Richer brief evidence, 22 October 2026 (unapplied)
+
+`20261022020702_dneskai_richer_brief_evidence.sql` adds bounded article prose to the owner-scoped media collection and a fenced service-only setter. Alt and figcaption metadata stay in the immutable image plan. `20261022020759_dneskai_brief_v2_compatibility.sql` accepts both brief document versions without rewriting stored briefs or changing grants.
+
+Both migrations are local preparation. Reconcile production's divergent marketing history before an approved coordinated application/code release. Do not use the earlier generic `db push` recipe on production until that owner decision is resolved. Existing brief/1 documents remain readable; new briefs use brief/2. No collection switch, paid ceiling or staging ledger changes.

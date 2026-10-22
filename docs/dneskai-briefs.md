@@ -231,3 +231,11 @@ zbývající ID článků. Rozhoduje `kind` předchozího paketu.
 - Nad limity čtení (2000 otevřených, 1000 vybraných, 1000 duplicit) se zprávy
   neseskupí a jedna událost se může vybrat dvakrát. Běh to ukáže kódem
   `collection-event-window-partial`.
+
+## Richer evidence (brief/2, prepared 22 October 2026)
+
+New briefs use `dneskai-brief/2`; the strict reader still accepts unmodified `dneskai-brief/1` snapshots. RSS projection prefers `content:encoded`, then content and the description fallback. During the existing public-page media read, the collector keeps up to 4,000 characters of sanitized article/main prose, plus bounded alt/figcaption metadata in the fixed image plan. Navigation, scripts, hidden text and instruction-shaped text do not become evidence. No extra request is made to obtain this text.
+
+The richer text travels through the owner-scoped media read into a new brief, its source packet and the bounded generation offer. Article text can satisfy the existing 400-character format threshold; source alt text is metadata, not a vision result or fact verification. The offer keeps the same evidence-size plans, source ordering and token/cost guards. Caption-only evidence never receives article prose or becomes a transcript. Historical briefs are not rewritten.
+
+The matching migrations are unapplied; production needs a separately approved release after migration-history reconciliation.

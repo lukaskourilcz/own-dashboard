@@ -351,3 +351,28 @@ describe('other events for the Sources tab', () => {
     ]);
   });
 });
+
+
+describe('brief/2 evidence with v1 compatibility',()=>{
+ it('carries source prose and image descriptions into the brief, packet and model offer',async()=>{
+  const candidate=report('openai-blog','rich-page',0,'Short feed text.');
+  const articleText='Richer public article evidence. '.repeat(30);
+  const outcome=buildDneskaiBrief({eventId:dneskaiEventId(candidate.id),memberHash:dneskaiEventMemberHash([candidate]),targetDate:'2026-10-21',category:'ai-news',scheduledAt:'2026-10-21T06:00:00Z',observedAt:new Date('2026-10-20T20:30:00Z'),members:[{candidate,articleText,media:[asset(19,0,undefined,{sourceAltText:'A source description.'})]}]});
+  if(!('brief' in outcome))throw new Error(outcome.code);
+  expect(outcome.brief).toMatchObject({schemaVersion:'dneskai-brief/2',suggestedFormat:'carousel',evidence:[{articleText}],media:[{sourceAltText:'A source description.'}]});
+  const packet=dneskaiBriefSourcePacket(outcome.brief);expect(packet.content.body).toContain(articleText.trim());
+  const {dneskaiBriefOffer,dneskaiBriefPrompt}=await import('@/lib/marketing/dneskai-generation');
+  const offer=dneskaiBriefOffer(outcome.brief,['Test publisher']);expect(offer.evidence[0]!.excerpt).toContain('Richer public article evidence.');
+  expect(JSON.parse(dneskaiBriefPrompt(offer)).media[0].sourceAltText).toBe('A source description.');
+  const {DneskaiBriefSchema}=await import('@/lib/marketing/dneskai-brief');
+  const legacy={...outcome.brief,schemaVersion:'dneskai-brief/1',evidence:outcome.brief.evidence.map(({...e})=>{delete (e as {articleText?:string}).articleText;return e;}),media:outcome.brief.media.map(({...m})=>{delete (m as {sourceAltText?:string}).sourceAltText;return m;})};
+  expect(DneskaiBriefSchema.safeParse(legacy).success).toBe(true);
+  expect(DneskaiBriefSchema.safeParse({...legacy,evidence:outcome.brief.evidence}).success).toBe(false);
+ });
+ it('never turns a caption-only source into article prose',()=>{
+  const candidate=report('instagram:technology','caption-only',0,'Short caption',{url:'https://www.instagram.com/reel/SYNTHETIC/',instagram:{mediaType:'video'}});
+  const result=buildDneskaiBrief({eventId:dneskaiEventId(candidate.id),memberHash:dneskaiEventMemberHash([candidate]),targetDate:'2026-10-21',category:'ai-news',scheduledAt:'2026-10-21T06:00:00Z',observedAt:new Date('2026-10-20T20:30:00Z'),members:[{candidate,articleText:'Not a transcript. '.repeat(100),media:[]}]});
+  expect(result).toMatchObject({brief:{evidence:[{captionOnly:true,excerpt:'Short caption'}]}});
+  if('brief' in result)expect(result.brief.evidence[0]).not.toHaveProperty('articleText');
+ });
+});

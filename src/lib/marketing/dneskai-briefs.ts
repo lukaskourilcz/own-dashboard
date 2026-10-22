@@ -87,7 +87,7 @@ export function assignDneskaiBriefSlots(briefs: ReadonlyArray<{ id: string; rank
   return result;
 }
 
-export type DneskaiBriefMember = { candidate: DneskaiCandidate; media: readonly DneskaiMediaAssetView[] };
+export type DneskaiBriefMember = { candidate: DneskaiCandidate; media: readonly DneskaiMediaAssetView[]; articleText?:string };
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2048);
 const sourceName = (sourceId: string) => DNESKAI_SOURCES.find((source) => source.id === sourceId)?.name ?? sourceId;
 function firstLine(value: string) { return (value.trim().split(/\r?\n/, 1)[0] ?? '').trim(); }
@@ -109,6 +109,7 @@ export function buildDneskaiBrief(input: { eventId: string; memberHash: string; 
   if (!ranked.length) return { code: 'brief-evidence-unavailable' };
   const evidence: DneskaiBriefEvidence[] = ranked.map((candidate) => ({
     candidateId: candidate.id, sourceId: candidate.sourceId, url: safeEvidenceUrl(candidate.url)!, title: evidenceTitle(candidate), excerpt: candidate.text.slice(0, 4000),
+    ...(!dneskaiCaptionOnly(candidate)&&input.members.find(m=>m.candidate.id===candidate.id)?.articleText?{articleText:input.members.find(m=>m.candidate.id===candidate.id)!.articleText}:{}),
     publishedAt: candidate.publishedAt, dateEstimated: candidate.dateEstimated === true, captionOnly: dneskaiCaptionOnly(candidate),
   }));
   const seen = new Set<string>();
@@ -116,13 +117,14 @@ export function buildDneskaiBrief(input: { eventId: string; memberHash: string; 
     if (seen.has(asset.sha256)) return [];
     seen.add(asset.sha256);
     return [{ assetSha256: asset.sha256, candidateId: candidate.id, position: asset.position, credit: asset.credit, width: asset.width, height: asset.height,
+      ...(asset.sourceAltText?{sourceAltText:asset.sourceAltText}:{}),
       originKind: asset.originKind, fullBleedCapable: asset.fullBleedCapable, insetCapable: asset.insetCapable }];
   })).slice(0, DNESKAI_BRIEF_MEDIA_LIMIT);
   const primary = ranked[0]!;
-  const singleImage = primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;
+  const singleImage = Math.max(primary.text.trim().length, dneskaiCaptionOnly(primary)?0:(input.members.find(m=>m.candidate.id===primary.id)?.articleText?.length??0)) < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;
   const observedAt = input.observedAt.toISOString();
   const parsed = DneskaiBriefSchema.safeParse({
-    schemaVersion: 'dneskai-brief/1', eventId: input.eventId, memberHash: input.memberHash, targetDate: input.targetDate, category: input.category,
+    schemaVersion: 'dneskai-brief/2', eventId: input.eventId, memberHash: input.memberHash, targetDate: input.targetDate, category: input.category,
     title: evidence[0]!.title.slice(0, 300), evidence, media, suggestedFormat: singleImage ? 'single-image' : 'carousel',
     scheduledAt: input.scheduledAt, timeZone: 'Europe/Prague', observedAt, expiresAt: new Date(input.observedAt.getTime() + dneskaiBriefLifetimeMs(input.category)).toISOString(),
   });
@@ -319,7 +321,7 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
       if (!slot) { await skip(row, 'brief-slot-unavailable'); continue; }
       const withMedia = await Promise.all(members.map(async (member) => {
         const view = await store.media(input.owner, input.project, member.id);
-        return { candidate: member.candidate, media: view ? dneskaiOfferableMediaAssets(view) : [] };
+        return { candidate: member.candidate, articleText:view?.articleText, media: view ? dneskaiOfferableMediaAssets(view) : [] };
       }));
       const outcome = buildDneskaiBrief({ eventId: row.event_id, memberHash: row.member_hash, targetDate: row.target_date, category: row.category, scheduledAt: slot, observedAt: clock(), members: withMedia });
       if ('code' in outcome) { await skip(row, outcome.code); continue; }

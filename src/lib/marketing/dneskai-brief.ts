@@ -6,7 +6,7 @@ import { z } from "zod";
  * BoardlessAI article as the input of a DNESKAi social post. Research selection is not fact verification and
  * not approval; the owner still approves the exact rendered revision.
  */
-export const DNESKAI_BRIEF_VERSION = "dneskai-brief/1";
+export const DNESKAI_BRIEF_VERSION = "dneskai-brief/2";
 
 const id = z.string().min(1).max(200);
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
@@ -46,8 +46,8 @@ export const DneskaiBriefMediaSchema = z.strictObject({
 });
 export type DneskaiBriefMedia = z.infer<typeof DneskaiBriefMediaSchema>;
 
-export const DneskaiBriefSchema = z.strictObject({
-  schemaVersion: z.literal(DNESKAI_BRIEF_VERSION),
+const DneskaiBriefV1Schema = z.strictObject({
+  schemaVersion: z.literal("dneskai-brief/1"),
   eventId: id,
   /** sha256 over the sorted member candidate ids and their content hashes; changes when the event changes. */
   memberHash: sha256,
@@ -63,7 +63,13 @@ export const DneskaiBriefSchema = z.strictObject({
   timeZone: z.literal("Europe/Prague"),
   observedAt: timestamp,
   expiresAt: timestamp,
-}).superRefine((brief, context) => {
+});
+const DneskaiBriefV2Schema=DneskaiBriefV1Schema.extend({
+ schemaVersion:z.literal(DNESKAI_BRIEF_VERSION),
+ evidence:z.array(DneskaiBriefEvidenceSchema.extend({articleText:z.string().max(4000).optional()})).min(1).max(30),
+ media:z.array(DneskaiBriefMediaSchema.extend({sourceAltText:z.string().max(1000).optional()})).max(30)
+});
+export const DneskaiBriefSchema=z.discriminatedUnion("schemaVersion",[DneskaiBriefV1Schema,DneskaiBriefV2Schema]).superRefine((brief, context) => {
   const candidates = new Set(brief.evidence.map((item) => item.candidateId));
   brief.media.forEach((item, index) => {
     if (!candidates.has(item.candidateId)) context.addIssue({ code: "custom", message: "media must belong to an evidence candidate", path: ["media", index, "candidateId"] });

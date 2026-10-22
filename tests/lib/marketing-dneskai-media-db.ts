@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
  * An isolated WASM Postgres with the Supabase roles, a storage schema stand-in and the migrations the
  * DNESKAi media tables depend on, executed unchanged. The clock is simulated through `marketing.test_time`.
  */
-export const MEDIA_MIGRATIONS = ['20261012225640_marketing_control_surface.sql', '20261013001528_marketing_private_assets.sql', '20261013165236_marketing_dneskai_collection.sql', '20261020130000_dneskai_source_media.sql'];
+export const MEDIA_MIGRATIONS = ['20261012225640_marketing_control_surface.sql', '20261013001528_marketing_private_assets.sql', '20261013165236_marketing_dneskai_collection.sql', '20261020130000_dneskai_source_media.sql', '20261022020702_dneskai_richer_brief_evidence.sql'];
 
 export async function createMediaDatabase(users: readonly string[], projects: ReadonlyArray<{ id: string; owner: string }>, instant: string) {
   const db = new PGlite();

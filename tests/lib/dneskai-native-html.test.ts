@@ -179,3 +179,10 @@ describe('free image references in the feed contract', () => {
   expect((await collectNativeDneskaiFeed(source('stackexchange-ml'), since, { now, signal, fetcher, resolve })).sources[0]).toMatchObject({ status: 'ok', errorCode: null, items: [] });
  });
 });
+
+
+it('prefers RSS content:encoded to a short description without fetching another page',async()=>{
+ const body='<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Fixture</title><item><title>Test release</title><link>https://example.test/release</link><description>Short snippet</description><content:encoded><![CDATA[<p>Richer public evidence with a source fact.</p>]]></content:encoded></item></channel></rss>';
+ const items=await parseRssFeed(body,config('rest-of-world'),new Date('2026-10-20T20:00:00Z'));
+ expect(items[0]?.summary).toBe('Richer public evidence with a source fact.');
+});

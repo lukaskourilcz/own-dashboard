@@ -1,3 +1,4 @@
+import { sanitizeExternalContent } from "./free-feeds/security/content";
 import * as cheerio from 'cheerio';
 import type { DneskaiCandidate, DneskaiSource } from './dneskai-contracts';
 import { parseSafeHttpsUrl } from './free-feeds/security/url';
@@ -22,6 +23,8 @@ export interface DneskaiMediaPlanEntry {
   kind: DneskaiMediaOriginKind;
   /** Tried when `url` (a full-size rendition derived from it) cannot be fetched. */
   fallbackUrl?: string;
+  /** Publisher metadata, untrusted and never a vision description. */
+  sourceAltText?: string;
 }
 
 export const DNESKAI_MEDIA_INSTAGRAM_LIMIT = 10;
@@ -239,11 +242,14 @@ export function extractArticleMedia(html: string, pageUrl: string, options: { al
   const baseHref = $('base[href]').first().attr('href');
   let base = page;
   try { if (baseHref) { const declared = new URL(baseHref, page); if (declared.protocol === 'https:') base = declared; } } catch { /* the page URL stays the base */ }
-  const found: Array<{ url: string; kind: DneskaiMediaOriginKind }> = [];
-  const push = (raw: string | undefined, kind: DneskaiMediaOriginKind) => { const url = usableImageUrl(raw, base, options.allowImage); if (url) found.push({ url, kind }); };
+  const found: Array<{ url: string; kind: DneskaiMediaOriginKind; sourceAltText?: string }> = [];
+  const push = (raw: string | undefined, kind: DneskaiMediaOriginKind, alt?:string) => {
+    const url = usableImageUrl(raw, base, options.allowImage);const sourceAltText=cleanSourceText(alt??"",1000);
+    if (url) found.push({ url, kind, ...(sourceAltText?{sourceAltText}:{}) });
+  };
 
   for (const selector of ["meta[property='og:image']", "meta[property='og:image:secure_url']", "meta[property='og:image:url']", "meta[name='twitter:image']", "meta[name='twitter:image:src']", "meta[property='twitter:image']"]) {
-    $(selector).each((_, element) => push($(element).attr('content'), 'og-image'));
+    $(selector).each((_, element) => push($(element).attr('content'), 'og-image', $("meta[property='og:image:alt'], meta[name='twitter:image:alt']").first().attr('content')));
   }
   for (const image of options.feedImages ?? []) push(image, 'feed-image');
 
@@ -274,7 +280,7 @@ export function extractArticleMedia(html: string, pageUrl: string, options: { al
       if (own) srcsets.push(own);
       const src = [image.attr('data-src'), image.attr('data-lazy-src'), image.attr('data-original'), image.attr('src')].find((value) => value && !/^data:/i.test(value.trim()));
       // srcset lists the renditions; the widest one across the picture's sources and the img wins.
-      push((srcsets.length ? largestSrcsetCandidate(srcsets.join(', ')) : undefined) ?? src, 'article-figure');
+      push((srcsets.length ? largestSrcsetCandidate(srcsets.join(', ')) : undefined) ?? src, 'article-figure', [image.attr('alt'),image.closest('figure').find('figcaption').text()].filter(Boolean).join(' · '));
     });
   }
 
@@ -282,10 +288,28 @@ export function extractArticleMedia(html: string, pageUrl: string, options: { al
   const entries: DneskaiMediaPlanEntry[] = [];
   for (const item of found) {
     const { url, fallbackUrl } = fullSizeImageUrl(item.url);
-    if (seen.has(url) || (fallbackUrl && seen.has(fallbackUrl))) continue;
+    if (seen.has(url) || (fallbackUrl && seen.has(fallbackUrl))) {
+      const previous=entries.find(entry=>entry.url===url||entry.url===fallbackUrl||entry.fallbackUrl===url);
+      if(previous&&!previous.sourceAltText&&item.sourceAltText)previous.sourceAltText=item.sourceAltText;
+      continue;
+    }
     seen.add(url); if (fallbackUrl) seen.add(fallbackUrl);
-    entries.push({ position: entries.length, url, kind: item.kind, ...(fallbackUrl ? { fallbackUrl } : {}) });
+    entries.push({ position: entries.length, url, kind: item.kind, ...(fallbackUrl ? { fallbackUrl } : {}), ...(item.sourceAltText?{sourceAltText:item.sourceAltText}:{}) });
     if (entries.length >= (options.limit ?? DNESKAI_MEDIA_FEED_LIMIT)) break;
   }
   return entries;
+}
+
+
+function cleanSourceText(value:string,max:number):string {
+ const clean=sanitizeExternalContent(value,max);return clean.promptInjectionSignals.length?"":clean.text;
+}
+/** Public article prose from the page already fetched for pictures. Navigation and instructions are excluded. */
+export function extractArticleText(html:string):string {
+ const $=cheerio.load(html);
+ $('script,style,noscript,nav,header,footer,aside,form,[hidden],[aria-hidden="true"]').remove();
+ const articles=$('article').toArray().sort((a,b)=>$(b).find('p').text().length-$(a).find('p').text().length);
+ const container=articles[0]??$('main,[role=main]').first().get(0);if(!container)return "";
+ const paragraphs=$(container).find('p,h1,h2,h3,li,blockquote').toArray().filter(el=>!$(el).parentsUntil(container).is('nav,aside,form'));
+ return cleanSourceText(paragraphs.map(el=>$(el).text().trim()).filter(Boolean).join('\n'),4000);
 }

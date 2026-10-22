@@ -8,7 +8,7 @@ import { safeFetch, SourceHttpError, UnsafeUrlError } from './free-feeds/securit
 import { SOURCE_USER_AGENT } from './free-feeds/sources/adapters/util';
 import { DneskaiMediaImageError, inspectDneskaiImage } from './dneskai-media-image';
 import {
-  DNESKAI_MEDIA_ORIGIN_KINDS, dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, extractArticleMedia,
+  DNESKAI_MEDIA_ORIGIN_KINDS, dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, extractArticleMedia, extractArticleText,
   instagramImageUrlPolicy, instagramMediaPlan, publisherImageUrlPolicy, type DneskaiImageUrlPolicy, type DneskaiMediaPlanEntry,
 } from './dneskai-media-plan';
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
@@ -223,7 +223,7 @@ const BeginSchema = z.object({
   claimed: z.boolean(), reason: z.string().optional(), candidate: z.unknown().optional(),
   state: z.object({
     status: z.enum(['pending', 'complete', 'partial', 'failed', 'empty']),
-    plan: z.array(z.object({ position: z.number().int(), url: z.string(), kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), fallbackUrl: z.string().optional() })).nullable(),
+    plan: z.array(z.object({ position: z.number().int(), url: z.string(), kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), fallbackUrl: z.string().optional(), sourceAltText: z.string().max(1000).optional() })).nullable(),
     skipped: z.array(z.object({ position: z.number().int(), code: z.string(), retryable: z.boolean(), attempts: z.number().int() })),
     page_attempts: z.number().int(), asset_count: z.number().int(),
   }).optional(),
@@ -301,6 +301,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
       try {
         const page = await fetchArticle(candidate.url, deps, deps.signal);
         plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls });
+        await rpc(db,'marketing_media_set_evidence',{p_owner:owner,p_project:project,p_candidate:candidateId,p_fence:fence,p_article_text:extractArticleText(page.html)});
         await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'ok', p_page_error: null });
       } catch (error) {
         if (error instanceof DneskaiMediaError) throw error;
@@ -451,6 +452,7 @@ const LinkRowSchema = z.object({
 });
 const CollectionRowSchema = z.object({
   candidate_id: z.string(), status: z.enum(['pending', 'complete', 'partial', 'failed', 'empty']), page_status: z.enum(['not-applicable', 'pending', 'ok', 'failed']), page_error: z.string().nullable(),
+  article_text: z.string().max(4000).default(''), plan:z.array(z.object({position:z.number().int(),sourceAltText:z.string().max(1000).optional()})).nullable().optional(),
   attempted_at: z.string().nullable(), completed_at: z.string().nullable(), skipped: z.array(z.object({ position: z.number().int(), code: z.string() }).loose()),
 });
 
@@ -468,7 +470,7 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
   if (!candidates.length) return { schemaVersion: DNESKAI_MEDIA_READ_VERSION, candidates: [] };
   const ids = candidates.map((candidate) => candidate.id);
   const [collections, links] = await Promise.all([
-    db.from('marketing_media_collections').select('candidate_id,status,page_status,page_error,attempted_at,completed_at,skipped').eq('user_id', owner).eq('project_id', project).in('candidate_id', ids),
+    db.from('marketing_media_collections').select('candidate_id,status,page_status,page_error,attempted_at,completed_at,skipped,article_text,plan').eq('user_id', owner).eq('project_id', project).in('candidate_id', ids),
     db.from('marketing_media_asset_links').select('candidate_id,position,origin_url,origin_kind,credit,asset:marketing_media_assets(id,sha256,width,height,mime,bytes,storage_path,fetched_at,duplicate_of_asset_id,purged_at)')
       .eq('user_id', owner).eq('project_id', project).in('candidate_id', ids).order('position', { ascending: true }).limit(100),
   ]);
@@ -492,9 +494,11 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
       const collection = collectionRows.get(candidate.id);
       return {
         candidateId: candidate.id, sourceId: candidate.sourceId, title: candidate.title, url: candidate.url, candidateStatus: candidate.status,
+        ...(collection?.article_text?{articleText:collection.article_text}:{}),
         captionOnly: dneskaiCaptionOnly(candidate), mediaType: candidate.instagram?.mediaType ?? null,
         collection: collection ? { status: collection.status, pageStatus: collection.page_status, pageError: collection.page_error, attemptedAt: collection.attempted_at, completedAt: collection.completed_at, skipped: collection.skipped.map(({ position, code }) => ({ position, code })) } : null,
         assets: linkRows.filter((row) => row.candidate_id === candidate.id).sort((left, right) => left.position - right.position).map((row) => ({
+          ...(collection?.plan?.find(p=>p.position===row.position)?.sourceAltText?{sourceAltText:collection.plan.find(p=>p.position===row.position)!.sourceAltText}:{}),
           assetId: row.asset.id, sha256: row.asset.sha256, position: row.position, originKind: row.origin_kind, originUrl: row.origin_url, credit: row.credit,
           width: row.asset.width, height: row.asset.height, mime: row.asset.mime, bytes: row.asset.bytes, fetchedAt: row.asset.fetched_at,
           ...dneskaiMediaCapabilities(row.asset),

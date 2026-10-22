@@ -206,7 +206,8 @@ function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: Offe
   const presented = brief.evidence.slice(0, plan.evidence);
   const evidence = presented.map((item, index) => {
     const allowance = Math.min(index === 0 ? PRIMARY_EXCERPT : SUPPORTING_EXCERPT, remaining);
-    const excerpt = allowance >= 120 ? shortened(item.excerpt, allowance) : "";
+    const articleText="articleText" in item&&!item.captionOnly?item.articleText:undefined;
+    const excerpt = allowance >= 120 ? shortened([item.excerpt,articleText].filter(Boolean).join("\n\n"), allowance) : "";
     remaining -= excerpt.length;
     return { index, publisher: publishers[index] || dneskaiFallbackPublisher(item), title: shortened(item.title, TITLE_CHARS), excerpt,
       published: item.publishedAt && !item.dateEstimated ? czechDate(item.publishedAt) : null, captionOnly: item.captionOnly, url: item.url };
@@ -253,7 +254,7 @@ export function dneskaiBriefPrompt(offer: DneskaiBriefOffer): string {
     rules: offer.rules,
     evidence: offer.evidence.map(({ url, ...item }) => { void url; return item; }),
     media: offer.media.map((item) => ({ assetSha256: item.assetSha256, evidenceIndex: item.evidenceIndex, position: item.position, credit: item.credit, originKind: item.originKind,
-      width: item.width, height: item.height, fullBleedCapable: item.fullBleedCapable, insetCapable: item.insetCapable, singlePhotoCapable: item.singlePhotoCapable })),
+      width: item.width, height: item.height, fullBleedCapable: item.fullBleedCapable, insetCapable: item.insetCapable, singlePhotoCapable: item.singlePhotoCapable, ...("sourceAltText" in item&&item.sourceAltText?{sourceAltText:item.sourceAltText}:{}) })),
     // Owner-reviewed presentation knowledge does not apply to briefs (#95, #101 decoupled).
     presentationOnly: [],
   });

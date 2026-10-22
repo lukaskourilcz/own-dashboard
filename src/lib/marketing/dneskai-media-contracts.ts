@@ -24,6 +24,7 @@ export const DneskaiMediaAssetViewSchema = z.strictObject({
   originUrl: z.url().max(2048),
   /** „Foto: @účet“ or „Obrázek: vydavatel“; always present (owner decision 7, #110). */
   credit: z.string().min(1).max(120),
+  sourceAltText:z.string().max(1000).optional(),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   mime: z.enum(['image/jpeg', 'image/png', 'image/webp']),
@@ -50,6 +51,7 @@ export const DneskaiMediaCandidateViewSchema = z.strictObject({
   candidateStatus: z.enum(['new', 'held', 'duplicate', 'rejected', 'selected']),
   /** The text is an Instagram caption, never a transcript of the video. */
   captionOnly: z.boolean(),
+  articleText:z.string().max(4000).optional(),
   mediaType: z.enum(['image', 'carousel', 'video']).nullable(),
   /** null: media were never collected for this candidate. */
   collection: z.strictObject({

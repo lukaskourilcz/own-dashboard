@@ -124,6 +124,10 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
     const result = await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store });
     expect(result.candidates[0]).toMatchObject({ status: 'complete', assets: 3, skipped: [{ position: 2, code: 'media-excluded-small' }] });
     expect(web.count(page)).toBe(1);
+    const evidence=(await pg.query<{article_text:string;plan:Array<{sourceAltText?:string}>}>('select article_text,plan from marketing_media_collections where candidate_id=$1',[id])).rows[0]!;
+    expect(evidence.article_text).toBe('OFFLINE TEST body paragraph.');
+    expect(evidence.plan[1]!.sourceAltText).toBe('OFFLINE');
+    await expect(pg.query('select marketing_media_set_evidence($1,$2,$3,$4,$5)',[owner,project,id,'99999999-9999-4999-8999-999999999999','changed'])).rejects.toThrow('media fence unavailable');
     const rows = await assetsOf(id);
     expect(rows.map((row) => [row.position, row.origin_kind, row.origin_url, row.credit])).toEqual([
       [0, 'og-image', 'https://www.theverge.com/wp-content/uploads/2026/10/hero.jpg?quality=90&strip=all', 'Obrázek: The Verge'],

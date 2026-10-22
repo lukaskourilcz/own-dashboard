@@ -19,6 +19,7 @@ interface RssItem {
   link?: string;
   title?: string;
   contentSnippet?: string;
+  "content:encoded"?: string;
   content?: string;
   summary?: string;
   isoDate?: string;
@@ -52,7 +53,7 @@ export function projectRssItem(
     item.link,
     {
       title: item.title,
-      summary: item.contentSnippet ?? item.content ?? item.summary,
+      summary: item["content:encoded"]?.trim() || item.content?.trim() || item.contentSnippet || item.summary,
       publishedAt: item.isoDate ?? item.pubDate,
       // isoDate is normalised to UTC; the written pubDate still shows a day-only "00:00:00 -0400".
       dateText: item.pubDate,

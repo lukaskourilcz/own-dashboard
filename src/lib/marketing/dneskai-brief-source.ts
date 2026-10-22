@@ -29,12 +29,13 @@ export function dneskaiBriefLifetimeMs(category: DneskaiBriefCategory): number {
 export function dneskaiBriefSourcePacket(brief: DneskaiBrief, options: { observedAt?: string; eligible?: boolean; eligibilityReason?: string } = {}): SourcePacket {
   const value = DneskaiBriefSchema.parse(brief);
   const primary = value.evidence[0]!;
+  const text=(item:typeof primary)=>[item.excerpt,...("articleText" in item&&!item.captionOnly?[item.articleText]:[])].filter(Boolean).join("\n\n");
   const content = {
     title: value.title.slice(0, 300),
-    body: (primary.excerpt.trim() || primary.title).slice(0, 12000),
+    body: (text(primary).trim() || primary.title).slice(0, 12000),
     category: value.category,
     difficulty: null, code: null, options: [], answer: null, explanation: null,
-    evidence: value.evidence.map((item) => ({ url: item.url, title: item.title.slice(0, 300), excerpt: item.excerpt.slice(0, 2000), checkedAt: value.observedAt })),
+    evidence: value.evidence.map((item) => ({ url: item.url, title: item.title.slice(0, 300), excerpt: text(item).slice(0, 2000), checkedAt: value.observedAt })),
     image: null,
   };
   return parseSourcePacket({
