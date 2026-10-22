@@ -59,6 +59,16 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 
 The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and the second paid action of a page is refused by a $1 stand-in ceiling. Design Lab stays inside the review tab (decision 10).
 
+## Comment and message (#159)
+
+With the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` the read sends `capabilities.engagement: true` and the post card shows „Komentář a zpráva“ under the caption (`lab/engagement-editor.tsx`). A post with a keyword shows three fields:
+
+- **Keyword.** Typed text turns upper case; a valid word (Latin letters and digits, 1 to 24) shows as a chip. Diacritics, spaces or punctuation mark the field invalid in place.
+- **DM message.** A textarea with a 1,000-character counter and a chat-bubble preview under `@account`.
+- **Public reply.** Starts with „Poslali jsme vám to do zpráv.“ (`DNESKAI_DEFAULT_PUBLIC_REPLY`), 200 characters at most. Emptied, no public reply is sent.
+
+A post without a keyword, such as a news post, shows „Přidat klíčové slovo“; „Odebrat klíčové slovo“ takes it away again. The deck draft holds the three fields as typed. `dneskaiEditRequest` sends `engagement` only when its normalised form (trimmed, keyword upper case, empty reply left out) differs from the saved one, and `null` after a removal. That change counts in the dirty check, so Approve waits for a save, and the saved version gets a new hash that needs its own approval. `draftProblems` refuses what the server would refuse before anything is sent. An engagement-only save reuses the rendered JPEGs. Nothing is sent to commenters yet; the comment watcher (#160) has its own switch.
+
 ## Topics (náměty, #150)
 
 A topic is a working title the owner approves before the pipeline pays for enrichment, pictures or generation (plan A1). `GET /api/marketing/dneskai/topics?projectId=` returns the owner's topics grouped by kind (`news`, `education`) and status: every open topic, the newest 120, and the rejected or expired ones of the last 14 days, the newest 40. Each topic carries its title, source (domain or Instagram handle), keyword, verdict and dates; `lastProposedAt` says when the pipeline last proposed one. `POST` takes `approve`, `reject` or `restore` with up to 40 `topicIds` and answers per topic, `edit` with a title and a keyword (or `null`), and `create` with a kind and a URL, a title or both. A topic that changed meanwhile answers `topic-status-changed`; the same manual URL twice answers `topic-exists`.

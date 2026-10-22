@@ -56,7 +56,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 | Bank (GoCardless) | Daily transaction sync | `src/lib/gocardless.ts`, `src/lib/bank*` | As configured; no new bank work planned |
 | Jina Reader | Link enrichment: only the submitted URL is sent | `src/lib/link-library.ts` | Live |
 | **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
-| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0 | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
+| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0; Facebook Login for Business is a prepared second mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
 | **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions | `src/lib/marketing/generation.ts`, `dneskai-generation.ts` | Key set, live |
 | **Jev** (typesafe.ai, `jev-1.13.0`) | Classifies collected stories (category, relevance, on-topic) | `src/lib/marketing/dneskai-providers.ts` | Live, about $0.002 a night |
 | Apify | Instagram profile collection and a research plan | `dneskai-collection.ts`, `dneskai-apify-research*.ts` | Token set, **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`) |
@@ -81,6 +81,7 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | Step | What it does | Code |
 |---|---|---|
 | 1 collection | From 22:00 Prague, reads the native feeds (RSS, Atom, JSON, HTML; registry in `dneskai-registry.ts`), dedups, and asks Jev to classify the candidates | `dneskai-collection.ts`, `dneskai-native-feed.ts`, `free-feeds/` |
+| 1a scouting | Only with `DNESKAI_SCOUTING_ENABLED`: hourly from 22:00 to 08:00, turns the night's reports from education sources and library links rated 4 or 5 into proposed topics (`marketing_dneskai_topics`); no model call, no lease | `dneskai-scouting.ts` |
 | 2 media | Downloads the pictures of selected stories (og:image, article figures), stores them by sha256 with credit, pHash and size | `dneskai-media*.ts` |
 | 3 briefs | Groups stories into events, picks up to four, writes one brief per slot (`marketing_dneskai_briefs`) | `dneskai-events.ts`, `dneskai-briefs.ts` |
 | 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
@@ -100,7 +101,7 @@ headlines become one event. The deployed SQL (`marketing_dneskai_finish`) picks 
 relevance. A prepared migration switches this to relevance first, with at most one non-news story a day, and gives
 held stories one automatic second review (section 8).
 
-### Generation (`marketing-copy/6`)
+### Generation (`marketing-copy/7`)
 
 One structured Claude call per brief (Claude Sonnet 5.5, $2/$10 per million tokens). The model writes the title,
 caption, hashtags and 4 to 7 slides (types `cover-photo`, `figure`, `split`, `statement`, or one `single`), and picks

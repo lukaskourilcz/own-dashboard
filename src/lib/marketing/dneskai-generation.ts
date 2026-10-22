@@ -6,6 +6,7 @@ import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type Dnesk
 import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
+import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
 
 /**
  * Generation v5 for DNESKAi (#116): one structured Claude call turns a research brief (#115) into the
@@ -17,7 +18,7 @@ import { marketingHumanizerInstructions } from "./humanizer";
  * given is checked here before anything is rendered, and the studio's own gate (`validateDneskaiDeck`)
  * then decides whether the words fit. This module has no I/O; `generation.ts` runs the call.
  */
-export const MARKETING_BRIEF_PROMPT_VERSION = "marketing-copy/6";
+export const MARKETING_BRIEF_PROMPT_VERSION = "marketing-copy/7";
 /** The `templateVersion` of a DNESKAi deck job and revision: the vendored studio renderer it targets. */
 export const DNESKAI_DECK_TEMPLATE_VERSION = DNESKAI_RENDERER_VERSION;
 /** A carousel carries at most this many slides, all written by the model; no sources slide is appended. */
@@ -95,6 +96,14 @@ export const DneskaiCopySchema = z.strictObject({
   slides: z.array(DneskaiCopySlideSchema).min(1).max(DNESKAI_MAX_CONTENT_SLIDES),
 });
 export type DneskaiCopy = z.infer<typeof DneskaiCopySchema>;
+/** The DM a keyword comment receives (#158): 400 to 900 characters in the prompt, checked by `validateDneskaiReplyMessage`. */
+export const DNESKAI_REPLY_MESSAGE_MIN = 400, DNESKAI_REPLY_MESSAGE_MAX = 900;
+/**
+ * `marketing-copy/7` for an education topic (#158): the same answer plus `replyMessage`, the private message sent to
+ * whoever comments the keyword. News briefs use `DneskaiCopySchema` and are never asked for one.
+ */
+export const DneskaiEducationCopySchema = DneskaiCopySchema.extend({ replyMessage: z.string().min(1).max(1000) });
+export type DneskaiEducationCopy = z.infer<typeof DneskaiEducationCopySchema>;
 export type DneskaiCopySlide = z.infer<typeof DneskaiCopySlideSchema>;
 /**
  * The official SDK transformation, as for `marketing-copy/4`: lengths, the hash pattern and the enums travel as
@@ -103,6 +112,12 @@ export type DneskaiCopySlide = z.infer<typeof DneskaiCopySlideSchema>;
  */
 export function dneskaiCopyWireSchema(): Record<string, unknown> {
   return transformJSONSchema(z.toJSONSchema(DneskaiCopySchema));
+}
+/** What the education turn asks of `replyMessage`; news calls never see it, so their system prompt is unchanged. */
+export const DNESKAI_REPLY_MESSAGE_RULE = `This is an education post: also write replyMessage, the private message a reader receives after commenting the post's keyword. Czech, ${DNESKAI_REPLY_MESSAGE_MIN} to ${DNESKAI_REPLY_MESSAGE_MAX} characters, plain text with line breaks: what the tool or method is in one or two sentences; how to start, in three numbered steps (1., 2., 3.); what it costs, only if the evidence states it; one honest caveat. The system prompt's fact rules bind it exactly as they bind the caption: only what the evidence states, every number from the evidence, the actor named, no talk about sources or verification. At most one URL, copied exactly from links, never another. No greeting, no sign-off, no emoji, no markdown, no hashtags and no call to follow, share or comment. Code writes the caption line that asks readers to comment the keyword; never write it yourself.`;
+/** The wire schema of an education brief call: the news schema plus `replyMessage`. */
+export function dneskaiEducationCopyWireSchema(): Record<string, unknown> {
+  return transformJSONSchema(z.toJSONSchema(DneskaiEducationCopySchema));
 }
 
 const SYSTEM_RULES = [
@@ -135,7 +150,7 @@ export const DNESKAI_BRIEF_SYSTEM_PROMPT = [SYSTEM_RULES, marketingHumanizerInst
  * prompt (rules and Humanizer), the wire schema and the text limits. A revision's `promptVersion` carries it.
  */
 export const MARKETING_BRIEF_PROMPT_FINGERPRINT = contentHash({
-  version: MARKETING_BRIEF_PROMPT_VERSION, system: DNESKAI_BRIEF_SYSTEM_PROMPT, schema: dneskaiCopyWireSchema(), limits: DNESKAI_TEXT_LIMITS,
+  version: MARKETING_BRIEF_PROMPT_VERSION, system: DNESKAI_BRIEF_SYSTEM_PROMPT, schema: dneskaiCopyWireSchema(), educationSchema: dneskaiEducationCopyWireSchema(), educationRule: DNESKAI_REPLY_MESSAGE_RULE, limits: DNESKAI_TEXT_LIMITS,
 });
 export const MARKETING_BRIEF_PROMPT_ID = `${MARKETING_BRIEF_PROMPT_VERSION}+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`;
 
@@ -251,10 +266,21 @@ export function dneskaiOwnerNote(note: string) {
   };
 }
 
-/** The human turn of a brief call. No URL reaches the model; code writes the source lines. */
-export function dneskaiBriefPrompt(offer: DneskaiBriefOffer, ownerNote: ReturnType<typeof dneskaiOwnerNote> | null = null): string {
+/**
+ * An education brief's extra turn (#158): the evidence links the DM may cite, the only URLs that ever reach the model,
+ * and the reminder that the keyword line is code's. The keyword itself is not sent.
+ */
+export type DneskaiEducationPrompt = { links: string[]; rule: string };
+export function dneskaiEducationPrompt(offer: DneskaiBriefOffer): DneskaiEducationPrompt {
+  return { links: [...new Set(offer.evidence.map((item) => item.url))].slice(0, 6),
+    rule: DNESKAI_REPLY_MESSAGE_RULE };
+}
+
+/** The human turn of a brief call. Only an education brief sends URLs (its evidence links, for the DM). */
+export function dneskaiBriefPrompt(offer: DneskaiBriefOffer, ownerNote: ReturnType<typeof dneskaiOwnerNote> | null = null, education: DneskaiEducationPrompt | null = null): string {
   return JSON.stringify({
     ...(ownerNote ? { ownerNote } : {}),
+    ...(education ? { education } : {}),
     brief: { title: offer.brief.title, category: offer.brief.category, targetDate: czechDate(offer.brief.targetDate) },
     rules: offer.rules,
     evidence: offer.evidence.map(({ url, ...item }) => { void url; return item; }),
@@ -408,6 +434,31 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
   return issues;
 }
 
+const URLS = /https?:\/\/[^\s<>"„“]+/gu;
+/**
+ * The education DM (#158) under the same truth rules as the caption: 400 to 900 characters, at most one URL and only
+ * one of the evidence links, no markup or emoji, every number from the evidence, no talk about sources, no hashtag
+ * and no keyword call (code writes that in the caption). Returns code-written issues, never quoting the text.
+ */
+export function validateDneskaiReplyMessage(value: string, offer: DneskaiBriefOffer): DneskaiCopyIssue[] {
+  const issues: DneskaiCopyIssue[] = [];
+  const text = value.trim();
+  const field = "replyMessage";
+  if (text.length < DNESKAI_REPLY_MESSAGE_MIN || text.length > DNESKAI_REPLY_MESSAGE_MAX) issues.push(issue("reply-message-length", null, field, `The replyMessage has ${text.length} characters; write ${DNESKAI_REPLY_MESSAGE_MIN} to ${DNESKAI_REPLY_MESSAGE_MAX}.`));
+  const urls = [...text.matchAll(URLS)].map((match) => match[0].replace(/[.,;:!?)]+$/u, ""));
+  const links = new Set(offer.evidence.map((item) => item.url));
+  if (urls.length > 1) issues.push(issue("reply-message-urls", null, field, "Use at most one URL in the replyMessage."));
+  if (urls.some((url) => !links.has(url))) issues.push(issue("reply-message-url-unknown", null, field, "A URL in the replyMessage is not one of education.links; copy one exactly or leave it out."));
+  const prose = text.replace(URLS, " ");
+  if (UNSAFE_TEXT.test(prose)) issues.push(issue("unsafe-text", null, field, "Remove markup, control characters and emoji."));
+  // Step numbers at a line start („1. Otevřete…“) are list markers, not claims.
+  if (dneskaiUnsupportedNumbers(prose.replace(/^[ \t]*[1-9]\.[ \t]+/gmu, ""), offer.corpus).length) issues.push(issue("unsupported-number", null, field, "A number in the replyMessage does not appear in the evidence; remove it or use only numbers the evidence states."));
+  if (dneskaiTalksAboutSources(prose)) issues.push(issue("source-talk", null, field, "Remove the sentence about sources, confirmation or verification."));
+  if (/(^|\s)#[\p{L}\p{N}]/u.test(prose)) issues.push(issue("caption-hashtag", null, field, "The replyMessage carries no hashtags."));
+  if (/napi(?:š|s)te\s+do\s+komentář/iu.test(prose)) issues.push(issue("reply-message-cta", null, field, "Do not ask for a comment; code writes that line in the caption."));
+  return issues;
+}
+
 /**
  * Phrases that talk about sources, sourcing or verification, which the owner never wants in a slide or a caption
  * (22 October 2026): „Zdrojem je…“, „Údaj pochází od…“, „nezávislé potvrzení chybí“, „Z dostupného textu…“.
@@ -467,21 +518,19 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
   return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, slides });
 }
 
-/**
- * The AI disclosure every DNESKAi caption ends its text with. It states how the post was made, names no source and
- * does not claim a legal requirement.
- */
-export const DNESKAI_AI_DISCLOSURE = "Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.";
+export { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
 
 /**
- * The published caption: the model's text, the AI disclosure and the hashtags (at most `DNESKAI_HASHTAG_LIMIT`). No
+ * The published caption: the model's text, the keyword line when the post has a keyword (#158), the AI disclosure and
+ * the hashtags (at most `DNESKAI_HASHTAG_LIMIT`; the keyword line carries none). No
  * source list, link or picture credit (owner rule, 22 October 2026). Refused when the whole passes 2,200 characters.
  */
-export function assembleDneskaiCaption(copy: DneskaiCopy, offer: DneskaiBriefOffer): { caption: string } | { issue: DneskaiCopyIssue } {
+export function assembleDneskaiCaption(copy: DneskaiCopy, offer: DneskaiBriefOffer, keyword: string | null = null): { caption: string } | { issue: DneskaiCopyIssue } {
   void offer;
   const body = copy.caption.replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const tags = dneskaiHashtags(copy.hashtags).map((tag) => `#${tag}`).join(" ");
-  const caption = [body, DNESKAI_AI_DISCLOSURE, tags].join("\n\n");
+  // #158: with an approved keyword, code's own line asks for the comment, before the disclosure. The model never does.
+  const caption = [body, ...(keyword ? [dneskaiKeywordLine(keyword)] : []), DNESKAI_AI_DISCLOSURE, tags].join("\n\n");
   if (caption.length <= DNESKAI_CAPTION_LIMIT) return { caption };
   const room = DNESKAI_CAPTION_LIMIT - (caption.length - body.length);
   return { issue: issue("caption-too-long", null, "caption", `With the AI disclosure and hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${Math.max(100, room)} characters.`) };

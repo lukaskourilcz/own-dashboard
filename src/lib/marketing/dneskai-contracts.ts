@@ -4,7 +4,7 @@ export const DNESKAI_COLLECTION_VERSION = 'dneskai-collection/1' as const;
 export const DNESKAI_DAILY_TARGET = 4;
 export const DneskaiSourceSchema = z.strictObject({
   id: z.string().min(1).max(100), name: z.string().min(1).max(120), url: z.url(),
-  kind: z.enum(['instagram', 'rss', 'html', 'hn', 'arxiv', 'bluesky', 'spaceflight', 'github', 'stackexchange']),
+  kind: z.enum(['instagram', 'rss', 'html', 'hn', 'hnsearch', 'arxiv', 'bluesky', 'spaceflight', 'github', 'stackexchange']),
   weekdays: z.array(z.number().int().min(0).max(6)).min(1).max(7), maxItems: z.number().int().min(1).max(20),
 });
 export type DneskaiSource = z.infer<typeof DneskaiSourceSchema>;

@@ -236,7 +236,7 @@ export class FakeJev {
 // ------------------------------------------------------------------ Anthropic
 type OfferMedia = { assetSha256: string; evidenceIndex: number; position: number; credit: string; width: number; height: number; fullBleedCapable: boolean; insetCapable: boolean; singlePhotoCapable: boolean };
 type Offer = { brief: { title: string }; rules: { firstSlide: string }; evidence: Array<{ index: number; title: string }>; media: OfferMedia[] };
-/** marketing-copy/6 answers a careful model could give for the two briefs; pictures are chosen by capability, never by content. */
+/** marketing-copy/7 answers a careful model could give for the two briefs; pictures are chosen by capability, never by content. */
 export function fixtureCopy(offer: Offer) {
   const cover = offer.media.find((item) => item.fullBleedCapable)!;
   const inset = offer.media.filter((item) => item.insetCapable && item.assetSha256 !== cover.assetSha256);

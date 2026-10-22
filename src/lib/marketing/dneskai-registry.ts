@@ -13,7 +13,8 @@ export const DNESKAI_REGISTRY_VERSION='dneskai-sources/1';
  */
 export type DneskaiSourceTier = 0 | 1 | 2;
 export interface DneskaiFeedAdapter { readonly query?: string; readonly repos?: readonly string[]; readonly site?: string }
-type DneskaiRegistryEntry = DneskaiSource & { tier?: 0 | 2; adapter?: DneskaiFeedAdapter };
+/** `topic: 'education'` marks a scouting source (#151): its reports become topics (náměty), never Jev news candidates. */
+type DneskaiRegistryEntry = DneskaiSource & { tier?: 0 | 2; adapter?: DneskaiFeedAdapter; topic?: 'education' };
 const instagram: DneskaiRegistryEntry[] = [
   { id: "instagram:mosseri", name: "mosseri", url: "https://www.instagram.com/mosseri/", kind: 'instagram', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], tier: 0 },
   { id: "instagram:meta.ai", name: "meta.ai", url: "https://www.instagram.com/meta.ai/", kind: 'instagram', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], tier: 0 },
@@ -60,10 +61,46 @@ const feeds: DneskaiRegistryEntry[] = [
   { id: "variety", name: "Variety", url: "https://variety.com/feed/", kind: 'rss', maxItems: 20, weekdays: [5] },
   { id: "wired-ai", name: "Wired (AI)", url: "https://www.wired.com/feed/tag/ai/latest/rss", kind: 'rss', maxItems: 20, weekdays: [1] },
 ];
-const entries: ReadonlyMap<string, DneskaiRegistryEntry> = new Map([...instagram, ...feeds].map((entry) => [entry.id, entry]));
-/** The public source rows: the schema is strict, so tier and adapter parameters stay inside this module. */
-export const DNESKAI_SOURCES: readonly DneskaiSource[] = Object.freeze([...entries.values()].map(({ id, name, url, kind, weekdays, maxItems }) =>
-  Object.freeze(DneskaiSourceSchema.parse({ id, name, url, kind, weekdays, maxItems }))));
+/**
+ * Education sources (#151, plan section 5), read only while DNESKAI_SCOUTING_ENABLED is on. Each profile is read on two
+ * weekdays so that, with the news profiles, a day stays near the $0.25 Apify ceiling; the SQL caps hold the rest.
+ * Feed URLs were taken from the plan's seed list on 22 October 2026 and are checked by the first scouting night.
+ * @aimanie and @digitalnihumanista wait for the owner's check and are not listed (DNESKAI_EDUCATION_PENDING_PROFILES).
+ */
+const educationProfile = (handle: string, weekdays: number[]): DneskaiRegistryEntry =>
+  ({ id: `instagram:${handle}`, name: handle, url: `https://www.instagram.com/${handle}/`, kind: 'instagram', maxItems: 10, weekdays, tier: 0, topic: 'education' });
+const education: DneskaiRegistryEntry[] = [
+  educationProfile('itstundeanthony', [1, 4]),
+  educationProfile('godofprompt', [2, 5]),
+  educationProfile('rowancheung', [3, 6]),
+  educationProfile('mreflow', [0, 3]),
+  educationProfile('bensbites', [1, 5]),
+  educationProfile('futurepedia', [2, 6]),
+  educationProfile('therundownai', [0, 4]),
+  educationProfile('czechcrunch', [1, 3]),
+  { id: "claude-code-whats-new", name: "Claude Code · what's new", url: "https://code.claude.com/docs/en/whats-new", kind: 'html', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], tier: 0, topic: 'education' },
+  { id: "product-hunt", name: "Product Hunt", url: "https://www.producthunt.com/feed", kind: 'rss', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], tier: 2, topic: 'education' },
+  { id: "show-hn", name: "Show HN (over 200 points)", url: "https://hn.algolia.com/api/v1/search_by_date?tags=show_hn&numericFilters=points%3E200", kind: 'hnsearch', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], tier: 2, topic: 'education' },
+  { id: "bens-bites", name: "Ben's Bites", url: "https://www.bensbites.com/feed", kind: 'rss', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], tier: 2, topic: 'education' },
+  { id: "aisdg", name: "AISDG digest", url: "https://aisdg.substack.com/feed", kind: 'rss', maxItems: 10, weekdays: [1, 4], tier: 2, topic: 'education' },
+  { id: "perplexity-changelog", name: "Perplexity changelog", url: "https://www.perplexity.ai/changelog", kind: 'html', maxItems: 10, weekdays: [2, 5], tier: 0, topic: 'education' },
+  { id: "devto-github", name: "dev.to · GitHub", url: "https://dev.to/feed/tag/github", kind: 'rss', maxItems: 10, weekdays: [3], tier: 2, topic: 'education' },
+  { id: "webcrew", name: "WebCrew", url: "https://webcrew.cz/feed/", kind: 'rss', maxItems: 10, weekdays: [1], topic: 'education' },
+  { id: "czechcrunch-ai", name: "CzechCrunch · AI", url: "https://cc.cz/umela-inteligence/feed/", kind: 'rss', maxItems: 10, weekdays: [0, 1, 2, 3, 4, 5, 6], topic: 'education' },
+];
+/** Profiles from the plan that stay unread until the owner confirms them. */
+export const DNESKAI_EDUCATION_PENDING_PROFILES = Object.freeze(['aimanie', 'digitalnihumanista']);
+const entries: ReadonlyMap<string, DneskaiRegistryEntry> = new Map([...instagram, ...feeds, ...education].map((entry) => [entry.id, entry]));
+const publicRow = ({ id, name, url, kind, weekdays, maxItems }: DneskaiRegistryEntry) => Object.freeze(DneskaiSourceSchema.parse({ id, name, url, kind, weekdays, maxItems }));
+/** The public news source rows: the schema is strict, so tier and adapter parameters stay inside this module. */
+export const DNESKAI_SOURCES: readonly DneskaiSource[] = Object.freeze([...entries.values()].filter((entry) => !entry.topic).map(publicRow));
+/** The education (scouting) source rows (#151); collected only while DNESKAI_SCOUTING_ENABLED is on. */
+export const DNESKAI_EDUCATION_SOURCES: readonly DneskaiSource[] = Object.freeze([...entries.values()].filter((entry) => entry.topic === 'education').map(publicRow));
+const allRows: ReadonlyMap<string, DneskaiSource> = new Map([...DNESKAI_SOURCES, ...DNESKAI_EDUCATION_SOURCES].map((row) => [row.id, row]));
+/** A news or education source row by id. */
+export function dneskaiSourceById(sourceId: string): DneskaiSource | undefined { return allRows.get(sourceId); }
+/** True for a scouting source: its reports become topics and never reach Jev. */
+export function isDneskaiEducationSource(sourceId: string): boolean { return entries.get(sourceId)?.topic === 'education'; }
 /** Unknown sources count as newsrooms (1). */
 export function dneskaiSourceTier(sourceId: string): DneskaiSourceTier { return entries.get(sourceId)?.tier ?? 1; }
 /** The registered adapter parameters of a feed; `{}` for a feed that needs none, undefined for an unknown id. */
@@ -72,7 +109,8 @@ export function dneskaiFeedAdapter(sourceId: string): DneskaiFeedAdapter | undef
   return entry ? entry.adapter ?? {} : undefined;
 }
 export function isDneskaiProject(project:Pick<Project,'portfolio_key'|'repo_full_name'|'parent_id'>&Partial<Pick<Project,'previous_repo_full_names'>>):boolean{return portfolioEntryFor(project)?.key==='aifirst';}
-export function dueDneskaiSources(date:string):DneskaiSource[]{const instant=new Date(`${date}T12:00:00Z`);if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(instant.getTime())||instant.toISOString().slice(0,10)!==date)throw new Error('collection-date-invalid');return DNESKAI_SOURCES.filter(source=>source.weekdays.includes(instant.getUTCDay()));}
+/** The sources due on a Prague date; education sources only with `education` (DNESKAI_SCOUTING_ENABLED). */
+export function dueDneskaiSources(date:string,options:{education?:boolean}={}):DneskaiSource[]{const instant=new Date(`${date}T12:00:00Z`);if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(instant.getTime())||instant.toISOString().slice(0,10)!==date)throw new Error('collection-date-invalid');return [...DNESKAI_SOURCES,...(options.education?DNESKAI_EDUCATION_SOURCES:[])].filter(source=>source.weekdays.includes(instant.getUTCDay()));}
 /** Cheap pre-model identity: tracking parameters never create a second research topic. */
 export function dneskaiCheapIdentity(item:{title:string;text:string;url:string}) {
  const url=new URL(item.url);url.hash='';for(const key of [...url.searchParams.keys()])if(/^utm_|^(fbclid|gclid|ref|source)$/i.test(key))url.searchParams.delete(key);url.searchParams.sort();

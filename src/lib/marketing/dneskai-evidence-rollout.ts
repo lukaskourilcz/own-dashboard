@@ -33,3 +33,12 @@ export function dneskaiSelectionV2Enabled(env: Record<string, string | undefined
 export function dneskaiTopicsEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_TOPICS_ENABLED === 'true';
 }
+
+/**
+ * Scouting (#151). Only with DNESKAI_TOPICS_ENABLED and after 20261023100000_dneskai_topics.sql is applied: the nightly
+ * collection then also reads the education sources (their reports never reach Jev), and the scheduler's scouting step
+ * turns those reports and highly rated library links into proposed topics. No model call.
+ */
+export function dneskaiScoutingEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_SCOUTING_ENABLED === 'true' && dneskaiTopicsEnabled(env);
+}

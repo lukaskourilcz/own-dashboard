@@ -167,6 +167,40 @@ The code connects one Instagram professional account through the Instagram API w
 - The panel warns when fewer than ten days remain and when the token has expired. If no automatic refresh has run by then, generate a new token, replace the environment value and verify again.
 - Verification reads `/me` with whichever valid token expires later: the stored one after a refresh, or a newly installed environment token. So verifying still works after the environment token's own 60 days have passed, and an older environment token never replaces a newer stored token. Verifying a different account (another `user_id` or handle) replaces the token and sets `enabled=false`. Re-verifying the same account keeps its current `enabled` value.
 
+### Facebook Login for Business (#166)
+
+Licensed and trending music on Reels (the Instagram Audio API) works only with Facebook Login, not Instagram Login.
+The code supports both; `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE` picks one, and Instagram Login stays the default
+until the owner switches. Owner steps (Astra has them as #181; start only after the first Reel with library audio has
+published):
+
+1. **Page.** Use the Facebook Page the owner names for DNESKAi and link `@dneskai` to it (Page settings → Linked
+   accounts → Instagram). Verification refuses a token whose Pages are not linked to `@dneskai`
+   (`facebook-page-link-required`).
+2. **Product.** In the Meta app add **Facebook Login for Business** with `instagram_basic`,
+   `instagram_content_publish`, `pages_read_engagement` and `pages_show_list` (required here), plus
+   `instagram_manage_comments` and `instagram_manage_messages` for the comment watcher. Keep Development mode.
+3. **Token.** Generate a long-lived token (a long-lived user token, or the Page token derived from it). Copy its
+   expiry and granted scopes from the Access Token Debugger.
+4. **Vercel Production** (Sensitive), then redeploy:
+
+   | Name | Value |
+   |---|---|
+   | `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE` | `facebook` |
+   | `MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN` | The Facebook Login token from step 3 (bootstrap only, as before). |
+   | `MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT` | Its expiry from the debugger. A Page token that never expires: a date far ahead, for example `2099-01-01T00:00:00Z`. |
+   | `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` | The granted scopes from the debugger, comma-separated. |
+   | `MARKETING_META_APP_ID`, `MARKETING_META_APP_SECRET` | The app's id and secret. Needed only to renew an expiring token through `fb_exchange_token`; without them the token step holds with `refresh-app-credentials-missing`. |
+
+   `MARKETING_DNESKAI_INSTAGRAM_API_VERSION` and its verified-at date stay as they are.
+5. **Verify.** Zdroje → Účet → Ověřit účet. The server reads
+   `GET graph.facebook.com/<version>/me/accounts?fields=id,name,instagram_business_account{id,username}` (or `/me`
+   for a Page token), stores the Instagram account id of the Page linked to `@dneskai` with login mode `facebook`,
+   and shows the Page name. The panel then reads *Připojení: Facebook Login (stránka)*. The publisher calls
+   `graph.facebook.com` from then on; publishing stays as switched.
+
+Rollback: set the mode back to `instagram` with the Instagram Login token and verify again.
+
 ### Failed container creation and stuck publications (approval-04)
 
 - The publisher records one durable intent, `publish-intent`, right before the single `media_publish` request. Child and parent containers are unpublished drafts that expire on Meta's side, so a transient failure while creating or polling them (no answer, HTTP 5xx or 429, the run deadline) records `container-retry`: the claim stays, and the next tick inside its ten minutes runs every check again (approval hash, account, token, source freshness, downloaded bytes, quota) and creates all containers anew. A definite 4xx rejection is recorded as `failed`. This needs no migration.
@@ -180,6 +214,7 @@ The code connects one Instagram professional account through the Instagram API w
 - **Generate now** needs only `MARKETING_AI_CONSENT=true`, which generation already requires. It uses existing functions and the existing $1 daily ceiling.
 - **Regenerate with a note** needs `supabase/migrations/20261022190000_dneskai_regenerate_with_note.sql` and the server-only `DNESKAI_REGENERATE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-regenerate-with-a-note-owner-decision-8)), then set the variable and redeploy. Until then the Lab shows the button disabled with its reason and the route answers `regenerate-unavailable`.
 - **Topics (náměty)** need `supabase/migrations/20261023100000_dneskai_topics.sql` and the server-only `DNESKAI_TOPICS_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-dneskai-topics-150-plan-a1)), then set the variable and redeploy. Until then `/api/marketing/dneskai/topics` answers 404.
+- **Scouting** needs the topics switch above and the server-only `DNESKAI_SCOUTING_ENABLED=true`; no migration of its own. The education feeds are free; the education Instagram profiles also need `MARKETING_DNESKAI_APIFY_ENABLED=true` and stay inside the existing Apify reservations ([education sources](dneskai-native-feeds.md#education-sources-for-scouting-151)).
 
 ### DNESKAi Reels (#163)
 
