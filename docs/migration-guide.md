@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Seventeen files are newer than anything production holds and none of them is applied: `20261022000000` through
+Eighteen files are newer than anything production holds and none of them is applied: `20261022000000` through
 `20261023130100`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the seventeen files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the eighteen files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -811,12 +811,18 @@ Three security-definer functions, executable by `authenticated` and scoped by `a
 
 It stays unapplied. Nothing proposes or consumes topics yet. The app reads the table and calls the functions only with the server-only `DNESKAI_TOPICS_ENABLED=true`; without it `GET` and `POST /api/marketing/dneskai/topics` answer 404. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-topics-database.test.ts`).
 
-
 ### Prepared: topic spend ledger (#152, plan A3)
 
 `20261023100100_dneskai_topic_spend.sql` adds `marketing_private.dneskai_topic_spend` and three service-only functions. `marketing_reserve_dneskai_topic_spend` reserves one paid topic call before it starts: a reel transcript (`transcript`) against its own ceiling (`MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, $0.50 by default) and transcript spend of the last 24 hours, or a topic model call (`classify` for FACT or HYPE, `title` for titling) against the $1 DNESKAi generation ceiling and everything generation and topics spent in 24 hours. A refused call reserves nothing. `marketing_settle_dneskai_topic_spend` records the measured cost once. A row counts at its settled cost, or at its reservation while unsettled. The file also replaces `marketing_dneskai_generation_spent` with the body of `20261021124651` plus the topic model calls, so generation jobs and topic calls never pass the ceiling together, and the Errors and costs tab shows the combined figure.
 
 It stays unapplied. The app reserves here only with `DNESKAI_FACT_OR_HYPE_ENABLED=true` (and later the titling switch). Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-topic-spend-database.test.ts`).
+
+## DNESKAi comment replies, 23 October 2026 (unapplied)
+
+`20261023120000_dneskai_comment_replies.sql` (#160) prepares the comment watcher. `marketing_instagram_comment_replies` holds one row per keyword comment that got a reply: Instagram's comment id (unique, so a comment never gets a second private reply), the media id, the publication, the matched keyword, the private reply's status (`claimed`, `sent`, `failed`, `uncertain`) and time, the public reply's status and comment id, and an error code. It stores no commenter username, user id or comment text. `marketing_instagram_comment_checks` keeps one row per watched publication: the cursor of an unfinished pass, that pass's counts, the counts of the last finished pass and the last check time. Both are own-read; only `service_role` writes, and a trigger refuses a row whose publication belongs to another owner. `marketing_accounts` gains `engagement_enabled` (off), `engagement_blocked_code` and `engagement_blocked_at`.
+
+Nothing reads these until `DNESKAI_ENGAGEMENT_ENABLED=true`; set it only after the push, because the scheduler, the accounts read and the switch route then query the new columns.
+
 ## DNESKAi Reel bucket, 23 October 2026 (unapplied)
 
 `20261023130000_dneskai_reel_bucket.sql` creates the private `marketing-reels` bucket: MP4 only, 64 MiB per file,
