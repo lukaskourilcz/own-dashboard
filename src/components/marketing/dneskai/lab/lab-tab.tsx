@@ -1,5 +1,6 @@
 'use client';
 
+import { DneskaiAudioPicker } from './audio-picker';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -277,6 +278,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <legend className="sr-only">{t.post.title}</legend>
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
+          <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>
           <div><label htmlFor={`${id}-account`} className="text-xs font-medium">{t.post.account}</label><select id={`${id}-account`} value={draft.accountId ?? ''} onChange={(event) => setDraft({ ...draft, accountId: event.target.value })} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring"><option value="" disabled>@{post.account.handle}</option>{props.read.accounts.filter((item) => item.verified).map((item) => <option key={item.id} value={item.id}>@{item.handle}</option>)}</select></div>
