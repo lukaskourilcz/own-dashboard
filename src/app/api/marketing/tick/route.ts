@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   try { input = MarketingTickInputSchema.parse(JSON.parse(raw)); } catch { return rejected(400, "tick-input-invalid"); }
   try {
     const db = createAdminClient();
-    const result = await runMarketingTick({ owner: principal.ownerId, env: process.env, ports: createMarketingSchedulerPorts(db, principal.ownerId, process.env) }, input);
+    const result = await runMarketingTick({ owner: principal.ownerId, env: process.env, ports: createMarketingSchedulerPorts(db, principal.ownerId, process.env, { origin: new URL(request.url).origin }) }, input);
     return Response.json(result, { headers });
   } catch (error) {
     // Only a code-shaped message is kept (for example scheduler-state-unavailable); anything else is dropped.
