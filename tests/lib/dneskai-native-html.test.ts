@@ -1,18 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
-import { collectNativeDneskaiFeed } from '@/lib/marketing/dneskai-native-feed';
+import { collectNativeDneskaiFeed, dneskaiNativeSourceConfig } from '@/lib/marketing/dneskai-native-feed';
 import { DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
 import { DneskaiFeedResponseSchema } from '@/lib/marketing/dneskai-contracts';
 import { collectDneskaiFeed } from '@/lib/marketing/dneskai-providers';
 import { ARTICLE_ENRICHMENT_LIMIT, articleMetadata, parseListingDate, projectHtml, publisherArticleUrl } from '@/lib/marketing/free-feeds/sources/adapters/html';
 import { parseRssFeed } from '@/lib/marketing/free-feeds/sources/adapters/rss';
-import registry from '@/lib/marketing/free-feeds/registry.json';
-import { SourceConfigSchema } from '@/lib/marketing/free-feeds/sources/types';
 vi.mock('server-only', () => ({}));
 
 const now = new Date('2026-10-20T20:00:00Z'), since = '2026-10-13T20:00:00Z';
 const signal = new AbortController().signal;
 const resolve = async () => ['93.184.216.34'];
-const config = (id: string) => SourceConfigSchema.parse(registry.sources.find(row => row.id === id));
+const config = (id: string) => dneskaiNativeSourceConfig(id)!;
 const source = (id: string) => DNESKAI_SOURCES.find(row => row.id === id)!;
 const html = (body: string) => new Response(`<!doctype html><html><head><title>Listing</title></head><body>${body}</body></html>`, { headers: { 'content-type': 'text/html; charset=utf-8' } });
 

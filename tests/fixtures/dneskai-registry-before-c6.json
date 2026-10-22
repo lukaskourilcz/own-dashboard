@@ -1,0 +1,763 @@
+{
+ "sources": [
+  {
+   "id": "instagram:mosseri",
+   "name": "mosseri",
+   "url": "https://www.instagram.com/mosseri/",
+   "kind": "instagram",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:meta.ai",
+   "name": "meta.ai",
+   "url": "https://www.instagram.com/meta.ai/",
+   "kind": "instagram",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:technology",
+   "name": "technology",
+   "url": "https://www.instagram.com/technology/",
+   "kind": "instagram",
+   "weekdays": [
+    1,
+    4
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:insidertech",
+   "name": "insidertech",
+   "url": "https://www.instagram.com/insidertech/",
+   "kind": "instagram",
+   "weekdays": [
+    1,
+    0
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:activeprogrammer",
+   "name": "activeprogrammer",
+   "url": "https://www.instagram.com/activeprogrammer/",
+   "kind": "instagram",
+   "weekdays": [
+    2,
+    5
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:tiffintech",
+   "name": "tiffintech",
+   "url": "https://www.instagram.com/tiffintech/",
+   "kind": "instagram",
+   "weekdays": [
+    2,
+    5
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:robotic",
+   "name": "robotic",
+   "url": "https://www.instagram.com/robotic/",
+   "kind": "instagram",
+   "weekdays": [
+    3,
+    6
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:evolving.ai",
+   "name": "evolving.ai",
+   "url": "https://www.instagram.com/evolving.ai/",
+   "kind": "instagram",
+   "weekdays": [
+    3
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:techcrunch",
+   "name": "techcrunch",
+   "url": "https://www.instagram.com/techcrunch/",
+   "kind": "instagram",
+   "weekdays": [
+    4,
+    0
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "instagram:theapplehub",
+   "name": "theapplehub",
+   "url": "https://www.instagram.com/theapplehub/",
+   "kind": "instagram",
+   "weekdays": [
+    6,
+    0
+   ],
+   "maxItems": 10
+  },
+  {
+   "id": "404-media",
+   "name": "404 Media",
+   "url": "https://www.404media.co/rss/",
+   "kind": "rss",
+   "weekdays": [
+    4
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "anthropic-news",
+   "name": "Anthropic",
+   "url": "https://www.anthropic.com/news",
+   "kind": "html",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "ars-technica",
+   "name": "Ars Technica",
+   "url": "https://feeds.arstechnica.com/arstechnica/index",
+   "kind": "rss",
+   "weekdays": [
+    1
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "arxiv-cs-ai",
+   "name": "arXiv cs.AI",
+   "url": "https://export.arxiv.org/api/query",
+   "kind": "arxiv",
+   "weekdays": [
+    3
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "arxiv-cs-lg",
+   "name": "arXiv cs.LG",
+   "url": "https://export.arxiv.org/api/query",
+   "kind": "arxiv",
+   "weekdays": [
+    3
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "bluesky-language-models",
+   "name": "Bluesky · language models",
+   "url": "https://api.bsky.app/xrpc/app.bsky.feed.searchPosts",
+   "kind": "bluesky",
+   "weekdays": [
+    0
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "deepmind-blog",
+   "name": "Google DeepMind",
+   "url": "https://deepmind.google/blog/rss.xml",
+   "kind": "rss",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "digiday",
+   "name": "Digiday",
+   "url": "https://digiday.com/feed/",
+   "kind": "rss",
+   "weekdays": [
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "github-ai-releases",
+   "name": "GitHub · AI releases",
+   "url": "https://github.com/",
+   "kind": "github",
+   "weekdays": [
+    2,
+    5
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "google-research",
+   "name": "Google Research",
+   "url": "https://research.google/blog/rss/",
+   "kind": "rss",
+   "weekdays": [
+    3
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "hf-blog",
+   "name": "Hugging Face",
+   "url": "https://huggingface.co/blog/feed.xml",
+   "kind": "rss",
+   "weekdays": [
+    2,
+    5
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "hn-frontpage",
+   "name": "Hacker News (front page)",
+   "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
+   "kind": "hn",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "import-ai",
+   "name": "Import AI (Jack Clark)",
+   "url": "https://jack-clark.net/feed/",
+   "kind": "rss",
+   "weekdays": [
+    5,
+    0
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "interconnects",
+   "name": "Interconnects (Nathan Lambert)",
+   "url": "https://www.interconnects.ai/feed",
+   "kind": "rss",
+   "weekdays": [
+    5,
+    0
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "meta-ai",
+   "name": "Meta AI",
+   "url": "https://ai.meta.com/blog/",
+   "kind": "html",
+   "weekdays": [
+    3
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "mit-tech-review",
+   "name": "MIT Technology Review",
+   "url": "https://www.technologyreview.com/feed/",
+   "kind": "rss",
+   "weekdays": [
+    4
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "nieman-lab",
+   "name": "Nieman Lab",
+   "url": "https://www.niemanlab.org/",
+   "kind": "html",
+   "weekdays": [
+    4
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "openai-blog",
+   "name": "OpenAI",
+   "url": "https://openai.com/news/rss.xml",
+   "kind": "rss",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "platformer",
+   "name": "Platformer (Casey Newton)",
+   "url": "https://www.platformer.news/rss/",
+   "kind": "rss",
+   "weekdays": [
+    5,
+    0
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "rest-of-world",
+   "name": "Rest of World",
+   "url": "https://restofworld.org/feed/latest/",
+   "kind": "rss",
+   "weekdays": [
+    2
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "simonw",
+   "name": "Simon Willison",
+   "url": "https://simonwillison.net/atom/everything/",
+   "kind": "rss",
+   "weekdays": [
+    2
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "social-media-today",
+   "name": "Social Media Today",
+   "url": "https://www.socialmediatoday.com/feeds/news/",
+   "kind": "rss",
+   "weekdays": [
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "spaceflight-news",
+   "name": "Spaceflight News",
+   "url": "https://api.spaceflightnewsapi.net/v4/articles/",
+   "kind": "spaceflight",
+   "weekdays": [
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "stackexchange-ml",
+   "name": "Stack Overflow · machine-learning",
+   "url": "https://api.stackexchange.com/2.3/questions",
+   "kind": "stackexchange",
+   "weekdays": [
+    0
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "stratechery",
+   "name": "Stratechery (Ben Thompson)",
+   "url": "https://stratechery.com/feed/",
+   "kind": "rss",
+   "weekdays": [
+    5,
+    0
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "techcrunch-ai",
+   "name": "TechCrunch AI",
+   "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+   "kind": "rss",
+   "weekdays": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "tensorfeed",
+   "name": "TensorFeed (AI news)",
+   "url": "https://tensorfeed.ai/feed.xml",
+   "kind": "rss",
+   "weekdays": [
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "the-register",
+   "name": "The Register",
+   "url": "https://www.theregister.com/?lab_viewport=rss",
+   "kind": "rss",
+   "weekdays": [
+    4
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "the-verge",
+   "name": "The Verge",
+   "url": "https://www.theverge.com/rss/index.xml",
+   "kind": "rss",
+   "weekdays": [
+    1
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "tubefilter",
+   "name": "Tubefilter",
+   "url": "https://www.tubefilter.com/",
+   "kind": "html",
+   "weekdays": [
+    6
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "variety",
+   "name": "Variety",
+   "url": "https://variety.com/feed/",
+   "kind": "rss",
+   "weekdays": [
+    5
+   ],
+   "maxItems": 20
+  },
+  {
+   "id": "wired-ai",
+   "name": "Wired (AI)",
+   "url": "https://www.wired.com/feed/tag/ai/latest/rss",
+   "kind": "rss",
+   "weekdays": [
+    1
+   ],
+   "maxItems": 20
+  }
+ ],
+ "adapters": {
+  "404-media": {
+   "id": "404-media",
+   "kind": "rss",
+   "name": "404 Media",
+   "url": "https://www.404media.co/rss/",
+   "maxItems": 20
+  },
+  "anthropic-news": {
+   "id": "anthropic-news",
+   "kind": "html",
+   "name": "Anthropic",
+   "url": "https://www.anthropic.com/news",
+   "maxItems": 20
+  },
+  "ars-technica": {
+   "id": "ars-technica",
+   "kind": "rss",
+   "name": "Ars Technica",
+   "url": "https://feeds.arstechnica.com/arstechnica/index",
+   "maxItems": 20
+  },
+  "arxiv-cs-ai": {
+   "id": "arxiv-cs-ai",
+   "kind": "arxiv",
+   "name": "arXiv cs.AI",
+   "url": "https://export.arxiv.org/api/query",
+   "maxItems": 20,
+   "query": "cat:cs.AI"
+  },
+  "arxiv-cs-lg": {
+   "id": "arxiv-cs-lg",
+   "kind": "arxiv",
+   "name": "arXiv cs.LG",
+   "url": "https://export.arxiv.org/api/query",
+   "maxItems": 20,
+   "query": "cat:cs.LG"
+  },
+  "bluesky-language-models": {
+   "id": "bluesky-language-models",
+   "kind": "bluesky",
+   "name": "Bluesky · language models",
+   "url": "https://api.bsky.app/xrpc/app.bsky.feed.searchPosts",
+   "maxItems": 20,
+   "query": "language model"
+  },
+  "deepmind-blog": {
+   "id": "deepmind-blog",
+   "kind": "rss",
+   "name": "Google DeepMind",
+   "url": "https://deepmind.google/blog/rss.xml",
+   "maxItems": 20
+  },
+  "digiday": {
+   "id": "digiday",
+   "kind": "rss",
+   "name": "Digiday",
+   "url": "https://digiday.com/feed/",
+   "maxItems": 20
+  },
+  "github-ai-releases": {
+   "id": "github-ai-releases",
+   "kind": "github",
+   "name": "GitHub · AI releases",
+   "url": "https://github.com/",
+   "maxItems": 20,
+   "repos": [
+    "openai/openai-python",
+    "anthropics/anthropic-sdk-python",
+    "huggingface/transformers",
+    "vllm-project/vllm",
+    "ollama/ollama",
+    "ggml-org/llama.cpp",
+    "langchain-ai/langchain"
+   ]
+  },
+  "google-research": {
+   "id": "google-research",
+   "kind": "rss",
+   "name": "Google Research",
+   "url": "https://research.google/blog/rss/",
+   "maxItems": 20
+  },
+  "hf-blog": {
+   "id": "hf-blog",
+   "kind": "rss",
+   "name": "Hugging Face",
+   "url": "https://huggingface.co/blog/feed.xml",
+   "maxItems": 20
+  },
+  "hn-frontpage": {
+   "id": "hn-frontpage",
+   "kind": "hn",
+   "name": "Hacker News (front page)",
+   "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
+   "maxItems": 20
+  },
+  "import-ai": {
+   "id": "import-ai",
+   "kind": "rss",
+   "name": "Import AI (Jack Clark)",
+   "url": "https://jack-clark.net/feed/",
+   "maxItems": 20
+  },
+  "interconnects": {
+   "id": "interconnects",
+   "kind": "rss",
+   "name": "Interconnects (Nathan Lambert)",
+   "url": "https://www.interconnects.ai/feed",
+   "maxItems": 20
+  },
+  "meta-ai": {
+   "id": "meta-ai",
+   "kind": "html",
+   "name": "Meta AI",
+   "url": "https://ai.meta.com/blog/",
+   "maxItems": 20
+  },
+  "mit-tech-review": {
+   "id": "mit-tech-review",
+   "kind": "rss",
+   "name": "MIT Technology Review",
+   "url": "https://www.technologyreview.com/feed/",
+   "maxItems": 20
+  },
+  "nieman-lab": {
+   "id": "nieman-lab",
+   "kind": "html",
+   "name": "Nieman Lab",
+   "url": "https://www.niemanlab.org/",
+   "maxItems": 20
+  },
+  "openai-blog": {
+   "id": "openai-blog",
+   "kind": "rss",
+   "name": "OpenAI",
+   "url": "https://openai.com/news/rss.xml",
+   "maxItems": 20
+  },
+  "platformer": {
+   "id": "platformer",
+   "kind": "rss",
+   "name": "Platformer (Casey Newton)",
+   "url": "https://www.platformer.news/rss/",
+   "maxItems": 20
+  },
+  "rest-of-world": {
+   "id": "rest-of-world",
+   "kind": "rss",
+   "name": "Rest of World",
+   "url": "https://restofworld.org/feed/latest/",
+   "maxItems": 20
+  },
+  "simonw": {
+   "id": "simonw",
+   "kind": "rss",
+   "name": "Simon Willison",
+   "url": "https://simonwillison.net/atom/everything/",
+   "maxItems": 20
+  },
+  "social-media-today": {
+   "id": "social-media-today",
+   "kind": "rss",
+   "name": "Social Media Today",
+   "url": "https://www.socialmediatoday.com/feeds/news/",
+   "maxItems": 20
+  },
+  "spaceflight-news": {
+   "id": "spaceflight-news",
+   "kind": "spaceflight",
+   "name": "Spaceflight News",
+   "url": "https://api.spaceflightnewsapi.net/v4/articles/",
+   "maxItems": 20
+  },
+  "stackexchange-ml": {
+   "id": "stackexchange-ml",
+   "kind": "stackexchange",
+   "name": "Stack Overflow · machine-learning",
+   "url": "https://api.stackexchange.com/2.3/questions",
+   "maxItems": 20,
+   "query": "machine-learning",
+   "site": "stackoverflow"
+  },
+  "stratechery": {
+   "id": "stratechery",
+   "kind": "rss",
+   "name": "Stratechery (Ben Thompson)",
+   "url": "https://stratechery.com/feed/",
+   "maxItems": 20
+  },
+  "techcrunch-ai": {
+   "id": "techcrunch-ai",
+   "kind": "rss",
+   "name": "TechCrunch AI",
+   "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+   "maxItems": 20
+  },
+  "tensorfeed": {
+   "id": "tensorfeed",
+   "kind": "rss",
+   "name": "TensorFeed (AI news)",
+   "url": "https://tensorfeed.ai/feed.xml",
+   "maxItems": 20
+  },
+  "the-register": {
+   "id": "the-register",
+   "kind": "rss",
+   "name": "The Register",
+   "url": "https://www.theregister.com/?lab_viewport=rss",
+   "maxItems": 20
+  },
+  "the-verge": {
+   "id": "the-verge",
+   "kind": "rss",
+   "name": "The Verge",
+   "url": "https://www.theverge.com/rss/index.xml",
+   "maxItems": 20
+  },
+  "tubefilter": {
+   "id": "tubefilter",
+   "kind": "html",
+   "name": "Tubefilter",
+   "url": "https://www.tubefilter.com/",
+   "maxItems": 20
+  },
+  "variety": {
+   "id": "variety",
+   "kind": "rss",
+   "name": "Variety",
+   "url": "https://variety.com/feed/",
+   "maxItems": 20
+  },
+  "wired-ai": {
+   "id": "wired-ai",
+   "kind": "rss",
+   "name": "Wired (AI)",
+   "url": "https://www.wired.com/feed/tag/ai/latest/rss",
+   "maxItems": 20
+  }
+ },
+ "tiers": {
+  "instagram:mosseri": 0,
+  "instagram:meta.ai": 0,
+  "instagram:technology": 2,
+  "instagram:insidertech": 2,
+  "instagram:activeprogrammer": 2,
+  "instagram:tiffintech": 2,
+  "instagram:robotic": 2,
+  "instagram:evolving.ai": 2,
+  "instagram:techcrunch": 2,
+  "instagram:theapplehub": 2,
+  "404-media": 1,
+  "anthropic-news": 0,
+  "ars-technica": 1,
+  "arxiv-cs-ai": 0,
+  "arxiv-cs-lg": 0,
+  "bluesky-language-models": 2,
+  "deepmind-blog": 0,
+  "digiday": 1,
+  "github-ai-releases": 0,
+  "google-research": 0,
+  "hf-blog": 0,
+  "hn-frontpage": 2,
+  "import-ai": 1,
+  "interconnects": 1,
+  "meta-ai": 0,
+  "mit-tech-review": 1,
+  "nieman-lab": 1,
+  "openai-blog": 0,
+  "platformer": 1,
+  "rest-of-world": 1,
+  "simonw": 1,
+  "social-media-today": 1,
+  "spaceflight-news": 2,
+  "stackexchange-ml": 2,
+  "stratechery": 1,
+  "techcrunch-ai": 2,
+  "tensorfeed": 2,
+  "the-register": 1,
+  "the-verge": 1,
+  "tubefilter": 1,
+  "variety": 1,
+  "wired-ai": 1
+ }
+}

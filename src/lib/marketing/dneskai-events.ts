@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { DneskaiCandidate } from './dneskai-contracts';
+import { dneskaiSourceTier } from './dneskai-registry';
 
 /**
  * DNESKAi events (#115): reports of one news event, grouped without any paid call. Two candidates belong to
@@ -159,12 +160,12 @@ function titleFacts(headline: string): TitleFacts {
  * Different version or number tokens mean different events, however similar the rest reads: `0.12.6` and
  * `0.12.7` are two releases even when both headlines also mention „Gemma 3“.
  */
-function factsMatch(a: TitleFacts, b: TitleFacts): boolean {
+function factsMatch(a: TitleFacts, b: TitleFacts, reworded = true): boolean {
   if (disjoint(a.versions, b.versions) || disjoint(a.numbers, b.numbers)) return false;
   const { score, shared } = jaccard(a.tokens, b.tokens);
   if (shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD) return true;
   // The second tier: a reworded headline about the same named thing.
-  if (shared < DNESKAI_EVENT_REWORDED_MIN_SHARED_TOKENS || score < DNESKAI_EVENT_REWORDED_JACCARD) return false;
+  if (!reworded || shared < DNESKAI_EVENT_REWORDED_MIN_SHARED_TOKENS || score < DNESKAI_EVENT_REWORDED_JACCARD) return false;
   for (const token of a.tokens) if (b.tokens.has(token) && (a.entities.has(token) || b.entities.has(token))) return true;
   return false;
 }
@@ -172,6 +173,18 @@ function factsMatch(a: TitleFacts, b: TitleFacts): boolean {
 /** True when two headlines describe the same event by the #115 token rule and its SEL-07 second tier. */
 export function dneskaiHeadlinesMatch(left: string, right: string): boolean {
   return factsMatch(titleFacts(left), titleFacts(right));
+}
+
+/**
+ * True when any headline on the left repeats any on the right (briefs-15): the #115 first tier only (token
+ * Jaccard ≥ 0.6 with ≥ 2 shared tokens) under the same number and version guard, so `Ollama 0.12.7` never
+ * repeats `Ollama 0.12.6`. The reworded second tier is left out because the 14-day repeat window is much wider
+ * than the 72-hour event window. Each headline is tokenised once.
+ */
+export function dneskaiHeadlinesRepeat(left: readonly string[], right: readonly string[]): boolean {
+  if (!left.length || !right.length) return false;
+  const others = right.map(titleFacts);
+  return left.some((headline) => { const facts = titleFacts(headline); return others.some((other) => factsMatch(facts, other, false)); });
 }
 
 const TRACKING = /^(?:utm_.*|fbclid|gclid|ref|ref_src|source|igsh|igshid|si|mc_cid|mc_eid|ncid|cmpid|guccounter)$/i;
@@ -288,19 +301,8 @@ export function dneskaiFinishEvents<T extends DneskaiEventInput>(events: readonl
   return kept.map((event) => ({ eventId: event.eventId, anchorId: event.anchorId, memberIds: event.members.slice(0, DNESKAI_FINISH_EVENT_MEMBER_LIMIT).map((member) => member.id) }));
 }
 
-/**
- * How directly a source reports an event. 0: the original publisher or its own account (lab and vendor blogs,
- * GitHub releases, arXiv). 1: newsrooms and authors with their own reporting. 2: aggregators and reposts
- * (Hacker News, TechCrunch, news-roundup Instagram accounts). Unknown sources count as 1.
- */
-const PUBLISHER_SOURCES = new Set(['anthropic-news', 'openai-blog', 'deepmind-blog', 'google-research', 'hf-blog', 'meta-ai', 'github-ai-releases',
-  'arxiv-cs-ai', 'arxiv-cs-lg', 'instagram:mosseri', 'instagram:meta.ai']);
-const AGGREGATOR_SOURCES = new Set(['hn-frontpage', 'techcrunch-ai', 'tensorfeed', 'bluesky-language-models', 'stackexchange-ml', 'spaceflight-news',
-  'instagram:technology', 'instagram:insidertech', 'instagram:evolving.ai', 'instagram:techcrunch', 'instagram:theapplehub', 'instagram:robotic',
-  'instagram:activeprogrammer', 'instagram:tiffintech']);
-export function dneskaiSourceTier(sourceId: string): 0 | 1 | 2 {
-  return PUBLISHER_SOURCES.has(sourceId) ? 0 : AGGREGATOR_SOURCES.has(sourceId) ? 2 : 1;
-}
+/** How directly a source reports an event (0 publisher, 1 newsroom, 2 aggregator) is a registry field (audit C6). */
+export { dneskaiSourceTier };
 
 /**
  * Orders an event's reports with the chosen primary first: the original publisher or account before a

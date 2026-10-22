@@ -7,7 +7,7 @@ import { parseSourcePacket, type ContentRevision, type SourcePacket } from './co
 import { DneskaiBriefSchema, type DneskaiBrief, type DneskaiBriefCategory, type DneskaiBriefEvidence, type DneskaiBriefMedia } from './dneskai-brief';
 import { dneskaiBriefLifetimeMs, dneskaiBriefSourcePacket } from './dneskai-brief-source';
 import { DneskaiCandidateSchema, type DneskaiCandidate } from './dneskai-contracts';
-import { dneskaiPrimaryUrlKey, rankDneskaiEventMembers } from './dneskai-events';
+import { dneskaiHeadlinesRepeat, dneskaiPrimaryUrlKey, rankDneskaiEventMembers } from './dneskai-events';
 import { dneskaiOfferableMediaAssets, type DneskaiMediaAssetView, type DneskaiMediaCandidateView } from './dneskai-media-contracts';
 import { dneskaiCaptionOnly } from './dneskai-media-plan';
 import { phashDistance } from './dneskai-media-image';
@@ -139,15 +139,25 @@ export function buildDneskaiBrief(input: { eventId: string; memberHash: string; 
   return parsed.success ? { brief: parsed.data } : { code: 'brief-invalid' };
 }
 
-/** What a recent prepared or published post (or an admitted brief of another day) covered. */
-export type DneskaiCoverage = { id: string; duplicateOf: string; urls: readonly string[]; assetSha256s: readonly string[] };
+/**
+ * What a recent prepared or published post (or an admitted brief of another day) covered. `titles` are its
+ * source reports' headlines, read from the stored packets and briefs; coverage without them is compared by URL
+ * and picture only.
+ */
+export type DneskaiCoverage = { id: string; duplicateOf: string; urls: readonly string[]; assetSha256s: readonly string[]; titles?: readonly string[] };
+/** The comparable headline of a report title: its first line, at most 200 characters, as event grouping reads it. */
+const repeatHeadline = (title: string) => firstLine(title).slice(0, 200);
 /**
  * A brief repeats recent coverage when one of its evidence URLs (canonicalized) was a source or evidence URL of
- * the coverage, or when one of its pictures is a picture the coverage drew: the same bytes, or the same
- * photograph recompressed (pHash distance ≤ 3). Pictures in `ignore` (site-wide cards) are not compared.
+ * the coverage; when one of its reports' headlines repeats a headline the coverage drew on (briefs-15: the event
+ * grouping's tokens, Jaccard ≥ 0.6 with ≥ 2 shared tokens, different numbers or versions never match), which
+ * catches a follow-up with a new URL and a new picture; or when one of its pictures is a picture the coverage
+ * drew: the same bytes, or the same photograph recompressed (pHash distance ≤ 3). Pictures in `ignore`
+ * (site-wide cards) are not compared.
  */
-export function dneskaiBriefRepeat(brief: Pick<DneskaiBrief, 'evidence' | 'media'>, coverage: readonly DneskaiCoverage[], phashes: ReadonlyMap<string, string | null>, ignore: ReadonlySet<string> = new Set()): { coverage: DneskaiCoverage; by: 'url' | 'media' } | null {
+export function dneskaiBriefRepeat(brief: Pick<DneskaiBrief, 'evidence' | 'media'>, coverage: readonly DneskaiCoverage[], phashes: ReadonlyMap<string, string | null>, ignore: ReadonlySet<string> = new Set()): { coverage: DneskaiCoverage; by: 'url' | 'title' | 'media' } | null {
   const urls = new Set(brief.evidence.flatMap((item) => dneskaiPrimaryUrlKey(item.url) ?? []));
+  const headlines = brief.evidence.flatMap((item) => typeof item.title === 'string' && item.title.trim() ? [repeatHeadline(item.title)] : []);
   const pictures = brief.media.map((item) => item.assetSha256).filter((sha) => !ignore.has(sha));
   const near = (left: string, right: string) => {
     if (left === right) return true;
@@ -157,6 +167,9 @@ export function dneskaiBriefRepeat(brief: Pick<DneskaiBrief, 'evidence' | 'media
   };
   for (const item of coverage) {
     if (item.urls.some((url) => { const key = dneskaiPrimaryUrlKey(url); return key !== null && urls.has(key); })) return { coverage: item, by: 'url' };
+  }
+  for (const item of coverage) {
+    if (dneskaiHeadlinesRepeat(headlines, (item.titles ?? []).map(repeatHeadline))) return { coverage: item, by: 'title' };
   }
   for (const item of coverage) {
     if (pictures.some((sha) => item.assetSha256s.some((other) => near(sha, other)))) return { coverage: item, by: 'media' };
@@ -439,12 +452,13 @@ export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { en
         id, duplicateOf: id,
         urls: revision.sources.flatMap((source) => { const packet = packets.get(source.sourceId); return packet ? [packet.canonicalUrl, ...packet.content.evidence.map((item) => item.url)] : []; }),
         assetSha256s: [...new Set((revision.deck?.slides ?? []).flatMap((slide) => slide.images.map((image) => image.assetSha256)))],
+        titles: [...new Set(revision.sources.flatMap((source) => { const packet = packets.get(source.sourceId); return packet ? [packet.content.title, ...packet.content.evidence.map((item) => item.title)] : []; }))],
       }));
       const briefs = (await read(db.from('marketing_dneskai_briefs').select('id,run_id,lead_candidate_id,brief').eq('user_id', owner).eq('project_id', project).in('status', ['ready', 'queued'])
         .gte('created_at', since.toISOString()).neq('run_id', runId).limit(100))) as Array<{ id: string; lead_candidate_id: string; brief: unknown }> ?? [];
       const fromBriefs: DneskaiCoverage[] = briefs.flatMap((row) => {
         const brief = DneskaiBriefSchema.safeParse(row.brief);
-        return brief.success ? [{ id: row.id, duplicateOf: row.lead_candidate_id, urls: brief.data.evidence.map((item) => item.url), assetSha256s: brief.data.media.map((item) => item.assetSha256) }] : [];
+        return brief.success ? [{ id: row.id, duplicateOf: row.lead_candidate_id, urls: brief.data.evidence.map((item) => item.url), assetSha256s: brief.data.media.map((item) => item.assetSha256), titles: brief.data.evidence.map((item) => item.title) }] : [];
       });
       return [...fromRevisions, ...fromBriefs];
     },

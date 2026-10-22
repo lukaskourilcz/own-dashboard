@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, DneskaiBriefError, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, dneskaiSitewidePictures, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 import { dneskaiBriefSourcePacket } from '@/lib/marketing/dneskai-brief-source';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
-import { dneskaiEventId, dneskaiEventMemberHash } from '@/lib/marketing/dneskai-events';
+import { dneskaiEventId, dneskaiEventMemberHash, dneskaiHeadlinesMatch } from '@/lib/marketing/dneskai-events';
 import { GenerationInputSchema } from '@/lib/marketing/generation';
 import type { DneskaiMediaAssetView, DneskaiMediaCandidateView } from '@/lib/marketing/dneskai-media-contracts';
 import type { DneskaiCandidate } from '@/lib/marketing/dneskai-contracts';
@@ -100,6 +100,35 @@ describe('repetition against the last 14 days', () => {
     // An ignored picture (a site-wide card) is not compared; the URLs still are.
     expect(dneskaiBriefRepeat(brief, [{ id: 'r2', duplicateOf: 'r2', urls: [], assetSha256s: [sha(1)] }], phashes, new Set([sha(1)]))).toBeNull();
     expect(dneskaiBriefRepeat(brief, [{ id: 'r1', duplicateOf: 'r1', urls: ['https://example.test/news/one/'], assetSha256s: [sha(1)] }], phashes, new Set([sha(1)]))).toMatchObject({ by: 'url' });
+  });
+
+  it('catches a follow-up with a new URL and a new picture by its headline (briefs-15)', () => {
+    const covered = { id: 'r5', duplicateOf: 'r5', urls: ['https://example.test/news/launch'], assetSha256s: [sha(5)],
+      titles: ['OpenAI releases GPT-6', 'GPT-6 is here'] };
+    const followUp = { evidence: [{ url: 'https://other.example.test/2026/10/gpt-6-free', title: 'OpenAI releases GPT-6 to free users' }], media: [{ assetSha256: sha(6) }] } as Parameters<typeof dneskaiBriefRepeat>[0];
+    expect(dneskaiBriefRepeat(followUp, [covered], new Map())).toMatchObject({ by: 'title', coverage: { id: 'r5' } });
+    // Only the first line of a title is compared, as event grouping reads it.
+    const captioned = { ...followUp, evidence: [{ url: 'https://www.instagram.com/p/x/', title: 'OpenAI releases GPT-6 to free users\nFull caption with many other words about pricing and plans' }] } as Parameters<typeof dneskaiBriefRepeat>[0];
+    expect(dneskaiBriefRepeat(captioned, [covered], new Map())).toMatchObject({ by: 'title' });
+    // A URL match still wins and is reported as such.
+    expect(dneskaiBriefRepeat({ ...followUp, evidence: [...followUp.evidence, { url: 'https://example.test/news/launch', title: 'Unrelated' }] } as Parameters<typeof dneskaiBriefRepeat>[0], [covered], new Map())).toMatchObject({ by: 'url' });
+  });
+
+  it('never blocks a genuinely new story on its headline', () => {
+    const covered = { id: 'r6', duplicateOf: 'r6', urls: ['https://example.test/news/ollama-0-12-6'], assetSha256s: [], titles: ['Ollama 0.12.6: faster Gemma 3 support on Apple silicon', 'Anthropic raises $30B in new funding'] };
+    const story = (title: string) => ({ evidence: [{ url: 'https://example.test/news/new', title }], media: [{ assetSha256: sha(7) }] }) as Parameters<typeof dneskaiBriefRepeat>[0];
+    // A different version or figure is a different event, however similar the rest reads.
+    expect(dneskaiBriefRepeat(story('Ollama 0.12.7: faster Gemma 3 support on Apple silicon'), [covered], new Map())).toBeNull();
+    expect(dneskaiBriefRepeat(story('Anthropic raises $40B in new funding'), [covered], new Map())).toBeNull();
+    // Same company, different story.
+    expect(dneskaiBriefRepeat(story('Anthropic opens an office in Prague'), [covered], new Map())).toBeNull();
+    // The reworded event tier (Jaccard 0.45 with an entity) groups within 72 hours but does not mark a repeat over 14 days.
+    const reworded = { id: 'r7', duplicateOf: 'r7', urls: [], assetSha256s: [], titles: ['Mistral opens Paris lab, hires engineers'] };
+    expect(dneskaiHeadlinesMatch('Mistral opens Paris lab for robotics', 'Mistral opens Paris lab, hires engineers')).toBe(true);
+    expect(dneskaiBriefRepeat(story('Mistral opens Paris lab for robotics'), [reworded], new Map())).toBeNull();
+    // Coverage without titles is compared by URL and picture only.
+    expect(dneskaiBriefRepeat(story('Ollama 0.12.6: faster Gemma 3 support on Apple silicon'), [{ ...covered, titles: undefined }], new Map())).toBeNull();
+    expect(dneskaiBriefRepeat(story('Ollama 0.12.6: faster Gemma 3 support on Apple silicon'), [covered], new Map())).toMatchObject({ by: 'title' });
   });
 
   it('treats a picture three articles of one site carry as a site-wide card, not the same reports on three sites', () => {

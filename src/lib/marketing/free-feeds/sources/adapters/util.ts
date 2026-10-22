@@ -103,8 +103,6 @@ export function makeItem(
     author,
     summary: summary.text,
     fetchedAt: now.toISOString(),
-    weight: source.weight,
-    tags: source.tags,
     promptInjectionSignals: [
       ...new Set([...title.promptInjectionSignals, ...summary.promptInjectionSignals])
     ].slice(0, 20),

@@ -3,36 +3,36 @@ import type {
   SourceFetchContext,
   SourceItem
 } from "../types";
-import { fetchJson, makeItem } from "./util";
+import { parseFeedEntries, projectRssItem, type RssItem } from "./rss";
+import { fetchText } from "./util";
 
-interface GithubRelease {
-  id?: number;
-  html_url?: string;
-  name?: string | null;
-  tag_name?: string;
-  body?: string | null;
-  draft?: boolean;
-  published_at?: string;
-  author?: { login?: string };
+/**
+ * GitHub's public release feed (`https://github.com/<owner>/<repo>/releases.atom`) needs no token and
+ * is not subject to the REST API's 60-requests-per-hour unauthenticated limit (audit C15). It lists
+ * the ten newest published releases; drafts never appear in it.
+ */
+export const GITHUB_RELEASE_FEED_ENTRIES = 10;
+/** Release notes are long: huggingface/transformers' feed was 1.4 MB on 22 Oct 2026. Still bounded. */
+export const GITHUB_RELEASE_FEED_MAX_BYTES = 3_000_000;
+
+export function githubReleaseFeedUrl(repo: string, base: string): string {
+  return new URL(`/${repo}/releases.atom`, base).toString();
 }
 
-export function projectReleases(
-  releases: GithubRelease[],
+/**
+ * Prefixes the repository to the release title, as the API projection did. The entry's
+ * `media:thumbnail` is the release author's 30 px avatar, not a picture of the release, so it is
+ * never offered as the item's image.
+ */
+export function projectReleaseEntries(
+  entries: readonly RssItem[],
   repo: string,
   source: SourceConfig,
   now: Date
 ): SourceItem[] {
-  return releases.flatMap((release) => {
-    if (release.draft || !release.html_url) return [];
-    const item = makeItem(
-      release.html_url,
-      {
-        title: `${repo} ${release.name || release.tag_name || "release"}`,
-        summary: release.body ?? undefined,
-        publishedAt: release.published_at,
-        author: release.author?.login,
-        externalId: release.id ? String(release.id) : undefined
-      },
+  return entries.flatMap((entry) => {
+    const item = projectRssItem(
+      { ...entry, title: `${repo} ${entry.title?.trim() || "release"}`, enclosure: undefined, mediaContent: undefined, mediaThumbnail: undefined },
       source,
       now
     );
@@ -44,21 +44,18 @@ export async function fetchGithub(
   source: SourceConfig,
   context: SourceFetchContext
 ): Promise<SourceItem[]> {
-  const headers: Record<string, string> = {
-    accept: "application/vnd.github+json",
-    "x-github-api-version": "2022-11-28",
-    "user-agent": "boardlessai-source-shadow/0.1"
-  };
   const projected = await Promise.all(
     (source.repos ?? []).map(async (repo) => {
       try {
-        const url = new URL(`/repos/${repo}/releases`, source.url);
-        url.searchParams.set("per_page", "3");
-        const releases = await fetchJson<GithubRelease[]>(url.toString(), context, {
-          headers
-        });
-        if (releases.length >= 3) context.reportIssue?.("upstream-cap");
-        return projectReleases(releases, repo, source, context.now);
+        const xml = await fetchText(githubReleaseFeedUrl(repo, source.url), context, { maxBytes: GITHUB_RELEASE_FEED_MAX_BYTES });
+        const entries = await parseFeedEntries(xml);
+        const items = projectReleaseEntries(entries, repo, source, context.now);
+        // A full page whose oldest release is still inside the window may have dropped older ones.
+        const oldest = items.reduce<string | null>((low, item) => (item.publishedAt && (!low || item.publishedAt < low) ? item.publishedAt : low), null);
+        if (entries.length >= GITHUB_RELEASE_FEED_ENTRIES && (!context.since || !oldest || Date.parse(oldest) > context.since.getTime())) {
+          context.reportIssue?.("upstream-cap");
+        }
+        return items;
       } catch {
         context.reportIssue?.("fetch-failed");
         return [];

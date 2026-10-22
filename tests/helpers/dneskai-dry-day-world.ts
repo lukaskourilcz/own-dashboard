@@ -143,7 +143,9 @@ export async function routePublishers(internet: FakeInternet) {
   for (const [host, feed] of [['huggingface.co', '/blog/feed.xml'], ['restofworld.org', '/feed/latest/'], ['simonwillison.net', '/atom/everything/']] as const) {
     internet.route(host, (_request, url) => url.pathname === feed ? xml(rss(host, [])) : new Response('not found', { status: 404 }));
   }
-  internet.route('api.github.com', (_request, url) => /^\/repos\/[^/]+\/[^/]+\/releases$/.test(url.pathname) ? json([]) : json({ message: 'Not Found' }, 404));
+  internet.route('github.com', (_request, url) => /^\/[^/]+\/[^/]+\/releases\.atom$/.test(url.pathname)
+    ? new Response('<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Release notes</title></feed>', { headers: { 'content-type': 'application/atom+xml; charset=utf-8' } })
+    : new Response('not found', { status: 404 }));
   internet.route('hacker-news.firebaseio.com', (_request, url) => url.pathname === '/v0/topstories.json' ? json([HN_STORY.id])
     : url.pathname === `/v0/item/${HN_STORY.id}.json` ? json({ ...HN_STORY, type: 'story', text: 'Asking for a friend who stares at code all day.' }) : json(null, 404));
   return images;

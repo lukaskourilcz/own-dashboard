@@ -1,11 +1,19 @@
 import 'server-only';
 import { DneskaiFeedRequestSchema, DneskaiFeedResponseSchema, type DneskaiSource } from './dneskai-contracts';
-import registry from './free-feeds/registry.json';
-import { SourceConfigSchema, SourceItemSchema } from './free-feeds/sources/types';
+import { DNESKAI_SOURCES, dneskaiFeedAdapter } from './dneskai-registry';
+import { SourceConfigSchema, SourceItemSchema, type SourceConfig } from './free-feeds/sources/types';
 import { fetchSource } from './free-feeds/sources/adapters';
 import { parseSafeHttpsUrl, SourceHttpError } from './free-feeds/security/url';
 
-const sources = registry.sources.map(source => SourceConfigSchema.parse(source));
+/** Adapter configuration derived from the one source registry (audit C6): every registered non-Instagram source. */
+const sources: readonly SourceConfig[] = DNESKAI_SOURCES.filter(source => source.kind !== 'instagram').map(({ id, kind, name, url, maxItems }) => {
+  const adapter = dneskaiFeedAdapter(id) ?? {};
+  return SourceConfigSchema.parse({ id, kind, name, url, maxItems, ...adapter, ...(adapter.repos ? { repos: [...adapter.repos] } : {}) });
+});
+/** The adapter configuration of a registered feed, or undefined. */
+export function dneskaiNativeSourceConfig(sourceId: string): SourceConfig | undefined {
+  return sources.find(source => source.id === sourceId);
+}
 /** Feed configuration is code-owned. Source content cannot authorize another network host. */
 export const DNESKAI_NATIVE_FEED_IDS = Object.freeze(sources.map(source => source.id));
 
@@ -27,7 +35,6 @@ export async function collectNativeDneskaiFeed(source: DneskaiSource, since: str
   const envelope = (status: 'ok' | 'partial' | 'error', errorCode: string | null) => DneskaiFeedResponseSchema.parse({
     schemaVersion: 'dneskai-feed/1', sources: [{ sourceId: source.id, status, errorCode, items: items.slice(0, source.maxItems) }],
   });
-  if (!configured.enabled) return envelope('error', 'source-disabled');
   try {
     signal.throwIfAborted();
     const raw = await fetchSource({ ...configured, maxItems: Math.min(50, source.maxItems + 1) }, {

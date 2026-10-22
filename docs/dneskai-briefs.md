@@ -139,6 +139,13 @@ posledních 14 dní (`review`, `approved`, `publishing`, `published`, `reconcili
 `returned`, `skipped`) a se zařazenými zadáními jiných běhů. Opakování je:
 
 - shodná kanonická URL důkazu se zdrojem nebo důkazem revize (`marketing_sources`),
+- titulek některé zprávy zadání, který opakuje titulek zdroje nebo důkazu revize či jiného
+  zadání (briefs-15, `dneskaiHeadlinesRepeat`): stejné tokeny jako při seskupování událostí,
+  Jaccard aspoň 0,6 a aspoň 2 společné tokeny, porovnává se první řádek titulku. Jiné číslo
+  nebo verze (`Ollama 0.12.6` a `0.12.7`) shodu vylučuje. Volnější druhý stupeň seskupení
+  (0,45 se jménem) se tu nepoužije, protože 14 dní je mnohem víc než 72 hodin. Takto se
+  chytí navazující zpráva s novou URL i novým obrázkem. Revize a zadání uložené před touto
+  změnou se čtou stejně, titulky se berou z jejich uložených zdrojů,
 - stejný obrázek jako v decku revize (stejný sha256),
 - nebo stejná fotka v jiném rozlišení: pHash do 3 bitů. Přísnější než značka duplicity
   v #114 (6 bitů), protože různé slidy jedné šablony leží 4 až 6 bitů od sebe.
