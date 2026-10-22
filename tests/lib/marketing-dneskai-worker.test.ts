@@ -11,7 +11,7 @@ import devDesign from "../../templates/marketing/devshark/derived-layout.json";
 import type { DneskaiDeckRenderResult } from "@/lib/marketing/dneskai-ports";
 import type { MarketingModel } from "@/lib/marketing/generation";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
+import { ACCOUNT, briefFixture, briefPacket, briefPictures, validCopy as fixtureCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
@@ -19,6 +19,12 @@ const owner = "dbd55242-0c60-483d-8032-edeb348dfd0d";
 const jobId = "abbb84c0-bdcc-46ea-924a-e71db4773d28";
 const revisionId = "90246ac5-0587-407c-9048-3fce5f968a16";
 const env = { MARKETING_AI_CONSENT: "true", ANTHROPIC_API_KEY: "test-only-no-real-call" };
+/** The fixture's answer under the owner's post rules: the cover shows its headline alone. */
+const validCopy = (from: BriefPictures) => {
+  const copy = fixtureCopy(from);
+  delete copy.slides[0]!.kicker;
+  return copy;
+};
 let pictures: BriefPictures;
 beforeAll(async () => { pictures = await briefPictures(); });
 beforeEach(() => { vi.clearAllMocks(); current = null; });
@@ -49,7 +55,7 @@ const renderDneskaiDeck = vi.fn(async ({ deck }: { deck: { slides: { alt: string
   status: "rendered", renderKeys: deck.slides.map((_, index) => String(index).repeat(64).slice(0, 64)), problems: [],
   assets: deck.slides.map((slide, index) => ({ url: `https://test-only.supabase.co/storage/v1/object/sign/marketing-assets/slide-${index}.jpg?token=test-only`, sha256: String((index + 1) % 10).repeat(64), mimeType: "image/jpeg", width: 1080, height: 1350, alt: slide.alt })),
 }));
-function database(reserve: (args: Record<string, unknown>) => { data: unknown; error: unknown } = () => ({ data: { admitted: true, spentUsd: 0, reservationUsd: 0.25, ceilingUsd: 1 }, error: null }), request: unknown = job()) {
+function database(reserve: (args: Record<string, unknown>) => { data: unknown; error: unknown } = () => ({ data: { admitted: true, spentUsd: 0, reservationUsd: 0.13, ceilingUsd: 1 }, error: null }), request: unknown = job()) {
   const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() };
   query.select.mockReturnValue(query); query.eq.mockReturnValue(query);
   query.maybeSingle.mockResolvedValue({ data: { id: "test-only-account", enabled: true, verified_at: new Date().toISOString() }, error: null });
@@ -164,7 +170,7 @@ describe("the DNESKAi daily generation ceiling at the paid call", () => {
     expect(order).toBeLessThan(provider.invoke.mock.invocationCallOrder[0]!);
   }, 30000);
   it("refuses the call when the ceiling would pass, records no spend and never invokes the model", async () => {
-    const { db, rpc } = database(() => ({ data: { admitted: false, spentUsd: 0.9, reservationUsd: 0.25, ceilingUsd: 1 }, error: null }));
+    const { db, rpc } = database(() => ({ data: { admitted: false, spentUsd: 0.9, reservationUsd: 0.13, ceilingUsd: 1 }, error: null }));
     const provider = model();
     expect(await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck }))
       .toEqual({ claimed: true, status: "failed", errorCode: "dneskai-daily-generation-budget-exhausted" });
@@ -275,7 +281,7 @@ describe("the copy-validation retry on the next tick (GEN-14)", () => {
     const stored = { schemaVersion: "marketing-job-retry/1", resume: { attempt: 1, feedback: "\nTest-only feedback.", issues: ["image-unknown"], usage: { attempts: 1, inputTokens: 3000, outputTokens: 1500, estimatedCostUsd: 0.021 } } };
     const base = retryDatabase(stored);
     base.rpc.mockImplementation(async (name: string, args: Record<string, unknown>) => name === "marketing_claim_job" ? { data: job(), error: null }
-      : name === "marketing_reserve_dneskai_generation" ? { data: { admitted: false, spentUsd: 0.9, reservationUsd: 0.25, ceilingUsd: 1 }, error: null }
+      : name === "marketing_reserve_dneskai_generation" ? { data: { admitted: false, spentUsd: 0.9, reservationUsd: 0.13, ceilingUsd: 1 }, error: null }
       : name === "marketing_finish_job" ? { data: args.p_error ? "failed" : "review", error: null } : { data: null, error: null });
     const provider = model();
     expect(await executeMarketingJob(base.db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true }))
