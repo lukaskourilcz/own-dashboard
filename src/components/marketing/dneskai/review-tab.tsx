@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError, type DneskaiEditResult } from '@/lib/marketing/dneskai-workspace-client';
 import {
-  dneskaiJobState, dneskaiPostState, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, pragueDate, pragueDayAfter, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
+  dneskaiJobState, dneskaiPostState, formatDneskaiDayTime, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, pragueDate, pragueDayAfter, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiSlideStrip } from './slide-strip';
 import { DneskaiStateChip } from './state-chip';
@@ -18,7 +18,6 @@ import { DneskaiPostEditor, dneskaiApprovalBlock } from './post-editor';
 
 type Lang = 'en' | 'cs';
 const shortHash = (hash: string) => hash.slice(0, 7);
-export const pragueDateTime = (iso: string, lang: Lang) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }).format(new Date(iso));
 
 /**
  * „Dnes ke schválení“ (#119): every undecided DNESKAi post with its full slide strip, its state and one main button
@@ -59,7 +58,7 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
     setBusy(post.id); setMessage(null);
     try {
       await (await dneskaiWorkspaceApi(preview)).approve(post.id, post.contentHash);
-      setMessage({ text: t.card.approved(pragueDateTime(post.scheduledAt, lang)) });
+      setMessage({ text: t.card.approved(formatDneskaiDayTime(post.scheduledAt)) });
       await refresh();
       return true;
     } catch (error) {
@@ -103,7 +102,7 @@ export function DneskaiReviewTab({ read, projectId, lang, preview, refreshing, o
         const state = dneskaiPostState(post, context);
         return <li key={post.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm">
           <span className="min-w-0 break-words">{post.title}</span>
-          <span className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time><DneskaiStateChip detail={state} lang={lang} /></span>
+          <span className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{formatDneskaiDayTime(post.scheduledAt)}</time><DneskaiStateChip detail={state} lang={lang} /></span>
           {state.code && <DneskaiCodeText code={state.code} lang={lang} className="w-full" />}
         </li>;
       })}</ul>
@@ -132,7 +131,7 @@ function JobRow({ job, lang }: { job: DneskaiWorkspaceJob; lang: Lang }) {
   const state = dneskaiJobState(job);
   return <li className="min-w-0 space-y-1.5 px-3 py-2.5" data-testid="dneskai-job">
     <div className="flex flex-wrap items-center justify-between gap-2"><p className="min-w-0 break-words text-sm">{job.title || t.calendar.job}</p>
-      <span className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">{job.scheduledAt && <time dateTime={job.scheduledAt} className="tabular">{pragueDateTime(job.scheduledAt, lang)}</time>}<DneskaiStateChip detail={state} lang={lang} /></span></div>
+      <span className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">{job.scheduledAt && <time dateTime={job.scheduledAt} className="tabular">{formatDneskaiDayTime(job.scheduledAt)}</time>}<DneskaiStateChip detail={state} lang={lang} /></span></div>
     {state.state === 'preparing' ? <><p className="text-xs text-foreground-muted">{t.review.preparingNote}</p><DneskaiDetails lang={lang} rows={[[t.detailJob, job.id]]} /></>
       : <DneskaiCodeText code={state.code} lang={lang} details={[[t.detailJob, job.id]]} />}
   </li>;
@@ -155,7 +154,7 @@ function PostCard({ post, read, renderFailed, lang, busy, onEdit, onApprove, onD
     <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
       <div className="min-w-0">
         <h3 id={`${id}-title`} className="break-words text-sm font-semibold">{post.title}</h3>
-        <p className="mt-0.5 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time> · @{post.account.handle}{post.deck ? ` · ${t.card.slideCount(post.deck.slides.length)}` : ''}</p>
+        <p className="mt-0.5 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{formatDneskaiDayTime(post.scheduledAt)}</time> · @{post.account.handle}{post.deck ? ` · ${t.card.slideCount(post.deck.slides.length)}` : ''}</p>
       </div>
       <DneskaiStateChip detail={state} lang={lang} />
     </header>
