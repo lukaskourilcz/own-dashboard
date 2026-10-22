@@ -228,6 +228,13 @@ Rollback: set the mode back to `instagram` with the Instagram Login token and ve
 - A DNESKAi post may carry an `engagement`: a one-word keyword, the DM text sent to whoever comments it, and an optional public reply under the comment. It lives on the revision, so approval covers the exact words. Nothing sends it yet; the comment watcher comes later and has its own switch.
 - Editing it needs only the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` and a redeploy; no migration. Off, the edit route answers `engagement-disabled` to an `engagement` field and the Lab shows no editor.
 
+### Replies to keyword comments (#160)
+
+- Apply `20261023120000_dneskai_comment_replies.sql` with the other prepared migrations, then set the server-only `DNESKAI_ENGAGEMENT_ENABLED=true` and redeploy.
+- The stored Instagram Login token needs `instagram_business_manage_comments` next to `instagram_business_basic`. List it in `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` and verify the account again, or the reply switch answers `engagement-scopes-unverified`.
+- In the Instagram app, allow connected tools to message (Settings, Messages and story replies, Message controls, Connected tools, Allow access to messages). Without it Instagram refuses the first reply with code 10 and the account panel shows the block.
+- Turn the reply switch on in DNESKAi, Zdroje, Instagram account. Polling needs no webhook; the webhook upgrade is #161.
+
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
 Since the 22 October 2026 audit, `/api/marketing/dneskai/collect` answers every method with `410` and

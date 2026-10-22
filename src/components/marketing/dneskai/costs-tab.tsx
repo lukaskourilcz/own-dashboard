@@ -13,7 +13,7 @@ import { qk } from '@/lib/queries/keys';
 import { dneskaiNeedsReview, dneskaiPostState, dneskaiStateContext, formatDneskaiDay, formatDneskaiDayTime, type DneskaiCostsRead, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiCodeText } from './code-text';
 import { DneskaiStateChip } from './state-chip';
-import { TabHeader } from './review-tab';
+import { TabHeader } from './tab-header';
 
 type Lang = 'en' | 'cs';
 

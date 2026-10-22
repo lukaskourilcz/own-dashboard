@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
@@ -9,7 +9,7 @@ import { dneskaiAwaitingRender, type DneskaiWorkspaceRead } from '@/lib/marketin
 import { DneskaiLabTab } from './lab/lab-tab';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { Button } from '@/components/ui/button';
-import { DneskaiReviewTab } from './review-tab';
+import { Tooltip } from '@/components/ui/tooltip';
 import { DneskaiCalendarTab } from './calendar-tab';
 import { DneskaiPublishedTab } from './published-tab';
 import { DneskaiCostsTab } from './costs-tab';
@@ -76,11 +76,25 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
     refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
 }
 
-function ReviewExperience({ guest, ...props }: Parameters<typeof DneskaiReviewTab>[0] & { guest: boolean }) {
-  const [view, setView] = useState<'lab' | 'list'>('lab');
-  const [dirty, setDirty] = useState(false);
-  const t = dneskaiLab[props.lang];
-  return <div className="space-y-4"><div role="group" aria-label={t.views.label} className="flex gap-1">
-    {(['lab', 'list'] as const).map((item) => <Button key={item} variant={view === item ? 'subtle' : 'ghost'} size="sm" aria-pressed={view === item} disabled={(dirty && view !== item) || (guest && item === 'list')} onClick={() => setView(item)}>{t.views[item]}</Button>)}
-  </div>{view === 'lab' ? <DneskaiLabTab {...props} guest={guest} onDirtyChange={setDirty} /> : <DneskaiReviewTab {...props} />}</div>;
+type LabProps = Omit<Parameters<typeof DneskaiLabTab>[0], 'guest' | 'onDirtyChange'>;
+const CHANNELS = ['instagram', 'threads', 'linkedin'] as const;
+
+/**
+ * „Dnes ke schválení“ by channel (#170): Instagram opens the Design Lab; Threads and LinkedIn have no connected
+ * account yet and stay disabled with a tooltip that says so. Threads publishing is tracked in issue #124.
+ */
+function ReviewExperience({ guest, ...props }: LabProps & { guest: boolean }) {
+  const t = dneskaiLab[props.lang].channels;
+  return <div className="min-w-0 space-y-4" data-testid="dneskai-review">
+    <div role="group" aria-label={t.label} className="inline-flex rounded-md border border-border bg-surface-secondary p-0.5" data-testid="dneskai-channels">
+      {CHANNELS.map((channel) => channel === 'instagram'
+        ? <Button key={channel} variant="subtle" size="sm" aria-pressed="true">{t[channel]}</Button>
+        // aria-disabled, not disabled: the button stays focusable so keyboard users reach the tooltip.
+        : <Tooltip key={channel} content={t.notConnected}><Button variant="ghost" size="sm" aria-pressed="false" aria-disabled="true" aria-describedby={`dneskai-channel-${channel}-note`}
+            className="cursor-not-allowed opacity-50 hover:bg-transparent hover:text-foreground-muted" onClick={(event) => event.preventDefault()}>
+            {t[channel]}</Button></Tooltip>)}
+      {CHANNELS.slice(1).map((channel) => <span key={channel} id={`dneskai-channel-${channel}-note`} hidden>{t.notConnected}</span>)}
+    </div>
+    <DneskaiLabTab {...props} guest={guest} />
+  </div>;
 }

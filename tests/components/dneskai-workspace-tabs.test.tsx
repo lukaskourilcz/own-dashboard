@@ -30,7 +30,6 @@ const wait = (ms: number) => act(async () => { await new Promise((done) => setTi
 const show = async (tab: DneskaiWorkspaceTabId) => {
   act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab={tab} projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview /></TooltipProvider></QueryClientProvider>));
   await wait(400);
-  if (tab === 'dneskai-review') act(() => { [...container.querySelectorAll('button')].find((button) => button.textContent === 'List')?.click(); });
 };
 const blocked = () => container.querySelector('[data-testid="dneskai-blocked-posts"]')?.textContent ?? '';
 const calendarEntry = (title: string) => [...container.querySelectorAll('[data-testid="dneskai-calendar"] li li')].find((item) => item.textContent?.includes(title));
@@ -54,14 +53,14 @@ describe('DNESKAi tabs share the versions whose render did not attach', () => {
   it('records the version of an edit that answered 502 render-attach-failed, and the other tabs read it', async () => {
     // The server saved the edit as a new version (the demo's fresh one, no slides yet) and then could not attach its render.
     const edit = vi.spyOn(demoDneskaiWorkspaceApi, 'edit').mockRejectedValue(new DneskaiWorkspaceRequestError('render-attach-failed', 502, fresh));
+    // The Lab's fit check would call the dev-preview fitter over HTTP; the save does not wait for it.
+    vi.spyOn(demoDneskaiWorkspaceApi, 'fit').mockReturnValue(new Promise(() => undefined));
+    // The Lab opens on the first post in review that can still be approved: „Benchmark není žebříček“.
     await show('dneskai-review');
-    const card = [...container.querySelectorAll<HTMLElement>('[data-testid="dneskai-post"]')].find((item) => item.querySelector('h3')?.textContent === 'Benchmark není žebříček')!;
-    act(() => { [...card.querySelectorAll('button')].find((button) => button.textContent === t.card.edit)!.click(); });
-    await wait(300);
-    const editor = document.querySelector<HTMLElement>('[data-testid="dneskai-slide-editor"]')!;
-    const label = [...editor.querySelectorAll('label')].find((item) => item.textContent === t.fields.headline)!;
+    const inspector = container.querySelector<HTMLElement>('[data-testid="dneskai-slide-inspector"]')!;
+    const label = [...inspector.querySelectorAll('label')].find((item) => item.textContent?.startsWith(dneskaiLab.en.slide.fields.headline))!;
     type(document.getElementById(label.htmlFor) as HTMLInputElement, 'Benchmark čtěte s metodikou');
-    act(() => { document.querySelector<HTMLButtonElement>('[data-testid="dneskai-editor-main"]')!.click(); });
+    act(() => { [...container.querySelectorAll<HTMLButtonElement>('[data-testid="dneskai-lab"] button')].find((button) => button.textContent === dneskaiLab.en.actions.save)!.click(); });
     await wait(300);
     expect(edit).toHaveBeenCalledTimes(1);
     expect(client.getQueryData<ReadonlySet<string>>(dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).renderFailed)).toEqual(new Set([fresh]));
@@ -199,5 +198,25 @@ describe('state as card tint (#173)', () => {
       expect(card.getAttribute('aria-label')).toMatch(new RegExp(`, ${dneskaiWorkspace[lang].states[state]}$`));
       expect(card.querySelector('.rounded-full')).toBeNull();
     }
+  });
+});
+
+describe('channel control (#170)', () => {
+  it.each(['en', 'cs'] as const)('offers Instagram and announces Threads and LinkedIn as disabled, with the reason (%s)', async (lang) => {
+    vi.spyOn(demoDneskaiWorkspaceApi, 'fit').mockReturnValue(new Promise(() => undefined));
+    act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-review" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
+    await wait(400);
+    const c = dneskaiLab[lang].channels;
+    const group = container.querySelector<HTMLElement>('[data-testid="dneskai-channels"]')!;
+    expect(group.getAttribute('role')).toBe('group');
+    expect(group.getAttribute('aria-label')).toBe(c.label);
+    const buttons = [...group.querySelectorAll('button')];
+    expect(buttons.map((button) => button.textContent)).toEqual([c.instagram, c.threads, c.linkedin]);
+    expect(buttons.map((button) => button.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+    expect(buttons.map((button) => button.getAttribute('aria-disabled'))).toEqual([null, 'true', 'true']);
+    for (const button of buttons.slice(1)) expect(document.getElementById(button.getAttribute('aria-describedby')!)!.textContent).toBe(c.notConnected);
+    // No List view any more: the posts list lives in Příspěvky (#169).
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent === 'List' || button.textContent === 'Seznam')).toBe(false);
+    expect(container.querySelector('[data-testid="dneskai-lab"]')).not.toBeNull();
   });
 });

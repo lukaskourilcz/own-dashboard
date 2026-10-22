@@ -158,8 +158,9 @@ export const ContentRevisionSchema = z.strictObject({
   if (revision.brand !== "dneskai") context.addIssue({ code: "custom", message: "a deck revision belongs to DNESKAi", path: ["brand"] });
   if (revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "a deck revision publishes to Instagram", path: ["account", "platform"] });
   if (!revision.deck) { context.addIssue({ code: "custom", message: "a marketing-content/2 revision requires a deck", path: ["deck"] }); return; }
-  const expected = revision.format === "carousel" ? "carousel" : revision.format === "post" ? "single-image" : null;
-  if (expected === null) context.addIssue({ code: "custom", message: "a deck revision is a carousel or a post", path: ["format"] });
+  // A Reel (#165) is a carousel deck published as one rendered video: same slides, same JPEGs, one more format.
+  const expected = revision.format === "carousel" || revision.format === "reel" ? "carousel" : revision.format === "post" ? "single-image" : null;
+  if (expected === null) context.addIssue({ code: "custom", message: "a deck revision is a carousel, a reel or a post", path: ["format"] });
   else if (revision.deck.format !== expected) context.addIssue({ code: "custom", message: "deck format must match the revision format", path: ["deck", "format"] });
 });
 export type ContentRevision = z.infer<typeof ContentRevisionSchema>;
@@ -217,7 +218,8 @@ export function revisionReadiness(revision: ContentRevision): string[] {
   const issues: string[] = [];
   if (revision.account.platform === "instagram" && revision.assets.length === 0) issues.push("missing-assets");
   if (revision.format === "carousel" && revision.assets.length < 2) issues.push("carousel-needs-two-assets");
-  if (revision.format === "reel" && !revision.assets.some((asset) => asset.mimeType === "video/mp4")) issues.push("missing-video");
+  // A deck Reel carries its slide JPEGs; the MP4 is rendered from them before publishing (#163, #165).
+  if (revision.format === "reel" && !revision.deck && !revision.assets.some((asset) => asset.mimeType === "video/mp4")) issues.push("missing-video");
   if (revision.format === "story") {
     if (revision.account.platform !== "instagram") issues.push("story-instagram-required");
     if (revision.assets.length !== 1 || revision.assets[0]?.mimeType !== "image/jpeg") issues.push("story-single-jpeg-required");

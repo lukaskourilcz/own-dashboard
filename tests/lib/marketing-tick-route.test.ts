@@ -38,7 +38,7 @@ describe('POST /api/marketing/tick', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(await response.json()).toMatchObject({ duplicate: false, did: [{ category: 'collection', status: 'noop' }] });
-    expect(mocks.ports).toHaveBeenCalledWith({ admin: true }, owner, process.env);
+    expect(mocks.ports).toHaveBeenCalledWith({ admin: true }, owner, process.env, { origin: 'https://own.example' });
     expect(mocks.tick).toHaveBeenCalledWith({ owner, env: process.env, ports: { ports: true } }, { tick: '22222222-2222-4222-8222-222222222222', kind: 'minute' });
   });
   it('refuses a bad signature, a changed body, an unsigned bearer and a missing secret before any database access', async () => {
