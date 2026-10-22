@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "editorial",
+  "label": "Editorial",
+  "purpose": "DNESKAi as it posts today: white and paper grounds, ink type, blueprint blue for the rule, the spine and the statement ground. The default look; every render made before looks existed is drawn in it.",
+  "palette": {
+    "background": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md; the white ground the light logotype is approved for."
+    },
+    "surface": {
+      "value": "#f7f7f5",
+      "source": "--surface-page in DESIGN_SYSTEM.md; the paper ground the light logotype is approved for."
+    },
+    "surface-strong": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md."
+    },
+    "foreground": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md."
+    },
+    "muted": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts)."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Space Grotesk",
+      "source": "BRAND_SYSTEM.md: display headlines, section headings, navigation and controls."
+    },
+    "body": {
+      "family": "Source Serif 4",
+      "source": "BRAND_SYSTEM.md: article prose, deks, definitions and descriptive card copy."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: dates, issue identifiers, source ids, tags, captions and measured values."
+    }
+  },
+  "style": {}
+}

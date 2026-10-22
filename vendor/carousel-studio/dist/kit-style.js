@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { BRAND_KITS_DIRECTORY, brandKitVentures, logotypeForBrand, logotypeMarkup, readBrandKit } from "./brand-kit.js";
+import { FONT_FAMILIES } from "./fonts.js";
 function paletteValues(palette) {
     return Object.fromEntries(Object.entries(palette).map(([token, entry]) => [token, entry.value]));
 }
@@ -25,7 +26,30 @@ export function readKitStyle(venture, root) {
         };
     };
     const grounds = new Map((style?.grounds ?? []).map((ground) => [ground.id, paletteValues(ground.palette)]));
+    const flat = style?.flat ?? false;
+    const squareCorners = style?.squareCorners ?? false;
+    const logo = style?.logo ?? "every-slide";
+    const looks = new Map(reading.looks.map((look) => {
+        for (const family of [look.fonts.headline.family, look.fonts.body.family, look.fonts.mono.family]) {
+            if (!FONT_FAMILIES.includes(family))
+                throw new Error(`Brand kit ${venture} look ${look.id} names a family the studio does not ship: ${family}`);
+        }
+        const palette = paletteValues(look.palette);
+        const resolved = {
+            id: look.id,
+            label: look.label,
+            purpose: look.purpose,
+            palette,
+            fonts: { headline: look.fonts.headline.family, body: look.fonts.body.family, mono: look.fonts.mono.family },
+            flat: flat || (look.style.flat ?? false),
+            squareCorners: squareCorners || (look.style.squareCorners ?? false),
+            logo: look.style.logo ?? logo,
+            colours: new Set(Object.values(palette))
+        };
+        return [look.id, resolved];
+    }));
     const colours = new Set([
+        ...[...looks.values()].flatMap((look) => [...look.colours]),
         ...Object.values(paletteValues(manifest.carouselPalette)),
         ...[...grounds.values()].flatMap((palette) => Object.values(palette)),
         ...manifest.palettes.flatMap((palette) => [...palette.grounds, ...palette.colors.map((colour) => colour.value)]),
@@ -39,16 +63,47 @@ export function readKitStyle(venture, root) {
         fonts: manifest.carouselFonts
             ? { headline: manifest.carouselFonts.headline.family, body: manifest.carouselFonts.body.family, mono: manifest.carouselFonts.mono.family }
             : null,
-        flat: style?.flat ?? false,
-        squareCorners: style?.squareCorners ?? false,
-        logo: style?.logo ?? "every-slide",
+        flat,
+        squareCorners,
+        logo,
         grounds,
         groundSequence: style?.groundSequence ?? [],
         cornerMark: style?.cornerMark
             ? { variants: style.cornerMark.roles.map(markFor), widthPx: style.cornerMark.widthPx, marginPx: style.cornerMark.marginPx, storyTopPx: style.cornerMark.storyTopPx }
             : null,
-        colours
+        colours,
+        looks,
+        defaultLook: manifest.carouselLooks?.default ?? null
     };
+}
+const dressedStyles = new WeakMap();
+export function kitStyleWithLook(style, look) {
+    if (look === undefined)
+        return style;
+    if (!style)
+        throw new Error(`Look ${look} was asked of a brand that names no brand kit`);
+    const found = style.looks.get(look);
+    if (!found)
+        throw new Error(`Brand kit ${style.venture} declares no look ${look}${style.looks.size ? `; it has ${[...style.looks.keys()].join(", ")}` : ""}`);
+    const cache = dressedStyles.get(style) ?? new Map();
+    dressedStyles.set(style, cache);
+    const cached = cache.get(look);
+    if (cached)
+        return cached;
+    const dressed = {
+        ...style,
+        palette: found.palette,
+        fonts: found.fonts,
+        flat: found.flat,
+        squareCorners: found.squareCorners,
+        logo: found.logo
+    };
+    cache.set(look, dressed);
+    return dressed;
+}
+/** Every family any look of the kit binds, de-duplicated, for the coverage gates. */
+export function kitLookFamilies(style) {
+    return [...new Set([...style.looks.values()].flatMap((look) => [look.fonts.headline, look.fonts.body, look.fonts.mono]))];
 }
 const styleCache = new Map();
 /**

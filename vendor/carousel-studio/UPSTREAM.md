@@ -7,14 +7,15 @@ Vercel build of OwnDashboard needs no Quorum checkout, no pnpm workspace and no 
 ## Pin
 
 - Repository: `lukaskourilcz/quorum`, directory `studio/`, package `@boardlessai/carousel-studio` 1.0.0
-- Commit: `852c2e9f4fd4447ee602cd2df2c775bbba036fa2`
-- Commit date: `2026-10-20T22:29:10Z`
-- Vendored: `2026-10-20`
-- Tree sha256: `af3c47ddedae6c83413154f2f72e953b6eaabb7e360fafa6c6bfe61f7d06de24`
+- Commit: `893a4953a91ce878f5b8736a83bc0357374dc461`
+- Commit date: `2026-10-22T17:24:42Z`
+- Vendored: `2026-10-22`
+- Tree sha256: `fdacdb3ff9f6b909b6ca3712279efb63c6b3390385aaa1c7e17532dab688faa1`
 
-Note on this pin: commit `852c2e9` is Quorum `main` after PR #607 (studio tree
-`3d8482180ed0da7dc718df83bfb8e62e495c6511`): the DNESKAi kit lays slides out for the words and pictures
-they hold and keeps Czech ties (`keepWithNext: "cs"`). `--write` updates the four lines above; rewrite this note by hand.
+Note on this pin: commit `893a495` is Quorum `main` with six DNESKAi kits: editorial (default), bold, explainer,
+magazine, ticker and spotlight (the owner's photo-led reference, with an optional circular second picture on the
+cover). By the owner's rule of 22 October 2026 no kit draws a page count or a picture credit, and the cover and single
+templates hold only the headline. `--write` updates the four lines above; rewrite this note by hand.
 
 The tree hash covers every file in this directory except this one: sha256 over the sorted
 `sha256sum` lines of the files, as `scripts/vendor-carousel-studio.sh` computes it.
@@ -27,7 +28,7 @@ The tree hash covers every file in this directory except this one: sha256 over t
 | `dist/` | `tsc -p studio/tsconfig.build.json` on the commit above (TypeScript 5.9.3) | The package entry point and its type declarations, byte-identical to Quorum's own build |
 | `fonts/` | `studio/fonts/`, all 17 families with their `OFL.txt` | The renderer hands every committed face to resvg (`fontFiles()` lists all of `FONT_METRICS`), and resvg looks for a missing glyph across all of them. A subset would make the output depend on which files happen to exist |
 | `brand-kits/caught-up/` | `studio/brand-kits/caught-up/` | The DNESKAi logotype and its manifest, which pins each file by sha256 |
-| `golden/dneskai-photo.json` | `studio/golden/dneskai-photo.json` | The pinned PNG hash of each DNESKAi slide type, used by the vendor test |
+| `golden/dneskai-*.json` | `studio/golden/dneskai-*.json` | The pinned PNG hashes of each DNESKAi slide type in every kit (`dneskai-photo.json` is editorial), used by the vendor test |
 | `LICENSE` | Quorum `LICENSE` (MIT) | Licence of the engine code |
 | `package.json` | `studio/package.json`, trimmed | Only `name`, `version`, `type`, `exports` and `dependencies`, plus two subpath exports (below) |
 

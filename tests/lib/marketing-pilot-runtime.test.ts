@@ -66,7 +66,7 @@ describe("pilot guard in the actual worker admission and invocation path; no net
   it("rechecks durable admission on every attempted model call, including a validation retry", async () => {
     const { input, db, jobId, rpc, model, invoke, result } = setup();
     rpc.mockImplementation(async (name: string) => ({ data: name === "marketing_claim_job" ? input : name === "marketing_check_pilot_attempt" ? true : "review", error: null }));
-    const run = vi.fn(async (_input, deps) => { expect(deps.budget.maxCostUsd).toBe(0.25); await deps.model.invoke(invoke); await deps.model.invoke(invoke); return result; });
+    const run = vi.fn(async (_input, deps) => { expect(deps.budget.maxCostUsd).toBe(0.13); await deps.model.invoke(invoke); await deps.model.invoke(invoke); return result; });
     await executeMarketingJob(db, owner, jobId, { env, model, run, refreshSource: vi.fn(), storage: { put: vi.fn() } });
     expect(model.invoke).toHaveBeenCalledTimes(2);
     const claim = rpc.mock.calls.find(([name]) => name === "marketing_claim_job");

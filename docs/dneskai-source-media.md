@@ -140,7 +140,32 @@ Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service r
   `Obrázek: <vlastník>/<repozitář> (GitHub)`. Otázky ze Stack Exchange nesou
   `Obrázek: Stack Overflow`.
 
-Credit není nikdy prázdný a má nejvýše 120 znaků, stejně jako pole `credit` slidu.
+- Fotografie agentury (rozhodnutí vlastníka 21, 22. 10. 2026): když obrázek z feedu sám
+  jmenuje agenturu, credit uvede agenturu i vydavatele, který ho otiskl:
+  `Foto: Getty Images přes TechCrunch`. Partner Getty Images se uvede s ní:
+  `Foto: Bloomberg / Getty Images přes TechCrunch`. Když je agentura zároveň vydavatelem,
+  zůstane `Foto: Reuters`. Agentury: Getty Images, Reuters, AP, AFP, Shutterstock, Alamy,
+  EPA, Bloomberg, ČTK.
+
+  Platí jen výslovné signály daného obrázku (`dneskaiPictureAgency`):
+  1. pole creditu vložená v souboru: IPTC By-line, Credit, Source a Copyright
+     (`dneskaiEmbeddedCredits` čte záznamy IIM, i uvnitř bloku Photoshopu) a XMP
+     `photoshop:Credit`, `photoshop:Source`, `dc:rights`, `dc:creator` a další pole práv;
+  2. creditová část popisku nebo alt textu: text za `Image Credits:`, `Credit:`,
+     `Photo by`, `Foto:` a podobnými štítky, za `©`, `(AP Photo/…)`, `REUTERS/…` a agentura
+     hned za lomítkem nebo za „via“ („Justin Sullivan / Getty Images“);
+  3. název agentury jako slovo v cestě obrázku (`GettyImages-2171234567.jpg`,
+     `shutterstock_2245.jpg`); krátké názvy (AP, EPA, ČTK) se v URL nehledají.
+
+  Zmínka mimo credit („the Reuters newsroom“) se nepočítá, AP, AFP, EPA a ČTK musí být
+  velkými písmeny, a když signály jmenují dvě různé agentury, credit zůstane
+  `Obrázek: <vydavatel>`. Nic se nehádá. Instagram a příspěvky na platformách dál
+  uvádějí autora. Credit se počítá pro každý obrázek zvlášť při sběru a ukládá se do
+  `marketing_media_asset_links.credit`; dřív uložené obrázky si credit nechávají.
+
+Credit není nikdy prázdný a má nejvýše 120 znaků. Zůstává v databázi
+(`marketing_media_asset_links.credit`) jako původ obrázku. Od 22. 10. 2026 ho neukazuje
+žádný slide ani popisek příspěvku (pravidla vlastníka, `.claude/skills/dneskai-post-content/SKILL.md`).
 
 ## Popisek Reelu
 
@@ -195,4 +220,4 @@ Instagram ani placené API.
 
 RSS prefers `content:encoded`. The article page already fetched for its pictures also yields up to 4,000 sanitized characters of article/main prose; scripts, navigation and instruction-shaped content are excluded. Image alt text/figure captions are retained as untrusted publisher metadata (up to 1,000 characters), never as a vision observation. The collection lease fences this evidence before the image plan is fixed. Brief `/2` carries these fields into the bounded offer; `/1` stays readable. Caption-only social evidence cannot become article or video-transcript evidence.
 
-This requires the new, **unapplied** richer-evidence and brief-compatibility migrations listed in [migration-guide.md](migration-guide.md). Apply them through [migration-guide.md](migration-guide.md#applying-the-prepared-migrations). Agency/photo-author credit policy remains an owner decision; publisher metadata does not authorize a new attribution rule.
+This requires the new, **unapplied** richer-evidence and brief-compatibility migrations listed in [migration-guide.md](migration-guide.md). Apply them through [migration-guide.md](migration-guide.md#applying-the-prepared-migrations). The owner settled agency credits on 22 October 2026 (decision 21); the rule is in [Credit](#credit) above.

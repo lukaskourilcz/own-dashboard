@@ -32,6 +32,7 @@ Use these local skills when applicable:
 - `.claude/skills/own-dashboard-brand-media/SKILL.md`
 - `.claude/skills/own-dashboard-visual-qa/SKILL.md`
 - `.claude/skills/own-dashboard-release/SKILL.md`
+- `.claude/skills/dneskai-post-content/SKILL.md` — binding: what a DNESKAi slide and caption may never show (no sources slide, credits, page counts or text about sources; headline-only first slide; at most 10 hashtags)
 
 Narrow agents live in `.claude/agents/`; executable command playbooks live in `.claude/commands/`.
 

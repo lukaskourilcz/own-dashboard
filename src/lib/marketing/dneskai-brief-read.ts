@@ -57,13 +57,14 @@ export async function readDneskaiBriefs(db: Database, owner: string, project: st
  * The nightly selection's eligibility rules, mirrored from public.marketing_dneskai_finish
  * (supabase/migrations/20261021124058_dneskai_events_briefs_finish.sql, `eligible`): a classified, on-topic, open report
  * with relevance at least 0.85, published no later than now and within 48 hours (ai-news, tech-news) or 30 days.
- * Explanation only; the SQL stays the authority and nothing here selects anything.
+ * Explanation only; the SQL stays the authority and nothing here selects anything. The windows, floor and
+ * eligibility are the same under 20261022180000 (relevance first); only the ranking among eligible events changed.
  */
 export const DNESKAI_SELECTION_RELEVANCE_FLOOR = 0.85;
 export const DNESKAI_SELECTION_NEWS_WINDOW_HOURS = 48;
 export const DNESKAI_SELECTION_WINDOW_DAYS = 30;
 
-type SelectionRule = Exclude<DneskaiEventSelection['code'], 'selection-not-picked' | null> | 'eligible' | 'unexplained';
+type SelectionRule = Exclude<DneskaiEventSelection['code'], 'selection-not-picked' | 'selection-not-picked-relevance' | null> | 'eligible' | 'unexplained';
 function selectionRule(candidate: DneskaiCandidate, now: Date): SelectionRule {
   if (candidate.category === null) return 'selection-unclassified';
   if (candidate.category === 'other') return 'selection-off-topic';
@@ -83,14 +84,16 @@ export function dneskaiSelectionEligible(candidate: DneskaiCandidate, now: Date)
 /**
  * Why an unselected event lost, from the stored candidates alone (read-only). The lead is the report the selection
  * would lead with: an eligible one first, then the most relevant. Held, duplicate and rejected events keep their
- * own reason; they get the lead's facts and no selection code.
+ * own reason; they get the lead's facts and no selection code. `relevanceFirst` names the rule of
+ * 20261022180000 (decisions 11 and 12: relevance first, at most one event outside ai-news and tech-news a day) in place
+ * of one event per category; it is on with DNESKAI_SELECTION_V2_ENABLED.
  */
-export function dneskaiEventSelection(members: readonly DneskaiCandidate[], status: DneskaiEventView['status'], now: Date): DneskaiEventSelection {
+export function dneskaiEventSelection(members: readonly DneskaiCandidate[], status: DneskaiEventView['status'], now: Date, relevanceFirst = false): DneskaiEventSelection {
   const ranked = members.map((candidate) => ({ candidate, rule: selectionRule(candidate, now) }))
     .sort((a, b) => Number(b.rule === 'eligible') - Number(a.rule === 'eligible') || (b.candidate.relevance ?? -1) - (a.candidate.relevance ?? -1)
       || Date.parse(b.candidate.publishedAt ?? '') - Date.parse(a.candidate.publishedAt ?? '') || 0);
   const lead = ranked[0]!;
-  const code = status !== 'new' ? null : lead.rule === 'eligible' ? 'selection-not-picked' : lead.rule === 'unexplained' ? null : lead.rule;
+  const code = status !== 'new' ? null : lead.rule === 'eligible' ? (relevanceFirst ? 'selection-not-picked-relevance' : 'selection-not-picked') : lead.rule === 'unexplained' ? null : lead.rule;
   return { code, category: lead.candidate.category, relevance: lead.candidate.relevance, publishedAt: lead.candidate.publishedAt, ...(lead.candidate.dateEstimated ? { dateEstimated: true as const } : {}) };
 }
 
@@ -100,7 +103,7 @@ export function dneskaiEventSelection(members: readonly DneskaiCandidate[], stat
  * out. Newest events first, at most `limit`. Each carries the lead report's category, relevance and date and, for
  * an open event, the first selection rule it fails (SEL-05).
  */
-export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], briefed: ReadonlySet<string>, limit = 30, now: Date = new Date()): DneskaiEventView[] {
+export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], briefed: ReadonlySet<string>, limit = 30, now: Date = new Date(), relevanceFirst = false): DneskaiEventView[] {
   const open = candidates.filter((candidate) => !briefed.has(candidate.id) && candidate.status !== 'selected');
   const statusOf = (members: readonly DneskaiCandidate[]): { status: DneskaiEventView['status']; reason: string | null } => {
     for (const status of ['duplicate', 'held', 'rejected'] as const) {
@@ -115,6 +118,6 @@ export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], 
     .map((event) => {
       const ordered = rankDneskaiEventMembers(event.members);
       const state = statusOf(event.members);
-      return { eventId: event.eventId, targetDate: null, ...state, brief: null, members: ordered.slice(0, 30).map((member, index) => memberView(member, index === 0 ? 'primary' : 'supporting')), selection: dneskaiEventSelection(event.members, state.status, now) };
+      return { eventId: event.eventId, targetDate: null, ...state, brief: null, members: ordered.slice(0, 30).map((member, index) => memberView(member, index === 0 ? 'primary' : 'supporting')), selection: dneskaiEventSelection(event.members, state.status, now, relevanceFirst) };
     });
 }

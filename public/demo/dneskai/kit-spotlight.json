@@ -1,0 +1,609 @@
+{
+  "fixture": true,
+  "kit": "spotlight",
+  "look": "spotlight",
+  "tileCount": 25,
+  "layout": {
+    "width": 1944,
+    "height": 2574,
+    "rows": 5,
+    "tiles": [
+      {
+        "left": 24,
+        "top": 24
+      },
+      {
+        "left": 408,
+        "top": 24
+      },
+      {
+        "left": 792,
+        "top": 24
+      },
+      {
+        "left": 1176,
+        "top": 24
+      },
+      {
+        "left": 1560,
+        "top": 24
+      },
+      {
+        "left": 24,
+        "top": 534
+      },
+      {
+        "left": 408,
+        "top": 534
+      },
+      {
+        "left": 792,
+        "top": 534
+      },
+      {
+        "left": 1176,
+        "top": 534
+      },
+      {
+        "left": 1560,
+        "top": 534
+      },
+      {
+        "left": 24,
+        "top": 1044
+      },
+      {
+        "left": 408,
+        "top": 1044
+      },
+      {
+        "left": 792,
+        "top": 1044
+      },
+      {
+        "left": 1176,
+        "top": 1044
+      },
+      {
+        "left": 1560,
+        "top": 1044
+      },
+      {
+        "left": 24,
+        "top": 1554
+      },
+      {
+        "left": 408,
+        "top": 1554
+      },
+      {
+        "left": 792,
+        "top": 1554
+      },
+      {
+        "left": 1176,
+        "top": 1554
+      },
+      {
+        "left": 1560,
+        "top": 1554
+      },
+      {
+        "left": 24,
+        "top": 2064
+      },
+      {
+        "left": 408,
+        "top": 2064
+      },
+      {
+        "left": 792,
+        "top": 2064
+      },
+      {
+        "left": 1176,
+        "top": 2064
+      },
+      {
+        "left": 1560,
+        "top": 2064
+      }
+    ]
+  },
+  "slides": [
+    {
+      "deck": "photo-rich",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-spotlight-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "6f3d8acc1d2323699001c5474adfcdd26bf3d7bee53260e5dd88b533c1f4110d",
+      "tileHash": "6f3d8acc1d2323699001c5474adfcdd26bf3d7bee53260e5dd88b533c1f4110d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-spotlight-figure",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "45a3508d48f0cb69694a30d4f6348f5bd0a36738df2a7257f6f27ad0e71308c6",
+      "tileHash": "45a3508d48f0cb69694a30d4f6348f5bd0a36738df2a7257f6f27ad0e71308c6",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-spotlight-split",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "f883f37fa086546463cb3aa500975116ef499ffb72b40109a66b67bf28fdaaa2",
+      "tileHash": "f883f37fa086546463cb3aa500975116ef499ffb72b40109a66b67bf28fdaaa2",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 3,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-spotlight-figure",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "eb0abe1e54182a4bf2296735b6a2e284e36e0bdd3dc6eff8e26143da34c26aa5",
+      "tileHash": "eb0abe1e54182a4bf2296735b6a2e284e36e0bdd3dc6eff8e26143da34c26aa5",
+      "truncatedSlots": [],
+      "problems": [
+        {
+          "code": "image-upscaled",
+          "field": "image-1",
+          "blocking": false
+        }
+      ],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 4,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "65181378fb25f85f6357ac30ce36ace2a933900b9f76e41c16ee936c021138fe",
+      "tileHash": "65181378fb25f85f6357ac30ce36ace2a933900b9f76e41c16ee936c021138fe",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "photo-rich",
+      "index": 5,
+      "type": "split",
+      "template": {
+        "id": "dneskai-spotlight-split-pair",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "b2c069f956e19b441c0fa4063f72acb394104bafd75c94c155237d8b16225ac6",
+      "tileHash": "b2c069f956e19b441c0fa4063f72acb394104bafd75c94c155237d8b16225ac6",
+      "truncatedSlots": [],
+      "problems": [
+        {
+          "code": "image-upscaled",
+          "field": "image-1",
+          "blocking": false
+        },
+        {
+          "code": "image-upscaled",
+          "field": "image-2",
+          "blocking": false
+        }
+      ],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 6,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-spotlight-sources-3",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "650270812f42b439b25291a08ffef1d5d154e1a3a5c4115b55d9abbe54418ba7",
+      "tileHash": "650270812f42b439b25291a08ffef1d5d154e1a3a5c4115b55d9abbe54418ba7",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-3",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-spotlight-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "74b4d196db17718421677410ecc838281918df384fc687c76946517cfaba6f90",
+      "tileHash": "74b4d196db17718421677410ecc838281918df384fc687c76946517cfaba6f90",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-spotlight-figure",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "709771010a2c36b0bd3fdd0e8f0353d239477a7527b2f3a63b775c62d8061cc2",
+      "tileHash": "709771010a2c36b0bd3fdd0e8f0353d239477a7527b2f3a63b775c62d8061cc2",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "84932d40a2d2e64796a6348de636ab5e8c29fc43e31a1ef436e391108768bdf6",
+      "tileHash": "84932d40a2d2e64796a6348de636ab5e8c29fc43e31a1ef436e391108768bdf6",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "single-photo",
+      "index": 3,
+      "type": "split",
+      "template": {
+        "id": "dneskai-spotlight-split",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "2023a09618812177c61d8d844bc1c46234069b3b4d275a2f4b0ed859b09d880d",
+      "tileHash": "2023a09618812177c61d8d844bc1c46234069b3b4d275a2f4b0ed859b09d880d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-spotlight-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "46d6fe969406dddc1ce5644e208d10be85b5008544d4924ab46bfdc35e2dafe3",
+      "tileHash": "46d6fe969406dddc1ce5644e208d10be85b5008544d4924ab46bfdc35e2dafe3",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "text-only",
+      "index": 0,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "65181378fb25f85f6357ac30ce36ace2a933900b9f76e41c16ee936c021138fe",
+      "tileHash": "65181378fb25f85f6357ac30ce36ace2a933900b9f76e41c16ee936c021138fe",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 1,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "84932d40a2d2e64796a6348de636ab5e8c29fc43e31a1ef436e391108768bdf6",
+      "tileHash": "84932d40a2d2e64796a6348de636ab5e8c29fc43e31a1ef436e391108768bdf6",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "a021ae76215776771891e166b39bdb6d926f4609dc64665cbbd1ea1177a5608c",
+      "tileHash": "a021ae76215776771891e166b39bdb6d926f4609dc64665cbbd1ea1177a5608c",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "84932d40a2d2e64796a6348de636ab5e8c29fc43e31a1ef436e391108768bdf6",
+      "tileHash": "84932d40a2d2e64796a6348de636ab5e8c29fc43e31a1ef436e391108768bdf6",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-spotlight-sources-0",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "c9b5319778c7acf5b8828b20ab4574a5e63b81cb4a80ea6a7eaa7d83862fe70e",
+      "tileHash": "c9b5319778c7acf5b8828b20ab4574a5e63b81cb4a80ea6a7eaa7d83862fe70e",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-spotlight-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": null,
+      "tileHash": "7be79818d8dfb1ba3f75efd77b9faa0e4f5eb7f1cdbb63806da98f1ca74fccf2",
+      "truncatedSlots": [],
+      "problems": [
+        {
+          "code": "image-low-resolution",
+          "field": "image-1",
+          "blocking": true
+        }
+      ],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-spotlight-figure",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "fcd01ce853525455a07b50fd8be4fe5638567c8d3ab603a8f677a84168d6e6d7",
+      "tileHash": "fcd01ce853525455a07b50fd8be4fe5638567c8d3ab603a8f677a84168d6e6d7",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-spotlight-split",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "e2c5f456c13a465f5bc204e47ca4f7819626819b9fc0a36087247f5b4abe59d7",
+      "tileHash": "e2c5f456c13a465f5bc204e47ca4f7819626819b9fc0a36087247f5b4abe59d7",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-spotlight-statement",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "65181378fb25f85f6357ac30ce36ace2a933900b9f76e41c16ee936c021138fe",
+      "tileHash": "65181378fb25f85f6357ac30ce36ace2a933900b9f76e41c16ee936c021138fe",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-spotlight-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "993043a9938f7f616c73ba52be7567eb6e5d6d1e8a01143b5d6a402ce60e084f",
+      "tileHash": "993043a9938f7f616c73ba52be7567eb6e5d6d1e8a01143b5d6a402ce60e084f",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-spotlight-single-photo",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "74b4d196db17718421677410ecc838281918df384fc687c76946517cfaba6f90",
+      "tileHash": "74b4d196db17718421677410ecc838281918df384fc687c76946517cfaba6f90",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-type-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-spotlight-single-type",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "02f661d13403aeb7e2aba12db0e73b739fd639335b6b261c67c72732a34652ec",
+      "tileHash": "02f661d13403aeb7e2aba12db0e73b739fd639335b6b261c67c72732a34652ec",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "cover-inset",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-spotlight-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "spotlight",
+      "pngHash": "e68b2155db96d806d077583ef1441095b41f3147c6763b6a02ea53372b7ef893",
+      "tileHash": "e68b2155db96d806d077583ef1441095b41f3147c6763b6a02ea53372b7ef893",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-5"
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,22 @@ export const DNESKAI_SLIDE_TYPES = ["cover-photo", "figure", "split", "statement
 export const DneskaiSlideTypeSchema = z.enum(DNESKAI_SLIDE_TYPES);
 export type DneskaiSlideType = z.infer<typeof DneskaiSlideTypeSchema>;
 
+/**
+ * The six DNESKAi kits (quorum `studio/src/dneskai-kits`). A deck names its kit only when it is not `editorial`:
+ * a deck without `kit` is drawn in editorial, so every deck saved before kits existed keeps its hash.
+ */
+export const DNESKAI_KIT_IDS = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"] as const;
+export const DneskaiKitIdSchema = z.enum(DNESKAI_KIT_IDS);
+export type DneskaiKitId = z.infer<typeof DneskaiKitIdSchema>;
+export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
+/**
+ * The kits the vendored studio (vendor/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
+ * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
+ */
+export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
+/** The kit a deck is drawn in. */
+export const dneskaiKitOf = (deck: { kit?: DneskaiKitId } | null | undefined): DneskaiKitId => deck?.kit ?? DNESKAI_EDITORIAL_KIT;
+
 /** Statement slides take `accent | ink`; a single-image post takes `photo | type`. */
 export const DneskaiSlideVariantSchema = z.enum(["accent", "ink", "photo", "type"]);
 
@@ -58,6 +74,8 @@ export type DneskaiSlide = z.infer<typeof DneskaiSlideSchema>;
 export const DneskaiDeckSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_SLIDES_VERSION),
   format: z.enum(["carousel", "single-image"]),
+  /** Absent means editorial; editorial is never written, so one deck has one hash. */
+  kit: DneskaiKitIdSchema.exclude(["editorial"]).optional(),
   slides: z.array(DneskaiSlideSchema).min(1).max(10),
 }).superRefine((deck, context) => {
   if (deck.format === "single-image" && (deck.slides.length !== 1 || deck.slides[0]?.type !== "single")) {

@@ -174,6 +174,12 @@ The code connects one Instagram professional account through the Instagram API w
 - **Give up and queue again.** A publication left in `reconciliation` (or a claim whose lease ran out) with no numeric container ID, no media ID, no URL and no publish intent provably published nothing. *Errors and costs → Failed or uncertain publications* then offers *Give up and queue again*, which returns the post to approved and queued without changing its approval or images. Any row with a media ID or a numeric container is refused and stays with reconciliation. If the slot is more than 15 minutes old, the next run records the ordinary missed slot and the post can then be edited, returned or skipped.
 - The action needs `supabase/migrations/20261022110000_marketing_requeue_unpublished_publication.sql` and the server-only `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#applying-the-prepared-migrations)), then set the variable and redeploy. Without them the button is not shown and the route answers `publication-requeue-unavailable`.
 
+### Review reminders, regenerate and generate now (owner decisions 7–9)
+
+- **Review reminders** need no setup. The pg_cron tick writes them into OwnDashboard's Notifications (Inbox), never to e-mail or another channel. Set the server-only `DNESKAI_REVIEW_REMINDERS_ENABLED=false` and redeploy to stop them; any other value leaves them on.
+- **Generate now** needs only `MARKETING_AI_CONSENT=true`, which generation already requires. It uses existing functions and the existing $1 daily ceiling.
+- **Regenerate with a note** needs `supabase/migrations/20261022190000_dneskai_regenerate_with_note.sql` and the server-only `DNESKAI_REGENERATE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-regenerate-with-a-note-owner-decision-8)), then set the variable and redeploy. Until then the Lab shows the button disabled with its reason and the route answers `regenerate-unavailable`.
+
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
 Since the 22 October 2026 audit, `/api/marketing/dneskai/collect` answers every method with `410` and
@@ -187,3 +193,7 @@ These server variables now open nothing. Delete them from every Vercel environme
 `MARKETING_DNESKAI_COLLECTION_SECRET`, `MARKETING_DNESKAI_MANUAL_SECRET`, `MARKETING_DNESKAI_MANUAL_RUN` and the
 `MARKETING_DNESKAI_COLLECTION_PILOT_*` group. Keep `MARKETING_DNESKAI_COLLECTION_ENABLED` (the tick reads it) and `MARKETING_N8N_SECRET` (it still
 opens the devShark and knowledge operations of `/api/marketing/n8n`).
+
+### Story selection v2 switch (owner decisions 11-13)
+
+`DNESKAI_SELECTION_V2_ENABLED` is a server-only Vercel variable, off by default. Set it to `true` in Production and redeploy only after migrations `20261022180000_dneskai_relevance_first_selection.sql` and `20261022180100_dneskai_held_requeue.sql` are applied ([migration guide](migration-guide.md#prepared-story-selection-v2-owner-decisions-11-13)). With it on, the nightly collection gives reports that Jev held in the last 48 hours one more Jev review (at most 16 a night, within the existing $0.25 daily collection ceiling), and the Sources tab explains an unpicked event by the relevance-first rule. The rule itself changes when `20261022180000` is applied, with or without the switch. Turning it off stops the re-queue; reports already re-queued keep their record and never get a third review.

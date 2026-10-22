@@ -1,3 +1,4 @@
+import { dneskaiShownDeck } from "./dneskai-slide-layout";
 import "server-only";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -25,7 +26,7 @@ export async function editedDneskaiDeck(original: ContentRevision, edit: Dneskai
   if (!original.deck) return fail("deck-edit-unsupported");
   // A type move of a picture slide or an inserted slide is checked against the pool's capability flags (review-10).
   const briefPool = edit && dneskaiDeckEditNeedsPool(original.deck, edit) ? (loadBriefPool ? await loadBriefPool(original) : fail("deck-edit-pool-unavailable")) : null;
-  const deck = edit ? applyDneskaiDeckEdit(original.deck, edit, briefPool) : original.deck;
+  const deck = dneskaiShownDeck(edit ? applyDneskaiDeckEdit(original.deck, edit, briefPool) : original.deck);
   const pool = new Set(await listBriefAssetHashes(original));
   if (dneskaiDeckAssetHashes(deck).some((sha256) => !pool.has(sha256))) return fail("deck-asset-outside-brief");
   return deck;

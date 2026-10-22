@@ -84,6 +84,16 @@ export const DneskaiWorkspaceJobSchema = z.strictObject({
 });
 export type DneskaiWorkspaceJob = z.infer<typeof DneskaiWorkspaceJobSchema>;
 
+/** A built brief waiting for the scheduler to admit it: no job exists, nothing has been spent on it. */
+export const DneskaiWorkspaceWaitingSchema = z.strictObject({
+  briefId: uuid,
+  title: z.string().min(1).max(300),
+  scheduledAt: timestamp,
+  status: z.enum(['pending', 'ready']),
+  code: code.nullable(),
+});
+export type DneskaiWorkspaceWaiting = z.infer<typeof DneskaiWorkspaceWaitingSchema>;
+
 export const DneskaiWorkspaceReadSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_WORKSPACE_VERSION),
   /** Prague date the read was built for; the calendar starts here. */
@@ -94,6 +104,13 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
   accounts: z.array(z.strictObject({ id: uuid, remoteId: z.string().min(1).max(200), handle: z.string().min(1).max(100), verified: z.boolean(), enabled: z.boolean() })).max(4),
   posts: z.array(DneskaiWorkspacePostSchema).max(60),
   jobs: z.array(DneskaiWorkspaceJobSchema).max(20),
+  /**
+   * Topics of today and tomorrow whose brief waits for the scheduler: pending or ready, with no drafting job yet
+   * (owner decision 9, „Generate now“). Absent from older responses.
+   */
+  waiting: z.array(DneskaiWorkspaceWaitingSchema).max(8).optional(),
+  /** Which paid owner actions this deployment offers. Absent from older responses: neither. */
+  capabilities: z.strictObject({ regenerate: z.boolean(), generateNow: z.boolean() }).optional(),
   /** Stored rows (revisions, accounts) that could not be read; shown as a count, never silently dropped. */
   unreadable: z.number().int().nonnegative(),
 });
@@ -233,8 +250,11 @@ export function dneskaiCalendarDays(input: { today: string; generatedAt: string;
 }
 
 /** Today for review: undecided posts first by time, then drafting jobs for today and the next days. */
-export function dneskaiReviewQueue(read: Pick<DneskaiWorkspaceRead, 'posts' | 'jobs' | 'today'>): { posts: DneskaiWorkspacePost[]; jobs: DneskaiWorkspaceJob[] } {
-  const posts = read.posts.filter(dneskaiNeedsReview).sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt));
+export function dneskaiReviewQueue(read: Pick<DneskaiWorkspaceRead, 'posts' | 'jobs' | 'today'> & { generatedAt?: string }): { posts: DneskaiWorkspacePost[]; jobs: DneskaiWorkspaceJob[] } {
+  // A post whose time passed before the read follows the ones that can still be approved (owner decision 6: it is moved).
+  const now = read.generatedAt ? Date.parse(read.generatedAt) : Number.NEGATIVE_INFINITY;
+  const passed = (post: DneskaiWorkspacePost) => Number(Date.parse(post.scheduledAt) <= now);
+  const posts = read.posts.filter(dneskaiNeedsReview).sort((a, b) => passed(a) - passed(b) || Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt));
   const jobs = read.jobs.filter((job) => !job.scheduledAt || pragueDate(job.scheduledAt) >= read.today)
     .sort((a, b) => Date.parse(a.scheduledAt ?? a.createdAt) - Date.parse(b.scheduledAt ?? b.createdAt));
   return { posts, jobs };

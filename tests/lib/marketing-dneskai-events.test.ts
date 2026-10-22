@@ -108,6 +108,15 @@ describe('reworded, renumbered and dated headlines of one story (SEL-07)', () =>
     expect(dneskaiHeadlinesMatch(left, right)).toBe(false);
     expect(dneskaiHeadlinesMatch(right, left)).toBe(false);
   });
+  // Owner decision 14 (22 October 2026, no change): two sizes of one release share the release number and stay one
+  // story; without a shared number the size alone is a different figure and keeps them apart (row above).
+  it('joins two sizes of one model release into one event', () => {
+    expect(dneskaiHeadlinesMatch('Meta releases Llama 4 8B', 'Meta releases Llama 4 70B')).toBe(true);
+    expect(dneskaiHeadlinesMatch('Meta releases Llama 4 70B', 'Meta releases Llama 4 8B')).toBe(true);
+    const events = groupDneskaiEvents([report('instagram:meta.ai', 'llama-8b', 'Meta releases Llama 4 8B', 0), report('the-verge', 'llama-70b', 'Meta releases Llama 4 70B', 3)]);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.links).toEqual(['similar-title']);
+  });
   it('normalises figures: magnitude suffixes and words, Czech words, currency and a decimal comma', () => {
     expect([...dneskaiTitleTokens('Anthropic raises $40B at $300bn valuation')]).toEqual(['anthropic', 'raises', '40', 'billion', '300', 'valuation']);
     expect([...dneskaiTitleTokens('Startup získal 1,5 mld. dolarů')]).toEqual(['startup', 'ziskal', '1.5', 'billion']);

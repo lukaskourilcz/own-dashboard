@@ -7,7 +7,8 @@ export const runtime = 'nodejs';
 
 /**
  * Owner actions on a dead-end DNESKAi brief (briefs-07): `retry`, `reslot` and `release`. None of them admits a job,
- * approves a post or changes a ceiling; there is deliberately no `generate-now`.
+ * approves a post or changes a ceiling. „Generate now“ (owner decision 9) is the separate, budgeted
+ * `/api/marketing/dneskai/generate`.
  */
 const Input = z.strictObject({ action: z.enum(['retry', 'reslot', 'release']), briefId: z.uuid() });
 export async function POST(request: Request) {

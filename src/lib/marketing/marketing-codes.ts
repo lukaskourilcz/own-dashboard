@@ -342,6 +342,7 @@ const CODES = {
   'asset-image-invalid': ['investigate', 'An image file is not valid.', 'Soubor obrázku není platný.'],
   'asset-mime-or-response-invalid': ['retry', 'An image link returned something other than an image.', 'Odkaz na obrázek nevrátil obrázek.'],
   'asset-unreachable': ['auto', 'An image link could not be reached.', 'Odkaz na obrázek není dostupný.'],
+  'caption-hashtags-over-limit': ['edit', 'A DNESKAi caption carries at most 10 hashtags; remove the extra ones.', 'Popisek DNESKAi nese nejvýš 10 hashtagů; ty navíc odeberte.'],
   'caption-hashtag-limit': ['edit', 'The caption has more hashtags than Instagram allows.', 'Popisek má víc hashtagů, než Instagram dovolí.'],
   'caption-mention-limit': ['edit', 'The caption mentions too many accounts.', 'Popisek zmiňuje příliš mnoho účtů.'],
   'checkpoint-fence-lost': ['wait', 'Another process took over this publication.', 'Publikaci převzal jiný proces.'],
@@ -485,6 +486,24 @@ const CODES = {
   'collection-disabled': ['config', 'Source collection is not enabled.', 'Sběr zdrojů není zapnutý.'],
   // A retired entry point answers 410: /api/marketing/dneskai/collect, and DNESKAi operations of /api/marketing/n8n.
   'route-retired': ['none', 'This entry point was retired; the scheduler does this work now.', 'Tento vstupní bod byl vyřazen; tuto práci teď dělá plánovač.'],
+  // Owner decisions 6, 8 and 9 (22 October 2026): approve at the next free slot, regenerate with a note, generate now.
+  'slot-unavailable': ['reload', 'The free slot changed after you opened the post, so nothing was moved or approved.', 'Volný čas se změnil, když jste měli příspěvek otevřený, proto se nic nepřesunulo ani neschválilo.'],
+  'slot-none-free': ['edit', 'No daily slot is free today or tomorrow, so nothing was moved.', 'Dnes ani zítra není volný žádný denní čas, proto se nic nepřesunulo.'],
+  'regenerate-unavailable': ['config', 'Regenerating is switched off on this server, so nothing was generated or spent.', 'Přegenerování je na tomto serveru vypnuté, nic se nevygenerovalo ani neutratilo.'],
+  'regenerate-not-reviewable': ['reload', 'Only a post in review or a returned post can be regenerated.', 'Přegenerovat lze jen příspěvek ke kontrole nebo vrácený příspěvek.'],
+  'regenerate-unsupported': ['edit', 'This post has no drafting job to repeat. It can be edited by hand.', 'Tento příspěvek nemá úlohu psaní, kterou by šlo zopakovat. Upravit ho jde ručně.'],
+  'regenerate-slot-passed': ['edit', 'The topic’s slot is less than 15 minutes away, too close for a new draft to be reviewed.', 'Čas tématu je za méně než 15 minut, nový návrh by se nestihl zkontrolovat.'],
+  'regenerate-note-missing': ['retry', 'The note is empty. Write what should change.', 'Poznámka je prázdná. Napište, co se má změnit.'],
+  'brief-unavailable': ['reload', 'This topic no longer exists or is not yours.', 'Toto téma už neexistuje nebo nepatří vám.'],
+  'brief-already-queued': ['wait', 'This topic already has a drafting job.', 'Toto téma už má úlohu psaní.'],
+  'brief-not-waiting': ['reload', 'This topic no longer waits for the scheduler.', 'Toto téma už nečeká na plánovač.'],
+  'brief-still-waiting': ['wait', 'The topic still waits for its pictures. The scheduler drafts it once they are collected.', 'Téma ještě čeká na své obrázky. Plánovač ho napíše, jakmile budou sebrané.'],
+  'generate-now-busy': ['wait', 'The scheduler is preparing topics right now, so this one was not started twice.', 'Plánovač právě připravuje témata, proto se toto nespustilo podruhé.'],
+  'generate-now-unavailable': ['retry', 'The topic could not be admitted now. Nothing was spent.', 'Téma teď nešlo zařadit. Nic se neutratilo.'],
+  'invalid-generate-request': ['investigate', 'The request to generate now was not valid.', 'Požadavek na okamžité vygenerování nebyl platný.'],
+  'reminder-state-unavailable': ['auto', 'The posts waiting for review could not be read for the reminder.', 'Příspěvky čekající na kontrolu nešlo pro připomínku načíst.'],
+  'reminder-write-failed': ['auto', 'The review reminder could not be written.', 'Připomínku kontroly nešlo zapsat.'],
+  'reminders-disabled': ['none', 'Review reminders are switched off.', 'Připomínky kontroly jsou vypnuté.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;

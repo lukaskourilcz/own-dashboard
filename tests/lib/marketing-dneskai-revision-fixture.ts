@@ -7,9 +7,9 @@ export const signed = (n: number, token = "first-test-only-token") =>
   `https://test-only.supabase.co/storage/v1/object/sign/marketing-assets/11111111-1111-4111-8111-111111111111/marketing/dneskai/33333333-3333-4333-8333-333333333333/${"f".repeat(64)}/${n}-${[d, e, c][n - 1]}.jpg?token=${token}`;
 export function deck(): DneskaiDeck {
   return { schemaVersion: DNESKAI_SLIDES_VERSION, format: "carousel", slides: [
-    { type: "cover-photo", headline: "Nový model umí číst grafy", kicker: "MODEL", images: [{ slot: "image-1", assetSha256: a, crop: { focal: { x: 0.5, y: 0.4 } } }], alt: "Titulní fotka" },
+    { type: "cover-photo", headline: "Nový model umí číst grafy", images: [{ slot: "image-1", assetSha256: a, crop: { focal: { x: 0.5, y: 0.4 } } }], alt: "Titulní fotka" },
     { type: "split", headline: "Dva pohledy", body: "Text slidu.", images: [{ slot: "image-1", assetSha256: b }, { slot: "image-2", assetSha256: a, crop: { focal: { x: 0.2, y: 0.8 }, zoom: 1.5, fit: "cover" } }], alt: "Dvě fotky" },
-    { type: "sources", headline: "", sources: ["The Verge, 20. 10. 2026"], images: [], alt: "Zdroje" },
+    { type: "statement", headline: "Výrok k ověření sazby.", images: [], alt: "Výrok" },
   ] };
 }
 export function deckRevision(): ContentRevision {

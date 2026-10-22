@@ -36,7 +36,12 @@ export type MarketingTickInput = z.infer<typeof MarketingTickInputSchema>;
 export const MARKETING_TICK_CATEGORIES = ["collection", "media", "briefs", "generation", "publishing", "reconciliation", "token"] as const;
 /** Daily-tick duties in execution order. */
 export const MARKETING_DAILY_DUTIES = ["renewal", "purge", "retention"] as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number];
+/**
+ * Owner decision 7: the review reminder runs last in a minute tick, after the categories above, and only when the
+ * ports wire it. It holds no lease; its notifications are keyed per day and per slot.
+ */
+export const MARKETING_TICK_REMINDER = "reminder" as const;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -87,7 +92,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -163,6 +168,11 @@ export interface MarketingSchedulerPorts {
   /** Approved and ready-for-review revisions of the owner (newest 50) with the signed URLs of their assets. */
   renewableRevisions(): Promise<Array<{ id: string; assetUrls: string[] }>>;
   renewRevision(revisionId: string): Promise<{ renewed: number }>;
+  /**
+   * Owner decision 7: writes the in-app review reminders that are due and were not sent before
+   * (`sendDneskaiReviewReminders`). Optional: without it the minute tick has no reminder step.
+   */
+  reviewReminders?(project: string, now: Date): Promise<{ due: number; sent: number }>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -459,6 +469,19 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       },
     },
   ];
+
+  // Off only when the owner sets DNESKAI_REVIEW_REMINDERS_ENABLED=false; nothing but in-app notifications is written.
+  const reviewReminders = ports.reviewReminders;
+  if (reviewReminders) minuteSteps.push({
+    category: MARKETING_TICK_REMINDER, lease: null,
+    async precheck(): Promise<StepOutcome | null> {
+      return env.DNESKAI_REVIEW_REMINDERS_ENABLED === "false" ? { status: "skipped", code: "reminders-disabled" } : null;
+    },
+    async run({ now }): Promise<StepOutcome> {
+      const result = await reviewReminders(await project(), now());
+      return { status: result.sent ? "done" : "noop", detail: { due: result.due, sent: result.sent } };
+    },
+  });
 
   const dailySteps: Step[] = [
     {

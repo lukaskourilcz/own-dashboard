@@ -21,11 +21,11 @@ export const demoPhotos = assets.photos;
 /** The written fields each template draws and their limits (`DNESKAI_PLACED_FIELDS` × `DNESKAI_TEXT_LIMITS`); a test ties them together. */
 export function demoFieldLimits(slide: Pick<DneskaiSlide, 'type' | 'variant' | 'images'>): DneskaiFieldLimit[] {
   const table: Record<string, Array<[DneskaiFieldLimit['field'], number]>> = {
-    'cover-photo': [['headline', 110], ['kicker', 56], ['credit', 80]],
-    figure: [['headline', 110], ['body', 260], ['credit', 80]],
-    split: [['headline', 110], ['body', slide.images.length > 1 ? 320 : 330], ['kicker', 28], ['credit', 80]],
+    'cover-photo': [['headline', 110]],
+    figure: [['headline', 110], ['body', 260]],
+    split: [['headline', 110], ['body', slide.images.length > 1 ? 320 : 330], ['kicker', 28]],
     statement: [['headline', 170], ['body', 240]],
-    single: slide.variant === 'type' ? [['headline', 120], ['body', 280], ['kicker', 56], ['credit', 80]] : [['headline', 110], ['body', 100], ['kicker', 44], ['credit', 30]],
+    single: [['headline', slide.variant === 'type' ? 120 : 110]],
     sources: [],
   };
   return (table[slide.type] ?? []).map(([field, max]) => ({ field, max }));
@@ -64,7 +64,7 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     photo('p4', 'ukazka-zpravy-2', 0, 'Foto: ukázkový zdroj 2'), photo('p6', 'ukazka-zpravy-2', 1, 'Foto: ukázkový zdroj 2'), photo('p2', 'ukazka-zpravy-2', 2, 'Foto: ukázkový zdroj 2'),
   ];
   const brief = (title: string, day: number) => ({ eventId: hash(9000 + day), title, targetDate: pragueDayAfter(today, day), evidence, media });
-  const caption = (lines: string[]) => `${lines.join('\n\n')}\n\nZdroje: ukázkový blog, ukázkové zprávy.\n\n#ai #umelainteligence #dneskai`;
+  const caption = (lines: string[]) => `${lines.join('\n\n')}\n\nText připravil jazykový model. Výběr a schválení: redakce DNESKAi.\n\n#dneskai #ai #umelainteligence`;
   const rendered = (problems: NonNullable<DneskaiWorkspacePost['renderReport']>['problems'] = []) =>
     ({ schemaVersion: 'dneskai-render-report/1' as const, status: 'rendered' as const, problems, renderKeys: [], renderedAt: created(2) });
   const base = (n: number, deck: DeckName | DneskaiDeck, patch: Partial<DneskaiWorkspacePost>): DneskaiWorkspacePost => {
@@ -103,6 +103,9 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     base(9, 'c', { title: 'Co stojí jeden dotaz', ready: false, assets: [], renderReport: null, scheduledAt: at(3, '12:30') }),
     // An edited version saved 20 seconds before the read: its render is still on its way.
     base(10, 'b', { title: 'Lokální model na notebooku', ready: false, assets: [], renderReport: null, createdAt: new Date(now.getTime() - 20_000).toISOString(), scheduledAt: at(3, '17:00') }),
+    // Owner decision 6: a post of today whose time passed 20 minutes ago (or at midnight) without approval.
+    base(11, 'e', { title: 'Malý model bez připojení', brief: brief('Ukázkové téma s prošlým časem', 0),
+      scheduledAt: new Date(Math.max(now.getTime() - 20 * 60_000, Date.parse(at(0, '00:00')))).toISOString() }),
   ];
   return {
     schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: ['08:00', '12:30', '17:00', '20:00'],
@@ -112,6 +115,12 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
       { id: id(201), status: 'running', errorCode: null, createdAt: created(1), title: 'Jak odhadnout cenu jednoho dotazu', scheduledAt: at(1, '20:00') },
       { id: id(202), status: 'failed', errorCode: 'dneskai-daily-generation-budget-exhausted', createdAt: created(2), title: 'Co je kontextové okno', scheduledAt: at(2, '17:00') },
     ],
+    // Owner decision 9: two built topics of today that wait for the scheduler, with no job yet.
+    waiting: [
+      { briefId: id(501), title: 'Jak číst kartu modelu', scheduledAt: at(0, '17:00'), status: 'ready', code: null },
+      { briefId: id(502), title: 'Kdy pomůže vyhledávání v dokumentech', scheduledAt: at(0, '20:00'), status: 'ready', code: null },
+    ],
+    capabilities: { regenerate: true, generateNow: true },
     unreadable: 0,
   };
 }

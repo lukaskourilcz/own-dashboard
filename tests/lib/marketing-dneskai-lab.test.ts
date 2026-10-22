@@ -44,13 +44,13 @@ describe('Design Lab read model', () => {
     expect(dneskaiLabOrder([today!, tomorrow!]).length).toBe(today!.posts.length + tomorrow!.posts.length);
   });
 
-  it('lists five kits per post; only the current kit has a cover, and no cover is ever invented for the others', () => {
+  it('lists six renderable kits per post; only the current kit has a cover, and no cover is ever invented for the others', () => {
     const post = read().posts[0]!;
     const kits = dneskaiLabKits(post);
     expect(kits.map((kit) => kit.id)).toEqual([...DNESKAI_KITS]);
-    expect(kits.map((kit) => kit.key)).toEqual([1, 2, 3, 4, 5]);
+    expect(kits.map((kit) => kit.key)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(kits[0]).toMatchObject({ id: 'editorial', current: true, renderable: true, cover: post.assets[0], fits: true });
-    for (const kit of kits.slice(1)) expect(kit).toMatchObject({ current: false, renderable: false, cover: null, fits: null });
+    for (const kit of kits.slice(1)) expect(kit).toMatchObject({ current: false, renderable: true, cover: null, fits: null });
   });
 
   it('reads a v1 deck as the editorial kit and a deck that names its kit as that kit', () => {
@@ -90,7 +90,8 @@ describe('text fit before saving (studio fitter, no media, $0)', () => {
 
   it('says every field of a deck that renders fits, with its count and limit', async () => {
     const result = DneskaiFitResultSchema.parse(await fitDneskaiDeck(fitRequest()));
-    expect(result.slides.map((slide) => slide.fits)).toEqual([true, true, true, true, true]);
+    // The preview deck is the written slides only (cover, figure, split, statement): no sources slide.
+    expect(result.slides.map((slide) => slide.fits)).toEqual([true, true, true, true]);
     const cover = result.slides[0]!.fields.find((field) => field.field === 'headline')!;
     expect(cover).toMatchObject({ max: 110, overBy: 0, clipped: false, lines: null, fontSize: null, codes: [] });
     expect(cover.characters).toBe([...deck().slides[0]!.headline.trim()].length);
@@ -119,8 +120,10 @@ describe('text fit before saving (studio fitter, no media, $0)', () => {
     expect(figure.codes).toContain('text-unplaced');
   });
 
-  it('refuses a kit OwnDashboard cannot render yet', async () => {
-    await expect(fitDneskaiDeck({ ...fitRequest(), kit: 'bold' })).rejects.toMatchObject({ code: 'kit-unavailable' });
+  it('fits the same deck in another kit, measured in that kit', async () => {
+    const fitted = await fitDneskaiDeck({ ...fitRequest(), kit: 'bold' });
+    expect(fitted.kit).toBe('bold');
+    expect(fitted.slides.length).toBe(fitRequest().slides.length);
   });
 
   it('refuses a deck shape a save would refuse', async () => {
@@ -135,11 +138,11 @@ describe('POST /api/marketing/dneskai/fit', () => {
   it('answers the fit for the signed-in owner, rate-limited per owner', async () => {
     const response = await fitRoute(request(fitUrl, body()));
     expect(response.status).toBe(200);
-    expect(DneskaiFitResultSchema.parse(await response.json()).slides).toHaveLength(5);
+    expect(DneskaiFitResultSchema.parse(await response.json()).slides).toHaveLength(4);
     expect(mocks.limited).toHaveBeenCalledWith(owner, expect.objectContaining({ key: 'dneskai-fit' }));
   });
 
-  it('refuses no session, a cross-origin post, a malformed body, a rate limit and an unrenderable kit with codes only', async () => {
+  it('refuses no session, a cross-origin post, a malformed body, a rate limit and an unknown kit with codes only', async () => {
     mocks.client.mockReturnValueOnce({ auth: { getUser: async () => ({ data: { user: null } }) } });
     expect((await fitRoute(request(fitUrl, body()))).status).toBe(401);
     const cross = new Request(fitUrl, { method: 'POST', headers: { Origin: 'https://evil.example' }, body: JSON.stringify(body()) });
@@ -150,9 +153,10 @@ describe('POST /api/marketing/dneskai/fit', () => {
     const limited = await fitRoute(request(fitUrl, body()));
     expect(limited.status).toBe(429);
     expect(limited.headers.get('Retry-After')).toBe('12');
+    expect((await fitRoute(request(fitUrl, { ...body(), kit: 'clipping' }))).status).toBe(400);
     const bold = await fitRoute(request(fitUrl, { ...body(), kit: 'bold' }));
-    expect(bold.status).toBe(409);
-    expect(await bold.json()).toEqual({ error: 'kit-unavailable' });
+    expect(bold.status).toBe(200);
+    expect((await bold.json()).kit).toBe('bold');
   });
 });
 

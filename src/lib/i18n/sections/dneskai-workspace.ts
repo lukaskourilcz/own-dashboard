@@ -56,7 +56,7 @@ const en = {
   },
   draftProblems: {
     'text-too-long': 'is longer than the slide holds', 'text-missing': 'is empty', 'alt-missing': 'is empty', 'caption-too-long': 'is longer than 2,200 characters',
-    'caption-missing': 'is empty', 'deck-edit-slide-count': 'A carousel needs 2 to 10 slides; a single post exactly one.', 'schedule-invalid': 'is not a valid time in Prague (for example inside the clock change).', 'schedule-outside-asset-window': 'must be in the future and at most six days ahead.',
+    'caption-missing': 'is empty', 'deck-edit-slide-count': 'A carousel needs 2 to 10 slides; a single post exactly one.', 'schedule-invalid': 'is not a valid time in Prague (for example inside the clock change).', 'schedule-outside-asset-window': 'must be in the future and at most six days ahead.', 'caption-hashtags-over-limit': 'carries more than 10 hashtags.',
     'text-clipped': 'would be cut on the slide; shorten it', 'text-unfit': 'has text the slide cannot print as written',
   },
   calendar: {
@@ -66,7 +66,7 @@ const en = {
   published: { title: 'Published', intro: 'Receipts of published posts: link, time and account.', empty: 'Nothing published yet', open: 'Open on Instagram', noLink: 'No public link recorded', at: 'Published', planned: 'Planned', account: 'Account', cover: (title: string) => `Cover of “${title}”` },
   costs: {
     title: 'Errors and costs', intro: 'What failed or is uncertain, what each day cost and when the scheduler last ran.',
-    budget: 'Generation budget, last 24 hours', budgetValue: (spent: string, ceiling: string) => `${spent} of ${ceiling}`, budgetLeft: (left: string) => `${left} left. One drafting job reserves up to $0.25 before its call.`,
+    budget: 'Generation budget, last 24 hours', budgetValue: (spent: string, ceiling: string) => `${spent} of ${ceiling}`, budgetLeft: (left: string) => `${left} left. One drafting job reserves up to $0.13 before its call.`,
     budgetUnknown: 'The spend could not be read.', ceilingUnknown: 'The daily limit is not valid.',
     budgetBasis: 'Booked against the limit: measured usage of finished jobs plus the full reservation of every running, uncertain or unmeasured job.',
     balances: 'Provider balances', balancesHelp: 'OwnDashboard does not read provider balances. Check them in each provider’s console.',
@@ -74,7 +74,7 @@ const en = {
     token: 'Instagram token', tokenLoading: 'Loading account…', tokenUnavailable: 'Account status could not be loaded.', tokenExpires: 'Expires', noAccount: 'No @dneskai account is connected.',
     days: 'Cost per day', date: 'Day', collection: 'Sources (Apify, Jev)', generation: 'Drafting (Claude)', total: 'Measured total', unknown: (count: number) => `${count} without a recorded cost`,
     booked: 'Booked for failed drafts', bookedShort: 'Booked',
-    daysHelp: 'Measured is the cost providers reported for finished runs and drafts. Booked is what a failed drafting job recorded: when its billing was uncertain, that is the full $0.25 reservation, so it may be more than was billed. A missing cost is counted separately, never as zero.',
+    daysHelp: 'Measured is the cost providers reported for finished runs and drafts. Booked is what a failed drafting job recorded: when its billing was uncertain, that is the full reservation ($0.13, or $0.25 before 22 October 2026), so it may be more than was billed. A call the provider rejected before running the model counts as $0. A missing cost is counted separately, never as zero.',
     runs: 'Source collection runs', noRuns: 'No collection runs recorded.', runFor: (date: string) => `For ${date}`, cost: 'Cost', unknownCost: 'Not recorded',
     posts: 'Posts for review that cannot be approved', noPosts: 'No post waiting for review has a problem.',
     jobs: 'Drafting jobs with a problem', noJobs: 'No failed or uncertain drafting jobs this week.',
@@ -147,7 +147,7 @@ const cs: typeof en = {
   },
   draftProblems: {
     'text-too-long': 'je delší, než se na slide vejde', 'text-missing': 'je prázdný', 'alt-missing': 'je prázdný', 'caption-too-long': 'je delší než 2 200 znaků',
-    'caption-missing': 'je prázdný', 'deck-edit-slide-count': 'Carousel potřebuje 2 až 10 slidů, samostatný příspěvek právě jeden.', 'schedule-invalid': 'není platný pražský čas (například během změny času).', 'schedule-outside-asset-window': 'musí být v budoucnu a nejvýše šest dní dopředu.',
+    'caption-missing': 'je prázdný', 'deck-edit-slide-count': 'Carousel potřebuje 2 až 10 slidů, samostatný příspěvek právě jeden.', 'schedule-invalid': 'není platný pražský čas (například během změny času).', 'schedule-outside-asset-window': 'musí být v budoucnu a nejvýše šest dní dopředu.', 'caption-hashtags-over-limit': 'má víc než 10 hashtagů.',
     'text-clipped': 'by se na slidu ořízl; zkraťte ho', 'text-unfit': 'obsahuje text, který slide nevytiskne tak, jak je napsaný',
   },
   calendar: {
@@ -157,7 +157,7 @@ const cs: typeof en = {
   published: { title: 'Publikované', intro: 'Potvrzení publikovaných příspěvků: odkaz, čas a účet.', empty: 'Zatím nic publikovaného', open: 'Otevřít na Instagramu', noLink: 'Veřejný odkaz není zaznamenaný', at: 'Publikováno', planned: 'Plán', account: 'Účet', cover: (title: string) => `Titulní slide příspěvku „${title}“` },
   costs: {
     title: 'Chyby a náklady', intro: 'Co selhalo nebo není jisté, kolik stál každý den a kdy naposledy běžel plánovač.',
-    budget: 'Rozpočet generování za posledních 24 hodin', budgetValue: (spent: string, ceiling: string) => `${spent} z ${ceiling}`, budgetLeft: (left: string) => `Zbývá ${left}. Jedna úloha psaní si před voláním rezervuje až 0,25 $.`,
+    budget: 'Rozpočet generování za posledních 24 hodin', budgetValue: (spent: string, ceiling: string) => `${spent} z ${ceiling}`, budgetLeft: (left: string) => `Zbývá ${left}. Jedna úloha psaní si před voláním rezervuje až 0,13 $.`,
     budgetUnknown: 'Útratu nelze načíst.', ceilingUnknown: 'Denní limit není platný.',
     budgetBasis: 'Započteno do limitu: změřená spotřeba dokončených úloh a celá rezervace každé běžící, nejisté nebo nezměřené úlohy.',
     balances: 'Zůstatky u poskytovatelů', balancesHelp: 'OwnDashboard zůstatky u poskytovatelů nenačítá. Zkontrolujte je v konzoli každého poskytovatele.',
@@ -165,7 +165,7 @@ const cs: typeof en = {
     token: 'Instagramový token', tokenLoading: 'Načítám účet…', tokenUnavailable: 'Stav účtu nelze načíst.', tokenExpires: 'Platnost do', noAccount: 'Účet @dneskai není připojený.',
     days: 'Náklady po dnech', date: 'Den', collection: 'Zdroje (Apify, Jev)', generation: 'Psaní (Claude)', total: 'Změřeno celkem', unknown: (count: number) => `${count} bez zaznamenané ceny`,
     booked: 'Rezervováno za neúspěšné návrhy', bookedShort: 'Rezervováno',
-    daysHelp: 'Změřené náklady jsou ty, které poskytovatelé nahlásili za dokončené běhy a návrhy. Rezervováno je částka, kterou zapsala neúspěšná úloha psaní: když účtování nebylo jisté, je to celá rezervace 0,25 $, takže může být vyšší, než kolik se skutečně účtovalo. Chybějící cena se počítá zvlášť, nikdy jako nula.',
+    daysHelp: 'Změřené náklady jsou ty, které poskytovatelé nahlásili za dokončené běhy a návrhy. Rezervováno je částka, kterou zapsala neúspěšná úloha psaní: když účtování nebylo jisté, je to celá rezervace (0,13 $, před 22. říjnem 2026 to bylo 0,25 $), takže může být vyšší, než kolik se skutečně účtovalo. Volání, které poskytovatel odmítl dřív, než model spustil, se počítá jako 0 $. Chybějící cena se počítá zvlášť, nikdy jako nula.',
     runs: 'Běhy sběru zdrojů', noRuns: 'Žádné běhy sběru nejsou zaznamenané.', runFor: (date: string) => `Pro ${date}`, cost: 'Cena', unknownCost: 'Nezaznamenáno',
     posts: 'Příspěvky ke schválení, které nelze schválit', noPosts: 'Žádný příspěvek čekající na kontrolu nemá problém.',
     jobs: 'Úlohy psaní s problémem', noJobs: 'Tento týden žádná úloha psaní neselhala ani nemá nejistý výsledek.',

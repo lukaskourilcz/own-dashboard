@@ -1,5 +1,5 @@
 import type { DneskaiBriefMedia } from "./dneskai-brief";
-import type { DneskaiSlide, DneskaiSlideType } from "./dneskai-slides";
+import type { DneskaiKitId, DneskaiSlide, DneskaiSlideType } from "./dneskai-slides";
 
 /**
  * What each DNESKAi slide type draws and holds, browser-safe: the template a slide resolves to, the written
@@ -17,12 +17,14 @@ export type DneskaiTextField = "headline" | "body" | "kicker" | "credit" | "sour
  * vendored templates (`tests/lib/carousel-studio-vendor.test.ts`).
  */
 export const DNESKAI_PLACED_FIELDS = {
-  "cover-photo": ["headline", "kicker", "credit"],
-  figure: ["headline", "body", "credit"],
-  split: ["headline", "body", "kicker", "credit"],
+  // Owner rule (22 October 2026): the first slide and a single post carry the headline alone, and no slide draws a
+  // picture credit, a page count or anything about sources. Credits live in the database, not in the post.
+  "cover-photo": ["headline"],
+  figure: ["headline", "body"],
+  split: ["headline", "body", "kicker"],
   statement: ["headline", "body"],
   sources: ["sources"],
-  single: ["headline", "body", "kicker", "credit"],
+  single: ["headline"],
 } as const satisfies Record<DneskaiSlideType, readonly DneskaiTextField[]>;
 
 /**
@@ -31,13 +33,13 @@ export const DNESKAI_PLACED_FIELDS = {
  * studio. Whether a line fits is still the fitter's call; this is the hard ceiling the prompt aims under.
  */
 export const DNESKAI_TEXT_LIMITS = {
-  "dneskai-cover-photo": { headline: 110, kicker: 56, credit: 80 },
-  "dneskai-figure": { headline: 110, body: 260, credit: 80 },
-  "dneskai-split": { headline: 110, body: 330, kicker: 28, credit: 80 },
-  "dneskai-split-pair": { headline: 110, body: 320, kicker: 28, credit: 80 },
+  "dneskai-cover-photo": { headline: 110 },
+  "dneskai-figure": { headline: 110, body: 260 },
+  "dneskai-split": { headline: 110, body: 330, kicker: 28 },
+  "dneskai-split-pair": { headline: 110, body: 320, kicker: 28 },
   "dneskai-statement": { headline: 170, body: 240 },
-  "dneskai-single-photo": { headline: 110, body: 100, kicker: 44, credit: 30 },
-  "dneskai-single-type": { headline: 120, body: 280, kicker: 56, credit: 80 },
+  "dneskai-single-photo": { headline: 110 },
+  "dneskai-single-type": { headline: 120 },
 } as const satisfies Record<string, Partial<Record<"headline" | "body" | "kicker" | "credit", number>>>;
 export type DneskaiTemplateId = keyof typeof DNESKAI_TEXT_LIMITS;
 
@@ -101,18 +103,16 @@ export function dneskaiShapePictureCounts(shape: DneskaiSlideShape): readonly nu
   }
 }
 
-/** The credit layer of a single photo slide: the shortest credit line a single-image post can carry. */
-const SINGLE_PHOTO_CREDIT = DNESKAI_TEXT_LIMITS["dneskai-single-photo"].credit;
 export type DneskaiPoolPicture = Pick<DneskaiBriefMedia, "assetSha256" | "candidateId" | "credit" | "fullBleedCapable" | "insetCapable">;
 
 /**
  * Whether a picture from the brief's pool can fill a shape's picture place, by the same capability flags
- * generation offers the model: a cover needs a full-bleed picture, a single photo a full-bleed picture whose credit
- * fits its short credit line (`singlePhotoCapable`), every framed slide a picture at least inset-capable.
+ * generation offers the model: a cover and a single photo need a full-bleed picture, every framed slide a picture at
+ * least inset-capable. No slide carries a credit line, so a credit never rules a picture out.
  */
 export function dneskaiPictureFitsShape(media: Pick<DneskaiPoolPicture, "credit" | "fullBleedCapable" | "insetCapable">, shape: DneskaiSlideShape): boolean {
   if (shape.type === "cover-photo") return media.fullBleedCapable;
-  if (shape.type === "single") return shape.variant === "photo" && media.fullBleedCapable && dneskaiCreditLine([media.credit], SINGLE_PHOTO_CREDIT) !== null;
+  if (shape.type === "single") return shape.variant === "photo" && media.fullBleedCapable;
   if (shape.type === "statement") return false;
   return media.insetCapable || media.fullBleedCapable;
 }
@@ -167,9 +167,10 @@ export function dneskaiInsertablePictures<T extends DneskaiPoolPicture>(pool: re
 }
 
 /**
- * The credit line code sets for a slide's pictures, the same three forms as generation (`fitDneskaiCredit` in
+ * The credit line code sets for a slide's pictures, the same four forms as generation (`fitDneskaiCredit` in
  * dneskai-generation.ts): full credits, then without the „Foto:“/„Obrázek:“ label, then also without the platform in
- * brackets. Null when even the shortest form does not fit.
+ * brackets, then an agency credit without the publisher („Getty Images přes TechCrunch“ → „Getty Images“). Null when
+ * even the shortest form does not fit.
  */
 export function dneskaiCreditLine(credits: readonly string[], limit: number): string | null {
   const whitespace = (value: string) => value.replace(/\s+/gu, " ").trim();
@@ -179,9 +180,37 @@ export function dneskaiCreditLine(credits: readonly string[], limit: number): st
   if (!full.length) return "";
   const unlabelled = full.map((credit) => credit.replace(/^(?:Foto|Obrázek):\s+/u, ""));
   const bare = unlabelled.map((credit) => credit.replace(/\s+\((?:Bluesky|GitHub|Instagram)\)$/u, ""));
-  for (const form of [full, unlabelled, bare]) {
+  const agency = bare.map((credit) => credit.replace(/\s+přes\s+.+$/u, ""));
+  for (const form of [full, unlabelled, bare, agency]) {
     const line = distinct(form).join(" · ");
     if (characters(line) <= limit) return line;
   }
   return null;
 }
+
+/**
+ * A deck as the owner's slide rules allow it (22 October 2026): no sources slide, no picture credit on any slide, and
+ * on every slide only the fields its type draws, so the first slide and a single post keep their headline alone.
+ * Decks saved before the rule are brought into line when they are edited; nothing else about them changes.
+ */
+export function dneskaiShownDeck<T extends { format: "carousel" | "single-image"; kit?: DneskaiKitId; slides: DneskaiSlide[] }>(deck: T): T {
+  const inset = dneskaiCoverInset(deck.kit ?? "editorial");
+  const slides = deck.slides.filter((slide) => slide.type !== "sources").map((slide) => {
+    const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
+    const next = { ...slide };
+    delete next.credit;
+    for (const field of ["body", "kicker"] as const) if (!placed.includes(field)) delete next[field];
+    // Only a kit with a cover inset draws a second cover picture; any other kit would refuse it.
+    if (slide.type === "cover-photo" && !inset) next.images = next.images.filter((image) => image.slot === "image-1");
+    return next;
+  });
+  // A carousel keeps at least two slides: a two-slide legacy deck whose second slide was its sources slide stays whole.
+  return deck.format === "carousel" && slides.length < 2 ? deck : { ...deck, slides };
+}
+
+/**
+ * Kits whose cover draws an optional second picture as a circular inset (the studio's `DNESKAI_OPTIONAL_IMAGE_SLOTS`,
+ * held to the vendored contract by `tests/lib/carousel-studio-vendor.test.ts`). Every other kit refuses it.
+ */
+export const DNESKAI_COVER_INSET_KITS: readonly DneskaiKitId[] = ["spotlight"];
+export const dneskaiCoverInset = (kit: DneskaiKitId) => DNESKAI_COVER_INSET_KITS.includes(kit);

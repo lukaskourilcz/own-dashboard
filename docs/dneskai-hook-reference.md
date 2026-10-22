@@ -79,9 +79,9 @@ The DNESKAi deck itself follows playbook:69-74: cover, second cover, one beat pe
 | docs/hooks/02-hook-craft-rules.md:106 | The final CTA slide is a quiet ad | DNESKAi ends on sources and carries no ad slide. |
 | studio/hooks/news.hooks.json:2-13 | Twelve fixed edition lines | See the section on the twelve news lines above. |
 
-## Open owner decisions
+## Owner decisions
 
-This page settles none of these. They stay with the owner (playbook:161-167):
+Both were open when this page was written (playbook:161-167); the owner settled them on 22 October 2026:
 
-- Register A, B or C (playbook:132-153). Option B would add a family tag to the slide schema and a humanizer carve-out for a tagged slide-1 line (playbook:144).
-- The hashtag ceiling. The prompt asks for up to 8 and the parser accepts 10 (`dneskai-generation.ts:122`, `:124`); Instagram allows 5 (playbook:14).
+- Register: option B without the family tag. The prompt asks for a factual cover hook and the humanizer's Czech voice carves it out (see [marketing-generation.md](marketing-generation.md#dneskai-briefs-generation-v6)).
+- The hashtag ceiling: a caption carries at most 10, `#dneskai` first (`dneskaiHashtags`).

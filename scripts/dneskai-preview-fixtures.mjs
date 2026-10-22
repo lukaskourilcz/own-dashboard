@@ -44,35 +44,34 @@ const photos = {
 
 const decks = {
   a: [
-    { type: 'cover-photo', kicker: 'Prakticky', headline: 'Benchmark není žebříček. Jak ho číst bez omylu', alt: 'Ukázková rozostřená fotografie s titulkem o čtení benchmarků.', credit: 'Foto: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p1', crop: { focal: { x: 0.42, y: 0.55 } } }] },
-    { type: 'figure', headline: 'Nejdřív zjistěte, co test měří', alt: 'Ukázkový obrázek v rámu s vysvětlením, co benchmark měří.', body: 'Jedno číslo shrnuje stovky úloh. Podívejte se, jaké úlohy to jsou a jestli se podobají vaší práci.', credit: 'Obrázek: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p3' }] },
-    { type: 'split', kicker: 'Tip', headline: 'Porovnávejte stejné podmínky', alt: 'Text vlevo a ukázkový obrázek vpravo s radou ke srovnávání.', body: 'Výsledek s jiným promptem nebo počtem pokusů není srovnatelný. Hledejte v metodice, jak byl test spuštěn.', credit: 'Foto: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p4' }] },
+    { type: 'cover-photo', headline: 'Benchmark není žebříček. Jak ho číst bez omylu', alt: 'Ukázková rozostřená fotografie s titulkem o čtení benchmarků.', images: [{ slot: 'image-1', photo: 'p1', crop: { focal: { x: 0.42, y: 0.55 } } }] },
+    { type: 'figure', headline: 'Nejdřív zjistěte, co test měří', alt: 'Ukázkový obrázek v rámu s vysvětlením, co benchmark měří.', body: 'Jedno číslo shrnuje stovky úloh. Podívejte se, jaké úlohy to jsou a jestli se podobají vaší práci.', images: [{ slot: 'image-1', photo: 'p3' }] },
+    { type: 'split', kicker: 'Tip', headline: 'Porovnávejte stejné podmínky', alt: 'Text vlevo a ukázkový obrázek vpravo s radou ke srovnávání.', body: 'Výsledek s jiným promptem nebo počtem pokusů není srovnatelný. Hledejte v metodice, jak byl test spuštěn.', images: [{ slot: 'image-1', photo: 'p4' }] },
     { type: 'statement', headline: 'Malý rozdíl v procentech často neznamená nic.', alt: 'Výrok na modré ploše o malých rozdílech v procentech.', body: 'Než podle něj vyberete model, ověřte rozptyl mezi běhy.' },
-    { type: 'sources', headline: '', alt: 'Seznam ukázkových zdrojů s náhledy použitých obrázků.', sources: ['Ukázkový zdroj: Blog o strojovém učení (21. 10. 2026)', 'Obrázky: ukázkový zdroj'], images: [{ slot: 'image-1', photo: 'p1' }, { slot: 'image-2', photo: 'p3' }] },
   ],
   b: [
-    { type: 'single', variant: 'photo', kicker: 'Tip dne', headline: 'Dejte modelu kontext, ne prosby', alt: 'Ukázková fotografie s tipem dne o kontextu v promptech.', body: 'Popište cíl, publikum a formát odpovědi.', credit: 'Foto: ukázka', images: [{ slot: 'image-1', photo: 'p2' }] },
+    { type: 'single', variant: 'photo', headline: 'Dejte modelu kontext, ne prosby', alt: 'Ukázková fotografie s tipem dne o kontextu v promptech.', images: [{ slot: 'image-1', photo: 'p2' }] },
   ],
   c: [
-    { type: 'cover-photo', kicker: 'Terminál', headline: 'Tři zkratky, které zrychlí práci v terminálu', alt: 'Ukázková fotografie s titulkem o zkratkách v terminálu.', credit: 'Foto: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p6' }] },
+    { type: 'cover-photo', headline: 'Tři zkratky, které zrychlí práci v terminálu', alt: 'Ukázková fotografie s titulkem o zkratkách v terminálu.', images: [{ slot: 'image-1', photo: 'p6' }] },
     { type: 'statement', variant: 'ink', headline: 'Nejrychlejší příkaz je ten, který nemusíte psát.', alt: 'Výrok na tmavé ploše o rychlých příkazech.' },
   ],
   d: [
-    { type: 'figure', headline: 'Kdy stačí menší model', alt: 'Ukázkový obrázek v rámu s vysvětlením, kdy stačí menší model.', body: 'Na třídění, shrnutí a hledání v textu často stačí menší model. Bývá levnější a rychlejší.', credit: 'Obrázek: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p3' }] },
+    { type: 'figure', headline: 'Kdy stačí menší model', alt: 'Ukázkový obrázek v rámu s vysvětlením, kdy stačí menší model.', body: 'Na třídění, shrnutí a hledání v textu často stačí menší model. Bývá levnější a rychlejší.', images: [{ slot: 'image-1', photo: 'p3' }] },
     { type: 'statement', headline: 'Začněte malým modelem a větší přidejte, až když chybí kvalita.', alt: 'Výrok na modré ploše o volbě velikosti modelu.' },
   ],
   e: [
-    { type: 'cover-photo', kicker: 'Checklist', headline: 'Pět otázek před nasazením AI asistenta', alt: 'Ukázková fotografie s titulkem o otázkách před nasazením asistenta.', credit: 'Foto: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p2' }] },
-    { type: 'sources', headline: '', alt: 'Seznam ukázkových zdrojů s náhledem použitého obrázku.', sources: ['Ukázkový zdroj: Příručka týmu (20. 10. 2026)'], images: [{ slot: 'image-1', photo: 'p2' }] },
+    { type: 'cover-photo', headline: 'Pět otázek před nasazením AI asistenta', alt: 'Ukázková fotografie s titulkem o otázkách před nasazením asistenta.', images: [{ slot: 'image-1', photo: 'p2' }] },
+    { type: 'statement', variant: 'ink', headline: 'Kdo bude odpovědi kontrolovat a jak často?', alt: 'Výrok na tmavé ploše s otázkou, kdo kontroluje odpovědi asistenta.', images: [] },
   ],
   f: [
-    { type: 'cover-photo', kicker: 'Ověřování', headline: 'Jak poznat, že odpověď modelu potřebuje ověření', alt: 'Ukázková fotografie s titulkem o ověřování odpovědí.', credit: 'Foto: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p6', crop: { focal: { x: 0.6, y: 0.4 } } }] },
-    { type: 'statement', headline: 'Čísla, jména a data si vždy dohledejte ve zdroji.', alt: 'Výrok na modré ploše o dohledávání čísel ve zdroji.' },
+    { type: 'cover-photo', headline: 'Jak poznat, že odpověď modelu potřebuje ověření', alt: 'Ukázková fotografie s titulkem o ověřování odpovědí.', images: [{ slot: 'image-1', photo: 'p6', crop: { focal: { x: 0.6, y: 0.4 } } }] },
+    { type: 'statement', headline: 'U čísel, jmen a dat buďte nejpřísnější.', alt: 'Výrok na modré ploše o dohledávání čísel ve zdroji.' },
   ],
   // The fixed version of the preview's refused post: what the demo shows once its problems are edited away.
   g: [
-    { type: 'cover-photo', kicker: 'Prompty', headline: 'Proč se vyplatí verzovat prompty', alt: 'Ukázková fotografie s titulkem o verzování promptů.', credit: 'Foto: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p6' }] },
-    { type: 'figure', headline: 'Každá změna má svůj záznam', alt: 'Ukázkový obrázek v rámu o záznamu změn promptů.', body: 'Když se odpovědi zhorší, víte, která úprava to způsobila, a můžete se vrátit.', credit: 'Obrázek: ukázkový zdroj', images: [{ slot: 'image-1', photo: 'p3' }] },
+    { type: 'cover-photo', headline: 'Proč se vyplatí verzovat prompty', alt: 'Ukázková fotografie s titulkem o verzování promptů.', images: [{ slot: 'image-1', photo: 'p6' }] },
+    { type: 'figure', headline: 'Každá změna má svůj záznam', alt: 'Ukázkový obrázek v rámu o záznamu změn promptů.', body: 'Když se odpovědi zhorší, víte, která úprava to způsobila, a můžete se vrátit.', images: [{ slot: 'image-1', photo: 'p3' }] },
   ],
 };
 

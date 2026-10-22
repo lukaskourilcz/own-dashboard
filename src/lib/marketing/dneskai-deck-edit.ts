@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { DneskaiDeckSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
-  DNESKAI_INSERT_SHAPES, DNESKAI_PLACED_FIELDS, dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
-  dneskaiSlideFieldLimits, dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
+  DNESKAI_INSERT_SHAPES, dneskaiCoverInset, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
+  dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
 } from "./dneskai-slide-layout";
 
 /**
@@ -42,7 +42,8 @@ export const DneskaiSlideInsertSchema = z.strictObject({
   }),
 });
 export const DneskaiDeckEditEntrySchema = z.union([DneskaiSlideEditSchema, DneskaiSlideInsertSchema]);
-export const DneskaiDeckEditSchema = z.strictObject({ slides: z.array(DneskaiDeckEditEntrySchema).min(1).max(10) });
+/** `kit` switches the whole post to another kit (kits are per post); absent keeps the deck's kit. */
+export const DneskaiDeckEditSchema = z.strictObject({ kit: DneskaiKitIdSchema.optional(), slides: z.array(DneskaiDeckEditEntrySchema).min(1).max(10) });
 export type DneskaiDeckEdit = z.infer<typeof DneskaiDeckEditSchema>;
 export type DneskaiSlideEditEntry = z.infer<typeof DneskaiSlideEditSchema>;
 export type DneskaiSlideInsert = z.infer<typeof DneskaiSlideInsertSchema>["insert"];
@@ -97,26 +98,18 @@ function inserted(entry: DneskaiSlideInsert, deck: DneskaiDeck, pool: DneskaiEdi
   if (entry.variant && entry.type !== "statement") return fail("deck-edit-variant-invalid");
   if (!dneskaiShapePictureCounts(shape).includes(entry.images.length) || entry.images.some((image, position) => image.slot !== `image-${position + 1}`)) return fail("deck-edit-insert-pictures");
   const insertable = new Map(dneskaiInsertablePictures(pool.media, deck, pool.primaryCandidateId).map((item) => [item.assetSha256, item]));
-  const credits: string[] = [];
   for (const image of entry.images) {
     const media = insertable.get(image.assetSha256);
     if (!media) return fail(pool.media.some((item) => item.assetSha256 === image.assetSha256) ? "deck-edit-insert-picture-unavailable" : "deck-asset-outside-brief");
     if (!dneskaiPictureFitsShape(media, shape)) return fail("deck-edit-insert-picture-unfit");
     if (taken.has(image.assetSha256)) return fail("deck-edit-insert-picture-unavailable");
     taken.add(image.assetSha256);
-    credits.push(media.credit);
   }
   const slide: DneskaiSlide = {
     type: entry.type, ...(entry.type === "statement" ? { variant: entry.variant ?? "accent" } : {}),
     headline: entry.headline, ...(entry.body?.trim() ? { body: entry.body } : {}), ...(entry.kicker?.trim() ? { kicker: entry.kicker } : {}),
     images: entry.images.map((image) => structuredClone(image)), alt: entry.alt,
   };
-  if (credits.length) {
-    const limit = dneskaiSlideFieldLimits(slide).find((field) => field.field === "credit")?.max ?? 80;
-    const credit = dneskaiCreditLine(credits, limit);
-    if (credit === null) return fail("picture-credits-too-long");
-    slide.credit = credit;
-  }
   if (unplacedFields(slide).length) return fail("deck-edit-text-unplaced");
   return slide;
 }
@@ -128,11 +121,13 @@ function inserted(entry: DneskaiSlideInsert, deck: DneskaiDeck, pool: DneskaiEdi
 export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, pool: DneskaiEditPool | null = null): DneskaiDeck {
   const edit = DneskaiDeckEditSchema.safeParse(value);
   if (!edit.success) return fail("deck-edit-invalid");
+  if (edit.data.kit && !DNESKAI_RENDERABLE_KIT_IDS.includes(edit.data.kit)) return fail("kit-unavailable");
   if (dneskaiDeckEditNeedsPool(deck, edit.data) && !pool) return fail("deck-edit-pool-unavailable");
   const used = new Set<number>();
   // Pictures the kept slides show: an inserted slide may not repeat one.
   const taken = new Set(edit.data.slides.flatMap((entry) => !isInsert(entry) && deck.slides[entry.from]?.type !== "sources" ? deck.slides[entry.from]?.images.map((image) => image.assetSha256) ?? [] : []));
   let sourcesSeen = false;
+  const kit = edit.data.kit ?? dneskaiKitOf(deck);
   const slides = edit.data.slides.map((change, index) => {
     if (isInsert(change)) {
       if (sourcesSeen) return fail("deck-edit-insert-after-sources");
@@ -146,12 +141,18 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
     if (change.headline !== undefined) next.headline = change.headline;
     if (change.body === null) delete next.body; else if (change.body !== undefined) next.body = change.body;
     if (change.kicker === null) delete next.kicker; else if (change.kicker !== undefined) next.kicker = change.kicker;
-    if (change.credit !== undefined) next.credit = change.credit;
+    // No slide shows a picture credit (owner rule, 22 October 2026): an edit never writes one.
+    delete next.credit;
     if (change.alt !== undefined) next.alt = change.alt;
     if (change.images !== undefined) {
-      // Swap a picture or its crop inside the slide's places; adding or dropping a place would change the template.
-      if (slotKey(change.images) !== slotKey(next.images) || new Set(change.images.map((image) => image.slot)).size !== change.images.length) return fail("deck-edit-slots-changed");
-      next.images = next.images.map((image) => structuredClone(change.images!.find((candidate) => candidate.slot === image.slot)!));
+      // Swap a picture or its crop inside the slide's places; adding or dropping a place would change the template. The
+      // one exception: a cover in a kit with an inset (spotlight) may add or drop its optional second picture.
+      const inset = next.type === "cover-photo" && dneskaiCoverInset(kit);
+      const allowed = inset ? ["image-1", "image-1,image-2"] : [slotKey(next.images)];
+      if (!allowed.includes(slotKey(change.images)) || new Set(change.images.map((image) => image.slot)).size !== change.images.length) return fail("deck-edit-slots-changed");
+      if (inset && new Set(change.images.map((image) => image.assetSha256)).size !== change.images.length) return fail("deck-edit-slots-changed");
+      next.images = inset ? [...change.images].sort((a, b) => a.slot.localeCompare(b.slot)).map((image) => structuredClone(image))
+        : next.images.map((image) => structuredClone(change.images!.find((candidate) => candidate.slot === image.slot)!));
     }
     if (shape) {
       // A moved slide's pictures must fit their new place, and no text may stay where the new type draws none.
@@ -167,6 +168,9 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   });
   if (deck.format === "carousel" && (slides.length < 2 || slides.length > 10)) return fail("deck-edit-slide-count");
   if (deck.format === "single-image" && slides.length !== 1) return fail("deck-edit-slide-count");
-  const parsed = DneskaiDeckSchema.safeParse({ ...deck, slides });
+  // Editorial is written by leaving `kit` out, so a deck switched back to it hashes as it did before.
+  const { kit: _previous, ...rest } = deck;
+  void _previous;
+  const parsed = DneskaiDeckSchema.safeParse({ ...rest, ...(kit !== "editorial" ? { kit } : {}), slides });
   return parsed.success ? parsed.data : fail("deck-edit-invalid");
 }

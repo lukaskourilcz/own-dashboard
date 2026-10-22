@@ -8,7 +8,8 @@ import { applyDneskaiDeckEdit, DneskaiRevisionEditError } from '@/lib/marketing/
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiMediaRead } from '@/lib/marketing/dneskai-media-contracts';
 import { z } from 'zod';
-import type { DneskaiSlide } from '@/lib/marketing/dneskai-slides';
+import { dneskaiKitOf, type DneskaiSlide } from '@/lib/marketing/dneskai-slides';
+import { dneskaiNextFreeSlot, dneskaiTakenSlots } from '@/lib/marketing/dneskai-lab';
 
 /**
  * The deterministic stand-in for the DNESKAi workspace server in `/dev-preview` and the guest tour (#119). It keeps
@@ -40,6 +41,14 @@ function find(id: string): DneskaiWorkspacePost {
 }
 
 /** The server's edit contract, shared (`applyDneskaiDeckEdit`), with the fixture brief as the pool. */
+/** The deck an edit produces, with its kit: the request's when it switches kit, otherwise the post's. Editorial is never written. */
+function editedDeck(post: DneskaiWorkspacePost, request: Pick<DneskaiEditRequest, 'deck'>, slides: DneskaiSlide[]) {
+  const { kit: _kept, ...deck } = post.deck!;
+  void _kept;
+  const kit = request.deck?.kit ?? dneskaiKitOf(post.deck);
+  return { ...deck, ...(kit !== 'editorial' ? { kit } : {}), slides };
+}
+
 function applyEdit(post: DneskaiWorkspacePost, request: DneskaiEditRequest): DneskaiSlide[] {
   if (!post.deck) return [];
   if (!request.deck) return clone(post.deck.slides);
@@ -67,6 +76,18 @@ function demoProblems(post: DneskaiWorkspacePost, slides: DneskaiSlide[]) {
     }
   });
   return problems;
+}
+
+/**
+ * The preview's stand-in for the daily generation ceiling: $1, of which the fixture has spent $0.60. Each admitted
+ * demo job counts at its whole $0.25 reservation, as an unsettled job does, so the second paid action of one page
+ * is refused exactly as the server refuses it. Nothing is called and nothing is spent.
+ */
+const DEMO_CEILING_USD = 1, DEMO_RESERVATION_USD = 0.25;
+let demoSpentUsd = 0.6;
+function reserveDemoJob() {
+  if (demoSpentUsd + DEMO_RESERVATION_USD > DEMO_CEILING_USD + 1e-9) throw new DneskaiWorkspaceRequestError('dneskai-daily-generation-budget-exhausted', 409);
+  demoSpentUsd += DEMO_RESERVATION_USD;
 }
 
 /** The approval the server's SQL makes, with its refusals: the exact hash, a ready version still in review. */
@@ -110,6 +131,44 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     approveOne(id, expectedHash);
     return { id, scheduledAt: post.scheduledAt };
   },
+  // Owner decision 6: the slot is checked against the fixture's own posts, jobs and waiting topics, as the server does.
+  async approveAt(id, expectedHash, scheduledAt) {
+    await pause(400);
+    const post = find(id);
+    if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
+    if (post.status !== 'review' || !post.ready) throw new DneskaiWorkspaceRequestError('revision-not-ready', 409);
+    const free = dneskaiNextFreeSlot({ today: read().today, slots: read().slots, taken: dneskaiTakenSlots(read(), id), now: Date.now() });
+    if (!free) throw new DneskaiWorkspaceRequestError('slot-none-free', 409);
+    if (Date.parse(free) !== Date.parse(scheduledAt)) throw new DneskaiWorkspaceRequestError('slot-unavailable', 409);
+    post.scheduledAt = free;
+    approveOne(id, expectedHash);
+    return { id, scheduledAt: free };
+  },
+  // Owner decision 8: the preview has no model, so the regeneration stays a queued drafting job for the post's slot.
+  async regenerate(id, expectedHash, note) {
+    await pause(400);
+    const post = find(id);
+    if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
+    if (post.status !== 'review' && post.status !== 'returned') throw new DneskaiWorkspaceRequestError('regenerate-not-reviewable', 409);
+    if (!note.trim()) throw new DneskaiWorkspaceRequestError('regenerate-note-missing', 400);
+    reserveDemoJob();
+    if (post.status === 'review') { post.status = 'returned'; post.feedback = note.trim().slice(0, 2000); }
+    const jobId = uuid();
+    read().jobs.unshift({ id: jobId, status: 'queued', errorCode: null, createdAt: new Date().toISOString(), title: post.title, scheduledAt: post.scheduledAt });
+    return { jobId, status: 'queued' as const };
+  },
+  // Owner decision 9: the waiting topic becomes a drafting job at once; the preview drafts nothing.
+  async generateNow(briefId) {
+    await pause(400);
+    const waiting = read().waiting ?? [];
+    const brief = waiting.find((item) => item.briefId === briefId);
+    if (!brief) throw new DneskaiWorkspaceRequestError('brief-not-waiting', 409);
+    reserveDemoJob();
+    read().waiting = waiting.filter((item) => item.briefId !== briefId);
+    const jobId = uuid();
+    read().jobs.unshift({ id: jobId, status: 'running', errorCode: null, createdAt: new Date().toISOString(), title: brief.title, scheduledAt: brief.scheduledAt });
+    return { jobId, status: 'queued' as const };
+  },
   async approveMany(posts) {
     await pause(400);
     return { results: posts.map(({ id, contentHash }) => {
@@ -125,7 +184,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async renderPreview(request, signal) {
     const post = find(request.id);
     const slides = applyEdit(post, { action: 'edit', id: request.id, caption: post.caption, scheduledAt: post.scheduledAt, deck: request.deck });
-    return previewAt('/api/dev-preview/dneskai-preview', { deck: { ...post.deck!, slides }, slide: request.slide }, signal);
+    return previewAt('/api/dev-preview/dneskai-preview', { deck: editedDeck(post, { deck: request.deck }, slides), slide: request.slide }, signal);
   },
   async decide(id, action, feedback) {
     await pause(200);
@@ -144,7 +203,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     let ready = problems.length === 0;
     let assets = clone(post.assets);
     if (post.deck && (request.deck || !post.ready || post.assets.length !== slides.length)) {
-      const response = await fetch('/api/dev-preview/dneskai-render', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...post.deck, slides }) });
+      const response = await fetch('/api/dev-preview/dneskai-render', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editedDeck(post, request, slides)) });
       if (!response.ok) throw new DneskaiWorkspaceRequestError('render-unavailable', response.status);
       const rendered = z.object({ ready: z.boolean(), assets: z.array(z.object({ url: z.string().startsWith('data:image/jpeg;base64,'), sha256: z.string().regex(/^[a-f0-9]{64}$/), width: z.literal(1080), height: z.literal(1350), alt: z.string() })), problems: z.array(z.object({ slide: z.number(), code: z.string(), blocking: z.boolean(), message: z.string(), field: z.string().nullable() })) }).parse(await response.json());
       ready = rendered.ready;
@@ -157,7 +216,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
       ...clone(post), id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
       caption: request.caption, scheduledAt: new Date(request.scheduledAt).toISOString(),
       account: account ? { id: account.remoteId, handle: account.handle, platform: 'instagram' } : post.account,
-      deck: post.deck ? { ...post.deck, slides } : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
+      deck: post.deck ? editedDeck(post, request, slides) : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
       contentHash: '0'.repeat(64),
     };
@@ -171,4 +230,4 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
 /** Only the preview harness's project id has fixture posts. */
 export const DEMO_DNESKAI_PROJECT_ID = DEMO_PROJECT_ID;
 /** Restores the fixtures (component tests). */
-export function resetDemoDneskaiWorkspace() { store = null; }
+export function resetDemoDneskaiWorkspace() { store = null; demoSpentUsd = 0.6; }

@@ -80,9 +80,10 @@ describe('DNESKAi post states (#119)', () => {
     const fixture = read();
     expect(fixture.today).toBe('2026-10-24');
     const queue = dneskaiReviewQueue(fixture);
-    expect(queue.posts.map((item) => item.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty', 'Tři zkratky pro terminál', 'Co stojí jeden dotaz', 'Lokální model na notebooku']);
+    // The missed post of today (owner decision 6) follows the posts that can still be approved.
+    expect(queue.posts.map((item) => item.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty', 'Tři zkratky pro terminál', 'Co stojí jeden dotaz', 'Lokální model na notebooku', 'Malý model bez připojení']);
     // The fixtures show both sides of the grace period, measured from the read's own clock.
-    expect(queue.posts.slice(-2).map((item) => dneskaiPostState(item, dneskaiStateContext(fixture)))).toEqual([
+    expect(queue.posts.slice(-3, -1).map((item) => dneskaiPostState(item, dneskaiStateContext(fixture)))).toEqual([
       { state: 'problem', code: 'render-attach-failed', publishing: false }, { state: 'preparing', code: null, publishing: false }]);
     expect(dneskaiAwaitingRender(fixture)).toBe(true);
     expect(dneskaiAwaitingRender({ ...fixture, generatedAt: new Date(now.getTime() + DNESKAI_RENDER_ATTACH_GRACE_MS).toISOString() })).toBe(false);
@@ -121,7 +122,8 @@ describe('the post editor logic', () => {
 
   it('sets the credit line exactly as generation does', () => {
     const sets: Array<[string[], number]> = [[['Foto: @simonwillison.net (Bluesky)'], 80], [['Foto: @simonwillison.net (Bluesky)'], 30], [['Foto: @simonwillison.net (Bluesky)'], 20],
-      [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 80], [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 30], [['Foto: a', 'Foto: a'], 80], [[], 80], [['Obrázek: velmi dlouhý vydavatel s dlouhým jménem'], 10]];
+      [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 80], [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 30], [['Foto: a', 'Foto: a'], 80], [[], 80], [['Obrázek: velmi dlouhý vydavatel s dlouhým jménem'], 10],
+      [['Foto: Getty Images přes TechCrunch'], 80], [['Foto: Getty Images přes TechCrunch'], 30], [['Foto: Bloomberg / Getty Images přes TechCrunch'], 30], [['Foto: Getty Images přes TechCrunch', 'Obrázek: TechCrunch'], 30]];
     for (const [credits, limit] of sets) expect(dneskaiCreditLine(credits, limit), `${credits.join('|')} ${limit}`).toBe(fitDneskaiCredit(credits, limit));
   });
 
@@ -143,6 +145,15 @@ describe('the post editor logic', () => {
     expect(draftProblems(original, far, null, now)).toContainEqual({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
   });
 
+  it('sends the kit with every slide position when the owner switches kit, and nothing about kits otherwise', () => {
+    const original = post(1);
+    const draft = createDeckDraft(original);
+    expect(draft.kit).toBe('editorial');
+    expect(dneskaiEditRequest(original, draft).deck).toBeUndefined();
+    const request = dneskaiEditRequest(original, { ...draft, kit: 'ticker' });
+    expect(request.deck).toEqual({ kit: 'ticker', slides: original.deck!.slides.map((_, from) => ({ from })) });
+  });
+
   it('builds the minimal edit request: unchanged slides carry only their position, cleared optional text is removed', () => {
     const original = post(1);
     let draft = createDeckDraft(original, 'd0e5ca10-0000-4000-8000-0000000000aa');
@@ -150,16 +161,15 @@ describe('the post editor logic', () => {
     draft = setSlideText(draft, 0, 'headline', 'Nový titulek');
     draft = setSlideText(draft, 3, 'body', '   ');
     draft = setImageCrop(draft, 1, 'image-1', { focal: { x: 0.31234, y: 0.7 }, zoom: 1.5 });
+    draft = removeSlide(draft, 2);
     draft = moveSlide(draft, 2, 1);
-    draft = removeSlide(draft, 4);
     const request = dneskaiEditRequest(original, { ...draft, caption: 'Nový popisek' }, 'd0e5ca10-0000-4000-8000-0000000000bb');
     expect(request).toEqual({
       action: 'edit', id: original.id, caption: 'Nový popisek', scheduledAt: original.scheduledAt, accountId: 'd0e5ca10-0000-4000-8000-0000000000bb',
       deck: { slides: [
         { from: 0, headline: 'Nový titulek' },
-        { from: 2 },
-        { from: 1, images: [{ slot: 'image-1', assetSha256: original.deck!.slides[1]!.images[0]!.assetSha256, crop: { focal: { x: 0.312, y: 0.7 }, zoom: 1.5 } }] },
         { from: 3, body: null },
+        { from: 1, images: [{ slot: 'image-1', assetSha256: original.deck!.slides[1]!.images[0]!.assetSha256, crop: { focal: { x: 0.312, y: 0.7 }, zoom: 1.5 } }] },
       ] },
     });
     // Text a slide type does not draw never reaches the request, even if it was typed.
@@ -167,15 +177,16 @@ describe('the post editor logic', () => {
     expect(dneskaiEditRequest(original, statement).deck).toBeUndefined();
   });
 
-  it('swaps a picture from the pool, follows its credit and the sources slide, and flags pictures that cannot fill a cover', () => {
+  it('swaps a picture from the pool without writing a credit, and flags pictures that cannot fill a cover', () => {
     const original = post(1);
     const pool = orderedMediaPool(original.brief!);
     expect(pool.map((item) => item.assetSha256)).toEqual([assets.photos.p1.sha256, assets.photos.p3.sha256, assets.photos.p5.sha256, assets.photos.p4.sha256, assets.photos.p6.sha256, assets.photos.p2.sha256]);
     const p2 = pool.find((item) => item.assetSha256 === assets.photos.p2.sha256)!;
     const swapped = swapSlideImage(createDeckDraft(original), 0, 'image-1', p2, original.brief!.media);
     expect(swapped.slides[0]!.slide.images).toEqual([{ slot: 'image-1', assetSha256: p2.assetSha256 }]);
-    expect(swapped.slides[0]!.slide.credit).toBe('Foto: ukázkový zdroj 2');
-    expect(swapped.slides[4]!.slide.images.map((image) => image.assetSha256)).toEqual([p2.assetSha256, assets.photos.p3.sha256]);
+    // No slide shows a picture credit (owner rule, 22 October 2026): the credit stays in the brief's media.
+    expect(swapped.slides.every((item) => item.slide.credit === undefined)).toBe(true);
+    expect(swapped.slides.slice(1)).toEqual(createDeckDraft(original).slides.slice(1));
     expect(mediaResolution(pool[0]!)).toBe('full-bleed');
     expect(mediaResolution(pool[1]!)).toBe('inset');
     expect(mediaResolution(pool[2]!)).toBe('small');

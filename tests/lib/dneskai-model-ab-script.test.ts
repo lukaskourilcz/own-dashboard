@@ -52,7 +52,7 @@ describe("the dry plan (#122)", () => {
     const sonnet = briefCost(base, KNOWN_PRICING["claude-sonnet-5-5"]!);
     const reservation = ((base + DNESKAI_RETRY_INSTRUCTION_BYTES) * 2 + DNESKAI_AB_BUDGET.maxOutputTokens * 10) / 1_000_000;
     expect(sonnet.attemptReservationUsd).toBeCloseTo(reservation, 6);
-    expect(sonnet.worstUsd).toBeCloseTo(Math.min(2 * reservation, 0.25), 6);
+    expect(sonnet.worstUsd).toBeCloseTo(Math.min(2 * reservation, 0.13), 6);
     expect(sonnet.expectedUsd).toBeLessThan(sonnet.retryUsd);
     expect(sonnet.retryUsd).toBeLessThan(sonnet.worstUsd);
     const haiku = briefCost(base, KNOWN_PRICING["claude-haiku-5-5"]!);
@@ -94,7 +94,9 @@ describe("the live run (#122), with fake models only", () => {
       { model: "claude-sonnet-5-5", runs: 1, produced: 1, producedShare: 1, retried: 0, clipRetries: 0, meanAttempts: 1, costUsd: 0.021, approvedWithoutEditsShare: null },
       { model: "claude-haiku-5-5", runs: 1, produced: 0, producedShare: 0, retried: 1, clipRetries: 0, meanAttempts: 2, costUsd: 0.0021, approvedWithoutEditsShare: null },
     ]);
-    expect(result!.runs[0]).toMatchObject({ ok: true, format: "carousel", slide_types: { "cover-photo": 1, sources: 1 }, draft: { caption: expect.any(String) } });
+    expect(result!.runs[0]).toMatchObject({ ok: true, format: "carousel", slide_types: { "cover-photo": 1, figure: 1, statement: 1, split: 1 }, draft: { caption: expect.any(String) } });
+    // The written slides only: no sources slide is appended (owner rule, 22 October 2026).
+    expect(result!.runs[0]).not.toHaveProperty("slide_types.sources");
     expect(result!.runs[1]).toMatchObject({ ok: false, errorCode: "copy-validation-failed", attemptIssues: [["unknown-asset"], ["unknown-asset"]] });
     const [file, contents] = (run.writeFile as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, string];
     expect(file).toBe("work/dneskai-model-ab-2026-10-21.json");

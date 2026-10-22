@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "explainer",
+  "label": "Explainer",
+  "purpose": "Research results, rules and how-it-works posts read as a short document: paper grounds, white figure plates, one sans family for the claim and its explanation, IBM Plex Mono for labels, the folio and source lines, blueprint blue for the header rule and the statement ground.",
+  "palette": {
+    "background": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md; the white of the figure plates and the single type post."
+    },
+    "surface": {
+      "value": "#f7f7f5",
+      "source": "--surface-page in DESIGN_SYSTEM.md; the paper ground of every inner slide, approved for the light logotype."
+    },
+    "surface-strong": {
+      "value": "#d6def7",
+      "source": "The one supporting colour: blueprint blue (#2f5ae6) mixed about one part in five into white, for the plate edges and foot rule only, so the figure grid reads as drafting lines without a second hue. Never under text."
+    },
+    "foreground": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md; also the INK statement ground."
+    },
+    "muted": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md; explanations and source lines."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; labels, the folio, the header rule and the statement ground."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts)."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "IBM Plex Sans",
+      "source": "A precise neo-grotesque at 700 for the finding and each section's claim; the sans half of the Plex family the brand already uses for its mono labels."
+    },
+    "body": {
+      "family": "IBM Plex Sans",
+      "source": "The same family at 400 for explanations and sources, so a section reads as one document voice; open apertures and a tall x-height hold at phone size."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: dates, issue identifiers, source ids, tags, captions and measured values; here the section labels, the folio and the source line."
+    }
+  },
+  "style": {}
+}

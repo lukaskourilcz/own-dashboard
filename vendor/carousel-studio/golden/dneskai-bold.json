@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "dneskai-photo-golden/1",
+  "canvas": {
+    "width": 1080,
+    "height": 1350
+  },
+  "updatedAt": "2026-10-22",
+  "entries": [
+    {
+      "name": "cover-photo",
+      "templateId": "dneskai-bold-cover-photo",
+      "version": "1.0.0",
+      "pngHash": "93123f201fd376104599a966046b3ba8a2c044c888aaaf70121882006fa1c458"
+    },
+    {
+      "name": "cover-photo-crop",
+      "templateId": "dneskai-bold-cover-photo",
+      "version": "1.0.0",
+      "pngHash": "1e26390cb55c0540b0c1062b3309848c05d45ff52ebd869de930a03f475d83fa"
+    },
+    {
+      "name": "figure",
+      "templateId": "dneskai-bold-figure",
+      "version": "1.1.0",
+      "pngHash": "60035c83a8941bdc55ed52a175be2d5a20b24e4b0180c59b1f3051ed53ff2ee0"
+    },
+    {
+      "name": "split",
+      "templateId": "dneskai-bold-split",
+      "version": "1.1.0",
+      "pngHash": "50d7dbb9e5b35703a576137673e5264d50db55fbcefa6d8d74191b6a754023df"
+    },
+    {
+      "name": "split-pair",
+      "templateId": "dneskai-bold-split-pair",
+      "version": "1.1.0",
+      "pngHash": "2216c51cec146fde0595e279095544c569977f6e383c407ae8323ffc94fec550"
+    },
+    {
+      "name": "statement",
+      "templateId": "dneskai-bold-statement",
+      "version": "1.1.0",
+      "pngHash": "a0239e50f890d9d655846db652452c179cf41118f701b165e8f019393d165be0"
+    },
+    {
+      "name": "statement-ink",
+      "templateId": "dneskai-bold-statement",
+      "version": "1.1.0",
+      "pngHash": "5d9d578a78a93eb55410c75a15c6c080245bca10dbcbfec082a507cfec69713c"
+    },
+    {
+      "name": "sources",
+      "templateId": "dneskai-bold-sources-4",
+      "version": "1.1.0",
+      "pngHash": "b4c9bfeb0181750b61d4b0adf574425d230744ddbed3b7510faf81d802835f8e"
+    },
+    {
+      "name": "single-photo",
+      "templateId": "dneskai-bold-single-photo",
+      "version": "1.1.0",
+      "pngHash": "ba84a328eed3caf78706d4d10c053dd5b4d869139d16ac65010ecfa7db19f92a"
+    },
+    {
+      "name": "single-photo-focal",
+      "templateId": "dneskai-bold-single-photo",
+      "version": "1.1.0",
+      "pngHash": "88bb8ddce6195306bf5d85789a5ccfb15e213fbd709305aae31d981ad53681b0"
+    },
+    {
+      "name": "single-type",
+      "templateId": "dneskai-bold-single-type",
+      "version": "1.1.0",
+      "pngHash": "f155c3ce1ef31ba07afb92c502aa0c7643f600b65433b6e293cf84bc592a54ed"
+    },
+    {
+      "name": "acceptance-1",
+      "templateId": "dneskai-bold-cover-photo",
+      "version": "1.0.0",
+      "pngHash": "38222fba3451878cd8f37f32b40d151ebc4595792993a08c0e7ff9700df995db"
+    },
+    {
+      "name": "acceptance-2",
+      "templateId": "dneskai-bold-figure",
+      "version": "1.1.0",
+      "pngHash": "3e8bf5a23b503a0463f9b21879f95db4b1f763eb4a9762ea54e0567f61337f0b"
+    },
+    {
+      "name": "acceptance-3",
+      "templateId": "dneskai-bold-figure",
+      "version": "1.1.0",
+      "pngHash": "e3fbc1234144ffd1bc9343149e4c7fde9abbca0f7ede118a101dea29922f6ed5"
+    },
+    {
+      "name": "acceptance-4",
+      "templateId": "dneskai-bold-split-pair",
+      "version": "1.1.0",
+      "pngHash": "1d1f9fd1944a7e06a89517356db437c216174d370e73af48bc6ead6ea630be73"
+    },
+    {
+      "name": "acceptance-5",
+      "templateId": "dneskai-bold-statement",
+      "version": "1.1.0",
+      "pngHash": "9ad39be71acf8ecf7d39c93d6c847d65c0e0676321cf27663b1d8e6f49eb9f5d"
+    },
+    {
+      "name": "acceptance-6",
+      "templateId": "dneskai-bold-figure",
+      "version": "1.1.0",
+      "pngHash": "bd44e30417838abce02e868cb1ef82cc7e8838f3ae6b8b30a397cb7f010ad466"
+    },
+    {
+      "name": "acceptance-7",
+      "templateId": "dneskai-bold-sources-4",
+      "version": "1.1.0",
+      "pngHash": "5bbd31e56fbb635dfc0ab756375c54f0780924e81cbe3a15febe622dff8a8704"
+    }
+  ]
+}

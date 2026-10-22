@@ -45,6 +45,41 @@ export interface DneskaiInspectedImage {
   bytes: number;
   /** 64-bit DCT perceptual hash as 16 hex digits. */
   phash: string;
+  /** Credit, source, copyright and creator fields embedded in the file (IPTC, XMP); untrusted text, used only to name a photo agency. */
+  embeddedCredits: string[];
+}
+
+const XMP_CREDIT_FIELDS = ['photoshop:Credit', 'photoshop:Source', 'dc:rights', 'dc:creator', 'Iptc4xmpCore:CreditLine', 'xmpRights:WebStatement', 'plus:LicensorName', 'plus:CopyrightOwnerName'];
+/** IPTC IIM record 2 datasets: By-line (80), Credit (110), Source (115), Copyright Notice (116). */
+const IPTC_CREDIT_DATASETS = new Set([80, 110, 115, 116]);
+const MAX_EMBEDDED_CREDITS = 12;
+const decodeXml = (value: string) => value.replace(/<[^>]*>/g, ' ').replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+  .replace(/&#(\d+);/g, (_, decimal: string) => String.fromCodePoint(Number(decimal))).replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+const cleanCredit = (value: string) => value.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
+
+/**
+ * The credit fields a picture carries in its IPTC block (raw IIM records, also inside a Photoshop resource) and its
+ * XMP packet. Pure; bounded in what it reads and returns. Publishers often strip these, so an empty list is normal.
+ */
+export function dneskaiEmbeddedCredits(metadata: { iptc?: Uint8Array; xmp?: Uint8Array }): string[] {
+  const found: string[] = [];
+  const iptc = metadata.iptc?.subarray(0, 65536);
+  if (iptc) {
+    for (let index = 0; index + 5 <= iptc.length; index += 1) {
+      if (iptc[index] !== 0x1c || iptc[index + 1] !== 0x02) continue;
+      const dataset = iptc[index + 2]!, length = (iptc[index + 3]! << 8) | iptc[index + 4]!;
+      if (length & 0x8000 || index + 5 + length > iptc.length) continue;
+      if (IPTC_CREDIT_DATASETS.has(dataset)) found.push(new TextDecoder('utf-8').decode(iptc.subarray(index + 5, index + 5 + length)));
+      index += 4 + length;
+    }
+  }
+  const xmp = metadata.xmp ? new TextDecoder('utf-8').decode(metadata.xmp.subarray(0, 262144)) : '';
+  for (const field of xmp ? XMP_CREDIT_FIELDS : []) {
+    const name = field.replace(':', '\\:').replace('.', '\\.');
+    for (const match of xmp.matchAll(new RegExp(`${name}="([^"]{1,400})"`, 'g'))) found.push(decodeXml(match[1]!));
+    for (const match of xmp.matchAll(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]{0,2000}?)</${name}>`, 'g'))) found.push(decodeXml(match[1]!));
+  }
+  return [...new Set(found.map(cleanCredit).filter(Boolean))].slice(0, MAX_EMBEDDED_CREDITS);
 }
 
 const DCT_SIZE = 32;
@@ -99,7 +134,7 @@ export async function inspectDneskaiImage(input: Uint8Array): Promise<DneskaiIns
   const bytes = Buffer.from(input.buffer, input.byteOffset, input.byteLength);
   const format = sniffDneskaiImage(bytes);
   if (!format) throw new DneskaiMediaImageError('media-excluded-format');
-  let width: number, height: number, grey: Buffer;
+  let width: number, height: number, grey: Buffer, embeddedCredits: string[];
   try {
     const { default: sharp } = await import('sharp').catch(() => { throw new DneskaiMediaImageError('media-decoder-unavailable'); });
     const meta = await sharp(bytes, { limitInputPixels: false }).metadata();
@@ -107,6 +142,7 @@ export async function inspectDneskaiImage(input: Uint8Array): Promise<DneskaiIns
     if (meta.width * meta.height > DNESKAI_MEDIA_MAX_PIXELS) throw new DneskaiMediaImageError('media-too-many-pixels');
     // An animated WebP is a GIF in another container; the renderer draws stills.
     if ((meta.pages ?? 1) > 1) throw new DneskaiMediaImageError('media-excluded-format');
+    embeddedCredits = dneskaiEmbeddedCredits({ iptc: meta.iptc, xmp: meta.xmp });
     const swapped = (meta.orientation ?? 1) >= 5;
     width = swapped ? meta.height : meta.width;
     height = swapped ? meta.width : meta.height;
@@ -121,6 +157,6 @@ export async function inspectDneskaiImage(input: Uint8Array): Promise<DneskaiIns
   return {
     sha256: createHash('sha256').update(bytes).digest('hex'),
     format, mime: DNESKAI_MEDIA_FORMATS[format].mime, ext: DNESKAI_MEDIA_FORMATS[format].ext,
-    width, height, bytes: bytes.length, phash: dctPerceptualHash(grey),
+    width, height, bytes: bytes.length, phash: dctPerceptualHash(grey), embeddedCredits,
   };
 }

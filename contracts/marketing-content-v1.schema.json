@@ -210,6 +210,16 @@
             "single-image"
           ]
         },
+        "kit": {
+          "type": "string",
+          "enum": [
+            "bold",
+            "explainer",
+            "magazine",
+            "ticker",
+            "spotlight"
+          ]
+        },
         "slides": {
           "minItems": 1,
           "maxItems": 10,

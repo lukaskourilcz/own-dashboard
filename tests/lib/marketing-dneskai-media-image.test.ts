@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { inspectDneskaiImage, phashDistance, sniffDneskaiImage } from '@/lib/marketing/dneskai-media-image';
+import { dneskaiEmbeddedCredits, inspectDneskaiImage, phashDistance, sniffDneskaiImage } from '@/lib/marketing/dneskai-media-image';
 import { scene } from './marketing-dneskai-media-fixture';
 
 describe('DNESKAi source picture inspection', () => {
@@ -12,6 +12,24 @@ describe('DNESKAi source picture inspection', () => {
       expect(image).toMatchObject({ format, mime, width: 1200, height: 900, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
       expect(image.phash).toMatch(/^[a-f0-9]{16}$/);
     }
+  });
+
+  it('reads the credit fields embedded in the file, and nothing when a publisher stripped them', async () => {
+    // A Getty-style XMP packet: attribute and element forms, an rdf:Alt rights line with an entity.
+    const xmp = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" photoshop:Credit="Getty Images" photoshop:Source="Getty Images North America">
+      <dc:creator><rdf:Seq><rdf:li>Justin Sullivan</rdf:li></rdf:Seq></dc:creator><dc:rights><rdf:Alt><rdf:li xml:lang="x-default">&#169; 2026 Getty Images</rdf:li></rdf:Alt></dc:rights></rdf:Description></rdf:RDF></x:xmpmeta>`;
+    const tagged = await scene(1, 1200, 900).jpeg().withXmp(xmp).toBuffer();
+    expect((await inspectDneskaiImage(tagged)).embeddedCredits).toEqual(['Getty Images', 'Getty Images North America', '© 2026 Getty Images', 'Justin Sullivan']);
+    expect((await inspectDneskaiImage(await scene(1, 1200, 900).jpeg().toBuffer())).embeddedCredits).toEqual([]);
+  });
+
+  it('reads IPTC credit, source, by-line and copyright records, skipping the rest', () => {
+    const record = (dataset: number, value: string) => { const bytes = Buffer.from(value, 'utf8'); return Buffer.concat([Buffer.from([0x1c, 0x02, dataset, bytes.length >> 8, bytes.length & 0xff]), bytes]); };
+    // Inside a Photoshop 8BIM resource, as JPEG APP13 carries it: the IIM records are found wherever they sit.
+    const iptc = Buffer.concat([Buffer.from('Photoshop 3.0\u00008BIM\u0004\u0004\u0000\u0000', 'latin1'), record(0, '\u0000\u0004'), record(5, 'OFFLINE headline'), record(80, 'AP Photo/Jae C. Hong'), record(110, 'AP'), record(115, 'Associated Press'), record(116, 'Copyright 2026 The Associated Press')]);
+    expect(dneskaiEmbeddedCredits({ iptc })).toEqual(['AP Photo/Jae C. Hong', 'AP', 'Associated Press', 'Copyright 2026 The Associated Press']);
+    expect(dneskaiEmbeddedCredits({ iptc: Buffer.from([0x1c, 0x02, 110, 0xff, 0xff, 0x41]) })).toEqual([]);
+    expect(dneskaiEmbeddedCredits({})).toEqual([]);
   });
 
   it('measures the displayed size after EXIF orientation, like the renderer', async () => {

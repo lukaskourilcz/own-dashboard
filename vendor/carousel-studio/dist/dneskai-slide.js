@@ -1,7 +1,11 @@
+import { dneskaiKit } from "./dneskai-kits/registry.js";
+import { DNESKAI_DEFAULT_KIT, DNESKAI_VARIANTS, DNESKAI_INK_VARIANT, DNESKAI_QUOTE_MARK } from "./dneskai-kits/contract.js";
+export { DNESKAI_KITS, dneskaiKit } from "./dneskai-kits/registry.js";
+export { DNESKAI_KIT_IDS, DNESKAI_DEFAULT_KIT, DNESKAI_SLIDE_TYPES, DNESKAI_VARIANTS, DNESKAI_TEMPLATE_ROLES, dneskaiRoleOf, DNESKAI_TEXT_FIELDS, DNESKAI_CODE_OWNED_SLOTS, DNESKAI_TEXT_LIMITS, dneskaiImageSlots, DNESKAI_OPTIONAL_IMAGE_SLOTS, DNESKAI_TEMPLATE_VARIANTS } from "./dneskai-kits/contract.js";
 import { createHash } from "node:crypto";
 import { CONNECTOR_MAX_SLIDES, MASTER_CANVAS, MASTER_FORMAT } from "./canvas.js";
 import { layoutDneskaiSlide } from "./dneskai-layout.js";
-import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, DNESKAI_PHOTO_TEMPLATES, dneskaiSourceSlot, dneskaiSourcesTemplate } from "./dneskai-photo.js";
+import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./dneskai-photo.js";
 import { cropRegion } from "./images.js";
 import { CAROUSEL_BRANDS } from "./library.js";
 import { carouselTextFits, renderCarouselSlidePng } from "./renderer.js";
@@ -10,7 +14,7 @@ import { ImageCropSchema } from "./schema.js";
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
- * strings code owns (the folio, the sources slide's title and its disclosure), decodes and crops
+ * strings code owns (the sources slide's title and its disclosure, a quotation mark), decodes and crops
  * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
  * the words and pictures they carry and the height left over is set around them on purpose), and
  * renders through the same engine and gates as every other Design Lab slide.
@@ -26,7 +30,6 @@ import { ImageCropSchema } from "./schema.js";
  * exact record the slide was drawn from — the words, the variant and each photograph's crop with
  * the sha256 of the bytes it was set on — so an approval can hash what was seen.
  */
-export const DNESKAI_SLIDE_TYPES = ["cover-photo", "figure", "split", "statement", "sources", "single"];
 /** A photograph drawn to every edge needs this many pixels on its shorter side (report §5.3). */
 export const DNESKAI_BLEED_MIN_SHORT_SIDE = 900;
 /**
@@ -91,31 +94,14 @@ function fieldOf(slot, input) {
 }
 const problem = (code, blocking, field, message) => ({ code, blocking, field, message });
 /** The template a slide type and variant resolve to, or the problem that stops it. */
-function resolveTemplate(input) {
-    const variants = {
-        "cover-photo": [],
-        figure: [],
-        split: [],
-        statement: ["accent", "ink"],
-        sources: [],
-        single: ["photo", "type"]
-    };
-    const allowed = variants[input.type];
+function resolveTemplate(input, kit) {
+    const allowed = DNESKAI_VARIANTS[input.type];
     if (!allowed)
         return problem("variant-invalid", true, "type", `There is no DNESKAi slide type ${String(input.type)}.`);
     if (input.variant !== undefined && !allowed.includes(input.variant)) {
         return problem("variant-invalid", true, "variant", `A ${input.type} slide has ${allowed.length ? `the variants ${allowed.join(", ")}` : "no variants"}, not ${input.variant}.`);
     }
-    const imageCount = input.images?.length ?? 0;
-    const byId = (id) => DNESKAI_PHOTO_TEMPLATES.get(id);
-    switch (input.type) {
-        case "cover-photo": return byId("dneskai-cover-photo");
-        case "figure": return byId("dneskai-figure");
-        case "split": return byId(input.images?.some((image) => image.slot === "image-2") ? "dneskai-split-pair" : "dneskai-split");
-        case "statement": return byId("dneskai-statement");
-        case "sources": return dneskaiSourcesTemplate(Math.min(imageCount, DNESKAI_MAX_THUMBNAILS));
-        case "single": return byId((input.variant ?? "photo") === "photo" ? "dneskai-single-photo" : "dneskai-single-type");
-    }
+    return kit.resolve(input.type, input.variant, (input.images ?? []).map(image => image.slot));
 }
 /** Every image layer of a single-slide template, by slot. */
 function imageLayers(template) {
@@ -124,12 +110,6 @@ function imageLayers(template) {
 function isBleed(layer) {
     return layer.x <= 0 && layer.y <= 0 && layer.width >= 1 && layer.height >= 1;
 }
-function folio(position) {
-    if (position.count <= 1)
-        return "";
-    const pad = (value) => String(value).padStart(2, "0");
-    return `${pad(position.index + 1)} / ${pad(position.count)}`;
-}
 function strings(input, template) {
     const fixed = FIXED_STRINGS[input.locale ?? "cs"];
     const all = {
@@ -137,10 +117,10 @@ function strings(input, template) {
         body: input.body?.trim() ?? "",
         kicker: input.kicker?.trim() ?? "",
         credit: input.credit?.trim() ?? "",
-        folio: folio(input.position),
         title: fixed.title,
         "images-label": fixed.imagesLabel,
         disclosure: fixed.disclosure,
+        "quote-mark": DNESKAI_QUOTE_MARK,
         ...Object.fromEntries(Array.from({ length: DNESKAI_MAX_SOURCES }, (_, index) => [dneskaiSourceSlot(index), sourceLines(input)[index]?.text ?? ""]))
     };
     return Object.fromEntries(template.requiredSlots.map((slot) => [slot, all[slot] ?? ""]));
@@ -151,9 +131,12 @@ async function inspect(input) {
     if (!Number.isInteger(index) || !Number.isInteger(count) || count < 1 || count > CONNECTOR_MAX_SLIDES || index < 0 || index >= count) {
         problems.push(problem("position-invalid", true, "position", `Slide ${index + 1} of ${count} is not a place in a carousel of 1 to ${CONNECTOR_MAX_SLIDES} slides.`));
     }
-    const resolved = resolveTemplate(input);
+    const kit = dneskaiKit(input.kit ?? DNESKAI_DEFAULT_KIT);
+    if (!kit)
+        return { kit: null, problems: [...problems, problem("kit-invalid", true, "kit", `Unknown DNESKAi kit ${String(input.kit)}.`)], template: null, payload: null, images: {} };
+    const resolved = resolveTemplate(input, kit);
     if (!("schemaVersion" in resolved))
-        return { problems: [...problems, resolved], template: null, payload: null, images: {} };
+        return { kit, problems: [...problems, resolved], template: null, payload: null, images: {} };
     const template = resolved;
     if (input.type === "sources") {
         const lines = sourceLines(input);
@@ -253,13 +236,13 @@ async function inspect(input) {
     const payload = {
         locale: input.locale ?? "cs",
         strings: strings(input, template),
-        ...(input.type === "statement" && input.variant === "ink" ? { variant: "INK" } : {}),
+        ...(input.type === "statement" && input.variant === "ink" ? { variant: DNESKAI_INK_VARIANT } : {}),
         ...(Object.keys(crops).length ? { images: crops } : {})
     };
     // The words fitted in the template's declared frames: what would be cut, found without the
     // photographs so it is reported even when an image problem stops the render, and the lines
     // the layout stacks.
-    const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT });
+    const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT, look: kit.look });
     const clipped = [];
     for (const fit of fits) {
         if (fit.fitted.truncated && payload.strings[fit.slot]) {
@@ -268,8 +251,9 @@ async function inspect(input) {
         }
     }
     const laid = layoutDneskaiSlide({
+        flow: kit.flows.get(template.id), metrics: kit.metrics,
         template,
-        text: Object.fromEntries(fits.map((fit) => [fit.slot, { lines: fit.fitted.lines.length, fontSize: fit.fitted.fontSize }])),
+        text: Object.fromEntries(fits.map((fit) => [fit.slot, { lines: fit.fitted.lines.length, fontSize: fit.fitted.fontSize, capHeight: fit.face.capHeight / 1000 }])),
         pictures
     });
     // Measured on the region the crop actually cuts in the frame the picture is laid out in, not on
@@ -300,7 +284,7 @@ async function inspect(input) {
             found.push(problem("image-upscaled", false, image.slot, `${drawn} in this frame and may look soft.`));
         }
     });
-    return { problems: [...problems, ...perImage.flat(), ...missing, ...clipped], template: laid, payload, images };
+    return { kit, problems: [...problems, ...perImage.flat(), ...missing, ...clipped], template: laid, payload, images };
 }
 /** Every problem the slide has, without rendering it. */
 export async function validateDneskaiSlide(input) {
@@ -308,15 +292,16 @@ export async function validateDneskaiSlide(input) {
 }
 /** Render one slide, or refuse with the problems that stop it. */
 export async function renderDneskaiSlide(input) {
-    const { problems, template, payload, images } = await inspect(input);
+    const { kit, problems, template, payload, images } = await inspect(input);
     const reference = template ? { id: template.id, version: template.version } : null;
     if (!template || !payload || problems.some((entry) => entry.blocking)) {
-        return { status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload };
+        return { kit: kit?.id ?? null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload };
     }
     const rendered = await renderCarouselSlidePng({
         template,
         payload,
         brand: CAROUSEL_BRANDS["caught-up"],
+        look: kit.look,
         format: MASTER_FORMAT,
         images,
         deck: input.position,
@@ -325,6 +310,7 @@ export async function renderDneskaiSlide(input) {
     if (!rendered)
         throw new Error(`Template ${template.id} has no slide to render`);
     return {
+        kit: kit.id,
         status: "rendered",
         png: rendered.png,
         pngHash: rendered.pngHash,

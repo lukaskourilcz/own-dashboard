@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "bold",
+  "label": "Bold",
+  "purpose": "Bold type and statement: one sentence per slide at display size on flat blueprint blue, ink, white and paper grounds that change from role to role as the swipe device. For a day with one strong claim, a regulation or an attributed quote, and few or no pictures.",
+  "palette": {
+    "background": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md; the white ground of the figure slide and the type on blue and ink grounds."
+    },
+    "surface": {
+      "value": "#f7f7f5",
+      "source": "--surface-page in DESIGN_SYSTEM.md; the paper ground of the sources slide and the note under a statement."
+    },
+    "surface-strong": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md; labels and credits on the blue and ink grounds."
+    },
+    "foreground": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md; type on white and paper, and the ink ground of split, single photo and the INK statement."
+    },
+    "muted": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md; body copy, credits and the picture hairline on white and paper."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; the ground of the cover, the statement and the type-only announcement."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts); the kicker on white and paper."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Barlow Condensed",
+      "source": "A condensed grotesque at 700, set in sentence case: it carries a sentence at display size inside the 936 px measure, and its Czech accents are drawn glyphs with the same 0.70 em cap height as Space Grotesk."
+    },
+    "body": {
+      "family": "Inter",
+      "source": "A plain sans for the short note under each statement, so the display face stays the only loud thing on the slide."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: dates, issue identifiers, source ids, tags, captions and measured values."
+    }
+  },
+  "style": {}
+}

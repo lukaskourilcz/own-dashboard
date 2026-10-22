@@ -1,0 +1,558 @@
+{
+  "fixture": true,
+  "kit": "magazine",
+  "look": "magazine",
+  "tileCount": 24,
+  "layout": {
+    "width": 1944,
+    "height": 2574,
+    "rows": 5,
+    "tiles": [
+      {
+        "left": 24,
+        "top": 24
+      },
+      {
+        "left": 408,
+        "top": 24
+      },
+      {
+        "left": 792,
+        "top": 24
+      },
+      {
+        "left": 1176,
+        "top": 24
+      },
+      {
+        "left": 1560,
+        "top": 24
+      },
+      {
+        "left": 24,
+        "top": 534
+      },
+      {
+        "left": 408,
+        "top": 534
+      },
+      {
+        "left": 792,
+        "top": 534
+      },
+      {
+        "left": 1176,
+        "top": 534
+      },
+      {
+        "left": 1560,
+        "top": 534
+      },
+      {
+        "left": 24,
+        "top": 1044
+      },
+      {
+        "left": 408,
+        "top": 1044
+      },
+      {
+        "left": 792,
+        "top": 1044
+      },
+      {
+        "left": 1176,
+        "top": 1044
+      },
+      {
+        "left": 1560,
+        "top": 1044
+      },
+      {
+        "left": 24,
+        "top": 1554
+      },
+      {
+        "left": 408,
+        "top": 1554
+      },
+      {
+        "left": 792,
+        "top": 1554
+      },
+      {
+        "left": 1176,
+        "top": 1554
+      },
+      {
+        "left": 1560,
+        "top": 1554
+      },
+      {
+        "left": 24,
+        "top": 2064
+      },
+      {
+        "left": 408,
+        "top": 2064
+      },
+      {
+        "left": 792,
+        "top": 2064
+      },
+      {
+        "left": 1176,
+        "top": 2064
+      }
+    ]
+  },
+  "slides": [
+    {
+      "deck": "photo-rich",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-magazine-cover-photo",
+        "version": "1.0.0"
+      },
+      "look": "magazine",
+      "pngHash": "c6a937b9593f958a13332598f7d4a13592501fc61bf719c41d3d44e95670ba20",
+      "tileHash": "c6a937b9593f958a13332598f7d4a13592501fc61bf719c41d3d44e95670ba20",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-magazine-figure",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "1ec56d233483472d09723b65b7b85f9bb55c5511b95f365b9c2ebad1437256ea",
+      "tileHash": "1ec56d233483472d09723b65b7b85f9bb55c5511b95f365b9c2ebad1437256ea",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-magazine-split",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "ca5e760e1ea7556ce4c9ad9efd2c34a4da9c9bab4dbea564ff18d3d0b5064906",
+      "tileHash": "ca5e760e1ea7556ce4c9ad9efd2c34a4da9c9bab4dbea564ff18d3d0b5064906",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 3,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-magazine-figure",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "80f0d222758ad49d4cb440c7dd37d849eacc6ccb76686e2fdf06d16c6fe5c2b5",
+      "tileHash": "80f0d222758ad49d4cb440c7dd37d849eacc6ccb76686e2fdf06d16c6fe5c2b5",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 4,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "183315ef7941361c29dc849db2cc3650473094586c4fcafdc1b7d01f5311d3a7",
+      "tileHash": "183315ef7941361c29dc849db2cc3650473094586c4fcafdc1b7d01f5311d3a7",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "photo-rich",
+      "index": 5,
+      "type": "split",
+      "template": {
+        "id": "dneskai-magazine-split-pair",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "557eb77f788d093fe072e82525784f5d75bf9da9b8ab7e07a5f7addb058ecf11",
+      "tileHash": "557eb77f788d093fe072e82525784f5d75bf9da9b8ab7e07a5f7addb058ecf11",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 6,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-magazine-sources-3",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "91fa1c40f0352ba8ea112499e8a0e164bff9ce41395033a35dd4766553b13987",
+      "tileHash": "91fa1c40f0352ba8ea112499e8a0e164bff9ce41395033a35dd4766553b13987",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-3",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-magazine-cover-photo",
+        "version": "1.0.0"
+      },
+      "look": "magazine",
+      "pngHash": "5d3aa2ec647fae9e7aa75347f8697a94aa29ae34c4153d0d1d8aaedf05a1db7d",
+      "tileHash": "5d3aa2ec647fae9e7aa75347f8697a94aa29ae34c4153d0d1d8aaedf05a1db7d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-magazine-figure",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "6f8fbe4aca6eee1551d0db863a7d8bd9dbe960921e38ea1f0e91ccd3690557f0",
+      "tileHash": "6f8fbe4aca6eee1551d0db863a7d8bd9dbe960921e38ea1f0e91ccd3690557f0",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "4222ed48a4d3a09dcb4ef6344c4f76d370f367a2e7615a996eb6dedc2251bc3e",
+      "tileHash": "4222ed48a4d3a09dcb4ef6344c4f76d370f367a2e7615a996eb6dedc2251bc3e",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "single-photo",
+      "index": 3,
+      "type": "split",
+      "template": {
+        "id": "dneskai-magazine-split",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "34da8d56548d7e0ea2406f899dcfa3b58fce359c3467d3b57b3d6bf3bd529ae1",
+      "tileHash": "34da8d56548d7e0ea2406f899dcfa3b58fce359c3467d3b57b3d6bf3bd529ae1",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-magazine-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "47d8442495b3757eba2c238b802d24667ef7a7d7d49c810620cecec3057c5e29",
+      "tileHash": "47d8442495b3757eba2c238b802d24667ef7a7d7d49c810620cecec3057c5e29",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "text-only",
+      "index": 0,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "183315ef7941361c29dc849db2cc3650473094586c4fcafdc1b7d01f5311d3a7",
+      "tileHash": "183315ef7941361c29dc849db2cc3650473094586c4fcafdc1b7d01f5311d3a7",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 1,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "4222ed48a4d3a09dcb4ef6344c4f76d370f367a2e7615a996eb6dedc2251bc3e",
+      "tileHash": "4222ed48a4d3a09dcb4ef6344c4f76d370f367a2e7615a996eb6dedc2251bc3e",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "1e107110ce35532ebacea327e3fc1b8422c75f64c87c727998eede8dc4140476",
+      "tileHash": "1e107110ce35532ebacea327e3fc1b8422c75f64c87c727998eede8dc4140476",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "4222ed48a4d3a09dcb4ef6344c4f76d370f367a2e7615a996eb6dedc2251bc3e",
+      "tileHash": "4222ed48a4d3a09dcb4ef6344c4f76d370f367a2e7615a996eb6dedc2251bc3e",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-magazine-sources-0",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "2e3afecbfa4769cac2578f89a7044601037cd7d52c6dcf88d5190c3c01cf6b2b",
+      "tileHash": "2e3afecbfa4769cac2578f89a7044601037cd7d52c6dcf88d5190c3c01cf6b2b",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-magazine-cover-photo",
+        "version": "1.0.0"
+      },
+      "look": "magazine",
+      "pngHash": "bc85eff4be8c9cf92066249b83b77f028e65b51dd17c064c37c8a40d07d001b3",
+      "tileHash": "bc85eff4be8c9cf92066249b83b77f028e65b51dd17c064c37c8a40d07d001b3",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-magazine-figure",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "5a543997030e508a2369e33f2988016ed246968f239dfc9eb9a5db7d4357b0b3",
+      "tileHash": "5a543997030e508a2369e33f2988016ed246968f239dfc9eb9a5db7d4357b0b3",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-magazine-split",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "15d3fb66f17a29fa16ed82b2c8a0eceb7f04ab830b0f3d332269ee68daaaadce",
+      "tileHash": "15d3fb66f17a29fa16ed82b2c8a0eceb7f04ab830b0f3d332269ee68daaaadce",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-magazine-statement",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "183315ef7941361c29dc849db2cc3650473094586c4fcafdc1b7d01f5311d3a7",
+      "tileHash": "183315ef7941361c29dc849db2cc3650473094586c4fcafdc1b7d01f5311d3a7",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-magazine-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "50e3e6827f35c54bd4bfcc4b0add78101e40326cac79fa43e677464550152202",
+      "tileHash": "50e3e6827f35c54bd4bfcc4b0add78101e40326cac79fa43e677464550152202",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-magazine-single-photo",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "de929bd0628ac9c656c1ab5b5ff1238c549318a95fcf6b5506ad9ff420fa5fca",
+      "tileHash": "de929bd0628ac9c656c1ab5b5ff1238c549318a95fcf6b5506ad9ff420fa5fca",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-type-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-magazine-single-type",
+        "version": "1.1.0"
+      },
+      "look": "magazine",
+      "pngHash": "209564d1d8fe2fee2370d174132ba51458c4117db9c887ecbcff6669f5ce9f70",
+      "tileHash": "209564d1d8fe2fee2370d174132ba51458c4117db9c887ecbcff6669f5ce9f70",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    }
+  ]
+}

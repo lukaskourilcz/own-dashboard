@@ -236,7 +236,7 @@ export class FakeJev {
 // ------------------------------------------------------------------ Anthropic
 type OfferMedia = { assetSha256: string; evidenceIndex: number; position: number; credit: string; width: number; height: number; fullBleedCapable: boolean; insetCapable: boolean; singlePhotoCapable: boolean };
 type Offer = { brief: { title: string }; rules: { firstSlide: string }; evidence: Array<{ index: number; title: string }>; media: OfferMedia[] };
-/** marketing-copy/5 answers a careful model could give for the two briefs; pictures are chosen by capability, never by content. */
+/** marketing-copy/6 answers a careful model could give for the two briefs; pictures are chosen by capability, never by content. */
 export function fixtureCopy(offer: Offer) {
   const cover = offer.media.find((item) => item.fullBleedCapable)!;
   const inset = offer.media.filter((item) => item.insetCapable && item.assetSha256 !== cover.assetSha256);
@@ -263,7 +263,7 @@ export function fixtureCopy(offer: Offer) {
       hashtags: ['meta', 'preklad', 'hlasovyasistent'],
       format: 'carousel',
       slides: [
-        { type: 'cover-photo', kicker: 'Meta AI', headline: 'Aplikace Meta AI začíná živě překládat hlasové rozhovory', images: image(cover), alt: 'Úvodní slide o živém překladu v aplikaci Meta AI s obrázkem z příspěvku účtu meta.ai.' },
+        { type: 'cover-photo', headline: 'Aplikace Meta AI začíná živě překládat hlasové rozhovory', images: image(cover), alt: 'Úvodní slide o živém překladu v aplikaci Meta AI s obrázkem z příspěvku účtu meta.ai.' },
         { type: 'figure', headline: 'Mluvíte jedním jazykem, odpověď slyšíte v jiném', body: 'Podle Mety funkce překládá hlasový rozhovor průběžně. Zatím umí angličtinu, španělštinu, francouzštinu, němčinu a italštinu.', images: image(inset[0]), alt: 'Slide s vysvětlením, jak živý překlad funguje, s druhým obrázkem z příspěvku meta.ai.' },
         { type: 'statement', headline: 'Meta zatím neuvádí, ve kterých zemích bude překlad dostupný.', images: [], alt: 'Textový slide o tom, co Meta ve svém oznámení neuvedla.' },
         { type: 'split', kicker: 'Co sledovat', headline: 'Kvalitu překladu ukáže až běžné používání', body: 'Oznámení nezmiňuje nezávislé testy přesnosti. Sledujte, jak si funkce poradí s nářečím a odbornými pojmy.', images: image(inset[1]), alt: 'Slide s tím, co u nové funkce sledovat, s třetím obrázkem z příspěvku meta.ai.' },
@@ -276,7 +276,7 @@ export function fixtureCopy(offer: Offer) {
     hashtags: ['claude', 'anthropic', 'tymovaprace'],
     format: 'carousel',
     slides: [
-      { type: 'cover-photo', kicker: 'Anthropic', headline: 'Claude dostává sdílenou paměť pro týmové pracovní prostory', images: image(cover), alt: 'Úvodní slide o sdílené paměti v Claude s ilustrací z oznámení společnosti Anthropic.' },
+      { type: 'cover-photo', headline: 'Claude dostává sdílenou paměť pro týmové pracovní prostory', images: image(cover), alt: 'Úvodní slide o sdílené paměti v Claude s ilustrací z oznámení společnosti Anthropic.' },
       { type: 'split', kicker: 'Jak to funguje', headline: 'Paměť projektu vidí a upravují všichni členové', body: 'Každý uložený údaj si mohou členové týmu prohlédnout, opravit nebo smazat.', images: image(inset[0]), alt: 'Slide o tom, jak týmová paměť funguje, s obrázkem nastavení od společnosti Anthropic.' },
       { type: 'figure', headline: 'Správci rozhodují, kde paměť poběží', body: 'U stávajících pracovních prostorů je funkce ve výchozím stavu vypnutá. Cena se podle TechCrunch nemění.', images: image(inset[1]), alt: 'Slide o roli správců s obrázkem z článku TechCrunch.' },
       { type: 'statement', headline: 'Anthropic zatím neříká, jak dlouho paměť údaje uchovává.', images: [], alt: 'Textový slide o otázce, kterou oznámení nechává otevřenou.' },

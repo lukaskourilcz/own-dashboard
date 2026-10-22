@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, DNESKAI_STUDIO, type DneskaiTextField } from "@/lib/marketing/dneskai-render";
-import type { DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
+import { DNESKAI_RENDERABLE_KIT_IDS, type DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
 
 const root = path.resolve(__dirname, "../..");
 const vendor = path.join(root, "vendor/carousel-studio");
@@ -100,11 +100,24 @@ describe("vendored @boardlessai/carousel-studio", () => {
         const field = (layer.slot.startsWith("source-") ? "sources" : layer.slot) as DneskaiTextField;
         const family = dressed.fonts[layer.fontToken];
         expect({ id, field, family, weight: studio.resolveFace(family, layer.fontWeight).weight, uppercase: layer.uppercase })
-          .toEqual({ id, field, ...DNESKAI_FIELD_FACES[field] });
+          .toEqual({ id, field, ...(DNESKAI_FIELD_FACES as Record<string, object>)[field] });
         drawn.add(field);
       }
       expect({ id, fields: [...drawn].sort() }).toEqual({ id, fields: [...DNESKAI_PLACED_FIELDS[type]].sort() });
     }
+  });
+
+  it("offers exactly the kits the vendored studio registers, each placing every field a deck carries", async () => {
+    const slide = await import("@boardlessai/carousel-studio/dneskai-slide");
+    expect([...slide.DNESKAI_KITS.keys()]).toEqual([...DNESKAI_RENDERABLE_KIT_IDS]);
+    expect(DNESKAI_RENDERABLE_KIT_IDS[0]).toBe("editorial");
+    // One copy deck sets in every kit, so a kit switch can never strand text the new kit does not draw.
+    for (const kit of slide.DNESKAI_KITS.values()) {
+      for (const type of Object.keys(DNESKAI_PLACED_FIELDS) as DneskaiSlideType[]) {
+        expect({ kit: kit.id, type, fields: [...kit.placedFields[type]].sort() }).toEqual({ kit: kit.id, type, fields: [...DNESKAI_PLACED_FIELDS[type]].sort() });
+      }
+    }
+    expect(slide.dneskaiKit("editorial")!.fieldFaces).toEqual(DNESKAI_FIELD_FACES);
   });
 
   it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {
@@ -127,4 +140,18 @@ describe("vendored @boardlessai/carousel-studio", () => {
         .toEqual({ name, status: "rendered", template: { id: pinned.templateId, version: pinned.version }, pngHash: pinned.pngHash });
     }
   }, 60000);
+
+  it("renders the golden cases in every other kit, byte for byte where the kit pins that case", async () => {
+    const studio = await import("@boardlessai/carousel-studio");
+    const cases = await studio.dneskaiGoldenCases();
+    for (const kit of DNESKAI_RENDERABLE_KIT_IDS.filter((id) => id !== "editorial")) {
+      const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(vendor, `golden/dneskai-${kit}.json`), "utf8")));
+      for (const { name, input } of cases) {
+        const result = await studio.renderDneskaiSlide({ ...input, kit });
+        expect({ kit, name, status: result.status, kitName: result.kit, truncated: result.truncatedSlots }).toEqual({ kit, name, status: "rendered", kitName: kit, truncated: [] });
+        const pinned = golden.entries.find((entry) => entry.name === name);
+        if (pinned) expect({ kit, name, pngHash: result.pngHash }).toEqual({ kit, name, pngHash: pinned.pngHash });
+      }
+    }
+  }, 240000);
 });

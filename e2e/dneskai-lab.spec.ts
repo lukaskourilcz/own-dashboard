@@ -15,7 +15,7 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   const lab = page.getByTestId('dneskai-lab');
   await expect(lab).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
-  await expect(page.getByTestId('dneskai-kit-bold').getByRole('radio')).toBeDisabled();
+  await expect(page.getByTestId('dneskai-kit-bold').getByRole('radio')).toBeEnabled();
   const inspector = page.getByTestId('dneskai-slide-inspector');
   const headline = inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true });
   await headline.fill(lang === 'cs' ? 'Krátký ověřený titulek' : 'Short checked headline');
@@ -166,4 +166,86 @@ test('Publish now stays off while the account does not publish, and says why', a
   const publish = page.getByTestId('dneskai-lab-publish-now');
   await expect(publish).toBeDisabled();
   await expect(publish).toHaveAttribute('title', dneskaiLab.en.actions.publishNowOff);
+});
+
+test('Lab switches a post to another kit, previews it unsaved, then saves a version that needs its own approval', async ({ page }) => {
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const t = dneskaiLab.en, lab = page.getByTestId('dneskai-lab');
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
+  await page.getByTestId('dneskai-kit-ticker').click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+  await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
+  await expect(page.getByTestId('dneskai-kit-ticker')).toContainText(t.kits.onStage);
+  await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(lab.getByText(t.actions.saved)).toBeVisible();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
+  await expect(page.getByTestId('dneskai-kit-ticker').getByRole('radio')).toBeChecked();
+});
+
+// Owner decisions 6, 8 and 9. The clock is fixed at 10:00 in Prague, so the fixture's missed post (09:40) moves to
+// today's 12:30: 17:00 and 20:00 are held by the two topics waiting for the scheduler.
+const DECISIONS_NOW = new Date('2026-10-20T08:00:00.000Z');
+for (const lang of ['en', 'cs'] as const) test(`a missed post moves to the next free slot and is approved by its new hash (${lang})`, async ({ page }) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang];
+  await page.clock.setFixedTime(DECISIONS_NOW);
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  // The Lab opens on a post that can still be approved, not on the missed one.
+  await expect(page.getByTestId('dneskai-lab-moved')).toHaveCount(0);
+  await page.getByTestId('dneskai-lab-queue-post').filter({ hasText: t.queue.moved }).click();
+  const moved = page.getByTestId('dneskai-lab-moved');
+  await expect(moved).toContainText(t.actions.moved.title);
+  const button = moved.getByRole('button', { name: t.actions.moved.button('12:30') });
+  await expect(button).toBeEnabled();
+  await button.focus(); await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(t.actions.moved.dialogTitle('12:30'));
+  await expect(page.getByTestId('dneskai-move-summary')).toContainText('Malý model bez připojení');
+  const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[role="dialog"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  await page.getByTestId('dneskai-move-confirm').click();
+  await expect(page.getByTestId('dneskai-lab-session')).toContainText(t.actions.moved.done('12:30'));
+  await expect(page.getByTestId('dneskai-lab-moved')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('a returned post is regenerated with the owner’s note; it never approves anything', async ({ page }) => {
+  const t = dneskaiLab.en;
+  await page.clock.setFixedTime(DECISIONS_NOW);
+  await gotoPreview(page);
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labPost=d0e5ca10-0000-4000-8000-000000000004');
+  const regenerate = page.getByTestId('dneskai-lab-regenerate');
+  await expect(regenerate).toBeEnabled();
+  await regenerate.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(t.actions.regenerateDescription);
+  const note = page.getByTestId('dneskai-regenerate-note');
+  // The return feedback is filled in; an empty note cannot be sent.
+  await expect(note).toHaveValue('Titulek je moc dlouhý, zkraťte ho na jednu krátkou větu.');
+  await note.fill('   ');
+  await expect(page.getByTestId('dneskai-regenerate-confirm')).toBeDisabled();
+  await note.fill('Kratší titulek, bez otázky.');
+  await page.getByTestId('dneskai-regenerate-confirm').click();
+  await expect(page.getByTestId('dneskai-lab-session')).toContainText(t.actions.regenerateQueued);
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+});
+
+for (const lang of ['en', 'cs'] as const) test(`a waiting topic is generated now, and the next one is refused at the daily limit (${lang})`, async ({ page }) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang];
+  await page.clock.setFixedTime(DECISIONS_NOW);
+  await gotoPreview(page, { lang });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const waiting = page.getByTestId('dneskai-lab-waiting');
+  await expect(waiting.getByText(t.queue.waiting)).toHaveCount(2);
+  const first = waiting.getByRole('button', { name: t.queue.generateNowName('Jak číst kartu modelu') });
+  await first.focus(); await page.keyboard.press('Enter');
+  await expect(waiting.getByRole('status')).toContainText(t.queue.generateNowQueued);
+  await expect(waiting.getByText(t.queue.waiting)).toHaveCount(1);
+  await expect(page.getByTestId('dneskai-lab-queue').getByText(`17:00 · ${t.queue.preparing}`)).toBeVisible();
+  await waiting.getByRole('button', { name: t.queue.generateNowName('Kdy pomůže vyhledávání v dokumentech') }).click();
+  await expect(waiting.getByRole('status')).toContainText(lang === 'cs' ? 'Denní limit generování DNESKAi je vyčerpaný.' : 'The DNESKAi daily generation limit is reached.');
+  await expect(waiting.getByText(t.queue.waiting)).toHaveCount(1);
+  const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-lab-queue"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  expect(errors).toEqual([]);
 });

@@ -26,6 +26,14 @@ export const DneskaiEditResultSchema = z.strictObject({
 export type DneskaiEditResult = z.infer<typeof DneskaiEditResultSchema>;
 export const DneskaiPublishNowResultSchema = z.object({ id: z.uuid(), scheduledAt: z.iso.datetime({ offset: true }) });
 export type DneskaiPublishNowResult = z.infer<typeof DneskaiPublishNowResultSchema>;
+/** A paid owner action (regenerate, generate now): the job, and whether it was drafted within the request. */
+export const DneskaiPaidActionResultSchema = z.object({
+  jobId: z.uuid(),
+  status: z.enum(['review', 'queued', 'failed']),
+  revisionId: z.uuid().nullable().optional(),
+  errorCode: z.string().regex(/^[a-z][a-z0-9_-]{0,99}$/).optional(),
+});
+export type DneskaiPaidActionResult = z.infer<typeof DneskaiPaidActionResultSchema>;
 
 export interface DneskaiWorkspaceApi {
   /** True in the deterministic preview: nothing reaches a server. */
@@ -37,6 +45,12 @@ export interface DneskaiWorkspaceApi {
   approve(id: string, expectedHash: string): Promise<void>;
   /** „Publish now“: approves exactly this saved version for a time two minutes ahead; the next tick publishes it. */
   publishNow(id: string, expectedHash: string): Promise<DneskaiPublishNowResult>;
+  /** „Moved, approve again“: this saved version moved to `scheduledAt`, the next free slot the owner was shown, and approved. */
+  approveAt(id: string, expectedHash: string, scheduledAt: string): Promise<DneskaiPublishNowResult>;
+  /** „Regenerate with a note“: a new draft of the same topic with the note as feedback (≈ $0.02, never approved). */
+  regenerate(id: string, expectedHash: string, note: string): Promise<DneskaiPaidActionResult>;
+  /** „Generate now“: admits a waiting topic now and drafts it, under the daily ceiling. */
+  generateNow(briefId: string): Promise<DneskaiPaidActionResult>;
   edit(request: DneskaiEditRequest): Promise<DneskaiEditResult>;
   decide(id: string, action: 'returned' | 'skipped', feedback?: string): Promise<void>;
   /** „Approve the day“: each post bound to its own hash; one refusal never blocks the others. */
@@ -92,6 +106,21 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async publishNow(id, expectedHash) {
     const result = DneskaiPublishNowResultSchema.safeParse(await post({ action: 'publish-now', id, expectedHash }));
     if (!result.success) throw new DneskaiWorkspaceRequestError('approval-unavailable', 502);
+    return result.data;
+  },
+  async approveAt(id, expectedHash, scheduledAt) {
+    const result = DneskaiPublishNowResultSchema.safeParse(await post({ action: 'approve-at', id, expectedHash, scheduledAt }));
+    if (!result.success) throw new DneskaiWorkspaceRequestError('approval-unavailable', 502);
+    return result.data;
+  },
+  async regenerate(id, expectedHash, note) {
+    const result = DneskaiPaidActionResultSchema.safeParse(await post({ action: 'regenerate', id, expectedHash, note: note.trim().slice(0, 1000) }));
+    if (!result.success) throw new DneskaiWorkspaceRequestError('regenerate-unavailable', 502);
+    return result.data;
+  },
+  async generateNow(briefId) {
+    const result = DneskaiPaidActionResultSchema.safeParse(await post({ action: 'generate-now', briefId }, '/api/marketing/dneskai/generate'));
+    if (!result.success) throw new DneskaiWorkspaceRequestError('generate-now-unavailable', 502);
     return result.data;
   },
   async edit(request) {

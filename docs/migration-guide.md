@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Nine files are newer than anything production holds and none of them is applied: `20261022000000` through
-`20261022160000`. Apply them with the CLI, which records each file's own version:
+Thirteen files are newer than anything production holds and none of them is applied: `20261022000000` through
+`20261022190000`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the nine files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the thirteen files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -742,8 +742,10 @@ npx supabase migration list --linked      # both columns agree
 Do not apply them through the Supabase MCP `apply_migration` tool: it records the apply time as the version, which
 recreates the mismatch, and it holds the retention file's `delete` for a confirmation. `20261022141613` needs
 `20261022021835` first; filename order does that. After the push, set the server-only switches in Vercel Production
-and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`
-and `MARKETING_PUBLICATION_REQUEUE_ENABLED`. `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner
+and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`,
+`MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED` and `DNESKAI_REGENERATE_ENABLED`. The
+relevance-first selection (`20261022180000`) and the unknown-cost scope (`20261022171000`) take effect with the push
+itself and need no switch. `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner
 approves the research plan; the ledger alone spends nothing. The next daily tick then records no `retention` error.
 
 ## DNESKAi research preparation, 22 October 2026 (unapplied)
@@ -779,3 +781,23 @@ Both stay unapplied. The deployed app never calls these functions while `DNESKAI
 ### Prepared: event category by majority (SEL-10)
 
 `20261022160000_dneskai_event_majority_category.sql` replaces `marketing_dneskai_finish` with a version that reads an optional `category` on each `p_events` entry. The collector sends the category most eligible reports of the event carry, tier-0/1 sources breaking ties (`dneskaiEventCategory`). The function uses it only when at least one eligible member of that event carries it; otherwise it keeps the lead report's category, as before. The lead report, each report's 48 h / 30 d window, the one-event-per-category rule and the briefs' validity rules are unchanged; `tool` and `ai-project` remain separate categories. It stays unapplied. The deployed function ignores the extra key, so the code needs no switch and changes nothing until an approved application.
+
+### Prepared: unknown collection cost scoped to its day (owner decision 17)
+
+`20261022171000_dneskai_collection_unresolved_scope.sql` narrows one guard in `marketing_dneskai_claim_stage`. A paid stage was refused while any stage the owner ever reserved had no cost, or a cost above its reservation, so one unknown Apify cost from the October staging pilot blocked paid collection on every later night. The guard now checks only the stages of the run being claimed and of the other runs with the same Prague date. An unknown cost tonight still stops tonight's paid work on every project. No row changes: the old reservation keeps its $0.04 and its missing cost, and still counts in its own day's $0.25 total. The per-stage $0.04 and $0.003 reservations and the $0.25 daily ceiling are unchanged.
+
+Like `20261021122330`, the file rewrites only that guard inside the current function body, raises an error if it does not find the guard exactly once, and does nothing on a second run. Replayed only in PGlite (`tests/lib/marketing-dneskai-unresolved-scope-database.test.ts`). The collector code already holds a run only for its own unresolved stages, so it needs no switch; the deployed function keeps the old, stricter guard until the migration is applied. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations).
+
+### Prepared: story selection v2 (owner decisions 11-13)
+
+`20261022180000_dneskai_relevance_first_selection.sql` replaces `marketing_dneskai_finish` with the body of `20261022160000` and changes only the ranking. The day's events are picked by relevance, and at most one of them may be outside news (`ai-news`, `tech-news`): `tool`, `ai-project` and `marketing` share that one slot, so a weak ai-project item no longer pushes out a strong news story. The 0.85 floor, the 48 h / 30 d windows, grouping, coverage, the limit of four events, member selection and briefs are unchanged. Rank 1 is the most relevant event. It must apply after `20261022160000`; filename order does that.
+
+`20261022180100_dneskai_held_requeue.sql` adds `requeued_at` to `marketing_dneskai_candidates` and the service-only `marketing_dneskai_requeue_held(p_owner, p_run, p_fence)`. Under the run's fence, while the run is running, today in Prague and before its Jev stages are planned, it opens at most 16 reports that Jev held for review (`collection-review-*`) less than 48 hours ago, with text, published within 30 days and never re-queued before, most relevant first. The release rules match `marketing_dneskai_release_candidate`. Jev then reviews them in that night's batches under the existing stage and $0.25 daily limits: at most two extra batches, $0.006. `requeued_at` is never cleared, so a report gets one second chance; a retried tick of the same run re-queues nothing.
+
+Both stay unapplied and were replayed only in PGlite (`tests/lib/marketing-dneskai-selection-v2-database.test.ts`). The selection rule changes as soon as `20261022180000` is applied; no switch gates it. The collector calls `marketing_dneskai_requeue_held`, and the Sources tab explains the relevance-first rule, only with the server-only `DNESKAI_SELECTION_V2_ENABLED=true`; set it after both are applied and redeploy. A missing function while the switch is on leaves the night as it was.
+
+### Prepared: regenerate with a note (owner decision 8)
+
+`20261022190000_dneskai_regenerate_with_note.sql` replaces `marketing_finish_job` with the body of `20261021124706` plus one step. When the finished job's request names `generation.replacesRevisionId`, and that revision is the owner's, of the same brand, still `review` or `returned` and has no claimed, published or uncertain publication, the new revision is saved through `marketing_save_revision` with it as the replaced revision: the old version becomes `superseded` and a queued publication of it is cancelled, as for an owner edit. A version the owner approved meanwhile keeps its approval; the new draft is saved beside it. Without the key the function behaves as before. Nothing here approves; the new revision is ready and in review.
+
+It stays unapplied. The app sends `replacesRevisionId` only from the Lab's „Regenerate with a note“, which the server refuses with `regenerate-unavailable` until `DNESKAI_REGENERATE_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-regenerate-database.test.ts`).

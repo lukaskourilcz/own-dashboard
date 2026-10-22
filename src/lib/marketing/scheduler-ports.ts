@@ -13,6 +13,7 @@ import { CONTAINER_RETRY_CODE } from "./publisher";
 import { listMetaTokenMetadata, refreshInstagramToken } from "./meta-credentials";
 import { renewStoredRevisionAssetUrls } from "./asset-urls";
 import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type SchedulerCollectionRun } from "./scheduler";
+import { sendDneskaiReviewReminders } from "./dneskai-reminders";
 
 /**
  * The real modules behind the scheduler's ports (#120). Each port calls one existing exported function or
@@ -87,6 +88,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       if (error) throw new Error("job-state-unavailable");
       return z.array(z.object({ id: z.uuid() })).parse(data ?? []).map((row) => row.id);
     },
+    reviewReminders: (project, now) => sendDneskaiReviewReminders(db, owner, project, now),
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

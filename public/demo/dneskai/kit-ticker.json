@@ -1,0 +1,564 @@
+{
+  "fixture": true,
+  "kit": "ticker",
+  "look": "ticker",
+  "tileCount": 24,
+  "layout": {
+    "width": 1944,
+    "height": 2574,
+    "rows": 5,
+    "tiles": [
+      {
+        "left": 24,
+        "top": 24
+      },
+      {
+        "left": 408,
+        "top": 24
+      },
+      {
+        "left": 792,
+        "top": 24
+      },
+      {
+        "left": 1176,
+        "top": 24
+      },
+      {
+        "left": 1560,
+        "top": 24
+      },
+      {
+        "left": 24,
+        "top": 534
+      },
+      {
+        "left": 408,
+        "top": 534
+      },
+      {
+        "left": 792,
+        "top": 534
+      },
+      {
+        "left": 1176,
+        "top": 534
+      },
+      {
+        "left": 1560,
+        "top": 534
+      },
+      {
+        "left": 24,
+        "top": 1044
+      },
+      {
+        "left": 408,
+        "top": 1044
+      },
+      {
+        "left": 792,
+        "top": 1044
+      },
+      {
+        "left": 1176,
+        "top": 1044
+      },
+      {
+        "left": 1560,
+        "top": 1044
+      },
+      {
+        "left": 24,
+        "top": 1554
+      },
+      {
+        "left": 408,
+        "top": 1554
+      },
+      {
+        "left": 792,
+        "top": 1554
+      },
+      {
+        "left": 1176,
+        "top": 1554
+      },
+      {
+        "left": 1560,
+        "top": 1554
+      },
+      {
+        "left": 24,
+        "top": 2064
+      },
+      {
+        "left": 408,
+        "top": 2064
+      },
+      {
+        "left": 792,
+        "top": 2064
+      },
+      {
+        "left": 1176,
+        "top": 2064
+      }
+    ]
+  },
+  "slides": [
+    {
+      "deck": "photo-rich",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-ticker-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "7d38caf9cd740ab4511c03758d826df4a4c7a1e5ea7ec93f41e6d0d4d86fc3b3",
+      "tileHash": "7d38caf9cd740ab4511c03758d826df4a4c7a1e5ea7ec93f41e6d0d4d86fc3b3",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-ticker-figure",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "7dc5c11845e09e7cc0e293a4c3d6a86b5ce37762c7930f42883be2196c218e36",
+      "tileHash": "7dc5c11845e09e7cc0e293a4c3d6a86b5ce37762c7930f42883be2196c218e36",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-ticker-split",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "b69aded646e86a06ef4d8198cad71261b85c63588e29f6a789f56664046fb3e1",
+      "tileHash": "b69aded646e86a06ef4d8198cad71261b85c63588e29f6a789f56664046fb3e1",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 3,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-ticker-figure",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "cacb1398ca89188bff95a8064d37dcc809e8d9f781324fb2759199eff53e3a57",
+      "tileHash": "cacb1398ca89188bff95a8064d37dcc809e8d9f781324fb2759199eff53e3a57",
+      "truncatedSlots": [],
+      "problems": [
+        {
+          "code": "image-upscaled",
+          "field": "image-1",
+          "blocking": false
+        }
+      ],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 4,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "93673297e79bab101d6a4a4a922a6ade20ce2905dd98bbe7b55c7b329d6944d8",
+      "tileHash": "93673297e79bab101d6a4a4a922a6ade20ce2905dd98bbe7b55c7b329d6944d8",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "photo-rich",
+      "index": 5,
+      "type": "split",
+      "template": {
+        "id": "dneskai-ticker-split-pair",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "9d08e7030a1b6b7566cc96840d388392e7bc7af8ba2f456acc751929ebade8b2",
+      "tileHash": "9d08e7030a1b6b7566cc96840d388392e7bc7af8ba2f456acc751929ebade8b2",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 6,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-ticker-sources-3",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "f8c2c5df94d14f3da4dfa1641131a96ca04a5f2c061aa6a282c9d6548030a77c",
+      "tileHash": "f8c2c5df94d14f3da4dfa1641131a96ca04a5f2c061aa6a282c9d6548030a77c",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-3",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-ticker-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "2d6245700bb4c694a6b4d027f7236df321d419ac22151b34a6eb6168379565a0",
+      "tileHash": "2d6245700bb4c694a6b4d027f7236df321d419ac22151b34a6eb6168379565a0",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-ticker-figure",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "6f22ce3db0c5c6d0f5fe8a774ddcaab3f0478d0c6a90252b91353c3749c94ceb",
+      "tileHash": "6f22ce3db0c5c6d0f5fe8a774ddcaab3f0478d0c6a90252b91353c3749c94ceb",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "07343c4b220db0ff8d5a096969a9229c504e0ad831587949186e0f35f667e892",
+      "tileHash": "07343c4b220db0ff8d5a096969a9229c504e0ad831587949186e0f35f667e892",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "single-photo",
+      "index": 3,
+      "type": "split",
+      "template": {
+        "id": "dneskai-ticker-split",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "5bd26a0f71c3947ede255c80c7f21a0df3af5b68880d38b283ddd27a07bcc49a",
+      "tileHash": "5bd26a0f71c3947ede255c80c7f21a0df3af5b68880d38b283ddd27a07bcc49a",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-ticker-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "a8776d8c2c739099a23691ade0799fb00dae35ad181b1cb407fc443a81e3fd56",
+      "tileHash": "a8776d8c2c739099a23691ade0799fb00dae35ad181b1cb407fc443a81e3fd56",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "text-only",
+      "index": 0,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "93673297e79bab101d6a4a4a922a6ade20ce2905dd98bbe7b55c7b329d6944d8",
+      "tileHash": "93673297e79bab101d6a4a4a922a6ade20ce2905dd98bbe7b55c7b329d6944d8",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 1,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "07343c4b220db0ff8d5a096969a9229c504e0ad831587949186e0f35f667e892",
+      "tileHash": "07343c4b220db0ff8d5a096969a9229c504e0ad831587949186e0f35f667e892",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "7ac666d6a6fb4916b60ab77c1a01f76b255218d70a05ab5a026219b7a12e4e72",
+      "tileHash": "7ac666d6a6fb4916b60ab77c1a01f76b255218d70a05ab5a026219b7a12e4e72",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "07343c4b220db0ff8d5a096969a9229c504e0ad831587949186e0f35f667e892",
+      "tileHash": "07343c4b220db0ff8d5a096969a9229c504e0ad831587949186e0f35f667e892",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-ticker-sources-0",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "fe9cb5f411891f678e914894fe3dbbbd3801382c552bd3619c9313bde9139c86",
+      "tileHash": "fe9cb5f411891f678e914894fe3dbbbd3801382c552bd3619c9313bde9139c86",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-ticker-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "5e476ea45e1d896a168a782922d967097850272299ed3fcee73e2b9b1388d5ef",
+      "tileHash": "5e476ea45e1d896a168a782922d967097850272299ed3fcee73e2b9b1388d5ef",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-ticker-figure",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "392b4de0e7903fadca3265013bef2edf049ffe2c7c9a21e6683c9734ed0d39d5",
+      "tileHash": "392b4de0e7903fadca3265013bef2edf049ffe2c7c9a21e6683c9734ed0d39d5",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-ticker-split",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "54fdb62a4cc385b0ea24fb4b8e38a49d288cff60ac328c7299b8703eed87f27d",
+      "tileHash": "54fdb62a4cc385b0ea24fb4b8e38a49d288cff60ac328c7299b8703eed87f27d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-ticker-statement",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "93673297e79bab101d6a4a4a922a6ade20ce2905dd98bbe7b55c7b329d6944d8",
+      "tileHash": "93673297e79bab101d6a4a4a922a6ade20ce2905dd98bbe7b55c7b329d6944d8",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-ticker-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "5e4aa976ba3af92672adab78fbeffd6482ee430d7e7c941f19e11192fc9e3c5c",
+      "tileHash": "5e4aa976ba3af92672adab78fbeffd6482ee430d7e7c941f19e11192fc9e3c5c",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-ticker-single-photo",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "d82a63e2293a3fa0af79c88d47f22e67f099ae6efe0a112bde8dbf2c59e78e2c",
+      "tileHash": "d82a63e2293a3fa0af79c88d47f22e67f099ae6efe0a112bde8dbf2c59e78e2c",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-type-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-ticker-single-type",
+        "version": "1.1.0"
+      },
+      "look": "ticker",
+      "pngHash": "db5d63c13f33a12f199e194d3c926f342cbd530d51f1d7854aed418583e7b043",
+      "tileHash": "db5d63c13f33a12f199e194d3c926f342cbd530d51f1d7854aed418583e7b043",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    }
+  ]
+}

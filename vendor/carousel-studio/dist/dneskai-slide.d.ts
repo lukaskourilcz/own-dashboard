@@ -1,9 +1,15 @@
+import { type DneskaiKitId, type DneskaiSlideType, type DneskaiVariant } from "./dneskai-kits/contract.js";
+export { DNESKAI_KITS, dneskaiKit } from "./dneskai-kits/registry.js";
+export { DNESKAI_KIT_IDS, DNESKAI_DEFAULT_KIT, DNESKAI_SLIDE_TYPES, DNESKAI_VARIANTS, DNESKAI_TEMPLATE_ROLES, dneskaiRoleOf, DNESKAI_TEXT_FIELDS, DNESKAI_CODE_OWNED_SLOTS, DNESKAI_TEXT_LIMITS, dneskaiImageSlots, DNESKAI_OPTIONAL_IMAGE_SLOTS, DNESKAI_TEMPLATE_VARIANTS } from "./dneskai-kits/contract.js";
+export type { DneskaiKitId, DneskaiSlideType, DneskaiVariant, DneskaiTemplateRole, DneskaiTextField } from "./dneskai-kits/contract.js";
+export type { DneskaiKit, DneskaiKitTemplate, DneskaiFieldFace } from "./dneskai-kits/kit.js";
+export type { DneskaiFlow, DneskaiLayoutMetrics } from "./dneskai-layout.js";
 import { type CarouselPayload, type ImageCrop } from "./schema.js";
 /**
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
- * strings code owns (the folio, the sources slide's title and its disclosure), decodes and crops
+ * strings code owns (the sources slide's title and its disclosure, a quotation mark), decodes and crops
  * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
  * the words and pictures they carry and the height left over is set around them on purpose), and
  * renders through the same engine and gates as every other Design Lab slide.
@@ -19,8 +25,6 @@ import { type CarouselPayload, type ImageCrop } from "./schema.js";
  * exact record the slide was drawn from — the words, the variant and each photograph's crop with
  * the sha256 of the bytes it was set on — so an approval can hash what was seen.
  */
-export declare const DNESKAI_SLIDE_TYPES: readonly ["cover-photo", "figure", "split", "statement", "sources", "single"];
-export type DneskaiSlideType = (typeof DNESKAI_SLIDE_TYPES)[number];
 /** A photograph drawn to every edge needs this many pixels on its shorter side (report §5.3). */
 export declare const DNESKAI_BLEED_MIN_SHORT_SIDE = 900;
 /**
@@ -62,24 +66,28 @@ export interface DneskaiImageInput {
     assetSha256?: string;
 }
 export interface DneskaiSlideInput {
+    /** Absent preserves the approved editorial kit. */
+    kit?: DneskaiKitId;
     type: DneskaiSlideType;
     /** `statement`: `accent` (default) or `ink`. `single`: `photo` (default) or `type`. */
-    variant?: "accent" | "ink" | "photo" | "type";
+    variant?: DneskaiVariant;
     headline?: string;
     body?: string;
+    /** Set only on the split slides. Ignored elsewhere since the owner's decision of 22 October 2026. */
     kicker?: string;
+    /** Accepted and ignored: no slide shows a picture credit; it belongs in the Instagram caption. */
     credit?: string;
     /** The sources slide's lines, one source each, at most `DNESKAI_MAX_SOURCES`. */
     sources?: readonly string[];
     images?: readonly DneskaiImageInput[];
-    /** The slide's place in the carousel. The folio prints it; a single post is `{ 0, 1 }`. */
+    /** The slide's place in the carousel; a single post is `{ 0, 1 }`. No slide prints it. */
     position: {
         index: number;
         count: number;
     };
     locale?: "cs" | "en";
 }
-export type DneskaiProblemCode = "position-invalid" | "variant-invalid" | "text-missing" | "text-clipped" | "sources-missing" | "sources-too-many" | "image-missing" | "image-unexpected" | "image-duplicate" | "image-undecodable" | "image-unsupported" | "image-hash-mismatch" | "image-low-resolution" | "image-upscaled" | "crop-invalid";
+export type DneskaiProblemCode = "kit-invalid" | "position-invalid" | "variant-invalid" | "text-missing" | "text-clipped" | "sources-missing" | "sources-too-many" | "image-missing" | "image-unexpected" | "image-duplicate" | "image-undecodable" | "image-unsupported" | "image-hash-mismatch" | "image-low-resolution" | "image-upscaled" | "crop-invalid";
 export interface DneskaiSlideProblem {
     code: DneskaiProblemCode;
     /** A blocking problem means no PNG. A non-blocking one renders and is reported beside it. */
@@ -89,6 +97,7 @@ export interface DneskaiSlideProblem {
     message: string;
 }
 export interface DneskaiSlideResult {
+    kit: DneskaiKitId | null;
     status: "rendered" | "refused";
     png: Buffer | null;
     pngHash: string | null;

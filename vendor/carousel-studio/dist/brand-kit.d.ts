@@ -164,6 +164,10 @@ export declare const BrandKitManifestSchema: z.ZodObject<{
         }, z.core.$strict>>;
         neutrals: z.ZodDefault<z.ZodArray<z.ZodString>>;
     }, z.core.$strict>>;
+    carouselLooks: z.ZodOptional<z.ZodObject<{
+        default: z.ZodString;
+        ids: z.ZodArray<z.ZodString>;
+    }, z.core.$strict>>;
     rules: z.ZodArray<z.ZodString>;
     doNots: z.ZodArray<z.ZodString>;
     socialRules: z.ZodDefault<z.ZodArray<z.ZodString>>;
@@ -201,10 +205,77 @@ export declare const BrandKitManifestSchema: z.ZodObject<{
 }, z.core.$strict>;
 export type BrandKitManifest = z.infer<typeof BrandKitManifestSchema>;
 export type BrandKitAsset = BrandKitManifest["assets"][number];
+/**
+ * One named look of a kit (`looks/<id>.json`): a full carousel palette, the three type slots and
+ * the style flags the look sets. A studio file format, not a published contract.
+ */
+export declare const CarouselLookSchema: z.ZodObject<{
+    schemaVersion: z.ZodLiteral<"brand-kit-look/1">;
+    id: z.ZodString;
+    label: z.ZodString;
+    purpose: z.ZodString;
+    palette: z.ZodObject<{
+        background: z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        surface: z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        "surface-strong": z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        foreground: z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        muted: z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        accent: z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        secondary: z.ZodObject<{
+            value: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+    }, z.core.$strict>;
+    fonts: z.ZodObject<{
+        headline: z.ZodObject<{
+            family: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        body: z.ZodObject<{
+            family: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+        mono: z.ZodObject<{
+            family: z.ZodString;
+            source: z.ZodString;
+        }, z.core.$strict>;
+    }, z.core.$strict>;
+    style: z.ZodDefault<z.ZodObject<{
+        flat: z.ZodOptional<z.ZodBoolean>;
+        squareCorners: z.ZodOptional<z.ZodBoolean>;
+        logo: z.ZodOptional<z.ZodEnum<{
+            "every-slide": "every-slide";
+            "last-slide": "last-slide";
+        }>>;
+    }, z.core.$strict>>;
+}, z.core.$strict>;
+export type CarouselLook = z.infer<typeof CarouselLookSchema>;
+/** The directory inside a kit that holds its look files. */
+export declare const BRAND_KIT_LOOKS_DIRECTORY = "looks";
 /** What reading one kit directory found. A problem is a reason the kit cannot be used as it is. */
 export interface BrandKitReading {
     directory: string;
     manifest: BrandKitManifest | null;
+    /** The parsed look files in manifest order. Empty when the manifest lists none or any failed. */
+    looks: CarouselLook[];
     problems: string[];
 }
 /**

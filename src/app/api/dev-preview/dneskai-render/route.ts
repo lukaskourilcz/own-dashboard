@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         if (createHash('sha256').update(bytes).digest('hex') !== image.assetSha256) throw new Error('fixture-hash-mismatch');
         return { ...image, bytes };
       }));
-      const result = await renderDneskaiSlide({ ...slide, images, position: { index, count: deck.slides.length }, locale: 'cs' });
+      const result = await renderDneskaiSlide({ ...slide, ...(deck.kit ? { kit: deck.kit } : {}), images, position: { index, count: deck.slides.length }, locale: 'cs' });
       problems.push(...result.problems.map((problem) => ({ ...problem, slide: index, blocking: problem.blocking || problem.code === 'text-clipped' })));
       if (!result.png || result.status !== 'rendered' || result.truncatedSlots.length) continue;
       const jpeg = await sharp(result.png).flatten({ background: '#ffffff' }).jpeg({ quality: 82 }).toBuffer();

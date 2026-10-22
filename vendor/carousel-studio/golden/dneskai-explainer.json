@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "dneskai-photo-golden/1",
+  "canvas": {
+    "width": 1080,
+    "height": 1350
+  },
+  "updatedAt": "2026-10-22",
+  "entries": [
+    {
+      "name": "acceptance-01",
+      "templateId": "dneskai-explainer-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "066c3a6282dc3556eea5c34d4ef3cec1ca20109ad1d55825a28c9c2ddbec819f"
+    },
+    {
+      "name": "acceptance-02",
+      "templateId": "dneskai-explainer-figure",
+      "version": "1.1.0",
+      "pngHash": "c726ea3f89a1ebe1a210ca9bd04ec4a7f02aa23860287afa655ff23b518ede67"
+    },
+    {
+      "name": "acceptance-03",
+      "templateId": "dneskai-explainer-figure",
+      "version": "1.1.0",
+      "pngHash": "bb44cb81d72c875f4aeba2d7b5e1e10b22f1901494204c5424cd600c49bac2ec"
+    },
+    {
+      "name": "acceptance-04",
+      "templateId": "dneskai-explainer-split-pair",
+      "version": "1.1.0",
+      "pngHash": "1e6a86427875adcae7496d1e00f8259e1e0b0fde5bc8088dc1047ead0ddeccc2"
+    },
+    {
+      "name": "acceptance-05",
+      "templateId": "dneskai-explainer-statement",
+      "version": "1.1.0",
+      "pngHash": "230806bb589448e166aea82f719017c47f38f353b078ab19f0996cc2e2fda496"
+    },
+    {
+      "name": "acceptance-06",
+      "templateId": "dneskai-explainer-figure",
+      "version": "1.1.0",
+      "pngHash": "5e2ed130d8b8549e1721b80ed5a36b644a1ee7b781b7433e22fcd3be5e808775"
+    },
+    {
+      "name": "acceptance-07",
+      "templateId": "dneskai-explainer-sources-4",
+      "version": "1.1.0",
+      "pngHash": "f0ff415c1df649330268b990e339f7a9e29f5c980a1a24dfc476555914a32865"
+    },
+    {
+      "name": "cover-photo",
+      "templateId": "dneskai-explainer-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "e5811e8e47ac5b1b24605d3d230be88f1a6f3896ccd2ee6a5e04668b2b7f2401"
+    },
+    {
+      "name": "cover-photo-crop",
+      "templateId": "dneskai-explainer-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "1d3d0bac2331033c06d3e1fb63306a321b01788bb02977096938b2db161f0eb2"
+    },
+    {
+      "name": "figure",
+      "templateId": "dneskai-explainer-figure",
+      "version": "1.1.0",
+      "pngHash": "6aa9537fd1cc3670a4bca2f682a37cefe4234c440f009a63ce4dc81d73882f02"
+    },
+    {
+      "name": "split",
+      "templateId": "dneskai-explainer-split",
+      "version": "1.1.0",
+      "pngHash": "bdbe1e0f19492b24e0fad20f86c91629bc9bfbac635a49e2fb736b2c04bc951c"
+    },
+    {
+      "name": "split-pair",
+      "templateId": "dneskai-explainer-split-pair",
+      "version": "1.1.0",
+      "pngHash": "b343013b67a393ab4252f7c2b44d21466c5fcd26ffc3a8297be2ec1fd105f883"
+    },
+    {
+      "name": "statement",
+      "templateId": "dneskai-explainer-statement",
+      "version": "1.1.0",
+      "pngHash": "4cd30c73d526b12cada3df8d9c62ba96cd31c665046687b7f2b7b34ed6ddc9bd"
+    },
+    {
+      "name": "statement-ink",
+      "templateId": "dneskai-explainer-statement",
+      "version": "1.1.0",
+      "pngHash": "285b2495e742f3bec4b693e5b91f3871d70cb1d324c65a8ab4114b159aca69e7"
+    },
+    {
+      "name": "sources",
+      "templateId": "dneskai-explainer-sources-4",
+      "version": "1.1.0",
+      "pngHash": "9cf75261f1fa2e247a83bb8d28797995490563dbba1536f92338dc0bd5fcd7f3"
+    },
+    {
+      "name": "single-photo",
+      "templateId": "dneskai-explainer-single-photo",
+      "version": "1.1.0",
+      "pngHash": "1044ad37a46b4557926f4641df2a74ff0283fcf35067fdbe615fcc6843de3905"
+    },
+    {
+      "name": "single-photo-focal",
+      "templateId": "dneskai-explainer-single-photo",
+      "version": "1.1.0",
+      "pngHash": "185ad1789bc5309720fe67b757fd6ed3a4f77177533afb47249df6fe490c68f3"
+    },
+    {
+      "name": "single-type",
+      "templateId": "dneskai-explainer-single-type",
+      "version": "1.1.0",
+      "pngHash": "c10310c6c63184daeeb714346fcbbe0e22820b0d915d1c0a9e2e7f859b2577b3"
+    }
+  ]
+}

@@ -136,8 +136,79 @@ export function dneskaiPublisherName(source: Pick<DneskaiSource, 'id' | 'name'>)
   return PUBLISHER_NAMES[source.id] ?? source.name.replace(/\s*\(.*\)\s*$/, '').replace(/\s+·\s+.*$/, '').trim();
 }
 
-/** Credit line for one candidate's pictures. Never empty. */
-export function dneskaiMediaCredit(source: Pick<DneskaiSource, 'id' | 'name' | 'url' | 'kind'>, candidate: Pick<DneskaiCandidate, 'url' | 'instagram'>, pageUrl?: string): string {
+/**
+ * What one picture says about its own origin: its URL, the publisher's alt text and figure caption
+ * (`sourceAltText`), and the credit fields embedded in the file (IPTC and XMP, `dneskaiEmbeddedCredits`).
+ */
+export interface DneskaiPictureSignals { url?: string; sourceAltText?: string; embeddedCredits?: readonly string[] }
+
+const bounds = (pattern: string) => `(?<![\\p{L}\\p{N}])(?:${pattern})(?![\\p{L}\\p{N}])`;
+/**
+ * Photo agencies DNESKAi credits by name. `text` matches inside a credit (a caption's credit part or an embedded
+ * credit field); the short uppercase names (AP, AFP, EPA, ČTK) match only as written. `file` matches a token of
+ * the picture's URL path, only for names that do not occur there by chance.
+ */
+const AGENCIES: ReadonlyArray<{ name: string; text: RegExp; file?: RegExp }> = [
+  { name: 'Getty Images', text: new RegExp(bounds('[Gg]etty\\s*[Ii]mages|GETTY\\s*IMAGES'), 'u'), file: /(?:^|[^a-z])getty[-_ ]?images(?:[^a-z]|$)/i },
+  { name: 'Reuters', text: new RegExp(bounds('Reuters|REUTERS'), 'u'), file: /(?:^|[^a-z])reuters(?:[^a-z]|$)/i },
+  { name: 'AP', text: new RegExp(bounds('AP(?:\\s+Photo)?|Associated\\s+Press'), 'u') },
+  { name: 'AFP', text: new RegExp(bounds('AFP'), 'u'), file: /(?:^|[^a-z])afp(?:[^a-z]|$)/i },
+  { name: 'Shutterstock', text: new RegExp(bounds('[Ss]hutterstock|SHUTTERSTOCK'), 'u'), file: /shutterstock/i },
+  { name: 'Alamy', text: new RegExp(bounds('Alamy|ALAMY'), 'u'), file: /(?:^|[^a-z])alamy(?:[^a-z]|$)/i },
+  { name: 'EPA', text: new RegExp(bounds('EPA(?:-EFE)?'), 'u') },
+  { name: 'Bloomberg', text: new RegExp(bounds('Bloomberg'), 'u') },
+  { name: 'ČTK', text: new RegExp(bounds('ČTK|CTK'), 'u') },
+];
+/** Partners Getty Images distributes: „Bloomberg via Getty Images“ is credited as „Bloomberg / Getty Images“. */
+const GETTY_PARTNER = /(?<![\p{L}\p{N}])(Bloomberg|AFP|NurPhoto|SOPA Images|Anadolu|AP)(?:\s+(?:via|přes)\s+|\s*\/\s*)Getty\s*Images/iu;
+const CREDIT_LABELS = String.raw`Image\s+Credits?|Photo(?:graph)?\s+Credits?|Credits?|Photo(?:graph)?(?:\s+by)?|Image(?:\s+by)?|Picture|Illustration|Foto(?:grafie)?|Obrázek|Zdroj\s+fotografie|Zdroj\s+foto`;
+/** The parts of a caption or alt text that are a credit: after a credit label, after ©, an „(AP Photo/…)“ or a „/ Agency“ tail. */
+function creditSegments(text: string): string[] {
+  const segments: string[] = [];
+  for (const match of text.matchAll(new RegExp(`(?:${CREDIT_LABELS})\\s*:\\s*([^·\\n]{1,160})`, 'giu'))) segments.push(match[1]!);
+  for (const match of text.matchAll(/Photo(?:graph)?\s+by\s+([^·\n]{1,160})/giu)) segments.push(match[1]!);
+  for (const match of text.matchAll(/(?:©|\(c\)|Copyright)\s*([^·\n]{1,120})/giu)) segments.push(match[1]!);
+  for (const match of text.matchAll(/\(\s*(AP\s+Photo[^)]{0,100})\)/gu)) segments.push(match[1]!);
+  for (const match of text.matchAll(/\bREUTERS\s*\//gu)) segments.push(match[0]);
+  // „Jakub Porzycki/NurPhoto via Getty Images“, „Justin Sullivan / Getty Images“: an agency right after a slash or „via“.
+  for (const match of text.matchAll(/(?:\/|\svia\s)\s*([^·\n/]{1,60})/gu)) if (AGENCIES.some((agency) => startsWith(agency.text).test(match[1]!))) segments.push(match[1]!);
+  return segments;
+}
+const startsWith = (pattern: RegExp) => new RegExp(`^(?:${pattern.source})`, pattern.flags);
+function agenciesIn(text: string): string[] {
+  const partner = GETTY_PARTNER.exec(text)?.[1];
+  if (partner) {
+    const name = AGENCIES.find((agency) => agency.text.test(partner))?.name ?? partner.replace(/\b\w/g, (letter) => letter.toUpperCase());
+    return [`${name} / Getty Images`];
+  }
+  return AGENCIES.filter((agency) => agency.text.test(text)).map((agency) => agency.name);
+}
+function urlPath(url: string): string {
+  try { const parsed = new URL(url); return decodeURIComponent(`${parsed.pathname}${parsed.search}`); } catch { return ''; }
+}
+
+/**
+ * The photo agency one picture names, or `null`. Only explicit signals count: a credit field embedded in the
+ * file, the credit part of the caption or alt text, or an agency's name as a token of the image URL („GettyImages-
+ * 1234.jpg“). An agency merely mentioned in a caption („the Reuters building“) does not count, and two different
+ * agencies give `null`: the credit then names the publisher alone rather than guess.
+ */
+export function dneskaiPictureAgency(signals: DneskaiPictureSignals): string | null {
+  const found = new Set<string>();
+  for (const field of signals.embeddedCredits ?? []) for (const name of agenciesIn(field)) found.add(name);
+  for (const segment of creditSegments(signals.sourceAltText ?? '')) for (const name of agenciesIn(segment)) found.add(name);
+  const path = signals.url ? urlPath(signals.url) : '';
+  for (const agency of AGENCIES) if (agency.file?.test(path)) found.add(agency.name);
+  // „Bloomberg / Getty Images“ already names Getty Images and its partner.
+  for (const name of [...found]) if (name.endsWith(' / Getty Images')) { found.delete('Getty Images'); found.delete(name.replace(' / Getty Images', '')); }
+  return found.size === 1 ? [...found][0]! : null;
+}
+
+/**
+ * Credit line for one candidate's pictures, or for one picture of it when its signals are given. Never empty.
+ * A feed picture whose own signals name a photo agency credits both: „Foto: Getty Images přes TechCrunch“.
+ */
+export function dneskaiMediaCredit(source: Pick<DneskaiSource, 'id' | 'name' | 'url' | 'kind'>, candidate: Pick<DneskaiCandidate, 'url' | 'instagram'>, pageUrl?: string, picture?: DneskaiPictureSignals): string {
   if (source.kind === 'instagram') {
     const profile = new URL(source.url).pathname.split('/').filter(Boolean)[0] ?? source.name;
     return bounded(`Foto: @${candidate.instagram?.ownerUsername ?? profile}`);
@@ -149,7 +220,10 @@ export function dneskaiMediaCredit(source: Pick<DneskaiSource, 'id' | 'name' | '
   // An aggregator (Hacker News, Spaceflight News) links to another publisher's page: credit that site.
   const sites = [registrableDomain(new URL(source.url).hostname), ...(SOURCE_SITES[source.id] ?? [])];
   const onSourceSite = sites.includes(registrableDomain(host));
-  return bounded(`Obrázek: ${onSourceSite ? dneskaiPublisherName(source) : host.replace(/^www\./, '')}`);
+  const publisher = onSourceSite ? dneskaiPublisherName(source) : host.replace(/^www\./, '');
+  const agency = picture ? dneskaiPictureAgency(picture) : null;
+  if (agency) return bounded(agency.toLocaleLowerCase('cs') === publisher.toLocaleLowerCase('cs') ? `Foto: ${agency}` : `Foto: ${agency} přes ${publisher}`);
+  return bounded(`Obrázek: ${publisher}`);
 }
 /** Registered API hosts whose candidates live on another domain of the same publisher. */
 const SOURCE_SITES: Readonly<Record<string, readonly string[]>> = { 'stackexchange-ml': ['stackoverflow.com'] };

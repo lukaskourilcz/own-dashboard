@@ -313,7 +313,8 @@ type CategoryMember = Pick<DneskaiCandidate, 'id' | 'sourceId' | 'category' | 'r
  * sources (publishers and newsrooms, not aggregators) decide; if they tie too, the most relevant eligible report
  * among the tied categories decides (relevance, then the newer report, then the id, as the SQL picks its lead).
  * Null when no report is eligible. Each report keeps its own Jev label for display; this only names the event.
- * tool and ai-project stay separate categories: how they share the diversity rule is the owner's selection policy.
+ * tool and ai-project stay separate categories here. Under 20261022180000 (decisions 11 and 12) they share the one
+ * daily slot outside news with marketing; the SQL applies that, not this label.
  */
 export function dneskaiEventCategory<T extends CategoryMember>(members: readonly T[], eligible: (member: T) => boolean): DneskaiEventCategory | null {
   const pool = members.filter((member) => member.category && member.category !== 'other' && eligible(member));

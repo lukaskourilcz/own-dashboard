@@ -6,16 +6,16 @@ import { marketingHumanizerInstructions } from "./humanizer";
 import { fitMarketingText } from "./render";
 import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
-import { classifyMarketingProviderError, type MarketingProviderFailure } from "./provider-errors";
+import { classifyMarketingProviderError, marketingProviderFailureUnbilled, type MarketingProviderFailure } from "./provider-errors";
 import { claudeCallFields, claudeCallProfile } from "./claude-call-profile";
 import type { DneskaiDeck } from "./dneskai-slides";
 import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import {
-  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DNESKAI_SOURCES_SLIDE, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
-  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
-  dneskaiSourcesSlideBlocked, loadDneskaiGlyphFilter, normalizeDneskaiCopy, validateDneskaiCopy,
-  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers, type DneskaiGlyphFilter,
+  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiOwnerNote, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
+   normalizeDneskaiCopy, validateDneskaiCopy,
+  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers,
 } from "./dneskai-generation";
 
 export const MARKETING_PROMPT_VERSION = "marketing-copy/4";
@@ -50,6 +50,13 @@ export const GenerationInputSchema = z.strictObject({
   knowledge: z.array(KnowledgeSchema).max(8),
   consent: z.boolean(),
   revisionId: z.uuid(),
+  /**
+   * Owner decision 8, „Regenerate with a note“: the owner's own words about what to change, sent to the model as
+   * feedback on a DNESKAi brief draft. Only its hash reaches tracing.
+   */
+  ownerNote: z.string().trim().min(1).max(1000).optional(),
+  /** The revision a regeneration replaces once it is saved (20261022190000_dneskai_regenerate_with_note.sql). */
+  replacesRevisionId: z.uuid().optional(),
 });
 export type GenerationInput = z.infer<typeof GenerationInputSchema> & { source: SourcePacket };
 const BudgetSchema = z.strictObject({
@@ -63,9 +70,28 @@ export type GenerationBudget = z.infer<typeof BudgetSchema>;
 /** Planning estimate only, with more headroom than the model A/B script's bytes/3 heuristic.
  * Czech UTF-8 bytes are not tokens. Dollar reservations remain byte-based; recorded usage is authoritative. */
 export const DNESKAI_INPUT_BYTES_PER_TOKEN = 2;
+/**
+ * Owner decision 15 (22 October 2026): one job may spend at most $0.13, down from $0.25. At the default Sonnet 5.5
+ * price ($2 input, $10 output per million tokens) two full attempts cost 2 x (20,000 x $2 + 2,500 x $10) / 1,000,000
+ * = 2 x $0.065 = $0.13. The code holds that ceiling, not the arithmetic: before every attempt it reserves the attempt's
+ * input in UTF-8 bytes (never fewer than the billed tokens) plus the full output limit, and makes the call only if the
+ * recorded spend plus that reservation stays within `maxCostUsd`. A rich brief whose first attempt cost more than
+ * usual therefore gets no retry (`cost-budget-exceeded`) rather than going past $0.13. Admission and the DNESKAi
+ * ledger reserve this amount per job; ledger rows written at $0.25 before the change keep it.
+ */
 export const DEFAULT_GENERATION_BUDGET: GenerationBudget = {
-  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000,
+  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.13, maxLatencyMs: 60000,
 };
+/** Failures thrown by `createClaudeMarketingModel` before it sends any request. */
+const MARKETING_UNSENT_CALL_CODES: ReadonlySet<string> = new Set(["unsafe-native-tracing-enabled", "provider-sdk-setup-failed"]);
+/** Owner decision 16: a call that provably billed nothing (never sent, or rejected whole by the API) counts as $0. */
+export function marketingCallUnbilled(failure: unknown): boolean {
+  if (failure instanceof MarketingGenerationError) {
+    if (failure.providerFailure) return marketingProviderFailureUnbilled(failure.providerFailure);
+    return MARKETING_UNSENT_CALL_CODES.has(failure.code);
+  }
+  return marketingProviderFailureUnbilled(classifyMarketingProviderError(failure));
+}
 export type ModelUsage = { inputTokens: number; outputTokens: number };
 /** The structured answer a call asks for: a name and the wire JSON schema. Absent: `marketing_copy` (`marketing-copy/4`). */
 export type MarketingModelOutput = { name: string; schema: Record<string, unknown> };
@@ -282,23 +308,22 @@ function memoizedMedia(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
     return bytes;
   };
 }
-/** Narrower and narrower source lines for the code-written sources slide before giving up on it. */
-const SOURCE_LINE_STEPS = [DNESKAI_SOURCES_SLIDE.lineChars, 150, 110] as const;
 
 async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, budget: GenerationBudget, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
   const brief = source.brief!;
   const outputSchema = dneskaiCopyWireSchema();
   // The prompt gets what the input reservation leaves after the system prompt, schema, envelope and retry instructions.
-  const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES;
+  const note = input.ownerNote ? dneskaiOwnerNote(input.ownerNote) : null;
+  const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES
+    - (note ? Buffer.byteLength(JSON.stringify(note)) + 16 : 0);
   let offer: DneskaiBriefOffer;
   try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
   const loadMedia = memoizedMedia(dependencies.loadDneskaiMedia!);
   const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;
-  let glyphs: Promise<DneskaiGlyphFilter> | null = null;
   return {
     promptVersion: MARKETING_BRIEF_PROMPT_ID,
-    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer) },
+    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer, note) },
     output: { name: "dneskai_post", schema: outputSchema },
     outputSchema,
     feedbackReserveBytes: DNESKAI_RETRY_INSTRUCTION_BYTES,
@@ -313,22 +338,15 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
       const assembled = assembleDneskaiCaption(parsed.data, offer);
       if ("issue" in assembled) issues.push(assembled.issue);
       if (issues.length || !("caption" in assembled)) return fail(issues);
-      glyphs ??= loadDneskaiGlyphFilter();
-      let filter: DneskaiGlyphFilter;
-      try { filter = await glyphs; } catch { glyphs = null; throw new MarketingGenerationError("render-rasterizer-unavailable"); }
-      let deck: DneskaiDeck | null = null; let problems: DneskaiSlideRenderProblem[] = [];
-      for (const lineChars of SOURCE_LINE_STEPS) {
-        try { deck = buildDneskaiDeck(parsed.data, offer, filter, lineChars); }
-        catch { throw new MarketingGenerationError("brief-deck-invalid"); }
-        try { problems = await validateDeck(deck, loadMedia, context.signal); }
-        catch (failure) {
-          if (failure instanceof DneskaiRenderError) throw new MarketingGenerationError(failure.code === "worker-timeout" ? "generation-timeout" : failure.code);
-          throw new MarketingGenerationError("render-validation-failed");
-        }
-        // Code writes the sources slide; it shortens its own lines rather than asking the model.
-        if (!dneskaiSourcesSlideBlocked(problems, deck)) break;
+      let deck: DneskaiDeck;
+      try { deck = buildDneskaiDeck(parsed.data, offer); }
+      catch { throw new MarketingGenerationError("brief-deck-invalid"); }
+      let problems: DneskaiSlideRenderProblem[];
+      try { problems = await validateDeck(deck, loadMedia, context.signal); }
+      catch (failure) {
+        if (failure instanceof DneskaiRenderError) throw new MarketingGenerationError(failure.code === "worker-timeout" ? "generation-timeout" : failure.code);
+        throw new MarketingGenerationError("render-validation-failed");
       }
-      if (!deck || dneskaiSourcesSlideBlocked(problems, deck)) throw new MarketingGenerationError("brief-sources-slide-refused");
       const blocking = dneskaiRenderIssues(problems, deck);
       return blocking.length ? fail(blocking) : { ok: true, value: { copy: parsed.data, deck, caption: assembled.caption } };
     },
@@ -390,9 +408,10 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   const resume = dependencies.resume === undefined ? null : MarketingGenerationResumeSchema.safeParse(dependencies.resume);
   if (resume && (!resume.success || resume.data.attempt >= budget.maxAttempts || resume.data.usage.estimatedCostUsd > budget.maxCostUsd)) throw new MarketingGenerationError("generation-retry-invalid");
   const resumed = resume?.success ? resume.data : null;
-  const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) })) ?? null;
+  const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id),
+    ...(input.ownerNote ? { ownerNote: input.ownerNote } : {}), ...(input.replacesRevisionId ? { replacesRevisionId: input.replacesRevisionId } : {}) })) ?? null;
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
-  // A resumed retry starts from the usage the earlier attempts recorded, so the $0.25 and the attempt cap span both calls.
+  // A resumed retry starts from the usage the earlier attempts recorded, so the job's cost cap and the attempt cap span both calls.
   const usage = resumed ? { ...resumed.usage } : { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
   const report = () => { try { dependencies.onUsage?.({ ...usage }); } catch {} };
   if (resumed) report();
@@ -419,8 +438,9 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       try {
         result = await model.invoke({ ...prompts, prompt: prompts.prompt + retryFeedback, maxOutputTokens: budget.maxOutputTokens, signal, ...(profile.output ? { output: profile.output } : {}) });
       } catch (failure) {
-        // Billing may already have happened. Never retry an ambiguous transport/provider failure.
-        ambiguous(reservation);
+        // Never retry a provider failure. A call the API rejected whole, or that was never sent, records no cost
+        // (decision 16); any other failure may have been billed and books the reservation.
+        if (marketingCallUnbilled(failure)) report(); else ambiguous(reservation);
         if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
         if (failure instanceof MarketingGenerationError) throw failure;
         const providerFailure = classifyMarketingProviderError(failure);

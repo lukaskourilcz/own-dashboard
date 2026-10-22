@@ -73,7 +73,8 @@ cp -R "$scratch/source/studio/dist" "$out/dist"
 cp -R "$scratch/source/studio/fonts" "$out/fonts"
 mkdir -p "$out/brand-kits" "$out/golden"
 cp -R "$scratch/source/studio/brand-kits/caught-up" "$out/brand-kits/caught-up"
-cp "$scratch/source/studio/golden/dneskai-photo.json" "$out/golden/dneskai-photo.json"
+# The editorial pins and each other kit's pins (golden/dneskai-<kit>.json), which the vendor test reads.
+cp "$scratch/source/studio/golden/"dneskai-*.json "$out/golden/"
 cp "$scratch/source/LICENSE" "$out/LICENSE"
 # The manifest keeps what Node and npm read. Exact dependency pins become caret ranges so that
 # OwnDashboard's own sharp, resvg and zod satisfy them and npm installs no second copy. Two subpath

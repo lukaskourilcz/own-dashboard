@@ -9,3 +9,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Read `CLAUDE.md` for the product control surface and follow the focused workflows under `.claude/skills/`. Search before creating, preserve the catch-all shell, route-scoped React Query loading, own-only Supabase RLS, static FX, Czech invoice correctness, the no-model-call boundary in `docs/ai-and-privacy.md`, EN/CS parity, and the retired personal scope. Tugedr is an opportunity source, never Pulse. Use semantic tokens and authentic `/dev-preview` UI; validate mobile, accessibility, non-happy paths, and relevant tests. Before producing brand media, perform current primary-source research for safe low-cost or free generators and select a documented provider. Never add filler or generated fake UI.
 
 Keep project communications project-scoped and subscription renewal dates/classification explicit.
+
+DNESKAi posts follow `.claude/skills/dneskai-post-content/SKILL.md`: the first slide shows only its headline; no slide shows page counts, picture credits, a sources slide or any text about sources or verification; the caption names no sources or credits and carries at most 10 hashtags.

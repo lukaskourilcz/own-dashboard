@@ -1,8 +1,8 @@
 import type { DneskaiBriefMedia } from './dneskai-brief';
-import type { DneskaiImageCrop, DneskaiSlide, DneskaiSlideImage } from './dneskai-slides';
+import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSlide, type DneskaiSlideImage } from './dneskai-slides';
 import { pragueLocalInput, pragueScheduledAt } from './clock';
 import {
-  dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
+  dneskaiCoverInset, dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
   dneskaiSlideMoves, dneskaiSlideShape, DNESKAI_PLACED_FIELDS, type DneskaiPoolPicture, type DneskaiShapeId, type DneskaiSlideShape,
 } from './dneskai-slide-layout';
 import type { DneskaiFieldLimit, DneskaiWorkspacePost } from './dneskai-workspace';
@@ -17,13 +17,18 @@ import type { DneskaiFitResult } from './dneskai-lab';
  * (`applyDneskaiDeckEdit` in dneskai-deck-edit.ts).
  */
 export const DNESKAI_CAPTION_MAX = 2200;
+/** The owner's cap on hashtags per DNESKAi post (22 October 2026); generation keeps to it and every edit is checked. */
+export const DNESKAI_CAPTION_HASHTAG_MAX = 10;
+/** The hashtags a caption carries, as Instagram reads them. */
+export const dneskaiCaptionHashtags = (caption: string) => caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0;
 export const DNESKAI_ZOOM = { min: 1, max: 2, step: 0.05 } as const;
 /** Arrow keys move the focal point by 2 % of the picture. */
 export const DNESKAI_FOCAL_STEP = 0.02;
 
 /** `from` is the slide's index in the saved revision, or null for a slide the owner inserted. */
 export type DraftSlide = { from: number | null; slide: DneskaiSlide; fields: DneskaiFieldLimit[] };
-export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null };
+/** `kit`: the kit the post is drawn in (kits are per post); switching it is an edit like any other. */
+export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const round = (value: number) => Math.round(value * 1000) / 1000;
@@ -49,6 +54,7 @@ export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | 
     caption: post.caption,
     scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
+    kit: dneskaiKitOf(post.deck),
   };
 }
 
@@ -118,6 +124,26 @@ export function swapSlideImage(draft: DeckDraft, index: number, slot: string, me
   return { ...draft, slides };
 }
 
+/**
+ * Adds, replaces or removes (`media` null) the cover's circular inset picture (`image-2`) in a kit that draws one
+ * (`dneskaiCoverInset`). The inset is a second picture from the topic's pool; any other slide or kit is unchanged.
+ */
+export function setCoverInset(draft: DeckDraft, index: number, media: Pick<DneskaiBriefMedia, 'assetSha256'> | null): DeckDraft {
+  const target = draft.slides[index];
+  if (!target || target.slide.type !== 'cover-photo' || !dneskaiCoverInset(draft.kit)) return draft;
+  const main = target.slide.images.filter((image) => image.slot === 'image-1');
+  if (media && main.some((image) => image.assetSha256 === media.assetSha256)) return draft;
+  const images = media ? [...main, { slot: 'image-2', assetSha256: media.assetSha256 }] : main;
+  return { ...draft, slides: draft.slides.map((item, position) => position === index ? { ...item, slide: { ...item.slide, images } } : item) };
+}
+/** The draft in another kit: a cover inset the new kit cannot draw is dropped with the switch. */
+export function setDraftKit(draft: DeckDraft, kit: DneskaiKitId): DeckDraft {
+  const next = { ...draft, kit };
+  if (dneskaiCoverInset(kit)) return next;
+  return { ...next, slides: next.slides.map((item) => item.slide.type === 'cover-photo' && item.slide.images.length > 1
+    ? { ...item, slide: { ...item.slide, images: item.slide.images.filter((image) => image.slot === 'image-1') } } : item) };
+}
+
 export function removeSlide(draft: DeckDraft, index: number): DeckDraft {
   return { ...draft, slides: draft.slides.filter((_, position) => position !== index) };
 }
@@ -179,7 +205,7 @@ export function insertPosition(draft: DeckDraft, after: number): number {
 }
 
 /**
- * Inserts a carousel slide (review-10): a framed picture from the pool with its code-set credit, or a statement.
+ * Inserts a carousel slide (review-10): a framed picture from the pool without a credit line (no slide shows one), or a statement.
  * Its headline and alt text start empty, so the draft cannot be saved until the owner writes them. Returns the draft
  * unchanged when the shape, the picture or the slide count does not allow it.
  */
@@ -192,11 +218,6 @@ export function insertSlide(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, 
   if (needsPicture && !media) return unchanged;
   const slide: DneskaiSlide = { type: shape.type, ...('variant' in shape ? { variant: shape.variant } : {}), headline: '', images: media ? [{ slot: 'image-1', assetSha256: media.assetSha256 }] : [], alt: '' };
   const fields = dneskaiSlideFieldLimits(slide);
-  if (media) {
-    const credit = dneskaiCreditLine([media.credit], fields.find((field) => field.field === 'credit')?.max ?? 80);
-    if (credit === null) return unchanged;
-    slide.credit = credit;
-  }
   const index = insertPosition(draft, after);
   const slides = [...draft.slides];
   slides.splice(index, 0, { from: null, slide, fields });
@@ -218,7 +239,7 @@ export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
-export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit' };
+export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'caption-hashtags-over-limit' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit' };
 /**
  * What the editor itself can see is wrong before sending; the server and the renderer check the rest. With the fit
  * report for this exact draft (POST /api/marketing/dneskai/fit), a field the studio's fitter would cut is a problem
@@ -246,6 +267,7 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
   if (post.deck?.format === 'single-image' && draft.slides.length !== 1) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
   if (!draft.caption.trim()) problems.push({ slide: null, field: 'caption', code: 'caption-missing' });
   else if (characterCount(draft.caption) > DNESKAI_CAPTION_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-too-long' });
+  else if (dneskaiCaptionHashtags(draft.caption) > DNESKAI_CAPTION_HASHTAG_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-hashtags-over-limit' });
   const scheduled = scheduledIso(draft.scheduledLocal);
   if (scheduled === null) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-invalid' });
   else if (Date.parse(scheduled) <= now.getTime() || Date.parse(scheduled) > now.getTime() + DNESKAI_SCHEDULE_WINDOW_MS) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
@@ -260,7 +282,7 @@ export function scheduledIso(local: string): string | null {
 
 export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null };
 export type DneskaiSlideInsertEdit = { insert: { type: 'figure' | 'split' | 'statement'; variant?: 'accent' | 'ink'; headline: string; body?: string; kicker?: string; alt: string; images: DneskaiSlideImage[] } };
-export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; deck?: { slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> } };
+export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; deck?: { kit?: DneskaiKitId; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> } };
 
 const sameImages = (a: readonly DneskaiSlideImage[], b: readonly DneskaiSlideImage[]) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -272,7 +294,8 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
   const scheduledAt = scheduledIso(draft.scheduledLocal);
   if (!scheduledAt) throw new Error('schedule-invalid');
   const original = post.deck?.slides ?? [];
-  let changed = draft.slides.length !== original.length;
+  const kitChanged = draft.kit !== dneskaiKitOf(post.deck);
+  let changed = kitChanged || draft.slides.length !== original.length;
   const slides = draft.slides.map(({ from, slide, fields }, position): DneskaiSlideEdit | DneskaiSlideInsertEdit => {
     if (from === null) {
       changed = true;
@@ -312,7 +335,7 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
   return {
     action: 'edit', id: post.id, caption: draft.caption, scheduledAt,
     ...(accountId ? { accountId } : {}),
-    ...(changed ? { deck: { slides } } : {}),
+    ...(changed ? { deck: { ...(kitChanged ? { kit: draft.kit } : {}), slides } } : {}),
   };
 }
 

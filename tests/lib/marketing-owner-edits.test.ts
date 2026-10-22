@@ -21,7 +21,7 @@ describe("edit kinds between two saved revisions (#122)", () => {
     expect(ownerEditKinds(base(), base())).toEqual({});
   });
   it("counts headline and secondary text per field", () => {
-    const edited = withDeck(base(), { slides: [{ from: 0, headline: "Nový titulek", kicker: null }, { from: 1, body: "Jiný text.", alt: "Jiný alt." }, { from: 2 }] });
+    const edited = withDeck(base(), { slides: [{ from: 0, headline: "Nový titulek" }, { from: 1, kicker: "Nový kicker", body: "Jiný text.", alt: "Jiný alt." }, { from: 2 }] });
     expect(ownerEditKinds(base(), edited)).toEqual({ "text-headline": 1, "text-body": 3 });
   });
   it("tells a picture swap from a new crop of the same picture", () => {
