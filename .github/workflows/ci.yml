@@ -49,7 +49,9 @@ jobs:
   e2e:
     # ubuntu-latest moved to 26.04, where Playwright 1.56 cannot install Chromium. Pinned until Playwright is upgraded.
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # 254 cases run in about 6 minutes, but runner setup and the production build
+    # have taken up to 9 minutes on their own; 15 cancelled a passing run.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
