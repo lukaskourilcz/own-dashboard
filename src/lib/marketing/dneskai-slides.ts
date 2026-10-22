@@ -24,7 +24,7 @@ export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
  * The kits the vendored studio (vendor/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
  * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
  */
-export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial"];
+export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker"];
 /** The kit a deck is drawn in. */
 export const dneskaiKitOf = (deck: { kit?: DneskaiKitId } | null | undefined): DneskaiKitId => deck?.kit ?? DNESKAI_EDITORIAL_KIT;
 

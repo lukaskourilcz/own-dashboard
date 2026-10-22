@@ -7,15 +7,14 @@ Vercel build of OwnDashboard needs no Quorum checkout, no pnpm workspace and no 
 ## Pin
 
 - Repository: `lukaskourilcz/quorum`, directory `studio/`, package `@boardlessai/carousel-studio` 1.0.0
-- Commit: `83bdfb2e1e9ce1114b9b615bd20237f55a7f115a`
-- Commit date: `2026-10-22T07:31:24Z`
+- Commit: `8135cc54d31d091c27fedfb94a41084ace2923fe`
+- Commit date: `2026-10-22T16:13:36Z`
 - Vendored: `2026-10-22`
-- Tree sha256: `d257617242e71635c25accc1b1e729b9a3f279e83f11810434c5499c3f15376d`
+- Tree sha256: `c2a23af09d3de3690fdeb42537136f0ad98b4eec7c38c931587a3605e6cca7fc`
 
-Note on this pin: commit `83bdfb2` is Quorum `main` after the DNESKAi kit engine (`fable/dneskai-kits`): looks
-over the brand kit, flows and metrics per kit, and `renderDneskaiSlide({ ..., kit })`. Only the `editorial` kit is
-registered at this commit, and its output is byte-identical to `852c2e9`. `--write` updates the four lines above;
-rewrite this note by hand.
+Note on this pin: commit `8135cc5` is Quorum `main` with all five DNESKAi kits registered: editorial (default,
+byte-identical to `852c2e9`), bold, explainer, magazine and ticker, each with its own look, templates and golden pins.
+`golden/` carries every kit's pins. `--write` updates the four lines above; rewrite this note by hand.
 
 The tree hash covers every file in this directory except this one: sha256 over the sorted
 `sha256sum` lines of the files, as `scripts/vendor-carousel-studio.sh` computes it.
@@ -28,7 +27,7 @@ The tree hash covers every file in this directory except this one: sha256 over t
 | `dist/` | `tsc -p studio/tsconfig.build.json` on the commit above (TypeScript 5.9.3) | The package entry point and its type declarations, byte-identical to Quorum's own build |
 | `fonts/` | `studio/fonts/`, all 17 families with their `OFL.txt` | The renderer hands every committed face to resvg (`fontFiles()` lists all of `FONT_METRICS`), and resvg looks for a missing glyph across all of them. A subset would make the output depend on which files happen to exist |
 | `brand-kits/caught-up/` | `studio/brand-kits/caught-up/` | The DNESKAi logotype and its manifest, which pins each file by sha256 |
-| `golden/dneskai-photo.json` | `studio/golden/dneskai-photo.json` | The pinned PNG hash of each DNESKAi slide type, used by the vendor test |
+| `golden/dneskai-*.json` | `studio/golden/dneskai-*.json` | The pinned PNG hashes of each DNESKAi slide type in every kit (`dneskai-photo.json` is editorial), used by the vendor test |
 | `LICENSE` | Quorum `LICENSE` (MIT) | Licence of the engine code |
 | `package.json` | `studio/package.json`, trimmed | Only `name`, `version`, `type`, `exports` and `dependencies`, plus two subpath exports (below) |
 

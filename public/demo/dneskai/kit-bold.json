@@ -1,0 +1,564 @@
+{
+  "fixture": true,
+  "kit": "bold",
+  "look": "bold",
+  "tileCount": 24,
+  "layout": {
+    "width": 1944,
+    "height": 2574,
+    "rows": 5,
+    "tiles": [
+      {
+        "left": 24,
+        "top": 24
+      },
+      {
+        "left": 408,
+        "top": 24
+      },
+      {
+        "left": 792,
+        "top": 24
+      },
+      {
+        "left": 1176,
+        "top": 24
+      },
+      {
+        "left": 1560,
+        "top": 24
+      },
+      {
+        "left": 24,
+        "top": 534
+      },
+      {
+        "left": 408,
+        "top": 534
+      },
+      {
+        "left": 792,
+        "top": 534
+      },
+      {
+        "left": 1176,
+        "top": 534
+      },
+      {
+        "left": 1560,
+        "top": 534
+      },
+      {
+        "left": 24,
+        "top": 1044
+      },
+      {
+        "left": 408,
+        "top": 1044
+      },
+      {
+        "left": 792,
+        "top": 1044
+      },
+      {
+        "left": 1176,
+        "top": 1044
+      },
+      {
+        "left": 1560,
+        "top": 1044
+      },
+      {
+        "left": 24,
+        "top": 1554
+      },
+      {
+        "left": 408,
+        "top": 1554
+      },
+      {
+        "left": 792,
+        "top": 1554
+      },
+      {
+        "left": 1176,
+        "top": 1554
+      },
+      {
+        "left": 1560,
+        "top": 1554
+      },
+      {
+        "left": 24,
+        "top": 2064
+      },
+      {
+        "left": 408,
+        "top": 2064
+      },
+      {
+        "left": 792,
+        "top": 2064
+      },
+      {
+        "left": 1176,
+        "top": 2064
+      }
+    ]
+  },
+  "slides": [
+    {
+      "deck": "photo-rich",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-bold-cover-photo",
+        "version": "1.0.0"
+      },
+      "look": "bold",
+      "pngHash": "900c54d2765c38affd6ab94ebe65250d3cec126763a3f8f69417edb903b28552",
+      "tileHash": "900c54d2765c38affd6ab94ebe65250d3cec126763a3f8f69417edb903b28552",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-bold-figure",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "1f4d67ba13f1fba78a112cd352f8b591ea1294f5df4dbc2e8946719596729390",
+      "tileHash": "1f4d67ba13f1fba78a112cd352f8b591ea1294f5df4dbc2e8946719596729390",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-bold-split",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "1a7f21023fccd7ffa185b13ac0f06ae85853e132d71f62b2568718a56ffa4f35",
+      "tileHash": "1a7f21023fccd7ffa185b13ac0f06ae85853e132d71f62b2568718a56ffa4f35",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 3,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-bold-figure",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "638c3854bb9e9beab23b77d095877f931b101eb43e74a9f3de9c3a3df2b93753",
+      "tileHash": "638c3854bb9e9beab23b77d095877f931b101eb43e74a9f3de9c3a3df2b93753",
+      "truncatedSlots": [],
+      "problems": [
+        {
+          "code": "image-upscaled",
+          "field": "image-1",
+          "blocking": false
+        }
+      ],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 4,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "7a668d52ab48ac421e116c7dba15440f153537c12a8a1847be547c20e2fe4d18",
+      "tileHash": "7a668d52ab48ac421e116c7dba15440f153537c12a8a1847be547c20e2fe4d18",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "photo-rich",
+      "index": 5,
+      "type": "split",
+      "template": {
+        "id": "dneskai-bold-split-pair",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "a08f0df8767df38197ff611061104565f42103971a55c1d50e4c9f7526907da0",
+      "tileHash": "a08f0df8767df38197ff611061104565f42103971a55c1d50e4c9f7526907da0",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 6,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-bold-sources-3",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "10331b1948ba1280b6d229e2ad181ff1117acc32a3abf182ab3880184c7238a4",
+      "tileHash": "10331b1948ba1280b6d229e2ad181ff1117acc32a3abf182ab3880184c7238a4",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-3",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-bold-cover-photo",
+        "version": "1.0.0"
+      },
+      "look": "bold",
+      "pngHash": "fbd47f21145a334ebc9f625fa8515929677ddc97e7f165506fe1ff97c90ed38d",
+      "tileHash": "fbd47f21145a334ebc9f625fa8515929677ddc97e7f165506fe1ff97c90ed38d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-bold-figure",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "85dc57008e5f6835be33f3212cc76e6bc11101de83d38b18120c6e1ff2c97865",
+      "tileHash": "85dc57008e5f6835be33f3212cc76e6bc11101de83d38b18120c6e1ff2c97865",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "81737f3feaabcb289b5990ca0f713622dc33a9ab5a83773725f8f5561f5d0891",
+      "tileHash": "81737f3feaabcb289b5990ca0f713622dc33a9ab5a83773725f8f5561f5d0891",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "single-photo",
+      "index": 3,
+      "type": "split",
+      "template": {
+        "id": "dneskai-bold-split",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "f1000f447962e4f5426f92dbd3a81869c4dade5cf9fe85127bba4cbc61782ce4",
+      "tileHash": "f1000f447962e4f5426f92dbd3a81869c4dade5cf9fe85127bba4cbc61782ce4",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-bold-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "27780a2f2266863c903f1f158c2a2d6b6642eb83307a99bf5ed7e76fa51bf421",
+      "tileHash": "27780a2f2266863c903f1f158c2a2d6b6642eb83307a99bf5ed7e76fa51bf421",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "text-only",
+      "index": 0,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "049d0c9566b9aaf1b6c5658f23fb5970974f2c7050fcaa28e9be287fc6ebeaa1",
+      "tileHash": "049d0c9566b9aaf1b6c5658f23fb5970974f2c7050fcaa28e9be287fc6ebeaa1",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 1,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "cbaccd4b87e04264842bf8b45f1b8499f8dc3a1b849753413a567471aa6abbf5",
+      "tileHash": "cbaccd4b87e04264842bf8b45f1b8499f8dc3a1b849753413a567471aa6abbf5",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "a6b7b9434234f2ef320d338efe7fafc9a34a1194105ed9e7f0ee738ab717e764",
+      "tileHash": "a6b7b9434234f2ef320d338efe7fafc9a34a1194105ed9e7f0ee738ab717e764",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "c505afadbc900a30ffbccfb795ba6ed9d7a22313888b5169f1f72ac6939c9d04",
+      "tileHash": "c505afadbc900a30ffbccfb795ba6ed9d7a22313888b5169f1f72ac6939c9d04",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-bold-sources-0",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "d7f14a4506ce737a139e7166391058127b736fd71213d9bafdca215aa88a96ea",
+      "tileHash": "d7f14a4506ce737a139e7166391058127b736fd71213d9bafdca215aa88a96ea",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-bold-cover-photo",
+        "version": "1.0.0"
+      },
+      "look": "bold",
+      "pngHash": "05238f459e13e21343865730244a11865c569375f90ef29f5a0c7800eabbb00a",
+      "tileHash": "05238f459e13e21343865730244a11865c569375f90ef29f5a0c7800eabbb00a",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-bold-figure",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "5cf8d0057dbed033596cd9c6492435a64ed38c141c42d8fea5c412c60e9f9910",
+      "tileHash": "5cf8d0057dbed033596cd9c6492435a64ed38c141c42d8fea5c412c60e9f9910",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-bold-split",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "f6716a71fd5d0fc1653b4c03e2e9851f81203b8e9a3b077c662cc69c3a9ae023",
+      "tileHash": "f6716a71fd5d0fc1653b4c03e2e9851f81203b8e9a3b077c662cc69c3a9ae023",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-bold-statement",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "f8b56b51a4dd6e3328ad64e18daa1d0aaca6ddb55b835932168e97ab92ecc0b8",
+      "tileHash": "f8b56b51a4dd6e3328ad64e18daa1d0aaca6ddb55b835932168e97ab92ecc0b8",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-bold-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "e2d7b98cdfd8b1c522931ba1260cea7c9046df8055a791f7ef32285d4060e4ce",
+      "tileHash": "e2d7b98cdfd8b1c522931ba1260cea7c9046df8055a791f7ef32285d4060e4ce",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-bold-single-photo",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "80cc6bba8a53897db6d7784587798aa51fd8961d9d9fc9310a25c796a21ae387",
+      "tileHash": "80cc6bba8a53897db6d7784587798aa51fd8961d9d9fc9310a25c796a21ae387",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-type-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-bold-single-type",
+        "version": "1.1.0"
+      },
+      "look": "bold",
+      "pngHash": "d9501a0b801a3f747a622e2fac204a3f37bb9a84ce6fca70ecc08948820807ef",
+      "tileHash": "d9501a0b801a3f747a622e2fac204a3f37bb9a84ce6fca70ecc08948820807ef",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    }
+  ]
+}

@@ -13,9 +13,8 @@ import {
  * kits. Browser-safe and pure; the Lab builds it from the read it already has, so no new server read exists.
  *
  * Kits are per post and variants stay per slide (AGENT-RULES §9). A kit switch is an edit like any other: it saves a
- * new revision with its own assets and hash, and that hash needs its own approval. The vendored studio draws one look,
- * which is the `editorial` kit; the other four have no renderer in OwnDashboard yet, so their tiles say so rather than
- * show a picture nobody rendered.
+ * new revision with its own assets and hash, and that hash needs its own approval. The vendored studio draws all five
+ * kits; a tile shows a cover only for the kit the post was saved in, and the stage previews a newly chosen kit.
  */
 export const DNESKAI_KITS = DNESKAI_KIT_IDS;
 export const DneskaiKitSchema = z.enum(DNESKAI_KITS);

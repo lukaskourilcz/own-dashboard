@@ -15,7 +15,7 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   const lab = page.getByTestId('dneskai-lab');
   await expect(lab).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
-  await expect(page.getByTestId('dneskai-kit-bold').getByRole('radio')).toBeDisabled();
+  await expect(page.getByTestId('dneskai-kit-bold').getByRole('radio')).toBeEnabled();
   const inspector = page.getByTestId('dneskai-slide-inspector');
   const headline = inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true });
   await headline.fill(lang === 'cs' ? 'Krátký ověřený titulek' : 'Short checked headline');
@@ -166,4 +166,18 @@ test('Publish now stays off while the account does not publish, and says why', a
   const publish = page.getByTestId('dneskai-lab-publish-now');
   await expect(publish).toBeDisabled();
   await expect(publish).toHaveAttribute('title', dneskaiLab.en.actions.publishNowOff);
+});
+
+test('Lab switches a post to another kit, previews it unsaved, then saves a version that needs its own approval', async ({ page }) => {
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const t = dneskaiLab.en, lab = page.getByTestId('dneskai-lab');
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
+  await page.getByTestId('dneskai-kit-ticker').click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+  await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
+  await expect(page.getByTestId('dneskai-kit-ticker')).toContainText(t.kits.onStage);
+  await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(lab.getByText(t.actions.saved)).toBeVisible();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
+  await expect(page.getByTestId('dneskai-kit-ticker').getByRole('radio')).toBeChecked();
 });

@@ -1,0 +1,558 @@
+{
+  "fixture": true,
+  "kit": "explainer",
+  "look": "explainer",
+  "tileCount": 24,
+  "layout": {
+    "width": 1944,
+    "height": 2574,
+    "rows": 5,
+    "tiles": [
+      {
+        "left": 24,
+        "top": 24
+      },
+      {
+        "left": 408,
+        "top": 24
+      },
+      {
+        "left": 792,
+        "top": 24
+      },
+      {
+        "left": 1176,
+        "top": 24
+      },
+      {
+        "left": 1560,
+        "top": 24
+      },
+      {
+        "left": 24,
+        "top": 534
+      },
+      {
+        "left": 408,
+        "top": 534
+      },
+      {
+        "left": 792,
+        "top": 534
+      },
+      {
+        "left": 1176,
+        "top": 534
+      },
+      {
+        "left": 1560,
+        "top": 534
+      },
+      {
+        "left": 24,
+        "top": 1044
+      },
+      {
+        "left": 408,
+        "top": 1044
+      },
+      {
+        "left": 792,
+        "top": 1044
+      },
+      {
+        "left": 1176,
+        "top": 1044
+      },
+      {
+        "left": 1560,
+        "top": 1044
+      },
+      {
+        "left": 24,
+        "top": 1554
+      },
+      {
+        "left": 408,
+        "top": 1554
+      },
+      {
+        "left": 792,
+        "top": 1554
+      },
+      {
+        "left": 1176,
+        "top": 1554
+      },
+      {
+        "left": 1560,
+        "top": 1554
+      },
+      {
+        "left": 24,
+        "top": 2064
+      },
+      {
+        "left": 408,
+        "top": 2064
+      },
+      {
+        "left": 792,
+        "top": 2064
+      },
+      {
+        "left": 1176,
+        "top": 2064
+      }
+    ]
+  },
+  "slides": [
+    {
+      "deck": "photo-rich",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-explainer-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "5017c6bd8e3de194deafbe72790e1160554033180397c700677c9a4b59072912",
+      "tileHash": "5017c6bd8e3de194deafbe72790e1160554033180397c700677c9a4b59072912",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-explainer-figure",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "0742185ca062cc1c210e62a749dc8724b96e079c4947a32c6ac9127f47a7abd9",
+      "tileHash": "0742185ca062cc1c210e62a749dc8724b96e079c4947a32c6ac9127f47a7abd9",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-explainer-split",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "4bfcf3a5855c8c290febe4dda37782ea0968468854d5733299c26393a477089d",
+      "tileHash": "4bfcf3a5855c8c290febe4dda37782ea0968468854d5733299c26393a477089d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 3,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-explainer-figure",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "d9a874f62fc64abedf453d06e065bf14ab3681533104703966992167e15db183",
+      "tileHash": "d9a874f62fc64abedf453d06e065bf14ab3681533104703966992167e15db183",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 4,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "da53dc14ebffb5bf99a3b45cb8f40fa4c41b9c328feac1d76d727885b5ee1277",
+      "tileHash": "da53dc14ebffb5bf99a3b45cb8f40fa4c41b9c328feac1d76d727885b5ee1277",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "photo-rich",
+      "index": 5,
+      "type": "split",
+      "template": {
+        "id": "dneskai-explainer-split-pair",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "ca662edd5b93a0b9959f237788b5e9bf3b643e012f24775ed8dbcafd0e8b63c8",
+      "tileHash": "ca662edd5b93a0b9959f237788b5e9bf3b643e012f24775ed8dbcafd0e8b63c8",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-5"
+        }
+      ]
+    },
+    {
+      "deck": "photo-rich",
+      "index": 6,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-explainer-sources-3",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "204db73d7ca4285a13ae5d175544ef744063d1c056a9c9560dde15efe7c69de8",
+      "tileHash": "204db73d7ca4285a13ae5d175544ef744063d1c056a9c9560dde15efe7c69de8",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-1"
+        },
+        {
+          "slot": "image-2",
+          "file": "synthetic-3"
+        },
+        {
+          "slot": "image-3",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-explainer-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "2c7be56188636d64d7c3c075e90c392733d703fdd3dd36111968a9c14f48b124",
+      "tileHash": "2c7be56188636d64d7c3c075e90c392733d703fdd3dd36111968a9c14f48b124",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-explainer-figure",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "e4e604aa213d9fce4728ce767640885d412f0af9ce130e1b6d5a62730f1f1d6f",
+      "tileHash": "e4e604aa213d9fce4728ce767640885d412f0af9ce130e1b6d5a62730f1f1d6f",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "8d1da00489a4a27919b64c50d185b176fb2bd604805a05756d982fd9cc6c7219",
+      "tileHash": "8d1da00489a4a27919b64c50d185b176fb2bd604805a05756d982fd9cc6c7219",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "single-photo",
+      "index": 3,
+      "type": "split",
+      "template": {
+        "id": "dneskai-explainer-split",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "a2b45c778aa8bc971f3ffb180fb3aaecf5066ea10a9c705acbf713596cd69870",
+      "tileHash": "a2b45c778aa8bc971f3ffb180fb3aaecf5066ea10a9c705acbf713596cd69870",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-explainer-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "94bc8b58e41bc7a92895f596c5c9ec8459aa2fab63480f1658a55a921a0907cf",
+      "tileHash": "94bc8b58e41bc7a92895f596c5c9ec8459aa2fab63480f1658a55a921a0907cf",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "text-only",
+      "index": 0,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "858883262642a98db3e960342c2c71a2add20d1bb09ea7efa31403f47522b9f3",
+      "tileHash": "858883262642a98db3e960342c2c71a2add20d1bb09ea7efa31403f47522b9f3",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 1,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "104b73b8b79ea29b6a0bc50ad81956de8322c79e0e46db4d6e724ed8c02afbb1",
+      "tileHash": "104b73b8b79ea29b6a0bc50ad81956de8322c79e0e46db4d6e724ed8c02afbb1",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 2,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "6af77f966f240cf9391d8d09970c4b3308916cd8592644b5bec336e7e42638d5",
+      "tileHash": "6af77f966f240cf9391d8d09970c4b3308916cd8592644b5bec336e7e42638d5",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "de3d4fd58385094b73eb444ea98bef945fee7fb43202d780a37ee5cb8718bb3b",
+      "tileHash": "de3d4fd58385094b73eb444ea98bef945fee7fb43202d780a37ee5cb8718bb3b",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "text-only",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-explainer-sources-0",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "73d122eac62475eed69475ad5f164711f5d2c16e5248093b62e61ef9b8e85263",
+      "tileHash": "73d122eac62475eed69475ad5f164711f5d2c16e5248093b62e61ef9b8e85263",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 0,
+      "type": "cover-photo",
+      "template": {
+        "id": "dneskai-explainer-cover-photo",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "1a620d2d4e6ce33a7f66eda42001f9de23fe6f79ec7555a67104f9b8ad9d6823",
+      "tileHash": "1a620d2d4e6ce33a7f66eda42001f9de23fe6f79ec7555a67104f9b8ad9d6823",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 1,
+      "type": "figure",
+      "template": {
+        "id": "dneskai-explainer-figure",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "d4cdc8eb7ff1fd0e8b27d1432af1d0485a05c5c9c63aeeae8cc829a48d0f860e",
+      "tileHash": "d4cdc8eb7ff1fd0e8b27d1432af1d0485a05c5c9c63aeeae8cc829a48d0f860e",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 2,
+      "type": "split",
+      "template": {
+        "id": "dneskai-explainer-split",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "56aff61c8fdd3b239251570ec82edf7dc90e1f0a1556c8dcdbaf789d2e6a088e",
+      "tileHash": "56aff61c8fdd3b239251570ec82edf7dc90e1f0a1556c8dcdbaf789d2e6a088e",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "low-res",
+      "index": 3,
+      "type": "statement",
+      "template": {
+        "id": "dneskai-explainer-statement",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "26206cc191aaf0fe5942463d660a337f9f49d69dea30980f4b903e4ac7fa5b3b",
+      "tileHash": "26206cc191aaf0fe5942463d660a337f9f49d69dea30980f4b903e4ac7fa5b3b",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    },
+    {
+      "deck": "low-res",
+      "index": 4,
+      "type": "sources",
+      "template": {
+        "id": "dneskai-explainer-sources-1",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "de51d4d09e655a2c0103a110a5abdeba4f6b92034e532bfae853624caaa9f43d",
+      "tileHash": "de51d4d09e655a2c0103a110a5abdeba4f6b92034e532bfae853624caaa9f43d",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-4"
+        }
+      ]
+    },
+    {
+      "deck": "single-photo-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-explainer-single-photo",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "f249c9958141ddb73709a11715540ab18900b283e63c00b9fd7b766c66219d23",
+      "tileHash": "f249c9958141ddb73709a11715540ab18900b283e63c00b9fd7b766c66219d23",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": [
+        {
+          "slot": "image-1",
+          "file": "synthetic-2"
+        }
+      ]
+    },
+    {
+      "deck": "single-type-post",
+      "index": 0,
+      "type": "single",
+      "template": {
+        "id": "dneskai-explainer-single-type",
+        "version": "1.1.0"
+      },
+      "look": "explainer",
+      "pngHash": "627affd95063f7c2d829e04ba2785883e09d3141fb9bd8ec02b801855a0bb591",
+      "tileHash": "627affd95063f7c2d829e04ba2785883e09d3141fb9bd8ec02b801855a0bb591",
+      "truncatedSlots": [],
+      "problems": [],
+      "photos": []
+    }
+  ]
+}

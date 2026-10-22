@@ -189,7 +189,11 @@
   "carouselLooks": {
     "default": "editorial",
     "ids": [
-      "editorial"
+      "editorial",
+      "bold",
+      "explainer",
+      "magazine",
+      "ticker"
     ]
   },
   "rules": [

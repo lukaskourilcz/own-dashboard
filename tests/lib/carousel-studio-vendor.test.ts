@@ -140,4 +140,18 @@ describe("vendored @boardlessai/carousel-studio", () => {
         .toEqual({ name, status: "rendered", template: { id: pinned.templateId, version: pinned.version }, pngHash: pinned.pngHash });
     }
   }, 60000);
+
+  it("renders the golden cases in every other kit, byte for byte where the kit pins that case", async () => {
+    const studio = await import("@boardlessai/carousel-studio");
+    const cases = await studio.dneskaiGoldenCases();
+    for (const kit of DNESKAI_RENDERABLE_KIT_IDS.filter((id) => id !== "editorial")) {
+      const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(vendor, `golden/dneskai-${kit}.json`), "utf8")));
+      for (const { name, input } of cases) {
+        const result = await studio.renderDneskaiSlide({ ...input, kit });
+        expect({ kit, name, status: result.status, kitName: result.kit, truncated: result.truncatedSlots }).toEqual({ kit, name, status: "rendered", kitName: kit, truncated: [] });
+        const pinned = golden.entries.find((entry) => entry.name === name);
+        if (pinned) expect({ kit, name, pngHash: result.pngHash }).toEqual({ kit, name, pngHash: pinned.pngHash });
+      }
+    }
+  }, 240000);
 });

@@ -12,7 +12,7 @@ Unsaved changes block approval, batch approval, refresh, List switching and retu
 
 Approve the day captures the eligible revision IDs and hashes when its dialog opens. It shows each deck, caption, account and time; every image must load before submission. The request binds each hash independently and shows per-item refusals. A failure never grants authority to a different revision. Batch failures refresh the read because a response may be lost after some approvals succeeded. Individual approvals use the existing server route and hash check.
 
-Only Editorial is renderable. The four future kit tiles are disabled until the owner approves their distinct designs and the corresponding renderer is available. The prototype does not present Editorial copies as other kits. Kit switching, alternative-variant storage/retention, reminders, missed-slot movement and paid regeneration await the decisions in NEEDED.md. No approval hash is weakened, no schedule moves automatically, and no model call or notification is added.
+All five kits render (vendored Quorum `8135cc5`): Editorial, Bold, Explainer, Magazine and Ticker. A kit tile or the keys 1 to 5 switch the draft's kit; the stage then shows every slide as an unsaved preview in that kit, and saving writes a revision whose deck names the kit (`kit`, left out for Editorial so older hashes stand). That revision needs its own approval. A kit the vendored studio does not register is shown, never offered, and the server refuses it with `kit-unavailable`. Alternative-variant storage and retention stay out of scope. No approval hash is weakened, no schedule moves automatically, and no model call or notification is added.
 
 ## Expired time and Publish now (22 October 2026)
 
@@ -33,7 +33,7 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 
 `POST /api/dev-preview/dneskai-render` accepts a bounded deck using only those known fixture hashes. It reads no owner records, fetches no URL, calls no provider and writes no storage. It refuses cross-origin requests and unknown assets. Ordinary production answers 404; development and explicit `NEXT_E2E=1` builds can render fixture edits. The guest tour in an ordinary production build does not gain this rendering endpoint; a render-dependent demo edit is unavailable there. The public `/guest` Lab is explicitly read-only: edit/approval/List controls are disabled and it calls neither fit nor render endpoints. Dev-preview post edits and approvals remain in browser memory.
 
-The preview also exposes the implemented Editorial specimen sheet from Quorum commit `138422c9`: `public/demo/dneskai/kit-editorial.png` and its JSON receipts. It contains the six ADR fixture decks, 24 slides, including an explicit refused low-resolution tile. The four other sheets await approved designs. This copies review artifacts only; it does not re-vendor or consolidate the studio.
+The preview also exposes the five specimen sheets, `public/demo/dneskai/kit-<kit>.png` with their JSON receipts: Editorial from Quorum commit `138422c9`, the other four from `8135cc5`. Each contains the six ADR fixture decks, 24 slides. Only Editorial refuses the low-resolution cover, because only its cover bleeds the picture.
 
 ## Verification
 

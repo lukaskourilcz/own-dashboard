@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "magazine",
+  "label": "Magazine",
+  "purpose": "Clippings for a story several outlets reported: white cards with hairline ink borders on the paper ground, Petrona headlines, Literata text and Plex Mono labels. Blueprint blue only for the kicker and one rule; the statement keeps the blue and ink grounds.",
+  "palette": {
+    "background": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md; the white of the top card, where every inner slide's words sit."
+    },
+    "surface": {
+      "value": "#f7f7f5",
+      "source": "--surface-page in DESIGN_SYSTEM.md; the paper ground the cards lie on, one the light logotype is approved for."
+    },
+    "surface-strong": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md; the cards under the top one, a shade darker than the paper."
+    },
+    "foreground": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md; headlines, card borders, the masthead bar and the ink statement ground."
+    },
+    "muted": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md; body text, credits and plate hairlines."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; the kicker, the type post's rule and the statement ground."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts)."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Petrona",
+      "source": "A display serif with a calligraphic stress, set at 800 for headlines: the magazine page's voice, distinct from the editorial grotesque. Every committed weight passes the Czech alphabet gate."
+    },
+    "body": {
+      "family": "Literata",
+      "source": "A text serif drawn for long reading on screens, for paragraphs and sources; Czech-complete in every committed weight."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: dates, issue identifiers, source ids, tags, captions and measured values."
+    }
+  },
+  "style": {}
+}

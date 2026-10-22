@@ -87,12 +87,25 @@ export interface DneskaiStackItem {
 }
 export type DneskaiFlow = {
     kind: "cover-static";
-} | {
+}
+/**
+ * `plate`: the shape layer drawn directly before the picture is its plate, moved with it and
+ * standing `plate` px clear of it above and below; the gaps are measured to the plate. `top`: where
+ * the headline starts, when a slide sets a label line above it under the header. Both absent:
+ * the editorial figure.
+ */
+ | {
     kind: "figure";
-} | {
+    plate?: number;
+    top?: number;
+}
+/** `align: "top"` stands the words and the pictures on one top line instead of centring the shorter column. */
+ | {
     kind: "split";
+    align?: "top";
 } | {
     kind: "split-pair";
+    align?: "top";
 } | {
     kind: "statement";
 } | {
