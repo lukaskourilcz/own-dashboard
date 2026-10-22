@@ -223,3 +223,36 @@ describe('the Lab keeps a saved JPEG only while the pixels cannot differ', () =>
     expect(dneskaiSlidePixelsKey({ ...cover, images: [{ ...cover.images[0]!, crop: { focal: { x: 0.5, y: 0.41 } } }] })).not.toBe(dneskaiSlidePixelsKey(cover));
   });
 });
+
+describe('spotlight cover inset', () => {
+  it('adds and drops the cover inset only in a kit that draws one, on server and draft alike', async () => {
+    const cover = deck().slides[0]!;
+    const withInset = { from: 0, images: [...cover.images, { slot: 'image-2', assetSha256: b }] };
+    // Any other kit keeps the cover's one picture place.
+    expect(await code(() => applyDneskaiDeckEdit(deck(), { slides: [withInset, { from: 1 }, { from: 2 }] }))).toBe('deck-edit-slots-changed');
+    const spotlight = applyDneskaiDeckEdit(deck(), { kit: 'spotlight', slides: [withInset, { from: 1 }, { from: 2 }] });
+    expect(spotlight.slides[0]!.images.map((image) => image.slot)).toEqual(['image-1', 'image-2']);
+    // The same picture twice is no inset.
+    expect(await code(() => applyDneskaiDeckEdit(deck(), { kit: 'spotlight', slides: [{ from: 0, images: [...cover.images, { slot: 'image-2', assetSha256: cover.images[0]!.assetSha256 }] }, { from: 1 }, { from: 2 }] }))).toBe('deck-edit-slots-changed');
+    const dropped = applyDneskaiDeckEdit(spotlight, { slides: [{ from: 0, images: cover.images }, { from: 1 }, { from: 2 }] });
+    expect(dropped.slides[0]!.images.map((image) => image.slot)).toEqual(['image-1']);
+    // Leaving spotlight drops the inset when the deck is shown.
+    const { dneskaiShownDeck } = await import('@/lib/marketing/dneskai-slide-layout');
+    expect(dneskaiShownDeck({ ...spotlight, kit: 'bold' }).slides[0]!.images.map((image) => image.slot)).toEqual(['image-1']);
+    expect(dneskaiShownDeck(spotlight).slides[0]!.images.map((image) => image.slot)).toEqual(['image-1', 'image-2']);
+  });
+
+  it('lets the draft add, replace and remove the inset and drops it when the kit changes', async () => {
+    const { createDeckDraft, setCoverInset, setDraftKit } = await import('@/lib/marketing/dneskai-deck-editor');
+    const value = createDneskaiWorkspaceFixture(new Date('2026-10-24T09:00:00Z')).posts.find((item) => item.id.endsWith('000000000001'))!;
+    const draft = setDraftKit(createDeckDraft(value), 'spotlight');
+    const pool = value.brief!.media.filter((item) => !value.deck!.slides[0]!.images.some((image) => image.assetSha256 === item.assetSha256));
+    const inset = setCoverInset(draft, 0, pool[0]!);
+    expect(inset.slides[0]!.slide.images.map((image) => image.slot)).toEqual(['image-1', 'image-2']);
+    expect(setCoverInset(inset, 0, null).slides[0]!.slide.images.map((image) => image.slot)).toEqual(['image-1']);
+    expect(setDraftKit(inset, 'ticker').slides[0]!.slide.images.map((image) => image.slot)).toEqual(['image-1']);
+    // Not on another slide, not in another kit.
+    expect(setCoverInset(inset, 1, pool[0]!)).toBe(inset);
+    expect(setCoverInset(createDeckDraft(value), 0, pool[0]!).slides[0]!.slide.images).toHaveLength(1);
+  });
+});
