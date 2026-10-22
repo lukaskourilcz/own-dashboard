@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
+import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/vercel/analytics?**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"kind":"unconfigured"}' }));
@@ -186,6 +187,69 @@ test('Lab switches a post to another kit, previews it unsaved, then saves a vers
   await expect(lab.getByText(t.actions.saved)).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   await expect(page.getByTestId('dneskai-kit-ticker').getByRole('radio')).toBeChecked();
+});
+
+test('Spotlight takes a round inset picture on the cover from the pool, previews it, saves and approves the new hash', async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab.en;
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const lab = page.getByTestId('dneskai-lab'), stage = page.getByTestId('dneskai-lab-stage');
+  const inspector = page.getByTestId('dneskai-slide-inspector'), approve = page.getByTestId('dneskai-lab-approve');
+  await expect(approve).toBeEnabled();
+  const version = await approve.textContent();
+  // The post's own kit draws no inset, so its cover offers none.
+  await expect(inspector).toContainText('Slide 1');
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).not.toBeChecked();
+  await expect(inspector.getByTestId('dneskai-lab-inset')).toHaveCount(0);
+  await expect(inspector.getByRole('button', { name: t.slide.insetAdd })).toHaveCount(0);
+  // Key 6 puts the post on the Spotlight kit; its cover can now take a second, round picture.
+  await page.getByTestId('dneskai-lab-session').focus();
+  await page.keyboard.press('6');
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
+  const inset = inspector.getByTestId('dneskai-lab-inset');
+  await expect(inset).toContainText(t.slide.insetHelp);
+  const draftImage = stage.getByTestId('dneskai-stage-draft-image');
+  await expect(draftImage).toHaveAttribute('src', /^data:image\/webp;base64,/, { timeout: 20_000 });
+  const withoutInset = await draftImage.getAttribute('src');
+  await inset.getByRole('button', { name: t.slide.insetAdd, exact: true }).click();
+  const tray = inset.getByTestId('dneskai-media-tray');
+  await expect(tray).toBeVisible();
+  await tray.getByRole('button', { name: new RegExp(`^${dneskaiWorkspace.en.editor.choose}: `) }).first().click();
+  // The inset is now the cover's second picture, with its own crop controls and a way to remove it.
+  await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
+  await expect(inspector.getByRole('button', { name: t.slide.insetRemove, exact: true })).toBeVisible();
+  await expect(inspector.getByTestId('dneskai-lab-inset')).toHaveCount(0);
+  await expect.poll(() => draftImage.getAttribute('src'), { timeout: 20_000 }).not.toBe(withoutInset);
+  await expect(draftImage).toHaveAttribute('src', /^data:image\/webp;base64,/);
+  await expect(approve).toBeDisabled();
+  await stage.screenshot({ path: info.outputPath('lab-spotlight-inset.png') });
+  await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(approve).toBeEnabled({ timeout: 20_000 });
+  await expect(approve).not.toHaveText(version!);
+  await expect(page.getByTestId('dneskai-draft-badge')).toHaveCount(0);
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
+  await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
+  await approve.click();
+  await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
+  expect(errors).toEqual([]);
+});
+
+test('a kit without a cover inset drops the Spotlight inset and offers no inset controls', async ({ page }) => {
+  const t = dneskaiLab.en;
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const inspector = page.getByTestId('dneskai-slide-inspector');
+  await page.getByTestId('dneskai-kit-spotlight').click();
+  const inset = inspector.getByTestId('dneskai-lab-inset');
+  await inset.getByRole('button', { name: t.slide.insetAdd, exact: true }).click();
+  await inset.getByTestId('dneskai-media-tray').getByRole('button', { name: new RegExp(`^${dneskaiWorkspace.en.editor.choose}: `) }).first().click();
+  await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
+  for (const kit of ['editorial', 'bold', 'explainer', 'magazine', 'ticker'] as const) {
+    await page.getByTestId(`dneskai-kit-${kit}`).click();
+    await expect(page.getByTestId(`dneskai-kit-${kit}`).getByRole('radio')).toBeChecked();
+    await expect(inspector.getByTestId('dneskai-lab-picture-image-2'), kit).toHaveCount(0);
+    await expect(inspector.getByTestId('dneskai-lab-inset'), kit).toHaveCount(0);
+    await expect(inspector.getByRole('button', { name: t.slide.insetAdd }), kit).toHaveCount(0);
+    await expect(inspector.getByRole('button', { name: t.slide.insetRemove }), kit).toHaveCount(0);
+  }
 });
 
 // Owner decisions 6, 8 and 9. The clock is fixed at 10:00 in Prague, so the fixture's missed post (09:40) moves to
