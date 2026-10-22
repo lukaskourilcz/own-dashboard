@@ -56,7 +56,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 | Bank (GoCardless) | Daily transaction sync | `src/lib/gocardless.ts`, `src/lib/bank*` | As configured; no new bank work planned |
 | Jina Reader | Link enrichment: only the submitted URL is sent | `src/lib/link-library.ts` | Live |
 | **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
-| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0 | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified, publishing **on** |
+| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0 | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
 | **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions | `src/lib/marketing/generation.ts`, `dneskai-generation.ts` | Key set, live |
 | **Jev** (typesafe.ai, `jev-1.13.0`) | Classifies collected stories (category, relevance, on-topic) | `src/lib/marketing/dneskai-providers.ts` | Live, about $0.002 a night |
 | Apify | Instagram profile collection and a research plan | `dneskai-collection.ts`, `dneskai-apify-research*.ts` | Token set, **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`) |
@@ -165,7 +165,7 @@ expiry) and recovery actions. "Publikované" lists receipts; "Chyby a náklady" 
 ### Publishing
 
 A post publishes only when all three are true: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the
-account's own `enabled` switch. All three are on now. The publisher checks the JPEGs (format, size, 8 MB),
+account's own `enabled` switch. The two Vercel switches are on; the account switch is off since the pilot. The publisher checks the JPEGs (format, size, 8 MB),
 the caption limits and the 24-hour quota. It creates the Instagram containers and the carousel parent, polls, and
 calls `media_publish` once. It stores `remote_media_id` and the permalink (`marketing_publications`). After a timeout
 it only reads the media list; it never posts twice.
@@ -214,11 +214,14 @@ listed in `docs/external-setup.md` and `docs/marketing-scheduling.md`.
 ## 7. Production state on 22 October 2026
 
 - Collection, Jev, media and briefs have run every night since 21 October.
-- Generation and rendering work: two posts were generated for about $0.044.
-- The first real post published at 19:01 Prague (https://www.instagram.com/p/DezenXXkev_/), and a five-slide
-  carousel was queued for 20:00. Both were made before the post rules and kits landed, so they still carry the old
-  elements.
-- Publishing is on. The owner decides whether it stays on for daily operation.
+- The pilot is done: a single image published at 19:01 Prague (https://www.instagram.com/p/DezenXXkev_/) and a
+  five-slide carousel at 20:00 (https://www.instagram.com/p/Dezk8kMlv0P/), both on the first attempt, about $0.046 in
+  total. Both were made before the post rules and kits landed, so they still carry the old elements.
+- After the pilot, publishing for `@dneskai` is off at the account switch (`marketing_accounts.enabled = false`),
+  because daily operation is not authorized yet. Both Vercel switches stay on. Turning the account back on in
+  DNESKAi → Zdroje resumes publishing; every post still needs approval of its exact version.
+- Generation keeps preparing posts for review every night under the $1.00 daily ceiling.
+- No GitHub issue is open in either repository; open owner work is in `NEEDED.md`.
 
 ## 8. Where to look next
 
