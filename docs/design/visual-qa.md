@@ -278,3 +278,15 @@ Contrast (WCAG 2.2 AA, computed from the tokens in `globals.css`; the tint sits 
 | `--risk` (error code) | 5.97 / 5.73 / 5.91 / 5.62 / 5.71 | 5.91 / 5.60 / 5.87 / 6.12 / 6.10 |
 
 Every pair passes 4.5:1. A translucent tint laid straight on the page background (`#f3f4f6`) would have dropped `--success` text to 4.20:1, which is why the tint utilities paint `--surface` first. Axe (wcag2a–wcag22aa) passes on the Lab in English/light and Czech/dark and on Příspěvky in both, at desktop and Pixel 5 widths. Dates read `DD/MM` (`formatDneskaiDay`) in both languages. The macOS baselines in `e2e/dneskai-lab-visual.spec.ts-snapshots/` were regenerated for #169, #172 and this change and reviewed one by one.
+
+## DNESKAi topics list (Náměty) — 22 October 2026
+
+The topics section at the top of the Design Lab (#154) was checked on `/dev-preview` with the synthetic topics in `src/lib/demo/dneskai-topics-fixtures.ts`. `e2e/dneskai-lab.spec.ts` runs it at 1280 and 360 px in English (light) and Czech (dark), in both browser projects: axe WCAG 2.2 AA on the section, no horizontal document scroll, no console errors and no request to a marketing API. The same flow approves and rejects by keyboard (↓, A, Z), approves two selected topics at once and restores one from the archive. Axe first flagged the approved row: its reduced opacity brought the chips and the source link below 4.5:1, so the row now uses full opacity. The visual baseline spec hides the section, so the committed Lab baselines stay valid; on macOS all 75 tests of the lab, visual and workspace specs passed (one skipped).
+
+English, 1280 px, light:
+
+![Topics list in English at 1280 px](screenshots/dneskai-topics-en-1280.png)
+
+Czech, 360 px, dark (the fixed phone navigation crosses the element capture):
+
+![Topics list in Czech at 360 px](screenshots/dneskai-topics-cs-360.png)
