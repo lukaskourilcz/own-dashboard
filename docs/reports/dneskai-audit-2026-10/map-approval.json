@@ -1,0 +1,1098 @@
+{
+ "subsystem": "approval",
+ "summary": "Approval, revisions and publishing in own-dashboard 8df25a5 are tight on byte identity and loose on owner time. revisionContentHash is sha256 over the canonical revision minus assets[].url only, so it binds title, caption, format, deck, every rendered asset sha256/MIME/size/alt, account, scheduledAt, sources, knowledgeIds, templateVersion, promptVersion, model and traceId. Approval (marketing_approve_revision) stores approved_hash=content_hash and creates one queued publication; edits, skips, returns, newer source revisions and calendar rebinds all null approved_hash. The publisher recomputes the hash, re-downloads every JPEG and checks sha256, JPEG, 4:5..1.91:1 geometry, declared size, sRGB and 8 MiB before the first container, reads content_publishing_limit, and posts media_publish once behind a durable intent. Weak points: scheduledAt is in the hash and a slot missed by 15 minutes turns the approved revision into failed, so every reschedule or missed slot costs an edit, a synchronous re-render and a new approval; returned and skipped posts can neither be re-approved nor regenerated; a transient error while creating any of up to ten carousel children strands the publication in reconciliation with no owner way out; marketing-assets is never purged and its render-key objects are shared between revisions, so retention needs reference counting. For task G the code supports the 'lazy covers + cache warming' option with fewer changes than the draft model claims: the render-key cache already makes a kit switch an ordinary edit whose render is a cache hit, so no variants table is needed; the deck schema, render key, edit schema and tracer need a kit field. Measured render cost is about 0.82 MB and 0.5-0.7 s per 7-slide deck locally, so five kits are about 4.1 MB and 2.6-3.6 s of CPU, lower than the brief's 6-8 MB and 8-15 s.",
+ "files": [
+  {
+   "path": "own-dashboard/src/lib/marketing/hashes.ts",
+   "role": "revisionContentHash: sha256 of canonical revision without assets[].url"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/contracts.ts",
+   "role": "ContentRevision marketing-content/1 and /2, AssetSchema, readiness, receipts, render report, canonicalJson"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+   "role": "owner deck edit schema, prepare edit (drops assets), render-and-attach"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts",
+   "role": "client draft operations: text, crop, swap, remove, move; no kit/type/variant"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/store.ts",
+   "role": "saveRevision -> marketing_save_revision with replacesId"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/asset-urls.ts",
+   "role": "7-day signed URLs, byte re-verification, renewal RPC"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/publisher.ts",
+   "role": "publicationGate, verifyAssets, quota gate, container creation, media_publish, reconciliation"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/orchestrator.ts",
+   "role": "publishDueMarketing: refresh sources, claim, checkpoints, finish"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/meta-credentials.ts",
+   "role": "token resolution and 60-day refresh with a 10-day window"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+   "role": "brief packet refresh at publish time; member change makes it ineligible"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+   "role": "render key, render cache, studio pin, per-template face tables"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-slides.ts",
+   "role": "dneskai-slides/1 deck schema (no kit field)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+   "role": "publishing budget, URL renewal window, daily duties"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+   "role": "renewable revisions query, reconciliation picking"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/approval-notification.ts",
+   "role": "n8n webhook called on every approval when configured"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/tracing.ts",
+   "role": "LangSmith trace schema (no kit field)"
+  },
+  {
+   "path": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+   "role": "approve / return / skip / edit; synchronous re-render with 45 s abort"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+   "role": "approve, decide, ingest (supersede), claim_due, save_revision"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql",
+   "role": "render_report, URL renewal, attach render, approve v2"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261013001528_marketing_private_assets.sql",
+   "role": "private marketing-assets bucket, 8 MiB, image/jpeg"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261021090000_marketing_job_render_report.sql",
+   "role": "finish_job stores the job's render report on the revision"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-revision-media.md",
+   "role": "doc of hash, renewal, edits, gates"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-launch.md",
+   "role": "launch doc (stale hash statement)"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "The approval identity excludes only assets[].url; any future asset field is covered by default.",
+   "evidence": "own-dashboard/src/lib/marketing/hashes.ts:12-14 `const { url, ...identity } = asset`; :23-24 `return contentHash(revisionWithoutDeliveryUrls(revision))`"
+  },
+  {
+   "fact": "Hashed fields (strict schema): schemaVersion, brand, title, caption, format, sources, knowledgeIds, assets{sha256,mimeType,width,height,alt}, account{id,platform,handle}, collaborators?, scheduledAt, timeZone, templateVersion, promptVersion, model, traceId, deck?. The brief's list (2.6) omits title, caption, promptVersion, model, traceId and knowledgeIds.",
+   "evidence": "own-dashboard/src/lib/marketing/contracts.ts:95-117 ContentRevisionSchema; brief.md:185"
+  },
+  {
+   "fact": "canonicalJson sorts object keys; arrays keep order, so slide and asset order are part of the hash.",
+   "evidence": "own-dashboard/src/lib/marketing/contracts.ts:292-296"
+  },
+  {
+   "fact": "Approval: marketing_approve_revision (authenticated, security definer) checks campaign/entry, content_hash = expected, status review|approved and ready, no blocking render report, deck asset count = slide count, scheduledAt > now(), sources valid, verified account; then sets approved_hash=content_hash and inserts one queued marketing_publications row (unique revision_id, platform).",
+   "evidence": "own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql:98-131"
+  },
+  {
+   "fact": "Return/skip: marketing_decide_revision sets status returned|skipped, nulls approved_at/approved_hash and cancels the queued publication; refused once a publication is claimed, published or in reconciliation.",
+   "evidence": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:185-196"
+  },
+  {
+   "fact": "Supersede: marketing_save_revision with p_replace sets the previous row superseded with approved_hash null and cancels its queued publication; refused when the previous is publishing, published, reconciliation or superseded or has a claimed/published/reconciliation publication.",
+   "evidence": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:282-286"
+  },
+  {
+   "fact": "A newer source revision, a changed content hash or an ineligible source supersedes every review/approved/returned/failed revision citing it.",
+   "evidence": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:214-219"
+  },
+  {
+   "fact": "Owner edit of a deck revision always drops assets and re-renders, even for a caption- or schedule-only change; it saves first (superseding the old revision) and renders synchronously with a 45 s abort inside a 60 s route.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts:77 `assets: []`; own-dashboard/src/app/api/marketing/revisions/route.ts:14 maxDuration=60; :62 saveRevision replacesId; :64 AbortSignal.timeout(45000)"
+  },
+  {
+   "fact": "The edit route refuses a schedule in the past or more than 6 days ahead (signed URLs last 7 days).",
+   "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:41 `scheduled>Date.now()+6*86400000` -> schedule-outside-asset-window; own-dashboard/src/lib/marketing/asset-urls.ts:11 `expiresIn = 7 * 24 * 60 * 60`"
+  },
+  {
+   "fact": "Render attach may only add assets: the deck, text, account and schedule must stay byte-identical, and a ready attach needs one asset per slide and a non-blocking report.",
+   "evidence": "own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql:81-90"
+  },
+  {
+   "fact": "Publisher gate: status approved|publishing, approved_at valid, approved_hash = content_hash = recomputed hash; ready and readiness; render report; account binding, enabled and verified; MARKETING_PUBLISH_ENABLED and MARKETING_DNESKAI_PUBLISH_ENABLED; API version; token present/unexpired; scopes instagram_business_basic + instagram_business_content_publish; each source unchanged, usable and observed within 15 min; within the 15-min window after scheduledAt; alt present and <= 1000; carousel 2-10; declared 4:5..1.91:1 geometry; <= 30 hashtags and <= 20 mentions.",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:53-106; switches in own-dashboard/src/lib/marketing/scheduler.ts:183-185 and orchestrator.ts:99"
+  },
+  {
+   "fact": "verifyAssets downloads every asset (approved host, no redirect, 10 s), checks Content-Type, <= 8 MiB, sha256 equals assets[].sha256, then decodes with sharp: JPEG, valid geometry, orientation 1, width/height equal the declared ones, colour space srgb.",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:167-200"
+  },
+  {
+   "fact": "Quota: reads content_publishing_limit (quota_usage, config.quota_total) and holds when unavailable or exhausted; no fixed number is assumed.",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:217-226"
+  },
+  {
+   "fact": "Carousel: after a durable 'intent:<content hash>' checkpoint, one POST per child (image_url, is_carousel_item, alt_text), one parent POST with media_type CAROUSEL and children, up to 3 status polls at 1 s, revalidation of the whole gate, a durable publish-intent checkpoint, then exactly one media_publish POST and a permalink read.",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:388-457"
+  },
+  {
+   "fact": "Collaborators go on the parent container only when the revision records them; no DNESKAi code path writes collaborators.",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:411-412; grep -rn collaborators src/lib/marketing finds only contracts.ts, hashes.ts, publisher.ts, marketing-codes.ts"
+  },
+  {
+   "fact": "No audio, music, cover, location or user-tag field is ever sent; grep for audio|music|share_to_feed|cover_url|location_id|user_tags in src/lib/marketing finds only a knowledge-extraction prompt sentence.",
+   "evidence": "own-dashboard/src/lib/marketing/knowledge-extraction.ts:24 (only hit)"
+  },
+  {
+   "fact": "Reconciliation is GET-only: a stored media id is confirmed by its permalink; otherwise the container status, then a caption-prefix (100 chars) match in the account's /media list within scheduledAt -5 min .. +20 min; exactly one match is required.",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:262-338"
+  },
+  {
+   "fact": "Expired claim leases become reconciliation ('lease-expired'); approved revisions whose queued publication is more than 15 min past its slot become failed and lose approved_hash; their publications fail with publish-window-expired.",
+   "evidence": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:230-233"
+  },
+  {
+   "fact": "Receipt: marketing_finish_publication writes status, container id, media id, permalink and error code; receipts are typed per state (queued, claimed, published, failed, reconciliation, cancelled).",
+   "evidence": "own-dashboard/src/lib/marketing/contracts.ts:161-169; own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql:159"
+  },
+  {
+   "fact": "Token: long-lived Instagram tokens last 60 days; the scheduler refreshes when fewer than 10 days remain and the token is at least 24 h old; a stored DB token wins over the env bootstrap.",
+   "evidence": "own-dashboard/src/lib/marketing/meta-credentials.ts:32-36, 103-106, 110-119"
+  },
+  {
+   "fact": "Signed URLs: renewed by the daily tick when they expire within 48 h, for up to 50 newest review/approved revisions; renewal re-hashes the stored bytes, and SQL accepts only a changed signature on the same object path; content_hash and approved_hash stay.",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:73; own-dashboard/src/lib/marketing/scheduler-ports.ts:121-124; own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql:39-61"
+  },
+  {
+   "fact": "Rendered slides are cached per render key at <owner>/marketing/dneskai/slides/<renderKey>.jpg, so one object can serve several revisions.",
+   "evidence": "own-dashboard/src/lib/marketing/asset-urls.ts:41-47"
+  },
+  {
+   "fact": "Only marketing-media (source photos) has a purge; nothing deletes marketing-assets objects.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:427-436 purgeUnusedDneskaiMedia; grep '.remove(' in src/lib/marketing finds only dneskai-media.ts:98,436"
+  },
+  {
+   "fact": "Every approval calls notifyMarketingApproval, which POSTs to an n8n Cloud webhook when MARKETING_N8N_APPROVAL_WEBHOOK_URL and a secret are set (2 s timeout); unset returns 'unconfigured'.",
+   "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:35; own-dashboard/src/lib/marketing/approval-notification.ts:4-12"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Publication window after slot",
+   "value": "15 min (claim and gate); reconciliation lookahead 20 min",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:86, 263-265; own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:233,236"
+  },
+  {
+   "name": "Source freshness at publish",
+   "value": "observedAt within 15 min (sources refreshed just before claim)",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:6, 83; own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:124"
+  },
+  {
+   "name": "Instagram feed image",
+   "value": "JPEG, 320-1440 px wide, 4:5..1.91:1, <= 8 MiB, sRGB, orientation 1",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:15, 18-21, 179, 196-198"
+  },
+  {
+   "name": "marketing-assets bucket",
+   "value": "private, 8,388,608 bytes, image/jpeg only",
+   "evidence": "own-dashboard/supabase/migrations/20261013001528_marketing_private_assets.sql:7"
+  },
+  {
+   "name": "Carousel size",
+   "value": "2-10 assets",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:90"
+  },
+  {
+   "name": "Alt text",
+   "value": "required, <= 1000 chars",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:17, 87, 93"
+  },
+  {
+   "name": "Caption",
+   "value": "<= 2200 chars, <= 30 hashtags, <= 20 mentions",
+   "evidence": "own-dashboard/src/lib/marketing/contracts.ts:99; publisher.ts:97-98"
+  },
+  {
+   "name": "Collaborators",
+   "value": "1-3, not the own handle",
+   "evidence": "own-dashboard/src/lib/marketing/contracts.ts:106; publisher.ts:16,104"
+  },
+  {
+   "name": "Publish deadline",
+   "value": "50 s total; Graph request 1-15 s (default 10 s); container polls <= 3 x <= 1 s",
+   "evidence": "own-dashboard/src/lib/marketing/publisher.ts:137, 341, 418-423"
+  },
+  {
+   "name": "Live publish minimum start",
+   "value": "30 s of tick budget left (dry run 15 s)",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:69, 75"
+  },
+  {
+   "name": "Claim lease",
+   "value": "10 min",
+   "evidence": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql:245"
+  },
+  {
+   "name": "Signed URL lifetime / renewal window / edit horizon",
+   "value": "7 days / 48 h / 6 days",
+   "evidence": "own-dashboard/src/lib/marketing/asset-urls.ts:11; scheduler.ts:73; src/app/api/marketing/revisions/route.ts:41"
+  },
+  {
+   "name": "Edit render abort",
+   "value": "45 s inside a 60 s route",
+   "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:14, 64"
+  },
+  {
+   "name": "Token lifetime / refresh window / min age",
+   "value": "60 days / < 10 days left / >= 24 h",
+   "evidence": "own-dashboard/src/lib/marketing/meta-credentials.ts:32-36"
+  },
+  {
+   "name": "Reconciliation re-read interval",
+   "value": "30 min",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:71"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "Approval/publish/revision tests (static count of it/test calls)",
+   "value": "identity 5, media-database 6, publisher-media-identity 3, meta-publisher 21, publisher 13, asset-urls 11, revision-edit 6, revisions-route 5, revision-lineage 6, meta-credentials 11 = 87",
+   "method": "grep -cE '^\\s*(it|test)(\\.each)?\\(' tests/lib/<file>.test.ts in the worktree; not run (worktree has no node_modules)",
+   "kind": "measured"
+  },
+  {
+   "what": "Rendered 7-slide deck size and time (cover-photo, figure, 2 split, 2 statement, sources)",
+   "value": "820,252 bytes JPEG (117 KB/slide); 720 ms cold, 504-522 ms warm on Apple M2; storage upload not included",
+   "method": "dneskai-audit-handoff/measurements/bench-render-run1.json (earlier reader's run against vendored studio dist), summed jpegBytes and totalMs per pass; not re-run here",
+   "kind": "measured"
+  },
+  {
+   "what": "Five-kit render per post",
+   "value": "about 4.1 MB and 2.6-3.6 s CPU locally (5 x the measured deck); brief says 6-8 MB and 8-15 s, the draft model says 9 MB and 7-15 s",
+   "method": "5 x measured deck; assumes other kits have similar byte size and cost, which is unknown until they exist",
+   "kind": "estimated"
+  },
+  {
+   "what": "marketing-assets growth with no purge",
+   "value": "single kit ~3.3 MB/day, ~98 MB/month at 4 posts/day; five kits pre-rendered ~490 MB/month; plus every edited slide",
+   "method": "4 x 0.82 MB x 30 (x5); excludes edits",
+   "kind": "estimated"
+  },
+  {
+   "what": "Graph calls for one live 7-slide carousel",
+   "value": "1 account GET, 1 quota GET, 7 child POSTs, 1 parent POST, 1-3 status GETs, 1 media_publish POST, 1 permalink GET = 13-15 calls, plus 7 asset downloads with sharp decode, inside a 50 s deadline",
+   "method": "counted from publisher.ts:377-454",
+   "kind": "measured"
+  },
+  {
+   "what": "Owner round trips to recover a missed slot or reschedule",
+   "value": "2 (edit with new time -> synchronous re-render; approve new hash)",
+   "method": "read from route.ts:38-67 and approve SQL; render is a cache hit when only caption/schedule change because the render key excludes them (dneskai-render.ts:196-213)",
+   "kind": "estimated"
+  }
+ ],
+ "findings": [
+  {
+   "id": "approval-01",
+   "title": "scheduledAt is inside the approval hash, so every reschedule and every missed slot needs an edit, a re-render and a new approval",
+   "category": "speed",
+   "claim": "The hash covers scheduledAt (and account). Moving a post by a minute creates a new revision, supersedes the approved one, re-renders the deck synchronously and needs a new approval. Approval is also refused once scheduledAt has passed, so a post not approved before its slot cannot be approved at all without an edit. Approved posts more than 15 min past their slot are turned into failed with approved_hash cleared; nothing moves them to the next free slot.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/contracts.ts",
+     "line": 107,
+     "excerpt": "scheduledAt: timestamp,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/hashes.ts",
+     "line": 23,
+     "excerpt": "export function revisionContentHash(revision: ContentRevision): string {"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql",
+     "line": 115,
+     "excerpt": "if (r.revision->>'scheduledAt')::timestamptz<=now() then raise exception 'schedule expired'; end if;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 232,
+     "excerpt": "update public.marketing_revisions r set status='failed',approved_at=null,approved_hash=null where ... p.scheduled_at<now()-interval '15 minutes';"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 64,
+     "excerpt": "rendered=await renderAndAttachDneskaiRevision(admin,user.id,{revisionId:saved.id,revision},{...signal:AbortSignal.timeout(45000)});"
+    }
+   ],
+   "impact": {
+    "statement": "Each missed 08:00 slot costs the owner two round trips and an approval; the brief's 'auto-move to the next free slot' cannot exist without re-approval under today's hash.",
+    "keep": true,
+    "reason": "A missed slot or a time change costs the owner an edit, a re-render wait and a second approval every time, which directly fights the 10-minute target.",
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Decide whether the publish time may change after approval without a new approval (time outside the hash, or an auto-move to the next free slot), or stay strictly bound."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Owner decision: split the identity into a content hash (bytes, text, deck, account) that approval binds and a schedule the owner may shift within a rule (for example: same day, to the next free slot, never earlier than now + 5 min) without re-approval, recorded as an event. The hard rule binds pixels and text, which stays intact. If the owner keeps time in the hash, at least skip the re-render for caption/schedule-only edits and offer 'move to next free slot' as a one-click edit+approve.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "contracts.ts:107 scheduledAt is a revision field; hashes.ts:12-24 hashes the whole revision minus assets[].url, so scheduledAt is covered. marketing_revision_media_identity.sql:115 refuses approval once scheduledAt<=now(). marketing_control_surface.sql:231-232 (marketing_claim_due, not redefined by any later migration) turns an approved revision with a queued publication 15 min past its slot into failed with approved_hash cleared. revisions/route.ts:41 accepts only a future schedule and :62-64 saves then renders with AbortSignal.timeout(45000). grep for reschedule/next-free-slot logic in src/lib/marketing finds only brief slot assignment (dneskai-briefs.ts:292), nothing for approved revisions.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-02",
+   "title": "A caption- or schedule-only edit of a deck revision still drops all assets and runs the synchronous render path",
+   "category": "speed",
+   "claim": "prepareDneskaiRevisionEdit always sets assets: [] and the route always renders when the revision has a deck, even if the deck is unchanged. The render key excludes caption, alt and schedule, so the slides are cache hits, but the request still loads fonts, computes keys, reads storage for every slide and holds the owner in a blocking call; any storage hiccup leaves the new revision unready while the old one is already superseded.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+     "line": 77,
+     "excerpt": "return parseContentRevision({ ...original, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [] });"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 50,
+     "excerpt": "if(current.deck){"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 61,
+     "excerpt": "// Saved unready and without assets: the previous revision is superseded now, so its approval cannot be used meanwhile."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 194,
+     "excerpt": "whitespace is a hit. The alt text is not drawn and is not part of the key."
+    }
+   ],
+   "impact": {
+    "statement": "Seconds per caption fix today, and a failure mode where a typo fix leaves the post unapprovable until a second edit succeeds.",
+    "keep": true,
+    "reason": "Small owner-time cost on caption or time edits; worth fixing when the edit route is reworked for the Design Lab.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "When the edited deck equals the original deck, copy the original assets (only alt may differ, and alt is not drawn) and save ready=true without calling the renderer; keep the render path for deck changes.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-revision-edit.ts:77 always sets assets: []; revisions/route.ts:50 renders whenever current.deck exists; :61-65 saves (superseding) before rendering and returns 502 render-attach-failed leaving the new revision unready. dneskai-render.ts:194-213 render key excludes caption, alt and schedule, so slides are cache hits.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-03",
+   "title": "An approved post is silently superseded when its event gains a member before the slot",
+   "category": "risk",
+   "claim": "At publish the brief packet is re-read from marketing_dneskai_briefs; if the event's current member hash or count differs from the brief's, the packet becomes ineligible ('brief-members-changed'), and marketing_ingest_source then supersedes every review or approved revision citing it and cancels the queued publication. Events can grow on a later collection night (Jev duplicate links at any age), so a newer report about the same story kills the approved post instead of strengthening it.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+     "line": 68,
+     "excerpt": "const changed = row.data.currentMemberHash !== row.data.memberHash || row.data.currentMemberCount !== row.data.memberCount;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+     "line": 69,
+     "excerpt": "const reason = changed ? 'brief-members-changed' : row.data.status === 'skipped' ? (row.data.code ?? 'brief-skipped') : null;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 214,
+     "excerpt": "for invalidated in select r.id from public.marketing_revisions r where ... r.status in ('review','approved','returned','failed') and exists("
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 218,
+     "excerpt": "update public.marketing_revisions set status='superseded',approved_hash=null,approved_at=null where id=invalidated;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/orchestrator.ts",
+     "line": 81,
+     "excerpt": "try{await synchronizeMarketingSources(db,owner,revision.brand,revision.sources.map(source=>source.sourceId),undefined,signal);}"
+    }
+   ],
+   "impact": {
+    "statement": "A post the owner approved in the morning can vanish at its slot with no notification; the slot stays empty.",
+    "keep": false,
+    "reason": "Refuted: a new report joining the event is not detected, so approved posts are not superseded this way.",
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "Bind the approved revision to the member hash it was generated from and treat a grown event as still valid for that revision (the approved copy only cites the original members). Surface 'new reports joined this story' as an advisory in review instead of superseding. Add a PGlite test for a member added between approval and publish.",
+   "truth": {
+    "verdict": "refuted",
+    "evidence": "The cited lines exist (dneskai-brief-source.ts:68-69, marketing_control_surface.sql:214-218, orchestrator.ts:81) and an ineligible brief packet does supersede approved revisions. But the trigger in the claim cannot happen: marketing_dneskai_brief_source (20261020150000_dneskai_events_briefs.sql:279-287) builds current_ids only from candidates with id=any(b.member_ids) that are still selected for the target date, so a new report joining the event is never counted; currentMemberCount can only shrink. Collection never rewrites a selected candidate: save_stage updates an existing candidate only for Jev when existing.status='new' (20261020100000_dneskai_collection_cursor_limits.sql:124-128); feed items are inserted only when not found (:129-131). No code deletes marketing_dneskai_candidates. skip_brief refuses queued briefs (20261020150000:201). So a later report does not supersede an approved post; the path is reachable only by a manual data change.",
+    "correctedLocations": [],
+    "correctedClaim": "The publisher's source refresh supersedes an approved DNESKAi revision if its brief becomes ineligible (a member leaves 'selected' or changes content hash), but no current code path does either after selection, and a new report joining the event is not detected at all (current_ids is restricted to the brief's own member_ids)."
+   }
+  },
+  {
+   "id": "approval-04",
+   "title": "A transient error while creating any carousel child strands the publication in reconciliation with no owner path out",
+   "category": "risk",
+   "claim": "The durable 'intent:<hash>' checkpoint is written before the first child POST, and every failure after it becomes reconciliation. Reconciliation of an intent container (not a numeric id) returns container-identity-unavailable forever. Child containers are unpublished and expire on Meta's side, so recreating them would not publish twice, but the code applies the single-POST rule to container creation too. A revision in reconciliation cannot be edited, returned or skipped (SQL refuses), so the post is frozen.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 389,
+     "excerpt": "container = `intent:${revisionContentHash(revision)}`;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 401,
+     "excerpt": "for (const asset of revision.assets) children.push(await create({ ..."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 461,
+     "excerpt": "const outcome = result(sideEffectStarted || previous.remote_container_id ? 'reconciliation' : 'failed', ..."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 322,
+     "excerpt": "if (!idValid(container)) return result('reconciliation', 'container-identity-unavailable', container);"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 191,
+     "excerpt": "if not found or r.status not in ('review','approved','returned','failed') or exists(... status in ('claimed','published','reconciliation')"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 283,
+     "excerpt": "if not found or previous.status in ('publishing','published','reconciliation','superseded') or exists(...) then raise exception 'repl"
+    }
+   ],
+   "impact": {
+    "statement": "One HTTP 5xx or timeout on any of 7-10 child POSTs loses the day's post and needs a manual database fix; carousels are the target format, so this is the common path once live.",
+    "keep": true,
+    "reason": "One flaky Meta call during child creation freezes a post with no owner exit; it must be fixed before the pilot goes live.",
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Write the publish-critical intent only before the parent container (or before media_publish). If child creation fails, record failed with a retryable code and let the next tick recreate children from scratch; keep the single media_publish rule and the caption-match reconciliation. Add an owner 'give up and re-queue' action for reconciliation rows that have no numeric container or media id.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "publisher.ts:388-390 writes the durable intent 'intent:<hash>' and sets sideEffectStarted before the first child POST; :401 creates children in a loop; :459-461 any error after that becomes reconciliation. publisher.ts:37 idValid accepts only numeric ids, so reconcileMarketingPublication returns container-identity-unavailable at :322 on every pass. marketing_decide_revision (control_surface.sql:191) and save_revision (:283) refuse revisions with a reconciliation publication. grep of src/app and src/components finds no owner action that resolves or abandons a reconciliation; costs-tab.tsx:85 only displays it.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-05",
+   "title": "marketing-assets is never purged, and its render-key objects are shared, so retention needs reference counting",
+   "category": "cost",
+   "claim": "Only marketing-media has a purge. Rendered slides are stored once per render key at <owner>/marketing/dneskai/slides/<key>.jpg and reused by any revision whose slide has the same key; every edit, re-vendor (the studio commit and tree hash are in the key) or policy bump adds new objects and orphans none explicitly. The variant draft's rule 'delete objects no revision with status X references' needs a key-to-revision index, which render_report.renderKeys partly provides (only for clean renders).",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/asset-urls.ts",
+     "line": 42,
+     "excerpt": "// A DNESKAi studio slide is cached by its render key (#117), so one stored JPEG can serve several revisions."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+     "line": 427,
+     "excerpt": "export async function purgeUnusedDneskaiMedia(db: DneskaiMediaDatabase, owner: string, olderThanDays = 30, ..."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 201,
+     "excerpt": "studio: DNESKAI_STUDIO,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/contracts.ts",
+     "line": 232,
+     "excerpt": "renderKeys: z.array(z.string().min(1).max(200)).max(10),"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261013001528_marketing_private_assets.sql",
+     "line": 7,
+     "excerpt": "values('marketing-assets','marketing-assets',false,8388608,array['image/jpeg'])"
+    }
+   ],
+   "impact": {
+    "statement": "About 0.1 GB a month at one kit and about 0.5 GB with five pre-rendered kits (estimate); small against Supabase Pro's included storage but unbounded, and it blocks a clean variant design.",
+    "keep": true,
+    "reason": "Storage grows without bound and five kits multiply it; a retention rule is needed before pre-rendering variants.",
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Choose how long rendered slides of approved and published posts are kept (for example 180 days after publication)."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Add a daily 'assets' purge: list slide objects older than 30 days whose render key is not in render_report.renderKeys of any revision in review, approved, publishing, reconciliation or published within 90 days, and whose sha256 is not in such a revision's assets; delete in chunks, same pattern as purgeUnusedDneskaiMedia. Store renderKeys for job-generated revisions too (check the job result) so the index is complete.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "grep for marketing-assets in src and supabase finds the bucket definition (20261013001528_marketing_private_assets.sql:7), renderer and URL code, but no remove/delete on that bucket; the only storage remove calls are in dneskai-media.ts:98 and :436 (marketing-media purge). asset-urls.ts:42 and dneskai-render.ts:352-405 confirm one object per render key shared across revisions; the key includes the studio pin (dneskai-render.ts:201). contracts.ts:232 renderKeys is stored in render_report; dneskai-render.ts:390 returns renderKeys [] on a refused render.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-06",
+   "title": "The deck, render key, edit schema and tracer have no kit field; a kit switch is impossible without a contract bump",
+   "category": "modernity",
+   "claim": "DneskaiDeckSchema is a strict object of schemaVersion, format and slides; the render key hashes the studio pin, policy, encoder, slide words, variant, images and position but no kit; the owner edit schema allows only text, credit, alt and images of existing slots; the per-template face and placement tables are single tables for the caught-up kit; the trace records prompt and template version hashes but no kit.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-slides.ts",
+     "line": 58,
+     "excerpt": "export const DneskaiDeckSchema = z.strictObject({"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-slides.ts",
+     "line": 9,
+     "excerpt": "export const DNESKAI_SLIDES_VERSION = \"dneskai-slides/1\";"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 200,
+     "excerpt": "schemaVersion: \"dneskai-render-key/2\","
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+     "line": 17,
+     "excerpt": "export const DneskaiSlideEditSchema = z.strictObject({"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 104,
+     "excerpt": "export const DNESKAI_FIELD_FACES = {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/tracing.ts",
+     "line": 34,
+     "excerpt": "model: z.string().regex(/^claude-[a-z0-9.-]+$/), prompt_version_hash: hash, template_version_hash: hash,"
+    }
+   ],
+   "impact": {
+    "statement": "Blocks goal 3 (five kits switchable per post) and the month-end analysis of which kit worked.",
+    "keep": true,
+    "reason": "This is the hard prerequisite for five switchable kits; without it the Design Lab goal cannot start.",
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "dneskai-slides/2 with deck.kit (v1 reads as the default kit); render key v3 with kit; DNESKAI_RENDER_POLICY bump; DneskaiRevisionEditInput.kit; per-kit FIELD_FACES/PLACED_FIELDS derived from the vendored kit registry; tracer and owner feedback carry the kit code (allowed: a code, not content). See variantModel.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-slides.ts:9 and :58 (strict deck schema, no kit); dneskai-render.ts:200-212 render key has no kit; dneskai-revision-edit.ts:17-25 edit schema allows headline/body/kicker/credit/alt/images only; dneskai-render.ts:104 single DNESKAI_FIELD_FACES table described as the caught-up kit's faces (:98); grep 'kit' in tracing.ts, dneskai-slides.ts and dneskai-revision-edit.ts returns nothing.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-07",
+   "title": "The render-key cache already makes a kit switch an ordinary edit; the draft's variants table and per-kit fit flags on revisions are unnecessary",
+   "category": "simplicity",
+   "claim": "Because renderDneskaiDeck looks up every slide by render key before rendering and returns stored objects on a hit, warming the cache for the other kits (in a tick unit) means a later kit-switch edit is a cache hit end to end: a new revision, its assets and its own hash, approved like any edit. No alternative assets need to live beside revision.assets; preview tiles only need signed URLs for cached keys.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 352,
+     "excerpt": "const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder));"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 353,
+     "excerpt": "const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 395,
+     "excerpt": "let stored = cached[index];"
+    },
+    {
+     "file": "dneskai-audit-handoff/design-lab/variant-approval-model.md",
+     "line": 11,
+     "excerpt": "A. Pre-render all five kits ... alternatives sit in a variants table"
+    }
+   ],
+   "impact": {
+    "statement": "Fewer moving parts for the Design Lab: no new table, no change to approval or publisher; switching is fast once warmed.",
+    "keep": true,
+    "reason": "It removes a planned table and keeps approval semantics unchanged, which cuts the work for task G.",
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Adopt option B (covers for all kits first, full decks warmed by a tick unit with spare budget) on top of the existing cache; add a read endpoint that returns signed URLs for the cached keys of (post, kit); a kit choice posts an edit with kit set. Reject option C (writing the kit at approval) because it moves hashing to approval time.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Mechanism confirmed: dneskai-render.ts:352-353 looks up every slide by render key and :395 reuses a stored object, so a re-render of an unchanged slide is a storage read. But today the key has no kit (approval-06), so warming other kits is impossible until the key and deck carry a kit; and a kit switch still goes through the synchronous edit route (revisions/route.ts:50-65) with storage reads and a new revision. Per-kit fit flags are not purely unnecessary: without them the Lab cannot show which kits clip before the owner switches.",
+    "correctedLocations": [],
+    "correctedClaim": "Once the deck and render key carry a kit, the existing per-slide render-key cache lets warmed kits make a kit switch an ordinary edit with cache hits, so no separate variants table is needed for assets; a per-kit fit/clip flag is still useful for the picker."
+   }
+  },
+  {
+   "id": "approval-08",
+   "title": "Removing or reordering one slide re-renders every slide because the deck size and position are in the render key",
+   "category": "speed",
+   "claim": "The render key includes position.index and position.count, so deleting a slide changes the key of all slides (count) and moving one changes the keys of all moved slides; the cache does not help for structural edits, and each produces a new set of stored objects.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 209,
+     "excerpt": "position: { index: position.index, count: position.count },"
+    }
+   ],
+   "impact": {
+    "statement": "Structural edits cost a full deck render (about 0.5-0.7 s warm locally, more on Vercel cold) and add 0.8 MB of never-purged objects each time.",
+    "keep": false,
+    "reason": "Re-rendering a 7-slide deck takes about 0.5 s, so the owner will not notice; not worth a finding.",
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Keep position in the key only for templates that draw it (page counter, cover/sources); if the studio draws 'n/N' on every slide this is correct and only the storage note matters. Verify in the studio templates before changing.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-render.ts:209 position {index,count} is part of the key; removing a slide changes count for all slides; moving changes index for moved slides.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-09",
+   "title": "Returned and skipped posts cannot be approved again and nothing regenerates them",
+   "category": "quality",
+   "claim": "marketing_decide_revision sets returned or skipped and clears approval; marketing_approve_revision accepts only review or approved, so a returned post becomes approvable only through an owner edit (which creates a new review revision). No code reacts to 'returned' by queueing a new generation; the feedback text goes only to marketing_events and the hash-only trace.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 194,
+     "excerpt": "update public.marketing_revisions set status=p_action,approved_at=null,approved_hash=null,feedback=left(p_feedback,2000) where id=r.id;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql",
+     "line": 111,
+     "excerpt": "if r.status not in ('review','approved') or not r.ready then raise exception 'revision not ready'; end if;"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 76,
+     "excerpt": "const {error}=await db.rpc('marketing_decide_revision',{p_revision_id:input.id,p_action:input.action,p_feedback:input.feedback??null});"
+    }
+   ],
+   "impact": {
+    "statement": "The owner's feedback is lost for the post; a weak post costs either a manual rewrite or an empty slot.",
+    "keep": true,
+    "reason": "'Vrátit k úpravě' leads nowhere today; the owner either edits by hand or loses the slot, and a regenerate action is a Design Lab requirement.",
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Decide whether to add a paid 'regenerate with my note' action and how much of the daily generation ceiling it may reserve."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Owner decision (it costs money): 'regenerate with my note' that enqueues a new generation job for the same brief with the note as an extra instruction, shows the reserved $0.25 (or the lowered reservation, see cost map), and links the new revision via replaces_id.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "control_surface.sql:194 decide sets returned/skipped and clears approval; marketing_revision_media_identity.sql:111 approve requires status review or approved. grep finds no code that queues generation on 'returned'. Additionally dneskai-briefs.ts:50 lists returned and skipped among DNESKAI_COVERING_REVISION_STATUSES, so the brief step will not produce a fresh post for the same event either. The route records feedback only via recordMarketingOwnerFeedback (revisions/route.ts:76-78).",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-10",
+   "title": "No batch 'approve the day'; each approval is a separate RPC with its own expected hash",
+   "category": "speed",
+   "claim": "The route accepts one { id, expectedHash } per approve; the client calls it per post. A batch that still binds each exact hash is a loop over the same RPC with per-item results.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 16,
+     "excerpt": "z.strictObject({action:z.literal('approve'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-workspace-client.ts",
+     "line": 77,
+     "excerpt": "async approve(id, expectedHash) { await post({ action: 'approve', id, expectedHash }); },"
+    }
+   ],
+   "impact": {
+    "statement": "Four separate clicks and waits per day; small alone, but part of the under-10-minute goal.",
+    "keep": true,
+    "reason": "An 'approve the day' action that still sends each exact hash saves several clicks a day at almost no risk.",
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add action 'approve-many' with an array of { id, expectedHash } (max 4-8), run each through marketing_approve_revision, return per-item outcomes; the UI shows which hash each approval bound.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "revisions/route.ts:16 approve schema takes one id and expectedHash; dneskai-workspace-client.ts:77 posts per post; review-tab.tsx:58-61 approves one post per click.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-11",
+   "title": "Approval calls a dormant n8n webhook on every approval",
+   "category": "simplicity",
+   "claim": "The approve branch awaits notifyMarketingApproval, which POSTs the publication id to an n8n Cloud webhook whenever MARKETING_N8N_APPROVAL_WEBHOOK_URL and the secret are set. n8n workflows are all inactive (brief 2.8), so this is a coupling to a retired service on the approval path.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 35,
+     "excerpt": "const scheduling=await notifyMarketingApproval(data);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/approval-notification.ts",
+     "line": 9,
+     "excerpt": "if(url.origin!=='https://bambambaklawa.app.n8n.cloud'||!url.pathname.startsWith('/webhook/')..."
+    }
+   ],
+   "impact": {
+    "statement": "Up to 2 s added to an approval if the env is still set, and one more moving part; overlaps the cost map's n8n findings.",
+    "keep": true,
+    "reason": "It is a dormant coupling to a retired service on the approval path; removing it is simple cleanup with no owner-visible effect.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Remove the call and the module (and its test and env names) once the owner confirms the n8n receiver is archived; keep the 'scheduling' field out of the response.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "revisions/route.ts:35 awaits notifyMarketingApproval on approve; approval-notification.ts:5-6 returns 'unconfigured' unless MARKETING_N8N_APPROVAL_WEBHOOK_URL and a >=32-char secret are set, :9 pins the n8n Cloud origin, 2 s timeout. Whether the env is set in production was not checked (env values are not read).",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-12",
+   "title": "Brief 2.6 lists the hash fields incompletely",
+   "category": "doc-drift",
+   "claim": "Brief 2.6 says the hash covers templateVersion, deck, rendered asset sha256s, alt, account, schedule and sources. The code also hashes title, caption, format, knowledgeIds, collaborators, promptVersion, model, traceId, timeZone, brand, schemaVersion and each asset's MIME type and dimensions. Consequence for the Design Lab: anything stored in the revision (for example a kit id or fit flags) changes the hash unless kept outside it.",
+   "evidence": [
+    {
+     "file": "dneskai-audit-handoff/brief.md",
+     "line": 185,
+     "excerpt": "covers templateVersion, deck (types, variants, text, image hashes, crops, order), rendered asset sha256s, alt, account, schedule and sources"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/contracts.ts",
+     "line": 98,
+     "excerpt": "title: z.string().min(1).max(300),"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/contracts.ts",
+     "line": 110,
+     "excerpt": "promptVersion: id,"
+    }
+   ],
+   "impact": {
+    "statement": "Low; matters only when designing what to store on a revision.",
+    "keep": true,
+    "reason": "The Design Lab work needs the exact list of hashed fields, because anything stored in the revision changes the hash.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Use docs/marketing-revision-media.md:16 as the reference list in the Design Lab spec.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "brief.md:185 lists the hash fields; contracts.ts:95-118 ContentRevisionSchema also has schemaVersion, brand, title, caption, format, knowledgeIds, collaborators, timeZone, templateVersion, promptVersion, model, traceId, and AssetSchema carries mimeType, width, height, alt; hashes.ts:12-24 hashes all of them except assets[].url.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-13",
+   "title": "docs/marketing-launch.md still says the final URL is part of the revision hash",
+   "category": "doc-drift",
+   "claim": "The launch doc says 'Final URL is part of the revision hash; changes require new approval', while since #118 the hash drops assets[].url and URL renewal keeps the approval.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/marketing-launch.md",
+     "line": 93,
+     "excerpt": "Final URL is part of the revision hash; changes require new approval."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/hashes.ts",
+     "line": 9,
+     "excerpt": "The revision as the owner approves it: every field except the assets' delivery URLs."
+    }
+   ],
+   "impact": {
+    "statement": "Could lead the owner or an agent to think a URL renewal needs re-approval.",
+    "keep": true,
+    "reason": "The launch doc could make the owner think URL renewal needs a new approval; a one-line fix.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Replace the sentence with the #118 rule and link docs/marketing-revision-media.md.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "docs/marketing-launch.md:93 says the final URL is part of the revision hash; hashes.ts:9-14 drops assets[].url from the hash.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-14",
+   "title": "Variant model draft overstates render cost and storage per post",
+   "category": "doc-drift",
+   "claim": "The draft variant model estimates 7-15 s warm and about 9 MB for five 7-slide kits (brief: 8-15 s, 6-8 MB). The measured 7-slide deck is 820 KB and 0.50-0.52 s warm (0.72 s cold) on an M2, so five kits are about 4.1 MB and 2.6-3.6 s plus uploads. Vercel CPU is slower and storage uploads add round trips, but the job budget is not the binding constraint the draft assumes.",
+   "evidence": [
+    {
+     "file": "dneskai-audit-handoff/design-lab/variant-approval-model.md",
+     "line": 11,
+     "excerpt": "5 × deck (≈ 7–15 s warm for 7 slides, more when cold) ... ≈ 5 × 7 × 250 KB ≈ 9 MB"
+    },
+    {
+     "file": "dneskai-audit-handoff/measurements/bench-render-run1.json",
+     "line": 15,
+     "excerpt": "\"label\": \"cold (first pass in a fresh process)\", \"totalMs\": 720.5"
+    }
+   ],
+   "impact": {
+    "statement": "Changes the recommendation's justification: pre-rendering all kits fits the job, the open costs are uploads, storage and never-chosen kits.",
+    "keep": true,
+    "reason": "The measured numbers make pre-rendering five kits look cheap, which changes the task-G decision.",
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Measure one five-kit render with uploads on a Vercel preview (or the worker) before choosing between eager and lazy; until then use 4 MB and ~3 s CPU as the planning figure, labelled estimate.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "variant-approval-model.md:11 says 7-15 s and ~9 MB; measurements/bench-render-run1.json passes: cold 720.5 ms, warm 503.8-521.7 ms, 820,252 JPEG bytes for 7 slides on an Apple M2. Five kits x that = ~4.1 MB, ~2.5-3.6 s, an extrapolation since the other kits do not exist; uploads and Vercel CPU are excluded.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-15",
+   "title": "Approval and publish gates are strong and tested; keep them unchanged under the Design Lab",
+   "category": "quality",
+   "claim": "Exact-bytes approval is enforced three times: SQL approve compares content_hash, claim_due requires approved_hash = content_hash and ready, and the publisher recomputes the hash, re-downloads every asset and compares sha256, geometry and sRGB before any container, then revalidates the whole gate after the container is FINISHED and before media_publish. 87 tests cover identity, renewal, edits, media database and the publisher.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 61,
+     "excerpt": "if (!['approved', 'publishing'].includes(row.status) || !timestampValid(row.approved_at, now) || row.approved_hash !== hash || row.content_hash !== hash) return 'exact-approval-required';"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 186,
+     "excerpt": "if (hash.digest('hex') !== asset.sha256) throw new MetaFailure('asset-hash-mismatch');"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 436,
+     "excerpt": "if (refreshedGate || revisionContentHash(fresh.revisionRow.revision) !== revisionContentHash(revision) ...) return result('held', refreshedGate ?? 'approval-changed-before-publish', container);"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 237,
+     "excerpt": "and r.status='approved' and r.approved_hash=r.content_hash and r.ready"
+    }
+   ],
+   "impact": {
+    "statement": "Owner rule 8 holds today; the variant work must not add a second approval path.",
+    "keep": false,
+    "reason": "Nothing to act on; it belongs in the facts as the guarantee the Design Lab must keep.",
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Route every kit switch, regenerate and batch approval through marketing_save_revision + marketing_approve_revision; add no new approval function.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "publisher.ts:61 exact-approval gate, :186 sha256 compare, :435-436 regate after FINISHED, control_surface.sql:237 claim requires approved_hash=content_hash and ready. Test count recounted: 87 it/test calls across the 10 listed files (meta-publisher 21, publisher 13, asset-urls 11, meta-credentials 11, ...).",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "approval-16",
+   "title": "The publication window is 15 minutes and ticks run every 5 minutes, and a live publish needs 30 s of tick budget; a busy tick can lose the slot",
+   "category": "risk",
+   "claim": "A queued publication is claimable only between scheduledAt and +15 min; ticks every 5 min give three chances. A live publish starts only with 30 s of the soft budget left; the scheduler yields other categories when a publication is due within 5 min, which mitigates this. If all three ticks hold (credential, quota or a slow first category), the revision becomes failed with approval cleared (approval-01).",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 63,
+     "excerpt": "export const MARKETING_PUBLICATION_YIELD_MS = 5 * 60_000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 69,
+     "excerpt": "export const MARKETING_LIVE_PUBLISH_MINIMUM_START_MS = 30_000;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 236,
+     "excerpt": "p.status='queued' and p.scheduled_at<=now() and p.scheduled_at>=now()-interval '15 minutes'"
+    }
+   ],
+   "impact": {
+    "statement": "Unmeasured until live; with the yield rule the risk looks low, but a miss needs owner re-approval.",
+    "keep": false,
+    "reason": "The scheduler already yields to publishing and approval-01 covers missed slots; the residual risk is small.",
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Keep the window; record held codes per publication in the review UI and send a notification when a publication ends publish-window-expired. Revisit with production tick durations (production map).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "control_surface.sql:236 claim window scheduled_at..+15 min; scheduler.ts:63 yield 5 min used at :246; scheduler.ts:69 30 s minimum start used at :367.",
+    "correctedLocations": []
+   }
+  }
+ ],
+ "variantModel": {
+  "options": [
+   {
+    "option": "1 Pre-render all five kits in the generation job",
+    "fitToCode": "Possible: the job renders the deck already; adding 4 more decks costs ~2-3 s CPU locally and 28 more uploads; storage ~4 MB/post. Alternatives would sit only in the render cache (no table needed).",
+    "verdict": "viable but renders kits never chosen"
+   },
+   {
+    "option": "2 Lazy: covers for all kits first, full decks on demand, warmed by a tick unit",
+    "fitToCode": "Best fit: render cache by key means warming and on-demand renders never duplicate work; a switch is an edit that hits the cache.",
+    "verdict": "recommended"
+   },
+   {
+    "option": "3 Store alternatives outside revision.assets and write the chosen kit into the deck at approval",
+    "fitToCode": "Conflicts with marketing_attach_revision_render (only assets may change after save) and with approve comparing a stored content_hash; the hash would have to be computed at approval.",
+    "verdict": "rejected"
+   }
+  ],
+  "contractChanges": [
+   "dneskai-slides/2: deck.kit enum of five ids; v1 parses as the default kit (dneskai-slides.ts:9, :58).",
+   "Render key dneskai-render-key/3 adds kit; DNESKAI_RENDER_POLICY dneskai-render/3 (dneskai-render.ts:34, :200).",
+   "Per-kit DNESKAI_FIELD_FACES / DNESKAI_PLACED_FIELDS / DNESKAI_TEXT_LIMITS (dneskai-render.ts:104, :117; dneskai-generation.ts:39) derived from the vendored kit registry, with the vendor tests deriving them per kit.",
+   "DneskaiRevisionEditInput gains kit?; DneskaiSlideEditSchema optionally gains variant within the type's allowed set (dneskai-revision-edit.ts:17-25, :63). Type change and slide insertion are separate owner decisions.",
+   "dneskai-deck-editor.ts: setKit (and setSlideVariant if adopted); draftProblems uses the chosen kit's limits.",
+   "Tracer and owner feedback carry the kit code (tracing.ts:34; owner-feedback.ts:10).",
+   "Read model: per post, per kit: cover URL or null, rendered flag, fit flag computed by the text gate at $0."
+  ],
+  "retention": "Daily purge of marketing-assets slide objects older than 30 days whose render key or sha256 is not referenced by a revision in review, approved, publishing or reconciliation, or by one published in the last 90 days; receipts keep the sha256s. Requires renderKeys on every revision's report (approval-05).",
+  "publisherVerification": "Unchanged: the revision's assets are the chosen kit's JPEGs; publisher recomputes revisionContentHash, compares approved_hash and content_hash, downloads and re-hashes each asset, checks geometry and sRGB (publisher.ts:61, 167-200, 436).",
+  "dependencies": [
+   "approval-01 (schedule in hash) decides whether auto-move is possible",
+   "approval-02 (no-render path for unchanged decks)",
+   "approval-05 (purge needs key index)",
+   "approval-06 (contract fields)",
+   "rendering map: renderDneskaiSlide hard-codes the caught-up kit in the studio"
+  ]
+ },
+ "openQuestions": [
+  "Owner: may the schedule move without re-approval (content hash vs schedule), and under which rule?",
+  "Owner: 'regenerate with my note' with a cost per call, yes or no, and its reservation size?",
+  "Does the studio draw the slide position (n/N) on every template? If not, position can leave the render key (approval-08).",
+  "Does the job result's renderReport carry renderKeys for generated revisions in production? Needed for the purge index.",
+  "Child container creation latency on Meta for 7-10 images is unmeasured; a live pilot (#123) should record per-call timings before the 30 s minimum start is trusted.",
+  "Current marketing-assets object count and size in production (production map, storage.objects).",
+  "Should a grown event (new member) keep the approved revision valid (approval-03)? Owner may prefer a review advisory."
+ ],
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-approval.json",
+ "verification": {
+  "confirmed": 14,
+  "partly": 1,
+  "refuted": 1,
+  "notConfirmed": 0,
+  "kept": 12,
+  "dropped": 4,
+  "quickWins": 3,
+  "verifiedAt": "2026-10-22T00:07:54Z",
+  "method": "single verifier agent, truth + impact lenses per finding",
+  "notes": [
+   "All 57 cited file:line references resolve to the quoted excerpt within 5 lines (scripted check plus manual reading).",
+   "approval-03 refuted: marketing_dneskai_brief_source counts only the brief's own member_ids, and collection never rewrites a selected candidate, so a new report does not supersede an approved post. The map summary still repeats the refuted claim ('silently superseded when its event gains a member'); synthesis must not use it.",
+   "Fact 6 (newer source revision or ineligible source supersedes review/approved/returned/failed revisions) is correct as a mechanism; it is not reached by event growth.",
+   "approval-09 strengthened: returned and skipped revisions count as covering the event (dneskai-briefs.ts:50), so no fresh brief replaces them either.",
+   "The 87-test count was reproduced by grep; no tests were run (the worktree has no node_modules).",
+   "Summary corrected after verification: the refuted approval-03 sentence was replaced with approval-09."
+  ]
+ }
+}
