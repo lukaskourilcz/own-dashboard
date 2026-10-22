@@ -289,10 +289,15 @@ export function dneskaiTemplateId(slide: Pick<DneskaiCopySlide, "type" | "varian
 }
 
 const UNSAFE_TEXT = /https?:\/\/|www\.|<[^>]+>|[\u0000-\u0008\u000b-\u001f]|[\p{Extended_Pictographic}]/u;
-const NUMBER = /\b\d+(?:[.,]\d+)?%?/g;
+// Extract the same whole numeric tokens from output and evidence. Keep units and decimal precision:
+// 20 is not 2026, 2 is not 2.5, and a plain date component is not a percentage.
+const NUMBER = /(?<![\p{L}\p{N}])\d+(?:[ \u00a0\u202f]\d{3})*(?:[.,]\d+)?(?:[ \u00a0\u202f]?%)?(?!\p{N}|[.,]\d)/gu;
+const numericToken = (value: string) => value.replace(/[ \u00a0\u202f]/g, "").replace(",", ".");
 function supportedNumber(number: string, corpus: string) {
-  return corpus.includes(number) || corpus.includes(number.replace(",", ".")) || corpus.includes(number.replace(".", ","));
+  const wanted=numericToken(number);
+  return (corpus.match(NUMBER)??[]).some(token=>numericToken(token)===wanted);
 }
+
 const sameText = (left: string, right: string) => whitespace(left).toLocaleLowerCase("cs") === whitespace(right).toLocaleLowerCase("cs");
 
 /**

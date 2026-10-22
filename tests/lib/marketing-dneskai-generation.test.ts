@@ -498,3 +498,21 @@ describe("brief input planning without relaxing budget admission", () => {
     expect(blocked.invoke).not.toHaveBeenCalled();
   });
 });
+
+
+describe("whole numeric evidence tokens",()=>{
+  const unsupported=(body:string,corpus:string)=>{
+    const copy=validCopy(pictures);copy.caption=body;
+    const offer={...offerFor(),corpus};
+    return validateDneskaiCopy(copy,offer).filter(issue=>issue.field==="caption"&&issue.code==="unsupported-number");
+  };
+  it.each([["26","2026"],["2","12"],["2","2.5"],["20 %","20. 10. 2026"],["0","100"]])("refuses %s supported only by %s",(copy,evidence)=>{
+    expect(unsupported(copy,evidence)).toHaveLength(1);
+  });
+  it.each([["2,5","2.5"],["20 %","20%"],["1 234","1234"],["1\u202f234,5","1 234.5"]])("accepts equivalent decimal, percent and thousands notation %s / %s",(copy,evidence)=>{
+    expect(unsupported(copy,evidence)).toEqual([]);
+  });
+  it("preserves the current date policy for whole date components",()=>{
+    expect(unsupported("20","20. 10. 2026")).toEqual([]);
+  });
+});
