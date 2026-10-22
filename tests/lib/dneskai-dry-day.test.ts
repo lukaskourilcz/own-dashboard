@@ -68,6 +68,24 @@ const apify = new FakeApify(clock, ENV.MARKETING_DNESKAI_APIFY_ACTOR_ID!, ENV.MA
 const jev = new FakeJev();
 const anthropic = new FakeAnthropic(/shared memory/i);
 const graph = new FakeGraph(clock, internet, IG_TOKEN, IG_USER, '9900000000000001', 'dneskai');
+/**
+ * The world's answers were written for marketing-copy/5 and put a kicker on the cover. Under the owner's post rules
+ * (22 October 2026) the first slide carries its headline alone, so the model here answers without that kicker.
+ */
+function headlineOnlyCover(handler: typeof anthropic.handler): typeof anthropic.handler {
+  return async (request, url) => {
+    const response = await handler(request, url);
+    if (!response.ok) return response;
+    const message = await response.json() as { content: Array<{ type: string; text: string }> };
+    message.content = message.content.map((part) => {
+      if (part.type !== 'text') return part;
+      const copy = JSON.parse(part.text) as { slides: Array<{ type: string; kicker?: string }> };
+      copy.slides = copy.slides.map(({ kicker, ...slide }) => slide.type === 'cover-photo' ? slide : { ...slide, ...(kicker === undefined ? {} : { kicker }) });
+      return { ...part, text: JSON.stringify(copy) };
+    });
+    return Response.json(message, { status: response.status });
+  };
+}
 const ticks: Array<{ at: string; result: MarketingTickResult; ms: number }> = [];
 const at = (iso: string) => vi.setSystemTime(new Date(iso));
 const sql = <T = Record<string, unknown>>(text: string, params: unknown[] = []) => emulator.sql<T>(text, params);
@@ -116,7 +134,7 @@ beforeAll(async () => {
   db = await createMigratedDatabase({ owner: OWNER, instant: new Date() });
   emulator = new SupabaseEmulator(db, SUPABASE, { service: SERVICE_KEY, users: { [OWNER]: OWNER_SESSION } }, clock);
   internet.route(new URL(SUPABASE).hostname, (request) => emulator.fetch(request));
-  internet.route('api.apify.com', apify.handler).route('api.typesafe.ai', jev.handler).route('api.anthropic.com', anthropic.handler).route('graph.instagram.com', graph.handler);
+  internet.route('api.apify.com', apify.handler).route('api.typesafe.ai', jev.handler).route('api.anthropic.com', headlineOnlyCover(anthropic.handler)).route('graph.instagram.com', graph.handler);
   await routePublishers(internet);
   shared.fetch = internet.fetch;
   vi.stubGlobal('fetch', internet.fetch);
@@ -204,7 +222,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(anthropic.requests.every((request) => request.model === 'claude-sonnet-5-5' && JSON.stringify(request.outputConfig).includes('json_schema'))).toBe(true);
     const retry = anthropic.requests.find((request) => request.prompt.includes('Your previous answer could not be used'))!;
     expect(retry.prompt).toMatch(/- Slide 2 \(split with picture [a-f0-9]{12}…\), body \[unsupported-glyph\]: The body uses characters the typeface cannot draw; use plain Czech letters and punctuation \(U\+2022\)\./);
-    // No prompt carries a URL: code writes the source lines.
+    // No prompt carries a URL.
     expect(anthropic.requests.some((request) => /https?:\/\//.test(request.prompt))).toBe(false);
 
     // Two revisions marketing-content/2, ready, decks drawn only from their briefs' pools, real 1080x1350 JPEGs.
@@ -270,7 +288,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const before = await snapshot();
     const deck = noon.revision.deck!;
     const spare = (await briefRows())[1]!.brief.media.find((item) => !deck.slides.some((slide) => slide.images.some((image) => image.assetSha256 === item.assetSha256)))!;
-    expect(spare.credit).toBe(deck.slides[2]!.credit);
+    // No slide carries a picture credit (owner rule, 22 October 2026); the credit stays with the brief's media.
+    expect(spare.credit).toBe('Obrázek: TechCrunch');
+    expect(deck.slides.every((slide) => slide.credit === undefined)).toBe(true);
     // The pilot's owner edit (#123 step 4): one slide's text, one picture swapped, a focal point moved and a new time.
     const response = await ownerRequest({
       action: 'edit', id: noon.id, caption: noon.revision.caption, scheduledAt: '2026-10-27T11:40:00.000Z',
@@ -278,7 +298,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
         { from: 0, images: [{ slot: 'image-1', assetSha256: deck.slides[0]!.images[0]!.assetSha256, crop: { focal: { x: 0.3, y: 0.45 } } }] },
         { from: 1, headline: 'Paměť projektu teď vidí a upravuje celý tým' },
         { from: 2, images: [{ slot: 'image-1', assetSha256: spare.assetSha256 }] },
-        { from: 3 }, { from: 4 },
+        { from: 3 },
       ] },
     });
     const body = await response.json() as { id: string; ready: boolean; contentHash: string; render: { status: string; problems: unknown[] } };
@@ -292,10 +312,11 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(edited.revision.scheduledAt).toBe('2026-10-27T11:40:00.000Z');
     expect(rows.find((row) => row.id === noon.id)!.status).toBe('superseded');
     expect(body.contentHash).not.toBe(noon.content_hash);
-    // Only the three changed slides were rendered; the statement and the sources slide came from the render cache.
+    // Only the three changed slides were rendered; the statement came from the render cache.
     const after = await snapshot();
     expect(after.assetUploads - before.assetUploads).toBe(3);
-    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, false, true, true]);
+    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, false, true]);
+    expect(edited.revision.deck!.slides.every((slide) => slide.credit === undefined && slide.type !== 'sources')).toBe(true);
     expect(after.imageDownloads).toBe(before.imageDownloads);
     for (const [index, asset] of edited.revision.assets.entries()) {
       const bytes = await assetBytes(asset.url);
@@ -326,14 +347,14 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const [published] = await sql<{ status: string; remote_media_id: string; remote_url: string; error_code: string | null }>(
       "select p.status,p.remote_media_id,p.remote_url,p.error_code from public.marketing_publications p where p.revision_id=$1", [morning.id]);
     expect(published).toMatchObject({ status: 'published', error_code: null, remote_media_id: graph.media[0]!.id, remote_url: graph.media[0]!.permalink });
-    expect(graph.fetchedImages).toHaveLength(5);
+    expect(graph.fetchedImages).toHaveLength(4);
     expect(graph.fetchedImages.every((image) => image.format === 'jpeg' && image.width === 1080 && image.height === 1350)).toBe(true);
     // The bytes Meta fetched are the approved ones: the approval binds content_hash, which binds every asset sha256.
     const [approvedRow] = await sql<{ approved_hash: string; content_hash: string; status: string }>('select approved_hash,content_hash,status from public.marketing_revisions where id=$1', [morning.id]);
     expect(approvedRow).toEqual({ approved_hash: morning.content_hash, content_hash: morning.content_hash, status: 'published' });
     expect(graph.fetchedImages.map((image) => image.sha256)).toEqual(morning.revision.assets.map((asset) => asset.sha256));
     const carousel = [...graph.containers.values()].find((container) => container.children)!;
-    expect(carousel.children).toHaveLength(5);
+    expect(carousel.children).toHaveLength(4);
     expect(carousel.caption).toBe(morning.revision.caption);
     expect([...graph.containers.values()].filter((container) => container.alt).map((container) => container.alt)).toEqual(morning.revision.assets.map((asset) => asset.alt));
   }, 300_000);
@@ -399,13 +420,13 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const [textRow] = (await revisionRows()).filter((row) => parseContentRevision(row.revision).sources[0]?.sourceId === textOnly.eventId);
     const textRevision = parseContentRevision(textRow!.revision);
     expect(textRow).toMatchObject({ status: 'review', ready: true });
-    expect(textRevision.deck!.slides.map((slide) => slide.type)).toEqual(['statement', 'statement', 'statement', 'statement', 'sources']);
+    expect(textRevision.deck!.slides.map((slide) => slide.type)).toEqual(['statement', 'statement', 'statement', 'statement']);
     expect(textRevision.deck!.slides.every((slide) => slide.images.length === 0)).toBe(true);
-    expect(textRevision.assets).toHaveLength(5);
+    expect(textRevision.assets).toHaveLength(4);
     const after = await snapshot();
-    // One new job, one call and five rendered slides; no picture was downloaded for either report.
+    // One new job, one call and four rendered slides; no picture was downloaded for either report.
     expect({ jobs: after.jobs, revisions: after.revisions, anthropic: after.anthropic, assetUploads: after.assetUploads, mediaAssets: after.mediaAssets })
-      .toEqual({ jobs: before.jobs + 1, revisions: before.revisions + 1, anthropic: before.anthropic + 1, assetUploads: before.assetUploads + 5, mediaAssets: before.mediaAssets });
+      .toEqual({ jobs: before.jobs + 1, revisions: before.revisions + 1, anthropic: before.anthropic + 1, assetUploads: before.assetUploads + 4, mediaAssets: before.mediaAssets });
   }, 300_000);
 
   it('refreshes the stored Instagram token once fewer than ten days remain, and the next Graph call uses the new token (#121)', async () => {
@@ -430,10 +451,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const rows = [saved.filter((file) => file.name.startsWith('morning-')), saved.filter((file) => file.name.startsWith('noon-') && !file.name.startsWith('noon-edited')), saved.filter((file) => file.name.startsWith('noon-edited'))];
     const width = 324, height = 405, gap = 12;
     const tiles = await Promise.all(rows.flatMap((row, y) => row.map(async (file, x) => ({ input: await sharp(file.bytes).resize(width, height).toBuffer(), left: gap + x * (width + gap), top: gap + y * (height + gap) }))));
-    const sheet = await sharp({ create: { width: gap + 5 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
+    const sheet = await sharp({ create: { width: gap + 4 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
     writeFileSync(`${OUT}/contact-sheet.jpg`, sheet);
     writeFileSync(`${OUT}/ticks.json`, JSON.stringify(ticks.map((entry) => ({ at: entry.at, ms: entry.ms, did: entry.result.did.map((item) => ({ category: item.category, status: item.status, code: item.code, detail: item.detail })) })), null, 1));
-    expect(saved).toHaveLength(15);
+    expect(saved).toHaveLength(12);
     console.info(`DNESKAi dry-day slides and contact sheet: ${OUT}`);
   });
 });
