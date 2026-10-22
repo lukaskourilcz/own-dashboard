@@ -109,6 +109,18 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(read.posts[0]!.id).toBe(revisionId);
     expect(read.posts.filter((post) => post.status === 'published')).toHaveLength(59);
   });
+  it('lists the briefs waiting for the scheduler and the paid actions the server offers (owner decisions 8, 9)', async () => {
+    const waitingAt = pragueScheduledAt(tomorrow, '20:00');
+    mocks.tables.marketing_dneskai_briefs!.push(
+      { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', user_id: owner, status: 'ready', code: null, job_id: null, scheduled_at: waitingAt, title: 'Čekající téma' },
+      { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', user_id: owner, status: 'pending', code: 'owner-retry', job_id: '66666666-6666-4666-8666-666666666666', scheduled_at: waitingAt, title: 'Téma s úlohou' },
+      { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', user_id: owner, status: 'ready', code: null, job_id: null, scheduled_at: '2020-01-01T08:00:00Z', title: 'Prošlé téma' });
+    vi.stubEnv('MARKETING_AI_CONSENT', 'true');
+    const body = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
+    vi.unstubAllEnvs();
+    expect(body.waiting).toEqual([{ briefId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', title: 'Čekající téma', scheduledAt: new Date(waitingAt).toISOString(), status: 'ready', code: null }]);
+    expect(body.capabilities).toEqual({ regenerate: false, generateNow: true });
+  });
   it('refuses a signed-out read, a bad project or date, a foreign project and hides database errors', async () => {
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
     expect((await get(review, `projectId=${project}`)).status).toBe(401);
