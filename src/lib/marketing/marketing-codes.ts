@@ -530,6 +530,12 @@ const CODES = {
   'reminder-state-unavailable': ['auto', 'The posts waiting for review could not be read for the reminder.', 'Příspěvky čekající na kontrolu nešlo pro připomínku načíst.'],
   'reminder-write-failed': ['auto', 'The review reminder could not be written.', 'Připomínku kontroly nešlo zapsat.'],
   'reminders-disabled': ['none', 'Review reminders are switched off.', 'Připomínky kontroly jsou vypnuté.'],
+  'scouting-not-due': ['none', 'Scouting runs between 22:00 and 08:00 Prague time.', 'Hledání námětů běží mezi 22:00 a 8:00 pražského času.'],
+  'scouting-not-this-slot': ['none', 'Scouting runs once an hour; this tick was not its turn.', 'Hledání námětů běží jednou za hodinu; tento běh na řadě nebyl.'],
+  'scouting-reports-unavailable': ['retry', 'The night\'s reports could not be read for scouting.', 'Noční zprávy se pro hledání námětů nepodařilo načíst.'],
+  'scouting-library-unavailable': ['retry', 'The link library could not be read for scouting.', 'Knihovnu odkazů se pro hledání námětů nepodařilo načíst.'],
+  'scouting-topics-unavailable': ['retry', 'The existing topics could not be read, so no topic was added.', 'Stávající náměty se nepodařilo načíst, žádný námět nepřibyl.'],
+  'scouting-write-failed': ['retry', 'The new topics could not be saved. The next hour tries again.', 'Nové náměty se nepodařilo uložit. Další hodina to zkusí znovu.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;

@@ -180,6 +180,7 @@ The code connects one Instagram professional account through the Instagram API w
 - **Generate now** needs only `MARKETING_AI_CONSENT=true`, which generation already requires. It uses existing functions and the existing $1 daily ceiling.
 - **Regenerate with a note** needs `supabase/migrations/20261022190000_dneskai_regenerate_with_note.sql` and the server-only `DNESKAI_REGENERATE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-regenerate-with-a-note-owner-decision-8)), then set the variable and redeploy. Until then the Lab shows the button disabled with its reason and the route answers `regenerate-unavailable`.
 - **Topics (náměty)** need `supabase/migrations/20261023100000_dneskai_topics.sql` and the server-only `DNESKAI_TOPICS_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-dneskai-topics-150-plan-a1)), then set the variable and redeploy. Until then `/api/marketing/dneskai/topics` answers 404.
+- **Scouting** needs the topics switch above and the server-only `DNESKAI_SCOUTING_ENABLED=true`; no migration of its own. The education feeds are free; the education Instagram profiles also need `MARKETING_DNESKAI_APIFY_ENABLED=true` and stay inside the existing Apify reservations ([education sources](dneskai-native-feeds.md#education-sources-for-scouting-151)).
 
 ### DNESKAi Reels (#163)
 

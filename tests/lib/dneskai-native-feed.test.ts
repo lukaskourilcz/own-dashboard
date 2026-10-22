@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { collectNativeDneskaiFeed, DNESKAI_NATIVE_FEED_IDS } from '@/lib/marketing/dneskai-native-feed';
-import { DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
+import { DNESKAI_EDUCATION_SOURCES, DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
 import { collectDneskaiFeed } from '@/lib/marketing/dneskai-providers';
 import { dneskaiCollectionBlockers } from '@/lib/marketing/dneskai-store';
 vi.mock('server-only', () => ({}));
@@ -15,7 +15,7 @@ const feed = (body: string) => vi.fn<typeof fetch>(async () => new Response(body
 describe('native DNESKAi free-feed collection', () => {
  it('covers every registered free feed identity', () => {
   expect(DNESKAI_NATIVE_FEED_IDS.length).toBeGreaterThan(0);
-  expect([...DNESKAI_NATIVE_FEED_IDS].sort()).toEqual(DNESKAI_SOURCES.filter(row => row.kind !== 'instagram').map(row => row.id).sort());
+  expect([...DNESKAI_NATIVE_FEED_IDS].sort()).toEqual([...DNESKAI_SOURCES, ...DNESKAI_EDUCATION_SOURCES].filter(row => row.kind !== 'instagram').map(row => row.id).sort());
  });
  it('collects RSS without bridge configuration, filters old items and records source provenance', async () => {
   const fetcher = feed(xml(item('fresh') + item('old', '2026-10-12T08:00:00Z')));

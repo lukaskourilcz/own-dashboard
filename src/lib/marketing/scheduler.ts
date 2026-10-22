@@ -6,6 +6,8 @@ import type { DneskaiMediaOutcome } from "./dneskai-media";
 import type { CreateDneskaiBriefs } from "./dneskai-ports";
 import { instagramTokenRefreshDue, type InstagramTokenRefreshOutcome, type MetaTokenMetadata } from "./meta-credentials";
 import { pragueMarketingDate } from "./weekly-planning";
+import type { DneskaiScoutingResult } from "./dneskai-scouting";
+import { dneskaiScoutingEnabled } from "./dneskai-evidence-rollout";
 
 /**
  * The marketing scheduler (#120). pg_cron calls POST /api/marketing/tick every five minutes and once a day
@@ -41,7 +43,13 @@ export const MARKETING_DAILY_DUTIES = ["renewal", "purge", "retention"] as const
  * ports wire it. It holds no lease; its notifications are keyed per day and per slot.
  */
 export const MARKETING_TICK_REMINDER = "reminder" as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER;
+/**
+ * Scouting (#151) runs right after collection, only while DNESKAI_SCOUTING_ENABLED is on and the ports wire it. It
+ * holds no lease: it reads stored reports and library links and inserts topics idempotently, so two ticks at once
+ * insert each topic once. It runs in the first five-minute slot of each hour between 22:00 and 08:00 Prague.
+ */
+export const MARKETING_TICK_SCOUTING = "scouting" as const;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -92,7 +100,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -173,6 +181,8 @@ export interface MarketingSchedulerPorts {
    * (`sendDneskaiReviewReminders`). Optional: without it the minute tick has no reminder step.
    */
   reviewReminders?(project: string, now: Date): Promise<{ due: number; sent: number }>;
+  /** #151: turns the night's education reports and highly rated library links into proposed topics (`scoutDneskaiTopics`). */
+  scoutTopics?(project: string, now: Date): Promise<DneskaiScoutingResult>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -469,6 +479,22 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       },
     },
   ];
+
+  const scoutTopics = ports.scoutTopics;
+  if (scoutTopics && dneskaiScoutingEnabled(env)) minuteSteps.splice(1, 0, {
+    category: MARKETING_TICK_SCOUTING, lease: null,
+    async precheck(): Promise<StepOutcome | null> {
+      const hour = pragueHour(clock());
+      if (hour >= 8 && hour < 22) return { status: "noop", code: "scouting-not-due" };
+      if (Math.floor(clock().getTime() / MARKETING_TICK_INTERVAL_MS) % 12 !== 0) return { status: "noop", code: "scouting-not-this-slot" };
+      if (await yieldToPublication()) return yielded;
+      return null;
+    },
+    async run({ now }): Promise<StepOutcome> {
+      const result = await scoutTopics(await project(), now());
+      return { status: result.inserted ? "done" : "noop", detail: { reports: result.reports, library: result.library, inserted: result.inserted, skipped: result.skipped } };
+    },
+  });
 
   // Off only when the owner sets DNESKAI_REVIEW_REMINDERS_ENABLED=false; nothing but in-app notifications is written.
   const reviewReminders = ports.reviewReminders;

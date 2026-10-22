@@ -1,4 +1,4 @@
-import { DNESKAI_SOURCES } from "./dneskai-registry";
+import { dneskaiSourceById } from "./dneskai-registry";
 import { dneskaiPublisherName } from "./dneskai-media-plan";
 import { dneskaiFallbackPublisher, type DneskaiEvidencePublishers } from "./dneskai-generation";
 
@@ -8,7 +8,7 @@ import { dneskaiFallbackPublisher, type DneskaiEvidencePublishers } from "./dnes
  * bundle the generation module do not pull in the registry and its path aliases.
  */
 export const dneskaiEvidencePublishers: DneskaiEvidencePublishers = async (evidence) => evidence.map((item) => {
-  const source = DNESKAI_SOURCES.find((entry) => entry.id === item.sourceId);
+  const source = dneskaiSourceById(item.sourceId);
   if (!source) return dneskaiFallbackPublisher(item);
   if (source.kind === "instagram") {
     const profile = new URL(source.url).pathname.split("/").filter(Boolean)[0];
