@@ -167,9 +167,10 @@ export function dneskaiInsertablePictures<T extends DneskaiPoolPicture>(pool: re
 }
 
 /**
- * The credit line code sets for a slide's pictures, the same three forms as generation (`fitDneskaiCredit` in
+ * The credit line code sets for a slide's pictures, the same four forms as generation (`fitDneskaiCredit` in
  * dneskai-generation.ts): full credits, then without the „Foto:“/„Obrázek:“ label, then also without the platform in
- * brackets. Null when even the shortest form does not fit.
+ * brackets, then an agency credit without the publisher („Getty Images přes TechCrunch“ → „Getty Images“). Null when
+ * even the shortest form does not fit.
  */
 export function dneskaiCreditLine(credits: readonly string[], limit: number): string | null {
   const whitespace = (value: string) => value.replace(/\s+/gu, " ").trim();
@@ -179,7 +180,8 @@ export function dneskaiCreditLine(credits: readonly string[], limit: number): st
   if (!full.length) return "";
   const unlabelled = full.map((credit) => credit.replace(/^(?:Foto|Obrázek):\s+/u, ""));
   const bare = unlabelled.map((credit) => credit.replace(/\s+\((?:Bluesky|GitHub|Instagram)\)$/u, ""));
-  for (const form of [full, unlabelled, bare]) {
+  const agency = bare.map((credit) => credit.replace(/\s+přes\s+.+$/u, ""));
+  for (const form of [full, unlabelled, bare, agency]) {
     const line = distinct(form).join(" · ");
     if (characters(line) <= limit) return line;
   }

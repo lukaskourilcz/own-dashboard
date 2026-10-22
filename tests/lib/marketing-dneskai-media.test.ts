@@ -145,6 +145,32 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
     expect(web.requests.length).toBe(requests);
   });
 
+  it('credits a photo agency the picture itself names, beside the publisher, and only then (owner decision 21)', async () => {
+    const page = 'https://techcrunch.com/2026/10/20/offline-agency-credit/';
+    const uploads = 'https://techcrunch.com/wp-content/uploads/2026/10/';
+    // Shapes as publishers ship them: a Getty file name on the social card, a figure caption naming a Getty partner,
+    // an embedded XMP credit from Reuters, a caption that only mentions Reuters, and a plain screenshot.
+    const reutersXmp = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" photoshop:Credit="REUTERS"/></rdf:RDF></x:xmpmeta>`;
+    const [getty, partner, reuters, mention, plain] = await Promise.all([
+      scene(0, 1600, 1000).jpeg({ quality: 81 }).toBuffer(), scene(1, 1600, 1000).jpeg({ quality: 81 }).toBuffer(), scene(2, 1600, 1000).jpeg({ quality: 81 }).withXmp(reutersXmp).toBuffer(),
+      scene(3, 1600, 1000).jpeg({ quality: 81 }).toBuffer(), scene(4, 1600, 1000).jpeg({ quality: 81 }).toBuffer(),
+    ]);
+    const html = `<html><head><meta property="og:image" content="${uploads}GettyImages-2171234567.jpg?w=1200"></head><body><article><p>OFFLINE TEST body.</p>
+      <figure><img src="${uploads}nvidia-chip.jpg" alt="OFFLINE chip"><figcaption>OFFLINE chip on a table. Image Credits:Bloomberg via Getty Images</figcaption></figure>
+      <figure><img src="${uploads}trading-floor.jpg" alt="OFFLINE floor"></figure>
+      <figure><img src="${uploads}newsroom.jpg" alt="OFFLINE newsroom"><figcaption>OFFLINE: the Reuters newsroom in London.</figcaption></figure>
+      <figure><img src="${uploads}screenshot.jpg" alt="OFFLINE screenshot"></figure></article></body></html>`;
+    const web = new FixtureWeb().serve(page, { body: html, type: 'text/html; charset=utf-8' })
+      .serve(`${uploads}GettyImages-2171234567.jpg`, { body: getty }).serve(`${uploads}nvidia-chip.jpg`, { body: partner })
+      .serve(`${uploads}trading-floor.jpg`, { body: reuters }).serve(`${uploads}newsroom.jpg`, { body: mention }).serve(`${uploads}screenshot.jpg`, { body: plain });
+    const id = await insertCandidate('techcrunch-ai', 'OFFLINE-agency', page, []);
+    const result = await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() });
+    expect(result.candidates[0]).toMatchObject({ status: 'complete', assets: 5 });
+    expect((await assetsOf(id)).map((row) => [row.position, row.credit])).toEqual([
+      [0, 'Foto: Getty Images přes TechCrunch'], [1, 'Foto: Bloomberg / Getty Images přes TechCrunch'], [2, 'Foto: Reuters přes TechCrunch'],
+      [3, 'Obrázek: TechCrunch'], [4, 'Obrázek: TechCrunch']]);
+  });
+
   it('records pictures the publisher policy refused at plan time as one counted media-host-not-publisher entry', async () => {
     const page = 'https://www.theverge.com/2026/10/20/offline-refused-hosts';
     const html = `<html><head><meta property="og:image" content="https://images.wirephoto.example/offline/a.jpg"><meta name="twitter:image" content="https://images.wirephoto.example/offline/a.jpg"></head><body><article>

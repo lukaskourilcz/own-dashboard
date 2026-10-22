@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
-  dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, dneskaiPublisherName, extractArticleMedia, extractArticleText, fullSizeImageUrl,
+  dneskaiCaptionOnly, dneskaiMediaCapabilities, dneskaiMediaCredit, dneskaiPictureAgency, dneskaiPublisherName, extractArticleMedia, extractArticleText, fullSizeImageUrl,
   instagramMediaPlan, isInstagramMediaHost, largestSrcsetCandidate, publisherImageUrlPolicy, registrableDomain,
 } from '@/lib/marketing/dneskai-media-plan';
 import { DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
@@ -128,6 +128,46 @@ describe('DNESKAi media credit, caption-only and resolution flags', () => {
     for (const row of DNESKAI_SOURCES) {
       const credit = dneskaiMediaCredit(row, { url: row.kind === 'instagram' ? 'https://www.instagram.com/p/x/' : row.url });
       expect(credit.length, row.id).toBeGreaterThan(8);
+      expect(credit.length, row.id).toBeLessThanOrEqual(120);
+    }
+  });
+
+  it('names a photo agency only from an explicit signal of the picture itself (owner decision 21)', () => {
+    const agency = (sourceAltText?: string, url?: string, embeddedCredits?: string[]) => dneskaiPictureAgency({ sourceAltText, url, embeddedCredits });
+    // Credit parts of real caption shapes: TechCrunch, The Verge, Ars Technica, AP, Reuters, EPA, ČTK.
+    expect(agency('Sam Altman · Image Credits:Justin Sullivan / Getty Images')).toBe('Getty Images');
+    expect(agency('Photo by Jakub Porzycki/NurPhoto via Getty Images')).toBe('NurPhoto / Getty Images');
+    expect(agency('OFFLINE · Image Credits: Bloomberg / Getty Images')).toBe('Bloomberg / Getty Images');
+    expect(agency('A data center. Credit: Getty Images')).toBe('Getty Images');
+    expect(agency('Jensen Huang on stage. (AP Photo/Jae C. Hong)')).toBe('AP');
+    expect(agency('A logo is seen in this illustration. REUTERS/Dado Ruvic/Illustration')).toBe('Reuters');
+    expect(agency('Ursula von der Leyen. Foto: EPA-EFE/Olivier Hoslet')).toBe('EPA');
+    expect(agency('Premiér na tiskové konferenci. Foto: ČTK/Michaela Říhová')).toBe('ČTK');
+    expect(agency('© Shutterstock')).toBe('Shutterstock');
+    expect(agency(undefined, 'https://techcrunch.com/wp-content/uploads/2026/10/openai-logo-GettyImages-1234.jpg?w=1200')).toBe('Getty Images');
+    expect(agency(undefined, 'https://i0.wp.com/example.org/uploads/shutterstock_2245.jpg')).toBe('Shutterstock');
+    expect(agency(undefined, undefined, ['Getty Images', '© 2026 Getty Images'])).toBe('Getty Images');
+    expect(agency('Image Credits: Getty Images', 'https://techcrunch.com/wp-content/uploads/GettyImages-1.jpg', ['Getty Images North America'])).toBe('Getty Images');
+    // Mentions are not credits, short names match only as written, and two agencies are not guessed between.
+    for (const [alt, url, embedded] of [
+      ['The Reuters building in London', undefined, undefined], ['Getty Images headquarters at night', undefined, undefined], ['Image Credits: TechCrunch', undefined, undefined],
+      ['ML/AI chart from Reuters data', undefined, undefined], ['Photo: OpenAI API dashboard', undefined, undefined], ['Image: map of epa regions', undefined, undefined],
+      [undefined, 'https://example.org/uploads/apple-ap-chip.jpg', undefined], [undefined, 'https://example.org/uploads/epa-report.jpg', undefined],
+      ['Image Credits: Reuters', 'https://example.org/GettyImages-1.jpg', undefined], [undefined, undefined, ['Jane Doe']], [undefined, undefined, undefined],
+    ] as const) expect(agency(alt, url, embedded ? [...embedded] : undefined), `${alt} ${url} ${embedded}`).toBeNull();
+  });
+
+  it('credits the agency through the publisher that ran the picture, within the credit bounds', () => {
+    const tc = source('techcrunch-ai');
+    const getty = { url: 'https://techcrunch.com/wp-content/uploads/2026/10/GettyImages-2171234567.jpg' };
+    expect(dneskaiMediaCredit(tc, { url: 'https://techcrunch.com/2026/10/20/x/' }, undefined, getty)).toBe('Foto: Getty Images přes TechCrunch');
+    expect(dneskaiMediaCredit(tc, { url: 'https://techcrunch.com/2026/10/20/x/' }, undefined, { url: 'https://techcrunch.com/wp-content/uploads/2026/10/chip.jpg' })).toBe('Obrázek: TechCrunch');
+    expect(dneskaiMediaCredit(source('hn-frontpage'), { url: 'https://www.example.org/post' }, undefined, { sourceAltText: 'Credit: Reuters' })).toBe('Foto: Reuters přes example.org');
+    // Instagram and platform posts keep crediting their author.
+    expect(dneskaiMediaCredit(source('instagram:mosseri'), { url: 'https://www.instagram.com/p/x/' }, undefined, { embeddedCredits: ['Getty Images'] })).toBe('Foto: @mosseri');
+    expect(dneskaiMediaCredit(source('bluesky-language-models'), { url: 'https://bsky.app/profile/offline.test.bsky.social/post/3k' }, undefined, getty)).toBe('Obrázek: @offline.test.bsky.social (Bluesky)');
+    for (const row of DNESKAI_SOURCES.filter((entry) => entry.kind !== 'instagram')) {
+      const credit = dneskaiMediaCredit(row, { url: row.url }, undefined, { sourceAltText: 'Photo by Jakub Porzycki/NurPhoto via Getty Images' });
       expect(credit.length, row.id).toBeLessThanOrEqual(120);
     }
   });

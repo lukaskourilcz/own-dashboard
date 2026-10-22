@@ -333,7 +333,9 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
     }
   }
 
-  const credit = dneskaiMediaCredit(source, candidate);
+  // Each picture is credited from its own signals: the plan's URL and caption, and the credit fields of its file.
+  const creditFor = (entry: DneskaiMediaPlanEntry, prepared: PreparedEntry) => dneskaiMediaCredit(source, candidate, undefined,
+    { url: prepared.originUrl, sourceAltText: entry.sourceAltText, embeddedCredits: prepared.image.embeddedCredits });
   const linked = new Set((begun.links ?? []).map((link) => link.position));
   const skips = new Map<number, Skip>(state.skipped.map((skip) => [skip.position, skip]));
   const refusedSkip = dneskaiRefusedHostsSkip(refusedHosts);
@@ -361,7 +363,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
     counters.downloaded += 1;
     if (result.reused) counters.reused += 1;
     try {
-      const linkedPosition = await recordEntry(db, owner, project, candidateId, fence, entry, credit, result);
+      const linkedPosition = await recordEntry(db, owner, project, candidateId, fence, entry, creditFor(entry, result), result);
       if (linkedPosition === entry.position) { linked.add(entry.position); skips.delete(entry.position); }
       else skips.set(entry.position, { position: entry.position, code: 'media-duplicate-bytes', retryable: false, attempts });
     } catch (error) {
