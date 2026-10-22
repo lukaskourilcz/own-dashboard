@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Copy, Music } from 'lucide-react';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
-import { loadDneskaiAudioLibrary } from '@/lib/marketing/dneskai-audio-client';
+import { loadDneskaiAudioOptions } from '@/lib/marketing/dneskai-audio-client';
 import type { DneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-contracts';
 import type { DneskaiWorkspacePost } from '@/lib/marketing/dneskai-workspace';
 
@@ -30,10 +30,10 @@ export function dneskaiMusicHintTrack(tracks: readonly DneskaiAudioTrack[], posi
  */
 export function DneskaiMusicHint({ post, position, preview, lang, now = new Date() }: { post: DneskaiWorkspacePost; position: number; preview: boolean; lang: 'en' | 'cs'; now?: Date }) {
   const t = dneskaiAudio[lang].hint;
-  const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioLibrary(preview, signal) });
+  const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal) });
   const [copied, setCopied] = useState<'done' | 'failed' | null>(null);
   if (!query.data || !dneskaiMusicHintDue(post, now)) return null;
-  const track = dneskaiMusicHintTrack(query.data, position);
+  const track = dneskaiMusicHintTrack(query.data.tracks, position);
   const name = track ? `${track.title} – ${track.artist}` : null;
   const copy = async () => {
     try { await navigator.clipboard.writeText(name!); setCopied('done'); } catch { setCopied('failed'); }

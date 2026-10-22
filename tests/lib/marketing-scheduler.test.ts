@@ -662,3 +662,22 @@ describe('scouting step (#151)', () => {
     expect(failed.recorded).toBe(true);
   });
 });
+
+describe('daily trending audio (#167)', () => {
+  it('runs after the daily duties only with its switch on and the port wired', async () => {
+    const audioTrends = vi.fn(async () => ({ status: 'done' as const, stored: 7 }));
+    const off = harness({ audioTrends }, new Clock(evening));
+    expect((await off.tick(on, 'daily')).did.map((entry) => entry.category)).toEqual([...MARKETING_DAILY_DUTIES]);
+    expect(audioTrends).not.toHaveBeenCalled();
+    const h = harness({ audioTrends }, new Clock(evening));
+    const result = await h.tick({ ...on, DNESKAI_AUDIO_TRENDS_ENABLED: 'true' }, 'daily');
+    expect(result.did.map((entry) => entry.category)).toEqual([...MARKETING_DAILY_DUTIES, 'audio-trends']);
+    expect(step(result, 'audio-trends')).toMatchObject({ status: 'done', detail: { stored: 7 } });
+  });
+  it('records Instagram Login as a skip with its code, not an error', async () => {
+    const h = harness({ audioTrends: async () => ({ status: 'skipped', code: 'audio-trends-facebook-login-required', stored: 0 }) }, new Clock(evening));
+    const result = await h.tick({ ...on, DNESKAI_AUDIO_TRENDS_ENABLED: 'true' }, 'daily');
+    expect(statuses(result)['audio-trends']).toBe('skipped:audio-trends-facebook-login-required');
+    expect(result.errors).toEqual([]);
+  });
+});

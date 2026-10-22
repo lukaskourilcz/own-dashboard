@@ -49,7 +49,12 @@ export const MARKETING_TICK_REMINDER = "reminder" as const;
  * insert each topic once. It runs in the first five-minute slot of each hour between 22:00 and 08:00 Prague.
  */
 export const MARKETING_TICK_SCOUTING = "scouting" as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING;
+/**
+ * Trending audio (#167) runs last in the daily tick, only while DNESKAI_AUDIO_TRENDS_ENABLED is on and the ports wire
+ * it. Two Graph GETs under Facebook Login; it holds no lease, its upsert is idempotent.
+ */
+export const MARKETING_TICK_AUDIO_TRENDS = "audio-trends" as const;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_AUDIO_TRENDS;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -100,7 +105,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, "audio-trends": 12_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -183,6 +188,8 @@ export interface MarketingSchedulerPorts {
   reviewReminders?(project: string, now: Date): Promise<{ due: number; sent: number }>;
   /** #151: turns the night's education reports and highly rated library links into proposed topics (`scoutDneskaiTopics`). */
   scoutTopics?(project: string, now: Date): Promise<DneskaiScoutingResult>;
+  /** #167: the day's trending sounds under Facebook Login; skipped (with its code) on Instagram Login. */
+  audioTrends?(now: Date, signal: AbortSignal): Promise<{ status: "done" | "skipped"; code?: string; stored: number }>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -563,6 +570,15 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       },
     },
   ];
+
+  const audioTrends = ports.audioTrends;
+  if (audioTrends && env.DNESKAI_AUDIO_TRENDS_ENABLED === "true") dailySteps.push({
+    category: MARKETING_TICK_AUDIO_TRENDS, lease: null,
+    async run({ signal: abort, now }): Promise<StepOutcome> {
+      const result = await audioTrends(now(), abort);
+      return { status: result.status === "done" ? (result.stored ? "done" : "noop") : "skipped", ...(result.code ? { code: result.code } : {}), detail: { stored: result.stored } };
+    },
+  });
 
   const did: MarketingTickStep[] = [];
   for (const step of input.kind === "minute" ? await minuteOrder(minuteSteps.map(memoizedPrecheck), started) : dailySteps) {

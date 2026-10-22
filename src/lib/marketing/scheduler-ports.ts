@@ -11,11 +11,13 @@ import { refreshSource } from "./source-refresh";
 import { dneskaiReelsEnabled } from "./dneskai-reel";
 import { prepareUpcomingDneskaiReels, publishDueMarketing, reconcileStoredMarketingPublication } from "./orchestrator";
 import { CONTAINER_RETRY_CODE } from "./publisher";
-import { listMetaTokenMetadata, refreshInstagramToken } from "./meta-credentials";
+import { listMetaTokenMetadata, refreshInstagramToken, resolveMetaPublisherConfig, type MetaCredentialAccount } from "./meta-credentials";
+import { pragueMarketingDate } from "./weekly-planning";
 import { renewStoredRevisionAssetUrls } from "./asset-urls";
 import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type SchedulerCollectionRun } from "./scheduler";
 import { sendDneskaiReviewReminders } from "./dneskai-reminders";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
+import { ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
 
 /**
  * The real modules behind the scheduler's ports (#120). Each port calls one existing exported function or
@@ -95,6 +97,13 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     reviewReminders: (project, now) => sendDneskaiReviewReminders(db, owner, project, now),
     scoutTopics: (project, now) => scoutDneskaiTopics(db, owner, project, now),
+    async audioTrends(now, signal) {
+      const { data: account, error } = await db.from("marketing_accounts").select("*").eq("user_id", owner).eq("brand", "dneskai").eq("platform", "instagram").not("verified_at", "is", null).maybeSingle();
+      if (error) throw new Error("account-unavailable");
+      if (!account) return { status: "skipped", code: "account-unverified", stored: 0 };
+      const config = await resolveMetaPublisherConfig(db, owner, account as MetaCredentialAccount, env);
+      return ingestDneskaiAudioTrends(db, owner, { config, remoteAccountId: String((account as { remote_account_id: string }).remote_account_id), today: pragueMarketingDate(now), signal });
+    },
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

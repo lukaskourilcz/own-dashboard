@@ -38,7 +38,21 @@ export const DneskaiAudioTrackSchema = z.strictObject({
   previewUrl: httpsUrl.nullable(),
 });
 export type DneskaiAudioTrack = z.infer<typeof DneskaiAudioTrackSchema>;
-export const DneskaiAudioLibrarySchema = z.strictObject({ tracks: z.array(DneskaiAudioTrackSchema).max(200) });
+/** A trending sound from Meta's Audio API (#167): usable only on a Reel under Facebook Login, attached by Instagram. */
+export const DneskaiAudioTrendSchema = z.strictObject({
+  audioId: z.string().regex(/^\d{1,40}$/),
+  title: z.string().min(1).max(300),
+  artist: z.string().max(300).nullable(),
+  type: z.enum(['music', 'original_sound']),
+  durationMs: z.number().int().min(0).max(3_600_000).nullable(),
+  coverUrl: z.url({ protocol: /^https$/ }).max(2048).nullable(),
+  daysSeen: z.number().int().min(1),
+  nicheCount: z.number().int().min(0),
+  tiktok: z.boolean(),
+});
+export type DneskaiAudioTrend = z.infer<typeof DneskaiAudioTrendSchema>;
+/** `trends` only while `DNESKAI_AUDIO_TRENDS_ENABLED` is on. */
+export const DneskaiAudioLibrarySchema = z.strictObject({ tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(50).optional() });
 export type DneskaiAudioLibrary = z.infer<typeof DneskaiAudioLibrarySchema>;
 
 export const DneskaiAudioPrepareSchema = z.strictObject({
@@ -80,4 +94,17 @@ export function nextDneskaiAudioTrack<T extends { id: string; enabled: boolean }
 export function dneskaiAudioClock(durationMs: number): string {
   const seconds = Math.round(durationMs / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+/** A post's Reel audio as the revision stores it: a library track or a trending Instagram sound (#167). */
+export type DneskaiAudioChoice = { trackId: string } | { instagramAudioId: string };
+/** One string per choice for selects and edit requests: the track's uuid, or `ig:<audio id>` for a trending sound. */
+export const DneskaiAudioChoiceKeySchema = z.union([z.uuid(), z.string().regex(/^ig:\d{1,40}$/)]);
+export function dneskaiAudioChoiceKey(audio: DneskaiAudioChoice | null | undefined): string | null {
+  if (!audio) return null;
+  return 'trackId' in audio ? audio.trackId : `ig:${audio.instagramAudioId}`;
+}
+export function dneskaiAudioFromKey(key: string | null): DneskaiAudioChoice | null {
+  if (!key) return null;
+  return key.startsWith('ig:') ? { instagramAudioId: key.slice(3) } : { trackId: key };
 }

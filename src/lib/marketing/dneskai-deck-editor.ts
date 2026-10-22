@@ -1,3 +1,4 @@
+import { dneskaiAudioChoiceKey } from './dneskai-audio-contracts';
 import { ENGAGEMENT_KEYWORD_PATTERN, ENGAGEMENT_PUBLIC_REPLY_MAX, ENGAGEMENT_REPLY_MESSAGE_MAX, type ContentEngagement } from './contracts';
 import type { DneskaiBriefMedia } from './dneskai-brief';
 import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSlide, type DneskaiSlideImage } from './dneskai-slides';
@@ -79,7 +80,7 @@ export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | 
     scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
     kit: dneskaiKitOf(post.deck),
-    audioTrackId: post.audio?.trackId ?? null,
+    audioTrackId: dneskaiAudioChoiceKey(post.audio),
     engagement: post.engagement ? { keyword: post.engagement.keyword, replyMessage: post.engagement.replyMessage, publicReply: post.engagement.publicReply ?? '' } : null,
     format: post.format,
   };
@@ -375,7 +376,7 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
     action: 'edit', id: post.id, caption: draft.caption, scheduledAt,
     ...(accountId ? { accountId } : {}),
     // Sent only when the choice changed, so an untouched post keeps its saved track (or its rotation).
-    ...((draft.audioTrackId ?? null) !== (post.audio?.trackId ?? null) ? { audioTrackId: draft.audioTrackId ?? null } : {}),
+    ...((draft.audioTrackId ?? null) !== dneskaiAudioChoiceKey(post.audio) ? { audioTrackId: draft.audioTrackId ?? null } : {}),
     ...(draft.format !== post.format && (draft.format === 'carousel' || draft.format === 'reel') ? { format: draft.format } : {}),
     ...(changed ? { deck: { ...(kitChanged ? { kit: draft.kit } : {}), slides } } : {}),
     ...(dneskaiEngagementChanged(post, draft) ? { engagement: dneskaiDraftEngagement(draft.engagement) } : {}),
