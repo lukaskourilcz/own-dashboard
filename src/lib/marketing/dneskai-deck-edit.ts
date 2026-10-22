@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
-  DNESKAI_INSERT_SHAPES, DNESKAI_PLACED_FIELDS, dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
-  dneskaiSlideFieldLimits, dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
+  DNESKAI_INSERT_SHAPES, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
+  dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
 } from "./dneskai-slide-layout";
 
 /**
@@ -98,26 +98,18 @@ function inserted(entry: DneskaiSlideInsert, deck: DneskaiDeck, pool: DneskaiEdi
   if (entry.variant && entry.type !== "statement") return fail("deck-edit-variant-invalid");
   if (!dneskaiShapePictureCounts(shape).includes(entry.images.length) || entry.images.some((image, position) => image.slot !== `image-${position + 1}`)) return fail("deck-edit-insert-pictures");
   const insertable = new Map(dneskaiInsertablePictures(pool.media, deck, pool.primaryCandidateId).map((item) => [item.assetSha256, item]));
-  const credits: string[] = [];
   for (const image of entry.images) {
     const media = insertable.get(image.assetSha256);
     if (!media) return fail(pool.media.some((item) => item.assetSha256 === image.assetSha256) ? "deck-edit-insert-picture-unavailable" : "deck-asset-outside-brief");
     if (!dneskaiPictureFitsShape(media, shape)) return fail("deck-edit-insert-picture-unfit");
     if (taken.has(image.assetSha256)) return fail("deck-edit-insert-picture-unavailable");
     taken.add(image.assetSha256);
-    credits.push(media.credit);
   }
   const slide: DneskaiSlide = {
     type: entry.type, ...(entry.type === "statement" ? { variant: entry.variant ?? "accent" } : {}),
     headline: entry.headline, ...(entry.body?.trim() ? { body: entry.body } : {}), ...(entry.kicker?.trim() ? { kicker: entry.kicker } : {}),
     images: entry.images.map((image) => structuredClone(image)), alt: entry.alt,
   };
-  if (credits.length) {
-    const limit = dneskaiSlideFieldLimits(slide).find((field) => field.field === "credit")?.max ?? 80;
-    const credit = dneskaiCreditLine(credits, limit);
-    if (credit === null) return fail("picture-credits-too-long");
-    slide.credit = credit;
-  }
   if (unplacedFields(slide).length) return fail("deck-edit-text-unplaced");
   return slide;
 }
@@ -148,7 +140,8 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
     if (change.headline !== undefined) next.headline = change.headline;
     if (change.body === null) delete next.body; else if (change.body !== undefined) next.body = change.body;
     if (change.kicker === null) delete next.kicker; else if (change.kicker !== undefined) next.kicker = change.kicker;
-    if (change.credit !== undefined) next.credit = change.credit;
+    // No slide shows a picture credit (owner rule, 22 October 2026): an edit never writes one.
+    delete next.credit;
     if (change.alt !== undefined) next.alt = change.alt;
     if (change.images !== undefined) {
       // Swap a picture or its crop inside the slide's places; adding or dropping a place would change the template.
