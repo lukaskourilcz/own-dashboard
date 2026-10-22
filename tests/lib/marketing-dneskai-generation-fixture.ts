@@ -70,7 +70,7 @@ export function briefInput(packet: SourcePacket): GenerationInput {
   return { source: packet, account: ACCOUNT, scheduledAt: packet.brief!.scheduledAt, templateVersion: DNESKAI_DECK_TEMPLATE_VERSION, knowledge: [], consent: true, revisionId: REVISION_ID };
 }
 
-/** A valid answer for `briefFixture`: four written slides, three of them with pictures. */
+/** A valid answer for `briefFixture`: four written slides, three of them with pictures, and a cover with its headline alone. */
 export function validCopy(pictures: BriefPictures): DneskaiCopy {
   return {
     title: "Lightroom otevře zavřené oči",
@@ -78,7 +78,7 @@ export function validCopy(pictures: BriefPictures): DneskaiCopy {
     hashtags: ["Adobe", "Lightroom", "úpravy fotek"],
     format: "carousel",
     slides: [
-      { type: "cover-photo", headline: "Lightroom na mobilu otevře zavřené oči jedním klepnutím", kicker: "Nástroj", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Titulní slide o nové funkci Lightroomu s obrázkem z článku The Verge." },
+      { type: "cover-photo", headline: "Lightroom na mobilu otevře zavřené oči jedním klepnutím", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Titulní slide o nové funkci Lightroomu s obrázkem z článku The Verge." },
       { type: "figure", headline: "Rychlá akce Open Eyes najde zavřené oči sama", body: "Funkce je v aplikaci pro iOS i Android. Úpravu nabídne, když na fotce rozpozná zavřené oči.", images: [{ slot: "image-1", assetSha256: pictures.figure.sha256 }], alt: "Slide s obrázkem z článku The Verge o tom, kde funkci najdete." },
       { type: "statement", headline: "Zdarma jsou 2 použití, pak je potřeba předplatné.", body: "Creative Cloud s kredity na AI nástroje.", images: [], alt: "Textový slide o tom, kolik funkce stojí." },
       { type: "split", kicker: "Na Instagramu", headline: "Účet @technology akci vyzkoušel na portrétu", body: "V popisku příspěvku napsal, že novou akci použil na portrétní fotce.", images: [{ slot: "image-1", assetSha256: pictures.post.sha256 }], alt: "Slide s fotkou z příspěvku účtu @technology na Instagramu." },
