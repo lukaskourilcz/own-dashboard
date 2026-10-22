@@ -706,6 +706,10 @@ A fingerprint of every function body, constraint, index, policy, trigger, grant,
 migrations define matched the PGlite build of the repository exactly, apart from those two missing objects.
 `restrict_pg_net_browser_roles` changed nothing: Supabase grants `net.http_post` to `PUBLIC` as `supabase_admin`,
 which the `postgres` role cannot revoke. The `net` schema is not exposed through the API.
+It exists only in production's history, as version `20261021125123` (the latest version a read-only query found on
+22 October 2026); `supabase/migrations` has no file for it. A fresh install therefore never runs it, which loses
+nothing because it changed nothing. `migration list --linked` shows it as a remote-only version, so `db push` refuses
+until that history is reconciled with the owner's approval. Do not recreate it as a file without that approval.
 
 Until the owner runs the statements below in the SQL editor, `marketing_ticks` and `cron.job_run_details` keep every
 row, and the daily tick records an error for its last step, `retention`, which prunes the ticks. Nothing else
