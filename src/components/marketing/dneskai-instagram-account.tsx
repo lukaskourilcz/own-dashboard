@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
-import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, setMarketingAccountEnabled, setMarketingAccountEngagement, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
+import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, setMarketingAccountEnabled, setMarketingAccountEngagement, marketingCommentSubscription, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
 
 type Lang = 'en' | 'cs';
 type Props = { lang: Lang; disabled?: boolean; now?: Date };
@@ -106,5 +106,26 @@ export function DneskaiEngagementSwitch({ account, lang, now }: { account: Marke
     </Button>
     <div aria-live="polite">{toggle.isSuccess ? <p role="status" className="text-sm text-success">{toggle.data.engagement?.enabled ? e.enabledNow : e.disabledNow}</p>
       : error ? <p role="alert" className="text-sm text-risk">{error}</p> : null}</div>
+    {state.webhook ? <DneskaiCommentSubscription account={account} lang={lang} /> : null}
+  </div>;
+}
+
+/**
+ * #161: whether Meta delivers this account's comments to the webhook, read once when the panel opens, and the owner's
+ * button to subscribe them. Polling answers comments either way; the webhook only makes replies faster.
+ */
+export function DneskaiCommentSubscription({ account, lang }: { account: MarketingAccountStatus; lang: Lang }) {
+  const t = dneskaiAccount[lang], e = t.engagement;
+  const client = useQueryClient();
+  const key = [...qk.marketingAccounts, 'comment-subscription', account.id] as const;
+  const status = useQuery({ queryKey: key, retry: false, staleTime: 5 * 60_000, queryFn: ({ signal }) => marketingCommentSubscription(account.id, 'status', signal) });
+  const subscribe = useMutation({ mutationFn: () => marketingCommentSubscription(account.id, 'subscribe'), onSuccess: (subscribed) => client.setQueryData(key, subscribed) });
+  const failure = status.isError ? status.error : subscribe.isError ? subscribe.error : null;
+  const message = failure ? (failure instanceof MarketingAccountRequestError ? e.errors[failure.code] : undefined) ?? verificationError(failure, lang) : null;
+  return <div className="space-y-2" data-testid="dneskai-comment-subscription">
+    <p className="text-sm">{status.isPending ? e.webhookChecking : status.data ? e.webhookOn : e.webhookOff}</p>
+    {status.data === false && <Button variant="outline" className="min-h-11" disabled={subscribe.isPending} aria-busy={subscribe.isPending} onClick={() => subscribe.mutate()}>
+      {subscribe.isPending ? t.switching : e.webhookSubscribe}</Button>}
+    <div aria-live="polite">{subscribe.isSuccess ? <p role="status" className="text-sm text-success">{e.webhookOn}</p> : message ? <p role="alert" className="text-sm text-risk">{message}</p> : null}</div>
   </div>;
 }
