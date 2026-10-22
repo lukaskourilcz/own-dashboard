@@ -39,22 +39,34 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
           <Progress value={share} aria-label={t.costs.budget} aria-valuetext={t.costs.budgetValue(usd(spentUsd), usd(ceilingUsd))} indicatorClassName={share >= 75 ? 'bg-warning' : 'bg-information'} />
           <p className="text-xs text-foreground-muted">{t.costs.budgetLeft(usd(Math.max(0, ceilingUsd - spentUsd)))}</p>
         </> : <p className="text-sm text-warning">{spentUsd === null ? t.costs.budgetUnknown : t.costs.ceilingUnknown}</p>}
+        <p className="text-xs text-foreground-muted">{t.costs.budgetBasis}</p>
         {code && <DneskaiCodeText code={code} lang={lang} />}
       </section>
       <TokenSection lang={lang} preview={preview} now={now} />
     </div>
 
+    {/* cost-16: balances are never read, so they show as unknown instead of a number. */}
+    <section aria-labelledby="dneskai-balances-title" className="min-w-0 space-y-1" data-testid="dneskai-balances">
+      <h3 id="dneskai-balances-title" className="text-sm font-semibold">{t.costs.balances}</h3>
+      <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+        {[t.costs.balanceApify, t.costs.balanceAnthropic].map((label) => <div key={label} className="flex gap-1"><dt className="text-foreground-muted">{label}:</dt><dd className="text-warning">{t.costs.balanceUnknown}</dd></div>)}
+      </dl>
+      <p className="text-xs text-foreground-muted">{t.costs.balancesHelp}</p>
+    </section>
+
     <section aria-labelledby="dneskai-days-title" className="min-w-0 space-y-2">
       <h3 id="dneskai-days-title" className="text-sm font-semibold">{t.costs.days}</h3>
       <div className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface" role="region" aria-labelledby="dneskai-days-title" tabIndex={0}>
-        <table className="w-full min-w-[30rem] text-left text-xs">
-          <thead className="border-b border-border text-foreground-muted"><tr><th scope="col" className="px-3 py-2 font-medium">{t.costs.date}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.collection}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.generation}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.total}</th></tr></thead>
+        <table className="w-full min-w-[36rem] text-left text-xs" aria-describedby="dneskai-days-help">
+          <thead className="border-b border-border text-foreground-muted"><tr><th scope="col" className="px-3 py-2 font-medium">{t.costs.date}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.collection}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.generation}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.total}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.booked}</th></tr></thead>
           <tbody className="divide-y divide-border">{read.days.map((row) => <tr key={row.date}>
             <th scope="row" className="px-3 py-2 font-normal">{day(row.date)}{row.unknown > 0 && <span className="block text-warning">{t.costs.unknown(row.unknown)}</span>}</th>
             <td className="px-3 py-2 text-right tabular">{usd(row.collectionUsd)}</td><td className="px-3 py-2 text-right tabular">{usd(row.generationUsd)}</td><td className="px-3 py-2 text-right font-medium tabular">{usd(row.collectionUsd + row.generationUsd)}</td>
+            <td className={`px-3 py-2 text-right tabular ${row.generationBookedUsd > 0 ? 'text-warning' : 'text-foreground-muted'}`}>{usd(row.generationBookedUsd)}</td>
           </tr>)}</tbody>
         </table>
       </div>
+      <p id="dneskai-days-help" className="max-w-3xl text-xs text-foreground-muted">{t.costs.daysHelp}</p>
     </section>
 
     <section aria-labelledby="dneskai-runs-cost-title" className="min-w-0 space-y-2">
@@ -73,7 +85,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
       {read.jobs.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noJobs}</p> : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.jobs.map((job) => <li key={job.id} className="min-w-0 space-y-1 px-3 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="min-w-0 break-words">{job.title || t.calendar.job}</span>
           <span className="flex items-center gap-2 text-xs text-foreground-muted">{job.scheduledAt && <time dateTime={job.scheduledAt} className="tabular">{pragueDateTime(job.scheduledAt, lang)}</time>}<StatusBadge value={`job-${job.status}`} label={t.costs.jobStatus[job.status] ?? job.status} tone={job.status === 'failed' ? 'risk' : 'warning'} /></span></div>
-        <DneskaiCodeText code={job.errorCode} lang={lang} details={[[t.detailJob, job.id], [t.costs.cost, job.costUsd === null ? null : usd(job.costUsd)]]} />
+        <DneskaiCodeText code={job.errorCode} lang={lang} details={[[t.detailJob, job.id], [t.costs.bookedShort, job.costUsd === null ? null : usd(job.costUsd)]]} />
       </li>)}</ul>}
     </section>
 

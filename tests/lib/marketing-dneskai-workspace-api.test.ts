@@ -132,7 +132,8 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(read.generation).toEqual({ spentUsd: 0.5, ceilingUsd: 1, code: null });
     expect(read.runs[0]).toMatchObject({ status: 'complete', costUsd: 0.04 });
     expect(read.jobs.map((job) => job.errorCode)).toEqual(['dneskai-daily-generation-budget-exhausted']);
-    expect(read.days[0]).toMatchObject({ collectionUsd: 0.04, generationUsd: 0.25 });
+    // cost-16: the failed job's $0.25 is booked, not measured spend.
+    expect(read.days[0]).toMatchObject({ collectionUsd: 0.04, generationUsd: 0, generationBookedUsd: 0.25 });
     expect(read.ticks).toMatchObject({ total: 2, withErrors: 1 });
     expect(read.ticks.recent[0]?.errors).toEqual([{ category: 'token', code: 'token-failed' }]);
     expect(JSON.stringify(read)).not.toContain('PRIVATE');
@@ -140,6 +141,18 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     const short = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}&range=2d`)).json());
     expect(short.days.map((day) => day.date)).toEqual(read.days.slice(0, 2).map((day) => day.date));
     for (const range of ['8d', '0d', '7', 'week']) expect((await get(costs, `projectId=${project}&range=${range}`)).status).toBe(400);
+  });
+  it('keeps measured drafting cost, booked failed-job cost and unknown figures apart (cost-16)', async () => {
+    mocks.rpc.mockResolvedValue({ data: 0.5, error: null });
+    const now = new Date().toISOString();
+    const job = (n: number, status: string, cost: string | null) => ({ id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(n).padStart(12, '0')}`, user_id: owner, status, error_code: status === 'failed' ? 'provider-unavailable' : null, created_at: now, title: `Téma ${n}`, scheduled_at: pragueScheduledAt(tomorrow, '08:00'), revision_id: null, brand: 'dneskai', cost_usd: cost });
+    mocks.tables.marketing_jobs = [job(1, 'review', '0.031'), job(2, 'review', '0.044'), job(3, 'failed', '0.25'), job(4, 'reconciliation', null), job(5, 'running', null)];
+    mocks.tables.marketing_dneskai_runs = [{ id: '99999999-9999-4999-8999-999999999999', user_id: owner, project_id: project, date: pragueMarketingDate(new Date()), target_date: tomorrow, status: 'running', cost_usd: '0', error_code: null, created_at: now }];
+    const read = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}`)).json());
+    expect(read.days[0]!.generationUsd).toBeCloseTo(0.075, 6);
+    expect(read.days[0]).toMatchObject({ collectionUsd: 0, generationBookedUsd: 0.25, unknown: 3 });
+    // A running collection run has a placeholder 0 until it finishes: it shows as not recorded.
+    expect(read.runs[0]).toMatchObject({ status: 'running', costUsd: null });
   });
   it('counts a malformed run or tick instead of failing the whole read', async () => {
     mocks.rpc.mockResolvedValue({ data: 0.5, error: null });

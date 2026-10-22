@@ -69,3 +69,30 @@ describe('DNESKAi tabs share the versions whose render did not attach', () => {
     expect(entry?.textContent).toContain(t.states.problem); expect(entry?.textContent).not.toContain(t.states.preparing);
   });
 });
+
+// cost-16: measured spend, booked failed-job cost and provider balances are shown apart; unknowns are words, not $0.00.
+describe('Errors and costs keeps measured, booked and unknown apart', () => {
+  it('shows the booked column, the unknown count and unread provider balances in the preview', async () => {
+    await show('dneskai-costs');
+    const costs = container.querySelector('[data-testid="dneskai-costs"]')!;
+    const headers = [...costs.querySelectorAll('table thead th')].map((cell) => cell.textContent);
+    expect(headers).toEqual([t.costs.date, t.costs.collection, t.costs.generation, t.costs.total, t.costs.booked]);
+    const yesterday = costs.querySelectorAll('table tbody tr')[1]!;
+    expect(yesterday.textContent).toContain(t.costs.unknown(1));
+    // Measured total excludes the booked $0.25: 0.04 sources + 0.37 drafting.
+    expect([...yesterday.querySelectorAll('td')].map((cell) => cell.textContent)).toEqual(['$0.04', '$0.37', '$0.41', '$0.25']);
+    expect(costs.querySelector('table')!.getAttribute('aria-describedby')).toBe('dneskai-days-help');
+    expect(costs.querySelector('#dneskai-days-help')!.textContent).toBe(t.costs.daysHelp);
+    const balances = costs.querySelector('[data-testid="dneskai-balances"]')!;
+    expect(balances.textContent).toContain(`${t.costs.balanceApify}:${t.costs.balanceUnknown}`);
+    expect(balances.textContent).toContain(`${t.costs.balanceAnthropic}:${t.costs.balanceUnknown}`);
+    expect(balances.textContent).not.toMatch(/\$/);
+    expect(costs.textContent).toContain(t.costs.budgetBasis);
+  });
+
+  it('keeps the new cost strings in EN and CS parity', () => {
+    for (const key of ['budgetBasis', 'balances', 'balancesHelp', 'balanceApify', 'balanceAnthropic', 'balanceUnknown', 'booked', 'bookedShort', 'daysHelp'] as const) {
+      expect(dneskaiWorkspace.cs.costs[key]).toBeTruthy(); expect(dneskaiWorkspace.cs.costs[key]).not.toBe(dneskaiWorkspace.en.costs[key]);
+    }
+  });
+});

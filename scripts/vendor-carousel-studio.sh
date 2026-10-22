@@ -23,8 +23,15 @@ vendor="$repo/vendor/carousel-studio"
 upstream_doc="$vendor/UPSTREAM.md"
 
 # sha256 over the sorted "<sha256>  <relative path>" lines of every vendored file except UPSTREAM.md.
+# GNU coreutils and recent macOS ship sha256sum; older macOS only has `shasum -a 256`, same output format.
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256=(sha256sum)
+else
+  sha256=(shasum -a 256)
+fi
+
 tree_hash() {
-  (cd "$1" && find . -type f ! -path ./UPSTREAM.md -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) | sha256sum | cut -d' ' -f1
+  (cd "$1" && find . -type f ! -path ./UPSTREAM.md -print0 | LC_ALL=C sort -z | xargs -0 "${sha256[@]}") | "${sha256[@]}" | cut -d' ' -f1
 }
 
 recorded_hash() {
@@ -49,6 +56,7 @@ fi
 quorum="$(cd "$1" && pwd)"
 commit="$(git -C "$quorum" rev-parse --verify "$2^{commit}")"
 write="${3:-}"
+[[ -z "$write" || "$write" == "--write" ]] || { echo "Unknown option $write; the only option is --write." >&2; exit 2; }
 tsc="$quorum/studio/node_modules/typescript/bin/tsc"
 [[ -f "$tsc" ]] || { echo "No TypeScript at $tsc; run pnpm install in the Quorum checkout." >&2; exit 1; }
 
@@ -88,15 +96,37 @@ node -e '
 
 rebuilt="$(tree_hash "$out")"
 if [[ "$write" == "--write" ]]; then
-  find "$vendor" -mindepth 1 -maxdepth 1 ! -name UPSTREAM.md -exec rm -rf {} +
-  cp -R "$out/." "$vendor/"
   committed="$(TZ=UTC git -C "$quorum" show -s --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd "$commit")"
   today="$(date -u +%Y-%m-%d)"
-  sed -i "s/^- Commit: \`[0-9a-f]\{40\}\`$/- Commit: \`$commit\`/; s/^- Commit date: \`[^\`]*\`$/- Commit date: \`$committed\`/; s/^- Vendored: \`[^\`]*\`$/- Vendored: \`$today\`/; s/^- Tree sha256: \`[0-9a-f]\{64\}\`$/- Tree sha256: \`$rebuilt\`/" "$upstream_doc"
+  # Prepare the new UPSTREAM.md in the scratch directory first. Node rewrites it, so GNU and BSD sed
+  # behave the same, and a missing pin line stops the script before the vendored tree is touched.
+  staged_doc="$scratch/UPSTREAM.md"
+  node -e '
+    const fs = require("node:fs");
+    const [source, target, commit, committed, today, rebuilt] = process.argv.slice(1);
+    let text = fs.readFileSync(source, "utf8");
+    const lines = [
+      [/^- Commit: `[0-9a-f]{40}`$/m, `- Commit: \`${commit}\``],
+      [/^- Commit date: `[^`]*`$/m, `- Commit date: \`${committed}\``],
+      [/^- Vendored: `[^`]*`$/m, `- Vendored: \`${today}\``],
+      [/^- Tree sha256: `[0-9a-f]{64}`$/m, `- Tree sha256: \`${rebuilt}\``]
+    ];
+    const missing = lines.filter(([pattern]) => (text.match(new RegExp(pattern.source, "gm")) ?? []).length !== 1);
+    if (missing.length > 0) {
+      console.error(`UPSTREAM.md needs exactly one of each pin line; missing or repeated: ${missing.map(([pattern]) => pattern.source).join(", ")}`);
+      process.exit(1);
+    }
+    for (const [pattern, line] of lines) text = text.replace(pattern, () => line);
+    fs.writeFileSync(target, text);
+  ' "$upstream_doc" "$staged_doc" "$commit" "$committed" "$today" "$rebuilt"
+
+  find "$vendor" -mindepth 1 -maxdepth 1 ! -name UPSTREAM.md -exec rm -rf {} +
+  cp -R "$out/." "$vendor/"
+  cp "$staged_doc" "$upstream_doc"
+  written="$(tree_hash "$vendor")"
+  [[ "$written" == "$rebuilt" && "$(recorded_hash)" == "$rebuilt" ]] \
+    || { echo "vendor/carousel-studio is $written after the copy, UPSTREAM.md records $(recorded_hash), the build was $rebuilt." >&2; exit 1; }
   echo "vendor/carousel-studio rebuilt from $commit ($committed): $rebuilt"
-  [[ "$(recorded_hash)" == "$rebuilt" ]] || { echo "UPSTREAM.md has no Commit/Tree sha256 lines to update." >&2; exit 1; }
-  grep -q "^- Commit date: \`$committed\`$" "$upstream_doc" && grep -q "^- Vendored: \`$today\`$" "$upstream_doc" \
-    || { echo "UPSTREAM.md has no Commit date/Vendored lines to update." >&2; exit 1; }
   echo "Update DNESKAI_STUDIO in src/lib/marketing/dneskai-render.ts and the note under Pin in UPSTREAM.md."
   exit 0
 fi

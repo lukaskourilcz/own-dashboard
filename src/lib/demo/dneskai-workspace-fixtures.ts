@@ -122,7 +122,7 @@ export function createDneskaiCostsFixture(now: Date): DneskaiCostsRead {
   return {
     schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(),
     generation: { spentUsd: 0.5, ceilingUsd: 1, code: null },
-    days: Array.from({ length: 7 }, (_, index) => ({ date: pragueDayAfter(today, -index), collectionUsd: index === 0 ? 0.04 : index % 3 === 0 ? 0 : 0.04, generationUsd: index === 0 ? 0.5 : index === 1 ? 0.62 : 0, unknown: index === 1 ? 1 : 0 })),
+    days: Array.from({ length: 7 }, (_, index) => ({ date: pragueDayAfter(today, -index), collectionUsd: index === 0 ? 0.04 : index % 3 === 0 ? 0 : 0.04, generationUsd: index === 0 ? 0.5 : index === 1 ? 0.37 : 0, generationBookedUsd: index === 1 ? 0.25 : 0, unknown: index === 1 ? 1 : 0 })),
     runs: [
       { id: id(301), date: today, targetDate: pragueDayAfter(today, 1), status: 'complete', costUsd: 0.04, errorCode: null, createdAt: ago(120) },
       { id: id(302), date: pragueDayAfter(today, -1), targetDate: today, status: 'partial', costUsd: 0.04, errorCode: 'collection-source-partial', createdAt: ago(1560) },

@@ -260,8 +260,14 @@ export const DneskaiCostsReadSchema = z.strictObject({
     ceilingUsd: usd.nullable(),
     code: code.nullable(),
   }),
-  /** The last seven Prague days, newest first: collection (Apify, Jev) and generation (Claude) cost. */
-  days: z.array(z.strictObject({ date: z.iso.date(), collectionUsd: usd, generationUsd: usd, unknown: z.number().int().nonnegative() })).max(7),
+  /**
+   * The last seven Prague days, newest first (cost-16). `collectionUsd` is the measured cost of finished collection
+   * runs (Apify, Jev); `generationUsd` the measured provider usage of drafting jobs that produced a draft (Claude);
+   * `generationBookedUsd` what failed drafting jobs recorded, which is the job's reserved maximum when billing was
+   * ambiguous, so it may exceed what was billed. `unknown` counts runs and jobs with no figure yet (running,
+   * uncertain or unmeasured); they are never added as zero.
+   */
+  days: z.array(z.strictObject({ date: z.iso.date(), collectionUsd: usd, generationUsd: usd, generationBookedUsd: usd, unknown: z.number().int().nonnegative() })).max(7),
   runs: z.array(z.strictObject({ id: uuid, date: z.iso.date(), targetDate: z.iso.date(), status: z.enum(['running', 'complete', 'partial', 'held', 'failed']), costUsd: usd.nullable(), errorCode: code.nullable(), createdAt: timestamp })).max(14),
   jobs: z.array(z.strictObject({ id: uuid, status: z.enum(['queued', 'running', 'review', 'failed', 'reconciliation']), errorCode: code.nullable(), createdAt: timestamp, costUsd: usd.nullable(), title: z.string().max(300), scheduledAt: timestamp.nullable() })).max(30),
   publications: z.array(z.strictObject({ id: uuid, revisionId: uuid, status: z.enum(DNESKAI_PUBLICATION_STATUSES), errorCode: code.nullable(), scheduledAt: timestamp, lastCheckedAt: timestamp.nullable(), title: z.string().max(300) })).max(20),
