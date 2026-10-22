@@ -258,13 +258,19 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       category: "collection", lease: "collection",
       async precheck(): Promise<StepOutcome | null> {
         const paused = intakePaused(); if (paused) return paused;
+        // The hour cannot be tested before the run list: a run admitted at 22:00 continues past midnight and is
+        // found only there. The list is read once per tick and reused by the briefs step, so a slow read is not
+        // repeated; its duration is recorded on the no-op so a stall can be attributed (production-13).
+        const yieldStarted = clock().getTime();
         if (await yieldToPublication()) return yielded;
+        const runsStarted = clock().getTime();
         const list = await runs(), today = pragueMarketingDate(clock());
+        const detail = { yieldMs: Math.max(0, runsStarted - yieldStarted), runsMs: Math.max(0, clock().getTime() - runsStarted) };
         if (list.some((run) => !run.pilot && run.status === "running")) return null;
-        if (list.some((run) => !run.pilot && run.date === today)) return { status: "noop", code: "collection-finished" };
+        if (list.some((run) => !run.pilot && run.date === today)) return { status: "noop", code: "collection-finished", detail };
         // Admission refuses a date a pilot run holds; asking would only record the same error each tick.
-        if (list.some((run) => run.pilot && run.date === today)) return { status: "noop", code: "collection-pilot-today" };
-        if (pragueHour(clock()) < 22) return { status: "noop", code: "collection-not-due" };
+        if (list.some((run) => run.pilot && run.date === today)) return { status: "noop", code: "collection-pilot-today", detail };
+        if (pragueHour(clock()) < 22) return { status: "noop", code: "collection-not-due", detail };
         return null;
       },
       async run({ signal: abort, now }): Promise<StepOutcome> {

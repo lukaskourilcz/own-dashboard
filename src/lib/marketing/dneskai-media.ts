@@ -159,7 +159,19 @@ export interface DneskaiMediaDependencies {
   concurrency?: number;
 }
 
-type Skip = { position: number; code: string; retryable: boolean; attempts: number };
+/** `count` and `hosts` appear only on the plan-level (-1) media-host-not-publisher record. */
+type Skip = { position: number; code: string; retryable: boolean; attempts: number; count?: number; hosts?: string[] };
+/** Refused hosts kept on the plan-level record, most refusals first. */
+export const DNESKAI_MEDIA_REFUSED_HOSTS_LIMIT = 5;
+/**
+ * Pictures the publisher policy refused while the plan was built never enter the plan. One position -1 record
+ * keeps how many there were and their hosts, so the allowlist can grow from evidence (M-08).
+ */
+export function dneskaiRefusedHostsSkip(refused: ReadonlyMap<string, number>): Skip | null {
+  if (!refused.size) return null;
+  const hosts = [...refused.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0])).slice(0, DNESKAI_MEDIA_REFUSED_HOSTS_LIMIT).map(([host]) => host);
+  return { position: -1, code: 'media-host-not-publisher', retryable: false, attempts: 1, count: [...refused.values()].reduce((sum, value) => sum + value, 0), hosts };
+}
 export type DneskaiMediaOutcome = {
   candidateId: string;
   status: 'complete' | 'partial' | 'failed' | 'empty' | 'pending' | 'not-selected' | 'busy';
@@ -225,7 +237,7 @@ const BeginSchema = z.object({
   state: z.object({
     status: z.enum(['pending', 'complete', 'partial', 'failed', 'empty']),
     plan: z.array(z.object({ position: z.number().int(), url: z.string(), kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), fallbackUrl: z.string().optional(), sourceAltText: z.string().max(1000).optional() })).nullable(),
-    skipped: z.array(z.object({ position: z.number().int(), code: z.string(), retryable: z.boolean(), attempts: z.number().int() })),
+    skipped: z.array(z.object({ position: z.number().int(), code: z.string(), retryable: z.boolean(), attempts: z.number().int(), count: z.number().int().optional(), hosts: z.array(z.string()).max(DNESKAI_MEDIA_REFUSED_HOSTS_LIMIT).optional() })),
     page_attempts: z.number().int(), asset_count: z.number().int(),
   }).optional(),
   links: z.array(z.object({ position: z.number().int(), assetId: z.uuid(), sha256: z.string() })).optional(),
@@ -293,6 +305,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   const instagram = source.kind === 'instagram';
   const allowImage = instagram ? instagramImageUrlPolicy : publisherImageUrlPolicy(source, candidate.url);
   let plan = state.plan as DneskaiMediaPlanEntry[] | null;
+  const refusedHosts = new Map<string, number>();
   if (!plan) {
     if (instagram) {
       plan = instagramMediaPlan(candidate);
@@ -301,7 +314,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
       // The article page is read once; its pictures and their order are then fixed for every later pass.
       try {
         const page = await fetchArticle(candidate.url, deps, deps.signal);
-        plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls });
+        plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls, refusedHosts });
         if (dneskaiRichEvidenceEnabled()) await rpc(db,'marketing_media_set_evidence',{p_owner:owner,p_project:project,p_candidate:candidateId,p_fence:fence,p_article_text:extractArticleText(page.html)});
         await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'ok', p_page_error: null });
       } catch (error) {
@@ -313,7 +326,8 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
           return { ...base, status: 'pending', skipped: [{ position: -1, code: failure.code }] };
         }
         // No readable page: the feed's own image is all the publisher offered.
-        plan = extractArticleMedia('', candidate.url, { allowImage, feedImages: candidate.mediaUrls });
+        refusedHosts.clear();
+        plan = extractArticleMedia('', candidate.url, { allowImage, feedImages: candidate.mediaUrls, refusedHosts });
         await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'failed', p_page_error: failure.code });
       }
     }
@@ -321,7 +335,9 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
 
   const credit = dneskaiMediaCredit(source, candidate);
   const linked = new Set((begun.links ?? []).map((link) => link.position));
-  const skips = new Map(state.skipped.map((skip) => [skip.position, skip]));
+  const skips = new Map<number, Skip>(state.skipped.map((skip) => [skip.position, skip]));
+  const refusedSkip = dneskaiRefusedHostsSkip(refusedHosts);
+  if (refusedSkip) skips.set(refusedSkip.position, refusedSkip);
   const open = (entry: DneskaiMediaPlanEntry) => {
     if (linked.has(entry.position)) return false;
     const skip = skips.get(entry.position);

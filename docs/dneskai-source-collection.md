@@ -69,6 +69,10 @@ v běhu, který ji poprvé uložil. Záložka Zdroje odhad označí. Rotace mů�
 z některých účtů zpozdit o několik dnů; datum zůstává viditelné a starý příspěvek
 nesmí vystupovat jako dnešní zpráva.
 
+Události se vybírají jen při dokončení běhu ve stejný pražský den, kdy běh začal.
+Běh, který skončí po půlnoci, nevybere nic a zapíše kód
+`collection-selection-day-passed`, aby nulový výběr nebyl bez vysvětlení.
+
 Denní feedy vracejí nejvýše 20 položek, Instagram 10 na profil a 50 za den.
 Kandidát nese nejvýše 10 odkazů na média. Jev dostane po sběru `ceil(nových / 8)`
 dávek, nejvýše 16; běh bez nových kandidátů žádnou dávku nevytvoří.
@@ -91,7 +95,9 @@ proměnná fázi pozastaví před rezervací s nulovou cenou a kódem
 Běh Apify, který už byl spuštěný, se dočte, aby jeho rezervace dostala skutečnou
 cenu. Jev přepínač Apify nečte; řídí se `MARKETING_DNESKAI_PAID_ENABLED` (v ručním
 běhu platným `MARKETING_DNESKAI_MANUAL_RUN`) a souhlasem, takže běh bez Apify
-klasifikuje kandidáty z bezplatných feedů, skončí jako `partial` a vybere události.
+klasifikuje kandidáty z bezplatných feedů a vybere události. Instagramová fáze
+vypnutá přepínačem si nechá kód `collection-apify-disabled`, ale běh kvůli ní
+nekončí jako `partial`; ten stav znamená skutečnou chybu nebo neúplné čtení zdroje.
 Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.
 
 Jev dostává jen omezené veřejné zdrojové texty a související veřejné kandidáty.

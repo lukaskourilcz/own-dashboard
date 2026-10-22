@@ -164,6 +164,17 @@ describe('createDneskaiBriefs over a store', () => {
     expect(calls.filter(([name]) => name === 'enqueue' || name === 'admit')).toEqual([]);
   });
 
+  it('rechecks briefs held for the account without the media and slot reads, and still lapses them', async () => {
+    const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
+    const { store } = fakeStore(rows, [a1, a2], { account: false });
+    expect((await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).pending).toBe(true);
+    const owedMedia = vi.spyOn(store, 'owedMedia'), takenSlots = vi.spyOn(store, 'takenSlots'), coverage = vi.spyOn(store, 'coverage'), members = vi.spyOn(store, 'members');
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now })).toEqual({ created: [], skipped: [], pending: true });
+    // 07:45 in Prague: the held 08:00 brief lapses as before.
+    expect(await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now: () => new Date('2026-10-21T05:45:00Z') })).toEqual({ created: [], skipped: [{ eventId: rows[0]!.event_id, code: 'brief-slot-passed' }], pending: false });
+    expect([owedMedia, takenSlots, coverage, members].map((spy) => spy.mock.calls.length)).toEqual([0, 0, 0, 0]);
+  });
+
   it('admits a brief as one job whose request carries the brief SourcePacket, then never twice', async () => {
     const rows = [briefRow(ids('a', 1), 1, [a1, a2])];
     const { store, calls, requests } = fakeStore(rows, [a1, a2], { account: true, media: { [a1.id]: [asset(9, 0)] } });
@@ -330,7 +341,8 @@ describe('createDneskaiBriefs over a store', () => {
       const closing = await tick();
       expect(closing).toMatchObject({ status: 'noop', detail: { skipped: 1 } });
       expect(closing.pending).toBeUndefined();
-      expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-target-date-passed' });
+      // The held brief had the 20:00 slot: it lapses as its slot passing, as the owner brief describes.
+      expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-slot-passed' });
       expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
       expect(createBriefs).toHaveBeenCalledTimes(2);
     });

@@ -241,6 +241,17 @@ describe('collection', () => {
     const finished = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'complete', pilot: false }] }, new Clock(evening));
     expect(step(await finished.tick(), 'collection')).toMatchObject({ status: 'noop', code: 'collection-finished' });
   });
+  it('records how long the run list read took on a not-due no-op, and reads it once for collection and briefs', async () => {
+    const clock = new Clock(Date.parse('2026-10-20T12:00:00Z'));
+    const slow = harness({ collectionRuns: async () => { clock.advance(16_000); return []; } }, clock);
+    expect(step(await slow.tick(), 'collection')).toMatchObject({ status: 'noop', code: 'collection-not-due', detail: { yieldMs: 0, runsMs: 16_000 } });
+    expect(slow.called('collectionRuns')).toHaveLength(1);
+  });
+  it('still continues a run that is running after midnight, before 22:00 Prague', async () => {
+    const h = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: false }] }, new Clock(Date.parse('2026-10-20T22:30:00Z')));
+    expect(step(await h.tick(), 'collection')).toMatchObject({ status: 'done', detail: { admitted: false } });
+    expect(h.called('tickCollection')[0][1][1]).toBe(runId);
+  });
   it('leaves a date held by a retained pilot run alone and never ticks or briefs a pilot run', async () => {
     const h = harness({ collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: true }, { id: finishedRun, date: '2026-10-19', status: 'complete', pilot: true }] }, new Clock(evening));
     const result = await h.tick();

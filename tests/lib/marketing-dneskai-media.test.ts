@@ -145,6 +145,21 @@ describe('collectDneskaiMedia: selected candidates, stored once, in order, with 
     expect(web.requests.length).toBe(requests);
   });
 
+  it('records pictures the publisher policy refused at plan time as one counted media-host-not-publisher entry', async () => {
+    const page = 'https://www.theverge.com/2026/10/20/offline-refused-hosts';
+    const html = `<html><head><meta property="og:image" content="https://images.wirephoto.example/offline/a.jpg"><meta name="twitter:image" content="https://images.wirephoto.example/offline/a.jpg"></head><body><article>
+      <p>OFFLINE TEST body paragraph.</p><figure><img src="https://cdn.wirephoto.example/offline/b.jpg" alt="OFFLINE"></figure>
+      <figure><img src="https://i0.wp.com/agency.example/offline/c.jpg" alt="OFFLINE"></figure><figure><img src="/own.jpg" alt="OFFLINE own"></figure></article></body></html>`;
+    const web = new FixtureWeb().serve(page, { body: html, type: 'text/html; charset=utf-8' }).serve('https://www.theverge.com/own.jpg', { body: B });
+    const id = await insertCandidate('the-verge', 'OFFLINE-verge-refused', page, []);
+    const result = await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() });
+    expect(result.candidates[0]).toMatchObject({ status: 'complete', assets: 1, skipped: [{ position: -1, code: 'media-host-not-publisher' }] });
+    expect(web.requests.some((url) => url.includes('wirephoto') || url.includes('agency'))).toBe(false);
+    const stored = async () => (await pg.query<{ skipped: unknown[] }>('select skipped from marketing_media_collections where candidate_id=$1', [id])).rows[0]!.skipped;
+    expect(await stored()).toEqual([{ position: -1, code: 'media-host-not-publisher', retryable: false, attempts: 1, count: 3, hosts: ['wirephoto.example', 'agency.example'] }]);
+    await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() });
+    expect(await stored()).toEqual([{ position: -1, code: 'media-host-not-publisher', retryable: false, attempts: 1, count: 3, hosts: ['wirephoto.example', 'agency.example'] }]);
+  });
   it('stores a picture used by two candidates once and links it to both', async () => {
     const page = 'https://deepmind.google/discover/blog/offline-test/';
     const web = new FixtureWeb().serve(page, { body: '<html><head><meta property="og:image" content="https://lh3.googleusercontent.com/OFFLINE=w2400"></head><body></body></html>', type: 'text/html' })

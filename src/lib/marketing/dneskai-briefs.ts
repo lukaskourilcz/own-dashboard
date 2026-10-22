@@ -287,9 +287,25 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   const skip = async (row: DneskaiBriefRow, code: string, duplicateOf: string | null = null) => {
     await store.skip(input.owner, row.id, code, duplicateOf); result.skipped.push({ eventId: row.event_id, code });
   };
-  // A target day whose last slot has passed is closed: nothing waits for its media any more.
+  // A target day whose last slot has passed is closed: nothing waits for its media any more. A brief that was built
+  // holds a slot of that day, so it lapses as brief-slot-passed like every earlier held brief; only a brief never
+  // built (still waiting for media) closes as brief-target-date-passed (briefs-10).
   if (!dneskaiBriefSlots(run.target_date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE)) {
-    for (const row of open) await skip(row, 'brief-target-date-passed');
+    for (const row of open) await skip(row, row.brief ? 'brief-slot-passed' : 'brief-target-date-passed');
+    return result;
+  }
+  let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
+  // Every open brief is already built and none can be admitted without a verified account: only the lapse checks
+  // below can change anything, so the media, slot and coverage reads are skipped (production-04).
+  if (open.every((row) => row.brief) && !(await (account ??= store.account(input.owner)))) {
+    for (const row of open) {
+      if (input.signal?.aborted) { result.pending = true; break; }
+      const stored = DneskaiBriefSchema.safeParse(row.brief);
+      if (!stored.success) { await skip(row, 'brief-invalid'); continue; }
+      if (Date.parse(stored.data.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }
+      if (Date.parse(stored.data.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }
+      result.pending = true;
+    }
     return result;
   }
   const owed = await store.owedMedia(input.owner, input.project, [...new Set(open.flatMap((row) => row.member_ids))]);
@@ -298,7 +314,6 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   const slots = dneskaiSlotAllocator(run.target_date, [...await store.takenSlots(input.owner, input.project, run.target_date, input.runId),
     ...rows.flatMap((row) => row.status !== 'skipped' && row.scheduled_at ? [row.scheduled_at] : [])], clock());
   let coverage: Promise<DneskaiCoverage[]> | null = null;
-  let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
   for (const row of open) {
     if (input.signal?.aborted) { result.pending = true; break; }
     const verified = await (account ??= store.account(input.owner));

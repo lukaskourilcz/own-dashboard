@@ -112,10 +112,10 @@ Pro každou událost v pořadí:
    zadání téhož dne, nebo když do něj zbývá méně než 30 minut. Stejná hranice platí pro
    zadání, které čas už má a čeká na účet nebo na nové zařazení: méně než 30 minut před
    svým časem se přeskočí (`brief-slot-passed`). Den, do jehož posledního času zbývá
-   méně než 30 minut, se uzavře (`brief-target-date-passed`). Tak skončí i poslední
-   zadání dne: kontrola dne předchází kontrole času zadání. `brief-expired` v běžném
-   běhu nenastane, protože platnost (nejméně 48 hodin od vytvoření) trvá déle než
-   cesta k času zadání (méně než 24 hodin).
+   méně než 30 minut, se uzavře: hotové zadání s časem dostane `brief-slot-passed`,
+   zadání, které se nestihlo sestavit, `brief-target-date-passed`. `brief-expired`
+   v běžném běhu nenastane, protože platnost (nejméně 48 hodin od vytvoření) trvá
+   déle než cesta k času zadání (méně než 24 hodin).
 
 ### Opakování za 14 dní
 
@@ -177,8 +177,8 @@ média to platí pro:
 
 Krok plánovače nemá pro zadání žádný odklad, takže se pokus opakuje jednou za
 pětiminutový tik. Končí, když do času zadání zbývá méně než 30 minut
-(`brief-slot-passed`), nebo když do posledního času cílového dne zbývá méně než
-30 minut (`brief-target-date-passed`). Jiné kódy zařazení (`job-request-invalid`,
+(`brief-slot-passed`, i u posledního času dne). Nesestavené zadání končí, když do
+posledního času cílového dne zbývá méně než 30 minut (`brief-target-date-passed`). Jiné kódy zařazení (`job-request-invalid`,
 `template-revision-mismatch`, `source-unavailable`, `campaign-conflict`,
 `brief-entry-changed`, `brief-closed`, `brief-not-ready`, `brief-source-unavailable`,
 `calendar-entry-unavailable` a další) nechají zadání `ready` a plánovač kvůli nim znovu
