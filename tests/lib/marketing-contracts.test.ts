@@ -55,6 +55,35 @@ describe("exact owner approval contract", () => {
   });
 });
 
+describe("engagement on the revision (#157)", () => {
+  const engagement = { keyword: "SKILL", replyMessage: "Tady je návod, jak začít.", publicReply: "Poslali jsme vám to do zpráv." };
+  it("accepts a keyword with its DM and optional public reply, and revisions without it", () => {
+    expect(parseContentRevision({ ...revision, engagement }).engagement).toEqual(engagement);
+    const withoutReply = { keyword: engagement.keyword, replyMessage: engagement.replyMessage };
+    expect(parseContentRevision({ ...revision, engagement: withoutReply }).engagement).toEqual(withoutReply);
+    expect(parseContentRevision(revision).engagement).toBeUndefined();
+  });
+  it("rejects a keyword that is not one upper-case word, empty or long messages and unknown fields", () => {
+    for (const patch of [{ keyword: "skill" }, { keyword: "DVĚ SLOVA" }, { keyword: "NÁVOD" }, { keyword: "" }, { keyword: "A".repeat(25) }, { keyword: "AI-TOOL" },
+      { replyMessage: "" }, { replyMessage: "x".repeat(1001) }, { publicReply: "" }, { publicReply: "x".repeat(201) }, { url: "https://example.com" }])
+      expect(() => parseContentRevision({ ...revision, engagement: { ...engagement, ...patch } })).toThrow();
+    expect(parseContentRevision({ ...revision, engagement: { ...engagement, keyword: "A".repeat(24), replyMessage: "x".repeat(1000), publicReply: "x".repeat(200) } }).engagement?.keyword).toHaveLength(24);
+  });
+  it("keeps engagement to Instagram accounts", () => {
+    expect(() => parseContentRevision({ ...revision, format: "thread", assets: [], account: { ...revision.account, platform: "threads" }, engagement })).toThrow();
+  });
+  it("changes the content hash with the keyword or a message, so the approval no longer matches", () => {
+    const withEngagement = parseContentRevision({ ...revision, engagement });
+    const approved = { ...approval, revisionHash: revisionHash(withEngagement) };
+    expect(revisionHash(withEngagement)).not.toBe(revisionHash(revision));
+    for (const changed of [{ ...engagement, keyword: "NAVOD" }, { ...engagement, replyMessage: "Jiný text." }, { keyword: engagement.keyword, replyMessage: engagement.replyMessage }]) {
+      const edited = parseContentRevision({ ...revision, engagement: changed });
+      expect(revisionHash(edited)).not.toBe(approved.revisionHash);
+      expect(() => parseApprovalDecision(approved, { revisionId, revisionHash: revisionHash(edited) })).toThrow("approval-revision-mismatch");
+    }
+  });
+});
+
 describe("durable publication receipt contract", () => {
   it("requires valid published media and a HTTPS public URL bound to the publication/revision/platform", () => {
     expect(parsePublicationReceipt(receipt, { publicationId, revisionId, revisionHash: approval.revisionHash, platform: "instagram" })).toEqual(receipt);

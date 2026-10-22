@@ -92,6 +92,31 @@ export const AssetSchema = z.strictObject({
   height: z.number().int().positive().max(7680),
   alt: z.string().max(1000),
 });
+/** Longest DM text a keyword comment receives, and longest public reply under the comment (#157). */
+export const ENGAGEMENT_REPLY_MESSAGE_MAX = 1000;
+export const ENGAGEMENT_PUBLIC_REPLY_MAX = 200;
+/** One word of Latin letters and digits, stored upper case: what a commenter writes to get the DM. */
+export const ENGAGEMENT_KEYWORD_PATTERN = /^[A-Z0-9]{1,24}$/;
+/**
+ * The comment keyword, the DM it triggers and the optional public reply under the comment (#157). Owner-approved with
+ * the post: it sits inside the revision, so the content hash and the approval cover the exact words sent.
+ */
+export const ContentEngagementSchema = z.strictObject({
+  keyword: z.string().regex(ENGAGEMENT_KEYWORD_PATTERN),
+  replyMessage: z.string().min(1).max(ENGAGEMENT_REPLY_MESSAGE_MAX),
+  publicReply: z.string().min(1).max(ENGAGEMENT_PUBLIC_REPLY_MAX).optional(),
+});
+export type ContentEngagement = z.infer<typeof ContentEngagementSchema>;
+/**
+ * What an owner edit may send: the same fields, trimmed, the keyword upper-cased before the check. `null` removes the
+ * engagement from the post (a post without a keyword CTA); leaving it out keeps the saved one.
+ */
+export const ContentEngagementEditSchema = z.strictObject({
+  keyword: z.string().trim().toUpperCase().regex(ENGAGEMENT_KEYWORD_PATTERN),
+  replyMessage: z.string().trim().min(1).max(ENGAGEMENT_REPLY_MESSAGE_MAX),
+  publicReply: z.string().trim().min(1).max(ENGAGEMENT_PUBLIC_REPLY_MAX).optional(),
+}).nullable();
+
 export const ContentRevisionSchema = z.strictObject({
   schemaVersion: z.enum([MARKETING_CONTENT_VERSION, MARKETING_DECK_CONTENT_VERSION]),
   brand: BrandSchema,
@@ -115,7 +140,11 @@ export const ContentRevisionSchema = z.strictObject({
    * Assets are its rendered JPEGs in slide order; the deck keeps the source images' hashes and crops.
    */
   deck: DneskaiDeckSchema.optional(),
+  /** Comment keyword and DM reply (#157). Absent on revisions without a keyword CTA and on every revision before it. */
+  engagement: ContentEngagementSchema.optional(),
 }).superRefine((revision, context) => {
+  // A keyword comment is answered by an Instagram private reply; no other platform has one.
+  if (revision.engagement && revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "engagement replies are sent on Instagram", path: ["engagement"] });
   if (revision.schemaVersion === MARKETING_CONTENT_VERSION) {
     if (revision.deck) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no deck", path: ["deck"] });
     return;

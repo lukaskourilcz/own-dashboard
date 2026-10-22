@@ -120,7 +120,18 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     const body = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
     vi.unstubAllEnvs();
     expect(body.waiting).toEqual([{ briefId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', title: 'Čekající téma', scheduledAt: new Date(waitingAt).toISOString(), status: 'ready', code: null }]);
-    expect(body.capabilities).toEqual({ regenerate: false, generateNow: true });
+    expect(body.capabilities).toEqual({ regenerate: false, generateNow: true, engagement: false });
+  });
+  it('shows each post’s keyword and messages, null without them, and offers the editor only behind its switch (#157)', async () => {
+    const engagement = { keyword: 'SKILL', replyMessage: 'Návod: otevřete aplikaci a začněte.', publicReply: 'Poslali jsme vám to do zpráv.' };
+    const plain = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
+    expect(plain.posts[0]!.engagement).toBeNull();
+    mocks.tables.marketing_revisions![0] = { ...mocks.tables.marketing_revisions![0]!, revision: { ...revision, engagement } };
+    vi.stubEnv('DNESKAI_ENGAGEMENT_EDITOR_ENABLED', 'true');
+    const read = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
+    vi.unstubAllEnvs();
+    expect(read.posts[0]!.engagement).toEqual(engagement);
+    expect(read.capabilities?.engagement).toBe(true);
   });
   it('refuses a signed-out read, a bad project or date, a foreign project and hides database errors', async () => {
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
