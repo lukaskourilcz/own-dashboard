@@ -295,6 +295,15 @@ const CODES = {
   'brief-expired': ['none', 'The brief expired before it was queued.', 'Platnost podkladu skončila dřív, než se zařadil.'],
   'brief-evidence-unavailable': ['none', 'No report has a citable https link.', 'Žádná zpráva nemá citovatelný odkaz https.'],
   'brief-skipped': ['none', 'The brief was skipped.', 'Podklad byl přeskočený.'],
+  // Owner recovery actions (C3, briefs-07).
+  'owner-retry': ['wait', 'You asked to retry queueing; the scheduler takes it up.', 'Požádali jste o nové zařazení; plánovač ho převezme.'],
+  'recovery-unavailable': ['retry', 'The recovery action failed.', 'Akce obnovy se nepovedla.'],
+  'recovery-brief-unavailable': ['reload', 'The brief for this action is not available.', 'Podklad pro tuto akci není dostupný.'],
+  'recovery-members-changed': ['none', 'The reports of this brief changed or belong to another brief.', 'Zprávy podkladu se změnily nebo patří k jinému podkladu.'],
+  'recovery-brief-invalid': ['none', 'The brief could not be rebuilt for a new slot.', 'Podklad se pro nový čas nepodařilo znovu sestavit.'],
+  'recovery-no-free-slot': ['none', 'No free slot is left today or tomorrow before the brief expires.', 'Dnes ani zítra před vypršením podkladu nezbývá volný čas.'],
+  'recovery-held-release-unavailable': ['config', 'Re-review of held reports needs the prepared owner recovery migration.', 'Nová kontrola pozastavených zpráv vyžaduje připravenou migraci obnovy.'],
+  'recovery-candidate-unavailable': ['reload', 'The held report is not available.', 'Pozastavená zpráva není dostupná.'],
   'source-current-unavailable': ['source', 'The current source could not be read.', 'Aktuální zdroj nelze načíst.'],
   // Publication (publisher, orchestrator).
   'access-token-expired': ['token', 'The Instagram token has expired.', 'Platnost instagramového tokenu vypršela.'],

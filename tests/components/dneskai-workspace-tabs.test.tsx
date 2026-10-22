@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DneskaiWorkspaceTab, type DneskaiWorkspaceTabId } from '@/components/marketing/dneskai/workspace';
 import { DEMO_DNESKAI_PROJECT_ID, demoDneskaiWorkspaceApi, resetDemoDneskaiWorkspace } from '@/lib/demo/dneskai-workspace-demo';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
+import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
 // A plain element stands in for next/image; the slide strips only need its src, size and alt.
@@ -94,5 +95,18 @@ describe('Errors and costs keeps measured, booked and unknown apart', () => {
     for (const key of ['budgetBasis', 'balances', 'balancesHelp', 'balanceApify', 'balanceAnthropic', 'balanceUnknown', 'booked', 'bookedShort', 'daysHelp'] as const) {
       expect(dneskaiWorkspace.cs.costs[key]).toBeTruthy(); expect(dneskaiWorkspace.cs.costs[key]).not.toBe(dneskaiWorkspace.en.costs[key]);
     }
+  });
+});
+
+describe('Design Lab queue', () => {
+  it('links to the owner recovery actions in Sources when the workspace offers it', async () => {
+    const onOpenSources = vi.fn();
+    act(() => root.render(<QueryClientProvider client={client}><DneskaiWorkspaceTab tab="dneskai-review" projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview onOpenSources={onOpenSources} /></QueryClientProvider>));
+    await wait(400);
+    const link = [...container.querySelectorAll('[data-testid="dneskai-lab-queue"] button')].find((button) => button.textContent === dneskaiLab.en.queue.recovery) as HTMLButtonElement;
+    expect(link.className).toContain('min-h-11');
+    act(() => link.click());
+    expect(onOpenSources).toHaveBeenCalledTimes(1);
+    expect(dneskaiLab.cs.queue.recovery).not.toBe(dneskaiLab.en.queue.recovery);
   });
 });

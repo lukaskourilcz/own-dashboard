@@ -46,11 +46,12 @@ function useRenderFailed(projectId: string) {
  * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Today, Calendar and Published share the review
  * read; Errors and costs has its own. In the preview the reads come from the in-memory demo, never from a server.
  */
-export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean }) {
-  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : <ReviewRead tab={tab} projectId={projectId} lang={lang} preview={preview} />;
+/** `onOpenSources` lets the Design Lab queue point to the owner recovery actions in Sources (C3, briefs-07). */
+export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false, onOpenSources }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean; onOpenSources?: () => void }) {
+  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : <ReviewRead tab={tab} projectId={projectId} lang={lang} preview={preview} onOpenSources={onOpenSources} />;
 }
 
-function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean }) {
+function ReviewRead({ tab, projectId, lang, preview, onOpenSources }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean; onOpenSources?: () => void }) {
   const t = dneskaiWorkspace[lang];
   const pathname = usePathname();
   const guest = preview && pathname === '/guest';
@@ -59,7 +60,7 @@ function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWor
   if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
   const props = { read: query.data, lang, preview, refreshing: query.isFetching, onRefresh: () => void query.refetch() };
-  return tab === 'dneskai-review' ? <ReviewExperience {...props} guest={guest} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
+  return tab === 'dneskai-review' ? <ReviewExperience {...props} guest={guest} onOpenSources={onOpenSources} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
     : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} />;
 }
 
@@ -76,11 +77,11 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
     refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
 }
 
-function ReviewExperience({ guest, ...props }: Parameters<typeof DneskaiReviewTab>[0] & { guest: boolean }) {
+function ReviewExperience({ guest, onOpenSources, ...props }: Parameters<typeof DneskaiReviewTab>[0] & { guest: boolean; onOpenSources?: () => void }) {
   const [view, setView] = useState<'lab' | 'list'>('lab');
   const [dirty, setDirty] = useState(false);
   const t = dneskaiLab[props.lang];
   return <div className="space-y-4"><div role="group" aria-label={t.views.label} className="flex gap-1">
     {(['lab', 'list'] as const).map((item) => <Button key={item} variant={view === item ? 'subtle' : 'ghost'} size="sm" aria-pressed={view === item} disabled={(dirty && view !== item) || (guest && item === 'list')} onClick={() => setView(item)}>{t.views[item]}</Button>)}
-  </div>{view === 'lab' ? <DneskaiLabTab {...props} guest={guest} onDirtyChange={setDirty} /> : <DneskaiReviewTab {...props} />}</div>;
+  </div>{view === 'lab' ? <DneskaiLabTab {...props} guest={guest} onDirtyChange={setDirty} onOpenSources={onOpenSources} /> : <DneskaiReviewTab {...props} />}</div>;
 }

@@ -68,6 +68,18 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     purgeMedia: (days) => purgeUnusedDneskaiMedia(db, owner, days),
     createBriefs: getCreateDneskaiBriefs(db),
+    async pendingBriefRuns(project, except) {
+      const { data, error } = await db.from("marketing_dneskai_briefs").select("run_id").eq("user_id", owner).eq("project_id", project).eq("status", "pending")
+        .order("updated_at", { ascending: false }).limit(20);
+      if (error) throw new Error("briefs-state-unavailable");
+      const ids = [...new Set(z.array(z.object({ run_id: z.uuid() })).parse(data ?? []).map((row) => row.run_id))].filter((id) => id !== except);
+      if (!ids.length) return [];
+      // A retained collection-pilot run never gets briefs from the scheduler.
+      const runs = await db.from("marketing_dneskai_runs").select("id,collection_pilot_owner").eq("user_id", owner).eq("project_id", project).in("id", ids);
+      if (runs.error) throw new Error("briefs-state-unavailable");
+      const ordinary = new Set(z.array(z.object({ id: z.uuid(), collection_pilot_owner: z.uuid().nullable().optional() })).parse(runs.data ?? []).filter((run) => !run.collection_pilot_owner).map((run) => run.id));
+      return ids.filter((id) => ordinary.has(id));
+    },
     async queuedGenerationJobs(limit) {
       const { data, error } = await db.from("marketing_jobs").select("id").eq("user_id", owner).eq("status", "queued")
         .eq("request->generation->source->>brand", "dneskai").order("created_at").order("id").limit(Math.max(1, Math.min(20, limit)));

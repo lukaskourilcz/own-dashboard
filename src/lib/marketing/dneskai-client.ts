@@ -30,3 +30,20 @@ export async function loadDneskaiMedia(projectId: string, candidateId?: string, 
   if (!response.ok) throw new Error('dneskai-media-unavailable');
   return DneskaiMediaReadSchema.parse(await response.json());
 }
+
+/** An owner recovery request (C3, briefs-07): a brief action, or re-review of one held report. */
+export type DneskaiRecoveryRequest = { action: 'retry' | 'reslot' | 'release'; briefId: string } | { action: 'release'; projectId: string; candidateId: string };
+export class DneskaiRecoveryRequestError extends Error {
+  constructor(readonly code: string) { super(code); this.name = 'DneskaiRecoveryRequestError'; }
+}
+/** Posts one recovery action. A refusal carries only its code; server detail never reaches the UI. */
+export async function postDneskaiRecovery(request: DneskaiRecoveryRequest): Promise<void> {
+  const url = 'candidateId' in request ? '/api/marketing/dneskai/candidates' : '/api/marketing/dneskai/briefs';
+  let response: Response;
+  try { response = await fetch(url, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request) }); }
+  catch { throw new DneskaiRecoveryRequestError('recovery-unavailable'); }
+  if (response.ok) return;
+  let code = 'recovery-unavailable';
+  try { const body = await response.json() as { error?: unknown }; if (typeof body.error === 'string' && /^[a-z0-9-]{1,64}$/.test(body.error)) code = body.error; } catch { /* the generic code stays */ }
+  throw new DneskaiRecoveryRequestError(code);
+}

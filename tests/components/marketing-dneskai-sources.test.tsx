@@ -175,3 +175,68 @@ describe('DNESKAi events in Sources (#115)', () => {
     expect(Object.keys(dneskaiSources.cs.eventStatus).sort()).toEqual(Object.keys(dneskaiSources.en.eventStatus).sort());
   });
 });
+describe('owner recovery in Sources (C3, briefs-07)', () => {
+  const recoveryNow = new Date('2026-10-14T08:00:00Z');
+  const ON = { retry: true, reslot: true, heldRelease: true, lapsedRelease: true }, OFF = { retry: true, reslot: false, heldRelease: false, lapsedRelease: false };
+  const briefId = '55555555-5555-4555-8555-555555555555', readyId = '66666666-6666-4666-8666-666666666666';
+  function recoveryState(recovery: typeof ON): DneskaiCollectionState {
+    const value = state(); const base = value.candidates[0]!;
+    value.candidates.push(
+      { ...base, id: 'held-topic', title: 'HELD-TOPIC', status: 'held', targetDate: null, reason: 'collection-review-category-relevance', publishedAt: '2026-10-13T20:00:00Z' },
+      { ...base, id: 'held-stale', title: 'HELD-STALE', status: 'held', targetDate: null, reason: 'collection-source-date-unavailable-or-stale', publishedAt: '2026-10-01T20:00:00Z' },
+    );
+    value.events = [
+      { eventId: 'a'.repeat(64), targetDate: '2026-10-15', status: 'selected', reason: null, brief: { id: readyId, rank: 1, status: 'ready', code: 'brief-entry-changed', scheduledAt: '2026-10-15T06:00:00.000Z', suggestedFormat: 'carousel', evidenceCount: 1, mediaCount: 0, jobId: null },
+        members: [{ candidateId: 'ready', sourceId: 'qa-rss', title: 'READY-EVENT', url: 'https://example.invalid/ready', status: 'selected', reason: null, role: 'primary' }] },
+      { eventId: 'b'.repeat(64), targetDate: '2026-10-14', status: 'held', reason: 'brief-slot-passed', brief: { id: briefId, rank: 2, status: 'skipped', code: 'brief-slot-passed', scheduledAt: '2026-10-14T06:00:00.000Z', suggestedFormat: 'carousel', evidenceCount: 1, mediaCount: 0, jobId: null },
+        members: [{ candidateId: 'lapsed', sourceId: 'qa-rss', title: 'LAPSED-EVENT', url: 'https://example.invalid/lapsed', status: 'selected', reason: null, role: 'primary' }] },
+    ];
+    value.recovery = recovery;
+    return value;
+  }
+  const button = (name: string) => [...container.querySelectorAll('button')].find(item => item.getAttribute('aria-label') === name) as HTMLButtonElement | undefined;
+  it.each(['en', 'cs'] as const)('groups held reports and explains each disabled action while the prepared SQL is missing (%s)', lang => {
+    const t = dneskaiSources[lang];
+    render(<DneskaiSourceRecords state={recoveryState(OFF)} lang={lang} now={recoveryNow} recovery={{ projectId: 'qa-project' }} />);
+    const heldSection = container.querySelector('[aria-labelledby="dneskai-held-title"]')!;
+    expect([...heldSection.querySelectorAll('details')].map(item => item.getAttribute('data-held-group'))).toEqual(['category', 'stale']);
+    expect(heldSection.querySelector('[data-held-group="category"] summary')?.textContent).toBe(`${t.recovery.heldGroups.category}1`);
+    const reReview = button(`${t.recovery.reReview}: HELD-TOPIC`)!;
+    expect(reReview.disabled).toBe(true);
+    expect(document.getElementById(reReview.getAttribute('aria-describedby')!)?.textContent).toBe(t.recovery.reasons['recovery-held-release-unavailable']);
+    const reslot = button(`${t.recovery.reslot}: LAPSED-EVENT`)!, release = button(`${t.recovery.release}: LAPSED-EVENT`)!;
+    expect(reslot.disabled).toBe(true); expect(release.disabled).toBe(true);
+    expect(document.getElementById(release.getAttribute('aria-describedby')!)?.textContent).toBe(t.recovery.reasons['recovery-release-unavailable']);
+    expect(button(`${t.recovery.retry}: READY-EVENT`)?.disabled).toBe(false);
+    for (const item of container.querySelectorAll('button')) expect(item.className).toContain('min-h-11');
+    expect(container.textContent).not.toContain('generate');
+  });
+  it('re-reviews a held report, reslots a lapsed brief and shows a refusal by its localized code only', async () => {
+    const t = dneskaiSources.en;
+    const fetcher = vi.fn(async (_url: unknown, init?: RequestInit) => JSON.parse(String(init?.body)).action === 'retry'
+      ? Response.json({ error: 'account-unavailable', detail: 'PRIVATE-DETAIL' }, { status: 409 }) : Response.json({ ok: true }));
+    vi.stubGlobal('fetch', fetcher);
+    render(<DneskaiSourceRecords state={recoveryState(ON)} lang="en" now={recoveryNow} recovery={{ projectId: 'qa-project' }} />);
+    expect(button(`${t.recovery.reReview}: HELD-STALE`)?.disabled).toBe(true);
+    await act(async () => { button(`${t.recovery.reReview}: HELD-TOPIC`)!.click(); await new Promise(done => setTimeout(done, 10)); });
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/marketing/dneskai/candidates');
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ action: 'release', projectId: 'qa-project', candidateId: 'held-topic' });
+    expect(container.textContent).toContain(t.recovery.done.held);
+    await act(async () => { button(`${t.recovery.reslot}: LAPSED-EVENT`)!.click(); await new Promise(done => setTimeout(done, 10)); });
+    expect(fetcher.mock.calls[1]?.[0]).toBe('/api/marketing/dneskai/briefs');
+    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toEqual({ action: 'reslot', briefId });
+    expect(container.textContent).toContain(t.recovery.done.reslot);
+    await act(async () => { button(`${t.recovery.retry}: READY-EVENT`)!.click(); await new Promise(done => setTimeout(done, 10)); });
+    expect(container.querySelector('p.text-risk[role="status"]')?.textContent).toBe(t.recovery.reasons['account-unavailable']);
+    expect(container.textContent).not.toContain('PRIVATE-DETAIL');
+  });
+  it('stays read-only without the recovery prop', () => {
+    render(<DneskaiSourceRecords state={recoveryState(ON)} lang="en" now={recoveryNow} />);
+    expect(container.querySelectorAll('button')).toHaveLength(0);
+    expect(container.querySelector('[aria-labelledby="dneskai-held-title"]')?.textContent).toContain('HELD-TOPIC');
+  });
+  it('keeps EN and CS recovery strings in parity', () => {
+    for (const key of ['heldGroups', 'done', 'reasons'] as const) expect(Object.keys(dneskaiSources.cs.recovery[key]).sort()).toEqual(Object.keys(dneskaiSources.en.recovery[key]).sort());
+    expect(Object.keys(dneskaiSources.cs.recovery).sort()).toEqual(Object.keys(dneskaiSources.en.recovery).sort());
+  });
+});

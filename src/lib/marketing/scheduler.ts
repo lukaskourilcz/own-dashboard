@@ -124,6 +124,11 @@ export interface MarketingSchedulerPorts {
   mediaCollectionActive(): Promise<boolean>;
   purgeMedia(olderThanDays: number): Promise<{ purged: number; errorCode: string | null }>;
   createBriefs: CreateDneskaiBriefs;
+  /**
+   * Ordinary (non-pilot) runs, other than `except`, with a pending brief: briefs the owner reopened with retry or
+   * reslot (briefs-07), which may belong to an older run than the newest finished one. Optional for older wiring.
+   */
+  pendingBriefRuns?(project: string, except: string): Promise<string[]>;
   /** Oldest first, queued DNESKAi generation jobs. */
   queuedGenerationJobs(limit: number): Promise<string[]>;
   executeJob(jobId: string, signal: AbortSignal): Promise<unknown>;
@@ -325,13 +330,25 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       },
       async run({ state, signal: abort }): Promise<StepOutcome> {
         const run = briefRun!;
-        if (state.runId === run.id && state.pending === false) return { status: "noop", code: "briefs-current" };
+        const current = state.runId === run.id && state.pending === false;
         try {
-          const result = await ports.createBriefs({ owner, project: await project(), runId: run.id, signal: abort });
+          // An owner retry or reslot reopens a brief as pending, possibly in the newest run after it went current or
+          // in an older run; those runs get the same createBriefs call, so admission rules stay the ordinary ones.
+          const reopened = ports.pendingBriefRuns ? (await ports.pendingBriefRuns(await project(), current ? "" : run.id)).slice(0, 3) : [];
+          const runIds = [...new Set([...(current ? [] : [run.id]), ...reopened])];
+          if (!runIds.length) return { status: "noop", code: "briefs-current" };
+          let created = 0, jobs = 0, skipped = 0, pending = false, newest: boolean | null = current ? false : null;
+          for (const runId of runIds) {
+            if (abort.aborted) { pending = true; break; }
+            const result = await ports.createBriefs({ owner, project: await project(), runId, signal: abort });
+            created += result.created.length; jobs += result.created.filter((item) => item.jobId).length; skipped += result.skipped.length;
+            pending ||= result.pending;
+            if (runId === run.id) newest = result.pending;
+          }
           return {
-            status: result.created.length ? "done" : "noop", pending: result.pending,
-            detail: { runId: run.id, created: result.created.length, jobs: result.created.filter((item) => item.jobId).length, skipped: result.skipped.length },
-            state: { runId: run.id, pending: result.pending },
+            status: created ? "done" : "noop", pending,
+            detail: { runId: run.id, created, jobs, skipped, ...(reopened.length ? { reopenedRuns: reopened.length } : {}) },
+            state: { runId: run.id, pending: newest ?? true },
           };
         } catch (error) {
           // #115 wires brief creation; until then the step is a recorded skip.

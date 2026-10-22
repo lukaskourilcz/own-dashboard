@@ -229,6 +229,18 @@ describe('createDneskaiBriefs over a store', () => {
     expect(await createDneskaiBriefsWithStore(late.store, { owner, project, runId }, { now: () => new Date('2026-10-21T19:00:00Z') })).toMatchObject({ skipped: [{ code: 'brief-target-date-passed' }], pending: false });
   });
 
+  it('closes each brief by its own day, so a brief the owner moved to the next day outlives its run’s day (briefs-07)', async () => {
+    const closed = briefRow(ids('b', 1), 1, [b1], 'tool');
+    const moved = { ...briefRow(ids('a', 2), 2, [a1]), target_date: '2026-10-22', code: 'owner-reslot', scheduled_at: '2026-10-22T06:00:00.000Z' };
+    const built = buildDneskaiBrief({ eventId: moved.event_id, memberHash: moved.member_hash, targetDate: '2026-10-22', category: 'ai-news', scheduledAt: '2026-10-22T06:00:00.000Z', observedAt: new Date('2026-10-20T21:00:00Z'), members: [{ candidate: a1, media: [] }] });
+    if (!('brief' in built)) throw new Error('fixture brief invalid');
+    moved.brief = built.brief;
+    const { store, calls } = fakeStore([closed, moved], [a1, b1], { account: false });
+    const result = await createDneskaiBriefsWithStore(store, { owner, project, runId }, { now: () => new Date('2026-10-21T19:00:00Z') });
+    expect(calls).toEqual([['skip', closed.id, 'brief-target-date-passed', null]]);
+    expect(result).toMatchObject({ pending: true, skipped: [{ code: 'brief-target-date-passed' }] });
+  });
+
   it('reports pending while the run is still collecting', async () => {
     const { store } = fakeStore([], []);
     store.run = async () => ({ id: runId, date: '2026-10-20', target_date: '2026-10-21', status: 'running' });

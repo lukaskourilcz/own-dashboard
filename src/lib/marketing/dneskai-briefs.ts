@@ -71,6 +71,12 @@ export function dneskaiSlotAllocator(targetDate: string, taken: readonly string[
   };
 }
 
+/** Every free slot of one target day under the allocator's rules, earliest first. */
+export function dneskaiFreeSlots(targetDate: string, taken: readonly string[], now: Date): string[] {
+  return dneskaiBriefSlots(targetDate).filter((slot) => Date.parse(slot) >= now.getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE
+    && !taken.some((value) => Math.abs(Date.parse(value) - Date.parse(slot)) < DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES * MINUTE));
+}
+
 /**
  * Assigns slots in rank order. A brief that already holds a slot keeps it; every other open brief takes the
  * first free slot of the day that is not within an hour of another post and not closer than 30 minutes to now.
@@ -282,18 +288,19 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   if (!run) throw new DneskaiBriefError('brief-run-unavailable');
   if (run.status === 'running') return { ...result, pending: true };
   const rows = (await store.briefs(input.owner, input.project, input.runId)).sort((a, b) => a.rank - b.rank);
-  const open = rows.filter((row) => row.status === 'pending' || row.status === 'ready');
-  if (!open.length) return result;
+  const pendingOrReady = rows.filter((row) => row.status === 'pending' || row.status === 'ready');
+  if (!pendingOrReady.length) return result;
   const skip = async (row: DneskaiBriefRow, code: string, duplicateOf: string | null = null) => {
     await store.skip(input.owner, row.id, code, duplicateOf); result.skipped.push({ eventId: row.event_id, code });
   };
   // A target day whose last slot has passed is closed: nothing waits for its media any more. A brief that was built
   // holds a slot of that day, so it lapses as brief-slot-passed like every earlier held brief; only a brief never
   // built (still waiting for media) closes as brief-target-date-passed (briefs-10).
-  if (!dneskaiBriefSlots(run.target_date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE)) {
-    for (const row of open) await skip(row, row.brief ? 'brief-slot-passed' : 'brief-target-date-passed');
-    return result;
-  }
+  // The day is the brief's own: an owner reslot (briefs-07) may move a built brief of this run to the next day.
+  const dayOpen = (date: string) => dneskaiBriefSlots(date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE);
+  for (const row of pendingOrReady) if (!dayOpen(row.target_date)) await skip(row, row.brief ? 'brief-slot-passed' : 'brief-target-date-passed');
+  const open = pendingOrReady.filter((row) => dayOpen(row.target_date));
+  if (!open.length) return result;
   let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
   // Every open brief is already built and none can be admitted without a verified account: only the lapse checks
   // below can change anything, so the media, slot and coverage reads are skipped (production-04).

@@ -21,7 +21,7 @@ import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStageView } from './stage';
 
-type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean };
+type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean; onOpenSources?: () => void };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
 function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
@@ -88,6 +88,7 @@ export function DneskaiLabTab(props: Props) {
           {!day.posts.length && !day.jobs.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
         </section>)}
+        {props.onOpenSources && !props.guest && <button type="button" className="focus-ring inline-flex min-h-11 items-center rounded text-left text-xs text-information underline" onClick={props.onOpenSources}>{t.queue.recovery}</button>}
       </nav>
       {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} lab={active} slide={Math.min(chosen.slide, Math.max(0, active.slides.length - 1))}
         onSlide={(slide) => { setChosen({ post: active.post.id, slide }); remember(active.post.id, slide); }} onDirty={setDirty}
