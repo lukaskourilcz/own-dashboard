@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
-  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostState, dneskaiPublished, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
+  dneskaiAwaitingRender, dneskaiCalendarDays, dneskaiJobState, dneskaiPostList, dneskaiPostMatches, dneskaiPostState, dneskaiPublished, DNESKAI_POST_FILTERS, dneskaiRenderFailed, dneskaiReviewQueue, dneskaiStateContext, DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema,
   DNESKAI_POST_STATES, DNESKAI_RENDER_ATTACH_GRACE_MS, DNESKAI_STATE_TONES, pragueDstDay, type DneskaiWorkspacePost,
 } from '@/lib/marketing/dneskai-workspace';
 import {
@@ -257,5 +257,25 @@ describe('render report fields', () => {
       loadMedia: async () => Buffer.alloc(0),
     });
     expect(result.report.problems).toEqual([{ slide: 1, code: 'text-clipped', blocking: true, message: 'cut', field: 'headline' }, { slide: 2, code: 'x', blocking: true, message: 'm' }]);
+  });
+});
+
+describe('Příspěvky (#169)', () => {
+  it('lists every post except older versions, latest first, and each filter takes its states', () => {
+    const fixture = read();
+    const list = dneskaiPostList(fixture);
+    expect(list).toHaveLength(fixture.posts.filter((item) => item.status !== 'superseded').length);
+    const times = list.map(({ post }) => Date.parse(post.publication?.publishedAt ?? post.scheduledAt));
+    expect(times).toEqual([...times].sort((a, b) => b - a));
+    expect(list.some((item) => item.post.status === 'superseded')).toBe(false);
+    expect(list.filter((item) => dneskaiPostMatches(item.state.state, 'published')).map((item) => item.post.title)).toEqual(['Pět otázek před nasazením asistenta']);
+    expect(dneskaiPostMatches('returned', 'waiting')).toBe(true);
+    expect(dneskaiPostMatches('approved', 'scheduled')).toBe(true);
+    expect(dneskaiPostMatches('problem', 'problems')).toBe(true);
+    expect(dneskaiPostMatches('skipped', 'waiting')).toBe(false);
+    for (const filter of DNESKAI_POST_FILTERS) {
+      expect(dneskaiWorkspace.cs.published.filters[filter]).toBeTruthy(); expect(dneskaiWorkspace.en.published.filters[filter]).toBeTruthy();
+    }
+    expect(dneskaiWorkspace.cs.published.filters.waiting).toBe('Čeká');
   });
 });
