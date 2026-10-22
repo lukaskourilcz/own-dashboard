@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Fourteen files are newer than anything production holds and none of them is applied: `20261022000000` through
-`20261023100000`. Apply them with the CLI, which records each file's own version:
+Fifteen files are newer than anything production holds and none of them is applied: `20261022000000` through
+`20261023130000`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the fourteen files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the fifteen files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -810,3 +810,15 @@ It stays unapplied. The app sends `replacesRevisionId` only from the Lab's „Re
 Three security-definer functions, executable by `authenticated` and scoped by `auth.uid()`, carry the owner's actions. `marketing_dneskai_topic_decide` approves a proposed topic, rejects a proposed or approved one, and restores a rejected or expired one to proposed. `marketing_dneskai_topic_edit` changes the title and keyword until enrichment starts. `marketing_dneskai_topic_create` adds a manual topic from an https URL, a title or both; the same URL (or, without one, the same title) cannot be added twice. None of them writes a brief, admits a job or spends money.
 
 It stays unapplied. Nothing proposes or consumes topics yet. The app reads the table and calls the functions only with the server-only `DNESKAI_TOPICS_ENABLED=true`; without it `GET` and `POST /api/marketing/dneskai/topics` answer 404. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-topics-database.test.ts`).
+
+## DNESKAi Reel bucket, 23 October 2026 (unapplied)
+
+`20261023130000_dneskai_reel_bucket.sql` creates the private `marketing-reels` bucket: MP4 only, 64 MiB per file,
+with the same owner-prefix read policy and restrictive browser guards as `marketing-assets`. The render route
+(`/api/marketing/dneskai/render-reel`, #163) writes one immutable object per reel key under
+`<owner>/marketing/dneskai/reels/<reelKey>.mp4` with the service role and hands Instagram a seven-day signed URL.
+No table, function or existing policy changes.
+
+Replayed only in PGlite (`tests/lib/dneskai-reel-bucket.test.ts`). Apply it with the CLI like the other prepared
+files (`npx supabase db push --linked`); the route answers 404 until `MARKETING_DNESKAI_REELS_ENABLED=true`, and with
+the switch on but the bucket missing it answers 503 `reel-bucket-required`.
