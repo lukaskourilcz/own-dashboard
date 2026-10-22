@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
@@ -190,11 +190,18 @@ test('Lab switches a post to another kit, previews it unsaved, then saves a vers
 
 // Owner decisions 6, 8 and 9. The clock is fixed at 10:00 in Prague, so the fixture's missed post (09:40) moves to
 // today's 12:30: 17:00 and 20:00 are held by the two topics waiting for the scheduler.
+// The server renders Home with the real date, so a browser clock days away from it fails Home's hydration (React #418)
+// before the Lab is even opened. The clock is therefore fixed only once Home is unloaded; the DNESKAi review renders its
+// fixture in the browser, so the Lab itself sees the fixed time.
 const DECISIONS_NOW = new Date('2026-10-20T08:00:00.000Z');
+async function atDecisionsNow(page: Page, options: Parameters<typeof gotoPreview>[1] = {}) {
+  await gotoPreview(page, options);
+  await page.goto('about:blank');
+  await page.clock.setFixedTime(DECISIONS_NOW);
+}
 for (const lang of ['en', 'cs'] as const) test(`a missed post moves to the next free slot and is approved by its new hash (${lang})`, async ({ page }) => {
   const errors = watchConsole(page), t = dneskaiLab[lang];
-  await page.clock.setFixedTime(DECISIONS_NOW);
-  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await atDecisionsNow(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   // The Lab opens on a post that can still be approved, not on the missed one.
   await expect(page.getByTestId('dneskai-lab-moved')).toHaveCount(0);
@@ -217,8 +224,7 @@ for (const lang of ['en', 'cs'] as const) test(`a missed post moves to the next 
 
 test('a returned post is regenerated with the owner’s note; it never approves anything', async ({ page }) => {
   const t = dneskaiLab.en;
-  await page.clock.setFixedTime(DECISIONS_NOW);
-  await gotoPreview(page);
+  await atDecisionsNow(page);
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labPost=d0e5ca10-0000-4000-8000-000000000004');
   const regenerate = page.getByTestId('dneskai-lab-regenerate');
   await expect(regenerate).toBeEnabled();
@@ -238,8 +244,7 @@ test('a returned post is regenerated with the owner’s note; it never approves 
 
 for (const lang of ['en', 'cs'] as const) test(`a waiting topic is generated now, and the next one is refused at the daily limit (${lang})`, async ({ page }) => {
   const errors = watchConsole(page), t = dneskaiLab[lang];
-  await page.clock.setFixedTime(DECISIONS_NOW);
-  await gotoPreview(page, { lang });
+  await atDecisionsNow(page, { lang });
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const waiting = page.getByTestId('dneskai-lab-waiting');
   await expect(waiting.getByText(t.queue.waiting)).toHaveCount(2);
