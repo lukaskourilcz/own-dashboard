@@ -69,6 +69,18 @@ describe('regenerateDneskaiRevision (owner decision 8)', () => {
     expect(dneskaiRegenerateJobKey(owner, revisionId, hash, 'Jiná poznámka.')).not.toBe(key);
   });
 
+  it('carries the owner\'s keyword and messages onto the regenerated draft (#157), and adds none to a post without them', async () => {
+    const engagement = { keyword: 'SKILL', replyMessage: 'Návod: otevřete aplikaci a začněte.', publicReply: 'Poslali jsme vám to do zpráv.' };
+    const withEngagement = { ...revision, engagement };
+    const user = fakeDb({ marketing_revisions: [{ revision: withEngagement, content_hash: revisionContentHash(withEngagement), status: 'returned' }] });
+    const admin = fakeDb({ marketing_jobs: [originalJob()] }, { marketing_dneskai_generation_spent: { data: 0, error: null } });
+    await run(user, admin, { expectedHash: revisionContentHash(withEngagement) });
+    expect(mocks.enqueue.mock.calls[0]?.[2].generation.engagement).toEqual(engagement);
+    mocks.enqueue.mockClear();
+    await run(fakeDb({ marketing_revisions: [{ revision, content_hash: hash, status: 'returned' }] }), admin);
+    expect(mocks.enqueue.mock.calls[0]?.[2].generation).not.toHaveProperty('engagement');
+  });
+
   it('refuses before any job when switched off, changed, decided, unsupported, too late or past the ceiling', async () => {
     const admin = fakeDb({ marketing_jobs: [originalJob()] }, { marketing_dneskai_generation_spent: { data: 0.9, error: null } });
     const user = (status = 'returned') => fakeDb({ marketing_revisions: [{ revision, content_hash: hash, status }] });

@@ -67,6 +67,8 @@ const CODES = {
   'account-unavailable': ['account', 'The chosen account is not a verified @dneskai Instagram account.', 'Vybraný účet není ověřený instagramový účet @dneskai.'],
   'account-platform-changed': ['edit', 'The post cannot move to another platform.', 'Příspěvek nelze přesunout na jinou platformu.'],
   'revision-edit-invalid': ['edit', 'The edited post is not valid.', 'Upravený příspěvek není platný.'],
+  'engagement-disabled': ['config', 'Editing the comment keyword and message is switched off on the server.', 'Úprava klíčového slova a zprávy je na serveru vypnutá.'],
+  'engagement-unsupported': ['investigate', 'This post has no slide deck, so it cannot carry a comment keyword.', 'Tento příspěvek nemá slidy, proto nemůže mít klíčové slovo.'],
   'render-attach-failed': ['rerender', 'The new version was saved, but its slides were not attached: the attachment failed or the render ran out of time. It cannot be approved.', 'Nová verze se uložila, ale slidy se k ní nepřipojily: připojení selhalo nebo vykreslování nestihlo časový limit. Nelze ji schválit.'],
   'renderer-unwired': ['config', 'The slide renderer is not available on the server.', 'Vykreslování slidů není na serveru dostupné.'],
   'media-unwired': ['config', 'The source picture store is not available on the server.', 'Úložiště zdrojových obrázků není na serveru dostupné.'],

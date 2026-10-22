@@ -52,6 +52,7 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
     fields: (revision.deck?.slides ?? []).map(dneskaiSlideFieldLimits),
     assets: revision.assets.map(({ url, sha256, width, height, alt }) => ({ url, sha256, width, height, alt })),
     renderReport: report.success ? report.data : null,
+    engagement: revision.engagement ?? null,
     brief: brief ? { eventId: brief.eventId, title: brief.title, targetDate: brief.targetDate,
       evidence: brief.evidence.map(({ candidateId, sourceId, url, title }) => ({ candidateId, sourceId, url, title })), media: brief.media } : null,
     publication: publication ? { id: publication.id, status: publication.status as NonNullable<DneskaiWorkspacePost['publication']>['status'], scheduledAt: iso(publication.scheduled_at)!,
