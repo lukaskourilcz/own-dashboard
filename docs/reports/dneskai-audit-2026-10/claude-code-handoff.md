@@ -47,3 +47,20 @@ Quorum: studio 710/710, orchestrator 3,235/3,235 and site 1,062/1,062 pass in th
 - [owner-todo.md](owner-todo.md): everything that still needs the owner, in plain language, with my recommendation on each decision.
 - [browser-agent-prompt.md](browser-agent-prompt.md): a prompt for a browser agent that connects `@dneskai`, adds the production Anthropic key and archives the old n8n workflows.
 - [session-log-2026-10-22.md](session-log-2026-10-22.md): the work log of the sessions on 22 October (commits, gates, pushes).
+
+## Continuation, 22 October 2026 evening (branch `fable/pilot-prereqs`, on top of PR #145)
+
+Verified read-only in production at 14:46–15:10 UTC:
+
+- `@dneskai` is the only `marketing_accounts` row: Instagram, verified 14:17 UTC, enabled. Production env names include `ANTHROPIC_API_KEY`, `MARKETING_PUBLISH_ENABLED` and `MARKETING_DNESKAI_PUBLISH_ENABLED`, and no `LANGSMITH_*`.
+- The 14:20 UTC tick admitted the two remaining briefs of 22 October. Both jobs ended in `review`: a single image for 15:00 UTC (2 attempts, 8,044 in / 965 out tokens, $0.025738 estimated) and a five-slide carousel for 18:00 UTC (1 attempt, 3,931 / 1,068, $0.018542). Both revisions are `ready` with render reports `rendered`; the carousel has one non-blocking `image-upscaled`. `traceId` is null because LangSmith is off. No approval, no publication.
+- Review notes for the carousel (slide 2 repeats the cover, 9 hashtags, source dated by estimate) are in #123.
+
+Done on the branch:
+
+1. Migration history reconciled without touching production. 20 files renamed to production's versions, the events/briefs and scheduler files split as production applied them, the pg_net revoke added, and the never-applied scheduler retention moved to `20261022000000`. Every applied file's SQL matches production's stored statements by MD5, comments and whitespace aside. Nine files are pending. `tests/lib/migration-contracts.test.ts` pins the versions.
+2. A social card that reframes a body figure (pHash ≤ 14 bits) is no longer offered beside it, which caused slide 2's repeat. It applies from the next brief build.
+
+Supabase branching is enabled, but main commits show "Supabase Preview: skipped", and the prepared migrations on main were never auto-applied, so merging applies nothing to the database.
+
+Still open: the owner's review and approval of the pilot post, then receipt, costs and switching publishing off (#123); the CLI push of the nine migrations and four switches (NEEDED.md); LangSmith keys (#122); the read-only feed checks on 23, 25 and 28 October (#111).

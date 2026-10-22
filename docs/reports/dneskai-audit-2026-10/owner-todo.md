@@ -71,28 +71,25 @@ Don't cancel the Apify subscription, even though an old Quorum note suggests it.
 
 ---
 
-## 4. One database session (about 30–45 min, best done together)
+## 4. One database push (about 20 min)
 
-Production recorded its database changes under different version numbers than the repository. Until that list is lined up, no new database change can go in safely. Eight prepared changes are waiting, and the features that need them stay hidden behind switches.
+The migration history is lined up: since 22 October the repository lists every version production recorded, so no repair is needed. I changed only the repository; nothing was written to production. Nine prepared changes are waiting, and the features that need them stay hidden behind switches.
 
-Tell me "go" and I'll prepare the exact commands. You run them, because they write to production.
-
-1. **Line up the migration history.** I prepare the commands; you approve and run them.
-2. **Run the two cleanup statements** that trim old scheduler logs. Until then the daily run logs one harmless error.
-3. **Apply the eight waiting changes.** They unlock:
+1. **Apply the nine waiting changes** with the Supabase CLI. The three commands are in `docs/migration-guide.md`, section "Applying the prepared migrations". You run them, because they need the database password and write to production. They unlock:
+   - the scheduler log cleanup (the daily run stops logging its one harmless error);
    - "Give up and queue again" for a stuck Instagram publication;
    - "Re-review" for held stories and "Move to next free slot" and "Release" for expired posts;
    - richer article text in the stories;
    - better category picking;
-   - the Apify research ledger.
-4. **Flip the matching switches in Vercel and redeploy.** I'll give you the list.
+   - the Apify research ledger, which spends nothing until you approve the plan.
+2. **Flip four switches in Vercel and redeploy:** `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`, `MARKETING_PUBLICATION_REQUEUE_ENABLED`.
 
 ---
 
 ## 5. When the basics work
 
 ### Pilot post (20 min, at most $1.50)
-After section 1: open the Design Lab, edit and approve one post, switch publishing on for `@dneskai` only, check that it appears on Instagram and in Publikované, then switch publishing off again.
+Publishing is already on for `@dneskai`, and two real posts reached review on 22 October. Open the Design Lab, check and edit the carousel, and approve it. It goes out in its slot. Check that it appears on Instagram and in Publikované, then switch publishing off again unless you want it daily. My review notes are in issue #123.
 
 ### LangSmith diagnostics (20 min, free tier)
 Create a project in an EU LangSmith workspace and add four values to Vercel. The exact steps are in `NEEDED.md`. You'll then see a privacy-safe trace for every draft.
