@@ -188,11 +188,16 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(jobs.map((job) => job.status)).toEqual(['review', 'review']);
     expect(new Set(jobs.map((job) => job.id))).toEqual(new Set(briefs.map((row) => row.job_id)));
     expect(jobs.every((job) => job.template === DNESKAI_RENDERER_VERSION)).toBe(true);
-    // Both jobs were queued by the briefs step, then executed one per tick by the generation step.
+    // Both jobs were queued by the briefs step, then executed one per tick by the generation step. The memory job's
+    // first attempt failed validation, went back to the queue with its feedback and made its second attempt on the
+    // next tick (GEN-14), so it took two generation steps.
     expect(ticks.filter((entry) => step(entry.result, 'briefs')?.status === 'done').map((entry) => step(entry.result, 'briefs')!.detail)).toEqual([
       { runId: expect.any(String), created: 2, jobs: 2, skipped: 0 }]);
     const generated = ticks.filter((entry) => step(entry.result, 'generation')?.status === 'done').map((entry) => step(entry.result, 'generation')!.detail);
-    expect(generated.map((detail) => [detail?.claimed, detail?.jobStatus])).toEqual([[true, 'review'], [true, 'review']]);
+    // The two jobs were queued in the same instant, so either may run first.
+    expect(generated.map((detail) => `${detail?.claimed}:${detail?.jobStatus}`).sort()).toEqual(['true:queued', 'true:review', 'true:review']);
+    const requeued = generated.findIndex((detail) => detail?.jobStatus === 'queued');
+    expect(generated.slice(requeued + 1)).toContainEqual(expect.objectContaining({ jobId: generated[requeued]!.jobId, jobStatus: 'review' }));
     // The memory brief's first answer drew a bullet the body face cannot carry: the renderer's glyph gate refused it
     // and the second call got the problem as an instruction naming the slide, the field and the code point.
     expect(anthropic.requests).toHaveLength(3);

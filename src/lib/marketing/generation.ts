@@ -86,6 +86,27 @@ export type GeneratedMarketingDraft = {
 export class MarketingGenerationError extends Error {
   constructor(public readonly code: string, public readonly providerFailure?: MarketingProviderFailure) { super(code); this.name = "MarketingGenerationError"; }
 }
+/**
+ * Where a deferred copy-validation retry continues (GEN-14): the attempts already made, their running usage,
+ * their issue codes and the targeted feedback the next attempt sends. Stored on the job between ticks.
+ */
+export const MarketingGenerationResumeSchema = z.strictObject({
+  attempt: z.number().int().min(1).max(2),
+  feedback: z.string().min(1).max(64_000),
+  issues: z.array(z.string().regex(/^[a-z0-9-]{1,64}$/)).max(30),
+  usage: z.strictObject({
+    attempts: z.number().int().min(1).max(3), inputTokens: z.number().int().nonnegative(), outputTokens: z.number().int().nonnegative(),
+    estimatedCostUsd: z.number().nonnegative().max(1),
+  }),
+}).refine((resume) => resume.usage.attempts === resume.attempt, { message: "attempts mismatch" });
+export type MarketingGenerationResume = z.infer<typeof MarketingGenerationResumeSchema>;
+/**
+ * A copy-validation failure before the last attempt, thrown instead of retrying in the same call when the
+ * caller asked for `deferRetry`. Carries the resume point; nothing was spent beyond `resume.usage`.
+ */
+export class MarketingGenerationRetryDeferred extends MarketingGenerationError {
+  constructor(public readonly resume: MarketingGenerationResume) { super("generation-retry-deferred"); this.name = "MarketingGenerationRetryDeferred"; }
+}
 export function generationPrompt(source: SourcePacket, knowledge: GenerationInput["knowledge"]): { system: string; prompt: string } {
   return {
     system: [
@@ -206,6 +227,13 @@ export type GenerationDependencies = {
   evidencePublishers?: DneskaiEvidencePublishers;
   /** Brief generation: the studio's deck gate. Defaults to `validateDneskaiDeck` from dneskai-render.ts. */
   validateDneskaiDeck?: (deck: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal) => Promise<DneskaiSlideRenderProblem[]>;
+  /**
+   * GEN-14: a copy-validation failure before the last attempt throws `MarketingGenerationRetryDeferred` instead of
+   * retrying inside the same latency budget. The caller stores the resume point and calls again with `resume`.
+   */
+  deferRetry?: boolean;
+  /** Continues a deferred retry: the next attempt, the same budget, cost and attempt cap counted from the stored usage. */
+  resume?: MarketingGenerationResume;
 };
 
 function legacyProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, challenge: ReturnType<typeof authoredCodingChallenge> | null): GenerationProfile<MarketingCopy> {
@@ -359,20 +387,25 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   if (estimatedTokens(attemptInput("")) > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
   const reservationFor = (inputBytes: number) => cost({ inputTokens: inputBytes, outputTokens: budget.maxOutputTokens }, model.pricing);
   if (reservationFor(attemptInput("")) > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
+  const resume = dependencies.resume === undefined ? null : MarketingGenerationResumeSchema.safeParse(dependencies.resume);
+  if (resume && (!resume.success || resume.data.attempt >= budget.maxAttempts || resume.data.usage.estimatedCostUsd > budget.maxCostUsd)) throw new MarketingGenerationError("generation-retry-invalid");
+  const resumed = resume?.success ? resume.data : null;
   const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) })) ?? null;
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
-  const usage = { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
+  // A resumed retry starts from the usage the earlier attempts recorded, so the $0.25 and the attempt cap span both calls.
+  const usage = resumed ? { ...resumed.usage } : { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
   const report = () => { try { dependencies.onUsage?.({ ...usage }); } catch {} };
+  if (resumed) report();
   // Billing may have happened without a usage figure. A brief job then records its whole maximum, which the DNESKAi
   // daily ceiling counts; the article and exercise paths keep counting the attempt's own reservation.
   const ambiguous = (reservation: number) => {
     usage.estimatedCostUsd = source.kind === "brief" ? Math.max(usage.estimatedCostUsd + reservation, budget.maxCostUsd) : usage.estimatedCostUsd + reservation;
     report();
   };
-  const failedValidationIssues = new Set<string>();
-  let retryFeedback = "";
+  const failedValidationIssues = new Set<string>(resumed?.issues ?? []);
+  let retryFeedback = resumed?.feedback ?? "";
   try {
-    for (let attempt = 1; attempt <= budget.maxAttempts; attempt++) {
+    for (let attempt = (resumed?.attempt ?? 0) + 1; attempt <= budget.maxAttempts; attempt++) {
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
       const inputBytes = attemptInput(retryFeedback);
       if (estimatedTokens(inputBytes) > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
@@ -410,6 +443,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
         for (const issue of issues) failedValidationIssues.add(issue);
         retryFeedback = outcome.feedback;
         if (attempt === budget.maxAttempts) throw new MarketingGenerationError("copy-validation-failed");
+        if (dependencies.deferRetry) throw new MarketingGenerationRetryDeferred({ attempt, feedback: retryFeedback, issues: [...failedValidationIssues].slice(0, 30), usage: { ...usage } });
         continue;
       }
       if (!sourceUsable(source, now())) throw new MarketingGenerationError("source-unavailable");
@@ -419,6 +453,11 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
     }
     throw new MarketingGenerationError("copy-validation-failed");
   } catch (error) {
+    if (error instanceof MarketingGenerationRetryDeferred) {
+      // This call ends here; the retry is a new call with its own trace, which lists these codes as retry reasons.
+      await diagnostic(() => trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...[...failedValidationIssues].slice(0, 29), error.code] }));
+      throw error;
+    }
     const code = error instanceof MarketingGenerationError ? error.code : "generation-failed";
     // The trace keeps at most 30 issue codes.
     await diagnostic(() => trace?.finish({ status: "failed", revisionHash: null, usage, issues: [...[...failedValidationIssues].slice(0, 29), code] }));

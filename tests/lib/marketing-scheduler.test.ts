@@ -329,6 +329,18 @@ describe('media, briefs and generation', () => {
   });
 });
 
+describe('a job queued again for its deferred retry (GEN-14)', () => {
+  it('stays pending, and the next tick runs its second attempt', async () => {
+    let attempts = 0;
+    const h = harness({ queuedGenerationJobs: async () => attempts < 2 ? [jobA] : [], executeJob: async () => (++attempts === 1 ? { claimed: true, status: 'queued', retry: { attempt: 2 } } : { claimed: true, status: 'review' }) }, new Clock(evening));
+    const first = await h.tick();
+    expect(step(first, 'generation')).toMatchObject({ status: 'done', pending: true, detail: { jobId: jobA, jobStatus: 'queued' } });
+    h.clock.advance(5 * 60_000);
+    expect(step(await h.tick(), 'generation')).toMatchObject({ status: 'done', detail: { jobId: jobA, jobStatus: 'review' } });
+    expect(h.called('executeJob')).toHaveLength(2);
+  });
+});
+
 describe('generation priority (production-03)', () => {
   // 20:30Z is an even five-minute slot (collection's turn), 20:35Z an odd one.
   const odd = evening + 5 * 60_000;

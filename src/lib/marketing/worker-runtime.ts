@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { marketingJobIdentityHash, marketingJobTemplate, parseMarketingJobRequest, createMarketingWorkerHandler, runMarketingWorkerJob, type MarketingJobRequest, type MarketingWorkerResult, type DurableMarketingQueue } from "../../../services/marketing-worker/protocol";
-import { createClaudeMarketingModel, DEFAULT_GENERATION_BUDGET, MarketingGenerationError, type GeneratedMarketingDraft, type GenerationDependencies, type MarketingModel } from "./generation";
+import { createClaudeMarketingModel, DEFAULT_GENERATION_BUDGET, MarketingGenerationError, MarketingGenerationResumeSchema, MarketingGenerationRetryDeferred, type GeneratedMarketingDraft, type GenerationDependencies, type MarketingGenerationResume, type MarketingModel } from "./generation";
 import { DNESKAI_DECK_TEMPLATE_VERSION } from "./dneskai-generation";
 import { dneskaiEvidencePublishers } from "./dneskai-publishers";
 import { createMarketingTracer, LANGSMITH_EU_ENDPOINT, type MarketingTracer } from "./tracing";
@@ -256,7 +256,27 @@ export type ExecuteMarketingDependencies = {
   loadDneskaiMedia?: LoadDneskaiMediaBytes;
   /** Defaults to the carousel studio renderer over `createDneskaiSlideStorage`. */
   renderDneskaiDeck?: RenderDneskaiDeck;
+  /**
+   * GEN-14: a copy-validation failure on the first attempt puts the job back in the queue with its retry feedback
+   * instead of retrying inside the same 45 s; the next execution makes the second attempt. Pilot jobs never defer.
+   */
+  deferRetry?: boolean;
 };
+/** What a job waiting for its deferred retry stores in `marketing_jobs.result` while it is queued again. */
+export const MARKETING_JOB_RETRY_SCHEMA_VERSION = "marketing-job-retry/1";
+const JobRetryStateSchema = z.strictObject({ schemaVersion: z.literal(MARKETING_JOB_RETRY_SCHEMA_VERSION), resume: MarketingGenerationResumeSchema });
+/**
+ * The retry state of a claimed job: null for a first execution. Anything else stored on a claimed job is refused,
+ * because running it as a first attempt could make a third paid call.
+ */
+async function claimedJobRetryState(db: Database, ownerId: string, jobId: string, fence: string): Promise<MarketingGenerationResume | null> {
+  const { data, error } = await db.from("marketing_jobs").select("result").eq("user_id", ownerId).eq("id", jobId).eq("fence", fence).maybeSingle();
+  if (error || !data) throw new MarketingWorkerRuntimeError("job-retry-state-unavailable");
+  if (data.result === null || data.result === undefined) return null;
+  const parsed = JobRetryStateSchema.safeParse(data.result);
+  if (!parsed.success) throw new MarketingWorkerRuntimeError("job-retry-state-invalid");
+  return parsed.data.resume;
+}
 export async function executeMarketingJob(db: Database, ownerId: string, jobId: string, dependencies: ExecuteMarketingDependencies) {
   assertOwner(ownerId); z.uuid().parse(jobId);
   const config = marketingProviderConfiguration(dependencies.env);
@@ -275,6 +295,9 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
   // What the generation may have spent so far: recorded on a failed job so the DNESKAi daily ceiling can count it.
   let spent: GeneratedMarketingDraft["usage"] | null = null;
   try {
+    const resume = await claimedJobRetryState(db, ownerId, jobId, fence);
+    // A failure before the second attempt still records what the first one spent.
+    if (resume) spent = { ...resume.usage };
     const request = parseMarketingJobRequest(data);
     if (!request.generation.consent) throw new MarketingWorkerRuntimeError("marketing-consent-required");
     assertSchedule(request.generation.scheduledAt, new Date());
@@ -310,6 +333,8 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
       loadDneskaiMedia: dependencies.loadDneskaiMedia,
       evidencePublishers: dneskaiEvidencePublishers,
       onUsage: (usage) => { spent = usage; },
+      ...(resume ? { resume } : {}),
+      ...(dependencies.deferRetry && !pilot ? { deferRetry: true } : {}),
       ...(originalSource.brand === "dneskai" ? { admitPaidCall: dneskaiDailyGenerationAdmission(db, ownerId, jobId, fence, env) } : {}),
       renderDneskaiDeck: dependencies.loadDneskaiMedia ? (input) => (dependencies.renderDneskaiDeck
         ?? createDneskaiDeckRenderer({ storage: (owner, slideSignal) => createDneskaiSlideStorage(db, owner, { signal: slideSignal }) }))({ ...input, owner: ownerId, loadMedia: dependencies.loadDneskaiMedia! }) : undefined,
@@ -324,6 +349,18 @@ export async function executeMarketingJob(db: Database, ownerId: string, jobId: 
     const revision = parseContentRevision(result.revision);
     if (signal.aborted || revisionReadiness(revision).length || revisionContentHash(revision) !== result.revisionHash) throw new MarketingWorkerRuntimeError("job-result-invalid");
   } catch (failure) {
+    if (failure instanceof MarketingGenerationRetryDeferred) {
+      // Back to the queue under the same fence, with the retry feedback and the usage so far. The daily ledger keeps
+      // counting the job at its reservation until it finishes; a lost write leaves the lease to expire into
+      // reconciliation, like a lost finish.
+      const state = { schemaVersion: MARKETING_JOB_RETRY_SCHEMA_VERSION, resume: failure.resume };
+      const { data: requeued, error: requeueError } = await db.from("marketing_jobs")
+        .update({ status: "queued", fence: null, lease_until: null, result: state, error_code: null })
+        .eq("user_id", ownerId).eq("id", jobId).eq("status", "running").eq("fence", fence).gt("lease_until", new Date().toISOString())
+        .select("id");
+      if (requeueError || !Array.isArray(requeued) || requeued.length !== 1) throw new MarketingWorkerRuntimeError("job-finish-reconciliation-required");
+      return { claimed: true, status: "queued" as const, retry: { attempt: failure.resume.attempt + 1, issues: failure.resume.issues } };
+    }
     // No automatic replay; never persist provider response/credentials/exception text.
     const knownCode = pilotUnavailable ? "pilot-admission-unavailable" : knowledgeUnavailable ? "knowledge-reference-unavailable" : failure instanceof MarketingWorkerRuntimeError || failure instanceof MarketingGenerationError || failure instanceof MarketingRenderError || failure instanceof MarketingPilotError || failure instanceof MarketingTemplateApprovalError
       ? failure.code : failure instanceof Error && ["source-superseded", "template-superseded"].includes(failure.message) ? failure.message : "worker-execution-failed";

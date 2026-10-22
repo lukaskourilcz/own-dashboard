@@ -370,7 +370,8 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
           const result = await ports.executeJob(jobId, abort) as { claimed?: unknown; status?: unknown; job?: { status?: unknown } | null } | null;
           const jobStatus = typeof result?.status === "string" ? result.status : typeof result?.job?.status === "string" ? result.job.status : null;
           return {
-            status: "done", pending: queuedJobs.length > 1,
+            // A job queued again for its deferred retry (GEN-14) makes its second attempt on the next tick.
+            status: "done", pending: queuedJobs.length > 1 || jobStatus === "queued",
             detail: { jobId, claimed: result?.claimed === true, jobStatus },
             state: { blocked },
           };

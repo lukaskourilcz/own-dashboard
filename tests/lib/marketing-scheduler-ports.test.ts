@@ -127,7 +127,7 @@ describe('scheduler ports', () => {
     expect(mocks.purge).toHaveBeenCalledWith(db, owner, 30);
     mocks.loader.mockReturnValue('media-loader');
     await ports.executeJob(other, signal);
-    expect(mocks.execute).toHaveBeenCalledWith(db, owner, other, { refreshSource: 'refresh-source-function', loadDneskaiMedia: 'media-loader', signal, env });
+    expect(mocks.execute).toHaveBeenCalledWith(db, owner, other, { refreshSource: 'refresh-source-function', loadDneskaiMedia: 'media-loader', signal, env, deferRetry: true });
     mocks.publish.mockResolvedValue({ outcomes: [{ publicationId: other, status: 'dry-run', errorCode: null, remoteUrl: null }] });
     expect(await ports.publishDue(true, signal)).toEqual({ outcomes: [{ publicationId: other, status: 'dry-run', errorCode: null }] });
     expect(mocks.publish).toHaveBeenCalledWith(db, owner, 'dneskai', true, signal);
