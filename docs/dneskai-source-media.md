@@ -62,7 +62,9 @@ v registru) a jeho známé CDN (`PUBLISHER_IMAGE_DOMAINS` v `dneskai-media-plan.
 Obrázkové proxy (WordPress Jetpack `i0.wp.com/<host>/…`, Substack
 `substackcdn.com/image/fetch/…`, GitHub camo) zmenšují libovolný veřejný obrázek, proto
 u nich rozhoduje host, který nesou: musí to být doména vydavatele nebo jeho CDN.
-Neznámý host se přeskočí jako `media-host-not-publisher`, nehádá se. Vynechávají se
+Obrázek z neznámého hostu se do plánu nedostane, nehádá se. Takové obrázky se
+zapíšou jako jeden záznam `media-host-not-publisher` s pozicí -1, počtem (`count`)
+a nejvýše pěti hosty (`hosts`), aby šlo seznam CDN rozšiřovat podle dat. Vynechávají se
 avatary, loga, ikony, autorské a sdílecí bloky, navigace, patička, SVG, GIF a obrázky
 deklarované nebo skutečně menší než 300 px. Logo nebo ikona se poznají podle složky
 (`/avatars/`, `/icons/`) nebo krátkého názvu souboru (`logo.png`, `site-logo-dark.png`,
@@ -169,7 +171,7 @@ ho načte přes `loadDneskaiMedia` v `dneskai-client.ts`.
 |---|---|---|
 | `media-duplicate-bytes` | stejné byty už jsou na dřívější pozici | ne |
 | `media-excluded-format`, `media-excluded-small` | není JPEG/PNG/WebP, animace, kratší strana pod 300 px | ne |
-| `media-host-not-publisher` | host není vydavatel ani jeho CDN | ne |
+| `media-host-not-publisher` | host není vydavatel ani jeho CDN; u feedů jeden záznam s pozicí -1, počtem a hosty z doby plánu | ne |
 | `media-http-403`, `-404`, `-410` | odkaz vypršel nebo neexistuje | ne |
 | `media-http-429`, `-5xx`, `media-timeout`, `media-fetch-failed` | přechodná chyba | ano, celkem 3× |
 | `media-too-large`, `media-undecodable`, `media-host-unsafe`, `media-redirect-refused` | soubor nebo adresa nevyhovuje | ne |

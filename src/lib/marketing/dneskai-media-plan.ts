@@ -219,14 +219,16 @@ const EXCLUDED_ALT = /(?:^|[^a-z])(?:avatar|headshot of the author|author photo|
 const EXCLUDED_CONTAINER = /(?:^|[^a-z])(?:author|byline|avatar|logo|related|recirc|newsletter|share|social|comments?|promo|advert|ads?|sponsor|sidebar|footer|nav|breadcrumbs?|icons?)(?:[^a-z]|$)/i;
 const EXCLUDED_ELEMENTS = 'nav, footer, aside, form, noscript, [role=navigation], [role=contentinfo], [role=complementary]';
 
-function usableImageUrl(raw: string | undefined, base: URL, allowImage: DneskaiImageUrlPolicy): string | undefined {
+function usableImageUrl(raw: string | undefined, base: URL, allowImage: DneskaiImageUrlPolicy, refused?: (url: URL) => void): string | undefined {
   const value = raw?.trim();
   if (!value || /^(?:data|blob):/i.test(value)) return undefined;
   try {
     const url = parseSafeHttpsUrl(new URL(value, base).href);
     url.hash = '';
     if (url.href.length > 2048 || EXCLUDED_EXTENSION.test(url.pathname) || EXCLUDED_FORMAT_QUERY.test(url.search) || chromePath(url.pathname)) return undefined;
-    return allowImage(url) ? url.href : undefined;
+    if (allowImage(url)) return url.href;
+    refused?.(url);
+    return undefined;
   } catch { return undefined; }
 }
 const declaredSmall = (value: string | undefined) => value !== undefined && /^\d+$/.test(value.trim()) && Number(value) < 300;
@@ -235,15 +237,32 @@ const declaredSmall = (value: string | undefined) => value !== undefined && /^\d
  * The article's pictures in publisher order: social-card meta images, the feed's own image, then every
  * figure and image of the article body, deduplicated, at most `limit`.
  */
-export function extractArticleMedia(html: string, pageUrl: string, options: { allowImage: DneskaiImageUrlPolicy; feedImages?: readonly string[]; limit?: number }): DneskaiMediaPlanEntry[] {
+/**
+ * The host a refused picture is counted under: the proxied host for an image proxy, else the registrable domain.
+ * Public CDN names only, so the publisher allowlist can be extended from evidence instead of guesses (M-08).
+ */
+function refusedImageHost(url: URL): string {
+  const proxied = proxiedImageHost(url);
+  return registrableDomain(proxied ?? url.hostname);
+}
+
+export function extractArticleMedia(html: string, pageUrl: string, options: { allowImage: DneskaiImageUrlPolicy; feedImages?: readonly string[]; limit?: number; refusedHosts?: Map<string, number> }): DneskaiMediaPlanEntry[] {
   const $ = cheerio.load(html);
   const page = new URL(pageUrl);
   const baseHref = $('base[href]').first().attr('href');
   let base = page;
   try { if (baseHref) { const declared = new URL(baseHref, page); if (declared.protocol === 'https:') base = declared; } } catch { /* the page URL stays the base */ }
   const found: Array<{ url: string; kind: DneskaiMediaOriginKind; sourceAltText?: string }> = [];
+  // Each distinct refused picture counts once under its host, however many tags name it.
+  const refusedSeen = new Set<string>();
+  const countRefused = options.refusedHosts && ((refused: URL) => {
+    if (refusedSeen.has(refused.href)) return;
+    refusedSeen.add(refused.href);
+    const host = refusedImageHost(refused);
+    options.refusedHosts!.set(host, (options.refusedHosts!.get(host) ?? 0) + 1);
+  });
   const push = (raw: string | undefined, kind: DneskaiMediaOriginKind, alt?:string) => {
-    const url = usableImageUrl(raw, base, options.allowImage);const sourceAltText=cleanSourceText(alt??"",1000);
+    const url = usableImageUrl(raw, base, options.allowImage, countRefused);const sourceAltText=cleanSourceText(alt??"",1000);
     if (url) found.push({ url, kind, ...(sourceAltText?{sourceAltText}:{}) });
   };
 
