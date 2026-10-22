@@ -212,15 +212,20 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     }
     if (!ready) assets = [];
     const account = request.accountId ? read().accounts.find((item) => item.id === request.accountId) : null;
+    const audioTrackId = request.audioTrackId === undefined ? post.audio?.trackId ?? null : request.audioTrackId;
+    const { audio: savedAudio, ...unchanged } = clone(post);
+    void savedAudio;
     const next: DneskaiWorkspacePost = {
-      ...clone(post), id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
+      ...unchanged, id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
       caption: request.caption, scheduledAt: new Date(request.scheduledAt).toISOString(),
       account: account ? { id: account.remoteId, handle: account.handle, platform: 'instagram' } : post.account,
+      // #164: absent keeps the saved track, null returns the post to the rotation.
+      ...(audioTrackId ? { audio: { trackId: audioTrackId } } : {}),
       deck: post.deck ? editedDeck(post, request, slides) : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
       contentHash: '0'.repeat(64),
     };
-    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
+    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, audio: next.audio ?? null, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
     post.status = 'superseded';
     read().posts.unshift(next);
     return { id: next.id, ready: next.ready, contentHash: next.contentHash, render: { status: ready ? 'rendered' : 'refused', problems } };
