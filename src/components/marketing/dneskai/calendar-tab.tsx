@@ -6,7 +6,7 @@ import { dneskaiCalendarDays, formatDneskaiDay, pragueDstDay, type DneskaiWorksp
 import { cn } from '@/lib/utils';
 import { DneskaiStateChip } from './state-chip';
 import { DneskaiCodeText } from './code-text';
-import { TabHeader } from './review-tab';
+import { TabHeader } from './tab-header';
 
 type Lang = 'en' | 'cs';
 
