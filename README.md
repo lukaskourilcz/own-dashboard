@@ -155,6 +155,7 @@ The migrations, in the order they run:
 59. `20261021100000_dneskai_hideable_project_tabs.sql` — recreates the `user_preferences.hidden_project_tabs` check with the four DNESKAi workspace tabs (For review today, Calendar, Published, Errors and costs) after the eleven project tabs, so Settings can hide them. No row is rewritten.
 60. `20261022020702_dneskai_richer_brief_evidence.sql` — unapplied, bounded article prose stored under the existing media lease; source image alt metadata stays in the fixed plan.
 61. `20261022020759_dneskai_brief_v2_compatibility.sql` — unapplied, accept brief/2 while retaining strict brief/1 reads and old snapshots.
+62. `20261022021835_dneskai_release_lapsed_reports.sql` — future skips release only lapsed, never-generated reports; prepared, unapplied.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
 

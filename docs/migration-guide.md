@@ -732,3 +732,7 @@ select cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete
 `20261022020702_dneskai_richer_brief_evidence.sql` adds bounded article prose to the owner-scoped media collection and a fenced service-only setter. Alt and figcaption metadata stay in the immutable image plan. `20261022020759_dneskai_brief_v2_compatibility.sql` accepts both brief document versions without rewriting stored briefs or changing grants.
 
 Both migrations are local preparation. Reconcile production's divergent marketing history before an approved coordinated application/code release. Do not use the earlier generic `db push` recipe on production until that owner decision is resolved. Existing brief/1 documents remain readable; new briefs use brief/2. No collection switch, paid ceiling or staging ledger changes.
+
+### Prepared: lapsed brief reports
+
+`20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied pending migration-history reconciliation.
