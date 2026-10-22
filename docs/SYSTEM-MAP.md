@@ -49,7 +49,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 
 | System | What OwnDashboard uses it for | Where | Production state |
 |---|---|---|---|
-| Supabase | Database, RLS, Storage (`marketing-assets`, `marketing-media`), pg_cron scheduler, Vault secrets | `src/lib/supabase/` | Live |
+| Supabase | Database, RLS, Storage (`marketing-assets`, `marketing-media`, `marketing-reels` once migration `20261023130000` is pushed), pg_cron scheduler, Vault secrets | `src/lib/supabase/` | Live |
 | Vercel | Hosting, env vars, crons | `vercel.json` | Live |
 | GitHub | Repos `lukaskourilcz/own-dashboard` and `lukaskourilcz/quorum`; project repo stats | `src/lib/github*` | Live |
 | Google Calendar | Direct calendar read/write | `src/lib/calendar*`, `src/lib/google-*` | Live |
@@ -162,6 +162,14 @@ hash; approval binds exactly that hash (`marketing_approve_revision`). Actions:
 The "Zdroje (DNESKAi)" tab shows sources, feeds, the Instagram account panel ("Ověřit účet", publishing switch, token
 expiry) and recovery actions. "Publikované" lists receipts; "Chyby a náklady" shows costs.
 
+### Reels (prepared, off)
+
+`renderDneskaiReel` (`dneskai-reel-render.ts`, #163) turns a post's rendered slides into a 1080 × 1920 MP4 with
+`ffmpeg-static`: 3.5 s per slide, 0.5 s crossfades, a gentle zoom, AAC audio or a silent track. The route
+`/api/marketing/dneskai/render-reel` (`maxDuration` 300 on Vercel Pro with Fluid Compute) stores it once per
+revision hash and audio in the private `marketing-reels` bucket and returns a signed URL. Behind
+`MARKETING_DNESKAI_REELS_ENABLED`. Details: `docs/dneskai-source-media.md`.
+
 ### Publishing
 
 A post publishes only when all three are true: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the
@@ -198,8 +206,8 @@ Costs show in "Chyby a náklady".
 
 ## 6. Database and switches still to apply
 
-The repository lists every migration version production recorded (reconciled 22 October). Fourteen prepared
-migrations are not applied yet: `20261022000000` through `20261023100000`. The owner applies them with
+The repository lists every migration version production recorded (reconciled 22 October). Fifteen prepared
+migrations are not applied yet: `20261022000000` through `20261023130000`. The owner applies them with
 `npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Then the
 owner sets these switches in Vercel Production and redeploys:
 - `DNESKAI_RICH_EVIDENCE_ENABLED`

@@ -68,11 +68,13 @@ const sharpLibvips = "./node_modules/@img/sharp-libvips-*/lib/**/*";
 
 const nextConfig: NextConfig = {
   // Native bindings loaded through platform-suffixed specifiers no bundler can resolve.
-  serverExternalPackages: ["sharp", "@resvg/resvg-js"],
+  serverExternalPackages: ["sharp", "@resvg/resvg-js", "ffmpeg-static"],
   outputFileTracingIncludes: {
     "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
+    // The reel renderer (#163) spawns the ffmpeg-static executable, which no import reaches.
+    "/api/marketing/dneskai/render-reel": ["./node_modules/ffmpeg-static/ffmpeg"],
     // The Design Lab's fixture-only fit route runs the same studio fitter as /api/marketing/dneskai/fit.
     "/api/dev-preview/dneskai-fit": [...carouselStudioFiles, sharpLibvips],
     "/api/dev-preview/dneskai-render": [...carouselStudioFiles, sharpLibvips, "./public/demo/dneskai/original-*.jpg"],

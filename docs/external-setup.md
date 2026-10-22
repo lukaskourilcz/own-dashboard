@@ -181,6 +181,10 @@ The code connects one Instagram professional account through the Instagram API w
 - **Regenerate with a note** needs `supabase/migrations/20261022190000_dneskai_regenerate_with_note.sql` and the server-only `DNESKAI_REGENERATE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-regenerate-with-a-note-owner-decision-8)), then set the variable and redeploy. Until then the Lab shows the button disabled with its reason and the route answers `regenerate-unavailable`.
 - **Topics (náměty)** need `supabase/migrations/20261023100000_dneskai_topics.sql` and the server-only `DNESKAI_TOPICS_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-dneskai-topics-150-plan-a1)), then set the variable and redeploy. Until then `/api/marketing/dneskai/topics` answers 404.
 
+### DNESKAi Reels (#163)
+
+- The Reel renderer needs `supabase/migrations/20261023130000_dneskai_reel_bucket.sql` (the private `marketing-reels` bucket) and the server-only `MARKETING_DNESKAI_REELS_ENABLED=true`. Both are off by default. Until the switch is on, `/api/marketing/dneskai/render-reel` answers 404. The encoder is the `ffmpeg-static` binary that `npm ci` downloads during the Vercel build; there is nothing to install. Decision and measurements: [source media](dneskai-source-media.md#reels-slideshow-video-163).
+
 ### Comment keyword and DM message (#157, #159)
 
 - A DNESKAi post may carry an `engagement`: a one-word keyword, the DM text sent to whoever comments it, and an optional public reply under the comment. It lives on the revision, so approval covers the exact words. Nothing sends it yet; the comment watcher comes later and has its own switch.
