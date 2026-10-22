@@ -4,6 +4,7 @@ import { Storage } from 'happy-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { SettingsPanel } from '@/components/panels/settings-panel';
 import { ProjectWorkspace } from '@/components/projects/project-workspace';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
@@ -34,7 +35,7 @@ const workspace = <ProjectWorkspace project={project} allProjects={[project]} co
   repoNotes={[]} setRepoNotes={noop} repoLinks={[]} setRepoLinks={noop} communications={[]} setCommunications={noop} aiLinks={[]} aiCategories={[]}
   projectLinks={[]} setProjectLinks={noop} promptLinks={[]} competitors={[]} setCompetitors={noop} onOpenProject={noop} displayCurrency="CZK"
   repositoryIntegrationEnabled={false} onBackToProjects={noop} isPreview />;
-const render = (node: React.ReactNode) => act(() => root.render(<QueryClientProvider client={client}>{node}</QueryClientProvider>));
+const render = (node: React.ReactNode) => act(() => root.render(<QueryClientProvider client={client}><TooltipProvider>{node}</TooltipProvider></QueryClientProvider>));
 const switches = () => [...container.querySelectorAll<HTMLButtonElement>('[role="switch"]')];
 const switchNamed = (name: string) => switches().find(item => item.getAttribute('aria-label') === name);
 const tabs = () => [...container.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
@@ -50,12 +51,12 @@ describe('hideable DNESKAi project tabs', () => {
     expect(heading.className).toContain('normal-case'); expect(heading.className).not.toContain('uppercase');
     const group = container.querySelector(`ul[aria-labelledby="${heading.parentElement!.id}"]`)!;
     const rowLabel = (row: Element) => row.querySelector('span')?.textContent;
-    expect([...group.querySelectorAll('li')].map(rowLabel)).toEqual([tabsLabel.review, tabsLabel.calendar, professional[lang].projectSources, tabsLabel.published, tabsLabel.costs]);
+    expect([...group.querySelectorAll('li')].map(rowLabel)).toEqual([tabsLabel.review, tabsLabel.calendar, tabsLabel.published, professional[lang].projectSources]);
 
     // Each DNESKAi switch names the project, so no other switch on the page (the Navigation Calendar) shares its name.
     const names = switches().map(item => item.getAttribute('aria-label'));
     const groupNames = [...group.querySelectorAll('[role="switch"]')].map(item => item.getAttribute('aria-label'));
-    expect(groupNames).toEqual([...[tabsLabel.review, tabsLabel.calendar].map(s.projectTabInDneskai), professional[lang].projectSources, ...[tabsLabel.published, tabsLabel.costs].map(s.projectTabInDneskai)]);
+    expect(groupNames).toEqual([...[tabsLabel.review, tabsLabel.calendar, tabsLabel.published].map(s.projectTabInDneskai), professional[lang].projectSources]);
     for (const name of groupNames) expect(names.filter(item => item === name)).toHaveLength(1);
     expect(names).toContain(tabsLabel.calendar);
     const general = group.previousElementSibling!.previousElementSibling!;
@@ -64,12 +65,13 @@ describe('hideable DNESKAi project tabs', () => {
     expect([...general.querySelectorAll('li')].map(rowLabel)[0]).toBe(professional[lang].projectOverview);
   });
 
-  it('hides a DNESKAi tab from the workspace and opens Overview when the hidden tab was open', () => {
+  it('shows four DNESKAi tabs with review open, and a hidden tab falls back to the first one left', () => {
     document.documentElement.lang = 'en';
     render(<><SettingsPanel syncPreferences={false} />{workspace}</>);
     const labels = dneskaiWorkspace.en.tabs; const p = professional.en;
-    expect(tabs().map(item => item.textContent)).toEqual([p.projectOverview, labels.review, labels.calendar, p.projectSources, labels.published, labels.costs,
-      p.projectTasksNotes, p.projectActivity, p.projectCommunication, p.projectRepository, p.projectFinance, expect.any(String), p.projectKnowledge, p.projectScaling, p.projectMonetization]);
+    expect(tabs().map(item => item.textContent)).toEqual([labels.review, labels.calendar, labels.published, p.projectSources]);
+    expect(tabNamed(labels.review)!.getAttribute('aria-selected')).toBe('true');
+    expect(container.querySelector('[data-dynamic-tab="dneskai-review"]')).not.toBeNull();
 
     click(tabNamed(labels.calendar)!);
     expect(tabNamed(labels.calendar)!.getAttribute('aria-selected')).toBe('true');
@@ -80,16 +82,38 @@ describe('hideable DNESKAi project tabs', () => {
     expect(calendarSwitch.getAttribute('aria-checked')).toBe('false');
     expect(JSON.parse(localStorage.getItem('hiddenProjectTabs') ?? '[]')).toEqual(['dneskai-calendar']);
     expect(tabNamed(labels.calendar)).toBeUndefined();
-    expect(tabNamed(p.projectOverview)!.getAttribute('aria-selected')).toBe('true');
+    expect(tabNamed(labels.review)!.getAttribute('aria-selected')).toBe('true');
     expect(container.querySelector('[data-dynamic-tab="dneskai-calendar"]')).toBeNull();
-    expect(tabs().map(item => item.textContent).slice(0, 5)).toEqual([p.projectOverview, labels.review, p.projectSources, labels.published, labels.costs]);
+    expect(tabs().map(item => item.textContent)).toEqual([labels.review, labels.published, p.projectSources]);
 
-    // Sources hides from the DNESKAi group like the four DNESKAi tabs.
+    // Sources hides from the DNESKAi group like the DNESKAi tabs.
     click(switchNamed(p.projectSources)!);
     expect(tabNamed(p.projectSources)).toBeUndefined();
 
     click(calendarSwitch); click(switchNamed(p.projectSources)!);
     expect(JSON.parse(localStorage.getItem('hiddenProjectTabs') ?? '[]')).toEqual([]);
     expect(tabNamed(labels.calendar)).toBeDefined(); expect(tabNamed(p.projectSources)).toBeDefined();
+  });
+
+  it('keeps the general project sections in the overflow menu; the open one joins the strip', () => {
+    document.documentElement.lang = 'cs';
+    render(<><SettingsPanel syncPreferences={false} />{workspace}</>);
+    const more = dneskaiWorkspace.cs.more; const p = professional.cs;
+    const button = container.querySelector<HTMLButtonElement>('[data-testid="dneskai-more"]')!;
+    expect(button.getAttribute('aria-label')).toBe(more.button);
+    click(button);
+    const menu = document.querySelector<HTMLElement>('[data-testid="dneskai-more-menu"]')!;
+    const items = [...menu.querySelectorAll('button')].map(item => item.textContent);
+    expect(items.slice(0, 4)).toEqual([more.costs, more.account, more.recovery, more.shortcuts]);
+    expect(items.slice(4)).toEqual([p.projectOverview, p.projectTasksNotes, p.projectActivity, p.projectCommunication, p.projectRepository, p.projectFinance, expect.any(String), p.projectKnowledge, p.projectScaling, p.projectMonetization]);
+    click([...menu.querySelectorAll('button')].find(item => item.textContent === p.projectFinance)!);
+    expect(tabNamed(p.projectFinance)!.getAttribute('aria-selected')).toBe('true');
+    expect(tabs()).toHaveLength(5);
+
+    // A section hidden in Settings leaves the menu too.
+    click(switchNamed(p.projectFinance)!);
+    expect(tabNamed(p.projectFinance)).toBeUndefined();
+    click(button);
+    expect([...document.querySelectorAll('[data-testid="dneskai-more-menu"] button')].map(item => item.textContent)).not.toContain(p.projectFinance);
   });
 });

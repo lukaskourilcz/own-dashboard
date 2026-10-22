@@ -31,7 +31,7 @@ test("a project workspace lists the links it uses and adds one from the library"
   await gotoPreview(page);
   await signInFixtureUser(page);
   await echoProjectLinkWrites(page);
-  await page.goto("/dev-preview?project=dneskai");
+  await page.goto("/dev-preview?project=dneskai&projectTab=overview");
   const section = page.getByRole("list", { name: "Links" });
   await expect(section.getByRole("link", { name: "Google Search Console", exact: true })).toBeVisible();
   await expect(section.getByText("Checks that each daily edition is indexed.")).toBeVisible();
