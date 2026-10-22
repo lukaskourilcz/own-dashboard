@@ -1,14 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn(), media: vi.fn(), lister: vi.fn(), feedback: vi.fn(async () => false)}));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn(), media: vi.fn(), lister: vi.fn(), feedback: vi.fn(async () => false), refresh: vi.fn()}));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
 vi.mock("@/lib/marketing/owner-feedback", () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
+vi.mock("@/lib/marketing/asset-urls", () => ({ refreshMarketingAssetUrls: mocks.refresh }));
 vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: () => mocks.render(), getDneskaiMediaLoader: (...args: unknown[]) => mocks.media(...args), getBriefAssetHashLister: (...args: unknown[]) => mocks.lister(...args), getBriefPoolLoader: () => async () => ({ media: [], primaryCandidateId: null }) }));
 import { POST } from "@/app/api/marketing/revisions/route";
 import { revisionContentHash } from "@/lib/marketing/hashes";
-import type { ContentRevision } from "@/lib/marketing/contracts";
-import { a, b, c, deckRevision } from "./marketing-dneskai-revision-fixture";
+import { DNESKAI_RENDER_REPORT_VERSION, type ContentRevision, type DneskaiRenderReport } from "@/lib/marketing/contracts";
+import { a, b, c, deckRevision, signed } from "./marketing-dneskai-revision-fixture";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const current = "33333333-3333-4333-8333-333333333333";
@@ -17,13 +18,13 @@ const account = "77777777-7777-4777-8777-777777777777";
 const scheduledAt = () => new Date(Date.now() + 86400000).toISOString();
 const request = (body: unknown) => new Request("https://own.example/api/marketing/revisions", { method: "POST", headers: { Origin: "https://own.example", "Content-Type": "application/json" }, body: JSON.stringify(body) });
 type Rpc = { name: string; args: Record<string, unknown> };
-function userDb(revision: ContentRevision, accounts: Record<string, unknown> = {}, approveError: { message: string } | null = null) {
+function userDb(revision: ContentRevision, accounts: Record<string, unknown> = {}, approveError: { message: string } | null = null, renderReport: DneskaiRenderReport | null = null) {
   const rpc = vi.fn(async (name: string) => name === "marketing_approve_revision" ? (approveError ? { data: null, error: approveError } : { data: "88888888-8888-4888-8888-888888888888", error: null }) : { data: null, error: null });
   const from = vi.fn((table: string) => {
     const filters: Record<string, unknown> = {};
     const query = { select: () => query, eq: (column: string, value: unknown) => { filters[column] = value; return query; },
       maybeSingle: async () => table === "marketing_accounts" ? { data: accounts[String(filters.id)] ?? null, error: null } : { data: { revision, content_hash: revisionContentHash(revision) }, error: null },
-      single: async () => ({ data: { revision, slides: [], offline_import_receipt: null }, error: null }) };
+      single: async () => ({ data: { revision, slides: [], offline_import_receipt: null, render_report: renderReport }, error: null }) };
     return query;
   });
   return { auth: { getUser: async () => ({ data: { user: { id: owner } } }) }, from, rpc };
@@ -39,7 +40,9 @@ beforeEach(() => {
   mocks.render.mockReturnValue(vi.fn(async () => ({ status: "rendered", assets: rendered, renderKeys: [], problems: [] })));
   mocks.media.mockReturnValue(vi.fn(async () => Buffer.from("test-only")));
   mocks.lister.mockReturnValue(vi.fn(async () => [a, b, c]));
+  mocks.refresh.mockImplementation(async (_db: unknown, _owner: string, assets: ContentRevision["assets"]) => assets.map((asset, i) => ({ ...asset, url: signed(i + 1, "renewed-test-only-token") })));
 });
+const cleanReport: DneskaiRenderReport = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: "rendered", renderKeys: ["k1", "k2", "k3"], renderedAt: "2026-10-20T09:00:00.000Z", problems: [] };
 
 describe("POST /api/marketing/revisions deck edits (#118)", () => {
   it("saves an unready replacement, renders it with the injected media loader and attaches the rendered hash", async () => {
@@ -63,6 +66,39 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
     expect(attach.args).toMatchObject({ p_owner: owner, p_revision: saved, p_expected_hash: save.args.p_hash, p_hash: finalHash, p_ready: true });
     expect(body).toMatchObject({ id: saved, ready: true, contentHash: finalHash, render: { status: "rendered", problems: [] } });
     expect(mocks.feedback).toHaveBeenCalledWith(expect.objectContaining({ revisionId: saved, revisionHash: finalHash, decision: "edited" }), expect.anything(), expect.anything());
+  });
+
+  it("keeps the rendered JPEGs for a caption- or time-only edit: no render, same sha256s, a new hash that needs a new approval (review-03)", async () => {
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, cleanReport));
+    const when = scheduledAt();
+    const response = await POST(request({ action: "edit", id: current, caption: "Jen nový caption.", scheduledAt: when }));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(mocks.render.mock.results[0]!.value).not.toHaveBeenCalled();
+    expect(mocks.refresh).toHaveBeenCalledWith(admin.db, owner, deckRevision().assets);
+    const save = admin.calls.find((call) => call.name === "marketing_save_revision")!;
+    expect(save.args).toMatchObject({ p_replace: current, p_ready: false, p_slides: [] });
+    const attach = admin.calls.find((call) => call.name === "marketing_attach_revision_render")!;
+    const content = attach.args.p_content as ContentRevision;
+    expect(content.assets.map((asset) => asset.sha256)).toEqual(deckRevision().assets.map((asset) => asset.sha256));
+    expect(content).toMatchObject({ caption: "Jen nový caption.", scheduledAt: when });
+    expect(attach.args).toMatchObject({ p_ready: true, p_report: cleanReport, p_expected_hash: save.args.p_hash });
+    expect(attach.args.p_hash).toBe(revisionContentHash(content));
+    expect(attach.args.p_hash).not.toBe(revisionContentHash(deckRevision()));
+    expect(body).toMatchObject({ id: saved, ready: true, contentHash: attach.args.p_hash, render: { status: "rendered", problems: [] } });
+  });
+
+  it("renders when the deck changed, the previous render was not clean or its stored bytes cannot be re-verified", async () => {
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db);
+    mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, cleanReport));
+    await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), deck: { slides: [{ from: 0, headline: "Jiný titulek" }, { from: 1 }, { from: 2 }] } }));
+    mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, { ...cleanReport, status: "refused" }));
+    await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt() }));
+    mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, cleanReport));
+    mocks.refresh.mockRejectedValueOnce(new Error("stored-asset-hash-or-mime-invalid"));
+    await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt() }));
+    // One renderer instance is wired for every request in this test: three edits, three renders.
+    expect(mocks.render.mock.results[0]!.value).toHaveBeenCalledTimes(3);
   });
 
   it("refuses before writing when the renderer is unwired or an image is outside the brief's media", async () => {

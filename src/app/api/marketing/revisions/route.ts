@@ -8,7 +8,7 @@ import { parseContentRevision, type ContentRevision } from '@/lib/marketing/cont
 import { refreshMarketingAssetUrls } from '@/lib/marketing/asset-urls';
 import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
-import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision } from '@/lib/marketing/dneskai-revision-edit';
+import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from '@/lib/marketing/dneskai-revision-edit';
 import { getBriefAssetHashLister, getBriefPoolLoader, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
 import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 export const maxDuration=60;
@@ -17,7 +17,7 @@ const Input=z.discriminatedUnion('action',[
  // „Approve the day“ (Design Lab): each post approved only if its own hash still matches; per-post results.
  DneskaiApproveManyInputSchema,
  z.strictObject({action:z.enum(['returned','skipped']),id:z.uuid(),feedback:z.string().max(2000).optional()}),
- // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer; `accountId` is a marketing_accounts row.
+ // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer unless the deck is unchanged; `accountId` is a marketing_accounts row.
  z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional()}),
 ]);
 // SQL refusals the review UI can explain; anything else stays the generic code.
@@ -51,7 +51,7 @@ export async function POST(request:Request){
    return NextResponse.json({publicationId:data,scheduling:'tick'});
   }
   if(input.action==='edit'){
-   const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt').eq('id',input.id).eq('user_id',user.id).single();
+   const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt,render_report').eq('id',input.id).eq('user_id',user.id).single();
    if(error||!row)return NextResponse.json({error:'revision-unavailable'},{status:404});
    const scheduled=Date.parse(input.scheduledAt);if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});
    const current=parseContentRevision(row.revision);
@@ -74,9 +74,13 @@ export async function POST(request:Request){
      return NextResponse.json({error:failure instanceof Error&&unwired.has(failure.message)?failure.message:'media-unavailable'},{status:503});
     }
     // Saved unready and without assets: the previous revision is superseded now, so its approval cannot be used meanwhile.
+    // A caption-, time- or account-only edit leaves the deck as it was: its previous JPEGs (same sha256s, re-verified
+    // byte for byte and re-signed) are attached instead of a render (review-03). Anything that fails here renders.
+    let reuse=reusableDneskaiRender(current,row.render_report,revision);
+    if(reuse){try{reuse={...reuse,assets:await refreshMarketingAssetUrls(admin,user.id,reuse.assets)};}catch{reuse=null;}}
     const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:[]});
     let rendered;
-    try{rendered=await renderAndAttachDneskaiRevision(admin,user.id,{revisionId:saved.id,revision},{render:wiring.render,loadMedia:wiring.loadMedia,signal:AbortSignal.timeout(45000)});}
+    try{rendered=await renderAndAttachDneskaiRevision(admin,user.id,{revisionId:saved.id,revision},{render:wiring.render,loadMedia:wiring.loadMedia,signal:AbortSignal.timeout(45000),reuse});}
     catch{return NextResponse.json({id:saved.id,ready:false,error:'render-attach-failed'},{status:502});}
     await recordMarketingOwnerFeedback({traceId:revision.traceId,revisionId:saved.id,revisionHash:rendered.contentHash,decision:'edited'},process.env,{db,ownerId:user.id});
     return NextResponse.json({id:saved.id,ready:rendered.ready,contentHash:rendered.contentHash,render:{status:rendered.report.status,problems:rendered.report.problems}});
