@@ -312,3 +312,5 @@ export const DneskaiCostsReadSchema = z.strictObject({
   }),
 });
 export type DneskaiCostsRead = z.infer<typeof DneskaiCostsReadSchema>;
+/** Topics (náměty, #150): the schemas live in dneskai-topics.ts and are part of this read model. */
+export * from './dneskai-topics';

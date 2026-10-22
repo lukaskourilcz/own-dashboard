@@ -13,6 +13,7 @@ import {
   DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
   DneskaiWorkspaceReadSchema, DneskaiWorkspaceWaitingSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
+import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPICS_VERSION, DneskaiTopicSchema, DneskaiTopicsReadSchema, emptyDneskaiTopicGroups, type DneskaiTopic, type DneskaiTopicsRead } from './dneskai-topics';
 
 /**
  * Server read of the DNESKAi workspace (#119). Every query runs through the owner's session client and filters on
@@ -225,4 +226,48 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(), generation, days, runs, jobs, publications, unreadable,
     ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, generationDeferred: ticks.filter(generationDeferred).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },
   });
+}
+
+const TOPIC_ACTIVE_LIMIT = 120;
+const TOPIC_ARCHIVE_LIMIT = 40;
+type TopicRow = { id: string; kind: string; source_kind: string; title_cs: string; summary: string | null; keyword: string | null; verdict: string | null; evidence: unknown;
+  status: string; proposed_for: string; approved_at: string | null; created_at: string; updated_at: string };
+
+/** A topic's source as the list shows it: the domain of its first URL, or the Instagram handle the evidence names. */
+function topicSource(evidence: unknown): DneskaiTopic['source'] {
+  const value = evidence && typeof evidence === 'object' ? evidence as { urls?: unknown; handle?: unknown } : {};
+  const url = Array.isArray(value.urls) ? value.urls.find((item): item is string => typeof item === 'string' && /^https:\/\//.test(item) && item.length <= 2048) ?? null : null;
+  const handle = typeof value.handle === 'string' && /^@?[A-Za-z0-9._]{1,30}$/.test(value.handle) ? `@${value.handle.replace(/^@/, '')}` : null;
+  let host: string | null = null;
+  try { host = url ? new URL(url).hostname.replace(/^www\./, '').slice(0, 120) : null; } catch { host = null; }
+  return { label: handle ?? host, url: host ? url : null };
+}
+
+/**
+ * Topics (náměty, #150) of one DNESKAi project, grouped by kind and status: every open topic (proposed, approved and
+ * in progress, the newest 120) and the rejected or expired ones of the last 14 days (the newest 40). Returns null
+ * when DNESKAI_TOPICS_ENABLED is off, so nothing reads a table that may not exist yet.
+ */
+export async function readDneskaiTopics(db: Database, owner: string, project: string, now: Date, options: { enabled: boolean }): Promise<DneskaiTopicsRead | null> {
+  if (!options.enabled) return null;
+  z.uuid().parse(owner); z.uuid().parse(project);
+  const columns = 'id,kind,source_kind,title_cs,summary,keyword,verdict,evidence,status,proposed_for,approved_at,created_at,updated_at';
+  const [activeResult, archiveResult, latestResult] = await Promise.all([
+    db.from('marketing_dneskai_topics').select(columns).eq('user_id', owner).eq('project_id', project).not('status', 'in', `(${DNESKAI_TOPIC_ARCHIVED_STATUSES.join(',')})`)
+      .order('proposed_for', { ascending: false }).order('created_at', { ascending: false }).limit(TOPIC_ACTIVE_LIMIT),
+    db.from('marketing_dneskai_topics').select(columns).eq('user_id', owner).eq('project_id', project).in('status', [...DNESKAI_TOPIC_ARCHIVED_STATUSES])
+      .gte('updated_at', new Date(now.getTime() - 14 * 86_400_000).toISOString()).order('updated_at', { ascending: false }).limit(TOPIC_ARCHIVE_LIMIT),
+    db.from('marketing_dneskai_topics').select('created_at').eq('user_id', owner).eq('project_id', project).neq('source_kind', 'manual').order('created_at', { ascending: false }).limit(1),
+  ]);
+  const all = [...rows(activeResult as { data: TopicRow[] | null; error: unknown }, 'dneskai-topics-unavailable'), ...rows(archiveResult as { data: TopicRow[] | null; error: unknown }, 'dneskai-topics-unavailable')];
+  const groups = { news: emptyDneskaiTopicGroups(), education: emptyDneskaiTopicGroups() };
+  let unreadable = 0;
+  for (const row of all) {
+    const topic = DneskaiTopicSchema.safeParse({ id: row.id, kind: row.kind, sourceKind: row.source_kind, source: topicSource(row.evidence), title: row.title_cs, summary: row.summary,
+      keyword: row.keyword, verdict: row.verdict, status: row.status, proposedFor: row.proposed_for, approvedAt: iso(row.approved_at), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) });
+    if (!topic.success) { unreadable += 1; continue; }
+    groups[topic.data.kind][topic.data.status].push(topic.data);
+  }
+  const latest = rows(latestResult as { data: Array<{ created_at: string }> | null; error: unknown }, 'dneskai-topics-unavailable')[0];
+  return DneskaiTopicsReadSchema.parse({ schemaVersion: DNESKAI_TOPICS_VERSION, generatedAt: now.toISOString(), groups, lastProposedAt: latest ? iso(latest.created_at) : null, unreadable });
 }
