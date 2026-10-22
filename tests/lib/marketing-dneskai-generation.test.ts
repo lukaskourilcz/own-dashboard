@@ -135,7 +135,7 @@ describe("marketing-copy/6 prompt (#116, owner rules of 22 October 2026)", () =>
   });
 });
 
-describe("marketing-copy/5 schema", () => {
+describe("marketing-copy/6 schema", () => {
   it("sends the SDK-transformed schema: enums and limits as descriptions, no unsupported constraints", () => {
     const wire = dneskaiCopyWireSchema() as { properties: Record<string, Record<string, unknown>> & { slides: { items: { properties: Record<string, Record<string, unknown>> } } } };
     expect(wire.properties.slides.items.properties.type!.description).toBe('{enum: ["cover-photo","figure","split","statement","single"]}');
@@ -163,23 +163,36 @@ describe("marketing-copy/5 schema", () => {
       expect({ id, limits: Object.fromEntries(layers.map((layer) => [(layer as { slot: string }).slot, (layer as { maxChars: number }).maxChars])) }).toEqual({ id, limits });
     }
   });
-  it("normalizes hashtags as the studio does and keeps at most five, #dneskai first, topic tags before the base set", async () => {
+  it("keeps no credit layer in any template of the vendored studio", async () => {
+    const studio = await import("@boardlessai/carousel-studio");
+    for (const id of Object.keys(DNESKAI_TEXT_LIMITS)) {
+      const slots = studio.DNESKAI_PHOTO_TEMPLATES.get(id)!.slides[0]!.layers.flatMap((layer) => layer.type === "text" ? [(layer as { slot: string }).slot] : []);
+      expect({ id, credit: slots.includes("credit") }).toEqual({ id, credit: false });
+    }
+    // The cover and both single templates draw the headline alone.
+    for (const id of ["dneskai-cover-photo", "dneskai-single-photo", "dneskai-single-type"] as const) expect(Object.keys(DNESKAI_TEXT_LIMITS[id])).toEqual(["headline"]);
+  });
+  it("normalizes hashtags as the studio does and keeps at most ten, #dneskai first, topic tags before the base set", async () => {
     const studio = await import("@boardlessai/carousel-studio");
     expect(normalizeDneskaiHashtag("Úpravy fotek")).toBe(studio.normalizeHashtag("Úpravy fotek"));
-    expect(DNESKAI_HASHTAG_LIMIT).toBe(5);
+    expect(DNESKAI_HASHTAG_LIMIT).toBe(10);
     expect(dneskaiHashtags([])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);
-    expect(dneskaiHashtags(["Umělá inteligence", "#OpenAI", "č"])).toEqual(["dneskai", "umelainteligence", "openai", "ai", "technologie"]);
-    expect(dneskaiHashtags(Array.from({ length: 12 }, (_, index) => `tag${index}`))).toEqual(["dneskai", "tag0", "tag1", "tag2", "tag3"]);
+    expect(dneskaiHashtags(["Umělá inteligence", "#OpenAI", "č"])).toEqual(["dneskai", "umelainteligence", "openai", "ai", "technologie", "aitech"]);
+    expect(dneskaiHashtags(Array.from({ length: 12 }, (_, index) => `tag${index}`))).toEqual(["dneskai", ...Array.from({ length: 9 }, (_, index) => `tag${index}`)]);
     expect(dneskaiHashtags(["AI", "ai", "Dneskai"])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);
-    expect(dneskaiHashtags(["Adobe", "Lightroom"])).toEqual(["dneskai", "adobe", "lightroom", "ai", "umelainteligence"]);
+    expect(dneskaiHashtags(["Adobe", "Lightroom"])).toEqual(["dneskai", "adobe", "lightroom", "ai", "umelainteligence", "technologie", "aitech"]);
+    // The base set fills only the room the topic tags leave.
+    expect(dneskaiHashtags(["a1", "a2", "a3", "a4", "a5", "a6", "a7"])).toEqual(["dneskai", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "ai", "umelainteligence"]);
   });
-  it("accepts at most five proposed hashtags and says five in the prompt", () => {
+  it("accepts at most ten proposed hashtags and says so in the prompt", () => {
     const copy = validCopy(pictures);
-    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: ["a1", "a2", "a3", "a4", "a5"] }).success).toBe(true);
-    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: ["a1", "a2", "a3", "a4", "a5", "a6"] }).success).toBe(false);
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("hashtags: up to 4 topic tags, the most specific first");
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("at most 5 hashtags;");
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).not.toContain("up to 8 topic tags");
+    const tags = (count: number) => Array.from({ length: count }, (_, index) => `a${index + 1}`);
+    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: tags(10) }).success).toBe(true);
+    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: tags(11) }).success).toBe(false);
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("hashtags: up to 9 topic tags, the most specific first");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("code adds #dneskai and keeps the post at 10 hashtags.");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("at most 10 hashtags;");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).not.toContain("at most 5 hashtags");
   });
 });
 
