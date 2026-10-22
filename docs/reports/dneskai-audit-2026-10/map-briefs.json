@@ -1,0 +1,1272 @@
+{
+  "subsystem": "briefs",
+  "summary": "The brief step (own-dashboard/src/lib/marketing/dneskai-briefs.ts, 496 lines, no model) turns each selected event into a dneskai-brief/1 with evidence ranked publisher > newsroom > aggregator, at most 20 pictures, a suggested format and one of four fixed Prague slots, then admits it as a guarded generation job only when a verified @dneskai Instagram account exists. The owner brief's map is accurate except for one line number (:112 is :111) and the lapse wording (the day's last brief lapses as brief-target-date-passed; brief-expired cannot fire first). The biggest problems are upstream of the model: evidence is the feed description capped at 2,000 chars (RSS content:encoded and the fetched article body are both discarded), the 400-char/one-picture rule locks generation into single-image posts, a held brief that lapses leaves its candidates `selected` so the event can never be re-selected for 30 days, generation is gated on the publishing account although only the publisher needs it, and the owner has no path to re-slot, retry, release or generate anyway. Nothing in the brief carries a hook or kit hint. Measured: 36/42 tests pass locally and the 6 failures are a machine-timezone leak in the dry-day test (9/9 pass with TZ=UTC).",
+  "files": [
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+      "role": "Brief creation: slots, format rule, repeat check, admission, lapse; Supabase store"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-brief.ts",
+      "role": "dneskai-brief/1 zod contract (evidence, media, suggestedFormat, scheduledAt, expiresAt)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-brief-read.ts",
+      "role": "Owner read model for the Zdroje tab (state, slot, counts; no brief document)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+      "role": "SourcePacket of a brief (body = primary excerpt), lifetime 48 h / 14 d, refresh from the store"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+      "role": "Candidate (text <= 12000), feed item (summary <= 2000) and event view contracts"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+      "role": "Source tiers and rankDneskaiEventMembers (evidence order)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+      "role": "Consumer of the brief: offer plans, format rules, fact rule"
+    },
+    {
+      "path": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+      "role": "finish/prepare/skip/admit/queued/source SQL guards"
+    },
+    {
+      "path": "own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql",
+      "role": "marketing_enqueue_job: 8 jobs per rolling 24 h per owner"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+      "role": "briefs tick unit (min budget 5 s, stops at pending=false)"
+    },
+    {
+      "path": "own-dashboard/docs/dneskai-briefs.md",
+      "role": "Subsystem doc (233 lines, Czech)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-briefs.test.ts",
+      "role": "Unit tests over a store stub (22 cases)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+      "role": "PGlite end-to-end day (9 cases)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-brief-refresh.test.ts",
+      "role": "refreshSource for brief packets (4 cases)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-brief.test.ts",
+      "role": "Contract tests (2 cases)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-briefs-flow-database.test.ts",
+      "role": "PGlite flow tests (8 cases, not run here)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-briefs-database.test.ts",
+      "role": "PGlite selection tests (8 cases, not run here)"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+      "role": "Zdroje tab: shows brief state and slot, offers only refresh and open-review"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/dneskai/sources/route.ts",
+      "role": "GET-only route for the collection state"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "Contract: dneskai-brief/1 is a strict object with evidence (1..30), media (<=30), suggestedFormat carousel|single-image, scheduledAt, timeZone Europe/Prague, observedAt and expiresAt; media must belong to an evidence candidate and be distinct.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-brief.ts:9 `export const DNESKAI_BRIEF_VERSION = \"dneskai-brief/1\"`; :49-65 `z.strictObject({ schemaVersion, eventId, memberHash, targetDate, category, title, evidence: ...min(1).max(30), media: ...max(30), suggestedFormat: z.enum([\"carousel\",\"single-image\"]), scheduledAt, timeZone: z.literal(\"Europe/Prague\"), observedAt, expiresAt })`; :66-75 superRefine",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Evidence order is publisher (tier 0) > newsroom (tier 1, the default) > aggregator (tier 2), then more usable pictures, then newer, then id. Tiers are two hard-coded id sets in dneskai-events.ts, not registry fields.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:216-222 `const PUBLISHER_SOURCES = new Set([...11 ids])`, `const AGGREGATOR_SOURCES = new Set([...14 ids])`, `dneskaiSourceTier(sourceId): 0|1|2`; :229-233 `sort((a,b) => dneskaiSourceTier(a) - dneskaiSourceTier(b) || mediaCount(b) - mediaCount(a) || instant(b) - instant(a) || id)`; own-dashboard/src/lib/marketing/dneskai-briefs.ts:108 `const ranked = rankDneskaiEventMembers(..., usable).filter((candidate) => safeEvidenceUrl(candidate.url)).slice(0, 30)`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "At most 20 media per brief, in each report's original position order, primary report first, no repeated sha256.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:35 `export const DNESKAI_BRIEF_MEDIA_LIMIT = 20;` and :115-120 `ranked.flatMap(... sort((a,b) => a.position - b.position) ...).slice(0, DNESKAI_BRIEF_MEDIA_LIMIT)`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Format rule: single-image when the primary report's text (trimmed) is under 400 characters AND the whole brief has at most one usable picture (insetCapable width >= 600 or fullBleedCapable short side >= 900); otherwise carousel. Generation then locks a single-image brief to single-image.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:37 `DNESKAI_BRIEF_SINGLE_TEXT_LIMIT = 400`; :97 `dneskaiUsablePicture = (media) => media.fullBleedCapable || media.insetCapable`; :122 `const singleImage = primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;`; own-dashboard/src/lib/marketing/dneskai-generation.ts:228 `formats: brief.suggestedFormat === \"single-image\" ? [\"single-image\"] : [\"carousel\", \"single-image\"]`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Four fixed slots 08:00, 12:30, 17:00, 20:00 Europe/Prague (DST-correct via pragueScheduledAt). A slot is free when it is >= now + 30 min and no other DNESKAi post or brief of that day lies within 60 min of it. Briefs take slots in rank order: rank 1 always gets the earliest free slot (08:00), a brief still waiting for media reserves the next free slot, a skipped brief leaves its slot to the next.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:30 `DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '17:00', '20:00']`; :32 `SLOT_CLEARANCE_MINUTES = 60`; :34 `MIN_LEAD_MINUTES = 30`; :65-66 free rule; :68 `peek: () => dneskaiBriefSlots(targetDate).find(free)`; :280 `rows ... sort((a, b) => a.rank - b.rank)`; :313 `if (row.member_ids.some((id) => owed.has(id))) { const reserved = slots.peek(); if (reserved) slots.take(reserved); result.pending = true; continue; }`; :318-319 `const slot = slots.peek(); if (!slot) { await skip(row, 'brief-slot-unavailable'); continue; }`; :335 `slots.take(slot)` only after the repeat check",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "14-day repeat rule: a brief repeats recent coverage (revisions in review/approved/publishing/published/reconciliation/returned/skipped, plus ready/queued briefs of other runs) when a canonicalised evidence URL matches a covered source or evidence URL, or a picture is byte-identical or pHash distance <= 3; site-wide cards (one picture on >= 3 articles of one host) are ignored. The repeat is skipped as collection-already-covered and its reports become duplicates.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:38 `DNESKAI_REPEAT_WINDOW_DAYS = 14`; :43 `DNESKAI_REPEAT_PHASH_MAX_DISTANCE = 3`; :48 `DNESKAI_SITEWIDE_PICTURE_ARTICLES = 3`; :50 covering statuses; :149 `if (item.urls.some(... urls.has(key))) return { coverage: item, by: 'url' }`; :152 `if (pictures.some((sha) => item.assetSha256s.some((other) => near(sha, other)))) return { coverage: item, by: 'media' }`; :334 `await skip(row, 'collection-already-covered', repeat.coverage.duplicateOf)`; :401-421 coverage reads",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Admission: a built brief becomes a job only when marketing_accounts has a dneskai/instagram row with verified_at set; otherwise it is stored pending/account-unavailable and the step keeps returning pending. The job goes through marketing_enqueue_job, which refuses when the owner already has 8 marketing_jobs rows created in the last 24 hours, whatever the brand.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:462 `.eq('brand','dneskai').eq('platform','instagram').not('verified_at','is',null).maybeSingle()`; :336 `store.prepare(..., verified ? 'ready' : 'pending', verified ? null : 'account-unavailable')`; :345 `if (!verified) { result.created.push({ ..., jobId: null }); result.pending = true; continue; }`; own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql:96 `if (select count(*) from public.marketing_jobs where user_id=p_owner and created_at>now()-interval '24 hours')>=8 then raise exception 'daily job budget exhausted'`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Expiry: expiresAt = brief creation time + 48 h for ai-news/tech-news, + 14 days otherwise; the SourcePacket carries it and refresh returns an expired brief with its past expiresAt.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts:20-22 `return category === 'ai-news' || category === 'tech-news' ? 48 * HOUR : 14 * 24 * HOUR;`; own-dashboard/src/lib/marketing/dneskai-briefs.ts:127 `expiresAt: new Date(input.observedAt.getTime() + dneskaiBriefLifetimeMs(input.category)).toISOString()`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Lapse: on every 5-minute tick a held or retried brief is skipped as brief-slot-passed once its slot is under 30 minutes away; before the loop, a target day with no slot >= now + 30 min skips every open brief as brief-target-date-passed (so the 20:00 brief lapses at 19:30 under that code). The SQL admit guard only checks that the slot has not passed outright.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:307 `if (Date.parse(brief.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }`; :287-288 `if (!dneskaiBriefSlots(run.target_date).some((slot) => Date.parse(slot) >= clock().getTime() + ... )) { for (const row of open) await skip(row, 'brief-target-date-passed');`; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:234 `if b.scheduled_at<=clock_timestamp() then raise exception 'brief slot passed';end if;`; own-dashboard/src/lib/marketing/scheduler.ts:322 `if (state.runId === run.id && state.pending === false) return { status: \"noop\", code: \"briefs-current\" };`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Account-unavailable wait: a stored brief without a verified account is left pending each tick (nothing written) and admitted on the first tick after verification, provided its slot is still >= 30 min away.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:300 `const verified = await (account ??= store.account(input.owner));`; :309-310 `// Still held as account-unavailable ... if (!verified) { result.pending = true; continue; }`; :311 `if (row.status === 'pending') await store.prepare(input.owner, row.id, null, null, 'ready', null);`; tests/lib/marketing-dneskai-briefs.test.ts:260 and :275",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    },
+    {
+      "fact": "Correction of the owner brief's `dneskai-briefs.ts:112`: the brief takes the collected feed text at line 111 (excerpt) and decides the format on the same text at line 122. The article page is fetched by the media step for non-Instagram candidates and only its pictures are kept.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:111 `excerpt: candidate.text.slice(0, 4000),`; :122 `primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT`; own-dashboard/src/lib/marketing/dneskai-media.ts:302-303 `const page = await fetchArticle(candidate.url, deps, deps.signal); plan = extractArticleMedia(page.html, page.url, ...)`; own-dashboard/src/lib/marketing/dneskai-media-plan.ts:250-251 `$('article').toArray().map(... text: $(element).find('p').text().length)` (container found by text length, text discarded); Downloads/fable-dneskai-brief.md:231",
+      "check": {
+        "status": "verified",
+        "note": "Lines 111 and 122 confirmed; brief.md:231 cites :112."
+      }
+    },
+    {
+      "fact": "Candidate text is the feed item summary: for RSS the rss-parser description snippet (content:encoded is never read), for HTML listings one paragraph >= 40 chars or empty, sanitised and capped at 2,000 characters.",
+      "evidence": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/rss.ts:55 `summary: item.contentSnippet ?? item.content ?? item.summary,`; rss.ts:10-11 customFields only media:content and media:thumbnail; own-dashboard/node_modules/rss-parser/lib/fields.js:42 `['content:encoded', 'content:encoded', {includeSnippet: true}]`; own-dashboard/src/lib/marketing/free-feeds/sources/adapters/html.ts:205 `summary: paragraph.length >= 40 ? paragraph : \"\",`; own-dashboard/src/lib/marketing/free-feeds/sources/adapters/util.ts:82 `const summary = sanitizeExternalContent(fields.summary ?? \"\", 2_000);`; own-dashboard/src/lib/marketing/dneskai-providers.ts:64 `candidate(source.id,item.externalId,item.title,item.summary,...)`; own-dashboard/src/lib/marketing/dneskai-contracts.ts:81 `summary: z.string().max(2000)`",
+      "check": {
+        "status": "verified",
+        "note": "rss.ts customFields at :11 (map said :10-11); rss-parser fields.js:42 checked in own-dashboard main node_modules. Production: 116 of 134 candidates under 400 chars, max 2,000."
+      }
+    },
+    {
+      "fact": "No owner write path exists for briefs: the sources route is GET-only, no module outside dneskai-briefs.ts writes marketing_dneskai_briefs, the Zdroje tab offers only refresh and open-review, skipped briefs are terminal in SQL, and the scheduler stops calling a run once pending is false.",
+      "evidence": "own-dashboard/src/app/api/marketing/dneskai/sources/route.ts:5 `export async function GET(request:Request){` (only export); own-dashboard/src/components/marketing/dneskai-sources.tsx:21-22 `<Button ... onClick={() => void query.refetch()}>{t.refresh}` and `onClick={onOpenReview}`; :57 `{briefLabel(event.brief)}{event.brief.scheduledAt && <> · {t.slot}: ...`; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:200 `if b.status='skipped' then return to_jsonb(b);end if;` and :174 `if b.status not in('pending','ready') then raise exception 'brief closed'`; own-dashboard/src/lib/marketing/scheduler.ts:322",
+      "check": {
+        "status": "verified",
+        "note": "Also no write module elsewhere in src; review route GET-only."
+      }
+    },
+    {
+      "fact": "The brief, the generation offer and the calendar entry carry no hook, angle, audience or kit field.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-brief.ts:49-65 strictObject fields listed above; own-dashboard/src/lib/marketing/dneskai-generation.ts:252 `brief: { title: offer.brief.title, category: offer.brief.category, targetDate: czechDate(offer.brief.targetDate) },`; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:252 `jsonb_build_object('schemaVersion','dneskai-brief-entry/1','briefId',...,'title',...,'category',...,'suggestedFormat',...,'evidenceCount',...,'mediaCount',...)`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines opened at 8df25a5 and match."
+      }
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "DNESKAI_BRIEF_SLOTS",
+      "value": "08:00, 12:30, 17:00, 20:00 Europe/Prague",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:30",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES",
+      "value": "60",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:32",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_BRIEF_MIN_LEAD_MINUTES",
+      "value": "30 (slot must be >= now+30 min to take or keep)",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:34, :65, :287, :307",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_BRIEF_MEDIA_LIMIT",
+      "value": "20 (schema allows 30)",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:35; dneskai-brief.ts:59",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_BRIEF_SINGLE_TEXT_LIMIT",
+      "value": "400 characters of primary feed text",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:37, :122",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_REPEAT_WINDOW_DAYS",
+      "value": "14",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:38, :326",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_REPEAT_PHASH_MAX_DISTANCE",
+      "value": "3 bits",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:43",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "DNESKAI_SITEWIDE_PICTURE_ARTICLES",
+      "value": "3 articles of one host",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:48",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "Evidence excerpt cap",
+      "value": "4,000 chars in the brief; 2,000 in the packet evidence; body 12,000",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-brief.ts:25; dneskai-briefs.ts:111; dneskai-brief-source.ts:34, :37",
+      "check": {
+        "status": "verified",
+        "note": "Brief 4,000 (dneskai-brief.ts:25), packet evidence 2,000 (dneskai-brief-source.ts:37), body 12,000 (:34) confirmed."
+      }
+    },
+    {
+      "name": "Feed summary cap",
+      "value": "2,000 chars",
+      "evidence": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/util.ts:82; dneskai-contracts.ts:81",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "Brief lifetime",
+      "value": "48 h news, 14 d otherwise, from creation",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts:20-22; dneskai-briefs.ts:127",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "Job budget",
+      "value": "8 marketing_jobs rows per owner per rolling 24 h, all brands",
+      "evidence": "own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql:96",
+      "check": {
+        "status": "verified",
+        "note": "marketing_durable_jobs.sql:96 confirmed (>= 8 jobs created in 24 h raises)."
+      }
+    },
+    {
+      "name": "Offer plans",
+      "value": "evidence 6..1, media 12..3, excerpt total 5000..400 chars; primary excerpt 2000, supporting 700",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:169-172",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "Publisher acceptance window",
+      "value": "at most 15 min after the slot",
+      "evidence": "own-dashboard/src/lib/marketing/publisher.ts:264",
+      "check": {
+        "status": "verified",
+        "note": "Constant confirmed at the cited line."
+      }
+    },
+    {
+      "name": "Scheduler briefs minimum budget",
+      "value": "5,000 ms, no backoff",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:75; docs/dneskai-briefs.md:170-171",
+      "check": {
+        "status": "verified",
+        "note": "scheduler.ts:75 briefs: 5_000 confirmed; docs :170-171 say no backoff."
+      }
+    }
+  ],
+  "measurements": [
+    {
+      "what": "Non-database brief tests plus the dry day (4 files) on this Mac (TZ=CEST)",
+      "value": "42 tests: 36 passed, 6 failed, 7.39 s; all 6 failures in tests/lib/dneskai-dry-day.test.ts",
+      "method": "./node_modules/.bin/vitest run tests/lib/marketing-dneskai-briefs.test.ts tests/lib/marketing-dneskai-brief.test.ts tests/lib/marketing-dneskai-brief-refresh.test.ts tests/lib/dneskai-dry-day.test.ts",
+      "basis": "measured",
+      "check": {
+        "status": "corrected",
+        "note": "Re-run 2026-10-22 01:58 CEST: 42 tests, 36 passed, 6 failed (all dry-day), 21.43 s under load average ~30 (map: 7.39 s). Pass/fail split reproduced; duration is load-dependent."
+      }
+    },
+    {
+      "what": "Dry-day file alone with TZ=UTC",
+      "value": "9/9 passed, 16.70 s (briefs reach status queued with jobs on main)",
+      "method": "TZ=UTC ./node_modules/.bin/vitest run tests/lib/dneskai-dry-day.test.ts; the local failure is a timestamptz text compare: expected '2026-10-27 07:00:00+00', received '2026-10-27 08:00:00+01' (same instant) at tests/lib/dneskai-dry-day.test.ts:175-176",
+      "basis": "measured",
+      "check": {
+        "status": "corrected",
+        "note": "Re-run with TZ=UTC together with the two PGlite brief files: 24 tests, 23 passed, 1 dry-day case timed out at 300 s under load average ~30 (not an assertion). The timestamptz assertions that fail locally passed. 9/9 in 16.7 s not reproduced on this loaded machine."
+      }
+    },
+    {
+      "what": "Dry-day fixture evidence",
+      "value": "3 feed summaries of 213, 204 and 185 characters; every story carries 3 Instagram pictures",
+      "method": "awk over tests/helpers/dneskai-dry-day-world.ts summary: lines; line 183 images array",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "awk over tests/helpers/dneskai-dry-day-world.ts summary lines gives 214/205/186 including a quote character, i.e. 213/204/185."
+      }
+    },
+    {
+      "what": "Registry sources vs tier sets",
+      "value": "42 registry ids; 11 in PUBLISHER_SOURCES, 14 in AGGREGATOR_SOURCES, 17 fall to the default newsroom tier",
+      "method": "grep -o '\"id\": \"...\"' src/lib/marketing/dneskai-registry.ts compared with dneskai-events.ts:216-220",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Recounted: 42 registry ids, 25 in the two tier sets, 17 default (listed under briefs-14)."
+      }
+    },
+    {
+      "what": "Owner write surface for briefs",
+      "value": "0 API actions, 0 UI actions; 1 GET route",
+      "method": "grep for marketing_dneskai_briefs/skip_brief/prepare_brief outside dneskai-briefs.ts in src; route file exports; dneskai-sources.tsx buttons",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "grep re-run: only dneskai-briefs.ts writes marketing_dneskai_briefs; route exports GET only."
+      }
+    },
+    {
+      "what": "Code size",
+      "value": "dneskai-briefs.ts 496 lines, five brief modules 813 lines, doc 233 lines, 7 test files 1,358 lines",
+      "method": "wc -l",
+      "basis": "measured",
+      "check": {
+        "status": "corrected",
+        "note": "dneskai-briefs.ts 496, dneskai-brief.ts 81, dneskai-brief-source.ts 71, dneskai-brief-read.ts 77 (725 for four modules; the fifth module behind \"813\" is unnamed), doc 233. Brief-related test files now total 1,585 lines across 8 files incl. a db helper and the tracing test."
+      }
+    },
+    {
+      "what": "Git history of the step",
+      "value": "11 commits between 2026-10-20 and 2026-10-21; last 'Document when the DNESKAi brief step calls again' (2b6ab05)",
+      "method": "git log -- src/lib/marketing/dneskai-briefs.ts docs/dneskai-briefs.md",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "11 commits since 2026-10-19; last 2b6ab05 \"Document when the DNESKAi brief step calls again\" (2026-10-21)."
+      }
+    },
+    {
+      "what": "Production briefs for 2026-10-22 and candidate text lengths",
+      "value": "4 briefs, all pending/account-unavailable, member candidates still selected, slots 06:00/10:30/15:00/18:00 UTC; formats single-image x3 (media 0/1/0), carousel x1 (media 2); primary excerpts 166/162/137/236 chars; 134 candidates: 116 under 400 chars, median 138.5, 39 empty, max 2,000; 0 marketing_accounts, 0 marketing_jobs; scheduler briefs state pending=true for run 6305e565",
+      "method": "Production SELECT 2026-10-21 23:57 UTC (gcctapykhrdyxikieemn), 3 read-only queries",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Added by verifier."
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "briefs-01",
+      "title": "Feed-description evidence plus the 400-char/one-picture rule lock most briefs into single-image posts, and generation cannot upgrade them",
+      "category": "quality",
+      "claim": "The brief's only text is the feed summary (RSS description snippet or one listing paragraph, capped at 2,000 chars, in production 137-236 chars); the format rule turns short text + <= 1 usable picture into single-image, and generation then forbids carousel for that brief while its fact rule allows only what the excerpt states. The format is decided by the publisher's feed configuration, not by the story; Anthropic's listing adapter yields one paragraph or nothing.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 122,
+          "excerpt": "const singleImage = primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 228,
+          "excerpt": "formats: brief.suggestedFormat === \"single-image\" ? [\"single-image\" as const] : [\"carousel\" as const, \"single-image\" as const],"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 120,
+          "excerpt": "\"Facts: use only what the evidence titles and excerpts state. Add no background knowledge, names, dates, prices or numbers of your own"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/util.ts",
+          "line": 82,
+          "excerpt": "const summary = sanitizeExternalContent(fields.summary ?? \"\", 2_000);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/html.ts",
+          "line": 205,
+          "excerpt": "summary: paragraph.length >= 40 ? paragraph : \"\","
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+          "line": 64,
+          "excerpt": "items.push(candidate(source.id,item.externalId,item.title,item.summary,item.url,..."
+        },
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 219,
+          "excerpt": "4 briefs exist for 22 October; 3 of the 4 came out as single-image and 2 have no picture at all."
+        }
+      ],
+      "impactScore": 5,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Decide the format after a richer evidence pack exists (briefs-03) and make it a suggestion: keep `single-image` only when the pack is thin after article text, let generation choose carousel when evidence >= ~800 chars even with 0-1 pictures (statement/split decks are valid), and drop the picture count from the rule. Keep the 400-char constant as the floor for the text-only single. Add an end-to-end case with 0-1 pictures to the dry day (today every fixture story has 3 Instagram pictures).",
+      "impactStatement": "Three of the first four production briefs are single posts (owner-reported, not re-queried here); the owner's goal is scroll-stopping carousels, and a truthful carousel cannot be written from 200 characters. Every such post also wastes the generation call (~$0.02) on a format the owner does not want.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-briefs.ts:122 single-image rule (text < 400 and <= 1 usable picture); dneskai-generation.ts:228 locks single-image briefs; rss.ts:55 / html.ts:205 / util.ts:82 feed summary capped at 2,000. Production SELECT 2026-10-21 23:57 UTC (gcctapykhrdyxikieemn): the 4 briefs for 2026-10-22 are single-image x3 (media 0, 1, 0) and carousel x1 (media 2), primary excerpts 166/162/137/236 chars; across all 134 stored candidates 116 (87 %) have text under 400 chars, median 138.5, 39 empty, max 2,000 (cap hit).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 5,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "The format rule plus teaser-length evidence decides most posts before the model runs; this is the main quality ceiling of the stage, measured in production."
+      }
+    },
+    {
+      "id": "briefs-02",
+      "title": "RSS full text (content:encoded) is dropped at collection although rss-parser already exposes it",
+      "category": "quality",
+      "claim": "The RSS adapter takes rss-parser's description snippet and never reads `content:encoded`, which rss-parser parses by default (with a snippet) and which many registry feeds carry in full; the 2,000-char cap then applies to the description.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/rss.ts",
+          "line": 55,
+          "excerpt": "summary: item.contentSnippet ?? item.content ?? item.summary,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/rss.ts",
+          "line": 11,
+          "excerpt": "customFields: { item: [[\"media:content\", \"mediaContent\", { keepArray: true }], [\"media:thumbnail\", \"mediaThumbnail\", { keepArray: true }]] }"
+        },
+        {
+          "file": "own-dashboard/node_modules/rss-parser/lib/fields.js",
+          "line": 42,
+          "excerpt": "['content:encoded', 'content:encoded', {includeSnippet: true}],"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+          "line": 81,
+          "excerpt": "summary: z.string().max(2000)"
+        }
+      ],
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "In rss.ts prefer `item['content:encodedSnippet'] ?? item.contentSnippet ?? ...` and raise the summary cap (feed item 2,000 -> e.g. 6,000; candidate text already allows 12,000) with the same sanitiser; note the cap lives in util.ts:82 and dneskai-contracts.ts:81 and both must move. Measure the per-feed gain on the next night by logging summary lengths (counts only).",
+      "impactStatement": "The cheapest source of article-length evidence is thrown away at zero cost difference; this alone would move several feeds past the 400-char single-image rule and give the model real facts and numbers.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "rss.ts:55 uses item.contentSnippet ?? item.content ?? item.summary; rss.ts:11 customFields add only media:content/media:thumbnail; rss-parser parseItemRss sets content/contentSnippet from <description> only, while fields.js:42 copies content:encoded with includeSnippet (checked in own-dashboard main node_modules, same 8df25a5 lockfile; the audit worktree had no node_modules at check time). No src/ or services/ code reads content:encoded. Per-feed gain is unmeasured (no live fetch).",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/rss.ts",
+            "line": 11,
+            "excerpt": "customFields: { item: [[\"media:content\", \"mediaContent\", { keepArray: true }], [\"media:thumbnail\", \"mediaThumbnail\", { keepArray: true }]] }"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null,
+        "reason": "A one-line adapter change plus two cap constants can lift feeds that carry full text past the 400-char rule at zero cost; measure gain on the next night."
+      }
+    },
+    {
+      "id": "briefs-03",
+      "title": "The media step fetches and parses the article page but keeps no text; a richer evidence pack (body excerpt, numbers, attributed quotes) needs a brief/2 and five touch points",
+      "category": "quality",
+      "claim": "For every non-Instagram report the media step downloads the article HTML once and even locates the article container by paragraph length, then discards the text. The brief, packet and offer all have room (4,000/12,000/5,000 chars) that is never filled. A richer pack is a no-model, no-network-cost change but touches the media store, the brief contract, the SQL guard, the offer plans and the number validator.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 302,
+          "excerpt": "const page = await fetchArticle(candidate.url, deps, deps.signal); plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls });"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 250,
+          "excerpt": "const articles = $('article').toArray().map((element) => ({ element, text: $(element).find('p').text().length }));"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-brief.ts",
+          "line": 25,
+          "excerpt": "excerpt: z.string().max(4000),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+          "line": 34,
+          "excerpt": "body: (primary.excerpt.trim() || primary.title).slice(0, 12000),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 169,
+          "excerpt": "{ evidence: 6, media: 12, excerptTotal: 5000 }, { evidence: 6, media: 10, excerptTotal: 3500 }, ..."
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 182,
+          "excerpt": "if jsonb_typeof(v) is distinct from 'object' or v->>'schemaVersion' is distinct from 'dneskai-brief/1' or ..."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 364,
+          "excerpt": "if (unsupported.length) issues.push(issue(\"unsupported-number\", entry.slide, entry.field, ... \"not appear in the evidence\""
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+          "line": 13,
+          "excerpt": "title: z.string().max(500), text: z.string().max(12000), url: z.url(),"
+        }
+      ],
+      "impactScore": 5,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "(1) In the media step, extract from the already-chosen container: paragraph text up to ~6,000 chars, `<blockquote>`/quoted sentences with the nearest attribution, and a numbers list with 60 chars of context; store it in a new table keyed by candidate id + page sha256 (not inside the candidate: its content_hash feeds memberHash, so editing it would trip brief-members-changed). Respect the existing 1 MB/8 s/DNS-pinned fetch and keep the text private to generation (captions are not transcripts; never republish it). (2) Bump to dneskai-brief/2: evidence[].bodyExcerpt, brief.numbers[], brief.quotes[] with evidenceIndex; update the SQL literal at :182 and parseSourcePacket. (3) Add an offer plan tier and a prompt rule: quotes verbatim from quotes[] with attribution, numbers only from numbers[]; extend the number validator corpus. (4) Instagram stays caption-only. (5) openai.com 403 and feeds without pages fall back to briefs-02's content:encoded.",
+      "impactStatement": "Without it the model writes from a teaser; with it, carousels can carry real numbers and attributed quotes without inventing anything (the owner's hardest rule). Zero model cost, zero extra requests (same fetch).",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-media.ts:302 fetches the article and passes only page.html to extractArticleMedia; dneskai-media-plan.ts:250 scores <article> containers by paragraph length and returns pictures only; dneskai-brief.ts:25 (4,000), dneskai-brief-source.ts:34 (12,000) and dneskai-generation.ts:169 (5,000 total) leave room unused; SQL :182 pins dneskai-brief/1. Overlaps media finding M-04 (same root cause); dedupe in synthesis.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 5,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Primary-source text from a fetch that already happens is the cheapest way to truthful, number-bearing carousels; overlaps media M-04 and briefs-02 as the fallback."
+      }
+    },
+    {
+      "id": "briefs-04",
+      "title": "A held brief that lapses leaves its reports `selected`, so the event is covered and can never be re-selected for 30 days; the 22 October briefs die one by one without a post",
+      "category": "risk",
+      "claim": "brief-slot-passed and brief-target-date-passed skip the brief row without touching its candidates (only a duplicateOf skip rewrites them). The finish SQL treats any event containing a selected report as covered and never selects it, and the Jev history also includes selected candidates. So each lapse permanently burns the story even though nothing was generated or published.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 307,
+          "excerpt": "if (Date.parse(brief.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 288,
+          "excerpt": "for (const row of open) await skip(row, 'brief-target-date-passed');"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 203,
+          "excerpt": "if p_duplicate_of is not null then update public.marketing_dneskai_candidates set status='duplicate' ... end if; update public.marketing_dneskai_briefs set status='skipped'"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 115,
+          "excerpt": "select case when p.status='selected' then p.id else marketing_private.dneskai_covering_id(...) end as covering ... from pool p where p.event_id=l.event_id and (p.status='selected' or ..."
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 121,
+          "excerpt": "row_number() over(partition by category ...) as category_rank from scored s where covered_by is null"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-briefs.md",
+          "line": 54,
+          "excerpt": "vybrané zprávy (`selected`) za 30 dní, nejvýše 1000,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+          "line": 50,
+          "excerpt": "const history=[...(selected.data??[]).map(row=>({id:row.candidate.id,title:row.candidate.title,text:row.candidate.text.slice(0,500)}))"
+        },
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 220,
+          "excerpt": "so the 22 October briefs will be skipped one by one unless `@dneskai` is verified first"
+        }
+      ],
+      "impactScore": 5,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "On a lapse without a job (slot-passed, target-date-passed, slot-unavailable, expired) release the members: a new candidate status such as `lapsed` (or back to `new` with target_date null) that the finish SQL does not treat as covering and that Jev history excludes; plus a one-off, owner-approved SQL to release the 21-22 October members. Longer term, carry a lapsed brief to the next day's first free slot instead of skipping it (see briefs-06).",
+      "impactStatement": "Until @dneskai is verified every night's four best stories are lost (07:30, 12:00, 16:30, 19:30 Prague on the target day) and cannot come back; after verification, any outage or late approval has the same effect. Production state after 22 October was not queried here (no Supabase in this prompt).",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "skip at dneskai-briefs.ts:288 and :307 calls marketing_dneskai_skip_brief, which rewrites candidates only when p_duplicate_of is set (migration :203-206); finish SQL only treats status='new' as eligible (:108) and marks events containing a selected report as covered (:115-116, :121). Nothing else returns a selected candidate to new. Nuance: news items also fall out of the 48 h freshness window (:110), so a release only helps within that window or for 30-day categories. Production SELECT 2026-10-21 23:57 UTC (gcctapykhrdyxikieemn): all 4 briefs are pending/account-unavailable with their member candidates still selected, 0 marketing_accounts, 0 jobs; the first will lapse at 05:30 UTC on 22 Oct.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 5,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Approve a production change (migration with a lapsed status) and any one-off release of the 21-22 Oct members; production writes are owner-only.",
+        "reason": "Every lapse silently burns a selected story for good, and production is about to lose all four 22 Oct briefs this way."
+      }
+    },
+    {
+      "id": "briefs-05",
+      "title": "Generation is gated on a verified publishing account although only the publisher needs it; the owner cannot see a carousel until Meta is connected",
+      "category": "simplicity",
+      "claim": "A brief becomes a job only when marketing_accounts has a verified dneskai/instagram row, and the job request embeds that account. The publish gate checks the account again. The coupling is why there are 0 jobs and 0 revisions and why a Design Lab (preview, kits, approval) cannot be used before the Meta setup.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 310,
+          "excerpt": "if (!verified) { result.pending = true; continue; }"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 345,
+          "excerpt": "// No verified @dneskai account: the brief exists and waits; no job is created."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 233,
+          "excerpt": "source: input.packet, account: { id: input.account.remote_account_id, platform: 'instagram' as const, handle: input.account.handle }, scheduledAt: brief.scheduledAt,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 462,
+          "excerpt": ".eq('brand', 'dneskai').eq('platform', 'instagram').not('verified_at', 'is', null).maybeSingle()"
+        },
+        {
+          "file": "own-dashboard/services/marketing-worker/protocol.ts",
+          "line": 29,
+          "excerpt": "export const DneskaiDeckJobRequestSchema = z.strictObject({ ...jobFields, generation: GenerationInputSchema.extend(..."
+        },
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 220,
+          "excerpt": "There are 0 jobs, 0 revisions and 0 publications, and 0 `marketing_accounts` rows ... The owner has never seen a generated DNESKAi carousel."
+        }
+      ],
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Let a brief admit a job with a `preview` account (brand dneskai, no remote id) when no verified account exists; keep the ANTHROPIC key, the $1 daily ceiling and MARKETING_AI_CONSENT as the only gates for generation, and leave the verified-account requirement to the approval/publish gate (which already checks it). The job request schema needs an optional preview account; approval binding is unchanged because the account is part of the hash.",
+      "impactStatement": "Every day of unverified account = four briefs wasted (briefs-04) and no feedback on copy or design; the Design Lab goal needs generation to run before publishing exists.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-briefs.ts:310 and :345 hold briefs without a verified account; :233 embeds remote_account_id/handle in the job request; :462 reads only verified dneskai/instagram rows; publisher.ts:66 re-checks verified_at and remote id at publish time (account-unverified-or-disabled). Production: 0 marketing_accounts rows.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/publisher.ts",
+            "line": 66,
+            "excerpt": "if ((!advisory && !account.enabled) || !timestampValid(account.verified_at, now) || !idValid(account.remote_account_id)) return 'account-unverified-or-disabled';"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Whether a preview account may generate posts before the Meta connection (explicitly waiting on the owner per AGENT-RULES rule 9).",
+        "reason": "Decoupling is the only way the owner sees a generated carousel before Meta is connected, but it is a listed owner decision."
+      }
+    },
+    {
+      "id": "briefs-06",
+      "title": "Slot rigidity: rank 1 always lands at 08:00, which must be approved by about 08:15, and a slot cannot change without rebuilding the brief",
+      "category": "speed",
+      "claim": "Slots are four constants filled in rank order, so the day's best story gets the slot with the least owner time; the publisher accepts a publish intent at most 15 minutes after the slot; the slot is inside the brief JSON, checked by prepare_brief and bound to the calendar entry's local_time, so a re-slot means a new brief, packet and job. No weekday table, no owner default, no learning from Insights.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 30,
+          "excerpt": "export const DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '17:00', '20:00'] as const;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 68,
+          "excerpt": "peek: (): string | null => dneskaiBriefSlots(targetDate).find(free) ?? null,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 280,
+          "excerpt": "const rows = (await store.briefs(input.owner, input.project, input.runId)).sort((a, b) => a.rank - b.rank);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/publisher.ts",
+          "line": 264,
+          "excerpt": "/** A publish intent is accepted at most 15 minutes after the slot; the extra 5 minutes cover the request deadline. */"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 256,
+          "excerpt": "if not found or en.status<>'planned' or en.needs_review or en.date<>b.target_date or en.local_time is distinct from v_local_time or en.kind<>v_kind ... then raise exception 'brief entry changed'"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-brief.ts",
+          "line": 62,
+          "excerpt": "scheduledAt: timestamp,"
+        },
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 246,
+          "excerpt": "The 08:00 slot must be approved before it starts."
+        }
+      ],
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Short term: fill 12:30, 17:00, 20:00 first and give 08:00 (next day) to rank 4, or make the slot list owner-configurable per weekday in the registry/settings. Medium term: assign the final slot at approval time (first free slot >= now + lead) and rebind the calendar entry from the approved revision's schedule rather than from the brief; later learn slot order from Insights once scopes exist.",
+      "impactStatement": "A missed 08:15 approval loses the strongest post of the day; the owner is forced to review before breakfast, against the 10-minutes-a-day goal.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-briefs.ts:30 fixed slots; :68 peek returns the earliest free slot; :280 rows sorted by rank, so rank 1 takes 08:00; publisher.ts:264 15-minute acceptance window; migration :256 binds local_time of the calendar entry to the brief.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Which slot order and times the owner wants (no Insights data exists to decide it).",
+        "reason": "Reordering the constant is a small change that keeps the best story out of the before-breakfast approval window, but the times are the owner's call."
+      }
+    },
+    {
+      "id": "briefs-07",
+      "title": "No owner path to re-slot, retry, release or generate anyway; skipped and non-retryable `ready` briefs are dead ends",
+      "category": "simplicity",
+      "claim": "The only API for events is a GET; the Zdroje tab shows the brief state and slot with refresh and open-review buttons; skip is terminal in SQL; the scheduler stops calling a run once pending is false, and the doc lists admission codes that leave a brief `ready` forever.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/app/api/marketing/dneskai/sources/route.ts",
+          "line": 5,
+          "excerpt": "export async function GET(request:Request){"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+          "line": 21,
+          "excerpt": "<Button variant=\"outline\" className=\"min-h-11\" disabled={disabled || query.isFetching} onClick={() => void query.refetch()}>{t.refresh}</Button>"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+          "line": 57,
+          "excerpt": "{event.brief && <p ...>{briefLabel(event.brief)}{event.brief.scheduledAt && <> · {t.slot}: {at(event.brief.scheduledAt)}</>}</p>}"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 200,
+          "excerpt": "if b.status='skipped' then return to_jsonb(b);end if;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+          "line": 322,
+          "excerpt": "if (state.runId === run.id && state.pending === false) return { status: \"noop\", code: \"briefs-current\" };"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-briefs.md",
+          "line": 173,
+          "excerpt": "Jiné kódy zařazení (`job-request-invalid`, `template-revision-mismatch`, `source-unavailable`, `campaign-conflict`, `brief-entry-changed` a další) nechají zadání `ready` a plánovač kvůli nim znovu nevolá."
+        }
+      ],
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Add an owner-only POST /api/marketing/dneskai/briefs with actions `reslot` (next free slot today or tomorrow; rebuild the brief with the same memberHash), `retry` (clear the code, set pending), `release` (lapsed -> re-selectable, briefs-04) and `generate-now` (admit immediately under the existing $1 ceiling and consent; money rules unchanged). Show the three buttons on the event card in Zdroje and in the future Design Lab.",
+      "impactStatement": "Every exception (late verification, a Supabase hiccup, a wrong slot) costs the owner a post with no recovery but waiting for the next night; it also blocks the Design Lab flow 'pick a story, generate now, switch kits'.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "sources/route.ts:5 is the only export (GET); dneskai-sources.tsx:21 refresh and :22 open-review are the only actions; no module besides dneskai-briefs.ts writes marketing_dneskai_briefs (others only read: dneskai-brief-read.ts:27, dneskai-workspace-read.ts:106, rpc in dneskai-brief-source.ts:61); migration :200 makes skipped terminal; scheduler.ts:322 stops once pending=false; review route is GET-only.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Without reslot/retry/release/generate-now every exception costs a post, and the Design Lab flow needs these actions anyway."
+      }
+    },
+    {
+      "id": "briefs-08",
+      "title": "Nothing in the brief, the offer or the calendar entry carries a hook or kit hint",
+      "category": "quality",
+      "claim": "The brief is a strict object with evidence, media, format and slot only; the model receives title, category and date plus excerpts; the calendar entry stores counts. The hook knowledge base lives only in Quorum. The brief title is the publisher's headline, which for arXiv or GitHub releases is a version string.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-brief.ts",
+          "line": 49,
+          "excerpt": "export const DneskaiBriefSchema = z.strictObject({"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 252,
+          "excerpt": "brief: { title: offer.brief.title, category: offer.brief.category, targetDate: czechDate(offer.brief.targetDate) },"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+          "line": 252,
+          "excerpt": "jsonb_build_object('schemaVersion','dneskai-brief-entry/1','briefId',b.id,'eventId',b.event_id,'title',b.brief->>'title','category',b.category,'suggestedFormat',...,'evidenceCount',...,'mediaCount',...)"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 126,
+          "excerpt": "title: evidence[0]!.title.slice(0, 300), evidence, media, suggestedFormat: singleImage ? 'single-image' : 'carousel',"
+        },
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 251,
+          "excerpt": "Quorum's hook knowledge base (`quorum/docs/hooks/`, `studio/hooks/news.hooks.json`) ... live only in Quorum."
+        }
+      ],
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "With the brief/2 bump (briefs-03) add optional `hints: { hookFamily, angle, kitId, audience }`. Compute defaults without a model (category -> hook family; numbers present -> number hook; question headline -> question hook; kit by rotation or owner default), let the owner edit them in Zdroje/Design Lab before generation, pass them in the offer, and store the kit on the revision so approval still binds exact bytes.",
+      "impactStatement": "The model picks the angle blind every time and the renderer has no kit to vary; the owner cannot steer a post before paying for generation, and five kits per post have no field to live in.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-brief.ts:49-65 strict schema without hint fields; dneskai-generation.ts:252 passes only title, category, targetDate; migration :252 entry carries counts only; dneskai-briefs.ts:126 title is evidence[0].title.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Hook hints touch the copy register, which waits on the owner (AGENT-RULES rule 9); kit hints are per post, consistent with the kit rule.",
+        "reason": "A kit field is needed for five switchable kits; hook hints help only after the register decision."
+      }
+    },
+    {
+      "id": "briefs-09",
+      "title": "Owner brief cites dneskai-briefs.ts:112 for the feed-text use; the lines are 111 (excerpt) and 122 (format decision)",
+      "category": "doc-drift",
+      "claim": "Line 112 holds publishedAt/dateEstimated/captionOnly. The substance is right: the brief takes candidate.text (the feed summary) and the media step reads the page only for non-Instagram reports, keeping pictures only.",
+      "evidence": [
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 231,
+          "excerpt": "The brief uses only the feed text (`dneskai-briefs.ts:112`), although the media step already fetches the article page."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 111,
+          "excerpt": "candidateId: candidate.id, sourceId: candidate.sourceId, url: safeEvidenceUrl(candidate.url)!, title: evidenceTitle(candidate), excerpt: candidate.text.slice(0, 4000),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 112,
+          "excerpt": "publishedAt: candidate.publishedAt, dateEstimated: candidate.dateEstimated === true, captionOnly: dneskaiCaptionOnly(candidate),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 296,
+          "excerpt": "if (instagram) { plan = instagramMediaPlan(candidate); ... } else { // The article page is read once"
+        }
+      ],
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Cite :111 and :122 in the brief and in the audit report.",
+      "impactStatement": "A reader acting on the brief would patch the wrong line; no product impact.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-briefs.ts:111 holds the excerpt (candidate.text.slice(0, 4000)), :112 holds publishedAt/dateEstimated/captionOnly, :122 the format rule; brief.md:231 cites :112.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "A line-number correction for the brief; fold into the doc-drift appendix rather than an owner item."
+      }
+    },
+    {
+      "id": "briefs-10",
+      "title": "Lapse wording drifts: the last brief of a day lapses as brief-target-date-passed, brief-expired cannot fire first, and NEEDED.md promises jobs 'on the next tick' without the lapse caveat",
+      "category": "doc-drift",
+      "claim": "The owner brief says held briefs lapse at slot-passed or at expiry. In code the pre-loop day check skips the remaining brief as brief-target-date-passed at 19:30, and expiry (>= 48 h after creation) is always later than the slot (< 24 h after creation), so the brief-expired branch is unreachable for ordinary runs. NEEDED.md item 8 tells the owner that briefs prepared before verification get jobs on the next tick, which is true only while the slot is >= 30 minutes away.",
+      "evidence": [
+        {
+          "file": "Downloads/fable-dneskai-brief.md",
+          "line": 220,
+          "excerpt": "They lapse when their slot is less than 30 minutes away (`brief-slot-passed`) or at expiry (48 h for news, 14 days otherwise)"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 287,
+          "excerpt": "if (!dneskaiBriefSlots(run.target_date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE)) {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 308,
+          "excerpt": "if (Date.parse(brief.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+          "line": 21,
+          "excerpt": "return category === 'ai-news' || category === 'tech-news' ? 48 * HOUR : 14 * 24 * HOUR;"
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 8,
+          "excerpt": "Briefs prepared before verification get their generation jobs on the next tick."
+        }
+      ],
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Fix the two sentences; in NEEDED.md add 'only briefs whose slot is still 30 minutes away; earlier slots of that day are skipped'.",
+      "impactStatement": "The owner may verify the account in the afternoon expecting the morning's four posts and get at most the 17:00 and 20:00 ones.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-briefs.ts:287-288 skips all open briefs as brief-target-date-passed when no slot >= now+30 min remains (wins over :307 for the 20:00 brief); :308 brief-expired follows :307 and lifetimes from creation (dneskai-brief-source.ts:21: 48 h / 14 d) exceed the < 24 h to a next-day slot; NEEDED.md:8 says jobs come on the next tick without the 30-minute caveat; brief.md:220 says lapse at slot or expiry.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "The owner timing the Meta verification should know that only slots still 30 minutes away survive; two sentences to fix."
+      }
+    },
+    {
+      "id": "briefs-11",
+      "title": "docs/dneskai-briefs.md still describes the #115-only branch (enqueue ends in job-request-invalid until #116) and its code table omits five codes the code emits",
+      "category": "doc-drift",
+      "claim": "#116 is merged: enqueueMarketingJob parses the job request, marketingJobTemplate returns null for a DNESKAi deck job and the dry day reaches queued briefs with jobs. The state table does not list brief-closed, brief-not-ready, brief-source-unavailable, calendar-entry-unavailable or brief-run-unavailable.",
+      "evidence": [
+        {
+          "file": "own-dashboard/docs/dneskai-briefs.md",
+          "line": 150,
+          "excerpt": "Na samotné větvi #115 `enqueueMarketingJob` parsuje `MarketingWorkerRequestSchema` se šablonou devShark, zařazení skončí `job-request-invalid` a zadání zůstane `ready`. Úloha vznikne až po sloučení #116."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 130,
+          "excerpt": "const request = parseMarketingJobRequest(value);"
+        },
+        {
+          "file": "own-dashboard/services/marketing-worker/protocol.ts",
+          "line": 46,
+          "excerpt": "export function marketingJobTemplate(request: MarketingJobRequest): MarketingTemplate | null {"
+        },
+        {
+          "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+          "line": 176,
+          "excerpt": "{ status: 'queued', rank: 1, slot: '2026-10-27 07:00:00+00' }, {"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-briefs.md",
+          "line": 210,
+          "excerpt": "| `skipped` | `brief-members-changed`, `brief-slot-unavailable`, `brief-slot-passed`, `brief-target-date-passed`, `brief-evidence-unavailable`, `brief-expired`, `brief-invalid` |"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 211,
+          "excerpt": "['calendar-entry-unavailable'], ['brief campaign conflict', 'campaign-conflict'], ... ['brief closed', 'brief-closed'], ['brief not ready', 'brief-not-ready']"
+        }
+      ],
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Replace the branch paragraph with the merged behaviour and add the missing codes (and their retryable/non-retryable class) to the table.",
+      "impactStatement": "A reader concludes jobs are not created on main; operators cannot look up five codes.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "docs/dneskai-briefs.md:149-151 still describes the #115-only branch; worker-runtime.ts:130 parses the request and protocol.ts:29/:46 accept DNESKAi deck jobs; the code table at docs :210 and the codes around :173 omit brief-closed, brief-not-ready, brief-source-unavailable, calendar-entry-unavailable and brief-run-unavailable, which dneskai-briefs.ts emits (rpcCode at :209-211).",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+            "line": 211,
+            "excerpt": "['brief entry changed', 'brief-entry-changed'], ['brief closed', 'brief-closed'], ['brief not ready', 'brief-not-ready']"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Real doc drift for the doc-drift list; no product impact."
+      }
+    },
+    {
+      "id": "briefs-12",
+      "title": "The dry-day test fails on a Prague-timezone machine: 6 of 9 cases compare timestamptz text that depends on the session timezone",
+      "category": "quality",
+      "claim": "Locally (TZ=CEST) the night run fails on '2026-10-27 08:00:00+01' vs expected '07:00:00+00' (same instant) and five later cases fail in cascade; with TZ=UTC all nine pass. CI does not pin TZ (GitHub runners happen to be UTC).",
+      "evidence": [
+        {
+          "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+          "line": 175,
+          "excerpt": "expect(briefs.map((row) => ({ status: row.status, rank: row.rank, slot: row.scheduled_at }))).toEqual(["
+        },
+        {
+          "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+          "line": 389,
+          "excerpt": "expect(after).toEqual([{ refreshed_at: '2026-12-12 08:00:00+00', expires_at: '2027-02-10 08:00:00+00' }]);"
+        }
+      ],
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Set `process.env.TZ = 'UTC'` in the vitest config (or `set timezone to 'UTC'` on the PGlite session in createMigratedDatabase) and compare instants, not text.",
+      "impactStatement": "The owner's own machine reports the end-to-end day as broken (36/42 locally), which erodes trust in the suite that guards approval and publishing; 20 minutes lost per confused run.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Re-run 2026-10-22 01:58 CEST on this Mac: 4 brief files 36 passed / 6 failed (all in dneskai-dry-day.test.ts), received slot \"2026-10-27 08:00:00+01\" vs expected \"07:00:00+00\" (same instant). Also marketing-dneskai-briefs-flow-database.test.ts:83 fails locally (14/15) on the same timestamptz text compare and passes with TZ=UTC. No TZ pin in vitest config or .github/workflows. With TZ=UTC the two DB files passed 15/15 and the dry day 8/9, the ninth a 300 s timeout under machine load average ~30 (other agents running), not an assertion.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/tests/lib/marketing-dneskai-briefs-flow-database.test.ts",
+            "line": 83,
+            "excerpt": "expect(...).toEqual([[1, \"pending\", \"account-unavailable\", \"2026-10-21T06:00:00+00:00\"], ...])"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "A one-line TZ pin keeps the end-to-end suite green on the owner's machine; low product impact."
+      }
+    },
+    {
+      "id": "briefs-13",
+      "title": "Dead paths: assignDneskaiBriefSlots is exported but only tests call it, and the brief-expired branch is unreachable for ordinary runs",
+      "category": "simplicity",
+      "claim": "Production uses dneskaiSlotAllocator directly; assignDneskaiBriefSlots duplicates its rank loop. brief-expired sits after brief-slot-passed and can only fire for a brief whose expiry precedes its slot, which the 48 h/14 d lifetimes and next-day target date rule out.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 78,
+          "excerpt": "export function assignDneskaiBriefSlots(briefs: ReadonlyArray<{ id: string; rank: number; scheduledAt: string | null }>, targetDate: string, taken: readonly string[], now: Date): Map<string, string | null> {"
+        },
+        {
+          "file": "own-dashboard/tests/lib/marketing-dneskai-briefs.test.ts",
+          "line": 36,
+          "excerpt": "const slots = assignDneskaiBriefSlots(briefs, '2026-10-25', ['2026-10-25T11:45:00.000Z'], now);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 308,
+          "excerpt": "if (Date.parse(brief.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }"
+        }
+      ],
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Delete assignDneskaiBriefSlots and its test, or make the production loop use it; keep brief-expired only if briefs may ever target a day beyond tomorrow.",
+      "impactStatement": "Reading cost only; about 15 lines and one misleading code.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "assignDneskaiBriefSlots (dneskai-briefs.ts:78) is referenced only by tests/lib/marketing-dneskai-briefs.test.ts:2, :36, :38; brief-expired at :308 is reachable only if expiry precedes the slot, which the lifetimes rule out for next-day targets.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "About 15 lines of dead code; cleanup, not an owner item."
+      }
+    },
+    {
+      "id": "briefs-14",
+      "title": "Source tiers are two hard-coded id sets apart from the registry; 17 of 42 sources silently rank as newsrooms",
+      "category": "risk",
+      "claim": "The evidence order that decides the primary source (and therefore the headline, body text and picture order) depends on sets in dneskai-events.ts that must be edited by hand whenever the registry changes; an unknown id becomes tier 1, so a new vendor blog would rank below arXiv.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+          "line": 216,
+          "excerpt": "const PUBLISHER_SOURCES = new Set(['anthropic-news', 'openai-blog', 'deepmind-blog', 'google-research', 'hf-blog', 'meta-ai', 'github-ai-releases', 'arxiv-cs-ai', 'arxiv-cs-lg', 'instagram:mosseri', 'instagram:meta.ai']);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+          "line": 222,
+          "excerpt": "return PUBLISHER_SOURCES.has(sourceId) ? 0 : AGGREGATOR_SOURCES.has(sourceId) ? 2 : 1;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+          "line": 5,
+          "excerpt": "export const DneskaiSourceSchema = z.strictObject({ id, name, url, kind, weekdays, maxItems });"
+        }
+      ],
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Add `tier: 0|1|2` to DneskaiSourceSchema and the registry entries, derive dneskaiSourceTier from the registry, and add a test that every registry source has an explicit tier.",
+      "impactStatement": "Wrong primary = wrong headline and wrong credit on the cover; silent after any registry edit.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-events.ts:216-222 hard-codes 11 publisher and 14 aggregator ids; recount of dneskai-registry.ts gives 42 ids and 17 defaulting to tier 1: 404-media, ars-technica, digiday, import-ai, interconnects, mit-tech-review, nieman-lab, platformer, rest-of-world, simonw, social-media-today, stratechery, the-register, the-verge, tubefilter, variety, wired-ai. These are genuine newsrooms or newsletters, so no current source is misranked; the risk is only for future registry edits.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "The default tier is correct for all 17 sources today; worth a registry test when the registry next changes, not an owner item."
+      }
+    },
+    {
+      "id": "briefs-15",
+      "title": "The 14-day repeat check knows only URLs and pictures: a follow-up with a new URL and picture passes, while a fresh story reusing a publisher's share image is dropped until three articles carry it",
+      "category": "quality",
+      "claim": "Repeat detection has no topic signal although the same title-token Jaccard used for event grouping exists, and site-wide cards are learned only after three articles, which the doc itself lists as a limitation.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 140,
+          "excerpt": "const urls = new Set(brief.evidence.flatMap((item) => dneskaiPrimaryUrlKey(item.url) ?? []));"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 152,
+          "excerpt": "if (pictures.some((sha) => item.assetSha256s.some((other) => near(sha, other)))) return { coverage: item, by: 'media' };"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 48,
+          "excerpt": "export const DNESKAI_SITEWIDE_PICTURE_ARTICLES = 3;"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-briefs.md",
+          "line": 229,
+          "excerpt": "Karta celého webu se pozná až ve chvíli, kdy ji nesou tři články. Do té doby může shoda obrázku přeskočit zadání jako opakování."
+        }
+      ],
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Add a third signal: title Jaccard >= 0.6 with >= 2 shared tokens against the covered revisions' titles (reuse dneskai-events.ts tokenisation), reported as by: 'title'; seed site-wide cards from a per-source list in the registry (logos, default share images) instead of waiting for three articles; show repeats in Zdroje with a 'post anyway' action (briefs-07).",
+      "impactStatement": "Either the feed shows the same topic twice within two weeks (brand looks repetitive) or a good new story is silently skipped; both cost the owner a slot with no notice.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "The brief repeat check (dneskai-briefs.ts:140-153) uses only URLs and pictures, and docs :229-230 lists the three-article site-wide limitation. But a topic signal exists upstream: event grouping (dneskai-events.ts:13-17, Jaccard >= 0.6, >= 2 shared tokens, 72 h) reads the selected reports of the last 30 days, and the finish SQL (:115-121) never selects an event that contains a selected report. So a follow-up within 72 h with a similar headline is already caught at selection; only later or reworded follow-ups pass.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+            "line": 17,
+            "excerpt": "export const DNESKAI_EVENT_WINDOW_HOURS = 72;"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Narrower than claimed because selection already groups 72 h follow-ups; the site-wide-card false positive remains worth seeding from the registry."
+      }
+    }
+  ],
+  "openQuestions": [
+    "ANSWERED (verifier): production briefs for 2026-10-22 are all pending/account-unavailable with members still selected; first lapse 05:30 UTC 22 Oct.",
+    "Which of the 32 feeds carry content:encoded and how long it is; needs a live fetch (no network calls were made).",
+    "Whether a preview account for generation (briefs-05) is acceptable to the owner before the Meta connection, given the $1 daily ceiling.",
+    "Whether the owner wants an 08:00 slot at all; no posting-time data exists (no Insights).",
+    "ANSWERED (verifier): the two PGlite brief files run 15 tests; the flow file fails 1 locally on the same timestamptz text compare and passes with TZ=UTC."
+  ],
+  "verification": {
+    "confirmed": 14,
+    "partly": 1,
+    "refuted": 0,
+    "notConfirmed": 0,
+    "kept": 12,
+    "dropped": 3,
+    "quickWins": 2,
+    "verifiedAt": "2026-10-22T00:07:47.710Z",
+    "verifier": "A-verify-2",
+    "sourceMap": "dneskai-audit-handoff/maps/map-briefs.json",
+    "repoCommit": "8df25a5",
+    "notes": [
+      "Owner decision: approve a migration and one-off release so lapsed briefs free their candidates (briefs-04); production writes are owner-only.",
+      "Owner decision: whether a preview account may generate before the Meta connection (briefs-05; AGENT-RULES rule 9).",
+      "Owner decision: slot order and times (briefs-06).",
+      "Owner decision: hook hints depend on the pending copy-register decision (briefs-08).",
+      "Brief/code: brief.md:231 cites dneskai-briefs.ts:112; the code is at :111 (excerpt) and :122 (format).",
+      "Brief/code: brief.md:220 says held briefs lapse at slot-passed or expiry; the last one lapses as brief-target-date-passed and brief-expired cannot fire first.",
+      "Brief confirmed by production: 3 of 4 briefs single-image, 2 with no picture (media 0, 1, 0, 2).",
+      "Overlap for synthesis: briefs-03 = media M-04 (article text discarded); briefs-02 is its fallback."
+    ]
+  }
+}
