@@ -13,7 +13,7 @@ The deck names each source image by `assetSha256` (the stored bytes in `marketin
 
 ## Approval hash
 
-`revisionContentHash(revision)` in `src/lib/marketing/hashes.ts` is sha256 over the canonical JSON of the revision with `assets[].url` removed and nothing else. It covers title, caption, format, the deck (slide text, image hashes, crops, order), each asset's sha256, MIME type, dimensions and alt text, account, schedule, sources, collaborators, knowledge IDs and versions. It is what `content_hash` stores and what `approved_hash` binds. `revisionHash` is the same function under its old name.
+`revisionContentHash(revision)` in `src/lib/marketing/hashes.ts` is sha256 over the canonical JSON of the revision with `assets[].url` removed and nothing else. It covers every `ContentRevisionSchema` field: schema version, brand, title, caption, format, sources, knowledge IDs, each asset's sha256, MIME type, dimensions and alt text, account, collaborators, scheduled time and time zone, template version, prompt version, model, trace ID and the deck (slide text, image hashes, crops, order). Anything later stored on the revision, such as a kit ID or fit flags, changes the hash and needs a new approval unless it is kept outside the revision. It is what `content_hash` stores and what `approved_hash` binds. `revisionHash` is the same function under its old name.
 
 SQL never computes the hash. `marketing_save_revision`, `marketing_approve_revision`, `marketing_claim_due` and the publication fences compare stored values only.
 

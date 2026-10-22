@@ -24,7 +24,9 @@ flowchart TD
 `src/lib/marketing/dneskai-events.ts`, čistá funkce `groupDneskaiEvents`. Dvě zprávy
 patří k jedné události, když platí aspoň jedno:
 
-1. Jev označil jednu za duplicitu druhé (`duplicateOf`), bez ohledu na čas.
+1. Jev označil jednu za duplicitu druhé (`duplicateOf`), bez ohledu na čas v rámci
+   čtených oken: duplicity se čtou jen za posledních 7 dní (`DNESKAI_EVENT_READS`),
+   takže starší odkaz seskupení nevidí.
 2. Mají stejnou primární URL po kanonizaci: bez schématu, `www.`/`m.`/`amp.`,
    sledovacích parametrů, fragmentu, `/amp` a koncového lomítka. Instagram a Hacker
    News se počítají i přes odkaz na článek v textu.
@@ -44,8 +46,9 @@ Pravidla 2 a 3 spojují jen zprávy publikované do 72 hodin od sebe.
 
 `marketing_dneskai_finish` (migrace `20261020150000_dneskai_events_briefs.sql`) dostává
 seskupení jako `p_events` (jen události se dvěma a více zprávami; jednotlivá zpráva je
-událost sama o sobě). SQL ho ověří: každá událost je pojmenovaná svou kotvou a žádná
-zpráva není ve dvou.
+událost sama o sobě). SQL ověří jen tvar seskupení: nejvýše 300 událostí po 2–300
+zprávách, každá událost je pojmenovaná svou kotvou a žádná zpráva není ve dvou.
+Pravidla seskupení (72 hodin, URL, tokeny titulků) SQL nekontroluje.
 
 Seskupení počítá `createDneskaiCollectionStore().finish` (`finishEvents`). Čte od
 nejnovějších, po stránkách po tisíci řádcích (`DNESKAI_EVENT_READS`):
@@ -57,10 +60,13 @@ nejnovějších, po stránkách po tisíci řádcích (`DNESKAI_EVENT_READS`):
 Posílá jen události, ve kterých je aspoň jedna otevřená zpráva; jiné vybrat nejde. Nad
 300 událostí vyhrají ty s naposledy sebranou zprávou. Když čtení nebo seznam událostí
 narazí na limit, běh dostane kód `collection-event-window-partial` (pokud už nemá jiný)
-a záložka Zdroje ho ukáže slovy. 3000 zpráv se seskupí zhruba za půl sekundy.
+a záložka Zdroje ho ukáže slovy. Doba seskupení závisí na datech: při měření
+22. 10. 2026 trvalo 3000 syntetických zpráv 70 ms a 3000 zpráv v 300 desetičlenných
+událostech s podobnými titulky 1,47 s.
 
 - Událost vede její nejlepší způsobilá zpráva (dosavadní podmínky: kategorie mimo
-  `other`, relevance ≥ 0,85, bez duplicity, datum do 48 h u zpráv a do 30 dní jinak).
+  `other`, relevance ≥ 0,85, bez duplicity, bez důvodu vyřazení (`reason`), datum
+  vyplněné, ne v budoucnosti a do 48 h u zpráv a do 30 dní jinak).
 - Nejvýše čtyři události: nejdřív jedna za každou kategorii, pak podle relevance.
   Méně je v pořádku, nic se nedoplňuje.
 - Událost byla pokrytá dřív, když v ní je dříve vybraná zpráva, nebo Jev duplicita,
@@ -106,7 +112,10 @@ Pro každou událost v pořadí:
    zadání téhož dne, nebo když do něj zbývá méně než 30 minut. Stejná hranice platí pro
    zadání, které čas už má a čeká na účet nebo na nové zařazení: méně než 30 minut před
    svým časem se přeskočí (`brief-slot-passed`). Den, do jehož posledního času zbývá
-   méně než 30 minut, se uzavře (`brief-target-date-passed`).
+   méně než 30 minut, se uzavře (`brief-target-date-passed`). Tak skončí i poslední
+   zadání dne: kontrola dne předchází kontrole času zadání. `brief-expired` v běžném
+   běhu nenastane, protože platnost (nejméně 48 hodin od vytvoření) trvá déle než
+   cesta k času zadání (méně než 24 hodin).
 
 ### Opakování za 14 dní
 
@@ -146,10 +155,9 @@ revizi nebo zprávu, která téma pokryla.
    zdroje. Jinou aktivní kampaň DNESKAi nikdy nepřevezme (`campaign-conflict`).
 4. `enqueueMarketingJob` → `marketing_enqueue_job`: platí `marketing_calendar_job_current`
    i limit 8 úloh za 24 hodin. Požadavek nenese šablonu ani znalosti; `templateVersion`
-   je verze vendorovaného studia. Takový požadavek přijímá až `DneskaiDeckJobRequestSchema`
-   z #116. Na samotné větvi #115 `enqueueMarketingJob` parsuje `MarketingWorkerRequestSchema`
-   se šablonou devShark, zařazení skončí `job-request-invalid` a zadání zůstane `ready`.
-   Úloha vznikne až po sloučení #116.
+   je verze vendorovaného studia. `enqueueMarketingJob` ho parsuje přes
+   `MarketingJobRequestSchema`, který vedle požadavku se šablonou přijímá
+   `DneskaiDeckJobRequestSchema` (#116), a úloha vznikne.
 5. `marketing_dneskai_brief_queued` zapíše `job_id`, stav `queued`.
 
 Bez ověřeného řádku `marketing_accounts` pro dneskai/instagram zadání vznikne, ale
@@ -172,7 +180,8 @@ pětiminutový tik. Končí, když do času zadání zbývá méně než 30 minu
 (`brief-slot-passed`), nebo když do posledního času cílového dne zbývá méně než
 30 minut (`brief-target-date-passed`). Jiné kódy zařazení (`job-request-invalid`,
 `template-revision-mismatch`, `source-unavailable`, `campaign-conflict`,
-`brief-entry-changed` a další) nechají zadání `ready` a plánovač kvůli nim znovu
+`brief-entry-changed`, `brief-closed`, `brief-not-ready`, `brief-source-unavailable`,
+`calendar-entry-unavailable` a další) nechají zadání `ready` a plánovač kvůli nim znovu
 nevolá. Zopakují se jen při volání, které drží otevřené jiné zadání téhož běhu.
 
 Když úloha vznikla, ale zápis `job_id` selhal, vrátí `marketing_dneskai_admit_brief`
@@ -204,10 +213,13 @@ zbývající ID článků. Rozhoduje `kind` předchozího paketu.
 | `pending` | – | čeká na média ze zdrojů, nebo se po selhání prvního uložení sestaví znovu |
 | `pending` | `account-unavailable` | zadání hotové, chybí ověřený účet `@dneskai`; plánovač to zkouší každý tik |
 | `ready` | – / kód z `DNESKAI_BRIEF_RETRYABLE_CODES` | zadání hotové, zařazení se zopakuje při dalším tiku |
-| `ready` | jiný kód chyby | zadání hotové, zařazení selhalo a plánovač ho sám nezopakuje |
+| `ready` | jiný kód chyby, např. `job-request-invalid`, `campaign-conflict`, `brief-entry-changed`, `brief-closed`, `brief-not-ready`, `brief-source-unavailable`, `calendar-entry-unavailable` | zadání hotové, zařazení selhalo a plánovač ho sám nezopakuje |
 | `queued` | – | úloha generování existuje (`job_id`) |
 | `skipped` | `collection-already-covered` | opakování příspěvku nebo zadání z posledních 14 dní |
 | `skipped` | `brief-members-changed`, `brief-slot-unavailable`, `brief-slot-passed`, `brief-target-date-passed`, `brief-evidence-unavailable`, `brief-expired`, `brief-invalid` | zadání nevzniklo nebo už neplatí |
+
+Volání, které nenačte dokončený běh sběru, skončí chybou `brief-run-unavailable` a žádné
+zadání nezmění.
 
 ## Rozhraní
 

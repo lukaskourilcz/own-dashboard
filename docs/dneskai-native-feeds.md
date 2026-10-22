@@ -1,6 +1,6 @@
 # DNESKAi native free-feed migration
 
-OwnDashboard can collect the existing 32 free feeds without calling Quorum. Select `MARKETING_DNESKAI_FEED_PROVIDER=native` in a reviewed deployment to use the local adapters. Unset or `bridge` keeps the existing signed collection bridge. An unknown value fails closed. This change sets no deployment variables. Verification: a live read-only comparison of all 32 feeds on 20 October 2026, described below.
+OwnDashboard can collect the existing 32 free feeds without calling Quorum. Select `MARKETING_DNESKAI_FEED_PROVIDER=native` in a reviewed deployment to use the local adapters. Unset or `bridge` selects the signed Quorum collection bridge; that is still the code default, but Quorum turned its side off on 21 October 2026, so the bridge now answers 503 until Quorum's `DNESKAI_COLLECTION_ENABLED` is on again. Production uses `native` (see the cutover below). An unknown value fails closed. This change sets no deployment variables. Verification: a live read-only comparison of all 32 feeds on 20 October 2026, described below.
 
 The local registry preserves the exact feed IDs, URLs, search queries and GitHub repositories from Quorum. `dneskai-registry.ts` remains the authority for all 42 source identities and their Prague collection cadence; ten Instagram profiles retain the existing capped Apify path. The local adapter boundary returns `dneskai-feed/1`; the collection runner retains candidate hashes, partial statuses and its existing cursor rules. Research candidates still require classification and owner review.
 
