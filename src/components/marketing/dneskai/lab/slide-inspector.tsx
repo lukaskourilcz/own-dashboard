@@ -1,12 +1,13 @@
 'use client';
 
+import { dneskaiCoverInset } from '@/lib/marketing/dneskai-slide-layout';
 import { useId, useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import {
-  draftSlideMoves, imageFocal, imageZoom, insertablePictures, insertSlide, mediaResolution, removeSlide, setImageCrop, setSlideShape, setSlideText, swapSlideImage, type DeckDraft,
+  draftSlideMoves, imageFocal, imageZoom, insertablePictures, insertSlide, mediaResolution, removeSlide, setCoverInset, setImageCrop, setSlideShape, setSlideText, swapSlideImage, type DeckDraft,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { DNESKAI_INSERT_SHAPES, dneskaiShapeId, dneskaiSlideShape, type DneskaiShapeId } from '@/lib/marketing/dneskai-slide-layout';
 import { EntityBadge } from '@/components/ui/status-badge';
@@ -124,9 +125,16 @@ export function DneskaiSlideInspector({ post, draft, index, onDraft, fit, previe
           {post.brief && <Button type="button" variant="outline" size="sm" aria-expanded={swap === image.slot} onClick={() => setSwap(swap === image.slot ? null : image.slot)}>
             <ImageIcon />{swap === image.slot ? tw.editor.closeSwap : tw.editor.swap}</Button>}
           {post.brief && swap === image.slot && <DneskaiMediaTray lang={lang} brief={post.brief} slide={slide} current={image.assetSha256} previews={previews} state={mediaState}
-            headingId={`${id}-pool-${image.slot}`} onChoose={(choice) => { onDraft(swapSlideImage(draft, index, image.slot, choice, post.brief!.media)); setSwap(null); }} />}
+            headingId={`${id}-pool-${image.slot}`} onChoose={(choice) => { onDraft(image.slot === 'image-2' ? setCoverInset(draft, index, choice) : swapSlideImage(draft, index, image.slot, choice, post.brief!.media)); setSwap(null); }} />}
+          {image.slot === 'image-2' && slide.type === 'cover-photo' && <Button type="button" variant="ghost" size="sm" onClick={() => onDraft(setCoverInset(draft, index, null))}>{t.slide.insetRemove}</Button>}
         </div>;
       })}
+      {slide.type === 'cover-photo' && dneskaiCoverInset(draft.kit) && !slide.images.some((image) => image.slot === 'image-2') && post.brief && <div className="min-w-0 space-y-2 border-t border-border pt-3" data-testid="dneskai-lab-inset">
+        <p className="text-xs text-foreground-muted">{t.slide.insetHelp}</p>
+        <Button type="button" variant="outline" size="sm" aria-expanded={swap === 'image-2'} onClick={() => setSwap(swap === 'image-2' ? null : 'image-2')}><ImageIcon />{t.slide.insetAdd}</Button>
+        {swap === 'image-2' && <DneskaiMediaTray lang={lang} brief={post.brief} slide={slide} current={slide.images[0]?.assetSha256 ?? ''} previews={previews} state={mediaState}
+          headingId={`${id}-pool-inset`} onChoose={(choice) => { onDraft(setCoverInset(draft, index, choice)); setSwap(null); }} />}
+      </div>}
     </div>}
     {post.deck?.format === 'carousel' && slide.type !== 'sources' && <InsertSlide post={post} draft={draft} index={index} onDraft={onDraft} onSlide={onSlide} previews={previews} lang={lang} onNotice={onNotice ?? setNotice} />}
   </section>;

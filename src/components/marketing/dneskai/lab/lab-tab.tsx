@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { createDeckDraft, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
+import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -239,7 +239,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   function chooseKit(kit: DneskaiKit) {
     if (props.guest || busy || !editable) return;
     if (!dneskaiKitRenderable(kit)) { setMessage(t.kits.unavailableNotice(t.kits.names[kit])); return; }
-    if (kit !== draft.kit) { setDraft({ ...draft, kit }); setFit({ status: 'checking', result: null }); }
+    if (kit !== draft.kit) { setDraft(setDraftKit(draft, kit)); setFit({ status: 'checking', result: null }); }
   }
   function shortcut(event: React.KeyboardEvent) {
     if (busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true],[role=dialog]')) return;
