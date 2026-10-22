@@ -1087,7 +1087,7 @@
           {
             "file": "own-dashboard/tests/lib/marketing-dneskai-briefs-flow-database.test.ts",
             "line": 83,
-            "excerpt": "expect(...).toEqual([[1, \"pending\", \"account-unavailable\", \"2026-10-21T06:00:00+00:00\"], ...])"
+            "excerpt": "expect(briefs.map((row) => [row.rank, row.status, row.code, row.scheduled_at])).toEqual([[1, 'pending', 'account-unavailable', '2026-10-21T06:00:00+00:00'], ..."
           }
         ]
       },
@@ -1254,7 +1254,7 @@
     "kept": 12,
     "dropped": 3,
     "quickWins": 2,
-    "verifiedAt": "2026-10-22T00:07:47.710Z",
+    "verifiedAt": "2026-10-22T00:07:54.564Z",
     "verifier": "A-verify-2",
     "sourceMap": "dneskai-audit-handoff/maps/map-briefs.json",
     "repoCommit": "8df25a5",
