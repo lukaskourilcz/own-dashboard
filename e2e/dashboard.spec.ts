@@ -123,13 +123,23 @@ test.describe("dashboard sections", () => {
     await gotoPreview(page);
     // The pre-rename slug still resolves to the DNESKAi workspace.
     await page.goto("/dev-preview?project=aifirst");
-    await expect(page.getByRole("heading", { level: 1, name: "DNESKAi" })).toBeVisible();
-    for (const tab of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Competition", "Knowledge", "Scaling", "Monetization"]) {
-      await expect(page.getByRole("tab", { name: tab })).toBeVisible();
+    // No project header (#171): the toolbar breadcrumb "Projects › DNESKAi" carries the context.
+    await expect(page.locator("header").getByText("DNESKAi", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(["Projects"]);
+    // DNESKAi shows its four tabs; the general project sections open from the More menu (#169).
+    await expect(page.getByRole("tab")).toHaveText(["For review today", "Calendar", "Posts", "Sources (DNESKAi)"]);
+    const more = page.getByTestId("dneskai-more");
+    await expect(more).toHaveAccessibleName("More");
+    await more.click();
+    const menu = page.getByTestId("dneskai-more-menu");
+    for (const section of ["Overview", "Tasks", "Activity", "Communication", "Repository", "Finance", "Competition", "Knowledge", "Scaling", "Monetization"]) {
+      await expect(menu.getByRole("button", { name: section })).toBeVisible();
     }
-    await page.getByRole("tab", { name: "Finance" }).click();
+    await menu.getByRole("button", { name: "Finance" }).click();
+    await expect(page.getByRole("tab", { name: "Finance" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByText("Supabase", { exact: true })).toBeVisible();
-    await page.getByRole("tab", { name: "Communication" }).click();
+    await more.click();
+    await menu.getByRole("button", { name: "Communication" }).click();
     await expect(page.getByText("Confirmed the first release scope and the weekly review cadence.")).toBeVisible();
     await expect(page.getByText("Send the revised launch checklist.")).toBeVisible();
   });
@@ -140,10 +150,22 @@ test.describe("dashboard sections", () => {
     const sidebar = page.locator("aside");
 
     await sidebar.getByRole("link", { name: "DNESKAi", exact: true }).click();
-    await expect(
-      page.getByRole("heading", { level: 1, name: "DNESKAi" }),
-    ).toBeVisible();
+    await expect(page.locator("header").getByText("DNESKAi", { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/projects\/dneskai$/);
+    // Every project workspace opens straight on its tabs: no back button, eyebrow, summary or status badge (#171).
+    await expect(page.getByRole("button", { name: "All projects", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    // The breadcrumb's "Projects" is the keyboard way back to the table.
+    const back = page.locator("header").getByRole("button", { name: "Projects", exact: true });
+    await back.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/projects$/);
+    await page.goto("/dev-preview?project=devshark");
+    await expect(page.getByRole("tab").first()).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(["Projects"]);
+    await expect(page.getByRole("button", { name: "All projects", exact: true })).toHaveCount(0);
+
+    await sidebar.getByRole("link", { name: "DNESKAi", exact: true }).click();
 
     await sidebar.getByRole("button", { name: "Projects", exact: true }).click();
     await expect(
@@ -274,10 +296,11 @@ test.describe("dashboard sections", () => {
       .locator("aside")
       .getByRole("link", { name: "DNESKAi", exact: true })
       .click();
-    await expect(
-      page.getByRole("tab", { name: "Communication", exact: true }),
-    ).toHaveCount(0);
-    await expect(page.getByRole("tab", { name: "Activity", exact: true })).toBeVisible();
+    // The general sections of DNESKAi live in its More menu; a hidden one leaves it.
+    await page.getByTestId("dneskai-more").click();
+    const menu = page.getByTestId("dneskai-more-menu");
+    await expect(menu.getByRole("button", { name: "Communication", exact: true })).toHaveCount(0);
+    await expect(menu.getByRole("button", { name: "Activity", exact: true })).toBeVisible();
   });
 
   test("Tasks groups manual and imported work by active project", async ({ page }, testInfo) => {

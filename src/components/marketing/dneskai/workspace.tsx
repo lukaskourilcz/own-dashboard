@@ -43,7 +43,7 @@ function useRenderFailed(projectId: string) {
 }
 
 /**
- * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Today, Calendar and Published share the review
+ * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Today, Calendar and Posts share the review
  * read; Errors and costs has its own. In the preview the reads come from the in-memory demo, never from a server.
  */
 /** `onOpenSources` lets the Design Lab queue point to the owner recovery actions in Sources (C3, briefs-07). */
@@ -61,7 +61,7 @@ function ReviewRead({ tab, projectId, lang, preview, onOpenSources }: { tab: Exc
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
   const props = { read: query.data, lang, preview, refreshing: query.isFetching, onRefresh: () => void query.refetch() };
   return tab === 'dneskai-review' ? <ReviewExperience {...props} guest={guest} onOpenSources={onOpenSources} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
-    : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} />;
+    : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} renderFailed={renderFailed} />;
 }
 
 function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang; preview: boolean }) {
