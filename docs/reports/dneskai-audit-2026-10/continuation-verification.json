@@ -1,0 +1,50 @@
+{
+  "branch": "fable/dneskai-continuation",
+  "units": {
+    "fullPassed": 2126,
+    "fullSkipped": 1,
+    "finalFocusedPassed": 21,
+    "note": "Final focused set includes one added missing-render regression after the full run."
+  },
+  "browser": {
+    "method": "Full 238-case run, followed by 42-case DNESKAi remediation and 2 missing-render checks; case identities merged by project, file and title.",
+    "passed": 168,
+    "skipped": 72,
+    "unresolvedFailures": 0,
+    "distinctCases": 240
+  },
+  "gates": {
+    "lint": 0,
+    "types": 0,
+    "normalProductionBuild": 0,
+    "latestOptimizedPlaywrightBuild": 0,
+    "diffCheck": 0,
+    "note": "Normal production build passed before final UI recovery changes; the final source passed the optimized Playwright production build with NEXT_E2E=1. Ordinary-production fixture guards are covered by unit tests."
+  },
+  "upstreamStudio": {
+    "passed": 710,
+    "dneskaiGoldensUnchanged": 11,
+    "familyGoldensUnchanged": 30,
+    "downstreamTestsPassed": [
+      517,
+      18,
+      21
+    ]
+  },
+  "production": {
+    "selectOnly": true,
+    "accountSnapshotUtc": "2026-10-22T02:39:00Z",
+    "dneskaiAccountCount": 0,
+    "latestMigration": "20261021125123",
+    "pendingBriefCount": 4,
+    "pendingBriefCode": "account-unavailable",
+    "briefsHaveJobs": false
+  },
+  "authorization": {
+    "pushed": false,
+    "deployed": false,
+    "migrationsApplied": false,
+    "researchActorsStarted": 0,
+    "researchBuildPinsVerified": 9
+  }
+}

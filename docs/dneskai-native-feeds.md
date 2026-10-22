@@ -17,7 +17,7 @@ OwnDashboard stores these files under `src/lib/marketing/free-feeds/`. The migra
 
 ## Boundaries and recovery
 
-Requests use only the registered source's HTTPS host. The transport checks public DNS addresses, pins the checked address to a direct TLS connection with the registered hostname, rejects redirect responses, caps decoded bodies at 1 MB and applies an 8-second request deadline within a 40-second collection deadline. Native collection sends no application credentials, invokes no model and uses no reader service. An HTTP 429 yields an error without a retry in the current collection. HN and GitHub isolate individual item/repository failures and retain partial evidence. The adapters preserve API caps; unknown dates, duplicates, detected instruction text and rejected future dates prevent completeness. Source text remains untrusted after sanitization.
+Requests use only the registered source's HTTPS host. The transport checks public DNS addresses, pins the checked address to a direct TLS connection with the registered hostname, rejects redirect responses, caps decoded bodies at 1 MB and applies the adapter request timeout within the source signal. The collection runner supplies a 25-second source deadline inside its 45-second tick budget (the native adapter also has a 40-second outer safeguard); the shortest signal wins. Up to three free sources overlap, sharing the five-operation cap. Paid stages remain serial. Native collection sends no application credentials, invokes no model and uses no reader service. An HTTP 429 yields an error without a retry in the current collection. HN and GitHub isolate individual item/repository failures and retain partial evidence. The adapters preserve API caps; unknown dates, duplicates, detected instruction text and rejected future dates prevent completeness. Source text remains untrusted after sanitization.
 
 HTML publishers that block static fetching or require scripts remain unavailable with `reader-disabled`; the adapter does not purchase or activate another provider.
 
@@ -58,7 +58,7 @@ Known gaps in the cursor rule:
 
 Deployment cutover is authorized (#110, decision 3); the 32-feed comparison below is its evidence. Cutover is live since 21 October 2026 (see the end of this document); keep the bridge credentials until Quorum's `DNESKAI_COLLECTION_ENABLED` is off and the rollback window has passed. This implementation does not migrate approved articles, the editorial model engine, transcript processing, image generation or publication. The existing signed approved-article source integration remains available.
 
-Offline validation uses publisher fixtures and injected public-address resolution. It proves registry identity parity, RSS filtering, caps, partial evidence, prompt-like source rejection, private DNS refusal, redirect refusal, body limits, cancellation and rate handling. Live availability from Vercel, the native provider in production and publication remain unverified.
+Offline validation uses publisher fixtures and injected public-address resolution. It proves registry identity parity, RSS filtering, caps, partial evidence, prompt-like source rejection, private DNS refusal, redirect refusal, body limits, cancellation and rate handling. These offline checks do not prove live Vercel availability or publication. The separately dated production cutover evidence below records what was verified later.
 
 ## Web article and social topics are separate outputs
 

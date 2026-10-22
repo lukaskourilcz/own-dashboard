@@ -1,0 +1,32 @@
+# Continuation after the audit
+
+The maps and findings are preserved as evidence at the audited commits. They are not rewritten to make historical measurements look current. This local integration branch combines the audit, eleven selected quick fixes, the disabled research runner/ledger preparation and the Design Lab prototype. Nothing here marks them deployed.
+
+| Audit reference | Local continuation | Practical limit |
+|---|---|---|
+| C2 | Instruction-shaped injection filter; ordinary AI vocabulary survives | Untrusted source content stays untrusted |
+| C4 | Definitely refused starts settle at zero | Unknown starts/polls retain their cap; historic ledgers untouched |
+| GEN-01, cost-11 | Brief offers/input checks use bytes/2 plus token overhead | Conservative heuristic, not a true tokenizer; dollar reservation and all ceilings unchanged |
+| GEN-09 | Whole numeric tokens and normalized grouping/decimal/percent notation | Date-as-evidence policy unchanged |
+| C1, briefs-02, M-03 | Encoded RSS, bounded fetched prose and publisher image descriptions reach brief/2 and the offer | Metadata is not vision or a transcript; prepared migrations unapplied |
+| briefs-04 | Future lapsed, never-generated briefs release eligible selected reports | No historical cleanup; jobs, revisions, coverage and other active briefs retain protection |
+| M-06 | Child URLs precede fallback renditions and deduplicate before the ten-URL cap | Ten-reference cap remains |
+| M-09 | Publisher/CDN redirects recheck policy and public DNS/TLS pins per hop | Two image redirects; no arbitrary-host or private-address access |
+| C10 | Up to three free reads overlap within five operations and 45 seconds | Paid stages remain serial; no larger budget |
+| TESTS-01, TESTS-02, SCHED-14 | PGlite uses UTC and component tests get explicit browser Storage | Node version remains a separate tooling choice; production migration parity is not implied |
+| review-01, review-13, review-14 | Mounted Lab, 390 px stage/full-size view, inspector, exact-hash actions, batch outcomes and authentic fixture edits | Only Editorial; existing edit contract; no paid regeneration, reminder or late-slot policy |
+| SCHED-07, C11, weekly/worker documentation | Code-backed documentation corrected, historic pilot evidence retained and labelled | Production remains separately dated |
+
+The upstream kit branch contains the additive Editorial contract, look/flow/metrics support, a named-kit API, coverage gates and six deterministic specimen decks (24 slides). Its original golden hashes remain unchanged. Four distinct designs and their sheets await the owner's design/naming choice; the studio has not been consolidated or re-vendored.
+
+The research runner remains off. Its private ledger reserves atomically against a separate $150 owner-wide cap; unknown costs consume the reservation. Nine build pins were resolved using unauthenticated public metadata only; their receipts and the exact plan review copy are committed. The plan, rollout and all paid runs still need approval. No research observations or month-end findings have been manufactured.
+
+## Production snapshot
+
+A Supabase MCP SELECT on 22 October 2026 at 02:39 UTC returned zero DNESKAi account rows and latest migration `20261021125123`. No credentials, remote account IDs or private source text were queried. No write or migration was performed. A second SELECT confirmed all four 22 October briefs are pending with `account-unavailable` and no jobs. Their Prague slots are 08:00, 12:30, 17:00 and 20:00; the first 30-minute lead boundary is 07:30. They still need account registration before their lapse boundaries. Migration-history reconciliation is a prerequisite to any approved application/schema release.
+
+## Remaining owner choices
+
+NEEDED.md retains the register/hashtag policy, research plan, ceilings, approval/time/reminder/retention policy, four kit designs and magazine/clipping naming, consolidation, agency-photo credits and migration history. Registering the existing @dneskai account is the immediate operational prerequisite. The broader audit remains a prioritised backlog; the eleven selected quick fixes and prototype do not claim to resolve every finding.
+
+Final results are in [continuation-verification.json](continuation-verification.json) and the handoff LOG.md: full unit replay 2,126 passed/1 skipped, current focused UI 21/21 (including one new regression), lint/types clean and optimized build clean. Browser case identities across the full run and targeted fixes yield 168 passed, 72 skipped and no unresolved failure. Skipped checks are not claimed as verified.

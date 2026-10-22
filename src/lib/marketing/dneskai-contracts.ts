@@ -69,7 +69,7 @@ export const DneskaiCollectionStateSchema = z.strictObject({
 });
 export type DneskaiCollectionState = z.infer<typeof DneskaiCollectionStateSchema>;
 
-/** Quorum reuses its existing adapters; candidates are research, never approved SourcePackets. */
+/** Native OwnDashboard adapters or the compatible signed bridge return research candidates, never approved SourcePackets. */
 export const DneskaiFeedRequestSchema = z.strictObject({
   action: z.literal('collect'), sourceIds: z.array(z.string().max(100)).min(1).max(8),
   since: z.iso.datetime({ offset: true }), maxItems: z.number().int().min(1).max(20),
