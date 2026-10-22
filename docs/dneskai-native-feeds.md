@@ -184,3 +184,39 @@ What changed after it: a free source now gets 25 s (`DNESKAI_FEED_TIMEOUT_MS` in
 
 Quorum's `DNESKAI_COLLECTION_ENABLED` was turned off the same evening and Quorum was redeployed; the rollback above applies.
 
+## Education sources for scouting (#151)
+
+The registry tags 17 sources `topic: 'education'` (plan section 5). They sit outside `DNESKAI_SOURCES`, so the news
+list, the Sources tab and the news cadence do not change. With the server-only `DNESKAI_SCOUTING_ENABLED=true` (which
+also needs `DNESKAI_TOPICS_ENABLED=true`) the nightly collection admits the ones due that weekday next to the news
+sources, reads them with the same adapters, timeouts and cursors, and never hands their reports to Jev. The scouting
+step then turns them into proposed topics.
+
+| Id | Kind | URL | Weekdays |
+|---|---|---|---|
+| `claude-code-whats-new` | html | https://code.claude.com/docs/en/whats-new | daily |
+| `product-hunt` | rss | https://www.producthunt.com/feed | daily |
+| `show-hn` | hnsearch | https://hn.algolia.com/api/v1/search_by_date?tags=show_hn&numericFilters=points%3E200 | daily |
+| `bens-bites` | rss | https://www.bensbites.com/feed | daily |
+| `aisdg` | rss | https://aisdg.substack.com/feed | Mon, Thu |
+| `perplexity-changelog` | html | https://www.perplexity.ai/changelog | Tue, Fri |
+| `devto-github` | rss | https://dev.to/feed/tag/github | Wed |
+| `webcrew` | rss | https://webcrew.cz/feed/ | Mon |
+| `czechcrunch-ai` | rss | https://cc.cz/umela-inteligence/feed/ | daily |
+
+`hnsearch` is a new adapter (`free-feeds/sources/adapters/hnsearch.ts`) for the free Algolia Hacker News API; the
+registered URL carries the query and the adapter sets only `hitsPerPage`. Anthropic news is already a daily news
+source (`anthropic-news`) and stays one.
+
+Eight Instagram profiles are education sources, each read on two weekdays at 10 posts through the existing
+Apify stage: @itstundeanthony, @godofprompt, @rowancheung, @mreflow, @bensbites, @futurepedia, @therundownai and
+@czechcrunch. No day reads more than three of them, and the existing $0.04 per profile and $0.25 per day
+reservations and `MARKETING_DNESKAI_APIFY_ENABLED` still decide; a profile over the day's ceiling is held, not read.
+@aimanie and @digitalnihumanista wait for the owner's check and are not registered.
+
+The feed URLs come from the plan's seed list and were not fetched while building this. After the first scouting
+night, each source's stage and its row in `marketing_dneskai_source_states` show whether it answered; a feed that
+fails records its error code there and the night goes on. The profiles go through the same `apify~instagram-scraper` actor as the news
+profiles, so captions and links arrive, but not `musicInfo` or play counts; the reel scraper with transcripts comes
+with the FACT or HYPE classifier (A3).
+

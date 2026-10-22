@@ -12,7 +12,7 @@ import { dneskaiOfferableMediaAssets, type DneskaiMediaAssetView, type DneskaiMe
 import { dneskaiCaptionOnly } from './dneskai-media-plan';
 import { phashDistance } from './dneskai-media-image';
 import { pendingDneskaiMediaCandidates, readDneskaiMedia } from './dneskai-media';
-import { DNESKAI_SOURCES } from './dneskai-registry';
+import { dneskaiSourceById } from './dneskai-registry';
 import { DNESKAI_RENDERER_VERSION } from './dneskai-render';
 import type { CreateDneskaiBriefs } from './dneskai-ports';
 import type { DneskaiEditPool } from './dneskai-deck-edit';
@@ -129,7 +129,7 @@ export function assignDneskaiBriefSlots(briefs: ReadonlyArray<{ id: string; rank
 
 export type DneskaiBriefMember = { candidate: DneskaiCandidate; media: readonly DneskaiMediaAssetView[]; articleText?:string };
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2048);
-const sourceName = (sourceId: string) => DNESKAI_SOURCES.find((source) => source.id === sourceId)?.name ?? sourceId;
+const sourceName = (sourceId: string) => dneskaiSourceById(sourceId)?.name ?? sourceId;
 function firstLine(value: string) { return (value.trim().split(/\r?\n/, 1)[0] ?? '').trim(); }
 function evidenceTitle(candidate: DneskaiCandidate) { return (candidate.title.trim() || firstLine(candidate.text) || sourceName(candidate.sourceId)).slice(0, 500); }
 function safeEvidenceUrl(value: string) { const parsed = httpsUrl.safeParse(value); if (!parsed.success) return null; const url = new URL(parsed.data); return url.username || url.password ? null : url.href; }

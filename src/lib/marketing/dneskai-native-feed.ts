@@ -1,12 +1,12 @@
 import 'server-only';
 import { DneskaiFeedRequestSchema, DneskaiFeedResponseSchema, type DneskaiSource } from './dneskai-contracts';
-import { DNESKAI_SOURCES, dneskaiFeedAdapter } from './dneskai-registry';
+import { DNESKAI_EDUCATION_SOURCES, DNESKAI_SOURCES, dneskaiFeedAdapter } from './dneskai-registry';
 import { SourceConfigSchema, SourceItemSchema, type SourceConfig } from './free-feeds/sources/types';
 import { fetchSource } from './free-feeds/sources/adapters';
 import { parseSafeHttpsUrl, SourceHttpError } from './free-feeds/security/url';
 
-/** Adapter configuration derived from the one source registry (audit C6): every registered non-Instagram source. */
-const sources: readonly SourceConfig[] = DNESKAI_SOURCES.filter(source => source.kind !== 'instagram').map(({ id, kind, name, url, maxItems }) => {
+/** Adapter configuration derived from the one source registry (audit C6): every registered non-Instagram source, news first, then education (#151). */
+const sources: readonly SourceConfig[] = [...DNESKAI_SOURCES, ...DNESKAI_EDUCATION_SOURCES].filter(source => source.kind !== 'instagram').map(({ id, kind, name, url, maxItems }) => {
   const adapter = dneskaiFeedAdapter(id) ?? {};
   return SourceConfigSchema.parse({ id, kind, name, url, maxItems, ...adapter, ...(adapter.repos ? { repos: [...adapter.repos] } : {}) });
 });

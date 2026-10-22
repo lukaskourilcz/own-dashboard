@@ -294,6 +294,7 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `DNESKAI_REVIEW_REMINDERS_ENABLED` | on | The tick's `reminder` step; only `false` turns it off | Live |
 | `DNESKAI_REGENERATE_ENABLED` | off | Lab: Regenerate with a note (`action: "regenerate"`) | Off until migration `20261022190000` |
 | `DNESKAI_TOPICS_ENABLED` | off | Topics (náměty): `GET` and `POST /api/marketing/dneskai/topics` and their read model; off answers 404 | Off until migration `20261023100000` |
+| `DNESKAI_SCOUTING_ENABLED` | off | Collection also reads the education sources (never sent to Jev); the tick's `scouting` step turns them and library links rated 4 or 5 into proposed topics, hourly 22:00–08:00 | Needs `DNESKAI_TOPICS_ENABLED` and migration `20261023100000` |
 | `MARKETING_DNESKAI_REELS_ENABLED` | off | Reels: the render route (#163), Zdroje → Hudba and the Lab's music picker (#164), the Formát switch, Reel generation for education posts and Reel publishing (#165) | Off until migrations `20261023130000` and `20261023130100` |
 | `DNESKAI_ENGAGEMENT_EDITOR_ENABLED` | off | Lab: the comment keyword, DM message and public reply editor; `engagement` in `action: "edit"` | Off, needs no migration |
 | `DNESKAI_RICH_EVIDENCE_ENABLED` | off | Fetched article text and picture descriptions in media collection and brief/2 | Off until the evidence migrations |
