@@ -17,12 +17,14 @@ export type DneskaiTextField = "headline" | "body" | "kicker" | "credit" | "sour
  * vendored templates (`tests/lib/carousel-studio-vendor.test.ts`).
  */
 export const DNESKAI_PLACED_FIELDS = {
-  "cover-photo": ["headline", "kicker", "credit"],
-  figure: ["headline", "body", "credit"],
-  split: ["headline", "body", "kicker", "credit"],
+  // Owner rule (22 October 2026): the first slide and a single post carry the headline alone, and no slide draws a
+  // picture credit, a page count or anything about sources. Credits live in the database, not in the post.
+  "cover-photo": ["headline"],
+  figure: ["headline", "body"],
+  split: ["headline", "body", "kicker"],
   statement: ["headline", "body"],
   sources: ["sources"],
-  single: ["headline", "body", "kicker", "credit"],
+  single: ["headline"],
 } as const satisfies Record<DneskaiSlideType, readonly DneskaiTextField[]>;
 
 /**
@@ -31,13 +33,13 @@ export const DNESKAI_PLACED_FIELDS = {
  * studio. Whether a line fits is still the fitter's call; this is the hard ceiling the prompt aims under.
  */
 export const DNESKAI_TEXT_LIMITS = {
-  "dneskai-cover-photo": { headline: 110, kicker: 56, credit: 80 },
-  "dneskai-figure": { headline: 110, body: 260, credit: 80 },
-  "dneskai-split": { headline: 110, body: 330, kicker: 28, credit: 80 },
-  "dneskai-split-pair": { headline: 110, body: 320, kicker: 28, credit: 80 },
+  "dneskai-cover-photo": { headline: 110 },
+  "dneskai-figure": { headline: 110, body: 260 },
+  "dneskai-split": { headline: 110, body: 330, kicker: 28 },
+  "dneskai-split-pair": { headline: 110, body: 320, kicker: 28 },
   "dneskai-statement": { headline: 170, body: 240 },
-  "dneskai-single-photo": { headline: 110, body: 100, kicker: 44, credit: 30 },
-  "dneskai-single-type": { headline: 120, body: 280, kicker: 56, credit: 80 },
+  "dneskai-single-photo": { headline: 110 },
+  "dneskai-single-type": { headline: 120 },
 } as const satisfies Record<string, Partial<Record<"headline" | "body" | "kicker" | "credit", number>>>;
 export type DneskaiTemplateId = keyof typeof DNESKAI_TEXT_LIMITS;
 
@@ -101,18 +103,16 @@ export function dneskaiShapePictureCounts(shape: DneskaiSlideShape): readonly nu
   }
 }
 
-/** The credit layer of a single photo slide: the shortest credit line a single-image post can carry. */
-const SINGLE_PHOTO_CREDIT = DNESKAI_TEXT_LIMITS["dneskai-single-photo"].credit;
 export type DneskaiPoolPicture = Pick<DneskaiBriefMedia, "assetSha256" | "candidateId" | "credit" | "fullBleedCapable" | "insetCapable">;
 
 /**
  * Whether a picture from the brief's pool can fill a shape's picture place, by the same capability flags
- * generation offers the model: a cover needs a full-bleed picture, a single photo a full-bleed picture whose credit
- * fits its short credit line (`singlePhotoCapable`), every framed slide a picture at least inset-capable.
+ * generation offers the model: a cover and a single photo need a full-bleed picture, every framed slide a picture at
+ * least inset-capable. No slide carries a credit line, so a credit never rules a picture out.
  */
 export function dneskaiPictureFitsShape(media: Pick<DneskaiPoolPicture, "credit" | "fullBleedCapable" | "insetCapable">, shape: DneskaiSlideShape): boolean {
   if (shape.type === "cover-photo") return media.fullBleedCapable;
-  if (shape.type === "single") return shape.variant === "photo" && media.fullBleedCapable && dneskaiCreditLine([media.credit], SINGLE_PHOTO_CREDIT) !== null;
+  if (shape.type === "single") return shape.variant === "photo" && media.fullBleedCapable;
   if (shape.type === "statement") return false;
   return media.insetCapable || media.fullBleedCapable;
 }
@@ -186,4 +186,21 @@ export function dneskaiCreditLine(credits: readonly string[], limit: number): st
     if (characters(line) <= limit) return line;
   }
   return null;
+}
+
+/**
+ * A deck as the owner's slide rules allow it (22 October 2026): no sources slide, no picture credit on any slide, and
+ * on every slide only the fields its type draws, so the first slide and a single post keep their headline alone.
+ * Decks saved before the rule are brought into line when they are edited; nothing else about them changes.
+ */
+export function dneskaiShownDeck<T extends { format: "carousel" | "single-image"; slides: DneskaiSlide[] }>(deck: T): T {
+  const slides = deck.slides.filter((slide) => slide.type !== "sources").map((slide) => {
+    const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
+    const next = { ...slide };
+    delete next.credit;
+    for (const field of ["body", "kicker"] as const) if (!placed.includes(field)) delete next[field];
+    return next;
+  });
+  // A carousel keeps at least two slides: a two-slide legacy deck whose second slide was its sources slide stays whole.
+  return deck.format === "carousel" && slides.length < 2 ? deck : { ...deck, slides };
 }

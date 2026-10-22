@@ -88,7 +88,7 @@ describe("marketing-copy/5 prompt (#116)", () => {
       { type: "statement", headline: "Účet @technology akci vyzkoušel na portrétu.", images: [], alt: "Textový slide o vyzkoušení funkce na Instagramu." },
     ] };
     expect(validateDneskaiCopy(statements, offer)).toEqual([]);
-    const deck = buildDneskaiDeck(statements, offer, glyphs);
+    const deck = buildDneskaiDeck(statements, offer);
     expect(deck.slides.map((slide) => slide.type)).toEqual(["statement", "statement", "statement", "statement", "sources"]);
     expect(deck.slides.every((slide) => slide.images.length === 0)).toBe(true);
     // A picture the brief does not offer is refused, so a carousel never gains an invented picture.
@@ -343,7 +343,7 @@ describe("code-set picture credits", () => {
     const offer = dneskaiBriefOffer(singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]), publishers);
     const copy = singlePhoto(pictures.hero.sha256);
     expect(validateDneskaiCopy(copy, offer)).toEqual([]);
-    expect(buildDneskaiDeck(copy, offer, glyphs).slides[0]!.credit).toBe("@testonly-blog.net (Bluesky)");
+    expect(buildDneskaiDeck(copy, offer).slides[0]!.credit).toBe("@testonly-blog.net (Bluesky)");
     const caption = assembleDneskaiCaption(copy, offer);
     expect("caption" in caption && caption.caption).toContain(`\n\n${BLUESKY_CREDIT}\n\n`);
     const carousel = validCopy(pictures);

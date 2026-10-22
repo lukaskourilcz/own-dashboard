@@ -12,7 +12,7 @@ import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevision
 import { getBriefAssetHashLister, getBriefPoolLoader, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
 import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { marketingPublishingLive } from '@/lib/marketing/scheduler';
-import { DNESKAI_PUBLISH_NOW_LEAD_MS } from '@/lib/marketing/dneskai-deck-editor';
+import { DNESKAI_CAPTION_HASHTAG_MAX, DNESKAI_PUBLISH_NOW_LEAD_MS, dneskaiCaptionHashtags } from '@/lib/marketing/dneskai-deck-editor';
 export const maxDuration=60;
 const Input=z.discriminatedUnion('action',[
  z.strictObject({action:z.literal('approve'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
@@ -79,6 +79,7 @@ export async function POST(request:Request){
    const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt,render_report').eq('id',input.id).eq('user_id',user.id).single();
    if(error||!row)return NextResponse.json({error:'revision-unavailable'},{status:404});
    const scheduled=Date.parse(input.scheduledAt);if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});
+   if(dneskaiCaptionHashtags(input.caption)>DNESKAI_CAPTION_HASHTAG_MAX&&parseContentRevision(row.revision).brand==='dneskai')return NextResponse.json({error:'caption-hashtags-over-limit'},{status:409});
    const current=parseContentRevision(row.revision);
    let account:ContentRevision['account']=current.account;
    if(input.accountId){

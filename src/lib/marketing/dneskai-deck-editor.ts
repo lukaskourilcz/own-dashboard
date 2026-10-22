@@ -17,6 +17,10 @@ import type { DneskaiFitResult } from './dneskai-lab';
  * (`applyDneskaiDeckEdit` in dneskai-deck-edit.ts).
  */
 export const DNESKAI_CAPTION_MAX = 2200;
+/** The owner's cap on hashtags per DNESKAi post (22 October 2026); generation keeps to it and every edit is checked. */
+export const DNESKAI_CAPTION_HASHTAG_MAX = 10;
+/** The hashtags a caption carries, as Instagram reads them. */
+export const dneskaiCaptionHashtags = (caption: string) => caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0;
 export const DNESKAI_ZOOM = { min: 1, max: 2, step: 0.05 } as const;
 /** Arrow keys move the focal point by 2 % of the picture. */
 export const DNESKAI_FOCAL_STEP = 0.02;
@@ -220,7 +224,7 @@ export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
-export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit' };
+export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'caption-hashtags-over-limit' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit' };
 /**
  * What the editor itself can see is wrong before sending; the server and the renderer check the rest. With the fit
  * report for this exact draft (POST /api/marketing/dneskai/fit), a field the studio's fitter would cut is a problem
@@ -248,6 +252,7 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
   if (post.deck?.format === 'single-image' && draft.slides.length !== 1) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
   if (!draft.caption.trim()) problems.push({ slide: null, field: 'caption', code: 'caption-missing' });
   else if (characterCount(draft.caption) > DNESKAI_CAPTION_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-too-long' });
+  else if (dneskaiCaptionHashtags(draft.caption) > DNESKAI_CAPTION_HASHTAG_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-hashtags-over-limit' });
   const scheduled = scheduledIso(draft.scheduledLocal);
   if (scheduled === null) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-invalid' });
   else if (Date.parse(scheduled) <= now.getTime() || Date.parse(scheduled) > now.getTime() + DNESKAI_SCHEDULE_WINDOW_MS) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });

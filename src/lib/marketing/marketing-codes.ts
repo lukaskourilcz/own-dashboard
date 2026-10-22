@@ -342,6 +342,7 @@ const CODES = {
   'asset-image-invalid': ['investigate', 'An image file is not valid.', 'Soubor obrázku není platný.'],
   'asset-mime-or-response-invalid': ['retry', 'An image link returned something other than an image.', 'Odkaz na obrázek nevrátil obrázek.'],
   'asset-unreachable': ['auto', 'An image link could not be reached.', 'Odkaz na obrázek není dostupný.'],
+  'caption-hashtags-over-limit': ['edit', 'A DNESKAi caption carries at most 10 hashtags; remove the extra ones.', 'Popisek DNESKAi nese nejvýš 10 hashtagů; ty navíc odeberte.'],
   'caption-hashtag-limit': ['edit', 'The caption has more hashtags than Instagram allows.', 'Popisek má víc hashtagů, než Instagram dovolí.'],
   'caption-mention-limit': ['edit', 'The caption mentions too many accounts.', 'Popisek zmiňuje příliš mnoho účtů.'],
   'checkpoint-fence-lost': ['wait', 'Another process took over this publication.', 'Publikaci převzal jiný proces.'],

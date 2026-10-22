@@ -12,10 +12,10 @@ import type { DneskaiDeck } from "./dneskai-slides";
 import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import {
-  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DNESKAI_SOURCES_SLIDE, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
+  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
   assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
-  dneskaiSourcesSlideBlocked, loadDneskaiGlyphFilter, normalizeDneskaiCopy, validateDneskaiCopy,
-  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers, type DneskaiGlyphFilter,
+   normalizeDneskaiCopy, validateDneskaiCopy,
+  type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers,
 } from "./dneskai-generation";
 
 export const MARKETING_PROMPT_VERSION = "marketing-copy/4";
@@ -283,7 +283,6 @@ function memoizedMedia(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
   };
 }
 /** Narrower and narrower source lines for the code-written sources slide before giving up on it. */
-const SOURCE_LINE_STEPS = [DNESKAI_SOURCES_SLIDE.lineChars, 150, 110] as const;
 
 async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, budget: GenerationBudget, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
   const brief = source.brief!;
@@ -295,7 +294,6 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
   const loadMedia = memoizedMedia(dependencies.loadDneskaiMedia!);
   const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;
-  let glyphs: Promise<DneskaiGlyphFilter> | null = null;
   return {
     promptVersion: MARKETING_BRIEF_PROMPT_ID,
     prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer) },
@@ -313,22 +311,15 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
       const assembled = assembleDneskaiCaption(parsed.data, offer);
       if ("issue" in assembled) issues.push(assembled.issue);
       if (issues.length || !("caption" in assembled)) return fail(issues);
-      glyphs ??= loadDneskaiGlyphFilter();
-      let filter: DneskaiGlyphFilter;
-      try { filter = await glyphs; } catch { glyphs = null; throw new MarketingGenerationError("render-rasterizer-unavailable"); }
-      let deck: DneskaiDeck | null = null; let problems: DneskaiSlideRenderProblem[] = [];
-      for (const lineChars of SOURCE_LINE_STEPS) {
-        try { deck = buildDneskaiDeck(parsed.data, offer, filter, lineChars); }
-        catch { throw new MarketingGenerationError("brief-deck-invalid"); }
-        try { problems = await validateDeck(deck, loadMedia, context.signal); }
-        catch (failure) {
-          if (failure instanceof DneskaiRenderError) throw new MarketingGenerationError(failure.code === "worker-timeout" ? "generation-timeout" : failure.code);
-          throw new MarketingGenerationError("render-validation-failed");
-        }
-        // Code writes the sources slide; it shortens its own lines rather than asking the model.
-        if (!dneskaiSourcesSlideBlocked(problems, deck)) break;
+      let deck: DneskaiDeck;
+      try { deck = buildDneskaiDeck(parsed.data, offer); }
+      catch { throw new MarketingGenerationError("brief-deck-invalid"); }
+      let problems: DneskaiSlideRenderProblem[];
+      try { problems = await validateDeck(deck, loadMedia, context.signal); }
+      catch (failure) {
+        if (failure instanceof DneskaiRenderError) throw new MarketingGenerationError(failure.code === "worker-timeout" ? "generation-timeout" : failure.code);
+        throw new MarketingGenerationError("render-validation-failed");
       }
-      if (!deck || dneskaiSourcesSlideBlocked(problems, deck)) throw new MarketingGenerationError("brief-sources-slide-refused");
       const blocking = dneskaiRenderIssues(problems, deck);
       return blocking.length ? fail(blocking) : { ok: true, value: { copy: parsed.data, deck, caption: assembled.caption } };
     },
