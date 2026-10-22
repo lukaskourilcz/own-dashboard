@@ -10,10 +10,10 @@ import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
 import { marketingTokenState } from '@/lib/marketing/accounts-client';
 import { dneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import { qk } from '@/lib/queries/keys';
-import { dneskaiNeedsReview, dneskaiPostState, dneskaiStateContext, type DneskaiCostsRead, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { dneskaiNeedsReview, dneskaiPostState, dneskaiStateContext, formatDneskaiDay, formatDneskaiDayTime, type DneskaiCostsRead, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiCodeText } from './code-text';
 import { DneskaiStateChip } from './state-chip';
-import { TabHeader, pragueDateTime } from './review-tab';
+import { TabHeader } from './review-tab';
 
 type Lang = 'en' | 'cs';
 
@@ -28,7 +28,6 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
 }) {
   const t = dneskaiWorkspace[lang];
   const usd = (value: number) => new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
-  const day = (date: string) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
   const { spentUsd, ceilingUsd, code } = read.generation;
   const share = spentUsd !== null && ceilingUsd ? Math.min(100, Math.round((spentUsd / ceilingUsd) * 100)) : 0;
   const tone = (status: string) => status === 'complete' ? 'success' as const : status === 'failed' ? 'risk' as const : status === 'running' ? 'information' as const : 'warning' as const;
@@ -63,7 +62,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
         <table className="w-full min-w-[36rem] text-left text-xs" aria-describedby="dneskai-days-help">
           <thead className="border-b border-border text-foreground-muted"><tr><th scope="col" className="px-3 py-2 font-medium">{t.costs.date}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.collection}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.generation}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.total}</th><th scope="col" className="px-3 py-2 text-right font-medium">{t.costs.booked}</th></tr></thead>
           <tbody className="divide-y divide-border">{read.days.map((row) => <tr key={row.date}>
-            <th scope="row" className="px-3 py-2 font-normal">{day(row.date)}{row.unknown > 0 && <span className="block text-warning">{t.costs.unknown(row.unknown)}</span>}</th>
+            <th scope="row" className="px-3 py-2 font-normal">{formatDneskaiDay(row.date)}{row.unknown > 0 && <span className="block text-warning">{t.costs.unknown(row.unknown)}</span>}</th>
             <td className="px-3 py-2 text-right tabular">{usd(row.collectionUsd)}</td><td className="px-3 py-2 text-right tabular">{usd(row.generationUsd)}</td><td className="px-3 py-2 text-right font-medium tabular">{usd(row.collectionUsd + row.generationUsd)}</td>
             <td className={`px-3 py-2 text-right tabular ${row.generationBookedUsd > 0 ? 'text-warning' : 'text-foreground-muted'}`}>{usd(row.generationBookedUsd)}</td>
           </tr>)}</tbody>
@@ -75,7 +74,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
     <section aria-labelledby="dneskai-runs-cost-title" className="min-w-0 space-y-2">
       <h3 id="dneskai-runs-cost-title" className="text-sm font-semibold">{t.costs.runs}</h3>
       {read.runs.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noRuns}</p> : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.runs.map((run) => <li key={run.id} className="min-w-0 space-y-1 px-3 py-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>{day(run.date)} · <span className="text-foreground-muted">{t.costs.runFor(day(run.targetDate))}</span></span>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>{formatDneskaiDay(run.date)} · <span className="text-foreground-muted">{t.costs.runFor(formatDneskaiDay(run.targetDate))}</span></span>
           <span className="flex items-center gap-2 text-xs"><span className="tabular text-foreground-muted">{t.costs.cost}: {run.costUsd === null ? t.costs.unknownCost : usd(run.costUsd)}</span><StatusBadge value={`run-${run.status}`} label={t.costs.runStatus[run.status] ?? run.status} tone={tone(run.status)} /></span></div>
         {run.errorCode && <DneskaiCodeText code={run.errorCode} lang={lang} tone={run.status === 'failed' ? 'risk' : 'muted'} details={[[t.detailRun, run.id]]} />}
       </li>)}</ul>}
@@ -87,7 +86,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
       <h3 id="dneskai-jobs-title" className="text-sm font-semibold">{t.costs.jobs}</h3>
       {read.jobs.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noJobs}</p> : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.jobs.map((job) => <li key={job.id} className="min-w-0 space-y-1 px-3 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="min-w-0 break-words">{job.title || t.calendar.job}</span>
-          <span className="flex items-center gap-2 text-xs text-foreground-muted">{job.scheduledAt && <time dateTime={job.scheduledAt} className="tabular">{pragueDateTime(job.scheduledAt, lang)}</time>}<StatusBadge value={`job-${job.status}`} label={t.costs.jobStatus[job.status] ?? job.status} tone={job.status === 'failed' ? 'risk' : 'warning'} /></span></div>
+          <span className="flex items-center gap-2 text-xs text-foreground-muted">{job.scheduledAt && <time dateTime={job.scheduledAt} className="tabular">{formatDneskaiDayTime(job.scheduledAt)}</time>}<StatusBadge value={`job-${job.status}`} label={t.costs.jobStatus[job.status] ?? job.status} tone={job.status === 'failed' ? 'risk' : 'warning'} /></span></div>
         <DneskaiCodeText code={job.errorCode} lang={lang} details={[[t.detailJob, job.id], [t.costs.bookedShort, job.costUsd === null ? null : usd(job.costUsd)]]} />
       </li>)}</ul>}
     </section>
@@ -96,7 +95,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
       <h3 id="dneskai-publications-title" className="text-sm font-semibold">{t.costs.publications}</h3>
       {read.publications.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noPublications}</p> : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.publications.map((publication) => <li key={publication.id} className="min-w-0 space-y-1 px-3 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="min-w-0 break-words">{publication.title}</span>
-          <span className="flex items-center gap-2 text-xs text-foreground-muted"><time dateTime={publication.scheduledAt} className="tabular">{pragueDateTime(publication.scheduledAt, lang)}</time><StatusBadge value="dneskai-problem" label={t.states.problem} tone="risk" /></span></div>
+          <span className="flex items-center gap-2 text-xs text-foreground-muted"><time dateTime={publication.scheduledAt} className="tabular">{formatDneskaiDayTime(publication.scheduledAt)}</time><StatusBadge value="dneskai-problem" label={t.states.problem} tone="risk" /></span></div>
         <DneskaiCodeText code={publication.errorCode ?? (publication.status === 'reconciliation' ? 'read-only-reconciliation' : 'publishing-failed')} lang={lang} details={[[t.detailPublication, publication.id], [t.detailRevision, publication.revisionId]]} />
         {publication.requeueable && <RequeuePublication id={publication.id} lang={lang} preview={preview} onDone={onRefresh} />}
       </li>)}</ul>}
@@ -104,11 +103,11 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
 
     <section aria-labelledby="dneskai-ticks-title" className="min-w-0 space-y-2">
       <h3 id="dneskai-ticks-title" className="text-sm font-semibold">{t.costs.ticks}</h3>
-      {read.ticks.total === 0 ? <p className="text-sm text-warning">{t.costs.noTicks}</p> : <p className="text-sm">{t.costs.tickSummary(read.ticks.total, read.ticks.withErrors, read.ticks.generationDeferred)}{read.ticks.lastStartedAt && <span className="text-foreground-muted"> · {t.costs.lastTick}: <time dateTime={read.ticks.lastStartedAt} className="tabular">{pragueDateTime(read.ticks.lastStartedAt, lang)}</time></span>}</p>}
+      {read.ticks.total === 0 ? <p className="text-sm text-warning">{t.costs.noTicks}</p> : <p className="text-sm">{t.costs.tickSummary(read.ticks.total, read.ticks.withErrors, read.ticks.generationDeferred)}{read.ticks.lastStartedAt && <span className="text-foreground-muted"> · {t.costs.lastTick}: <time dateTime={read.ticks.lastStartedAt} className="tabular">{formatDneskaiDayTime(read.ticks.lastStartedAt)}</time></span>}</p>}
       {read.ticks.recent.length > 0 && <>
         <h4 className="text-xs font-semibold text-foreground-muted">{t.costs.recentTicks}</h4>
         <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.ticks.recent.map((tick) => <li key={tick.id} className="min-w-0 space-y-1 px-3 py-2.5 text-xs">
-          <p><time dateTime={tick.startedAt} className="tabular">{pragueDateTime(tick.startedAt, lang)}</time> · {t.costs.tickKind[tick.kind]}{!tick.finishedAt && <span className="text-warning"> · {t.costs.unfinished}</span>}</p>
+          <p><time dateTime={tick.startedAt} className="tabular">{formatDneskaiDayTime(tick.startedAt)}</time> · {t.costs.tickKind[tick.kind]}{!tick.finishedAt && <span className="text-warning"> · {t.costs.unfinished}</span>}</p>
           <p className="text-foreground-muted">{tick.did.map((step) => `${t.costs.steps[step.category] ?? t.costs.otherStep}: ${t.costs.stepStatus[step.status] ?? step.status}`).join(' · ')}</p>
           {tick.errors.map((error, index) => <DneskaiCodeText key={`${error.category}-${index}`} code={error.code} lang={lang} />)}
         </li>)}</ul>
@@ -156,7 +155,7 @@ function BlockedPosts({ review, renderFailed, lang }: { review: DneskaiWorkspace
         : blocked.length === 0 ? <p className="text-sm text-foreground-muted">{t.costs.noPosts}</p>
           : <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="dneskai-blocked-posts">{blocked.map(({ post, detail }) => <li key={post.id} className="min-w-0 space-y-1 px-3 py-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="min-w-0 break-words">{post.title}</span>
-              <span className="flex items-center gap-2 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{pragueDateTime(post.scheduledAt, lang)}</time><DneskaiStateChip detail={detail} lang={lang} /></span></div>
+              <span className="flex items-center gap-2 text-xs text-foreground-muted"><time dateTime={post.scheduledAt} className="tabular">{formatDneskaiDayTime(post.scheduledAt)}</time><DneskaiStateChip detail={detail} lang={lang} /></span></div>
             <DneskaiCodeText code={detail.code} lang={lang} details={[[t.detailRevision, post.id], [t.detailHash, post.contentHash]]} />
           </li>)}</ul>}
   </section>;
@@ -177,7 +176,7 @@ function TokenSection({ lang, preview, now }: { lang: Lang; preview: boolean; no
         : !record || !state ? <p className="text-xs text-foreground-muted">{t.costs.noAccount}</p>
           : <>
             <StatusBadge value={`token-${state}`} label={account.token[state]} tone={state === 'valid' ? 'success' : state === 'expiring' ? 'warning' : state === 'expired' ? 'risk' : 'neutral'} />
-            <p className="text-xs"><span className="text-foreground-muted">@{record.handle} · {t.costs.tokenExpires}: </span>{record.token ? <time dateTime={record.token.expiresAt} className="tabular">{pragueDateTime(record.token.expiresAt, lang)}</time> : account.notRecorded}</p>
+            <p className="text-xs"><span className="text-foreground-muted">@{record.handle} · {t.costs.tokenExpires}: </span>{record.token ? <time dateTime={record.token.expiresAt} className="tabular">{formatDneskaiDayTime(record.token.expiresAt)}</time> : account.notRecorded}</p>
             {account.tokenHelp[state] && <p className="text-xs text-foreground-muted">{account.tokenHelp[state]}</p>}
           </>}
   </section>;

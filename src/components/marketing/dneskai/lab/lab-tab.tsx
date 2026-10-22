@@ -14,7 +14,7 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
-import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { CountedField } from '../post-editor';
 import { DneskaiCodeText } from '../code-text';
@@ -81,7 +81,7 @@ export function DneskaiLabTab(props: Props) {
         choose(ordered[Math.max(0, Math.min(ordered.length - 1, at + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
       }} aria-label={t.queue.label} className="min-w-0 space-y-4" data-testid="dneskai-lab-queue">
         {days.map((day, index) => <section key={day.date} className="space-y-2">
-          <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow} <span className="font-normal text-foreground-muted tabular">{day.date}</span></h3>
+          <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow}</h3>
           <ol className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
             {day.posts.map((item) => <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><button type="button" onClick={() => choose(item.post.id)} aria-current={active?.post.id === item.post.id ? 'true' : undefined}
               className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', active?.post.id === item.post.id ? 'border-primary bg-surface-selected' : 'border-border hover:bg-surface-hover')} data-testid="dneskai-lab-queue-post">
@@ -353,10 +353,10 @@ function ApproveDay({ day, onClose, ...props }: Props & { day: DneskaiLabDay; on
     } catch (failure) { setError(failure instanceof DneskaiWorkspaceRequestError ? failure.code : 'decision-failed'); }
     finally { await client.invalidateQueries({ queryKey: dneskaiWorkspaceKeys(props.projectId).review }); setBusy(false); }
   }
-  return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent className="max-w-3xl" data-testid="dneskai-approve-day"><DialogHeader><DialogTitle>{t.approveDay.title}</DialogTitle><DialogDescription>{t.approveDay.description(day.date)}</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent className="max-w-3xl" data-testid="dneskai-approve-day"><DialogHeader><DialogTitle>{t.approveDay.title}</DialogTitle><DialogDescription>{t.approveDay.description(formatDneskaiDay(day.date))}</DialogDescription></DialogHeader>
     <ul className="space-y-4">{posts.map((item) => <li key={item.post.id} className="space-y-2 border-b border-border pb-3"><p className="text-xs font-semibold">{item.deadline.time} · {item.post.title} <span className="font-normal text-foreground-muted">{t.actions.version(item.revision.shortHash)}</span></p>
       <div className="flex gap-2 overflow-x-auto">{item.slides.map((slide) => slide.render ? <Image unoptimized key={slide.index} src={slide.render.url} alt={slide.render.alt} width={slide.render.width} height={slide.render.height} className="h-40 w-32 shrink-0 object-contain" onLoad={() => setLoaded((before) => new Set(before).add(slide.render!.url))} onError={() => setLoaded((before) => { const next = new Set(before); next.delete(slide.render!.url); return next; })} /> : <p key={slide.index} className="text-xs">{t.stage.noRender}</p>)}</div>
-      <p className="whitespace-pre-wrap text-xs">{item.post.caption}</p><p className="text-xs text-foreground-muted">@{item.post.account.handle} · {item.post.scheduledAt}</p>
+      <p className="whitespace-pre-wrap text-xs">{item.post.caption}</p><p className="text-xs text-foreground-muted">@{item.post.account.handle} · <time dateTime={item.post.scheduledAt} className="tabular">{formatDneskaiDayTime(item.post.scheduledAt)}</time></p>
       {result?.results.find((entry) => entry.id === item.post.id && !entry.ok) && <div role="alert"><DneskaiCodeText code={result.results.find((entry) => entry.id === item.post.id)!.error ?? 'approval-unavailable'} lang={props.lang} /></div>}
     </li>)}</ul>
     {result && <p role="status" className="mt-3 text-sm">{t.approveDay.result(result.results.filter((item) => item.ok).length, result.results.filter((item) => !item.ok).length)}</p>}

@@ -6,10 +6,10 @@ import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { DNESKAI_POST_FILTERS, dneskaiPostList, dneskaiPostMatches, type DneskaiPostFilter, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { DNESKAI_POST_FILTERS, dneskaiPostList, formatDneskaiDayTime, dneskaiPostMatches, type DneskaiPostFilter, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiCodeText, DneskaiDetails } from './code-text';
 import { DneskaiStateChip } from './state-chip';
-import { TabHeader, pragueDateTime } from './review-tab';
+import { TabHeader } from './review-tab';
 
 type Lang = 'en' | 'cs';
 
@@ -50,7 +50,7 @@ export function DneskaiPublishedTab({ read, lang, preview, refreshing, onRefresh
           <div className="min-w-0 space-y-1">
             <div className="flex min-w-0 flex-wrap items-start justify-between gap-2"><p className="min-w-0 break-words text-sm font-medium">{post.title}</p><DneskaiStateChip detail={state} lang={lang} /></div>
             <dl className="grid gap-x-4 gap-y-0.5 text-xs text-foreground-muted sm:grid-cols-2">
-              <div><dt className="inline">{at ? t.published.at : t.published.planned}: </dt><dd className="inline tabular"><time dateTime={at ?? post.scheduledAt}>{pragueDateTime(at ?? post.scheduledAt, lang)}</time></dd></div>
+              <div><dt className="inline">{at ? t.published.at : t.published.planned}: </dt><dd className="inline tabular"><time dateTime={at ?? post.scheduledAt}>{formatDneskaiDayTime(at ?? post.scheduledAt)}</time></dd></div>
               <div><dt className="inline">{t.published.account}: </dt><dd className="inline">@{post.account.handle}</dd></div>
             </dl>
             {state.state === 'problem' && <DneskaiCodeText code={state.code} lang={lang} />}
