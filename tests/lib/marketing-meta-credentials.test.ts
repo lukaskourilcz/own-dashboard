@@ -62,7 +62,9 @@ describe('Meta token resolution', () => {
     expect(instagramTokenRefreshDue({ expiresAt: at(11 * day), refreshedAt: at(-2 * day), loginMode: 'instagram' }, now)).toBe(false);
     expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-23 * 3_600_000), loginMode: 'instagram' }, now)).toBe(false);
     expect(instagramTokenRefreshDue({ expiresAt: at(-1), refreshedAt: at(-2 * day), loginMode: 'instagram' }, now)).toBe(false);
-    expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-2 * day), loginMode: 'facebook' }, now)).toBe(false);
+    // #166: a Facebook Login token is renewed by the same window; Threads is not.
+    expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-2 * day), loginMode: 'facebook' }, now)).toBe(true);
+    expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-2 * day), loginMode: 'threads' }, now)).toBe(false);
     expect(await listMetaTokenMetadata(database(null).db, owner)).toEqual([{ accountId: account.id, brand: 'dneskai', platform: 'instagram', expiresAt: at(5 * day), refreshedAt: at(-55 * day), scopes: ['instagram_business_basic'], loginMode: 'instagram' }]);
   });
 });
@@ -106,7 +108,7 @@ describe('refreshInstagramToken', () => {
     ['a token younger than 24 hours', stored({ refreshedAt: at(-23 * 3_600_000) }), {}, 'skipped', 'access-token-too-new'],
     ['an expired token with an expired bootstrap', stored({ expiresAt: at(-1) }), { MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: at(-day) }, 'held', 'access-token-expired'],
     ['an expired token without a bootstrap', stored({ expiresAt: at(-1) }), { MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }, 'held', 'access-token-expired'],
-    ['a Facebook Login token', stored({ loginMode: 'facebook' }), {}, 'held', 'refresh-instagram-login-required'],
+    ['a Facebook Login token without the app id and secret', stored({ loginMode: 'facebook' }), {}, 'held', 'refresh-app-credentials-missing'],
     ['no token at all', null, { MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }, 'held', 'access-token-missing'],
     ['scopes the store would refuse', null, { MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: Array.from({ length: 21 }, (_, index) => `scope_${String.fromCharCode(97 + index)}`).join(',') }, 'held', 'verified-scopes-invalid'],
     ['a malformed scope', null, { MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES: 'instagram_business_basic,Instagram-Business-Content-Publish' }, 'held', 'verified-scopes-invalid'],
@@ -136,5 +138,24 @@ describe('refreshInstagramToken', () => {
     expect(await refreshInstagramToken(database(stored()).db, owner, { ...account, user_id: '22222222-2222-4222-8222-222222222222' }, { env: env(), now, fetcher })).toMatchObject({ status: 'held', code: 'credential-owner-mismatch' });
     expect(await refreshInstagramToken(database(stored(), { readError: true }).db, owner, account, { env: env(), now, fetcher })).toMatchObject({ status: 'held', code: 'credential-store-unavailable' });
     expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('Facebook Login tokens (#166)', () => {
+  const fb = (patch: Record<string, string | undefined> = {}) => env({ MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE: 'facebook', MARKETING_META_APP_ID: '123456789',
+    MARKETING_META_APP_SECRET: 'TEST-ONLY-APP-SECRET-0001', ...patch });
+  it('renews a due token through fb_exchange_token with the app id and secret and stores it in facebook mode', async () => {
+    const { db, rpc } = database(stored({ loginMode: 'facebook', scopes: ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement'] }));
+    const fetcher = vi.fn(async () => Response.json({ access_token: 'TEST-ONLY-EXCHANGED-TOKEN-01', token_type: 'bearer', expires_in: 60 * 86_400 })) as unknown as typeof fetch & ReturnType<typeof vi.fn>;
+    expect(await refreshInstagramToken(db, owner, account, { env: fb(), now, fetcher })).toMatchObject({ status: 'refreshed' });
+    const url = new URL((fetcher.mock.calls[0] as [string])[0]);
+    expect(`${url.origin}${url.pathname}`).toBe('https://graph.facebook.com/v99.0/oauth/access_token');
+    expect(Object.fromEntries(url.searchParams)).toEqual({ grant_type: 'fb_exchange_token', client_id: '123456789', client_secret: 'TEST-ONLY-APP-SECRET-0001', fb_exchange_token: 'TEST-ONLY-STORED-TOKEN-000001' });
+    expect(rpc).toHaveBeenCalledWith('marketing_store_account_token', expect.objectContaining({ p_token: 'TEST-ONLY-EXCHANGED-TOKEN-01', p_login_mode: 'facebook' }));
+  });
+  it('publishes through graph.facebook.com with the Facebook Login scopes', async () => {
+    const { db } = database(stored({ loginMode: 'facebook', expiresAt: at(30 * day), scopes: ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement'] }));
+    const config = await resolveMetaPublisherConfig(db, owner, account, fb(), now);
+    expect(config).toMatchObject({ loginMode: 'facebook', credentialSource: 'database', scopes: ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement'] });
   });
 });

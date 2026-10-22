@@ -28,12 +28,25 @@ enforce them; a change that lets any of them through is a bug.
 - No source list, no links, no picture credits.
 - It ends with the AI disclosure ("Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.") and
   the hashtags.
-- **At most 10 hashtags**, `#dneskai` first. Generation keeps to it, and every caption edit is checked.
+- **No call to comment or follow in model text.** The one allowed call is the keyword line, and code writes it
+  from the approved keyword, in its own paragraph before the disclosure: „Napište do komentáře „SKILL“ a pošleme
+  vám návod do zpráv.“ Only posts with a keyword (education) carry it; news posts do not. It holds no hashtag.
+- **At most 10 hashtags**, `#dneskai` first. Generation keeps to it, and every caption edit is checked. The keyword
+  line does not count toward them.
+
+## DM message (education posts)
+
+- The private message a keyword comment receives (`engagement.replyMessage`) follows the caption's truth rules:
+  only what the evidence states, every number from the evidence, no text about sources or verification, no emoji,
+  markup or hashtags, and no call to comment. It may carry one URL, and only an evidence link.
+- The model writes it for education topics only; the owner edits and approves it with the post.
 
 ## Where it is enforced
 
 - Prompt and checks: `src/lib/marketing/dneskai-generation.ts` (`SYSTEM_RULES`, `validateDneskaiCopy`,
-  `dneskaiTalksAboutSources`, `buildDneskaiDeck`, `assembleDneskaiCaption`, `DNESKAI_HASHTAG_LIMIT`).
+  `validateDneskaiReplyMessage`, `dneskaiTalksAboutSources`, `buildDneskaiDeck`, `assembleDneskaiCaption`,
+  `DNESKAI_HASHTAG_LIMIT`). The keyword line and the disclosure: `src/lib/marketing/dneskai-caption.ts`
+  (`dneskaiKeywordLine`, `dneskaiCaptionWithKeyword`, also applied on every owner edit).
 - What each slide type draws: `DNESKAI_PLACED_FIELDS` and `DNESKAI_TEXT_LIMITS` in
   `src/lib/marketing/dneskai-slide-layout.ts`, held to the vendored studio by
   `tests/lib/carousel-studio-vendor.test.ts`. `dneskaiShownDeck` brings an older deck into line when it is edited.
