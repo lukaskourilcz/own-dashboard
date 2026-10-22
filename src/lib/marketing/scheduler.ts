@@ -9,7 +9,8 @@ import { pragueMarketingDate } from "./weekly-planning";
 import type { DneskaiScoutingResult } from "./dneskai-scouting";
 import type { DneskaiFactOrHypeResult } from "./dneskai-fact-or-hype";
 import type { DneskaiTitlingResult } from "./dneskai-titling";
-import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled, dneskaiTitlingEnabled } from "./dneskai-evidence-rollout";
+import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled, dneskaiTitlingEnabled, dneskaiTopicBriefsEnabled } from "./dneskai-evidence-rollout";
+import type { DneskaiTopicBridgeResult } from "./dneskai-topic-bridge";
 
 /**
  * The marketing scheduler (#120). pg_cron calls POST /api/marketing/tick every five minutes and once a day
@@ -51,7 +52,12 @@ export const MARKETING_TICK_REMINDER = "reminder" as const;
  * insert each topic once. It runs in the first five-minute slot of each hour between 22:00 and 08:00 Prague.
  */
 export const MARKETING_TICK_SCOUTING = "scouting" as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING;
+/**
+ * The topic-to-brief bridge (#155) runs right after briefs, under the briefs lease, only while
+ * DNESKAI_TOPIC_BRIEFS_ENABLED is on and the ports wire it.
+ */
+export const MARKETING_TICK_ENRICHMENT = "enrichment" as const;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_ENRICHMENT;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -102,7 +108,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -193,6 +199,10 @@ export interface MarketingSchedulerPorts {
   expireTopics?(project: string, now: Date): Promise<number>;
   /** #153: with titling on, the briefs step turns a finished run's selected events into news topics instead of briefs. */
   newsTopics?(project: string, runId: string, now: Date): Promise<{ events: number; inserted: number }>;
+  /** #155: whether any topic waits for the bridge (approved, enriching or briefed). */
+  topicBriefWork?(project: string): Promise<boolean>;
+  /** #155: approved topics become briefs and queued jobs (`advanceDneskaiTopicBriefs`). */
+  topicBriefs?(project: string, now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiTopicBridgeResult>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -538,6 +548,25 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       return { status: worked ? "done" : "noop", detail };
     },
   });
+
+  const topicBriefs = ports.topicBriefs, topicBriefWork = ports.topicBriefWork;
+  if (topicBriefs && topicBriefWork && dneskaiTopicBriefsEnabled(env)) {
+    const at = minuteSteps.findIndex((item) => item.category === "briefs");
+    minuteSteps.splice(at + 1, 0, {
+      category: MARKETING_TICK_ENRICHMENT, lease: "briefs",
+      async precheck(): Promise<StepOutcome | null> {
+        const paused = intakePaused(); if (paused) return paused;
+        if (!(await topicBriefWork(await project()))) return { status: "noop" };
+        if (await yieldToPublication()) return yielded;
+        return null;
+      },
+      async run({ now, signal: abort, remainingMs }): Promise<StepOutcome> {
+        const result = await topicBriefs(await project(), now(), { signal: abort, remainingMs });
+        const moved = result.enriching + result.briefed + result.generated;
+        return { status: moved ? "done" : "noop", pending: result.waiting > 0, detail: { ...result } };
+      },
+    });
+  }
 
   // Off only when the owner sets DNESKAI_REVIEW_REMINDERS_ENABLED=false; nothing but in-app notifications is written.
   const reviewReminders = ports.reviewReminders;
