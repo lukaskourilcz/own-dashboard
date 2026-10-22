@@ -329,6 +329,86 @@ describe('media, briefs and generation', () => {
   });
 });
 
+describe('a job queued again for its deferred retry (GEN-14)', () => {
+  it('stays pending, and the next tick runs its second attempt', async () => {
+    let attempts = 0;
+    const h = harness({ queuedGenerationJobs: async () => attempts < 2 ? [jobA] : [], executeJob: async () => (++attempts === 1 ? { claimed: true, status: 'queued', retry: { attempt: 2 } } : { claimed: true, status: 'review' }) }, new Clock(evening));
+    const first = await h.tick();
+    expect(step(first, 'generation')).toMatchObject({ status: 'done', pending: true, detail: { jobId: jobA, jobStatus: 'queued' } });
+    h.clock.advance(5 * 60_000);
+    expect(step(await h.tick(), 'generation')).toMatchObject({ status: 'done', detail: { jobId: jobA, jobStatus: 'review' } });
+    expect(h.called('executeJob')).toHaveLength(2);
+  });
+});
+
+describe('generation priority (production-03)', () => {
+  // 20:30Z is an even five-minute slot (collection's turn), 20:35Z an odd one.
+  const odd = evening + 5 * 60_000;
+  const order = (result: MarketingTickResult) => result.did.map((entry) => entry.category);
+  it('runs a queued job first, before media and briefs eat its 43 s', async () => {
+    const clock = new Clock(afternoon);
+    const h = harness({
+      queuedGenerationJobs: async () => [jobA], pendingMedia: async () => ['candidate-1'],
+      collectMedia: async (_project, ids) => { clock.advance(20_000); return { complete: true, candidates: ids.map((candidateId) => ({ candidateId, status: 'complete' as const, assets: 1, downloaded: 1, reused: 0, skipped: [] })) }; },
+      collectionRuns: async () => [{ id: finishedRun, date: '2026-10-20', status: 'complete', pilot: false }],
+      createBriefs: async () => { clock.advance(4_000); return { created: [], skipped: [], pending: true }; },
+    }, clock);
+    const result = await h.tick();
+    expect(order(result)).toEqual(['generation', 'collection', 'media', 'briefs', 'publishing', 'reconciliation', 'token']);
+    expect(step(result, 'generation')).toMatchObject({ status: 'done', detail: { jobId: jobA } });
+    expect(h.called('queuedGenerationJobs')).toHaveLength(1);
+    expect(h.called('executeJob').map(([, args]) => args[0])).toEqual([jobA]);
+  });
+  it('keeps collection first in its own slot while a collection run is in progress', async () => {
+    const clock = new Clock(afternoon);
+    const h = harness({
+      queuedGenerationJobs: async () => [jobA],
+      collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: false }],
+      tickCollection: async () => { clock.advance(15_000); return { runId, status: 'running', continue: true, retryAfterSeconds: 15 }; },
+    }, clock);
+    const result = await h.tick();
+    // Even slot and a collection run in progress: collection keeps its place and generation waits for the next slot.
+    expect(order(result)[0]).toBe('collection');
+    expect(statuses(result)).toMatchObject({ collection: 'done', generation: 'deferred:tick-budget-exhausted' });
+  });
+  it('alternates with a running collection by slot, so neither starves at night', async () => {
+    const clock = new Clock(evening);
+    const h = harness({
+      queuedGenerationJobs: async () => [jobA, jobB],
+      collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'running', pilot: false }],
+      tickCollection: async () => { clock.advance(15_000); return { runId, status: 'running', continue: true, retryAfterSeconds: 15 }; },
+      executeJob: async () => { clock.advance(40_000); return { claimed: true, status: 'review' }; },
+    }, clock);
+    const seen: string[] = [];
+    for (let slot = 0; slot < 4; slot++) {
+      clock.at = evening + slot * 5 * 60_000;
+      const result = await h.tick();
+      seen.push(`${order(result)[0]} ${statuses(result).collection} ${statuses(result).generation}`);
+    }
+    expect(seen).toEqual([
+      'collection done deferred:tick-budget-exhausted', 'generation deferred:tick-budget-exhausted done',
+      'collection done deferred:tick-budget-exhausted', 'generation deferred:tick-budget-exhausted done',
+    ]);
+    expect(h.called('tickCollection')).toHaveLength(2);
+    expect(h.called('executeJob')).toHaveLength(2);
+  });
+  it('keeps the usual order when nothing is runnable: no job, no consent, or a live publication due', async () => {
+    const run = async (overrides: Partial<MarketingSchedulerPorts>, env = on) => order(await harness({ ...busyDay(), collectionRuns: async () => [], ...overrides }, new Clock(odd)).tick(env));
+    expect(await run({ queuedGenerationJobs: async () => [] })).toEqual([...MARKETING_TICK_CATEGORIES]);
+    expect(await run({}, { ...on, MARKETING_AI_CONSENT: 'false' })).toEqual([...MARKETING_TICK_CATEGORIES]);
+    expect(await run({ publicationDueSoon: async () => true })).toEqual([...MARKETING_TICK_CATEGORIES]);
+    expect(await run({ queuedGenerationJobs: async () => { throw new Error('jobs-unavailable'); } })).toEqual([...MARKETING_TICK_CATEGORIES]);
+    expect(await run({})).toEqual(['generation', ...MARKETING_TICK_CATEGORIES.filter((category) => category !== 'generation')]);
+  });
+  it('reads each precheck once even when it chose the order', async () => {
+    const h = harness({ ...busyDay() }, new Clock(evening));
+    await h.tick();
+    expect(h.called('queuedGenerationJobs')).toHaveLength(1);
+    expect(h.called('collectionRuns')).toHaveLength(2); // once before collection ran, once after it changed the run list
+    expect(h.called('publicationDueSoon')).toHaveLength(1);
+  });
+});
+
 describe('Instagram token refresh', () => {
   it('refreshes one due token per tick and never retries an uncertain refresh of the same token', async () => {
     let token = dueToken();

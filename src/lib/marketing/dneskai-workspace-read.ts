@@ -208,10 +208,11 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
       errors: (errors.success ? errors.data : []).slice(0, 20).flatMap((error) => /^[a-z]{1,20}$/.test(error.category) ? [{ category: error.category, code: safeCode(error.code) ?? `${error.category}-failed` }] : []),
     };
   }));
-  // The recent list shows ticks that did something or failed; the minute ticks that found nothing to do are counted only.
-  const recent = ticks.filter((tick) => tick.errors.length || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);
+  const generationDeferred = (tick: (typeof ticks)[number]) => tick.did.some((step) => step.category === 'generation' && step.status === 'deferred');
+  // The recent list shows ticks that did something, failed or deferred a draft; the minute ticks that found nothing to do are counted only.
+  const recent = ticks.filter((tick) => tick.errors.length || generationDeferred(tick) || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);
   return DneskaiCostsReadSchema.parse({
     schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(), generation, days, runs, jobs, publications, unreadable,
-    ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },
+    ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, generationDeferred: ticks.filter(generationDeferred).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },
   });
 }

@@ -76,6 +76,77 @@ describe('DNESKAi event grouping without paid calls (#115)', () => {
   });
 });
 
+describe('reworded, renumbered and dated headlines of one story (SEL-07)', () => {
+  // The probe pairs of the October 2026 audit (bench-grouping.mjs): one story each, worded by two publishers.
+  const probes: Array<[string, string]> = [
+    ['OpenAI launches Sora 2 app for iPhone', 'OpenAI launches Sora 2 iPhone app'],
+    ['OpenAI unveils GPT-6 with new reasoning', "GPT-6: OpenAI's biggest leap in reasoning yet"],
+    ['Anthropic raises $40B at $300B valuation', 'Anthropic raises 40 billion dollars'],
+    ['Apple event on 15 October: M5 MacBook Pro', 'Apple event 2026: M5 MacBook Pro'],
+    ['Amazon Nova Premier now available', 'Amazon Nova Premier model now available in Bedrock'],
+    ['Google představil Gemini 3 pro vývojáře', 'Google uvedl Gemini 3 pro vývojáře'],
+    ['Meta AI app hits 1 billion users', 'Meta AI app reaches 1B users'],
+  ];
+  it.each(probes)('joins %j and %j', (left, right) => {
+    expect(dneskaiHeadlinesMatch(left, right)).toBe(true);
+    expect(dneskaiHeadlinesMatch(right, left)).toBe(true);
+  });
+  // Distinct stories that share a company, a verb or a city word stay apart.
+  const distinct: Array<[string, string]> = [
+    ['Waymo expands to New York', 'Waymo expands to New Delhi'],
+    ['Anthropic raises $40B', 'Anthropic raises $13B'],
+    ['Anthropic raises $40B at $300B valuation', 'Anthropic raises 40 million dollars'],
+    ['Google launches Gemini 3 for developers', 'Google launches Gemini app for kids'],
+    ['Apple event on 15 October: M5 MacBook Pro', 'Apple event on 9 September: iPhone 17'],
+    ['Apple sells 15 million iPhones', 'Apple sells 20 million iPhones'],
+    ['OpenAI releases GPT-5.1 for developers', 'OpenAI releases GPT-5.2 for developers'],
+    ['Meta releases Llama 8B model for phones', 'Meta releases Llama 70B model for phones'],
+    ['Meta AI app hits 1 billion users', 'Meta AI app adds a voice feature'],
+    ['cheap robot vacuums flood market', 'robot vacuums flood shelves'],
+  ];
+  it.each(distinct)('keeps %j and %j apart', (left, right) => {
+    expect(dneskaiHeadlinesMatch(left, right)).toBe(false);
+    expect(dneskaiHeadlinesMatch(right, left)).toBe(false);
+  });
+  it('normalises figures: magnitude suffixes and words, Czech words, currency and a decimal comma', () => {
+    expect([...dneskaiTitleTokens('Anthropic raises $40B at $300bn valuation')]).toEqual(['anthropic', 'raises', '40', 'billion', '300', 'valuation']);
+    expect([...dneskaiTitleTokens('Startup získal 1,5 mld. dolarů')]).toEqual(['startup', 'ziskal', '1.5', 'billion']);
+    expect(dneskaiHeadlinesMatch('Startup získal 1,5 mld. dolarů od investorů', 'Startup získal 1.5 miliardy dolarů')).toBe(true);
+    expect([...dneskaiTitleTokens('Revenue reaches 1,000 users')]).toContain('1000');
+  });
+  it('keeps a day beside a month and a year as tokens but never as a fact that splits a story', () => {
+    expect(dneskaiHeadlinesMatch('Apple event on 15 October: M5 MacBook Pro', 'Apple event October 15th: M5 MacBook Pro')).toBe(true);
+    expect(dneskaiHeadlinesMatch('Apple event 15. října: M5 MacBook Pro', 'Apple event 2026: M5 MacBook Pro')).toBe(true);
+    // A number that is not next to a month is still a fact.
+    expect(dneskaiHeadlinesMatch('Apple sells 15 MacBook Pro units per second', 'Apple sells 20 MacBook Pro units per second')).toBe(false);
+    expect(dneskaiHeadlinesMatch('Apple sells 15 MacBook Pro units on 3 May', 'Apple sells 20 MacBook Pro units on 3 May')).toBe(false);
+    expect(dneskaiHeadlinesMatch('Ollama v0.12.6 released for 2026', 'Ollama v0.12.7 released for 2026')).toBe(false);
+  });
+  it('keeps „Nova“ and „New“ when they name something inside a headline, not when they open it or in Title Case', () => {
+    expect([...dneskaiTitleTokens('Amazon Nova Premier now available')]).toEqual(['amazon', 'nova-premier', 'premier', 'available']);
+    expect([...dneskaiTitleTokens('Waymo expands to New York')]).toEqual(['waymo', 'expands', 'new-york', 'york']);
+    expect([...dneskaiTitleTokens('Amazon launches Nova')]).toEqual(['amazon', 'launches', 'nova']);
+    expect([...dneskaiTitleTokens('New model from OpenAI')]).toEqual(['model', 'openai']);
+    expect([...dneskaiTitleTokens('Nová funkce v aplikaci')]).toEqual(['funkce', 'aplikaci']);
+    expect([...dneskaiTitleTokens('OpenAI Releases New Model For Developers')]).toEqual(['openai', 'releases', 'model', 'developers']);
+    expect(dneskaiHeadlinesMatch('OpenAI Releases New Model For Developers', 'OpenAI releases new model for developers')).toBe(true);
+  });
+  it('joins at the second tier only with a shared entity, at Jaccard 0.45 or more and three shared tokens', () => {
+    // Three shared of six tokens (0.5): the capitalised Roomba makes it one story, plain words do not.
+    expect(dneskaiHeadlinesMatch('cheap Roomba vacuums flood market', 'Roomba vacuums flood shelves')).toBe(true);
+    expect(dneskaiHeadlinesMatch('cheap robot vacuums flood market', 'robot vacuums flood shelves')).toBe(false);
+    // Two shared tokens are never enough below 0.6, entity or not.
+    expect(dneskaiHeadlinesMatch('OpenAI Sora reaches Android', 'OpenAI Sora tops charts again')).toBe(false);
+  });
+  it('groups the probe pairs into one event each within 72 hours and still splits them beyond it', () => {
+    const items = probes.flatMap(([left, right], index) => [report('the-verge', `probe-${index}-a`, left, index), report('techcrunch-ai', `probe-${index}-b`, right, index + 1)]);
+    const events = groupDneskaiEvents(items);
+    expect(events).toHaveLength(probes.length);
+    expect(events.every((event) => event.members.length === 2 && event.links.join() === 'similar-title')).toBe(true);
+    expect(groupDneskaiEvents([report('the-verge', 'far-a', probes[2]![0], 0), report('wired-ai', 'far-b', probes[2]![1], 80)])).toHaveLength(2);
+  });
+});
+
 describe('the events sent to marketing_dneskai_finish', () => {
   it('keeps only the events a keep rule allows and, over the limit, the most recently collected ones', () => {
     const pairs = Array.from({ length: DNESKAI_FINISH_EVENT_LIMIT + 2 }, (_, index) => [

@@ -100,7 +100,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
 
     <section aria-labelledby="dneskai-ticks-title" className="min-w-0 space-y-2">
       <h3 id="dneskai-ticks-title" className="text-sm font-semibold">{t.costs.ticks}</h3>
-      {read.ticks.total === 0 ? <p className="text-sm text-warning">{t.costs.noTicks}</p> : <p className="text-sm">{t.costs.tickSummary(read.ticks.total, read.ticks.withErrors)}{read.ticks.lastStartedAt && <span className="text-foreground-muted"> · {t.costs.lastTick}: <time dateTime={read.ticks.lastStartedAt} className="tabular">{pragueDateTime(read.ticks.lastStartedAt, lang)}</time></span>}</p>}
+      {read.ticks.total === 0 ? <p className="text-sm text-warning">{t.costs.noTicks}</p> : <p className="text-sm">{t.costs.tickSummary(read.ticks.total, read.ticks.withErrors, read.ticks.generationDeferred)}{read.ticks.lastStartedAt && <span className="text-foreground-muted"> · {t.costs.lastTick}: <time dateTime={read.ticks.lastStartedAt} className="tabular">{pragueDateTime(read.ticks.lastStartedAt, lang)}</time></span>}</p>}
       {read.ticks.recent.length > 0 && <>
         <h4 className="text-xs font-semibold text-foreground-muted">{t.costs.recentTicks}</h4>
         <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{read.ticks.recent.map((tick) => <li key={tick.id} className="min-w-0 space-y-1 px-3 py-2.5 text-xs">

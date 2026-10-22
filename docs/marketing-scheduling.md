@@ -32,15 +32,24 @@ pg_cron (Supabase)                      Vercel (OwnDashboard)
 
 ## What a minute tick does
 
-Every five minutes, 288 times a day. One tick runs at most one unit of each category, in this order,
-one after another. Each unit is wrapped, so a failure is recorded and the next category still runs.
+Every five minutes, 288 times a day. One tick runs at most one unit of each category, one after
+another, in the order below. Each unit is wrapped, so a failure is recorded and the next category still runs.
+
+Generation is the exception to the order (production-03). It needs 43 s of the 48 s budget, so after
+media and briefs it rarely fits. When the generation precheck finds a runnable job (consent on, a queued
+DNESKAi job, no live publication to yield to), the tick runs generation first and the other categories
+after it in their usual order. The one exception is a collection run in progress (or due at 22:00):
+then collection and generation take turns by five-minute slot. In even slots, counted from the Unix epoch
+(`marketingCollectionTurn`), collection keeps its place and generation usually waits. In odd slots
+generation goes first and collection usually waits. During a night with both, each gets every other
+tick. Each precheck still runs once per tick: the order is chosen from its answer.
 
 | # | Category | Runs when | One unit | Switch |
 |---|---|---|---|---|
 | 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s): up to three free reads concurrently, each admitted with its 25 s timeout available; paid starts and polls remain serial. Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; inside the tick `MARKETING_DNESKAI_PAID_ENABLED` holds Apify and Jev, and Apify also needs `MARKETING_DNESKAI_APIFY_ENABLED` |
 | 2 | media | `pendingDneskaiMediaCandidates` is not empty | one `collectDneskaiMedia` for up to eight candidates, budget at most 40 s. A `busy` candidate waits 125 s (its claim lasts 120 s), a failed pass waits 10 minutes. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 3 | briefs | the newest finished run of the last two days | `getCreateDneskaiBriefs(db)` (#115) for that run. Once a call reports `pending: false` the run is left alone. A call stays `pending` while a brief waits for media, for a verified account, or for a job admission that failed with a code in `DNESKAI_BRIEF_RETRYABLE_CODES`. The step has no backoff, so it calls once per five-minute tick until that brief's slot, or the target day's last slot, is under 30 minutes away. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
-| 4 | generation | a queued `marketing_jobs` row of brand `dneskai` | `executeMarketingJob` for the oldest one. A job that throws before it is claimed is set aside for an hour so younger jobs still run. | `MARKETING_AI_CONSENT` (and the generation module's own limits) |
+| 4 | generation | a queued `marketing_jobs` row of brand `dneskai` | `executeMarketingJob` for the oldest one, with `deferRetry`: a first attempt that fails copy validation puts the job back in the queue with its retry feedback, and the next tick makes the second attempt (GEN-14, see [marketing generation](marketing-generation.md)). A job that throws before it is claimed is set aside for an hour so younger jobs still run. | `MARKETING_AI_CONSENT` (and the generation module's own limits) |
 | 5 | publishing | a queued DNESKAi publication inside its 15-minute window, or a claimed one waiting for its container | `publishDueMarketing(db, owner, 'dneskai', dryRun, signal)`. Live only when `MARKETING_PUBLISH_ENABLED` and `MARKETING_DNESKAI_PUBLISH_ENABLED` are both `true`; otherwise a dry run with no Meta write. | both publish switches; `marketing_accounts.enabled` is enforced by the publisher |
 | 6 | reconciliation | a DNESKAi publication in `reconciliation` not checked for 30 minutes; when there is none, a `claimed` one whose lease expired (the function died mid-publish), which only `marketing_claim_due` would otherwise move to `reconciliation` | `reconcileStoredMarketingPublication`: Graph GET requests only, and the receipt when the media is found | none (read-only) |
 | 7 | token | an Instagram token row for which `instagramTokenRefreshDue` is true (under ten days left, at least a day old) | `refreshInstagramToken` for one account. The refresh is marked uncertain in `marketing_scheduler_state` before the request is sent (`marketing_scheduler_save_state`); without that mark nothing is sent. `uncertain` is never retried for the same stored token, even when the answer or the release is lost; a new token from account verification lifts the block. `failed` waits a day, `held` an hour. | none: a refresh is a GET that publishes nothing, so a paused account keeps a live token |
@@ -82,8 +91,10 @@ scheduled again under a new `jobid`. Any other job keeps its history, including 
 The route may run 60 s and pg_net waits 55 s. A tick starts no category after 48 s and every abort
 signal fires at 53 s. Each category needs a minimum to start (collection 20 s, media 25 s,
 generation 43 s, publishing 30 s when live and 15 s as a dry run, token 16 s). A category that does not fit is recorded as
-`deferred: tick-budget-exhausted` with `pending: true` and runs on the next tick. In practice a
-collection step at night uses most of a tick, so media and generation follow once collection is done.
+`deferred: tick-budget-exhausted` with `pending: true` and runs on the next tick. A runnable generation
+job goes first (see above), so media and briefs no longer push it past 43 s; during a collection run the
+two alternate by slot. The Costs tab counts the ticks of the last 24 hours whose generation step was
+`deferred` (`ticks.generationDeferred`, either code) and lists them among the recent ticks.
 
 `renewStoredRevisionAssetUrls` and `purgeUnusedDneskaiMedia` take no abort signal. The tick stops waiting
 for them at 53 s (`renewal-cut-off`, `purge-cut-off`), still writes its record, and does not release their

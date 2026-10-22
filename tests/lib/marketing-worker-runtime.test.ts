@@ -132,7 +132,8 @@ describe("canonical reviewed knowledge admission and paid invocation", () => {
     expect(knowledgeQuery.select).toHaveBeenCalledWith("ai_link_id,user_id,review_status,summary:metadata->summary,brands:metadata->tags->brand");
     expect(knowledgeQuery.eq).toHaveBeenCalledWith("user_id", owner); expect(knowledgeQuery.eq).toHaveBeenCalledWith("review_status", "reviewed");
     expect(knowledgeQuery.in).toHaveBeenCalledWith("ai_link_id", [knowledgeId]); expect(knowledgeQuery.limit).toHaveBeenCalledWith(8);
-    expect(from.mock.calls.every(([table]) => ["marketing_accounts", "marketing_knowledge_items"].includes(table))).toBe(true);
+    // marketing_jobs: the claimed job's deferred-retry state (GEN-14), read under the fence.
+    expect(from.mock.calls.every(([table]) => ["marketing_accounts", "marketing_knowledge_items", "marketing_jobs"].includes(table))).toBe(true);
   });
   it("rejects missing, foreign, unreviewed, wrong-brand, changed-summary and duplicate references before enqueue", async () => {
     const rows: CanonicalKnowledge[][] = [[], [{ ...canonical(), user_id: "55555555-5555-4555-8555-555555555555" }], [{ ...canonical(), review_status: "needs-review" }],

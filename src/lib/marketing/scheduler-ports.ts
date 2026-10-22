@@ -74,7 +74,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       if (error) throw new Error("job-state-unavailable");
       return z.array(z.object({ id: z.uuid() })).parse(data ?? []).map((row) => row.id);
     },
-    executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env }),
+    executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();
       // A claimed carousel waiting for its container counts too: its 10-minute claim leaves room for

@@ -4,8 +4,9 @@ import type { DneskaiCandidate } from './dneskai-contracts';
 /**
  * DNESKAi events (#115): reports of one news event, grouped without any paid call. Two candidates belong to
  * one event when Jev marked one a duplicate of the other, when they point at the same primary URL after
- * canonicalization, or when their headlines share at least 60 % of their meaningful tokens (Jaccard over
- * Czech and English stop-word-free tokens). Pure: no network, storage or clock.
+ * canonicalization, or when their headlines match (SEL-07): at least 60 % of their meaningful tokens are shared
+ * (Jaccard over Czech and English stop-word-free tokens), or at least 45 % with three shared tokens of which one
+ * names an entity. Different numbers or versions keep headlines apart. Pure: no network, storage or clock.
  */
 export const DNESKAI_EVENT_VERSION = 'dneskai-event/1';
 export const DNESKAI_EVENT_MEMBERS_VERSION = 'dneskai-event-members/1';
@@ -13,6 +14,10 @@ export const DNESKAI_EVENT_MEMBERS_VERSION = 'dneskai-event-members/1';
 export const DNESKAI_EVENT_TITLE_JACCARD = 0.6;
 /** A headline match also needs this many shared tokens, so two one-word titles never merge on their own. */
 export const DNESKAI_EVENT_MIN_SHARED_TOKENS = 2;
+/** The second tier (SEL-07): a reworded headline joins at this Jaccard ... */
+export const DNESKAI_EVENT_REWORDED_JACCARD = 0.45;
+/** ... with at least this many shared tokens, one of them an entity (a capitalised name such as `OpenAI` or `Nova`). */
+export const DNESKAI_EVENT_REWORDED_MIN_SHARED_TOKENS = 3;
 /** Reports further apart than this are separate events unless Jev linked them. */
 export const DNESKAI_EVENT_WINDOW_HOURS = 72;
 /** Selected members per event: one media collector call (`pendingDneskaiMediaCandidates` returns eight). */
@@ -41,7 +46,7 @@ const STOP_WORDS = new Set([
   'he', 'her', 'his', 'how', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'may', 'more', 'most', 'new', 'now', 'of', 'on', 'or', 'our',
   'out', 'over', 'says', 'she', 'so', 'than', 'that', 'the', 'their', 'them', 'they', 'this', 'to', 'up', 'us', 'via', 'was', 'we', 'were',
   'what', 'when', 'which', 'who', 'why', 'will', 'with', 'would', 'you', 'your', 'about', 'after', 'all', 'also', 'any', 'here', 'there',
-  'these', 'those', 'than', 'then', 'not', 'no', 'yes', 'some', 'one', 'get', 'gets', 'got', 'make', 'makes', 'made', 'now', 'today',
+  'these', 'those', 'than', 'then', 'not', 'no', 'yes', 'some', 'one', 'get', 'gets', 'got', 'make', 'makes', 'made', 'now', 'today', 'yet',
   // Czech (diacritics folded)
   'a', 'aby', 'ale', 'ani', 'asi', 'az', 'bez', 'bude', 'budou', 'by', 'byl', 'byla', 'bylo', 'byly', 'byt', 'co', 'do', 'ho', 'i', 'jak',
   'jako', 'je', 'jeho', 'jej', 'jeji', 'jen', 'jeste', 'ji', 'jsem', 'jsme', 'jsou', 'jste', 'k', 'kam', 'kde', 'kdo', 'kdyz', 'ke', 'ktera',
@@ -51,11 +56,76 @@ const STOP_WORDS = new Set([
   'ze', 'zde', 'nove', 'novy', 'nova', 'dnes', 'jiz',
 ]);
 
-/** Meaningful lower-case tokens of a headline, diacritics folded; versions such as `0.5.1` or `gpt-4o` stay whole. */
+/**
+ * Words that are function words in lower case and names when capitalised inside a headline („Amazon Nova“,
+ * „New York“). A capitalised one followed by another capitalised word becomes one token with it (`new-york`,
+ * beside `york`), so „New York“ and „New Delhi“ do not share a token.
+ */
+const NAME_WHEN_CAPITALISED = new Set(['new', 'nova', 'novy', 'nove']);
+/** Currency words carry no event: „$40B“ and „40 billion dollars“ are the same figure. */
+const CURRENCY_WORDS = new Set(['dollar', 'dollars', 'usd', 'dolar', 'dolaru', 'dolary', 'eur', 'euro', 'eura', 'euros', 'czk', 'kc', 'korun', 'koruna', 'koruny']);
+/** Magnitude words and suffixes, folded to one English word so „40B“, „40 bn“, „40 billion“ and „40 mld“ compare. */
+const MAGNITUDE_WORDS = new Map([
+  ...['billion', 'billions', 'bn', 'mld', 'miliard', 'miliardy', 'miliardu'].map((word) => [word, 'billion'] as const),
+  ...['million', 'millions', 'mn', 'mil', 'milion', 'miliony', 'milionu'].map((word) => [word, 'million'] as const),
+  ...['trillion', 'trillions', 'tn'].map((word) => [word, 'trillion'] as const),
+]);
+const MAGNITUDE_SUFFIX: Record<string, string> = { b: 'billion', bn: 'billion', m: 'million', mn: 'million', t: 'trillion', tn: 'trillion' };
+const MONTHS = new Set([
+  'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+  'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec',
+  'leden', 'ledna', 'unor', 'unora', 'brezen', 'brezna', 'duben', 'dubna', 'kveten', 'kvetna', 'cerven', 'cervna', 'cervenec', 'cervence',
+  'srpen', 'srpna', 'zari', 'rijen', 'rijna', 'listopad', 'listopadu', 'prosinec', 'prosince',
+]);
+const YEAR = /^(?:19|20)\d{2}$/;
+const DAY = /^(?:[1-9]|[12]\d|3[01])(?:st|nd|rd|th)?$/;
+
+/** One headline token: lower case, diacritics folded, with what the comparison needs to know about it. */
+type HeadlineToken = { token: string; entity: boolean; date: boolean };
+function headlineTokens(value: string): HeadlineToken[] {
+  // Thousands separators go, a decimal comma becomes a point: „1,000“ is 1000 and „1,5 mld“ is 1.5 billion.
+  const folded = value.normalize('NFKD').replace(/\p{M}+/gu, '').replace(/(\d),(?=\d{3}(?!\d))/g, '$1').replace(/(\d),(?=\d)/g, '$1.');
+  const raw = folded.match(/[\p{L}\p{N}]+(?:[.\-+][\p{L}\p{N}]+)*/gu) ?? [];
+  const lower = raw.map((word) => word.toLocaleLowerCase('en'));
+  const capitalised = (index: number) => /^\p{Lu}/u.test(raw[index] ?? '');
+  // A headline in Title Case capitalises every word, so a capital says nothing about a name there.
+  const longWords = raw.slice(1).filter((word) => /^\p{L}{4,}$/u.test(word));
+  const titleCase = longWords.length >= 2 && longWords.every((word) => /^\p{Lu}/u.test(word));
+  const named = (index: number) => index > 0 && !titleCase && capitalised(index);
+  const tokens: HeadlineToken[] = [];
+  for (let index = 0; index < raw.length; index++) {
+    const word = raw[index]!, token = lower[index]!;
+    // Mixed case (OpenAI, iPhone, GPT-6) names something wherever it stands; a capital inside a sentence-case headline does too.
+    const entity = /\p{Lu}/u.test(word.slice(1)) || named(index);
+    if (NAME_WHEN_CAPITALISED.has(token) && named(index)) {
+      if (index + 1 < raw.length && capitalised(index + 1) && !STOP_WORDS.has(lower[index + 1]!)) {
+        tokens.push({ token: `${token}-${lower[index + 1]}`, entity: true, date: false });
+      } else tokens.push({ token, entity: true, date: false });
+      continue;
+    }
+    if (STOP_WORDS.has(token) || CURRENCY_WORDS.has(token)) continue;
+    const magnitude = MAGNITUDE_WORDS.get(token);
+    if (magnitude) { tokens.push({ token: magnitude, entity: false, date: false }); continue; }
+    const scaled = /^(\d+(?:\.\d+)?)(bn|mn|tn|b|m|t)$/.exec(token);
+    if (scaled) {
+      tokens.push({ token: scaled[1]!, entity: false, date: false }, { token: MAGNITUDE_SUFFIX[scaled[2]!]!, entity: false, date: false });
+      continue;
+    }
+    if (token.length < 2 && !/\d/.test(token)) continue;
+    // A day next to a month and a year are dates: they never decide whether two headlines report one event.
+    const date = YEAR.test(token) || (DAY.test(token) && (MONTHS.has(lower[index - 1] ?? '') || MONTHS.has(lower[index + 1] ?? '')));
+    tokens.push({ token, entity, date });
+  }
+  return tokens;
+}
+
+/**
+ * Meaningful lower-case tokens of a headline, diacritics folded; versions such as `0.5.1` or `gpt-4o` stay whole.
+ * Figures are normalised (`$40B` gives `40` and `billion`), currency words are dropped, and „New York“ or
+ * „Amazon Nova“ keep the word a lower-case „new“ or „nova“ would lose.
+ */
 export function dneskaiTitleTokens(value: string): Set<string> {
-  const folded = value.normalize('NFKD').replace(/\p{M}+/gu, '').toLocaleLowerCase('en');
-  const tokens = folded.match(/[\p{L}\p{N}]+(?:[.\-+][\p{L}\p{N}]+)*/gu) ?? [];
-  return new Set(tokens.map((token) => token.replace(/'s$/, '')).filter((token) => !STOP_WORDS.has(token) && (token.length > 1 || /\d/.test(token))));
+  return new Set(headlineTokens(value).map((entry) => entry.token));
 }
 
 /** The comparable headline: the title (Instagram uses the caption as its title) up to its first line, 200 characters. */
@@ -73,11 +143,17 @@ function jaccard(left: ReadonlySet<string>, right: ReadonlySet<string>): { score
 
 const disjoint = (a: readonly string[], b: readonly string[]) => a.length > 0 && b.length > 0 && !a.some((token) => b.includes(token));
 const VERSION_TOKEN = /^v?\d+(?:\.\d+)+[a-z0-9-]*$|^v\d+$/;
-/** A headline's tokens with its number and version tokens, computed once per report. */
-type TitleFacts = { tokens: ReadonlySet<string>; numbers: string[]; versions: string[] };
-function titleFacts(tokens: ReadonlySet<string>): TitleFacts {
-  const all = [...tokens];
-  return { tokens, numbers: all.filter((token) => /\d/.test(token)), versions: all.filter((token) => VERSION_TOKEN.test(token)) };
+/** A headline's tokens with its number, version and entity tokens, computed once per report. */
+type TitleFacts = { tokens: ReadonlySet<string>; numbers: string[]; versions: string[]; entities: ReadonlySet<string> };
+function titleFacts(headline: string): TitleFacts {
+  const entries = headlineTokens(headline);
+  const tokens = new Set(entries.map((entry) => entry.token));
+  // A date (a year, a day beside a month) is a token for the Jaccard but never a fact: „15 October“ and „2026“ may report one event.
+  const facts = [...new Set(entries.filter((entry) => !entry.date).map((entry) => entry.token))];
+  return {
+    tokens, numbers: facts.filter((token) => /\d/.test(token)), versions: facts.filter((token) => VERSION_TOKEN.test(token)),
+    entities: new Set(entries.filter((entry) => entry.entity).map((entry) => entry.token)),
+  };
 }
 /**
  * Different version or number tokens mean different events, however similar the rest reads: `0.12.6` and
@@ -86,12 +162,16 @@ function titleFacts(tokens: ReadonlySet<string>): TitleFacts {
 function factsMatch(a: TitleFacts, b: TitleFacts): boolean {
   if (disjoint(a.versions, b.versions) || disjoint(a.numbers, b.numbers)) return false;
   const { score, shared } = jaccard(a.tokens, b.tokens);
-  return shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD;
+  if (shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD) return true;
+  // The second tier: a reworded headline about the same named thing.
+  if (shared < DNESKAI_EVENT_REWORDED_MIN_SHARED_TOKENS || score < DNESKAI_EVENT_REWORDED_JACCARD) return false;
+  for (const token of a.tokens) if (b.tokens.has(token) && (a.entities.has(token) || b.entities.has(token))) return true;
+  return false;
 }
 
-/** True when two headlines describe the same event by the #115 token rule. */
+/** True when two headlines describe the same event by the #115 token rule and its SEL-07 second tier. */
 export function dneskaiHeadlinesMatch(left: string, right: string): boolean {
-  return factsMatch(titleFacts(dneskaiTitleTokens(left)), titleFacts(dneskaiTitleTokens(right)));
+  return factsMatch(titleFacts(left), titleFacts(right));
 }
 
 const TRACKING = /^(?:utm_.*|fbclid|gclid|ref|ref_src|source|igsh|igshid|si|mc_cid|mc_eid|ncid|cmpid|guccounter)$/i;
@@ -164,7 +244,7 @@ export function groupDneskaiEvents<T extends DneskaiEventInput>(candidates: read
     reasons.set(root, merged);
   };
   // Everything a pair comparison needs is computed once per report: a night can hold a few thousand reports.
-  const facts = items.map((item) => titleFacts(dneskaiTitleTokens(dneskaiEventHeadline(item))));
+  const facts = items.map((item) => titleFacts(dneskaiEventHeadline(item)));
   const urls = items.map((item) => dneskaiEventUrlKeys(item));
   const urlSets = urls.map((keys) => new Set(keys));
   const times = items.map((item) => { const value = instant(item); return Number.isFinite(value) ? value : 0; });

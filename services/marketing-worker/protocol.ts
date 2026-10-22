@@ -168,7 +168,7 @@ export async function runMarketingWorkerJob(request: MarketingJobRequest, depend
   reloadSource(sourceId: string): Promise<unknown>;
   reloadTemplate?(version: string): Promise<MarketingTemplate | null>;
   renderDneskaiDeck?: RenderDneskaiRevisionDeck;
-} & Pick<GenerationDependencies, "admitPaidCall" | "onUsage" | "loadDneskaiMedia" | "validateDneskaiDeck" | "evidencePublishers">): Promise<MarketingWorkerResult> {
+} & Pick<GenerationDependencies, "admitPaidCall" | "onUsage" | "loadDneskaiMedia" | "validateDneskaiDeck" | "evidencePublishers" | "deferRetry" | "resume">): Promise<MarketingWorkerResult> {
   const job = parseMarketingJobRequest(request);
   const template = marketingJobTemplate(job);
   if (template) {

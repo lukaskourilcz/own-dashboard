@@ -212,3 +212,111 @@ describe("the DNESKAi daily generation ceiling at the paid call", () => {
     expect(await readMarketingJob(db, owner, jobId)).toEqual({ jobId, status: "failed", errorCode: "copy-validation-failed" });
   });
 });
+
+/** `database()` plus the job row: the fenced retry-state read and the fenced requeue (GEN-14). */
+function retryDatabase(stored: unknown = null, requeued: Array<{ id: string }> = [{ id: jobId }]) {
+  const base = database();
+  const jobs = { mode: "read" as "read" | "update", update: vi.fn(), select: vi.fn(), eq: vi.fn(), gt: vi.fn(), maybeSingle: vi.fn() };
+  jobs.update.mockImplementation(() => { jobs.mode = "update"; return jobs; });
+  jobs.select.mockImplementation(() => jobs.mode === "update" ? Promise.resolve({ data: requeued, error: null }) : jobs);
+  jobs.eq.mockReturnValue(jobs); jobs.gt.mockReturnValue(jobs);
+  jobs.maybeSingle.mockImplementation(async () => ({ data: { result: stored }, error: null }));
+  const from = vi.fn((table: string) => table === "marketing_jobs" ? jobs : base.query);
+  return { ...base, jobs, db: { rpc: base.rpc, from } as unknown as ReturnType<typeof createAdminClient> };
+}
+const wrongCopy = () => { const copy = validCopy(pictures); copy.slides[1]!.images[0]!.assetSha256 = "f".repeat(64); return copy; };
+
+describe("the copy-validation retry on the next tick (GEN-14)", () => {
+  it("puts the job back in the queue after a failed first attempt, with its feedback and usage, under the same fence", async () => {
+    const { db, rpc, jobs } = retryDatabase();
+    const provider = model([{ copy: wrongCopy(), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
+    const result = await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true });
+    expect(result).toMatchObject({ claimed: true, status: "queued", retry: { attempt: 2 } });
+    expect(provider.invoke).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls.filter(([name]) => name === "marketing_reserve_dneskai_generation")).toHaveLength(1);
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain("marketing_finish_job");
+    const fence = rpc.mock.calls.find(([name]) => name === "marketing_claim_job")![1].p_fence;
+    const update = jobs.update.mock.calls[0]![0] as { status: string; fence: null; lease_until: null; result: { schemaVersion: string; resume: { attempt: number; feedback: string; issues: string[]; usage: unknown } } };
+    expect(update).toMatchObject({ status: "queued", fence: null, lease_until: null, error_code: null });
+    expect(update.result.schemaVersion).toBe("marketing-job-retry/1");
+    expect(update.result.resume).toMatchObject({ attempt: 1, usage: { attempts: 1, inputTokens: 3000, outputTokens: 1500, estimatedCostUsd: 0.021 } });
+    expect(update.result.resume.issues.length).toBeGreaterThan(0);
+    expect(update.result.resume.feedback).toContain("Correct exactly these problems");
+    expect(jobs.eq).toHaveBeenCalledWith("status", "running"); expect(jobs.eq).toHaveBeenCalledWith("fence", fence);
+    expect(jobs.gt).toHaveBeenCalledWith("lease_until", expect.any(String));
+  }, 30000);
+  it("makes the second attempt on the next execution with the stored feedback and counts both attempts", async () => {
+    const first = retryDatabase();
+    await executeMarketingJob(first.db, owner, jobId, { env, model: model([{ copy: wrongCopy(), usage: { inputTokens: 3000, outputTokens: 1500 } }]), refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true });
+    const stored = (first.jobs.update.mock.calls[0]![0] as { result: { resume: { feedback: string } } }).result;
+    const { db, rpc } = retryDatabase(stored);
+    const provider = model([{ copy: validCopy(pictures), usage: { inputTokens: 3500, outputTokens: 1500 } }]);
+    expect(await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true }))
+      .toEqual({ claimed: true, status: "review", revisionId });
+    expect(provider.invoke).toHaveBeenCalledTimes(1);
+    expect(provider.invoke.mock.calls[0]![0].prompt.endsWith(stored.resume.feedback)).toBe(true);
+    // Same reservation as an in-process retry: the job's whole $0.25 under the new fence.
+    expect(rpc).toHaveBeenCalledWith("marketing_reserve_dneskai_generation", expect.objectContaining({ p_job: jobId, p_reservation: 0.25 }));
+    const finish = rpc.mock.calls.find(([name]) => name === "marketing_finish_job")![1] as { p_result: { usage: unknown } };
+    expect(finish.p_result.usage).toEqual({ attempts: 2, inputTokens: 6500, outputTokens: 3000, estimatedCostUsd: 0.043 });
+  }, 30000);
+  it("fails the job after the second attempt also fails, recording both attempts, and never makes a third call", async () => {
+    const stored = { schemaVersion: "marketing-job-retry/1", resume: { attempt: 1, feedback: "\nTest-only feedback.", issues: ["image-unknown"], usage: { attempts: 1, inputTokens: 3000, outputTokens: 1500, estimatedCostUsd: 0.021 } } };
+    const { db, rpc, jobs } = retryDatabase(stored);
+    const provider = model([{ copy: wrongCopy(), usage: { inputTokens: 3200, outputTokens: 1500 } }, { copy: validCopy(pictures), usage: { inputTokens: 1, outputTokens: 1 } }]);
+    expect(await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true }))
+      .toEqual({ claimed: true, status: "failed", errorCode: "copy-validation-failed" });
+    expect(provider.invoke).toHaveBeenCalledTimes(1);
+    expect(jobs.update).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_error: "copy-validation-failed",
+      p_result: { schemaVersion: "marketing-job-failure/1", usage: { attempts: 2, inputTokens: 6200, outputTokens: 3000, estimatedCostUsd: 0.0424 } } }));
+  }, 30000);
+  it("records the first attempt's usage when the second is refused before the call", async () => {
+    const stored = { schemaVersion: "marketing-job-retry/1", resume: { attempt: 1, feedback: "\nTest-only feedback.", issues: ["image-unknown"], usage: { attempts: 1, inputTokens: 3000, outputTokens: 1500, estimatedCostUsd: 0.021 } } };
+    const base = retryDatabase(stored);
+    base.rpc.mockImplementation(async (name: string, args: Record<string, unknown>) => name === "marketing_claim_job" ? { data: job(), error: null }
+      : name === "marketing_reserve_dneskai_generation" ? { data: { admitted: false, spentUsd: 0.9, reservationUsd: 0.25, ceilingUsd: 1 }, error: null }
+      : name === "marketing_finish_job" ? { data: args.p_error ? "failed" : "review", error: null } : { data: null, error: null });
+    const provider = model();
+    expect(await executeMarketingJob(base.db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true }))
+      .toEqual({ claimed: true, status: "failed", errorCode: "dneskai-daily-generation-budget-exhausted" });
+    expect(provider.invoke).not.toHaveBeenCalled();
+    expect(base.rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_result: { schemaVersion: "marketing-job-failure/1", usage: stored.resume.usage } }));
+  }, 30000);
+  it("never retries a provider failure, deferred or not", async () => {
+    const { db, rpc, jobs } = retryDatabase();
+    const provider = model();
+    provider.invoke.mockRejectedValueOnce(Object.assign(new Error("test-only"), { status: 529 }));
+    const result = await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true });
+    expect(result).toMatchObject({ claimed: true, status: "failed" });
+    expect(provider.invoke).toHaveBeenCalledTimes(1);
+    expect(jobs.update).not.toHaveBeenCalled();
+    // Billing was ambiguous: the brief job books its whole maximum.
+    expect(rpc).toHaveBeenCalledWith("marketing_finish_job", expect.objectContaining({ p_result: { schemaVersion: "marketing-job-failure/1", usage: expect.objectContaining({ attempts: 1, estimatedCostUsd: 0.25 }) } }));
+  }, 30000);
+  it("refuses a stored state it cannot read and makes no call, so a job never gets a third attempt", async () => {
+    for (const stored of [{ schemaVersion: "marketing-job-retry/1", resume: { attempt: 2, feedback: "x", issues: [], usage: { attempts: 2, inputTokens: 1, outputTokens: 1, estimatedCostUsd: 0.01 } } },
+      { schemaVersion: "marketing-job-failure/1", usage: {} }, "test-only"]) {
+      const { db } = retryDatabase(stored);
+      const provider = model();
+      const result = await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true });
+      expect(result).toMatchObject({ claimed: true, status: "failed" });
+      expect(["job-retry-state-invalid", "generation-retry-invalid"]).toContain((result as { errorCode: string }).errorCode);
+      expect(provider.invoke).not.toHaveBeenCalled();
+    }
+  }, 30000);
+  it("leaves the lease to reconciliation when the requeue write is lost", async () => {
+    const { db, rpc } = retryDatabase(null, []);
+    await expect(executeMarketingJob(db, owner, jobId, { env, model: model([{ copy: wrongCopy(), usage: { inputTokens: 3000, outputTokens: 1500 } }]), refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck, deferRetry: true }))
+      .rejects.toThrow("job-finish-reconciliation-required");
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain("marketing_finish_job");
+  }, 30000);
+  it("keeps the in-process retry for callers that do not defer", async () => {
+    const { db, jobs } = retryDatabase();
+    const provider = model([{ copy: wrongCopy(), usage: { inputTokens: 3000, outputTokens: 1500 } }, { copy: validCopy(pictures), usage: { inputTokens: 3500, outputTokens: 1500 } }]);
+    expect(await executeMarketingJob(db, owner, jobId, { env, model: provider, refreshSource: vi.fn(async () => job().generation.source), loadDneskaiMedia, renderDneskaiDeck }))
+      .toEqual({ claimed: true, status: "review", revisionId });
+    expect(provider.invoke).toHaveBeenCalledTimes(2);
+    expect(jobs.update).not.toHaveBeenCalled();
+  }, 30000);
+});
