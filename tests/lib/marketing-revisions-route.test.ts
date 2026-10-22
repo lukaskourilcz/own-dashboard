@@ -119,7 +119,13 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "deck-asset-outside-brief" });
     response = await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), deck: { slides: [{ from: 0 }] } }));
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "deck-edit-slide-count" });
+    // A DNESKAi caption carries at most 10 hashtags (owner rule, 22 October 2026).
+    const tags = (count: number) => ["#dneskai", ...Array.from({ length: count - 1 }, (_, n) => `#tema${n + 1}`)].join(" ");
+    response = await POST(request({ action: "edit", id: current, caption: `Upravený caption.\n\n${tags(11)}`, scheduledAt: scheduledAt() }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "caption-hashtags-over-limit" });
     expect(admin.calls).toEqual([]);
+    response = await POST(request({ action: "edit", id: current, caption: `Upravený caption.\n\n${tags(10)}`, scheduledAt: scheduledAt() }));
+    expect(response.status).not.toBe(409);
   });
 
   it("records a refused render on the new revision and keeps it unready", async () => {
