@@ -108,3 +108,23 @@ describe('Lab format switch (#165)', () => {
     expect(container.innerHTML).toBe('');
   });
 });
+
+describe('trending sounds in the picker and in Hudba (#167)', () => {
+  const trend = { audioId: '587784541076604', title: 'Trend Song', artist: 'Trend Artist', type: 'music' as const, durationMs: 30_000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false };
+  it('lists trending sounds above the library and says Instagram adds the chosen one', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [track({ id: '11111111-1111-4111-8111-111111111111', title: 'One' })], trends: [trend] })));
+    render(<DneskaiAudioPicker value="ig:587784541076604" onChange={() => {}} preview={false} lang="cs" />); await settle();
+    const groups = [...container.querySelectorAll('optgroup')].map((group) => group.getAttribute('label'));
+    expect(groups).toEqual([dneskaiAudio.cs.trends.title, dneskaiAudio.cs.title]);
+    expect(container.querySelector('option[value="ig:587784541076604"]')?.textContent).toBe('Trend Song · Trend Artist · 0:30');
+    expect(container.textContent).toContain(dneskaiAudio.cs.trends.attached);
+  });
+  it.each(['en', 'cs'] as const)('shows the trending list in Hudba with type and days (%s)', async (lang) => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trends: [trend] })));
+    render(<DneskaiAudioLibrary lang={lang} />); await settle();
+    const t = dneskaiAudio[lang].trends;
+    const list = container.querySelector('[data-testid="dneskai-audio-trends"]')!;
+    expect(list.textContent).toContain(t.title);
+    expect(list.textContent).toContain(`${t.type.music} · ${t.days(3)}`);
+  });
+});
