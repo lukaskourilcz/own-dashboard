@@ -419,3 +419,79 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
     return { status: "rendered", assets, renderKeys, problems };
   };
 }
+
+/* ---- render-only preview (REN-01) --------------------------------------------------------------------------- */
+
+/** The preview image: the slide's real pixels at 80 % (two device pixels per CSS pixel of the 390 px stage and more), WebP. */
+export const DNESKAI_PREVIEW_IMAGE = { width: 864, height: 1080, quality: 82, format: "webp" } as const;
+/** Rendered previews kept in memory by render key: a slide the owner returns to is not drawn twice. */
+const PREVIEW_CACHE_ENTRIES = 48;
+const previewCache = new Map<string, Buffer>();
+
+export type DneskaiSlidePreview = {
+  status: "rendered" | "refused";
+  /** The downscaled WebP of the draft slide, null when refused. Never stored, never an approval asset. */
+  image: Buffer | null;
+  renderKey: string;
+  problems: DneskaiSlideRenderProblem[];
+  cached: boolean;
+};
+
+/** Forgets every cached preview (tests). */
+export function clearDneskaiPreviewCache() { previewCache.clear(); }
+
+/**
+ * One slide of a draft deck rendered in memory for the Design Lab (REN-01): the same text gate, studio render and
+ * refusal rules as `createDneskaiDeckRenderer`, at $0 (no model call), with no storage write, no revision and no
+ * render key cache in `marketing-assets`. A clean slide comes back as a downscaled WebP; a refused one as its
+ * problems. The bytes are a preview only: approval still binds a saved revision's content hash and its stored JPEGs.
+ * `signal` bounds the work like the save path's abort budget: an abort between stages is `worker-timeout`.
+ */
+export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loadMedia: LoadDneskaiMediaBytes, options: { signal?: AbortSignal } = {}): Promise<DneskaiSlidePreview> {
+  const deck = parseDeck(value);
+  const slide = deck.slides[index];
+  if (!slide) throw new DneskaiRenderError("render-input-invalid");
+  const abortCheck = () => { if (options.signal?.aborted) throw new DneskaiRenderError("worker-timeout"); };
+  abortCheck();
+  const position = { index, count: deck.slides.length };
+  const metrics = await fonts();
+  const encoder = await dneskaiEncoderIdentity();
+  const renderKey = dneskaiRenderKey(slide, position, encoder);
+  const own = textProblems(slide, index, metrics);
+  const hit = previewCache.get(renderKey);
+  if (hit && !own.length) {
+    previewCache.delete(renderKey); previewCache.set(renderKey, hit);
+    return { status: "rendered", image: hit, renderKey, problems: [], cached: true };
+  }
+  const loaded = await slideImages(slide, index, mediaLoader(loadMedia), options.signal);
+  abortCheck();
+  const engine = await studio();
+  if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false };
+  const input = dneskaiStudioInput(slide, position, loaded.images);
+  if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false };
+  let result;
+  try { result = await engine.renderDneskaiSlide(input); }
+  catch { throw new DneskaiRenderError("render-rasterization-failed"); }
+  abortCheck();
+  const found = result.problems.map((problem) => slideProblem(index, problem));
+  if (result.truncatedSlots.length && !found.some((problem) => problem.code === "text-clipped")) {
+    for (const slot of result.truncatedSlots) found.push({ slide: index, code: "text-clipped", blocking: true, field: truncatedField(slide, slot), message: `The renderer cut ${slot}; shorten it.` });
+  }
+  if (result.status !== "rendered" || !result.png || found.some((problem) => problem.blocking)) {
+    if (!found.some((problem) => problem.blocking)) found.push({ slide: index, code: "render-refused", blocking: true, field: null, message: "The studio refused this slide." });
+    return { status: "refused", image: null, renderKey, problems: found, cached: false };
+  }
+  const sharp = await sharpModule();
+  let image: Buffer;
+  try {
+    image = await sharp(result.png).flatten({ background: "#ffffff" }).toColourspace("srgb")
+      .resize(DNESKAI_PREVIEW_IMAGE.width, DNESKAI_PREVIEW_IMAGE.height, { fit: "fill" }).webp({ quality: DNESKAI_PREVIEW_IMAGE.quality }).toBuffer();
+  } catch { throw new DneskaiRenderError("render-jpeg-encoding-failed"); }
+  abortCheck();
+  // Advisory problems (a picture stretched short of refusal) are part of the preview's answer, not of the cache.
+  if (!found.length) {
+    previewCache.set(renderKey, image);
+    while (previewCache.size > PREVIEW_CACHE_ENTRIES) previewCache.delete(previewCache.keys().next().value!);
+  }
+  return { status: "rendered", image, renderKey, problems: found, cached: false };
+}

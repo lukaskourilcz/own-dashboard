@@ -2,7 +2,7 @@
 
 import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos } from './dneskai-workspace-fixtures';
 import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
-import { DneskaiWorkspaceRequestError, fitAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
+import { DneskaiWorkspaceRequestError, fitAt, previewAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
 import { applyDneskaiDeckEdit, DneskaiRevisionEditError } from '@/lib/marketing/dneskai-deck-edit';
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -109,6 +109,12 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   },
   // The real studio fit, through the fixture-only twin of the route: it reads no owner data. Production guests get 404.
   fit: (request, signal) => fitAt('/api/dev-preview/dneskai-fit', request, signal),
+  // The real in-memory render of one draft slide, after the shared edit rules, through the fixture-only twin route.
+  async renderPreview(request, signal) {
+    const post = find(request.id);
+    const slides = applyEdit(post, { action: 'edit', id: request.id, caption: post.caption, scheduledAt: post.scheduledAt, deck: request.deck });
+    return previewAt('/api/dev-preview/dneskai-preview', { deck: { ...post.deck!, slides }, slide: request.slide }, signal);
+  },
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);

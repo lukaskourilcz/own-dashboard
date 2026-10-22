@@ -51,6 +51,7 @@ const CODES = {
   'deck-edit-slide-count': ['edit', 'A carousel needs 2 to 10 slides and a single post exactly one.', 'Carousel potřebuje 2 až 10 slidů a samostatný příspěvek právě jeden.'],
   'deck-edit-slots-changed': ['edit', 'A slide’s picture places cannot be added or removed, only swapped.', 'Místa pro obrázky na slidu nelze přidat ani odebrat, jen vyměnit.'],
   'text-unfit': ['edit', 'The slide cannot print this text as written.', 'Slide tento text v napsané podobě nevytiskne.'],
+  'preview-slide-invalid': ['reload', 'The draft no longer has this slide.', 'Návrh už tento slide nemá.'],
   'deck-edit-variant-invalid': ['edit', 'This slide type has no such variant.', 'Tento typ slidu takovou variantu nemá.'],
   'deck-edit-move-not-allowed': ['edit', 'The slide’s pictures do not allow this type here.', 'Obrázky slidu tento typ na tomto místě nedovolují.'],
   'deck-edit-text-unplaced': ['edit', 'The new slide type does not show some of the text; remove it first.', 'Nový typ slidu část textu nezobrazí; nejdřív ho odstraňte.'],

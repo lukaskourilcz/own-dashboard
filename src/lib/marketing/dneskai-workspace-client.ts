@@ -4,7 +4,7 @@ import { loadMarketingAccounts, type MarketingAccountStatus } from './accounts-c
 import { DneskaiRenderProblemSchema } from './contracts';
 import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, type DneskaiCostsRead, type DneskaiWorkspaceRead } from './dneskai-workspace';
 import type { DneskaiEditRequest } from './dneskai-deck-editor';
-import { DneskaiApproveManyResultSchema, DneskaiFitResultSchema, type DneskaiApproveManyResult, type DneskaiFitRequest, type DneskaiFitResult } from './dneskai-lab';
+import { DneskaiApproveManyResultSchema, DneskaiFitResultSchema, DneskaiPreviewResultSchema, type DneskaiApproveManyResult, type DneskaiFitRequest, type DneskaiFitResult, type DneskaiPreviewRequest, type DneskaiPreviewResult } from './dneskai-lab';
 import { qk } from '@/lib/queries/keys';
 
 /**
@@ -38,6 +38,8 @@ export interface DneskaiWorkspaceApi {
   approveMany(posts: ReadonlyArray<{ id: string; contentHash: string }>): Promise<DneskaiApproveManyResult>;
   /** Text fit feedback before saving ($0, no model call, nothing stored). */
   fit(request: DneskaiFitRequest, signal?: AbortSignal): Promise<DneskaiFitResult>;
+  /** One slide of the unsaved draft as real pixels (REN-01): $0, nothing stored, never approvable. */
+  renderPreview(request: DneskaiPreviewRequest, signal?: AbortSignal): Promise<DneskaiPreviewResult>;
 }
 
 const codeShape = /^[a-z][a-z0-9_-]{0,99}$/;
@@ -92,7 +94,15 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     return result.data;
   },
   fit: (request, signal) => fitAt('/api/marketing/dneskai/fit', request, signal),
+  renderPreview: (request, signal) => previewAt('/api/marketing/dneskai/preview', request, signal),
 };
+
+/** POST a preview request and validate the answer; the harness posts the edited deck to its fixture-only twin. */
+export async function previewAt(url: string, body: unknown, signal?: AbortSignal): Promise<DneskaiPreviewResult> {
+  const result = DneskaiPreviewResultSchema.safeParse(await post(body, url, signal));
+  if (!result.success) throw new DneskaiWorkspaceRequestError('render-unavailable', 502);
+  return result.data;
+}
 
 /** POST a fit request and validate the answer; the preview posts to its fixture-only twin of the route. */
 export async function fitAt(url: string, request: DneskaiFitRequest, signal?: AbortSignal): Promise<DneskaiFitResult> {
