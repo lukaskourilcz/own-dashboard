@@ -216,7 +216,10 @@ account, token, freshness, downloaded bytes, quota) and recreates all containers
 (another 4xx) is recorded as `failed`. An unfinished known container stays pending. A container in
 `ERROR` or `EXPIRED` before any publish request is recorded as `failed` (`container-error`,
 `container-expired`). After the publish intent, a publish timeout, uncertain response or failed receipt
-keeps reconciliation state and the known IDs; `media_publish` is sent at most once per publication. Missing
+keeps reconciliation state and the known IDs; `media_publish` is sent at most once per publication.
+A reconciliation row without a numeric container ID, media ID, URL or publish intent provably
+published nothing; the owner can give up on it and queue the approved post again
+(`POST /api/marketing/publications`, see [external setup §11](external-setup.md)). Missing
 permalink lookup retains the media ID and remains reconciliation; it does not announce a verified
 public post. A previously attempted publish, recorded media ID or reconciliation record performs
 only GET queries.

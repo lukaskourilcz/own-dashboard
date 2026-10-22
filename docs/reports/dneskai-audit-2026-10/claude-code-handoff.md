@@ -24,6 +24,7 @@ Prepared, unapplied migrations:
 - `20261022020702_dneskai_richer_brief_evidence.sql`
 - `20261022020759_dneskai_brief_v2_compatibility.sql`
 - `20261022021835_dneskai_release_lapsed_reports.sql`
+- `20261022110000_marketing_requeue_unpublished_publication.sql` (approval-04 owner re-queue; also needs `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`, default off)
 
 The lapsed-report release behavior requires its migration; no historic records were reset. Research also requires its migration and exact plan approval, independently of deploying this code. Plan ID: `a4c1458a8327aace893915734aff52c115ce417d5b250ec8d6ce8d33bfcf9438`.
 

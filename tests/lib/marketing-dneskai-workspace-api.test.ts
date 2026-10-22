@@ -165,6 +165,24 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(read.ticks.total).toBe(2);
     expect(read.unreadable).toBe(2);
   });
+  it('marks only provably unpublished stuck publications as requeueable, and only behind the server switch (approval-04)', async () => {
+    mocks.rpc.mockResolvedValue({ data: 0.5, error: null });
+    const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+    const row = (n: number, patch: Record<string, unknown>) => ({ id: `cccccccc-cccc-4ccc-8ccc-${String(n).padStart(12, '0')}`, user_id: owner, revision_id: revisionId, status: 'reconciliation', error_code: 'container-identity-unavailable',
+      scheduled_at: ago(30), last_checked_at: null, remote_container_id: `intent:${sha(1)}`, remote_media_id: null, remote_url: null, lease_until: null, marketing_revisions: { brand: 'dneskai', title: `Post ${n}` }, ...patch });
+    mocks.tables.marketing_publications = [row(1, {}), row(2, { remote_container_id: '17890000000000001', error_code: 'meta-request-uncertain' }), row(3, { remote_media_id: '90001', error_code: 'remote-permalink-unavailable' }),
+      row(4, { status: 'claimed', remote_container_id: null, error_code: 'container-retry', lease_until: ago(1) }), row(5, { status: 'claimed', remote_container_id: null, error_code: 'container-retry', lease_until: new Date(Date.now() + 60_000).toISOString() }),
+      row(6, { status: 'failed', remote_container_id: null, error_code: 'meta-http-400' })];
+    const off = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}`)).json());
+    expect(off.publications.some((publication) => publication.requeueable)).toBe(false);
+    vi.stubEnv('MARKETING_PUBLICATION_REQUEUE_ENABLED', 'true');
+    const on = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}`)).json());
+    vi.unstubAllEnvs();
+    // The live claim (5) is still publishing and is not listed; the expired one (4) reads as marketing_claim_due will record it.
+    expect(on.publications.map((publication) => [publication.title, publication.status, publication.errorCode, publication.requeueable ?? false])).toEqual([
+      ['Post 1', 'reconciliation', 'container-identity-unavailable', true], ['Post 2', 'reconciliation', 'meta-request-uncertain', false], ['Post 3', 'reconciliation', 'remote-permalink-unavailable', false],
+      ['Post 4', 'reconciliation', 'lease-expired', true], ['Post 6', 'failed', 'meta-http-400', false]]);
+  });
   it('shows an unreadable spend and a malformed ceiling as codes, not as zero', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'PRIVATE' } });
     vi.stubEnv('MARKETING_DNESKAI_DAILY_GENERATION_USD', 'lots');

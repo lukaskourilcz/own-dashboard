@@ -270,7 +270,12 @@ export const DneskaiCostsReadSchema = z.strictObject({
   days: z.array(z.strictObject({ date: z.iso.date(), collectionUsd: usd, generationUsd: usd, generationBookedUsd: usd, unknown: z.number().int().nonnegative() })).max(7),
   runs: z.array(z.strictObject({ id: uuid, date: z.iso.date(), targetDate: z.iso.date(), status: z.enum(['running', 'complete', 'partial', 'held', 'failed']), costUsd: usd.nullable(), errorCode: code.nullable(), createdAt: timestamp })).max(14),
   jobs: z.array(z.strictObject({ id: uuid, status: z.enum(['queued', 'running', 'review', 'failed', 'reconciliation']), errorCode: code.nullable(), createdAt: timestamp, costUsd: usd.nullable(), title: z.string().max(300), scheduledAt: timestamp.nullable() })).max(30),
-  publications: z.array(z.strictObject({ id: uuid, revisionId: uuid, status: z.enum(DNESKAI_PUBLICATION_STATUSES), errorCode: code.nullable(), scheduledAt: timestamp, lastCheckedAt: timestamp.nullable(), title: z.string().max(300) })).max(20),
+  /**
+   * Failed, reconciliation and lease-expired publications. `requeueable` (approval-04) is true only when the server
+   * offers the owner's "give up and re-queue" and the row provably published nothing; absent means not offered.
+   */
+  publications: z.array(z.strictObject({ id: uuid, revisionId: uuid, status: z.enum(DNESKAI_PUBLICATION_STATUSES), errorCode: code.nullable(), scheduledAt: timestamp, lastCheckedAt: timestamp.nullable(), title: z.string().max(300),
+    requeueable: z.boolean().optional() })).max(20),
   /** Stored rows (runs, jobs, publications, ticks) that could not be read; shown as a count, never a failed read. */
   unreadable: z.number().int().nonnegative(),
   ticks: z.strictObject({

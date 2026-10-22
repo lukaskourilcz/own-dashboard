@@ -746,3 +746,9 @@ Both migrations are local preparation. Reconcile production's divergent marketin
 ### Prepared: lapsed brief reports
 
 `20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied pending migration-history reconciliation.
+
+## Publication re-queue, 22 October 2026 (unapplied)
+
+`20261022110000_marketing_requeue_unpublished_publication.sql` adds `marketing_requeue_publication(p_publication)` for the signed-in owner (audit finding approval-04). It accepts a publication in `reconciliation`, or a claim whose lease expired, only when it has no numeric container ID, no media ID, no URL and no `publish-intent`: such a row never reached `media_publish`. It sets the publication back to `queued` (`error_code='owner-requeued'`, container and lease cleared) and the revision back to `approved`, leaving `approved_at`, `approved_hash` and the content untouched, and records a `requeued` event. Every other row is refused with `publication may be published`, `publication not stranded` or `approval changed`.
+
+The deployed code needs nothing from this migration: container retries use the existing `marketing_checkpoint_publication`, and the route and panel stay off until `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. A missing function answers `publication-requeue-unavailable`. Replayed only in PGlite (`tests/lib/marketing-requeue-database.test.ts`). Apply it with the other prepared migrations after production's marketing history is reconciled under an owner-approved release.

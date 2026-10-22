@@ -5,6 +5,7 @@ import { requireDneskaiProject } from '@/lib/marketing/dneskai-store';
 import { DNESKAI_COST_RANGES, readDneskaiCosts } from '@/lib/marketing/dneskai-workspace-read';
 import { dneskaiDailyGenerationCeiling } from '@/lib/marketing/worker-runtime';
 import type { DneskaiCostsRead } from '@/lib/marketing/dneskai-workspace';
+import { marketingPublicationRequeueEnabled } from '@/lib/marketing/publication-requeue';
 
 export const runtime = 'nodejs';
 
@@ -39,7 +40,8 @@ export async function GET(request: Request) {
   } catch { spendCode = 'dneskai-daily-generation-budget-unavailable'; }
   const limit = ceiling();
   try {
-    const read = await readDneskaiCosts(db, user.id, projectId!, new Date(), { spentUsd, ceilingUsd: limit.ceilingUsd, code: limit.code ?? spendCode }, range.data);
+    const read = await readDneskaiCosts(db, user.id, projectId!, new Date(), { spentUsd, ceilingUsd: limit.ceilingUsd, code: limit.code ?? spendCode }, range.data,
+      { requeueEnabled: marketingPublicationRequeueEnabled(process.env) });
     return Response.json(read, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {
     return Response.json({ error: 'dneskai-costs-unavailable' }, { status: 503 });
