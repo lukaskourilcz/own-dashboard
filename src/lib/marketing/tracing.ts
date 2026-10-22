@@ -35,9 +35,13 @@ const metadataSchema = z.strictObject({
   knowledge_ids: z.array(z.uuid()).max(8),
   // A DNESKAi brief (#115): which event and which member set, as hashes, and how many source pictures it offered.
   event_id_hash: hash.optional(), member_hash_hash: hash.optional(), media_count: z.number().int().min(0).max(30).optional(),
+  // Owner decision 8: a regeneration's note as a SHA-256 hash and the regenerated revision's id. Never the note text.
+  owner_note_hash: hash.optional(), replaces_revision_id: z.uuid().optional(),
 });
 export type TraceStart = {
   revisionId: string; source: SourcePacket; model: string; promptVersion: string; templateVersion: string; knowledgeIds: string[];
+  /** A regeneration (owner decision 8): only the note's hash and the replaced revision's id reach the trace. */
+  ownerNote?: string; replacesRevisionId?: string;
 };
 export type TraceStage = { name: "generation" | "render" | "validation"; attempt: number; latencyMs: number; usage: ModelUsage; costUsd: number; issues: string[] };
 export type TraceFinish = {
@@ -67,6 +71,8 @@ export function marketingTraceMetadata(input: TraceStart) {
     prompt_version_hash: contentHash(input.promptVersion), template_version_hash: contentHash(input.templateVersion),
     knowledge_ids: input.knowledgeIds,
     ...(brief ? { event_id_hash: traceIdentifierHash(brief.eventId), member_hash_hash: traceIdentifierHash(brief.memberHash), media_count: brief.media.length } : {}),
+    ...(input.ownerNote ? { owner_note_hash: traceIdentifierHash(input.ownerNote) } : {}),
+    ...(input.replacesRevisionId ? { replaces_revision_id: input.replacesRevisionId } : {}),
   });
 }
 /** What a trace says about a deck: its format, how many slides of each type and how many distinct pictures. No text. */

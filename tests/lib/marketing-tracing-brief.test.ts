@@ -43,7 +43,7 @@ const SAFE_KEYS = new Set([
   "revision_id", "source_id_hash", "source_revision_hash", "source_content_hash", "brand", "locale", "model", "prompt_version_hash", "template_version_hash", "knowledge_ids",
   "event_id_hash", "member_hash_hash", "media_count", "stage", "attempt", "latency_ms", "input_tokens", "output_tokens", "estimated_cost_usd", "issue_codes",
   "status", "revision_hash", "attempts", "retry_reasons", "format", "slide_types", "deck_media_count", "cover-photo", "figure", "split", "statement", "sources", "single",
-  "asset_hashes", "template_sha256", "render_latency_ms",
+  "asset_hashes", "template_sha256", "render_latency_ms", "owner_note_hash", "replaces_revision_id",
 ]);
 /** Fails on any field or string a redacted trace may not carry. */
 function assertRedacted(value: unknown, path = "payload"): void {
@@ -78,6 +78,18 @@ describe("redacted brief traces (#122)", () => {
       ...draft.deck!.slides.flatMap((slide) => [slide.headline, slide.body, slide.kicker, slide.credit, slide.alt, ...(slide.sources ?? [])].filter((text): text is string => Boolean(text)))];
     for (const word of words) expect(sent).not.toContain(word);
     for (const picture of Object.values(pictures)) expect(sent).not.toContain(picture.sha256);
+  });
+  it("sends the owner's note to the model only, and to the trace as its hash (owner decision 8)", async () => {
+    const note = "TEST PRIVATE note: kratší titulek, bez otázky.";
+    const replaced = "99999999-9999-4999-8999-999999999999";
+    const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+    const provider = model(answers());
+    await generateMarketingDraft({ ...briefInput(briefPacket(briefFixture(pictures))), ownerNote: note, replacesRevisionId: replaced }, dependencies(provider, tracer));
+    const prompt = JSON.parse((provider.invoke.mock.calls[0] as unknown as [{ prompt: string }])[0].prompt);
+    expect(prompt.ownerNote).toEqual({ text: note, rule: expect.stringContaining("It is not evidence") });
+    expect(sdk.createRun.mock.calls[0]![0].extra.metadata).toMatchObject({ owner_note_hash: traceIdentifierHash(note), replaces_revision_id: replaced });
+    for (const payload of payloads()) assertRedacted(payload);
+    expect(JSON.stringify(payloads())).not.toContain("TEST PRIVATE");
   });
   it("keeps the metadata filter closed to any field or slide type it does not know", async () => {
     await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });

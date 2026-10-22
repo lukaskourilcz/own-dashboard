@@ -13,7 +13,7 @@ import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import {
   DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DNESKAI_SOURCES_SLIDE, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
-  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
+  assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiOwnerNote, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
   dneskaiSourcesSlideBlocked, loadDneskaiGlyphFilter, normalizeDneskaiCopy, validateDneskaiCopy,
   type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers, type DneskaiGlyphFilter,
 } from "./dneskai-generation";
@@ -50,6 +50,13 @@ export const GenerationInputSchema = z.strictObject({
   knowledge: z.array(KnowledgeSchema).max(8),
   consent: z.boolean(),
   revisionId: z.uuid(),
+  /**
+   * Owner decision 8, „Regenerate with a note“: the owner's own words about what to change, sent to the model as
+   * feedback on a DNESKAi brief draft. Only its hash reaches tracing.
+   */
+  ownerNote: z.string().trim().min(1).max(1000).optional(),
+  /** The revision a regeneration replaces once it is saved (20261022190000_dneskai_regenerate_with_note.sql). */
+  replacesRevisionId: z.uuid().optional(),
 });
 export type GenerationInput = z.infer<typeof GenerationInputSchema> & { source: SourcePacket };
 const BudgetSchema = z.strictObject({
@@ -289,7 +296,9 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   const brief = source.brief!;
   const outputSchema = dneskaiCopyWireSchema();
   // The prompt gets what the input reservation leaves after the system prompt, schema, envelope and retry instructions.
-  const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES;
+  const note = input.ownerNote ? dneskaiOwnerNote(input.ownerNote) : null;
+  const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES
+    - (note ? Buffer.byteLength(JSON.stringify(note)) + 16 : 0);
   let offer: DneskaiBriefOffer;
   try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
@@ -298,7 +307,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   let glyphs: Promise<DneskaiGlyphFilter> | null = null;
   return {
     promptVersion: MARKETING_BRIEF_PROMPT_ID,
-    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer) },
+    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer, note) },
     output: { name: "dneskai_post", schema: outputSchema },
     outputSchema,
     feedbackReserveBytes: DNESKAI_RETRY_INSTRUCTION_BYTES,
@@ -390,7 +399,8 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   const resume = dependencies.resume === undefined ? null : MarketingGenerationResumeSchema.safeParse(dependencies.resume);
   if (resume && (!resume.success || resume.data.attempt >= budget.maxAttempts || resume.data.usage.estimatedCostUsd > budget.maxCostUsd)) throw new MarketingGenerationError("generation-retry-invalid");
   const resumed = resume?.success ? resume.data : null;
-  const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) })) ?? null;
+  const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id),
+    ...(input.ownerNote ? { ownerNote: input.ownerNote } : {}), ...(input.replacesRevisionId ? { replacesRevisionId: input.replacesRevisionId } : {}) })) ?? null;
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
   // A resumed retry starts from the usage the earlier attempts recorded, so the $0.25 and the attempt cap span both calls.
   const usage = resumed ? { ...resumed.usage } : { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
