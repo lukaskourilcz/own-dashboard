@@ -76,6 +76,7 @@ const CODES = {
   'caption-missing': ['edit', 'The caption is empty.', 'Popisek je prázdný.'],
   'schedule-invalid': ['edit', 'The planned time is not a valid Prague time.', 'Plánovaný čas není platný pražský čas.'],
   'schedule-outside-asset-window': ['edit', 'The time must be in the future and at most six days ahead.', 'Čas musí být v budoucnu a nejvýše šest dní dopředu.'],
+  'publish-now-unsupported': ['edit', 'Only a DNESKAi post with slides can be published right away.', 'Hned lze publikovat jen příspěvek DNESKAi se slidy.'],
   'revision-unavailable': ['reload', 'This version no longer exists or is not yours.', 'Tato verze už neexistuje nebo vám nepatří.'],
   'invalid-revision': ['edit', 'The request was not valid.', 'Požadavek nebyl platný.'],
   'revision-not-renderable': ['investigate', 'This version cannot be rendered again.', 'Tuto verzi nelze znovu vykreslit.'],

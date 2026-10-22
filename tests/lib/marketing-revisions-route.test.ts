@@ -163,3 +163,68 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
     });
   });
 });
+
+describe("POST /api/marketing/revisions publish-now", () => {
+  const live = { MARKETING_PUBLISH_ENABLED: "true", MARKETING_DNESKAI_PUBLISH_ENABLED: "true" };
+  // An expired post: its saved time has passed, which is exactly when the owner reaches for Publish now.
+  const expired = () => ({ ...deckRevision(), scheduledAt: "2026-10-22T15:00:00.000Z" }) as ContentRevision;
+  function publishDb(revision: ContentRevision, options: { status?: string; ready?: boolean; enabled?: boolean; approveError?: { message: string } } = {}) {
+    const rpc = vi.fn(async (name: string) => name === "marketing_approve_revision" ? (options.approveError ? { data: null, error: options.approveError } : { data: "88888888-8888-4888-8888-888888888888", error: null }) : { data: null, error: null });
+    const from = vi.fn((table: string) => {
+      const query = { select: () => query, eq: () => query,
+        maybeSingle: async () => table === "marketing_accounts" ? { data: { verified_at: "2026-10-22T14:17:08Z", enabled: options.enabled ?? true }, error: null }
+          : { data: { revision, render_report: cleanReport, content_hash: revisionContentHash(revision), status: options.status ?? "review", ready: options.ready ?? true }, error: null } };
+      return query;
+    });
+    return { auth: { getUser: async () => ({ data: { user: { id: owner } } }) }, from, rpc };
+  }
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it("moves the reviewed version two minutes ahead without re-rendering and approves the new hash", async () => {
+    for (const [key, value] of Object.entries(live)) vi.stubEnv(key, value);
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db);
+    const db = publishDb(expired()); mocks.user.mockReturnValue(db);
+    const before = Date.now();
+    const response = await POST(request({ action: "publish-now", id: current, expectedHash: revisionContentHash(expired()) }));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(mocks.render.mock.results[0]!.value).not.toHaveBeenCalled();
+    const save = admin.calls.find((call) => call.name === "marketing_save_revision")!;
+    const moved = save.args.p_revision as ContentRevision;
+    expect(moved).toMatchObject({ caption: expired().caption, deck: expired().deck, account: expired().account });
+    const lead = Date.parse(moved.scheduledAt) - before;
+    expect(lead).toBeGreaterThanOrEqual(2 * 60_000 - 50); expect(lead).toBeLessThan(2 * 60_000 + 5_000);
+    const attach = admin.calls.find((call) => call.name === "marketing_attach_revision_render")!;
+    expect(db.rpc).toHaveBeenCalledWith("marketing_approve_revision", { p_revision_id: saved, p_expected_hash: attach.args.p_hash });
+    expect(body).toMatchObject({ id: saved, publicationId: "88888888-8888-4888-8888-888888888888", scheduledAt: moved.scheduledAt, scheduling: "tick" });
+    expect(mocks.feedback).toHaveBeenCalledWith(expect.objectContaining({ revisionId: saved, decision: "approved" }), expect.anything(), expect.anything());
+  });
+
+  it("refuses before writing when the hash changed, the post is not in review, or publishing is off", async () => {
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db);
+    for (const [key, value] of Object.entries(live)) vi.stubEnv(key, value);
+    mocks.user.mockReturnValue(publishDb(expired()));
+    let response = await POST(request({ action: "publish-now", id: current, expectedHash: "0".repeat(64) }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "approval-unavailable", reason: "revision-changed" });
+    mocks.user.mockReturnValue(publishDb(expired(), { status: "approved" }));
+    response = await POST(request({ action: "publish-now", id: current, expectedHash: revisionContentHash(expired()) }));
+    expect(await response.json()).toEqual({ error: "approval-unavailable", reason: "revision-not-ready" });
+    mocks.user.mockReturnValue(publishDb(expired(), { enabled: false }));
+    response = await POST(request({ action: "publish-now", id: current, expectedHash: revisionContentHash(expired()) }));
+    expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "publishing-disabled" });
+    vi.stubEnv("MARKETING_DNESKAI_PUBLISH_ENABLED", "false");
+    mocks.user.mockReturnValue(publishDb(expired()));
+    response = await POST(request({ action: "publish-now", id: current, expectedHash: revisionContentHash(expired()) }));
+    expect(await response.json()).toEqual({ error: "publishing-disabled" });
+    expect(admin.calls).toEqual([]);
+  });
+
+  it("returns the saved version and the approval's reason when approval refuses", async () => {
+    for (const [key, value] of Object.entries(live)) vi.stubEnv(key, value);
+    const admin = adminDb(); mocks.admin.mockReturnValue(admin.db);
+    mocks.user.mockReturnValue(publishDb(expired(), { approveError: { message: "account unverified" } }));
+    const response = await POST(request({ action: "publish-now", id: current, expectedHash: revisionContentHash(expired()) }));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "approval-unavailable", reason: "account-unverified", id: saved });
+  });
+});

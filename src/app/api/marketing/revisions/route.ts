@@ -11,6 +11,8 @@ import { revisionContentHash } from '@/lib/marketing/hashes';
 import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from '@/lib/marketing/dneskai-revision-edit';
 import { getBriefAssetHashLister, getBriefPoolLoader, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
 import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
+import { marketingPublishingLive } from '@/lib/marketing/scheduler';
+import { DNESKAI_PUBLISH_NOW_LEAD_MS } from '@/lib/marketing/dneskai-deck-editor';
 export const maxDuration=60;
 const Input=z.discriminatedUnion('action',[
  z.strictObject({action:z.literal('approve'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
@@ -19,6 +21,9 @@ const Input=z.discriminatedUnion('action',[
  z.strictObject({action:z.enum(['returned','skipped']),id:z.uuid(),feedback:z.string().max(2000).optional()}),
  // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer unless the deck is unchanged; `accountId` is a marketing_accounts row.
  z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional()}),
+ // „Publish now“: the exact saved version the owner reviewed (expectedHash), moved to DNESKAI_PUBLISH_NOW_LEAD_MS from now
+ // and approved in the same request. The next scheduler tick (every 5 minutes) publishes it.
+ z.strictObject({action:z.literal('publish-now'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
 ]);
 // SQL refusals the review UI can explain; anything else stays the generic code.
 const approvalReasons:Record<string,string>={'revision not ready':'revision-not-ready','render blocked':'render-blocked','revision changed':'revision-changed','schedule expired':'schedule-expired','source changed':'source-changed','account unverified':'account-unverified','campaign inactive':'campaign-inactive'};
@@ -50,6 +55,26 @@ export async function POST(request:Request){
    // The pg_cron tick publishes the queued slot; approval notifies nobody (audit finding cost-07).
    return NextResponse.json({publicationId:data,scheduling:'tick'});
   }
+  if(input.action==='publish-now'){
+   const {data:row,error}=await db.from('marketing_revisions').select('revision,render_report,content_hash,status,ready').eq('id',input.id).eq('user_id',user.id).maybeSingle();
+   if(error||!row)return NextResponse.json({error:'revision-unavailable'},{status:404});
+   if(row.content_hash!==input.expectedHash)return NextResponse.json({error:'approval-unavailable',reason:'revision-changed'},{status:409});
+   if(row.status!=='review'||!row.ready)return NextResponse.json({error:'approval-unavailable',reason:'revision-not-ready'},{status:409});
+   const current=parseContentRevision(row.revision);
+   if(!current.deck)return NextResponse.json({error:'publish-now-unsupported'},{status:409});
+   // Both switches and the account's own switch: otherwise the tick would only dry-run and the slot would lapse.
+   const {data:target}=await db.from('marketing_accounts').select('verified_at,enabled').eq('user_id',user.id).eq('brand',current.brand).eq('platform',current.account.platform).eq('remote_account_id',current.account.id).maybeSingle();
+   if(!marketingPublishingLive(process.env)||!target?.verified_at||!target.enabled)return NextResponse.json({error:'publishing-disabled'},{status:409});
+   const scheduledAt=new Date(Date.now()+DNESKAI_PUBLISH_NOW_LEAD_MS).toISOString();
+   // Same caption, deck and account; only the time moves, so the saved JPEGs are re-verified and reused, not re-rendered.
+   const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:current.caption,scheduledAt,account:current.account});
+   if(edited instanceof Response)return edited;
+   if(!edited.ready)return NextResponse.json({error:'approval-unavailable',reason:'render-blocked',id:edited.id},{status:409});
+   const {data,error:approval}=await db.rpc('marketing_approve_revision',{p_revision_id:edited.id,p_expected_hash:edited.contentHash});
+   if(approval)return NextResponse.json({error:'approval-unavailable',reason:approvalReasons[approval.message]??null,id:edited.id},{status:409});
+   await recordMarketingOwnerFeedback({traceId:current.traceId,revisionId:edited.id,revisionHash:edited.contentHash,decision:'approved'},process.env,{db,ownerId:user.id});
+   return NextResponse.json({id:edited.id,publicationId:data,scheduledAt,scheduling:'tick'});
+  }
   if(input.action==='edit'){
    const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt,render_report').eq('id',input.id).eq('user_id',user.id).single();
    if(error||!row)return NextResponse.json({error:'revision-unavailable'},{status:404});
@@ -63,27 +88,9 @@ export async function POST(request:Request){
    }
    const admin=createAdminClient();
    if(current.deck){
-    // Resolve every dependency before writing: an unwired renderer or media store refuses the edit and the current revision keeps its state.
-    let wiring;
-    try{wiring={render:getRenderDneskaiDeck(admin),loadMedia:getDneskaiMediaLoader(admin,user.id),listBriefAssetHashes:getBriefAssetHashLister(admin,user.id),loadBriefPool:getBriefPoolLoader(admin,user.id)};}
-    catch(failure){const code=failure instanceof Error&&unwired.has(failure.message)?failure.message:'renderer-unavailable';return NextResponse.json({error:code},{status:503});}
-    let revision:ContentRevision;
-    try{revision=await prepareDneskaiRevisionEdit(current,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck},wiring.listBriefAssetHashes,wiring.loadBriefPool);}
-    catch(failure){
-     if(failure instanceof DneskaiRevisionEditError)return NextResponse.json({error:failure.code},{status:409});
-     return NextResponse.json({error:failure instanceof Error&&unwired.has(failure.message)?failure.message:'media-unavailable'},{status:503});
-    }
-    // Saved unready and without assets: the previous revision is superseded now, so its approval cannot be used meanwhile.
-    // A caption-, time- or account-only edit leaves the deck as it was: its previous JPEGs (same sha256s, re-verified
-    // byte for byte and re-signed) are attached instead of a render (review-03). Anything that fails here renders.
-    let reuse=reusableDneskaiRender(current,row.render_report,revision);
-    if(reuse){try{reuse={...reuse,assets:await refreshMarketingAssetUrls(admin,user.id,reuse.assets)};}catch{reuse=null;}}
-    const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:[]});
-    let rendered;
-    try{rendered=await renderAndAttachDneskaiRevision(admin,user.id,{revisionId:saved.id,revision},{render:wiring.render,loadMedia:wiring.loadMedia,signal:AbortSignal.timeout(45000),reuse});}
-    catch{return NextResponse.json({id:saved.id,ready:false,error:'render-attach-failed'},{status:502});}
-    await recordMarketingOwnerFeedback({traceId:revision.traceId,revisionId:saved.id,revisionHash:rendered.contentHash,decision:'edited'},process.env,{db,ownerId:user.id});
-    return NextResponse.json({id:saved.id,ready:rendered.ready,contentHash:rendered.contentHash,render:{status:rendered.report.status,problems:rendered.report.problems}});
+    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck});
+    if(edited instanceof Response)return edited;
+    return NextResponse.json({id:edited.id,ready:edited.ready,contentHash:edited.contentHash,render:{status:edited.report.status,problems:edited.report.problems}});
    }
    if(input.deck)return NextResponse.json({error:'deck-edit-unsupported'},{status:409});
    const assets=await refreshMarketingAssetUrls(admin,user.id,current.assets);
@@ -97,4 +104,31 @@ export async function POST(request:Request){
   if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:input.id,revisionHash:original.content_hash,decision:input.action},process.env,{db,ownerId:user.id});
   return NextResponse.json({ok:true});
  }catch{return NextResponse.json({error:'invalid-revision'},{status:400});}
+}
+
+type Database=Awaited<ReturnType<typeof createClient>>;
+/** Saves a DNESKAi deck edit as a new revision and attaches its render: the slides are reused when only caption, time or account changed. */
+async function editDneskaiDeck(db:Database,ownerId:string,id:string,current:ContentRevision,renderReport:unknown,edit:{caption:string;scheduledAt:string;account:ContentRevision['account'];deck?:z.infer<typeof DneskaiDeckEditSchema>}){
+ const admin=createAdminClient();
+ // Resolve every dependency before writing: an unwired renderer or media store refuses the edit and the current revision keeps its state.
+ let wiring;
+ try{wiring={render:getRenderDneskaiDeck(admin),loadMedia:getDneskaiMediaLoader(admin,ownerId),listBriefAssetHashes:getBriefAssetHashLister(admin,ownerId),loadBriefPool:getBriefPoolLoader(admin,ownerId)};}
+ catch(failure){const code=failure instanceof Error&&unwired.has(failure.message)?failure.message:'renderer-unavailable';return NextResponse.json({error:code},{status:503});}
+ let revision:ContentRevision;
+ try{revision=await prepareDneskaiRevisionEdit(current,edit,wiring.listBriefAssetHashes,wiring.loadBriefPool);}
+ catch(failure){
+  if(failure instanceof DneskaiRevisionEditError)return NextResponse.json({error:failure.code},{status:409});
+  return NextResponse.json({error:failure instanceof Error&&unwired.has(failure.message)?failure.message:'media-unavailable'},{status:503});
+ }
+ // Saved unready and without assets: the previous revision is superseded now, so its approval cannot be used meanwhile.
+ // A caption-, time- or account-only edit leaves the deck as it was: its previous JPEGs (same sha256s, re-verified
+ // byte for byte and re-signed) are attached instead of a render (review-03). Anything that fails here renders.
+ let reuse=reusableDneskaiRender(current,renderReport,revision);
+ if(reuse){try{reuse={...reuse,assets:await refreshMarketingAssetUrls(admin,ownerId,reuse.assets)};}catch{reuse=null;}}
+ const saved=await saveRevision(admin,ownerId,revision,{replacesId:id,slides:[]});
+ let rendered;
+ try{rendered=await renderAndAttachDneskaiRevision(admin,ownerId,{revisionId:saved.id,revision},{render:wiring.render,loadMedia:wiring.loadMedia,signal:AbortSignal.timeout(45000),reuse});}
+ catch{return NextResponse.json({id:saved.id,ready:false,error:'render-attach-failed'},{status:502});}
+ await recordMarketingOwnerFeedback({traceId:revision.traceId,revisionId:saved.id,revisionHash:rendered.contentHash,decision:'edited'},process.env,{db,ownerId});
+ return {id:saved.id,ready:rendered.ready,contentHash:rendered.contentHash,report:rendered.report};
 }

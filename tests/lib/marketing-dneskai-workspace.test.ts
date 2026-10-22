@@ -8,7 +8,7 @@ import {
   DNESKAI_POST_STATES, DNESKAI_RENDER_ATTACH_GRACE_MS, DNESKAI_STATE_TONES, pragueDstDay, type DneskaiWorkspacePost,
 } from '@/lib/marketing/dneskai-workspace';
 import {
-  createDeckDraft, dneskaiCreditLine, dneskaiEditRequest, draftProblems, focalFromPoint, mediaFits, mediaResolution, moveFocal, moveSlide, orderedMediaPool, removeSlide,
+  createDeckDraft, dneskaiCreditLine, dneskaiEditRequest, dneskaiNextEditableTime, dneskaiScheduleExpired, draftProblems, focalFromPoint, mediaFits, mediaResolution, moveFocal, moveSlide, orderedMediaPool, removeSlide,
   scheduledIso, setImageCrop, setSlideText, swapSlideImage,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { createDneskaiCostsFixture, createDneskaiWorkspaceFixture, demoFieldLimits } from '@/lib/demo/dneskai-workspace-fixtures';
@@ -19,6 +19,10 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { pragueScheduledAt } from '@/lib/marketing/clock';
 import { renderAndAttachDneskaiRevision } from '@/lib/marketing/dneskai-revision-edit';
 import { deckRevision } from './marketing-dneskai-revision-fixture';
+
+// The drafts read the clock (an expired time is replaced, the time window is checked): pin it to the fixture's day.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date('2026-10-24T09:00:00Z'));
 
 const now = new Date('2026-10-24T09:00:00Z');
 const read = () => createDneskaiWorkspaceFixture(now);
@@ -119,6 +123,24 @@ describe('the post editor logic', () => {
     const sets: Array<[string[], number]> = [[['Foto: @simonwillison.net (Bluesky)'], 80], [['Foto: @simonwillison.net (Bluesky)'], 30], [['Foto: @simonwillison.net (Bluesky)'], 20],
       [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 80], [['Obrázek: Hugging Face', 'Foto: @mosseri (Instagram)'], 30], [['Foto: a', 'Foto: a'], 80], [[], 80], [['Obrázek: velmi dlouhý vydavatel s dlouhým jménem'], 10]];
     for (const [credits, limit] of sets) expect(dneskaiCreditLine(credits, limit), `${credits.join('|')} ${limit}`).toBe(fitDneskaiCredit(credits, limit));
+  });
+
+  it('offers the nearest possible time for a post whose time has passed, and checks the six-day window before saving', () => {
+    const original = post(1);
+    const late = new Date(Date.parse(original.scheduledAt) + 30 * 60_000);
+    expect(dneskaiScheduleExpired(original, now)).toBe(false);
+    expect(dneskaiScheduleExpired(original, late)).toBe(true);
+    // At least 15 minutes ahead on a 5-minute mark: 09:31:10 becomes 09:50.
+    expect(dneskaiNextEditableTime(new Date('2026-10-24T09:31:10Z'))).toBe('2026-10-24T09:50:00.000Z');
+    expect(dneskaiNextEditableTime(new Date('2026-10-24T09:35:00Z'))).toBe('2026-10-24T09:50:00.000Z');
+    const draft = createDeckDraft(original, null, late);
+    expect(scheduledIso(draft.scheduledLocal)).toBe(dneskaiNextEditableTime(late));
+    // The draft differs from the saved version only in its time, so the editor offers to save it.
+    expect(dneskaiEditRequest(original, draft)).toEqual({ action: 'edit', id: original.id, caption: original.caption, scheduledAt: dneskaiNextEditableTime(late) });
+    expect(draftProblems(original, draft, null, late).filter((problem) => problem.field === 'scheduledAt')).toEqual([]);
+    expect(draftProblems(original, createDeckDraft(original, null, now), null, late)).toContainEqual({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
+    const far = { ...createDeckDraft(original, null, now), scheduledLocal: '2026-11-05T09:00' };
+    expect(draftProblems(original, far, null, now)).toContainEqual({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
   });
 
   it('builds the minimal edit request: unchanged slides carry only their position, cleared optional text is removed', () => {
