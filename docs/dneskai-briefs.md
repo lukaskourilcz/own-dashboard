@@ -82,6 +82,15 @@ událostech s podobnými titulky 1,47 s.
 - Událost vede její nejlepší způsobilá zpráva (dosavadní podmínky: kategorie mimo
   `other`, relevance ≥ 0,85, bez duplicity, bez důvodu vyřazení (`reason`), datum
   vyplněné, ne v budoucnosti a do 48 h u zpráv a do 30 dní jinak).
+- Kategorie události (SEL-10, připraveno 22. 10. 2026): většina mezi jejími způsobilými
+  zprávami; při shodě rozhodnou zprávy zdrojů tieru 0 a 1 (vydavatel, redakce), pak
+  nejrelevantnější zpráva. Spočítá ji `dneskaiEventCategory` při seskupení a pošle jako
+  volitelné `category` v `p_events`. Nasazená funkce klíč ignoruje a bere kategorii vedoucí
+  zprávy; teprve neaplikovaná migrace `20261022160000_dneskai_event_majority_category.sql`
+  ji použije, a jen když ji nese aspoň jedna způsobilá zpráva události. Vedoucí zpráva,
+  okno 48 h / 30 dní každé zprávy a pravidlo jedné události za kategorii se nemění;
+  `tool` a `ai-project` zůstávají dvě kategorie (to je volba vlastníka). Každá zpráva
+  dál ukazuje svůj vlastní štítek od Jeva.
 - Nejvýše čtyři události: nejdřív jedna za každou kategorii, pak podle relevance.
   Méně je v pořádku, nic se nedoplňuje.
 - Událost byla pokrytá dřív, když v ní je dříve vybraná zpráva, nebo Jev duplicita,
