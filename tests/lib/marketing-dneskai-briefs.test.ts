@@ -350,6 +350,52 @@ describe('other events for the Sources tab', () => {
       ['held', 'collection-review-relevance', [[c.id, 'primary']]],
     ]);
   });
+
+  // SEL-05: an unselected event says which stored selection rule it fails, from the candidate alone.
+  it('explains why an open event was not selected, rule by rule, from the stored lead report', async () => {
+    const { dneskaiOtherEventViews } = await import('@/lib/marketing/dneskai-brief-read');
+    const now = new Date('2026-10-21T20:00:00Z');
+    const fresh = '2026-10-21T12:00:00Z', old = '2026-10-18T12:00:00Z';
+    const make = (id: string, title: string, patch: Partial<DneskaiCandidate>) => syntheticCandidate('techcrunch-ai', id, title, { status: 'new', reason: null, duplicateOf: null, publishedAt: fresh, fetchedAt: fresh, category: 'ai-news', relevance: 0.9, ...patch });
+    const views = dneskaiOtherEventViews([
+      make('s1', 'Synthetic unclassified quantum notebook', { category: null, relevance: null }),
+      make('s2', 'Synthetic gardening robot fair', { category: 'other', relevance: 0.95 }),
+      make('s3', 'Synthetic chip tariff memo', { category: 'tech-news', relevance: 0.6 }),
+      make('s4', 'Synthetic model benchmark leak', { publishedAt: old, dateEstimated: true }),
+      make('s5', 'Synthetic marketing playbook release', { category: 'marketing', relevance: 0.91, publishedAt: old }),
+      make('s6', 'Synthetic satellite outage explained', { status: 'held', reason: 'collection-source-date-unavailable-or-stale', relevance: 0.4 }),
+    ], new Set(), 30, now);
+    const byTitle = (word: string) => views.find((view) => view.members[0]!.title.includes(word))!;
+    expect(byTitle('quantum').selection).toEqual({ code: 'selection-unclassified', category: null, relevance: null, publishedAt: fresh });
+    expect(byTitle('gardening').selection).toMatchObject({ code: 'selection-off-topic', category: 'other' });
+    expect(byTitle('tariff').selection).toMatchObject({ code: 'selection-below-floor', category: 'tech-news', relevance: 0.6 });
+    expect(byTitle('benchmark').selection).toEqual({ code: 'selection-outside-window', category: 'ai-news', relevance: 0.9, publishedAt: old, dateEstimated: true });
+    // Thirty days for topics other than AI and tech news: three days old still qualifies, so it simply lost.
+    expect(byTitle('playbook').selection).toMatchObject({ code: 'selection-not-picked', category: 'marketing', relevance: 0.91 });
+    // A held event keeps its own reason; it gets the facts but no selection code.
+    expect(byTitle('satellite')).toMatchObject({ status: 'held', reason: 'collection-source-date-unavailable-or-stale', selection: { code: null, relevance: 0.4 } });
+  });
+
+  it('leads with an eligible report when an event mixes eligible and weaker ones, and shows up to 30 events', async () => {
+    const { dneskaiOtherEventViews, dneskaiEventSelection } = await import('@/lib/marketing/dneskai-brief-read');
+    const now = new Date('2026-10-21T20:00:00Z');
+    const base = { status: 'new' as const, reason: null, duplicateOf: null, publishedAt: '2026-10-21T10:00:00Z', fetchedAt: '2026-10-21T10:00:00Z', category: 'ai-news' as const };
+    const weak = syntheticCandidate('wired-ai', 'w1', 'Synthetic agent launch', { ...base, relevance: 0.99, publishedAt: '2026-10-10T10:00:00Z' });
+    const strong = syntheticCandidate('openai-blog', 'w2', 'Synthetic agent launch', { ...base, relevance: 0.86 });
+    expect(dneskaiEventSelection([weak, strong], 'new', now)).toMatchObject({ code: 'selection-not-picked', relevance: 0.86 });
+    const many = Array.from({ length: 40 }, (_, index) => syntheticCandidate('techcrunch-ai', `m${index}`, `Synthetic distinct headline number ${index} ${'xyz'.repeat(index % 5)} topic${index}`, { ...base, fetchedAt: new Date(Date.parse(base.fetchedAt) - index * 60000).toISOString() }));
+    expect(dneskaiOtherEventViews(many, new Set(), undefined, now)).toHaveLength(30);
+  });
+
+  it('mirrors the eligibility thresholds of the finish function it explains', async () => {
+    const { DNESKAI_SELECTION_RELEVANCE_FLOOR, DNESKAI_SELECTION_NEWS_WINDOW_HOURS, DNESKAI_SELECTION_WINDOW_DAYS } = await import('@/lib/marketing/dneskai-brief-read');
+    const { readFileSync } = await import('node:fs');
+    const sql = readFileSync(new URL('../../supabase/migrations/20261020150000_dneskai_events_briefs.sql', import.meta.url), 'utf8');
+    const eligible = sql.slice(sql.indexOf('), eligible as ('), sql.indexOf('), leads as ('));
+    expect(eligible).toContain(`(candidate->>'relevance')::numeric>=${DNESKAI_SELECTION_RELEVANCE_FLOOR}`);
+    expect(eligible).toContain(`candidate->>'category' in('ai-news','tech-news') then interval '${DNESKAI_SELECTION_NEWS_WINDOW_HOURS} hours' else interval '${DNESKAI_SELECTION_WINDOW_DAYS} days'`);
+    expect(eligible).toContain("candidate->>'category'<>'other'");
+  });
 });
 
 

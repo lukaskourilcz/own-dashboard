@@ -2,7 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiBriefSchema } from './dneskai-brief';
-import { DNESKAI_BRIEFS_READ_VERSION, DneskaiBriefsReadSchema, DneskaiCandidateSchema, type DneskaiBriefsRead, type DneskaiCandidate, type DneskaiEventView } from './dneskai-contracts';
+import { DNESKAI_BRIEFS_READ_VERSION, DneskaiBriefsReadSchema, DneskaiCandidateSchema, type DneskaiBriefsRead, type DneskaiCandidate, type DneskaiEventSelection, type DneskaiEventView } from './dneskai-contracts';
 import { groupDneskaiEvents, rankDneskaiEventMembers } from './dneskai-events';
 
 /**
@@ -54,11 +54,48 @@ export async function readDneskaiBriefs(db: Database, owner: string, project: st
 }
 
 /**
+ * The nightly selection's eligibility rules, mirrored from public.marketing_dneskai_finish
+ * (supabase/migrations/20261020150000_dneskai_events_briefs.sql, `eligible`): a classified, on-topic, open report
+ * with relevance at least 0.85, published no later than now and within 48 hours (ai-news, tech-news) or 30 days.
+ * Explanation only; the SQL stays the authority and nothing here selects anything.
+ */
+export const DNESKAI_SELECTION_RELEVANCE_FLOOR = 0.85;
+export const DNESKAI_SELECTION_NEWS_WINDOW_HOURS = 48;
+export const DNESKAI_SELECTION_WINDOW_DAYS = 30;
+
+type SelectionRule = Exclude<DneskaiEventSelection['code'], 'selection-not-picked' | null> | 'eligible' | 'unexplained';
+function selectionRule(candidate: DneskaiCandidate, now: Date): SelectionRule {
+  if (candidate.category === null) return 'selection-unclassified';
+  if (candidate.category === 'other') return 'selection-off-topic';
+  if (candidate.relevance === null || candidate.relevance < DNESKAI_SELECTION_RELEVANCE_FLOOR) return 'selection-below-floor';
+  const published = candidate.publishedAt ? Date.parse(candidate.publishedAt) : Number.NaN;
+  const window = (candidate.category === 'ai-news' || candidate.category === 'tech-news' ? DNESKAI_SELECTION_NEWS_WINDOW_HOURS : DNESKAI_SELECTION_WINDOW_DAYS * 24) * 3600000;
+  if (!Number.isFinite(published) || published > now.getTime() || published < now.getTime() - window) return 'selection-outside-window';
+  if (candidate.status !== 'new' || candidate.duplicateOf !== null || candidate.reason !== null) return 'unexplained';
+  return 'eligible';
+}
+
+/**
+ * Why an unselected event lost, from the stored candidates alone (read-only). The lead is the report the selection
+ * would lead with: an eligible one first, then the most relevant. Held, duplicate and rejected events keep their
+ * own reason; they get the lead's facts and no selection code.
+ */
+export function dneskaiEventSelection(members: readonly DneskaiCandidate[], status: DneskaiEventView['status'], now: Date): DneskaiEventSelection {
+  const ranked = members.map((candidate) => ({ candidate, rule: selectionRule(candidate, now) }))
+    .sort((a, b) => Number(b.rule === 'eligible') - Number(a.rule === 'eligible') || (b.candidate.relevance ?? -1) - (a.candidate.relevance ?? -1)
+      || Date.parse(b.candidate.publishedAt ?? '') - Date.parse(a.candidate.publishedAt ?? '') || 0);
+  const lead = ranked[0]!;
+  const code = status !== 'new' ? null : lead.rule === 'eligible' ? 'selection-not-picked' : lead.rule === 'unexplained' ? null : lead.rule;
+  return { code, category: lead.candidate.category, relevance: lead.candidate.relevance, publishedAt: lead.candidate.publishedAt, ...(lead.candidate.dateEstimated ? { dateEstimated: true as const } : {}) };
+}
+
+/**
  * Recent reports that were not selected, grouped into events the same way the selection groups them, so the
  * owner sees one held or duplicate event instead of several loose reports. Reports already in a brief are left
- * out. Newest events first, at most `limit`.
+ * out. Newest events first, at most `limit`. Each carries the lead report's category, relevance and date and, for
+ * an open event, the first selection rule it fails (SEL-05).
  */
-export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], briefed: ReadonlySet<string>, limit = 12): DneskaiEventView[] {
+export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], briefed: ReadonlySet<string>, limit = 30, now: Date = new Date()): DneskaiEventView[] {
   const open = candidates.filter((candidate) => !briefed.has(candidate.id) && candidate.status !== 'selected');
   const statusOf = (members: readonly DneskaiCandidate[]): { status: DneskaiEventView['status']; reason: string | null } => {
     for (const status of ['duplicate', 'held', 'rejected'] as const) {
@@ -72,6 +109,7 @@ export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], 
     .slice(0, limit)
     .map((event) => {
       const ordered = rankDneskaiEventMembers(event.members);
-      return { eventId: event.eventId, targetDate: null, ...statusOf(event.members), brief: null, members: ordered.slice(0, 30).map((member, index) => memberView(member, index === 0 ? 'primary' : 'supporting')) };
+      const state = statusOf(event.members);
+      return { eventId: event.eventId, targetDate: null, ...state, brief: null, members: ordered.slice(0, 30).map((member, index) => memberView(member, index === 0 ? 'primary' : 'supporting')), selection: dneskaiEventSelection(event.members, state.status, now) };
     });
 }

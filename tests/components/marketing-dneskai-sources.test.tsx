@@ -142,8 +142,36 @@ describe('DNESKAi events in Sources (#115)', () => {
     expect(container.textContent).not.toContain('PRIVATE-REASON-CODE'); expect(container.textContent).not.toContain('collection-already-covered');
     expect(container.querySelectorAll('img,button,input')).toHaveLength(0);
   });
+  // SEL-05: an unselected event shows its stored topic, relevance and age and, when open, why it lost.
+  it.each(['en', 'cs'] as const)('shows topic, relevance, age and the losing rule of an unselected event, with unknowns in words (%s)', lang => {
+    const t = dneskaiSources[lang];
+    const value = withEvents();
+    value.events!.push(
+      { eventId: 'e'.repeat(64), targetDate: null, status: 'new', reason: null, brief: null, members: [member('open', 'primary', { status: 'new' })],
+        selection: { code: 'selection-below-floor', category: 'tech-news', relevance: 0.6, publishedAt: '2026-10-13T09:00:00Z' } },
+      { eventId: 'f'.repeat(64), targetDate: null, status: 'new', reason: null, brief: null, members: [member('raw', 'primary', { status: 'new' })],
+        selection: { code: 'selection-unclassified', category: null, relevance: null, publishedAt: null } },
+    );
+    value.events![3] = { ...value.events![3]!, selection: { code: null, category: 'ai-news', relevance: 0.4, publishedAt: '2026-10-10T12:00:00Z', dateEstimated: true } };
+    render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
+    const items = [...container.querySelector('[aria-labelledby="dneskai-events-title"]')!.querySelectorAll(':scope ul > li')];
+    const open = items.find(item => item.textContent!.includes('EVENT-open'))!;
+    expect(open.textContent).toContain(t.eventStatus.new);
+    expect(open.textContent).toContain(`${t.category}:${t.categories['tech-news']}`);
+    expect(open.textContent).toContain(`${t.relevance}:${lang === 'cs' ? '0,60' : '0.60'}`);
+    expect(open.textContent).toContain(lang === 'cs' ? 'před 3 hodinami' : '3 hours ago');
+    expect(open.textContent).toContain(`${t.whyNot}: ${t.selectionReasons['selection-below-floor']}`);
+    const raw = items.find(item => item.textContent!.includes('EVENT-raw'))!;
+    expect(raw.textContent).toContain(t.unclassified); expect(raw.textContent).toContain(`${t.relevance}:${t.noDate}`); expect(raw.textContent).toContain(t.unknownPublished);
+    expect(raw.textContent).toContain(t.selectionReasons['selection-unclassified']); expect(raw.textContent).not.toMatch(/0[.,]00/);
+    const held = items.find(item => item.textContent!.includes('EVENT-held'))!;
+    expect(held.textContent).toContain(t.estimated); expect(held.textContent).toContain(lang === 'cs' ? 'před 3 dny' : '3 days ago'); expect(held.textContent).not.toContain(t.whyNot);
+    expect(container.textContent).not.toContain('selection-'); expect(container.querySelectorAll('dl dt').length).toBeGreaterThanOrEqual(9);
+  });
   it('keeps EN and CS event strings in parity', () => {
     expect(Object.keys(dneskaiSources.cs.eventReasons).sort()).toEqual(Object.keys(dneskaiSources.en.eventReasons).sort());
+    expect(Object.keys(dneskaiSources.cs.selectionReasons).sort()).toEqual(Object.keys(dneskaiSources.en.selectionReasons).sort());
+    expect(Object.keys(dneskaiSources.cs.categories).sort()).toEqual(Object.keys(dneskaiSources.en.categories).sort());
     expect(Object.keys(dneskaiSources.cs.eventStatus).sort()).toEqual(Object.keys(dneskaiSources.en.eventStatus).sort());
   });
 });

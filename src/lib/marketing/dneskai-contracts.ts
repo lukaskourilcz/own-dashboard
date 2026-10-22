@@ -50,7 +50,15 @@ export const DneskaiEventViewSchema = z.strictObject({
     evidenceCount: z.number().int().min(0).max(30), mediaCount: z.number().int().min(0).max(30), jobId: z.uuid().nullable(),
   }).nullable(),
   members: z.array(DneskaiEventMemberViewSchema).min(1).max(30),
+  // SEL-05, additive: for an event that was not selected, what the stored lead report says about it. `code` names
+  // the first selection rule it fails (only for an open, status `new` event; null when the data cannot tell).
+  selection: z.strictObject({
+    code: z.enum(['selection-unclassified', 'selection-off-topic', 'selection-below-floor', 'selection-outside-window', 'selection-not-picked']).nullable(),
+    category: DneskaiCandidateSchema.shape.category, relevance: z.number().min(0).max(1).nullable(),
+    publishedAt: z.iso.datetime({ offset: true }).nullable(), dateEstimated: z.literal(true).optional(),
+  }).optional(),
 });
+export type DneskaiEventSelection = NonNullable<z.infer<typeof DneskaiEventViewSchema>['selection']>;
 export type DneskaiEventView = z.infer<typeof DneskaiEventViewSchema>;
 export const DNESKAI_BRIEFS_READ_VERSION = 'dneskai-briefs/1' as const;
 export const DneskaiBriefsReadSchema = z.strictObject({ schemaVersion: z.literal(DNESKAI_BRIEFS_READ_VERSION), events: z.array(DneskaiEventViewSchema).max(60) });

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -8,7 +9,7 @@ import { qk } from '@/lib/queries/keys';
 import { dneskaiSources } from '@/lib/i18n/sections/dneskai-sources';
 import { loadDneskaiSources, nextDneskaiSourceCheck, sourceExternalUrl } from '@/lib/marketing/dneskai-client';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
-import type { DneskaiCollectionState, DneskaiEventView } from '@/lib/marketing/dneskai-contracts';
+import type { DneskaiCollectionState, DneskaiEventSelection, DneskaiEventView } from '@/lib/marketing/dneskai-contracts';
 
 /** `onOpenReview` switches the project workspace to „Dnes ke schválení“, where the final review happens. */
 type Props = { projectId: string; lang: 'en' | 'cs'; onOpenReview: () => void; disabled?: boolean; now?: Date };
@@ -80,6 +81,7 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
       {otherEvents.length === 0 ? <p className="text-sm text-foreground-muted">{t.noOtherEvents}</p> : <ul className="divide-y divide-border">{otherEvents.map(event => <li key={event.eventId} className="min-w-0 space-y-1 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2"><p className="min-w-0 break-words text-sm">{link(event.members[0])}</p><StatusBadge value={event.status} label={t.eventStatus[event.status]} tone={eventTone(event.status)} /></div>
         <p className="text-xs text-foreground-muted">{sourceName(event.members[0].sourceId)} · {t.reports}: {event.members.length}{reasonText(event.reason) && <> · {reasonText(event.reason)}</>}</p>
+        {event.selection && <SelectionFacts selection={event.selection} lang={lang} now={now} published={published} />}
       </li>)}</ul>}</section>}
     <section aria-labelledby="dneskai-checks-title" className="space-y-2"><h3 id="dneskai-checks-title" className="text-sm font-semibold">{t.today} · {dateOnly(today)}</h3>
       {todayChecks.length === 0 ? <p className="text-sm text-foreground-muted">{t.noChecks}</p> : <ul className="divide-y divide-border">{todayChecks.map(value => <li key={value.sourceId} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span className="min-w-0 break-words">{sourceName(value.sourceId)}</span><span>{status(value.status)} · {at(value.lastAttemptAt)}</span></li>)}</ul>}</section>
@@ -103,4 +105,24 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
     <section aria-labelledby="dneskai-runs-title" className="space-y-2"><h3 id="dneskai-runs-title" className="text-sm font-semibold">{t.runs}</h3>
       {state.runs.length === 0 ? <p className="text-sm text-foreground-muted">{t.noRuns}</p> : <ul className="divide-y divide-border">{state.runs.map(run => <li key={run.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm"><div><p>{t.runDate}: {dateOnly(run.date)} · {t.targetDate}: {dateOnly(run.targetDate)}</p><p className="text-xs text-foreground-muted">{t.selectedCount}: {run.selectedCount} / 4 · {t.cost}: {cost(run.costUsd)}</p>{run.errorCode && <p className="text-xs text-risk">{t.blockers[run.errorCode] ?? t.errorDetail}</p>}</div>{status(run.status)}</li>)}</ul>}</section>
   </>;
+}
+
+/**
+ * SEL-05: the stored facts behind an unselected event (topic, relevance, publication age) and, for an open event,
+ * the first selection rule it fails. A missing value says so; it is never shown as zero.
+ */
+function SelectionFacts({ selection, lang, now, published }: { selection: DneskaiEventSelection; lang: 'en' | 'cs'; now: Date; published: (date: string | null, estimated?: boolean) => ReactNode }) {
+  const t = dneskaiSources[lang];
+  const locale = lang === 'cs' ? 'cs-CZ' : 'en-GB';
+  const relevance = selection.relevance === null ? t.noDate : new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(selection.relevance);
+  const hours = selection.publishedAt ? (now.getTime() - Date.parse(selection.publishedAt)) / 3600000 : null;
+  const age = hours === null || hours < 0 ? null : new Intl.RelativeTimeFormat(locale, { numeric: 'always' }).format(-(hours < 48 ? Math.round(hours) : Math.round(hours / 24)), hours < 48 ? 'hour' : 'day');
+  return <div className="space-y-1">
+    <dl className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground-muted">
+      <div className="flex gap-1"><dt>{t.category}:</dt><dd>{selection.category ? t.categories[selection.category] : t.unclassified}</dd></div>
+      <div className="flex gap-1"><dt>{t.relevance}:</dt><dd className="tabular">{relevance}</dd></div>
+      <div className="flex gap-1"><dt>{t.published}:</dt><dd className="tabular">{selection.publishedAt ? <>{published(selection.publishedAt, selection.dateEstimated)}{age && <> · {age}</>}</> : t.unknownPublished}</dd></div>
+    </dl>
+    {selection.code && <p className="text-xs"><span className="font-medium">{t.whyNot}:</span> {t.selectionReasons[selection.code]}</p>}
+  </div>;
 }
