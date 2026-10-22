@@ -341,7 +341,8 @@ describe('createDneskaiBriefs over a store', () => {
       const closing = await tick();
       expect(closing).toMatchObject({ status: 'noop', detail: { skipped: 1 } });
       expect(closing.pending).toBeUndefined();
-      expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-target-date-passed' });
+      // The held brief had the 20:00 slot: it lapses as its slot passing, as the owner brief describes.
+      expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-slot-passed' });
       expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
       expect(createBriefs).toHaveBeenCalledTimes(2);
     });

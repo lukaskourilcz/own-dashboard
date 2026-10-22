@@ -287,9 +287,11 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   const skip = async (row: DneskaiBriefRow, code: string, duplicateOf: string | null = null) => {
     await store.skip(input.owner, row.id, code, duplicateOf); result.skipped.push({ eventId: row.event_id, code });
   };
-  // A target day whose last slot has passed is closed: nothing waits for its media any more.
+  // A target day whose last slot has passed is closed: nothing waits for its media any more. A brief that was built
+  // holds a slot of that day, so it lapses as brief-slot-passed like every earlier held brief; only a brief never
+  // built (still waiting for media) closes as brief-target-date-passed (briefs-10).
   if (!dneskaiBriefSlots(run.target_date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE)) {
-    for (const row of open) await skip(row, 'brief-target-date-passed');
+    for (const row of open) await skip(row, row.brief ? 'brief-slot-passed' : 'brief-target-date-passed');
     return result;
   }
   let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
