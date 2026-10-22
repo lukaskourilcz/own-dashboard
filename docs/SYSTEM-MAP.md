@@ -101,7 +101,7 @@ headlines become one event. The deployed SQL (`marketing_dneskai_finish`) picks 
 relevance. A prepared migration switches this to relevance first, with at most one non-news story a day, and gives
 held stories one automatic second review (section 8).
 
-### Generation (`marketing-copy/6`)
+### Generation (`marketing-copy/7`)
 
 One structured Claude call per brief (Claude Sonnet 5.5, $2/$10 per million tokens). The model writes the title,
 caption, hashtags and 4 to 7 slides (types `cover-photo`, `figure`, `split`, `statement`, or one `single`), and picks

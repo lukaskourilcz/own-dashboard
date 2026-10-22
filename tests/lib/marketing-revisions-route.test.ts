@@ -16,6 +16,7 @@ import { DneskaiPaidActionError } from "@/lib/marketing/dneskai-paid-actions";
 import { revisionContentHash } from "@/lib/marketing/hashes";
 import { DNESKAI_RENDER_REPORT_VERSION, type ContentRevision, type DneskaiRenderReport } from "@/lib/marketing/contracts";
 import { a, b, c, deckRevision, signed } from "./marketing-dneskai-revision-fixture";
+import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "@/lib/marketing/dneskai-caption";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const current = "33333333-3333-4333-8333-333333333333";
@@ -182,6 +183,17 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
         const save = admin.calls.find((call) => call.name === "marketing_save_revision")!;
         expect((save.args.p_revision as ContentRevision).engagement).toEqual(expected);
       }
+    });
+    it("writes the caption's keyword line for the saved keyword and keeps ten hashtags under the cap (#158)", async () => {
+      vi.stubEnv("DNESKAI_ENGAGEMENT_EDITOR_ENABLED", "true");
+      const tags = (count: number) => ["#dneskai", ...Array.from({ length: count - 1 }, (_, n) => `#tema${n + 1}`)].join(" ");
+      const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, cleanReport));
+      const caption = `Upravený caption.\n\n${DNESKAI_AI_DISCLOSURE}\n\n${tags(10)}`;
+      expect((await POST(request({ action: "edit", id: current, caption, scheduledAt: scheduledAt(), engagement }))).status).toBe(200);
+      const saved = (admin.calls.find((call) => call.name === "marketing_save_revision")!.args.p_revision as ContentRevision).caption;
+      expect(saved).toBe(`Upravený caption.\n\n${dneskaiKeywordLine("SKILL")}\n\n${DNESKAI_AI_DISCLOSURE}\n\n${tags(10)}`);
+      const eleven = await POST(request({ action: "edit", id: current, caption: `${saved.replace(tags(10), tags(11))}`, scheduledAt: scheduledAt(), engagement }));
+      expect(eleven.status).toBe(409); expect(await eleven.json()).toEqual({ error: "caption-hashtags-over-limit" });
     });
     it("refuses engagement while the editor flag is off, on a legacy revision, and an invalid keyword, before writing", async () => {
       const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision()));
