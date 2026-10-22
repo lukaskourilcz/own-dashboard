@@ -266,6 +266,24 @@ export function dneskaiPublished(read: Pick<DneskaiWorkspaceRead, 'posts'>): Dne
     .sort((a, b) => Date.parse(b.publication?.publishedAt ?? b.scheduledAt) - Date.parse(a.publication?.publishedAt ?? a.scheduledAt));
 }
 
+/** The filter chips of Příspěvky (#169): every post, or the posts whose state falls in one group. */
+export const DNESKAI_POST_FILTERS = ['all', 'waiting', 'scheduled', 'published', 'problems'] as const;
+export type DneskaiPostFilter = (typeof DNESKAI_POST_FILTERS)[number];
+const DNESKAI_FILTER_STATES: Record<Exclude<DneskaiPostFilter, 'all'>, readonly DneskaiPostState[]> = {
+  waiting: ['preparing', 'review', 'returned'], scheduled: ['approved', 'scheduled'], published: ['published'], problems: ['problem'],
+};
+export const dneskaiPostMatches = (state: DneskaiPostState, filter: DneskaiPostFilter) => filter === 'all' || DNESKAI_FILTER_STATES[filter].includes(state);
+
+/**
+ * Příspěvky (#169): every post that is not an older version of another, with its state, latest first by the time it
+ * went out or will go out. Skipped posts show only under „all“.
+ */
+export function dneskaiPostList(read: Pick<DneskaiWorkspaceRead, 'posts' | 'generatedAt'>, renderFailed?: ReadonlySet<string>): Array<{ post: DneskaiWorkspacePost; state: DneskaiPostStateDetail }> {
+  const context = dneskaiStateContext(read, renderFailed);
+  const at = (post: DneskaiWorkspacePost) => Date.parse(post.publication?.publishedAt ?? post.scheduledAt);
+  return read.posts.filter((post) => post.status !== 'superseded').sort((a, b) => at(b) - at(a)).map((post) => ({ post, state: dneskaiPostState(post, context) }));
+}
+
 /** Errors and costs (#119): runs, held jobs and uncertain publications, scheduler ticks and the generation budget. */
 export const DNESKAI_COSTS_VERSION = 'dneskai-costs/1';
 const usd = z.number().nonnegative().max(10000);

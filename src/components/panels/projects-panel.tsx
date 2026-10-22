@@ -172,7 +172,6 @@ type ProjectsPanelProps = {
   initialVisibleIds?: string[];
   selectedProjectId?: string;
   onOpenProject: (project: Project) => void;
-  onBackToProjects: () => void;
   todos: Todo[];
   notes: Note[];
   setNotes: Updater<Note[]>;
@@ -243,7 +242,6 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       onOpenProject={props.onOpenProject}
       displayCurrency={props.displayCurrency}
       repositoryIntegrationEnabled={props.syncRepositories !== false}
-      onBackToProjects={props.onBackToProjects}
       isPreview={props.isPreview}
     />;
   }

@@ -256,6 +256,12 @@ Existing List review tests remain reachable through the explicit List control. N
 
 The integrated release check also covers the public `/guest` Lab as read-only in both browser projects, with no fixture-render or marketing API request. Legacy Sources-to-review tests now expect the Lab; legacy card-editor tests explicitly select List after returning from other tabs. Their navigation and responsive/axe coverage remain intact. A missing-asset demo save now invokes the real fixture renderer even when the deck is unchanged; a dedicated offline regression checks its full-size output. Final browser remediation totals are recorded in LOG.md.
 
+## Project workspace without its header — 22 October 2026 (#171)
+
+Every project workspace now opens on its tab row. The back button „Všechny projekty“, the eyebrow, the summary and the status badge are gone for every project; the toolbar breadcrumb „Projekty › <project>“ carries the context, and its „Projekty“ title is a button that returns to the table (Enter or click). The development and live links moved into the Overview summary card.
+
+`/dev-preview` screenshots of DNESKAi (For review today) and devShark (Overview) were taken and inspected in CS and EN, light and dark, at 1440 px desktop and Pixel 5 mobile: no header above the tabs, no horizontal overflow, breadcrumb legible in both themes. `e2e/dashboard.spec.ts` (desktop and mobile) passed 28/28 together with the screenshot run; it checks that only the toolbar `h1` remains, that „All projects“ is gone on DNESKAi and devShark, and that the breadcrumb button returns to `/projects` from the keyboard.
+
 ## DNESKAi topics list (Náměty) — 22 October 2026
 
 The topics section at the top of the Design Lab (#154) was checked on `/dev-preview` with the synthetic topics in `src/lib/demo/dneskai-topics-fixtures.ts`. `e2e/dneskai-lab.spec.ts` runs it at 1280 and 360 px in English (light) and Czech (dark), in both browser projects: axe WCAG 2.2 AA on the section, no horizontal document scroll, no console errors and no request to a marketing API. The same flow approves and rejects by keyboard (↓, A, Z), approves two selected topics at once and restores one from the archive. Axe first flagged the approved row: its reduced opacity brought the chips and the source link below 4.5:1, so the row now uses full opacity. The visual baseline spec hides the section, so the committed Lab baselines stay valid; on macOS all 75 tests of the lab, visual and workspace specs passed (one skipped).

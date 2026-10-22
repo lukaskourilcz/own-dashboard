@@ -4,7 +4,10 @@ import type { MediaResolution } from '@/lib/marketing/dneskai-deck-editor';
 
 /** The DNESKAi workspace tabs (#119). Every string exists in English and Czech with the same meaning. */
 const en = {
-  tabs: { review: 'For review today', calendar: 'Calendar', published: 'Published', costs: 'Errors and costs' },
+  tabs: { review: 'For review today', calendar: 'Calendar', published: 'Posts', costs: 'Errors and costs' },
+  more: { button: 'More', costs: 'Errors and costs', account: 'Instagram account', recovery: 'Topic recovery', shortcuts: 'Keyboard shortcuts', sections: 'Project',
+    accountDescription: 'The account DNESKAi publishes to and its verification.', recoveryDescription: 'Last night’s collection, held topics and the owner recovery actions.',
+    shortcutsDescription: 'Keys that work in the Design Lab when focus is not in a field.' },
   preview: 'Preview with demo posts. Edits redraw synthetic fixture slides. Nothing is published or stored.',
   refresh: 'Refresh', refreshing: 'Refreshing…', loading: 'Loading DNESKAi posts…',
   unavailable: 'DNESKAi posts could not be loaded. Check the connection, then refresh.',
@@ -63,7 +66,9 @@ const en = {
     title: 'Next seven days', intro: 'Publishing slots in Europe/Prague and what is planned in each.', free: 'Free slot', dst: 'Clocks change on this day; times are local Prague time.',
     today: 'Today', job: 'Draft being prepared',
   },
-  published: { title: 'Published', intro: 'Receipts of published posts: link, time and account.', empty: 'Nothing published yet', open: 'Open on Instagram', noLink: 'No public link recorded', at: 'Published', planned: 'Planned', account: 'Account', cover: (title: string) => `Cover of “${title}”` },
+  published: { title: 'Posts', intro: 'Every post with its state. Published ones carry their link to Instagram.', empty: 'No posts yet', emptyFilter: 'No post in this group',
+    filters: { label: 'Show posts', all: 'All', waiting: 'Waiting', scheduled: 'Scheduled', published: 'Published', problems: 'Errors' }, openLab: 'Open in the Lab', openLabName: (title: string) => `Open in the Lab: ${title}`,
+    open: 'Open on Instagram', noLink: 'No public link recorded', at: 'Published', planned: 'Planned', account: 'Account', cover: (title: string) => `Cover of “${title}”` },
   costs: {
     title: 'Errors and costs', intro: 'What failed or is uncertain, what each day cost and when the scheduler last ran.',
     budget: 'Generation budget, last 24 hours', budgetValue: (spent: string, ceiling: string) => `${spent} of ${ceiling}`, budgetLeft: (left: string) => `${left} left. One drafting job reserves up to $0.13 before its call.`,
@@ -95,7 +100,10 @@ const en = {
 };
 
 const cs: typeof en = {
-  tabs: { review: 'Dnes ke schválení', calendar: 'Kalendář', published: 'Publikované', costs: 'Chyby a náklady' },
+  tabs: { review: 'Dnes ke schválení', calendar: 'Kalendář', published: 'Příspěvky', costs: 'Chyby a náklady' },
+  more: { button: 'Více', costs: 'Chyby a náklady', account: 'Účet Instagram', recovery: 'Obnova témat', shortcuts: 'Klávesové zkratky', sections: 'Projekt',
+    accountDescription: 'Účet, na který DNESKAi publikuje, a jeho ověření.', recoveryDescription: 'Noční sběr, pozdržená témata a akce pro jejich obnovu.',
+    shortcutsDescription: 'Klávesy fungují v Design Labu, když kurzor není v poli.' },
   preview: 'Náhled s ukázkovými příspěvky. Úpravy překreslí syntetické ukázkové slidy. Nic se nepublikuje ani neukládá.',
   refresh: 'Obnovit', refreshing: 'Obnovuji…', loading: 'Načítám příspěvky DNESKAi…',
   unavailable: 'Příspěvky DNESKAi nelze načíst. Zkontrolujte připojení a obnovte stránku.',
@@ -154,7 +162,9 @@ const cs: typeof en = {
     title: 'Příštích sedm dní', intro: 'Publikační sloty v čase Europe/Prague a co je v nich naplánované.', free: 'Volný slot', dst: 'Tento den se mění čas; časy jsou místní pražské.',
     today: 'Dnes', job: 'Návrh se připravuje',
   },
-  published: { title: 'Publikované', intro: 'Potvrzení publikovaných příspěvků: odkaz, čas a účet.', empty: 'Zatím nic publikovaného', open: 'Otevřít na Instagramu', noLink: 'Veřejný odkaz není zaznamenaný', at: 'Publikováno', planned: 'Plán', account: 'Účet', cover: (title: string) => `Titulní slide příspěvku „${title}“` },
+  published: { title: 'Příspěvky', intro: 'Všechny příspěvky a jejich stav. Publikované mají odkaz na Instagram.', empty: 'Zatím žádné příspěvky', emptyFilter: 'V této skupině není žádný příspěvek',
+    filters: { label: 'Zobrazit příspěvky', all: 'Vše', waiting: 'Čeká', scheduled: 'Naplánované', published: 'Publikované', problems: 'Chyby' }, openLab: 'Otevřít v Labu', openLabName: (title: string) => `Otevřít v Labu: ${title}`,
+    open: 'Otevřít na Instagramu', noLink: 'Veřejný odkaz není zaznamenaný', at: 'Publikováno', planned: 'Plán', account: 'Účet', cover: (title: string) => `Titulní slide příspěvku „${title}“` },
   costs: {
     title: 'Chyby a náklady', intro: 'Co selhalo nebo není jisté, kolik stál každý den a kdy naposledy běžel plánovač.',
     budget: 'Rozpočet generování za posledních 24 hodin', budgetValue: (spent: string, ceiling: string) => `${spent} z ${ceiling}`, budgetLeft: (left: string) => `Zbývá ${left}. Jedna úloha psaní si před voláním rezervuje až 0,13 $.`,
