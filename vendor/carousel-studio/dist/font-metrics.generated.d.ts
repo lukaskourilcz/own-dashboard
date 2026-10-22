@@ -9,6 +9,10 @@ export interface FaceMetrics {
     readonly average: number;
     /** What an unmapped character is charged. */
     readonly fallback: number;
+    /** The cap height in thousandths of an em: OS/2 sCapHeight over unitsPerEm, else the H glyph's yMax from glyf, else 700 (assumed). */
+    readonly capHeight: number;
+    /** The x-height in thousandths of an em: OS/2 sxHeight over unitsPerEm, else the x glyph's yMax from glyf, else 500 (assumed). */
+    readonly xHeight: number;
     readonly widths: Readonly<Record<string, string>>;
 }
 export declare const FONT_METRICS: Readonly<Record<string, FaceMetrics>>;

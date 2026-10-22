@@ -7,14 +7,15 @@ Vercel build of OwnDashboard needs no Quorum checkout, no pnpm workspace and no 
 ## Pin
 
 - Repository: `lukaskourilcz/quorum`, directory `studio/`, package `@boardlessai/carousel-studio` 1.0.0
-- Commit: `852c2e9f4fd4447ee602cd2df2c775bbba036fa2`
-- Commit date: `2026-10-20T22:29:10Z`
-- Vendored: `2026-10-20`
-- Tree sha256: `af3c47ddedae6c83413154f2f72e953b6eaabb7e360fafa6c6bfe61f7d06de24`
+- Commit: `83bdfb2e1e9ce1114b9b615bd20237f55a7f115a`
+- Commit date: `2026-10-22T07:31:24Z`
+- Vendored: `2026-10-22`
+- Tree sha256: `d257617242e71635c25accc1b1e729b9a3f279e83f11810434c5499c3f15376d`
 
-Note on this pin: commit `852c2e9` is Quorum `main` after PR #607 (studio tree
-`3d8482180ed0da7dc718df83bfb8e62e495c6511`): the DNESKAi kit lays slides out for the words and pictures
-they hold and keeps Czech ties (`keepWithNext: "cs"`). `--write` updates the four lines above; rewrite this note by hand.
+Note on this pin: commit `83bdfb2` is Quorum `main` after the DNESKAi kit engine (`fable/dneskai-kits`): looks
+over the brand kit, flows and metrics per kit, and `renderDneskaiSlide({ ..., kit })`. Only the `editorial` kit is
+registered at this commit, and its output is byte-identical to `852c2e9`. `--write` updates the four lines above;
+rewrite this note by hand.
 
 The tree hash covers every file in this directory except this one: sha256 over the sorted
 `sha256sum` lines of the files, as `scripts/vendor-carousel-studio.sh` computes it.

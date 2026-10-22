@@ -6,7 +6,7 @@ import { fontFiles, measureEm, resolveFace } from "./fonts.js";
 import { validateTemplateForBrand } from "./validation.js";
 import { groundsBehindLayer } from "./grounds.js";
 import { LOGO_ID, chooseLogotypeVariant, logotypeForBrand } from "./brand-kit.js";
-import { brandOnGround, dressBrand, groundAt, kitStyleFor, kitTemplate, logoAllowedAt } from "./kit-style.js";
+import { brandOnGround, dressBrand, groundAt, kitStyleFor, kitStyleWithLook, kitTemplate, logoAllowedAt } from "./kit-style.js";
 function escapeXml(value) {
     return value
         .replaceAll("&", "&amp;")
@@ -273,12 +273,12 @@ export function carouselTextFits(input) {
     const parsed = CarouselTemplateSchema.parse(input.template);
     const payload = CarouselPayloadSchema.parse(input.payload);
     const declared = BrandTokensSchema.parse(input.brand);
-    const style = kitStyleFor(declared);
+    const style = kitStyleWithLook(kitStyleFor(declared), input.look);
     const brand = style ? dressBrand(declared, style) : declared;
     const template = style ? kitTemplate(parsed, style) : parsed;
     const canvas = template.formats[carouselCanvas(input.format)];
     return template.slides.flatMap((slide, slideIndex) => slide.layers.flatMap((layer) => layer.type === "text"
-        ? [{ slideIndex, slideId: slide.id, slot: layer.slot, fitted: fitTextLayer(layer, payload, brand, canvas.width, canvas.height) }]
+        ? [{ slideIndex, slideId: slide.id, slot: layer.slot, fitted: fitTextLayer(layer, payload, brand, canvas.width, canvas.height), face: resolveFace(brand.fonts[layer.fontToken], layer.fontWeight) }]
         : []));
 }
 /**
@@ -312,10 +312,10 @@ function cornerMarkSvg(input) {
  * template it shows as passing is one the renderer will draw. A brand whose kit cannot be used
  * fails every template, with the kit's reason.
  */
-export function validateTemplateAsRendered(template, brand, format) {
+export function validateTemplateAsRendered(template, brand, format, look) {
     let style;
     try {
-        style = kitStyleFor(brand);
+        style = kitStyleWithLook(kitStyleFor(brand), look);
     }
     catch (error) {
         return [{ id: "brand-tokens", status: "fail", detail: error instanceof Error ? error.message : String(error) }];
@@ -363,7 +363,7 @@ function renderSlides(input, wanted) {
     const declared = BrandTokensSchema.parse(input.brand);
     // A kitted brand is drawn from its kit or not at all: `kitStyleFor` throws for a missing or
     // damaged kit, and so does a kit that gives the logo slot nothing to draw.
-    const style = kitStyleFor(declared);
+    const style = kitStyleWithLook(kitStyleFor(declared), input.look);
     if (style && !logotypeForBrand(declared.id))
         throw new Error(`Brand kit ${style.venture} marks no logotype file for the logo slot`);
     const brand = style ? dressBrand(declared, style) : declared;

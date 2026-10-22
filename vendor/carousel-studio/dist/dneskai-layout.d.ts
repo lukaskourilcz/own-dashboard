@@ -58,10 +58,95 @@ export declare const DNESKAI_AREA: {
  * sits a little above the slide's middle, where a centred block reads as centred rather than low.
  */
 export declare const DNESKAI_OPTICAL_SHARE = 0.42;
+/**
+ * Where the cap line sits under the top of a line box, in em, for the kit's three faces: Space
+ * Grotesk and IBM Plex Mono have caps 0.70 em tall and Source Serif 4 0.67, under a baseline the
+ * renderer sets one em below the frame's top.
+ */
+export declare const DNESKAI_CAP_OFFSET = 0.3;
+/** The single photo's headline panel, as `dneskai-photo.ts` draws it at the foot. */
+export declare const DNESKAI_PANEL: {
+    /** The panel's top when the band stands at the top of the slide, under the logotype row. */
+    readonly top: 152;
+    /** The panel's padding on each side of the hugged lines (the template's `padding`). */
+    readonly padding: 24;
+    /** How far below the panel's top the headline frame starts: the cap line then sits about 40 px in. */
+    readonly inset: 17;
+    /** Panel floor to the line under it, and that line's floor to the kicker row, as at the foot. */
+    readonly toBody: 22;
+    readonly toKicker: 28;
+    /** Clearance the focal point keeps from the band before the band moves out of its way. */
+    readonly clearance: 48;
+};
+export type DneskaiGapName = keyof typeof DNESKAI_GAPS;
+export interface DneskaiStackItem {
+    /** A text slot, an image slot, `rule` (the slide's first rule layer) or `thumbnails` (sources only). */
+    key: string;
+    /** Visual space above the item, ink to ink: a named gap reads the kit's table, a number is units. Ignored on the first item. */
+    gap: DneskaiGapName | number;
+}
+export type DneskaiFlow = {
+    kind: "cover-static";
+} | {
+    kind: "figure";
+} | {
+    kind: "split";
+} | {
+    kind: "split-pair";
+} | {
+    kind: "statement";
+} | {
+    kind: "sources";
+} | {
+    kind: "single-type";
+} | {
+    kind: "single-photo";
+} | {
+    kind: "stack";
+    anchor: "centre" | "top";
+    items: readonly DneskaiStackItem[];
+};
+export interface DneskaiLayoutMetrics {
+    readonly unit: number;
+    /** All thirteen gaps; a kit copies the editorial table and changes what it wants. */
+    readonly gaps: Readonly<Record<DneskaiGapName, number>>;
+    readonly area: {
+        readonly top: number;
+        readonly bottom: number;
+    };
+    readonly opticalShare: number;
+    readonly thumbnails: {
+        readonly columns: number;
+        readonly width: number;
+        readonly height: number;
+        readonly gap: number;
+    };
+    readonly panel: {
+        readonly top: number;
+        readonly padding: number;
+        readonly inset: number;
+        readonly toBody: number;
+        readonly toKicker: number;
+        readonly clearance: number;
+    };
+    /**
+     * Where the cap line sits under the top of a line box, in em, for every face. Absent: one minus
+     * the face's own cap height from the metrics table. The editorial kit pins 0.3, the constant its
+     * recorded hashes were laid out with.
+     */
+    readonly capOffset?: number;
+}
+export declare const DNESKAI_EDITORIAL_METRICS: DneskaiLayoutMetrics;
+export declare const DNESKAI_STACK_PRESETS: {
+    readonly statement: DneskaiFlow;
+    readonly singleType: DneskaiFlow;
+};
 /** One text slot as the fitter set it: how many lines, at what size. No lines means empty. */
 export interface DneskaiMeasuredText {
     lines: number;
     fontSize: number;
+    /** Cap height in em, used when the kit does not pin an offset. */
+    capHeight?: number;
 }
 /** One decoded photograph: its oriented pixel size and the crop it is drawn with. */
 export interface DneskaiLaidPicture {
@@ -72,6 +157,8 @@ export interface DneskaiLaidPicture {
     focalGiven: boolean;
 }
 export interface DneskaiLayoutInput {
+    flow: DneskaiFlow;
+    metrics: DneskaiLayoutMetrics;
     /** The kit template, with its declared (largest) frames. */
     template: CarouselTemplate;
     /** Every text slot as fitted in the declared frames. */

@@ -186,6 +186,12 @@
     "groundSequence": [],
     "neutrals": []
   },
+  "carouselLooks": {
+    "default": "editorial",
+    "ids": [
+      "editorial"
+    ]
+  },
   "rules": [
     "Use the production files as they are. The name is drawn as outlines; never redraw it or set it in a font.",
     "Keep the proportions: the viewBox is 50 -708 4217.8 708, about 5.96 : 1.",

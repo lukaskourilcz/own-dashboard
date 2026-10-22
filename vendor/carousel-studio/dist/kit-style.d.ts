@@ -8,6 +8,11 @@ import type { BrandTokens, CarouselTemplate } from "./schema.js";
  * mark. When the kit is missing, fails its hashes or does not set a carousel palette, nothing is
  * drawn for that brand: the old palette and wordmark are exactly what the owner replaced, and a
  * card in them would ship looking finished.
+ *
+ * Looks (`brand-kits/<kit>/looks/<id>.json`) layer on top, in this precedence: a ground from
+ * `groundSequence` replaces the palette per slide position, as before; a look replaces the kit's
+ * base palette, faces and flags; the kit's base is what a render without a look draws. Grounds and
+ * corner marks stay kit-level. A look can set `flat` or `squareCorners` and never clear them.
  */
 type Palette = Readonly<Record<string, string>>;
 export interface KitCornerMark {
@@ -15,6 +20,21 @@ export interface KitCornerMark {
     widthPx: number;
     marginPx: number;
     storyTopPx: number;
+}
+/** One named look of a kit, resolved against the kit's own flags. */
+export interface KitLook {
+    id: string;
+    label: string;
+    purpose: string;
+    palette: Palette;
+    fonts: BrandTokens["fonts"];
+    /** Resolved: the kit's flag or the look's, whichever is set. */
+    flat: boolean;
+    squareCorners: boolean;
+    /** The look's placement when set, else the kit's. */
+    logo: "every-slide" | "last-slide";
+    /** Every colour this look's palette draws. */
+    colours: ReadonlySet<string>;
 }
 export interface KitStyle {
     venture: string;
@@ -27,8 +47,12 @@ export interface KitStyle {
     grounds: ReadonlyMap<string, Palette>;
     groundSequence: readonly string[];
     cornerMark: KitCornerMark | null;
-    /** Every colour the kit declares: its palettes, its grounds, its files' inks and its neutrals. */
+    /** Every colour the kit declares: its palettes, its grounds, its looks, its files' inks and its neutrals. */
     colours: ReadonlySet<string>;
+    /** The kit's looks by id, in manifest order. Empty for a kit that declares none. */
+    looks: ReadonlyMap<string, KitLook>;
+    /** The look a render uses when none is asked for; null when the kit declares none. */
+    defaultLook: string | null;
 }
 /** A slide's place in the deck it ships in. */
 export interface DeckPosition {
@@ -37,6 +61,15 @@ export interface DeckPosition {
 }
 /** Read and verify one kit into the style the renderer draws. Throws with the kit's problems. */
 export declare function readKitStyle(venture: string, root?: string): KitStyle;
+/**
+ * The kit style as one of its looks dresses it. The style itself when no look is asked for, so a
+ * caller that passes nothing receives the object it received before looks existed. Throws for a
+ * look the kit does not declare, and for a look asked of a brand that has no kit.
+ */
+export declare function kitStyleWithLook(style: KitStyle, look?: string): KitStyle;
+export declare function kitStyleWithLook(style: KitStyle | null, look?: string): KitStyle | null;
+/** Every family any look of the kit binds, de-duplicated, for the coverage gates. */
+export declare function kitLookFamilies(style: KitStyle): string[];
 /**
  * The kit style for a brand, or null for a brand that names no kit.
  *

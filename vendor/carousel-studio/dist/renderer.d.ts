@@ -1,4 +1,5 @@
 import { type BrandTokens, type CarouselFormat, type CarouselPayload, type CarouselTemplate } from "./schema.js";
+import type { FaceMetrics } from "./font-metrics.generated.js";
 import { type FittedText } from "./text.js";
 import { type TemplateCheck } from "./validation.js";
 import { type DeckPosition } from "./kit-style.js";
@@ -8,6 +9,8 @@ export interface TextSlotFit {
     slideId: string;
     slot: string;
     fitted: FittedText;
+    /** The committed face used for fitting, including cap height for layout. */
+    face: FaceMetrics;
 }
 /**
  * Every text slot of a template fitted exactly as the renderer will fit it, without drawing.
@@ -16,7 +19,7 @@ export interface TextSlotFit {
  * needs. Same parse, same kit faces and the same canvas as `renderSlides`; the ground a slide
  * stands on changes colours, never faces, so it is not needed here.
  */
-export declare function carouselTextFits(input: Pick<CarouselRenderInput, "template" | "payload" | "brand" | "format">): TextSlotFit[];
+export declare function carouselTextFits(input: Pick<CarouselRenderInput, "template" | "payload" | "brand" | "format" | "look">): TextSlotFit[];
 export interface RenderedSlide {
     slideId: string;
     index: number;
@@ -27,6 +30,8 @@ export interface RenderedSlide {
     truncatedSlots: string[];
 }
 export interface CarouselRenderInput {
+    /** Named kit look; absent preserves the kit palette and faces. */
+    look?: string;
     template: CarouselTemplate;
     payload: CarouselPayload;
     brand: BrandTokens;
@@ -49,7 +54,7 @@ export interface CarouselRenderInput {
  * template it shows as passing is one the renderer will draw. A brand whose kit cannot be used
  * fails every template, with the kit's reason.
  */
-export declare function validateTemplateAsRendered(template: CarouselTemplate, brand: BrandTokens, format: CarouselFormat): TemplateCheck[];
+export declare function validateTemplateAsRendered(template: CarouselTemplate, brand: BrandTokens, format: CarouselFormat, look?: string): TemplateCheck[];
 export { prepareCarouselImages, treatImage } from "./images.js";
 export declare function renderCarouselSvg(input: CarouselRenderInput): RenderedSlide[];
 /**

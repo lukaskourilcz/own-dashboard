@@ -81,9 +81,9 @@ export const DNESKAI_OPTICAL_SHARE = 0.42;
  * Grotesk and IBM Plex Mono have caps 0.70 em tall and Source Serif 4 0.67, under a baseline the
  * renderer sets one em below the frame's top.
  */
-const CAP_OFFSET = 0.3;
+export const DNESKAI_CAP_OFFSET = 0.3;
 /** The single photo's headline panel, as `dneskai-photo.ts` draws it at the foot. */
-const PANEL = {
+export const DNESKAI_PANEL = {
     /** The panel's top when the band stands at the top of the slide, under the logotype row. */
     top: 152,
     /** The panel's padding on each side of the hugged lines (the template's `padding`). */
@@ -96,28 +96,31 @@ const PANEL = {
     /** Clearance the focal point keeps from the band before the band moves out of its way. */
     clearance: 48
 };
+export const DNESKAI_EDITORIAL_METRICS = {
+    unit: DNESKAI_SPACE_UNIT, gaps: DNESKAI_GAPS, area: DNESKAI_AREA, opticalShare: DNESKAI_OPTICAL_SHARE,
+    thumbnails: DNESKAI_THUMBNAIL_GRID, panel: DNESKAI_PANEL, capOffset: DNESKAI_CAP_OFFSET
+};
+export const DNESKAI_STACK_PRESETS = {
+    statement: { kind: "stack", anchor: "centre", items: [{ key: "headline", gap: 0 }, { key: "body", gap: "headlineToNote" }] },
+    singleType: { kind: "stack", anchor: "centre", items: [{ key: "rule", gap: 0 }, { key: "kicker", gap: "ruleToLabel" }, { key: "headline", gap: "labelToText" }, { key: "body", gap: "headlineToNote" }] }
+};
 const px = { x: (layer) => layer.x * W, y: (layer) => layer.y * H, width: (layer) => layer.width * W, height: (layer) => layer.height * H };
 /**
  * The slide laid out for what it holds. The cover photo is returned as declared, and so is the
  * single photo unless its focal point would sit under the headline band.
  */
 export function layoutDneskaiSlide(input) {
-    const id = input.template.id;
-    if (id === "dneskai-figure")
-        return figure(input);
-    if (id === "dneskai-split")
-        return split(input);
-    if (id === "dneskai-split-pair")
-        return splitPair(input);
-    if (id === "dneskai-statement")
-        return statement(input);
-    if (id.startsWith("dneskai-sources-"))
-        return sources(input);
-    if (id === "dneskai-single-type")
-        return singleType(input);
-    if (id === "dneskai-single-photo")
-        return singlePhoto(input);
-    return input.template;
+    switch (input.flow.kind) {
+        case "cover-static": return input.template;
+        case "figure": return figure(input);
+        case "split": return split(input);
+        case "split-pair": return splitPair(input);
+        case "sources": return sources(input);
+        case "single-photo": return singlePhoto(input);
+        case "statement": return stacked(input, DNESKAI_STACK_PRESETS.statement);
+        case "single-type": return stacked(input, DNESKAI_STACK_PRESETS.singleType);
+        case "stack": return stacked(input, input.flow);
+    }
 }
 function layersOf(template) {
     return template.slides[0].layers;
@@ -138,7 +141,7 @@ function textBlock(input, slot) {
     const drawn = measured.lines * measured.fontSize * 1.12;
     const height = Math.min(Math.round(px.height(layer)), Math.ceil(drawn));
     const lastBaseline = measured.fontSize + (measured.lines - 1) * measured.fontSize * 1.12;
-    return { height, inkTop: measured.fontSize * CAP_OFFSET, inkBottom: Math.max(0, height - lastBaseline) };
+    return { height, inkTop: measured.fontSize * (input.metrics.capOffset ?? 1 - (measured.capHeight ?? 0.7)), inkBottom: Math.max(0, height - lastBaseline) };
 }
 const box = (height) => ({ height, inkTop: 0, inkBottom: 0 });
 /**
@@ -160,7 +163,7 @@ function pictureHeight(input, slot, width, max, cover = max) {
  * Elements one under another, each `gap` units of visual space under the one before it. Empty
  * elements (null) take no room and no gap, so an absent kicker does not leave its line behind.
  */
-function stack(items) {
+function stack(metrics, items) {
     const tops = new Map();
     let y = 0;
     let previous = null;
@@ -169,7 +172,7 @@ function stack(items) {
         if (!block)
             continue;
         if (previous)
-            y += Math.max(0, gap * DNESKAI_SPACE_UNIT - previous.inkBottom - block.inkTop);
+            y += Math.max(0, gap * metrics.unit - previous.inkBottom - block.inkTop);
         tops.set(key, y);
         y += block.height;
         previous = block;
@@ -178,8 +181,9 @@ function stack(items) {
     return { tops, height: y, inkTop: first?.inkTop ?? 0, inkBottom: previous?.inkBottom ?? 0 };
 }
 /** The top of a group of this height set at the optical centre of the area, never above its top. */
-function centredTop(height, area = DNESKAI_AREA) {
-    return area.top + Math.max(0, area.bottom - area.top - height) * DNESKAI_OPTICAL_SHARE;
+function centredTop(height, metrics) {
+    const area = metrics.area;
+    return area.top + Math.max(0, area.bottom - area.top - height) * metrics.opticalShare;
 }
 /** The template with the named layers moved. Text frames that move are top-anchored. */
 function moved(template, places, extra = (layer) => layer) {
@@ -217,14 +221,14 @@ function figure(input) {
     const headline = textBlock(input, "headline");
     const body = textBlock(input, "body");
     const picture = imageLayer(template, "image-1");
-    const above = headline ? Math.max(0, DNESKAI_GAPS.headlineToPicture * DNESKAI_SPACE_UNIT - headline.inkBottom) : 0;
-    const below = body ? Math.max(0, DNESKAI_GAPS.pictureToText * DNESKAI_SPACE_UNIT - body.inkTop) : 0;
-    const room = DNESKAI_AREA.bottom - DNESKAI_AREA.top - (headline?.height ?? 0) - above - below - (body?.height ?? 0);
+    const above = headline ? Math.max(0, input.metrics.gaps.headlineToPicture * input.metrics.unit - headline.inkBottom) : 0;
+    const below = body ? Math.max(0, input.metrics.gaps.pictureToText * input.metrics.unit - body.inkTop) : 0;
+    const room = input.metrics.area.bottom - input.metrics.area.top - (headline?.height ?? 0) - above - below - (body?.height ?? 0);
     const drawn = pictureHeight(input, "image-1", Math.round(px.width(picture)), room);
-    const pictureTop = DNESKAI_AREA.top + (headline?.height ?? 0) + above + Math.floor((room - drawn) / 2);
+    const pictureTop = input.metrics.area.top + (headline?.height ?? 0) + above + Math.floor((room - drawn) / 2);
     const places = new Map([[picture, { y: pictureTop, height: drawn }]]);
     if (headline)
-        places.set(textLayer(template, "headline"), { y: DNESKAI_AREA.top, height: headline.height });
+        places.set(textLayer(template, "headline"), { y: input.metrics.area.top, height: headline.height });
     if (body)
         places.set(textLayer(template, "body"), { y: pictureTop + drawn + below, height: body.height });
     return moved(template, places);
@@ -242,18 +246,18 @@ function row(left, right) {
 function split(input) {
     const { template } = input;
     const picture = imageLayer(template, "image-1");
-    const words = stack([
+    const words = stack(input.metrics, [
         { key: "kicker", block: textBlock(input, "kicker"), gap: 0 },
-        { key: "headline", block: textBlock(input, "headline"), gap: DNESKAI_GAPS.labelToText }
+        { key: "headline", block: textBlock(input, "headline"), gap: input.metrics.gaps.labelToText }
     ]);
     const body = textBlock(input, "body");
-    const under = body ? Math.max(0, DNESKAI_GAPS.rowToBody * DNESKAI_SPACE_UNIT - body.inkTop) : 0;
-    const room = DNESKAI_AREA.bottom - DNESKAI_AREA.top - under - (body?.height ?? 0);
+    const under = body ? Math.max(0, input.metrics.gaps.rowToBody * input.metrics.unit - body.inkTop) : 0;
+    const room = input.metrics.area.bottom - input.metrics.area.top - under - (body?.height ?? 0);
     const declared = Math.round(px.height(picture));
     const drawn = pictureHeight(input, "image-1", Math.round(px.width(picture)), Math.min(room, declared));
-    const pictures = stack([{ key: "image-1", block: box(drawn), gap: 0 }]);
+    const pictures = stack(input.metrics, [{ key: "image-1", block: box(drawn), gap: 0 }]);
     const laid = row(words, pictures);
-    const top = centredTop(laid.height + under + (body?.height ?? 0));
+    const top = centredTop(laid.height + under + (body?.height ?? 0), input.metrics);
     const places = new Map();
     placeStack(template, words, top + laid.left, heightsOf(input), places);
     places.set(picture, { y: top + laid.right, height: drawn });
@@ -266,53 +270,52 @@ function splitPair(input) {
     const { template } = input;
     const first = imageLayer(template, "image-1");
     const second = imageLayer(template, "image-2");
-    const words = stack([
+    const words = stack(input.metrics, [
         { key: "kicker", block: textBlock(input, "kicker"), gap: 0 },
-        { key: "headline", block: textBlock(input, "headline"), gap: DNESKAI_GAPS.labelToText },
-        { key: "body", block: textBlock(input, "body"), gap: DNESKAI_GAPS.headlineToBody }
+        { key: "headline", block: textBlock(input, "headline"), gap: input.metrics.gaps.labelToText },
+        { key: "body", block: textBlock(input, "body"), gap: input.metrics.gaps.headlineToBody }
     ]);
-    const gap = DNESKAI_GAPS.pictureToPicture * DNESKAI_SPACE_UNIT;
+    const gap = input.metrics.gaps.pictureToPicture * input.metrics.unit;
     // Each picture may grow past its declared frame while both still fit the band.
-    const each = Math.floor((DNESKAI_AREA.bottom - DNESKAI_AREA.top - gap) / 2);
+    const each = Math.floor((input.metrics.area.bottom - input.metrics.area.top - gap) / 2);
     const heightOf = (layer) => pictureHeight(input, layer.slot, Math.round(px.width(layer)), each, Math.round(px.height(layer)));
     const drawn = new Map([[first.slot, heightOf(first)], [second.slot, heightOf(second)]]);
-    const pictures = stack([
+    const pictures = stack(input.metrics, [
         { key: first.slot, block: box(drawn.get(first.slot)), gap: 0 },
-        { key: second.slot, block: box(drawn.get(second.slot)), gap: DNESKAI_GAPS.pictureToPicture }
+        { key: second.slot, block: box(drawn.get(second.slot)), gap: input.metrics.gaps.pictureToPicture }
     ]);
     const laid = row(words, pictures);
-    const top = centredTop(laid.height);
+    const top = centredTop(laid.height, input.metrics);
     const places = new Map();
     placeStack(template, words, top + laid.left, heightsOf(input), places);
     placeStack(template, pictures, top + laid.right, drawn, places);
     return moved(template, places);
 }
-/** Statement: the sentence and its note as one block at the optical centre. */
-function statement(input) {
-    const { template } = input;
-    const block = stack([
-        { key: "headline", block: textBlock(input, "headline"), gap: 0 },
-        { key: "body", block: textBlock(input, "body"), gap: DNESKAI_GAPS.headlineToNote }
-    ]);
-    const places = new Map();
-    placeStack(template, block, centredTop(block.height), heightsOf(input), places);
-    return moved(template, places);
-}
-/** Single, type: rule, kicker, headline and paragraph as one block at the optical centre. */
-function singleType(input) {
-    const { template } = input;
-    const rule = layersOf(template).find((layer) => layer.type === "rule");
-    const ruleHeight = Math.round(px.height(rule));
-    const block = stack([
-        { key: "rule", block: box(ruleHeight), gap: 0 },
-        { key: "kicker", block: textBlock(input, "kicker"), gap: DNESKAI_GAPS.ruleToLabel },
-        { key: "headline", block: textBlock(input, "headline"), gap: DNESKAI_GAPS.labelToText },
-        { key: "body", block: textBlock(input, "body"), gap: DNESKAI_GAPS.headlineToNote }
-    ]);
-    const heights = new Map(heightsOf(input));
-    heights.set("rule", ruleHeight);
-    const places = new Map();
-    placeStack(template, block, centredTop(block.height), heights, places, new Map([["rule", rule]]));
+/** General stack; named statement and single-type flows expand to these same items. */
+function stacked(input, flow) {
+    const { template } = input, heights = new Map(), others = new Map();
+    const items = flow.items.map(item => {
+        const text = textLayer(template, item.key), image = imageLayer(template, item.key);
+        let block;
+        if (text)
+            block = textBlock(input, item.key);
+        else if (image)
+            block = box(pictureHeight(input, item.key, Math.round(px.width(image)), Math.round(px.height(image))));
+        else if (item.key === "rule") {
+            const rule = layersOf(template).find(layer => layer.type === "rule");
+            if (!rule)
+                throw new Error(`Flow item ${item.key} names no layer on ${template.id}`);
+            block = box(Math.round(px.height(rule)));
+            others.set(item.key, rule);
+        }
+        else
+            throw new Error(`Flow item ${item.key} names no layer on ${template.id}`);
+        if (block)
+            heights.set(item.key, block.height);
+        return { key: item.key, block, gap: typeof item.gap === "number" ? item.gap : input.metrics.gaps[item.gap] };
+    });
+    const group = stack(input.metrics, items), places = new Map();
+    placeStack(template, group, flow.anchor === "top" ? input.metrics.area.top : centredTop(group.height, input.metrics), heights, places, others);
     return moved(template, places);
 }
 /**
@@ -323,23 +326,23 @@ function sources(input) {
     const { template } = input;
     const thumbnails = layersOf(template).filter((layer) => layer.type === "image");
     const lines = layersOf(template).filter((layer) => layer.type === "text" && layer.slot.startsWith("source-"));
-    const { columns, gap } = DNESKAI_THUMBNAIL_GRID;
+    const { columns, gap } = input.metrics.thumbnails;
     const rows = Math.ceil(thumbnails.length / columns);
     const gridHeight = (tile) => rows * tile + (rows - 1) * gap;
-    const colophon = (tile) => stack([
+    const colophon = (tile) => stack(input.metrics, [
         { key: "title", block: textBlock(input, "title"), gap: 0 },
-        ...lines.map((layer, index) => ({ key: layer.slot, block: textBlock(input, layer.slot), gap: index === 0 ? DNESKAI_GAPS.titleToSources : DNESKAI_GAPS.sourceToSource })),
-        { key: "images-label", block: rows ? textBlock(input, "images-label") : null, gap: DNESKAI_GAPS.sourcesToColophon },
-        { key: "thumbnails", block: rows ? box(gridHeight(tile)) : null, gap: DNESKAI_GAPS.labelToPictures },
-        { key: "disclosure", block: textBlock(input, "disclosure"), gap: rows ? DNESKAI_GAPS.picturesToDisclosure : DNESKAI_GAPS.sourcesToColophon }
+        ...lines.map((layer, index) => ({ key: layer.slot, block: textBlock(input, layer.slot), gap: index === 0 ? input.metrics.gaps.titleToSources : input.metrics.gaps.sourceToSource })),
+        { key: "images-label", block: rows ? textBlock(input, "images-label") : null, gap: input.metrics.gaps.sourcesToColophon },
+        { key: "thumbnails", block: rows ? box(gridHeight(tile)) : null, gap: input.metrics.gaps.labelToPictures },
+        { key: "disclosure", block: textBlock(input, "disclosure"), gap: rows ? input.metrics.gaps.picturesToDisclosure : input.metrics.gaps.sourcesToColophon }
     ]);
     // Full-size tiles unless the sources leave the grid less room; then every tile shrinks alike.
-    const full = colophon(DNESKAI_THUMBNAIL_GRID.height);
-    const excess = Math.max(0, full.height - (DNESKAI_AREA.bottom - DNESKAI_AREA.top));
-    const tileHeight = rows ? Math.floor((gridHeight(DNESKAI_THUMBNAIL_GRID.height) - excess - (rows - 1) * gap) / rows) : 0;
-    const tileWidth = Math.round((tileHeight * DNESKAI_THUMBNAIL_GRID.width) / DNESKAI_THUMBNAIL_GRID.height);
+    const full = colophon(input.metrics.thumbnails.height);
+    const excess = Math.max(0, full.height - (input.metrics.area.bottom - input.metrics.area.top));
+    const tileHeight = rows ? Math.floor((gridHeight(input.metrics.thumbnails.height) - excess - (rows - 1) * gap) / rows) : 0;
+    const tileWidth = Math.round((tileHeight * input.metrics.thumbnails.width) / input.metrics.thumbnails.height);
     const block = excess ? colophon(tileHeight) : full;
-    const top = DNESKAI_AREA.top;
+    const top = input.metrics.area.top;
     const places = new Map();
     placeStack(template, block, top, heightsOf(input), places);
     const gridTop = block.tops.get("thumbnails");
@@ -384,14 +387,14 @@ function singlePhoto(input) {
     const focalY = ((picture.crop.focal.y * picture.height - region.top) / region.height) * H;
     const panel = layersOf(template).find((layer) => layer.type === "shape" && layer.padText === "headline");
     const block = measured.lines * measured.fontSize * 1.12;
-    const band = block + PANEL.padding * 2;
+    const band = block + input.metrics.panel.padding * 2;
     const footTop = px.y(panel) + px.height(panel) - band;
     const body = textLayer(template, "body");
     const kicker = textLayer(template, "kicker");
     const credit = textLayer(template, "credit");
     const hasBody = (input.text.body?.lines ?? 0) > 0;
-    const bodyTop = PANEL.top + band + PANEL.toBody;
-    const kickerTop = hasBody ? bodyTop + px.height(body) + PANEL.toKicker : bodyTop;
+    const bodyTop = input.metrics.panel.top + band + input.metrics.panel.toBody;
+    const kickerTop = hasBody ? bodyTop + px.height(body) + input.metrics.panel.toKicker : bodyTop;
     // An empty line draws nothing, but its frame is still measured against the shade, so it waits
     // on the kicker row rather than below it in the clear part of the picture.
     const bodyPlace = hasBody ? { y: bodyTop, height: px.height(body) } : { y: kickerTop, height: px.height(kicker) };
@@ -400,12 +403,12 @@ function singlePhoto(input) {
     const headEnd = Math.max(bottom(kickerTop, px.height(kicker)), bottom(kickerTop, px.height(credit)), bottom(bodyPlace.y, bodyPlace.height));
     const clearFoot = footTop - focalY;
     const clearHead = focalY - headEnd;
-    if (clearFoot >= PANEL.clearance || clearHead <= clearFoot)
+    if (clearFoot >= input.metrics.panel.clearance || clearHead <= clearFoot)
         return template;
     const headline = textLayer(template, "headline");
     const places = new Map([
-        [panel, { y: PANEL.top, height: Math.ceil(band) }],
-        [headline, { y: PANEL.top + PANEL.inset, height: Math.ceil(block) }],
+        [panel, { y: input.metrics.panel.top, height: Math.ceil(band) }],
+        [headline, { y: input.metrics.panel.top + input.metrics.panel.inset, height: Math.ceil(block) }],
         [body, bodyPlace],
         [kicker, { y: kickerTop, height: px.height(kicker) }],
         [credit, { y: kickerTop, height: px.height(credit) }]
