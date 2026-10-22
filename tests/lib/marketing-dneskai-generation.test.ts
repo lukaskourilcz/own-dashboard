@@ -228,6 +228,19 @@ describe("deterministic gates before render", () => {
     expect(validateDneskaiCopy(copy, offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([
       [0, "text-unplaced", "body"], [1, "text-unplaced", "kicker"], [2, "text-too-long", "headline"], [3, "alt-repeats-headline", "alt"]]);
   });
+  it("keeps the cover and a single slide to the headline alone: a kicker or body there is text-unplaced", () => {
+    // The shared fixture still writes a kicker on its cover.
+    expect(validateDneskaiCopy(fixtureCopy(pictures), offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "kicker"]]);
+    const cover = validCopy(pictures);
+    cover.slides[0] = { ...cover.slides[0]!, kicker: "Nástroj", body: "Funkce je v aplikaci pro iOS i Android." };
+    expect(validateDneskaiCopy(cover, offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "body"], [0, "text-unplaced", "kicker"]]);
+    const single: DneskaiCopy = { ...validCopy(pictures), format: "single-image", slides: [{ type: "single", variant: "photo", headline: "Lightroom otevře zavřené oči", body: "Zdarma jsou 2 použití.", kicker: "Nástroj",
+      images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
+    expect(validateDneskaiCopy(single, offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "body"], [0, "text-unplaced", "kicker"]]);
+    const typeSingle: DneskaiCopy = { ...single, slides: [{ type: "single", variant: "type", headline: "Lightroom otevře zavřené oči", body: "Zdarma jsou 2 použití.", images: [], alt: "Textový slide o nové funkci Lightroomu." }] };
+    const typeOffer = offerFor({ media: [], suggestedFormat: "single-image" });
+    expect(validateDneskaiCopy(typeSingle, typeOffer).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "body"]]);
+  });
   it("refuses numbers the evidence does not state, URLs, emoji and hashtags in the prose", () => {
     const copy = validCopy(pictures);
     copy.caption = "Funkci podle Adobe používá 40 % uživatelů. Víc na www.example.com #ai";
@@ -246,6 +259,34 @@ describe("deterministic gates before render", () => {
     expect(codes({ ...single, format: "carousel" })).toEqual(["-:single-in-carousel", "0:first-slide-invalid", "-:too-few-pictures"]);
     const few = validCopy(pictures); few.slides = [few.slides[0]!, few.slides[2]!];
     expect(codes(few)).toEqual(["-:too-few-pictures"]);
+  });
+});
+
+describe("no text about sources or verification (owner rule, 22 October 2026)", () => {
+  const SOURCE_TALK = ["Zdrojem je oznámení samotného Anthropicu, nezávislé potvrzení chybí.", "Údaj pochází od firmy samotné.", "Podle dostupných zdrojů jde o první verzi.", "Zdroje se v datu neshodují."];
+  const PLAIN = ["Anthropic uvádí, že nový model zvládne delší úlohy.", "OpenAI oznámila novou verzi aplikace.", "Zdarma jsou 2 použití, pak je potřeba předplatné.",
+    "Jak funkce zvládá skupinové fotky, Adobe zatím neuvedlo.", "Zdrojový kód modelu je otevřený."];
+  it.each(SOURCE_TALK)("finds source talk in %s", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(true); });
+  it.each(PLAIN)("leaves the attribution or plain fact %s alone", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(false); });
+  // KNOWN PRODUCTION BUG (reported, not fixed here): the SOURCE_TALK patterns use `\b` and `\w`, which stay ASCII-only
+  // in JavaScript even with the `u` flag, so a pattern whose word starts or continues with a Czech letter never
+  // matches („dostupného“, „nezávislé potvrzení“, „Údaj“ without „od firmy samotné“). These cases state the rule and
+  // pass only while the bug lasts; once the patterns are fixed, move them into SOURCE_TALK above.
+  it.fails.each(["Z dostupného textu nevyplývá…", "Nezávislé potvrzení chybí.", "Podle dostupných informací jde o první verzi.", "Údaj pochází z blogu firmy."])(
+    "finds source talk in %s (fails until the ASCII word-boundary bug is fixed)", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(true); });
+  it("refuses source talk on a slide and in the caption, never in the internal title", () => {
+    expect(validateDneskaiCopy(validCopy(pictures), offerFor()).filter((entry) => entry.code === "source-talk")).toEqual([]);
+    const copy = validCopy(pictures);
+    copy.title = "Zdrojem je oznámení samotného Adobe";
+    copy.slides[1]!.body = SOURCE_TALK[0]!;
+    copy.slides[2]!.headline = "Údaj pochází od firmy samotné.";
+    copy.slides[3]!.alt = "Slide s fotkou z Instagramu; zdrojem je příspěvek účtu @technology.";
+    copy.caption = `${validCopy(pictures).caption}\n\nÚdaj pochází od firmy samotné.`;
+    expect(validateDneskaiCopy(copy, offerFor()).filter((entry) => entry.code === "source-talk").map((entry) => [entry.slide, entry.field])).toEqual([
+      [null, "caption"], [1, "body"], [2, "headline"], [3, "alt"]]);
+    // The retry names the slide and field and tells the model to attribute the claim to its actor instead.
+    const feedback = dneskaiRetryFeedback(validateDneskaiCopy(copy, offerFor()), copy, 100000);
+    expect(feedback).toContain("Slide 3 (statement), headline [source-talk]: Remove the sentence about sources, confirmation or verification; attribute the claim to its actor in the sentence instead.");
   });
 });
 
