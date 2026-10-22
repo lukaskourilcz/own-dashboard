@@ -204,6 +204,20 @@ const en = {
     ] as Array<[string, string]>,
     close: 'Close',
   },
+  /** #159: the comment keyword, the DM it triggers and the public reply under the comment. */
+  engagement: {
+    title: 'Comment and message',
+    intro: 'Whoever comments the keyword gets the message below by DM. Approval covers all three fields.',
+    notLive: 'Nothing is sent yet. Replies start once comment watching is switched on.',
+    none: 'This post has no keyword. News posts usually go without one.',
+    add: 'Add a keyword', remove: 'Remove the keyword',
+    keyword: 'Keyword', keywordHelp: 'One word of Latin letters or digits, up to 24. Saved in capitals.',
+    keywordInvalid: 'Use one word of Latin letters or digits, without diacritics or spaces.',
+    keywordChip: 'Commenters write',
+    message: 'DM message', messageHelp: 'Sent once to each person who writes the keyword in a comment.', messageMissing: 'Write the message.',
+    preview: 'Message preview', previewEmpty: 'The message appears here.',
+    publicReply: 'Public reply under the comment', publicReplyHelp: 'Leave it empty to post no public reply.',
+  },
 };
 
 const cs: typeof en = {
@@ -406,6 +420,19 @@ const cs: typeof en = {
       ['?', 'Zobrazit tento seznam'],
     ],
     close: 'Zavřít',
+  },
+  engagement: {
+    title: 'Komentář a zpráva',
+    intro: 'Kdo napíše klíčové slovo do komentáře, dostane do zpráv text níže. Schválení se vztahuje na všechna tři pole.',
+    notLive: 'Zatím se nic neodesílá. Odpovědi začnou, až se zapne hlídání komentářů.',
+    none: 'Tento příspěvek nemá klíčové slovo. Zprávy ho obvykle nemají.',
+    add: 'Přidat klíčové slovo', remove: 'Odebrat klíčové slovo',
+    keyword: 'Klíčové slovo', keywordHelp: 'Jedno slovo z latinských písmen nebo číslic, nejvýš 24. Uloží se velkými písmeny.',
+    keywordInvalid: 'Použijte jedno slovo z latinských písmen nebo číslic, bez diakritiky a mezer.',
+    keywordChip: 'Do komentáře se píše',
+    message: 'Zpráva do DM', messageHelp: 'Odejde jednou každému, kdo klíčové slovo napíše do komentáře.', messageMissing: 'Napište text zprávy.',
+    preview: 'Náhled zprávy', previewEmpty: 'Tady se zobrazí zpráva.',
+    publicReply: 'Veřejná odpověď pod komentářem', publicReplyHelp: 'Když pole necháte prázdné, žádná veřejná odpověď neodejde.',
   },
 };
 

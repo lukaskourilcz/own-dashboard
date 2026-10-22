@@ -218,9 +218,11 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
       account: account ? { id: account.remoteId, handle: account.handle, platform: 'instagram' } : post.account,
       deck: post.deck ? editedDeck(post, request, slides) : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
+      // #157: left out keeps the keyword and messages, null removes them, as the route does.
+      engagement: request.engagement === undefined ? post.engagement ?? null : request.engagement,
       contentHash: '0'.repeat(64),
     };
-    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
+    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, engagement: next.engagement, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
     post.status = 'superseded';
     read().posts.unshift(next);
     return { id: next.id, ready: next.ready, contentHash: next.contentHash, render: { status: ready ? 'rendered' : 'refused', problems } };
