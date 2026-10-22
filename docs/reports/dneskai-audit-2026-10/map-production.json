@@ -1,0 +1,1058 @@
+{
+ "subsystem": "production",
+ "summary": "Read-only evidence from Supabase project gcctapykhrdyxikieemn, taken at 2026-10-21 23:57 to 2026-10-22 00:00 UTC (33 queries, all in production-evidence.md). Brief section 2.9 is accurate on every number it gives: 124 minute ticks since 13:40 UTC with 0 errors, run 6305e565 read 7 of 9 feeds into 64 candidates (45 held, 12 new, 3 rejected, 4 selected) for $0.002243, 3 photos stored, 4 briefs for 22 October (3 single-image, 2 without a picture), and 0 accounts, tokens, jobs, revisions and publications. The production state adds five things the brief does not say: (1) all four 22 October briefs will lapse at 05:30, 10:00, 14:30 and 17:30 UTC because no @dneskai account row exists, and the two non-news briefs with 14-day expiry are thrown away with them instead of moving to a later slot; (2) generation's 43 s minimum start leaves only 5 s for collection, media and briefs, and the pending-brief recheck alone already takes a median 2.7 s, so 5 of 45 ticks with pending briefs would have deferred a generation job; (3) every run is reported partial because the deliberately disabled Instagram stages count as incomplete; (4) 10 cron runs (12:50-13:35 UTC) produced no tick row and their HTTP answers are gone after about 6 h, so a rejected tick is invisible; (5) only 1 of 3 stored pictures can fill a slide, and both OpenAI candidates got 403 on the page fetch. Input is thin by measurement: the longest of 64 texts is 261 characters, 20 of 64 candidates (Hacker News) have no text at all, and no candidate has 3 or more pictures. The retention prune function and cron job are missing (documented as an owner item); the first daily tick at 02:18 UTC had not run yet, so its retention error is still a prediction. Migration history shares one version with the repository out of 25 production entries since 13 October.",
+ "files": [
+  {
+   "path": "docs/reports/dneskai-audit-2026-10/production-evidence.md",
+   "role": "every query (Q1-Q33) with its trimmed result"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+   "role": "tick budgets (48 s soft, 53 s hard, per-category minimum start), step order, daily duties"
+  },
+  {
+   "path": "own-dashboard/src/app/api/marketing/tick/route.ts",
+   "role": "tick entry point; maxDuration 60; rejects before any tick row is written"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+   "role": "run admission (22:00 Prague), run status complete/partial/held"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+   "role": "brief slots, single-image rule, slot-passed and expiry lapse, account-unavailable hold"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+   "role": "brief lifetime: 48 h news, 14 days otherwise"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+   "role": "full-bleed (short side >= 900) and inset (width >= 600) flags"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+   "role": "selection: one per category first, relevance >= 0.85, 48 h / 30 days age"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+   "role": "the two tick jobs and the history prune job"
+  },
+  {
+   "path": "own-dashboard/docs/migration-guide.md",
+   "role": "production apply notes of 21 October (split entries, missing prune)"
+  },
+  {
+   "path": "own-dashboard/NEEDED.md",
+   "role": "owner items: Anthropic key, Meta connection, retention statements"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "Database clock at query time was 2026-10-21 23:57 UTC; no daily tick has run yet (the daily cron fires at 02:18 UTC) and the second native night (22 Oct, 20:00 UTC) had not started.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q3 now()=2026-10-21 23:57:00, daily ticks null; #Q24 job 2 has no runs"
+  },
+  {
+   "fact": "124 minute ticks from 2026-10-21 13:40:04 to 23:55:01 UTC, 0 with errors, 0 unfinished; no step was ever deferred, skipped or errored.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q2, #Q4"
+  },
+  {
+   "fact": "Two cron jobs exist and are active: marketing-tick-minute */5 and marketing-tick-daily 18 2 * * *; the repository's third job marketing-cron-history-prune is absent.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q23; own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql:89"
+  },
+  {
+   "fact": "Two collection runs exist: edc97cf7 (13 Oct staging, 70 candidates all still held, $0.017213) and 6305e565 (21 Oct, 64 candidates, 4 selected, $0.002243, 8 Jev batches). Both are status partial with collection-review-incomplete.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q8, #Q10"
+  },
+  {
+   "fact": "Run 6305e565 had 9 feed stages (5 ok, 2 arXiv collection-source-error, 2 item-cap partial: hn-frontpage and techcrunch-ai at 20 items), 4 Instagram stages held collection-apify-disabled with $0 reserved, and 8 Jev batches reserving $0.003 each.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q9"
+  },
+  {
+   "fact": "Candidates of run 6305e565 came from 6 sources: hn-frontpage 20, techcrunch-ai 20, openai-blog 15, anthropic-news 5, deepmind-blog 2, google-research 2. meta-ai returned 0 items.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q13, #Q15"
+  },
+  {
+   "fact": "All four selected candidates carry reason research-selection-not-fact-checked and relevance 0.96-0.97; the 12 unselected 'new' candidates (ai-news 4, tech-news 8) score 0.87-0.97.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q14, #Q31; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:121-124"
+  },
+  {
+   "fact": "Four briefs for 22 October, all pending/account-unavailable, one evidence item and one member each, slots 06:00, 10:30, 15:00, 18:00 UTC (08:00, 12:30, 17:00, 20:00 Prague), no job.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q16"
+  },
+  {
+   "fact": "Three media assets exist (461,750 bytes in marketing-media); marketing-assets holds 0 objects. Bucket limits: assets 8 MiB, media 32 MiB, both private.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q18, #Q22"
+  },
+  {
+   "fact": "Zero rows in marketing_accounts, marketing_account_tokens, marketing_jobs, marketing_revisions, marketing_publications, campaigns, calendar entries, events, knowledge items/sources/events, offline imports, sources.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q20"
+  },
+  {
+   "fact": "All four spend ledgers in marketing_private are empty (dneskai_generation_spend, generation_pilot_reservations, generation_pilots, dneskai_collection_pilots).",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q21"
+  },
+  {
+   "fact": "Production migration history from 13 October has 25 entries; the repository has 21 files for the same work; only 20261015234547 oslo_career_preferences shares a version. restrict_pg_net_browser_roles exists only in production and in docs/migration-guide.md.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q27; own-dashboard/docs/migration-guide.md:689-707"
+  },
+  {
+   "fact": "marketing_scheduler_prune_ticks does not exist in production; the retired five-argument marketing_dneskai_finish_retired_20261021 does.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q33; own-dashboard/src/lib/marketing/scheduler.ts:551 rpc(\"marketing_scheduler_prune_ticks\", ...)"
+  },
+  {
+   "fact": "Scheduler state: briefs holds {runId: 6305e565, pending: true}; collection and media hold {}; no lease is held.",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q26"
+  },
+  {
+   "fact": "pg_net keeps HTTP responses for about 6 hours (oldest 18:05, newest 00:00, 72 rows, all 200).",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q25, #Q30"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "tick soft budget (no category starts after)",
+   "value": "48,000 ms",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:51"
+  },
+  {
+   "name": "tick hard budget (abort)",
+   "value": "53,000 ms",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:53"
+  },
+  {
+   "name": "route maxDuration",
+   "value": "60 s",
+   "evidence": "own-dashboard/src/app/api/marketing/tick/route.ts:9"
+  },
+  {
+   "name": "minimum start per category",
+   "value": "collection 20 s, media 25 s, briefs 5 s, generation 43 s, publishing 15 s, reconciliation 5 s, token 16 s; renewal 15 s, purge 10 s, retention 1 s",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:74-76"
+  },
+  {
+   "name": "collection admission hour",
+   "value": ">= 22:00 Prague",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:267; own-dashboard/src/lib/marketing/dneskai-collection.ts:27"
+  },
+  {
+   "name": "brief lead before slot",
+   "value": "30 minutes (then brief-slot-passed)",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:34, :307"
+  },
+  {
+   "name": "brief lifetime",
+   "value": "48 h ai-news/tech-news, 14 days otherwise",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts:20-21"
+  },
+  {
+   "name": "single-image text limit",
+   "value": "< 400 characters and <= 1 usable picture",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:37, :122"
+  },
+  {
+   "name": "full-bleed minimum short side",
+   "value": "900 px",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:30"
+  },
+  {
+   "name": "selection relevance floor and age",
+   "value": ">= 0.85; ai-news/tech-news <= 48 h, others <= 30 days; at most 4, one per category first",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:108-124"
+  },
+  {
+   "name": "Jev reservation per batch (observed)",
+   "value": "$0.003 per batch of 8",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q9"
+  },
+  {
+   "name": "feed item cap (observed)",
+   "value": "20 per source per night",
+   "evidence": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q9 max_items 20, item-cap on hn-frontpage and techcrunch-ai"
+  },
+  {
+   "name": "tick and cron history retention (repo)",
+   "value": "14 days, not active in production",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:57; docs/reports/dneskai-audit-2026-10/production-evidence.md#Q23, #Q33"
+  },
+  {
+   "name": "media retention",
+   "value": "30 days for unreferenced bytes",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:58"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "minute tick duration",
+   "value": "p50 3.78 s, p95 15.84 s, max 29.40 s, avg 5.23 s over 124 ticks; worst tick 29.4 s = 55 % of the 53 s hard budget",
+   "method": "SQL on marketing_ticks (Q2)",
+   "kind": "measured"
+  },
+  {
+   "what": "tick time outside the steps",
+   "value": "avg 338 ms, max 4,751 ms",
+   "method": "duration minus sum of step ms (Q29)",
+   "kind": "measured"
+  },
+  {
+   "what": "collection night duration",
+   "value": "4 ticks, 20:00-20:15 UTC; collection steps 26.9, 14.3, 11.1, 9.7 s; media 7.4 s, briefs 7.1 s at 20:15",
+   "method": "Q5",
+   "kind": "measured"
+  },
+  {
+   "what": "pending-brief recheck per tick",
+   "value": "44 ticks, avg 2,681 ms, max 6,568 ms, zero output",
+   "method": "Q4",
+   "kind": "measured"
+  },
+  {
+   "what": "time spent before generation's minimum-start check",
+   "value": "briefs pending: median 4,109 ms, 5 of 45 ticks over 5,000 ms; no pending briefs: median 1,774 ms, 5 of 79 over 5,000 ms (collection nights)",
+   "method": "sum of collection, media, briefs and generation step ms per tick (Q28); excludes overhead so it is a lower bound",
+   "kind": "measured"
+  },
+  {
+   "what": "candidate text length, run 6305e565",
+   "value": "min 0, median 136, max 261 characters; 64 of 64 under 400; titles 10/64/100",
+   "method": "Q12",
+   "kind": "measured"
+  },
+  {
+   "what": "pictures per candidate, run 6305e565",
+   "value": "9 media URLs in 64 candidates (0.14 each), 9 with >= 1, 0 with >= 3",
+   "method": "Q12",
+   "kind": "measured"
+  },
+  {
+   "what": "Hacker News share of candidates",
+   "value": "20 of 64 (31 %), median text 0 characters, avg relevance 0.45, 0 selected, 3 rejected",
+   "method": "Q13",
+   "kind": "measured"
+  },
+  {
+   "what": "stored pictures fit for a full-bleed slide",
+   "value": "1 of 3 (1920x1080); 1024x683 and 1200x630 pass inset only",
+   "method": "Q18",
+   "kind": "measured"
+  },
+  {
+   "what": "page fetch failures",
+   "value": "2 of 4 selected events, both openai.com, media-page-http-403",
+   "method": "Q19, Q32",
+   "kind": "measured"
+  },
+  {
+   "what": "Jev cost per night",
+   "value": "$0.002243 for 64 candidates in 8 batches ($0.000035 per candidate); reserved $0.024",
+   "method": "Q8, Q9",
+   "kind": "measured"
+  },
+  {
+   "what": "Jev cost per month at one night a day",
+   "value": "about $0.07 (30 x $0.002243)",
+   "method": "extrapolated from one night",
+   "kind": "estimated"
+  },
+  {
+   "what": "Vercel function time spent on the pending-brief recheck",
+   "value": "about 13 minutes a day (288 ticks x 2.7 s) while no account exists",
+   "method": "Q4 average times 288 ticks a day",
+   "kind": "estimated"
+  },
+  {
+   "what": "cron runs vs recorded ticks",
+   "value": "134 cron runs (from 12:50) vs 124 ticks (from 13:40): 10 unrecorded",
+   "method": "Q24 vs Q2",
+   "kind": "measured"
+  },
+  {
+   "what": "storage",
+   "value": "marketing-media 3 objects / 461,750 bytes; marketing-assets 0",
+   "method": "Q22",
+   "kind": "measured"
+  },
+  {
+   "what": "migration versions shared between repo and production since 13 Oct",
+   "value": "1 of 25 production entries (21 repo files)",
+   "method": "Q27 list_migrations vs ls supabase/migrations",
+   "kind": "measured"
+  }
+ ],
+ "findings": [
+  {
+   "id": "production-01",
+   "title": "All four 22 October briefs lapse today because no @dneskai account row exists",
+   "category": "risk",
+   "claim": "Every brief is pending/account-unavailable with no job, and marketing_accounts has 0 rows. Each tick rechecks them; once a slot is under 30 minutes away the brief is skipped as brief-slot-passed. The lapse times are 05:30, 10:00, 14:30 and 17:30 UTC on 22 October. The first native night therefore produces no post, and the owner still has not seen one generated DNESKAi carousel.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q16",
+     "line": 156,
+     "excerpt": "4 briefs pending/account-unavailable, slots 06:00/10:30/15:00/18:00 UTC, job_id null"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q20",
+     "line": 200,
+     "excerpt": "marketing_accounts 0, tokens 0, jobs 0, revisions 0"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 307,
+     "excerpt": "if (Date.parse(brief.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 310,
+     "excerpt": "if (!verified) { result.pending = true; continue; }"
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 8,
+     "excerpt": "**Connect `@dneskai` to the Meta publishing API**"
+    }
+   ],
+   "impact": {
+    "statement": "A whole night of collection, Jev and media work ($0.0022, about 50 s of function time) ends in four skipped briefs; the same happens every night until the Meta connection and the Anthropic key exist. No generated carousel can be judged before then.",
+    "keep": true,
+    "reason": "Nothing reaches the owner until the account exists, and every night repeats the waste.",
+    "impactScore": 5,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": "Register and verify @dneskai on the Meta app and add ANTHROPIC_API_KEY, which turns on live model spend under the existing $1/day ceiling."
+   },
+   "impactScore": 5,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Owner item, not code: connect @dneskai and add ANTHROPIC_API_KEY (NEEDED.md items 1-2) before the next night. Until then show the lapse time per brief in the review tab so the waste is visible. Do not let a preview account generate (owner rule).",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Re-ran V1 at DB clock 2026-10-22 00:07 UTC: 4 briefs still pending/account-unavailable, job_id null, slots 06:00/10:30/15:00/18:00 UTC, marketing_accounts 0. Code: own-dashboard/src/lib/marketing/dneskai-briefs.ts:307 skips a stored brief as brief-slot-passed when its slot is < 30 min away (DNESKAI_BRIEF_MIN_LEAD_MINUTES=30 at :34); :310 continues while unverified. But :287 runs first: once no slot of the target date has a 30-minute lead, every open brief is skipped as brief-target-date-passed. So the 4th brief (18:00) lapses at 17:30 UTC with code brief-target-date-passed, not brief-slot-passed. Lapse times 05:30/10:00/14:30/17:30 UTC hold. NEEDED.md:8 (Meta) and :7 (Anthropic key) confirmed. Impact text says 'about 50 s of function time'; Q5/Q7 steps of the night sum to about 77 s (collection 62 s + media 7.4 s + briefs 7.1 s).",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+      "line": 287,
+      "excerpt": "if (!dneskaiBriefSlots(run.target_date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE)) { for (const row of open) await skip(row, 'brief-target-date-passed');"
+     }
+    ],
+    "correctedClaim": "All four 22 October briefs lapse today (05:30, 10:00, 14:30 UTC as brief-slot-passed; the last at 17:30 UTC as brief-target-date-passed) because marketing_accounts has 0 rows; the night's pipeline work (~77 s of function time, $0.0022) yields no post."
+   }
+  },
+  {
+   "id": "production-02",
+   "title": "Non-news briefs with a 14-day life are thrown away after one missed slot",
+   "category": "quality",
+   "claim": "Marketing, tool and ai-project briefs expire after 14 days, but the slot-passed check runs before the expiry check and simply skips the brief. Brief 6d1902a2 (marketing, expires 4 Nov) and 3a7ca8dc (ai-project carousel, the only carousel with 2 pictures, expires 4 Nov) will be skipped at 14:30 and 17:30 UTC on 22 October. The 14-day lifetime is never used.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-brief-source.ts",
+     "line": 21,
+     "excerpt": "return category === 'ai-news' || category === 'tech-news' ? 48 * HOUR : 14 * 24 * HOUR;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 307,
+     "excerpt": "... < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 308,
+     "excerpt": "if (Date.parse(brief.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q16",
+     "line": 156,
+     "excerpt": "6d1902a2 marketing expires 11-04 20:15; 3a7ca8dc ai-project carousel media 2 expires 11-04 20:15"
+    }
+   ],
+   "impact": {
+    "statement": "The best-supplied brief of the night (the only carousel, the only full-bleed picture) is discarded with the news briefs; evergreen material that could fill a thin day later is lost.",
+    "keep": true,
+    "reason": "Evergreen briefs, including the night's only carousel, are thrown away instead of filling thinner days.",
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "When a non-news brief misses its slot, move it to the next free slot inside its lifetime instead of skipping it (the slot-finder in dneskai-briefs.ts already exists); keep the skip for ai-news and tech-news.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "dneskai-brief-source.ts:21 lifetime 48 h news / 14 d otherwise confirmed; dneskai-briefs.ts:307 slot-passed precedes :308 expiry confirmed. However the 14-day brief is lost through two paths: 6d1902a2 via brief-slot-passed at 14:30 UTC, 3a7ca8dc via brief-target-date-passed (:287) at 17:30 UTC. brief-expired is effectively unreachable for any brief because the target-date check closes the day first. The recommendation's 'slot-finder already exists' is only half true: dneskaiSlotAllocator (:63) allocates slots of one target date only (:55 dneskaiBriefSlots(targetDate)); rolling a brief to a later day needs a cross-day allocator and a target_date change, so effort is M, not S.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+      "line": 63,
+      "excerpt": "export function dneskaiSlotAllocator(targetDate: string, taken: readonly string[], now: Date) {"
+     }
+    ],
+    "correctedClaim": "Non-news briefs live 14 days on paper, but every open brief is skipped when its slot (brief-slot-passed) or its target day (brief-target-date-passed) passes; brief-expired never fires first, and no code moves a brief to another day."
+   }
+  },
+  {
+   "id": "production-03",
+   "title": "Generation can start only if everything before it took under 5 s; pending briefs already eat most of that",
+   "category": "speed",
+   "claim": "remaining() is the 48 s soft budget minus elapsed time, and generation needs 43 s, so collection, media, briefs and the generation precheck must finish within 5 s. With briefs pending the median of those steps is 4.1 s and 5 of 45 ticks exceeded 5 s; on collection nights every tick 20:00-20:15 exceeded it. When jobs exist, those ticks defer generation by 5 minutes (tick-budget-exhausted).",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 51,
+     "excerpt": "export const MARKETING_TICK_SOFT_BUDGET_MS = 48_000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 75,
+     "excerpt": "collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, ..."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 232,
+     "excerpt": "const remaining = () => MARKETING_TICK_SOFT_BUDGET_MS - (clock().getTime() - started);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 503,
+     "excerpt": "if (remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q28",
+     "line": 255,
+     "excerpt": "briefs pending: 45 ticks, 5 over 5000 ms, median 4109 ms; not pending: 79 ticks, 5 over 5000 ms"
+    }
+   ],
+   "impact": {
+    "statement": "Measured on idle ticks; with real media and brief work the share grows. Each deferral delays a post by 5 minutes and can push generation past the 30-minute slot lead, which skips the brief. Owner sees late or missing drafts.",
+    "keep": true,
+    "reason": "Once jobs exist, a 5 s window before generation will defer drafts and can push them past the slot lead.",
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "Run generation first when a queued job exists (it is the one category with a hard 43 s need), or give it a dedicated tick; make the pending-brief recheck cheap (production-04). Add a tick-level counter of generation deferrals to the Costs tab.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "scheduler.ts:51 soft budget 48 000 ms, :75 generation minimum 43 000 ms, :232 remaining(), :503 minimum-start check after the precheck: lines correct. Step order collection(:258) > media(:287) > briefs(:312) > generation(:338) confirmed. V2 re-run (126 ticks): briefs-pending ticks 47, 5 over 5 000 ms, median 4 109 ms; not pending 79, 5 over, median 1 774 ms. No deferred/error/skipped step in 882 steps, so no deferral has happened yet (0 jobs).",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-04",
+   "title": "The pending-brief recheck costs 2.7 s a tick and produces nothing while no account exists",
+   "category": "simplicity",
+   "claim": "With briefs state pending=true, every minute tick calls createBriefs, which re-reads each brief and continues on !verified. In 44 ticks this averaged 2,681 ms (max 6,568 ms) with created 0, skipped 0. No backoff is set.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q4",
+     "line": 32,
+     "excerpt": "briefs noop pending 44 ticks avg 2681 ms max 6568"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q3",
+     "line": 25,
+     "excerpt": "briefs 2889 ms {jobs:0, created:0, skipped:0}"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 324,
+     "excerpt": "const result = await ports.createBriefs({ owner, project: await project(), runId: run.id, signal: abort });"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 309,
+     "excerpt": "// Still held as account-unavailable: nothing new to report, but the next call admits it once the account is verified."
+    }
+   ],
+   "impact": {
+    "statement": "About 13 minutes of Vercel function time a day (estimate) and most of the 5 s generation window (production-03).",
+    "keep": true,
+    "reason": "Cheap fix that frees most of the generation window and function time while no account exists.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Check for a verified account once before loading briefs and return early, or set next_allowed_at to the earliest lapse time; keep the lapse checks.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "scheduler.ts:324 calls createBriefs whenever state.pending is not false (:322); dneskai-briefs.ts:291-296 also reads owedMedia and takenSlots before the loop, and :309-310 continues while unverified; no nextAllowedAt is returned, so no backoff. V2: 46 pending noop steps, avg 2 663 ms, max 6 568 ms. 13 min/day is an estimate (288 ticks x 2.7 s).",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-05",
+   "title": "Input is measured thin: longest text 261 characters, a third of candidates have no text",
+   "category": "quality",
+   "claim": "All 64 candidates of the first native night are under the 400-character single-image limit (median 136, max 261). Hacker News supplied 20 of 64 with an empty text (median 0), avg relevance 0.45, 0 selected. Every selected event has one member and one evidence item of 137-236 characters.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q12",
+     "line": 118,
+     "excerpt": "run 6305e565: n 64, text 0/136/261, under400 64"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q13",
+     "line": 128,
+     "excerpt": "hn-frontpage 20, median text 0, avg_rel 0.45, selected 0"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q17",
+     "line": 168,
+     "excerpt": "excerpt chars 166, 162, 137, 236"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q16",
+     "line": 156,
+     "excerpt": "ev 1, members 1 for all four briefs"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 122,
+     "excerpt": "const singleImage = primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;"
+    }
+   ],
+   "impact": {
+    "statement": "The generator can only write what the evidence states, so a 150-character excerpt yields a one-slide post; carousels need article text. Hacker News costs 31 % of Jev classification for no output.",
+    "keep": true,
+    "reason": "Thin evidence is the main cap on carousel quality and truthful length.",
+    "impactScore": 5,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 5,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Use the article body the media step already fetches as evidence (see briefs map); for Hacker News either follow the linked article or drop the source. Keep the measurement as the baseline for the next nights.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "V3 re-run: run 6305e565 n 64, text 0/136/261, all 64 < 400; hn-frontpage 20, median text 0, avg relevance 0.45, 0 selected. Briefs: 1 evidence item, 1 member each (Q16), excerpts 166/162/137/236 (Q17). dneskai-briefs.ts:122 single-image rule at line 122 confirmed (limit 400 at :37). '31 % of Jev' is 20/64 candidates, assuming cost scales with candidate count (estimate).",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-06",
+   "title": "Only 1 of 3 stored pictures can fill a slide; OpenAI blocks the page fetch",
+   "category": "quality",
+   "claim": "The night stored 3 pictures: TechCrunch og-image 1024x683 and Anthropic og-image 1200x630 fail the 900 px full-bleed rule; only an Anthropic article figure 1920x1080 passes. Both OpenAI candidates (2 of 4 selected events) failed with media-page-http-403 and their feeds carry no image.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q18",
+     "line": 180,
+     "excerpt": "1024x683 full_bleed false; 1200x630 false; 1920x1080 true"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q32",
+     "line": 287,
+     "excerpt": "openai.com x2: empty, media-page-http-403, feed media 0"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+     "line": 34,
+     "excerpt": "return { fullBleedCapable: Math.min(size.width, size.height) >= DNESKAI_FULL_BLEED_MIN_SIDE, insetCapable: size.width >= DNESKAI_INSET_MIN_WIDTH };"
+    }
+   ],
+   "impact": {
+    "statement": "Three of four posts would be text-only or inset-only; no photo cover is possible for 3 of 4 posts. Scroll-stopping covers need photos.",
+    "keep": true,
+    "reason": "Without usable photos most covers cannot be scroll-stopping; this measurement grounds the Apify decision.",
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Whether to switch on Apify (MARKETING_DNESKAI_APIFY_ENABLED) for picture-rich Instagram sources, which spends prepaid credit."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Feed this measurement into the Apify decision (owner) and the media map: Instagram candidates averaged 2.5 media URLs on 13 Oct. For OpenAI, read the image from the RSS enclosure or a second publisher host; never substitute a picture.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "V4 re-run: assets techcrunch-ai 1024x683 (not full-bleed), anthropic-news 1200x630 (not), anthropic-news 1920x1080 (full-bleed); media collections 2 empty with media-page-http-403 and 2 complete. dneskai-media-plan.ts:34 capability rule with constants 900/600 at :30-31 confirmed. Per brief: 2 briefs with no media, 1 inset-only, 1 with one full-bleed picture.",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-07",
+   "title": "Every run is reported partial because disabled Instagram stages count as incomplete",
+   "category": "simplicity",
+   "claim": "A run is complete only when every stage is ok. Instagram stages held with collection-apify-disabled (a deliberate owner switch) are not ok, so with Apify off every night ends partial with collection-review-incomplete, even when all feeds work. Both runs in production are partial.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 85,
+     "excerpt": "const covered=current.every(stage=>stage.status==='ok'||(stage.kind==='jev'&&stage.error_code==='collection-no-new-candidates'));"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 87,
+     "excerpt": "...status==='complete'?null:'collection-review-incomplete'"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q8",
+     "line": 85,
+     "excerpt": "both runs status partial, error collection-review-incomplete"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q9",
+     "line": 95,
+     "excerpt": "4 instagram stages held collection-apify-disabled"
+    }
+   ],
+   "impact": {
+    "statement": "The run status cannot tell a broken feed from a switched-off service; the owner learns to ignore 'partial'.",
+    "keep": true,
+    "reason": "Small fix that makes the run status meaningful so real feed failures are not ignored.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Count stages held by a disabled switch as covered (or do not create them) and keep partial for real source errors such as the two arXiv timeouts.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-collection.ts:85 covered = every stage ok (Jev no-new-candidates excepted), :86-87 partial + collection-review-incomplete otherwise; :44 and :53 hold Instagram stages with collection-apify-disabled. V4: 4 Instagram stages held collection-apify-disabled; both runs partial. Caveat: run 6305e565 would be partial anyway because arxiv-cs-ai/lg failed and two feeds hit the item cap, so the switch is one of several causes that night.",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-08",
+   "title": "A rejected tick leaves no trace: 10 cron runs have no tick row and their HTTP answers are already gone",
+   "category": "risk",
+   "claim": "cron.job_run_details shows 134 successful runs from 12:50 UTC, marketing_ticks 124 from 13:40. The tick route answers 401/403/400/503 before beginTick writes anything, cron reports success because scheduler_post only enqueues a pg_net request ('1 row'), and pg_net keeps responses for about 6 hours. The 10 early runs (probably before the deploy or secret was in place) are unexplained in production data.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q24",
+     "line": 228,
+     "excerpt": "job 1 succeeded 134, first 12:50:00, message '1 row'"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q2",
+     "line": 13,
+     "excerpt": "minute 124, first 13:40:04"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q30",
+     "line": 273,
+     "excerpt": "oldest response 18:05, 72 rows"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/tick/route.ts",
+     "line": 26,
+     "excerpt": "if (!principal) return Response.json({ error: \"unauthorized\" }, { status: 401, headers });"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/tick/route.ts",
+     "line": 35,
+     "excerpt": "return Response.json({ error: \"tick-unavailable\" }, { status: 503, headers });"
+    }
+   ],
+   "impact": {
+    "statement": "If the secret or the Vercel deployment breaks at night, the pipeline stops silently; the Costs tab shows 'no errors' because it reads only marketing_ticks.",
+    "keep": true,
+    "reason": "A broken secret or deploy would stop the pipeline silently; a cron-vs-tick gap check is cheap insurance.",
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Have the daily tick (or a SQL view the Costs tab reads) compare cron.job_run_details runs with marketing_ticks rows for the last 24 h and record the gap; optionally copy non-200 pg_net statuses into a small table from a cron SQL job.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "V1: cron job 1 now 136 succeeded runs from 12:50 UTC; marketing_ticks 126 from 13:40. tick/route.ts:26 401 and :27 403 return before runMarketingTick/beginTick (:33); :35 503. Extra silent path found: marketing_private.scheduler_post returns null without sending anything when the Vault URL or secret is missing or malformed (supabase/migrations/20261020160100_marketing_scheduler_cron.sql:69-70), and cron still records success. pg_net keeps ~6 h (Q30). Only marketing_ticks is read by the workspace (dneskai-workspace-read.ts), not cron history.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+      "line": 70,
+      "excerpt": "or char_length(v_secret)<32 or v_secret ~ '\\s' then return null; end if;"
+     }
+    ],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-09",
+   "title": "Tick and cron-history retention are not installed; the first daily tick will record an error",
+   "category": "risk",
+   "claim": "marketing_scheduler_prune_ticks is missing and cron.job has no marketing-cron-history-prune. The daily duty 'retention' calls the missing RPC. No daily tick has run yet (first at 02:18 UTC on 22 Oct), so the error is predicted, not observed. The gap is documented as an owner item.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q33",
+     "line": 294,
+     "excerpt": "no marketing_scheduler_prune_ticks"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q23",
+     "line": 221,
+     "excerpt": "only marketing-tick-minute and marketing-tick-daily"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 551,
+     "excerpt": "const removed = await rpc(\"marketing_scheduler_prune_ticks\", { p_owner: owner, p_days: days });"
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 9,
+     "excerpt": "**Run the two DNESKAi retention statements** ... Until then the daily tick records an error for its `retention` step"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 702,
+     "excerpt": "`marketing_scheduler_functions` and nothing else: `marketing_scheduler_prune_ticks` is not in production yet."
+    }
+   ],
+   "impact": {
+    "statement": "A daily red line in the Costs tab from tomorrow, and unbounded growth of marketing_ticks (288 rows a day) and cron.job_run_details (~290 rows a day). Small in bytes, but it trains the owner to ignore errors.",
+    "keep": true,
+    "reason": "A daily misleading error from tomorrow until the owner runs a 5-minute SQL block.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Run the documented retention SQL block in production (a production write only the owner may do)."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Owner runs the documented block once (5 minutes). Until then make the retention step return skipped with a 'retention-not-installed' code when the RPC is missing, instead of an error.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "At DB clock 2026-10-22 00:07 UTC no daily tick exists yet (V1: daily 0, cron job 2 no runs), so the error is still a prediction. V4: pg_proc has no marketing_scheduler_prune_ticks; cron.job has only marketing-tick-minute and marketing-tick-daily. scheduler.ts:474 retention calls pruneTicks -> :551 rpc; rpc throws 'scheduler-state-unavailable' on any error (:533), and runStep records it (:514, :484), so the daily tick will show retention / scheduler-state-unavailable, a misleading code. NEEDED.md:9 and migration-guide.md:702 document the gap. Note: purge_old_cron_runs exists but prunes public.cron_runs, not cron.job_run_details, and its job is not scheduled in production either (out of scope).",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+      "line": 533,
+      "excerpt": "if (error) throw new Error(\"scheduler-state-unavailable\");"
+     }
+    ],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-10",
+   "title": "Production migration history shares one version with the repository",
+   "category": "risk",
+   "claim": "Since 13 October production records 25 entries with apply-time versions (split entries for events_briefs and scheduler, plus the production-only restrict_pg_net_browser_roles); the repository has 21 files with different versions. Only 20261015234547 matches. A Supabase CLI diff or db push would treat every repository file as unapplied.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q27",
+     "line": 249,
+     "excerpt": "25 production entries vs 21 repo files; shared: 20261015234547 only"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 689,
+     "excerpt": "Migrations `20261020100000` through `20261021100000` were applied to production project `gcctapykhrdyxikieemn` on"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 707,
+     "excerpt": "`restrict_pg_net_browser_roles` changed nothing: Supabase grants `net.http_post` to `PUBLIC` as `supabase_admin`,"
+    }
+   ],
+   "impact": {
+    "statement": "The next migration (kits, variants, retention) risks re-running old files or being applied under yet another version; a fresh install from the repo differs from production by the pg_net statement.",
+    "keep": true,
+    "reason": "The next migration (kits, retention) can be misapplied unless history is mapped or repaired first.",
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "medium",
+    "quickWin": true,
+    "ownerDecision": "Whether to repair production migration history (supabase migration repair) or keep a documented repo-to-production mapping."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "Add a mapping table (repo file -> production versions) to migration-guide.md and a check script that compares list_migrations names with repo filenames; decide (owner) whether to repair history with supabase migration repair. Commit restrict_pg_net_browser_roles as a no-op file with a comment, or document its absence.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "V5: production has 25 entries >= 20261013 (incl. split events_briefs x3, scheduler x2 and production-only 20261021125123 restrict_pg_net_browser_roles); repo has 21 files >= 20261012; only 20261015234547 shared. Confirmed. Overstated part: migration-guide.md:707-709 says restrict_pg_net_browser_roles changed nothing, so a fresh install does not differ in effect, only in history; the real schema gap is the two missing retention objects. Additional doc-drift: docs/migration-guide.md:89 still claims 'Every file from 20260721165419 on carries the version production recorded for it, with one exception', which is false for the 20 marketing files of 12-21 October.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/docs/migration-guide.md",
+      "line": 89,
+      "excerpt": "Every file from `20260721165419` on carries the version production recorded for it, with one exception"
+     }
+    ],
+    "correctedClaim": "Production and repository migration histories share one version since 12 October; the guide's claim that repo files carry production versions (migration-guide.md:89) is now false. restrict_pg_net_browser_roles is history-only (it changed nothing); the effective schema gap is the missing retention function and cron job."
+   }
+  },
+  {
+   "id": "production-11",
+   "title": "Category diversity filled two of four slots with non-news while 12 news items at 0.87-0.97 waited",
+   "category": "quality",
+   "claim": "Selection ranks one event per category first. The night selected ai-news 0.97, tech-news 0.97, marketing 0.96 and ai-project 0.96; 12 unselected 'new' candidates are ai-news (4) and tech-news (8) at 0.87-0.97. Relevance does not separate the picks from the rest (0.96 vs 0.97), so brief 2.10's 'weakly labelled' ai-project item is weak by label, not by score.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 121,
+     "excerpt": "row_number() over(partition by category order by relevance desc,published_at desc,event_id) as category_rank"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 124,
+     "excerpt": "from ranked order by category_rank,relevance desc,published_at desc,event_id limit 4"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q31",
+     "line": 280,
+     "excerpt": "selected ai-project:0.96 | ai-news:0.97 | tech-news:0.97 | marketing:0.96; 12 new, best 0.97"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q10",
+     "line": 104,
+     "excerpt": "new: ai-news 4, tech-news 8"
+    }
+   ],
+   "impact": {
+    "statement": "On a strong news day half the posts come from categories with weaker material; the relevance score cannot flag it.",
+    "keep": true,
+    "reason": "Affects which stories reach the owner, but unselected news stays eligible the next night, so the loss is partial.",
+    "impactScore": 2,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Whether category diversity or raw relevance should decide the four daily picks."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Make diversity a tie-breaker after a quality floor (for example prefer the category only when its lead is within 0.02 of the best unselected item and has >= 1 usable picture), and record the runners-up on the brief so the owner can swap one in (selection map).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Migration 20261020150000_dneskai_events_briefs.sql:121 category_rank and :123-124 order by category_rank, limit 4 confirmed. V3: selected 0.96-0.97 (ai-project, ai-news, tech-news, marketing); 12 new ai-news 4 (0.87-0.97) and tech-news 8 (0.89-0.97). Nuance: the pool (:105-106) takes status='new' candidates from any run, so these news items stay eligible on the next night while they are under 48 h (:110), which softens the loss.",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-12",
+   "title": "70 % of candidates are held with no exit, including 70 from 13 October and 5 high-relevance items held only for a missing date",
+   "category": "quality",
+   "claim": "Run 6305e565 held 45 of 64; 5 of them (relevance 0.88-0.96) only for collection-source-date-unavailable-or-stale. All 70 candidates of the 13 October staging run are still held eight days later. No production row shows a held candidate ever leaving that state.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q14",
+     "line": 142,
+     "excerpt": "collection-source-date-unavailable-or-stale 5 (0.88-0.96)"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q10",
+     "line": 104,
+     "excerpt": "run edc97cf7: held 70"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q31",
+     "line": 280,
+     "excerpt": "70 candidates from 13 Oct still held"
+    }
+   ],
+   "impact": {
+    "statement": "Good stories with an unknown date never reach the owner; held rows accumulate without retention.",
+    "keep": true,
+    "reason": "Good stories held for a missing date never reach the owner and held rows accumulate.",
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Give the owner a 'held' list with release/discard in the Zdroje tab, and add held candidates to the daily retention (for example 14 days).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "V3: run 6305e565 held 45 of 64; 5 held for collection-source-date-unavailable-or-stale at 0.88-0.96; run edc97cf7 70 held. Code: the selection pool only takes status='new' (events_briefs.sql:106-108) and :158 sets held for stale dates; no route or function moves held back to new (grep of src and migrations for candidate status updates: only Jev classification inside a run and finish). No retention for candidates found.",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-13",
+   "title": "A collection no-op took 16-19 s because two database reads run before the hour check",
+   "category": "speed",
+   "claim": "At 17:00 and 18:55 UTC (19:00 and 20:55 Prague) the collection step returned collection-not-due after 19,379 and 16,080 ms. The precheck calls yieldToPublication() and runs() before the cheap pragueHour < 22 test.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q7",
+     "line": 78,
+     "excerpt": "17:00 collection-not-due 19379 ms; 18:55 16080 ms"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 261,
+     "excerpt": "if (await yieldToPublication()) return yielded;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 262,
+     "excerpt": "const list = await runs(), today = pragueMarketingDate(clock());"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 267,
+     "excerpt": "if (pragueHour(clock()) < 22) return { status: \"noop\", code: \"collection-not-due\" };"
+    }
+   ],
+   "impact": {
+    "statement": "Such a stall pushes the generation step past its 5 s window (production-03) for that tick; the cause (cold start or slow database) is not established.",
+    "keep": true,
+    "reason": "Occasional 16-19 s stalls eat the tick; a reordering is trivial but the cause is unproven.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Test the hour first (keep the running-run check for after 22:00 and for a running run that started earlier), and log per-call timings for the two reads to find the stall.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "scheduler.ts:260-267: intakePaused, yieldToPublication (:261) and runs() (:262) run before the hour test (:267); lines correct. Q7 durations 19 379 / 16 080 ms re-read from evidence; cause (cold start vs slow DB) not established, as the claim says.",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-14",
+   "title": "Jev reserves about 10x its real cost and the collection ceiling is far from binding",
+   "category": "cost",
+   "claim": "Each Jev batch reserves $0.003 and costs $0.000193-0.000366; the night spent $0.002243 against $0.024 reserved, and both runs together $0.019456 against $0.208. Jev costs about $0.000035 per candidate.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q9",
+     "line": 95,
+     "excerpt": "__jev:00-07 reserved 0.003 each, cost 0.000193-0.000366"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q21",
+     "line": 207,
+     "excerpt": "stages reserved 0.208, cost 0.019456"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q8",
+     "line": 85,
+     "excerpt": "6305e565 cost_usd 0.002243"
+    }
+   ],
+   "impact": {
+    "statement": "Jev costs about $0.07 a month at one night a day (estimate); the $0.25 daily ceiling is only relevant once Apify is on. Inputs for the cost model, not a defect.",
+    "keep": false,
+    "reason": "A cost-model input with no action (Jev costs about $0.07 a month and ceilings are owner-locked); belongs in the cost map, not the owner list.",
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Use these measured numbers in the cost model; leave the ceiling unchanged (owner rule).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "V4: 8 Jev batches reserved $0.003 each, cost $0.000193-0.000366 (8-16x); run 6305e565 cost $0.002243; all stages reserved $0.208 vs cost $0.019456. Per-candidate $0.000035 = 0.002243/64.",
+    "correctedLocations": [],
+    "correctedClaim": ""
+   }
+  },
+  {
+   "id": "production-15",
+   "title": "Two feeds hit the 20-item cap; three sources have never succeeded",
+   "category": "quality",
+   "claim": "hn-frontpage and techcrunch-ai ended partial with collection-source-item-cap at 20 items. arxiv-cs-ai and arxiv-cs-lg (21 Oct) and github-ai-releases, simonw, rest-of-world (13 Oct) have last_success_at null. meta-ai succeeded with 0 items.",
+   "evidence": [
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q9",
+     "line": 95,
+     "excerpt": "hn-frontpage, techcrunch-ai partial collection-source-item-cap"
+    },
+    {
+     "file": "docs/reports/dneskai-audit-2026-10/production-evidence.md#Q15",
+     "line": 149,
+     "excerpt": "arxiv-cs-ai, arxiv-cs-lg, github-ai-releases, simonw, rest-of-world last_success_at null; meta-ai ok 0 items"
+    }
+   ],
+   "impact": {
+    "statement": "TechCrunch is the source of 1 of 4 picks and 7 of 12 unselected strong items; its cap may drop more. Five sources contribute nothing yet.",
+    "keep": true,
+    "reason": "Five silent sources and capped feeds shrink the candidate pool; mostly follow-up checks already planned.",
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Check the arXiv fix on 28 Oct and github-ai-releases on 23 Oct as NEEDED.md plans; consider raising techcrunch-ai's cap and lowering HN's (production-05).",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "V4: hn-frontpage and techcrunch-ai partial collection-source-item-cap (20 items) confirmed; meta-ai ok with 0 items confirmed. Title says 'three sources have never succeeded' but the claim lists five feeds with last_success_at null (arxiv-cs-ai, arxiv-cs-lg, github-ai-releases, simonw, rest-of-world), plus Instagram profiles never collected (activeprogrammer held provider-http-400-invalid-input, evolving.ai and robotic held).",
+    "correctedLocations": [],
+    "correctedClaim": "Two feeds hit the 20-item cap; five feeds (arxiv-cs-ai, arxiv-cs-lg, github-ai-releases, simonw, rest-of-world) have never succeeded, and meta-ai returned 0 items."
+   }
+  }
+ ],
+ "openQuestions": [
+  "Why did the 10 cron runs between 12:50 and 13:35 UTC on 21 October leave no tick row (deploy not live, secret missing, or 401)? The pg_net responses that would show it were already purged.",
+  "Will the first daily tick (02:18 UTC, 22 Oct) record exactly one error for retention, and do renewal and purge succeed? Re-query marketing_ticks where kind='daily' after 02:18.",
+  "What caused the 16-19 s collection no-ops at 17:00 and 18:55 UTC: function cold start, Supabase latency or the publication yield query?",
+  "Does the second native night (22 Oct, 20:00 UTC) repeat the numbers of the first (64 candidates, 4 selected, 3 pictures)? One night is a thin baseline.",
+  "Does the owner want the 70 held candidates of the 13 October staging run kept? They belong to a retired pilot.",
+  "Was the selected ai-project item 'weakly labelled' as brief 2.10 says? Its relevance is 0.96, so only a reading of the item can tell."
+ ],
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-production.json",
+ "verification": {
+  "confirmed": 11,
+  "partly": 4,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 14,
+  "dropped": 1,
+  "quickWins": 3,
+  "verifiedAt": "2026-10-22T00:11:42Z",
+  "dbClockAtVerification": "2026-10-22T00:07:39Z",
+  "method": "single verifier agent, truth + impact lenses per finding, SQL re-run (V1-V5 in production-evidence.md)",
+  "notes": [
+   "No daily tick had run at verification (DB clock 00:07 UTC); finding 09 remains a prediction.",
+   "Ticks grew from 124 to 126 and cron runs from 134 to 136 since mapping; all other re-run numbers match the mapper exactly.",
+   "production-01 impact statement: the night used about 77 s of function time, not about 50 s (Q5/Q7 sums).",
+   "New doc-drift folded into production-10: docs/migration-guide.md:89 claims repo files carry production versions.",
+   "New detail folded into production-08: scheduler_post returns null without sending when the Vault entries are missing (cron migration :69-70).",
+   "The retention step will record the misleading code scheduler-state-unavailable (scheduler.ts:533), not a retention-specific code."
+  ]
+ }
+}
