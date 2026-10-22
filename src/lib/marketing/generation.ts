@@ -1,3 +1,4 @@
+import { dneskaiDefaultRevisionFormat } from "./dneskai-reel-format";
 import { z } from "zod";
 import { ContentEngagementSchema, ENGAGEMENT_KEYWORD_PATTERN, MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash, revisionContentHash } from "./hashes";
@@ -373,7 +374,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
       const engagement = input.engagement ?? (input.education && replyMessage ? { keyword: input.education.keyword, replyMessage, publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY } : null);
       const revision = parseContentRevision({
         schemaVersion: MARKETING_DECK_CONTENT_VERSION, brand: "dneskai", title: copy.title.trim(), caption,
-        format: deck.format === "carousel" ? "carousel" : "post",
+        format: dneskaiDefaultRevisionFormat(deck.format, source.content.category),
         sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }],
         knowledgeIds: [], assets: [], account: input.account,
         scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,

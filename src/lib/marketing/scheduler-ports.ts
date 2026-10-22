@@ -8,12 +8,15 @@ import { collectDneskaiMedia, createDneskaiMediaLoader, pendingDneskaiMediaCandi
 import { getCreateDneskaiBriefs } from "./dneskai-wiring";
 import { executeMarketingJob } from "./worker-runtime";
 import { refreshSource } from "./source-refresh";
-import { publishDueMarketing, reconcileStoredMarketingPublication } from "./orchestrator";
+import { dneskaiReelsEnabled } from "./dneskai-reel";
+import { prepareUpcomingDneskaiReels, publishDueMarketing, reconcileStoredMarketingPublication } from "./orchestrator";
 import { CONTAINER_RETRY_CODE } from "./publisher";
 import { listMetaTokenMetadata, refreshInstagramToken } from "./meta-credentials";
 import { renewStoredRevisionAssetUrls } from "./asset-urls";
 import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type SchedulerCollectionRun } from "./scheduler";
 import { sendDneskaiReviewReminders } from "./dneskai-reminders";
+import { runDneskaiEngagementWatch } from "./dneskai-engagement-watch";
+import { createDneskaiEngagementGraph, createDneskaiEngagementStore } from "./dneskai-engagement-ports";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
@@ -44,7 +47,10 @@ export async function resolveDneskaiProjectId(db: Database, owner: string): Prom
   return matches[0].id as string;
 }
 
-export function createMarketingSchedulerPorts(db: Database, owner: string, env: Environment = process.env): MarketingSchedulerPorts {
+/** `origin`: this deployment as the tick reached it; the Reel render (#165) is requested there. */
+/** How far ahead of its slot a Reel's MP4 is rendered (#165). */
+export const DNESKAI_REEL_PREPARE_AHEAD_MS = 45 * 60_000;
+export function createMarketingSchedulerPorts(db: Database, owner: string, env: Environment = process.env, options: { origin?: string } = {}): MarketingSchedulerPorts {
   z.uuid().parse(owner);
   const publications = (columns = "id") => db.from("marketing_publications").select(`${columns},marketing_revisions!inner(brand)`).eq("user_id", owner).eq("marketing_revisions.brand", "dneskai");
   const any = async (query: PromiseLike<{ data: unknown[] | null; error: unknown }>, code: string) => {
@@ -92,6 +98,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       return z.array(z.object({ id: z.uuid() })).parse(data ?? []).map((row) => row.id);
     },
     reviewReminders: (project, now) => sendDneskaiReviewReminders(db, owner, project, now),
+    engagementWatch: ({ signal, now, remainingMs }) => runDneskaiEngagementWatch({ store: createDneskaiEngagementStore(db, owner), graph: createDneskaiEngagementGraph(db, owner, env), now, signal, remainingMs }),
     scoutTopics: (project, now) => scoutDneskaiTopics(db, owner, project, now),
     factOrHype: (project, now, options) => advanceDneskaiFactOrHype(db, owner, project, now, { env, ...options,
       model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
@@ -108,14 +115,22 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     async publicationWork() {
       const now = new Date();
-      const [due, pending] = await Promise.all([
+      // #165: a Reel due within 45 minutes is work too, so its render starts before the slot.
+      const reelSoon = dneskaiReelsEnabled(env) && options.origin
+        ? any(publications().eq("status", "queued").eq("marketing_revisions.revision->>format", "reel").gte("scheduled_at", new Date(now.getTime() - DUE_WINDOW_MS).toISOString())
+          .lte("scheduled_at", new Date(now.getTime() + DNESKAI_REEL_PREPARE_AHEAD_MS).toISOString()).limit(1), "publication-state-unavailable")
+        : Promise.resolve(false);
+      const [due, pending, reel] = await Promise.all([
         any(publications().eq("status", "queued").gte("scheduled_at", new Date(now.getTime() - DUE_WINDOW_MS).toISOString()).lte("scheduled_at", now.toISOString()).limit(1), "publication-state-unavailable"),
         containerPending(now),
+        reelSoon,
       ]);
-      return due || pending;
+      return due || pending || reel;
     },
     async publishDue(dryRun, signal) {
-      const result = await publishDueMarketing(db, owner, "dneskai", dryRun, signal);
+      // #165: start the render of a Reel due within 45 minutes, so its MP4 waits at the slot. Best effort, $0.
+      if (!dryRun && options.origin) await prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS).catch(() => null);
+      const result = options.origin ? await publishDueMarketing(db, owner, "dneskai", dryRun, signal, undefined, { origin: options.origin }) : await publishDueMarketing(db, owner, "dneskai", dryRun, signal);
       return { outcomes: result.outcomes.map((outcome) => ({ publicationId: outcome.publicationId, status: outcome.status, errorCode: outcome.errorCode ?? null })) };
     },
     async nextReconciliation(checkedBefore) {

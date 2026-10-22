@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }));
 import { DneskaiAudioPicker } from '@/components/marketing/dneskai/lab/audio-picker';
+import { DneskaiFormatSwitch } from '@/components/marketing/dneskai/lab/format-switch';
 import { DneskaiAudioLibrary } from '@/components/marketing/dneskai-audio-library';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 import { DEMO_DNESKAI_AUDIO_TRACKS, dneskaiAudioFileProblem } from '@/lib/marketing/dneskai-audio-client';
@@ -82,5 +83,28 @@ describe('Zdroje → Hudba (#164)', () => {
     expect(dneskaiAudioFileProblem({ type: 'video/mp4', size: 10 })).toBe('fileType');
     expect(dneskaiAudioFileProblem({ type: 'audio/mpeg', size: 21 * 1024 * 1024 })).toBe('fileSize');
     expect(dneskaiAudioFileProblem({ type: 'audio/mpeg', size: 1024 })).toBeNull();
+  });
+});
+
+describe('Lab format switch (#165)', () => {
+  it.each(['en', 'cs'] as const)('offers Carousel and Reel as a labelled radio group and reports the choice (%s)', async (lang) => {
+    library([]);
+    const onChange = vi.fn();
+    render(<DneskaiFormatSwitch value="carousel" onChange={onChange} preview={false} lang={lang} />); await settle();
+    const t = dneskaiAudio[lang].format;
+    const radios = [...container.querySelectorAll('[role="radio"]')];
+    expect(radios.map((radio) => [radio.textContent, radio.getAttribute('aria-checked')])).toEqual([[t.carousel, 'true'], [t.reel, 'false']]);
+    expect(container.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe(t.label);
+    act(() => { (radios[1] as HTMLButtonElement).click(); });
+    expect(onChange).toHaveBeenCalledWith('reel');
+  });
+  it('is hidden while Reels are off and for a post that is not a carousel or Reel', async () => {
+    library(null);
+    render(<DneskaiFormatSwitch value="carousel" onChange={() => {}} preview={false} lang="en" />); await settle();
+    expect(container.innerHTML).toBe('');
+    act(() => root.unmount()); root = createRoot(container); client.clear();
+    library([]);
+    render(<DneskaiFormatSwitch value="post" onChange={() => {}} preview={false} lang="en" />); await settle();
+    expect(container.innerHTML).toBe('');
   });
 });

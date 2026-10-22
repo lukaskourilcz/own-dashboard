@@ -17,7 +17,9 @@ const fail = (code: string): never => { throw new DneskaiRevisionEditError(code)
 
 /** `engagement`: left out keeps the saved keyword and messages, `null` removes them, an object replaces them (#157).
  * `audio`: absent keeps the saved choice, null clears it (the Reel then takes the next track in rotation, #164). */
-export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; engagement?: ContentEngagement | null; audio?: ContentRevision["audio"] | null };
+export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; engagement?: ContentEngagement | null; audio?: ContentRevision["audio"] | null;
+  /** #165: a carousel deck publishes as a carousel or as a Reel; absent keeps the saved format. */
+  format?: "carousel" | "reel" };
 
 /**
  * The deck an owner edit produces, checked against the brief: the edit applied by `applyDneskaiDeckEdit`
@@ -48,9 +50,10 @@ export async function prepareDneskaiRevisionEdit(original: ContentRevision, inpu
   const engagement = input.engagement === undefined ? saved : input.engagement ?? undefined;
   const audio = input.audio === undefined ? savedAudio : input.audio ?? undefined;
   try {
+    if (input.format && (deck.format !== "carousel" || !["carousel", "reel"].includes(original.format))) return fail("revision-format-unsupported");
     // #158: the caption's keyword line follows the approved keyword (added, changed or removed); code owns that line.
     const caption = dneskaiCaptionWithKeyword(input.caption, engagement?.keyword ?? null);
-    return parseContentRevision({ ...rest, caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(engagement ? { engagement } : {}), ...(audio ? { audio } : {}) });
+    return parseContentRevision({ ...rest, caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(input.format ? { format: input.format } : {}), ...(engagement ? { engagement } : {}), ...(audio ? { audio } : {}) });
   } catch { return fail("revision-edit-invalid"); }
 }
 

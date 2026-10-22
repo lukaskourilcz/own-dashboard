@@ -8,6 +8,13 @@ type Environment = Record<string, string | undefined>;
  * the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true`; off, the edit route refuses an `engagement` field and the
  * Lab shows no editor. Revisions that already carry engagement keep it through every edit either way.
  */
+/**
+ * #160: the comment watcher (scheduler step `engagement`), the per-account reply switch and the account read of its
+ * columns. Server-only `DNESKAI_ENGAGEMENT_ENABLED=true`, set only after `20261023120000_dneskai_comment_replies.sql`.
+ */
+export function dneskaiEngagementWatchEnabled(env: Environment = process.env): boolean {
+  return env.DNESKAI_ENGAGEMENT_ENABLED === 'true';
+}
 export function dneskaiEngagementEditorEnabled(env: Environment = process.env): boolean {
   return env.DNESKAI_ENGAGEMENT_EDITOR_ENABLED === 'true';
 }
