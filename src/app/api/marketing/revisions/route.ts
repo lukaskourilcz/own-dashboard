@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { saveRevision } from '@/lib/marketing/store';
-import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
+import { ContentEngagementEditSchema, parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
 import { refreshMarketingAssetUrls } from '@/lib/marketing/asset-urls';
 import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
@@ -15,6 +15,7 @@ import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/
 import { marketingPublishingLive } from '@/lib/marketing/scheduler';
 import { DNESKAI_CAPTION_HASHTAG_MAX, DNESKAI_PUBLISH_NOW_LEAD_MS, dneskaiCaptionHashtags } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiServerNextFreeSlot } from '@/lib/marketing/dneskai-move';
+import { dneskaiEngagementEditorEnabled } from '@/lib/marketing/dneskai-engagement';
 import { DNESKAI_REGENERATE_NOTE_MAX, DneskaiPaidActionError, regenerateDneskaiRevision } from '@/lib/marketing/dneskai-paid-actions';
 // Regenerate may draft the post within the request (one paid call under the daily ceiling), so it keeps the full minute.
 export const maxDuration=60;
@@ -24,7 +25,8 @@ const Input=z.discriminatedUnion('action',[
  DneskaiApproveManyInputSchema,
  z.strictObject({action:z.enum(['returned','skipped']),id:z.uuid(),feedback:z.string().max(2000).optional()}),
  // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer unless the deck is unchanged; `accountId` is a marketing_accounts row.
- z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional(),audioTrackId:z.uuid().nullable().optional()}),
+ // `engagement` (#157): the keyword, DM and public reply; null removes them. Accepted only with DNESKAI_ENGAGEMENT_EDITOR_ENABLED.
+ z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional(),engagement:ContentEngagementEditSchema.optional(),audioTrackId:z.uuid().nullable().optional()}),
  // „Publish now“: the exact saved version the owner reviewed (expectedHash), moved to DNESKAI_PUBLISH_NOW_LEAD_MS from now
  // and approved in the same request. The next scheduler tick (every 5 minutes) publishes it.
  z.strictObject({action:z.literal('publish-now'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
@@ -100,6 +102,10 @@ export async function POST(request:Request){
    const scheduled=Date.parse(input.scheduledAt);if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});
    if(dneskaiCaptionHashtags(input.caption)>DNESKAI_CAPTION_HASHTAG_MAX&&parseContentRevision(row.revision).brand==='dneskai')return NextResponse.json({error:'caption-hashtags-over-limit'},{status:409});
    const current=parseContentRevision(row.revision);
+   if(input.engagement!==undefined){
+    if(!dneskaiEngagementEditorEnabled(process.env))return NextResponse.json({error:'engagement-disabled'},{status:409});
+    if(!current.deck)return NextResponse.json({error:'engagement-unsupported'},{status:409});
+   }
    let account:ContentRevision['account']=current.account;
    if(input.accountId){
     const {data:chosen,error:accountError}=await db.from('marketing_accounts').select('brand,platform,remote_account_id,handle,verified_at').eq('id',input.accountId).eq('user_id',user.id).maybeSingle();
@@ -114,7 +120,7 @@ export async function POST(request:Request){
     if(trackError||!track||!track.enabled||track.source==='instagram-library')return NextResponse.json({error:'audio-track-unavailable'},{status:409});
    }
    if(current.deck){
-    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,...(input.audioTrackId!==undefined?{audio:input.audioTrackId?{trackId:input.audioTrackId}:null}:{})});
+    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,engagement:input.engagement,...(input.audioTrackId!==undefined?{audio:input.audioTrackId?{trackId:input.audioTrackId}:null}:{})});
     if(edited instanceof Response)return edited;
     return NextResponse.json({id:edited.id,ready:edited.ready,contentHash:edited.contentHash,render:{status:edited.report.status,problems:edited.report.problems}});
    }
@@ -156,8 +162,8 @@ async function moveAndApprove(db:Database,ownerId:string,id:string,current:Conte
  await recordMarketingOwnerFeedback({traceId:current.traceId,revisionId:edited.id,revisionHash:edited.contentHash,decision:'approved'},process.env,{db,ownerId});
  return NextResponse.json({id:edited.id,publicationId:data,scheduledAt,scheduling:'tick'});
 }
-/** Saves a DNESKAi deck edit as a new revision and attaches its render: the slides are reused when only caption, time or account changed. */
-async function editDneskaiDeck(db:Database,ownerId:string,id:string,current:ContentRevision,renderReport:unknown,edit:{caption:string;scheduledAt:string;account:ContentRevision['account'];deck?:z.infer<typeof DneskaiDeckEditSchema>;audio?:ContentRevision['audio']|null}){
+/** Saves a DNESKAi deck edit as a new revision and attaches its render: the slides are reused when only caption, time, account, engagement or audio changed. */
+async function editDneskaiDeck(db:Database,ownerId:string,id:string,current:ContentRevision,renderReport:unknown,edit:{caption:string;scheduledAt:string;account:ContentRevision['account'];deck?:z.infer<typeof DneskaiDeckEditSchema>;engagement?:z.infer<typeof ContentEngagementEditSchema>;audio?:ContentRevision['audio']|null}){
  const admin=createAdminClient();
  // Resolve every dependency before writing: an unwired renderer or media store refuses the edit and the current revision keeps its state.
  let wiring;
@@ -170,7 +176,7 @@ async function editDneskaiDeck(db:Database,ownerId:string,id:string,current:Cont
   return NextResponse.json({error:failure instanceof Error&&unwired.has(failure.message)?failure.message:'media-unavailable'},{status:503});
  }
  // Saved unready and without assets: the previous revision is superseded now, so its approval cannot be used meanwhile.
- // A caption-, time- or account-only edit leaves the deck as it was: its previous JPEGs (same sha256s, re-verified
+ // A caption-, time-, account- or engagement-only edit leaves the deck as it was: its previous JPEGs (same sha256s, re-verified
  // byte for byte and re-signed) are attached instead of a render (review-03). Anything that fails here renders.
  let reuse=reusableDneskaiRender(current,renderReport,revision);
  if(reuse){try{reuse={...reuse,assets:await refreshMarketingAssetUrls(admin,ownerId,reuse.assets)};}catch{reuse=null;}}

@@ -358,6 +358,30 @@
       ],
       "additionalProperties": false
     },
+    "engagement": {
+      "type": "object",
+      "properties": {
+        "keyword": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]{1,24}$"
+        },
+        "replyMessage": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "publicReply": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "keyword",
+        "replyMessage"
+      ],
+      "additionalProperties": false
+    },
     "audio": {
       "type": "object",
       "properties": {

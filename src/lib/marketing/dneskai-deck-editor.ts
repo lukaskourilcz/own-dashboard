@@ -1,3 +1,4 @@
+import type { ContentEngagement } from './contracts';
 import type { DneskaiBriefMedia } from './dneskai-brief';
 import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSlide, type DneskaiSlideImage } from './dneskai-slides';
 import { pragueLocalInput, pragueScheduledAt } from './clock';
@@ -284,7 +285,9 @@ export function scheduledIso(local: string): string | null {
 
 export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null };
 export type DneskaiSlideInsertEdit = { insert: { type: 'figure' | 'split' | 'statement'; variant?: 'accent' | 'ink'; headline: string; body?: string; kicker?: string; alt: string; images: DneskaiSlideImage[] } };
-export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; audioTrackId?: string | null; deck?: { kit?: DneskaiKitId; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> } };
+/** `engagement` (#157): left out keeps the saved keyword and messages, null removes them. */
+export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; audioTrackId?: string | null; deck?: { kit?: DneskaiKitId; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> };
+  engagement?: ContentEngagement | null };
 
 const sameImages = (a: readonly DneskaiSlideImage[], b: readonly DneskaiSlideImage[]) => JSON.stringify(a) === JSON.stringify(b);
 

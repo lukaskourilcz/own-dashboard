@@ -184,6 +184,11 @@ The code connects one Instagram professional account through the Instagram API w
 
 - The Reel renderer needs `supabase/migrations/20261023130000_dneskai_reel_bucket.sql` (the private `marketing-reels` bucket) and the server-only `MARKETING_DNESKAI_REELS_ENABLED=true`. Both are off by default. Until the switch is on, `/api/marketing/dneskai/render-reel` answers 404. The encoder is the `ffmpeg-static` binary that `npm ci` downloads during the Vercel build; there is nothing to install. Decision and measurements: [source media](dneskai-source-media.md#reels-slideshow-video-163).
 
+### Comment keyword and DM message (#157, #159)
+
+- A DNESKAi post may carry an `engagement`: a one-word keyword, the DM text sent to whoever comments it, and an optional public reply under the comment. It lives on the revision, so approval covers the exact words. Nothing sends it yet; the comment watcher comes later and has its own switch.
+- Editing it needs only the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` and a redeploy; no migration. Off, the edit route answers `engagement-disabled` to an `engagement` field and the Lab shows no editor.
+
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
 Since the 22 October 2026 audit, `/api/marketing/dneskai/collect` answers every method with `410` and

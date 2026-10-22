@@ -255,3 +255,9 @@ Eight Playwright checks passed across desktop/mobile and EN/CS, with light/dark 
 Existing List review tests remain reachable through the explicit List control. No unrelated invoice print, account permission rollout, live publication or notification was exercised by these focused checks. Complete application regression and integration gate outcomes belong to the handoff log; they are not implied by the focused results above.
 
 The integrated release check also covers the public `/guest` Lab as read-only in both browser projects, with no fixture-render or marketing API request. Legacy Sources-to-review tests now expect the Lab; legacy card-editor tests explicitly select List after returning from other tabs. Their navigation and responsive/axe coverage remain intact. A missing-asset demo save now invokes the real fixture renderer even when the deck is unchanged; a dedicated offline regression checks its full-size output. Final browser remediation totals are recorded in LOG.md.
+
+## Project workspace without its header — 22 October 2026 (#171)
+
+Every project workspace now opens on its tab row. The back button „Všechny projekty“, the eyebrow, the summary and the status badge are gone for every project; the toolbar breadcrumb „Projekty › <project>“ carries the context, and its „Projekty“ title is a button that returns to the table (Enter or click). The development and live links moved into the Overview summary card.
+
+`/dev-preview` screenshots of DNESKAi (For review today) and devShark (Overview) were taken and inspected in CS and EN, light and dark, at 1440 px desktop and Pixel 5 mobile: no header above the tabs, no horizontal overflow, breadcrumb legible in both themes. `e2e/dashboard.spec.ts` (desktop and mobile) passed 28/28 together with the screenshot run; it checks that only the toolbar `h1` remains, that „All projects“ is gone on DNESKAi and devShark, and that the breadcrumb button returns to `/projects` from the keyboard.

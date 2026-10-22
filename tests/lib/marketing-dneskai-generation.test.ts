@@ -436,6 +436,15 @@ describe("generation from a brief", () => {
     expect(draft.slides).toEqual([]);
     expect(clean).toHaveBeenCalledWith(draft.deck, expect.any(Function), expect.any(AbortSignal));
   });
+  it("carries the owner's engagement onto the draft unchanged and keeps it out of the prompt (#157)", async () => {
+    const engagement = { keyword: "SKILL", replyMessage: "Návod najdete tady: otevřete aplikaci a začněte.", publicReply: "Poslali jsme vám to do zpráv." };
+    const model = fakeModel([{ copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
+    const draft = await generateMarketingDraft({ ...briefInput(briefPacket(briefFixture(pictures))), engagement }, dependencies(model));
+    expect(draft.revision.engagement).toEqual(engagement);
+    expect(model.invoke.mock.calls[0]![0].prompt).not.toContain("SKILL");
+    const plain = await generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(fakeModel([{ copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }])));
+    expect(plain.revision).not.toHaveProperty("engagement");
+  });
   it("makes a single-image post a post revision", async () => {
     const single = { ...validCopy(pictures), format: "single-image" as const, slides: [{ type: "single" as const, variant: "photo" as const, headline: "Lightroom otevře zavřené oči", images: [{ slot: "image-1" as const, assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
     const draft = await generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(fakeModel([{ copy: single, usage: { inputTokens: 3000, outputTokens: 600 } }])));

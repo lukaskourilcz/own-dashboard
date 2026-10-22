@@ -3,7 +3,7 @@ import "server-only";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, canonicalJson, parseContentRevision, renderReportBlocks, revisionReadiness, storedRenderKeys,
-  storedRenderProblems, type ContentRevision, type DneskaiRenderReport } from "./contracts";
+  storedRenderProblems, type ContentEngagement, type ContentRevision, type DneskaiRenderReport } from "./contracts";
 import { dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
 import { DneskaiRevisionEditError, applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 import type { ListBriefAssetHashes, LoadDneskaiBriefPool, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
@@ -14,8 +14,9 @@ type Database = ReturnType<typeof createAdminClient>;
 export { DneskaiDeckEditSchema, DneskaiRevisionEditError, DneskaiSlideEditSchema, applyDneskaiDeckEdit, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 const fail = (code: string): never => { throw new DneskaiRevisionEditError(code); };
 
-/** `audio`: absent keeps the saved choice, null clears it (the Reel then takes the next track in rotation, #164). */
-export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; audio?: ContentRevision["audio"] | null };
+/** `engagement`: left out keeps the saved keyword and messages, `null` removes them, an object replaces them (#157).
+ * `audio`: absent keeps the saved choice, null clears it (the Reel then takes the next track in rotation, #164). */
+export type DneskaiRevisionEditInput = { caption: string; scheduledAt: string; account?: ContentRevision["account"]; deck?: DneskaiDeckEdit; engagement?: ContentEngagement | null; audio?: ContentRevision["audio"] | null };
 
 /**
  * The deck an owner edit produces, checked against the brief: the edit applied by `applyDneskaiDeckEdit`
@@ -34,18 +35,19 @@ export async function editedDneskaiDeck(original: ContentRevision, edit: Dneskai
 }
 
 /**
- * The edited revision as it will be saved: same sources, versions and trace, the new caption, schedule, account and
- * deck, and no assets, because the old JPEGs show the old deck.
+ * The edited revision as it will be saved: same sources, versions and trace, the new caption, schedule, account,
+ * deck and engagement, and no assets, because the old JPEGs show the old deck.
  */
 export async function prepareDneskaiRevisionEdit(original: ContentRevision, input: DneskaiRevisionEditInput, listBriefAssetHashes: ListBriefAssetHashes, loadBriefPool?: LoadDneskaiBriefPool): Promise<ContentRevision> {
   if (!original.deck) return fail("deck-edit-unsupported");
   const account = input.account ?? original.account;
   if (account.platform !== original.account.platform) return fail("account-platform-changed");
   const deck = await editedDneskaiDeck(original, input.deck, listBriefAssetHashes, loadBriefPool);
-  const { audio: savedAudio, ...rest } = original;
+  const { engagement: saved, audio: savedAudio, ...rest } = original;
+  const engagement = input.engagement === undefined ? saved : input.engagement ?? undefined;
   const audio = input.audio === undefined ? savedAudio : input.audio ?? undefined;
   try {
-    return parseContentRevision({ ...rest, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(audio ? { audio } : {}) });
+    return parseContentRevision({ ...rest, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [], ...(engagement ? { engagement } : {}), ...(audio ? { audio } : {}) });
   } catch { return fail("revision-edit-invalid"); }
 }
 
@@ -55,8 +57,8 @@ export type DneskaiRenderAttachment = { ready: boolean; contentHash: string; rep
 export type DneskaiReusableRender = { assets: ContentRevision["assets"]; report: DneskaiRenderReport };
 
 /**
- * The previous render, when an edit leaves the deck as it was (review-03). A caption, schedule or account change does
- * not move a pixel: the deck holds the slide text, images, crops, order and alt text, so an identical deck draws the
+ * The previous render, when an edit leaves the deck as it was (review-03). A caption, schedule, account or engagement
+ * (#157) change does not move a pixel: the deck holds the slide text, images, crops, order and alt text, so an identical deck draws the
  * same JPEGs. They are reused only when the previous revision carries one JPEG per slide and a stored report that is a
  * clean `rendered` result; anything else (no report, a refused or failed render, a changed deck) renders again.
  * Reuse never touches approval: the edited revision still gets its own content hash and needs a new approval.
