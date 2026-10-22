@@ -16,7 +16,8 @@ let container: HTMLDivElement; let root: Root; let client: QueryClient;
 beforeEach(() => { container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); });
 afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); vi.unstubAllGlobals(); });
 const render = (node: React.ReactNode) => act(() => root.render(<QueryClientProvider client={client}>{node}</QueryClientProvider>));
-const settle = () => act(async () => { await new Promise(done => setTimeout(done, 20)); });
+// Several short turns, so the query settles even on a loaded machine.
+const settle = () => act(async () => { for (let turn = 0; turn < 10; turn++) await new Promise(done => setTimeout(done, 20)); });
 const track = (patch: Partial<DneskaiAudioTrack>): DneskaiAudioTrack => ({ ...DEMO_DNESKAI_AUDIO_TRACKS[0]!, ...patch });
 const library = (tracks: DneskaiAudioTrack[] | null) => vi.stubGlobal('fetch', vi.fn(async () => tracks === null ? new Response('{"error":"not-found"}', { status: 404 }) : Response.json({ tracks })));
 
