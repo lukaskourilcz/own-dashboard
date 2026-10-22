@@ -19,22 +19,32 @@ export function dneskaiRoleOf(type, variant, imageSlots) {
     return { role: type === "single" ? (variant === "type" ? "single-type" : "single-photo") : type === "split" && imageSlots.includes("image-2") ? "split-pair" : type, thumbnails: type === "sources" ? Math.min(imageSlots.length, DNESKAI_MAX_THUMBNAILS) : 0 };
 }
 export const DNESKAI_TEXT_FIELDS = ["headline", "body", "kicker", "credit", "sources"];
-/** Slots code writes: never a field OwnDashboard gates. */
+/**
+ * Slots code writes: never a field OwnDashboard gates. `folio` stays named so a template from before
+ * the owner's 22 October 2026 decision still parses; no current template places it.
+ */
 export const DNESKAI_CODE_OWNED_SLOTS = ["folio", "title", "images-label", "disclosure"];
 /**
  * The character limit of every text slot of every role, which every kit's templates must set
- * exactly. One deck written inside these limits sets without clipping in all five kits, because
- * each kit's frames pass the overflow gate at these limits. Today's editorial values.
+ * exactly and in this order. One deck written inside these limits sets without clipping in all
+ * five kits, because each kit's frames pass the overflow gate at these limits.
+ *
+ * The owner's decision of 22 October 2026 shapes the table: no slide shows a page count (folio)
+ * or a picture credit, which moves to the Instagram caption OwnDashboard writes; the cover photo
+ * and the two single-image roles, each the first or only slide of a post, carry the headline
+ * alone; only the split roles keep a kicker. `credit` is still a contract text field so callers
+ * may keep sending it, but no template places it. OwnDashboard no longer builds sources slides;
+ * the role keeps its templates so an older deck still renders.
  */
 export const DNESKAI_TEXT_LIMITS = {
-    "cover-photo": { headline: 110, kicker: 56, credit: 80 },
-    figure: { folio: 9, headline: 110, body: 260, credit: 80 },
-    split: { folio: 9, kicker: 28, headline: 110, body: 330, credit: 80 },
-    "split-pair": { folio: 9, kicker: 28, headline: 110, body: 320, credit: 80 },
-    statement: { folio: 9, headline: 170, body: 240 },
-    sources: { folio: 9, title: 30, "source-1": 190, "source-2": 190, "source-3": 190, "source-4": 190, "images-label": 40, disclosure: 200 },
-    "single-photo": { headline: 110, body: 100, kicker: 44, credit: 30 },
-    "single-type": { kicker: 56, headline: 120, body: 280, credit: 80 }
+    "cover-photo": { headline: 110 },
+    figure: { headline: 110, body: 260 },
+    split: { kicker: 28, headline: 110, body: 330 },
+    "split-pair": { kicker: 28, headline: 110, body: 320 },
+    statement: { headline: 170, body: 240 },
+    sources: { title: 30, "source-1": 190, "source-2": 190, "source-3": 190, "source-4": 190, "images-label": 40, disclosure: 200 },
+    "single-photo": { headline: 110 },
+    "single-type": { headline: 120 }
 };
 /** The image slots a role carries, each with its `optional` flag; sources carries `image-1` to `image-N`, all required. */
 export function dneskaiImageSlots(role, thumbnails = 0) {

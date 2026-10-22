@@ -28,8 +28,8 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
 export const DNESKAI_STUDIO = {
   package: "@boardlessai/carousel-studio",
   version: "1.0.0",
-  commit: "8135cc54d31d091c27fedfb94a41084ace2923fe",
-  treeSha256: "c2a23af09d3de3690fdeb42537136f0ad98b4eec7c38c931587a3605e6cca7fc",
+  commit: "1c9aa857722f61bfe5adf5a9e9d517a933a79724",
+  treeSha256: "b5670677ee2b25e4b248c1e3271d7a4ebcffec7e8aece75d6beb0af78eac8c93",
 } as const;
 /** OwnDashboard's own rules on top of the studio's: the clip, glyph and placement gates and the JPEG below. Bump on any change. */
 export const DNESKAI_RENDER_POLICY = "dneskai-render/2";
@@ -106,9 +106,8 @@ export const DNESKAI_FIELD_FACES = {
   headline: { family: "Space Grotesk", weight: 700, uppercase: false },
   body: { family: "Source Serif 4", weight: 400, uppercase: false },
   kicker: { family: "IBM Plex Mono", weight: 400, uppercase: true },
-  credit: { family: "IBM Plex Mono", weight: 400, uppercase: false },
   sources: { family: "Source Serif 4", weight: 400, uppercase: false },
-} as const satisfies Record<DneskaiTextField, { family: string; weight: number; uppercase: boolean }>;
+} as const satisfies Record<Exclude<DneskaiTextField, "credit">, { family: string; weight: number; uppercase: boolean }>;
 
 /** The written fields each slide type draws: `DNESKAI_PLACED_FIELDS` in `dneskai-slide-layout.ts`, checked against the vendored templates. */
 
@@ -132,7 +131,7 @@ function characterList(characters: string[]): string {
  * (`unsupported-glyph`). The face check uses the studio's own metric tables, which are also what
  * its fitter measures by, so a character outside them could neither be measured nor drawn.
  */
-type FieldFaces = Readonly<Record<DneskaiTextField, { family: string; weight: number; uppercase: boolean }>>;
+type FieldFaces = Readonly<Partial<Record<DneskaiTextField, { family: string; weight: number; uppercase: boolean }>>>;
 
 /**
  * The faces a kit sets each written field in, from the vendored studio's own kit registry, so a re-vendor
@@ -140,7 +139,6 @@ type FieldFaces = Readonly<Record<DneskaiTextField, { family: string; weight: nu
  * register is refused as invalid input.
  */
 async function kitFieldFaces(kit: DneskaiKitId): Promise<FieldFaces> {
-  if (kit === "editorial") return DNESKAI_FIELD_FACES;
   const found = (await studio()).dneskaiKit(kit);
   if (!found) throw new DneskaiRenderError("render-input-invalid");
   return found.fieldFaces;
@@ -159,6 +157,7 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces:
       continue;
     }
     const face = faces[field];
+    if (!face) continue;
     const missing = metrics.missingCommittedGlyphs(metrics.resolveFace(face.family, face.weight), drawnText(value, face.uppercase))
       .filter((character) => !/\s/u.test(character));
     if (missing.length) {

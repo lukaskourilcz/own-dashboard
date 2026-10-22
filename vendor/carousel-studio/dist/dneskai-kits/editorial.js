@@ -1,34 +1,43 @@
 import { DNESKAI_THUMBNAIL_GRID, DNESKAI_EDITORIAL_METRICS } from "../dneskai-layout.js";
 import { defineDneskaiKit } from "./kit.js";
 import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./contract.js";
-import { box, text, fill, logo, folio, credit, kicker, body, bleed, plated, template, FLOWED, LEFT, MEASURE, RIGHT, W, H } from "./compose.js";
+import { box, text, fill, logo, kicker, body, bleed, plated, template, FLOWED, LEFT, MEASURE, W, H } from "./compose.js";
+/**
+ * The editorial kit: the approved DNESKAi photographic compositions in Space Grotesk, Source Serif 4
+ * and IBM Plex Mono on white, paper, blueprint blue and ink.
+ *
+ * Since the owner's decision of 22 October 2026 no slide carries a folio or a picture credit, and
+ * the first slide of a post shows its headline alone: the cover is the photograph to every edge and
+ * one headline standing on its floor, the single photo the headline on its blue panel, the single
+ * type post a blue rule and one large headline. The kicker survives on the split slides only. The
+ * band the flowed slides are composed in runs from under the logotype to 86 px above the foot
+ * (`DNESKAI_AREA`), the height the credit line used to hold.
+ */
 const coverPhoto = template({
     id: "dneskai-cover-photo",
     name: "DNESKAi · cover photo",
-    description: "A colour photograph to every edge, one headline standing on its floor, a blue rule, then the kicker and the credit.",
+    description: "A colour photograph to every edge and one headline standing on its floor, nothing else.",
     backgroundToken: "foreground",
     layers: [
         bleed("image-1"),
         logo,
-        text("headline", box(LEFT, 778, MEASURE, 372), { colorToken: "background", minFontSize: 50, maxFontSize: 84, maxChars: 110, maxLines: 4, valign: "bottom" }),
-        { type: "rule", ...box(LEFT, 1_176, 64, 6), colorToken: "accent", thickness: 6 },
-        kicker("background", box(LEFT, 1_204, MEASURE, 28)),
-        credit("surface-strong", box(LEFT, 1_246, MEASURE, 26))
+        // Bottom-anchored on the band's floor, 86 px above the foot, where the kicker and credit stood.
+        text("headline", box(LEFT, 770, MEASURE, 494), { colorToken: "background", minFontSize: 50, maxFontSize: 84, maxChars: 110, maxLines: 5, valign: "bottom" })
     ]
 });
 const figure = template({
     id: "dneskai-figure",
     name: "DNESKAi · figure",
-    description: "A headline above a photograph or chart on a white plate, a serif explanation below and the source's credit at the foot.",
+    description: "A headline above a photograph or chart on a white plate and a serif explanation below.",
     backgroundToken: "surface",
     version: FLOWED,
     layers: [
         logo,
-        folio("muted"),
         text("headline", box(LEFT, 166, MEASURE, 200), { minFontSize: 40, maxFontSize: 58, maxChars: 110, maxLines: 3 }),
-        ...plated("image-1", LEFT, 396, MEASURE, 600, { optional: false, fit: "contain" }),
-        body(box(LEFT, 1_030, MEASURE, 172), { minFontSize: 28, maxFontSize: 34, maxChars: 260, maxLines: 5 }),
-        credit("muted")
+        ...plated("image-1", LEFT, 396, MEASURE, 640, { optional: false, fit: "contain" }),
+        // The frame runs 6 px past the band: an empty caption then never reads as words standing on a
+        // covering picture that grew into its place.
+        body(box(LEFT, 1_070, MEASURE, 200), { minFontSize: 28, maxFontSize: 34, maxChars: 260, maxLines: 5 })
     ]
 });
 const spine = fill(box(0, 0, 12, H), "accent");
@@ -41,12 +50,10 @@ const split = template({
     layers: [
         spine,
         logo,
-        folio("muted"),
         kicker("accent", box(LEFT, 166, 420, 28), 20, 28),
         text("headline", box(LEFT, 206, 428, 600), { minFontSize: 38, maxFontSize: 52, maxChars: 110, maxLines: 8 }),
-        ...plated("image-1", 540, 168, 468, 640, { optional: false, fit: "contain" }),
-        body(box(LEFT, 856, MEASURE, 336), { minFontSize: 30, maxFontSize: 36, maxChars: 330, maxLines: 8 }),
-        credit("muted")
+        ...plated("image-1", 540, 168, 468, 680, { optional: false, fit: "contain" }),
+        body(box(LEFT, 896, MEASURE, 368), { minFontSize: 30, maxFontSize: 36, maxChars: 330, maxLines: 8 })
     ]
 });
 const splitPair = template({
@@ -58,14 +65,12 @@ const splitPair = template({
     layers: [
         spine,
         logo,
-        folio("muted"),
         kicker("accent", box(LEFT, 166, 420, 28), 20, 28),
         text("headline", box(LEFT, 206, 428, 330), { minFontSize: 36, maxFontSize: 48, maxChars: 110, maxLines: 6 }),
-        body(box(LEFT, 566, 428, 620), { minFontSize: 27, maxFontSize: 32, maxChars: 320, maxLines: 12 }),
+        body(box(LEFT, 566, 428, 698), { minFontSize: 27, maxFontSize: 32, maxChars: 320, maxLines: 12 }),
         // Landscape-leaning frames: what sources publish is mostly 3:2, 16:9 and wider.
         ...plated("image-1", 540, 168, 468, 360, { optional: false, fit: "contain" }),
-        ...plated("image-2", 540, 556, 468, 360, { optional: false, fit: "contain" }),
-        credit("muted")
+        ...plated("image-2", 540, 556, 468, 360, { optional: false, fit: "contain" })
     ]
 });
 const statement = template({
@@ -77,7 +82,6 @@ const statement = template({
     variants: [{ id: "INK", backgroundToken: "foreground" }],
     layers: [
         logo,
-        folio("background"),
         text("headline", box(LEFT, 236, MEASURE, 620), { colorToken: "background", minFontSize: 52, maxFontSize: 80, maxChars: 170, maxLines: 7, valign: "bottom" }),
         body(box(LEFT, 902, MEASURE, 300), { colorToken: "surface", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 6 })
     ]
@@ -100,7 +104,6 @@ function sources(thumbnails) {
         version: FLOWED,
         layers: [
             logo,
-            folio("muted"),
             text("title", box(LEFT, 166, MEASURE, 56), { minFontSize: 44, maxFontSize: 44, maxChars: 30, maxLines: 1 }),
             ...Array.from({ length: DNESKAI_MAX_SOURCES }, (_, index) => body(box(LEFT, SOURCE_TOP + index * SOURCE_ROW, MEASURE, 86), { slot: dneskaiSourceSlot(index), minFontSize: 25, maxFontSize: 27, maxChars: 190, maxLines: 3 })),
             ...(thumbnails > 0 ? [kicker("muted", box(LEFT, THUMB_TOP - 40, MEASURE, 26), 18, 40, "images-label")] : []),
@@ -112,34 +115,29 @@ function sources(thumbnails) {
 const singlePhoto = template({
     id: "dneskai-single-photo",
     name: "DNESKAi · single, photo",
-    description: "A one-image announcement: a colour photograph to every edge, the headline on a solid blue panel and one serif line under it.",
+    description: "A one-image post: a colour photograph to every edge and the headline alone on a solid blue panel at its foot.",
     backgroundToken: "foreground",
     version: FLOWED,
     layers: [
         bleed("image-1"),
         logo,
-        { type: "shape", ...box(48, 640, 984, 456), fillToken: "accent", strokeWidth: 0, radius: 0, padText: "headline", padding: 24 / W },
+        // The panel's floor sits on the band's floor, 86 px above the foot, as the cover's headline does.
+        { type: "shape", ...box(48, 724, 984, 540), fillToken: "accent", strokeWidth: 0, radius: 0, padText: "headline", padding: 24 / W },
         // 31 px above the panel's floor against 24 px of padding: the cap line and the baseline then
         // sit the same 40 px from the panel's edges, which equal padding around the line box does not.
-        text("headline", box(LEFT, 664, MEASURE, 401), { colorToken: "background", minFontSize: 48, maxFontSize: 76, maxChars: 110, maxLines: 5, valign: "bottom" }),
-        body(box(LEFT, 1_118, MEASURE, 76), { colorToken: "background", minFontSize: 28, maxFontSize: 32, maxChars: 100, maxLines: 2 }),
-        kicker("background", box(LEFT, 1_222, 540, 26), 18, 44),
-        credit("surface-strong", box(632, 1_222, RIGHT - 632, 26), { align: "end", maxChars: 30 })
+        text("headline", box(LEFT, 748, MEASURE, 485), { colorToken: "background", minFontSize: 48, maxFontSize: 80, maxChars: 110, maxLines: 5, valign: "bottom" })
     ]
 });
 const singleType = template({
     id: "dneskai-single-type",
     name: "DNESKAi · single, type",
-    description: "A one-image announcement set in type alone: a blue rule and kicker, one large headline and a serif paragraph under it, standing as one block a little above the middle.",
+    description: "A one-image post set in type alone: a blue rule and one large headline under it, standing as one block a little above the middle.",
     backgroundToken: "background",
     version: FLOWED,
     layers: [
         logo,
         { type: "rule", ...box(LEFT, 172, 96, 8), colorToken: "accent", thickness: 8 },
-        kicker("accent", box(LEFT, 204, MEASURE, 30), 22, 56),
-        text("headline", box(LEFT, 262, MEASURE, 600), { minFontSize: 60, maxFontSize: 100, maxChars: 120, maxLines: 6 }),
-        body(box(LEFT, 892, MEASURE, 300), { minFontSize: 32, maxFontSize: 38, maxChars: 280, maxLines: 6, valign: "bottom" }),
-        credit("muted")
+        text("headline", box(LEFT, 212, MEASURE, 1_052), { minFontSize: 64, maxFontSize: 116, maxChars: 120, maxLines: 8 })
     ]
 });
 const SOURCES = Array.from({ length: DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) => sources(count));

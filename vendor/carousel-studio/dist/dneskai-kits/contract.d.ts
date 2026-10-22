@@ -21,12 +21,22 @@ export declare function dneskaiRoleOf(type: DneskaiSlideType, variant: DneskaiVa
 };
 export declare const DNESKAI_TEXT_FIELDS: readonly ["headline", "body", "kicker", "credit", "sources"];
 export type DneskaiTextField = (typeof DNESKAI_TEXT_FIELDS)[number];
-/** Slots code writes: never a field OwnDashboard gates. */
+/**
+ * Slots code writes: never a field OwnDashboard gates. `folio` stays named so a template from before
+ * the owner's 22 October 2026 decision still parses; no current template places it.
+ */
 export declare const DNESKAI_CODE_OWNED_SLOTS: readonly ["folio", "title", "images-label", "disclosure"];
 /**
  * The character limit of every text slot of every role, which every kit's templates must set
- * exactly. One deck written inside these limits sets without clipping in all five kits, because
- * each kit's frames pass the overflow gate at these limits. Today's editorial values.
+ * exactly and in this order. One deck written inside these limits sets without clipping in all
+ * five kits, because each kit's frames pass the overflow gate at these limits.
+ *
+ * The owner's decision of 22 October 2026 shapes the table: no slide shows a page count (folio)
+ * or a picture credit, which moves to the Instagram caption OwnDashboard writes; the cover photo
+ * and the two single-image roles, each the first or only slide of a post, carry the headline
+ * alone; only the split roles keep a kicker. `credit` is still a contract text field so callers
+ * may keep sending it, but no template places it. OwnDashboard no longer builds sources slides;
+ * the role keeps its templates so an older deck still renders.
  */
 export declare const DNESKAI_TEXT_LIMITS: Readonly<Record<DneskaiTemplateRole, Readonly<Record<string, number>>>>;
 /** The image slots a role carries, each with its `optional` flag; sources carries `image-1` to `image-N`, all required. */

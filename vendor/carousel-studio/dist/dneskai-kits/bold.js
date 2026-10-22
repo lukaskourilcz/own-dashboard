@@ -1,7 +1,7 @@
 import { DNESKAI_EDITORIAL_METRICS } from "../dneskai-layout.js";
 import { defineDneskaiKit } from "./kit.js";
 import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./contract.js";
-import { box, text, logo, folio, credit, kicker, body, template, FLOWED, LEFT, MEASURE, RIGHT } from "./compose.js";
+import { box, text, logo, kicker, body, template, FLOWED, LEFT, MEASURE, RIGHT } from "./compose.js";
 /**
  * The bold kit: one sentence per slide, set as large as the slide allows.
  *
@@ -10,11 +10,14 @@ import { box, text, logo, folio, credit, kicker, body, template, FLOWED, LEFT, M
  * blue or ink and ink on white or paper, from 64 to 140 px across the full 936 px measure. A
  * condensed face fits a 110-character sentence into four or five lines at 80 px where Space
  * Grotesk would need six at 60, so the kit gets its scale from the face and not from capitals.
- * The note under a headline is Inter 400 at 26 to 36 px; labels and credits keep IBM Plex Mono.
+ * The note under a headline is Inter 400 at 26 to 36 px; the split's kicker and the sources' labels
+ * keep IBM Plex Mono. The first slide of a post shows its headline and nothing else, and no slide
+ * carries a folio or a picture credit (owner decision, 22 October 2026), so the type has the whole
+ * slide under the logotype down to 86 px above the foot.
  *
- * Grid: the editorial margins (72 px, a 936 px measure), the logotype top left and the folio top
- * right. Two-column slides split the measure 440 / 40 / 456. Spacing is the editorial 8 px unit
- * and gap table; the layout reads each face's own cap height, because two of these faces sit
+ * Grid: the editorial margins (72 px, a 936 px measure) and the logotype top left. Two-column
+ * slides split the measure 440 / 40 / 456. Spacing is the editorial 8 px unit, gap table and band
+ * (166 to 1264); the layout reads each face's own cap height, because two of these faces sit
  * differently in their line boxes than the editorial three.
  *
  * Swipe device: the ground changes with the role, never inside a slide. The cover, the statement
@@ -28,17 +31,16 @@ import { box, text, logo, folio, credit, kicker, body, template, FLOWED, LEFT, M
  * the editorial hairline; a plate on blue or ink has none, since the ground already frames it.
  *
  * Roles:
- * - cover photo (blue): kicker under the logotype, the headline standing on the plate, the plate
- *   across the lower third, the credit under it. Drawn as declared.
+ * - cover photo (blue): the headline from under the logotype, standing on the plate, the plate
+ *   across the lower third down to the band's floor. Drawn as declared.
  * - figure (white): the headline at the top, the picture and its explanation centred under it.
  * - split and split pair (ink): kicker and headline in the left column, the pictures to the right,
  *   the explanation under both (split) or under the headline (pair).
  * - statement (blue, INK variant on ink): the sentence and a quiet note, centred as one block.
  * - sources (paper): the title in the display face, the sources, the thumbnails and the
  *   disclosure as one colophon from the top.
- * - single photo (ink): the plate, the headline and one line, centred as a group, with the kicker
- *   and the credit on the foot row.
- * - single type (blue): kicker, a very large headline and a paragraph, centred as one block.
+ * - single photo (ink): the plate and the headline under it, centred as a group.
+ * - single type (blue): one headline at up to 160 px, centred: the whole post is the sentence.
  */
 /** A picture drawn as a flat plate. `border` adds the 2 px hairline a contained chart gets on white. */
 function plate(slot, x, y, width, height, options) {
@@ -62,31 +64,27 @@ const PICTURE_WIDTH = RIGHT - PICTURE_X;
 const coverPhoto = template({
     id: "dneskai-bold-cover-photo",
     name: "DNESKAi bold · cover photo",
-    description: "One sentence at display size in white on blueprint blue, standing on a photograph drawn as a plate across the lower third, the kicker above and the credit below.",
+    description: "One sentence at display size in white on blueprint blue, standing on a photograph drawn as a plate across the lower third.",
     backgroundToken: "accent",
     layers: [
         logo,
-        headline(box(LEFT, 218, MEASURE, 594), { colorToken: "background", minFontSize: 60, maxFontSize: 128, maxChars: 110, maxLines: 7, valign: "bottom" }),
-        kicker("background", box(LEFT, 170, MEASURE, 28), 22, 56),
-        plate("image-1", LEFT, 852, MEASURE, 348, { fit: "cover" }),
-        credit("surface-strong", box(LEFT, 1_226, MEASURE, 26))
+        headline(box(LEFT, 166, MEASURE, 640), { colorToken: "background", minFontSize: 60, maxFontSize: 132, maxChars: 110, maxLines: 7, valign: "bottom" }),
+        plate("image-1", LEFT, 846, MEASURE, 418, { fit: "cover" })
     ]
 });
 const figure = template({
     id: "dneskai-bold-figure",
     name: "DNESKAi bold · figure",
-    description: "A large headline on white, the picture or chart under it with a hairline, a short explanation and the credit at the foot.",
+    description: "A large headline on white, the picture or chart under it with a hairline and a short explanation.",
     backgroundToken: "background",
     version: FLOWED,
     layers: [
         logo,
-        folio("muted"),
         headline(box(LEFT, 166, MEASURE, 330), { colorToken: "foreground", minFontSize: 52, maxFontSize: 92, maxChars: 110, maxLines: 5 }),
-        plate("image-1", LEFT, 530, MEASURE, 450, { fit: "contain", border: "muted" }),
+        plate("image-1", LEFT, 530, MEASURE, 500, { fit: "contain", border: "muted" }),
         // The frame runs 6 px past the band, as the editorial figure's does: an empty note then never
         // reads as words standing on a picture that grew into its place.
-        body(box(LEFT, 1_016, MEASURE, 186), { minFontSize: 26, maxFontSize: 32, maxChars: 260, maxLines: 6 }),
-        credit("muted")
+        body(box(LEFT, 1_070, MEASURE, 200), { minFontSize: 26, maxFontSize: 32, maxChars: 260, maxLines: 6 })
     ]
 });
 const split = template({
@@ -97,12 +95,10 @@ const split = template({
     version: FLOWED,
     layers: [
         logo,
-        folio("surface-strong"),
         kicker("surface-strong", box(LEFT, 166, COLUMN, 28), 20, 28),
         headline(box(LEFT, 206, COLUMN, 600), { colorToken: "background", minFontSize: 48, maxFontSize: 88, maxChars: 110, maxLines: 10 }),
-        plate("image-1", PICTURE_X, 168, PICTURE_WIDTH, 640, { fit: "contain" }),
-        body(box(LEFT, 856, MEASURE, 336), { colorToken: "surface", minFontSize: 28, maxFontSize: 34, maxChars: 330, maxLines: 9 }),
-        credit("surface-strong")
+        plate("image-1", PICTURE_X, 168, PICTURE_WIDTH, 680, { fit: "contain" }),
+        body(box(LEFT, 896, MEASURE, 368), { colorToken: "surface", minFontSize: 28, maxFontSize: 34, maxChars: 330, maxLines: 9 })
     ]
 });
 const splitPair = template({
@@ -113,13 +109,11 @@ const splitPair = template({
     version: FLOWED,
     layers: [
         logo,
-        folio("surface-strong"),
         kicker("surface-strong", box(LEFT, 166, COLUMN, 28), 20, 28),
         headline(box(LEFT, 206, COLUMN, 340), { colorToken: "background", minFontSize: 40, maxFontSize: 68, maxChars: 110, maxLines: 7 }),
-        body(box(LEFT, 576, COLUMN, 620), { colorToken: "surface", minFontSize: 24, maxFontSize: 30, maxChars: 320, maxLines: 12 }),
+        body(box(LEFT, 576, COLUMN, 688), { colorToken: "surface", minFontSize: 24, maxFontSize: 30, maxChars: 320, maxLines: 12 }),
         plate("image-1", PICTURE_X, 168, PICTURE_WIDTH, 360, { fit: "contain" }),
-        plate("image-2", PICTURE_X, 552, PICTURE_WIDTH, 360, { fit: "contain" }),
-        credit("surface-strong")
+        plate("image-2", PICTURE_X, 552, PICTURE_WIDTH, 360, { fit: "contain" })
     ]
 });
 const statement = template({
@@ -131,7 +125,6 @@ const statement = template({
     variants: [{ id: "INK", backgroundToken: "foreground" }],
     layers: [
         logo,
-        folio("background"),
         headline(box(LEFT, 170, MEASURE, 740), { colorToken: "background", minFontSize: 60, maxFontSize: 132, maxChars: 170, maxLines: 10 }),
         body(box(LEFT, 950, MEASURE, 246), { colorToken: "surface", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 6 })
     ]
@@ -151,7 +144,6 @@ function sources(thumbnails) {
         version: FLOWED,
         layers: [
             logo,
-            folio("muted"),
             text("title", box(LEFT, 166, MEASURE, 84), { fontWeight: 700, minFontSize: 64, maxFontSize: 72, maxChars: 30, maxLines: 1 }),
             ...Array.from({ length: DNESKAI_MAX_SOURCES }, (_, index) => body(box(LEFT, SOURCE_TOP + index * SOURCE_ROW, MEASURE, 112), { slot: dneskaiSourceSlot(index), colorToken: "foreground", minFontSize: 23, maxFontSize: 30, maxChars: 190, maxLines: 4 })),
             ...(thumbnails > 0 ? [kicker("secondary", box(LEFT, THUMB_TOP - 40, MEASURE, 26), 18, 40, "images-label")] : []),
@@ -163,30 +155,24 @@ function sources(thumbnails) {
 const singlePhoto = template({
     id: "dneskai-bold-single-photo",
     name: "DNESKAi bold · single, photo",
-    description: "A one-image announcement on ink: the photograph as a plate, a large white headline and one line under it, the kicker and the credit on the foot row.",
+    description: "A one-image post on ink: the photograph as a plate and a large white headline under it, centred as one group.",
     backgroundToken: "foreground",
     version: FLOWED,
     layers: [
         logo,
-        plate("image-1", LEFT, 166, MEASURE, 460, { fit: "cover" }),
-        headline(box(LEFT, 666, MEASURE, 400), { colorToken: "background", minFontSize: 52, maxFontSize: 112, maxChars: 110, maxLines: 6 }),
-        body(box(LEFT, 1_096, MEASURE, 80), { colorToken: "surface", minFontSize: 28, maxFontSize: 32, maxChars: 100, maxLines: 2 }),
-        kicker("surface-strong", box(LEFT, 1_224, 540, 26), 18, 44),
-        credit("surface-strong", box(632, 1_224, RIGHT - 632, 26), { align: "end", maxChars: 30 })
+        plate("image-1", LEFT, 166, MEASURE, 480, { fit: "cover" }),
+        headline(box(LEFT, 686, MEASURE, 578), { colorToken: "background", minFontSize: 56, maxFontSize: 120, maxChars: 110, maxLines: 6 })
     ]
 });
 const singleType = template({
     id: "dneskai-bold-single-type",
     name: "DNESKAi bold · single, type",
-    description: "A one-image announcement in type alone on blueprint blue: a kicker, one very large headline and a paragraph under it, centred as one block.",
+    description: "A one-image post in type alone on blueprint blue: one headline as large as the slide allows, centred.",
     backgroundToken: "accent",
     version: FLOWED,
     layers: [
         logo,
-        kicker("background", box(LEFT, 170, MEASURE, 30), 22, 56),
-        headline(box(LEFT, 214, MEASURE, 640), { colorToken: "background", minFontSize: 60, maxFontSize: 140, maxChars: 120, maxLines: 9 }),
-        body(box(LEFT, 890, MEASURE, 306), { colorToken: "surface", minFontSize: 30, maxFontSize: 36, maxChars: 280, maxLines: 8 }),
-        credit("surface-strong")
+        headline(box(LEFT, 166, MEASURE, 1_098), { colorToken: "background", minFontSize: 64, maxFontSize: 160, maxChars: 120, maxLines: 9 })
     ]
 });
 /**
@@ -202,8 +188,8 @@ export const BOLD_METRICS = {
     panel: DNESKAI_EDITORIAL_METRICS.panel
 };
 const STATEMENT = { kind: "stack", anchor: "centre", items: [{ key: "headline", gap: 0 }, { key: "body", gap: "headlineToNote" }] };
-const SINGLE_PHOTO = { kind: "stack", anchor: "centre", items: [{ key: "image-1", gap: 0 }, { key: "headline", gap: "headlineToPicture" }, { key: "body", gap: "headlineToBody" }] };
-const SINGLE_TYPE = { kind: "stack", anchor: "centre", items: [{ key: "kicker", gap: 0 }, { key: "headline", gap: "labelToText" }, { key: "body", gap: "headlineToNote" }] };
+const SINGLE_PHOTO = { kind: "stack", anchor: "centre", items: [{ key: "image-1", gap: 0 }, { key: "headline", gap: "headlineToPicture" }] };
+const SINGLE_TYPE = { kind: "stack", anchor: "centre", items: [{ key: "headline", gap: 0 }] };
 export const BOLD_TEMPLATES = [
     { role: "cover-photo", template: coverPhoto, flow: { kind: "cover-static" } },
     { role: "figure", template: figure, flow: { kind: "figure" } },

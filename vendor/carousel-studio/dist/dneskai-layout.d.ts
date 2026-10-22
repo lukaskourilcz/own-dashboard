@@ -21,7 +21,7 @@ export declare const DNESKAI_GAPS: {
     readonly headlineToNote: 8;
     /** Two stacked pictures, and the rows and columns of the sources slide's thumbnails. */
     readonly pictureToPicture: 3;
-    /** The single type slide's blue rule above its kicker. */
+    /** A rule above a label line. Unused since single type lost its kicker; kept so every metrics table names thirteen gaps. */
     readonly ruleToLabel: 3;
     /** The sources slide's title above its first source. */
     readonly titleToSources: 5;
@@ -46,12 +46,14 @@ export declare const DNESKAI_THUMBNAIL_GRID: {
     readonly gap: 24;
 };
 /**
- * The band every flowed slide is composed in: under the logotype row, above the credit line.
- * A slide whose words and pictures are shorter than it gives the rest back as described above.
+ * The band every flowed slide is composed in: under the logotype row, down to 86 px above the
+ * foot. It ended at 1196 above a credit line until the owner's decision of 22 October 2026 took
+ * credits off the slides; the band now takes that height. A slide whose words and pictures are
+ * shorter than it gives the rest back as described above.
  */
 export declare const DNESKAI_AREA: {
     readonly top: 166;
-    readonly bottom: 1196;
+    readonly bottom: 1264;
 };
 /**
  * The share of the leftover height set above a centred group. Under a half, so the group's centre

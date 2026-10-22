@@ -9,7 +9,7 @@ import { type CarouselPayload, type ImageCrop } from "./schema.js";
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
- * strings code owns (the folio, the sources slide's title and its disclosure), decodes and crops
+ * strings code owns (the sources slide's title and its disclosure), decodes and crops
  * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
  * the words and pictures they carry and the height left over is set around them on purpose), and
  * renders through the same engine and gates as every other Design Lab slide.
@@ -73,12 +73,14 @@ export interface DneskaiSlideInput {
     variant?: DneskaiVariant;
     headline?: string;
     body?: string;
+    /** Set only on the split slides. Ignored elsewhere since the owner's decision of 22 October 2026. */
     kicker?: string;
+    /** Accepted and ignored: no slide shows a picture credit; it belongs in the Instagram caption. */
     credit?: string;
     /** The sources slide's lines, one source each, at most `DNESKAI_MAX_SOURCES`. */
     sources?: readonly string[];
     images?: readonly DneskaiImageInput[];
-    /** The slide's place in the carousel. The folio prints it; a single post is `{ 0, 1 }`. */
+    /** The slide's place in the carousel; a single post is `{ 0, 1 }`. No slide prints it. */
     position: {
         index: number;
         count: number;

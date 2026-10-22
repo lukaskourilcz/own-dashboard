@@ -22,7 +22,8 @@ export interface DneskaiKit {
     readonly flows: ReadonlyMap<string, DneskaiFlow>;
     readonly metrics: DneskaiLayoutMetrics;
     resolve(type: DneskaiSlideType, variant: DneskaiVariant | undefined, imageSlots: readonly string[]): CarouselTemplate;
-    readonly fieldFaces: Readonly<Record<DneskaiTextField, DneskaiFieldFace>>;
+    /** One face per field the kit places, in `DNESKAI_TEXT_FIELDS` order. A field no template places (since 22 October 2026, `credit`) has no face. */
+    readonly fieldFaces: Readonly<Partial<Record<DneskaiTextField, DneskaiFieldFace>>>;
     readonly placedFields: Readonly<Record<DneskaiSlideType, readonly DneskaiTextField[]>>;
 }
 /** Importing a kit verifies structure only. Font/manifest reads wait for the first fieldFaces access. */

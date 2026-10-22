@@ -14,7 +14,7 @@ import { ImageCropSchema } from "./schema.js";
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).
  *
  * The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the
- * strings code owns (the folio, the sources slide's title and its disclosure), decodes and crops
+ * strings code owns (the sources slide's title and its disclosure), decodes and crops
  * the photographs, lays the slide out for what it holds (`dneskai-layout.ts`: frames shrink to
  * the words and pictures they carry and the height left over is set around them on purpose), and
  * renders through the same engine and gates as every other Design Lab slide.
@@ -110,12 +110,6 @@ function imageLayers(template) {
 function isBleed(layer) {
     return layer.x <= 0 && layer.y <= 0 && layer.width >= 1 && layer.height >= 1;
 }
-function folio(position) {
-    if (position.count <= 1)
-        return "";
-    const pad = (value) => String(value).padStart(2, "0");
-    return `${pad(position.index + 1)} / ${pad(position.count)}`;
-}
 function strings(input, template) {
     const fixed = FIXED_STRINGS[input.locale ?? "cs"];
     const all = {
@@ -123,7 +117,6 @@ function strings(input, template) {
         body: input.body?.trim() ?? "",
         kicker: input.kicker?.trim() ?? "",
         credit: input.credit?.trim() ?? "",
-        folio: folio(input.position),
         title: fixed.title,
         "images-label": fixed.imagesLabel,
         disclosure: fixed.disclosure,

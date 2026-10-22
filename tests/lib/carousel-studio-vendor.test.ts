@@ -100,7 +100,7 @@ describe("vendored @boardlessai/carousel-studio", () => {
         const field = (layer.slot.startsWith("source-") ? "sources" : layer.slot) as DneskaiTextField;
         const family = dressed.fonts[layer.fontToken];
         expect({ id, field, family, weight: studio.resolveFace(family, layer.fontWeight).weight, uppercase: layer.uppercase })
-          .toEqual({ id, field, ...DNESKAI_FIELD_FACES[field] });
+          .toEqual({ id, field, ...(DNESKAI_FIELD_FACES as Record<string, object>)[field] });
         drawn.add(field);
       }
       expect({ id, fields: [...drawn].sort() }).toEqual({ id, fields: [...DNESKAI_PLACED_FIELDS[type]].sort() });

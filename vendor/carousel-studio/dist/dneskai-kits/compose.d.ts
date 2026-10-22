@@ -4,8 +4,9 @@ import { type CarouselLayerInput, type CarouselTemplate, type CarouselTemplateIn
  *
  * Single-slide templates for the reason the post decks use them: a carousel here is assembled from
  * whatever the day's story has — one photograph or four, a chart, a quote — so each slide is
- * chosen on its own and the deck is the sequence. The slide's place travels in the render's `deck`
- * position, which the folio reads.
+ * chosen on its own and the deck is the sequence. No slide prints its place in the deck, and none
+ * prints a picture credit: since the owner's decision of 22 October 2026 the credits travel in the
+ * Instagram caption, and the first slide of a post carries its headline and nothing else.
  *
  * Composed for the 4:5 master alone. These are photographic compositions: a cover's headline
  * stands on the floor of a full-bleed picture and the figure plates are sized to the 1080 × 1350
@@ -45,10 +46,6 @@ export declare const text: (slot: string, frame: Box, options: TextOptions) => C
 export declare const fill: (frame: Box, fillToken: string) => CarouselLayerInput;
 /** The DNESKAi logotype, top left, drawn from the kit's outlines at about 34 px high. */
 export declare const logo: CarouselLayerInput;
-/** "02 / 07", top right, in the mono label face. Code writes it from the deck position. */
-export declare const folio: (colorToken: string) => CarouselLayerInput;
-/** The photograph's source, in the mono label face, at the foot of the slide. */
-export declare const credit: (colorToken: string, frame?: Box, options?: TextOptions) => CarouselLayerInput;
 /** An uppercase, tracked label in the mono face: a kicker, or the sources slide's image label. */
 export declare const kicker: (colorToken: string, frame: Box, size?: number, maxChars?: number, slot?: string) => CarouselLayerInput;
 export declare const body: (frame: Box, options: TextOptions) => CarouselLayerInput;

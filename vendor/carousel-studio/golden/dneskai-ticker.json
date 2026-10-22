@@ -10,43 +10,43 @@
       "name": "acceptance-1",
       "templateId": "dneskai-ticker-cover-photo",
       "version": "1.1.0",
-      "pngHash": "d22b174d5737f5bcabe569d911e3ade6c5c587bcc69a6f6553243206f25afdae"
+      "pngHash": "53d69cb8123736fabd7259709a714bb5d9ea6cfedd6820ade3d69775b46487ac"
     },
     {
       "name": "acceptance-2",
       "templateId": "dneskai-ticker-figure",
       "version": "1.1.0",
-      "pngHash": "19c609efeec3bd966db70cacb38df3bd200db3db810e26cd98fa3eb0b4a109bd"
+      "pngHash": "4cc07776ef31a70d67e3ab2b51d097716693f36a2d916f7254a7285b02b7af67"
     },
     {
       "name": "acceptance-3",
       "templateId": "dneskai-ticker-figure",
       "version": "1.1.0",
-      "pngHash": "ecaa6138aec68b8e2879c4f7594b85b03ef84174268247403b8a903dedfe3c7a"
+      "pngHash": "bab49816b5fa16c272987542ed119feef4536d42584ae46eaae7472b8e1c120f"
     },
     {
       "name": "acceptance-4",
       "templateId": "dneskai-ticker-split-pair",
       "version": "1.1.0",
-      "pngHash": "46fb43cf244a76bc0292a7fa6937598384de6ff2f950b3739862663b96778ece"
+      "pngHash": "66a71e4519562f5e8926552147e58afcdb7d5fbd73eb983d3ace6553e50be8fc"
     },
     {
       "name": "acceptance-5",
       "templateId": "dneskai-ticker-statement",
       "version": "1.1.0",
-      "pngHash": "82c82092f2def49a3f543e0ba416b0d3a7e4dcab2bbcbf8abbe411deac974a55"
+      "pngHash": "1c2e0c9eda0293c760aea526e24da836953269b3532110c713729cc3a4c7ebd9"
     },
     {
       "name": "acceptance-6",
       "templateId": "dneskai-ticker-figure",
       "version": "1.1.0",
-      "pngHash": "ba59d75a78149f784b015f727388b2f0eac660c875d85ef44faeca0258436a77"
+      "pngHash": "6897d4aeb4c0f5b16a1b6e8ee4e9f02b6d66e5422580c2398fdd59a96c67a885"
     },
     {
       "name": "acceptance-7",
       "templateId": "dneskai-ticker-sources-4",
       "version": "1.1.0",
-      "pngHash": "804af65b7f591b9af3424e8eac9187510d7b38cc66c997d0ca6c0d98d4d2b2ee"
+      "pngHash": "0d7c974f54f6b368c9193bba5eb324a4c0e76e6e29d302057d30424f1f35e446"
     }
   ]
 }

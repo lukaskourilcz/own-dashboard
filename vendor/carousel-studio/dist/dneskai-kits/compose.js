@@ -5,8 +5,9 @@ import { MASTER_CANVAS, MASTER_FORMAT } from "../canvas.js";
  *
  * Single-slide templates for the reason the post decks use them: a carousel here is assembled from
  * whatever the day's story has — one photograph or four, a chart, a quote — so each slide is
- * chosen on its own and the deck is the sequence. The slide's place travels in the render's `deck`
- * position, which the folio reads.
+ * chosen on its own and the deck is the sequence. No slide prints its place in the deck, and none
+ * prints a picture credit: since the owner's decision of 22 October 2026 the credits travel in the
+ * Instagram caption, and the first slide of a post carries its headline and nothing else.
  *
  * Composed for the 4:5 master alone. These are photographic compositions: a cover's headline
  * stands on the floor of a full-bleed picture and the figure plates are sized to the 1080 × 1350
@@ -52,10 +53,6 @@ export const text = (slot, frame, options) => ({
 export const fill = (frame, fillToken) => ({ type: "shape", ...frame, fillToken, strokeWidth: 0, radius: 0 });
 /** The DNESKAi logotype, top left, drawn from the kit's outlines at about 34 px high. */
 export const logo = { type: "logo", ...box(LEFT, 64, 230, 52), colorToken: "foreground", fontToken: "headline" };
-/** "02 / 07", top right, in the mono label face. Code writes it from the deck position. */
-export const folio = (colorToken) => text("folio", box(RIGHT - 228, 76, 228, 26), { colorToken, fontToken: "mono", fontWeight: 400, minFontSize: 20, maxFontSize: 20, maxChars: 9, maxLines: 1, align: "end", tracking: 0.04 });
-/** The photograph's source, in the mono label face, at the foot of the slide. */
-export const credit = (colorToken, frame = box(LEFT, 1_224, MEASURE, 26), options = {}) => text("credit", frame, { colorToken, fontToken: "mono", fontWeight: 400, minFontSize: 18, maxFontSize: 18, maxChars: 80, maxLines: 1, ...options });
 /** An uppercase, tracked label in the mono face: a kicker, or the sources slide's image label. */
 export const kicker = (colorToken, frame, size = 22, maxChars = 56, slot = "kicker") => text(slot, frame, { colorToken, fontToken: "mono", fontWeight: 400, minFontSize: size, maxFontSize: size, maxChars, maxLines: 1, uppercase: true, tracking: 0.08 });
 export const body = (frame, options) => text("body", frame, { colorToken: "muted", fontToken: "body", fontWeight: 400, ...options });

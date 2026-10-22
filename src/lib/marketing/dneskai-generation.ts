@@ -421,19 +421,6 @@ export function dneskaiTalksAboutSources(value: string): boolean {
   return SOURCE_TALK.some((pattern) => pattern.test(value));
 }
 
-/** Characters a committed face carries; anything else is dropped from code-written text. */
-export type DneskaiGlyphFilter = (value: string, field: "credit" | "sources") => string;
-/** The filter over the studio's own metric tables, which are also what the renderer's glyph gate reads. */
-export async function loadDneskaiGlyphFilter(): Promise<DneskaiGlyphFilter> {
-  const fonts = await import("@boardlessai/carousel-studio/fonts");
-  return (value, field) => {
-    const face = DNESKAI_FIELD_FACES[field];
-    const text = value.normalize("NFC");
-    const missing = new Set(fonts.missingCommittedGlyphs(fonts.resolveFace(face.family, face.weight), text));
-    return whitespace([...text].filter((character) => /\s/u.test(character) || !missing.has(character)).join(""));
-  };
-}
-
 /** Latin letters and digits only, as the studio's `normalizeHashtag`: Instagram matches a diacritic tag as another tag. */
 export function normalizeDneskaiHashtag(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, "");

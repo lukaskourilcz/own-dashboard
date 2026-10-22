@@ -69,10 +69,7 @@ export function defineDneskaiKit(input) {
                     found[field] = face;
                     origins.set(field, t.id);
                 }
-            for (const field of DNESKAI_TEXT_FIELDS)
-                if (!found[field])
-                    throw new Error(`Kit ${input.id} lacks face for ${field}`);
-            fieldFaces = found;
+            fieldFaces = Object.fromEntries(DNESKAI_TEXT_FIELDS.flatMap(field => found[field] ? [[field, found[field]]] : []));
             return fieldFaces;
         }
     };
