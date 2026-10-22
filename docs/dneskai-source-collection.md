@@ -88,7 +88,9 @@ proměnná fázi pozastaví před rezervací s nulovou cenou a kódem
 Běh Apify, který už byl spuštěný, se dočte, aby jeho rezervace dostala skutečnou
 cenu. Jev přepínač Apify nečte; řídí se `MARKETING_DNESKAI_PAID_ENABLED` (v ručním
 běhu platným `MARKETING_DNESKAI_MANUAL_RUN`) a souhlasem, takže běh bez Apify
-klasifikuje kandidáty z bezplatných feedů, skončí jako `partial` a vybere události.
+klasifikuje kandidáty z bezplatných feedů a vybere události. Instagramová fáze
+vypnutá přepínačem si nechá kód `collection-apify-disabled`, ale běh kvůli ní
+nekončí jako `partial`; ten stav znamená skutečnou chybu nebo neúplné čtení zdroje.
 Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.
 
 Jev dostává jen omezené veřejné zdrojové texty a související veřejné kandidáty.

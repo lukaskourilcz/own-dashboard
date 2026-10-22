@@ -114,7 +114,9 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  current=await store.stages(owner,run.id);
  pending=pendingDneskaiCandidates(await store.candidates(owner,input.projectId),clock());
  if(current.some(stage=>stage.kind==='jev'&&stage.status==='queued')){const updated=await store.finish(owner,run.id,fence,'running',null);return{runId:updated.id,status:'running',continue:true,retryAfterSeconds:15};}
- const covered=current.every(stage=>stage.status==='ok'||(stage.kind==='jev'&&stage.error_code==='collection-no-new-candidates'));
+ // An Instagram stage held by its own switch (collection-apify-disabled) was switched off, not left incomplete: it keeps
+ // its code on the stage and does not make the run partial (production-07). Real source errors still do.
+ const covered=current.every(stage=>stage.status==='ok'||(stage.kind==='jev'&&stage.error_code==='collection-no-new-candidates')||dneskaiStageSwitchedOff(stage));
  const status=covered&&!pending.length?'complete':current.some(stage=>stage.status==='ok')?'partial':'held';
  const result=await store.finish(owner,run.id,fence,status,pending.length?'collection-classification-pending':status==='complete'?null:'collection-review-incomplete');return{runId:result.id,status:result.status,continue:false};
 }
@@ -136,6 +138,8 @@ export function dneskaiJevHistory(items:readonly import('./dneskai-contracts').D
  */
 const APIFY_REFUSED_BEFORE_REQUEST=new Set(['collection-apify-unconfigured','collection-instagram-input-invalid']);
 export function dneskaiApifyStartRefused(code:string){return APIFY_REFUSED_BEFORE_REQUEST.has(code)||/^provider-http-(400|401|402|403|404|413|422)-[a-z0-9-]+$/.test(code);}
+/** A stage the Apify switch held before any paid start: settled at zero cost, so nothing about it is unknown. */
+export function dneskaiStageSwitchedOff(stage:Pick<import('./dneskai-store').DneskaiStage,'kind'|'status'|'error_code'|'cost_usd'>){return stage.kind==='instagram'&&stage.status==='held'&&stage.error_code==='collection-apify-disabled'&&stage.cost_usd===0;}
 /** Jev classifies eight candidates per paid call; at most 16 calls per run (the former fixed stage count). */
 export const DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16;
 export function dneskaiJevStageCount(pending:number){return pending>0?Math.min(DNESKAI_JEV_MAX_STAGES,Math.ceil(pending/DNESKAI_JEV_BATCH)):0;}

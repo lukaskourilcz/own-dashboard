@@ -145,6 +145,13 @@ describe('Apify switch MARKETING_DNESKAI_APIFY_ENABLED: Instagram held, Jev stil
   expect(f.stages.filter(row=>row.kind==='instagram')).toEqual([expect.objectContaining({status:'held',reserved_usd:0,cost_usd:0,error_code:'collection-apify-disabled'}),expect.objectContaining({status:'held',reserved_usd:0,cost_usd:0,error_code:'collection-apify-disabled'})]);
   expect(f.claimStage.mock.calls.filter(call=>call[3].startsWith('instagram:')).map(call=>call[4])).toEqual([false,false]);
   expect(jev).toHaveBeenCalledTimes(1);expect(jev.mock.calls[0][0]).toHaveLength(3);
+  expect(result).toMatchObject({status:'complete',continue:false});expect(f.finish).toHaveBeenLastCalledWith(owner,runId,expect.any(String),'complete',null);
+ });
+ it('keeps a run with a switched-off Instagram stage partial when a free feed really failed',async()=>{
+  const f=fixture([stage('openai-blog','feed'),stage('anthropic-news','feed'),stage('instagram:mosseri','instagram')],[]);
+  const feed=vi.fn(async(source:{id:string})=>{if(source.id==='anthropic-news')throw new DneskaiProviderError('collection-source-timeout');return{items:[item(1),item(2)],complete:true,errorCode:null};});
+  const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env:{...env,MARKETING_DNESKAI_APIFY_ENABLED:'false'},now:()=>now,feed:feed as unknown as NonNullable<DneskaiCollectionDependencies['feed']>,jev:classify()});
+  expect(f.stages.find(row=>row.kind==='instagram')).toMatchObject({status:'held',error_code:'collection-apify-disabled'});
   expect(result).toMatchObject({status:'partial',continue:false});expect(f.finish).toHaveBeenLastCalledWith(owner,runId,expect.any(String),'partial','collection-review-incomplete');
  });
  it('scheduled run with the switch on still starts Apify for a queued Instagram stage',async()=>{
@@ -154,7 +161,7 @@ describe('Apify switch MARKETING_DNESKAI_APIFY_ENABLED: Instagram held, Jev stil
  });
  it('manual registered run needs the switch too: off holds Instagram at zero cost and still runs Jev, on starts Apify',async()=>{
   const off=night(),jev=classify(),startInstagram=vi.fn(async()=>started),withoutSwitch={...scoped,MARKETING_DNESKAI_APIFY_ENABLED:undefined};
-  expect(await tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:off.store,env:withoutSwitch,now:()=>now,feed:freeFeed(),jev,startInstagram})).toMatchObject({status:'partial',continue:false});
+  expect(await tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:off.store,env:withoutSwitch,now:()=>now,feed:freeFeed(),jev,startInstagram})).toMatchObject({status:'complete',continue:false});
   expect(startInstagram).not.toHaveBeenCalled();expect(jev).toHaveBeenCalledTimes(1);expect(off.store.admit).not.toHaveBeenCalled();
   expect(off.stages.filter(row=>row.kind==='instagram').map(row=>[row.status,row.reserved_usd,row.cost_usd,row.error_code])).toEqual([['held',0,0,'collection-apify-disabled'],['held',0,0,'collection-apify-disabled']]);
   const on=night();await tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:on.store,env:scoped,now:()=>now,feed:freeFeed(),jev:classify(),startInstagram});

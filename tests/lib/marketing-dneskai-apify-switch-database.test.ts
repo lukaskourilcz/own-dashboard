@@ -55,7 +55,7 @@ describe('DNESKAi collection with MARKETING_DNESKAI_APIFY_ENABLED unset', () => 
     for (let tick = 0; tick < 30 && (!response || response.continue); tick++) {
       response = await tickDneskaiCollection(OWNER, { projectId: PROJECT, ...(response ? { runId: response.runId } : {}) }, { store, env, feed, jev, startInstagram, pollInstagram });
     }
-    expect(response).toMatchObject({ status: 'partial', continue: false });
+    expect(response).toMatchObject({ status: 'complete', continue: false });
     expect(startInstagram).not.toHaveBeenCalled(); expect(pollInstagram).not.toHaveBeenCalled();
     expect(jev).toHaveBeenCalledTimes(1);
 
@@ -67,7 +67,7 @@ describe('DNESKAi collection with MARKETING_DNESKAI_APIFY_ENABLED unset', () => 
     expect(stages.filter((stage) => stage.kind === 'jev').map((stage) => stage.status)).toEqual(['ok']);
 
     const [run] = await sql<{ status: string; error_code: string | null; cost_usd: string | null; target_date: string }>('select status,error_code,cost_usd::text,target_date::text from public.marketing_dneskai_runs where id=$1', [response!.runId]);
-    expect(run).toMatchObject({ status: 'partial', error_code: 'collection-review-incomplete', target_date: '2026-10-27' });
+    expect(run).toMatchObject({ status: 'complete', error_code: null, target_date: '2026-10-27' });
     expect(Number(run!.cost_usd)).toBeCloseTo(0.0001, 10);
     const selected = await sql<{ id: string; target_date: string }>("select id,target_date::text from public.marketing_dneskai_candidates where user_id=$1 and status='selected' order by id", [OWNER]);
     expect(selected.map((row) => row.id).sort()).toEqual(reports.map((report) => report.id).sort());
