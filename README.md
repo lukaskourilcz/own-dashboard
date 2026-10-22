@@ -172,6 +172,7 @@ The migrations, in the order they run:
 74. `20261022180000_dneskai_relevance_first_selection.sql` — unapplied, `marketing_dneskai_finish` picks the day's events by relevance with at most one outside ai-news and tech-news (owner decisions 11 and 12).
 75. `20261022180100_dneskai_held_requeue.sql` — unapplied, `marketing_dneskai_requeue_held` gives a recent Jev hold one automatic second review (decision 13); called only with `DNESKAI_SELECTION_V2_ENABLED=true`.
 76. `20261022190000_dneskai_regenerate_with_note.sql` — unapplied, a finished regeneration job supersedes the returned or in-review version it replaces (owner decision 8); called only with `DNESKAI_REGENERATE_ENABLED=true`.
+77. `20261023130000_dneskai_reel_bucket.sql` — unapplied, the private `marketing-reels` bucket (MP4 only, 64 MiB) for rendered DNESKAi Reels, owner-prefix reads and no browser writes; used only with `MARKETING_DNESKAI_REELS_ENABLED=true`.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.

@@ -801,3 +801,15 @@ Both stay unapplied and were replayed only in PGlite (`tests/lib/marketing-dnesk
 `20261022190000_dneskai_regenerate_with_note.sql` replaces `marketing_finish_job` with the body of `20261021124706` plus one step. When the finished job's request names `generation.replacesRevisionId`, and that revision is the owner's, of the same brand, still `review` or `returned` and has no claimed, published or uncertain publication, the new revision is saved through `marketing_save_revision` with it as the replaced revision: the old version becomes `superseded` and a queued publication of it is cancelled, as for an owner edit. A version the owner approved meanwhile keeps its approval; the new draft is saved beside it. Without the key the function behaves as before. Nothing here approves; the new revision is ready and in review.
 
 It stays unapplied. The app sends `replacesRevisionId` only from the Lab's „Regenerate with a note“, which the server refuses with `regenerate-unavailable` until `DNESKAI_REGENERATE_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-regenerate-database.test.ts`).
+
+## DNESKAi Reel bucket, 23 October 2026 (unapplied)
+
+`20261023130000_dneskai_reel_bucket.sql` creates the private `marketing-reels` bucket: MP4 only, 64 MiB per file,
+with the same owner-prefix read policy and restrictive browser guards as `marketing-assets`. The render route
+(`/api/marketing/dneskai/render-reel`, #163) writes one immutable object per reel key under
+`<owner>/marketing/dneskai/reels/<reelKey>.mp4` with the service role and hands Instagram a seven-day signed URL.
+No table, function or existing policy changes.
+
+Replayed only in PGlite (`tests/lib/dneskai-reel-bucket.test.ts`). Apply it with the CLI like the other prepared
+files (`npx supabase db push --linked`); the route answers 404 until `MARKETING_DNESKAI_REELS_ENABLED=true`, and with
+the switch on but the bucket missing it answers 503 `reel-bucket-required`.
