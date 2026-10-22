@@ -305,3 +305,13 @@ ffmpeg as the renderer (audio stream, 1 s to 15 min, at most 20 MiB) and records
 deleted. `toggle` switches a track. The route and both screens are hidden while `MARKETING_DNESKAI_REELS_ENABLED`
 is off. The render route (`/api/marketing/dneskai/render-reel`) bakes the approved track into the MP4 and keys the
 reel by it.
+
+## Manual music on carousels (#168)
+
+Instagram's API puts music only on Reels, and licensed music only under Facebook Login (plan, section 2). Until
+@dneskai moves to Facebook Login (#166), Příspěvky shows **Přidat hudbu v aplikaci** on every carousel published in the
+last seven days: how to add music in the Instagram app (open the post, ⋯ → Upravit, add music, about 30 seconds) and
+a suggested track name from the library with a copy button, a different enabled track per post. When the trending
+ranking of #167 exists it can supply the name instead. The badge needs no API call and appears only while
+`MARKETING_DNESKAI_REELS_ENABLED=true`, because the suggestion comes from the library. Code:
+`src/components/marketing/dneskai/music-hint.tsx`.
