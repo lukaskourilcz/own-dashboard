@@ -53,7 +53,7 @@ describe('marketing_dneskai_topics (#150)', () => {
       const columns = Object.keys(values);
       return db.query(`insert into marketing_dneskai_topics(user_id,project_id,${columns.join(',')}) values($1,$2,${columns.map((_, index) => `$${index + 3}`).join(',')})`, [owner, project, ...Object.values(values)]);
     };
-    for (const patch of [{ kind: 'story' }, { source_kind: 'web' }, { verdict: 'maybe' }, { keyword: 'dvě slova' }, { keyword: 'čeština' }, { status: 'queued' }, { title_cs: ' padding ' }, { title_cs: 'x'.repeat(161) }]) {
+    for (const patch of [{ kind: 'story' }, { source_kind: 'web' }, { verdict: 'maybe' }, { keyword: 'dvě slova' }, { keyword: 'čeština' }, { status: 'queued' }, { title_cs: ' padding ' }, { title_cs: 'x'.repeat(161) }] as Array<Record<string, string>>) {
       await expect(insert(patch), JSON.stringify(patch)).rejects.toThrow(/check/);
     }
     await expect(db.query("insert into marketing_dneskai_topics(user_id,project_id,kind,source_kind,source_ref,title_cs,status) values($1,$2,'news','feed','approved:1','Titulek','approved')", [owner, project])).rejects.toThrow(/check/);
