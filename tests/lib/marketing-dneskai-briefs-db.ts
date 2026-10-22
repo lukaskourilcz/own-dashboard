@@ -15,7 +15,7 @@ export const BRIEF_MIGRATIONS = ['20261012225640_marketing_control_surface.sql',
   '20261020100000_dneskai_collection_cursor_limits.sql', '20261020120000_scope_retired_pilot_ledgers.sql', '20261020130000_dneskai_source_media.sql',
   '20261020140000_marketing_revision_media_identity.sql', '20261020150000_dneskai_events_briefs.sql', '20261022020702_dneskai_richer_brief_evidence.sql', '20261022020759_dneskai_brief_v2_compatibility.sql', '20261022021835_dneskai_release_lapsed_reports.sql'];
 
-export async function createBriefsDatabase(users: readonly string[], projects: ReadonlyArray<{ id: string; owner: string }>, instant: string) {
+export async function createBriefsDatabase(users: readonly string[], projects: ReadonlyArray<{ id: string; owner: string }>, instant: string, migrations: readonly string[] = BRIEF_MIGRATIONS) {
   const db = new PGlite();
   await db.exec(`set timezone = 'UTC';
     create schema auth; create schema storage; create role anon; create role authenticated; create role service_role bypassrls;
@@ -36,7 +36,7 @@ export async function createBriefsDatabase(users: readonly string[], projects: R
   await setBriefsTestTime(db, instant);
   for (const user of users) await db.query('insert into auth.users values($1)', [user]);
   for (const project of projects) await db.query("insert into projects(id,user_id,portfolio_key) values($1,$2,'aifirst')", [project.id, project.owner]);
-  for (const file of BRIEF_MIGRATIONS) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
+  for (const file of migrations) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
   return db;
 }
 

@@ -316,6 +316,23 @@ describe('media, briefs and generation', () => {
     expect(step(await h.tick(), 'briefs')).toMatchObject({ status: 'noop', code: 'briefs-current' });
     expect(h.called('createBriefs')).toHaveLength(2);
   });
+  it('also takes up runs with a brief the owner reopened, even after the newest run went current (briefs-07)', async () => {
+    const olderRun = '77777777-7777-4777-8777-777777777777';
+    let reopened: string[] = [];
+    const h = harness({
+      collectionRuns: async () => [{ id: finishedRun, date: '2026-10-19', status: 'partial', pilot: false }],
+      createBriefs: async (input: { runId: string }) => ({ created: input.runId === olderRun ? [{ briefId: 'b9', eventId: 'e9', jobId: jobB }] : [], skipped: [], pending: false }),
+      pendingBriefRuns: async () => reopened,
+    }, new Clock(evening));
+    expect(step(await h.tick(), 'briefs')).toMatchObject({ status: 'noop' });
+    expect(step(await h.tick(), 'briefs')).toMatchObject({ status: 'noop', code: 'briefs-current' });
+    reopened = [olderRun, finishedRun];
+    expect(step(await h.tick(), 'briefs')).toMatchObject({ status: 'done', detail: { created: 1, jobs: 1, reopenedRuns: 2 } });
+    expect(h.called('createBriefs').map(([, args]) => (args[0] as { runId: string }).runId)).toEqual([finishedRun, olderRun, finishedRun]);
+    expect(h.called('pendingBriefRuns').map(([, args]) => args[1])).toEqual([finishedRun, '', '']);
+    reopened = [];
+    expect(step(await h.tick(), 'briefs')).toMatchObject({ status: 'noop', code: 'briefs-current' });
+  });
   it('executes the oldest queued job and sets a job that keeps throwing aside for an hour', async () => {
     const h = harness({
       queuedGenerationJobs: async () => [jobA, jobB],

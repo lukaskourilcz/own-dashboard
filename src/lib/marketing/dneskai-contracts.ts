@@ -74,6 +74,8 @@ export const DneskaiCollectionStateSchema = z.strictObject({
     costUsd: z.number().nonnegative().nullable(), errorCode: z.string().nullable() })).max(14),
   /** Selected events with their briefs, then other recent events (#115). Absent from responses before #115. */
   events: z.array(DneskaiEventViewSchema).max(60).optional(),
+  /** Which owner recovery actions the deployment can perform (C3, briefs-07). Absent from older responses: none. */
+  recovery: z.strictObject({ retry: z.boolean(), reslot: z.boolean(), heldRelease: z.boolean(), lapsedRelease: z.boolean() }).optional(),
 });
 export type DneskaiCollectionState = z.infer<typeof DneskaiCollectionStateSchema>;
 

@@ -1,13 +1,14 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useId, type ReactNode } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiSources } from '@/lib/i18n/sections/dneskai-sources';
-import { loadDneskaiSources, nextDneskaiSourceCheck, sourceExternalUrl } from '@/lib/marketing/dneskai-client';
+import { DneskaiRecoveryRequestError, loadDneskaiSources, nextDneskaiSourceCheck, postDneskaiRecovery, sourceExternalUrl, type DneskaiRecoveryRequest } from '@/lib/marketing/dneskai-client';
+import { DNESKAI_HELD_GROUPS, DNESKAI_OWNER_CODES, DNESKAI_RECOVERY_OFF, dneskaiBriefActions, dneskaiHeldGroup, dneskaiHeldReleaseBlock } from '@/lib/marketing/dneskai-recovery-rules';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 import type { DneskaiCollectionState, DneskaiEventSelection, DneskaiEventView } from '@/lib/marketing/dneskai-contracts';
 
@@ -21,15 +22,17 @@ export function DneskaiSources({ projectId, lang, onOpenReview, disabled = false
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 id="dneskai-sources-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
       <Button variant="outline" className="min-h-11" disabled={disabled || query.isFetching} onClick={() => void query.refetch()}>{t.refresh}</Button></div>
     <div className="space-y-2 border-l-2 border-information pl-3"><p className="text-sm">{t.approval}</p><button type="button" className="focus-ring inline-flex min-h-11 items-center rounded text-sm text-information underline" onClick={onOpenReview}>{t.openReview}</button></div>
-    {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p> : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : query.data ? <DneskaiSourceRecords state={query.data} lang={lang} now={now} /> : null}
+    {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p> : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : query.data ? <DneskaiSourceRecords state={query.data} lang={lang} now={now} recovery={{ projectId }} /> : null}
   </section>;
 }
 
 /** A capped read is normal: the cursor moves on (docs/dneskai-native-feeds.md). It informs, it does not warn. */
 const INFORMATIONAL_SOURCE_CODES = new Set(['collection-source-item-cap']);
 
-export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiCollectionState; lang: 'en' | 'cs'; now: Date }) {
-  const t = dneskaiSources[lang]; const today = pragueMarketingDate(now);
+/** `recovery` enables the owner recovery actions (C3, briefs-07); without it the records stay read-only. */
+export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: DneskaiCollectionState; lang: 'en' | 'cs'; now: Date; recovery?: { projectId: string } }) {
+  const t = dneskaiSources[lang]; const today = pragueMarketingDate(now); const r = t.recovery;
+  const capabilities = state.recovery ?? DNESKAI_RECOVERY_OFF;
   const tomorrow = new Date(Date.parse(`${today}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
   const dateFormat = new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { timeZone: 'Europe/Prague', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const dateOnly = (date: string) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { timeZone: 'Europe/Prague', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${date}T12:00:00Z`));
@@ -49,13 +52,23 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
   const link = (member: { url: string; title: string }) => { const url = sourceExternalUrl(member.url); return url ? <a href={url} target="_blank" rel="noopener noreferrer" className="focus-ring rounded underline">{member.title || t.unnamed}</a> : member.title || t.unnamed; };
   const reasonText = (code: string | null) => code ? t.eventReasons[code] ?? t.blockers[code] ?? t.reasonUnknown : null;
   const briefLabel = (brief: NonNullable<DneskaiEventView['brief']>) => brief.status === 'queued' ? t.briefQueued : brief.status === 'ready' ? (brief.code ? [t.briefRetry, t.eventReasons[brief.code]].filter(Boolean).join(' · ') : t.briefReady)
-    : brief.status === 'pending' ? (brief.code === 'account-unavailable' ? t.briefAccount : t.briefMedia) : reasonText(brief.code) ?? t.reasonUnknown;
+    : brief.status === 'pending' ? (brief.code === 'account-unavailable' ? t.briefAccount : brief.code && DNESKAI_OWNER_CODES.has(brief.code) ? r.briefOwner : t.briefMedia) : reasonText(brief.code) ?? t.reasonUnknown;
+  // Owner actions on a dead-end brief: retry, reslot, release. Never generate-now; admission stays the scheduler's.
+  const briefControls = (event: DneskaiEventView) => {
+    if (!recovery || !event.brief) return null;
+    const title = event.members[0].title || t.unnamed;
+    const actions = dneskaiBriefActions(event.brief, capabilities, now).map(item => ({ key: item.action, label: r[item.action], name: `${r[item.action]}: ${title}`, available: item.available, reason: item.reason,
+      request: { action: item.action, briefId: event.brief!.id } as DneskaiRecoveryRequest, done: r.done[item.action] }));
+    return <RecoveryControls actions={actions} lang={lang} />;
+  };
+  const held = state.candidates.filter(candidate => candidate.status === 'held');
   const eventItem = (event: DneskaiEventView) => {
     const [primary, ...supporting] = event.members;
     return <li key={event.eventId} className="min-w-0 space-y-1 py-3">
       <p className="break-words text-sm font-medium">{link(primary)}</p>
       <p className="text-xs text-foreground-muted">{sourceName(primary.sourceId)} · {t.primarySource} · {t.unpublished}</p>
       {event.brief && <p className="text-xs text-foreground-muted">{briefLabel(event.brief)}{event.brief.scheduledAt && <> · {t.slot}: {at(event.brief.scheduledAt)}</>}</p>}
+      {briefControls(event)}
       {supporting.length > 0 && <ul aria-label={t.supportingReports} className="mt-1 space-y-1 border-l border-border pl-3">{supporting.map(member => <li key={member.candidateId} className="break-words text-xs text-foreground-muted">{sourceName(member.sourceId)}: {link(member)}</li>)}</ul>}
     </li>;
   };
@@ -82,7 +95,26 @@ export function DneskaiSourceRecords({ state, lang, now }: { state: DneskaiColle
         <div className="flex flex-wrap items-start justify-between gap-2"><p className="min-w-0 break-words text-sm">{link(event.members[0])}</p><StatusBadge value={event.status} label={t.eventStatus[event.status]} tone={eventTone(event.status)} /></div>
         <p className="text-xs text-foreground-muted">{sourceName(event.members[0].sourceId)} · {t.reports}: {event.members.length}{reasonText(event.reason) && <> · {reasonText(event.reason)}</>}</p>
         {event.selection && <SelectionFacts selection={event.selection} lang={lang} now={now} published={published} />}
+        {briefControls(event)}
       </li>)}</ul>}</section>}
+    <section aria-labelledby="dneskai-held-title" className="space-y-2"><h3 id="dneskai-held-title" className="text-sm font-semibold">{r.heldTitle} · <span className="tabular">{held.length}</span></h3>
+      <p className="max-w-3xl text-xs text-foreground-muted">{r.heldIntro}{state.candidates.length >= 200 && <> {r.heldShown}</>}</p>
+      {held.length === 0 ? <p className="text-sm text-foreground-muted">{r.noHeld}</p> : <div className="border-b border-border">{DNESKAI_HELD_GROUPS.map(group => {
+        const items = held.filter(candidate => dneskaiHeldGroup(candidate.reason) === group);
+        return items.length === 0 ? null : <details key={group} className="border-t border-border" data-held-group={group}>
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded text-sm font-medium"><span>{r.heldGroups[group]}</span><span className="tabular text-foreground-muted">{items.length}</span></summary>
+          <ul className="divide-y divide-border pb-2">{items.map(candidate => {
+            const block = capabilities.heldRelease ? dneskaiHeldReleaseBlock(candidate, now) : 'recovery-held-release-unavailable';
+            return <li key={candidate.id} className="min-w-0 space-y-1 py-3">
+              <p className="break-words text-sm">{link(candidate)}</p>
+              <p className="text-xs text-foreground-muted">{sourceName(candidate.sourceId)} · {reasonText(candidate.reason) ?? t.reasonUnknown} · {t.published}: {published(candidate.publishedAt, candidate.dateEstimated)}</p>
+              {recovery && <RecoveryControls lang={lang} actions={[{ key: 'held', label: r.reReview, name: `${r.reReview}: ${candidate.title || t.unnamed}`, available: block === null, reason: block,
+                request: { action: 'release', projectId: recovery.projectId, candidateId: candidate.id }, done: r.done.held }]} />}
+            </li>;
+          })}</ul>
+        </details>;
+      })}</div>}
+    </section>
     <section aria-labelledby="dneskai-checks-title" className="space-y-2"><h3 id="dneskai-checks-title" className="text-sm font-semibold">{t.today} · {dateOnly(today)}</h3>
       {todayChecks.length === 0 ? <p className="text-sm text-foreground-muted">{t.noChecks}</p> : <ul className="divide-y divide-border">{todayChecks.map(value => <li key={value.sourceId} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span className="min-w-0 break-words">{sourceName(value.sourceId)}</span><span>{status(value.status)} · {at(value.lastAttemptAt)}</span></li>)}</ul>}</section>
     <section aria-labelledby="dneskai-registry-title"><h3 id="dneskai-registry-title" className="mb-2 text-sm font-semibold">{t.registry}</h3>
@@ -124,5 +156,25 @@ function SelectionFacts({ selection, lang, now, published }: { selection: Dneska
       <div className="flex gap-1"><dt>{t.published}:</dt><dd className="tabular">{selection.publishedAt ? <>{published(selection.publishedAt, selection.dateEstimated)}{age && <> · {age}</>}</> : t.unknownPublished}</dd></div>
     </dl>
     {selection.code && <p className="text-xs"><span className="font-medium">{t.whyNot}:</span> {t.selectionReasons[selection.code]}</p>}
+  </div>;
+}
+
+type RecoveryAction = { key: string; label: string; name: string; available: boolean; reason: string | null; request: DneskaiRecoveryRequest; done: string };
+/**
+ * One row of owner recovery buttons. A disabled action names its reason in text, linked to the button; the outcome
+ * is announced in a polite status region. A refusal shows only its localized code.
+ */
+function RecoveryControls({ actions, lang }: { actions: RecoveryAction[]; lang: 'en' | 'cs' }) {
+  const t = dneskaiSources[lang]; const r = t.recovery; const client = useQueryClient(); const id = useId();
+  const mutation = useMutation({ mutationFn: (action: RecoveryAction) => postDneskaiRecovery(action.request), onSuccess: () => client.invalidateQueries({ queryKey: qk.dneskaiSources }) });
+  if (!actions.length) return null;
+  const code = mutation.error instanceof DneskaiRecoveryRequestError ? mutation.error.code : 'recovery-unavailable';
+  const message = mutation.isSuccess ? mutation.variables.done : mutation.isError ? r.reasons[code] ?? t.eventReasons[code] ?? r.reasons['recovery-unavailable'] : '';
+  return <div className="space-y-1 pt-1">
+    <div className="flex flex-wrap gap-2">{actions.map(action => <Button key={action.key} type="button" variant="outline" size="sm" className="min-h-11" aria-label={action.name}
+      aria-describedby={action.reason ? `${id}-${action.key}` : undefined} disabled={!action.available || mutation.isPending || mutation.isSuccess} onClick={() => mutation.mutate(action)}>
+      {mutation.isPending && mutation.variables?.key === action.key ? r.working : action.label}</Button>)}</div>
+    {actions.filter(action => action.reason).map(action => <p key={action.key} id={`${id}-${action.key}`} className="text-xs text-foreground-muted">{r.reasons[action.reason!] ?? r.reasons['recovery-unavailable']}</p>)}
+    <p role="status" className={`text-xs ${mutation.isError ? 'text-risk' : 'text-foreground-muted'}`}>{message}</p>
   </div>;
 }
