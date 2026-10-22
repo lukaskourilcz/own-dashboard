@@ -73,9 +73,9 @@ deployments that already exist: each keeps the values it was built with. Deploym
 Vercel project `own-dashboard`, target Production: `MARKETING_DNESKAI_MANUAL_RUN` and
 `MARKETING_DNESKAI_MANUAL_SECRET`. They belong to the 13 October production verification and pair with the
 n8n credential `OwnDashboard DNESKAi single production run 20261013`. `MARKETING_DNESKAI_MANUAL_RUN` is a
-`dneskai-manual/1` scope for one pre-registered run, at most two hours long. `src/lib/marketing/dneskai-manual.ts`
-returns no expiry once that window has passed, so the manual path refuses every request and both variables
-open nothing today. **Recommendation: delete both after the pilot, together with that credential.** The
+`dneskai-manual/1` scope for one pre-registered run, at most two hours long. The manual path that read it
+(`src/lib/marketing/dneskai-manual.ts`) was deleted on 22 October 2026 with the collection pilot, so both
+variables open nothing today. **Recommendation: delete both after the pilot, together with that credential.** The
 other 12 production variables serve ordinary collection and stay.
 
 Since 2026-10-22 `/api/marketing/dneskai/collect` answers `410` `{"code":"route-retired"}` before any credential

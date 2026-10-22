@@ -2,12 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 
 vi.mock('server-only', () => ({}));
 const owner = '11111111-1111-4111-8111-111111111111';
-const project = '22222222-2222-4222-8222-222222222222';
 const now = new Date('2026-10-13T12:00:00Z');
 const marker = 'TEST-ONLY-PRIVATE-VALUE';
 const generation = { MARKETING_PILOT_OWNER_ID: owner, MARKETING_PILOT_STARTS_AT: '2026-10-13T10:00:00Z', MARKETING_PILOT_EXPIRES_AT: '2026-10-14T10:00:00Z' };
-const collection = { MARKETING_OWNER_ID: owner, MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED: 'true', MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID: owner,
-  MARKETING_DNESKAI_COLLECTION_PILOT_PROJECT_ID: project, MARKETING_DNESKAI_COLLECTION_PILOT_STARTS_AT: '2026-10-13T10:00:00Z', MARKETING_DNESKAI_COLLECTION_PILOT_EXPIRES_AT: '2026-10-14T10:00:00Z' };
 let warn: MockInstance<typeof console.warn>;
 // A fresh module graph per test, so the once-per-process notice starts empty.
 beforeEach(() => { vi.resetModules(); warn = vi.spyOn(console, 'warn').mockImplementation(() => {}); });
@@ -31,7 +28,7 @@ describe('retired preview pilot notice (#113)', () => {
   it('keeps Preview unchanged and stays silent where no tuple is configured', async () => {
     const { previewPilotRetired } = await import('@/lib/marketing/preview-pilot');
     expect(previewPilotRetired('generation-pilot', { VERCEL_ENV: 'preview', ...generation })).toBe(false);
-    expect(previewPilotRetired('collection-pilot', { VERCEL_ENV: 'production' })).toBe(true);
+    expect(previewPilotRetired('offline-import', { VERCEL_ENV: 'production' })).toBe(true);
     expect(previewPilotRetired('source-preview', {})).toBe(true);
     expect(warn).not.toHaveBeenCalled();
   });
@@ -40,18 +37,14 @@ describe('retired preview pilot notice (#113)', () => {
     const { marketingPilotConfiguration } = await import('@/lib/marketing/pilot');
     const { trustedMarketingTemplate } = await import('@/lib/marketing/template-registry');
     const { currentMarketingTemplate } = await import('@/lib/marketing/render');
-    const { dneskaiCollectionPilotConfiguration, authenticateDneskaiCollectionPilot } = await import('@/lib/marketing/dneskai-pilot');
     const { sourceRefreshConfig } = await import('@/lib/marketing/source-refresh');
     const { assertMarketingOfflineImportConfiguration } = await import('@/lib/marketing/offline-import');
     const production = { VERCEL_ENV: 'production' };
     expect(marketingPilotConfiguration(owner, { ...production, ...generation }, now)).toBeNull();
     expect(trustedMarketingTemplate('devshark', { ...production, MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' })).toEqual(currentMarketingTemplate('devshark'));
-    expect(() => dneskaiCollectionPilotConfiguration(owner, project, { ...production, ...collection }, now)).toThrow('collection-pilot-invalid');
-    const secret = 'offline-collection-only-secret'.repeat(2);
-    expect(authenticateDneskaiCollectionPilot(new Request('https://own.example', { headers: { Authorization: `Bearer ${secret}` } }), project, { ...production, ...collection, MARKETING_DNESKAI_COLLECTION_SECRET: secret }, now)).toBeNull();
     expect(sourceRefreshConfig('dneskai', { ...production, MARKETING_DNESKAI_SOURCE_URL: 'https://quorum.example.invalid/admin/api/marketing-source', MARKETING_DNESKAI_SOURCE_SECRET: 'offline-bridge-secret'.repeat(2), MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN: marker })).toEqual({ url: 'https://quorum.example.invalid/admin/api/marketing-source', secret: 'offline-bridge-secret'.repeat(2) });
     expect(() => assertMarketingOfflineImportConfiguration(owner, { ...production, ...generation, MARKETING_OWNER_ID: owner, MARKETING_OFFLINE_IMPORT_ENABLED: 'true' }, now)).toThrow('offline-import-disabled');
-    expect(lines().map(line => line.family).sort()).toEqual(['collection-pilot', 'generation-pilot', 'offline-import', 'source-preview', 'template-approvals']);
+    expect(lines().map(line => line.family).sort()).toEqual(['generation-pilot', 'offline-import', 'source-preview', 'template-approvals']);
     expect(JSON.stringify(warn.mock.calls)).not.toContain(marker);
   });
 

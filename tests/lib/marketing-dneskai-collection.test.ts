@@ -18,14 +18,11 @@ function fixture(stages:DneskaiStage[],items=Array.from({length:17},(_,i)=>item(
 }
 function stage(sourceId:string,kind:DneskaiStage['kind']='jev'):DneskaiStage{return{run_id:runId,source_id:sourceId,kind,status:'queued',since_at:'2026-10-06T20:30:00Z',registration:null,reserved_usd:0,cost_usd:null,error_code:null};}
 describe('staged DNESKAi collection with mocked transports only',()=>{
- it('resumes only a registered production run with daily collection off and refuses expiry before paid HTTP',async()=>{
-  const scoped={...env,VERCEL_ENV:'production',MARKETING_OWNER_ID:owner,MARKETING_DNESKAI_COLLECTION_ENABLED:'false',MARKETING_DNESKAI_PAID_ENABLED:'false',MARKETING_DNESKAI_MANUAL_RUN:JSON.stringify({version:'dneskai-manual/1',ownerId:owner,projectId:project,runId,startsAt:'2026-10-13T20:00:00Z',expiresAt:'2026-10-13T21:00:00Z'})};
-  const f=fixture([stage('__jev:00')],[item(0)]),jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news',relevance:0.99,status:'new'})),costUsd:0.0001}));
-  await tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:f.store,env:scoped,now:()=>now,jev});
-  expect(f.store.admit).not.toHaveBeenCalled();expect(jev).toHaveBeenCalledTimes(1);
-  await expect(tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env:scoped,now:()=>now,jev})).rejects.toThrow('disabled');
-  await expect(tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:f.store,env:scoped,now:()=>new Date('2026-10-13T21:00:00Z'),jev})).rejects.toThrow('disabled');
-  expect(jev).toHaveBeenCalledTimes(1);
+ it('takes only a project and a run to resume, and never ticks a retained pilot run',async()=>{
+  for(const body of [{projectId:project,runId,manual:true},{projectId:project,pilot:true}])await expect(tickDneskaiCollection(owner,body,{store:fixture([]).store,env,now:()=>now})).rejects.toThrow();
+  const f=fixture([stage('instagram:mosseri','instagram')],[]),startInstagram=vi.fn();f.run.collection_pilot_owner=owner;
+  await expect(tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,startInstagram})).rejects.toThrow('collection-run-unavailable');
+  expect(f.store.admit).not.toHaveBeenCalled();expect(startInstagram).not.toHaveBeenCalled();
  });
  it('default disabled refuses before admission and missing Jev key holds without calls',async()=>{const f=fixture([stage('__jev:00')]),jev=vi.fn();await expect(tickDneskaiCollection(owner,{projectId:project},{store:f.store,env:{},now:()=>now,jev})).rejects.toThrow('disabled');expect(f.store.admit).not.toHaveBeenCalled();const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env:{...env,TYPESAFE_API_KEY:''},now:()=>now,jev});expect(result).toMatchObject({runId,status:'held',continue:false});expect(jev).not.toHaveBeenCalled();expect(f.saveStage.mock.calls[0][4].errorCode).toBe('collection-jev-unconfigured');});
  it('classifies all17 in bounded batches and includes earlier accepted batch in semantic history',async()=>{const f=fixture(Array.from({length:16},(_,i)=>stage(`__jev:${String(i).padStart(2,'0')}`))),jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,jev});expect(result.continue).toBe(false);expect(jev).toHaveBeenCalledTimes(3);expect(jev.mock.calls.map(call=>call[0].length)).toEqual([8,8,1]);expect(jev.mock.calls[1][1].map(item=>item.id)).toContain(f.items[0].id);expect(jev.mock.calls[2][1]).toHaveLength(16);expect(f.claimStage.mock.calls.filter(call=>call[4])).toHaveLength(3);});
@@ -121,20 +118,6 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
  });
  it('terminal daily admission returns exact persisted state without feeds/providers',async()=>{const f=fixture([]);f.run.status='complete';const feed=vi.fn(),jev=vi.fn();expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev})).toEqual({runId,status:'complete',continue:false});expect(f.store.claimStage).not.toHaveBeenCalled();expect(feed).not.toHaveBeenCalled();expect(jev).not.toHaveBeenCalled();});
  it('cheap dedup precedes paid batching and source round-robin prevents a hot source starving others',()=>{const first=item(1,'openai-blog'),duplicate={...first,id:'different',url:'https://other.example.test/path'},items=[first,duplicate,item(2,'openai-blog'),item(3,'anthropic-news'),item(4,'deepmind-blog')];expect(pendingDneskaiCandidates(items,now).map(item=>item.sourceId).slice(0,3)).toEqual(['openai-blog','anthropic-news','deepmind-blog']);expect(pendingDneskaiCandidates(items,now)).toHaveLength(4);expect(pendingDneskaiCandidates([{...first,publishedAt:null},{...first,publishedAt:'2026-01-01T00:00:00Z'}],now)).toEqual([]);});
- it('manual explicit collection pilot admits before22 without reusing exhausted generation authority',async()=>{
-  const f=fixture([stage('instagram:mosseri','instagram')],[]);f.run.collection_pilot_owner=owner;
-  const pilotEnv={...env,VERCEL_ENV:'preview',MARKETING_OWNER_ID:owner,MARKETING_DNESKAI_COLLECTION_ENABLED:'false',MARKETING_PILOT_OWNER_ID:owner,MARKETING_PILOT_STARTS_AT:'2026-10-01T00:00:00Z',MARKETING_PILOT_EXPIRES_AT:'2026-10-03T00:00:00Z',MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED:'true',MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID:owner,MARKETING_DNESKAI_COLLECTION_PILOT_PROJECT_ID:project,MARKETING_DNESKAI_COLLECTION_PILOT_STARTS_AT:'2026-10-13T10:00:00Z',MARKETING_DNESKAI_COLLECTION_PILOT_EXPIRES_AT:'2026-10-13T14:00:00Z'};
-  const startInstagram=vi.fn(async()=>({id:'TEST',actId:'test-only',userId:'TEST',buildNumber:'1.2.3',defaultDatasetId:'TEST',status:'RUNNING' as const}));
-  const result=await tickDneskaiCollection(owner,{projectId:project,pilot:true},{store:f.store,env:pilotEnv,now:()=>new Date('2026-10-13T12:00:00Z'),startInstagram});
-  expect(result.continue).toBe(true);expect(startInstagram).toHaveBeenCalledTimes(1);expect(f.store.admit).toHaveBeenCalledWith(owner,project,'2026-10-13',expect.any(Array),{ownerId:owner,projectId:project,startsAt:'2026-10-13T10:00:00Z',expiresAt:'2026-10-13T14:00:00Z'});
-  await expect(tickDneskaiCollection(owner,{projectId:project},{store:f.store,env:pilotEnv,now:()=>new Date('2026-10-13T12:00:00Z'),startInstagram})).rejects.toThrow('disabled');expect(startInstagram).toHaveBeenCalledTimes(1);
- });
- it('refuses caller adoption of an ordinary run into a pilot and expiry after reservation prevents POST',async()=>{
-  const f=fixture([stage('instagram:mosseri','instagram')],[]),pilotEnv={...env,VERCEL_ENV:'preview',MARKETING_OWNER_ID:owner,MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED:'true',MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID:owner,MARKETING_DNESKAI_COLLECTION_PILOT_PROJECT_ID:project,MARKETING_DNESKAI_COLLECTION_PILOT_STARTS_AT:'2026-10-13T20:00:00Z',MARKETING_DNESKAI_COLLECTION_PILOT_EXPIRES_AT:'2026-10-13T21:00:00Z'},startInstagram=vi.fn();
-  await expect(tickDneskaiCollection(owner,{projectId:project,pilot:true},{store:f.store,env:pilotEnv,now:()=>now,startInstagram})).rejects.toThrow('run-unavailable');expect(startInstagram).not.toHaveBeenCalled();
-  f.run.collection_pilot_owner=owner;const clock=vi.fn(()=>now),original=f.store.claimStage;f.store.claimStage=async(...args)=>{const result=await original(...args);clock.mockReturnValue(new Date(pilotEnv.MARKETING_DNESKAI_COLLECTION_PILOT_EXPIRES_AT));return result;};
-  await tickDneskaiCollection(owner,{projectId:project,pilot:true},{store:f.store,env:pilotEnv,now:clock,startInstagram});expect(startInstagram).not.toHaveBeenCalled();expect(f.stages[0].reserved_usd).toBe(0.04);
- });
 
 
 });
@@ -143,7 +126,6 @@ describe('Apify switch MARKETING_DNESKAI_APIFY_ENABLED: Instagram held, Jev stil
  const classify=()=>vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));
  const night=()=>fixture([stage('openai-blog','feed'),stage('instagram:mosseri','instagram'),stage('instagram:meta.ai','instagram')],[]);
  const freeFeed=()=>vi.fn(async()=>({items:[item(1),item(2),item(3)],complete:true,errorCode:null}));
- const scoped={...env,VERCEL_ENV:'production',MARKETING_OWNER_ID:owner,MARKETING_DNESKAI_COLLECTION_ENABLED:'false',MARKETING_DNESKAI_PAID_ENABLED:'false',MARKETING_DNESKAI_MANUAL_RUN:JSON.stringify({version:'dneskai-manual/1',ownerId:owner,projectId:project,runId,startsAt:'2026-10-13T20:00:00Z',expiresAt:'2026-10-13T21:00:00Z'})};
  it.each([undefined,'false','TRUE','1',''])('scheduled run with the switch %s holds every Instagram stage at zero cost, never starts Apify, classifies the free-feed candidates and finishes',async value=>{
   const f=night(),feed=freeFeed(),jev=classify(),startInstagram=vi.fn(async()=>started),pollInstagram=vi.fn();
   const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env:{...env,MARKETING_DNESKAI_APIFY_ENABLED:value},now:()=>now,feed,jev,startInstagram,pollInstagram});
@@ -164,14 +146,6 @@ describe('Apify switch MARKETING_DNESKAI_APIFY_ENABLED: Instagram held, Jev stil
   const f=night(),startInstagram=vi.fn(async()=>started);
   expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed:freeFeed(),jev:classify(),startInstagram})).toMatchObject({status:'running',continue:true});
   expect(startInstagram).toHaveBeenCalledTimes(1);expect(f.stages.filter(row=>row.kind==='instagram').map(row=>[row.status,row.reserved_usd])).toEqual([['polling',0.04],['queued',0]]);
- });
- it('manual registered run needs the switch too: off holds Instagram at zero cost and still runs Jev, on starts Apify',async()=>{
-  const off=night(),jev=classify(),startInstagram=vi.fn(async()=>started),withoutSwitch={...scoped,MARKETING_DNESKAI_APIFY_ENABLED:undefined};
-  expect(await tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:off.store,env:withoutSwitch,now:()=>now,feed:freeFeed(),jev,startInstagram})).toMatchObject({status:'complete',continue:false});
-  expect(startInstagram).not.toHaveBeenCalled();expect(jev).toHaveBeenCalledTimes(1);expect(off.store.admit).not.toHaveBeenCalled();
-  expect(off.stages.filter(row=>row.kind==='instagram').map(row=>[row.status,row.reserved_usd,row.cost_usd,row.error_code])).toEqual([['held',0,0,'collection-apify-disabled'],['held',0,0,'collection-apify-disabled']]);
-  const on=night();await tickDneskaiCollection(owner,{projectId:project,runId,manual:true},{store:on.store,env:scoped,now:()=>now,feed:freeFeed(),jev:classify(),startInstagram});
-  expect(startInstagram).toHaveBeenCalledTimes(1);expect(on.stages.find(row=>row.kind==='instagram')).toMatchObject({status:'polling',reserved_usd:0.04});
  });
  it('rechecks the switch after the reservation and right before the Apify start',async()=>{
   const f=fixture([stage('instagram:mosseri','instagram')],[]),live={...env},startInstagram=vi.fn(async()=>started),original=f.store.claimStage;
