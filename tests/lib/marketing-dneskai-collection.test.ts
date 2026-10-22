@@ -103,16 +103,14 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
  it('starts a free source only with its whole timeout left, except the first of a call',async()=>{
   // The first native night cut arXiv off at the old 8 s; a slow source now waits for the next call instead.
   expect(DNESKAI_FEED_TIMEOUT_MS).toBe(25_000);
-  const f=fixture([stage('openai-blog','feed'),stage('anthropic-news','feed'),stage('deepmind-blog','feed')],[]);
+  const f=fixture([stage('openai-blog','feed'),stage('anthropic-news','feed'),stage('deepmind-blog','feed'),stage('google-research','feed')],[]);
   let t=1_800_000_000_000;const realTime=vi.spyOn(Date,'now').mockImplementation(()=>t);
   const slow=vi.fn(async()=>{t+=21_000;return{items:[],complete:true,errorCode:null};}),fast=vi.fn(async()=>({items:[],complete:true,errorCode:null}));
   try{
    expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed:slow})).toMatchObject({status:'running',continue:true});
-   expect(slow).toHaveBeenCalledTimes(1);expect(f.stages.map(row=>row.status)).toEqual(['ok','queued','queued']);
-   await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,feed:slow});
-   expect(slow).toHaveBeenCalledTimes(2);
+   expect(slow).toHaveBeenCalledTimes(3);expect(f.stages.map(row=>row.status)).toEqual(['ok','ok','ok','queued']);
    expect(await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>now,feed:fast})).toMatchObject({continue:false});
-   expect(fast).toHaveBeenCalledTimes(1);expect(f.stages.map(row=>row.status)).toEqual(['ok','ok','ok']);
+   expect(fast).toHaveBeenCalledTimes(1);expect(f.stages.map(row=>row.status)).toEqual(['ok','ok','ok','ok']);
   }finally{realTime.mockRestore();}
  });
  it('terminal daily admission returns exact persisted state without feeds/providers',async()=>{const f=fixture([]);f.run.status='complete';const feed=vi.fn(),jev=vi.fn();expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev})).toEqual({runId,status:'complete',continue:false});expect(f.store.claimStage).not.toHaveBeenCalled();expect(feed).not.toHaveBeenCalled();expect(jev).not.toHaveBeenCalled();});
@@ -178,4 +176,14 @@ describe('Apify switch MARKETING_DNESKAI_APIFY_ENABLED: Instagram held, Jev stil
   for(const value of [undefined,'false','TRUE',' true'])expect(dneskaiCollectionBlockers({...env,MARKETING_DNESKAI_APIFY_ENABLED:value})).toContain('collection-apify-disabled');
   expect(dneskaiCollectionBlockers(env)).not.toContain('collection-apify-disabled');expect(dneskaiCollectionBlockers({...env,MARKETING_DNESKAI_APIFY_ENABLED:'false'})).not.toContain('collection-apify-unconfigured');
  });
+});
+
+
+it('bounds free-read concurrency at three and shares the five-operation tick cap',async()=>{
+ const ids=['openai-blog','anthropic-news','deepmind-blog','google-research','meta-ai','the-verge','ars-technica'];
+ const f=fixture(ids.map(id=>stage(id,'feed')),[]);let active=0,peak=0;
+ const feed=vi.fn(async()=>{active++;peak=Math.max(peak,active);await new Promise<void>(done=>setTimeout(done,5));active--;return{items:[],complete:true,errorCode:null};});
+ const result=await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed});
+ expect(peak).toBe(3);expect(feed).toHaveBeenCalledTimes(5);expect(result.continue).toBe(true);
+ expect(f.stages.filter(row=>row.status==='queued')).toHaveLength(2);expect(f.claimStage.mock.calls.every(call=>call[4]===false)).toBe(true);
 });
