@@ -360,9 +360,15 @@
    "recommendation": "In OwnDashboard, any kit or text change produces a new revision whose rendered bytes the owner approves; the Lab shows the hash state ('changed since approval') next to the approve button.",
    "impactStatement": "A port that kept 'save look = done' would let a kit switch slip past the hard rule that approval binds exact bytes.",
    "truth": {
-    "verdict": "confirmed",
-    "evidence": "workspace.tsx:230 says drafts go to Queue and need separate approval; no hash anywhere in design-lab-* (grep contentHash/sha256 empty).",
-    "correctedLocations": []
+    "verdict": "partly",
+    "evidence": "workspace.tsx:230 sends drafts to Quorum's Queue for separate approval. Correction: the package workspace does carry a hash: design-lab-package-workspace.tsx:138 posts action 'rerender' with expectedContentHash of the queue item, an optimistic-concurrency check on the draft, not an approval bound to rendered bytes. The conclusion (the Lab itself approves nothing) holds.",
+    "correctedLocations": [
+     {
+      "file": "quorum/site/src/components/admin/design-lab-package-workspace.tsx",
+      "line": 138,
+      "excerpt": "body: JSON.stringify({ action: \"rerender\", itemId: item.id, expectedContentHash: item.contentHash })"
+     }
+    ]
    },
    "impact": {
     "keep": true,
@@ -528,8 +534,8 @@
   "Which keyboard shortcuts does the owner want, and should single-key shortcuts be on by default?"
  ],
  "verification": {
-  "confirmed": 10,
-  "partly": 0,
+  "confirmed": 9,
+  "partly": 1,
   "refuted": 0,
   "notConfirmed": 0,
   "kept": 5,
@@ -541,7 +547,8 @@
   "notes": [
    "Both lenses applied in a separate pass; 22/22 evidence excerpts at cited lines.",
    "Owner decisions: none required; open question whether the Quorum Lab can be frozen.",
-   "Measurement: git log of Lab commits on Quorum main ($0)."
+   "Measurement: git log of Lab commits on Quorum main ($0).",
+   "DL-06 corrected after a recheck: the package workspace sends expectedContentHash (concurrency on the queue draft), not an approval hash."
   ]
  },
  "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-designlab.json"
