@@ -34,6 +34,8 @@ export const DneskaiMediaAssetViewSchema = z.strictObject({
   fullBleedCapable: z.boolean(),
   /** Width ≥ 600 px: may sit in a frame (figure, split). Smaller pictures are shown as small. */
   insetCapable: z.boolean(),
+  /** The 64-bit perceptual hash recorded at collection (`dneskai-media-image.ts`); absent on older reads. */
+  phash: z.string().regex(/^[a-f0-9]{16}$/).nullable().optional(),
   /** Set when a larger copy of the same picture exists; that one is canonical. */
   duplicateOfAssetId: z.uuid().nullable(),
   duplicateOfSha256: sha256.nullable(),
@@ -86,17 +88,39 @@ function repeatedPicture(copy: DneskaiMediaAssetView, canonical: DneskaiMediaAss
 }
 
 /**
+ * How far a social card's pHash may sit from a body figure of the same article and still be that figure
+ * reframed. Publishers crop or widen the hero for og:image, which moves the hash beyond the 6 bits the
+ * database uses for byte-level copies: Anthropic's card and hero for one post measured 12 bits on
+ * 22 October 2026. Unrelated pictures sit near 32 bits (σ ≈ 4), so 14 stays far from chance.
+ */
+export const DNESKAI_CARD_REFRAME_MAX_DISTANCE = 14;
+const NIBBLE_BITS = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4];
+const hammingDistance = (left: string, right: string) => {
+  let count = 0;
+  for (let index = 0; index < 16; index += 1) count += NIBBLE_BITS[parseInt(left[index], 16) ^ parseInt(right[index], 16)];
+  return count;
+};
+/** A feed's social card or feed image that reframes a body figure of the same candidate. */
+function reframedCard(card: DneskaiMediaAssetView, live: readonly DneskaiMediaAssetView[]) {
+  if (!CARD_KINDS.has(card.originKind) || !card.phash) return false;
+  return live.some((figure) => figure.originKind === 'article-figure' && figure.phash != null
+    && hammingDistance(card.phash!, figure.phash) <= DNESKAI_CARD_REFRAME_MAX_DISTANCE);
+}
+
+/**
  * The pictures of one candidate that the brief (#115), generation (#116) and review (#119) should offer, in
  * original order. A purged picture has no bytes. A near-duplicate marker alone never hides a picture:
  * distinct carousel slides built on one template measure 4-6 bits apart. Only a repeated copy is folded
  * into its larger copy when both belong to this candidate: an Instagram display image or rendition with
- * the same CDN file name, or a feed's social card or feed image against a body figure.
+ * the same CDN file name, or a feed's social card or feed image against a body figure. A social card that
+ * reframes a body figure (`DNESKAI_CARD_REFRAME_MAX_DISTANCE`) is folded into the figure too, so a deck
+ * never shows the hero twice.
  */
 export function dneskaiOfferableMediaAssets(candidate: Pick<DneskaiMediaCandidateView, 'assets'>): DneskaiMediaAssetView[] {
   const live = candidate.assets.filter((asset) => !asset.purged);
   const byId = new Map(live.map((asset) => [asset.assetId, asset]));
   return live.filter((asset) => {
     const canonical = asset.duplicateOfAssetId ? byId.get(asset.duplicateOfAssetId) : undefined;
-    return !canonical || !repeatedPicture(asset, canonical);
+    return (!canonical || !repeatedPicture(asset, canonical)) && !reframedCard(asset, live);
   });
 }

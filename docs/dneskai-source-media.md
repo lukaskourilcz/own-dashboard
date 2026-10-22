@@ -119,6 +119,13 @@ Vlastník čte jen své řádky (RLS), zápis jde jen přes funkce pro service r
   hlavní obrázek nebo varianta se stejným názvem souboru na CDN, u feedu `og:image` nebo
   obrázek z feedu proti obrázku v těle. Dva obrázky z těla článku ani dva různé slidy
   se nikdy neskládají.
+- Vydavatelé `og:image` často jen jinak ořežou nebo rozšíří hlavní obrázek, takže pHash
+  vyjde dál než 6 bitů a databáze kopii neoznačí. U Anthropicu 22. 10. 2026 měla karta
+  1200 × 630 a hlavní obrázek 1920 × 1080 vzdálenost 12 bitů a carousel ukázal stejnou
+  ilustraci dvakrát. Proto `dneskaiOfferableMediaAssets` vynechá `og:image` nebo obrázek
+  z feedu, který je od některého obrázku z těla téhož kandidáta nejvýš
+  `DNESKAI_CARD_REFRAME_MAX_DISTANCE` (14) bitů. Nesouvisející obrázky mají kolem 32 bitů.
+  Platí od dalšího sestavení briefu; uložené briefy a revize se nemění.
 - `fullBleedCapable` = kratší strana ≥ 900 px (cover, single). `insetCapable` = šířka
   ≥ 600 px (obrázek v rámu). Menší obrázky se uloží a UI je ukáže jako malé.
 
