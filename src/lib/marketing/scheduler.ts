@@ -7,6 +7,7 @@ import type { CreateDneskaiBriefs } from "./dneskai-ports";
 import { instagramTokenRefreshDue, type InstagramTokenRefreshOutcome, type MetaTokenMetadata } from "./meta-credentials";
 import { pragueMarketingDate } from "./weekly-planning";
 import type { EngagementWatchResult } from "./dneskai-engagement-watch";
+import { dneskaiEngagementWatchEnabled } from "./dneskai-engagement";
 
 /**
  * The marketing scheduler (#120). pg_cron calls POST /api/marketing/tick every five minutes and once a day
@@ -483,7 +484,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   if (engagementWatch) minuteSteps.push({
     category: MARKETING_TICK_ENGAGEMENT, lease: "publishing",
     async precheck(): Promise<StepOutcome | null> {
-      return env.DNESKAI_ENGAGEMENT_ENABLED === "true" ? null : { status: "skipped", code: "engagement-disabled" };
+      return dneskaiEngagementWatchEnabled(env) ? null : { status: "skipped", code: "engagement-disabled" };
     },
     async run({ signal: abort, now, remainingMs }): Promise<StepOutcome> {
       const result = await engagementWatch({ signal: abort, now, remainingMs });
