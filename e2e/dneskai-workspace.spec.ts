@@ -35,7 +35,8 @@ for (const lang of ['cs', 'en'] as const) {
     await expect(review.getByRole('heading', { level: 2, name: t.review.title })).toBeVisible();
     await expect(review.getByText(t.preview)).toBeVisible();
     const post = firstPost(page);
-    await expect(post.locator('img')).toHaveCount(5);
+    // Four written slides; a deck has no sources slide.
+    await expect(post.locator('img')).toHaveCount(4);
     await expect(post.getByText(t.states.review, { exact: true })).toBeVisible();
     const approve = post.getByTestId('dneskai-approve');
     await expect(approve).toContainText(t.card.approve);
@@ -93,10 +94,11 @@ test('editing a slide renders a new version and the main button carries the new 
   await edit.click();
   await expect(dialog).toBeVisible();
   await expect(dialog.getByTestId('dneskai-editor-main')).toContainText(t.card.approve);
-  // The cover draws a headline, a label and a credit, never a body.
+  // The cover draws only its headline: no label, credit or body is offered.
   const editor = dialog.getByTestId('dneskai-slide-editor');
   await expect(editor.getByLabel(t.fields.headline, { exact: true })).toBeVisible();
-  await expect(editor.getByLabel(t.fields.kicker, { exact: true })).toBeVisible();
+  await expect(editor.getByLabel(t.fields.kicker, { exact: true })).toHaveCount(0);
+  await expect(editor.getByLabel(t.fields.credit, { exact: true })).toHaveCount(0);
   await expect(editor.getByLabel(t.fields.body, { exact: true })).toHaveCount(0);
   const headline = editor.getByLabel(t.fields.headline, { exact: true });
   await headline.fill('x'.repeat(120));
@@ -191,19 +193,19 @@ test('the focal point moves by keyboard and pictures, slides and order change wi
   await expect(tray.getByText(t.editor.notFitting).first()).toBeVisible();
   await tray.getByRole('button', { name: `${t.editor.choose}: ${t.editor.origin(2, 3)}` }).click();
   await expect(dialog.getByText(t.editor.chosen)).toBeVisible();
-  // Move the second slide down with its keyboard button, then remove the last slide.
+  // Move the second slide down with its keyboard button, then remove the last slide (four written slides, no sources slide).
   const rows = dialog.getByTestId('dneskai-editor-slide');
-  await expect(rows).toHaveCount(5);
+  await expect(rows).toHaveCount(4);
   await dialog.getByRole('button', { name: `${t.editor.moveDown}: ${t.card.problemSlide(2)}` }).click();
   await expect(dialog.getByText(t.editor.moved(3))).toBeVisible();
-  await dialog.getByRole('button', { name: `${t.editor.remove}: ${t.card.problemSlide(5)}` }).click();
-  await expect(rows).toHaveCount(4);
+  await dialog.getByRole('button', { name: `${t.editor.remove}: ${t.card.problemSlide(4)}` }).click();
+  await expect(rows).toHaveCount(3);
   await expect(dialog.getByTestId('dneskai-editor-main')).toHaveText(t.editor.save);
   const axe = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-post-editor"]').withTags(AXE_TAGS).analyze();
   expect(axe.violations).toEqual([]);
   await dialog.getByTestId('dneskai-editor-main').click();
   await expect(dialog.getByText(t.editor.saved)).toBeVisible({ timeout: 15_000 });
-  await expect(dialog.getByTestId('dneskai-editor-slide')).toHaveCount(4);
+  await expect(dialog.getByTestId('dneskai-editor-slide')).toHaveCount(3);
   expect(errors).toEqual([]);
 });
 
