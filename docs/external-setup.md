@@ -206,7 +206,7 @@ The webhook makes replies leave within seconds instead of at the next five-minut
 2. In the Meta app (Instagram, API setup with Instagram login, Webhooks) set the callback URL `https://own-dashboard-tau.vercel.app/api/webhooks/instagram` and the same verify token, then verify and save. Subscribe the field `comments`.
 3. In DNESKAi, Zdroje, Instagram account, press „Odebírat komentáře“ (`POST /<IG_ID>/subscribed_apps?subscribed_fields=comments`). The panel then says Instagram sends comments right away.
 4. Allow access to messages for connected tools in the Instagram app (see above).
-5. While the Meta app is in Development mode, Meta may deliver nothing for the account. If a test comment does not arrive within a minute, the app needs to be switched to Live. Meta's docs also say `comments` needs Advanced Access for accounts the app does not own; @dneskai is the app's own tester account, so Standard Access is enough to start.
+5. While the Meta app is in Development mode, Meta may deliver nothing for the account. If a test comment does not arrive within a minute, the app needs to be switched to Live. Meta may also ask for Advanced Access to `comments`; applying for it is an app review, so decide that yourself.
 
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
