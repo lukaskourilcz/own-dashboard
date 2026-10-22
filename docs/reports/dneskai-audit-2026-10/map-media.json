@@ -1,0 +1,1323 @@
+{
+  "subsystem": "Source media (key: media) — own-dashboard #114: article/Instagram picture collection, marketing-media bucket, read model for briefs, generation and the editor",
+  "summary": "The media step is small, well-tested (6 files, 56 tests, 2.5 s) and strict: one page read per selected feed candidate (og:image/twitter:image, the feed image, body figures from a 12-entry publisher-host allowlist), Instagram CDN URLs fetched the same night, bytes stored once per owner under sha256 in the private marketing-media bucket with credit, pHash, EXIF-corrected dimensions, and a 30-day purge of unreferenced bytes in the daily tick. The capability flags are derived at read time from two constants (short side >= 900 full-bleed, width >= 600 inset), so no migration is needed to change them. The weak spots are supply and understanding, not plumbing: with feeds only, no event can get a full-bleed cover (typical og:image 1200x630 fails 900 px and would need a 2.14x upscale against the studio's 1.5x cap), openai.com 403s the page read and leaves those events pictureless, nothing looks at pixels (no vision or text-slide check), alt/figcaption/og:image:alt are discarded so the model picks pictures blind, off-host pictures are dropped silently, there is no owner upload or licensed fallback, Apify carousels (the only 1080x1350-native supply) are switched off, and docs/dneskai-source-media.md:28-29 still says nothing in the app calls these functions.",
+  "files": [
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-media.ts",
+      "role": "collector: claims candidates, reads the article page once, fetches/inspects/uploads pictures, records rows, pending list, 30-day purge, read model (507 lines)"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+      "role": "pure plan: Instagram/feed picture lists, publisher image-host allowlist (PUBLISHER_IMAGE_DOMAINS), proxies, chrome exclusions, credit strings, the 900/600 capability constants"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-media-image.ts",
+      "role": "sharp inspection: format sniff, EXIF-oriented size, 64 MP and 300 px gates, sha256, 64-bit DCT pHash"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-media-contracts.ts",
+      "role": "browser-safe read model dneskai-media/1 and dneskaiOfferableMediaAssets (what briefs/generation/editor may offer)"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/free-feeds/security/url.ts",
+      "role": "safeFetch: HTTPS-only, DNS public-address check, pinned TLS, per-hop host allowlist, content-type and byte caps (the task map's http.ts does not contain it)"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/http.ts",
+      "role": "n8n leftovers only: authenticateN8n and boundedRequestText; no safeFetch here"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+      "role": "bucket marketing-media, tables marketing_media_assets/_asset_links/_collections, 8 service-role functions, pHash <= 6 duplicate marking, purge claim"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/docs/dneskai-source-media.md",
+      "role": "Czech doc of the step (187 lines); lines 28-29 stale"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/app/api/marketing/dneskai/media/route.ts",
+      "role": "GET owner tray with 1-hour signed previews"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/scheduler.ts",
+      "role": "media unit (40 s budget, 125 s busy / 10 min failure backoff) and daily purge duty under the media lease"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/scheduler-ports.ts",
+      "role": "wires pendingMedia/collectMedia/purgeMedia/loadDneskaiMedia into the tick"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+      "role": "consumer: usable-picture rule, 20-media pool, single-image rule, pHash <= 3 repeat check, site-wide card detection"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-generation.ts",
+      "role": "consumer: offer of <= 12 media by sha256/size/credit/flags, model told it cannot see pictures"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/components/marketing/dneskai/media-tray.tsx",
+      "role": "editor consumer: pool with preview, credit, resolution badge, fit warning"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+      "role": "editor: previews from GET media, swap only inside brief.media, no upload"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/src/lib/marketing/dneskai-providers.ts",
+      "role": "Instagram mediaUrls assembly (displayUrl + images + childPosts) capped at 10"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/tests/lib/marketing-dneskai-media.test.ts",
+      "role": "collector tests (PGlite + fixture web), 15 tests"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/tests/lib/marketing-dneskai-media-database.test.ts",
+      "role": "schema, RLS, functions, duplicate marking, retention tests"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/tests/lib/marketing-dneskai-media-plan.test.ts",
+      "role": "plan, allowlist, credit, flags tests"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/quorum/studio/src/dneskai-slide.ts",
+      "role": "upstream studio: DNESKAI_BLEED_MIN_SHORT_SIDE 900, BLEED_MAX_UPSCALE 1350/900, FRAME_MAX_UPSCALE 1.5 (vendored at own-dashboard/vendor/carousel-studio/dist/dneskai-slide.js:31,63)"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/quorum/orchestrator/src/images/vision-gate.ts",
+      "role": "Quorum's vision gate the brief refers to (9 vetoes); not present in OwnDashboard"
+    },
+    {
+      "path": "/Users/lukasbarsinbars/Developer/own-dashboard/docs/reports/dneskai-instagram-2026-10-20.md",
+      "role": "20 Oct plan whose 5.3 rule and rights columns differ from the shipped code"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "A feed candidate's article page is read once with safeFetch (3 MB, 15 s, host + www sibling, 3 redirects) and its pictures are planned from og:image/og:image:secure_url/og:image:url, twitter:image(:src), the feed's own mediaUrls, then <picture>/<img> in the longest <article> (or main/[role=main]/body), largest srcset rendition, WordPress original before the resized URL, at most 8.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:211 `allowHosts: [host, sibling], method: 'GET', maxBytes: DNESKAI_MEDIA_PAGE_MAX_BYTES, maxRedirects: 3, timeoutMs: DNESKAI_MEDIA_FETCH_TIMEOUT_MS`; :302-303 `const page = await fetchArticle(...); plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls })`; dneskai-media-plan.ts:245 `for (const selector of [\"meta[property='og:image']\", ... \"meta[property='twitter:image']\"])`; :248 `for (const image of options.feedImages ?? []) push(image, 'feed-image')`; :250-251 `$('article')... sort by p text length`; :276-277 `largestSrcsetCandidate(srcsets.join(', '))`; :28 `DNESKAI_MEDIA_FEED_LIMIT = 8`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "The publisher image-host allowlist lives in PUBLISHER_IMAGE_DOMAINS (12 source ids) plus the page's and the registered source's registrable domain and three image proxies (i0-3.wp.com, substackcdn.com/image/fetch, camo.githubusercontent.com); an unknown host is skipped, not guessed.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:78-91 `const PUBLISHER_IMAGE_DOMAINS ... 'anthropic-news': ['cdn.sanity.io'], ... 'bluesky-language-models': ['cdn.bsky.app']`; :76 `Kept short and explicit: an unknown host is skipped, not guessed.`; :119-128 `publisherImageUrlPolicy(source, pageUrl)`; :97-113 `proxiedImageHost`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "Fetch limits: 8 MiB and 15 s per picture, 3 MB per page, 2 redirects for pictures within the same host only, Accept image/jpeg|png|webp, extra content types image/jpg and octet-stream; safeFetch refuses non-HTTPS, private addresses, credentials, non-443 ports and checks the allowlist on every redirect hop.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:31 `DNESKAI_MEDIA_FETCH_MAX_BYTES = 8 * 1024 * 1024`; :32 `DNESKAI_MEDIA_PAGE_MAX_BYTES = 3_000_000`; :33 `DNESKAI_MEDIA_FETCH_TIMEOUT_MS = 15_000`; :198 `allowHosts: [host], method: 'GET', maxBytes: DNESKAI_MEDIA_FETCH_MAX_BYTES, maxRedirects: 2`; free-feeds/security/url.ts:166-168 `if (!options.allowHosts.includes(url.hostname)) throw new UnsafeUrlError(...)`; :73-99 `parseSafeHttpsUrl`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "Bytes are stored unchanged in the private bucket marketing-media as <owner>/<sha256>.<jpg|png|webp>, never overwritten (upsert:false, bytes verified on conflict), only when the bucket is private; the SQL check pins storage_path to that shape and sha256 is unique per owner.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:29 `DNESKAI_MEDIA_BUCKET = 'marketing-media'`; :394 `deps.store.put(`${owner}/${image.sha256}.${image.ext}`, ...)`; :84 `throw new DneskaiMediaError('media-private-bucket-required')`; :87 `upload(name, bytes, { upsert: false, ...})`; supabase/migrations/20261020130000_dneskai_source_media.sql:10 `values('marketing-media','marketing-media',false,33554432,array['image/jpeg','image/png','image/webp'])`; :57 `unique(user_id,sha256)`; :59 `check(storage_path='marketing-media/'||user_id::text||'/'||sha256||'.'||...)`",
+      "check": {
+        "status": "verified",
+        "note": "Bucket at dneskai-media.ts:29, migration :9-10 (private, 33554432 bytes, jpeg/png/webp)."
+      }
+    },
+    {
+      "fact": "Credit strings: Instagram `Foto: @<ownerUsername or profile>`; feeds `Obrázek: <publisher name>` (registry name without section/author), aggregator pages credit the page host, Bluesky/GitHub credit the author; never empty, max 120 chars; stored on both asset and link rows.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:141 `return bounded(`Foto: @${candidate.instagram?.ownerUsername ?? profile}`)`; :146 `if (author) return bounded(`Obrázek: ${author}`)`; :150 `return bounded(`Obrázek: ${onSourceSite ? dneskaiPublisherName(source) : host.replace(/^www\\./, '')}`)`; :163 `return value.length <= 120 ? value : value.slice(0, 120).trimEnd()`; migration :52 `credit text not null check(length(btrim(credit)) between 1 and 120 ...)`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "pHash is the classic 32x32 grey DCT, 8x8 low frequencies, 64 bits as 16 hex digits; the database marks a new asset a duplicate of the nearest canonical within Hamming distance <= 6 that is at least as large (groups flat, never chained); the brief repeat check uses <= 3 bits.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-image.ts:50-51 `DCT_SIZE = 32; HASH_SIZE = 8`; :59 `export function dctPerceptualHash(grey: Uint8Array): string`; migration :191 `bit_count(('x'||m.phash)::bit(64) # ('x'||a.phash)::bit(64))<=6`; :192 `(m.width::bigint*m.height,m.bytes)>=(a.width::bigint*a.height,a.bytes)`; dneskai-briefs.ts:43 `DNESKAI_REPEAT_PHASH_MAX_DISTANCE = 3`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "Dimensions are the displayed size after EXIF orientation; the flags are derived at read time (not stored): fullBleedCapable = min(width,height) >= 900, insetCapable = width >= 600; briefs call a picture usable when either is true; generation narrows both by whether the credit fits the template and adds singlePhotoCapable.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-image.ts:110-112 `const swapped = (meta.orientation ?? 1) >= 5; width = swapped ? meta.height : meta.width`; dneskai-media-plan.ts:30-31 `DNESKAI_FULL_BLEED_MIN_SIDE = 900; DNESKAI_INSET_MIN_WIDTH = 600`; :34 `fullBleedCapable: Math.min(size.width, size.height) >= DNESKAI_FULL_BLEED_MIN_SIDE, insetCapable: size.width >= DNESKAI_INSET_MIN_WIDTH`; dneskai-media.ts:500 `...dneskaiMediaCapabilities(row.asset)`; dneskai-briefs.ts:97 `media.fullBleedCapable || media.insetCapable`; dneskai-generation.ts:221-223 `fullBleedCapable: item.fullBleedCapable && creditFits(item.credit, \"dneskai-cover-photo\") ... singlePhotoCapable`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "The 30-day purge runs as the daily tick's `purge` duty under the media lease, skipped while any candidate holds a collection claim; it marks purged_at and deletes bytes of assets fetched > 30 days ago that no revision deck (any status) references and no candidate linked within 30 days; rows, origin and credit stay; 200 per pass, 100 per storage delete.",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:35 `MARKETING_DAILY_DUTIES = [\"renewal\", \"purge\", \"retention\"]`; :58 `MARKETING_MEDIA_RETENTION_DAYS = 30`; :460 `if (await ports.mediaCollectionActive()) return { status: \"skipped\", code: \"media-collection-in-progress\", pending: true }`; dneskai-media.ts:427 `purgeUnusedDneskaiMedia(db, owner, olderThanDays = 30, ...)`; :431 `p_limit: options.limit ?? 200`; migration :273-274 `jsonb_path_query(r.revision,'$.deck.slides[*].images[*].assetSha256')`; :278-280 `a.fetched_at<cutoff and not exists(... l.linked_at>=cutoff) and not exists(select 1 from referenced ...)`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "Instagram handling: every mediaUrls entry (display first, then children) up to 10, only from cdninstagram.com/fbcdn.net, fetched the same night because signed CDN links expire in 24-48 h; only candidates selected for today or a later Prague day are ever collected; 403/404/410 are final, 429/5xx/timeouts retry up to 3 passes.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:27 `DNESKAI_MEDIA_INSTAGRAM_LIMIT = 10`; :53 `INSTAGRAM_MEDIA_DOMAINS = ['cdninstagram.com', 'fbcdn.net']`; dneskai-media.ts:20-21 `Instagram CDN links expire within 24-48 hours, so the scheduler (#120) calls collectDneskaiMedia the same night`; :178-179 `status = [400, 401, 403, 404, 410, 429, 500, ...]; retryable = error.status === 429 || error.status >= 500`; :37 `DNESKAI_MEDIA_MAX_ATTEMPTS = 3`; migration :258 `c.target_date>=(clock_timestamp() at time zone 'Europe/Prague')::date`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "403 behaviour (openai.com): the page read throws media-page-http-403, which is not retryable, so the plan is built from the feed's own images only; OpenAI's RSS has none, so the candidate ends `empty` and the event has no picture. Night 1: both openai-blog events pictureless, 3 photos stored in total.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:306-316 `const failure = classifyFetchError(error, signal); throw new FetchFailure(failure.code.replace(/^media-/, 'media-page-'), failure.retryable)`; :313-315 `// No readable page: the feed's own image is all the publisher offered. plan = extractArticleMedia('', candidate.url, { allowImage, feedImages: candidate.mediaUrls })`; :358 `linked.size ? ... : (failures ? 'failed' : 'empty')`; docs/dneskai-source-media.md:21-23 `vrátil web OpenAI ... media-page-http-403 u obou vybraných událostí z openai-blog. Jeho RSS nenese obrázek`; brief fable-dneskai-brief.md:218 `3 photos were stored; openai.com returns 403 to the page fetch, and its RSS carries no image.`",
+      "check": {
+        "status": "corrected",
+        "note": "Cited dneskai-media.ts:217-218 is the fetchArticle catch; the non-retryable fallback to feed images is dneskai-media.ts:306-316. Production: the two media-page-http-403 collections ended status empty, asset_count 0; 3 assets stored in total."
+      }
+    },
+    {
+      "fact": "The page fetch identifies itself as `boardlessai-source-shadow/0.1`, the same user agent the feed adapters use.",
+      "evidence": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/util.ts:132 `export const SOURCE_USER_AGENT = \"boardlessai-source-shadow/0.1\"`; dneskai-media.ts:212 `headers: { Accept: 'text/html, application/xhtml+xml;q=0.9', 'user-agent': SOURCE_USER_AGENT }`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "What generation sees: the brief's media (<= 20, usable first by rank) become an offer of <= 12 items with assetSha256, evidenceIndex, position, credit, originKind, width, height and the three flags; no URL, no pixels, no alt; the prompt says the model cannot see pictures and must never describe them, and the alt text it writes must not describe the picture.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:35 `DNESKAI_BRIEF_MEDIA_LIMIT = 20`; dneskai-generation.ts:168-170 `OFFER_PLANS ... { evidence: 6, media: 12, ... } ... { evidence: 1, media: 3, ... }`; :255-256 `media: offer.media.map((item) => ({ assetSha256: item.assetSha256, evidenceIndex..., position, credit, originKind, width, height, fullBleedCapable, insetCapable, singlePhotoCapable }))`; :123 `Pictures: you cannot see them. Choose them only from media, by the exact assetSha256 ... Never describe what a picture shows.`; :132 `alt: ... whose picture it carries, named from its credit, without describing the picture.`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "What the editor sees: the tray lists brief.media in original order with a signed preview (1 h) from GET /api/marketing/dneskai/media, origin index, credit, a resolution badge (Full-bleed / Frame only / Small) and a 'too small for this place' warning; swapping is only inside the brief's pool and there is no upload.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/media-tray.tsx:28-30 `const preview = previews.get(media.assetSha256); const resolution = mediaResolution(media); const fits = mediaFits(media, slide)`; :40-41 `<EntityBadge>{t.resolution[resolution]}</EntityBadge> ... {!fits && <p ...>{t.notFitting}</p>}`; post-editor.tsx:108 `for (const asset of candidate.assets) if (asset.previewUrl) map.set(asset.sha256, asset.previewUrl)`; :206 `onChoose={(choice) => { update(swapSlideImage(draft, selected, image.slot, choice, post.brief!.media)...`; dneskai-media.ts:35 `DNESKAI_MEDIA_PREVIEW_SECONDS = 60 * 60`; src/lib/i18n/sections/dneskai-workspace.ts:50 `resolution: { 'full-bleed': 'Full-bleed', inset: 'Frame only', small: 'Small' }`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "The read model dneskai-media/1 exposes per candidate: sourceId, title, url, candidateStatus, captionOnly, mediaType, collection state (status, pageStatus, pageError, skipped codes per position) and assets with assetId, sha256, position, originKind, originUrl, credit, width, height, mime, bytes, fetchedAt, the two flags, duplicateOfAssetId/Sha256, purged and previewUrl; dneskaiOfferableMediaAssets drops purged copies and folds only a repeated copy (same Instagram CDN file name, or a card against a body figure).",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-contracts.ts:18-42 `DneskaiMediaAssetViewSchema = z.strictObject({ assetId, sha256, position, originKind, originUrl, credit, width, height, mime, bytes, fetchedAt, fullBleedCapable, insetCapable, duplicateOfAssetId, duplicateOfSha256, purged, previewUrl })`; :45-65 candidate view; :77-84 `repeatedPicture`; :93-100 `dneskaiOfferableMediaAssets`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "The tick gives media at most 40 s per 5-minute tick (needs 25 s left to start), backs off 125 s after a busy candidate and 10 min after a failure; the collector defaults to a 50 s budget capped at 90 s, downloads 2 at a time (max 4), and never starts a download that could outlive the 120 s claim.",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:56 `MARKETING_TICK_MEDIA_BUDGET_MS = 40_000`; :75 `collection: 20_000, media: 25_000, ...`; :79-80 `MEDIA_BUSY_BACKOFF_MS = 125_000; MEDIA_FAILURE_BACKOFF_MS = 10 * 60_000`; dneskai-media.ts:42 `DEFAULT_BUDGET_MS = 50_000`; :44 `DNESKAI_MEDIA_MAX_BUDGET_MS = 90_000`; :332 `limiter(Math.max(1, Math.min(deps.concurrency ?? 2, 4)))`; :334 `leaseLeft() < ENTRY_WORST_MS + LEASE_MARGIN_MS`",
+      "check": {
+        "status": "verified",
+        "note": "Re-read at the cited lines in own-dashboard-audit (8df25a5)."
+      }
+    },
+    {
+      "fact": "The studio's own rule makes the 900 px gate equivalent to a 1.5x upscale cap at zoom 1: DNESKAI_BLEED_MAX_UPSCALE = 1350/900 = 1.5, and framed pictures past 1.5x are reported, not refused. The figure frame is 936 x 600 with fit contain.",
+      "evidence": "quorum/studio/src/dneskai-slide.ts:35 `export const DNESKAI_BLEED_MIN_SHORT_SIDE = 900`; :43 `export const DNESKAI_BLEED_MAX_UPSCALE = MASTER_CANVAS.height / DNESKAI_BLEED_MIN_SHORT_SIDE`; :71 `export const DNESKAI_FRAME_MAX_UPSCALE = 1.5`; :389 `if (shorter < DNESKAI_BLEED_MIN_SHORT_SIDE || upscale > DNESKAI_BLEED_MAX_UPSCALE)`; quorum/studio/src/canvas.ts:49 `MASTER_CANVAS = { width: 1_080, height: 1_350 }`; quorum/studio/src/dneskai-photo.ts:183 `...plated(\"image-1\", LEFT, 396, MEASURE, 600, { optional: false, fit: \"contain\" })` with :37-38 `LEFT = 72; MEASURE = 936`; own-dashboard/vendor/carousel-studio/dist/dneskai-slide.js:31 `DNESKAI_BLEED_MIN_SHORT_SIDE = 900`, :63 `DNESKAI_FRAME_MAX_UPSCALE = 1.5`",
+      "check": {
+        "status": "verified",
+        "note": "quorum dneskai-slide.ts:35 and :44 (cited :43); soft upscale 1080/900 = 1.2 at :50."
+      }
+    },
+    {
+      "fact": "The scheduler wiring the doc says does not exist is in place: scheduler-ports.ts hands pendingDneskaiMediaCandidates, collectDneskaiMedia, purgeUnusedDneskaiMedia and createDneskaiMediaLoader to the tick, and the brief records the tick running since 21 October.",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler-ports.ts:64-65 `pendingMedia: (project) => pendingDneskaiMediaCandidates(db, owner, project), collectMedia: (project, candidateIds, options) => collectDneskaiMedia(db, owner, project, candidateIds, options)`; :69 `purgeMedia: (days) => purgeUnusedDneskaiMedia(db, owner, days)`; :77 `loadDneskaiMedia: createDneskaiMediaLoader(db, owner)`; docs/dneskai-source-media.md:28-29 `Dokud plánovač nasazený není, žádná cesta v aplikaci tyto funkce nespouští.`",
+      "check": {
+        "status": "verified",
+        "note": "Wiring confirmed at scheduler-ports.ts:64-69; the doc sentence is a conditional, see M-07."
+      }
+    },
+    {
+      "fact": "Owner decision 7 removed the rights gate: pictures are used without rights clearance, only origin and credit are stored; the 20 Oct report had planned rights_class, a wire/stock exclusion, a press-kit origin kind and the marketing-assets bucket, none of which shipped.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:23-24 `Owner decision 7 (#110): source pictures are used without a rights gate; origin and credit are always stored.`; docs/reports/dneskai-instagram-2026-10-20.md:159 `rights_class (publisher-own, source-account, press, wire-stock-flagged, unknown), rights_note, credit`; :179 `rights_class = wire-stock-flagged (Getty, Reuters, AP, Shutterstock v URL nebo v creditu) obrázek vyřadí`; :158 `bucket marketing-assets`; migration :45 `origin_kind in('instagram-display','instagram-child','og-image','article-figure','feed-image')`",
+      "check": {
+        "status": "verified",
+        "note": "Report :177-179 planned the >= 2 usable rule and wire-stock exclusion; none shipped."
+      }
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "Picture fetch cap / timeout",
+      "value": "8 MiB, 15 s, 2 same-host redirects",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:31,33,198",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Article page cap",
+      "value": "3,000,000 bytes, 3 redirects within host and www sibling",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:32,211",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Bucket limit and formats",
+      "value": "marketing-media private, 32 MiB, image/jpeg|png|webp",
+      "evidence": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql:10",
+      "check": {
+        "status": "verified",
+        "note": "Migration :9-10 (bucket insert) and :50 (bytes check)."
+      }
+    },
+    {
+      "name": "Pictures per candidate",
+      "value": "Instagram 10, feed 8; plan <= 10, asset_count <= 10, skipped <= 12",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:27-28; migration :83,84,88",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Capability flags",
+      "value": "fullBleedCapable: min side >= 900; insetCapable: width >= 600",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:30-31,34",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Minimum picture size / max pixels",
+      "value": "shorter side >= 300 px (declared or decoded); <= 64,000,000 pixels; animated WebP refused",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-image.ts:20,22,107-113; dneskai-media-plan.ts:230",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Near-duplicate marker",
+      "value": "pHash Hamming <= 6 to a canonical at least as large",
+      "evidence": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql:191-192",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Brief repeat by picture / site-wide card",
+      "value": "pHash <= 3 within 14 days; a picture on >= 3 articles of one site is a site-wide card",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:38,43,48",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Retention",
+      "value": "30 days, no revision reference, no link within 30 days; 200 claimed per pass, 100 per delete call",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:58; dneskai-media.ts:39,427,431",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Claim lease / attempts",
+      "value": "120 s per candidate; 3 attempts per picture or page",
+      "evidence": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql:130; dneskai-media.ts:37,46",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Tick budget and backoffs",
+      "value": "media 40 s per tick (25 s minimum to start); busy 125 s; failure 10 min; collector default 50 s, max 90 s; concurrency 2 (max 4)",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:56,75,79-80; dneskai-media.ts:42,44,332",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Preview links",
+      "value": "signed for 3600 s, preview only, never in a revision hash",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media.ts:34-35,487",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Credit length",
+      "value": "1-120 chars, never empty",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts:163; migration :52",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Studio resolution rules",
+      "value": "full-bleed short side >= 900 and upscale <= 1350/900 = 1.5 (refused); soft warning > 1.2; framed > 1.5 reported",
+      "evidence": "quorum/studio/src/dneskai-slide.ts:35,43,49,71,389-396",
+      "check": {
+        "status": "verified",
+        "note": "quorum dneskai-slide.ts:35, :44 (1.5, refused), :50 (1.2 soft), :389-396."
+      }
+    },
+    {
+      "name": "Offer and brief limits",
+      "value": "brief media <= 20; offer media 12 -> 3 as the prompt shrinks; single-image when primary text < 400 chars and <= 1 usable picture",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:35,37,122; dneskai-generation.ts:168-170",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    },
+    {
+      "name": "Collection mediaUrls cap",
+      "value": "10 URLs per candidate after string dedup",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:77,81; dneskai-contracts.ts:17",
+      "check": {
+        "status": "verified",
+        "note": "Constant re-read with grep -n."
+      }
+    }
+  ],
+  "measurements": [
+    {
+      "what": "Media test suite (6 files)",
+      "value": "6 files, 56 tests, all passed; 2.53 s wall (tests 4.07 s across workers), vitest 4.1.6",
+      "method": "ran `./node_modules/.bin/vitest run tests/lib/marketing-dneskai-media-plan.test.ts ... marketing-dneskai-media-database.test.ts --reporter=dot` in own-dashboard (PGlite with real migrations, fixture web; no network)",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Re-run 22 Oct 2026: 6 files, 56 tests passed; vitest duration 16.1 s (19.0 s wall) on a machine shared with other agents, so the 2.5 s figure is not reproducible under load."
+      }
+    },
+    {
+      "what": "Registry size vs image-host allowlist",
+      "value": "42 sources (32 feeds + 10 Instagram); PUBLISHER_IMAGE_DOMAINS has 12 entries",
+      "method": "node regex over dneskai-registry.ts (ids/kinds/hosts) and count of keys at dneskai-media-plan.ts:78-91",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "grep over dneskai-registry.ts: 42 ids; kinds rss 21, html 4, arxiv 2, bluesky 1, github 1, hn 1, spaceflight 1, stackexchange 1, instagram 10; PUBLISHER_IMAGE_DOMAINS has 12 keys (dneskai-media-plan.ts:78-91)."
+      }
+    },
+    {
+      "what": "Capability flags and cover upscale for typical sizes (1080x1350 canvas, 900/600 gates, 1.5x cap)",
+      "value": "1200x630: fullBleed false, inset true, cover-upscale 2.14x; 1024x683: false/true, 1.98x; 1600x900: true/true, 1.50x; 1920x1080: true/true, 1.25x; IG 1080x1350: true/true, 1.00x; IG 1080x1080: true/true, 1.25x; IG 1080x566: false/true, 2.39x; HF 624x400: false/true, 3.38x",
+      "method": "node computation with the constants from dneskai-media-plan.ts:30-31 and dneskai-slide.ts:35,43",
+      "basis": "estimated",
+      "check": {
+        "status": "verified",
+        "note": "Arithmetic from the constants; rechecked 1350/630 = 2.14, 1350/683 = 1.98, 1350/900 = 1.5, 1350/1080 = 1.25, 1350/566 = 2.39, 1350/400 = 3.38."
+      }
+    },
+    {
+      "what": "Band layout geometry at <= 1.5x upscale (proposal in M-01)",
+      "value": "1200x630 -> 1800x945 cropped to a 1080x945 band (70 % of canvas height; whole picture visible at 0.9x gives 1080x567 = 42 %); 1024x683 -> 1080x1024 band (76 %); 1080x566 -> 1080x566 (42 %)",
+      "method": "node computation: scale = min(1.5, 1080/width), band height = height x scale, capped at 1350",
+      "basis": "estimated",
+      "check": {
+        "status": "verified",
+        "note": "Arithmetic for a proposed layout; not rendered."
+      }
+    },
+    {
+      "what": "Stored assets after the first native night that could be full-bleed",
+      "value": "1 of 3 (anthropic-news article-figure 1920x1080); both og:images (1200x630, 1024x683) fail",
+      "method": "Supabase SELECT 22 Oct 2026 on marketing_media_assets (verifier); the map had only the brief sizes",
+      "basis": "measured",
+      "check": {
+        "status": "refuted",
+        "note": "Supabase SELECT 22 Oct 2026 on marketing_media_assets: 3 assets: techcrunch-ai og-image 1024x683, anthropic-news og-image 1200x630, anthropic-news article-figure 1920x1080. 1 of 3 is full-bleed capable, not 0 of 3."
+      }
+    },
+    {
+      "what": "Subsystem size",
+      "value": "dneskai-media.ts 507, dneskai-media-plan.ts 291, dneskai-media-image.ts 126, dneskai-media-contracts.ts 100, migration 298, doc 187, route 33 lines; tests 968 lines",
+      "method": "wc -l",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "wc -l re-run: 507 / 291 / 126 / 100 / 298 / 187 lines."
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "M-01",
+      "title": "Social-card pictures can never give a full-bleed cover: og:image 1200x630 fails the 900 px gate and would need 2.14x against the studio 1.5x cap",
+      "category": "quality",
+      "claim": "With Apify off, the only pictures are publisher og:images (1200x630, 1024x683) and body figures. The 900 px short-side rule (equivalent to the studio's 1.5x upscale cap on a 1350 px canvas) makes every social card inset-only, so rules.firstSlide can never be cover-photo and a single post can never be the photo variant; 0 of the 3 pictures stored on night 1 qualify by the sizes the brief reports. Lowering the threshold alone cannot help because the studio refuses > 1.5x; a new composition is needed. [Verifier: body figures can qualify; night 1 stored one 1920x1080 Anthropic figure that is full-bleed capable, so 1 of 3, not 0 of 3.]",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 34,
+          "excerpt": "fullBleedCapable: Math.min(size.width, size.height) >= DNESKAI_FULL_BLEED_MIN_SIDE, insetCapable: size.width >= DNESKAI_INSET_MIN_WIDTH"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 30,
+          "excerpt": "export const DNESKAI_FULL_BLEED_MIN_SIDE = 900;"
+        },
+        {
+          "file": "quorum/studio/src/dneskai-slide.ts",
+          "line": 44,
+          "excerpt": "export const DNESKAI_BLEED_MAX_UPSCALE = MASTER_CANVAS.height / DNESKAI_BLEED_MIN_SHORT_SIDE;"
+        },
+        {
+          "file": "quorum/studio/src/dneskai-slide.ts",
+          "line": 389,
+          "excerpt": "if (shorter < DNESKAI_BLEED_MIN_SHORT_SIDE || upscale > DNESKAI_BLEED_MAX_UPSCALE) {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 229,
+          "excerpt": "firstSlide: fullBleed ? \"cover-photo\" as const : media.some((item) => item.insetCapable) ? \"figure-or-statement\" as const : \"statement\" as const,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 230,
+          "excerpt": "singleVariant: media.some((item) => item.singlePhotoCapable) ? \"photo\" as const : \"type\" as const,"
+        },
+        {
+          "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+          "line": 232,
+          "excerpt": "og:images (1200×630, 1024×683) mostly fail the 900 px full-bleed rule"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Accept a new photo composition (band) in the DNESKAi kit; it changes the look and crosses quorum/studio or waits for consolidation.",
+        "reason": "Most events carry only a social card, so a band layout is the realistic way to get a picture on the cover; the claim is overstated, the need is real."
+      },
+      "impactScore": 5,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Add one duotone-free 'band' composition to the photo kit (quorum/studio, then re-vendor): the picture spans the full 1080 px width at <= 1.5x upscale, cropped to a band of up to 945 px for 1200x630 (70 % of the canvas) or 1024 px for 1024x683, with the headline on the remaining paper strip; and a 'whole picture' variant at 0.9x (1080x567 band) for charts. Add a third flag bandCapable = width >= 720 (1080/1.5) in dneskaiMediaCapabilities and offer it to the model as the first-slide rule when nothing is fullBleedCapable. Keep the 900 rule for true full-bleed (body figures and srcset originals already qualify: 1600x900, 1920x1080).",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Code confirmed: dneskai-media-plan.ts:30,34 (min side >= 900), dneskai-generation.ts:229-230 (firstSlide cover-photo only when a fullBleedCapable picture is offered), quorum studio dneskai-slide.ts:44 (MAX_UPSCALE = 1350/900) and :389. Every 1200x630 / 1024x683 social card is inset-only and needs 2.14x / 1.98x for a cover. But \"feed pictures can never give a full-bleed cover\" and \"0 of 3 qualify\" are wrong: Supabase SELECT 22 Oct 2026 on marketing_media_assets shows 3 assets, and the anthropic-news article-figure is 1920x1080 (full-bleed capable). Body figures can qualify; og:images cannot.",
+        "correctedLocations": [
+          {
+            "file": "quorum/studio/src/dneskai-slide.ts",
+            "line": 44,
+            "excerpt": "export const DNESKAI_BLEED_MAX_UPSCALE = MASTER_CANVAS.height / DNESKAI_BLEED_MIN_SHORT_SIDE;"
+          }
+        ]
+      },
+      "impactStatement": "Every feed-sourced post opens with a framed figure or a typographic statement, never an edge-to-edge photo: the least scroll-stopping first slide the kit has. The owner cannot fix it in the editor (the render refuses). Quality cost on every post until Apify is on."
+    },
+    {
+      "id": "M-02",
+      "title": "Nothing looks at the pixels: no vision or text-slide check before a picture is offered",
+      "category": "quality",
+      "claim": "The collector derives sha256, format, size and pHash only; the model is told it cannot see pictures and must never describe them; the editor shows a 128 px thumbnail. A designed text slide from an Instagram carousel, a publisher logo card, a watermarked or blurry image or a picture unrelated to the headline passes every gate. Quorum's hero ladder has a vision gate with nine vetoes (wrong-subject, recognisable-face, logo-or-watermark, embedded-text, low-quality, ...); OwnDashboard has none.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-image.ts",
+          "line": 121,
+          "excerpt": "return { sha256: ..., format, mime: ..., ext: ..., width, height, bytes: bytes.length, phash: dctPerceptualHash(grey), };"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 123,
+          "excerpt": "\"Pictures: you cannot see them. Choose them only from media, by the exact assetSha256 ... Never describe what a picture shows.\""
+        },
+        {
+          "file": "quorum/orchestrator/src/images/vision-gate.ts",
+          "line": 15,
+          "excerpt": "* The law this module exists to enforce: no image ships that nothing has looked at."
+        },
+        {
+          "file": "quorum/orchestrator/src/images/vision-gate.ts",
+          "line": 36,
+          "excerpt": "export const GATE_VETOES = [ \"wrong-subject\", \"recognisable-face\", \"logo-or-watermark\", \"embedded-text\", \"ai-generated-look\", \"dated-aesthetic\", \"low-quality\", ..."
+        },
+        {
+          "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+          "line": 239,
+          "excerpt": "OwnDashboard has no vision check; Quorum's article image ladder has one."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Approve per-asset vision spend (Haiku-class call, cents per post) or keep only the free sharp-statistics layer.",
+        "reason": "A wrong or text-heavy picture on the cover is the most visible quality failure, and nothing catches it today."
+      },
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Two layers. (1) Free, in inspectDneskaiImage: sharp stats per asset (entropy, edge density, colour-count flatness, aspect) into a `quality` jsonb column and read-model fields `textSlideLikely`, `lowDetail`; briefs drop textSlideLikely from the usable count, the tray shows a badge. (2) Optional, owner-approved spend: one Haiku-class vision call per offered asset (~12 per post, well under a cent) answering 'does this picture show the subject of this headline? any text/watermark/face?' with LangSmith receiving codes only; failures descend to the typographic slide, never to a generated image. Port the veto vocabulary from quorum/orchestrator/src/images/vision-gate.ts rather than inventing a new one.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "inspectDneskaiImage returns sha256, format, size and pHash only (dneskai-media-image.ts:121-125); prompt line dneskai-generation.ts:123 tells the model it cannot see pictures. No vision, entropy or text-slide check anywhere under src/lib/marketing or src/components/marketing (grep). Quorum vision-gate.ts:15 and GATE_VETOES at :36-46 (9 vetoes) confirmed.",
+        "correctedLocations": []
+      },
+      "impactStatement": "The owner is the only quality gate and sees thumbnails: a wrong or text-covered picture reaches review, costs an edit-and-re-render cycle (minutes per post) or ships. Once Apify carousels are on (mostly designed slides, not photographs) this becomes the main failure mode."
+    },
+    {
+      "id": "M-03",
+      "title": "Alt text, figcaption and og:image:alt are discarded, so the model picks pictures blind and writes alt that describes nothing",
+      "category": "quality",
+      "claim": "extractArticleMedia reads <img alt> only to exclude avatars and never reads og:image:alt, twitter:image:alt, <figcaption> or og:image:width/height; no table column or read-model field carries a description. The model therefore chooses by credit, position and size, and its alt text is instructed to avoid describing the picture.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 261,
+          "excerpt": "// Alt text describes the photograph (\"the OpenAI logo on a phone\"), so it is checked for chrome only."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 245,
+          "excerpt": "for (const selector of [\"meta[property='og:image']\", \"meta[property='og:image:secure_url']\", \"meta[property='og:image:url']\", \"meta[name='twitter:image']\", ..."
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+          "line": 36,
+          "excerpt": "create table public.marketing_media_assets ( ... origin_url, origin_kind, position, width, height, mime, bytes, storage_path, credit, fetched_at, phash, duplicate_of_asset_id, purged_at"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-brief.ts",
+          "line": 33,
+          "excerpt": "export const DneskaiBriefMediaSchema = z.strictObject({ assetSha256, candidateId, position, credit, width, height, originKind, fullBleedCapable, insetCapable })"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 132,
+          "excerpt": "\"alt: one or two Czech sentences for a reader who cannot see the slide ... whose picture it carries, named from its credit, without describing the picture.\""
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Gives the model and the alt text something real to work with, but needs a migration, schema field and prompt line, so it is M not S."
+      },
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "At plan time keep a sanitised `sourceAlt` (<= 300 chars: og:image:alt / twitter:image:alt for cards, img alt + figcaption for figures) in the plan entry; store it on marketing_media_asset_links (new nullable column), expose it in dneskai-media/1, the brief media and the offer as untrusted data; let the prompt use it to choose and to write a real alt ('named from its source description'). Instagram children have no alt: leave null. One migration, one zod field, one prompt line.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "extractArticleMedia (dneskai-media-plan.ts:236-290) reads img alt only through EXCLUDED_ALT (:262-263); no selector reads og:image:alt, twitter:image:alt or figcaption (grep for figcaption|image:alt in src/lib/marketing and migrations: no hit). Brief media schema and the offer carry no description; prompt alt rule at dneskai-generation.ts:132.",
+        "correctedLocations": []
+      },
+      "impactStatement": "Wrong-picture-for-the-headline is the cheapest-to-prevent quality defect and it currently costs an owner edit per occurrence; the published alt text is also weak for screen-reader users and for Instagram's own accessibility signal."
+    },
+    {
+      "id": "M-04",
+      "title": "The article page (up to 3 MB) is fetched and thrown away: its primary-source text never reaches the brief",
+      "category": "quality",
+      "claim": "collectCandidate reads the full article HTML once (the container with the most paragraph text is already located to find figures) and keeps only image URLs; the brief is written from the feed excerpt (137-236 chars on night 1), which is the brief's weak point #1 and the reason 3 of 4 night-1 briefs became single-image posts.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 302,
+          "excerpt": "const page = await fetchArticle(candidate.url, deps, deps.signal); plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls });"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 250,
+          "excerpt": "const articles = $('article').toArray().map((element) => ({ element, text: $(element).find('p').text().length }));"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 122,
+          "excerpt": "const singleImage = primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;"
+        },
+        {
+          "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+          "line": 231,
+          "excerpt": "The brief uses only the feed text (`dneskai-briefs.ts:112`), although the media step already fetches the article page."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Primary-source text is the cheapest fix for thin carousels; it must be treated as untrusted evidence and number-grounded like feed text."
+      },
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "In the same pass, extract the main text from the located container (paragraphs, <= 10 kB, scripts/nav stripped, sanitised as untrusted) into marketing_media_collections.page_text (or a candidate-level column), and let dneskai-briefs.ts build evidence excerpts from it when present; keep the feed excerpt as fallback. Record page_text_bytes in the tick detail. Respect 'captions are not transcripts' (Instagram is unaffected) and 'never invent' (this adds the primary source, nothing else).",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Confirmed that the page is read (dneskai-media.ts:302, fetchArticle :207-216) and only image URLs are kept, and that briefs use candidate.text (dneskai-briefs.ts:111, excerpt candidate.text.slice(0, 4000)). Wrong detail: 3 MB is the page byte cap (DNESKAI_MEDIA_PAGE_MAX_BYTES = 3_000_000, dneskai-media.ts:32), not 3 MB of text. Causation overstated: single-image needs primary text < 400 chars AND <= 1 usable picture (dneskai-briefs.ts:122), and on night 1 two of the four page reads failed with media-page-http-403 (marketing_media_collections SELECT), so page text would have reached at most two of the four briefs.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+            "line": 111,
+            "excerpt": "excerpt: candidate.text.slice(0, 4000)"
+          }
+        ]
+      },
+      "impactStatement": "Thin evidence forces single-image, low-information posts and invites the model to pad; richer primary text is the single biggest lever for truthful 4-7 slide carousels at zero extra network cost (the bytes are already downloaded)."
+    },
+    {
+      "id": "M-05",
+      "title": "Apify carousels are the only native 1080x1350 supply and the pipeline is ready for them, but the switch is off",
+      "category": "cost",
+      "claim": "Instagram renditions are 1080 px wide (4:5 posts 1080x1350 pass the 900 rule; the only such supply), the collector stores up to 10 children per post the same night, credits the owner account, and the guards cap spend at $0.04 per profile and $0.25 per Prague day (<= $7.50 a month) against prepaid credit that expires. Night-1 evidence: 2.5 media URLs per Instagram candidate vs 0.14 per feed candidate. MARKETING_DNESKAI_APIFY_ENABLED=false holds all of it.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 27,
+          "excerpt": "export const DNESKAI_MEDIA_INSTAGRAM_LIMIT = 10;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 20,
+          "excerpt": "Instagram CDN links expire within 24-48 hours, so the scheduler (#120) calls `collectDneskaiMedia` the same night a collection run selects its topics."
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 14,
+          "excerpt": "Decide on Apify for DNESKAi Instagram sources — Production keeps `APIFY_TOKEN` ... `MARKETING_DNESKAI_APIFY_ENABLED=false` holds every Instagram stage ... up to $0.04 per profile and $0.25 per day."
+        },
+        {
+          "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+          "line": 91,
+          "excerpt": "Apify is likely the best source of carousel-ready, multi-image material. That rests on one night of evidence: 4 Instagram candidates averaged 2.5 media URLs, against 0.14 for the 64 feed candidates of 21 October."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Turn on MARKETING_DNESKAI_APIFY_ENABLED (AGENT-RULES item 9: waiting on the owner).",
+        "reason": "Only source of native 4:5 pictures and multi-image events, already guarded at $0.25/day; a 5-minute owner flip."
+      },
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Owner flips MARKETING_DNESKAI_APIFY_ENABLED=true for the existing 10 profiles (an existing decision item; no new account, no guard change). Pair it with M-02's text-slide flag so designed slides are offered as 'slide' not 'photo', and with M-06 so 10-slide carousels keep all children. Report the per-night media count in Chyby a náklady so the month-end analysis has the number.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "NEEDED.md:14 holds the Apify decision with MARKETING_DNESKAI_APIFY_ENABLED=false; DNESKAI_MEDIA_INSTAGRAM_LIMIT = 10 (dneskai-media-plan.ts:27). Production candidates: 4 Instagram candidates carry 10 media URLs (2.5 each) against 9 media URLs across 129 feed candidates (SELECT on marketing_dneskai_candidates).",
+        "correctedLocations": []
+      },
+      "impactStatement": "Without it every post is feed-only (see M-01). Turning it on costs at most $0.25/day of credit the owner wants used this month and immediately raises the full-bleed share and the carousel count."
+    },
+    {
+      "id": "M-06",
+      "title": "The 10-URL cap at collection can drop the last carousel child (display image counted twice)",
+      "category": "quality",
+      "claim": "mediaUrls is built as [displayUrl, ...images, ...childPosts.displayUrl], deduplicated by exact string and cut at 10; the plan, the SQL plan check and asset_count are also capped at 10. When displayUrl is a different signed string from images[0] (the same file, different URL) a 10-slide carousel keeps displayUrl + 9 children and position 1 becomes a media-duplicate-bytes skip, so slide 10 is lost. Unverified live (no Apify run in this audit).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+          "line": 121,
+          "excerpt": "[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])]"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+          "line": 81,
+          "excerpt": "mediaUrls:[...new Set(mediaUrls.map(safeUrl))].slice(0,DNESKAI_MEDIA_URL_LIMIT)"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+          "line": 77,
+          "excerpt": "export const DNESKAI_MEDIA_URL_LIMIT=10;"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+          "line": 83,
+          "excerpt": "plan jsonb check(plan is null or (jsonb_typeof(plan)='array' and jsonb_array_length(plan)<=10)),"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-source-media.md",
+          "line": 53,
+          "excerpt": "`displayUrl` a první položka `images[]` bývají stejný obrázek: stejné byty se uloží jednou a druhá pozice dostane kód `media-duplicate-bytes`."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-contracts.ts",
+          "line": 81,
+          "excerpt": "if (instagram) return fileName(copy.originUrl) !== '' && fileName(copy.originUrl) === fileName(canonical.originUrl);"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Real but small: one lost slide on 10-child carousels, only once Apify is on."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Deduplicate by CDN file name (the rule dneskaiOfferableMediaAssets already uses) before the cap, or drop displayUrl when images[] is non-empty; raise DNESKAI_MEDIA_URL_LIMIT, the plan check and asset_count to 11 so a display image plus 10 children fit. Add a test with a 10-child carousel whose displayUrl string differs from images[0]. Verify on the first Apify night by comparing childPosts.length with asset_count.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-providers.ts:121 builds [displayUrl, ...images, ...childPosts.displayUrl]; :81 dedups by exact string and slices to DNESKAI_MEDIA_URL_LIMIT = 10 (:77); contracts zod max(10) (dneskai-contracts.ts:17); plan check <= 10 (migration :83). The repo doc dneskai-source-media.md:51-53 itself says displayUrl and images[0] are usually the same picture stored once with the second position skipped as media-duplicate-bytes, i.e. different strings, so a 10-child carousel keeps at most 9 children. Not observed live (Apify off).",
+        "correctedLocations": []
+      },
+      "impactStatement": "The richest carousels (exactly the 10-slide ones the owner wants to learn from) lose their closing slide, which is often the CTA or summary; the loss is silent."
+    },
+    {
+      "id": "M-07",
+      "title": "docs/dneskai-source-media.md:28-29 says no path in the app calls the media functions; the tick has called them since 21 October",
+      "category": "doc-drift",
+      "claim": "The doc still carries the pre-scheduler sentence, while scheduler-ports.ts wires pendingDneskaiMediaCandidates, collectDneskaiMedia, purgeUnusedDneskaiMedia and the byte loader into the minute and daily ticks, and production has ticked since 13:40 UTC on 21 October.",
+      "evidence": [
+        {
+          "file": "own-dashboard/docs/dneskai-source-media.md",
+          "line": 28,
+          "excerpt": "denní tick jen tehdy, když žádný kandidát nedrží zámek sběru médií. Dokud plánovač nasazený"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-source-media.md",
+          "line": 29,
+          "excerpt": "není, žádná cesta v aplikaci tyto funkce nespouští."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+          "line": 65,
+          "excerpt": "collectMedia: (project, candidateIds, options) => collectDneskaiMedia(db, owner, project, candidateIds, options),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+          "line": 69,
+          "excerpt": "purgeMedia: (days) => purgeUnusedDneskaiMedia(db, owner, days),"
+        },
+        {
+          "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+          "line": 213,
+          "excerpt": "The tick has run every 5 minutes since 13:40 UTC with no errors."
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "A stale conditional clause; fold into a general doc pass."
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Replace lines 28-29 with: the minute tick's media unit and the daily tick's purge duty are the only callers (scheduler-ports.ts:64-69, docs/marketing-scheduling.md rows 2 and 'purge'). Date the paragraph.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "docs/dneskai-source-media.md:25-29 first says the scheduler tick calls collectDneskaiMedia and the daily purge, then adds the conditional \"Dokud plánovač nasazený není, žádná cesta v aplikaci tyto funkce nespouští\" (until the scheduler is deployed). The sentence is stale, not false; scheduler-ports.ts:64-69 wiring confirmed.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/docs/dneskai-source-media.md",
+            "line": 25,
+            "excerpt": "Po nasazení plánovače (#120, ...) ji volá jeho tick"
+          }
+        ]
+      },
+      "impactStatement": "A reader of the doc concludes media collection is dormant and may re-add a trigger; the rest of the doc (40 s budget, 125 s busy wait, daily purge) is accurate."
+    },
+    {
+      "id": "M-08",
+      "title": "Off-host pictures are dropped silently at plan time, so the 12-entry allowlist cannot be grown from evidence (doc says they are skipped as media-host-not-publisher)",
+      "category": "doc-drift",
+      "claim": "For feed articles usableImageUrl returns undefined when the host fails the publisher policy, and the picture never enters the plan or the skipped list; the code media-host-not-publisher is thrown only in fetchBytes, which feed plans cannot reach (they were filtered by the same policy), so it applies to Instagram off-CDN URLs only. The doc and the codes table claim every unknown host is recorded. With 32 feeds and 12 allowlist entries (none for digiday, variety, wired, MIT TR, Nieman, Stack Overflow's i.sstatic.net, ...), the owner has no signal when a publisher's CDN is refused.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 227,
+          "excerpt": "return allowImage(url) ? url.href : undefined;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 243,
+          "excerpt": "const push = (raw, kind) => { const url = usableImageUrl(raw, base, options.allowImage); if (url) found.push({ url, kind }); };"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 195,
+          "excerpt": "if (!allowImage(parsed)) throw new FetchFailure('media-host-not-publisher', false);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 78,
+          "excerpt": "const PUBLISHER_IMAGE_DOMAINS: Readonly<Record<string, readonly string[]>> = { 'anthropic-news': ['cdn.sanity.io'], ... (12 entries)"
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-source-media.md",
+          "line": 69,
+          "excerpt": "Neznámý host se přeskočí jako `media-host-not-publisher`, nehádá se."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null,
+        "reason": "Without a refused-host record the 12-entry allowlist cannot grow from evidence; the skipped jsonb already holds position -1 page codes, so recording is cheap."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Have extractArticleMedia return refused hosts (host, count, kind) alongside the entries; store them in marketing_media_collections (jsonb, capped at 10) and surface a weekly 'refused image hosts' list in Chyby a náklady; extend PUBLISHER_IMAGE_DOMAINS from that list in a weekly 5-minute pass. Fix the doc line and the codes table to say feed off-host pictures are not planned.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "usableImageUrl returns undefined for off-policy hosts (dneskai-media-plan.ts:227) and push drops it (:243) with no skip record; media-host-not-publisher is thrown only in fetchBytes (dneskai-media.ts:195), which feed plans never reach with an off-host URL. Doc dneskai-source-media.md:69 says unknown hosts are skipped as media-host-not-publisher. Production skipped arrays are all empty, consistent with silent drops.",
+        "correctedLocations": []
+      },
+      "impactStatement": "Pictures that exist are lost without a trace; the allowlist stays at its 13 October guess. Each missing CDN costs a whole publisher's figures for every event from it."
+    },
+    {
+      "id": "M-09",
+      "title": "A picture URL that redirects to the publisher's CDN is refused: the fetch allowlists only the URL's own host",
+      "category": "risk",
+      "claim": "fetchBytes passes allowHosts: [host] and safeFetch checks the allowlist on every hop, so a 30x to any other host ends as media-redirect-refused (final). Likely cases: GitHub release notes whose github.com/user-attachments/assets/... images redirect to private-user-images.githubusercontent.com, and publishers whose /wp-content paths bounce to a Jetpack or image-CDN host. Unverified live (no network in this audit).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 198,
+          "excerpt": "allowHosts: [host], method: 'GET', maxBytes: DNESKAI_MEDIA_FETCH_MAX_BYTES, maxRedirects: 2, timeoutMs: DNESKAI_MEDIA_FETCH_TIMEOUT_MS,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/free-feeds/security/url.ts",
+          "line": 166,
+          "excerpt": "if (!options.allowHosts.includes(url.hostname)) {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 184,
+          "excerpt": "if (/allowlisted|redirect/i.test(error.message)) return new FetchFailure('media-redirect-refused', false);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 89,
+          "excerpt": "'github-ai-releases': ['githubusercontent.com', 'githubassets.com'],"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Speculative: no observed case; revisit if media-redirect-refused appears in skipped codes."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Let safeFetch accept an `allowHost: (hostname) => boolean` predicate (or compute allowHosts from the policy) so a redirect hop is accepted when the same publisherImageUrlPolicy accepts it; keep the DNS/public-address checks per hop. Add a fixture test with a 302 from github.com to private-user-images.githubusercontent.com. Confirm live with one HEAD request from the Vercel region.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "fetchBytes passes allowHosts: [host] with maxRedirects 2 (dneskai-media.ts:198); safeFetch checks allowHosts on every hop (free-feeds/security/url.ts:166); the error maps to media-redirect-refused (dneskai-media.ts:184). Mechanism confirmed; occurrence not: none of the 10 github-ai-releases candidates in production was selected or mentions user-attachments.",
+        "correctedLocations": []
+      },
+      "impactStatement": "Whole sources (GitHub releases, some WordPress publishers) yield no figures although their hosts are on the allowlist; the skip code hides the cause."
+    },
+    {
+      "id": "M-10",
+      "title": "Wire-agency photos are credited to the publisher: the credit line is a factual claim the collector cannot back",
+      "category": "risk",
+      "claim": "Credit is always 'Obrázek: <publisher>' for feed pictures, even when the URL, alt or figcaption says Getty Images, Reuters, AP, AFP or Shutterstock (the chrome filter deliberately keeps 'openai-logo-GettyImages-1234.jpg'). The 20 Oct plan foresaw a wire-stock flag; owner decision 7 dropped the rights gate, but the truthfulness rule still applies to what the slide prints.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 150,
+          "excerpt": "return bounded(`Obrázek: ${onSourceSite ? dneskaiPublisherName(source) : host.replace(/^www\\./, '')}`);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 207,
+          "excerpt": "mentions a logo or an icon (`openai-logo-GettyImages-1234.jpg`) is a photograph and stays."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 23,
+          "excerpt": "Owner decision 7 (#110): source pictures are used without a rights gate; origin and credit are always stored."
+        },
+        {
+          "file": "own-dashboard/docs/reports/dneskai-instagram-2026-10-20.md",
+          "line": 179,
+          "excerpt": "`rights_class = wire-stock-flagged` (Getty, Reuters, AP, Shutterstock v URL nebo v creditu) obrázek vyřadí; typický případ je TechCrunch `og:image` z Getty"
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "How agency pictures are credited and whether they are shown at all (decision 7 stays; this is about the printed credit).",
+        "reason": "The credit is printed on the slide; a Getty photo credited to TechCrunch breaks the never-invent rule on the first night already."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "medium",
+      "recommendation": "Detect agency markers in the URL, alt and figcaption (Getty|GettyImages|Reuters|AP Photo|AFP|Shutterstock|Bloomberg|Alamy) at plan time; store `agency` on the link, render the credit as 'Obrázek: Getty Images / TechCrunch' when known, show an 'agentura' badge in the tray, and let the owner decide per picture. Decision 7 stays; this only makes the credit true and the risk visible.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskaiMediaCredit always credits the publisher for feed pictures (dneskai-media-plan.ts:150); the chrome filter keeps GettyImages file names (:205-207). Production proof (Supabase SELECT 22 Oct 2026 on marketing_media_assets): the techcrunch-ai og:image file is GettyImages-2195703830.jpg and its stored credit is \"Obrázek: TechCrunch\". One of the three pictures stored so far carries a credit the code cannot back.",
+        "correctedLocations": []
+      },
+      "impactStatement": "A published slide that says 'Obrázek: TechCrunch' under a Getty frame misattributes the picture (owner rule: never invent sources) and is the most takedown-prone picture class; today the owner cannot tell which pictures these are."
+    },
+    {
+      "id": "M-11",
+      "title": "pHash is weak on designed carousel slides: the 6-bit marker and the 3-bit repeat check can fold or skip distinct slides",
+      "category": "risk",
+      "claim": "The contracts module documents that distinct carousel slides on one template measure 4-6 bits apart, yet the database marks <= 6 as duplicates across all of an owner's assets, and the brief repeat check treats <= 3 bits within 14 days as 'the same photograph' and skips the event. Two different posts from one creator template (white background, big headline) can be 2-3 bits apart.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-contracts.ts",
+          "line": 89,
+          "excerpt": "distinct carousel slides built on one template measure 4-6 bits apart."
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+          "line": 191,
+          "excerpt": "and bit_count(('x'||m.phash)::bit(64) # ('x'||a.phash)::bit(64))<=6"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 43,
+          "excerpt": "export const DNESKAI_REPEAT_PHASH_MAX_DISTANCE = 3;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 152,
+          "excerpt": "if (pictures.some((sha) => item.assetSha256s.some((other) => near(sha, other)))) return { coverage: item, by: 'media' };"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "No observed case and Apify is off; revisit with data from the first Instagram nights."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "For instagram-display/instagram-child assets, require identical bytes (or pHash <= 3 and the same ownerUsername and the same post shortcode) before counting a media repeat; keep <= 3 for photographs. Once M-02's textSlideLikely exists, exclude flagged slides from both the repeat check and the duplicate marker. Log repeat decisions with the distance in the brief run detail.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Thresholds confirmed (migration :191 <= 6; dneskai-briefs.ts:43 <= 3; repeat check :152). The marker half is refuted: dneskaiOfferableMediaAssets (dneskai-media-contracts.ts:85-99) never hides a picture on the pHash marker alone; it folds only same-file-name Instagram copies or a card against a body figure. The repeat half (two template slides of different posts within 3 bits) is unmeasured; the code comment puts template slides at 4-6 bits.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-media-contracts.ts",
+            "line": 85,
+            "excerpt": "A near-duplicate marker alone never hides a picture"
+          }
+        ]
+      },
+      "impactStatement": "With Apify on, a new Instagram event can be dropped as a repeat of a two-week-old post from the same account because both use the creator's template; the owner sees nothing (no release path for skipped events)."
+    },
+    {
+      "id": "M-12",
+      "title": "A publisher's site-wide share card is offered to the model as a picture",
+      "category": "quality",
+      "claim": "dneskaiSitewidePictures (a picture carried by >= 3 articles of one site) is computed only to excuse the repeat check; the brief's media and the generation offer still present the publisher's default og:image (a logo card) as an insetCapable picture, and the tray shows it as a normal choice.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 331,
+          "excerpt": "if (repeat?.by === 'media') { const sitewide = dneskaiSitewidePictures(await store.pictureArticles(...));"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 46,
+          "excerpt": "* site's default share image), not a photograph of one event, so it never makes a brief a repeat."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 215,
+          "excerpt": "const media = brief.media.flatMap((item) => { ... return [{ ...rest, evidenceIndex, fullBleedCapable: ..., insetCapable: ..., singlePhotoCapable: ... }];"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Plausible but unobserved: the three stored pictures are article-specific; better covered by the M-02 picture check."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Compute sitewide for every brief at build time (the store query exists), drop those assets from brief.media or mark `sitewide: true` so the offer narrows insetCapable to false and the tray labels them 'karta webu'; count usable pictures without them so the single-image rule stays honest.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskaiSitewidePictures is called only inside the media-repeat branch (dneskai-briefs.ts:330-332); the offer (dneskai-generation.ts:215-222) keeps every brief picture with its flags.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+            "line": 331,
+            "excerpt": "const sitewide = dneskaiSitewidePictures(await store.pictureArticles(...))"
+          }
+        ]
+      },
+      "impactStatement": "A figure slide showing another brand's logo card looks like an advert for the publisher and is exactly the 'figure-or-statement' first slide M-01 forces; it costs an owner swap per occurrence."
+    },
+    {
+      "id": "M-13",
+      "title": "No owner upload and no licensed fallback: a 403 or an imageless feed leaves the owner with nothing to swap in",
+      "category": "quality",
+      "claim": "The bucket refuses browser writes, the editor swaps only inside brief.media, generation rejects any sha256 outside the offer, and origin_kind allows five values; Quorum's ladder has a licensed rung (Openverse, Wikimedia, Pexels, Pixabay) and a typographic plate, OwnDashboard has only the typographic statement. On night 1 two of four events had no picture.",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+          "line": 26,
+          "excerpt": "create policy marketing_media_browser_insert_guard on storage.objects as restrictive for insert to anon,authenticated with check (bucket_id<>'marketing-media');"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 206,
+          "excerpt": "onChoose={(choice) => { update(swapSlideImage(draft, selected, image.slot, choice, post.brief!.media), t.editor.chosen); setSwapSlot(null); }}"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 322,
+          "excerpt": "if (!offered) { issues.push(issue(\"unknown-asset\", index, image.slot, \"This assetSha256 is not one of the offered media.\")); continue; }"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+          "line": 45,
+          "excerpt": "origin_kind text not null check(origin_kind in('instagram-display','instagram-child','og-image','article-figure','feed-image')),"
+        },
+        {
+          "file": "quorum/orchestrator/src/images/licensed.ts",
+          "line": 8,
+          "excerpt": "export type LicensedImageProvider = \"openverse\" | \"wikimedia\" | \"pexels\" | \"pixabay\";"
+        },
+        {
+          "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+          "line": 177,
+          "excerpt": "The owner cannot change slide type, variant, format, kit or design, cannot add a slide or image slot, and cannot upload a picture."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Owner-upload credit semantics, and whether a licensed-stock rung is wanted at all (new service).",
+        "reason": "The only $0 way to give a pictureless event a real picture, and it keeps exact-bytes approval."
+      },
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Add POST /api/marketing/dneskai/media/upload (owner session, service-role write): run inspectDneskaiImage (same 8 MiB, format, 300 px, pHash gates), store under sha256, insert an asset row with origin_kind 'owner-upload' (one migration widening the CHECK) and an owner-typed credit, and link it to the candidate so the brief pool and the tray see it; approval still binds the exact bytes. Treat a licensed-stock rung (Openverse/Wikimedia, free) as a separate owner decision: new service, and generic stock rarely stops a scroll.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Browser inserts into marketing-media are refused (migration :26-27); origin_kind allows five values (:45); the editor swaps only within post.brief.media (post-editor.tsx:205-206); generation rejects unknown sha256 (dneskai-generation.ts:322). Quorum licensed.ts:8 lists openverse, wikimedia, pexels, pixabay. Night 1: two of four media collections ended empty after media-page-http-403.",
+        "correctedLocations": []
+      },
+      "impactStatement": "OpenAI and Anthropic publish press assets the owner could legitimately drop in within a minute; instead the post ships text-only or waits. This is a Design Lab requirement (live picture editing) as much as a supply gap."
+    },
+    {
+      "id": "M-14",
+      "title": "Pictures are downloaded before their size is known: declared og:image:width/height and <img width> are used only for the 300 px floor",
+      "category": "speed",
+      "claim": "The plan ignores og:image:width/height and reads width/height attributes only to drop < 300; every planned picture is fetched (up to 15 s and 8 MiB each, two at a time inside a 40 s tick budget), decoded twice by sharp and uploaded, including 1200x630 cards and sub-600 figures that can never be full-bleed or inset.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+          "line": 230,
+          "excerpt": "const declaredSmall = (value: string | undefined) => value !== undefined && /^\\d+$/.test(value.trim()) && Number(value) < 300;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 332,
+          "excerpt": "const limit = limiter(Math.max(1, Math.min(deps.concurrency ?? 2, 4)));"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+          "line": 56,
+          "excerpt": "export const MARKETING_TICK_MEDIA_BUDGET_MS = 40_000;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media-image.ts",
+          "line": 105,
+          "excerpt": "const meta = await sharp(bytes, { limitInputPixels: false }).metadata();"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Not a bottleneck: night 1 collected all four candidates between 20:15:12 and 20:15:18 UTC (marketing_media_collections)."
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Carry declared width/height (og:image:width/height, srcset w-descriptor, img attributes) into the plan entry, sort the plan by declared area within each origin kind, and skip entries declared under 600 px wide; keep the decoded size authoritative.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "declaredSmall only drops < 300 px (dneskai-media-plan.ts:230); og:image:width is never read; sharp decodes twice (dneskai-media-image.ts:105, :114); concurrency 2 (dneskai-media.ts:332); media budget 40 s (scheduler.ts:56).",
+        "correctedLocations": []
+      },
+      "impactStatement": "Small: a feed night is 4 events x <= 8 pictures and usually finishes in one or two ticks; the cost is tick time and storage, not dollars. Worth doing only together with M-01's band flag so the plan can order candidates largest-first."
+    },
+    {
+      "id": "M-15",
+      "title": "The openai.com 403 is final and leaves the events empty; the page read announces itself as a shadow bot and has no second route",
+      "category": "simplicity",
+      "claim": "The page fetch sends User-Agent boardlessai-source-shadow/0.1; openai.com answers 403, which classifyFetchError marks non-retryable, so the plan falls back to the feed image, which OpenAI's RSS lacks. Both openai-blog events on night 1 ended without a picture. No alternative path (press assets, a browser-grade fetch, the owner's upload) exists.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/util.ts",
+          "line": 132,
+          "excerpt": "export const SOURCE_USER_AGENT = \"boardlessai-source-shadow/0.1\";"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 179,
+          "excerpt": "return new FetchFailure(`media-http-${status}`, error.status === 429 || error.status >= 500);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 313,
+          "excerpt": "// No readable page: the feed's own image is all the publisher offered."
+        },
+        {
+          "file": "own-dashboard/docs/dneskai-source-media.md",
+          "line": 21,
+          "excerpt": "První nativní noc (21. 10.) vrátil web OpenAI na načtení stránky článku `media-page-http-403` u obou vybraných událostí z `openai-blog`."
+        }
+      ],
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Whether to read Cloudflare-blocked publisher pages through the existing Apify account (spend, AGENT-RULES item 9).",
+        "reason": "OpenAI is a top source and always pictureless; the fix is upload (M-13) or an owner-approved Apify page read, not a new user agent."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Try, in order: (1) a descriptive page-read user agent with a contact URL (DNESKAi/1.0; +https://...) for article pages only, measured over a week of ticks; (2) for publishers that still 403, let the owner upload the press asset (M-13); (3) if the owner approves the scope, read the few blocked pages through the existing Apify account (apify/web-fetch class actor, cents per page, capped by maxTotalChargeUsd and logged in the research ledger), never a new account.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "SOURCE_USER_AGENT = boardlessai-source-shadow/0.1 (util.ts:132); 403 is non-retryable (dneskai-media.ts:179) and falls back to feed images (:313). Recommendation step 1 refuted by a $0 probe (22 Oct, residential IP): openai.com/news/ returns 403 with cf-mitigated: challenge for the shadow UA, a descriptive DNESKAi UA and a desktop Chrome UA alike, so a user-agent change will not fix it.",
+        "correctedLocations": []
+      },
+      "impactStatement": "OpenAI is the most-selected AI-news publisher; half of night 1's events were pictureless because of this one host. Each such event becomes a typographic single post."
+    },
+    {
+      "id": "M-16",
+      "title": "The subsystem map in the audit task and the 20 Oct report disagree with the code (safeFetch location, bucket, rights columns)",
+      "category": "doc-drift",
+      "claim": "The task's file list names http.ts (safeFetch), but http.ts holds authenticateN8n and boundedRequestText; safeFetch is free-feeds/security/url.ts. The 20 Oct report's schema (bucket marketing-assets, rights_class/rights_note, press-kit origin kind, origin_expires_hint, a 5.3 rule requiring >= 2 usable assets) is not what shipped (separate marketing-media bucket, no rights columns, five origin kinds, the usable rule lives in briefs).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/http.ts",
+          "line": 5,
+          "excerpt": "export function authenticateN8n(request:Request,env:Record<string,string|undefined>=process.env,now=new Date()):string|null {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+          "line": 7,
+          "excerpt": "import { safeFetch, SourceHttpError, UnsafeUrlError } from './free-feeds/security/url';"
+        },
+        {
+          "file": "own-dashboard/docs/reports/dneskai-instagram-2026-10-20.md",
+          "line": 158,
+          "excerpt": "| `storage_path` | `marketing-media/<user>/<sha256>.jpg|png` v bucketu `marketing-assets` |"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020130000_dneskai_source_media.sql",
+          "line": 7,
+          "excerpt": "-- A separate private bucket: `marketing-assets` keeps its rendered-JPEG-only, 8 MiB contract."
+        },
+        {
+          "file": "own-dashboard/docs/reports/dneskai-instagram-2026-10-20.md",
+          "line": 177,
+          "excerpt": "carousel typu „obrazový“ vyžaduje ≥ 1 asset s kratší stranou ≥ 900 px (cover na celou plochu) a celkem ≥ 2 použitelné assety"
+        }
+      ],
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "A dated planning report and an audit-prompt typo; no owner impact."
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Add a dated 'what shipped differently' note at the top of the report pointing to docs/dneskai-source-media.md; correct the subsystem map to free-feeds/security/url.ts; remove http.ts with the n8n route when that cleanup lands.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "http.ts:5 is authenticateN8n and contains no safeFetch; dneskai-media.ts:7 imports safeFetch from free-feeds/security/url. The 20 Oct report names bucket marketing-assets (:158) and a >= 2 usable-asset rule (:177); the migration (:7-10) created marketing-media.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/docs/reports/dneskai-instagram-2026-10-20.md",
+            "line": 177,
+            "excerpt": "carousel typu „obrazový“ vyžaduje ≥ 1 asset s kratší stranou ≥ 900 px ... a celkem ≥ 2 použitelné assety"
+          }
+        ]
+      },
+      "impactStatement": "Low: a reader planning the Design Lab from the report would budget for rights columns and a shared bucket that do not exist; http.ts is an n8n leftover the brief already lists for removal."
+    }
+  ],
+  "openQuestions": [
+    "Real width/height distribution of marketing_media_assets in production (needed for the true full-bleed share; this prompt did not permit a Supabase SELECT): `select width,height,origin_kind,source_id from marketing_media_assets` would settle M-01 in one query.",
+    "Does the pinned apify~instagram-scraper build return displayUrl as the same string as images[0]? That decides whether M-06 loses a child today or only after a rendition change.",
+    "Is openai.com's 403 user-agent based (Cloudflare bot rule) or IP based? One HEAD request from the Vercel region with a descriptive UA answers it (M-15); no network was used in this audit.",
+    "Do github.com/user-attachments/assets URLs appear in the github-ai-releases candidates in practice, and do they redirect (M-09)?",
+    "Owner decisions needed: any vision spend per asset (M-02, cents per post), owner-upload credit semantics (M-13), and whether a licensed-stock rung is wanted at all.",
+    "Whether the 'band' composition (M-01) is accepted into the quorum studio or built directly in OwnDashboard once the studio source is consolidated (brief task C) — the recommendation assumes the cross-repo path.",
+    "Answered by the verifier: production widths/heights are 1024x683, 1200x630, 1920x1080 (1 of 3 full-bleed).",
+    "Answered by the verifier: openai.com 403 is a Cloudflare challenge (cf-mitigated: challenge) for every user agent tried from a residential IP; a UA change will not help.",
+    "Answered by the verifier: no github-ai-releases candidate has been selected and none mentions user-attachments (M-09 unobserved)."
+  ],
+  "verification": {
+    "confirmed": 12,
+    "partly": 4,
+    "refuted": 0,
+    "notConfirmed": 0,
+    "kept": 10,
+    "dropped": 6,
+    "quickWins": 3,
+    "verifiedAt": "2026-10-22T00:03:28Z",
+    "verifier": "A-verify-2",
+    "sourceMap": "dneskai-audit-handoff/maps/map-media.json",
+    "repoCommit": "8df25a5",
+    "notes": [
+      "Owner decisions: Apify switch (M-05); vision spend per picture (M-02); agency-photo credit format (M-10); owner-upload credit and licensed-stock rung (M-13); Apify page read for Cloudflare-blocked publishers (M-15); band composition in the kit (M-01).",
+      "Brief 2.10 says og:images mostly fail 900 px: confirmed; the map overreached to \"0 of 3 stored qualify\" — production has one qualifying body figure.",
+      "Production evidence of a false credit: GettyImages-2195703830.jpg credited \"Obrázek: TechCrunch\".",
+      "Evidence: 7 read-only SELECTs (information_schema, marketing_media_assets, marketing_media_collections, marketing_dneskai_candidates); one $0 HTTP probe of openai.com/news/ with three user agents; media vitest re-run."
+    ]
+  }
+}

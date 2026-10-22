@@ -1,0 +1,1329 @@
+{
+ "subsystem": "Collection: registry, native feeds, Jev, Apify (key: collection)",
+ "summary": "The collection stage is well guarded (DNS-pinned HTTPS, 1 MB bodies, 8/20/25 s deadlines, $0.25 reservation ledger, 133 passing unit tests in 1.8 s) but starves the stages after it. Measured live through the production adapter on 22 Oct: 80% of the 378 items the 32 free feeds return carry under 400 characters of text, the five daily feeds median 94-168 characters and Hacker News is 80% empty, so briefs fall below the 400-character single-image rule and the model writes from a sentence. The article page is fetched twice (HTML enrichment and the media step) and its text discarded both times. The prompt-injection regex drops ordinary AI vocabulary ('tool call', 'system prompt'): today it removed the vLLM 0.30-0.32 and Ollama 0.40.7 release notes, a Simon Willison tool post and a Register story. 70% of night-1 candidates were held and nothing in TypeScript, SQL or the UI can release or re-review a held row (the Jev save path skips non-new rows). Registry weights are set in registry.json and read nowhere; a hard-coded tier table in dneskai-events.ts does the job instead. There are zero Czech or regional sources and eight of the 32 feeds are BoardlessAI marketing-stage sources. Apify (off) is the only multi-image supply and would cost cents a night, but two latent faults must be fixed before switching it on: one failed paid start writes a null cost that blocks Jev on every later night with no resolution path, and the reservation-based $0.25 cap has $0.002 of headroom on Sundays, so widening Instagram makes the whole run end 'held' before Jev. Docs disagree with code on source deadlines, on which adapters run, and on what the one Apify test cost.",
+ "files": [
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-registry.ts",
+   "role": "42 source identities, weekday cadence, cheap identity (canonical URL + normalised text)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/free-feeds/registry.json",
+   "role": "32 free-feed configs copied from Quorum with weight/tags/stage fields (weights unused)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/free-feeds/sources/types.ts",
+   "role": "SourceItem/SourceConfig schemas; summary max 2000; registry pinned to exactly 32 sources"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/*.ts",
+   "role": "rss, html (+article enrichment), arxiv (20 s), hn, github (unauthenticated), bluesky, spaceflight, stackexchange, util (makeItem, 8 s fetch), reader (disabled)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/free-feeds/security/{pinned-fetch,url,content}.ts",
+   "role": "DNS-pinned TLS, private-address refusal, 1 MB cap, no redirects, prompt-injection regex"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-native-feed.ts",
+   "role": "Native provider: binding check against registry.json, dneskai-feed/1 envelope, drops flagged items, 40 s internal deadline"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+   "role": "Tick runner: 45 s budget, 5 operations, switches, reservations, Jev batching, run finish"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+   "role": "Feed provider (bridge|native), Apify start/poll, candidate(), Jev request/response, thresholds"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+   "role": "Source, candidate (states, media cap 10), feed envelope schemas"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+   "role": "Supabase RPC store, Jev history (20 rows), event grouping reads, blockers"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-ports.ts",
+   "role": "Seams to media/render/briefs (no collection logic)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-wiring.ts",
+   "role": "Concrete port implementations (no collection logic)"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+   "role": "Current admit/claim_stage/save_stage bodies: $0.25 day cap, $0.04/$0.003 reservations, unresolved-cost block, cursor rule"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+   "role": "marketing_dneskai_finish: selection of up to 4 events, unknown-cost gate, stale-to-held"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-native-feeds.md",
+   "role": "Native migration doc, 32-feed comparison, first native night"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-source-collection.md",
+   "role": "Czech operations doc: cadence table, costs, Apify switch, 13 Oct verification"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+   "role": "Jev threshold rework and 9-call evaluation ($0.002)"
+  },
+  {
+   "path": "own-dashboard/scripts/dneskai-native-feeds.ts",
+   "role": "Read-only live feed check (writes no summaries)"
+  },
+  {
+   "path": "own-dashboard/scripts/dneskai-feed-compare.ts",
+   "role": "Bridge vs native comparison table"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-collection.test.ts",
+   "role": "Runner tests incl. Apify switch (mocked transports)"
+  },
+  {
+   "path": "own-dashboard/tests/lib/dneskai-native-feed.test.ts",
+   "role": "Native provider tests (identity parity, caps, DNS, 20 s arXiv)"
+  },
+  {
+   "path": "own-dashboard/tests/lib/dneskai-native-html.test.ts",
+   "role": "HTML listing/article extraction and image reference tests"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-providers.test.ts",
+   "role": "Apify/Jev boundary tests (mocked HTTP)"
+  },
+  {
+   "path": "own-dashboard/tests/lib/dneskai-pinned-transport.test.ts",
+   "role": "DNS-pinned transport tests"
+  },
+  {
+   "path": "quorum/config/fixed-costs.json",
+   "role": "Records Apify Starter $22.99/month (owner reports a prepaid premium plan)"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "42 sources = 32 free feeds + 10 Instagram profiles; kinds: rss 21, html 4, arxiv 2, hn 1, github 1, bluesky 1, spaceflight 1, stackexchange 1, instagram 10. Daily (all 7 weekdays): anthropic-news (html), deepmind-blog (rss), hn-frontpage (hn), openai-blog (rss), techcrunch-ai (rss); instagram:mosseri, instagram:meta.ai. Rotation by UTC weekday of the Prague date: Sun(0) bluesky-language-models, import-ai, interconnects, platformer, stratechery, stackexchange-ml + IG insidertech, techcrunch, theapplehub; Mon(1) ars-technica, the-verge, wired-ai + IG technology, insidertech; Tue(2) github-ai-releases, hf-blog, rest-of-world, simonw + IG activeprogrammer, tiffintech; Wed(3) arxiv-cs-ai, arxiv-cs-lg, google-research, meta-ai + IG robotic, evolving.ai; Thu(4) 404-media, mit-tech-review, the-register, nieman-lab + IG technology, techcrunch; Fri(5) github-ai-releases, hf-blog, import-ai, interconnects, platformer, stratechery, variety + IG activeprogrammer, tiffintech; Sat(6) digiday, social-media-today, tensorfeed, spaceflight-news, tubefilter + IG robotic, theapplehub. 21 feeds are due once a week, 6 twice, 5 daily. maxItems 20 per feed, 10 per profile.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-registry.ts:7-364 (feeds), :365-485 (instagram), :486 'DNESKAI_SOURCES=Object.freeze([...instagram,...feeds]...)', :488 'filter(source=>source.weekdays.includes(instant.getUTCDay()))'; :13 '\"maxItems\": 20', :380 '\"maxItems\": 10'; counts measured by script over the file",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Registry weights exist only in free-feeds/registry.json (0.85: anthropic-news, deepmind-blog, google-research, meta-ai, openai-blog; 0.75: 404-media, import-ai, interconnects, mit-tech-review, platformer, simonw, stratechery; 0.7: github-ai-releases, hf-blog, nieman-lab, tensorfeed; 0.6: ars-technica, arxiv-cs-ai, arxiv-cs-lg, digiday, rest-of-world, techcrunch-ai, the-register, the-verge, tubefilter, wired-ai; 0.55: bluesky-language-models, social-media-today, spaceflight-news, variety; 0.5: hn-frontpage, stackexchange-ml). They are parsed, copied onto each SourceItem and then dropped before the envelope; no selection, ranking or SQL reads them. A separate hard-coded tier table (publisher 0 / newsroom 1 / aggregator 2) orders reports inside an event.",
+   "evidence": "own-dashboard/src/lib/marketing/free-feeds/registry.json:9 '\"weight\": 0.75'; free-feeds/sources/types.ts:25 and :47 'weight: z.number().min(0).max(1)'; free-feeds/sources/adapters/util.ts:106 'weight: source.weight,'; dneskai-native-feed.ts:62 'items.push({ externalId: item.externalId, title: item.title, url: item.url, publishedAt: item.publishedAt, summary: item.summary, fetchedAt: ...' (no weight); dneskai-contracts.ts:5-9 DneskaiSourceSchema has no weight; dneskai-events.ts:216-221 PUBLISHER_SOURCES/AGGREGATOR_SOURCES/dneskaiSourceTier; grep -rn '.weight' over src finds no marketing consumer",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Per-source limits: HTTPS only, host allowlist = the source host, public DNS pinned to the TLS connection (hostname=resolved address, servername=source host), redirects refused (maxRedirects 0), decoded body <= 1 MB, 8 s per request, 20 s for the arXiv request, 25 s per source in the runner, 40 s inside the native provider (unreachable behind the 25 s signal), article enrichment 8 pages / 600 KB / 3.5 s / 4 concurrent, 20 items per feed (the adapter asks for 21 to detect caps), 10 posts per profile and 50 Instagram items per Prague day, 10 media URLs per candidate, 45 s and 5 operations per tick call, 40 tick claims per run.",
+   "evidence": "own-dashboard/src/lib/marketing/free-feeds/security/pinned-fetch.ts:12-19 'hostname: addresses[0], port: 443, servername: url.hostname ... agent: false'; security/url.ts:106-111 resolvePublicAddresses throws on private; :145 'maxBytes = options.maxBytes ?? 1_000_000'; :174 'options.timeoutMs ?? 8_000'; :193 'redirect: \"manual\"'; sources/adapters/util.ts:139 'maxRedirects: 0'; sources/adapters/arxiv.ts:14 'ARXIV_REQUEST_TIMEOUT_MS = 20_000'; dneskai-collection.ts:13 'DNESKAI_FEED_TIMEOUT_MS=25_000'; dneskai-native-feed.ts:24 'AbortSignal.timeout(40_000)'; :33 'maxItems: Math.min(50, source.maxItems + 1)'; sources/adapters/html.ts:23-26 (8, 3_500, 4, 600_000); dneskai-contracts.ts:8 'maxItems: z.number().int().min(1).max(20)'; :17 'mediaUrls: z.array(z.url()).max(10)'; dneskai-providers.ts:77 'DNESKAI_MEDIA_URL_LIMIT=10'; supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:104 's.max_items>10 or items+s.max_items>50'; dneskai-collection.ts:33 'Math.min(45000,...)', :37 'operations>=5'; 20261013165236_marketing_dneskai_collection.sql:7 'tick_count between 0 and 40'",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Candidate shape: id = sha256(sourceId, externalId, contentHash) where contentHash = sha256(title, text, url, publishedAt); title <= 500 (feed title; Instagram: first 500 chars of the caption), text <= 12,000 (feed summary <= 2,000 chars: RSS contentSnippet/content, HTML card paragraph of >= 40 chars or empty, HN story text or empty; Instagram: the full caption), url, publishedAt (undated items get fetchedAt + dateEstimated), fetchedAt, mediaUrls <= 10 (feeds: at most one free RSS/card/og:image reference; Instagram: displayUrl + images[] + childPosts[].displayUrl, deduplicated), instagram {ownerUsername, mediaType image|carousel|video, containsVideo}, category (6 values), relevance 0-1, duplicateOf, status, reason.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:80-81 candidate(): 'hash=contentHash({title,text,url: safeUrl(url),publishedAt}) ... id:contentHash({sourceId,externalId,hash}) ... mediaUrls:[...new Set(mediaUrls.map(safeUrl))].slice(0,DNESKAI_MEDIA_URL_LIMIT)'; :64 'item.publishedAt??item.fetchedAt'; :121 'candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,...,[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(...)]'; dneskai-contracts.ts:11-29; free-feeds/sources/types.ts:23 'summary: z.string().max(2_000)'; sources/adapters/rss.ts:55; hn.ts:38 'summary: item.text'; html.ts:205 'summary: paragraph.length >= 40 ? paragraph : \"\"'",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Jev call: model 'jev-1.13.0' at POST https://api.typesafe.ai/v1/systemone, price $0.042 per million input tokens (output free), 8 candidates per call, at most 16 calls per run (ceil(pending/8)), history <= 148 records (store supplies <= 20: 7 selected + 6 published + 7 approved), each candidate sent as title <= 120 and text <= 600 UTF-16 units, history as 40 + 64; request <= 60,000 bytes and state <= 28,000 bytes checked before the reservation. Three questions per candidate: category choice over ai-news/tech-news/marketing/tool/ai-project/other, relevance (noul), duplicate choice over history and earlier batch items. Decision: held if in-scope probability (1 - P(other)) < 0.9, or duplicate confidence < 0.8 or P(choice) < 0.9 or choice 'uncertain', or relevance < 0.85; rejected if relevance <= 0.15 and P(other) >= 0.9, or category 'other' with everything certain; duplicate if a history/batch record is chosen; otherwise 'new' (eligible). Cost = input_tokens * 0.042 / 1e6.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:11 'JEV_MODEL=\\'jev-1.13.0\\''; :12 'JEV_INPUT_USD_PER_MTOK=0.042'; :127 'items.length>8||history.length>148'; :131-133 questions; :135 'boundedText(item.title,120),text:boundedText(item.text,600)' and 'boundedText(item.title,40),text:boundedText(item.text,64)'; :138 '>60000||...>28000'; :146 fetch 'https://api.typesafe.ai/v1/systemone'; :170-172 thresholds; :178 'clearlyOutOfScope=relevance<=0.15&&category.probabilities.other>=0.9'; :181-183 status mapping; :185 'costUsd:response.usage.input_tokens*JEV_INPUT_USD_PER_MTOK/1_000_000'; dneskai-collection.ts:101 'DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16'; dneskai-store.ts:46-50 history limits 7/6/7 then slice(0,20)",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Consent and switches: paid work (Jev and Apify) requires MARKETING_AI_CONSENT='true' and MARKETING_DNESKAI_PAID_ENABLED='true' (or a valid manual run), plus no active pilot; Apify additionally requires MARKETING_DNESKAI_APIFY_ENABLED exactly 'true' (re-read right before the actor start) and APIFY_TOKEN, MARKETING_DNESKAI_APIFY_ACTOR_ID, MARKETING_DNESKAI_APIFY_BUILD; Jev needs TYPESAFE_API_KEY; collection itself needs MARKETING_DNESKAI_COLLECTION_ENABLED='true' and runs only from 22:00 Prague; free feeds run without consent, and without consent no candidate is ever classified or selected.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-collection.ts:17 'env.MARKETING_DNESKAI_APIFY_ENABLED===\\'true\\''; :18 paidAllowed 'if(env.MARKETING_AI_CONSENT!==\\'true\\')return false; ... env.MARKETING_DNESKAI_PAID_ENABLED!==\\'true\\''; :26 collection switch; :27 '<\\'22\\'' Prague hour; :43-44 held codes collection-apify-disabled / collection-apify-unconfigured / collection-paid-disabled; :53 recheck before start; :68-70 Jev held collection-jev-unconfigured / collection-paid-disabled; dneskai-providers.ts:95 build must match /^\\\\d+\\\\.\\\\d+\\\\.\\\\d+$/; .env.example:143-158",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Candidate states are new | held | duplicate | rejected | selected ('unselected' in the brief = classified 'new' rows that the finish function did not pick). Held reasons: collection-review-{category|duplicate|relevance} (Jev uncertainty), collection-editorial-out-of-scope is rejected not held, collection-cost-unverified (Jev stage not ok / cost unknown), collection-empty-source-text (no title and no text at creation), insert-time hold when publishedAt is null or text empty, collection-source-date-unavailable-or-stale (finish: news older than 48 h, others older than 30 days). No code path releases or re-reviews a held candidate: the pending filter takes only status 'new' with category null, the Jev save RPC skips any row whose status is not 'new', the finish function reads only 'new'/'duplicate'/'selected', the API routes for candidates are GET-only (collect POST is the tick), and the Sources tab renders held as a badge.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-contracts.ts:28 'status: z.enum([\\'new\\', \\'held\\', \\'duplicate\\', \\'rejected\\', \\'selected\\'])'; dneskai-providers.ts:181-183; :81 'status:title.trim()||text.trim()?\\'new\\':\\'held\\',reason:...\\'collection-empty-source-text\\''; dneskai-collection.ts:107 'if(item.status!==\\'new\\'||item.category!==null||...)continue'; supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:122 'if s.kind=\\'jev\\' then', :125 'if not found or existing.status<>\\'new\\' or existing.content_hash<>item->>\\'contentHash\\' then continue;end if;', :126 cost-unverified hold, :130 insert hold; 20261020150000_dneskai_events_briefs.sql:106 '(c.status=\\'new\\' or membership?c.id)', :158 stale->held; src/app/api/marketing/dneskai/sources/route.ts:5 'export async function GET', review/route.ts:16 GET, media/route.ts:13 GET, collect/route.ts:9 POST (tick); src/components/marketing/dneskai-sources.tsx:62 'status === \\'held\\' ? \\'warning\\''",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Apify provider: POST https://api.apify.com/v2/actors/apify~instagram-scraper/runs?build=<MARKETING_DNESKAI_APIFY_BUILD>&waitForFinish=0&timeout=120&restartOnError=false&maxItems=<10>&maxTotalChargeUsd=0.04 with input {directUrls:[profile], resultsType:'posts', resultsLimit:10, onlyPostsNewerThan:<UTC Z>, addParentData:true}; the run must report actId = MARKETING_DNESKAI_APIFY_ACTOR_ID and buildNumber = the pinned build (0.0.813 per the doc). Polling reads /v2/actor-runs/:id, waits 10 s after finishedAt, refuses usageTotalUsd null (collection-cost-unknown) or > $0.04 (collection-budget-exceeded), then reads the dataset with fields id,shortCode,caption,timestamp,url,ownerUsername,inputUrl,coauthorProducers,type,productType,displayUrl,images,childPosts,error (limit 11), binds every item to the requested profile (or a documented co-author), and captures media as displayUrl + images[] + childPosts[].displayUrl, deduplicated, at most 10. Stage reservation $0.04; the switch MARKETING_DNESKAI_APIFY_ENABLED is false in production (owner decision 21 Oct) so every Instagram stage is held with nothing reserved.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:102 'new URLSearchParams({build:config.build,waitForFinish:\\'0\\',timeout:\\'120\\',restartOnError:\\'false\\',maxItems:String(source.maxItems),maxTotalChargeUsd:\\'0.04\\'})'; :103 'https://api.apify.com/v2/actors/apify~instagram-scraper/runs ... body:JSON.stringify({directUrls:[source.url],resultsType:\\'posts\\',resultsLimit:source.maxItems,onlyPostsNewerThan:sinceUtc,addParentData:true})'; :104 'run.actId!==config.id||run.buildNumber!==config.build'; :98 'source.maxItems>10'; :113 '<10000'; :114 'run.usageTotalUsd==null||run.usageTotalUsd>0.04'; :115-116 fields and schema; :120 binding; :121 media capture; supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:98 'amount:=case when s.kind=\\'instagram\\' then 0.04 else 0.003 end'; docs/dneskai-source-collection.md:88 'Podle rozhodnutí vlastníka z 21. 10. 2026 zůstává Apify zatím vypnuté.'; :311 build '0.0.813'; NEEDED.md:14",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Money guard: every paid stage reserves before the call under an advisory lock ($0.04 Instagram, $0.003 Jev); the sum of reservations (not measured costs) across the owner's stages for the Prague day must stay <= $0.25, and Instagram items <= 50/day; the day is re-checked after the reservation and before the provider call; a reservation whose cost is null or above the reservation anywhere in the owner's history (no run/date filter) makes every later paid claim raise 'collection cost unresolved', the runner holds Instagram stages (collection-cost-unresolved), holds Jev stages, and the finish function skips selection while a run carries an unknown cost; a claim exception finishes the whole run 'held' (collection-paid-admission-blocked).",
+   "evidence": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:87 'pg_advisory_xact_lock(...\\'dneskai-paid-serial\\')', :88 'if exists(select 1 from public.marketing_dneskai_stages where user_id=p_owner and reserved_usd>0 and (cost_usd is null or cost_usd>reserved_usd)) then raise exception \\'collection cost unresolved\\'', :97 sum(reserved_usd) for ru.date=r.date, :98 amounts, :104 'if total+amount>0.25 or (s.kind=\\'instagram\\' and (s.max_items>10 or items+s.max_items>50)) then raise exception \\'collection daily budget exceeded\\'', :105 'set reserved_usd=amount'; dneskai-collection.ts:46-47 unresolved -> Instagram held, :49 'catch{await store.finish(owner,run.id,fence,\\'held\\',\\'collection-paid-admission-blocked\\')', :53 recheck, :67-70 Jev held 'collection-cost-unresolved', :78 'collection-day-or-consent-changed'; 20261020150000_dneskai_events_briefs.sql:85-86 'bool_or(reserved_usd>0 and cost_usd is null) ... if p_status<>\\'running\\' and not unknown_cost'; docs/dneskai-source-collection.md:75-76",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "First native night (21 Oct, run 6305e565): 9 feeds due, 7 delivered, 64 candidates, both arXiv feeds timed out at 8 s, four Instagram stages held collection-apify-disabled, Jev ran 8 batches for $0.0022 and selected 4 events; the brief adds 3 rejected, 45 held (70%), 12 unselected.",
+   "evidence": "own-dashboard/docs/dneskai-native-feeds.md:175-180 ('The tick admitted run 6305e565 ... 64 candidates in total ... Jev classified the candidates in eight batches for $0.0022 and selected four events'); fable-dneskai-brief.md section 2.9",
+   "check": {
+    "status": "verified",
+    "note": "Production: 21 Oct stages: 5 feeds ok, 4 partial (2 arXiv with 0 items, collection-source-error), 4 Instagram held apify-disabled, 8 Jev ok $0.002243; 64 candidates; 4 briefs."
+   }
+  },
+  {
+   "fact": "The feed provider still defaults to the retired Quorum bridge: unset or 'bridge' sends a signed POST to <MARKETING_DNESKAI_SOURCE_URL>/admin/api/marketing-collection; production sets MARKETING_DNESKAI_FEED_PROVIDER=native and Quorum's bridge was switched off on 21 Oct (answers 503). 24 distinct MARKETING_DNESKAI_*/consent/token names are read in src.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:40 'if(env.MARKETING_DNESKAI_FEED_PROVIDER===\\'native\\')', :41-50 bridge branch; .env.example:148 'MARKETING_DNESKAI_FEED_PROVIDER=bridge'; docs/dneskai-native-feeds.md:171 'The code default stays `bridge`' and :184 'Quorum\\'s DNESKAI_COLLECTION_ENABLED was turned off the same evening'; env-name count measured with grep -rhoE over src",
+   "check": {
+    "status": "partly",
+    "note": "Code default confirmed; the production value of MARKETING_DNESKAI_FEED_PROVIDER was not read."
+   }
+  },
+  {
+   "fact": "Focused unit tests for this subsystem pass: 5 files, 133 tests, 1.83 s.",
+   "evidence": "own-dashboard: ./node_modules/.bin/vitest run tests/lib/marketing-dneskai-collection.test.ts tests/lib/dneskai-native-feed.test.ts tests/lib/dneskai-native-html.test.ts tests/lib/marketing-dneskai-providers.test.ts tests/lib/dneskai-pinned-transport.test.ts -> 'Test Files 5 passed (5), Tests 133 passed (133), Duration 1.83s' (22 Oct 00:47)",
+   "check": {
+    "status": "verified",
+    "note": "Re-run 22 Oct: the six collection files (providers, collection, native-feed, native-html, pinned-transport, cursor-database) pass, 137 tests."
+   }
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Jev in-scope probability (1 - P(other))",
+   "value": ">= 0.9 else held (collection-review-category)",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:170 'if(inScopeProbability<0.9)failedChecks.push(\\'category\\')'",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev relevance",
+   "value": ">= 0.85 else held; SQL eligibility also >= 0.85",
+   "evidence": "dneskai-providers.ts:172 'if(relevance<0.85)'; supabase/migrations/20261020150000_dneskai_events_briefs.sql:108 '(candidate->>\\'relevance\\')::numeric>=0.85'",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev duplicate",
+   "value": "confidence >= 0.8 and P(choice) >= 0.9 and choice != uncertain, else held",
+   "evidence": "dneskai-providers.ts:171 'duplicate.confidence<0.8||duplicate.probabilities[duplicate.choice]<0.9||duplicate.choice===\\'uncertain\\''",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev clearly out of scope (rejected)",
+   "value": "relevance <= 0.15 and P(other) >= 0.9",
+   "evidence": "dneskai-providers.ts:178",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev batch / stages / history / text",
+   "value": "8 candidates per call; <= 16 calls per run; history <= 148 (store gives <= 20); title 120 + text 600 chars per candidate; state <= 28 KB, request <= 60 KB",
+   "evidence": "dneskai-collection.ts:101; dneskai-providers.ts:127, :135, :138; dneskai-store.ts:50",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev price",
+   "value": "$0.042 per million input tokens, output free; $0.003 reserved per batch",
+   "evidence": "dneskai-providers.ts:12; supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:98",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Apify per profile",
+   "value": "maxTotalChargeUsd 0.04, maxItems/resultsLimit 10, timeout 120 s, $0.04 reserved, cost > 0.04 or null refuses the dataset",
+   "evidence": "dneskai-providers.ts:102, :114; SQL 20261020100000:98",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Daily paid ceiling",
+   "value": "sum of reservations <= $0.25 per Prague day (Apify + Jev); Instagram <= 50 items/day; pilot runs <= $0.24",
+   "evidence": "SQL 20261020100000:101, :104",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Freshness",
+   "value": "Jev input: publishedAt within 30 days; selection: ai-news/tech-news <= 48 h, others <= 30 days; older 'new' rows become held",
+   "evidence": "dneskai-collection.ts:107 '30*86400000'; SQL 20261020150000:110, :158",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Items per read",
+   "value": "20 per feed (adapter asks 21), 10 per Instagram profile (dataset limit 11), 10 media URLs per candidate",
+   "evidence": "dneskai-contracts.ts:8, :17; dneskai-native-feed.ts:33; dneskai-providers.ts:115 'limit:String(source.maxItems+1)'",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Transport",
+   "value": "HTTPS only, DNS-pinned, no redirects, 1 MB body, 8 s per request, 20 s arXiv, 25 s per source, 40 s native provider, enrichment 8 pages/600 KB/3.5 s/4 concurrent",
+   "evidence": "security/url.ts:145, :174, :193; adapters/util.ts:139; adapters/arxiv.ts:14; dneskai-collection.ts:13; dneskai-native-feed.ts:24; adapters/html.ts:23-26",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Tick runner",
+   "value": "45 s budget per call, max 5 operations, a free source starts only with 25 s left (except the first), retry after 15 s (scheduler runs every 5 min), 40 claims per run, collection category needs 20 s of tick budget",
+   "evidence": "dneskai-collection.ts:33, :37, :42, :58; SQL 20261013165236:7; scheduler.ts:75 'collection: 20_000'",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Single-image rule downstream",
+   "value": "primary report text < 400 chars and <= 1 usable picture -> single-image brief; excerpt passed to generation <= 4,000 chars",
+   "evidence": "dneskai-briefs.ts:37 'DNESKAI_BRIEF_SINGLE_TEXT_LIMIT = 400', :122, :111 'excerpt: candidate.text.slice(0, 4000)'",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Prompt-injection filter",
+   "value": "regex /(ignore (all|any|the) previous|system prompt|developer message|BEGIN (SYSTEM|INSTRUCTIONS)|tool call)/gi; a flagged item is dropped and the source stays partial",
+   "evidence": "free-feeds/security/content.ts:3-4; dneskai-native-feed.ts:61 'if (item.promptInjectionSignals.length) { issues.add(\\'untrusted-instructions\\'); continue; }'",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  }
+ ],
+ "measurements": [
+  {
+   "what": "Live text supply of the 32 free feeds through the production native adapter (since = now - 7 d, maxItems 20, egress this Mac, 22 Oct 00:48 local)",
+   "value": "32 sources: 20 ok, 12 partial, 0 error; 378 items; 302 (80%) with summary < 400 chars; 60 (16%) with empty summary; 112 (30%) with a free image reference; 43 estimated dates. Daily core medians: anthropic-news 168 chars (5 items, 5 images), deepmind-blog 94 (1), hn-frontpage 0 (16 of 20 empty, 0 images), openai-blog 147 (19 items, 0 images), techcrunch-ai 162 (20 items, 0 images); hf-blog 14 items all empty; long-text sources: arxiv 1,495-1,601, simonw 971, github releases 757, the-verge 684. Slowest source 2.75 s; all 32 read in about 6 s with 4 workers.",
+   "method": "Scratch script /private/tmp/claude-501/-Users-lukasbarsinbars-Developer/428e9d0d-66a6-4b6b-a161-332e4a6de8f8/scratchpad/audit/excerpts.ts calling collectNativeDneskaiFeed via jiti; output in .../audit/excerpts-live.json. Read-only, no credential, no paid call.",
+   "basis": "measured",
+   "check": {
+    "status": "partly",
+    "note": "Reader's live read, not repeated. Production confirms the direction: all 64 candidates of 21 Oct have text under 400 characters."
+   }
+  },
+  {
+   "what": "Items dropped by the prompt-injection filter today",
+   "value": "github-ai-releases: 4 of 21 (vllm v0.32.0, v0.31.0, v0.30.0 and ollama v0.40.7 release notes, matched 'tool call'); simonw: 1 of 30 ('llm-echo 0.5', matched 'tool call' and 'system prompt'); the-register: 1 of 250 (a story about indirect prompt injection whose title contains 'ignore all previous')",
+   "method": "Scratch script .../audit/dropped.ts calling fetchSource for the three sources that reported untrusted-instructions and listing items with promptInjectionSignals",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader's live read; production stage codes collapse to collection-source-error, so the drops cannot be seen there."
+   }
+  },
+  {
+   "what": "Jev request size and cost per batch (offline)",
+   "value": "8 candidates with 600-char text: history 0 -> 19,373 B request (state 5,448 B) ~4.8k tokens ~$0.00020; history 20 -> 25,472 B (state 8,187 B) ~6.4k tokens ~$0.00027; history 148 rows of 500 chars exceeds the 28 KB state limit (collection-jev-input-limit). Production night 1: $0.0022 / 8 batches = $0.000275 per batch, consistent.",
+   "method": "Scratch script .../audit/jev-size.ts calling jevRequest(); tokens estimated at 4 bytes per token; night-1 figure from docs/dneskai-native-feeds.md:180",
+   "basis": "estimated",
+   "check": {
+    "status": "estimate",
+    "note": "Offline request size measured; tokens at 4 bytes each are estimated."
+   }
+  },
+  {
+   "what": "Weekday source load and item ceilings",
+   "value": "Sun 11 feeds + 5 IG (cap 220 + 50 items), Mon 8 + 4 (160 + 40), Tue 9 + 4, Wed 9 + 4, Thu 9 + 4, Fri 12 + 4 (240 + 40), Sat 10 + 4; daily feeds 5, daily IG 2; weight distribution 0.5x2, 0.55x4, 0.6x10, 0.7x4, 0.75x7, 0.85x5",
+   "method": "python3 parse of dneskai-registry.ts and registry.json",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "Registry parse repeated: Sun 11 feeds + 5 IG, Mon 8+4, Tue-Thu 9+4, Fri 12+4, Sat 10+4."
+   }
+  },
+  {
+   "what": "Reservation arithmetic with Apify on",
+   "value": "Sunday: 5 profiles x $0.04 + 16 Jev x $0.003 = $0.248 of the $0.25 cap (headroom $0.002); other days 4 x 0.04 + 0.048 = $0.208. Measured actual Apify cost per 7-post profile $0.0046-0.0069 (brief) i.e. 6-9x below the reservation; at the migration's list rate ($2.30/1,000) 10 posts = $0.023.",
+   "method": "Arithmetic from SQL 20261020100000:98,:104 and the registry cadence; cost figures from fable-dneskai-brief.md 2.1 and migration comment lines 6-9",
+   "basis": "estimated",
+   "check": {
+    "status": "verified",
+    "note": "Arithmetic repeated; it assumes the worst case of 16 Jev batches."
+   }
+  },
+  {
+   "what": "Cost per night and per month, pipeline only",
+   "value": "Jev: $0.0022/night measured (night 1) -> about $0.07/month; reserved at most $0.048/night. Apify when on: 4-5 profiles/night -> $0.03-0.05/night at the measured rate, $0.09-0.12 at the list rate -> $1-3.5/month; reservations $0.16-0.20/night. The pipeline cannot spend the $150 research credit; research runs need their own ledger (brief 4.I).",
+   "method": "Computed from the figures above; monthly = 30 nights x 4.14 average profiles",
+   "basis": "estimated",
+   "check": {
+    "status": "partly",
+    "note": "Jev $0.0022 is measured (production 21 Oct $0.002243); the Apify per-night figures are estimates from the 13 Oct $0.0161 for three profiles."
+   }
+  },
+  {
+   "what": "Weight consumers, Czech hosts, env switches",
+   "value": "0 code consumers of registry weights (grep over src); 0 .cz hosts in the 42 sources; 24 distinct MARKETING_DNESKAI_*/MARKETING_AI_CONSENT/APIFY_TOKEN/TYPESAFE_API_KEY names read in src",
+   "method": "grep -rn / grep -rhoE over own-dashboard/src",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "0 weight consumers and 0 .cz hosts re-checked; the 24-switch count not recounted."
+   }
+  },
+  {
+   "what": "Focused vitest run",
+   "value": "5 files, 133 tests passed, 1.83 s",
+   "method": "./node_modules/.bin/vitest run on the five collection test files",
+   "basis": "measured",
+   "check": {
+    "status": "corrected",
+    "note": "Re-run 22 Oct with six files: 137 tests passed, 1.79 s (the reader ran five files, 133 tests)."
+   }
+  },
+  {
+   "what": "Quorum upstream comparison",
+   "value": "quorum/config/sources.json: same 32 ids, all maxItems 10 (own-dashboard uses 20), same weights; Quorum reads weights in edition/quality.ts:202 for its own article pipeline, OwnDashboard does not",
+   "method": "python3 parse of quorum/config/sources.json; grep '.weight' in quorum/orchestrator/src",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Quorum compared by the reader; not repeated."
+   }
+  },
+  {
+   "what": "Production candidates by night and status",
+   "value": "13 Oct: 70 held (52 under 400 chars). 21 Oct: 64 total = 45 held, 12 new, 4 selected, 3 rejected; all 64 under 400 chars; average text 96 (held), 170 (new), 175 (selected)",
+   "method": "Supabase read-only SELECT on marketing_dneskai_candidates grouped by created_at::date and status",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "A-verify-1"
+   }
+  },
+  {
+   "what": "Production paid stages",
+   "value": "13 Oct: 3 Instagram ok $0.0161 total, 1 held provider-http-400-invalid-input cost 0, 8 Jev ok $0.001113; 21 Oct: 4 Instagram held apify-disabled, 8 Jev ok $0.002243; 0 unresolved reservations",
+   "method": "Supabase read-only SELECT on marketing_dneskai_stages joined to runs",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "A-verify-1"
+   }
+  }
+ ],
+ "findings": [
+  {
+   "id": "C1",
+   "title": "Thin text input: 80% of feed items are under 400 characters and the fetched article text is thrown away twice",
+   "category": "quality",
+   "claim": "The candidate text that reaches Jev, the brief and the generation prompt is the RSS snippet or an HTML card paragraph. Measured live on 22 Oct: 302 of 378 items (80%) fall under the 400-character DNESKAI_BRIEF_SINGLE_TEXT_LIMIT, the five daily feeds median 94-168 characters, Hacker News and Hugging Face deliver titles only. Yet the HTML adapter already fetches up to 8 article pages per listing (for a date and og:image) and the media step fetches the article page again for every selected candidate (for pictures); both discard the body text.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/rss.ts",
+     "line": 55,
+     "excerpt": "summary: item.contentSnippet ?? item.content ?? item.summary,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/hn.ts",
+     "line": 38,
+     "excerpt": "summary: item.text,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/html.ts",
+     "line": 205,
+     "excerpt": "summary: paragraph.length >= 40 ? paragraph : \"\","
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/html.ts",
+     "line": 331,
+     "excerpt": "const html = await fetchText(entry.item.url, { ...context, signal }, { maxBytes: ARTICLE_MAX_BYTES }); const meta = articleMetadata(html, ...) (date and og:image only)"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+     "line": 303,
+     "excerpt": "plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls });"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 135,
+     "excerpt": "text:boundedText(item.text,600)"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 122,
+     "excerpt": "const singleImage = primary.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 111,
+     "excerpt": "excerpt: candidate.text.slice(0, 4000),"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 5,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "The thinnest input in the pipeline: every 21 Oct candidate was under 400 characters, so better copy starts with keeping the article text the media step already downloads."
+   },
+   "impactScore": 5,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "In the media step, where page.html is already fetched for every selected candidate (<= 32 pages a night), extract the article body (first 4,000 characters of <article>/<p> text through sanitizeExternalContent) and store it on the brief evidence as articleText beside the feed excerpt, framed as untrusted data for the generation prompt; keep the snippet as fallback when the page fails. Reuse the HTML-listing enrichment fetch the same way for publisher listings. Show text length per candidate in the Sources tab so the owner sees why a post went single-image.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "rss.ts:55, hn.ts:38 and html.ts:205 set the summary to the feed snippet, HN text or one card paragraph; html.ts:331 fetches the article page for enrichment and dneskai-media.ts:303 fetches it again for pictures, and neither keeps body text. dneskai-providers.ts:135 sends Jev 600 characters; dneskai-briefs.ts:122 applies the 400-character single-image rule. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: all 64 candidates of the 21 Oct night have text under 400 characters (average 96 held, 170 new, 175 selected). The 302/378 figure is the reader's live read and was not repeated.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: the carousel model writes 5-7 slides from one sentence, which caps truthfulness and depth (3 of 4 night-1 briefs came out single-image). Owner minutes: thin posts need rewriting in review. Dollars: none today; the fix adds no request because the page is already in memory."
+  },
+  {
+   "id": "C2",
+   "title": "The prompt-injection regex drops ordinary AI vocabulary and today removed the vLLM, Ollama and llm-echo release notes",
+   "category": "quality",
+   "claim": "PROMPT_LIKE matches 'tool call' and 'system prompt', which are topic words in AI-tool news. A flagged item is dropped (untrusted-instructions) and the read stays partial, so the source cursor never advances and the same 7-day window is re-read each night. Measured on 22 Oct: github-ai-releases lost vllm v0.32.0/v0.31.0/v0.30.0 and ollama v0.40.7; simonw lost 'llm-echo 0.5'; the-register lost a prompt-injection story. The doc calls this intended.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/security/content.ts",
+     "line": 4,
+     "excerpt": "/(ignore (all|any|the) previous|system prompt|developer message|BEGIN (SYSTEM|INSTRUCTIONS)|tool call)/gi;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-native-feed.ts",
+     "line": 61,
+     "excerpt": "if (item.promptInjectionSignals.length) { issues.add('untrusted-instructions'); continue; }"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 144,
+     "excerpt": "native additionally reports `untrusted-instructions` because it drops an item whose text matches the prompt-injection patterns and takes the next one. Intended."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 52,
+     "excerpt": "A read that dropped an item for prompt-injection text (`untrusted-instructions`) is partial whether it was capped or not, so it never advances."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Release notes of the very tools DNESKAi covers are dropped every night and the cursor sticks; narrowing the regex to instruction-shaped phrases is a small change."
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Match only instruction-shaped phrases (for example 'ignore (all|any|the) previous (instructions|messages)', 'you are now', 'BEGIN SYSTEM', 'developer message:') and keep 'tool call'/'system prompt' as ordinary words; keep a flagged item but strip the matching sentence and record the signal on the candidate so the generation prompt (which already frames source text as data) can see it. Let a read that only flagged items still move the cursor. Add the four dropped titles as regression fixtures.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "content.ts:3-4 PROMPT_LIKE matches \"system prompt\" and \"tool call\" anywhere (so \"tool calling\" too); dneskai-native-feed.ts:61 drops the item and marks the read untrusted-instructions, which makes it partial (:69); the cursor rule in 20261020100000:140-144 advances only on ok or item-cap partial, so the window is re-read. The doc calls it intended (dneskai-native-feeds.md:52, :144). The named drops (vLLM, Ollama, llm-echo) are the reader's live read; production cannot show them because stages store only collection-source-error/-partial (dneskai-providers.ts:72).",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: the Tuesday/Friday 'tools' rotation loses exactly its strongest items (every vLLM and Ollama release mentions tool calls). Simplicity: three sources sit permanently in collection-cursor-recovery-required. Dollars: none."
+  },
+  {
+   "id": "C3",
+   "title": "Held candidates are a dead end: 70% of night-1 supply, no release, no re-review, no owner action",
+   "category": "quality",
+   "claim": "Jev holds a candidate on any single uncertain check; night 1 held 45 of 64. Afterwards nothing can move it: the pending filter takes only status 'new' with category null, the Jev save RPC skips rows that are not 'new', the finish function reads only new/duplicate/selected, the candidate API routes are GET-only and the Sources tab shows held as a badge. The Jev evaluation itself records that borderline scores change with batch context, so many holds are noise.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 182,
+     "excerpt": "status:clearlyOutOfScope?'rejected' as const:uncertain?'held' as const:duplicateOf?'duplicate' as const:..."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 107,
+     "excerpt": "if(item.status!=='new'||item.category!==null||!item.publishedAt||...)continue;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 125,
+     "excerpt": "if not found or existing.status<>'new' or existing.content_hash<>item->>'contentHash' then continue;end if;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 106,
+     "excerpt": "from public.marketing_dneskai_candidates c where ... and (c.status='new' or membership?c.id)"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/dneskai/sources/route.ts",
+     "line": 5,
+     "excerpt": "export async function GET(request:Request){"
+    },
+    {
+     "file": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+     "line": 62,
+     "excerpt": "const eventTone = (status: DneskaiEventView['status']) => status === 'held' ? 'warning' as const : ..."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+     "line": 51,
+     "excerpt": "Výsledky nejsou stabilní ve všech dávkách: kratší historie a okolní položky mění některá hraniční skóre."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Seven in ten candidates vanish with no way back; a release button plus one automatic re-review recovers supply without a new service. Overlaps SEL-09."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Add an owner-only RPC marketing_dneskai_release_candidate (own RLS) that resets a held row to status 'new', category null, reason null, and a 'Re-review' button per held candidate in the Sources tab with the held reasons grouped (category / duplicate / relevance / stale / cost). Add one automatic retry: a collection-review-* hold younger than 48 h is re-queued once into the next night's batches (different batch context), capped at the existing 16 stages. Both need save_stage:125 to accept the transition for re-queued ids. Selection stays Jev-driven; releasing is not approval.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-providers.ts:182 holds on any failed check; dneskai-collection.ts:107 pending filter takes only status new with category null; the Jev save in 20261020100000:125 skips non-new rows; finish reads only new/duplicate/selected (20261020150000:106); every DNESKAi candidate route is GET (sources/route.ts:5). Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: 21 Oct 45 of 64 held (70 %); held reasons across both nights: classification-uncertain 60 (13 Oct), review-relevance 15, review-category-duplicate-relevance 11, review-category-relevance 7, date/stale 5, review-duplicate 5.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: most of each night's supply is discarded after one uncertain reading, and the owner cannot rescue a story they know is good. Owner minutes: none today because there is no control at all. Dollars: a re-review costs about $0.0003 per batch of 8."
+  },
+  {
+   "id": "C4",
+   "title": "One failed Apify start writes a null cost that blocks Jev and selection on every later night, with no resolution path",
+   "category": "risk",
+   "claim": "When a paid start throws (any HTTP 4xx such as a retired build pin, an input-schema change, or a network error) the runner saves costUsd null on a stage that already holds a $0.04 reservation. claim_stage then raises 'collection cost unresolved' for every paid claim of the owner on every later day (the check has no run or date filter), the runner holds Instagram and Jev stages with collection-cost-unresolved, and the finish function skips selection while a run carries an unknown cost. This is exactly what stopped Jev on 13 October in staging. Nothing in code or UI resolves the row, and the owner's rule forbids resetting reservations.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 55,
+     "excerpt": "await store.saveStage(owner,run.id,fence,source.id,{status:paid?'held':'error',items:[],complete:false,costUsd:paid?null:0,errorCode:code});if(paid)break;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 88,
+     "excerpt": "if exists(select 1 from public.marketing_dneskai_stages where user_id=p_owner and reserved_usd>0 and (cost_usd is null or cost_usd>reserved_usd)) then raise exception 'collection cost unresolved';end if;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 70,
+     "excerpt": "errorCode:...unresolved?'collection-cost-unresolved':'collection-paid-disabled'"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 86,
+     "excerpt": "if p_status<>'running' and not unknown_cost and r.date=(clock_timestamp() at time zone 'Europe/Prague')::date then"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 200,
+     "excerpt": "rezervace 0,04 USD zůstává uzamčená s neznámou spotřebou. Jev proto neproběhl; vybraná témata jsou 0 ze 4."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 33,
+     "excerpt": "throw new DneskaiProviderError(`provider-http-${status}${machine?`-${machine}`:''}`);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 95,
+     "excerpt": "!/^\\d+\\.\\d+\\.\\d+$/.test(env.MARKETING_DNESKAI_APIFY_BUILD))throw new DneskaiProviderError('collection-apify-unconfigured')"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "S",
+    "risk": "medium",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Must land before Apify is switched on: one rejected start would silently stop Jev and selection on every later night."
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "On a definite rejection of the start call (HTTP 4xx with an Apify machine code: no run was created) record cost 0 with the error code instead of null; keep null only for ambiguous outcomes (network, 5xx, 429). Add an owner-only 'resolve reservation' RPC that writes the cost read from the Apify console for one stage (never a reset), and list unresolved reservations as a blocker in the Sources and Costs tabs. Scope the unresolved check to the stage's own run plus the current day so one old row cannot freeze every future night.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code confirmed: dneskai-collection.ts:55 (catch) saves a paid failure with costUsd null on a stage that already reserved $0.04; claim_stage (20261020100000:88) raises \"collection cost unresolved\" for any reserved stage with null cost of the owner, with no run or date filter; the runner turns that raise into finishing the run held collection-paid-admission-blocked (dneskai-collection.ts:49 for Instagram, :76 for Jev), so Jev never runs on later nights; finish skips selection while the run carries unknown cost (20261020150000:85-86). Nothing resolves it. Not confirmed: \"this is what stopped Jev on 13 October in staging\". In production the 13 Oct provider-http-400-invalid-input stage carries cost 0 (not null) and Jev ran 8 batches that night; production has 0 unresolved reservations today.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Risk: switching Apify on (an owner goal) arms a single point of failure that silently stops all selection until someone edits a database row by hand; no notification says so. Dollars: none directly; the lost nights cost the owner's content."
+  },
+  {
+   "id": "C5",
+   "title": "The reservation-based $0.25 cap leaves $0.002 of Sunday headroom; widening Instagram ends the whole run before Jev",
+   "category": "cost",
+   "claim": "The day cap sums reservations ($0.04 per profile, $0.003 per Jev batch), not measured costs, and a reservation stays at $0.04 after the real cost (measured $0.0046-0.0069 per 7-post profile) is known. Sunday: 5 x 0.04 + 16 x 0.003 = $0.248. A sixth profile makes claim_stage raise 'collection daily budget exceeded'; the runner catches any claim exception by finishing the whole run 'held' (collection-paid-admission-blocked), so the remaining feeds are not read and Jev never runs that night.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 98,
+     "excerpt": "amount:=case when s.kind='instagram' then 0.04 else 0.003 end;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 104,
+     "excerpt": "if total+amount>0.25 or (s.kind='instagram' and (s.max_items>10 or items+s.max_items>50)) then raise exception 'collection daily budget exceeded';end if;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 49,
+     "excerpt": "try{claimed=await store.claimStage(owner,run.id,fence,source.id,paid&&stage.status==='queued');}catch{await store.finish(owner,run.id,fence,'held','collection-paid-admission-blocked');return{runId:run.id,status:'held',continue:false};}"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 102,
+     "excerpt": "maxTotalChargeUsd:'0.04'"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 7,
+     "excerpt": "an Apify stage still reserves $0.04 (actor maxTotalChargeUsd 0.04; 10 results at the Starter rate of $2.30 per 1,000 cost $0.023), and one Prague day still stops at $0.25 in total."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": "Per-profile reservation ($0.04) or daily ceiling ($0.25): change only by owner decision.",
+    "reason": "The hold-one-stage-and-continue fix is small; resizing the reservation or the ceiling is the owner's call."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Owner decision, never silent: either size the per-profile reservation and maxTotalChargeUsd to the measured rate (about $0.015 for 10 posts, confirmed in the console) or raise the day ceiling (for example $0.60 covers 12 profiles plus Jev). Independently, make a budget refusal hold that one stage with collection-budget-exceeded and continue with the free feeds and Jev instead of finishing the run.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "20261020100000:98 reserves 0.04 per Instagram stage and 0.003 per Jev batch; :101-104 sums reservations, not costs, against $0.25. Registry parse: Sunday has 5 profiles (other days 4), so 5 x 0.04 + 16 x 0.003 = $0.248 in the worst case of 16 Jev batches; the 21 Oct night needed 8 batches, so typical headroom is larger. A sixth profile raises, and dneskai-collection.ts:49 ends the whole run held. Measured cost: Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC 13 Oct three successful profiles cost $0.0161 together.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Cost/quality: the owner cannot add Instagram sources (the best picture supply) without an owner decision on the cap, and a mis-sized rotation costs a whole night's events. Dollars: actual Apify spend at 5 profiles is about $0.03-0.05 a night, so the cap is 5-8x above real spend yet blocks growth."
+  },
+  {
+   "id": "C6",
+   "title": "Two source-quality systems and a source count pinned in four places",
+   "category": "simplicity",
+   "claim": "Weights (0.5-0.85) live in registry.json, are copied onto each SourceItem and dropped at the envelope; nothing reads them. The tier table in dneskai-events.ts does the actual ranking. The same 32 feeds are listed twice (dneskai-registry.ts and registry.json) with a runtime binding check, the registry schema pins exactly 32 entries, and two tests assert 42/32, so adding one feed touches five files.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/registry.json",
+     "line": 9,
+     "excerpt": "\"weight\": 0.75,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/util.ts",
+     "line": 106,
+     "excerpt": "weight: source.weight,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-native-feed.ts",
+     "line": 62,
+     "excerpt": "items.push({ externalId: item.externalId, title: item.title, url: item.url, publishedAt: item.publishedAt, summary: item.summary, fetchedAt: now.toISOString(), ... }) (no weight)"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 216,
+     "excerpt": "const PUBLISHER_SOURCES = new Set(['anthropic-news', 'openai-blog', 'deepmind-blog', ...])"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/types.ts",
+     "line": 87,
+     "excerpt": "sources: z.array(SourceConfigSchema).length(32),"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-native-feed.ts",
+     "line": 20,
+     "excerpt": "if (!configured || configured.url !== source.url || configured.kind !== source.kind || source.maxItems > configured.maxItems) { throw new Error('collection-native-binding-invalid');"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-providers.test.ts",
+     "line": 35,
+     "excerpt": "expect(DNESKAI_SOURCES).toHaveLength(42)"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Simplicity win (one registry); no visible quality change on its own."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Keep one registry: extend DneskaiSourceSchema with an optional tier (0/1/2) and the adapter-specific fields (query, repos, site), generate the adapter config from it, delete weight/tags/stage (BoardlessAI stage concepts) from registry.json, drop .length(32) and derive test counts from the registry.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "registry.json:9 weights reach SourceItem (util.ts:106) and are dropped at dneskai-native-feed.ts:62; no other code reads them (grep: only free-feeds/sources/types.ts:25 schema). dneskai-events.ts:216-230 tier table orders members inside an event (not the selection). types.ts:87 pins .length(32); marketing-dneskai-providers.test.ts:35 asserts 42.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Simplicity: every source change (Czech feeds, retiring weak ones) is a five-file edit; readers assume weighting exists (the brief had to note it is unused). Owner minutes: small but recurring."
+  },
+  {
+   "id": "C7",
+   "title": "No Czech or regional source, and a quarter of the feeds serve BoardlessAI marketing stages, not DNESKAi",
+   "category": "quality",
+   "claim": "All 42 sources are English-language and mostly US; the registry has zero .cz hosts. Eight feeds were copied from Quorum's marketing-stage registry (variety, tubefilter, social-media-today, digiday, nieman-lab, spaceflight-news, stackexchange-ml, bluesky-language-models) and produce short social or entertainment items that Jev holds (bluesky median 78 chars today; stackexchange returned nothing; the 13 Oct run had 60 low-relevance candidates).",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-registry.ts",
+     "line": 5,
+     "excerpt": "/** Exact identities copied from Quorum config/sources.json, 2026-10-13; no new adapters."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/registry.json",
+     "line": 612,
+     "excerpt": "\"tags\": [\"platforms\", \"media\", \"streaming\", \"entertainment\"] (variety, lines 612-617)"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 325,
+     "excerpt": "Šedesát vyhodnocených kandidátů má nízkou jistotu/relevanci"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-registry.ts",
+     "line": 486,
+     "excerpt": "DNESKAI_SOURCES=Object.freeze([...instagram,...feeds]...) (grep '.cz' over the file: 0 matches)"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Approve a list of Czech and regional sources (rules forbid adding them without it).",
+    "reason": "A Czech account with no Czech source is a real editorial gap, but adding sources waits on the owner per the rules."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Owner approves a source list before anything is added (never invented: candidates to verify for a public RSS feed are Lupa.cz, Root.cz, CzechCrunch, Živě.cz, the tech sections of SeznamZprávy, HN.cz and E15, heise.de and Spider's Web for the region). Retire the eight marketing-stage feeds from the DNESKAi cadence (they stay in Quorum). Give the Czech feeds daily cadence and tier 1 so a local report leads an event when it exists.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Confirmed: 42 sources, 0 .cz hosts (registry parse), registry copied from Quorum (dneskai-registry.ts:5). The \"quarter serve BoardlessAI marketing stages\" list was not re-derived source by source; registry.json carries stage/tags fields per source (e.g. :10, :17). The map's second citation of dneskai-registry.ts:486 is correct but its excerpt is a paraphrase.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/lib/marketing/dneskai-registry.ts",
+      "line": 486,
+      "excerpt": "export const DNESKAI_SOURCES: readonly DneskaiSource[]=Object.freeze([...instagram,...feeds].map(source=>Object.freeze(DneskaiSourceSchema.parse(source))));"
+     }
+    ]
+   },
+   "impactStatement": "Quality: a Czech profile posts only translated US news with no local angle; weak feeds spend Jev batches and cursor budget on holds. Dollars: none; the RSS and HTML adapters need no new code."
+  },
+  {
+   "id": "C8",
+   "title": "Apify Instagram is the only multi-image supply, costs cents a night, and is switched off",
+   "category": "quality",
+   "claim": "A feed item carries at most one free image reference and the daily core carries none (today: openai-blog 0/19, techcrunch-ai 0/20, hn 0/20, hf-blog 0/14; 112 of 378 overall), so briefs depend on the article's og:image, which mostly fails the 900 px full-bleed rule. An Instagram candidate captures displayUrl, images[] and every carousel child (up to 10, media plan keeps 10 vs 8 for feeds). With MARKETING_DNESKAI_APIFY_ENABLED=false every Instagram stage is held at zero cost. When on, 4-5 profiles a night cost about $0.03-0.05 at the measured rate (at most $0.12 at the list rate), $1-3.5 a month.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 121,
+     "excerpt": "[...(item.displayUrl?[item.displayUrl]:[]),...(item.images??[]),...(item.childPosts??[]).flatMap(post=>post.displayUrl?[post.displayUrl]:[])]"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 76,
+     "excerpt": "/** Instagram carousels carry up to ten children; feed items carry at most one free image reference. */"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+     "line": 27,
+     "excerpt": "export const DNESKAI_MEDIA_INSTAGRAM_LIMIT = 10; ... DNESKAI_MEDIA_FEED_LIMIT = 8;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 44,
+     "excerpt": "errorCode:run.date!==date?'collection-day-expired':apifyOff?'collection-apify-disabled':..."
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 14,
+     "excerpt": "Decide on Apify for DNESKAi Instagram sources ... Setting it to `true` adds up to $0.04 per profile and $0.25 per day."
+    },
+    {
+     "file": "own-dashboard/.env.example",
+     "line": 158,
+     "excerpt": "MARKETING_DNESKAI_APIFY_ENABLED=false"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Switch MARKETING_DNESKAI_APIFY_ENABLED on and plan the $150 credit.",
+    "reason": "Apify is the only multi-image supply and costs cents; turning it on is the owner's decision, after C4 and C5."
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Owner decision to set MARKETING_DNESKAI_APIFY_ENABLED=true in Vercel Production (no code change), after C4 and C5 are fixed so one failure cannot freeze the pipeline. Then widen the rotation toward carousel-heavy public accounts chosen from the research study, and record mediaType/childPosts counts per night in the Costs tab so the owner sees the picture yield per profile.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-providers.ts:121 keeps displayUrl, images[] and child posts; dneskai-native-feed.ts:62-63 keeps one imageUrl per feed item; dneskai-collection.ts:44 holds every Instagram stage collection-apify-disabled; .env.example:158 false. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: 21 Oct four Instagram stages held collection-apify-disabled; 13 Oct three profiles cost $0.0161 together (about $0.005 each). The per-feed picture counts are the reader's live read.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: without it, 2 of 4 night-1 briefs had no picture and no event reached 3 images, so carousels cannot be built. Dollars: about $1-3.5 a month from the pipeline, separate from the $150 research ledger."
+  },
+  {
+   "id": "C9",
+   "title": "Jev answers 'is this concrete news'; a Haiku-ranked pass could judge hook, picture and Czech fit for about $0.007 a night",
+   "category": "modernity",
+   "claim": "Jev's category criteria are one-liners, its relevance question is a yes/no on concreteness, and selection orders events by relevance then recency. Nothing scores scroll-stopping potential, picture availability, or relevance to a Czech audience, and the evaluation doc notes unstable borderline scores. A structured-output ranking call per batch of 8 on claude-haiku-5-5 ($0.10 input / $0.50 output per MTok) costs about $0.0009 (6.4k in + 0.6k out), roughly $0.007 a night and $0.2 a month, three times Jev's $0.0022 a night.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 131,
+     "excerpt": "criteria:{'ai-news':'New AI development','tech-news':'Technology news','marketing':'Marketing/platform strategy','tool':'Usable software tool','ai-project':'AI project','other':'Unclear or unrelated'}"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 132,
+     "excerpt": "questions[`relevance_${index}`]={type:'noul',instructions:`Does ${reference} describe concrete AI or technology news ...`"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 123,
+     "excerpt": "row_number() over(order by category_rank,relevance desc,published_at desc,event_id) as rank"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+     "line": 53,
+     "excerpt": "Kategorie nejsou dostatečně spolehlivé jako přesná taxonomie."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 180,
+     "excerpt": "Jev classified the candidates in eight batches for $0.0022"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Approve a model re-rank call and its spend (same item as SEL-13).",
+    "reason": "A judgement pass could improve picks, but it is a new paid call and duplicates SEL-13; do SEL-01 first."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Owner decision. Keep Jev as the cheap first pass (or drop it) and add one claude-haiku-5-5 call per batch with output_config.format returning per candidate: category, relevance 0-1, duplicateOf, hookLine, visualPotential, czechAngle, with the same hold thresholds and the research-selection-not-fact-checked flag kept. Order events by a combined score. Run it only on candidates Jev did not reject (<= 32 a night) and reserve it like Jev ($0.003 a batch fits the ledger).",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code part confirmed: Jev criteria are one-phrase labels (dneskai-providers.ts:131), relevance is one concreteness question (:132), selection orders by relevance then recency (20261020150000:123). Not verified here: the claude-haiku-5-5 price and the $0.007/night estimate.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: selection would favour stories with a hook and pictures instead of the weakly labelled ai-project item night 1 picked, and could hand the generation step a draft hook and a Czech angle. Dollars: about $0.2 a month more. Needs owner approval (new spend and a new model scope)."
+  },
+  {
+   "id": "C10",
+   "title": "Sources are read one at a time across 5-minute ticks; the whole registry reads in 6 seconds concurrently",
+   "category": "speed",
+   "claim": "The runner awaits each source in sequence, does at most 5 operations per 45 s call and returns continue:true for the next 5-minute tick; night 1 took four ticks for 13 stages and a Friday needs about seven. Measured today: all 32 feeds read in about 6 s wall-clock with four workers (slowest source 2.75 s).",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 36,
+     "excerpt": "for(const stage of stages){ if(operations>=5||signal.aborted)break;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 52,
+     "excerpt": "const result=await(dependencies.feed??collectDneskaiFeed)(source,claimed.since_at,{...})"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 58,
+     "excerpt": "return{runId:updated.id,status:'running',continue:true,retryAfterSeconds:15};"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 175,
+     "excerpt": "the collection finished in four minute ticks with no tick error."
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Collection runs at night and finishes in four ticks; faster reads save no owner minutes."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Read the due free sources concurrently (four workers) inside one call under the same 45 s budget and per-source 25 s signal; keep paid stages serial behind the advisory lock. Collection then ends in one tick on every weekday.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-collection.ts:36-58: sources are awaited one by one, at most 5 operations per call, then continue:true for the next 5-minute tick. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: the 21 Oct run took 4 collection ticks (avg 15.5 s each). The 6 s concurrent read is the reader's measurement, not repeated.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Speed: collection occupies 20-35 minutes of the night and delays media, briefs and the first generation; harmless for the owner's morning but it is the longest stage for no reason. Dollars: none."
+  },
+  {
+   "id": "C11",
+   "title": "Doc drift: the native-feeds doc still states an 8-second source deadline inside a 40-second collection deadline",
+   "category": "doc-drift",
+   "claim": "Three places in docs/dneskai-native-feeds.md describe the runner's per-source deadline as 8 s and the collection deadline as 40 s; the code gives a source 25 s (20 s for the arXiv request, 8 s for other requests) and the 40 s timer inside the native provider can no longer fire. The same doc's last section states the 25 s rule, so the document contradicts itself.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 20,
+     "excerpt": "applies an 8-second request deadline within a 40-second collection deadline"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 33,
+     "excerpt": "If the runner's 8-second source deadline fires during that enrichment, the listing already parsed is kept"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 13,
+     "excerpt": "export const DNESKAI_FEED_TIMEOUT_MS=25_000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-native-feed.ts",
+     "line": 24,
+     "excerpt": "const signal = AbortSignal.any([options.signal, AbortSignal.timeout(40_000)]);"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 182,
+     "excerpt": "a free source now gets 25 s (`DNESKAI_FEED_TIMEOUT_MS` ...). The arXiv request itself may take 20 s"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Doc drift; include in the doc-drift list."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Update lines 20, 28 and 33 to 25 s per source / 8 s per request / 20 s arXiv, and delete the dead 40 s timeout in dneskai-native-feed.ts (the runner's signal is the only deadline).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "docs/dneskai-native-feeds.md:20 and :33 still say an 8 s source deadline in a 40 s collection deadline; dneskai-collection.ts:13 gives a source 25 s and the runner passes AbortSignal.timeout(25000), so the 40 s timer at dneskai-native-feed.ts:24 cannot fire first; the same doc states 25 s at :182.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Simplicity: a reader sizing a new source or debugging a timeout works from the wrong numbers. Owner minutes: small."
+  },
+  {
+   "id": "C12",
+   "title": "Doc drift: the Czech operations doc and a contract comment still say the feeds run through Quorum's adapters",
+   "category": "doc-drift",
+   "claim": "docs/dneskai-source-collection.md:37-38 says the daily feeds are read 'přes existující Quorum adaptéry' and dneskai-contracts.ts:72 says 'Quorum reuses its existing adapters', while the same doc's line 12 and the native-feeds doc record that OwnDashboard's own adapters have run since 21 October and the bridge is off.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 38,
+     "excerpt": "Google DeepMind, TechCrunch AI a Hacker News přes existující Quorum adaptéry."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+     "line": 72,
+     "excerpt": "/** Quorum reuses its existing adapters; candidates are research, never approved SourcePackets. */"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 12,
+     "excerpt": "Pravidelný sběr běží v produkci od 21. října 2026, každou noc od 22:00 Prahy."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 184,
+     "excerpt": "Quorum's `DNESKAI_COLLECTION_ENABLED` was turned off the same evening and Quorum was redeployed"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Doc drift; include in the doc-drift list."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Rewrite the cadence paragraph to name the native adapters and move the n8n and bridge sections of the Czech doc under a dated 'historie' heading; fix the contract comment.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "docs/dneskai-source-collection.md:37-38 says the feeds go through existing Quorum adapters; dneskai-contracts.ts:72 says the same; :12 of the same doc and dneskai-native-feeds.md:184 say native since 21 Oct.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Simplicity: the consolidation decision (owner goal 7) is harder to judge when the operations doc still points at Quorum."
+  },
+  {
+   "id": "C13",
+   "title": "Doc drift: the one Apify charge is attributed two ways and the reservation is sized on a rate the repo contradicts",
+   "category": "doc-drift",
+   "claim": "docs/dneskai-source-collection.md:239 says the single approved test returned seven posts for $0.0161 (one profile, $0.0023 per post, matching the migration's $2.30 per 1,000 Starter rate); the same doc's 13 Oct production section says $0.0161 was Apify's total for three successful profiles (the brief: $0.0046-0.0069 each, about $0.0008 per post). quorum/config/fixed-costs.json records Apify Starter at $22.99/month while the owner reports a prepaid premium plan.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 239,
+     "excerpt": "Apify vrátilo sedm příspěvků za doložených 0,0161 USD."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 321,
+     "excerpt": "API náklady jsou 0,017213294 USD: Apify vykázalo 0,0161 USD a Jev 0,001113294 USD"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 320,
+     "excerpt": "70 uložených kandidátů, tři úspěšné Instagram zdroje, osm úspěšných dávek Jev"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 8,
+     "excerpt": "Starter rate of $2.30 per 1,000 cost $0.023"
+    },
+    {
+     "file": "quorum/config/fixed-costs.json",
+     "line": 7,
+     "excerpt": "\"monthly_usd\": 22.99,"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Read the Apify plan, per-result rate and balance from the console (no token shared).",
+    "reason": "Needed before resizing the reservation; the owner reads the plan and rate from the Apify console."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "The owner reads plan, per-result rate and balance from the Apify console (no token shared) and the audit records it once, in the migration comment and the operations doc; then re-size the reservation (C5) and the research ledger from that figure.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "docs/dneskai-source-collection.md:239 attributes $0.0161 to one approved seven-post test; :320-321 attributes $0.0161 to three successful Instagram profiles. Production supports the second: the 13 Oct production stages show three ok Instagram stages with cost $0.0161 in total. Whether a staging test also cost exactly $0.0161 is not checkable from production. quorum/config/fixed-costs.json:7 says $22.99/month; the owner's prepaid plan is not in the repo.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Cost: the $0.04 reservation, the $0.25 cap and the $150 research plan all depend on a per-result price the repository states two ways (3x apart)."
+  },
+  {
+   "id": "C14",
+   "title": "The feed provider defaults to the retired bridge and carries dormant bridge and preview plumbing",
+   "category": "simplicity",
+   "claim": "Unset or 'bridge' sends signed requests to Quorum's /admin/api/marketing-collection, which has answered 503 since 21 October; .env.example ships 'bridge'; the blockers list reports collection-bridge-unconfigured in any non-native environment; the provider keeps the preview-share fetcher and three MARKETING_DNESKAI_SOURCE_* variables among 24 switches.",
+   "evidence": [
+    {
+     "file": "own-dashboard/.env.example",
+     "line": 148,
+     "excerpt": "MARKETING_DNESKAI_FEED_PROVIDER=bridge"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 42,
+     "excerpt": "const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 48,
+     "excerpt": "const fetcher=previewConfigured?((url,request)=>requestDneskaiCollectionPreview(...)) as typeof fetch:options.fetcher??fetch;"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 171,
+     "excerpt": "The code default stays `bridge`. Rollback: set `MARKETING_DNESKAI_FEED_PROVIDER=bridge` (or unset it) and redeploy."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+     "line": 87,
+     "excerpt": "if(env.MARKETING_DNESKAI_FEED_PROVIDER!=='native'&&(!env.MARKETING_DNESKAI_SOURCE_URL||!env.MARKETING_DNESKAI_SOURCE_SECRET))result.push('collection-bridge-unconfigured');"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Close the bridge rollback window.",
+    "reason": "Removing the dead bridge default removes a misconfiguration trap; wait for the owner to close the rollback window."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Once the owner closes the rollback window: default to native, delete the bridge branch, the preview-share fetcher and the MARKETING_DNESKAI_SOURCE_* variables, keep the dneskai-feed/1 envelope as the internal contract, and remove the bridge blocker. This is one step of the consolidation decision (owner goal 7).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": ".env.example:148 ships bridge; dneskai-providers.ts:42-48 keeps the bridge signer and preview-share fetcher; dneskai-store.ts:87 reports collection-bridge-unconfigured unless the provider is native; native-feeds.md:171 says the code default stays bridge. The production value (native per the doc) was not read (Vercel env not inspected).",
+    "correctedLocations": []
+   },
+   "impactStatement": "Simplicity/risk: a new environment built from the example routes collection to a dead endpoint; every reader must understand two providers and 24 switches. Owner minutes: setup and debugging."
+  },
+  {
+   "id": "C15",
+   "title": "GitHub releases are read without authentication; no live evidence from Vercel",
+   "category": "risk",
+   "claim": "The github adapter sends no credential (the migration removed ambient tokens), so it depends on GitHub's 60 unauthenticated requests per hour per IP; on Vercel's shared egress that allowance may already be spent. The 20 Oct comparison saw 403 from the sandbox, the first native night did not include the source, and it is due again on 28 Oct. It is the Tuesday 'tools' theme's primary source.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/github.ts",
+     "line": 47,
+     "excerpt": "const headers: Record<string, string> = { accept: \"application/vnd.github+json\", \"x-github-api-version\": \"2022-11-28\", \"user-agent\": \"boardlessai-source-shadow/0.1\" };"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 150,
+     "excerpt": "`github-ai-releases`: `empty-source` on both paths and both routes: the GitHub API answered 403 (unauthenticated rate limit for these addresses)."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 182,
+     "excerpt": "`github-ai-releases` and `stackexchange-ml` were not due that night and still have no live evidence."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 16,
+     "excerpt": "removes ambient GitHub and StackExchange credentials"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "The Tuesday tools source may never work from Vercel; the releases.atom switch is cheap, but verify the 28 Oct run first."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Replace the API calls with the seven repositories' public release Atom feeds through the existing RSS adapter (https://github.com/<owner>/<repo>/releases.atom; verify each once), which need no credential and no new scope; otherwise check the 28 Oct run in the Sources tab before relying on it.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "github.ts:47 builds headers without a token; dneskai-native-feeds.md:150 records 403 empty-source from the sandbox (the map's excerpt differs only in backticks); :182 says no live evidence yet. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: github-ai-releases last ran 13 Oct (bridge era), partial collection-source-error, no success cursor.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: Tuesday and Friday may silently lose every vLLM/Ollama/transformers release (combined with C2 the source yields nothing). Dollars: none."
+  },
+  {
+   "id": "C16",
+   "title": "Instagram candidates repeat the caption as title and caption-less carousels are held forever",
+   "category": "quality",
+   "claim": "An Instagram candidate's title is the first 500 characters of its caption and its text the full caption, so Jev reads the same opening twice (120 + 600 units). A post with no caption has no title and no text and is created 'held' with collection-empty-source-text, although an image-only carousel from a daily profile is the strongest picture supply the pipeline has.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 121,
+     "excerpt": "candidate(source.id,item.id,boundedText(item.caption,500),item.caption,item.url,item.timestamp,..."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 81,
+     "excerpt": "status:title.trim()||text.trim()?'new':'held',reason:title.trim()||text.trim()?null:'collection-empty-source-text'"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 135,
+     "excerpt": "title:boundedText(item.title,120),text:boundedText(item.text,600)"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Matters only once Apify is on; small change."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Use the caption's first sentence as the title and the remainder as text; keep caption-less posts with >= 2 images as 'new' with an imageOnly flag so they can join an event as supporting media without ever being quoted.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-providers.ts:121 passes the first 500 characters of the caption as title and the caption as text; :81 creates a row held when title and text are empty; :135 sends Jev title 120 + text 600.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Quality: wasted Jev context and lost carousels. Dollars: negligible."
+  }
+ ],
+ "openQuestions": [
+  "Apify plan, per-result rate and remaining prepaid balance: the repo states $2.30 per 1,000 (Starter) and a measured $0.0046-0.0069 per 7-post profile; only the owner's console can settle which applies and whether maxTotalChargeUsd 0.04 should shrink (C5, C13). The owner must read it; no token in chat.",
+  "Production rows: does any marketing_dneskai_stages row have reserved_usd > 0 and cost_usd null (it would hold Jev every night, C4), and what is the night-1 distribution of held reasons (collection-review-category/duplicate/relevance vs stale)? Needs a SELECT the collection reader was not allowed to run.",
+  "Live evidence for github-ai-releases and stackexchange-ml from Vercel's egress is due on the 28 Oct (Tuesday) run (C15).",
+  "Does the owner want Czech-language sources, or English sources with a Czech angle written at generation time? That decides how many of the eight marketing-stage feeds to replace (C7).",
+  "Jev duplicate detection across differently worded reports from several sources is unverified (evaluation doc tests used the same record in history); the event grouping in dneskai-events.ts compensates with URL and headline Jaccard, outside this subsystem.",
+  "Whether a Haiku ranking pass (C9) replaces or follows Jev is an owner decision on spend and scope; both paths fit the $0.25 ledger."
+ ],
+ "verification": {
+  "confirmed": 12,
+  "partly": 4,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 15,
+  "dropped": 1,
+  "quickWins": 3,
+  "verifiedAt": "2026-10-22T00:07:36Z",
+  "verifier": "A-verify-1",
+  "sourceMap": "dneskai-audit-handoff/maps/map-collection.json",
+  "repoCommit": "8df25a5",
+  "lineCheck": "All cited lines checked with grep -n/sed -n on own-dashboard 8df25a5 (worktree fable/audit-2026-10): every excerpt sits on the cited line.",
+  "notes": [
+   "Line numbers: every cited line holds its excerpt; two excerpts are paraphrases of the right line (dneskai-registry.ts:486, dneskai-native-feeds.md:150).",
+   "Production confirms the thin-text problem more strongly than the map: 64 of 64 candidates on 21 Oct are under 400 characters.",
+   "C4: the code defect is real, but production never hit it: the 13 Oct HTTP 400 stage holds cost 0 and Jev ran that night.",
+   "Stage and source-state error codes collapse native provider codes to collection-source-error/-partial (dneskai-providers.ts:72), which is why the prompt-injection drops (C2) are invisible in production; the doc points to the function log instead.",
+   "Owner items: Apify switch and $150 plan (C8); reservation/ceiling sizing (C5); Czech source list (C7); model re-rank spend (C9 = SEL-13); Apify console figures (C13); bridge rollback window (C14).",
+   "Evidence: read-only SELECTs on marketing_dneskai_{runs,stages,candidates,source_states}; registry parse; vitest re-run of six collection files."
+  ]
+ }
+}

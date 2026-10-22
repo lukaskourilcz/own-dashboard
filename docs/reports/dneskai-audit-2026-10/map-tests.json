@@ -1,0 +1,903 @@
+{
+ "subsystem": "tests",
+ "summary": "own-dashboard has 134 test files named for marketing/DNESKAi/carousel-studio (152 that mention either word) out of 200 unit test files, 25 PGlite migration-replay suites and 4 marketing/DNESKAi e2e specs (19 test() calls), all run by one GitHub workflow (ci.yml: check job lint, tsc, vitest, build, check:render-traces; e2e job Playwright + axe). Four coupled gates tie it to Quorum: the vendored tree hash, reproduction of the 11 pinned DNESKAi golden PNG hashes, the template-derived DNESKAI_FIELD_FACES/DNESKAI_PLACED_FIELDS and DNESKAI_TEXT_LIMITS. Quorum's studio carries 33 test files (683 tests measured) plus 92 consumer files across orchestrator and site, so the studio cannot leave Quorum: option (b) is a copy that diverges, and option (c) still drags 28 of 41 studio modules (81% of the source lines). Measured on this Mac: the marketing/DNESKAi vitest set (137 files, 1,340 tests) fails 11-12 tests under the host time zone (CEST) and Node 26, and 4 with TZ=UTC; CI on Node 22/UTC is green (last main run 6 min 47 s). The suite silently depends on TZ=UTC and Node 22, and the PGlite replays pin a cron prune job production lacks.",
+ "files": [
+  {
+   "path": "own-dashboard/.github/workflows/ci.yml",
+   "role": "The only workflow: check job (lint, tsc, vitest, build, check:render-traces) and e2e job (Playwright + axe), Node 22"
+  },
+  {
+   "path": "own-dashboard/vitest.config.mts",
+   "role": "vitest include tests/**, vendored studio kept external, no TZ pin"
+  },
+  {
+   "path": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+   "role": "Vendored tree hash, single sharp/resvg/zod, fonts and kit, subpath imports, FIELD_FACES/PLACED_FIELDS derived from templates, trace includes, 11 golden PNG hashes"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-render.test.ts",
+   "role": "Deck render: JPEG per type, determinism, render-key cache, clip/glyph/unplaced refusals, 900 px rule"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-generation.test.ts",
+   "role": "Prompt and schema; DNESKAI_TEXT_LIMITS equal to vendored template maxChars; hashtag rules equal to studio"
+  },
+  {
+   "path": "own-dashboard/tests/helpers/supabase-pglite.ts",
+   "role": "PGlite builder: schema.sql + every supabase/migrations file in filename order with Supabase stand-ins (vault, pg_net, pg_cron)"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-scheduler-database.test.ts",
+   "role": "pg_cron schedule incl. marketing-cron-history-prune, HMAC signing, leases, tick retention"
+  },
+  {
+   "path": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+   "role": "One DNESKAi day on real modules with fake providers; writes slides and a contact sheet"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-workspace.test.ts",
+   "role": "Workspace read model; committed preview renders byte-for-byte"
+  },
+  {
+   "path": "own-dashboard/e2e/dneskai-workspace.spec.ts",
+   "role": "Review/approve/edit flow on /dev-preview fixtures, axe"
+  },
+  {
+   "path": "own-dashboard/e2e/dneskai-sources.spec.ts",
+   "role": "Sources tab lazy, read-only"
+  },
+  {
+   "path": "own-dashboard/scripts/check-render-traces.mjs",
+   "role": "Post-build check that marketing route traces carry libvips, sharp addon and vendored fonts"
+  },
+  {
+   "path": "own-dashboard/scripts/vendor-carousel-studio.sh",
+   "role": "The only way to change vendor/carousel-studio (check, rebuild, --write)"
+  },
+  {
+   "path": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+   "role": "Pin: Quorum 852c2e9, tree sha256 af3c47dd..., what is and is not vendored"
+  },
+  {
+   "path": "quorum/.github/workflows/ci.yml",
+   "role": "Quorum verify job: agents:validate, lint, lint:hooks, hooks:vectors --check, typecheck, test, build, route smoke"
+  },
+  {
+   "path": "quorum/package.json",
+   "role": "test builds studio and orchestrator, then vitest in every workspace; studio:golden(:check); deploy:check"
+  },
+  {
+   "path": "quorum/scripts/deploy/shared.mjs",
+   "role": "releaseSteps that pnpm deploy:check runs"
+  },
+  {
+   "path": "quorum/studio/tests/",
+   "role": "33 studio test files: golden, dneskai-slide/photo/layout, czech-ties, glyph-coverage (Ukrainian), families, typography, hooks"
+  },
+  {
+   "path": "quorum/orchestrator/tests/architecture.test.ts",
+   "role": "Pins mirrored skills and vendored stop-slop by hash; cannot read sibling repos"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "own-dashboard has 200 unit test files; 134 carry marketing, dneskai or carousel in the name and 152 mention marketing or dneskai.",
+   "evidence": "ls tests/lib tests/components | grep -E '\\.test\\.tsx?$' (200) | grep -E 'marketing|dneskai|carousel' (134); grep -ril (152). Measured."
+  },
+  {
+   "fact": "25 test files replay the migrations on PGlite: schema.sql, one owner, then every supabase/migrations file in filename order.",
+   "evidence": "own-dashboard/tests/helpers/supabase-pglite.ts:57 `export const MIGRATION_FILES = readdirSync('supabase/migrations').filter((file) => file.endsWith('.sql')).sort();`; :6-8 comment"
+  },
+  {
+   "fact": "CI is one workflow with two jobs on push to main and on pull requests: check (Node 22, npm ci, lint, tsc, npm test, build with dummy Supabase env, check:render-traces) and e2e (ubuntu-24.04, Playwright Chromium, test:e2e).",
+   "evidence": "own-dashboard/.github/workflows/ci.yml:14-47 and :49-73"
+  },
+  {
+   "fact": "The vendor test recomputes the tree hash and requires it to equal UPSTREAM.md and DNESKAI_STUDIO.treeSha256, and the commit to equal DNESKAI_STUDIO.commit.",
+   "evidence": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts:33-35 `expect(treeHash(vendor)).toBe(recorded); expect(DNESKAI_STUDIO.treeSha256).toBe(recorded);`; src/lib/marketing/dneskai-render.ts:31"
+  },
+  {
+   "fact": "The vendor test re-renders every pinned DNESKAi golden case with OwnDashboard's sharp 0.35.5 and zod 4.6.7 and compares PNG hashes.",
+   "evidence": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts:118-128; vendor/carousel-studio/UPSTREAM.md:40-44"
+  },
+  {
+   "fact": "DNESKAI_FIELD_FACES and DNESKAI_PLACED_FIELDS are hand-kept tables that a test derives from the vendored templates; a new template fails until the gate knows it.",
+   "evidence": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts:92-106 `// A new template is a new place for copy: it fails here until the gate knows about it.`; src/lib/marketing/dneskai-render.ts:104,117"
+  },
+  {
+   "fact": "DNESKAI_TEXT_LIMITS is a hand-kept table that must equal the vendored template maxChars.",
+   "evidence": "own-dashboard/tests/lib/marketing-dneskai-generation.test.ts:107-111; src/lib/marketing/dneskai-generation.ts:39-47"
+  },
+  {
+   "fact": "The vendored studio pin 852c2e9 and Quorum main 76314a3 have the same studio tree (3d8482180ed0), so there is no upstream drift today.",
+   "evidence": "git -C quorum rev-parse 852c2e9:studio 76314a3:studio → both 3d8482180ed0da7dc718df83bfb8e62e495c6511 (measured); own-dashboard/vendor/carousel-studio/UPSTREAM.md:10,16"
+  },
+  {
+   "fact": "Quorum's own DNESKAi golden check lives in studio/tests/dneskai-slide.test.ts (render the committed bytes), so a studio change in Quorum is gated upstream, and again in OwnDashboard on re-vendor.",
+   "evidence": "quorum/studio/tests/dneskai-slide.test.ts:208-219 `it(\"render the committed bytes\"`"
+  },
+  {
+   "fact": "Quorum runs the studio suite through `pnpm test`, which first builds studio and orchestrator; CI also lints the hook libraries and checks the hook conformance vectors. deploy:check runs the same steps.",
+   "evidence": "quorum/package.json:56 `\"test\": \"pnpm --filter @boardlessai/carousel-studio build && ...\"`; quorum/.github/workflows/ci.yml:67-72; quorum/scripts/deploy/shared.mjs:16-25"
+  },
+  {
+   "fact": "92 files in quorum/orchestrator and quorum/site import @boardlessai/carousel-studio: ventures marketingshark, tehdejsi-svet, webdev-signal, booksofhistory, the social deck pipeline, the hook brain and the admin carousel-studio routes.",
+   "evidence": "grep -rln '@boardlessai/carousel-studio' orchestrator/src site/src orchestrator/tests | wc -l → 92 (measured); quorum/orchestrator/src/ventures/tehdejsi-svet/render.ts:21; quorum/orchestrator/src/ventures/marketingshark/render.ts:25; quorum/orchestrator/src/ventures/webdev-signal/design-lab.ts:11; quorum/orchestrator/package.json:62 `\"@boardlessai/carousel-studio\": \"workspace:*\"`"
+  },
+  {
+   "fact": "Quorum's architecture test states no test can read a sibling repository; nothing in Quorum knows OwnDashboard vendors the studio.",
+   "evidence": "quorum/orchestrator/tests/architecture.test.ts:63-64 `react-express-app and own-dashboard vendor the same bytes, and no test can read a sibling repository`"
+  },
+  {
+   "fact": "check:render-traces needs `npm run build` output and expects a Linux build (.so libvips), so it runs only in CI after the build step.",
+   "evidence": "own-dashboard/scripts/check-render-traces.mjs:5,12-13,49 `run npm run build first`; .github/workflows/ci.yml:44-47"
+  },
+  {
+   "fact": "The DNESKAi preview renders shown in /dev-preview and e2e are committed JPEGs regenerated by a script; the test pins them to their own sha256, not to the studio pin.",
+   "evidence": "own-dashboard/src/lib/demo/dneskai-workspace-fixtures.ts:12-13; scripts/dneskai-preview-fixtures.mjs:106; tests/lib/marketing-dneskai-workspace.test.ts:193-199"
+  },
+  {
+   "fact": "OwnDashboard vendors only dist, fonts, the caught-up kit, golden/dneskai-photo.json, LICENSE and a trimmed package.json; studio src, tests, scripts and hook libraries are left out.",
+   "evidence": "own-dashboard/vendor/carousel-studio/UPSTREAM.md:25-36"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "CI check job timeout",
+   "value": "10 minutes",
+   "evidence": "own-dashboard/.github/workflows/ci.yml:16"
+  },
+  {
+   "name": "CI e2e job timeout",
+   "value": "15 minutes",
+   "evidence": "own-dashboard/.github/workflows/ci.yml:52"
+  },
+  {
+   "name": "CI Node version",
+   "value": "22",
+   "evidence": "own-dashboard/.github/workflows/ci.yml:22"
+  },
+  {
+   "name": "Golden reproduction test timeout",
+   "value": "60 s (OwnDashboard), 120 s (Quorum)",
+   "evidence": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts:129; quorum/studio/tests/dneskai-slide.test.ts:219"
+  },
+  {
+   "name": "Vendored fonts at least",
+   "value": "40 font files",
+   "evidence": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts:61"
+  },
+  {
+   "name": "Quorum CI verify timeout",
+   "value": "25 minutes",
+   "evidence": "quorum/.github/workflows/ci.yml:39"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "npm ci in own-dashboard-audit",
+   "value": "788 packages in 1 min 36 s wall; Node 26.8.2, npm 11.19.1; npm skipped install scripts of 7 packages (allowScripts policy); git status clean afterwards",
+   "method": "measured: time npm ci --no-audit --no-fund"
+  },
+  {
+   "what": "Render + vendor tests",
+   "value": "2 files, 18 passed, vitest 12.99 s, 14.1 s wall",
+   "method": "measured: ./node_modules/.bin/vitest run tests/lib/marketing-dneskai-render.test.ts tests/lib/carousel-studio-vendor.test.ts"
+  },
+  {
+   "what": "Marketing/DNESKAi vitest set (137 files: tests/lib + tests/components matching marketing|dneskai|carousel-studio|langsmith|project-tab), host TZ Europe/Prague",
+   "value": "run 1: 5 files failed | 131 passed | 1 skipped; 12 tests failed | 1327 passed | 1 skipped (1340); 150.79 s. run 2: 4 files failed; 11 failed | 1328 passed | 1 skipped; 78.88 s",
+   "method": "measured, dot reporter; machine shared with other agents"
+  },
+  {
+   "what": "Same set with TZ=UTC",
+   "value": "2 files failed | 134 passed | 1 skipped; 4 failed | 1335 passed | 1 skipped (1340); 339.88 s (machine under load). 3 failures are project-tab-visibility (Node 26 localStorage), 1 is dry-day reconciliation (passed when run alone)",
+   "method": "measured"
+  },
+  {
+   "what": "The four failing files alone, TZ=UTC",
+   "value": "1 file failed | 3 passed; 3 failed | 25 passed (28); 21.33 s; only project-tab-visibility.test.tsx fails (TypeError reading 'clear' of undefined localStorage)",
+   "method": "measured"
+  },
+  {
+   "what": "Whole tests/lib with dot reporter",
+   "value": "not run: the marketing set alone took 79-340 s, over the 60 s rule",
+   "method": "skipped by rule"
+  },
+  {
+   "what": "npm run check:render-traces",
+   "value": "not run: needs .next build output from a Linux build",
+   "method": "read scripts/check-render-traces.mjs:5,49"
+  },
+  {
+   "what": "own-dashboard CI durations (last 8 runs, 21 Oct)",
+   "value": "6m47s, 9m03s, 9m09s, cancelled, 8m44s, 8m29s, 8m08s, 8m08s wall. Last main run: check job 3m54s (tests 1m38s, build 49s, render traces under 1 s); e2e job 6m44s (Playwright step 5m54s)",
+   "method": "measured: gh run list / gh run view --json jobs"
+  },
+  {
+   "what": "Quorum CI durations (last 5 ci.yml runs)",
+   "value": "8m01s, 8m28s, 7m59s, 5m33s, 7m59s wall",
+   "method": "measured: gh run list --workflow ci.yml"
+  },
+  {
+   "what": "Quorum studio vitest suite",
+   "value": "33 files; 2 failed | 681 passed (683); 201.49 s under load. The 2 failing files (typography committed PNG hash, carousel-studio one-slide bytes) pass alone: 34 passed, 46.62 s. Run on quorum-kits fable/dneskai-kits c24b67e4, not 76314a3; git status clean before and after",
+   "method": "measured"
+  },
+  {
+   "what": "Studio tests per file (static)",
+   "value": "hooks 39, families 22, carousel-studio 19, render-v2 18, slides 17, schema-capabilities 17, summary 16, typography 15, tehdejsi-family 15, dneskai-slide 15, script-capacity 14, canvas 14, layout-gate 13, kit-rendering 12, schema-v2 11, glyph-coverage 10, dneskai-layout 10, quiz-deck 9, czech-ties 9, brand-kits 7, tehdejsi-brand 6, dneskai-photo 5, brand-kit-render 5, others 1-4",
+   "method": "estimated: grep -c of it/test calls (it.each counted once)"
+  },
+  {
+   "what": "Module graph of the DNESKAi slide API",
+   "value": "28 of 41 top-level dist modules; their sources are 14,503 of 17,869 studio src lines (81%); fonts 5.8 MB, 17 families",
+   "method": "measured: python import walk from vendor dist/dneskai-slide.js; wc -l on quorum/studio/src"
+  },
+  {
+   "what": "Golden coverage",
+   "value": "11 pinned cases cover 8 of 14 DNESKAi templates (one of seven dneskai-sources-N)",
+   "method": "measured: vendor/carousel-studio/golden/dneskai-photo.json entries vs DNESKAI_MAX_THUMBNAILS = 6"
+  }
+ ],
+ "findings": [
+  {
+   "id": "TESTS-01",
+   "title": "The unit suite silently assumes TZ=UTC: 11-12 DNESKAi tests fail on the owner's Mac",
+   "category": "risk",
+   "claim": "Nothing pins the time zone for vitest. Tests compare timestamps formatted by the database/driver in the host zone with UTC literals, so on a Prague-zone machine dneskai-dry-day (6 tests) and marketing-dneskai-briefs-flow-database fail; CI passes only because GitHub runners use UTC.",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-briefs-flow-database.test.ts",
+     "line": 83,
+     "excerpt": "expect(briefs.map((row) => [row.rank, row.status, row.code, row.scheduled_at])).toEqual([[1, 'pending', 'account-unavailable', '2026-10-21T06:00:00+00:00'], ..."
+    },
+    {
+     "file": "own-dashboard/vitest.config.mts",
+     "line": 10,
+     "excerpt": "test: {"
+    },
+    {
+     "file": "own-dashboard/vitest.config.mts",
+     "line": 11,
+     "excerpt": "environment: \"node\","
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Set process.env.TZ = 'UTC' at the top of vitest.config.ts (or a globalSetup) and say so in docs; rerun the set to prove it.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Reopened briefs-flow test :83 (UTC literals); vitest.config.mts has no TZ. Measured: host TZ 11-12 failures, TZ=UTC removes all dry-day/briefs-flow failures in isolation.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-02",
+   "title": "Node version is unpinned locally; Node 26 breaks the DNESKAi tab-visibility tests",
+   "category": "risk",
+   "claim": "CI uses Node 22, but package.json has no engines field and there is no .nvmrc. On Node 26 the global localStorage shadows happy-dom's and project-tab-visibility.test.tsx fails all 3 tests.",
+   "evidence": [
+    {
+     "file": "own-dashboard/.github/workflows/ci.yml",
+     "line": 22,
+     "excerpt": "node-version: 22"
+    },
+    {
+     "file": "own-dashboard/tests/components/project-tab-visibility.test.tsx",
+     "line": 23,
+     "excerpt": "beforeEach(() => { localStorage.clear(); ..."
+    },
+    {
+     "file": "own-dashboard/tests/components/project-tab-visibility.test.tsx",
+     "line": 1,
+     "excerpt": "// @vitest-environment happy-dom"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add \"engines\": {\"node\": \">=22 <25\"} and a .nvmrc with 22, or make the test use window.localStorage from happy-dom explicitly.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "ci.yml:22 Node 22; no engines/.nvmrc; node 26 prints 'localStorage is not available because --localstorage-file was not provided' and the 3 tests fail with localStorage undefined.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-03",
+   "title": "PGlite replays prove the repository's migration order, not production's: tests pin a prune job production does not have",
+   "category": "risk",
+   "claim": "supabase-pglite.ts builds the database from repository filenames, and marketing-scheduler-database.test.ts asserts marketing-cron-history-prune and marketing_scheduler_prune_ticks exist. Production recorded the 21 October migrations as split, renumbered entries without those two objects, so the green suite says nothing about production; the daily tick logs a retention error until the owner runs the SQL.",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/helpers/supabase-pglite.ts",
+     "line": 57,
+     "excerpt": "export const MIGRATION_FILES = readdirSync('supabase/migrations').filter((file) => file.endsWith('.sql')).sort();"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-scheduler-database.test.ts",
+     "line": 66,
+     "excerpt": "it('schedules exactly the two tick jobs and the history prune, and re-running the file replaces rather than duplicates them'"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-scheduler-database.test.ts",
+     "line": 257,
+     "excerpt": "expect(await service('select marketing_scheduler_prune_ticks($1,$2) r', [owner, 14])).toBe(1);"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 703,
+     "excerpt": "- `20261020160100_marketing_scheduler_cron.sql` went in without the `marketing-cron-history-prune` job."
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 710,
+     "excerpt": "Until the owner runs the statements below in the SQL editor, `marketing_ticks` and `cron.job_run_details` keep every"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Owner runs the retention SQL from docs/migration-guide.md in production"
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Keep PGlite, add a read-only parity script that compares supabase_migrations and a function/cron fingerprint with the PGlite build, and list the owner SQL in NEEDED.md until applied.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Test and helper lines confirmed; migration-guide.md:703,710 state the missing prune and the retention error. The production state itself is from the doc (and the production map), not re-queried here.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-04",
+   "title": "No gate crosses the two repositories: a studio change in Quorum reaches OwnDashboard only when someone re-vendors",
+   "category": "risk",
+   "claim": "Quorum cannot read sibling repositories, and OwnDashboard only checks its own vendored copy. Today the pin equals Quorum main (same studio tree), so nothing is lost yet; under option (a) every Quorum studio change is invisible to OwnDashboard until a manual re-vendor, and a breaking change surfaces only then.",
+   "evidence": [
+    {
+     "file": "quorum/orchestrator/tests/architecture.test.ts",
+     "line": 63,
+     "excerpt": "* react-express-app and own-dashboard vendor the same bytes, and no test can read a sibling"
+    },
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 10,
+     "excerpt": "- Commit: `852c2e9f4fd4447ee602cd2df2c775bbba036fa2`"
+    },
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 16,
+     "excerpt": "`3d8482180ed0da7dc718df83bfb8e62e495c6511`): the DNESKAi kit lays slides out for the words and pictures"
+    },
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 33,
+     "excerpt": "expect(treeHash(vendor)).toBe(recorded);"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Consolidation option (a)/(b)/(c)"
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "If (a) stays: add a CI job in Quorum that runs scripts/vendor-carousel-studio.sh-equivalent checks on studio changes, or a scheduled OwnDashboard job that compares the pin with Quorum main. If (b): the problem disappears for DNESKAi but Quorum's copy diverges (TESTS-07).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "architecture.test.ts:63-64 says no test can read a sibling; rev-parse shows identical studio trees at 852c2e9 and 76314a3, so no drift today.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-05",
+   "title": "A kit tweak passes four mirrored gates across two repositories",
+   "category": "simplicity",
+   "claim": "Changing a DNESKAi template means: edit quorum/studio, regenerate the golden (studio golden script), re-vendor (tree hash), then hand-edit DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS and DNESKAI_TEXT_LIMITS in OwnDashboard until the derived tests agree.",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 92,
+     "excerpt": "// A new template is a new place for copy: it fails here until the gate knows about it."
+    },
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 103,
+     "excerpt": ".toEqual({ id, field, ...DNESKAI_FIELD_FACES[field] });"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-generation.test.ts",
+     "line": 107,
+     "excerpt": "it(\"keeps the template ceilings equal to the vendored studio's text layers\", async () => {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+     "line": 39,
+     "excerpt": "export const DNESKAI_TEXT_LIMITS = {"
+    },
+    {
+     "file": "quorum/studio/package.json",
+     "line": 27,
+     "excerpt": "\"golden\": \"tsx scripts/golden.ts\","
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Whatever option wins, derive the three tables from the studio's templates at import time (the tests already compute them) and keep one test that the derivation covers every template; that removes three hand edits per template change.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Vendor test :92-106 and generation test :107-111 derive and compare the three hand-kept tables; studio golden script at package.json:27.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-06",
+   "title": "Option (c) is not small: the DNESKAi slide API pulls 28 of 41 studio modules, 81% of the source",
+   "category": "simplicity",
+   "claim": "Forking only the DNESKAi kit still needs the renderer, fonts and metrics, all six family files, recipe, schema, validation and slides: 28 modules totalling 14,503 of 17,869 studio source lines. UPSTREAM.md says 27 dependencies (count differs by one).",
+   "evidence": [
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 53,
+     "excerpt": "- `@boardlessai/carousel-studio/dneskai-slide` → `dist/dneskai-slide.js`, the DNESKAi slide API and"
+    },
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 54,
+     "excerpt": "its 27 dependencies. The barrel also re-exports the hook-library reader (`dist/hooks/libraries.js`),"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 13,
+     "excerpt": "* The API OwnDashboard calls. It picks the photo-kit template for the slide type, writes the"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Consolidation option (a)/(b)/(c)"
+   },
+   "impactScore": 3,
+   "effort": "L",
+   "risk": "medium",
+   "recommendation": "Present (c) to the owner as roughly equal in effort to (b); do not choose it for size.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Import walk gives 28 modules; UPSTREAM.md:54 says 27 (likely counts differently). Line counts measured. The size argument holds.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-07",
+   "title": "Option (b) is a copy and a divergence: Quorum keeps 92 studio consumers and its own release gates",
+   "category": "risk",
+   "claim": "Ventures marketingshark, tehdejsi-svet (Ukrainian), webdev-signal and booksofhistory, the social deck pipeline, the hook brain and the admin carousel-studio routes import the studio as a workspace package, and Quorum's CI/deploy:check gate it (Ukrainian coverage, families golden, hooks lint and vectors). Moving the source to OwnDashboard leaves Quorum's copy in place.",
+   "evidence": [
+    {
+     "file": "quorum/orchestrator/package.json",
+     "line": 62,
+     "excerpt": "\"@boardlessai/carousel-studio\": \"workspace:*\","
+    },
+    {
+     "file": "quorum/orchestrator/src/ventures/tehdejsi-svet/render.ts",
+     "line": 21,
+     "excerpt": "} from \"@boardlessai/carousel-studio\";"
+    },
+    {
+     "file": "quorum/orchestrator/src/ventures/marketingshark/render.ts",
+     "line": 25,
+     "excerpt": "} from \"@boardlessai/carousel-studio\";"
+    },
+    {
+     "file": "quorum/studio/tests/glyph-coverage.test.ts",
+     "line": 166,
+     "excerpt": "\"%s draws the letters that separate Ukrainian from Russian\","
+    },
+    {
+     "file": "quorum/scripts/deploy/shared.mjs",
+     "line": 20,
+     "excerpt": "[pnpmExecutable, [\"lint:hooks\"]],"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "L",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Consolidation option (a)/(b)/(c); whether Quorum may later drop its dneskai-* modules"
+   },
+   "impactScore": 4,
+   "effort": "L",
+   "risk": "medium",
+   "recommendation": "If (b): copy at a tagged Quorum commit, record it in a DIVERGENCE note, keep Quorum untouched, and accept that Quorum's studio no longer serves DNESKAi (its dneskai-* modules could be deleted there later, by owner decision).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "92 importing files counted; workspace dependency and venture imports at cited lines; Ukrainian gate at glyph-coverage.test.ts:166 (corrected from 165).",
+    "correctedLocations": [
+     "quorum/studio/tests/glyph-coverage.test.ts:166"
+    ]
+   }
+  },
+  {
+   "id": "TESTS-08",
+   "title": "Exact test and tooling list that must move under (b) or (c)",
+   "category": "quality",
+   "claim": "To keep today's protection after copying the source, OwnDashboard must bring: studio tests dneskai-slide (15), dneskai-photo (5), dneskai-layout (10), czech-ties (9), layout-gate (13), typography (15), glyph-coverage Czech/Latin part (10), kit-rendering (12), brand-kits (7), brand-kit-render (5), portable (2), schema-capabilities (17); the golden script and DNESKAi golden; the fonts:metrics generator and font-metrics.generated.ts; and a tsc build step, because vitest and Next consume the package as built output. The vendor test's tree-hash and single-sharp assertions become obsolete and must be replaced, not just deleted.",
+   "evidence": [
+    {
+     "file": "quorum/studio/package.json",
+     "line": 26,
+     "excerpt": "\"fonts:metrics\": \"tsx scripts/generate-font-metrics.ts\","
+    },
+    {
+     "file": "quorum/studio/package.json",
+     "line": 28,
+     "excerpt": "\"golden:check\": \"tsx scripts/golden.ts --check\""
+    },
+    {
+     "file": "own-dashboard/vitest.config.mts",
+     "line": 15,
+     "excerpt": "server: { deps: { external: [/\\/vendor\\/carousel-studio\\//] } },"
+    },
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 34,
+     "excerpt": "Left out on purpose: `src/`, `tests/`, `scripts/`, the hook libraries in `studio/hooks/` (a missing"
+    },
+    {
+     "file": "quorum/package.json",
+     "line": 56,
+     "excerpt": "\"test\": \"pnpm --filter @boardlessai/carousel-studio build && pnpm --filter @boardlessai/orchestrator build && ..."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Consolidation option (a)/(b)/(c)"
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Use this list as the acceptance checklist of the consolidation issue; under (a) nothing moves beyond today's vendor, render and generation tests.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "fonts:metrics/golden:check scripts at studio/package.json:26,28; vitest external at vitest.config.mts:15; UPSTREAM.md:34 leaves src/tests/scripts out; quorum test builds first (package.json:56). Per-file counts are static estimates.",
+    "correctedLocations": [
+     "own-dashboard/vitest.config.mts:15"
+    ]
+   }
+  },
+  {
+   "id": "TESTS-09",
+   "title": "Golden hashes cover 8 of 14 DNESKAi templates",
+   "category": "quality",
+   "claim": "The 11 pinned cases include only dneskai-sources-4 of the seven sources templates (0-6 thumbnails), so six sources layouts can change pixels without any golden failing. There is no specimen sheet gate.",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 90,
+     "excerpt": "...Object.fromEntries(Array.from({ length: studio.DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) => [`dneskai-sources-${count}`, \"sources\" as const])),"
+    },
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 122,
+     "excerpt": "expect(cases.map((entry) => entry.name)).toEqual(golden.entries.map((entry) => entry.name));"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add one golden case per template id (upstream in Quorum under (a), locally under (b)), then contact-sheet the golden set for visual review.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "golden/dneskai-photo.json has 11 entries over 8 template ids; DNESKAI_MAX_THUMBNAILS = 6 gives 7 sources templates (dist/dneskai-photo.js:207).",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-10",
+   "title": "Preview renders in /dev-preview and e2e are pinned to themselves, not to the studio",
+   "category": "quality",
+   "claim": "public/demo/dneskai/*.jpg are produced by scripts/dneskai-preview-fixtures.mjs and the test only checks they match their recorded sha256; after a re-vendor that changes the look, the preview and e2e keep showing the old design.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/demo/dneskai-workspace-fixtures.ts",
+     "line": 12,
+     "excerpt": "* and number is invented. The slide images are real renders of these decks by the vendored studio, drawn from"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-workspace.test.ts",
+     "line": 193,
+     "excerpt": "it('ship the committed slide renders and photo previews they name, byte for byte', () => {"
+    },
+    {
+     "file": "own-dashboard/scripts/dneskai-preview-fixtures.mjs",
+     "line": 106,
+     "excerpt": "await writeFile(path.join(root, 'src/lib/demo/dneskai-preview-assets.json'), `${JSON.stringify(manifest, null, 2)}\\n`);"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Record the studio tree hash in dneskai-preview-assets.json and assert it equals DNESKAI_STUDIO.treeSha256.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Workspace test :193-199 hashes files against their own manifest only; no reference to DNESKAI_STUDIO.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-11",
+   "title": "The dry-day contact sheet goes to a hard-coded path from an old cloud session",
+   "category": "quality",
+   "claim": "dneskai-dry-day.test.ts writes 15 slides, a contact sheet and ticks.json to /tmp/claude-0/-home-user/ded5c14c-.../wave4/dry-day on every run; the only end-to-end visual artefact is hidden there (it exists on this Mac, last written 02:15 local).",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+     "line": 46,
+     "excerpt": "const OUT = '/tmp/claude-0/-home-user/ded5c14c-b66e-5228-83f0-9b51d30cae38/scratchpad/wave4/dry-day';"
+    },
+    {
+     "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+     "line": 125,
+     "excerpt": "mkdirSync(OUT, { recursive: true });"
+    },
+    {
+     "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+     "line": 404,
+     "excerpt": "writeFileSync(`${OUT}/contact-sheet.jpg`, sheet);"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Write to os.tmpdir() or an env-named folder (DNESKAI_DRY_DAY_OUT) and print the path; skip writing when unset.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Lines 46, 125, 404 confirmed; directory exists on this Mac with fresh files.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-12",
+   "title": "CI time has room today; option (b) adds the studio suite to the 10-minute check job",
+   "category": "speed",
+   "claim": "Last main run: check job 3m54s (tests 1m38s, build 49s), e2e 6m44s, wall 6m47s, against a 10-minute check timeout. The studio suite took 201 s locally under load (683 tests) and 47 s for two of its heaviest files alone.",
+   "evidence": [
+    {
+     "file": "own-dashboard/.github/workflows/ci.yml",
+     "line": 16,
+     "excerpt": "timeout-minutes: 10"
+    },
+    {
+     "file": "own-dashboard/.github/workflows/ci.yml",
+     "line": 35,
+     "excerpt": "run: npm test"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Under (b) run studio tests as their own job with a path filter on the package directory.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Job/step timings from gh run view; timeout at ci.yml:16. The (b) projection is an estimate.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-13",
+   "title": "Render-trace and font-trace gates hard-code the vendor path",
+   "category": "risk",
+   "claim": "check-render-traces.mjs, next.config.ts and the vendor test all look for vendor/carousel-studio/fonts and brand-kits; moving the studio to a workspace package changes those paths, and the trace check only runs in CI after a Linux build.",
+   "evidence": [
+    {
+     "file": "own-dashboard/scripts/check-render-traces.mjs",
+     "line": 43,
+     "excerpt": "const fontPattern = /^vendor\\/carousel-studio\\/fonts\\/.+\\.(ttf|otf|woff2?)$/;"
+    },
+    {
+     "file": "own-dashboard/next.config.ts",
+     "line": 63,
+     "excerpt": "const carouselStudioFiles = [\"./vendor/carousel-studio/fonts/**/*\", \"./vendor/carousel-studio/brand-kits/**/*\"];"
+    },
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 112,
+     "excerpt": "expect(config).toContain('const carouselStudioFiles = [\"./vendor/carousel-studio/fonts/**/*\", \"./vendor/carousel-studio/brand-kits/**/*\"];');"
+    },
+    {
+     "file": "own-dashboard/.github/workflows/ci.yml",
+     "line": 47,
+     "excerpt": "run: npm run check:render-traces"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "medium",
+    "quickWin": true,
+    "ownerDecision": "Only relevant if the owner picks (b) or (c)"
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "Under (b)/(c), update all three together in one commit and keep check:render-traces in CI; under (a) nothing changes.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Paths hard-coded at check-render-traces.mjs:43, next.config.ts:63, vendor test :112; trace check at ci.yml:47.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-14",
+   "title": "E2E checks the DNESKAi workspace on fixtures with axe, with no visual comparison",
+   "category": "quality",
+   "claim": "Four marketing/DNESKAi specs (19 test() calls) drive /dev-preview fixtures: review, approve, edit, sources. None compares screenshots, so a kit or layout change in the review UI is caught only by role/text assertions.",
+   "evidence": [
+    {
+     "file": "own-dashboard/e2e/dneskai-workspace.spec.ts",
+     "line": 58,
+     "excerpt": "test('approving schedules the exact version and the calendar shows it as scheduled', async ({ page }) => {"
+    },
+    {
+     "file": "own-dashboard/e2e/dneskai-workspace.spec.ts",
+     "line": 78,
+     "excerpt": "test('editing a slide renders a new version and the main button carries the new hash', async ({ page }) => {"
+    },
+    {
+     "file": "own-dashboard/playwright.config.ts",
+     "line": 36,
+     "excerpt": "command: `npm run build && npx next start -H 127.0.0.1 -p ${PORT}`,"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 2,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "When the Design Lab lands, add Playwright toHaveScreenshot on the fixture posts per kit, generated on Linux in CI.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "No toHaveScreenshot in e2e (grep); specs at cited lines drive /dev-preview.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "TESTS-15",
+   "title": "Render-heavy tests flake under CPU load on both sides",
+   "category": "risk",
+   "claim": "With other agents running, Quorum's studio suite failed 2 tests (typography committed PNG hash, carousel-studio one-slide bytes) that pass alone, and OwnDashboard's dry-day reconciliation test failed once under TZ=UTC and passed alone. Cause not isolated (likely timeouts).",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/lib/carousel-studio-vendor.test.ts",
+     "line": 129,
+     "excerpt": "}, 60000);"
+    },
+    {
+     "file": "quorum/studio/tests/dneskai-slide.test.ts",
+     "line": 219,
+     "excerpt": "}, 120_000);"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Note it; revisit only if CI shows the same flakes.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Failures observed under load and passes alone (measured); cause (timeouts vs CPU) not isolated. Timeout line corrected to dneskai-slide.test.ts:219.",
+    "correctedLocations": [
+     "quorum/studio/tests/dneskai-slide.test.ts:219"
+    ]
+   }
+  }
+ ],
+ "openQuestions": [
+  "Should vitest pin TZ=UTC in config (process.env.TZ in vitest.config.ts) or should the tests stop depending on the host zone?",
+  "Is Node 22 the intended runtime for local work too? No engines field or .nvmrc exists, and the owner's Mac runs Node 26.",
+  "Under option (b), does OwnDashboard want Quorum's generic studio tests (Cyrillic, families, quiz, mma) or only the DNESKAi subset? The subset still needs the shared engine tests (typography, layout-gate, czech-ties, glyph metrics).",
+  "Who regenerates goldens and font metrics under (b)/(c)? OwnDashboard has no golden or fonts:metrics script today.",
+  "Should production migration parity be checked by a script against supabase_migrations, since PGlite proves only the repository order?"
+ ],
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-tests.json",
+ "verification": {
+  "confirmed": 12,
+  "partly": 3,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 13,
+  "dropped": 2,
+  "verifiedAt": "2026-10-22T00:19:12Z"
+ }
+}

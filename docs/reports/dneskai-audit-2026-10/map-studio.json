@@ -1,0 +1,644 @@
+{
+ "subsystem": "studio",
+ "summary": "The DNESKAi photo kit is three files in quorum/studio (dneskai-slide.ts 434 lines, dneskai-photo.ts 329, dneskai-layout.ts 480) on top of the shared carousel engine. renderDneskaiSlide picks one of 14 template ids by slide type (8 compositions; sources-0..6 is one layout by thumbnail count; statement has an INK variant), fits text by stepping 1 px from max to min size with Czech ties, lays the slide out for its content, and renders through the same renderer and gates as every other venture: 4.5:1 WCAG and APCA Lc 40 on every ground (photographs measured against their extremes under the cover shade), logo clear space and minimum height from the kit manifest. The kit is hardcoded twice (CAROUSEL_BRANDS['caught-up'] at :359 and :417), templates resolve by literal id and the layout re-flow dispatches on literal ids (:150-160) with CAP_OFFSET 0.3 tuned to the three caught-up faces. The accepted kit-engine ADR (looks over the brand kit, flows in the kit) is being implemented on fable/dneskai-kits. Two facts change the consolidation math: the dneskai-slide import closure is 30 of 52 source files and 14,893 of 17,921 lines (because CAROUSEL_BRANDS lives in library.ts, which imports every deck family, recipes and summaries), so 'fork only the DNESKAi kit' is not small; and 95 Quorum files outside studio/ import the package, but only one test touches the DNESKAi API. Smaller findings: the font-metric charset leaves out U+201A although all three faces carry it, so Czech inner quotes are refused downstream; there is no DNESKAi specimen sheet and the golden pins 11 hashes covering 8 of 14 templates; photographs are decoded twice per slide (validate and render).",
+ "files": [
+  {
+   "path": "quorum/studio/src/dneskai-slide.ts",
+   "role": "DneskaiSlideInput, validateDneskaiSlide, renderDneskaiSlide, template resolution, fixed Czech strings (title, images label, AI disclosure)."
+  },
+  {
+   "path": "quorum/studio/src/dneskai-photo.ts",
+   "role": "The 14 DNESKAi templates (geometry in master px, 72 px margins, cover shade, formats declared, 4:5 only)."
+  },
+  {
+   "path": "quorum/studio/src/dneskai-layout.ts",
+   "role": "Content-driven re-flow per template id; DNESKAI_GAPS, DNESKAI_AREA, CAP_OFFSET 0.3, PANEL."
+  },
+  {
+   "path": "quorum/studio/src/dneskai-golden.ts",
+   "role": "The 11 golden cases (synthetic photos, invented Czech copy)."
+  },
+  {
+   "path": "quorum/studio/golden/dneskai-photo.json",
+   "role": "11 pinned PNG hashes, updatedAt 2026-10-20."
+  },
+  {
+   "path": "quorum/studio/src/library.ts",
+   "role": "CAROUSEL_BRANDS (brand tokens) plus the article-deck library; imports families, designs and recipes."
+  },
+  {
+   "path": "quorum/studio/src/renderer.ts",
+   "role": "carouselTextFits, renderCarouselSlidePng, template checks on every render, logo sizing from clear space, resvg with all committed faces."
+  },
+  {
+   "path": "quorum/studio/src/validation.ts",
+   "role": "validateTemplateForBrand: canvas, platform limits, safe area, 4.5:1 contrast, APCA, tokens, overflow, script."
+  },
+  {
+   "path": "quorum/studio/src/contrast-apca.ts",
+   "role": "APCA Lc floor 40 alongside WCAG 4.5:1."
+  },
+  {
+   "path": "quorum/studio/src/text.ts",
+   "role": "fitText: 1 px steps from maxFontSize to minFontSize, keepWithNext 'cs' ties, truncation report."
+  },
+  {
+   "path": "quorum/studio/src/fonts.ts",
+   "role": "FONT_METRICS lookups, fontFiles() (all 46 faces), hasCommittedGlyph / missingCommittedGlyphs."
+  },
+  {
+   "path": "quorum/studio/scripts/generate-font-metrics.ts",
+   "role": "pnpm fonts:metrics: width tables for a fixed character set (Latin-1, Latin Extended-A, Cyrillic, 15 extras)."
+  },
+  {
+   "path": "quorum/studio/scripts/specimens.ts",
+   "role": "Specimen pages for the article deck families only."
+  },
+  {
+   "path": "quorum/studio/src/recipe.ts",
+   "role": "carousel-recipe/1 for article decks: family, variant A/B, accentSwap, treatment none/mono/duotone, typeScale."
+  },
+  {
+   "path": "quorum/studio/src/families-launch.ts",
+   "role": "Launch deck compositions (rail, fault, halo and others) for article decks."
+  },
+  {
+   "path": "quorum/studio/brand-kits/caught-up/manifest.json",
+   "role": "DNESKAi brand kit: palette, fonts, carouselStyle, logo rules, empty socialRules."
+  },
+  {
+   "path": "quorum/studio/package.json",
+   "role": "Exports '.' only; scripts build/prepare/test/fonts:metrics/golden/golden:check/specimens."
+  },
+  {
+   "path": "quorum/orchestrator/tests/studio-lifecycle.test.ts",
+   "role": "The only consumer outside studio/ that reads the DNESKAi API (DNESKAI_PHOTO_TEMPLATES)."
+  },
+  {
+   "path": "dneskai-audit-handoff/engine/ADR-final.md",
+   "role": "Accepted kit-engine decision (looks over the brand kit, flows in the kit, one layout engine)."
+  }
+ ],
+ "facts": [
+  {
+   "fact": "DneskaiSlideInput: type, optional variant (accent|ink|photo|type), headline, body, kicker, credit, sources[], images[{slot, bytes, crop?, assetSha256?}], position {index,count}, locale cs|en. There is no kit, look or brand input.",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:89-103"
+  },
+  {
+   "fact": "The studio writes the folio, the sources title, the images label and the AI-disclosure line itself (cs: 'Text připravil jazykový model z uvedených zdrojů. Výběr a schválení: redakce DNESKAi.').",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:145-156; :219-233"
+  },
+  {
+   "fact": "14 template ids: cover-photo, figure, split, split-pair, statement (+INK variant), sources-0..6, single-photo, single-type. Compositions: 8 (9 counting INK).",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:320-323 DNESKAI_PHOTO_TEMPLATES; :235 `variants: [{ id: \"INK\", backgroundToken: \"foreground\" }]`; :246 DNESKAI_MAX_THUMBNAILS = 6"
+  },
+  {
+   "fact": "Per-template text frames (maxChars/min-max px/maxLines): cover headline 110/50-84/4, kicker 56 @22, credit 80 @18; figure headline 110/40-58/3, body 260/28-34/5; split headline 110/38-52/8, body 330/30-36/8, kicker 28 @20; split-pair headline 110/36-48/6, body 320/27-32/12; statement headline 170/52-80/7, body 240/30-36/6; sources lines 190/25-27/3, disclosure 200/19-20/4; single-photo headline 110/48-76/5, body 100/28-32/2, kicker 44 @18, credit 30; single-type headline 120/60-100/6, body 280/32-38/6.",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:166, :182-184, :202-204, :220-221, :239-240, :273, :277, :294-297, :311-312"
+  },
+  {
+   "fact": "Text fitting steps the font size down 1 px at a time from maxFontSize to minFontSize; at the minimum it wraps with breaking and reports truncation. Every DNESKAi slot keeps Czech ties (keepWithNext 'cs').",
+   "evidence": "quorum/studio/src/text.ts:208-212; :215-219; quorum/studio/src/dneskai-photo.ts:56-58"
+  },
+  {
+   "fact": "text-clipped is reported as non-blocking by the studio (the slide still renders, cut); OwnDashboard upgrades it to blocking.",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:364 `problem(\"text-clipped\", false, field, ...)`; own-dashboard/src/lib/marketing/dneskai-render.ts:224"
+  },
+  {
+   "fact": "resvg is given every committed face (46 files) with IBM Plex Sans as default, so a character missing from a field's face is drawn from another face or as a box without a problem being reported.",
+   "evidence": "quorum/studio/src/renderer.ts:605 `const font = { loadSystemFonts: false, fontFiles: fontFiles(), defaultFontFamily: \"IBM Plex Sans\" };`; own-dashboard/vendor/carousel-studio/UPSTREAM.md:58-61"
+  },
+  {
+   "fact": "Every render runs validateTemplateForBrand on each ground: canvas, platform limits, safe area, WCAG 4.5:1 and APCA Lc >= 40 per text/ground pair, brand tokens, overflow, script. Words over a carousel-template/2 photograph are measured against white and black extremes under the shade/scrim.",
+   "evidence": "quorum/studio/src/renderer.ts:492-493; validation.ts:164, :220-231; contrast-apca.ts:116 `APCA_MIN_LC = 40`; grounds.ts:87-105"
+  },
+  {
+   "fact": "The logo is sized from the kit's clear space ratio and minimum height (0.27 and 16 px for caught-up).",
+   "evidence": "quorum/studio/src/renderer.ts:297-298; quorum/studio/brand-kits/caught-up/manifest.json:28-32"
+  },
+  {
+   "fact": "Layout re-flow dispatches on literal template ids; CAP_OFFSET 0.3 is tuned to Space Grotesk, IBM Plex Mono (caps 0.70 em) and Source Serif 4 (0.67).",
+   "evidence": "quorum/studio/src/dneskai-layout.ts:150-160; :86-92"
+  },
+  {
+   "fact": "Photographs are colour only: every DNESKAi image layer sets treatment none; the recipe's mono/duotone does not apply to this kit.",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:17-19; :93 `treatment: \"none\"`; :120"
+  },
+  {
+   "fact": "The launch looks are article-deck families selected by a carousel-recipe/1 (family, A/B, accentSwap, treatment, typeScale, phaseSeed); LAUNCH_FAMILIES = folio, press, rail, fault, halo.",
+   "evidence": "quorum/studio/src/designs.ts:73; quorum/studio/src/recipe.ts:23-33"
+  },
+  {
+   "fact": "Golden: 11 DNESKAi PNG hashes rendered with no kit input; `pnpm golden` rewrites, `pnpm golden:check` compares; the golden test allows 300 s.",
+   "evidence": "quorum/studio/golden/dneskai-photo.json (11 entries, updatedAt 2026-10-20); quorum/studio/package.json scripts golden, golden:check; quorum/studio/tests/golden.test.ts:57"
+  },
+  {
+   "fact": "Upstream exports only '.'; the ./dneskai-slide and ./fonts subpaths exist only in OwnDashboard's trimmed vendored manifest.",
+   "evidence": "quorum/studio/package.json exports {'.'}; own-dashboard/scripts/vendor-carousel-studio.sh:80-84"
+  },
+  {
+   "fact": "Fonts: 17 OFL families, 46 TrueType faces; metrics generated into src/font-metrics.generated.ts (132 KB) by `pnpm -C studio fonts:metrics`, which must be re-run after a font change.",
+   "evidence": "quorum/CLAUDE.md:85-86; quorum/studio/package.json script fonts:metrics; ls -la src/font-metrics.generated.ts = 132.1K"
+  },
+  {
+   "fact": "Kit engine work in progress: fable/dneskai-kits (worktree quorum-kits) carries the ADR plus steps: frame receipts, portable test fix, cap/x heights in metrics, carouselLooks + looks/editorial.json (per LOG.md, commit c24b67e4).",
+   "evidence": "git -C quorum-kits log 76314a3..HEAD; dneskai-audit-handoff/LOG.md entry 2026-10-22T00:15:39Z C-kits"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Template ids",
+   "value": "14",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:320-323"
+  },
+  {
+   "name": "Sources slide",
+   "value": "<= 4 source lines, 0-6 thumbnails",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:245-246"
+  },
+  {
+   "name": "Side margin",
+   "value": "72 px (clears 3:4 grid crop of about 34 px a side)",
+   "evidence": "quorum/studio/src/dneskai-photo.ts:36-37"
+  },
+  {
+   "name": "Contrast floors",
+   "value": "WCAG 4.5:1 and APCA Lc 40 on every text/ground pair",
+   "evidence": "quorum/studio/src/validation.ts:164; contrast-apca.ts:116"
+  },
+  {
+   "name": "CAP_OFFSET",
+   "value": "0.3 em",
+   "evidence": "quorum/studio/src/dneskai-layout.ts:92"
+  },
+  {
+   "name": "Full-bleed",
+   "value": ">= 900 px short side, <= 1.5x upscale",
+   "evidence": "quorum/studio/src/dneskai-slide.ts:35, :44"
+  },
+  {
+   "name": "Fitter step",
+   "value": "1 px per step from maxFontSize to minFontSize",
+   "evidence": "quorum/studio/src/text.ts:208"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "Import closure of dneskai-slide.ts",
+   "value": "30 of 52 studio source files, 14,893 of 17,921 lines (83 %); only 3 files are DNESKAi-specific (1,243 lines). The closure includes every deck family, recipe.ts and summary.ts through library.ts.",
+   "method": "Node script walking relative imports from quorum/studio/src/dneskai-slide.ts (scratchpad a1/closure.mjs)"
+  },
+  {
+   "what": "Quorum consumers of @boardlessai/carousel-studio outside studio/",
+   "value": "95 files (site/src 27 lib files plus 5 admin-queue, 6 API routes; orchestrator social 9, ventures/marketingshark 8, studio 7, contracts 4, mma-files 2, others); 1 file uses the DNESKAi API (orchestrator/tests/studio-lifecycle.test.ts)",
+   "method": "grep -rln '@boardlessai/carousel-studio' site/src orchestrator/src orchestrator/tests scripts .github and package.json files; grep for renderDneskaiSlide|DNESKAI_PHOTO_TEMPLATES|validateDneskaiSlide|dneskaiGoldenCases"
+  },
+  {
+   "what": "Czech coverage of the committed faces",
+   "value": "All 46 faces carry every Czech letter (ÁáČčĎďÉéĚěÍíŇňÓóŘřŠšŤťÚúŮůÝýŽž) and „“‘’”–—…×%€§ in the metric tables; every face misses U+201A (‚) in the tables. The cmaps of Space Grotesk 700, Source Serif 4 400 and IBM Plex Mono 400 do contain U+201A.",
+   "method": "Re-ran measurements/czech-coverage.ts as .mjs against the vendored dist/font-metrics.generated.js; cmap probe of the three TTFs (scratchpad a1/cmap-probe.mjs)"
+  },
+  {
+   "what": "Per-slide cost of photographs",
+   "value": "Warm render+encode: slides with a photograph 58-236 ms, text-only statement 31-52 ms; validate-only (no raster) 0.1-0.2 ms for text slides vs 4-15 ms for photo slides",
+   "method": "bench-render.mjs re-run (rendering map) and measure-studio.json validateOnlyMs"
+  },
+  {
+   "what": "Golden coverage",
+   "value": "11 cases cover 8 of 14 template ids; dneskai-sources-0, -1, -2, -3, -5, -6 have no golden",
+   "method": "measure-studio.json totals.templatesUncovered; golden/dneskai-photo.json"
+  }
+ ],
+ "findings": [
+  {
+   "id": "STU-01",
+   "title": "The font-metric charset leaves out U+201A, so Czech inner quotes ‚…‘ are refused although every face carries the glyph",
+   "category": "quality",
+   "claim": "generate-font-metrics.ts measures a fixed set (Latin-1, Latin Extended-A, Cyrillic and 15 extras) that includes „ “ ‘ ’ but not ‚ (U+201A). hasCommittedGlyph reads only those tables, so OwnDashboard's glyph gate refuses any field containing ‚ with unsupported-glyph, although the cmaps of Space Grotesk, Source Serif 4 and IBM Plex Mono contain it.",
+   "evidence": [
+    {
+     "file": "quorum/studio/scripts/generate-font-metrics.ts",
+     "line": 153,
+     "excerpt": "for (const extra of [\"–\", \"—\", \"‘\", \"’\", \"“\", \"”\", \"…\", \"·\", \"×\", \"€\", \"→\", \"ʼ\", \"«\", \"»\", \"„\"]) {"
+    },
+    {
+     "file": "quorum/studio/src/fonts.ts",
+     "line": 161,
+     "excerpt": "return [...character].length === 1 && advancesOf(face).has(character);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 159,
+     "excerpt": "const missing = metrics.missingCommittedGlyphs(metrics.resolveFace(face.family, face.weight), drawnText(value, face.uppercase))"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add ‚ (and ‛ if wanted) to the extras, run `pnpm -C studio fonts:metrics`, check golden, re-vendor. Add a test that every Czech typographic character in a fixed list is in each kit face's table.",
+   "impactStatement": "A correct Czech quotation inside a quotation (‚takto‘) makes the whole deck refused and costs a paid retry or an owner edit. Rare in headlines, but quotes are a core statement-slide device.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code confirmed: generate-font-metrics.ts:153 has no U+201A, fonts.ts:160-161 checks only the tables, dneskai-render.ts:159 refuses. The cmap probe shows all three DNESKAi faces carry U+201A. But generation already steers around it: dneskai-generation.ts:122 tells the model 'Never nest quotations and never use the low single quote ‚ or ‘ as a quotation mark; rephrase instead.' So only an owner edit can hit the refusal.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+      "line": 122,
+      "excerpt": "Never nest quotations and never use the low single quote ‚ or ‘ as a quotation mark; rephrase instead."
+     }
+    ]
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "The prompt already avoids the character and owner edits with nested Czech quotes are rare; fold the one-line charset fix into the next metrics regeneration on the kits branch."
+   }
+  },
+  {
+   "id": "STU-02",
+   "title": "The DNESKAi kit is hardcoded in four places, so five kits need engine changes, not data",
+   "category": "simplicity",
+   "claim": "validateDneskaiSlide and renderDneskaiSlide both pass CAROUSEL_BRANDS['caught-up']; resolveTemplate maps slide types to literal template ids; layoutDneskaiSlide dispatches on literal ids; CAP_OFFSET is a module constant tuned to the three caught-up faces. A kit cannot be added by a manifest or token file alone.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 359,
+     "excerpt": "const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS[\"caught-up\"], format: MASTER_FORMAT });"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 197,
+     "excerpt": "case \"split\": return byId(input.images?.some((image) => image.slot === \"image-2\") ? \"dneskai-split-pair\" : \"dneskai-split\");"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-layout.ts",
+     "line": 152,
+     "excerpt": "if (id === \"dneskai-figure\") return figure(input);"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-layout.ts",
+     "line": 92,
+     "excerpt": "const CAP_OFFSET = 0.3;"
+    }
+   ],
+   "impactScore": 5,
+   "effort": "L",
+   "risk": "medium",
+   "recommendation": "Implement ADR-final as planned on fable/dneskai-kits (looks over the kit, flows declared per kit, cap height as metric data, kit input on DneskaiSlideInput), keeping the editorial kit byte-identical (11 golden hashes).",
+   "impactStatement": "Blocks owner goal 3 (five switchable kits) until the engine change lands; every kit that changes compositions, not only tokens, needs layout code.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-slide.ts:359 and :417 pass CAROUSEL_BRANDS['caught-up']; :193-200 resolve by literal id; dneskai-layout.ts:150-160 dispatch on ids; :92 CAP_OFFSET constant with :86-91 naming the three faces. ADR-final section 3 lists the same constraints; the kits branch has started removing them but main is unchanged.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 5,
+    "effort": "L",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "This is the engine work five kits depend on; it is already designed and under way, so the owner needs to see it as the critical path."
+   }
+  },
+  {
+   "id": "STU-03",
+   "title": "No DNESKAi specimen sheet exists and the golden covers 8 of 14 templates",
+   "category": "quality",
+   "claim": "scripts/specimens.ts renders one page per article deck family (DECK_FAMILIES) into docs/design-lab/families; nothing renders the DNESKAi photo kit for a human. The DNESKAi golden pins 11 PNG hashes (no images kept) and never renders sources-0..3, -5 or -6.",
+   "evidence": [
+    {
+     "file": "quorum/studio/scripts/specimens.ts",
+     "line": 6,
+     "excerpt": "DECK_FAMILIES,"
+    },
+    {
+     "file": "quorum/studio/scripts/specimens.ts",
+     "line": 38,
+     "excerpt": "const outputDirectory = path.join(here, \"..\", \"..\", \"docs\", \"design-lab\", \"families\");"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-golden.ts",
+     "line": 68,
+     "excerpt": "{ name: \"sources\", input: { type: \"sources\", position: at(6), sources: [\"Smyšlený blog: Smyšlený článek o smyšleném modelu (20. 10. 2026)\", \"Obrázky: smyšlený zdroj\"], images: thumbs.map((bytes, index) => ({ slot: `image-${index + 1}`, bytes })) } },"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add a DNESKAi specimen script (ADR-final section 12): the four realistic decks (photo-rich, single photo, text-only, low-res og:image) per kit as one contact sheet PNG, plus golden cases for sources-0 and sources-6.",
+   "impactStatement": "The owner has never seen a DNESKAi slide set side by side, and kit work has no visual baseline to compare against; six sources layouts can regress unnoticed.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "specimens.ts:6 and :38 render article families only, and the golden pins hashes for 8 of 14 templates. But OwnDashboard's /dev-preview fixtures (scripts/dneskai-preview-fixtures.mjs -> public/demo/dneskai, 22 JPEGs) do render 16 DNESKAi slides of six types for the workspace preview, so 'nothing renders the kit for a human' is too strong; there is no per-template or per-kit sheet.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/scripts/dneskai-preview-fixtures.mjs",
+      "line": 3,
+      "excerpt": "Regenerates the DNESKAi workspace preview fixtures (#119): small JPEG renders of invented DNESKAi slides,"
+     }
+    ]
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "A contact sheet per kit on four realistic decks is how the owner will judge kits; cheap and $0."
+   }
+  },
+  {
+   "id": "STU-04",
+   "title": "'Fork only the DNESKAi kit' is not small: the dneskai-slide import closure is 83 % of the studio",
+   "category": "simplicity",
+   "claim": "dneskai-slide.ts imports CAROUSEL_BRANDS from library.ts, which imports families, designs and recipes, so its closure is 30 of 52 source files and 14,893 of 17,921 lines. On the Quorum side, 95 files import the package but only orchestrator/tests/studio-lifecycle.test.ts uses the DNESKAi API. Option (b) copies a 18k-line engine that Quorum keeps changing for other ventures; option (c) needs CAROUSEL_BRANDS split out of library.ts first.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 6,
+     "excerpt": "import { CAROUSEL_BRANDS } from \"./library.js\";"
+    },
+    {
+     "file": "quorum/studio/src/library.ts",
+     "line": 14,
+     "excerpt": "import { familyDeckTemplate, familyDeckTemplates } from \"./families.js\";"
+    },
+    {
+     "file": "quorum/studio/src/library.ts",
+     "line": 16,
+     "excerpt": "import { parseRecipeTemplateId } from \"./recipe.js\";"
+    },
+    {
+     "file": "quorum/orchestrator/tests/studio-lifecycle.test.ts",
+     "line": 33,
+     "excerpt": "const photoKit = DNESKAI_PHOTO_TEMPLATES.get(\"dneskai-cover-photo\")!;"
+    }
+   ],
+   "impactScore": 4,
+   "effort": "L",
+   "risk": "medium",
+   "recommendation": "Before choosing (b) or (c), make the DNESKAi closure small in Quorum: move CAROUSEL_BRANDS (or the caught-up tokens) into a leaf module so dneskai-slide no longer pulls families/recipes/summary; re-measure the closure; then decide. Recommend (a) until the kit engine lands, then (c) on the reduced closure.",
+   "impactStatement": "Sets the real effort of the consolidation decision: (a) keep upstream = M per design change (rendering REN-02); (b) whole-studio copy = L once plus permanent divergence; (c) DNESKAi-only fork = M to cut the closure (move brand tokens out of library.ts) plus L to copy renderer/validation/text/fonts, after which OwnDashboard owns about 9-10k lines and the gates that protect them.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-slide.ts:6 imports CAROUSEL_BRANDS from library.ts; library.ts:14-16 import families, designs and recipe. Closure measured by script: 30 files, 14,893 lines, including summary.ts and every families-*.ts. 95 Quorum files import the package; the only DNESKAi API use outside studio/ is orchestrator/tests/studio-lifecycle.test.ts:33. Effort figures per option are estimates.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "L",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Consolidation option (a) / (b) / (c), and whether to first move brand tokens out of library.ts in Quorum.",
+    "reason": "Changes the consolidation recommendation from 'fork the kit, it is small' to 'shrink the closure first'; the owner decides with real numbers."
+   }
+  },
+  {
+   "id": "STU-05",
+   "title": "The studio has two looser notions of 'fits' than OwnDashboard enforces",
+   "category": "quality",
+   "claim": "The studio reports text-clipped as non-blocking and renders the cut slide, and it never reports a character a field's face lacks, because resvg gets all 46 faces and falls back silently. OwnDashboard compensates with its own blocking rules and a glyph gate, so the truth about a slide lives in two repositories.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 364,
+     "excerpt": "clipped.push(problem(\"text-clipped\", false, field, `The ${field} does not fit ${fit.slot} whole and would be cut; shorten it.`));"
+    },
+    {
+     "file": "quorum/studio/src/renderer.ts",
+     "line": 605,
+     "excerpt": "const font = { loadSystemFonts: false, fontFiles: fontFiles(), defaultFontFamily: \"IBM Plex Sans\" };"
+    },
+    {
+     "file": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+     "line": 61,
+     "excerpt": "deck with `unsupported-glyph` (`src/lib/marketing/dneskai-render.ts`). When Quorum's `inspect()`"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add an option (or a DNESKAi default) for inspect() to report missing glyphs per field face and to make clipping blocking; then drop the duplicate check in OwnDashboard as UPSTREAM.md already plans.",
+   "impactStatement": "Any new consumer (a Design Lab preview, a specimen script) that calls the studio directly would show cut or wrong-face text as fine. Matters most once kits multiply the faces.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-slide.ts:364 blocking false; renderer.ts:605 hands all faces to resvg; UPSTREAM.md:58-62 documents the OwnDashboard compensation and the plan to drop it.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "OwnDashboard's gate already covers it, and REN-09 keeps any Design Lab preview on that gate; worth doing in Quorum later, not an owner item."
+   }
+  },
+  {
+   "id": "STU-06",
+   "title": "The article 'looks' and recipe chips cannot carry DNESKAi kits as they are",
+   "category": "simplicity",
+   "claim": "carousel-recipe/1 selects an article deck family, A/B, accentSwap, a mono/duotone treatment and a type scale for article summary decks; the DNESKAi photo templates are not families, refuse any treatment but colour, and size text per field. The ADR therefore models kits as looks over the brand kit instead of reusing recipes.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/recipe.ts",
+     "line": 27,
+     "excerpt": "family: z.enum(DECK_DESIGNS),"
+    },
+    {
+     "file": "quorum/studio/src/recipe.ts",
+     "line": 30,
+     "excerpt": "treatment: z.enum([\"none\", \"mono\", \"duotone\"]),"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-photo.ts",
+     "line": 18,
+     "excerpt": "emoji. Photographs are drawn in colour (treatment `none`); a mono or duotone DNESKAi photograph"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Reuse the recipe idea (one small record per post naming the look) but not its schema; keep the kit switch as the ADR's look id.",
+   "impactStatement": "Avoids a tempting dead end: porting Quorum's recipe chips into OwnDashboard would offer switches the DNESKAi kit refuses.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "recipe.ts:27 family from DECK_DESIGNS, :30 treatment includes mono/duotone; dneskai-photo.ts:17-19 and every DNESKAi image layer set treatment none. ADR-final section 2 chose looks over the brand kit.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Already settled by the accepted ADR; informative for porters, nothing for the owner to act on."
+   }
+  },
+  {
+   "id": "STU-07",
+   "title": "Photographs are decoded twice per slide, once to validate and once to render",
+   "category": "speed",
+   "claim": "inspect() reads metadata and decodes every photograph to PNG (rotate().png()); validateDneskaiSlide and renderDneskaiSlide each call inspect(), and OwnDashboard validates the deck during generation before the job renders it. Photo slides take 58-236 ms warm against 31-52 ms for a text slide.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 330,
+     "excerpt": "const { data, info } = await sharp(bytes, { limitInputPixels: DNESKAI_MAX_IMAGE_PIXELS }).rotate().png().toBuffer({ resolveWithObject: true });"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 404,
+     "excerpt": "return (await inspect(input)).problems;"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-slide.ts",
+     "line": 409,
+     "excerpt": "const { problems, template, payload, images } = await inspect(input);"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Cache decoded PNG and size per asset sha256 in a small in-process LRU inside the studio; the bytes are content-addressed, so the cache cannot go stale.",
+   "impactStatement": "Small today (well under a second per deck); with five kits validated and rendered it is 10 decodes per photo per post. Worth fixing only alongside kit work.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-slide.ts:323 metadata and :330 full decode inside inspect(); :404 and :409 both call inspect(); images.ts keeps only a crop WeakMap (:130), no decode cache. own-dashboard generation.ts:266 validates before the job renders.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Sub-second today; only matters if five kits are validated and rendered per post, which the cost model can revisit."
+   }
+  },
+  {
+   "id": "STU-08",
+   "title": "Contrast, safe-area and logo gates run on every render; a new kit's palette is checked automatically",
+   "category": "risk",
+   "claim": "renderSlides runs validateTemplateForBrand on every ground before drawing: WCAG 4.5:1 and APCA Lc 40 per text/ground pair, photographs measured at their extremes under the shade, safe area, overflow; the logo is sized from the kit's clear space and minimum height. A look whose palette fails throws instead of rendering.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/renderer.ts",
+     "line": 492,
+     "excerpt": "const failed = validateTemplateForBrand(template, onGround, input.format).filter((check) => check.status === \"fail\");"
+    },
+    {
+     "file": "quorum/studio/src/validation.ts",
+     "line": 164,
+     "excerpt": "if (worst < 4.5) failures.add(`${pair.slideId}:${pair.target}`);"
+    },
+    {
+     "file": "quorum/studio/src/contrast-apca.ts",
+     "line": 116,
+     "excerpt": "export const APCA_MIN_LC = 40;"
+    },
+    {
+     "file": "quorum/studio/src/renderer.ts",
+     "line": 297,
+     "excerpt": "const byHeight = h / (1 + 2 * logotype.clearSpace);"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Keep the gates in the critical path of every kit; add the kits to the gate tests (one render per kit and template) rather than writing new contrast code.",
+   "impactStatement": "The brand's '4.5:1 against every ground' rule and logo clear space are already enforced in code; five kits inherit that for free. Any port or fork must keep these gates.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "renderer.ts:474-493 checks every ground before drawing and throws on any failed check; validation.ts:164 and :225-226 contrast and APCA; contrast-apca.ts:116; renderer.ts:297-298 logo sizing. grounds.ts:87-105 measures photographs at both extremes for carousel-template/2, which every DNESKAi template is (dneskai-photo.ts:144).",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Tells the owner that contrast and logo rules are already machine-enforced, and that kit tests should reuse them; cheap to extend."
+   }
+  },
+  {
+   "id": "STU-09",
+   "title": "Launch-family docs disagree with the code: the header names apex and vista, LAUNCH_FAMILIES names folio and press",
+   "category": "doc-drift",
+   "claim": "families-launch.ts says the five launch families are apex, rail, vista, fault and halo and its spec table carries those five; designs.ts exports LAUNCH_FAMILIES = folio, press, rail, fault, halo, which is what the Design Lab offers.",
+   "evidence": [
+    {
+     "file": "quorum/studio/src/families-launch.ts",
+     "line": 31,
+     "excerpt": " * that anatomy as composition, one archetype each: the statement poster (`apex`), the numbered"
+    },
+    {
+     "file": "quorum/studio/src/families-launch.ts",
+     "line": 454,
+     "excerpt": "export const LAUNCH_FAMILY_SPECS: Readonly<Record<Extract<DeckFamily, \"apex\" | \"rail\" | \"vista\" | \"fault\" | \"halo\">, FamilySpec>> = {"
+    },
+    {
+     "file": "quorum/studio/src/designs.ts",
+     "line": 73,
+     "excerpt": "export const LAUNCH_FAMILIES = [\"folio\", \"press\", \"rail\", \"fault\", \"halo\"] as const satisfies readonly DeckFamily[];"
+    }
+   ],
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Fix the header comment (or the constant) in Quorum when next touching the file.",
+   "impactStatement": "Confuses anyone mining the article looks for DNESKAi kit ideas; no effect on DNESKAi output.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "families-launch.ts:25-33 header and :454 spec keys name apex/rail/vista/fault/halo; designs.ts:73 LAUNCH_FAMILIES names folio/press/rail/fault/halo; the Quorum Design Lab model mirrors the latter (design-lab-model.ts:24).",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Cosmetic drift in article-deck code; no effect on DNESKAi."
+   }
+  }
+ ],
+ "openQuestions": [
+  "Consolidation: does the owner accept recommending (a) now and (c) after the closure is reduced, or prefer (b) despite divergence from Quorum's other ventures?",
+  "Should the studio make clipping and missing glyphs blocking for the DNESKAi API (STU-05), changing behaviour for any future caller?",
+  "Which Czech typographic characters must every kit face carry (a fixed list for STU-01's test)?"
+ ],
+ "verification": {
+  "confirmed": 7,
+  "partly": 2,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 4,
+  "dropped": 5,
+  "quickWins": 2,
+  "verifiedAt": "2026-10-22T00:19:04Z",
+  "verifier": "A-map-1",
+  "repoCommit": "own-dashboard 8df25a5, quorum 76314a3, aifirst 0e88cf6",
+  "notes": [
+   "Both lenses applied in a separate pass: 30/30 evidence excerpts at the cited lines; refutations searched in own-dashboard (prompt, preview fixtures) and quorum (images.ts caches, specimens, docs/design-lab).",
+   "STU-01 corrected: the generation prompt already forbids ‚ (dneskai-generation.ts:122), so the gap bites only owner edits.",
+   "STU-03 corrected: /dev-preview fixtures render 16 DNESKAi slides; there is still no per-template or per-kit sheet.",
+   "Owner decisions: consolidation option and closure reduction first (STU-04).",
+   "Measurements ($0): import-closure script, Czech coverage over 46 faces, cmap probe, golden coverage from measure-studio.json."
+  ]
+ },
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-studio.json"
+}

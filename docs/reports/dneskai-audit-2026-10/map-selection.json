@@ -1,0 +1,1326 @@
+{
+ "subsystem": "Selection into events (key: selection)",
+ "summary": "Selection is a free, fast, deterministic two-stage step: TypeScript groups candidates into events (Jev duplicate links at any age inside the read windows; same canonical URL or headline Jaccard >= 0.6 with >= 2 shared tokens within 72 h), and the SQL function marketing_dneskai_finish validates the grouping structurally and picks at most 4 events ordered by category_rank first, then Jev relevance, then publishedAt. The 4 cap is real in the schema (rank 1-4, unique(run_id,rank), selected_count 0-4). The owner brief's map matches the code on every rule it states. The central defect is the ordering: one-per-category is a hard key above relevance and recency, and the evergreen categories (marketing, tool, ai-project) draw from a 30-day pool, so on any night where all five categories have one >= 0.85 item, news gets at most 2 of 4 slots and a 28-day-old 0.85 ai-project repo displaces a 0.98 news story (reproduced in PGlite against the real migration). Around it: a lapsed, never-published brief permanently covers its topic (reproduced), held candidates never return, there is no owner swap/re-run/release path (a manual run needs a Vercel env JSON scope and a secret), the Zdroje tab shows 'Nevybrano' with no category, relevance, age or reason and lists at most 12 other events, a run that finishes after Prague midnight selects nothing silently, and the headline rule misses reworded or differently numbered headlines so the same story can split into several events. Docs drift is small and mostly precision (Jev links 'at any age' versus the 7-day duplicate read, 'validates the grouping' meaning structural checks only).",
+ "files": [
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+   "role": "Pure grouping: tokenisation, stop words, Jaccard/number rule, URL canonicalisation, union-find grouping, finish payload, source tiers, member ranking"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+   "role": "marketing_dneskai_briefs schema (4 cap), identity/covering SQL helpers, marketing_dneskai_finish selection, skip/prepare/admit brief functions"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql",
+   "role": "runs/candidates schema (selected_count 0-4, one run per date, tick cap 40), claim, former selection body"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+   "role": "Candidate/category/status schemas, DNESKAI_DAILY_TARGET, event view schemas shown to the owner"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+   "role": "finish() wiring, event read windows (DNESKAI_EVENT_READS), finishEvents, Jev history (20), collection state read for the UI"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+   "role": "Collection tick, Jev batching, pending filter (held never re-reviewed), finish status"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+   "role": "Jev questions (category list, relevance definition), gates 0.9/0.85/0.8, held/rejected/duplicate statuses, diagnostics"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-brief-read.ts",
+   "role": "Owner read model: selected events with briefs; other events (limit 12) with status/reason"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+   "role": "Brief lapse paths (brief-slot-passed, brief-target-date-passed, brief-expired) that skip without releasing members"
+  },
+  {
+   "path": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+   "role": "Zdroje tab: only Refresh and Open review buttons; selected/other events rendering; '/ 4' literals"
+  },
+  {
+   "path": "own-dashboard/src/lib/i18n/sections/dneskai-sources.ts",
+   "role": "Status wording: new = 'Nevybrano'/'Not selected'; reason codes"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+   "role": "Collection step: one run per Prague date, not due before 22:00; briefs and generation steps follow in the same tick order"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-manual.ts",
+   "role": "Manual re-run requires MARKETING_DNESKAI_MANUAL_RUN env JSON scope (production only, <= 2 h window)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/free-feeds/registry.json",
+   "role": "Per-source weight (0.6-0.85) that never reaches selection"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-events.test.ts",
+   "role": "Grouping edge cases: 72 h, versions, stop words, Jev/URL links, finish limit, store paging"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-briefs-database.test.ts",
+   "role": "Real SQL in PGlite: one-per-category, second ai-news stays new, covering chains, grouping validation"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-database.test.ts",
+   "role": "Real SQL in PGlite: category diversity ranking, stale hold, after-midnight run selects 0"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-briefs.md",
+   "role": "Event grouping and selection documentation (Czech)"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+   "role": "Project's own finding that Jev categories overlap and are not a reliable taxonomy"
+  },
+  {
+   "path": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+   "role": "Owner map, sections 2.1 (Selection) and 2.10 item 2 (Selection quirks)"
+  },
+  {
+   "path": "/private/tmp/claude-501/-Users-lukasbarsinbars-Developer/428e9d0d-66a6-4b6b-a161-332e4a6de8f8/scratchpad/audit/select-scenarios.mjs",
+   "role": "Audit scratch: real migrations in PGlite, scenarios S1a/S1b/S2/S4"
+  },
+  {
+   "path": "/private/tmp/claude-501/-Users-lukasbarsinbars-Developer/428e9d0d-66a6-4b6b-a161-332e4a6de8f8/scratchpad/audit/bench-grouping.mjs",
+   "role": "Audit scratch: grouping timing on 3000 synthetic reports and headline-rule probes"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "Grouping joins two reports on a Jev duplicateOf link regardless of time, and on the same canonical URL (own URL or URLs linked in the text) or a similar headline only when published within 72 h of each other.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:171-174 `const target = item.duplicateOf ? index.get(item.duplicateOf) ... union(position, target, 'jev-duplicate')`; :175 `const windowMs = DNESKAI_EVENT_WINDOW_HOURS * 3600000`; :182-184 `if (times[right]! - times[left]! > windowMs) break; if (urls[left]!.some(...)) union(..., 'same-url'); else if (factsMatch(...)) union(..., 'similar-title')`",
+   "check": {
+    "status": "partly",
+    "note": "The pure function joins Jev links at any age, but the store reads duplicates from 7 days only (dneskai-store.ts:62)."
+   }
+  },
+  {
+   "fact": "Headline rule: Jaccard >= 0.6 over stop-word-free tokens with >= 2 shared tokens; disjoint number tokens or version tokens block a match outright.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:13 `DNESKAI_EVENT_TITLE_JACCARD = 0.6`; :15 `DNESKAI_EVENT_MIN_SHARED_TOKENS = 2`; :86-89 `if (disjoint(a.versions, b.versions) || disjoint(a.numbers, b.numbers)) return false; ... return shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Tokenisation: NFKD + mark stripping folds diacritics, lower-cases with 'en', keeps letters/digits joined by . - + (versions such as 0.5.1 or gpt-4o stay whole), drops single-character tokens unless numeric, removes English and Czech (diacritics-folded) function words; the stop list includes 'new', 'nove', 'novy', 'nova' and has duplicate entries; the `'s` strip never fires because the token regex excludes apostrophes (measured: \"OpenAI's model\" -> openai, model).",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:56 `value.normalize('NFKD').replace(/\\p{M}+/gu, '').toLocaleLowerCase('en')`; :57 `/[\\p{L}\\p{N}]+(?:[.\\-+][\\p{L}\\p{N}]+)*/gu`; :58 `.map((token) => token.replace(/'s$/, '')).filter((token) => !STOP_WORDS.has(token) && (token.length > 1 || /\\d/.test(token)))`; :41 `'new'`; :51 `'nove', 'novy', 'nova', 'dnes', 'jiz'`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Comparable headline = title (Instagram: caption) first line, 200 chars; URL key strips scheme, www/m/amp/mobile, tracking params, fragment, /amp and index.html, trailing slash; up to 5 linked article URLs in a post's text count, social hosts excluded.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:62-65 `dneskaiEventHeadline ... slice(0, 200)`; :101-110 `dneskaiPrimaryUrlKey`; :117-121 `for (const match of text.matchAll(/https?:\\/\\/...)) ... if (keys.length >= 5) break;`; :98 `SOCIAL_HOSTS`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Event identity is sha256('dneskai-event/1\\n' + earliest member id); member hash is sha256 over sorted 'id:contentHash' lines; SQL computes both identically and the test asserts the bytes.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:24-35; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:52-58 `dneskai_event_id`, `dneskai_member_hash`; own-dashboard/tests/lib/marketing-dneskai-events.test.ts:64-65",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The store sends only multi-member events that contain an open ('new') report, at most 300 events of at most 300 members; it reads new reports (30 d, <= 2000), selected (30 d, <= 1000) and duplicates (7 d, <= 1000), pages of 1000, and marks the run collection-event-window-partial when a read hits its limit.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-store.ts:62 `DNESKAI_EVENT_READS=[{status:'new',days:30,limit:2000},{status:'selected',days:30,limit:1000},{status:'duplicate',days:7,limit:1000}]`; :84 `.filter(event=>event.members.length>1&&event.members.some(member=>member.status==='new'))`; :54 `p_error:errorCode??(grouping?.partial?'collection-event-window-partial':null)`; own-dashboard/src/lib/marketing/dneskai-events.ts:197-198, 204-208",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "SQL validation of p_events is structural only: array of <= 300, each with 2-300 memberIds, anchor among members, eventId = dneskai_event_id(anchorId), no candidate in two events. It does not re-check the 72 h window, URL or Jaccard rule.",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:89 `if jsonb_typeof(p_events) is distinct from 'array' or jsonb_array_length(p_events)>300 then raise exception 'collection events invalid'`; :91-92 `jsonb_array_length(e->'memberIds') not between 2 and 300 ... e->>'eventId' is distinct from marketing_private.dneskai_event_id(e->>'anchorId')`; :94 `members&&seen or (select count(distinct x) ...)<>cardinality(members)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Eligibility of a report to lead an event: status new, category not null and not 'other', relevance >= 0.85, duplicateOf null, reason null, publishedAt not null, not in the future, and within 48 h (ai-news, tech-news) or 30 days (marketing, tool, ai-project) of clock_timestamp().",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:108 `where status='new' and candidate->>'category' is not null and candidate->>'category'<>'other' and (candidate->>'relevance')::numeric>=0.85 and candidate->>'duplicateOf' is null and candidate->>'reason' is null and candidate->>'publishedAt' is not null`; :109-110 `<=clock_timestamp() ... >=clock_timestamp()-case when candidate->>'category' in('ai-news','tech-news') then interval '48 hours' else interval '30 days' end`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The lead of an event is its eligible report with the highest relevance (then newest publishedAt, then id); the event's category is the lead's category.",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:112-113 `select distinct on(event_id) event_id,id as lead_id,candidate->>'category' as category ... order by event_id,(candidate->>'relevance')::numeric desc,(candidate->>'publishedAt')::timestamptz desc,id collate \"C\"`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Selection order: category_rank (row_number per category by relevance desc, publishedAt desc, event_id) first, then relevance desc, publishedAt desc, event_id; limit 4. So every category's best eligible event precedes any category's second-best.",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:121 `row_number() over(partition by category order by relevance desc,published_at desc,event_id) as category_rank`; :123-124 `row_number() over(order by category_rank,relevance desc,published_at desc,event_id) as rank from ranked order by category_rank,relevance desc,published_at desc,event_id limit 4`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Category list: ai-news, tech-news, marketing, tool, ai-project, other; briefs accept only the first five; Jev's category criteria are one-phrase labels ('New AI development', 'Technology news', 'Marketing/platform strategy', 'Usable software tool', 'AI project', 'Unclear or unrelated').",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-contracts.ts:26 `category: z.enum(['ai-news', 'tech-news', 'marketing', 'tool', 'ai-project', 'other']).nullable()`; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:20 `category text not null check(category in('ai-news','tech-news','marketing','tool','ai-project'))`; own-dashboard/src/lib/marketing/dneskai-providers.ts:131",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Jev gates: in-scope probability (all categories but 'other') >= 0.9, duplicate confidence >= 0.8 and chosen probability >= 0.9 and not 'uncertain', relevance >= 0.85; any failed check -> status held with reason collection-review-<checks>; relevance <= 0.15 with other >= 0.9 -> rejected; relevance is a 'does it describe concrete news/tool/project/advice' probability, not importance.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:170-172 `if(inScopeProbability<0.9)failedChecks.push('category'); if(duplicate.confidence<0.8||duplicate.probabilities[duplicate.choice]<0.9||duplicate.choice==='uncertain')failedChecks.push('duplicate'); if(relevance<0.85)failedChecks.push('relevance');`; :182-183 statuses/reasons; :132 relevance question text",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The 4-per-day cap is enforced in the schema three ways and in the query: brief rank 1-4 with unique(run_id,rank), run selected_count 0-4, one run per owner/project/date with target_date = date+1, and `limit 4`; a 5th brief row and selected_count=5 are refused (measured).",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:19 `rank integer not null check(rank between 1 and 4)`; :33 `unique(run_id,rank)`; :124 `limit 4`; own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql:8 `selected_count integer not null default 0 check(selected_count between 0 and 4)`; :9 `unique(user_id,project_id,date),check(target_date=date+1)`; measured S4: both inserts raise check-constraint violations",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "All classified new/duplicate reports of a chosen event are selected for the target day, at most 8 (lead first); further ones become duplicates of the lead with collection-event-member-overflow; one brief row per chosen event (on conflict do nothing).",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:133-137 `row_number() over(order by (id=ev->>'leadId') desc,...) ... overflow_ids:=selected_ids[9:];selected_ids:=selected_ids[1:8];`; :142-143 `'collection-event-member-overflow'`; :146-148 `insert into public.marketing_dneskai_briefs ... on conflict do nothing`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "An event is covered (never selected) when it holds a selected report, or a Jev duplicate whose link leaves the event and ends (<= 8 hops) at a selected report or a DNESKAi revision; covered events' open reports become duplicates with collection-already-covered.",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:115-118 `case when p.status='selected' then p.id else marketing_private.dneskai_covering_id(...)`; :63-73 `dneskai_covering_id ... chain.depth<8`; :150-156 `'collection-already-covered'`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Selection runs only when the run's date equals the current Prague date; after that, remaining new reports with null or stale publishedAt are held with collection-source-date-unavailable-or-stale; a run that finishes after Prague midnight selects nothing and records no code for it (test asserts selected_count 0).",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:86 `if p_status<>'running' and not unknown_cost and r.date=(clock_timestamp() at time zone 'Europe/Prague')::date then`; :158 `set status='held' ... '\"collection-source-date-unavailable-or-stale\"'`; own-dashboard/tests/lib/marketing-dneskai-database.test.ts:34 `it('rejects old-day paid starts and cannot select old topics after midnight' ... selected_count).toBe(0)`",
+   "check": {
+    "status": "verified",
+    "note": "20261020150000:86 read; production 21 Oct finished before midnight (4 ticks)."
+   }
+  },
+  {
+   "fact": "A run may take up to 40 claims (5-minute scheduler cadence => up to 200 minutes after 22:00, i.e. past midnight) before it is held with collection-tick-limit.",
+   "evidence": "own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql:7 `tick_count integer not null default 0 check(tick_count between 0 and 40)`; :65 `if r.tick_count>=40 then update ... status='held',error_code='collection-tick-limit'`; own-dashboard/src/lib/marketing/scheduler.ts:267 `if (pragueHour(clock()) < 22) return { status: \"noop\", code: \"collection-not-due\" }`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Held candidates are never re-sent to Jev: the pending filter takes only status new with category null; no API route writes candidate status; the Zdroje tab has only Refresh and Open-review buttons.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-collection.ts:107 `if(item.status!=='new'||item.category!==null||!item.publishedAt||...)continue;`; own-dashboard/src/components/marketing/dneskai-sources.tsx:21-22 `onClick={() => void query.refetch()}` / `onClick={onOpenReview}`; own-dashboard/src/app/api/marketing/dneskai/sources/route.ts:5 `export async function GET`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "There is one collection run per Prague date and no re-run: the scheduler reports collection-finished once a run with today's date exists; a manual run needs a production env JSON scope MARKETING_DNESKAI_MANUAL_RUN (owner, project, runId, <= 2 h window) plus MARKETING_DNESKAI_MANUAL_SECRET on the HMAC route.",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:264 `if (list.some((run) => !run.pilot && run.date === today)) return { status: \"noop\", code: \"collection-finished\" }`; own-dashboard/src/lib/marketing/dneskai-manual.ts:11 `if(env.VERCEL_ENV!=='production'||env.MARKETING_OWNER_ID!==owner||!env.MARKETING_DNESKAI_MANUAL_RUN||!runId)return null;`; :15 `end-start>2*3600000`; own-dashboard/src/app/api/marketing/dneskai/collect/route.ts:12 `MARKETING_N8N_SECRET:input.manual?process.env.MARKETING_DNESKAI_MANUAL_SECRET:...`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The owner-facing event view carries no category, relevance, age or score; an unselected event shows status 'new' => 'Nevybrano' with reason null; at most 12 other events are listed, computed from at most 200 candidates.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-contracts.ts:40-43 `DneskaiEventMemberViewSchema = z.strictObject({ candidateId, sourceId, title, url, status, reason, role })`; own-dashboard/src/lib/marketing/dneskai-brief-read.ts:61 `limit = 12`; :68 `return { status: 'new', reason: null };`; own-dashboard/src/lib/i18n/sections/dneskai-sources.ts:53 `new: 'Nevybráno'`; own-dashboard/src/lib/marketing/dneskai-store.ts:98 `dneskaiOtherEventViews(candidates.slice(0,200), ...)`; own-dashboard/src/lib/marketing/dneskai-contracts.ts:63 `candidates: z.array(DneskaiCandidateSchema).max(200)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "A brief that lapses (brief-slot-passed, brief-target-date-passed, brief-expired) is skipped without p_duplicate_of, so its members stay 'selected' with the target date; a selected member covers its event for 30 days of grouping reads and is also in the Jev history, so the topic cannot be re-selected (measured S2: next night's fresh report became duplicate/collection-already-covered, 0 briefs).",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:283-284 `const skip = async (row, code, duplicateOf = null) => { await store.skip(input.owner, row.id, code, duplicateOf); ...`; :307 `await skip(row, 'brief-slot-passed')`; :288 `await skip(row, 'brief-target-date-passed')`; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:203-207 `if p_duplicate_of is not null then update ... status='duplicate'`; own-dashboard/src/lib/marketing/dneskai-store.ts:50 history = selected + published + approved `.slice(0,20)`",
+   "check": {
+    "status": "verified",
+    "note": "Production: the 22 Oct briefs are pending, code account-unavailable."
+   }
+  },
+  {
+   "fact": "Registry weights exist (0.6-0.85 per free feed) but never reach selection: DneskaiSourceSchema has no weight field and the SQL ranks only by relevance and publishedAt; dneskaiSourceTier orders evidence inside an event only.",
+   "evidence": "own-dashboard/src/lib/marketing/free-feeds/registry.json:9 `\"weight\": 0.75`; own-dashboard/src/lib/marketing/free-feeds/sources/types.ts:25 `weight: z.number().min(0).max(1)`; own-dashboard/src/lib/marketing/dneskai-contracts.ts:5-9 (id, name, url, kind, weekdays, maxItems only); own-dashboard/src/lib/marketing/dneskai-events.ts:229-234 `rankDneskaiEventMembers`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Jev decision diagnostics (in-scope probability, category probability, failed checks) are computed but dropped: the collection saves result.items only, and the evaluation doc says the scores are not part of the contract or a column.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:141 `export type JevDecisionDiagnostic=...`; :185 `return{items:result,diagnostics,costUsd:...}`; own-dashboard/src/lib/marketing/dneskai-collection.ts:79 `await store.saveStage(..., {status:'ok',items:result.items,complete:true,costUsd:result.costUsd,errorCode:null})`; own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md:22-23 `Diagnostické skóre není součástí veřejného kontraktu ani nového databázového sloupce.`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The project's own Jev evaluation concluded that categories overlap and are not reliable as an exact taxonomy; the one-per-category key in SQL still treats them as exact.",
+   "evidence": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md:7-8 `Jev dříve zadržoval vhodné zprávy, pokud si nebyl jistý přesnou kategorií. Kategorie se však překrývají`; :53 `Kategorie nejsou dostatečně spolehlivé jako přesná taxonomie.`; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:121",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Owner brief section 2.1 matches the code on grouping (Jev links, 72 h, same URL, Jaccard >= 0.6 with >= 2 tokens), the 4-event cap, one-per-category then relevance and recency, the 48 h / 30 d windows and the schema cap; the only imprecisions are 'at any age' (bounded by the 7-day duplicate read) and 'validates the grouping' (structural only).",
+   "evidence": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md:99-101; own-dashboard/src/lib/marketing/dneskai-store.ts:62; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:88-98",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Tests exist for: three-source grouping, version separation, Jev/URL links, 72 h boundary (70 h joins, 80 h does not), stop words and diacritics, anchor naming, tier ranking, 300-event limit, store paging; and in PGlite for one-per-category with a second ai-news staying 'new', covered events, no-grouping call, invalid grouping refusal, covering chains, category diversity, stale hold and after-midnight zero selection. No test covers an evergreen item outranking stronger news, a lapsed brief covering its topic, or any owner override (none exists).",
+   "evidence": "own-dashboard/tests/lib/marketing-dneskai-events.test.ts:13-95, 114-147; own-dashboard/tests/lib/marketing-dneskai-briefs-database.test.ts:43-60 (57-58 `// A second ai-news event waits behind the other categories; it is not forced in.` ... `expect((await status(secondAi)).status).toBe('new')`), 62-66, 68-86, 127-155; own-dashboard/tests/lib/marketing-dneskai-database.test.ts:33-34",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Headline Jaccard to join two reports",
+   "value": "0.6",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:13",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Minimum shared headline tokens",
+   "value": "2",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:15",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "URL/headline grouping window",
+   "value": "72 h (Jev links: any age within the read windows)",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:17; :182",
+   "check": {
+    "status": "partly",
+    "note": "72 h confirmed (dneskai-events.ts:17); Jev links are bounded by the 7-day duplicate read."
+   }
+  },
+  {
+   "name": "Selected members per event",
+   "value": "8 (overflow folded into the lead)",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:19; own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:137",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Events / members per finish call",
+   "value": "300 / 300",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-events.ts:197-198; SQL:89,91",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Grouping read windows",
+   "value": "new 30 d <= 2000; selected 30 d <= 1000; duplicate 7 d <= 1000; pages of 1000",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-store.ts:62-63",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Lead eligibility relevance floor",
+   "value": ">= 0.85 (same floor for every category)",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:108; own-dashboard/src/lib/marketing/dneskai-providers.ts:172",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev in-scope probability",
+   "value": ">= 0.9 of non-'other' mass",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:166-170",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev duplicate gate",
+   "value": "confidence >= 0.8 and chosen probability >= 0.9, never 'uncertain'",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:171",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev reject",
+   "value": "relevance <= 0.15 and other >= 0.9",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:178",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Age limits at selection time",
+   "value": "48 h for ai-news/tech-news; 30 days for marketing/tool/ai-project",
+   "evidence": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql:110; :158",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Events per day",
+   "value": "4 (limit 4; rank 1-4 + unique(run_id,rank); selected_count 0-4; one run per date)",
+   "evidence": "SQL 20261020150000:19,33,124; SQL 20261013165236:8-9",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev batch / stages / history",
+   "value": "8 per call; <= 16 calls per run; history 20 stored + prior batch, cut to 148 and 28 KB state / 60 KB request",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-collection.ts:101; own-dashboard/src/lib/marketing/dneskai-store.ts:50; own-dashboard/src/lib/marketing/dneskai-providers.ts:127,138",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Run tick cap",
+   "value": "40 claims, 60 s lease each",
+   "evidence": "own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql:7,65,68",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Other events shown to the owner",
+   "value": "12 events from at most 200 candidates; 60 events total in the state",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-brief-read.ts:61; own-dashboard/src/lib/marketing/dneskai-store.ts:98; own-dashboard/src/lib/marketing/dneskai-contracts.ts:63,68",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  }
+ ],
+ "measurements": [
+  {
+   "what": "Focused test run: marketing-dneskai-events, marketing-dneskai-briefs-database, marketing-dneskai-database",
+   "value": "3 files, 25 tests passed, 2.01 s wall (vitest 4.1.6, PGlite in-memory)",
+   "method": "./node_modules/.bin/vitest run <3 files> in own-dashboard, timed",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "Re-run 22 Oct: same 3 files, 25 tests passed, 2.77 s."
+   }
+  },
+  {
+   "what": "groupDneskaiEvents on 3000 synthetic reports (300 events of 10)",
+   "value": "70 ms (docs/dneskai-briefs.md:60 says about half a second)",
+   "method": "bench-grouping.mjs importing dneskai-events.ts via Node 26 type stripping, performance.now()",
+   "basis": "measured",
+   "check": {
+    "status": "disputed",
+    "note": "Re-run with different synthetic data (300 events x 10 similar headlines): 1.47 s warm. Grouping time depends on the data; 70 ms is one data set."
+   }
+  },
+  {
+   "what": "S1a: real marketing_dneskai_finish in PGlite, 12 ai-news (0.99..0.88, 2-13 h old) + ai-project 0.85 (28 d old) + tool 0.86 (20 d) + marketing 0.87 (10 d); 4 categories present",
+   "value": "briefs: rank1 ai-news 0.99, rank2 marketing 0.87, rank3 tool 0.86, rank4 ai-project 0.85; 11 ai-news with relevance 0.88-0.98 left status 'new'",
+   "method": "select-scenarios.mjs: 11 migrations loaded unchanged, 5-argument finish (every candidate its own event)",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader's PGlite scenario. Production 21 Oct shows the same effect with real data (news 2 of 4)."
+   }
+  },
+  {
+   "what": "S1b: same with tech-news 0.90 added (all 5 categories present)",
+   "value": "briefs: ai-news 0.99, tech-news 0.90, marketing 0.87, tool 0.86; news limited to 2 of 4; 11 strong ai-news unselected",
+   "method": "select-scenarios.mjs",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader's PGlite scenario."
+   }
+  },
+  {
+   "what": "S2: night 1 selects event A, marketing_dneskai_skip_brief(brief-slot-passed, null); night 2 fresh report B of the same event sent in p_events",
+   "value": "A stays status 'selected' with target_date; night 2 selected_count 0, 0 briefs; B becomes 'duplicate' reason collection-already-covered duplicateOf A",
+   "method": "select-scenarios.mjs with simulated clock (marketing.test_time)",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader's PGlite scenario; code path confirmed (20261020150000:203-207)."
+   }
+  },
+  {
+   "what": "S4: schema cap",
+   "value": "insert brief rank 5 -> marketing_dneskai_briefs_rank_check violation; update selected_count=5 -> marketing_dneskai_runs_selected_count_check violation",
+   "method": "select-scenarios.mjs",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader's PGlite scenario; checks confirmed in the migrations."
+   }
+  },
+  {
+   "what": "Headline-rule probes on 7 synthetic pairs",
+   "value": "merge: Sora 2 reorder, Amazon Nova Premier, Czech Gemini 3 reword; no merge: 'OpenAI unveils GPT-6 with new reasoning' vs \"GPT-6: OpenAI's biggest leap in reasoning yet\" (3 shared / 7 union = 0.43), '$40B' vs '40 billion' (numbers 40b vs 40), '1 billion' vs '1B', '15 October' vs '2026' (date tokens treated as numbers); 'Amazon Nova' tokenises to ['amazon']",
+   "method": "bench-grouping.mjs calling dneskaiHeadlinesMatch / dneskaiTitleTokens",
+   "basis": "measured",
+   "check": {
+    "status": "partly",
+    "note": "Two probes repeated: \"$40B\" vs \"40 billion\" does not merge; the Amazon Nova pair merges."
+   }
+  },
+  {
+   "what": "Migration load for the selection schema in PGlite",
+   "value": "11 migration files in 78 ms; whole scenario script 1.02 s wall",
+   "method": "select-scenarios.mjs timing",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader timing."
+   }
+  },
+  {
+   "what": "Production selection of 21 Oct (target 22 Oct)",
+   "value": "Briefs: 1 ai-news 0.97 (openai-blog, 21 Oct), 2 tech-news 0.97 (techcrunch-ai, 20 Oct), 3 marketing 0.96 (openai-blog, 21 Oct), 4 ai-project 0.96 (anthropic-news, 16 Oct); all pending, code account-unavailable. 12 classified reports left new: 4 ai-news 0.87-0.97, 8 tech-news 0.89-0.97.",
+   "method": "Supabase read-only SELECT on marketing_dneskai_briefs joined to the lead candidate, plus status=new candidates",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "A-verify-1"
+   }
+  }
+ ],
+ "findings": [
+  {
+   "id": "SEL-01",
+   "title": "One-per-category is a hard sort key above relevance and recency, so evergreen 30-day categories crowd out today's news",
+   "category": "quality",
+   "claim": "Because `picked` orders by category_rank before relevance, the best eligible item of every category is chosen before any category's second item. The marketing/tool/ai-project pools are 30 days deep, so they nearly always have a >= 0.85 item; on a 5-category night news gets at most 2 of 4 slots, and a 28-day-old ai-project item at the 0.85 floor beats eleven fresher news items scored 0.88-0.98. This is the exact code path behind the owner brief's 'weakly labelled ai-project over 12 strong news items'.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 121,
+     "excerpt": "row_number() over(partition by category order by relevance desc,published_at desc,event_id) as category_rank"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 124,
+     "excerpt": "from ranked order by category_rank,relevance desc,published_at desc,event_id limit 4"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 110,
+     "excerpt": "case when candidate->>'category' in('ai-news','tech-news') then interval '48 hours' else interval '30 days' end"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-briefs-database.test.ts",
+     "line": 57,
+     "excerpt": "// A second ai-news event waits behind the other categories; it is not forced in."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+     "line": 53,
+     "excerpt": "Kategorie nejsou dostatečně spolehlivé jako přesná taxonomie."
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 234,
+     "excerpt": "One-per-category diversity picked a weakly labelled \"ai-project\" item over 12 strong news items."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 5,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "How much category diversity the owner wants against freshness (editorial policy for the score weights).",
+    "reason": "Visible in production on the first night: two of four slots went to evergreen categories while a 0.97 news item stayed out. A score in the same CTE fixes it with no model."
+   },
+   "impactScore": 5,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Replace the hard category_rank key with a score computed in the same CTE, no model needed: score = relevance + recency bonus (news: 1 - age/48 h scaled to 0.10; evergreen: 1 - age/30 d scaled to 0.05) + corroboration bonus (0.03 per extra distinct source in the event, max 0.10) + 0.05 if a tier-0 publisher is in the event; apply a per-category relevance floor for evergreen categories to pre-empt news (e.g. >= 0.92) and a diversity rule as a soft penalty (-0.06 for the second item of the same category) with a hard cap of at most 1 evergreen item per day unless fewer than 4 news events are eligible. Keep `limit 4`. Add PGlite tests mirroring S1a/S1b. Expose the score and the 'lost to' reason (SEL-05). A Haiku re-rank (SEL-13) and an owner swap (SEL-04) are complementary, not substitutes.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "20261020150000:121 ranks within a category, :122-124 orders picked by category_rank before relevance, limit 4; :110 gives marketing/tool/ai-project 30 days. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: the 21 Oct night picked ai-news 0.97, tech-news 0.97, marketing 0.96 and ai-project 0.96 (published 16 Oct, 5 days old) while 12 ai-news/tech-news reports with relevance 0.87-0.97 (one at 0.97, two at 0.96/0.95) stayed unselected. News got 2 of 4 slots. The 28-day item at the 0.85 floor is the reader's PGlite scenario, not this night.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Up to half of each day's 4 posts can be weeks-old evergreen items while fresher, stronger news waits (and ages past 48 h). Each weak post still costs the generation call (~$0.02) and the owner's review minutes, and it dilutes a brand named 'today AI'. Measured S1a/S1b in PGlite."
+  },
+  {
+   "id": "SEL-02",
+   "title": "Selection ranks on Jev's binary 'is it concrete' probability only; corroboration, source tier, registry weight and engagement are never used",
+   "category": "quality",
+   "claim": "The only ranking signal is Jev's relevance answer, which asks whether the text describes a concrete event, not whether it matters or will stop a scroll. The grouping already computes how many sources reported an event and which tier they are, and the registry carries a per-source weight, but the SQL ranking ignores all of it (member count and tier are used only to order evidence inside an event).",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 132,
+     "excerpt": "Does ${reference} describe concrete AI or technology news (a release, research result, security finding, funding round or industry/legal event), a useful software tool, project built with AI, or actionable marketing/platform advice?"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 113,
+     "excerpt": "order by event_id,(candidate->>'relevance')::numeric desc,(candidate->>'publishedAt')::timestamptz desc,id collate \"C\""
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 229,
+     "excerpt": "export function rankDneskaiEventMembers<T ...>(members: readonly T[], mediaCount: (id: string) => number = () => 0): T[] {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/registry.json",
+     "line": 9,
+     "excerpt": "\"weight\": 0.75,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+     "line": 6,
+     "excerpt": "id: z.string().min(1).max(100), name: z.string().min(1).max(120), url: z.url(),"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Corroboration and source tier are free signals already computed; implement with SEL-01, not separately."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Pass `weight` through DneskaiSourceSchema (additive, optional) and store it on the candidate; in finish, add corroboration (count of distinct sourceIds and presence of a tier-0/tier-1 source per event, computable from the pool CTE and the membership map) and the lead's source weight to the score from SEL-01. When Apify is on, add Instagram likes/comments as a normalised engagement term (the scraper fields are already read). Verify with the first week's data which term correlates with saves once Insights exist.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Selection orders only by relevance and publishedAt (20261020150000:113, :121-124); dneskai-providers.ts:132 asks only whether the text describes concrete news; dneskaiSourceTier and member count order evidence inside an event (dneskai-events.ts:229) and never reach the SQL; registry weights never reach the candidate (DneskaiSourceSchema, dneskai-contracts.ts:6, has no weight).",
+    "correctedLocations": []
+   },
+   "impactStatement": "A single-source 0.95 item outranks a story covered by four publishers at 0.93; the 'scroll-stopping' goal has no input at all in the ranking. No dollars, but the posts chosen are not the ones most likely to be saved and sent."
+  },
+  {
+   "id": "SEL-03",
+   "title": "A lapsed, never-published brief permanently covers its topic",
+   "category": "risk",
+   "claim": "When a brief lapses (brief-slot-passed, brief-target-date-passed, brief-expired, or an account-unavailable brief that runs out of slots), `skip` is called without duplicateOf, so the event's members stay status 'selected' with a target date. A selected member makes the event 'covered' on every later night (SQL covering rule) and is also fed to Jev as history, so a fresh report of the same story is marked duplicate/collection-already-covered. Reproduced in PGlite (S2): night 2 selected 0 events and marked the new report a duplicate of the lapsed one.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 307,
+     "excerpt": "if (Date.parse(brief.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 283,
+     "excerpt": "const skip = async (row: DneskaiBriefRow, code: string, duplicateOf: string | null = null) => {"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 203,
+     "excerpt": "if p_duplicate_of is not null then"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 115,
+     "excerpt": "select case when p.status='selected' then p.id else marketing_private.dneskai_covering_id(p_owner,r.project_id,p.candidate->>'duplicateOf') end as covering"
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 220,
+     "excerpt": "so the 22 October briefs will be skipped one by one unless `@dneskai` is verified first"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Will happen tonight: the four 22 Oct briefs are pending with no account, so their stories get blocked for 30 days. One SQL branch fixes it."
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "In marketing_dneskai_skip_brief, when p_duplicate_of is null and the code is one of brief-slot-passed, brief-target-date-passed, brief-expired, brief-invalid or brief-slot-unavailable, set the brief's members back to status 'new' with target_date null and reason null (keeping category/relevance so no Jev call is needed); alternatively make the covering rule ignore selected members whose brief for that target date is skipped without a duplicate. Exclude such members from the Jev history read as well (dneskai-store.ts:44-50). Add a PGlite test equal to S2 expecting re-selection on night 2.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-briefs.ts:283 skip and :307 brief-slot-passed call marketing_dneskai_skip_brief without duplicateOf; the function changes members only when p_duplicate_of is set (20261020150000:203-207), so they stay selected with the target date; :115 makes a selected member cover its event; the store feeds selected reports to Jev as history (dneskai-store.ts:46-50). The reader reproduced night 2 selecting 0 in PGlite (not re-run). Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: all four 22 Oct briefs are pending with code account-unavailable, so they will lapse and trigger this path unless an @dneskai account is verified first.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Every day the owner cannot approve in time (or, right now, every day until @dneskai is verified) blacklists up to 4 topics for 30 days with no way back. The 22 October briefs are the first casualties. Zero dollars, but lost topics and silent confusion ('why was this never offered again?')."
+  },
+  {
+   "id": "SEL-04",
+   "title": "No owner override: no swap, no release of held items, no re-run; a manual run needs a Vercel env JSON scope and a secret",
+   "category": "simplicity",
+   "claim": "Selection is fully automatic and one-shot. The scheduler runs one collection per Prague date and reports collection-finished afterwards; finish is fence-locked to the run; the only re-run path is a production-only env variable MARKETING_DNESKAI_MANUAL_RUN with owner/project/runId and a <= 2 h window plus MARKETING_DNESKAI_MANUAL_SECRET on the HMAC route; held candidates never re-enter the Jev queue; the Zdroje tab has only Refresh and Open-review buttons and no API route writes candidate status.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 264,
+     "excerpt": "if (list.some((run) => !run.pilot && run.date === today)) return { status: \"noop\", code: \"collection-finished\" };"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-manual.ts",
+     "line": 11,
+     "excerpt": "if(env.VERCEL_ENV!=='production'||env.MARKETING_OWNER_ID!==owner||!env.MARKETING_DNESKAI_MANUAL_RUN||!runId)return null;"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/dneskai/collect/route.ts",
+     "line": 12,
+     "excerpt": "MARKETING_N8N_SECRET:input.manual?process.env.MARKETING_DNESKAI_MANUAL_SECRET:process.env.MARKETING_DNESKAI_COLLECTION_SECRET"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 107,
+     "excerpt": "if(item.status!=='new'||item.category!==null||!item.publishedAt||Date.parse(item.publishedAt)>now.getTime()||Date.parse(item.publishedAt)<now.getTime()-30*86400000)continue;"
+    },
+    {
+     "file": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+     "line": 21,
+     "excerpt": "<Button variant=\"outline\" className=\"min-h-11\" disabled={disabled || query.isFetching} onClick={() => void query.refetch()}>{t.refresh}</Button>"
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 235,
+     "excerpt": "70 % of candidates were held, with no owner path to release or re-review them."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "The owner cannot swap a weak pick or release a held story; a bench with swap and release fits the Design Lab goal."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Add an owner 'bench' to the Zdroje tab (or the Design Lab): the eligible-but-unselected leads of the night (up to 12, with category, relevance, age, source count). Two session-authenticated actions behind new service-role SQL: `marketing_dneskai_swap_event(owner, brief_id, event_id)` skips the brief with code owner-swapped (releasing members per SEL-03), re-checks eligibility and the 4 cap, and inserts a brief with the freed rank so the normal briefs step builds it; `marketing_dneskai_release_candidates(owner, ids)` sets held -> new with category null so the next night's Jev pass re-reviews them (about $0.0003 per 8 items). Keep approval semantics untouched: a swap only changes which brief exists, every rendered revision is still approved by exact bytes. Replace the env-scoped manual run with a session-authenticated 're-run tonight's selection' that calls finish again on a fresh run row only when no brief of the day has a job yet.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "scheduler.ts:264 reports collection-finished once today's run exists; one run per owner/project/date (20261013165236:9); the manual path needs MARKETING_DNESKAI_MANUAL_* in production (dneskai-manual.ts:11, dneskai/collect/route.ts:12); held items never re-enter (dneskai-collection.ts:107); every DNESKAi candidate route is GET; the Zdroje tab buttons are refresh/open review (dneskai-sources.tsx:21).",
+    "correctedLocations": []
+   },
+   "impactStatement": "When the automatic pick is wrong the owner's only options are to skip the post or edit a bad one; the 12 unselected strong items and 45 held items of 21 October are unreachable from the app. Fixing a selection today means editing Vercel env vars, i.e. not a 10-minute workflow."
+  },
+  {
+   "id": "SEL-05",
+   "title": "No explanation surface: unselected events show 'Nevybrano' with no category, relevance, age or losing reason, and at most 12 of them",
+   "category": "quality",
+   "claim": "The event member view carries only id, source, title, url, status, reason and role. An unselected eligible event has status 'new' and reason null, rendered as 'Nevybrano'. The 'other events' list is capped at 12 (newest first) from at most 200 candidates, so on a 64-candidate night with 45 held and 12 unselected, most of them are not shown at all, and nothing says which one lost to which category rule.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+     "line": 41,
+     "excerpt": "candidateId: z.string().min(1).max(200), sourceId: z.string().min(1).max(100), title: z.string().max(500), url: z.url(),"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-brief-read.ts",
+     "line": 68,
+     "excerpt": "return { status: 'new', reason: null };"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-brief-read.ts",
+     "line": 61,
+     "excerpt": "export function dneskaiOtherEventViews(candidates: readonly DneskaiCandidate[], briefed: ReadonlySet<string>, limit = 12): DneskaiEventView[] {"
+    },
+    {
+     "file": "own-dashboard/src/lib/i18n/sections/dneskai-sources.ts",
+     "line": 53,
+     "excerpt": "eventStatus: { selected: 'Vybráno', held: 'Pozastaveno', duplicate: 'Duplicita', rejected: 'Mimo témata', new: 'Nevybráno' },"
+    },
+    {
+     "file": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+     "line": 82,
+     "excerpt": "{sourceName(event.members[0].sourceId)} · {t.reports}: {event.members.length}{reasonText(event.reason) && <> · {reasonText(event.reason)}</>}"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Showing category, relevance, age and why an item lost is additive data the owner needs to trust the picks."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Additively extend DneskaiEventMemberViewSchema with category, relevance, publishedAt and dateEstimated (all already on the candidate), and add an optional `selection` object per event: score, categoryRank and a code such as selection-category-taken, selection-below-floor, selection-stale, selection-covered, written by finish into a new `selection jsonb` column on marketing_dneskai_runs (one row per night, no model data). Render a 'Proč ne' line per event, raise the other-events limit to 30 and sort eligible-unselected first. Keep the LangSmith rule irrelevant (nothing leaves the database).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-contracts.ts:41 member view has no category/relevance/age; dneskai-brief-read.ts:61-68 status new with reason null (:68); :61 limit 12, newest first (:70-71); dneskai-sources.ts:53 renders \"Nevybráno\". Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: 21 Oct leaves 12 new + 45 held + 3 rejected unselected reports, more than 12 can show.",
+    "correctedLocations": []
+   },
+   "impactStatement": "The owner cannot judge the selection, cannot learn why a strong story was skipped, and cannot build trust in the automatic pick; the audit itself had to reproduce the rule in PGlite to explain one night. Owner minutes wasted guessing; no dollars."
+  },
+  {
+   "id": "SEL-06",
+   "title": "A run that finishes after Prague midnight selects nothing and records no code for it",
+   "category": "risk",
+   "claim": "finish runs the selection only when the run's date equals the current Prague date. A run starts at 22:00 and may be claimed up to 40 times at the 5-minute cadence (200 minutes), so a slow night (Jev errors break the loop and continue next tick; arXiv timeouts; cost-unresolved holds) can end after 00:00 with status complete/partial, selected_count 0 and no error code explaining why. The existing test asserts the zero, not a code.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 86,
+     "excerpt": "if p_status<>'running' and not unknown_cost and r.date=(clock_timestamp() at time zone 'Europe/Prague')::date then"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql",
+     "line": 65,
+     "excerpt": "if r.tick_count>=40 then update public.marketing_dneskai_runs set status='held',error_code='collection-tick-limit',lease_until=null where id=p_run returning * into r;return to_jsonb(r);end if;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 80,
+     "excerpt": "catch(error){await store.saveStage(owner,run.id,fence,classification.source_id,{status:'held',items:[],complete:false,costUsd:null,errorCode:error instanceof DneskaiProviderError?error.code:'collection-jev-outcome-ambiguous'});break;}"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-database.test.ts",
+     "line": 34,
+     "excerpt": "it('rejects old-day paid starts and cannot select old topics after midnight'"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Rare (the first night took 4 ticks), but a silent empty day is costly; at least record a code."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Keep the paid-start guard, but let selection run when r.target_date is still today-or-later in Prague (the 48 h/30 d windows already prevent stale picks); if the guard must stay, set error_code collection-selection-day-passed and show it in Zdroje. Add a test for a 00:10 finish.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "20261020150000:86 selects only when r.date equals the Prague date at finish; 20261013165236:65 allows 40 claims (200 min at 5-minute ticks). The run row records the caller's code, none says why selection was skipped. Production: the 21 Oct run finished in 4 ticks, so this needs a slow night.",
+    "correctedLocations": []
+   },
+   "impactStatement": "A whole day without posts (and without briefs) with a green-looking run row; the owner learns it from an empty 'Zitra' section. Probability is low on a normal night (about 4-5 ticks) but rises exactly when a provider misbehaves."
+  },
+  {
+   "id": "SEL-07",
+   "title": "The headline rule misses reworded, differently numbered and dated headlines, so one story can become several events",
+   "category": "quality",
+   "claim": "Jaccard >= 0.6 only joins near-identical headlines; typical cross-publisher rewording scores about 0.4. The number rule treats any digit token as a fact, so '$40B' vs '40 billion', '1 billion' vs '1B', or a date in one headline and a year in the other can never merge. Without a Jev link (limited to the same batch, 20 history items and the prior batches) the story splits into separate events that compete for slots and can be selected twice on the same night.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 87,
+     "excerpt": "if (disjoint(a.versions, b.versions) || disjoint(a.numbers, b.numbers)) return false;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 80,
+     "excerpt": "numbers: all.filter((token) => /\\d/.test(token))"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 89,
+     "excerpt": "return shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+     "line": 50,
+     "excerpt": "return[...new Map(history.map(item=>[item.id,item])).values()].slice(0,20);"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-events.test.ts",
+     "line": 15,
+     "excerpt": "report('instagram:technology', 'tech-1', 'OpenAI launches Sora 2 app for iPhone', 0),"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "The same story twice on one day hurts the account; number normalisation is the cheap half."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Normalise numbers before comparison (40b -> 40 billion, 1b -> 1 billion, drop pure years and day/month tokens from the 'facts' lists, keep versions strict), and add a second tier: join when >= 3 shared tokens include at least one capitalised entity token from the original title and Jaccard >= 0.45. Keep the 72 h window. Add the probe pairs from bench-grouping.mjs as tests. Also drop 'nova', 'novy', 'nove', 'new' from the stop list when the token was capitalised mid-title (Amazon Nova, New York).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-events.ts:80 treats every token with a digit as a number fact and :87 refuses to merge on disjoint numbers; :89 needs Jaccard >= 0.6 and 2 shared tokens. Probe re-run: dneskaiHeadlinesMatch(\"Nvidia buys startup for $40B\", \"Nvidia buys startup for 40 billion dollars\") = false. Jev history is capped at 20 items (dneskai-store.ts:50). \"Typical rewording scores about 0.4\" is an estimate.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Thinner events (fewer evidence links and pictures per brief, which the brief step needs for carousels) and a real chance of two posts on one story. Measured on synthetic pairs: 4 of 7 plausible rewordings do not merge."
+  },
+  {
+   "id": "SEL-08",
+   "title": "Freshness is judged at 22:00 selection, not at the posting slot, and leftovers get a second night",
+   "category": "quality",
+   "claim": "The 48 h news window is measured from clock_timestamp() at finish; the post goes out 10-22 h later, so an item 47 h old at selection is up to about 69 h old on the feed. Items not picked stay 'new' and compete again the next night if still inside 48 h, so a story can be posted two to three days after it broke under a 'today' brand. publishedAt is only a tiebreak, never a score.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 110,
+     "excerpt": "and (candidate->>'publishedAt')::timestamptz>=clock_timestamp()-case when candidate->>'category' in('ai-news','tech-news') then interval '48 hours' else interval '30 days' end"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 158,
+     "excerpt": "update public.marketing_dneskai_candidates set status='held',candidate=jsonb_set(jsonb_set(candidate,'{status}','\"held\"'),'{reason}','\"collection-source-date-unavailable-or-stale\"') where ... status='new' and (candidate->>'publishedAt' is null or (candidate->>'publishedAt')::timestamptz<clock_timestamp()-..."
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 123,
+     "excerpt": "row_number() over(order by category_rank,relevance desc,published_at desc,event_id) as rank"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 102,
+     "excerpt": "`DNESKAI_BRIEF_SLOTS` = 08:00, 12:30, 17:00 a 20:00 Europe/Prague"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": "News freshness window (48 h vs 36 h at the posting slot).",
+    "reason": "A \"today\" account posting 2-3 day old news; measuring age at the first slot is a one-line SQL change, the 36 h window is an editorial choice."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Compute age against the target day's first slot (target_date 08:00 Prague) and tighten news to 36 h at that moment; fold recency into the score (SEL-01) so a 6-hour-old 0.90 story can beat a 40-hour-old 0.93 one; mark second-night leftovers with a visible 'včerejší' note in the brief so the copy can say 'včera' instead of implying today.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "20261020150000:110 measures age from clock_timestamp() at finish; :158 holds only stale or undated new rows, so unpicked fresh rows stay new and compete the next night; publishedAt is only a tiebreak (:123). Slots run to 20:00 the next day (dneskai-briefs.md:102). Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: 12 classified reports remain new after the 21 Oct finish.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Stale-feeling posts on a news brand; no dollars."
+  },
+  {
+   "id": "SEL-09",
+   "title": "Hold-by-uncertainty is one-way and unexplained: in-scope items held only for duplicate or category doubt never return, and the Jev diagnostics that would explain them are dropped",
+   "category": "quality",
+   "claim": "A candidate whose relevance is >= 0.85 but whose 'not a duplicate' probability is below 0.9 (or in-scope mass below 0.9) is held with collection-review-duplicate/-category. Held candidates are excluded from the pending filter forever and there is no owner release. The per-item diagnostics (in-scope probability, category probability, failed checks) are returned by the provider but not saved, so neither the UI nor a later tuning can see how close an item was. The Jev evaluation doc itself notes scores are unstable across batches.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 171,
+     "excerpt": "if(duplicate.confidence<0.8||duplicate.probabilities[duplicate.choice]<0.9||duplicate.choice==='uncertain')failedChecks.push('duplicate');"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 182,
+     "excerpt": "status:clearlyOutOfScope?'rejected' as const:uncertain?'held' as const:duplicateOf?'duplicate' as const:category.choice==='other'?'rejected' as const:'new' as const,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 79,
+     "excerpt": "await store.saveStage(owner,run.id,fence,classification.source_id,{status:'ok',items:result.items,complete:true,costUsd:result.costUsd,errorCode:null});"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 107,
+     "excerpt": "if(item.status!=='new'||item.category!==null||...)continue;"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+     "line": 52,
+     "excerpt": "kratší historie a okolní položky mění některá hraniční skóre. Při této nejistotě"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Persisting Jev diagnostics is additive and makes held items explainable; pairs with C3."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Persist the diagnostics on the candidate JSON (additive fields; they are counts/probabilities, no text) and show 'Ke kontrole: odlišnost (0,82)' in Zdroje. Treat held-for-duplicate items with relevance >= 0.85 whose candidate duplicate target is itself held/rejected as eligible leads at a 0.03 penalty, or re-ask Jev once on the next night with a 10-item history (the doc shows shorter history changes borderline scores). Verify first with the open question on production hold reasons.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-providers.ts:171-174 hold on duplicate or category doubt even with relevance >= 0.85; :182 sets held; the diagnostics array (:174-178) is returned, but dneskai-collection.ts:79 saves result.items only; held rows never re-enter (:107). The evaluation doc notes unstable scores (dneskai-jev-evaluation-2026-10-14.md:52).",
+    "correctedLocations": []
+   },
+   "impactStatement": "Likely a large share of the 70 % held on 21 October (not verifiable here without a production SELECT); every held-but-good story is lost for free, and the selection pool shrinks to what Jev was very sure about. Each re-review would cost about $0.0003 per 8 items."
+  },
+  {
+   "id": "SEL-10",
+   "title": "An event's category is whatever Jev gave its single most relevant member, although the project's evaluation says categories overlap",
+   "category": "quality",
+   "claim": "The lead is chosen by relevance alone and its category becomes the event's category, which then decides the category slot, the 48 h vs 30 d window and the brief's 48 h vs 14 d validity. A GitHub release labelled ai-project 0.90 next to a newsroom article labelled ai-news 0.88 makes the whole event an ai-project, taking the evergreen slot and a 30-day window.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 112,
+     "excerpt": "select distinct on(event_id) event_id,id as lead_id,candidate->>'category' as category,(candidate->>'relevance')::numeric as relevance"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 147,
+     "excerpt": "values(p_owner,r.project_id,p_run,ev->>'eventId',r.target_date,(ev->>'rank')::int,ev->>'category',selected_ids,ev->>'leadId',..."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-jev-evaluation-2026-10-14.md",
+     "line": 8,
+     "excerpt": "Kategorie se však překrývají: jeden příspěvek může představovat AI novinku i AI projekt."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 100,
+     "excerpt": "**Platnost**: 48 hodin pro `ai-news` a `tech-news`, 14 dní pro `tool`, `ai-project` a `marketing`"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Real but second-order; do it with the SEL-01 score."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Derive the event category by majority over eligible members with tier-0/1 sources breaking ties, and collapse tool + ai-project into one 'evergreen' bucket for the diversity rule; keep Jev's per-member label for display.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "20261020150000:112-113 picks the lead by relevance and takes its category; :147 writes it to the brief; the evaluation doc says categories overlap (dneskai-jev-evaluation-2026-10-14.md:8).",
+    "correctedLocations": []
+   },
+   "impactStatement": "Category-driven decisions become noisy per member; combined with SEL-01 it is the mechanism by which a 'weakly labelled' item wins a slot. No dollars."
+  },
+  {
+   "id": "SEL-11",
+   "title": "The daily cap of 4 is hard-coded in at least nine places and DNESKAI_DAILY_TARGET is unused",
+   "category": "simplicity",
+   "claim": "Changing the cadence (for example 3 posts/day while the kits are tuned, or 5 on a big day) requires a migration (brief rank check, run selected_count check, `limit 4`) plus edits in contracts (rank max 4, selectedCount max 4), the Zdroje component (slice(0,4), two '/ 4' labels) and the former migration; the exported constant DNESKAI_DAILY_TARGET = 4 is referenced nowhere.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+     "line": 4,
+     "excerpt": "export const DNESKAI_DAILY_TARGET = 4;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+     "line": 48,
+     "excerpt": "id: z.uuid(), rank: z.number().int().min(1).max(4),"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 19,
+     "excerpt": "rank integer not null check(rank between 1 and 4),"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql",
+     "line": 8,
+     "excerpt": "selected_count integer not null default 0 check(selected_count between 0 and 4)"
+    },
+    {
+     "file": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+     "line": 73,
+     "excerpt": "{t.selectedCount}: {count} / 4</p>"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Only matters if the owner changes the daily count; record it under that decision instead."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Make finish take `p_limit` (default 4) read from a per-owner settings row, relax the checks to a sane bound (1-8) and derive every TypeScript literal from DNESKAI_DAILY_TARGET; the UI reads the target from the state payload (dailyTarget is already there).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "DNESKAI_DAILY_TARGET (dneskai-contracts.ts:4) has no reference anywhere else in the repo (grep); the 4 is hard-coded in contracts (:48), the schema (20261020150000:19, 20261013165236:8), the SQL limit (20261020150000:124) and the UI (dneskai-sources.tsx:73).",
+    "correctedLocations": []
+   },
+   "impactStatement": "About half a day of work and a migration for a one-number change; a mismatch between places would silently fail the run update (check constraint) at 22:30."
+  },
+  {
+   "id": "SEL-12",
+   "title": "Docs and owner map overstate two points: Jev links 'at any age' and 'the SQL validates the grouping'",
+   "category": "doc-drift",
+   "claim": "docs/dneskai-briefs.md:27 and the owner brief say a Jev duplicate link joins reports regardless of time; the pure function does, but the store feeds it duplicates from the last 7 days only (the same doc lists this at line 55), so an older link is never seen. Both documents say the SQL 'validates the grouping'; it checks only shape, anchor naming and disjointness, never the 72 h window or the token rule. The docs' eligibility list omits the `reason is null` and `publishedAt <= now` conditions, and its timing note (3000 reports in about half a second) is seven times slower than measured (70 ms).",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 27,
+     "excerpt": "1. Jev označil jednu za duplicitu druhé (`duplicateOf`), bez ohledu na čas."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+     "line": 62,
+     "excerpt": "{status:'duplicate',days:7,limit:1000}"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 47,
+     "excerpt": "SQL ho ověří: každá událost je pojmenovaná svou kotvou a žádná zpráva není ve dvou."
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 99,
+     "excerpt": "Jev duplicate links at any age, or, within 72 h, the same canonical URL or headline Jaccard ≥ 0.6 with ≥ 2 shared tokens. The SQL function validates the grouping and selects from it;"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 63,
+     "excerpt": "`other`, relevance ≥ 0,85, bez duplicity, datum do 48 h u zpráv a do 30 dní jinak)."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 60,
+     "excerpt": "3000 zpráv se seskupí zhruba za půl sekundy."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Doc drift; drop the timing sentence correction (the figure depends on data)."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Reword docs/dneskai-briefs.md:27 to 'bez ohledu na čas v rámci čtených oken (duplicity 7 dní)', :47 to 'ověří tvar seskupení (kotva, disjunktnost), ne pravidla', add the two eligibility conditions at :62-63 and replace the timing note with the measured figure; mirror the first two in the owner map section 2.1.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Doc drift confirmed: docs/dneskai-briefs.md:27 says Jev links join regardless of time, but the store reads duplicates from the last 7 days only (dneskai-store.ts:62); :47 says SQL validates the grouping, but 20261020150000:87-97 checks only shape, anchor and disjointness; brief.md:99 repeats \"at any age\". The timing sub-claim is refuted as stated: grouping time depends on the data. The reader measured 70 ms for 3,000 synthetic reports; a re-run with 3,000 reports in 300 ten-member events of similar headlines took 1.47 s warm (Node v26.8.2), so the doc's \"about half a second\" is neither confirmed nor shown to be 7x slow.",
+    "correctedLocations": [
+     {
+      "file": "dneskai-audit-handoff/brief.md",
+      "line": 99,
+      "excerpt": "Jev duplicate links at any age, or, within 72 h, the same canonical URL"
+     }
+    ]
+   },
+   "impactStatement": "Low: readers may assume the SQL would reject a wrong grouping or that old Jev links still merge; both matter only when the TypeScript grouping or read windows change."
+  },
+  {
+   "id": "SEL-13",
+   "title": "No judgement of importance or hook potential enters selection; a cheap structured re-rank is possible but needs owner approval and the production key",
+   "category": "modernity",
+   "claim": "Jev answers a yes/no 'is it concrete' question per item in isolation; nothing compares the night's 10-20 eligible leads against each other for newsworthiness, Czech-audience fit or a carousel hook. The pipeline already has an Anthropic-via-LangChain path for generation, but ANTHROPIC_API_KEY is not in production and the owner's rules make any new paid call an explicit decision.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 132,
+     "excerpt": "questions[`relevance_${index}`]={type:'noul',instructions:`Does ${reference} describe concrete AI or technology news ..."
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020150000_dneskai_events_briefs.sql",
+     "line": 123,
+     "excerpt": "select event_id,lead_id,category,row_number() over(order by category_rank,relevance desc,published_at desc,event_id) as rank"
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 205,
+     "excerpt": "| Anthropic via LangChain | One structured call per post writes copy and deck. | built, not live (no `ANTHROPIC_API_KEY` in production) |"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Approve a model re-rank call, its spend and the production key (same as C9).",
+    "reason": "Plausible improvement after SEL-01/02, but a new paid call; same item as C9."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Do SEL-01/02 first (free, deterministic). Then, only with the owner's explicit approval of the spend and of adding the key to production: a nightly re-rank step between finish and briefs that sends the eligible leads (title, 600-char excerpt, category, relevance, age, source count; source text marked as untrusted data as the Jev prompt already does) and returns, via structured output, importance 1-5 and a one-line hook angle per lead; store only the scores and codes, send LangSmith hashes/counts/cost only, and fall back to the SQL order when the call fails or disagrees with the hard floors. Use claude-haiku-5-5 for this bulk-ranking role; it must never invent facts (it only orders existing reports).",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code part confirmed: Jev asks one yes/no question per item (dneskai-providers.ts:132); selection never compares leads for importance or hook (20261020150000:123). Not verified: that ANTHROPIC_API_KEY is absent in production (Vercel env not read) and the cost of the proposed re-rank.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Opportunity: one structured call per night over the eligible leads (about 5k input tokens of titles/excerpts, about 400 output tokens of JSON) would cost roughly $0.0007 with claude-haiku-5-5 ($0.10/$0.50 per MTok, skill price table cached 2026-10-06) or about $0.03 with claude-opus-5-5 ($4/$20 per MTok): under $1 a month either way, versus the ~$0.02 generation spent on each weak pick today."
+  },
+  {
+   "id": "SEL-14",
+   "title": "A single 22:00 cut-off and one run per date mean US-evening news reaches the feed a day and a half later",
+   "category": "speed",
+   "claim": "Collection is not due before 22:00 Prague and the schema allows one run per owner/project/date, so anything published after about 21:30 Prague (the US afternoon, when most AI announcements land) is first eligible the next night and posted the day after that. There is no morning top-up for the 12:30/17:00/20:00 slots.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 267,
+     "excerpt": "if (pragueHour(clock()) < 22) return { status: \"noop\", code: \"collection-not-due\" };"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261013165236_marketing_dneskai_collection.sql",
+     "line": 9,
+     "excerpt": "created_at timestamptz not null default clock_timestamp(),unique(user_id,project_id,date),check(target_date=date+1)"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 27,
+     "excerpt": "if(!pilot&&!input.runId&&new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Prague',hour:'2-digit',hourCycle:'h23'}).format(now)<'22')throw new Error('collection-not-due');"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Second collection run per day (or a later cut-off).",
+    "reason": "A morning top-up changes the run model and adds paid Jev calls; owner choice."
+   },
+   "impactScore": 2,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Allow a second 'top-up' run per date (a `phase` column in the unique key) at 06:30 Prague that only fills ranks still free or swaps the 17:00/20:00 briefs that have no job yet; or, cheaper, move the cut-off to 23:30 and shift the briefs step so the 08:00 slot still has 30 minutes of lead. Decide together with the Design Lab review window, since every change of brief needs a new approval.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "scheduler.ts:267 and dneskai-collection.ts:27 refuse collection before 22:00 Prague; 20261013165236:9 unique(user_id, project_id, date). Whether most AI announcements land after 21:30 Prague is the reader's estimate.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Wall-clock latency from story to post of 34-46 h for the most common AI news timing; the 'today' brand is structurally a day late. No dollars."
+  },
+  {
+   "id": "SEL-15",
+   "title": "Tokeniser details: product names stripped as Czech stop words, dead apostrophe handling, duplicated entries",
+   "category": "quality",
+   "claim": "'nova', 'novy', 'nove' and 'new' are stop words, so 'Amazon Nova' becomes just 'amazon' and 'New York'/'New Relic' lose a token; the `'s` strip can never match because apostrophes are not part of the token regex; the stop list repeats 'a', 'i', 'so', 'than', 'now'. None is dangerous, but each weakens the only cheap grouping signal.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 51,
+     "excerpt": "'ze', 'zde', 'nove', 'novy', 'nova', 'dnes', 'jiz',"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 58,
+     "excerpt": "return new Set(tokens.map((token) => token.replace(/'s$/, '')).filter((token) => !STOP_WORDS.has(token) && (token.length > 1 || /\\d/.test(token))));"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 57,
+     "excerpt": "const tokens = folded.match(/[\\p{L}\\p{N}]+(?:[.\\-+][\\p{L}\\p{N}]+)*/gu) ?? [];"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-events.ts",
+     "line": 44,
+     "excerpt": "'these', 'those', 'than', 'then', 'not', 'no', 'yes', 'some', 'one', 'get', 'gets', 'got', 'make', 'makes', 'made', 'now', 'today',"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Cosmetic; fold into SEL-07 if that work happens."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Strip possessives before tokenising (replace /['’]s\\b/ on the folded string), keep a token that appears capitalised in the raw title even if it is in the stop list, and dedupe the list; add the 'Amazon Nova' case to the stop-word test.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-events.ts:51 lists nova/novy/nove and :41 new as stop words (probe: \"Amazon Nova Premier launches\" still matches \"Amazon launches Nova Premier model\" through other tokens); :57 token regex has no apostrophe, so the :58 's strip never matches; \"than\" and \"now\" appear twice in the English list (:42-44) and \"a\", \"i\", \"so\" in both lists.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Marginal: a few more missed merges per month (measured: 'Amazon Nova Premier now available' still merged with its longer variant only because 'premier' and 'available' survived)."
+  }
+ ],
+ "openQuestions": [
+  "Production 21 October night: the distribution of held reasons (collection-review-duplicate vs -category vs -relevance vs stale) and the category, relevance, age and member count of the selected 'ai-project' event and of the 12 unselected items; needs a read-only SELECT on marketing_dneskai_candidates and marketing_dneskai_briefs, which this prompt did not permit.",
+  "Have the 22 October briefs already lapsed (status skipped, code brief-slot-passed or brief-target-date-passed)? If so, SEL-03 has already covered four topics and the fix should include a one-off release of their members.",
+  "Editorial decision for the owner: does DNESKAi want a fixed daily category mix at all, or news-first with evergreen items only when they clear a higher bar? The right scoring weights in SEL-01 depend on that answer.",
+  "Jev score stability: the evaluation doc reports borderline scores moving with batch composition; without persisted diagnostics (SEL-09) nobody can say how many held items sit within 0.05 of a threshold.",
+  "For an owner swap (SEL-04): should the replacement brief trigger generation automatically (about $0.02 and a new approval) or wait for an explicit 'generate' click, given the 08:00 lead time?"
+ ],
+ "verification": {
+  "confirmed": 13,
+  "partly": 2,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 13,
+  "dropped": 2,
+  "quickWins": 4,
+  "verifiedAt": "2026-10-22T00:08:33Z",
+  "verifier": "A-verify-1",
+  "sourceMap": "dneskai-audit-handoff/maps/map-selection.json",
+  "repoCommit": "8df25a5",
+  "lineCheck": "All cited lines checked with grep -n/sed -n on own-dashboard 8df25a5 (worktree fable/audit-2026-10): every excerpt sits on the cited line.",
+  "notes": [
+   "Line numbers: every cited line holds its excerpt; the brief is cited as fable-dneskai-brief.md, the file is dneskai-audit-handoff/brief.md with the same lines.",
+   "Production confirms SEL-01 on the first native night: news got 2 of 4 slots while a 0.97 tech-news and a 0.97 ai-news report stayed out.",
+   "SEL-03 is imminent: all four 22 Oct briefs are pending with account-unavailable, so they will lapse and block their stories unless an @dneskai account is verified first.",
+   "SEL-12 timing: grouping speed depends on the data (70 ms in the reader's run, 1.47 s in this one); do not quote either as the doc's correction.",
+   "Overlaps: SEL-09 with C3 (held items), SEL-13 with C9 (model re-rank), SEL-02 with SEL-01 (score).",
+   "Owner items: selection policy weights (SEL-01); news freshness window (SEL-08); model re-rank spend and production key (SEL-13); second daily run (SEL-14).",
+   "Evidence: read-only SELECTs on marketing_dneskai_briefs and candidates; vitest re-run of 3 selection files; grouping benchmark and headline probes via Node type stripping (scratch only)."
+  ]
+ }
+}

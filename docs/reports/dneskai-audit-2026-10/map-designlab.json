@@ -1,0 +1,555 @@
+{
+ "subsystem": "designlab",
+ "summary": "Quorum's admin Design Lab (site/src/components/admin/design-lab-*, about 1,000 lines of components plus 1,000 of lib) lets the owner pick an article, see one slide on a stage at most 480 px wide for 4:5 (72 px thumbnails underneath), switch among five canvases, pick one of five launch looks from a strip of real cover renders, fine-tune a recipe (A/B colour variant, photo treatment none/mono/duotone, type scale 90/100/110 %), edit one free-text field per slide (30-word cap) and export PNGs or a Canva brief. Every slide image is a server render of the article deck (renderCarouselSlidePng, cached privately for 300 s). Every chip click and text save writes a JSON file to Quorum's main branch through the GitHub Contents API: 79 'set the deck design' commits exist, 45 of them for one article. It works on article summary decks only; the DNESKAi photo kit (renderDneskaiSlide) is never called from site/, and nothing binds a choice to an exact-bytes approval. There is no keyboard handling. Reusable for an OwnDashboard Design Lab: the look-strip pattern (all looks rendered side by side as real covers), the stage-plus-strip layout, the canvas chips idea, per-field problem display from the package workspace, and its e2e/axe checks. Not reusable: GitHub persistence, the article/recipe model, free-text-per-slide editing, mono/duotone treatments, and the Canva hand-off.",
+ "files": [
+  {
+   "path": "quorum/site/src/components/admin/design-lab-model.ts",
+   "role": "Client constants: 5 canvases, launch/legacy families, look labels, treatments, scales, 30-word cap, slide URL and Canva brief builders."
+  },
+  {
+   "path": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+   "role": "Article rail, stage, slide strip, look strip, export footer; auto-saves recipe on every chip click."
+  },
+  {
+   "path": "quorum/site/src/components/admin/design-lab-inspector.tsx",
+   "role": "Text / Vzhled / Canva tabs: one textarea per slide, recipe chips, presets, Canva brief."
+  },
+  {
+   "path": "quorum/site/src/components/admin/design-lab-package-workspace.tsx",
+   "role": "Package decks: per-slide headline/body/alt/code fields with per-field problems, Send to Queue."
+  },
+  {
+   "path": "quorum/site/src/components/admin/design-lab-brand.tsx",
+   "role": "Brand tab: kit logos on grounds, rules, doNots, socialRules list."
+  },
+  {
+   "path": "quorum/site/src/components/admin/design-lab-section.tsx",
+   "role": "Per-venture section navigation in /admin."
+  },
+  {
+   "path": "quorum/site/src/components/admin/design-lab-bilingual-slide.tsx",
+   "role": "Tehdejší svět dual-language slide view."
+  },
+  {
+   "path": "quorum/site/src/app/admin/api/carousel-studio/recipe/route.ts",
+   "role": "POST: save recipe, slide text or preset through the admin store."
+  },
+  {
+   "path": "quorum/site/src/lib/carousel-studio-admin-store.ts",
+   "role": "Persistence: GitHub Contents API PUT to lukaskourilcz/quorum main (or local file without a token)."
+  },
+  {
+   "path": "quorum/site/src/lib/design-lab.ts",
+   "role": "Server read model: LabArticle from stored article summaries, recipes, presets and text overrides."
+  },
+  {
+   "path": "quorum/site/src/app/admin/api/carousel-studio/deck/[venture]/[slug]/[date]/[recipe]/[slide]/route.ts",
+   "role": "Renders one slide PNG of an article deck per request; private, max-age=300."
+  },
+  {
+   "path": "quorum/site/tests/e2e/admin-workflows-qa.spec.ts",
+   "role": "E2E: Design Lab workspace and Brand tab, axe checks across themes and widths."
+  }
+ ],
+ "facts": [
+  {
+   "fact": "Five canvases are offered: Instagram 4:5 (master), square, story 9:16, Threads and LinkedIn square; a canvas a template does not declare is refused by the render route with 422.",
+   "evidence": "quorum/site/src/components/admin/design-lab-model.ts:13-19; quorum/site/src/app/admin/api/carousel-studio/deck/[venture]/[slug]/[date]/[recipe]/[slide]/route.ts:73-77"
+  },
+  {
+   "fact": "Five launch looks folio, press, rail, fault, halo with Czech one-line descriptions; 25 legacy families behind a disclosure.",
+   "evidence": "quorum/site/src/components/admin/design-lab-model.ts:24-36; design-lab-inspector.tsx:52-53"
+  },
+  {
+   "fact": "Recipe chips: colour variant A/B (B sets accentSwap), photo treatment none/mono/duotone, type scale 0.9/1/1.1; presets can be saved.",
+   "evidence": "quorum/site/src/components/admin/design-lab-inspector.tsx:42-49, :55-59; design-lab-model.ts:37-40"
+  },
+  {
+   "fact": "Stage: one slide image, max width min(520, 600 x ratio) px, i.e. 480 px for 4:5; slide strip thumbnails 72 px wide; look strip cards 144-160 px wide, each a real render of slide 1 in that look.",
+   "evidence": "quorum/site/src/components/admin/design-lab-workspace.tsx:99, :116, :141-143"
+  },
+  {
+   "fact": "Navigation is by buttons only (previous/next slide, slide strip, article rail); no component in design-lab-* registers a keyboard handler.",
+   "evidence": "design-lab-workspace.tsx:110-112; grep -n 'onKeyDown|keydown' site/src/components/admin/design-lab-* returns nothing"
+  },
+  {
+   "fact": "A chip click updates the recipe and, when writes are enabled, immediately POSTs it; the store PUTs the JSON file to GitHub (repository default lukaskourilcz/quorum, branch default main) and returns the commit. Without a token on Vercel it refuses with UNCONFIGURED.",
+   "evidence": "design-lab-workspace.tsx:66-71, :44; quorum/site/src/lib/carousel-studio-admin-store.ts:181-184, :191-192, :213-216"
+  },
+  {
+   "fact": "Text editing is one free textarea per slide with a 30-word cap; the preview updates only after 'Uložit slide'.",
+   "evidence": "design-lab-inspector.tsx:28, :32-35; design-lab-model.ts:41"
+  },
+  {
+   "fact": "The Lab works on article summary decks (LabArticle built from stored article packages, buildArticleDeck/derivedCopyPack); no file under site/ calls renderDneskaiSlide, validateDneskaiSlide or DNESKAI_PHOTO_TEMPLATES.",
+   "evidence": "quorum/site/src/lib/design-lab.ts:5-24; grep -rln 'renderDneskaiSlide|DNESKAI_PHOTO_TEMPLATES|validateDneskaiSlide' site returns nothing"
+  },
+  {
+   "fact": "Approval is outside the Lab: edits create a draft in Quorum's Queue and 'every publication needs its own approval and a connected social profile'; nothing hashes the rendered bytes.",
+   "evidence": "design-lab-workspace.tsx:230; design-lab-package-workspace.tsx:134 (POST /admin/api/queue/actions)"
+  },
+  {
+   "fact": "The Canva tab builds a brief with every slide's text, canvas size, palette, fonts and photo credit and names instagram.com/technology as the visual reference.",
+   "evidence": "design-lab-model.ts:66-85, :73; design-lab-inspector.tsx:62-67"
+  },
+  {
+   "fact": "Tests: 6 workspace component tests, 2 bilingual, 2 WebDev Signal, 27 lib tests (brand 5, families 2, package 9, tehdejsi 1, ventures 10) plus e2e for the workspace and Brand tab with axe across themes and widths.",
+   "evidence": "grep -cE '^\\s*(it|test)\\(' on each test file; quorum/site/tests/e2e/admin-workflows-qa.spec.ts:177, :223, :243"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Stage width (4:5)",
+   "value": "480 px max (min(520, 600 x 0.8))",
+   "evidence": "design-lab-workspace.tsx:99"
+  },
+  {
+   "name": "Slide strip thumbnail",
+   "value": "72 px wide",
+   "evidence": "design-lab-workspace.tsx:116"
+  },
+  {
+   "name": "Words per slide",
+   "value": "30",
+   "evidence": "design-lab-model.ts:41"
+  },
+  {
+   "name": "Type scales",
+   "value": "0.9, 1, 1.1",
+   "evidence": "design-lab-model.ts:40"
+  },
+  {
+   "name": "Render cache",
+   "value": "private, max-age=300 per slide URL",
+   "evidence": "deck route.ts:97"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "GitHub commits written by the Lab",
+   "value": "79 commits titled 'admin: set the … deck design for …' on Quorum main; 45 of them for one article (2026-08-08), 14 for 2026-09-25, 10 for 2026-08-19; 111 'admin:' commits in all; none since 1 October",
+   "method": "git -C quorum log --format=%s --grep='^admin: set the' | sort | uniq -c"
+  },
+  {
+   "what": "Design Lab code size",
+   "value": "Components 1,000 lines (design-lab-*.tsx/.ts incl. tests 187), lib 1,375 lines incl. tests",
+   "method": "wc -l site/src/components/admin/design-lab-* site/src/lib/*design-lab*"
+  },
+  {
+   "what": "Test count",
+   "value": "37 unit/component tests across 8 files plus 2 e2e scenarios with axe",
+   "method": "grep -c over the test files; e2e spec read"
+  }
+ ],
+ "findings": [
+  {
+   "id": "DL-01",
+   "title": "The look strip (every look rendered as a real cover, side by side) is the instant kit switch the owner wants",
+   "category": "modernity",
+   "claim": "Under the stage the Lab renders slide 1 of the current article in each of the five launch looks as real server renders in a horizontal strip; clicking one previews it on the stage. This is the interaction the owner's Design Lab needs for five DNESKAi kits, and it maps directly onto per-kit cover renders.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 141,
+     "excerpt": "<div className=\"w-full overflow-x-auto\" data-horizontal-scroll><ol className=\"flex gap-3 pb-1\">{LAUNCH_FAMILIES.map((family) => <li className=\"w-36 shrink-0 md:w-40\" key={family}>"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 143,
+     "excerpt": "<SlideImage alt={`${family}: titulní slide`} canvas={false} ratio={1080 / 1350} src={slideUrl(article, { ...recipe, family }, \"instagram-portrait\", 1, false, revision)} />"
+    }
+   ],
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Port the pattern, not the code: in OwnDashboard show the five kits' covers of the selected post as a strip (rendered on demand through the preview route of rendering REN-01), with the selected kit outlined; apply OwnDashboard's tokens and the macOS split-pane contract.",
+   "impactStatement": "Choosing a kit by comparing five real covers takes seconds instead of a save-render-look loop per kit; central to owner goals 3 and 4.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "design-lab-workspace.tsx:141-143 renders slide 1 per LAUNCH_FAMILIES entry via slideUrl; each is a server PNG from the deck route (renderCarouselSlidePng).",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Directly serves instant kit switch; needs the preview route (REN-01)."
+   }
+  },
+  {
+   "id": "DL-02",
+   "title": "Every chip click and text save is a commit to Quorum's main branch",
+   "category": "simplicity",
+   "claim": "change() sets the recipe and immediately posts it; the store PUTs a JSON file through the GitHub Contents API to lukaskourilcz/quorum main by default. History shows 79 design commits, 45 for a single article.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 70,
+     "excerpt": "if (writesEnabled) void applyRecipe(merged);"
+    },
+    {
+     "file": "quorum/site/src/lib/carousel-studio-admin-store.ts",
+     "line": 192,
+     "excerpt": "const branch = process.env.BOARDLESSAI_GITHUB_BRANCH ?? \"main\";"
+    },
+    {
+     "file": "quorum/site/src/lib/carousel-studio-admin-store.ts",
+     "line": 216,
+     "excerpt": "body: JSON.stringify({ message, content: Buffer.from(`${JSON.stringify(next, null, 2)}\\n`).toString(\"base64\"), branch, ...(sha ? { sha } : {}) })"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Do not port the store. In OwnDashboard keep the chosen kit as a row (or a deck field per approval-06) and only persist on an explicit choice; previews are ephemeral.",
+   "impactStatement": "Trying looks pollutes git history, needs a GitHub token on the deployment and a network round trip per click; in OwnDashboard a merge to main deploys production, so this persistence model must not be ported.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "workspace.tsx:66-71 auto-posts on change; admin-store.ts:191-216 PUTs to GitHub main by default; git log counts 79 design commits, 45 for one article.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Keeps a harmful persistence model out of OwnDashboard, where main deploys production."
+   }
+  },
+  {
+   "id": "DL-03",
+   "title": "The stage is small: 480 px for 4:5 and 72 px thumbnails",
+   "category": "quality",
+   "claim": "The stage caps the slide at min(520, 600 x ratio) px, 480 px for 4:5, with a 72 px slide strip. OwnDashboard's review card today shows thumbnails of at most 128 px and no large view.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 99,
+     "excerpt": "<div className=\"relative w-full shadow-xl\" style={{ maxWidth: `${Math.min(520, 600 * canvas.ratio)}px` }}>"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 116,
+     "excerpt": "<ol className=\"flex gap-2\" aria-label=\"Slidy karuselu\" data-slide-strip>{article.slides.map((entry) => <li key={entry.index} className=\"w-[72px] shrink-0\">"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "In OwnDashboard size the stage to the pane (up to the 1080 px master at 1x on large screens, with a phone-frame toggle at about 390 px CSS width to judge feed size) and keep thumbnails of 96-128 px.",
+   "impactStatement": "Judging Czech type, crops and credits at 480 px is workable on a laptop but not ideal; the owner's brief asks for 'see each post large'.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "workspace.tsx:99 maxWidth min(520, 600*ratio) = 480 px at 4:5; :116 72 px strip.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "'See each post large' is an explicit owner goal and cheap to size right."
+   }
+  },
+  {
+   "id": "DL-04",
+   "title": "No keyboard flow",
+   "category": "speed",
+   "claim": "Slides, looks and articles are changed only by clicking buttons; no design-lab component handles key events.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 110,
+     "excerpt": "<Button type=\"button\" variant=\"secondary\" aria-label=\"Předchozí slide\" disabled={slide === 0} onClick={() => setSlide((value) => value - 1)}><ArrowLeft aria-hidden=\"true\" className=\"size-4\" /></Button>"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 112,
+     "excerpt": "<Button type=\"button\" variant=\"secondary\" aria-label=\"Další slide\" disabled={slide === article.slides.length - 1} onClick={() => setSlide((value) => value + 1)}><ArrowRight aria-hidden=\"true\" className=\"size-4\" /></Button>"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Design the OwnDashboard Lab keyboard-first: ←/→ slides, ↑/↓ posts, 1-5 kits, E edit, A approve (with the exact-bytes confirmation), all announced and documented, respecting WCAG 2.2 (no single-key shortcuts without a way to turn them off or remap).",
+   "impactStatement": "For 4 posts x 7 slides x 5 kits a day, arrow keys, 1-5 for kits and one approve key would save the owner a few minutes daily and fit the under-10-minutes goal.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "grep onKeyDown|keydown in design-lab-* is empty; navigation via buttons at :110-112.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Keyboard flow is a direct owner-minute saving at 4 posts a day."
+   }
+  },
+  {
+   "id": "DL-05",
+   "title": "Lab text editing is one free textarea per slide; OwnDashboard's per-field editor is the better base",
+   "category": "quality",
+   "claim": "The inspector edits a slide as one textarea with a 30-word cap and refreshes the preview only after saving; DNESKAi slides have per-field limits (headline, body, kicker, credit) and code-owned fields. The package workspace shows per-field problems after save, which is the useful part.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-inspector.tsx",
+     "line": 28,
+     "excerpt": "<AdminTextarea id={`slide-${article.id}`} className=\"min-h-44 text-base leading-relaxed\" value={current} disabled={!writable || busy}"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-inspector.tsx",
+     "line": 35,
+     "excerpt": "<p className=\"text-xs leading-relaxed text-[var(--admin-foreground-muted)]\">Jedna myšlenka na slide. Náhled a export se aktualizují po uložení textu.</p>"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-package-workspace.tsx",
+     "line": 16,
+     "excerpt": "interface Problem { slide: number; field: \"headline\" | \"body\" | \"alt\" | \"code\"; slot: string | null; message: string }"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Keep OwnDashboard's per-field editor and counters; borrow only the per-field problem list placement, fed live by validation through the preview route.",
+   "impactStatement": "Porting the textarea would lose the per-field limits and gates that keep DNESKAi copy printable.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "inspector.tsx:28 single textarea, :35 preview after save; model.ts:41 30 words; package-workspace.tsx:16 per-field problems.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Guidance for implementers; OwnDashboard's editor already exists."
+   }
+  },
+  {
+   "id": "DL-06",
+   "title": "The Lab does not touch approval; its semantics must not be carried over",
+   "category": "risk",
+   "claim": "A Lab change writes overrides and, for packages, drafts into Quorum's Queue; approval happens elsewhere and nothing binds a rendered byte hash. OwnDashboard's approval binds the revision content hash including rendered asset sha256s.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-workspace.tsx",
+     "line": 230,
+     "excerpt": "{article?.kind !== \"package\" ? <p className=\"text-xs leading-relaxed text-[var(--admin-foreground-muted)]\">Úpravy vytvoří nový koncept v Queue. Každé publikování vyžaduje samostatné schválení a připojený sociální profil.</p> :"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-package-workspace.tsx",
+     "line": 134,
+     "excerpt": "const response = await fetch(\"/admin/api/queue/actions\", {"
+    }
+   ],
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "In OwnDashboard, any kit or text change produces a new revision whose rendered bytes the owner approves; the Lab shows the hash state ('changed since approval') next to the approve button.",
+   "impactStatement": "A port that kept 'save look = done' would let a kit switch slip past the hard rule that approval binds exact bytes.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "workspace.tsx:230 sends drafts to Quorum's Queue for separate approval. Correction: the package workspace does carry a hash: design-lab-package-workspace.tsx:138 posts action 'rerender' with expectedContentHash of the queue item, an optimistic-concurrency check on the draft, not an approval bound to rendered bytes. The conclusion (the Lab itself approves nothing) holds.",
+    "correctedLocations": [
+     {
+      "file": "quorum/site/src/components/admin/design-lab-package-workspace.tsx",
+      "line": 138,
+      "excerpt": "body: JSON.stringify({ action: \"rerender\", itemId: item.id, expectedContentHash: item.contentHash })"
+     }
+    ]
+   },
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "medium",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Protects the exact-bytes approval rule during the port."
+   }
+  },
+  {
+   "id": "DL-07",
+   "title": "Article coupling makes the Lab's data model unusable for DNESKAi posts",
+   "category": "simplicity",
+   "claim": "LabArticle, recipes and the deck route are keyed by venture/slug/date of a stored article and build article summary decks; the DNESKAi photo kit is never rendered from site/.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/lib/design-lab.ts",
+     "line": 13,
+     "excerpt": "buildArticleDeck,"
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-model.ts",
+     "line": 64,
+     "excerpt": "return `/admin/api/carousel-studio/deck/${article.venture}/${encodeURIComponent(article.slug)}/${article.date}/${encodeURIComponent(token(recipe))}/${slide}?${query}`;"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Build the OwnDashboard Lab on dneskai-slides/1 revisions and the review read model; reuse only UI patterns (DL-01, DL-03).",
+   "impactStatement": "Rules out porting the model or routes; OwnDashboard's revision/deck contract is the model to build on.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "design-lab.ts:13 imports buildArticleDeck; model.ts:64 routes by venture/slug/date; no DNESKAi API use in site/.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Informative; already implied by building on OwnDashboard revisions."
+   }
+  },
+  {
+   "id": "DL-08",
+   "title": "Canvas chips offer five shapes; DNESKAi composes one",
+   "category": "quality",
+   "claim": "The Lab lets the owner switch among 4:5, square, story, Threads and LinkedIn; DNESKAi templates derive no canvas but 4:5, so the chips would only produce refusals.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-model.ts",
+     "line": 14,
+     "excerpt": "{ id: \"instagram-portrait\", label: \"Příspěvek 4:5\", ratio: 1080 / 1350, width: 1080, height: 1350, master: true },"
+    },
+    {
+     "file": "quorum/studio/src/dneskai-photo.ts",
+     "line": 152,
+     "excerpt": "canvas: { master: MASTER_FORMAT, derive: [] },"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Offer 4:5 plus a 3:4 grid preview only; add canvases when a kit composes them.",
+   "impactStatement": "Avoids porting dead controls; the useful 'other shape' for DNESKAi is the 3:4 grid crop (rendering REN-06).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "model.ts:13-19 five canvases; dneskai-photo.ts:152 derive [].",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Covered by REN-06."
+   }
+  },
+  {
+   "id": "DL-09",
+   "title": "The Canva hand-off copies all slide text out and names @technology as the reference",
+   "category": "risk",
+   "claim": "The Canva tab builds a brief with every slide's text, palette, fonts and credit for pasting into Canva and points to instagram.com/technology as the visual model.",
+   "evidence": [
+    {
+     "file": "quorum/site/src/components/admin/design-lab-model.ts",
+     "line": 73,
+     "excerpt": "\"Visual reference: https://www.instagram.com/technology/ — photo-led covers, dense bold headlines, restrained branding and strong contrast."
+    },
+    {
+     "file": "quorum/site/src/components/admin/design-lab-inspector.tsx",
+     "line": 64,
+     "excerpt": "<CopySocialText text={canvaBrief(article, recipe, format, texts)} />"
+    }
+   ],
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Leave it out of the OwnDashboard Lab; keep design work inside the studio and its gates.",
+   "impactStatement": "A design made in Canva leaves the exact-bytes pipeline (no studio gates, no render key), so it cannot be approved and published by OwnDashboard as built.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "model.ts:73 reference URL; inspector.tsx:62-67 Canva tab.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Simply not ported; nothing for the owner."
+   }
+  },
+  {
+   "id": "DL-10",
+   "title": "The Lab's e2e and axe coverage is a ready template for OwnDashboard's tests",
+   "category": "quality",
+   "claim": "Quorum runs e2e scenarios for the Design Lab workspace and Brand tab with axe checks across light/dark themes and viewports, plus 37 unit and component tests.",
+   "evidence": [
+    {
+     "file": "quorum/site/tests/e2e/admin-workflows-qa.spec.ts",
+     "line": 177,
+     "excerpt": "test(\"Design Lab renders a manual export workspace and keeps social publishing closed\", async ({"
+    },
+    {
+     "file": "quorum/site/tests/e2e/admin-workflows-qa.spec.ts",
+     "line": 243,
+     "excerpt": "await expectNoHighImpactAxeViolations(page, `${theme} ${viewport.width}px Brand tab`, [\"[data-design-lab-brand]\"]);"
+    }
+   ],
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Mirror the scenario list (empty state, writes disabled, link to one item, axe per theme and width) in OwnDashboard's e2e for the Lab.",
+   "impactStatement": "Shortens test design for the new surface; OwnDashboard already has its own e2e and axe for the DNESKAi workspace, so the gain is modest.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "admin-workflows-qa.spec.ts:177, :223, :243 e2e with axe.",
+    "correctedLocations": []
+   },
+   "impact": {
+    "keep": false,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Useful to implementers, not an owner item."
+   }
+  }
+ ],
+ "openQuestions": [
+  "Is the Quorum Design Lab still used for anything now that DNESKAi articles are paused (no admin commits since 1 October)? If not, it can be frozen rather than ported.",
+  "Which keyboard shortcuts does the owner want, and should single-key shortcuts be on by default?"
+ ],
+ "verification": {
+  "confirmed": 9,
+  "partly": 1,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 5,
+  "dropped": 5,
+  "quickWins": 4,
+  "verifiedAt": "2026-10-22T00:21:05Z",
+  "verifier": "A-map-1",
+  "repoCommit": "own-dashboard 8df25a5, quorum 76314a3, aifirst 0e88cf6",
+  "notes": [
+   "Both lenses applied in a separate pass; 22/22 evidence excerpts at cited lines.",
+   "Owner decisions: none required; open question whether the Quorum Lab can be frozen.",
+   "Measurement: git log of Lab commits on Quorum main ($0).",
+   "DL-06 corrected after a recheck: the package workspace sends expectedContentHash (concurrency on the queue draft), not an approval hash."
+  ]
+ },
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-designlab.json"
+}

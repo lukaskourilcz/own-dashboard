@@ -1,0 +1,1492 @@
+{
+ "subsystem": "scheduler",
+ "summary": "The scheduler is sound as a driver that never runs a unit twice and never spends by accident: pg_cron (*/5 and 02:18 UTC) signs a {tick, kind} body with HMAC-SHA256 from two Vault secrets, the Node route (maxDuration 60) runs seven categories in a fixed order under 90 s leases, a 48 s start cutoff, per-category minimum starts (generation 43 s) and a 53 s abort, and records every tick in marketing_ticks. Its limits are latency and headroom, not correctness. One generation job per 5-minute tick and at most five collection operations per tick make a 4-brief night take about 36-50 minutes of wall time for 3-4 minutes of work (fourth post in review around 22:36 from a 22:00 Prague start under ideal conditions, 22:45-22:50 with Apify profiles or a second media pass; computed from code constants, not measured live). A job renders only after its 45 s model budget and under the tick's 53 s abort, so a slow two-attempt job can lose its model spend with no replay. A five-kit pre-render (40 slides, about 6-10 s of rendering plus about 16 s of sequential four-round-trip uploads) cannot live inside the generation step, but fits as an overnight render category (one post per tick, 4 ticks for 4 posts) or as on-demand single-kit renders of 2-4 s in a user route; a queue or worker is not needed for 4 posts a day. Production still lacks marketing_scheduler_prune_ticks and the history-prune job, so every daily tick since 22 Oct records retention: scheduler-state-unavailable while docs/marketing-scheduling.md presents both as live. The owner must understand 4 pg_cron jobs, 3 Vercel crons, 8 SQL functions, 8 leases, 7+3 categories, 7 statuses, 6 behaviour switches plus 9 pilot/manual variables that do nothing in production, and 23 marketing routes including dormant n8n-era entry points. The scheduler's unit tests (67) pass in 1.65 s; the end-to-end dry-day harness is green in CI on Node 22 but fails on this machine's Node 26 at project resolution.",
+ "files": [
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+   "role": "runMarketingTick: category order, budgets, leases, daily duties, tick record"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+   "role": "wiring of the tick to collection, media, briefs, jobs, publishing, tokens, renewal"
+  },
+  {
+   "path": "own-dashboard/src/app/api/marketing/tick/route.ts",
+   "role": "the pg_cron entry point: HMAC auth, scheduler role, maxDuration 60"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020160000_marketing_scheduler.sql",
+   "role": "marketing_ticks, marketing_scheduler_state, six service-role functions"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+   "role": "pg_cron jobs, Vault read, HMAC signing, pg_net POST with 55 s timeout"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-scheduling.md",
+   "role": "owner documentation of the tick (compared against code)"
+  },
+  {
+   "path": "own-dashboard/docs/migration-guide.md",
+   "role": "production apply record: which scheduler objects are missing"
+  },
+  {
+   "path": "own-dashboard/NEEDED.md",
+   "role": "open owner item for the retention statements"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/automation-auth.ts",
+   "role": "HMAC verifier, 300 s skew, scheduler role"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+   "role": "executeMarketingJob: 55 s job signal, 45 s model budget, slide storage round trips"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/generation.ts",
+   "role": "generation budget defaults (2 attempts, 2,500 output tokens)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+   "role": "deck renderer: parallel cache finds, sequential render and upload loops"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+   "role": "collection tick: 5 operations, 45 s, 25 s per feed, retryAfterSeconds 15"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+   "role": "media pass limits (8 candidates, 15 s fetch and storage timeouts)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+   "role": "slots, 30-minute lead, 8 jobs per 24 h admission"
+  },
+  {
+   "path": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+   "role": "owner edit path with the synchronous 45 s re-render"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/publisher.ts",
+   "role": "container poll (3 x 1 s) that pushes media_publish to the next tick"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+   "role": "Chyby a naklady: how ticks and errors reach the owner"
+  },
+  {
+   "path": "own-dashboard/services/marketing-worker/protocol.ts",
+   "role": "runMarketingWorkerJob: render happens after the draft, inside the job"
+  },
+  {
+   "path": "own-dashboard/services/marketing-worker/README.md",
+   "role": "the unhosted external worker protocol"
+  },
+  {
+   "path": "own-dashboard/src/app/api/marketing/jobs/[id]/execute/route.ts",
+   "role": "existing on-demand job execution route (worker role)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/pilot.ts",
+   "role": "pilot tuple rules (ignored outside Preview)"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/preview-pilot.ts",
+   "role": "previewPilotRetired: production ignores the pilot tuple"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-scheduler.test.ts",
+   "role": "37 scheduler unit tests (budget, leases, duties)"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-scheduler-database.test.ts",
+   "role": "PGlite tests of both migrations, signing, prune job"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-scheduler-ports.test.ts",
+   "role": "port wiring tests"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-tick-route.test.ts",
+   "role": "route auth tests"
+  },
+  {
+   "path": "own-dashboard/tests/lib/marketing-dneskai-render.test.ts",
+   "role": "renderer tests used for the per-slide timing measurement"
+  },
+  {
+   "path": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+   "role": "end-to-end night harness on the real tick (fails locally on Node 26)"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-source-media.md",
+   "role": "media doc with a stale pre-scheduler statement"
+  },
+  {
+   "path": "own-dashboard/scaling.md",
+   "role": "Vercel Hobby assumption and 0.2 s per slide figure"
+  },
+  {
+   "path": "own-dashboard/vercel.json",
+   "role": "three non-marketing Vercel crons"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/20260724110000_cron_runs.sql",
+   "role": "the fourth pg_cron job (purge-cron-runs)"
+  },
+  {
+   "path": "own-dashboard/.github/workflows/ci.yml",
+   "role": "CI runs tests on Node 22"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "Cron cadence: marketing-tick-minute every 5 minutes UTC, marketing-tick-daily at 02:18 UTC, marketing-cron-history-prune at 03:43 UTC (the last one is not in production).",
+   "evidence": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql:87-89 `cron.schedule('marketing-tick-minute','*/5 * * * *'...)`, `('marketing-tick-daily','18 2 * * *'...)`, `('marketing-cron-history-prune','43 3 * * *'...)`; docs/migration-guide.md:703 `went in without the marketing-cron-history-prune job`",
+   "check": {
+    "status": "partly",
+    "note": "Repo schedules three marketing cron jobs (cron.sql:87-89). Production cron.job has two: marketing-tick-minute (*/5) and marketing-tick-daily (18 2 * * *); the history prune is missing as stated, and purge-cron-runs is missing too."
+   }
+  },
+  {
+   "fact": "Signing: scheduler_post reads marketing_scheduler_url and marketing_scheduler_secret from Vault, refuses a URL whose path is not exactly /api/marketing/tick or a secret under 32 chars or with whitespace, builds {tick: gen_random_uuid(), kind}, and sends Authorization: Bearer, X-Marketing-Timestamp and X-Marketing-Signature = hex(HMAC-SHA256(secret, timestamp||'.'||body)) with a 55 s pg_net timeout.",
+   "evidence": "20261020160100_marketing_scheduler_cron.sql:55 `encode(extensions.hmac(convert_to(p_timestamp||'.'||p_body,'UTF8'),convert_to(p_secret,'UTF8'),'sha256'),'hex')`; :67-70 `from vault.decrypted_secrets ... v_url !~ '^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?/api/marketing/tick$' or char_length(v_secret)<32`; :71 `jsonb_build_object('tick',gen_random_uuid(),'kind',p_kind)`; :78 `timeout_milliseconds:=55000`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The route verifies the same HMAC over `timestamp.body` with a 300 s skew window, requires the secret to be at least 32 chars, and accepts only the `scheduler` role; the body is bounded to 4,000 bytes; any thrown error answers 503 tick-unavailable.",
+   "evidence": "own-dashboard/src/lib/marketing/automation-auth.ts:15 `if(Math.abs(now-Number(time)*1000)>300000) return null;`, :23 `if(!secret || secret.length<32) continue;`, :26 `createHmac('sha256',secret).update(`${time}.${body}`)`; src/app/api/marketing/tick/route.ts:20 `boundedRequestText(request, 4000)`, :27 `if (principal.role !== \"scheduler\") return ... 403`, :35 `{ error: \"tick-unavailable\" }, { status: 503 }`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Vercel runtime: the tick route is Node with maxDuration 60; the revisions route and the jobs execute route also pin 60.",
+   "evidence": "src/app/api/marketing/tick/route.ts:8-9 `export const runtime = \"nodejs\"; export const maxDuration = 60;`; src/app/api/marketing/revisions/route.ts:14 `export const maxDuration=60;`; src/app/api/marketing/jobs/[id]/execute/route.ts:8 `export const maxDuration = 60;`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Category order of a minute tick: collection, media, briefs, generation, publishing, reconciliation, token; daily duties: renewal, purge, retention; eight lease names (purge shares the media lease, retention takes none).",
+   "evidence": "src/lib/marketing/scheduler.ts:33 `MARKETING_TICK_CATEGORIES = [\"collection\", \"media\", \"briefs\", \"generation\", \"publishing\", \"reconciliation\", \"token\"]`, :35 `MARKETING_DAILY_DUTIES = [\"renewal\", \"purge\", \"retention\"]`, :458 `category: \"purge\", lease: \"media\"`, :472 `category: \"retention\", lease: null`; 20261020160000_marketing_scheduler.sql:35 `check (category in ('collection','media','briefs','generation','publishing','reconciliation','token','renewal'))`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Lease: every category takes a 90 s lease through marketing_scheduler_acquire (1-300 s allowed); a live lease of another holder answers busy, a future next_allowed_at answers backoff; release refuses a backoff beyond 2 days.",
+   "evidence": "scheduler.ts:55 `MARKETING_TICK_LEASE_SECONDS = 90`, :506 `store.acquire(step.lease, holder, MARKETING_TICK_LEASE_SECONDS)`; 20261020160000_marketing_scheduler.sql:73 `p_seconds not between 1 and 300`, :77-78 `if s.lease_until>clock_timestamp() and s.holder is distinct from p_holder then ... 'busy'`, :95 `p_next_allowed_at>clock_timestamp()+interval '2 days' then raise exception`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Budgets: no category starts after 48 s (soft), every abort signal fires at 53 s (hard), and each category needs a minimum of the soft budget left: collection 20 s, media 25 s, briefs 5 s, generation 43 s, publishing 15 s (30 s when live), reconciliation 5 s, token 16 s, renewal 15 s, purge 10 s, retention 1 s. Prechecks run before the minimum check; a step with under 1 s left or an aborted signal is deferred as tick-budget-exhausted.",
+   "evidence": "scheduler.ts:51 `MARKETING_TICK_SOFT_BUDGET_MS = 48_000`, :53 `MARKETING_TICK_HARD_BUDGET_MS = 53_000`, :75-76 `collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000, renewal: 15_000, purge: 10_000, retention: 1_000`, :367 `marketingPublishingLive(env) ? MARKETING_LIVE_PUBLISH_MINIMUM_START_MS : MINIMUM_START_MS.publishing`, :498-503 `if (remaining() < 1_000 || signal.aborted) return record(budgetSpent); ... const early = await step.precheck?.(); ... if (remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "A tick is recorded twice: marketing_scheduler_begin_tick inserts the caller's uuid as primary key (a replay finds the row and does nothing), marketing_scheduler_finish_tick writes finished_at, did (max 20 entries, 16 KB) and errors (8 KB). A tick that dies keeps finished_at null and errors [].",
+   "evidence": "20261020160000_marketing_scheduler.sql:55-56 `insert into public.marketing_ticks(id,user_id,kind) values(p_tick,p_owner,p_kind) on conflict (id) do nothing; return found;`, :63 `update public.marketing_ticks set finished_at=clock_timestamp(),did=p_did,errors=p_errors where id=p_tick ... and finished_at is null`, :22-23 `jsonb_array_length(did)<=20 and pg_column_size(did)<=16384 ... pg_column_size(errors)<=8192`; scheduler.ts:235-237 `if (!(await ports.store.beginTick(...))) { return { ..., duplicate: true, recorded: false ... } }`, :486 `recorded = await ports.store.finishTick(input.tick, did, errors)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The daily tick runs only renewal (newest 50 approved/ready revisions, URLs expiring within 48 h, at most 10 renewals, permanent refusals set aside 7 days), purge (purgeUnusedDneskaiMedia 30 days under the media lease, skipped while a media claim is live) and retention (pruneTicks 14 days). Token refresh is a minute-tick category, not a daily duty.",
+   "evidence": "scheduler.ts:73 `MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000`, :85 `RENEWALS_PER_TICK = 10`, :89 `RENEWAL_SET_ASIDE_MS = 7 * 24 * 60 * 60_000`, :460 `if (await ports.mediaCollectionActive()) return { status: \"skipped\", code: \"media-collection-in-progress\", pending: true };`, :462 `untilCutOff(ports.purgeMedia(MARKETING_MEDIA_RETENTION_DAYS), abort, \"purge-cut-off\")`, :474 `ports.store.pruneTicks(MARKETING_TICK_RETENTION_DAYS)`, :392-395 token precheck `instagramTokenRefreshDue(token, clock())` inside minuteSteps",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "While the retention SQL is missing in production, pruneTicks' RPC error is rethrown as scheduler-state-unavailable, so every daily tick records errors [{category: retention, code: scheduler-state-unavailable}], marketing_ticks keeps every row (289 per day) and cron.job_run_details is never pruned; the workspace counts the daily tick as an error tick.",
+   "evidence": "scheduler.ts:533 `if (error) throw new Error(\"scheduler-state-unavailable\");`, :551 `rpc(\"marketing_scheduler_prune_ticks\", ...)`, :514 `outcome = { status: \"error\", code: schedulerFailureCode(error, step.category) }`; docs/migration-guide.md:702 `marketing_scheduler_prune_ticks is not in production yet`, :711 `the daily tick records an error for its last step, retention`; NEEDED.md:9 `Run the two DNESKAi retention statements`; src/lib/marketing/dneskai-workspace-read.ts:210 `withErrors: ticks.filter((tick) => tick.errors.length).length`",
+   "check": {
+    "status": "partly",
+    "note": "Code path confirmed; no daily tick had run by DB clock 2026-10-21 23:56 UTC, so the recorded error is predicted, not observed."
+   }
+  },
+  {
+   "fact": "Generation runs one job per tick: the precheck lists up to 5 queued DNESKAi jobs oldest first, the step executes exactly one and marks the category pending when more remain; a job that throws before claim is blocked for an hour (max 10 blocked).",
+   "evidence": "scheduler.ts:341 `queuedJobs = await ports.queuedGenerationJobs(5);`, :348 `const jobId = queuedJobs.find((id) => !blocked[id]);`, :351 `await ports.executeJob(jobId, abort)`, :354 `pending: queuedJobs.length > 1`, :81-82 `JOB_BLOCK_MS = 60 * 60_000; MAX_BLOCKED_JOBS = 10`; scheduler-ports.ts:73 `.order(\"created_at\").order(\"id\").limit(Math.max(1, Math.min(20, limit)))`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Collection progresses at most 5 operations per tick within a 45 s call; a free feed starts only with 25 s ahead (except the first); Jev batches (8 candidates each, max 16) are planned only after every source stage settled; an unfinished run answers continue: true with retryAfterSeconds 15, which the scheduler turns into a next_allowed_at that is always shorter than the 5-minute cadence.",
+   "evidence": "src/lib/marketing/dneskai-collection.ts:33 `Math.min(45000, ...)` / `:45000`, :37 `if(operations>=5||signal.aborted)break;`, :42 `if(!paid&&operations>0&&callEnds-Date.now()<DNESKAI_FEED_TIMEOUT_MS)break;`, :13 `DNESKAI_FEED_TIMEOUT_MS=25_000`, :58 `continue:true,retryAfterSeconds:15`, :63 planJev after `stage.kind!=='jev'` stages settle, :101 `DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16`; scheduler.ts:278-282 `Math.min(300, Math.max(0, response.retryAfterSeconds)) ... nextAllowedAt: retry ? iso(now().getTime() + retry * 1000) : null`",
+   "check": {
+    "status": "verified",
+    "note": "Production: the 21 Oct run took 4 collection ticks (avg 15.5 s each), 8 Jev batches."
+   }
+  },
+  {
+   "fact": "A media pass handles at most 8 candidates with a budget of min(40 s, remaining-3 s); fetch and storage timeouts are 15 s each; a busy candidate backs off 125 s, a failed pass 10 minutes.",
+   "evidence": "scheduler.ts:296 `Math.min(MARKETING_TICK_MEDIA_BUDGET_MS, remainingMs() - 3_000)`, :79-80 `MEDIA_BUSY_BACKOFF_MS = 125_000; MEDIA_FAILURE_BACKOFF_MS = 10 * 60_000`; src/lib/marketing/dneskai-media.ts:233 `.min(1).max(8)`, :33 `DNESKAI_MEDIA_FETCH_TIMEOUT_MS = 15_000`, :41 `DNESKAI_MEDIA_STORAGE_TIMEOUT_MS = 15_000`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "A job is bounded by a 55 s signal (or the tick's signal, whichever fires first); the 45 s maxLatencyMs covers the model attempts (2 attempts, 2,500 output tokens each) and rendering runs afterwards inside the same job; a failure finishes the job as failed with no replay, persisting only usage.",
+   "evidence": "src/lib/marketing/worker-runtime.ts:269 `const remainingMs = pilot ? Math.min(55000, ...) : 55000;`, :271 `AbortSignal.any([dependencies.signal, AbortSignal.timeout(remainingMs)])`, :308 `budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...`, :327 `// No automatic replay; never persist provider response/credentials/exception text.`; src/lib/marketing/generation.ts:64 `maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000`, :358 `AbortSignal.timeout(budget.maxLatencyMs)`; services/marketing-worker/protocol.ts:203 `await renderDneskaiRevisionAssets(draft, job.generation.revisionId, dependencies.renderDneskaiDeck, dependencies.signal)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The renderer checks the slide cache in parallel but renders and uploads slides one after another; a cache hit costs info + download + sha256 + sign, an upload costs upload + info + download + sign.",
+   "evidence": "src/lib/marketing/dneskai-render.ts:353 `const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));`, :359 `for (const [index, slide] of deck.slides.entries()) {`, :376 `result = await engine.renderDneskaiSlide(studioInput);`, :393-405 second sequential loop ending `stored = await storageStage(() => storage.put({...}))`; worker-runtime.ts:218 `await store.info(key)`, :224 `await store.download(key)`, :227 `await signedAssetUrl(store, key, options.signal)`, :177-182 `files.upload(...)`, `files.info(key)`, `files.download(key)`, `signedAssetUrl(files, key, signal)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Owner edits re-render synchronously: the superseding revision is saved first with no slides, then rendered under a 45 s abort; a render failure answers 502 render-attach-failed with the new revision unready.",
+   "evidence": "src/app/api/marketing/revisions/route.ts:62 `const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:[]});`, :64 `renderAndAttachDneskaiRevision(... signal:AbortSignal.timeout(45000)})`, :65 `catch{return NextResponse.json({id:saved.id,ready:false,error:'render-attach-failed'},{status:502});}`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Publishing yields: while live publishing is on and a DNESKAi publication is due within 5 minutes (15-minute window) or a claimed carousel waits for its container, collection, media, briefs and generation defer with yield-to-publication; the publisher polls a container 3 times at 1 s and otherwise returns container-pending for the next tick; a claim lasts 10 minutes.",
+   "evidence": "scheduler.ts:63 `MARKETING_PUBLICATION_YIELD_MS = 5 * 60_000`, :246 `marketingPublishingLive(env) ? ports.publicationDueSoon(MARKETING_PUBLICATION_YIELD_MS) : Promise.resolve(false)`, :248 `{ status: \"deferred\", code: \"yield-to-publication\", pending: true }`; scheduler-ports.ts:23 `DUE_WINDOW_MS = 15 * 60_000`, :51-52 containerPending; src/lib/marketing/publisher.ts:418 `Math.min(3, input.config.pollAttempts ?? 3)`, :423 `Math.min(1000, input.config.pollIntervalMs ?? 1000)`, :425 `if (status === 'IN_PROGRESS') return result('pending', 'container-pending', container);`; supabase/migrations/20261012225640_marketing_control_surface.sql:245 `lease_until=now()+interval '10 minutes'`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "Production ignores the pilot tuple (VERCEL_ENV is not preview), so tick authentication depends only on MARKETING_OWNER_ID and MARKETING_SCHEDULER_SECRET; in a Preview deployment an expired or malformed tuple makes authenticateAutomation return null (401) for every automation call including the tick.",
+   "evidence": "src/lib/marketing/preview-pilot.ts:24 `if (env.VERCEL_ENV === 'preview') return false;`, :30 `return true;`; src/lib/marketing/pilot.ts:19 `if (names.every((name) => env[name] === undefined) || previewPilotRetired(\"generation-pilot\", env)) return null;`, :26 `throw new MarketingPilotError(\"pilot-outside-window\")`; automation-auth.ts:10 `try{marketingPilotConfiguration(ownerId,env,new Date(now));}catch{return null;}`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "No background or queued execution path exists: `after()`/`waitUntil` are not used under src, the external worker protocol has no host, and the only on-demand execution route needs the worker secret, not the owner's session.",
+   "evidence": "grep of `after(`/`waitUntil` under src returned nothing; services/marketing-worker/README.md:3 `Hosting has not been provisioned or verified for this service.`; src/app/api/marketing/jobs/[id]/execute/route.ts:14 `if (principal.role !== \"worker\") return Response.json({ error: \"forbidden\" }, { status: 403 });`, :19 `executeMarketingJob(db, principal.ownerId, body.jobId, ...)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  },
+  {
+   "fact": "The owner's Chyby a naklady tab reads the last 24 h of ticks (limit 1,500), lists only ticks that did something or carry an error, and counts errors solely by errors.length.",
+   "evidence": "src/lib/marketing/dneskai-workspace-read.ts:174 `db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors')...gte('started_at', dayAgo)...limit(1500)`, :207 `const recent = ticks.filter((tick) => tick.errors.length || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);`, :210 `withErrors: ticks.filter((tick) => tick.errors.length).length`",
+   "check": {
+    "status": "verified",
+    "note": "dneskai-workspace-read.ts:207-210 read."
+   }
+  },
+  {
+   "fact": "Collection admission opens at 22:00 Prague; brief slots are 08:00, 12:30, 17:00 and 20:00 Prague; a brief whose slot is under 30 minutes away is skipped as brief-slot-passed; admission allows 8 jobs per rolling 24 h.",
+   "evidence": "scheduler.ts:267 `if (pragueHour(clock()) < 22) return { status: \"noop\", code: \"collection-not-due\" };`; src/lib/marketing/dneskai-briefs.ts:30 `DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '17:00', '20:00']`, :307 `if (Date.parse(brief.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }`, :241 `enqueues the job through marketing_enqueue_job (calendar current, 8 jobs per 24 h)`",
+   "check": {
+    "status": "verified",
+    "note": "Cited code read at the cited lines; matches."
+   }
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "minute tick cadence",
+   "value": "*/5 * * * * (UTC)",
+   "evidence": "20261020160100_marketing_scheduler_cron.sql:87",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "daily tick",
+   "value": "18 2 * * * (02:18 UTC)",
+   "evidence": "20261020160100_marketing_scheduler_cron.sql:88",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "cron history prune",
+   "value": "43 3 * * * (not in production)",
+   "evidence": "20261020160100_marketing_scheduler_cron.sql:89; docs/migration-guide.md:703",
+   "check": {
+    "status": "verified",
+    "note": "Production cron.job has no marketing-cron-history-prune (SELECT 21 Oct 23:56 UTC)."
+   }
+  },
+  {
+   "name": "pg_net request timeout",
+   "value": "55,000 ms",
+   "evidence": "20261020160100_marketing_scheduler_cron.sql:78 `timeout_milliseconds:=55000`",
+   "check": {
+    "status": "verified",
+    "note": "cron.sql:78 timeout_milliseconds:=55000; production: 0 of 72 responses timed out."
+   }
+  },
+  {
+   "name": "route maxDuration (tick, revisions, jobs execute)",
+   "value": "60 s",
+   "evidence": "src/app/api/marketing/tick/route.ts:9; revisions/route.ts:14; jobs/[id]/execute/route.ts:8",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "soft budget (no category starts after)",
+   "value": "48,000 ms",
+   "evidence": "scheduler.ts:51",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "hard budget (every abort signal)",
+   "value": "53,000 ms",
+   "evidence": "scheduler.ts:53",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "category lease",
+   "value": "90 s (SQL allows 1-300)",
+   "evidence": "scheduler.ts:55; 20261020160000_marketing_scheduler.sql:73",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "minimum start per category",
+   "value": "collection 20 s, media 25 s, briefs 5 s, generation 43 s, publishing 15 s dry / 30 s live, reconciliation 5 s, token 16 s, renewal 15 s, purge 10 s, retention 1 s",
+   "evidence": "scheduler.ts:69, 75-76, 367",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "media pass budget",
+   "value": "min(40 s, remaining - 3 s); 8 candidates; 15 s fetch, 15 s storage",
+   "evidence": "scheduler.ts:56, 296; dneskai-media.ts:233, 33, 41",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "media backoffs",
+   "value": "busy 125 s, failure 10 min",
+   "evidence": "scheduler.ts:79-80",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "collection per tick",
+   "value": "5 operations, 45 s call, 25 s per free feed, retryAfterSeconds 15 (capped 300)",
+   "evidence": "dneskai-collection.ts:37, 33, 13, 58; scheduler.ts:278",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "Jev batching",
+   "value": "8 candidates per call, max 16 calls per run",
+   "evidence": "dneskai-collection.ts:101",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "generation per tick",
+   "value": "1 job (reads up to 5 queued)",
+   "evidence": "scheduler.ts:341, 348, 354",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "job signal",
+   "value": "55,000 ms (or the tick signal)",
+   "evidence": "worker-runtime.ts:269-271",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "model budget per job",
+   "value": "45,000 ms for up to 2 attempts, 20,000 in / 2,500 out tokens, $0.25",
+   "evidence": "worker-runtime.ts:308; generation.ts:64, 358",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "blocked job",
+   "value": "1 h, at most 10 blocked ids kept",
+   "evidence": "scheduler.ts:81-82",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "publication yield",
+   "value": "due within 5 min or container-pending; 15-minute window; 10-minute claim; container poll 3 x 1 s",
+   "evidence": "scheduler.ts:63; scheduler-ports.ts:23; 20261012225640_marketing_control_surface.sql:245; publisher.ts:418-425",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "reconciliation interval",
+   "value": "30 min",
+   "evidence": "scheduler.ts:71",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "token backoffs",
+   "value": "failed 24 h, held 1 h; refresh due under 10 days",
+   "evidence": "scheduler.ts:83-84; docs/external-setup.md:164",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "URL renewal",
+   "value": "URLs expiring within 48 h, 10 per daily tick, newest 50 revisions, 7-day set-aside",
+   "evidence": "scheduler.ts:73, 85, 89-90",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "retention",
+   "value": "ticks 14 days, media 30 days",
+   "evidence": "scheduler.ts:57-58",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "signature skew",
+   "value": "+/-300 s; secret >= 32 chars",
+   "evidence": "automation-auth.ts:15, 23; 20261020160100_marketing_scheduler_cron.sql:70",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "tick body limits",
+   "value": "request 4,000 bytes; did <= 20 entries / 16 KB; errors <= 8 KB",
+   "evidence": "tick/route.ts:20; 20261020160000_marketing_scheduler.sql:22-23",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "revision edit re-render",
+   "value": "45,000 ms abort inside a 60 s route",
+   "evidence": "revisions/route.ts:14, 64",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  },
+  {
+   "name": "brief slots and lead",
+   "value": "08:00, 12:30, 17:00, 20:00 Prague; 30-minute lead; 8 jobs per 24 h",
+   "evidence": "dneskai-briefs.ts:30, 307, 241",
+   "check": {
+    "status": "verified",
+    "note": "Constant read at the cited line."
+   }
+  }
+ ],
+ "measurements": [
+  {
+   "what": "Scheduler test suite (marketing-scheduler, -ports, -database, tick-route)",
+   "value": "4 files, 67 tests passed, 1.65 s vitest duration (2 s wall)",
+   "method": "ran ./node_modules/.bin/vitest run on the four files",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "Re-run 22 Oct 2026 with the dry-day file: the 4 scheduler unit files pass (70 tests passed across 5 files, 6 failures all in dneskai-dry-day.test.ts)."
+   }
+  },
+  {
+   "what": "Deck render time on this Mac (vendored studio, in-memory storage fake)",
+   "value": "6-slide deck 803 ms including engine and font load; two 6-slide renders 967 ms, so about 80 ms per slide warm; 11 renderer tests 4.21 s",
+   "method": "ran vitest --reporter=verbose on tests/lib/marketing-dneskai-render.test.ts; deck defined at :45-51",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "Reader measurement on the owner's Mac; not repeated."
+   }
+  },
+  {
+   "what": "End-to-end dry-day harness on main 8df25a5",
+   "value": "6 of 9 tests fail locally (Node v26.8.2); first failure `dneskai-project-unavailable` for collection, media and briefs at tests/lib/dneskai-dry-day.test.ts:79; CI run on the same commit succeeded on Node 22 (gh run list, 2026-10-21T20:34Z)",
+   "method": "ran vitest on the file; gh run list --branch main; .github/workflows/ci.yml:22 node-version 22; no engines field or .nvmrc in the repo",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "Re-run 22 Oct 2026 on Node v26.8.2: 6 tests fail in dneskai-dry-day.test.ts; first failure dneskai-project-unavailable at :79. CI result on Node 22 not re-checked."
+   }
+  },
+  {
+   "what": "Night timeline for 4 briefs from 22:00 Prague (ideal: 9 feeds, 64 candidates, Apify off, account verified)",
+   "value": "collection 4 ticks (5 feeds; 4 feeds + 1 Jev batch; 5 Jev; 2 Jev) finishing about 22:15; media and briefs in tick 4-5; generation one job per tick at 22:20, 22:25, 22:30, 22:35; first post in review about 22:21, fourth about 22:36; with 2-3 Apify profiles (start, then poll next tick) or a second media pass about 22:45-22:50; 3-4 minutes of work in 36-50 minutes of wall time",
+   "method": "computed from code constants (dneskai-collection.ts:37, 42, 58, 63, 65, 101; scheduler.ts:75, 296, 341-354); not measured live (Supabase reads were not permitted for this reader)",
+   "basis": "estimated",
+   "check": {
+    "status": "estimate",
+    "note": "Computed from code constants. Production 21 Oct confirms 4 collection ticks; generation part unobserved (no account, no job)."
+   }
+  },
+  {
+   "what": "Five-kit pre-render (5 x 8 = 40 slides) inside one function",
+   "value": "render + JPEG encode 6-10 s (0.15-0.25 s per slide on Vercel, from the 80 ms local figure and scaling.md's 0.2 s); 40 sequential uploads of 4 storage round trips each about 16 s at 100 ms per call; total about 22-28 s before any model call; fits neither the 43 s generation step with a model call nor comfortably the 53 s abort after a slow model; fits a 40 s own category for one post per tick",
+   "method": "arithmetic from measured per-slide time and the round-trip counts at worker-runtime.ts:177-182, 218-227 and the sequential loops at dneskai-render.ts:359, 393; storage latency is assumed, not measured",
+   "basis": "estimated",
+   "check": {
+    "status": "estimate",
+    "note": "Arithmetic from a local per-slide figure and assumed storage round-trip latency."
+   }
+  },
+  {
+   "what": "Vendored studio weight loaded by the tick function",
+   "value": "vendor/carousel-studio 7.8 MB, of which fonts 5.8 MB",
+   "method": "du -sh",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "du -sh by the reader."
+   }
+  },
+  {
+   "what": "Distinct MARKETING_* identifiers under src/lib/marketing and src/app/api/marketing",
+   "value": "91 (environment variables and exported constants mixed)",
+   "method": "grep -rhoE 'MARKETING_[A-Z0-9_]+' | sort -u",
+   "basis": "measured",
+   "check": {
+    "status": "not-rerun",
+    "note": "grep count by the reader; mixes env variables and constants, so it is not a count of switches."
+   }
+  },
+  {
+   "what": "Marketing API routes",
+   "value": "23 route.ts files, including n8n, dneskai/collect, automation, jobs, jobs/[id], jobs/[id]/execute beside tick",
+   "method": "find src/app/api/marketing -name route.ts",
+   "basis": "measured",
+   "check": {
+    "status": "corrected",
+    "note": "find src/app/api/marketing -name route.ts returns 24 files on 8df25a5, not 23."
+   }
+  },
+  {
+   "what": "Production tick record (marketing_ticks)",
+   "value": "124 ticks, all kind=minute, 2026-10-21 13:40-23:55 UTC; 0 with errors; 0 unfinished; duration max 29.4 s, median 3.8 s; generation noop 124/124; collection done 4 (avg 15.5 s); media done 1 (7.4 s); briefs done 1, briefs ran with nothing created 44",
+   "method": "Supabase read-only SELECT over marketing_ticks and jsonb_array_elements(did), DB clock 2026-10-21 23:56 UTC",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "A-verify-1"
+   }
+  },
+  {
+   "what": "Production pg_cron and pg_net state",
+   "value": "cron.job: marketing-tick-minute, marketing-tick-daily only; net._http_response: 72 rows, 0 timed_out, last four 200; marketing_scheduler_prune_ticks absent from pg_proc",
+   "method": "Supabase read-only SELECT on cron.job, cron.job_run_details, net._http_response, pg_proc",
+   "basis": "measured",
+   "check": {
+    "status": "verified",
+    "note": "A-verify-1"
+   }
+  }
+ ],
+ "findings": [
+  {
+   "id": "SCHED-01",
+   "title": "Throughput is set by the 5-minute cadence, not by the work: 4 briefs take 36-50 minutes of wall time for 3-4 minutes of work",
+   "category": "speed",
+   "claim": "One generation job per tick, at most five collection operations per tick, and a collection retry hint of 15 s that pg_cron cannot honour mean a night of 4 briefs finishes around 22:36-22:50 from a 22:00 start, and any owner-triggered regeneration or variant routed through the queue waits 5 minutes per job. Overnight this is harmless; for the Design Lab's live loop it is the limiting path.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 348,
+     "excerpt": "const jobId = queuedJobs.find((id) => !blocked[id]);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 354,
+     "excerpt": "status: \"done\", pending: queuedJobs.length > 1,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 37,
+     "excerpt": "if(operations>=5||signal.aborted)break;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 58,
+     "excerpt": "return{runId:updated.id,status:'running',continue:true,retryAfterSeconds:15};"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 282,
+     "excerpt": "nextAllowedAt: retry ? iso(now().getTime() + retry * 1000) : null,"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+     "line": 87,
+     "excerpt": "perform cron.schedule('marketing-tick-minute','*/5 * * * *',$command$select marketing_private.scheduler_post('minute')$command$);"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 86,
+     "excerpt": "collection step at night uses most of a tick, so media and generation follow once collection is done."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Harmless overnight; it becomes the limit as soon as the Design Lab offers regenerate or variants, so it belongs in that design rather than a fix now."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Keep the tick as the overnight driver and add an owner-session 'run now' path that takes the generation lease and calls executeMarketingJob immediately (the jobs/[id]/execute route already does this for the worker role; re-expose it behind the owner's session and the same lease). Do not shorten the cron cadence (8,640 invocations a day at 10 s buys nothing while nothing is queued). Drop the inert retryAfterSeconds mapping or document that under pg_cron it is always the next tick.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "scheduler.ts:341-354: the generation precheck reads up to 5 queued jobs and the step runs exactly one (`queuedJobs.find`), pending when more remain. dneskai-collection.ts:37 caps a call at 5 operations; :58 returns retryAfterSeconds 15, which scheduler.ts:278-282 turns into nextAllowedAt, but pg_cron fires only every 5 min (cron.sql:87), so the hint never shortens anything. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: the 21 Oct run needed 4 collection ticks (4 `done` steps, avg 15.5 s). The 22:36-22:50 timeline for 4 posts is the reader's estimate: no generation job has run in production (124 of 124 ticks recorded generation `noop`).",
+    "correctedLocations": []
+   },
+   "impactStatement": "No owner minutes tonight (posts are ready by 23:00 for an 08:00 slot), but every interactive 'generate again' or 'make a variant' that goes through marketing_jobs costs the owner 5-20 minutes of waiting, which breaks the under-10-minutes-a-day goal as soon as regeneration exists."
+  },
+  {
+   "id": "SCHED-02",
+   "title": "A generation job renders after a 45 s model budget under the tick's 53 s abort; a slow two-attempt job loses its model spend with no replay",
+   "category": "risk",
+   "claim": "Generation starts no later than 5 s into the tick (43 of 48 s must remain), so the job has about 48 s before the hard abort. The model may use 45 s across two attempts of up to 2,500 output tokens; rendering, four storage round trips per slide and the finish RPC must then fit in what is left. A cut-off job is finished as failed, its draft is not persisted and there is no replay, so the model cost (up to the $0.25 reservation) is spent for nothing and the brief has no post. Nothing has run live, so no attempt latency has been measured.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 75,
+     "excerpt": "collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 53,
+     "excerpt": "export const MARKETING_TICK_HARD_BUDGET_MS = 53_000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 308,
+     "excerpt": "signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/generation.ts",
+     "line": 64,
+     "excerpt": "maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000,"
+    },
+    {
+     "file": "own-dashboard/services/marketing-worker/protocol.ts",
+     "line": 203,
+     "excerpt": ": draft.revision.brand === \"dneskai\" ? await renderDneskaiRevisionAssets(draft, job.generation.revisionId, dependencies.renderDneskaiDeck, dependencies.signal)"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 327,
+     "excerpt": "// No automatic replay; never persist provider response/credentials/exception text."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 405,
+     "excerpt": "stored = await storageStage(() => storage.put({ renderKey: renderKeys[index]!, bytes, sha256: digest, metadata }));"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "A slow first live job can burn the reservation and leave a brief without a post; worth splitting model and render before the first live night."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Persist the validated draft (deck JSON, usage) before rendering and make rendering a resumable step: either a second pass of the same job on the next tick or a new `render` category. Alternatively lower the model budget to about 35 s and give rendering its own abort, and, after the Vercel plan is verified, raise maxDuration together with the pg_net timeout. The approval hash still binds the rendered bytes, so approval semantics do not change.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "worker-runtime.ts:269-271 job signal min(55 s, tick signal); :308 maxLatencyMs 45000 over both attempts (generation.ts:64 maxAttempts 2; :358 the 45 s timer covers only generateMarketingDraft). protocol.ts:203 renders after the draft returns, with no budget of its own. scheduler.ts:53 aborts every signal at 53 s and generation starts with at least 43 s left (scheduler.ts:75), so a job may start up to 5 s in. worker-runtime.ts:325-333: on any failure the job finishes `failed` with the spent usage and no replay. Attempt latency is unmeasured (no live job yet).",
+    "correctedLocations": []
+   },
+   "impactStatement": "Each cut-off job wastes up to $0.11 real cost (worst case from the brief) against the $1 daily ceiling and leaves one of the day's four slots empty with no regenerate button; the owner only sees a failed job in Chyby a naklady."
+  },
+  {
+   "id": "SCHED-03",
+   "title": "A five-kit pre-render (40 slides) cannot live inside the generation step; it fits as an overnight render category or as on-demand single-kit renders",
+   "category": "speed",
+   "claim": "Rendering 5 x 8 slides costs about 6-10 s of rendering plus about 16 s of sequential uploads (upload, info, download, sign per slide), so 22-28 s before any model call. That exceeds what the 43 s generation step leaves after a model call and sits too close to the 53 s abort. As its own tick category with a media-like 40 s budget it fits one post per tick, so four posts are pre-rendered in four ticks (about 20 minutes, overnight). A single kit of 8 slides renders in about 2-4 s warm, which fits a user route. Cache hits are not free either: the renderer's find path downloads and hashes every JPEG, so a Design Lab kit switch must read stored variant URLs rather than call the renderer.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 359,
+     "excerpt": "for (const [index, slide] of deck.slides.entries()) {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+     "line": 393,
+     "excerpt": "for (const [index, slide] of deck.slides.entries()) {"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 177,
+     "excerpt": "const uploaded = await files.upload(key, bytes, { upsert: false, contentType: \"image/jpeg\", cacheControl: \"3600\", metadata });"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 180,
+     "excerpt": "const downloaded = await files.download(key);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 224,
+     "excerpt": "const downloaded = await store.download(key);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 56,
+     "excerpt": "export const MARKETING_TICK_MEDIA_BUDGET_MS = 40_000;"
+    },
+    {
+     "file": "own-dashboard/scaling.md",
+     "line": 23,
+     "excerpt": "about 0.2 s per slide on the local machine"
+    },
+    {
+     "file": "own-dashboard/tests/lib/marketing-dneskai-render.test.ts",
+     "line": 45,
+     "excerpt": "return DneskaiDeckSchema.parse({ schemaVersion: \"dneskai-slides/1\", format: \"carousel\", slides: ["
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Pre-render five kits overnight, or render one kit on demand (epic: owner decision on kits).",
+    "reason": "Sizes the five-kit pre-render honestly; the numbers are estimates and the choice of overnight pre-render vs on-demand is the owner's."
+   },
+   "impactScore": 4,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Add a `render` category after generation (own lease, 40 s budget) that renders the remaining kits of one revision per tick and records each variant's assets and content hash on the revision; parallelise storage.put with a concurrency of 4 to halve the per-post time; serve kit switches from stored URLs; keep a synchronous single-kit render (as the revisions route does) for live text/crop edits. No queue, worker or longer function is needed for 4 posts a day.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-render.ts:353 checks the cache in parallel; :358-389 renders slide by slide; :393-405 encodes and stores slide by slide. worker-runtime.ts:174-183 storeVerifiedJpeg = upload + info + download + sign per slide; :212-226 a cache hit = info + download + sha256 + sign. The 22-28 s for 40 slides is arithmetic from the measured 80 ms/slide local render and assumed storage round trips, not a measurement.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Decides the Design Lab architecture: pre-rendering overnight gives an instant kit switch at review for $0 and no new service; rendering inside the generation job would make every job fail under the 53 s abort."
+  },
+  {
+   "id": "SCHED-04",
+   "title": "The owner's edit supersedes the old revision before it renders, then waits up to 45 s synchronously",
+   "category": "quality",
+   "claim": "POST /api/marketing/revisions saves the superseding revision with no slides first and renders second under a 45 s abort; a timeout or render failure answers 502 render-attach-failed and leaves the owner with an unready revision while the previous one and its approval are already superseded. The wait itself is 2-6 s warm for 7 slides but a cold function also loads the 7.8 MB studio.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 62,
+     "excerpt": "const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:[]});"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 64,
+     "excerpt": "renderAndAttachDneskaiRevision(admin,user.id,{revisionId:saved.id,revision},{render:wiring.render,loadMedia:wiring.loadMedia,signal:AbortSignal.timeout(45000)})"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+     "line": 65,
+     "excerpt": "catch{return NextResponse.json({id:saved.id,ready:false,error:'render-attach-failed'},{status:502});}"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-render-preflight.md",
+     "line": 36,
+     "excerpt": "`/api/marketing/tick` (scheduled DNESKAi generation and media collection, the only place source pictures are inspected), `/api/marketing/revisions` (owner edits re-render the deck)"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Real but already handled by the editor's re-render path; matters only for the Design Lab's live editing loop."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Render first and supersede atomically on success (or keep the previous revision live until the attach commits), return the render report with the per-slide cache keys, and reserve the synchronous path for single-kit edits; multi-kit previews go through the render category of SCHED-03.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Behaviour confirmed at revisions/route.ts:61-65 (save with slides:[] and replacesId, then render under AbortSignal.timeout(45000), 502 render-attach-failed). But the order is deliberate: the comment at route.ts:61 says the previous revision is superseded so its approval cannot be used meanwhile, and losing the approval is inherent to any edit (approval binds bytes). The UI already recovers: post-editor.tsx:117-118 lets the owner save the failed version unchanged to render it again, and review-tab.tsx:30 shows it as a problem at once. The real cost is a version with no slides until a retry, not a lost approval.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+      "line": 61,
+      "excerpt": "// Saved unready and without assets: the previous revision is superseded now, so its approval cannot be used meanwhile."
+     },
+     {
+      "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+      "line": 118,
+      "excerpt": "const rerender = detail.code === 'render-attach-failed';"
+     }
+    ]
+   },
+   "impactStatement": "A failed edit costs the owner a retry and the previous approval; the synchronous wait is acceptable for one kit (seconds) but not for multi-kit previews."
+  },
+  {
+   "id": "SCHED-05",
+   "title": "Docs present tick retention and the cron history prune as live; production lacks both and every daily tick records an error under a misleading code",
+   "category": "doc-drift",
+   "claim": "docs/marketing-scheduling.md (state as of 20 October) describes the retention duty and the marketing-cron-history-prune job as running, but the production apply skipped both objects, so since the first daily tick (02:18 UTC, 22 October) each daily tick records retention: scheduler-state-unavailable, marketing_ticks keeps every row and cron.job_run_details grows by 289 rows a day. The code maps every RPC error to scheduler-state-unavailable, so the owner's error tab blames the state table rather than a missing function. The brief's 'no errors' line predates the first daily tick.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 71,
+     "excerpt": "| retention | Deletes `marketing_ticks` rows older than 14 days. |"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 74,
+     "excerpt": "deletes them. A third job, `marketing-cron-history-prune` (`43 3 * * *`, UTC), runs inside the"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 702,
+     "excerpt": "`marketing_scheduler_functions` and nothing else: `marketing_scheduler_prune_ticks` is not in production yet."
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 703,
+     "excerpt": "- `20261020160100_marketing_scheduler_cron.sql` went in without the `marketing-cron-history-prune` job."
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 9,
+     "excerpt": "**Run the two DNESKAi retention statements** — ... Until then the daily tick records an error for its `retention` step and the tick history keeps every row."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 533,
+     "excerpt": "if (error) throw new Error(\"scheduler-state-unavailable\");"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 474,
+     "excerpt": "const removed = await ports.store.pruneTicks(MARKETING_TICK_RETENTION_DAYS);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+     "line": 210,
+     "excerpt": "ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },"
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 213,
+     "excerpt": "- The tick has run every 5 minutes since 13:40 UTC with no errors."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "Run the two retention statements from docs/migration-guide.md in production (owner action, NEEDED.md:9).",
+    "reason": "Five owner minutes to run two SQL statements; the misleading error code is worth fixing in the same pass."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Run the two statements from docs/migration-guide.md, add a 'production state' note to docs/marketing-scheduling.md, and map a PostgREST function-not-found answer to a distinct code (for example scheduler-function-missing) so the error tab names the real cause.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code and production gap confirmed: scheduler.ts:471-475 retention calls marketing_scheduler_prune_ticks; scheduler.ts:530-534 maps any RPC error to scheduler-state-unavailable. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: pg_proc has marketing_scheduler_{acquire,begin_tick,finish_tick,release,save_state} but no prune_ticks; cron.job holds only marketing-tick-minute and marketing-tick-daily (no marketing-cron-history-prune, and no purge-cron-runs either). Not yet observed: no daily tick had run (marketing_ticks has 124 rows, all kind=minute, 13:40-23:55 UTC 21 Oct; cron.job_run_details has no marketing-tick-daily run), so \"every daily tick records retention: scheduler-state-unavailable\" is a prediction from the code. The 289 rows/day of job_run_details is arithmetic (288 + 1).",
+    "correctedLocations": []
+   },
+   "impactStatement": "Five owner minutes to run two statements; until then one error a day in Chyby a naklady that the owner cannot explain from the doc, and about 0.3 MB a day of unpruned rows (storage cost negligible)."
+  },
+  {
+   "id": "SCHED-06",
+   "title": "Brief says the worker caps a job at 45 s including both attempts; the 45 s covers only the model attempts",
+   "category": "doc-drift",
+   "claim": "The 45 s maxLatencyMs is the generation budget over the model attempts; the job itself runs under a 55 s signal (or the tick's 53 s abort) and renders and uploads slides after the model returns. The difference matters for the throughput question: the render has no budget of its own.",
+   "evidence": [
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 139,
+     "excerpt": "The worker caps a job at 45 s, both attempts included."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 269,
+     "excerpt": "const remainingMs = pilot ? Math.min(55000, Date.parse(pilot.expiresAt) - Date.now()) : 55000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 308,
+     "excerpt": "signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/generation.ts",
+     "line": 358,
+     "excerpt": "const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);"
+    },
+    {
+     "file": "own-dashboard/services/marketing-worker/protocol.ts",
+     "line": 203,
+     "excerpt": ": draft.revision.brand === \"dneskai\" ? await renderDneskaiRevisionAssets(draft, job.generation.revisionId, dependencies.renderDneskaiDeck, dependencies.signal)"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "A sentence in the brief; the substance is SCHED-02, so fold it there."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Correct the map: model attempts 45 s, whole job 55 s or the tick's 53 s abort, rendering unbudgeted after the model.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "brief.md:139 says the worker caps a job at 45 s with both attempts; worker-runtime.ts:308 applies 45 s to the model budget only and :269 gives the whole job 55 s; protocol.ts:203 renders after. (The map cites the brief as fable-dneskai-brief.md; the file is dneskai-audit-handoff/brief.md, same line.)",
+    "correctedLocations": [
+     {
+      "file": "dneskai-audit-handoff/brief.md",
+      "line": 139,
+      "excerpt": "The worker caps a job at 45 s, both attempts included."
+     }
+    ]
+   },
+   "impactStatement": "A planning error only, but it hides the render margin problem of SCHED-02."
+  },
+  {
+   "id": "SCHED-07",
+   "title": "docs/dneskai-source-media.md still says nothing in the application calls media collection or purge until the scheduler is deployed",
+   "category": "doc-drift",
+   "claim": "The media doc keeps a pre-#120 sentence that no path calls collectDneskaiMedia or purgeUnusedDneskaiMedia; the tick has been calling both since 21 October 13:40 UTC (purge from the first daily tick on 22 October).",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-media.md",
+     "line": 28,
+     "excerpt": "denní tick jen tehdy, když žádný kandidát nedrží zámek sběru médií. Dokud plánovač nasazený"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-media.md",
+     "line": 29,
+     "excerpt": "není, žádná cesta v aplikaci tyto funkce nespouští."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+     "line": 65,
+     "excerpt": "collectMedia: (project, candidateIds, options) => collectDneskaiMedia(db, owner, project, candidateIds, options),"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 462,
+     "excerpt": "try { result = await untilCutOff(ports.purgeMedia(MARKETING_MEDIA_RETENTION_DAYS), abort, \"purge-cut-off\"); }"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "One stale sentence; belongs in the doc-drift list."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Replace the sentence with the live state (tick since 21 October; purge daily at 02:18 UTC under the media lease).",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "docs/dneskai-source-media.md:28-29 still says no application path runs these functions; scheduler-ports.ts:65 wires collectDneskaiMedia into the tick and scheduler.ts:462 calls purgeMedia in the daily tick. Production: media ran once (1 `done` media step on 21 Oct); the purge has not run yet (no daily tick).",
+    "correctedLocations": []
+   },
+   "impactStatement": "A reader of the media doc concludes the purge is inert; the brief itself flagged line 28."
+  },
+  {
+   "id": "SCHED-08",
+   "title": "Too many moving parts for one owner: 4 pg_cron jobs, 3 Vercel crons, 8 SQL functions, 8 leases, 10 categories, 7 statuses, 6 switches plus 9 pilot and manual variables that do nothing in production, 23 marketing routes",
+   "category": "simplicity",
+   "claim": "To reason about why a post did or did not appear, the owner must know two timers in pg_cron (plus the history prune and the older purge-cron-runs job), three unrelated Vercel crons, six behaviour switches and one database flag, nine MARKETING_PILOT_* / MARKETING_DNESKAI_COLLECTION_PILOT_* / MARKETING_DNESKAI_MANUAL_* variables that production ignores, two Vault secrets plus one Vercel secret, eight SQL functions, eight leases, seven minute categories and three daily duties, seven step statuses and fourteen scheduler codes, and a route surface that still exposes the n8n, dneskai/collect, automation and jobs entry points the tick replaced. The Pausing table alone lists eight ways to stop things.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+     "line": 89,
+     "excerpt": "perform cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days'"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20260724110000_cron_runs.sql",
+     "line": 65,
+     "excerpt": "'purge-cron-runs',"
+    },
+    {
+     "file": "own-dashboard/vercel.json",
+     "line": 2,
+     "excerpt": "\"crons\": ["
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 191,
+     "excerpt": "| To stop | Do |"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/automation-auth.ts",
+     "line": 16,
+     "excerpt": "const configs: Array<[string|undefined,MarketingBrand|null,AutomationPrincipal['role']]>=["
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/preview-pilot.ts",
+     "line": 30,
+     "excerpt": "return true;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 18,
+     "excerpt": "function paidAllowed(owner:string,env:ProviderEnvironment,now:Date,project:string,pilotMode:boolean,manualRun?:string){if(env.MARKETING_AI_CONSENT!=='true')return false;if(manualRun?!manualCollectionExpiry(owner,project,manualRun,env,now):env.MARKETING_DNESKAI_PAID_ENABLED!=='true')return false;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 39,
+     "excerpt": "export type MarketingTickStatus = \"done\" | \"noop\" | \"skipped\" | \"busy\" | \"backoff\" | \"deferred\" | \"error\";"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/n8n/route.ts",
+     "line": 4,
+     "excerpt": "import { synchronizeMarketingSources,enqueueCalendarMarketingJob,executeOrchestratedMarketingJob,publishDueMarketing,reconcileStoredMarketingPublication } from '@/lib/marketing/orchestrator';"
+    },
+    {
+     "file": "/Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md",
+     "line": 202,
+     "excerpt": "Dormant code couplings remain: `approval-notification.ts`, called on every approval, posts to an archived receiver when its env is set; `/api/marketing/n8n` and `/api/marketing/dneskai/collect` are still routed."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": "When to delete the n8n, dneskai/collect, automation and pilot paths (after the #123 pilot).",
+    "reason": "Fewer switches and dead routes cut the owner's debugging time; deleting bridge/pilot paths should wait for the owner to close the rollback window."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "low",
+   "recommendation": "Collapse the six switches into one owner-visible settings row in the DNESKAi workspace (the publishing switch already lives there), delete the pilot and manual variables and the n8n, dneskai/collect, automation and jobs routes after the #123 pilot, and keep one page that lists the four pg_cron jobs and three Vercel crons with their purpose.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "The surface is large, but two counts are off. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: cron.job has 2 jobs, not 4 (marketing-cron-history-prune and purge-cron-runs are not scheduled; 20260724110000_cron_runs.sql:57-68 schedules purge-cron-runs only if pg_cron existed when it ran). find src/app/api/marketing -name route.ts gives 24 routes, not 23. Vercel crons (vercel.json: 3, none marketing), the dormant pilot/manual variables (automation-auth.ts:16, preview-pilot.ts:30) and the n8n/automation/jobs/dneskai-collect routes are confirmed. The other counts (8 SQL functions, 14 codes, 9 dead variables) were not recounted.",
+    "correctedLocations": [
+     {
+      "file": "own-dashboard/supabase/migrations/20260724110000_cron_runs.sql",
+      "line": 59,
+      "excerpt": "if exists (select 1 from pg_extension where extname = 'pg_cron') then"
+     }
+    ]
+   },
+   "impactStatement": "Every incident costs the owner reading time across Vercel env, Vault, pg_cron and three docs; dead variables and routes invite misconfiguration (a Preview with a stale pilot tuple answers 401 to every tick)."
+  },
+  {
+   "id": "SCHED-09",
+   "title": "A tick that dies at the function limit is invisible in Chyby a naklady",
+   "category": "risk",
+   "claim": "begin_tick inserts the row before any work and finish_tick writes errors only at the end, so a tick killed at 60 s, by an OOM or by a crash keeps finished_at null with errors [] and did []. The workspace counts errors by errors.length and lists ticks with done/error steps, so such ticks are neither counted nor listed; only the SQL in the doc finds them.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020160000_marketing_scheduler.sql",
+     "line": 55,
+     "excerpt": "insert into public.marketing_ticks(id,user_id,kind) values(p_tick,p_owner,p_kind) on conflict (id) do nothing;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020160000_marketing_scheduler.sql",
+     "line": 63,
+     "excerpt": "update public.marketing_ticks set finished_at=clock_timestamp(),did=p_did,errors=p_errors where id=p_tick and user_id=p_owner and finished_at is null;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+     "line": 207,
+     "excerpt": "const recent = ticks.filter((tick) => tick.errors.length || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 124,
+     "excerpt": "select id, started_at from marketing_ticks where finished_at is null and started_at < now() - interval '2 minutes';"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Cheap visibility fix in the workspace read; no unfinished tick has happened yet."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "In the workspace read, treat finished_at null with started_at older than 2 minutes as an error tick (code tick-unfinished) and show the last successful tick age; no schema change needed.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "20261020160000_marketing_scheduler.sql:55 inserts the tick row first, :63 writes finished_at/did/errors only at the end; dneskai-workspace-read.ts:207 lists ticks only with an error or a done/error step and :210 counts errors by errors.length, so an unfinished tick (did [], errors []) is neither listed nor counted; only the doc SQL at marketing-scheduling.md:124 finds it. Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: 0 unfinished ticks so far, so the gap has not bitten yet.",
+    "correctedLocations": []
+   },
+   "impactStatement": "A generation or publish that dies mid-way (the case SCHED-02 describes) shows up only as a failed job or a reconciliation row, never as the tick that caused it; the owner cannot tell a cadence problem from a content problem."
+  },
+  {
+   "id": "SCHED-10",
+   "title": "Carousels publish one tick late by design, and the yield freezes the rest of the pipeline for that tick",
+   "category": "quality",
+   "claim": "The publisher polls a new container three times at one-second intervals and otherwise returns container-pending; media_publish then waits for the next tick, so a carousel lands 5-6 minutes after its slot inside the 15-minute window. While publishing is live the yield also defers collection, media, briefs and generation for every tick within 5 minutes of a slot.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 418,
+     "excerpt": "const attempts = Math.max(1, Math.min(3, input.config.pollAttempts ?? 3));"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/publisher.ts",
+     "line": 425,
+     "excerpt": "if (status === 'IN_PROGRESS') return result('pending', 'container-pending', container);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 246,
+     "excerpt": "const yieldToPublication = () => (yieldRead ??= marketingPublishingLive(env) ? ports.publicationDueSoon(MARKETING_PUBLICATION_YIELD_MS) : Promise.resolve(false));"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 53,
+     "excerpt": "claim lasts ten minutes and the publisher polls the container for only three seconds, so a carousel"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Publishing is not live and needs owner approval first; revisit when it is."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Poll the container up to about 20 s while at least 25 s of soft budget remain (publishing starts with 30 s when live), so most carousels finish on the slot tick; keep the single media_publish send and the reconciliation path unchanged.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "publisher.ts:418-425 polls the container at most 3 times, 1 s apart, then returns container-pending; scheduler.ts:246 makes collection/media/briefs/generation yield while a publication is due or pending; the doc says the same at marketing-scheduling.md:50-55. Live publishing has never run (124 publishing noop), so \"usually one tick late\" is the doc's expectation, not a measurement.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Minor for Instagram timing; the real cost is a tick of lost generation or media time around each of the four daily slots, and a 10-minute claim that expires into reconciliation if one continuation tick is missed."
+  },
+  {
+   "id": "SCHED-11",
+   "title": "The 53 s hard budget plus cold start can exceed pg_net's 55 s timeout and record false timeouts",
+   "category": "risk",
+   "claim": "The tick's clock starts inside runMarketingTick after auth and begin_tick; the function's cold start (a module graph that includes sharp and the 7.8 MB studio) is not counted, so a tick that runs to its 53 s abort and then writes finish_tick answers after about 54-57 s, past pg_net's 55 s. The tick is recorded as finished, but net._http_response shows timed_out and the doc's delivery query misleads.",
+   "evidence": [
+    {
+     "file": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+     "line": 78,
+     "excerpt": "timeout_milliseconds:=55000);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 231,
+     "excerpt": "const started = clock().getTime();"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 53,
+     "excerpt": "export const MARKETING_TICK_HARD_BUDGET_MS = 53_000;"
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/tick/route.ts",
+     "line": 9,
+     "excerpt": "export const maxDuration = 60;"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 127,
+     "excerpt": "select id, status_code, timed_out, error_msg, created from net._http_response order by created desc limit 20;"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Production shows no timeouts and ticks of at most 29 s; diagnostic only."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Raise the pg_net timeout to 59 s or lower the hard budget to 50 s, and note in the doc that a timed_out row with a finished marketing_ticks row is harmless.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Arithmetic is right in principle: the 53 s budget starts inside runMarketingTick (scheduler.ts:231) after body read and auth (tick/route.ts:18-31), pg_net waits 55 s (cron.sql:78), maxDuration is 60 (route.ts:9). But nothing like it has happened: Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC: 0 of 72 net._http_response rows timed out; the longest recorded tick took 29.4 s, the median 3.8 s. It needs a tick that runs to its hard budget plus a cold start.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Diagnostic confusion only; no money and no duplicate work (the tick id is already recorded)."
+  },
+  {
+   "id": "SCHED-12",
+   "title": "Generation needs 43 of 48 s, so any media pass or slow precheck defers every queued job to the next tick",
+   "category": "speed",
+   "claim": "Only 5 s may pass before generation starts. The three earlier steps run their prechecks (project resolution, run list, pending-media RPC, and a full createBriefs call while any brief is pending, which is the state today) before the budget check, and a media pass alone may take 40 s. Every tick in which media has anything pending, or Supabase is slow, records generation as deferred: tick-budget-exhausted and the night's 4 jobs slip by 5 minutes each time. Today this costs one or two ticks a night; once a render category exists (SCHED-03) the fixed order will starve it the same way.",
+   "evidence": [
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 75,
+     "excerpt": "collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 296,
+     "excerpt": "const budgetMs = Math.max(0, Math.min(MARKETING_TICK_MEDIA_BUDGET_MS, remainingMs() - 3_000));"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 500,
+     "excerpt": "const early = await step.precheck?.();"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 503,
+     "excerpt": "if (remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 42,
+     "excerpt": "The step has no backoff, so it calls once per five-minute tick until that brief's slot, or the target day's last slot, is under 30 minutes away."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "A priority order (generation before media when a job is queued) is cheap, but no job has queued yet, so the delay is not observed."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Pick the heavy unit per tick by priority instead of fixed order: run generation (and later render) before media when a job is queued and no publication is due, and let media use the tick only when nothing is queued; the leases already make the categories independent.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code confirmed: generation needs 43 s of the 48 s soft budget (scheduler.ts:51, :75), so it must start within 5 s; prechecks run before the budget check (scheduler.ts:500-503); media may take min(40 s, remaining-3 s) (scheduler.ts:296). The briefs run (not the precheck, as the claim says) calls createBriefs every tick while a run is pending: Supabase read-only SELECT, DB clock 2026-10-21 23:56 UTC shows 44 briefs steps that ran with nothing created. The cost claim is not observed: no generation job has been queued in production, so \"one or two deferred ticks a night today\" is an estimate.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Five to ten minutes of extra latency a night today; a structural ceiling for any heavier work in the tick."
+  },
+  {
+   "id": "SCHED-13",
+   "title": "Execution-path options for heavier work, ranked: resumable tick steps now, longer maxDuration after a plan check, no queue or worker",
+   "category": "modernity",
+   "claim": "The repository has no background execution (`after()`/`waitUntil` unused), no queue, and an external worker protocol with no host; the 60 s function limit is self-imposed by maxDuration and the Vercel plan is unverified (scaling.md still assumes Hobby, which Vercel reserves for non-commercial use). For 4 posts a day the cheapest path is to split heavy work into resumable units that the existing tick already supports (leases, pending flags, per-slide cache); raising maxDuration (with the pg_net timeout) is the next step once the plan is known; a Supabase queue plus worker is new infrastructure that needs owner approval and is not justified by the volume.",
+   "evidence": [
+    {
+     "file": "own-dashboard/services/marketing-worker/README.md",
+     "line": 3,
+     "excerpt": "Hosting has not been provisioned or verified for this service."
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/jobs/[id]/execute/route.ts",
+     "line": 14,
+     "excerpt": "if (principal.role !== \"worker\") return Response.json({ error: \"forbidden\" }, { status: 403 });"
+    },
+    {
+     "file": "own-dashboard/scaling.md",
+     "line": 7,
+     "excerpt": "- **Personal, free tiers:** ~$0/month (Vercel Hobby, Supabase Free)."
+    },
+    {
+     "file": "own-dashboard/src/app/api/marketing/tick/route.ts",
+     "line": 9,
+     "excerpt": "export const maxDuration = 60;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 46,
+     "excerpt": "/** Categories that still have work; the next tick continues them. */"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-generation.md",
+     "line": 92,
+     "excerpt": "An unchanged deck therefore loads, renders and uploads nothing; editing one slide re-renders that slide only; an engine, policy or encoder change re-renders each slide once."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "M",
+    "risk": "medium",
+    "quickWin": false,
+    "ownerDecision": "Confirm the Vercel plan and function limits before raising maxDuration; no new queue/worker service without approval.",
+    "reason": "Good guidance: resumable tick steps first, no new queue or worker; the plan check is the owner's."
+   },
+   "impactScore": 3,
+   "effort": "M",
+   "risk": "medium",
+   "recommendation": "Verify the Vercel plan and function limits in the dashboard (owner), then: (1) implement SCHED-02 and SCHED-03 as resumable tick steps; (2) if the plan allows, raise maxDuration on tick and revisions and the pg_net timeout together; (3) do not build a queue or worker for this volume.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Code parts confirmed: no after()/waitUntil under src (grep), services/marketing-worker/README.md:3 says hosting is not provisioned, jobs/[id]/execute/route.ts:14 accepts only the worker role, maxDuration 60 is set in code (tick/route.ts:9), scaling.md:7 still assumes Vercel Hobby. The Vercel plan, its maxDuration ceiling and the Hobby terms are external facts this check did not verify.",
+    "correctedLocations": []
+   },
+   "impactStatement": "Avoids a new monthly service and a second deployment; keeps the owner's 'no new services without approval' rule; the only cost is design time."
+  },
+  {
+   "id": "SCHED-14",
+   "title": "The only end-to-end harness of the tick fails on the owner's Node 26; CI pins Node 22 and the repo pins nothing",
+   "category": "quality",
+   "claim": "tests/lib/dneskai-dry-day.test.ts, the single test that runs the real tick through collection, media, briefs, generation, render, edit and publish, fails on this machine (Node v26.8.2) with dneskai-project-unavailable from the scheduler ports' project resolution while CI on the same commit passes on Node 22; package.json has no engines field and there is no .nvmrc. The 67 unit tests pass on both.",
+   "evidence": [
+    {
+     "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+     "line": 79,
+     "excerpt": "expect(result.errors).toEqual([]);"
+    },
+    {
+     "file": "own-dashboard/tests/lib/dneskai-dry-day.test.ts",
+     "line": 9,
+     "excerpt": "* One DNESKAi day end to end on the real code (epic #110, before the live pilot #123)."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+     "line": 37,
+     "excerpt": "if (matches.length !== 1) throw new Error(matches.length ? \"dneskai-project-ambiguous\" : \"dneskai-project-unavailable\");"
+    },
+    {
+     "file": "own-dashboard/.github/workflows/ci.yml",
+     "line": 22,
+     "excerpt": "node-version: 22"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "The only end-to-end test fails locally; pinning Node 22 (.nvmrc, engines) is minutes of work and makes every later fix checkable."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add an engines field and .nvmrc for Node 22, or fix the helper (PostgREST/Storage emulator or project resolution under Node 26) and run the harness on both; keep this harness as the acceptance test for SCHED-02 and SCHED-03.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "Reproduced on this machine (Node v26.8.2): tests/lib/dneskai-dry-day.test.ts fails 6 tests; the first assertion at :79 receives errors collection/media/briefs dneskai-project-unavailable (thrown at scheduler-ports.ts:37). The 4 scheduler unit files pass. ci.yml:22 and :58 pin Node 22; package.json has no engines field and there is no .nvmrc. That Node 26 is the cause is the reader's inference from the green CI run; this check did not run Node 22.",
+    "correctedLocations": []
+   },
+   "impactStatement": "The owner cannot reproduce the night locally before changing the scheduler; a Node-version-dependent helper is a latent CI surprise when CI moves."
+  }
+ ],
+ "openQuestions": [
+  "Which Vercel plan and function limits does own-dashboard run on? scaling.md:7 assumes Hobby; the brief says unverified; SCHED-13's second step depends on it.",
+  "What is the real per-attempt latency of claude-sonnet-5-5 at 2,500 output tokens for this prompt? Nothing has run live, so the 45 s two-attempt fit (SCHED-02) is unmeasured.",
+  "What is the Vercel-to-Supabase storage round-trip latency? The pre-render arithmetic (SCHED-03) assumes about 100 ms per call.",
+  "Why does the dry-day harness fail under Node 26 at project resolution? Not diagnosed in this read-only audit (SCHED-14).",
+  "Production marketing_ticks for the night of 21-22 October (collection tick count, the first daily tick's retention error) were not read; this reader was not permitted Supabase access.",
+  "Does the owner want kit variants pre-rendered overnight (instant switch, 4 extra ticks) or rendered on demand (2-4 s per kit)? SCHED-03 recommends both, with pre-render as the default."
+ ],
+ "verification": {
+  "confirmed": 7,
+  "partly": 7,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 11,
+  "dropped": 3,
+  "quickWins": 1,
+  "verifiedAt": "2026-10-22T00:06:28Z",
+  "verifier": "A-verify-1",
+  "sourceMap": "dneskai-audit-handoff/maps/map-scheduler.json",
+  "repoCommit": "8df25a5",
+  "lineCheck": "All cited lines checked with grep -n/sed -n on own-dashboard 8df25a5 (worktree fable/audit-2026-10): every excerpt sits on the cited line.",
+  "notes": [
+   "Line numbers: every cited line holds its excerpt; the only path fix is the brief (cited as fable-dneskai-brief.md, file is dneskai-audit-handoff/brief.md, lines unchanged).",
+   "Production at DB clock 2026-10-21 23:56 UTC: no daily tick has run yet, no generation job has ever been queued, no publication is live. Findings that describe daily-tick errors, generation deferrals or publish timing are code readings, not observations.",
+   "Production cron has 2 jobs, not 4: both the history prune and purge-cron-runs are unscheduled.",
+   "Owner items: run the two retention statements (SCHED-05); Vercel plan and limits (SCHED-13); five-kit pre-render vs on-demand (SCHED-03); when to delete bridge/pilot/n8n paths (SCHED-08).",
+   "Evidence: 8 read-only SELECTs; vitest re-run of the 4 scheduler files plus the dry-day harness on Node v26.8.2."
+  ]
+ }
+}

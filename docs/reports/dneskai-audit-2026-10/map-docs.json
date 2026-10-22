@@ -1,0 +1,1058 @@
+{
+ "subsystem": "docs",
+ "summary": "Doc/code drift sweep over 17 own-dashboard docs and 2 quorum docs at 8df25a5/76314a3. 18 findings, every one citing the doc line and the code line. Three could mislead the owner into a wrong action: the migration guide claims repository and production versions match and points to repair commands that do not exist (24 production-only and 20 repo-only versions, plus restrict_pg_net_browser_roles with no file), so the next db push fails or a careless repair re-applies 20 migrations; quorum NEEDED.md proposes cancelling the \"unused\" Apify subscription that OwnDashboard Instagram collection and the $150 credit depend on; own-dashboard NEEDED.md keeps retired staging/n8n/BoardlessAI items, one asking for Insights access, and says waiting briefs get jobs after verification when they lapse first. Other drift: retention and the cron prune described as live (production lacks both; the daily tick logs scheduler-state-unavailable), .env.example defaults the feed provider to the retired Quorum bridge, the worker README describes an n8n-called external worker, the weekly-operations doc is unmarked history, dneskai-source-media.md:28-29 is still stale (PR #126 fixed only marketing-revision-media.md:28,45), and smaller wording drifts. Verified consistent: the vendored studio pin equals quorum studio at 76314a3; marketing-launch.md and marketing-n8n.md are bannered as historical; marketing-render-preflight.md and UPSTREAM.md match code.",
+ "files": [
+  {
+   "path": "own-dashboard/docs/migration-guide.md",
+   "role": "Migration history and the 2026-10-21 production apply section; claims about production versions"
+  },
+  {
+   "path": "own-dashboard/README.md",
+   "role": "Migration list 39-59 and the statement about marketing migrations in production"
+  },
+  {
+   "path": "own-dashboard/DOCS.md",
+   "role": "Product documentation; no section on the DNESKAi pipeline"
+  },
+  {
+   "path": "own-dashboard/NEEDED.md",
+   "role": "Owner action list; DNESKAi items and stale marketing items"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-scheduling.md",
+   "role": "pg_cron tick doc; retention and prune presented as live"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-source-media.md",
+   "role": "Media step doc; stale sentence on lines 28-29, host-skip wording"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-revision-media.md",
+   "role": "URL renewal and owner edits; lines 28 and 45 fixed by PR #126"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-weekly-operations.md",
+   "role": "13 October weekly n8n plan; not marked historical"
+  },
+  {
+   "path": "own-dashboard/services/marketing-worker/README.md",
+   "role": "External n8n-called worker description; stale"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-generation.md",
+   "role": "Generation v5 doc; worker integration paragraph stale"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-briefs.md",
+   "role": "Events and briefs doc; #115-only branch paragraph and Jev age claim"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-native-feeds.md",
+   "role": "Native adapters; stale 8 s / 40 s deadline wording"
+  },
+  {
+   "path": "own-dashboard/docs/dneskai-source-collection.md",
+   "role": "Collection doc (Czech); Quorum adapters wording, Apify charge attribution"
+  },
+  {
+   "path": "own-dashboard/docs/external-setup.md",
+   "role": "Section 11 Instagram publishing; token refresh retry wording"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-render-preflight.md",
+   "role": "Renderer diagnostic and studio packaging; consistent with code"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-launch.md",
+   "role": "Marked historical (superseded by #110); consistent"
+  },
+  {
+   "path": "own-dashboard/docs/marketing-n8n.md",
+   "role": "Marked historical (superseded by #110); consistent"
+  },
+  {
+   "path": "own-dashboard/vendor/carousel-studio/UPSTREAM.md",
+   "role": "Studio pin 852c2e9; matches quorum studio tree at 76314a3"
+  },
+  {
+   "path": "own-dashboard/.env.example",
+   "role": "Feed provider default bridge"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+   "role": "Feed provider switch: bridge unless MARKETING_DNESKAI_FEED_PROVIDER=native"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+   "role": "Tick steps incl. retention and token backoff"
+  },
+  {
+   "path": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+   "role": "Brief slots and lapse rules"
+  },
+  {
+   "path": "own-dashboard/supabase/migrations/",
+   "role": "21 repository migrations 20261012225640..20261021100000 vs 25 production entries"
+  },
+  {
+   "path": "quorum/docs/DNESKAI-OWN-DASHBOARD-SOURCE.md",
+   "role": "Quorum source and collection bridge doc; consistent with the bridge being off by default"
+  },
+  {
+   "path": "quorum/docs/NEEDED.md",
+   "role": "Quorum owner list; Apify cancellation item and completed items"
+  }
+ ],
+ "facts": [
+  {
+   "fact": "PR #126 (commit fcf9dcf) fixed docs/marketing-revision-media.md lines 28 and 45 flagged in #118: line 28 now says the daily tick renews URLs expiring within 48 hours, line 45 says the route resolves the renderer from dneskai-wiring.ts. It did not touch docs/dneskai-source-media.md.",
+   "evidence": "own-dashboard/docs/marketing-revision-media.md:28 `The daily tick (#120, \\`renewal\\` in \\`src/lib/marketing/scheduler.ts\\`) runs it`; :45 `resolves the renderer, media loader and pool lister from \\`src/lib/marketing/dneskai-wiring.ts\\``; `git show --stat fcf9dcf` lists NEEDED.md, docs/dneskai-source-collection.md, docs/marketing-revision-media.md only"
+  },
+  {
+   "fact": "The vendored studio pin is current: quorum studio tree at 852c2e9 and at 76314a3 is the same object 3d8482180ed0, and no quorum commit touches studio/ between them.",
+   "evidence": "own-dashboard/vendor/carousel-studio/UPSTREAM.md:10 `Commit: \\`852c2e9f4fd4447ee602cd2df2c775bbba036fa2\\``; :16 `studio tree \\`3d8482180ed0da7dc718df83bfb8e62e495c6511\\``; `git rev-parse 852c2e9:studio 76314a3:studio` both 3d84821…; `git log 852c2e9..76314a3 -- studio` empty"
+  },
+  {
+   "fact": "UPSTREAM.md dependency notes match the manifests: upstream sharp 0.35.4 / zod 4.4.3 exact, vendored caret ranges, OwnDashboard sharp 0.35.5, zod 4.6.7, resvg 2.6.2; 17 font families and 46 face files are vendored, as marketing-render-preflight.md:49 says.",
+   "evidence": "quorum/studio/package.json:33 `\"sharp\": \"0.35.4\"`; own-dashboard/vendor/carousel-studio/package.json:21 `\"sharp\": \"^0.35.4\"`; own-dashboard/package.json:59 `\"sharp\": \"0.35.5\"`; `ls vendor/carousel-studio/fonts | wc -l` = 17, font files = 46"
+  },
+  {
+   "fact": "marketing-launch.md and marketing-n8n.md carry a 'Historical state, superseded by #110' banner, so their n8n and BoardlessAI-article content is labelled as history; marketing-weekly-operations.md has no such banner.",
+   "evidence": "own-dashboard/docs/marketing-launch.md:3 `> **Historical state, superseded by`; own-dashboard/docs/marketing-n8n.md:3 same; own-dashboard/docs/marketing-weekly-operations.md:3 `Ověřeno 13. října 2026.`"
+  },
+  {
+   "fact": "Production records 25 marketing-era migrations; the repository holds 21 files from 20261012225640 to 20261021100000. Only 20261015234547_oslo_career_preferences has the same version on both sides. The other 20 files are recorded under apply-time versions, two of them split (events_briefs into 3 entries, scheduler into 2), and 20261021125123 restrict_pg_net_browser_roles exists only in production.",
+   "evidence": "`ls supabase/migrations | grep ^202610` (21 files) vs the production list in audit-map-workflow.js MIGRATIONS (25 entries, taken from the 21 Oct brief, not re-queried); own-dashboard/docs/migration-guide.md:689-705; production list re-confirmed in own-dashboard/docs/reports/dneskai-audit-2026-10/production-evidence.md:251 (list_migrations, Q27)"
+  },
+  {
+   "fact": "The feed provider defaults to the Quorum bridge in code; native collection needs MARKETING_DNESKAI_FEED_PROVIDER=native, which production sets.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:40 `if(env.MARKETING_DNESKAI_FEED_PROVIDER==='native'){response=await collectNativeDneskaiFeed`; :42 `collection-bridge-unconfigured`; own-dashboard/docs/dneskai-native-feeds.md:171 `Production sets \\`MARKETING_DNESKAI_FEED_PROVIDER=native\\``"
+  },
+  {
+   "fact": "The daily tick's retention step calls marketing_scheduler_prune_ticks through the scheduler store, whose rpc wrapper maps every database error to the code scheduler-state-unavailable.",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:474 `const removed = await ports.store.pruneTicks(MARKETING_TICK_RETENTION_DAYS);`; :533 `if (error) throw new Error(\"scheduler-state-unavailable\");`; :551 `rpc(\"marketing_scheduler_prune_ticks\"`"
+  },
+  {
+   "fact": "A brief waiting for the account lapses as brief-slot-passed when its slot is under 30 minutes away, as brief-target-date-passed when no slot of its day is left, or brief-expired at 48 h (news) / 14 days.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:34 `DNESKAI_BRIEF_MIN_LEAD_MINUTES = 30`; :288 `skip(row, 'brief-target-date-passed')`; :307 `skip(row, 'brief-slot-passed')`; own-dashboard/src/lib/marketing/dneskai-brief-source.ts:21 `48 * HOUR : 14 * 24 * HOUR`"
+  },
+  {
+   "fact": "Instagram collection in OwnDashboard calls Apify's apify~instagram-scraper with APIFY_TOKEN when MARKETING_DNESKAI_APIFY_ENABLED is on; the Apify account (Starter, $150 promotional credit until 2026-11-22, monthly cap raised to $244) is the one Quorum NEEDED.md proposes to cancel.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:95 `if(!env.APIFY_TOKEN||!env.MARKETING_DNESKAI_APIFY_ACTOR_ID`; :103 `https://api.apify.com/v2/actors/apify~instagram-scraper/runs`; dneskai-audit-handoff/research/apify-account.md:4-11"
+  },
+  {
+   "fact": "OwnDashboard DNESKAi slots are 08:00, 12:30, 17:00 and 20:00 Prague; a 60-minute clearance keeps briefs apart.",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:30 `DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '17:00', '20:00']`; :32 `DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES = 60`"
+  }
+ ],
+ "thresholds": [
+  {
+   "name": "Tick retention",
+   "value": "14 days (marketing_ticks), not in production",
+   "evidence": "own-dashboard/docs/marketing-scheduling.md:71; own-dashboard/docs/migration-guide.md:702"
+  },
+  {
+   "name": "cron history prune",
+   "value": "43 3 * * * UTC, 14 days, not in production",
+   "evidence": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql:89; own-dashboard/docs/migration-guide.md:703"
+  },
+  {
+   "name": "Free source deadline",
+   "value": "25 s per source (doc says 8 s); 45 s per collection call (doc says 40 s)",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-collection.ts:13,33; own-dashboard/docs/dneskai-native-feeds.md:20,33"
+  },
+  {
+   "name": "Brief minimum lead",
+   "value": "30 minutes before slot",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-briefs.ts:34"
+  },
+  {
+   "name": "Token refresh backoff",
+   "value": "failed: 24 h then retried; held: 1 h; uncertain: never for the same token",
+   "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:83-84,399,419"
+  },
+  {
+   "name": "Jev duplicate read window",
+   "value": "7 days (open and selected reports 30 days)",
+   "evidence": "own-dashboard/src/lib/marketing/dneskai-store.ts:62"
+  }
+ ],
+ "measurements": [
+  {
+   "what": "Docs read for this sweep",
+   "value": "19 files (17 own-dashboard incl. README, DOCS.md, NEEDED.md, .env.example, UPSTREAM.md; 2 quorum)",
+   "method": "measured: read with sed -n/cat -n in the worktree at 8df25a5 and quorum at 76314a3"
+  },
+  {
+   "what": "Migration versions matching production",
+   "value": "1 of 21 repository files (20261015234547); 20 renamed; 3 extra split entries; 1 production-only entry; 25 production rows",
+   "method": "measured: ls supabase/migrations against list_migrations as recorded in own-dashboard/docs/reports/dneskai-audit-2026-10/production-evidence.md:251-253"
+  },
+  {
+   "what": "NEEDED.md items",
+   "value": "own-dashboard: 1 checked [x] item and 4 unchecked items describing the retired October staging/n8n/BoardlessAI path (lines 3, 20, 21, 23, 24); quorum: 2 checked [x] items (lines 3, 5)",
+   "method": "measured: cat -n NEEDED.md and quorum/docs/NEEDED.md"
+  },
+  {
+   "what": "Doc/code drifts found",
+   "value": "18 findings, 16 doc-drift and 2 risk",
+   "method": "measured: this map"
+  },
+  {
+   "what": "Mentions of the DNESKAi pipeline in DOCS.md",
+   "value": "0 (only a seeded-cron sentence and the marketing calendar card)",
+   "method": "measured: grep -n -i 'pg_cron\\|tick\\|Dnes ke schválení\\|dneskai' DOCS.md"
+  }
+ ],
+ "findings": [
+  {
+   "id": "DOCS-01",
+   "title": "The migration guide says repository versions match production; for the whole marketing set they do not, and the promised repair commands do not exist",
+   "category": "risk",
+   "claim": "migration-guide.md:89 states that every file from 20260721165419 on carries the version production recorded, and :85 says NEEDED.md lists the known mismatches with migration repair commands. Production recorded all 20 October marketing files under apply-time versions (20261013193104… and 20261021122104…), and NEEDED.md contains no repair command. README.md:157 still says marketing migrations 39-46 do not imply a production deployment, although all are applied. The 2026-10-21 section (:689-691) explains the renaming but nothing updates :85/:89.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 89,
+     "excerpt": "Every file from `20260721165419` on carries the version production recorded for it"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 85,
+     "excerpt": "`NEEDED.md` lists the known mismatches on the production project and the `migration repair` commands that align them."
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 691,
+     "excerpt": "records the apply time as the version"
+    },
+    {
+     "file": "own-dashboard/README.md",
+     "line": 157,
+     "excerpt": "Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a p"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+     "line": 1,
+     "excerpt": "-- Owner-scoped marketing state. Production rollout requires review and a backup."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "S",
+    "risk": "high",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Blocks the next migration (kits, Design Lab state) and invites a wrong repair."
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "high",
+   "recommendation": "Add a \"Production versions 2026-10\" table to migration-guide.md with the 25 recorded versions and the exact `migration repair` (or file-rename) steps, fix :85/:89 and README.md:157.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "Re-read migration-guide.md:85,89,689-691 and README.md:157; ls supabase/migrations gives 21 files from 20261012225640; production list re-confirmed by the production workstream (own-dashboard/docs/reports/dneskai-audit-2026-10/production-evidence.md:251, list_migrations): 25 entries, only 20261015234547 shared; grep -n repair NEEDED.md finds nothing.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-02",
+   "title": "restrict_pg_net_browser_roles exists only in production; the repository has no file for it",
+   "category": "doc-drift",
+   "claim": "Production history ends with 20261021125123 restrict_pg_net_browser_roles. `grep -rn restrict_pg_net` finds only the prose at migration-guide.md:707, which says it changed nothing; no migration file exists. A fresh install never runs it (harmless, since it is a no-op by the guide's account), but `migration list` shows a remote-only version, so `db push` refuses until it is repaired or a matching file is added.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 707,
+     "excerpt": "`restrict_pg_net_browser_roles` changed nothing"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261021100000_dneskai_hideable_project_tabs.sql",
+     "line": 1,
+     "excerpt": "-- Allow hiding the four DNESKAi project workspace tabs."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Small fix that unblocks db push together with DOCS-01."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "Commit `supabase/migrations/20261021125123_restrict_pg_net_browser_roles.sql` with the statement production ran (or a commented no-op) and note it in the guide.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "grep -rln restrict_pg_net over the worktree (excluding node_modules/.git) finds only docs/migration-guide.md and the production evidence report; own-dashboard/docs/reports/dneskai-audit-2026-10/production-evidence.md:253 records the same. No migration file.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-03",
+   "title": "Scheduling doc and README present tick retention and the cron-history prune as running; production has neither and the daily tick logs a misleading error code",
+   "category": "doc-drift",
+   "claim": "marketing-scheduling.md:71 and :74 describe retention and marketing-cron-history-prune as running, :139 counts one prune run a day, README.md:151 says marketing_ticks are kept 14 days. migration-guide.md:702-703 and NEEDED.md:9 say both are missing in production. The retention step (scheduler.ts:474) then fails through the rpc wrapper, which reports scheduler-state-unavailable (:533), not a missing function.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 71,
+     "excerpt": "| retention | Deletes `marketing_ticks` rows older than 14 days. |"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 139,
+     "excerpt": "1 daily run and 1 prune run a day"
+    },
+    {
+     "file": "own-dashboard/README.md",
+     "line": 151,
+     "excerpt": "`marketing_ticks`, kept 14 days"
+    },
+    {
+     "file": "own-dashboard/docs/migration-guide.md",
+     "line": 702,
+     "excerpt": "`marketing_scheduler_prune_ticks` is not in production yet."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 474,
+     "excerpt": "const removed = await ports.store.pruneTicks(MARKETING_TICK_RETENTION_DAYS);"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 533,
+     "excerpt": "if (error) throw new Error(\"scheduler-state-unavailable\");"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": "Owner runs the retention SQL from migration-guide.md (5 minutes, deletes rows)",
+    "reason": "Daily misleading error in the owner view; fix is a 5-minute owner action."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Owner runs the 5-minute SQL block (NEEDED.md:9); until then add a \"not in production\" note at marketing-scheduling.md:71/74 and map a missing-function error to its own code.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "marketing-scheduling.md:71,74,139 and README.md:151 read as stated; migration-guide.md:702-703 and NEEDED.md:9 say both objects are missing; own-dashboard/docs/reports/dneskai-audit-2026-10/production-evidence.md:299 shows marketing_scheduler_prune_ticks absent in production; scheduler.ts:531-535 rpc wrapper throws scheduler-state-unavailable on any rpc error, and :474 has no own catch, so runStep records that code.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-04",
+   "title": "dneskai-source-media.md:28-29 still says no app path runs media collection; PR #126 did not fix it",
+   "category": "doc-drift",
+   "claim": "Lines 28-29 say that until the scheduler is deployed no path in the application runs these functions. The scheduler is deployed and its ports call collectDneskaiMedia and purgeUnusedDneskaiMedia; the same section (:25-27) already says the tick calls them, so the paragraph contradicts itself. Commit fcf9dcf (PR #126) fixed the sister lines in marketing-revision-media.md but not this file.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-media.md",
+     "line": 28,
+     "excerpt": "Dokud plánovač nasazený"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-media.md",
+     "line": 29,
+     "excerpt": "není, žádná cesta v aplikaci tyto funkce nespouští."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+     "line": 65,
+     "excerpt": "collectMedia: (project, candidateIds, options) => collectDneskaiMedia(db, owner, project, candidateIds, options),"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+     "line": 69,
+     "excerpt": "purgeMedia: (days) => purgeUnusedDneskaiMedia(db, owner, days),"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Cosmetic but one line; fold into a docs cleanup commit."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Delete the sentence \"Dokud plánovač nasazený není, žádná cesta v aplikaci tyto funkce nespouští.\" at :28-29.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-source-media.md:28-29 unchanged at 8df25a5; git show --stat fcf9dcf does not list this file; scheduler-ports.ts:65,69 wire both functions and scheduler.ts:298,462 call them.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-05",
+   "title": ".env.example and the native-feeds doc keep the retired Quorum bridge as the default feed provider",
+   "category": "risk",
+   "claim": "Code collects through the Quorum bridge unless MARKETING_DNESKAI_FEED_PROVIDER is exactly native (dneskai-providers.ts:40-42). .env.example:148 sets bridge and native-feeds.md:3 calls unset/bridge the existing path, while Quorum turned the bridge off on 21 October and it answers 503 (quorum NEEDED.md:5).",
+   "evidence": [
+    {
+     "file": "own-dashboard/.env.example",
+     "line": 148,
+     "excerpt": "MARKETING_DNESKAI_FEED_PROVIDER=bridge"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 3,
+     "excerpt": "Unset or `bridge` keeps the existing signed collection bridge."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 40,
+     "excerpt": "if(env.MARKETING_DNESKAI_FEED_PROVIDER==='native'){response=await collectNativeDneskaiFeed(source,since,options);}"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 42,
+     "excerpt": "throw new DneskaiProviderError('collection-bridge-unconfigured')"
+    },
+    {
+     "file": "quorum/docs/NEEDED.md",
+     "line": 5,
+     "excerpt": "`/admin/api/marketing-collection` now answers a signed query with 503."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "medium",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Native default removes a dead Quorum dependency and a Preview trap; supports consolidation."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "medium",
+   "recommendation": "Make native the code default (bridge only when explicitly set), set .env.example to native and reword native-feeds.md:3 and the .env comment.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "dneskai-providers.ts:38-42: unset or bridge takes the bridge path, which throws collection-bridge-unconfigured without URL/secret, otherwise posts to Quorum (503 per quorum NEEDED.md:5). .env.example:148 sets bridge. Correction: the failure is not silent; each stage records a provider error code visible in Zdroje and the tick log. Production is unaffected while MARKETING_DNESKAI_FEED_PROVIDER=native stays set.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-06",
+   "title": "The worker README and generation doc describe an external n8n-called worker that needs an approved template; DNESKAi generation runs in-process from the tick with no template",
+   "category": "doc-drift",
+   "claim": "services/marketing-worker/README.md:3 says hosting is not provisioned and n8n Cloud calls the HTTP interface; :5 requires the exact approved template in every envelope. marketing-generation.md:195 repeats that n8n calls HTTP. The tick calls executeMarketingJob in-process (scheduler-ports.ts:77), and DneskaiDeckJobRequestSchema carries no template (protocol.ts:25-29).",
+   "evidence": [
+    {
+     "file": "own-dashboard/services/marketing-worker/README.md",
+     "line": 3,
+     "excerpt": "n8n Cloud calls this HTTP interface"
+    },
+    {
+     "file": "own-dashboard/services/marketing-worker/README.md",
+     "line": 5,
+     "excerpt": "include `generation` and the exact approved `template`"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-generation.md",
+     "line": 195,
+     "excerpt": "n8n Cloud calls HTTP; it does not use Execute Command."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+     "line": 77,
+     "excerpt": "executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId,"
+    },
+    {
+     "file": "own-dashboard/services/marketing-worker/protocol.ts",
+     "line": 25,
+     "excerpt": "A DNESKAi job (#116): one brief, rendered through the vendored carousel studio, so it carries no template."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Removes an imagined moving part from the consolidation picture."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Rewrite the README to \"the protocol module that executeMarketingJob uses in-process from /api/marketing/tick; DNESKAi jobs carry no template\" and drop the n8n sentence at marketing-generation.md:195.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "README.md:3,5 and marketing-generation.md:195 read as quoted; scheduler-ports.ts:77 executeJob calls executeMarketingJob in-process; protocol.ts:25-33 DneskaiDeckJobRequestSchema has no template and marketingJobTemplate returns null for it (:46-47).",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-07",
+   "title": "marketing-weekly-operations.md still describes DNESKAi as derived from the BoardlessAI edition and run by an n8n 07:00 workflow with a 12:00 slot, without a historical banner",
+   "category": "doc-drift",
+   "claim": "The doc (dated 13 October, :3) says DNESKAi drafts come from the BoardlessAI final edition (:9), are prepared by an n8n concept at 07:00 (:47) and slotted at 12:00 (:48). Code collects native feeds nightly and slots briefs at 08:00/12:30/17:00/20:00 from pg_cron; articles are paused. NEEDED.md:23 still sends the reader to this doc.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/marketing-weekly-operations.md",
+     "line": 9,
+     "excerpt": "Vychází z finální edice BoardlessAI"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-weekly-operations.md",
+     "line": 47,
+     "excerpt": "Původní n8n koncept má spouštění v 07:00"
+    },
+    {
+     "file": "own-dashboard/docs/marketing-weekly-operations.md",
+     "line": 48,
+     "excerpt": "DNESKAi 12:00"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 30,
+     "excerpt": "export const DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '17:00', '20:00'] as const;"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020160100_marketing_scheduler_cron.sql",
+     "line": 87,
+     "excerpt": "perform cron.schedule('marketing-tick-minute','*/5 * * * *'"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "One banner line."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add the same \"Historical state, superseded by #110\" banner as marketing-launch.md:3 and link workflows-guide.md#dneskai-on-21-october-2026.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "marketing-weekly-operations.md:3,9,47,48 as quoted, no historical banner (contrast marketing-launch.md:3); dneskai-briefs.ts:30 slots; cron migration :87.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-08",
+   "title": "own-dashboard NEEDED.md keeps a finished item and four items for the retired staging, n8n and BoardlessAI-article path, one of which asks for Insights access",
+   "category": "doc-drift",
+   "claim": "CLAUDE.md says NEEDED.md holds only unfinished work, but :3 is checked [x]. :20 asks to review the exhausted staging pilot, :21 to pick a real BoardlessAI final article (articles are paused), :23 to finish the devShark offline import, and :24 to connect the n8n concepts and obtain Threads and Insights access. Code runs everything from pg_cron (n8n keeps no timer) and external-setup.md:141 forbids requesting insights.",
+   "evidence": [
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 3,
+     "excerpt": "- [x] **Shift Career to Oslo and refresh the shared interface**"
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 20,
+     "excerpt": "**Review the exhausted marketing pilot before any extension**"
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 21,
+     "excerpt": "the owner still needs to select a real final article and separately authorize delivery"
+    },
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 24,
+     "excerpt": "review the three saved inactive n8n concepts, connect their authorized runtime, and obtain separate Threads and Insights access."
+    },
+    {
+     "file": "own-dashboard/docs/marketing-scheduling.md",
+     "line": 5,
+     "excerpt": "in Supabase with pg_cron and pg_net. n8n keeps no marketing timer."
+    },
+    {
+     "file": "own-dashboard/docs/external-setup.md",
+     "line": 141,
+     "excerpt": "Do not add messaging, comments, insights or ads permissions."
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": "Whether to request Insights scopes (owner decision; not by NEEDED.md drift)",
+    "reason": "Keeps the owner list honest and stops an accidental Insights or n8n action."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Move :3 to a report, mark :20/:21/:23/:24 as superseded by #110 (or delete them, keeping the staging-retirement item :13), and phrase Insights as a pending owner decision.",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "NEEDED.md:3 is [x]; :20, :21, :24 describe the retired staging pilot, BoardlessAI article input and n8n/Insights; external-setup.md:141 forbids insights scopes. Correction: :23 is the devShark offline import (owner:ai) and is not proven retired, so it is not part of the DNESKAi drift; three DNESKAi-irrelevant items plus one finished item remain.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-09",
+   "title": "Quorum NEEDED.md proposes cancelling the \"unused\" Apify subscription that OwnDashboard's Instagram collection and the $150 research plan depend on",
+   "category": "doc-drift",
+   "claim": "quorum/docs/NEEDED.md:13 says no current DNESKAi source needs Apify and suggests cancelling, citing a $24 hard limit. OwnDashboard collection calls apify~instagram-scraper with APIFY_TOKEN (dneskai-providers.ts:95,103), the brief makes Apify the best source of multi-image material, and the account now holds $150 promotional credit until 2026-11-22 with a $244 monthly cap. The file also keeps two finished [x] items (:3, :5).",
+   "evidence": [
+    {
+     "file": "quorum/docs/NEEDED.md",
+     "line": 13,
+     "excerpt": "**Cancel or retain the unused Apify subscription.** No current DNESKAi article source needs Apify."
+    },
+    {
+     "file": "quorum/docs/NEEDED.md",
+     "line": 3,
+     "excerpt": "- [x] **Deploy the site so Vercel stops dispatching the paused DNESKAi day.**"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+     "line": 103,
+     "excerpt": "https://api.apify.com/v2/actors/apify~instagram-scraper/runs"
+    },
+    {
+     "file": "quorum/config/fixed-costs.json",
+     "line": 6,
+     "excerpt": "\"name\": \"Apify Starter\","
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 4,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": "Keep Apify (and its $150 credit) for the DNESKAi plan, or cancel",
+    "reason": "Directly protects $150 of credit and the only multi-image source."
+   },
+   "impactScore": 4,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Reword quorum NEEDED.md:13 to \"Apify is used by OwnDashboard DNESKAi collection (off) and the October research plan; decide there\" and drop the [x] items :3 and :5.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "quorum/docs/NEEDED.md:13 and :3,:5 as quoted; dneskai-providers.ts:95,103 use APIFY_TOKEN and apify~instagram-scraper; dneskai-audit-handoff/research/apify-account.md:4-11 records the Starter plan, the $150 promotional credit to 2026-11-22 and maxMonthlyUsageUsd 244 versus the $24 limit NEEDED.md cites.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-10",
+   "title": "NEEDED.md says waiting briefs get jobs on the next tick after verification; they lapse first",
+   "category": "doc-drift",
+   "claim": "NEEDED.md:8 ends \"Briefs prepared before verification get their generation jobs on the next tick.\" A pending account-unavailable brief is skipped as brief-slot-passed under 30 minutes before its slot and as brief-target-date-passed when its day has no slot left, so the 22 October briefs are gone before any verification later that day.",
+   "evidence": [
+    {
+     "file": "own-dashboard/NEEDED.md",
+     "line": 8,
+     "excerpt": "Briefs prepared before verification get their generation jobs on the next tick."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 307,
+     "excerpt": "skip(row, 'brief-slot-passed')"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 288,
+     "excerpt": "skip(row, 'brief-target-date-passed')"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+     "line": 34,
+     "excerpt": "export const DNESKAI_BRIEF_MIN_LEAD_MINUTES = 30;"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Sets the right urgency on the Meta setup that blocks the first carousel."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Append to NEEDED.md:8: \"A brief lapses 30 minutes before its slot, so only briefs for later slots get jobs.\"",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "NEEDED.md:8 ends with the quoted sentence; dneskai-briefs.ts:286-288 skip all open briefs when no slot of the target date is 30+ minutes away, :307 skips a brief whose own slot is under 30 minutes away.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-11",
+   "title": "Native-feeds doc keeps the old 8-second source deadline inside a 40-second collection deadline",
+   "category": "doc-drift",
+   "claim": "dneskai-native-feeds.md:20 and :33 speak of an 8 s source deadline within a 40 s collection deadline. The runner gives each free source 25 s (DNESKAI_FEED_TIMEOUT_MS) inside a 45 s call budget; 8 s is now only the per-request transport default and arXiv gets 20 s. The same doc corrects this at :182, so it contradicts itself.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 20,
+     "excerpt": "applies an 8-second request deadline within a 40-second collection deadline"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 33,
+     "excerpt": "If the runner's 8-second source deadline fires during that enrichment"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+     "line": 13,
+     "excerpt": "export const DNESKAI_FEED_TIMEOUT_MS=25_000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-native-feed.ts",
+     "line": 24,
+     "excerpt": "AbortSignal.timeout(40_000)"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/free-feeds/sources/adapters/arxiv.ts",
+     "line": 14,
+     "excerpt": "export const ARXIV_REQUEST_TIMEOUT_MS = 20_000;"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Accurate but minor."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "At :20 write \"8 s per request (arXiv 20 s), 25 s per source, 45 s per collection call\"; at :33 replace \"8-second\" with \"25-second\".",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "dneskai-native-feeds.md:20,33 as quoted; dneskai-collection.ts:13,33,42,52 give 25 s per free source in a 45 s call; dneskai-native-feed.ts:24 still has a 40 s cap of its own and url.ts:174 the 8 s request default. So :20 is partly still true (8 s per request, 40 s inside the native function) and :33 is wrong.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-12",
+   "title": "Collection doc and a contract comment still say the feeds run through Quorum adapters",
+   "category": "doc-drift",
+   "claim": "dneskai-source-collection.md:38 says the daily sources run \"přes existující Quorum adaptéry\"; dneskai-contracts.ts:72 says \"Quorum reuses its existing adapters\". Production uses the native copies in src/lib/marketing/free-feeds and the bridge is off.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 38,
+     "excerpt": "Google DeepMind, TechCrunch AI a Hacker News přes existující Quorum adaptéry."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-contracts.ts",
+     "line": 72,
+     "excerpt": "/** Quorum reuses its existing adapters; candidates are research, never approved SourcePackets. */"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-native-feeds.md",
+     "line": 171,
+     "excerpt": "Production sets `MARKETING_DNESKAI_FEED_PROVIDER=native`"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Accurate but minor."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Replace with \"přes nativní adaptéry v src/lib/marketing/free-feeds (kopie z Quorum)\" and fix the comment to say the schema is the bridge rollback contract.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-source-collection.md:38 and dneskai-contracts.ts:72 as quoted; production uses native (dneskai-native-feeds.md:171).",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-13",
+   "title": "Briefs doc still describes the #115-only branch where enqueue ends in job-request-invalid",
+   "category": "doc-drift",
+   "claim": "dneskai-briefs.md:150-152 says enqueueMarketingJob parses the devShark MarketingWorkerRequestSchema, so admission ends job-request-invalid until #116 is merged. #116 is merged: the runtime parses the union MarketingJobRequestSchema that includes DneskaiDeckJobRequestSchema.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 150,
+     "excerpt": "Na samotné větvi #115 `enqueueMarketingJob` parsuje `MarketingWorkerRequestSchema`"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+     "line": 130,
+     "excerpt": "const request = parseMarketingJobRequest(value);"
+    },
+    {
+     "file": "own-dashboard/services/marketing-worker/protocol.ts",
+     "line": 40,
+     "excerpt": "export const MarketingJobRequestSchema = z.union([MarketingWorkerRequestSchema, DneskaiDeckJobRequestSchema]);"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Accurate but minor."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Delete the sentences at :150-152 from \"Na samotné větvi #115\" to \"sloučení #116.\"",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-briefs.md:150-152 as quoted; worker-runtime.ts:130 parseMarketingJobRequest; protocol.ts:40 union schema includes DneskaiDeckJobRequestSchema.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-14",
+   "title": "Briefs doc says Jev duplicate links group reports at any age; the grouping only reads duplicates of the last 7 days",
+   "category": "doc-drift",
+   "claim": "dneskai-briefs.md:27 says a Jev duplicateOf link groups two reports regardless of time. groupDneskaiEvents itself is age-free, but its input reads duplicates of the last 7 days and open or selected reports of 30 days (DNESKAI_EVENT_READS).",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-briefs.md",
+     "line": 27,
+     "excerpt": "Jev označil jednu za duplicitu druhé (`duplicateOf`), bez ohledu na čas."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+     "line": 62,
+     "excerpt": "{status:'duplicate',days:7,limit:1000}"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Dropped: grouping semantics, no owner effect; the 14-day repeat check covers older repeats."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "At :27 write \"bez ohledu na čas v rámci načtených zpráv (duplicity 7 dní, ostatní 30 dní)\".",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-briefs.md:27 as quoted; dneskai-store.ts:58-62 reads duplicates of 7 days and open/selected reports of 30 days before grouping.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-15",
+   "title": "Media doc says off-host pictures are skipped as media-host-not-publisher; page pictures on unknown hosts vanish without a code",
+   "category": "doc-drift",
+   "claim": "dneskai-source-media.md:69 says an unknown host is skipped as media-host-not-publisher. For article pages, usableImageUrl returns undefined when allowImage refuses the host (dneskai-media-plan.ts:227), so the picture never enters the plan and no code is stored; the code exists only at fetch time (dneskai-media.ts:195) for URLs already planned.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-media.md",
+     "line": 69,
+     "excerpt": "Neznámý host se přeskočí jako `media-host-not-publisher`, nehádá se."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media-plan.ts",
+     "line": 227,
+     "excerpt": "return allowImage(url) ? url.href : undefined;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/dneskai-media.ts",
+     "line": 195,
+     "excerpt": "if (!allowImage(parsed)) throw new FetchFailure('media-host-not-publisher', false);"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 3,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": true,
+    "ownerDecision": null,
+    "reason": "Recording skipped hosts lets image supply be fixed from evidence; doc fix alone is cosmetic."
+   },
+   "impactScore": 3,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Either record skipped hosts in the plan (count and host only) or change :69 to \"se do plánu nedostane a kód se neukládá\".",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "dneskai-media-plan.ts:220-228 usableImageUrl returns undefined for a refused host and :243 push drops it without a code; dneskai-media.ts:195 throws media-host-not-publisher only for an already planned URL; dneskai-source-media.md:69 as quoted.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-16",
+   "title": "External setup says a failed token refresh is not retried; the tick retries it after 24 hours",
+   "category": "doc-drift",
+   "claim": "external-setup.md:164 says a failed or ambiguous refresh is reported and not retried. The token step backs off a failed refresh for 24 h (TOKEN_FAILED_BACKOFF_MS) and then tries again; only an uncertain refresh is never retried for the same token.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/external-setup.md",
+     "line": 164,
+     "excerpt": "A failed or ambiguous refresh is reported and not retried, and the old token stays in place."
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 83,
+     "excerpt": "const TOKEN_FAILED_BACKOFF_MS = 24 * 60 * 60_000;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 419,
+     "excerpt": "const wait = outcome.status === \"failed\" ? TOKEN_FAILED_BACKOFF_MS : TOKEN_HELD_BACKOFF_MS;"
+    },
+    {
+     "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+     "line": 399,
+     "excerpt": "An uncertain refresh is never retried for the same stored token"
+    }
+   ],
+   "impact": {
+    "keep": false,
+    "impactScore": 1,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Dropped: the panel warns at ten days; the wording difference changes no owner action."
+   },
+   "impactScore": 1,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "At :164 write \"A failed refresh is retried after 24 hours; an ambiguous one is never retried for the same token.\"",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "external-setup.md:164 as quoted; scheduler.ts:83 24 h backoff, :419-420 failed outcome stores a backoff and the step runs again after it, :399-404 uncertain marks block retries for the same token.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-17",
+   "title": "DOCS.md, the product doc every session must read, has no section on the DNESKAi pipeline",
+   "category": "doc-drift",
+   "claim": "CLAUDE.md lists DOCS.md under \"Read before changing\", but DOCS.md mentions DNESKAi only for the marketing calendar card and a seeded cron (:205). The project workspace mounts the DNESKAi tabs (project-workspace.tsx:52-53, 81) and the pipeline is documented only in workflows-guide.md and per-step docs.",
+   "evidence": [
+    {
+     "file": "own-dashboard/DOCS.md",
+     "line": 205,
+     "excerpt": "DNESKAi’s seeded cron represents its weekday publication check and incurs no model charge."
+    },
+    {
+     "file": "own-dashboard/src/components/projects/project-workspace.tsx",
+     "line": 52,
+     "excerpt": "import { isDneskaiProject } from \"@/lib/marketing/dneskai-registry\";"
+    },
+    {
+     "file": "own-dashboard/src/components/projects/project-workspace.tsx",
+     "line": 81,
+     "excerpt": "const DneskaiSources = dynamic("
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "Cheap orientation fix for every future session."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "Add a short \"DNESKAi social pipeline\" section to DOCS.md linking workflows-guide.md#dneskai-on-21-october-2026 and the per-step docs.",
+   "truth": {
+    "verdict": "confirmed",
+    "evidence": "grep -n -i on DOCS.md finds DNESKAi only at :201 (calendar) and :205 (seeded cron); no tick, review tab or pipeline section; project-workspace.tsx:52-53,81 mount the DNESKAi workspace.",
+    "correctedLocations": []
+   }
+  },
+  {
+   "id": "DOCS-18",
+   "title": "Collection doc attributes the one verified Apify charge two ways and the Apify reservation cites a rate the account no longer matches",
+   "category": "doc-drift",
+   "claim": "dneskai-source-collection.md:239 says Apify returned seven posts for $0.0161 in one test; :321 says $0.0161 was the Apify total of a 16-step run with three successful Instagram sources. The cursor-limits migration sizes the $0.04 reservation on a Starter rate of $2.30 per 1,000 results.",
+   "evidence": [
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 239,
+     "excerpt": "Apify vrátilo sedm příspěvků za doložených 0,0161 USD."
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 320,
+     "excerpt": "70 uložených kandidátů, tři úspěšné Instagram zdroje"
+    },
+    {
+     "file": "own-dashboard/docs/dneskai-source-collection.md",
+     "line": 321,
+     "excerpt": "API náklady jsou 0,017213294 USD: Apify vykázalo 0,0161 USD"
+    },
+    {
+     "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+     "line": 8,
+     "excerpt": "Starter rate of $2.30 per 1,000 cost $0.023"
+    }
+   ],
+   "impact": {
+    "keep": true,
+    "impactScore": 2,
+    "effort": "S",
+    "risk": "low",
+    "quickWin": false,
+    "ownerDecision": null,
+    "reason": "The per-profile Apify cost feeds the $150 plan; one sentence fixes it."
+   },
+   "impactScore": 2,
+   "effort": "S",
+   "risk": "low",
+   "recommendation": "State once, with the run id, whether $0.0161 was one profile or three, and give the per-profile cost range ($0.0046-0.0069 per the brief).",
+   "truth": {
+    "verdict": "partly",
+    "evidence": "dneskai-source-collection.md:236-239 is one owner-approved test returning seven posts for $0.0161; :318-322 is the continued run with three Instagram sources reporting the same $0.0161 Apify total. Both can be true if the continued run made no further Apify charge, so the doc is ambiguous rather than contradictory. The migration :8 rate is as quoted.",
+    "correctedLocations": []
+   }
+  }
+ ],
+ "openQuestions": [
+  "Should the October marketing files be renamed to the production versions (as was done for 2026-09-16) or should production be repaired to the file versions? Either needs care; neither was done.",
+  "What exactly did restrict_pg_net_browser_roles run in production? The guide says it changed nothing, but its SQL is not in the repository.",
+  "Was the $0.0161 Apify charge for one profile or for three (run ids in dneskai-source-collection.md)?",
+  "Should the weekly-operations, worker README and staging NEEDED items be deleted or kept under a historical banner? The owner's CLAUDE.md rule says NEEDED.md holds only unfinished work."
+ ],
+ "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-docs.json",
+ "verification": {
+  "confirmed": 14,
+  "partly": 4,
+  "refuted": 0,
+  "notConfirmed": 0,
+  "kept": 16,
+  "dropped": 2,
+  "verifiedAt": "2026-10-22T00:07:13Z"
+ }
+}

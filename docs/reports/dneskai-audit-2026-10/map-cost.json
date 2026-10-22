@@ -1,0 +1,1224 @@
+{
+  "subsystem": "cost",
+  "summary": "Every paid step is reserved before the call and counted against hard ceilings in SQL: collection $0.04 per Instagram profile and $0.003 per Jev stage inside $0.25 per Prague day (cursor_limits migration :98/:104), generation $0.25 per job inside a rolling $1.00 per 24 h (daily_generation_budget :57) and 8 jobs per 24 h for all brands (durable_jobs :96). Production has spent $0.019456 in total, all collection (Apify $0.0161 on 13 Oct, Jev $0.00336 over two nights); generation has spent $0 and has 0 jobs. The guards are safe but sized for fear, not for use: the $0.25 generation reservation is about 2x the arithmetic maximum of one job ($0.13) and about 10x the expected cost ($0.023); any provider failure, including unbilled 401/429, books the full $0.25 for 24 h; the 8-job cap, shared with devShark, leaves room for exactly one regeneration per post. At 4 posts a day the pipeline costs about $3/month in model spend (Sonnet 5.5), under $1/month in collection, and $0 in rendering; Haiku, vision or five-kit pre-render change this by cents to a few dollars, so cost is not what limits quality. Apify at current caps can spend at most $7.50/month, so the $150 promotional credit (expires 2026-11-22) cannot be used by the pipeline; it needs a separate owner-approved research plan. Simplicity: 42 MARKETING_* names and 13 provider variables are read, about 20 of them for retired paths (n8n, staging pilots, bridge, manual run); two retired entry points (/api/marketing/n8n and /api/marketing/dneskai/collect) can still trigger paid work when their secrets are set, and approval-notification.ts still runs on every approval. Docs disagree on plans: scaling.md says Vercel Hobby and Supabase Free and that model cost was never measured; Quorum records Apify Starter $22.99 and a $24 limit while the account reports a $244 cap plus $150 promo.",
+  "files": [
+    {
+      "path": "own-dashboard/src/lib/marketing/generation.ts",
+      "role": "DEFAULT_GENERATION_BUDGET (2 attempts, 20k in, 2.5k out, $0.25), reservation math, ambiguous-failure booking, admitPaidCall per attempt"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+      "role": "model default and Sonnet 5.5 pricing, daily ceiling env parser, ledger admission, 45 s DNESKAi latency budget, asset upload"
+    },
+    {
+      "path": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+      "role": "marketing_private.dneskai_generation_spend ledger and marketing_reserve_dneskai_generation"
+    },
+    {
+      "path": "own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql",
+      "role": "8 jobs per rolling 24 h in marketing_enqueue_job (moved to marketing_private by the pilot guard)"
+    },
+    {
+      "path": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+      "role": "current collection reservation: $0.04 Instagram, $0.003 Jev, $0.25 per Prague day, 10 posts/profile, 50/day"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+      "role": "JEV_INPUT_USD_PER_MTOK 0.042, Apify run with maxTotalChargeUsd 0.04 and post-run cost check"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-collection.ts",
+      "role": "paid switch logic (AI consent, PAID_ENABLED, APIFY_ENABLED), unresolved-cost hold"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/claude-call-profile.ts",
+      "role": "structured-output profile per model (Sonnet 5.5 json-schema, low effort)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/approval-notification.ts",
+      "role": "dormant n8n webhook called on every approval"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/n8n/route.ts",
+      "role": "retired n8n operations route; still routed, can execute jobs and knowledge runs"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/dneskai/collect/route.ts",
+      "role": "retired collection entry (n8n secret, manual, pilot)"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+      "role": "approval path that calls notifyMarketingApproval"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/dneskai/costs/route.ts",
+      "role": "owner Costs tab read (ceiling, 24 h spend, runs, jobs, ticks)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/knowledge-extraction.ts",
+      "role": "separate $0.25 default budget for Saved-source analysis (worker off)"
+    },
+    {
+      "path": "own-dashboard/scripts/dneskai-model-ab.ts",
+      "role": "A/B script; Haiku 5.5 list price constant 0.10/0.50; spend outside the daily ledger"
+    },
+    {
+      "path": "own-dashboard/docs/marketing-generation.md",
+      "role": "budget, ceiling and A/B dry-plan numbers"
+    },
+    {
+      "path": "own-dashboard/scaling.md",
+      "role": "plan and cost assumptions (Vercel Hobby, Supabase Free)"
+    },
+    {
+      "path": "own-dashboard/NEEDED.md",
+      "role": "owner cost items (Anthropic key, Apify decision, pilot measurements, A/B)"
+    },
+    {
+      "path": "quorum/config/fixed-costs.json",
+      "role": "Apify Starter $22.99/month"
+    },
+    {
+      "path": "quorum/docs/NEEDED.md",
+      "role": "Apify cancel-or-retain item with $24 hard usage limit"
+    },
+    {
+      "path": "dneskai-audit-handoff/research/apify-account.md",
+      "role": "Apify API facts of 22 Oct: Starter, $244 cap, $150 promo expiring 2026-11-22"
+    },
+    {
+      "path": "dneskai-audit-handoff/measurements/bench-render-run1.json",
+      "role": "measured render time and JPEG bytes per slide (M2, local)"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "Generation budget per DNESKAi job: 2 attempts, 20,000 input \"tokens\" (counted as UTF-8 bytes), 2,500 output tokens, $0.25, 60 s default overridden to 45 s by the worker.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64 `maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000`; own-dashboard/src/lib/marketing/worker-runtime.ts:308 `budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...`"
+    },
+    {
+      "fact": "Default model claude-sonnet-5-5 at $2 input / $10 output per MTok; another model needs explicit prices.",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:42 `DEFAULT_MARKETING_CLAUDE_MODEL = \"claude-sonnet-5-5\"`; :44 `{ inputPerMillionUsd: 2, outputPerMillionUsd: 10 }`; :55-56 rate() falls back only while model is the default"
+    },
+    {
+      "fact": "Rolling ceiling: MARKETING_DNESKAI_DAILY_GENERATION_USD, default 1, valid range (0, 50]; malformed refuses every DNESKAi call.",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:67 `DEFAULT_DNESKAI_DAILY_GENERATION_USD = 1`; :73 `value <= 0 || value > 50 ... dneskai-daily-generation-budget-invalid`"
+    },
+    {
+      "fact": "Before every attempt the worker reserves the job's whole maxCostUsd ($0.25) in the ledger; the ledger keeps one row per job (greatest reservation, calls+1, calls checked 1..3) and refuses when 24 h spend + reservation > ceiling.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:376 `await dependencies.admitPaidCall?.({ attempt, maxCostUsd: budget.maxCostUsd })`; own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql:57 `if spent+p_reservation>p_ceiling then`; :61 `on conflict(job_id) do update set calls=s.calls+1,...reserved_usd=greatest(...)`; :15 `calls integer not null default 1 check(calls between 1 and 3)`"
+    },
+    {
+      "fact": "Settled jobs count at their recorded estimatedCostUsd; running, reconciling or unreadable ones count at the full reservation. Rows are never deleted; the window moves.",
+      "evidence": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql:29-35 nested CASE on j.result->usage->estimatedCostUsd else s.reserved_usd; :38 `s.last_reserved_at>clock_timestamp()-interval '24 hours'`"
+    },
+    {
+      "fact": "Any model invoke failure or response without usage books max(spent+reservation, $0.25) for a brief job and is never retried.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:363-366 `const ambiguous = ... source.kind === \"brief\" ? Math.max(usage.estimatedCostUsd + reservation, budget.maxCostUsd)`; :385 and :392 `ambiguous(reservation);`"
+    },
+    {
+      "fact": "8 marketing jobs per owner per rolling 24 h, all brands together, counted at enqueue.",
+      "evidence": "own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql:96 `if (select count(*) from public.marketing_jobs where user_id=p_owner and created_at>now()-interval '24 hours')>=8 then raise exception 'daily job budget exhausted'`; own-dashboard/supabase/migrations/20261013092409_marketing_staging_pilot_guard.sql:23 `alter function public.marketing_enqueue_job(...) set schema marketing_private`"
+    },
+    {
+      "fact": "Collection: an Instagram stage reserves $0.04, a Jev stage $0.003; one Prague day stops at $0.25; Instagram at most 10 posts per profile and 50 per day; Jev stages = ceil(new candidates/8) up to 16.",
+      "evidence": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:98 `amount:=case when s.kind='instagram' then 0.04 else 0.003 end`; :104 `if total+amount>0.25 or (s.kind='instagram' and (s.max_items>10 or items+s.max_items>50))`; :18-21 jev_stage_count between 0 and 16"
+    },
+    {
+      "fact": "Apify run is started with maxTotalChargeUsd 0.04 and the result is held when usageTotalUsd is null or above 0.04.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:102 `maxTotalChargeUsd:'0.04'`; :114 `if(run.usageTotalUsd==null||run.usageTotalUsd>0.04)return{... errorCode: ... 'collection-cost-unknown':'collection-budget-exceeded'}`"
+    },
+    {
+      "fact": "Jev price constant $0.042 per MTok input, output free; cost computed from response usage.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:12 `export const JEV_INPUT_USD_PER_MTOK=0.042`; :185 `costUsd:response.usage.input_tokens*JEV_INPUT_USD_PER_MTOK/1_000_000`"
+    },
+    {
+      "fact": "Paid collection needs MARKETING_AI_CONSENT=true and MARKETING_DNESKAI_PAID_ENABLED=true; Instagram additionally MARKETING_DNESKAI_APIFY_ENABLED=true plus token, actor id and build. An unresolved paid stage holds all further paid stages.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-collection.ts:17 `apifyEnabled(env){return env.MARKETING_DNESKAI_APIFY_ENABLED==='true'}`; :18 paidAllowed checks MARKETING_AI_CONSENT and MARKETING_DNESKAI_PAID_ENABLED; :46-47 unresolved -> held 'collection-cost-unresolved'"
+    },
+    {
+      "fact": "Collection reservations are released by recording the measured cost: a stage with cost_usd <= reserved counts its cost in the run total; a stage with null or higher cost blocks further paid stages for the owner.",
+      "evidence": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:88 `if exists(... reserved_usd>0 and (cost_usd is null or cost_usd>reserved_usd)) then raise exception 'collection cost unresolved'`; :118 measured>reserved -> held"
+    },
+    {
+      "fact": "The Saved-source knowledge analysis has its own $0.25 default budget, 4,000 output and 24,000 input tokens; its worker is gated by MARKETING_KNOWLEDGE_WORKER_ENABLED.",
+      "evidence": "own-dashboard/src/lib/marketing/knowledge-extraction.ts:36 `const maxCostUsd = dependencies.maxCostUsd ?? 0.25`; :39-41; own-dashboard/src/lib/marketing/knowledge-runner.ts:28 `env.MARKETING_KNOWLEDGE_WORKER_ENABLED === \"true\"`"
+    },
+    {
+      "fact": "approval-notification.ts runs on every approval and POSTs to an n8n Cloud webhook (2 s timeout) when MARKETING_N8N_APPROVAL_WEBHOOK_URL and MARKETING_N8N_WEBHOOK_SECRET are set.",
+      "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:35 `const scheduling=await notifyMarketingApproval(data);`; own-dashboard/src/lib/marketing/approval-notification.ts:5-8 origin `https://bambambaklawa.app.n8n.cloud`, `AbortSignal.timeout(2000)`"
+    },
+    {
+      "fact": "Rendering makes no paid call; JPEGs go to the private marketing-assets bucket with no delete path (policy refuses deletes; no purge code).",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:22 `MARKETING_ASSET_BUCKET = \"marketing-assets\"`; :177 `files.upload(key, bytes, { upsert: false, contentType: \"image/jpeg\" ...`; own-dashboard/supabase/migrations/20261013001528_marketing_private_assets.sql:30 `for delete ... using (bucket_id<>'marketing-assets')`"
+    },
+    {
+      "fact": "The A/B script uses Haiku 5.5 at $0.10/$0.50 per MTok and its live spend is not counted in the daily generation ledger.",
+      "evidence": "own-dashboard/scripts/dneskai-model-ab.ts:33 `\"claude-haiku-5-5\": { inputPerMillionUsd: 0.1, outputPerMillionUsd: 0.5 }`; own-dashboard/docs/marketing-generation.md:189 `This spend is not counted in marketing_dneskai_generation_spent`"
+    },
+    {
+      "fact": "No prompt caching is used for generation.",
+      "evidence": "own-dashboard/docs/marketing-generation.md:13 `No prompt caching, browsing, model tools, fallback provider or LLM judge participates.`"
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "Generation reservation per job",
+      "value": "$0.25 (worst arithmetic max $0.13)",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64"
+    },
+    {
+      "name": "Generation attempts / input / output",
+      "value": "2 / 20,000 bytes-as-tokens / 2,500 tokens",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64; schema bounds :56-59 (max 3 / 32,000 / 4,000 / $1)"
+    },
+    {
+      "name": "Rolling generation ceiling",
+      "value": "$1.00 per 24 h (env, max 50)",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:67, :73"
+    },
+    {
+      "name": "Jobs per rolling 24 h",
+      "value": "8, all brands",
+      "evidence": "own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql:96"
+    },
+    {
+      "name": "DNESKAi worker latency",
+      "value": "45 s per job, both attempts",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:308"
+    },
+    {
+      "name": "Collection day ceiling",
+      "value": "$0.25 per Prague day",
+      "evidence": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:104"
+    },
+    {
+      "name": "Instagram reservation",
+      "value": "$0.04 per profile, 10 posts, 50 posts/day",
+      "evidence": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:98, :104; own-dashboard/src/lib/marketing/dneskai-providers.ts:102"
+    },
+    {
+      "name": "Jev reservation",
+      "value": "$0.003 per stage of 8 candidates, max 16 stages ($0.048)",
+      "evidence": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:98; :18-21"
+    },
+    {
+      "name": "Jev price",
+      "value": "$0.042 per MTok input, output free",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-providers.ts:12"
+    },
+    {
+      "name": "Sonnet 5.5 price",
+      "value": "$2 / $10 per MTok",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:44"
+    },
+    {
+      "name": "Haiku 5.5 price (repo)",
+      "value": "$0.10 / $0.50 per MTok",
+      "evidence": "own-dashboard/scripts/dneskai-model-ab.ts:33"
+    },
+    {
+      "name": "Knowledge analysis budget",
+      "value": "$0.25 default, max $1",
+      "evidence": "own-dashboard/src/lib/marketing/knowledge-extraction.ts:36-37"
+    },
+    {
+      "name": "Retired generation pilot",
+      "value": "3 jobs / $0.75 lifetime",
+      "evidence": "own-dashboard/supabase/migrations/20261020120000_scope_retired_pilot_ledgers.sql:56"
+    },
+    {
+      "name": "Approval webhook timeout",
+      "value": "2 s on the approval request",
+      "evidence": "own-dashboard/src/lib/marketing/approval-notification.ts:8"
+    }
+  ],
+  "measurements": [
+    {
+      "what": "Total production spend to date",
+      "value": "$0.019456 (2 collection runs); generation $0, 0 jobs, 0 ledger rows",
+      "method": "SQL select count(*),sum(cost_usd) from marketing_dneskai_runs; count/sum marketing_private.dneskai_generation_spend; count marketing_jobs; count/sum generation_pilot_reservations",
+      "kind": "measured"
+    },
+    {
+      "what": "Apify per profile (13 Oct, 7-post cap)",
+      "value": "3 ok stages $0.0161 total, max $0.0069 (reserved $0.04 each); 1 held at $0",
+      "method": "SQL select kind,status,count(*),sum(reserved_usd),sum(cost_usd),max(cost_usd),error codes from marketing_dneskai_stages join runs where kind<>'feed' group by date,kind,status",
+      "kind": "measured"
+    },
+    {
+      "what": "Jev per night",
+      "value": "13 Oct $0.00111 (8 stages), 21 Oct $0.00224 (8 stages); max stage $0.000366 vs $0.003 reserved",
+      "method": "SQL select kind,status,count(*),sum(reserved_usd),sum(cost_usd),max(cost_usd),error codes from marketing_dneskai_stages join runs where kind<>'feed' group by date,kind,status",
+      "kind": "measured"
+    },
+    {
+      "what": "Storage today",
+      "value": "marketing-media 3 objects 461,750 bytes; marketing-assets 0 objects",
+      "method": "SQL select bucket_id,count(*),sum((metadata->>'size')::bigint) from storage.objects where bucket_id in ('marketing-media','marketing-assets') group by 1",
+      "kind": "measured"
+    },
+    {
+      "what": "Generation cost per post, Sonnet 5.5",
+      "value": "expected $0.023-0.024 (one attempt ~4,000 in / 1,500 out); with one retry ~$0.045; arithmetic max of a job 2 x (20,000 x $2 + 2,500 x $10)/1e6 = $0.13; ledger books $0.25 on failure",
+      "method": "docs/marketing-generation.md:187 dry plan (20 briefs: $0.48 expected, $2.26 worst) and the generation map test brief ($0.0229); own arithmetic",
+      "kind": "estimated"
+    },
+    {
+      "what": "Generation cost per post, Haiku 5.5",
+      "value": "expected $0.001; worst $0.0055",
+      "method": "docs/marketing-generation.md:187 dry plan ($0.02 / $0.11 for 20 briefs) at repo prices 0.10/0.50",
+      "kind": "estimated"
+    },
+    {
+      "what": "Monthly cost today at 4 posts/day (120 posts)",
+      "value": "model ~$2.9 (Sonnet) + Jev ~$0.07 + Apify $0 (off) + render $0 = ~$3/month; ceiling-bounded max $30 generation + $7.50 collection",
+      "method": "arithmetic from the rows above; Jev at $0.0022/night x 30",
+      "kind": "estimated"
+    },
+    {
+      "what": "Apify on at current caps",
+      "value": "4-5 profiles/day: measured rate ~$0.0054/profile -> ~$0.75/month; Starter list rate $2.30/1,000 x 10 posts = $0.023/profile -> ~$3.10/month; hard max 5 x $0.04 x 30 = $6/month (day cap $0.25 -> $7.50 incl. Jev)",
+      "method": "arithmetic; rate from own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql:7-8 comment and SQL measurement",
+      "kind": "estimated"
+    },
+    {
+      "what": "Vision picture-choice call (12 pictures at 512x640)",
+      "value": "~437 image tokens each (w x h / 750) = ~5,250 + ~800 text in, ~400 out: Sonnet 5.5 ~$0.016/post ($1.9/month); Haiku 5.5 ~$0.0008/post ($0.10/month). The generation map measured 512x384 at ~263 tokens each: +$0.0063/post on Sonnet when added to the existing call",
+      "method": "Anthropic image token formula (public docs, assumption) with repo prices; cross-check against maps/map-generation.json measurement",
+      "kind": "estimated"
+    },
+    {
+      "what": "Five-kit pre-render per post",
+      "value": "$0 model; CPU 5 x 0.52 s warm (0.72 s cold) per 7-slide deck = ~2.6-3.6 s on an M2 (Vercel likely 2-3x slower: ~5-10 s); bytes 820,252 per deck -> ~4.1 MB per post, ~490 MB/month at 120 posts, never purged [verifier: per-deck bytes and ms are measured; the five-kit and monthly figures are arithmetic estimates]",
+      "method": "measurements/bench-render-run1.json (7 slides: 186,137+152,060+119,893+114,059+89,344+58,030+100,729 JPEG bytes; totals 720.5 ms cold, 521.7 ms warm); Vercel factor is an estimate",
+      "kind": "estimated"
+    },
+    {
+      "what": "Prompt caching saving",
+      "value": "stable prefix ~2,683 tokens: ~$0.0048 saved per hit, ~$0.0013 write premium; < $0.60/month at 120 posts",
+      "method": "maps/map-generation.json measurement, re-used",
+      "kind": "estimated"
+    },
+    {
+      "what": "Env names read by marketing code",
+      "value": "42 distinct MARKETING_* names (38 read literally + 4 collection-pilot names via an array), 13 provider names (ANTHROPIC_API_KEY, APIFY_TOKEN, APIFY_ACTOR_ID, APIFY_ACTOR_BUILD, TYPESAFE_API_KEY, LANGSMITH_API_KEY/PROJECT/ENDPOINT/TRACING, LANGCHAIN_TRACING_V2/TRACING/VERBOSE, CRON_SECRET) plus per-platform Meta prefix variables; ~20 MARKETING_* names serve retired paths [verifier: literal grep finds 44 distinct names (env-reads.txt missed 2 DEVSHARK preview names and 4 collection-pilot names) plus 2 built by prefix in source-refresh.ts:25-28, ~46 total]",
+      "method": "grep -rhoE env reads over src/lib/marketing, src/app/api/marketing (scratch env-reads.txt) plus own-dashboard/src/lib/marketing/dneskai-pilot.ts:7 and generation.ts:433",
+      "kind": "measured"
+    }
+  ],
+  "switches": {
+    "ownerBooleansForDneskai": [
+      {
+        "name": "MARKETING_AI_CONSENT",
+        "default": "unset=off",
+        "effect": "any paid call (Jev, Apify, generation, preflight)"
+      },
+      {
+        "name": "MARKETING_DNESKAI_COLLECTION_ENABLED",
+        "default": "unset=off",
+        "effect": "nightly collection in the tick"
+      },
+      {
+        "name": "MARKETING_DNESKAI_PAID_ENABLED",
+        "default": "unset=off",
+        "effect": "Jev and Apify; without it no event is selected"
+      },
+      {
+        "name": "MARKETING_DNESKAI_APIFY_ENABLED",
+        "default": "false in production",
+        "effect": "Instagram stages"
+      },
+      {
+        "name": "MARKETING_PUBLISH_ENABLED",
+        "default": "unset=dry run",
+        "effect": "live publishing (all brands)"
+      },
+      {
+        "name": "MARKETING_DNESKAI_PUBLISH_ENABLED",
+        "default": "unset=dry run",
+        "effect": "live publishing DNESKAi"
+      },
+      {
+        "name": "MARKETING_LANGSMITH_ENABLED",
+        "default": "unset=off",
+        "effect": "hash-only traces and feedback"
+      }
+    ],
+    "values": [
+      "MARKETING_OWNER_ID",
+      "MARKETING_CLAUDE_MODEL (default claude-sonnet-5-5)",
+      "MARKETING_CLAUDE_INPUT_USD_PER_MTOK / OUTPUT (default 2/10 only for the default model)",
+      "MARKETING_DNESKAI_DAILY_GENERATION_USD (default 1)",
+      "MARKETING_DNESKAI_FEED_PROVIDER (native|bridge)",
+      "MARKETING_DNESKAI_APIFY_ACTOR_ID",
+      "MARKETING_DNESKAI_APIFY_BUILD",
+      "MARKETING_APPROVED_ASSET_HOSTS"
+    ],
+    "retiredOrRollback": [
+      "MARKETING_N8N_SECRET",
+      "MARKETING_N8N_WEBHOOK_SECRET",
+      "MARKETING_N8N_APPROVAL_WEBHOOK_URL",
+      "MARKETING_DNESKAI_COLLECTION_SECRET",
+      "MARKETING_DNESKAI_MANUAL_RUN",
+      "MARKETING_DNESKAI_MANUAL_SECRET",
+      "MARKETING_PILOT_OWNER_ID",
+      "MARKETING_PILOT_STARTS_AT",
+      "MARKETING_PILOT_EXPIRES_AT",
+      "MARKETING_PILOT_TEMPLATE_APPROVALS",
+      "MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED",
+      "MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID",
+      "MARKETING_DNESKAI_COLLECTION_PILOT_PROJECT_ID",
+      "MARKETING_DNESKAI_COLLECTION_PILOT_STARTS_AT",
+      "MARKETING_DNESKAI_COLLECTION_PILOT_EXPIRES_AT",
+      "MARKETING_DNESKAI_SOURCE_URL",
+      "MARKETING_DNESKAI_SOURCE_SECRET",
+      "MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN",
+      "MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN",
+      "MARKETING_DNESKAI_SECRET"
+    ],
+    "otherFeatures": [
+      "MARKETING_KNOWLEDGE_WORKER_ENABLED",
+      "MARKETING_OFFLINE_IMPORT_ENABLED",
+      "MARKETING_DEVSHARK_SECRET",
+      "MARKETING_WORKER_SECRET",
+      "MARKETING_PUBLISH_SECRET",
+      "MARKETING_SCHEDULER_SECRET"
+    ]
+  },
+  "costModel": {
+    "today": {
+      "perPostUsd": "~0.024 model + ~0.0006 Jev share + 0 render",
+      "perMonthUsd": "~3 at 120 posts",
+      "ceilingMaxPerMonthUsd": "30 generation + 7.50 collection"
+    },
+    "apifyOn": {
+      "perMonthUsd": "+0.75 (measured rate) to +3.10 (list rate); hard max +6"
+    },
+    "visionPictureChoice": {
+      "sonnetPerPostUsd": 0.016,
+      "haikuPerPostUsd": 0.0008,
+      "perMonthUsd": "1.9 Sonnet / 0.10 Haiku"
+    },
+    "haikuForGeneration": {
+      "perPostUsd": 0.001,
+      "perMonthUsd": 0.12,
+      "note": "quality unknown until the A/B (#122)"
+    },
+    "fiveKitPrerender": {
+      "modelUsd": 0,
+      "cpuSecondsPerPost": "2.6-3.6 local, ~5-10 on Vercel (estimate)",
+      "storageMbPerPost": 4.1,
+      "storageMbPerMonth": 490
+    },
+    "regenerateWithNote": {
+      "perUseUsd": "~0.024 expected, books 0.25 until settled; limited by 8 jobs/24 h"
+    }
+  },
+  "findings": [
+    {
+      "id": "cost-01",
+      "title": "The $0.25 job reservation is 2x the arithmetic maximum and ~10x the expected cost",
+      "category": "cost",
+      "claim": "Every DNESKAi attempt reserves the job's whole maxCostUsd ($0.25) in the ledger, although the budget itself caps one job at 2 x (20,000 x $2 + 2,500 x $10)/1e6 = $0.13 and a typical post costs ~$0.023. With a $1.00 ceiling only four jobs can be unsettled at once, and every failure is booked at $0.25.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 64,
+          "excerpt": "maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 355,
+          "excerpt": "const reservationFor = (inputBytes: number) => cost({ inputTokens: inputBytes, outputTokens: budget.maxOutputTokens }, model.pricing);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 376,
+          "excerpt": "await dependencies.admitPaidCall?.({ attempt, maxCostUsd: budget.maxCostUsd });"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+          "line": 57,
+          "excerpt": "if spent+p_reservation>p_ceiling then"
+        },
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 187,
+          "excerpt": "Sonnet 5.5 expected 0.48 USD, worst case 2.26 USD ... eight briefs per 1.00 USD day at the worst case"
+        }
+      ],
+      "impact": {
+        "statement": "No money lost today, but the reservation, not the spend, is what the $1 ceiling sees: it blocks variants and regeneration long before real cost matters, and it overstates failures 2x. Fixing it lets the same $1 ceiling admit 7 concurrent jobs instead of 4.",
+        "keep": true,
+        "reason": "Real but small once settled-cost accounting is understood; it matters mainly together with cost-02.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Whether to size the per-job reservation to the computed worst case (~$0.13) instead of the flat $0.25 (a reservation change, owner-only)."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Owner decision (rule 9: never change a reservation silently): reserve reservationFor(attemptInput) x remaining attempts (~$0.13 worst) instead of the flat $0.25, keeping $0.25 as the schema ceiling. Show reserved vs spent in Chyby a náklady.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "generation.ts:376 passes budget.maxCostUsd (0.25) to admitPaidCall; worker-runtime.ts:86 sends it as p_reservation; SQL:57 refuses when spent+0.25>ceiling, SQL:61-62 keeps greatest(reserved). Arithmetic max 2x(20000x2+2500x10)/1e6=$0.13 is right. But marketing_dneskai_generation_spent (SQL:27-38) counts a finished job (review/failed with a numeric usage) at its RECORDED cost, not the reservation; only running/reconciliation jobs and ambiguous failures (generation.ts:363-364, which books max(...,0.25)) count $0.25. Validation failures book real cost. So the flat reservation limits only concurrent unsettled jobs (one generation per tick already caps that at ~1), not sequential variants.",
+        "correctedLocations": [],
+        "correctedClaim": "The ledger reserves the job's whole maxCostUsd ($0.25, ~2x the $0.13 arithmetic maximum) for each running job and for ambiguous failures; finished jobs count at their recorded cost, so the flat reservation mainly overstates ambiguous failures and caps unsettled jobs at four."
+      }
+    },
+    {
+      "id": "cost-02",
+      "title": "Any provider failure, even an unbilled 401/429, books $0.25 for 24 hours; four failures stop generation for a day",
+      "category": "risk",
+      "claim": "generateMarketingDraft calls ambiguous() on every invoke failure and on a missing usage figure, before classifying the error; a brief job then records max(spent+reservation, $0.25). The ledger counts that recorded cost for 24 h. An invalid ANTHROPIC_API_KEY (401) or rate limit (429), which Anthropic does not bill, still consumes a quarter of the ceiling; four such jobs exhaust $1.00.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 363,
+          "excerpt": "const ambiguous = (reservation: number) => {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 364,
+          "excerpt": "usage.estimatedCostUsd = source.kind === \"brief\" ? Math.max(usage.estimatedCostUsd + reservation, budget.maxCostUsd) : usage.estimatedCostUsd + reservation;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 385,
+          "excerpt": "ambiguous(reservation);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/provider-errors.ts",
+          "line": 29,
+          "excerpt": "const code = httpStatus !== null ? httpCodes[httpStatus] ?? (httpStatus < 500 ? 'provider-http-client-error' : 'provider-http-server-error')"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+          "line": 31,
+          "excerpt": "when jsonb_typeof(j.result->'usage'->'estimatedCostUsd')='number' then case"
+        }
+      ],
+      "impact": {
+        "statement": "On the first day with a mistyped key the owner gets zero posts for 24 h and a Costs tab showing $1.00 \"spent\" that was never billed.",
+        "keep": true,
+        "reason": "A single misconfiguration on launch day would silently block a whole day of posts and show phantom spend.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "medium",
+        "quickWin": true,
+        "ownerDecision": "Whether rejected requests with an HTTP 4xx status (no usage) may be booked at $0 instead of the full $0.25 (changes how a money guard counts, owner-only)."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "medium",
+      "recommendation": "Book $0 for HTTP 400/401/403/404/413/429 responses that carry a request id and no usage (Anthropic does not bill rejected requests); keep the full booking for timeouts, 5xx and transport failures. Mark booked-unknown separately from measured spend in the Costs tab.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "generation.ts:383-390: every model.invoke failure calls ambiguous(reservation) before classifyMarketingProviderError; :364 books max(spent+reservation, 0.25) for brief jobs; missing usage (:392-394) does the same. A missing key is refused earlier (worker-runtime.ts:60 claude-configuration-required, no booking), but an invalid key (401), 429 or 400 reaches invoke and is booked $0.25. SQL:27-38 counts a failed job's numeric recorded cost for 24 h; 4 x 0.25 = 1.00 makes the next reservation exceed the default ceiling (SQL:57). Lines all correct.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-03",
+      "title": "The 8-jobs-per-24h cap, shared with devShark, allows one regeneration per post and no variants",
+      "category": "cost",
+      "claim": "marketing_enqueue_job refuses the ninth job created in any rolling 24 h for the owner across all brands. Four DNESKAi posts plus four \"regenerate with my note\" jobs reach the cap; devShark jobs count too. The dollar ceiling would allow ~30 jobs at the expected cost.",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261012232949_marketing_durable_jobs.sql",
+          "line": 96,
+          "excerpt": "if (select count(*) from public.marketing_jobs where user_id=p_owner and created_at>now()-interval '24 hours')>=8 then raise exception 'daily job budget exhausted'; end if;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 241,
+          "excerpt": "enqueues the job through `marketing_enqueue_job` (calendar current, 8 jobs per 24 h)"
+        },
+        {
+          "file": "own-dashboard/scaling.md",
+          "line": 23,
+          "excerpt": "The database admits at most eight new content jobs per owner in a rolling 24-hour window"
+        }
+      ],
+      "impact": {
+        "statement": "The Design Lab's \"regenerate with my note\" and any copy variants hit a count limit, not a money limit; a bad night with retries can lock the owner out of edits that need a new job.",
+        "keep": true,
+        "reason": "The job count, not money, is the binding limit for any regenerate-with-note or copy variant feature in the Design Lab.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Whether to raise or split the 8-jobs-per-24h cap per brand (e.g. 12-16 for DNESKAi) or exempt owner-initiated regenerations (a ceiling change, owner-only)."
+      },
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Owner decision: count jobs per brand and raise DNESKAi to 12-16 per 24 h while the $1 ceiling stays the money guard; or keep 8 and exclude owner-initiated regenerations within the dollar ceiling. Never change silently.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "supabase/migrations/20261012232949_marketing_durable_jobs.sql:96 counts all marketing_jobs of the owner in 24 h (no brand filter) and raises at >=8. Later migrations (20261013092409:54, 20261020120000:43) only wrap it and still call marketing_private.marketing_enqueue_job. Edits re-render in the revisions route without a job, so today only generation and a future regenerate action consume the cap.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-04",
+      "title": "At its caps the pipeline can spend at most ~$7.50/month on Apify; the $150 promo credit needs a separate plan",
+      "category": "cost",
+      "claim": "Collection reserves $0.04 per profile inside $0.25 per Prague day, so even with Apify on the pipeline spends at most ~$6/month on Instagram (measured ~$0.0054 per profile, ~$0.75/month). The account holds $150 promotional usage expiring 2026-11-22 and $19 plan credit to 2026-11-14.",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+          "line": 98,
+          "excerpt": "amount:=case when s.kind='instagram' then 0.04 else 0.003 end;"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+          "line": 104,
+          "excerpt": "if total+amount>0.25 or (s.kind='instagram' and (s.max_items>10 or items+s.max_items>50)) then raise exception 'collection daily budget exceeded';end if;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+          "line": 102,
+          "excerpt": "maxTotalChargeUsd:'0.04'"
+        },
+        {
+          "file": "supabase:gcctapykhrdyxikieemn",
+          "line": 0,
+          "excerpt": "select kind,status,count(*),sum(reserved_usd),sum(cost_usd),max(cost_usd),error codes from marketing_dneskai_stages join runs where kind<>'feed' group by date,kind,status => 2026-10-13 instagram ok n=3 reserved 0.12 cost 0.0161 max 0.0069; instagram held n=1 reserved 0.04 cost 0 (provider-http-400-invalid-input); jev ok n=8 reserved 0.024 cost 0.001113 max 0.000170; 2026-10-21 instagram held n=4 reserved 0 (collection-apify-disabled); jev ok n=8 reserved 0.024 cost 0.002243 max 0.000366"
+        },
+        {
+          "file": "dneskai-audit-handoff/research/apify-account.md",
+          "line": 8,
+          "excerpt": "FINTECHERS_HACKATHON: 100 $ monthly prepaid usage for 1 month, redeemed 2026-10-21, expires 2026-11-22."
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 14,
+          "excerpt": "Setting it to `true` adds up to $0.04 per profile and $0.25 per day."
+        }
+      ],
+      "impact": {
+        "statement": "Switching Apify on uses under 5 % of the credit; the remaining ~$145 lapses unless the owner approves a research spend plan (brief task I) run outside the production guard.",
+        "keep": true,
+        "reason": "Without a separate plan about $145 of credit lapses on 22 Nov; this is the brief's task I and it is time-bound.",
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Whether to switch MARKETING_DNESKAI_APIFY_ENABLED on at current caps and approve a separate capped research spend plan for the $150 before 2026-11-22."
+      },
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Owner decisions: (1) turn MARKETING_DNESKAI_APIFY_ENABLED on at the current caps (~$1-3/month); (2) approve a separate, capped research runner with its own ledger for the $150 before 2026-11-22. Do not raise the $0.25/$0.04 caps to absorb credit.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "cursor_limits.sql:98 reserves 0.04 per Instagram stage, :104 caps the Prague day at 0.25 and 50 items; dneskai-providers.ts:102 maxTotalChargeUsd '0.04'. Verifier SQL: 13 Oct 3 ok Instagram stages cost $0.0161 (max $0.0069), Jev 13 Oct $0.00111 and 21 Oct $0.00224; total $0.01946. research/apify-account.md:8-9 list $100 + $50 promo expiring 2026-11-22 (the cited line 8 shows only the $100 part). Title's $7.50 is the whole collection ceiling; Instagram alone is max 5x0.04x30=$6.",
+        "correctedLocations": [
+          {
+            "file": "dneskai-audit-handoff/research/apify-account.md",
+            "line": 9,
+            "excerpt": "AITX_NVIDIA_CLAW_HACK: 50 $ monthly prepaid usage for 1 month, redeemed 2026-10-21, expires 2026-11-22."
+          }
+        ]
+      }
+    },
+    {
+      "id": "cost-05",
+      "title": "Reservations are 6-8x real collection cost and fill the $0.25 day on a 5-profile Sunday",
+      "category": "cost",
+      "claim": "An Instagram stage reserves $0.04 against a measured maximum of $0.0069; a Jev stage reserves $0.003 against a measured maximum of $0.000366. On a day with five profiles (5 x $0.04 = $0.20) and 16 Jev stages ($0.048) the reserved total is $0.248, leaving no room for a sixth profile or a retry while real spend would be ~$0.04.",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+          "line": 98,
+          "excerpt": "amount:=case when s.kind='instagram' then 0.04 else 0.003 end;"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+          "line": 9,
+          "excerpt": "item ceiling scales with the cap: at most five profiles are due on one weekday (Sunday), 5 x 10 = 50"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020100000_dneskai_collection_cursor_limits.sql",
+          "line": 18,
+          "excerpt": "Jev stages are planned once per run ... ceil(new candidates / 8), at most 16"
+        },
+        {
+          "file": "supabase:gcctapykhrdyxikieemn",
+          "line": 0,
+          "excerpt": "select kind,status,count(*),sum(reserved_usd),sum(cost_usd),max(cost_usd),error codes from marketing_dneskai_stages join runs where kind<>'feed' group by date,kind,status => 2026-10-13 instagram ok n=3 reserved 0.12 cost 0.0161 max 0.0069; instagram held n=1 reserved 0.04 cost 0 (provider-http-400-invalid-input); jev ok n=8 reserved 0.024 cost 0.001113 max 0.000170; 2026-10-21 instagram held n=4 reserved 0 (collection-apify-disabled); jev ok n=8 reserved 0.024 cost 0.002243 max 0.000366"
+        }
+      ],
+      "impact": {
+        "statement": "Limits how many Instagram sources (the best source of multi-image material) can run per night, at no real saving.",
+        "keep": false,
+        "reason": "No profile or retry is actually blocked under the current rotation; cosmetic until the owner adds profiles.",
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Owner decision (rule 9): after two weeks of Apify-on data, consider $0.025 per profile reservation, or keep $0.04 and add profiles only within $0.25. Record measured/reserved ratio in the Costs tab.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Reservation amounts are right (cursor_limits.sql:98) and measured costs match (max Instagram $0.0069, max Jev stage $0.000366). But Jev stages are ceil(candidates/8) (cursor_limits.sql:18-19); the real night had 8 stages ($0.024 reserved), not 16, and at most five profiles are due on any day (:9), so no sixth profile exists to be squeezed out. On a real 5-profile day reserved total would be ~0.20+0.024=$0.224, under the cap.",
+        "correctedLocations": [],
+        "correctedClaim": "Collection reservations are 6-8x measured cost; with the maximum 16 Jev stages a 5-profile Sunday would reserve $0.248, but on a measured night (8 Jev stages) it reserves ~$0.224 and the rotation never schedules a sixth profile."
+      }
+    },
+    {
+      "id": "cost-06",
+      "title": "Two retired n8n entry points can still start paid work",
+      "category": "risk",
+      "claim": "/api/marketing/n8n accepts execute (paid generation) and knowledge-run (paid Apify + Claude) operations authenticated only by MARKETING_N8N_SECRET; /api/marketing/dneskai/collect starts a collection tick (Jev, Apify) with MARKETING_DNESKAI_COLLECTION_SECRET or the manual secret. Both are outside the pg_cron scheduler that the docs call \"the one scheduled entry point\". Spend is still bounded by the same ledgers.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/app/api/marketing/n8n/route.ts",
+          "line": 57,
+          "excerpt": "const owner=authenticateN8n(request);if(!owner)return Response.json({error:'unauthorized'},{status:401});"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/n8n/route.ts",
+          "line": 108,
+          "excerpt": "if(input.operation==='execute')return Response.json(await executeOrchestratedMarketingJob(db,owner,input.jobId));"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/n8n/route.ts",
+          "line": 112,
+          "excerpt": "if(input.operation==='knowledge-run')return Response.json(await runQueuedKnowledgeAnalysis(owner,input.sourceId,{diagnostics:await createKnowledgeDiagnostics()}));"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/dneskai/collect/route.ts",
+          "line": 12,
+          "excerpt": "authenticateN8n(request,{...process.env,MARKETING_N8N_SECRET:input.manual?process.env.MARKETING_DNESKAI_MANUAL_SECRET:process.env.MARKETING_DNESKAI_COLLECTION_SECRET})"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/tick/route.ts",
+          "line": 14,
+          "excerpt": "The one scheduled entry point (#120)."
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 13,
+          "excerpt": "the expired Production variables `MARKETING_DNESKAI_MANUAL_RUN` and `MARKETING_DNESKAI_MANUAL_SECRET`"
+        }
+      ],
+      "impact": {
+        "statement": "A leaked or forgotten secret can trigger paid calls the owner does not see in the scheduler; two routes and ~16 tests to maintain for retired flows.",
+        "keep": true,
+        "reason": "Retiring the DNESKAi collect route is a small change that removes a second paid entry point and its secrets.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Return 410 from /api/marketing/dneskai/collect and delete its secrets; restrict /api/marketing/n8n to devShark/knowledge operations behind an explicit enable switch, or retire it when devShark moves to the tick. Removal touches tests/lib/marketing-n8n-api, marketing-weekly-n8n-api, marketing-dneskai-api, marketing-dneskai-manual-api, marketing-dneskai-pilot-api, dneskai-collection-workflow (and ~10 more grep hits) plus the inactive workflows/marketing/devshark-weekly-preparation.json and knowledge-processing.json that still call /api/marketing/n8n.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "n8n/route.ts:57 authenticates via authenticateN8n (http.ts:5-13: MARKETING_OWNER_ID + MARKETING_N8N_SECRET >=32 chars); :108 execute and :112 knowledge-run are live. dneskai/collect/route.ts:12 authenticates with the collection or manual secret, and :13 additionally requires MARKETING_DNESKAI_COLLECTION_ENABLED=true (the same switch the tick uses, scheduler.ts:247) or a valid manual window, so it is open whenever nightly collection is on. tick/route.ts:14 calls itself the one scheduled entry point. Spend stays within the same ledgers.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-07",
+      "title": "approval-notification.ts still runs on every approval for an archived n8n receiver",
+      "category": "simplicity",
+      "claim": "The approve action awaits notifyMarketingApproval, which POSTs the publication id to an n8n Cloud webhook with a 2 s timeout when two env vars are set. The receiver (approved-publisher) is retired; the pg_cron tick publishes.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 35,
+          "excerpt": "const scheduling=await notifyMarketingApproval(data);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/approval-notification.ts",
+          "line": 5,
+          "excerpt": "const configured=env.MARKETING_N8N_APPROVAL_WEBHOOK_URL;const secret=env.MARKETING_N8N_WEBHOOK_SECRET;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/approval-notification.ts",
+          "line": 7,
+          "excerpt": "if(url.origin!=='https://bambambaklawa.app.n8n.cloud'||!url.pathname.startsWith('/webhook/')"
+        },
+        {
+          "file": "own-dashboard/docs/marketing-n8n.md",
+          "line": 3,
+          "excerpt": "This page describes the October 2026 staging and n8n orchestration, retired on 2026-10-20"
+        }
+      ],
+      "impact": {
+        "statement": "Up to 2 s added to each approval if set, a dead coupling to a third service, and a misleading \"scheduling\" field in the approval response.",
+        "keep": true,
+        "reason": "Dead coupling worth removing in the n8n cleanup, but no owner-visible effect unless the env vars are set.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Delete approval-notification.ts and its test, return scheduling:\"tick\" from the approve action, and remove the two env names in the staging cleanup.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "revisions/route.ts:35 awaits notifyMarketingApproval after approval; approval-notification.ts:5 reads the two env vars and returns 'unconfigured' when absent; the origin check is at line 9, not 7; 2 s timeout at :10. docs/marketing-n8n.md:3 says the orchestration was retired 2026-10-20. Whether the env vars are still set in production is unknown, so the 2 s cost may be zero today.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/approval-notification.ts",
+            "line": 9,
+            "excerpt": "if(url.origin!=='https://bambambaklawa.app.n8n.cloud'||!url.pathname.startsWith('/webhook/')"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cost-08",
+      "title": "42 MARKETING_* variables, about 20 for retired paths",
+      "category": "simplicity",
+      "claim": "Marketing code reads 42 distinct MARKETING_* names plus 13 provider names. About 20 belong to retired paths: n8n (3), generation pilot (4), collection pilot (5), manual run (2), Quorum bridge and source preview (4), automation source secrets (2). The owner manages 7 booleans to run DNESKAi end to end.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-store.ts",
+          "line": 87,
+          "excerpt": "export function dneskaiCollectionBlockers(env:Record<string,string|undefined>){...if(env.MARKETING_DNESKAI_PAID_ENABLED!=='true')result.push('collection-paid-disabled');"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-pilot.ts",
+          "line": 7,
+          "excerpt": "const names=['MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED','MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID',...]"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/pilot.ts",
+          "line": 8,
+          "excerpt": "const names = [\"MARKETING_PILOT_OWNER_ID\", \"MARKETING_PILOT_STARTS_AT\", \"MARKETING_PILOT_EXPIRES_AT\"] as const;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/automation-auth.ts",
+          "line": 17,
+          "excerpt": "[env.MARKETING_DNESKAI_SECRET,'dneskai','source'],[env.MARKETING_DEVSHARK_SECRET,'devshark','source'],"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-providers.ts",
+          "line": 42,
+          "excerpt": "const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;"
+        }
+      ],
+      "impact": {
+        "statement": "Every retired variable is a place where a stale value (for example a pilot tuple) can block production or reopen a path; the owner cannot tell from Vercel which ones matter.",
+        "keep": true,
+        "reason": "Fewer env names means fewer ways for a stale value to block production; best done as one cleanup after the pilot.",
+        "impactScore": 2,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "After the pilot post (#123) delete the retired readers with their env names in one change; keep the bridge rollback only until the 28 Oct arXiv proof. Add a one-table \"switches\" section to docs/marketing-scheduling.md listing the 7 booleans and their effects.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "All cited lines correct. The count is low: a literal grep over src/lib/marketing and src/app/api/marketing finds 44 distinct MARKETING_* names (the mapper's env-reads.txt has 38 and misses MARKETING_DEVSHARK_SOURCE_PREVIEW_ORIGIN/_SHARE_TOKEN and the four MARKETING_DNESKAI_COLLECTION_PILOT_* names), and source-refresh.ts:25-28 builds two more by prefix (MARKETING_DEVSHARK_SOURCE_URL/_SECRET), ~46 in total. The ~20 retired and 7 owner booleans hold.",
+        "correctedLocations": [],
+        "correctedClaim": "Marketing code reads ~46 distinct MARKETING_* names (44 literal plus 2 built by prefix in source-refresh.ts:25-28), about 20 of them for retired paths; the owner manages 7 booleans to run DNESKAi."
+      }
+    },
+    {
+      "id": "cost-09",
+      "title": "Cost is not what limits quality: Haiku, vision and pre-render each move the month by cents to ~$2",
+      "category": "cost",
+      "claim": "At 120 posts/month: Sonnet 5.5 generation ~$2.9; Haiku 5.5 ~$0.14; a separate vision picture-choice call adds ~$1.9 (Sonnet) or ~$0.10 (Haiku); five-kit pre-render adds $0 model cost. All fit far under the $30/month ceiling-bounded maximum.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 44,
+          "excerpt": "export const DEFAULT_MARKETING_CLAUDE_PRICING = { inputPerMillionUsd: 2, outputPerMillionUsd: 10 } as const;"
+        },
+        {
+          "file": "own-dashboard/scripts/dneskai-model-ab.ts",
+          "line": 33,
+          "excerpt": "\"claude-haiku-5-5\": { inputPerMillionUsd: 0.1, outputPerMillionUsd: 0.5 },"
+        },
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 187,
+          "excerpt": "Sonnet 5.5 expected 0.48 USD, worst case 2.26 USD; Haiku 5.5 expected 0.02 USD, worst case 0.11 USD"
+        }
+      ],
+      "impact": {
+        "statement": "Switching to Haiku saves ~$2.75/month and risks copy quality; adding vision costs ~$2/month and directly improves picture choice and crops.",
+        "keep": true,
+        "reason": "Key input for the owner: model cost is not the constraint, so quality levers (vision, more evidence) are cheap.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Whether to approve a vision picture-choice call (~$2/month on Sonnet, new paid usage)."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Keep Sonnet 5.5 for copy until the A/B (#122) says otherwise; spend the savings argument on vision instead. Use Haiku only for cheap classification steps if Jev is ever replaced.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Pricing constants confirmed: worker-runtime.ts:44 Sonnet 2/10, scripts/dneskai-model-ab.ts:33 Haiku 0.10/0.50, docs/marketing-generation.md:187 dry plan ($0.48 / 20 briefs Sonnet, $0.02 Haiku). Arithmetic: Sonnet 0.024x120=$2.88 ok; Haiku 0.001x120=$0.12 (map said $0.14, corrected in costModel); vision 12x(512x640/750)=~5,240 image tokens +~800 text, ~400 out: Sonnet ~$0.016, Haiku ~$0.0008 ok. Image token formula is an assumption from public docs, not measured.",
+        "correctedLocations": [],
+        "correctedClaim": "At 120 posts/month: Sonnet 5.5 generation ~$2.9; Haiku 5.5 ~$0.12; a separate vision picture-choice call ~$1.9 (Sonnet) or ~$0.10 (Haiku), estimated; five-kit pre-render $0 model cost."
+      }
+    },
+    {
+      "id": "cost-10",
+      "title": "A second paid call per job (vision) does not fit the ledger as built",
+      "category": "modernity",
+      "claim": "The ledger allows at most 3 reservations per job (calls between 1 and 3) and admitPaidCall is wired only to generation attempts; a vision call before generation would need its own reservation path or would push a two-attempt job to the constraint limit.",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+          "line": 15,
+          "excerpt": "calls integer not null default 1 check(calls between 1 and 3),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 376,
+          "excerpt": "await dependencies.admitPaidCall?.({ attempt, maxCostUsd: budget.maxCostUsd });"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 197,
+          "excerpt": "admitPaidCall?(input: { attempt: number; maxCostUsd: number }): Promise<void>;"
+        }
+      ],
+      "impact": {
+        "statement": "Adding model vision for picture choice (a brief goal) needs a migration, not just a prompt change.",
+        "keep": false,
+        "reason": "Implementation detail for a vision feature not yet decided; folded into cost-09.",
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "When vision is approved, add a kind column (copy|vision) to dneskai_generation_spend or a separate small reservation ($0.05) and keep both under the same $1 ceiling.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "SQL:15 calls between 1 and 3; generation.ts:197 and :376 wire admitPaidCall only for generation attempts. But a vision call could reuse admitPaidCall (it is a dependency callback), and 2 attempts + 1 vision call = 3 calls, which fits the constraint; it needs code, not necessarily a migration. Kind tagging would need a column.",
+        "correctedLocations": [],
+        "correctedClaim": "The spend ledger allows 3 calls per job and admission is wired only to generation attempts; a vision call can fit (2+1=3) via the same callback but would be indistinguishable from copy spend without a kind column."
+      }
+    },
+    {
+      "id": "cost-11",
+      "title": "Counting one token per byte halves the evidence the model sees, to save fractions of a cent",
+      "category": "quality",
+      "claim": "The 20,000 input budget is compared with UTF-8 bytes (tokens are ~bytes/3), and the offer shrinks to fit it: a full brief loses 52 % of its excerpt characters and 4 of 12 pictures. The schema allows 32,000. Raising the budget to 32,000 would raise the worst case per attempt by $0.024 and the expected cost by well under $0.01 per post.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 57,
+          "excerpt": "maxInputTokens: z.number().int().min(1000).max(32000),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 261,
+          "excerpt": "const promptBytes = budget.maxInputTokens - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - 2048 - DNESKAI_RETRY_INSTRUCTION_BYTES;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 351,
+          "excerpt": "// UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead."
+        }
+      ],
+      "impact": {
+        "statement": "Thin evidence is the top quality limit found by the brief and generation maps; this is the cheapest lever on it.",
+        "keep": true,
+        "reason": "The cheapest lever on the top quality problem (thin evidence): cents per month for twice the evidence.",
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Whether to raise the input token budget (maxInputTokens 20,000 -> 32,000, worst case per job $0.178) or change the bytes-per-token count (a budget change, owner-only)."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Owner decision on the token budget: raise maxInputTokens to 32,000 for DNESKAi briefs (worst case per job $0.178, still under $0.25), or count tokens as bytes/2.5 for the shrink while keeping the byte rule for the reservation.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "generation.ts:57 schema max 32000; :261 promptBytes = maxInputTokens minus system prompt+schema bytes; :351-354 counts UTF-8 bytes as tokens. Raising to 32,000 adds 12,000x$2/1e6=$0.024 per attempt, job worst case 2x(0.064+0.025)=$0.178 < $0.25: arithmetic right. The 52 % / 4-of-12 figure is reused from maps/map-generation.json GEN-01 (not re-measured: worktree has no node_modules); this finding duplicates GEN-01 from the cost side.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-12",
+      "title": "Rendered slides are never purged; five-kit pre-render would add ~490 MB a month",
+      "category": "cost",
+      "claim": "JPEGs are uploaded to marketing-assets with no delete path (the bucket policy refuses deletes and no purge code exists). A 7-slide deck measured 0.82 MB; five kits per post at 120 posts/month would add ~490 MB/month, single-kit ~100 MB/month.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 177,
+          "excerpt": "const uploaded = await files.upload(key, bytes, { upsert: false, contentType: \"image/jpeg\", cacheControl: \"3600\", metadata });"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261013001528_marketing_private_assets.sql",
+          "line": 30,
+          "excerpt": "for delete to anon,authenticated using (bucket_id<>'marketing-assets');"
+        },
+        {
+          "file": "dneskai-audit-handoff/measurements/bench-render-run1.json",
+          "line": 0,
+          "excerpt": "7 slides jpegBytes 186137,152060,119893,114059,89344,58030,100729; totalMs cold 720.5, warm 521.7"
+        },
+        {
+          "file": "supabase:gcctapykhrdyxikieemn",
+          "line": 0,
+          "excerpt": "select bucket_id,count(*),sum((metadata->>'size')::bigint) from storage.objects where bucket_id in ('marketing-media','marketing-assets') group by 1 => marketing-media 3 objects 461,750 bytes; marketing-assets 0 objects"
+        }
+      ],
+      "impact": {
+        "statement": "Storage is cheap on Supabase Pro (100 GB included, public price; assumption), so dollars are small, but unbounded growth plus variants makes the bucket the only cost that grows without a ceiling.",
+        "keep": true,
+        "reason": "Needed before any multi-kit rendering; cheap in dollars now but the only cost with no ceiling.",
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "How long published and approved slide JPEGs must be kept before only the receipt's sha256s remain."
+      },
+      "impactScore": 2,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Pair the variant model with a purge in the daily tick: delete unreferenced renders older than 30 days, keep approved/published assets 180 days after publication (draft in design-lab/variant-approval-model.md). Prefer lazy covers-first rendering over full five-kit pre-render.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "worker-runtime.ts:177 uploads with upsert:false; the only storage remove() calls are in dneskai-media.ts:98/:436 for the marketing-media bucket (DNESKAI_MEDIA_BUCKET, :29). Nuance: private_assets.sql:30 is a restrictive delete guard for anon/authenticated only; service_role could delete, but no code does. Bench bytes sum to 820,252 per 7-slide deck (measurements/bench-render-run1.json); x5 = 4.1 MB, x120 = ~490 MB/month (estimate). Verifier SQL: marketing-assets has 0 objects today, marketing-media 3 objects 461,750 bytes.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-13",
+      "title": "The model A/B script spends outside the daily ceiling",
+      "category": "risk",
+      "claim": "scripts/dneskai-model-ab.ts has its own $1 ceiling but its spend is not written to marketing_private.dneskai_generation_spend, so a run plus production on the same day can spend up to $2.",
+      "evidence": [
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 189,
+          "excerpt": "This spend is not counted in `marketing_dneskai_generation_spent`, so run it on a day production does not need its ceiling"
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 16,
+          "excerpt": "but the spend is not counted in the daily generation ceiling, so pick a day production does not need it"
+        }
+      ],
+      "impact": {
+        "statement": "At most $1 extra per run, owner-initiated and documented; small.",
+        "keep": false,
+        "reason": "Documented, owner-initiated, at most $1 once; not worth owner attention.",
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Optional: have --live subtract marketing_dneskai_generation_spent from --ceiling-usd before starting.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "docs/marketing-generation.md:189 and NEEDED.md:16 both say the A/B spend is not counted in marketing_dneskai_generation_spent; the script's own ceiling is DNESKAI_AB_CEILING_USD=1 (scripts/dneskai-model-ab.ts:36).",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-14",
+      "title": "Doc drift: scaling.md says Vercel Hobby, Supabase Free and no measured model cost",
+      "category": "doc-drift",
+      "claim": "scaling.md lists Vercel Hobby and Supabase Free as the base and says model pilot cost is not measured; production runs on a Supabase Pro organisation (brief 2.8), Vercel Hobby is for non-commercial use, and NEEDED.md records measured pilot costs ($0.009291 for one call, $0.016446 for two).",
+      "evidence": [
+        {
+          "file": "own-dashboard/scaling.md",
+          "line": 7,
+          "excerpt": "**Personal, free tiers:** ~$0/month (Vercel Hobby, Supabase Free)."
+        },
+        {
+          "file": "own-dashboard/scaling.md",
+          "line": 25,
+          "excerpt": "Actual model pilot cost is not yet measured because credentials have not been provisioned."
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 20,
+          "excerpt": "The third passed COPY with one call, 1,957 input/228 output tokens, no validation issues and a $0.009291 known-rate estimate"
+        },
+        {
+          "file": "dneskai-audit-handoff/brief.md",
+          "line": 208,
+          "excerpt": "| Vercel | Tick route, renderer, UI. | live | plan not verified (older docs assume Hobby, which is for non-commercial use) |"
+        }
+      ],
+      "impact": {
+        "statement": "The owner cannot read the real fixed cost from the repo; if the account is Hobby, a commercial Instagram pipeline may breach Vercel terms.",
+        "keep": true,
+        "reason": "If production runs a commercial Instagram pipeline on Vercel Hobby it may breach the plan's terms; one owner check settles it.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Confirm the Vercel plan (Hobby vs Pro) and the Supabase plan for a commercial publishing pipeline."
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Owner confirms the Vercel and Supabase plans; then rewrite scaling.md with the marketing line items from this map (model ~$3/month, Jev ~$0.07, Apify ~$1-3 when on).",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "scaling.md:7 'Vercel Hobby, Supabase Free'; scaling.md:25 says model pilot cost is not measured; NEEDED.md:20 records $0.009291 for a pilot call; brief.md:208 says the Vercel plan is unverified and Hobby is for non-commercial use.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-15",
+      "title": "Doc drift: Apify plan recorded as Starter $22.99 with a $24 limit; the account reports a $244 cap and $150 promo",
+      "category": "doc-drift",
+      "claim": "Quorum's fixed costs and NEEDED.md describe Apify Starter at $22.99 with a $24 hard usage limit and recommend cancelling; the account API on 22 Oct reports Starter with maxMonthlyUsageUsd 244 and $150 promotional prepaid usage expiring 2026-11-22; the brief says \"premium plan, about $170 prepaid\".",
+      "evidence": [
+        {
+          "file": "quorum/config/fixed-costs.json",
+          "line": 6,
+          "excerpt": "\"name\": \"Apify Starter\","
+        },
+        {
+          "file": "quorum/config/fixed-costs.json",
+          "line": 7,
+          "excerpt": "\"monthly_usd\": 22.99,"
+        },
+        {
+          "file": "quorum/docs/NEEDED.md",
+          "line": 13,
+          "excerpt": "review the $24 hard usage limit because recurring included credit is $19 (invoice $22.99 with tax)"
+        },
+        {
+          "file": "dneskai-audit-handoff/research/apify-account.md",
+          "line": 4,
+          "excerpt": "Plan: STARTER (tier BRONZE), base 19 $/month with 19 $ of monthly usage credit; `maxMonthlyUsageUsd` 244"
+        }
+      ],
+      "impact": {
+        "statement": "A stale \"cancel the unused Apify subscription\" item contradicts the current plan to spend the credit; the cap number decides how much research can run.",
+        "keep": true,
+        "reason": "A stale 'cancel Apify' item contradicts the spend plan; the 244 cap decides how much research can run.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Update quorum/docs/NEEDED.md and the fixed-costs comment (Quorum read-only here: owner or Quorum workstream), and record the promo expiry in own-dashboard NEEDED.md next to the Apify decision.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "quorum/config/fixed-costs.json:6-7 'Apify Starter' 22.99; quorum/docs/NEEDED.md:13 the $24 hard limit; research/apify-account.md:4 STARTER, maxMonthlyUsageUsd 244. The brief's 'premium plan, about $170' disagrees with both (Starter plan + $150 promo + $19 credit).",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "cost-16",
+      "title": "The Costs tab shows reservations as spend and no provider balances",
+      "category": "quality",
+      "claim": "The Costs read sums job result.usage.estimatedCostUsd and run cost_usd per Prague day and the 24 h ledger figure; a failed job booked at $0.25 shows as $0.25 spent, and Apify credit, its expiry and the Anthropic balance are not shown.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+          "line": 170,
+          "excerpt": "db.from('marketing_jobs').select('id,status,error_code,created_at,cost_usd:result->usage->>estimatedCostUsd,..."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+          "line": 189,
+          "excerpt": "return { date, collectionUsd: runCosts.reduce<number>(...), generationUsd: jobCosts.reduce<number>(...)"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/dneskai/costs/route.ts",
+          "line": 13,
+          "excerpt": "try { return { ceilingUsd: dneskaiDailyGenerationCeiling(process.env), code: null }; }"
+        }
+      ],
+      "impact": {
+        "statement": "The owner cannot tell booked-unknown from billed money, nor see the $150 Apify credit burn before it lapses.",
+        "keep": true,
+        "reason": "During the Apify spend month the owner needs to see booked vs billed money and the credit burn.",
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Split \"measured\" and \"booked (unknown)\" in the Costs tab; add a manual monthly snapshot line for Apify usage (users/me/limits via the owner's token, no new scope) during the spend month.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-workspace-read.ts:170 reads result->usage->>estimatedCostUsd; :184-189 sums it per Prague day as generationUsd; an ambiguous failure records 0.25 as a number (generation.ts:364), so it shows as spent; only null costs go to the 'unknown' counter (:189). costs/route.ts:13 returns only the ceiling; no Apify or Anthropic balance anywhere.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+            "line": 189,
+            "excerpt": "unknown: [...runCosts, ...jobCosts].filter((cost) => cost === null).length"
+          }
+        ]
+      }
+    }
+  ],
+  "openQuestions": [
+    "Which Vercel plan runs OwnDashboard (Hobby is non-commercial)? Function CPU for five-kit pre-render depends on it.",
+    "Are MARKETING_N8N_SECRET, MARKETING_N8N_APPROVAL_WEBHOOK_URL, MARKETING_DNESKAI_COLLECTION_SECRET still set in Vercel Production? (Names only; values never read.)",
+    "Does the $150 Apify promotional credit sit above the plan's usage cap ($244 reported) and does the pipeline's own Apify use draw on it first?",
+    "Is the Anthropic API billing account prepaid, and is there a provider-side spend limit to back the $1/24 h application guard?",
+    "Haiku 5.5 price in the repo ($0.10/$0.50 per MTok, 6 Oct) should be re-checked before any switch.",
+    "Should owner-initiated regenerations count against the 8-job cap?",
+    "LangSmith EU plan and cost are not recorded anywhere in the repos."
+  ],
+  "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-cost.json",
+  "verification": {
+    "confirmed": 11,
+    "partly": 5,
+    "refuted": 0,
+    "notConfirmed": 0,
+    "kept": 13,
+    "dropped": 3,
+    "quickWins": 5,
+    "verifiedAt": "2026-10-22T00:10:50Z",
+    "method": "single verifier agent, truth + impact lenses per finding",
+    "notes": [
+      "All 63 cited file:line references re-opened; 62 within 5 lines, approval-notification.ts origin check is at :9 (not :7); apify-account.md $50 promo is :9.",
+      "Re-ran 2 read-only SELECTs (stage spend by date/kind/status; ledger rows, jobs, bucket objects): spend $0.01946 total, 0 generation ledger rows, 0 jobs, marketing-assets 0 objects, marketing-media 3 objects 461,750 bytes; all match the map.",
+      "costModel.haikuForGeneration.perMonthUsd corrected 0.14 -> 0.12 (0.001 x 120).",
+      "Env-name measurement annotated: ~46 distinct MARKETING_* names, not 42.",
+      "Five-kit pre-render measurement re-labelled estimated (only the single-deck numbers are measured).",
+      "cost-11 duplicates GEN-01 in map-generation.json; synthesis should merge them."
+    ]
+  }
+}
