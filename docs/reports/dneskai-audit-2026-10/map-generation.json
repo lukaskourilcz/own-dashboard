@@ -1323,12 +1323,7 @@
     "notConfirmed": 0,
     "kept": 14,
     "dropped": 2,
-    "quickWins": [
-      "GEN-01",
-      "GEN-04",
-      "GEN-05",
-      "GEN-09"
-    ],
+    "quickWins": 4,
     "verifiedAt": "2026-10-22T00:03:03.128Z",
     "verifier": "A-verify-2",
     "sourceMap": "dneskai-audit-handoff/maps/map-generation.json",
@@ -1338,6 +1333,12 @@
       "Brief vs code: section 2.4 matches the code; section 2.10 point 4 overstates the reservation problem (GEN-05): finished jobs count at recorded cost, failures and running jobs at $0.25.",
       "UI vs code: the return-with-note help text promises the note helps the next draft (i18n dneskai-workspace.ts:27/108); no code uses it (GEN-06).",
       "Measurements re-run on a git-archive export of 8df25a5 with node_modules linked from own-dashboard-fixes (same lockfile); the audit worktree has no node_modules. No paid call was made."
+    ],
+    "quickWinIds": [
+      "GEN-01",
+      "GEN-04",
+      "GEN-05",
+      "GEN-09"
     ]
   }
 }
