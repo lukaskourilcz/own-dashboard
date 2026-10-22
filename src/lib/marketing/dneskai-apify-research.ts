@@ -72,11 +72,21 @@ const RunSchema=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),actId:z.
 /** Apify refuses these before a run exists, so nothing was charged. Anything else after the request left is ambiguous. */
 const REFUSED_BEFORE_START=new Set([400,401,402,403,404,422]);
 
-async function apifyJson(url:string,init:RequestInit,fetcher:typeof fetch,signal?:AbortSignal):Promise<{ok:true;body:unknown}|{ok:false;status:number|null}>{
+async function apifyJson(url:string,init:RequestInit,fetcher:typeof fetch,signal?:AbortSignal):Promise<{ok:true;body:unknown}|{ok:false;status:number|null;refused:boolean}>{
   let response:Response;
-  try{response=await fetcher(url,{...init,redirect:'error',cache:'no-store',signal});}catch{return{ok:false,status:null};}
-  if(!response.ok){await response.body?.cancel().catch(()=>undefined);return{ok:false,status:response.status};}
-  try{const text=await response.text();if(text.length>1_000_000)return{ok:false,status:null};return{ok:true,body:JSON.parse(text)};}catch{return{ok:false,status:null};}
+  const deadline=AbortSignal.timeout(15_000);
+  try{response=await fetcher(url,{...init,redirect:'error',cache:'no-store',signal:signal?AbortSignal.any([signal,deadline]):deadline});}catch{return{ok:false,status:null,refused:false};}
+  try{
+    const reader=response.body?.getReader();let bytes=0;const chunks:Uint8Array[]=[];
+    if(reader){try{while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>1_000_000){await reader.cancel();return{ok:false,status:response.status,refused:false};}chunks.push(part.value);}}finally{reader.releaseLock();}}
+    const body:unknown=JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if(!response.ok){
+      // Only Apify's structured rejection proves that no actor run was created. A proxy 403 is uncertain.
+      const rejected=z.object({error:z.object({type:z.string().min(1).max(200)})}).safeParse(body);
+      return{ok:false,status:response.status,refused:REFUSED_BEFORE_START.has(response.status)&&rejected.success};
+    }
+    return{ok:true,body};
+  }catch{return{ok:false,status:response.status,refused:false};}
 }
 
 /** One research run: a dry run, or a reserved, capped start on the pinned build. Never retries a start. */
@@ -109,7 +119,7 @@ export async function startDneskaiResearchRun(request:ResearchRunRequest,depende
   const response=await apifyJson(`https://api.apify.com/v2/actors/${actor.name}/runs?${params}`,{method:'POST',headers:{Authorization:`Bearer ${env.APIFY_TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify(input)},dependencies.fetcher??fetch,dependencies.signal);
   if(!response.ok){
     // A refusal before start cost nothing; anything else keeps the whole cap counted until a person resolves it.
-    if(response.status!==null&&REFUSED_BEFORE_START.has(response.status)){await ledger.mark(request.owner,reservation.id,{status:'settled',costUsd:0});trace(`research-apify-refused-${response.status}`,{costUsd:0});throw new DneskaiResearchError(`research-apify-refused-${response.status}`);}
+    if(response.refused){await ledger.mark(request.owner,reservation.id,{status:'settled',costUsd:0});trace(`research-apify-refused-${response.status}`,{costUsd:0});throw new DneskaiResearchError(`research-apify-refused-${response.status}`);}
     await ledger.mark(request.owner,reservation.id,{status:'ambiguous'});trace('research-start-ambiguous');throw new DneskaiResearchError('research-start-ambiguous');
   }
   const parsed=z.object({data:RunSchema}).safeParse(response.body);
@@ -126,11 +136,13 @@ export async function startDneskaiResearchRun(request:ResearchRunRequest,depende
 export async function settleDneskaiResearchRun(owner:string,reservation:ResearchReservation,dependencies:ResearchDependencies={}):Promise<{running:true}|{running:false;costUsd:number|null;code:string|null;datasetId:string|null}>{
   const plan=dependencies.plan??DNESKAI_RESEARCH_PLAN,env=dependencies.env??process.env,ledger=dependencies.ledger;
   const item=plan.items.find(row=>row.key===reservation.itemKey),actor=item?plan.actors[item.actor]:null;
-  if(!ledger||!item||!actor||!reservation.apifyRunId||!env.APIFY_TOKEN)throw new DneskaiResearchError('research-settle-unavailable');
+  if(!ledger||!item||!actor||reservation.planId!==dneskaiResearchPlanId(plan)||!reservation.apifyRunId||!env.APIFY_TOKEN)throw new DneskaiResearchError('research-settle-unavailable');
   const response=await apifyJson(`https://api.apify.com/v2/actor-runs/${encodeURIComponent(reservation.apifyRunId)}`,{headers:{Authorization:`Bearer ${env.APIFY_TOKEN}`}},dependencies.fetcher??fetch,dependencies.signal);
   if(!response.ok)throw new DneskaiResearchError('research-settle-unavailable');
-  const run=z.object({data:RunSchema}).parse(response.body).data;
-  if(run.id!==reservation.apifyRunId||run.actId!==actor.id)throw new DneskaiResearchError('research-apify-binding-invalid');
+  const parsed=z.object({data:RunSchema}).safeParse(response.body);
+  if(!parsed.success)throw new DneskaiResearchError('research-settle-unavailable');
+  const run=parsed.data.data;
+  if(run.id!==reservation.apifyRunId||run.actId!==actor.id||run.buildNumber!==actor.build)throw new DneskaiResearchError('research-apify-binding-invalid');
   if(['READY','RUNNING','TIMING-OUT','ABORTING'].includes(run.status))return{running:true};
   if(run.usageTotalUsd==null)return{running:false,costUsd:null,code:'research-cost-unknown',datasetId:null};
   await ledger.mark(owner,reservation.id,{status:'settled',costUsd:run.usageTotalUsd});
@@ -173,7 +185,7 @@ export function researchInstagramMetric(item:Record<string,unknown>,publicAccoun
 }
 
 type ResearchDatabase={rpc(name:string,args:Record<string,unknown>):PromiseLike<{data:unknown;error:unknown}>};
-/** The ledger on the migration's service-only functions (`20261022180000_dneskai_apify_research.sql`). */
+/** The ledger on the migration's service-only functions (`20261022013957_dneskai_apify_research.sql`). */
 export function createSupabaseResearchLedger(db:ResearchDatabase):DneskaiResearchLedger{
   const rpc=async(name:string,args:Record<string,unknown>)=>{const{data,error}=await db.rpc(name,args);if(error)throw new DneskaiResearchError('research-ledger-unavailable');return data;};
   const Reserved=z.union([

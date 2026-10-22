@@ -726,3 +726,9 @@ grant execute on function public.marketing_scheduler_prune_ticks(uuid,integer) t
 
 select cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where coalesce(jobname,'') not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
 ```
+
+## DNESKAi research preparation, 22 October 2026 (unapplied)
+
+`20261022013957_dneskai_apify_research.sql` adds the separate private research ledger, atomic service-only reserve/mark/spent RPCs, and own-only public metric reads. It preserves all pipeline and staging ledgers. No cron or live route starts research. See [research operations](dneskai-apify-research.md).
+
+This migration has only been replayed in isolated PGlite tests. Production marketing migration versions differ from repository filenames; the dated audit records that mismatch. Reconcile history under an owner-approved release before applying any new migration. Do not follow the earlier generic `db push` procedure against production until then.

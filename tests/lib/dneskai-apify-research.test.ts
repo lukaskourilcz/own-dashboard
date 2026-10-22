@@ -111,7 +111,7 @@ describe("per-run cap", () => {
 
   it("settles a refusal before start at zero and keeps an ambiguous start at its whole cap", async () => {
     const ledger = memoryLedger(), deps = { plan: pinned, env: on, ledger, now: inWindow };
-    await refused(startDneskaiResearchRun({ owner, itemKey: "niche-posts-global", runIndex: 0 }, { ...deps, fetcher: vi.fn(async () => new Response("{}", { status: 402 })) }), "research-apify-refused-402");
+    await refused(startDneskaiResearchRun({ owner, itemKey: "niche-posts-global", runIndex: 0 }, { ...deps, fetcher: vi.fn(async () => Response.json({error:{type:"insufficient-funds"}}, { status: 402 })) }), "research-apify-refused-402");
     await refused(startDneskaiResearchRun({ owner, itemKey: "niche-posts-global", runIndex: 1 }, { ...deps, fetcher: vi.fn(async () => { throw new Error("socket"); }) }), "research-start-ambiguous");
     await refused(startDneskaiResearchRun({ owner, itemKey: "niche-posts-global", runIndex: 2 }, { ...deps, fetcher: vi.fn(async () => apifyRun(undefined, undefined, "another-actor")) }), "research-apify-binding-invalid");
     expect(ledger.rows.map((row) => row.status)).toEqual(["settled", "ambiguous", "ambiguous"]);
@@ -195,5 +195,24 @@ describe("what leaves the runner", () => {
     const serialized = JSON.stringify(metric);
     for (const dropped of ["Co je nového", "cdn.example.test", "private.person", "someone"]) expect(serialized).not.toContain(dropped);
     expect(researchInstagramMetric({ ...item, ownerUsername: "techcrunch" }, new Set(["techcrunch"])).accountHandle).toBe("techcrunch");
+  });
+});
+
+
+describe("uncertain provider responses retain their reservation", () => {
+  it.each([new Response("{}",{status:403}),new Response("upstream error",{status:502}),new Response("x".repeat(1_000_001),{status:400})])("does not release for an unverified refusal",async(response)=>{
+    const ledger=memoryLedger();
+    await refused(startDneskaiResearchRun({owner,itemKey:"niche-posts-global",runIndex:0},{plan:pinned,env:on,ledger,now:inWindow,fetcher:vi.fn(async()=>response)}),"research-start-ambiguous");
+    expect(await ledger.spent(owner)).toBe(3.6);
+  });
+  it("refuses a changed build or plan during settlement",async()=>{
+    const ledger=memoryLedger(),deps={plan:pinned,env:on,ledger,now:inWindow};
+    await startDneskaiResearchRun({owner,itemKey:"niche-posts-global",runIndex:0},{...deps,fetcher:vi.fn(async()=>apifyRun())});
+    const row=ledger.rows[0]!;
+    const wrongBuild=await apifyRun("SUCCEEDED",0).json();wrongBuild.data.buildNumber="9.9.8";
+    await refused(settleDneskaiResearchRun(owner,row,{...deps,fetcher:vi.fn(async()=>Response.json(wrongBuild))}),"research-apify-binding-invalid");
+    const fetcher=vi.fn();
+    await refused(settleDneskaiResearchRun(owner,{...row,planId:"a".repeat(64)},{...deps,fetcher}),"research-settle-unavailable");
+    expect(fetcher).not.toHaveBeenCalled();expect(await ledger.spent(owner)).toBe(3.6);
   });
 });
