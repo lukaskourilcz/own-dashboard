@@ -418,16 +418,20 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
  * (22 October 2026): „Zdrojem je…“, „Údaj pochází od…“, „nezávislé potvrzení chybí“, „Z dostupného textu…“.
  * Attributing a claim to its actor („Anthropic uvádí“) is not matched.
  */
+/** A word start and a word character that count Czech letters: JavaScript's \\b and \\w see only ASCII, even with `u`. */
+const START = "(?<![\\p{L}\\p{N}])", WORD = "[\\p{L}\\p{N}]";
+const talk = (source: string) => new RegExp(source.replaceAll("\\b", START).replaceAll("\\w", WORD), "iu");
 const SOURCE_TALK = [
-  /\bzdroj(?:e|em|i|ů|ích|ům|ových|ový|ová)?\b/iu,
-  /\b(?:údaj|údaje|informace|informaci)\w*\s+pochází/iu,
-  /\bnezávisl\w*\s+(?:potvrzen|ověřen)/iu,
-  /\b(?:potvrzen|ověřen)\w*\s+(?:chybí|zatím\s+není|není\s+k\s+dispozici)/iu,
-  /\bnikdo\s+(?:nezávisle\s+)?(?:nepotvrdil|neověřil)/iu,
-  /\bz\s+dostupn\w+\s+(?:textu|informací|zpráv|článku)/iu,
-  /\bpodle\s+dostupn\w+/iu,
-  /\b(?:oznámení|tvrzení|prohlášení)\s+(?:samotn\w+|firmy\s+samotné)/iu,
-  /\bod\s+(?:firmy|společnosti)\s+samotn/iu,
+  // „zdrojový kód“ (source code) is a fact about software, not about where a claim comes from.
+  talk("\\bzdroj(?:e|em|i|ů|ích|ům)?(?![\\p{L}\\p{N}])"),
+  talk("\\b(?:údaj|údaje|informace|informaci)\\w*\\s+pochází"),
+  talk("\\bnezávisl\\w*\\s+(?:potvrzen|ověřen)"),
+  talk("\\b(?:potvrzen|ověřen)\\w*\\s+(?:chybí|zatím\\s+není|není\\s+k\\s+dispozici)"),
+  talk("\\bnikdo\\s+(?:nezávisle\\s+)?(?:nepotvrdil|neověřil)"),
+  talk("\\bz\\s+dostupn\\w+\\s+(?:textu|informací|zpráv|článku)"),
+  talk("\\bpodle\\s+dostupn\\w+"),
+  talk("\\b(?:oznámení|tvrzení|prohlášení)\\s+(?:samotn\\w+|firmy\\s+samotné)"),
+  talk("\\bod\\s+(?:firmy|společnosti)\\s+samotn"),
 ];
 export function dneskaiTalksAboutSources(value: string): boolean {
   return SOURCE_TALK.some((pattern) => pattern.test(value));

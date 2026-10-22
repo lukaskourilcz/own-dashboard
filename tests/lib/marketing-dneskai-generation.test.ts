@@ -268,12 +268,9 @@ describe("no text about sources or verification (owner rule, 22 October 2026)", 
     "Jak funkce zvládá skupinové fotky, Adobe zatím neuvedlo.", "Zdrojový kód modelu je otevřený."];
   it.each(SOURCE_TALK)("finds source talk in %s", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(true); });
   it.each(PLAIN)("leaves the attribution or plain fact %s alone", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(false); });
-  // KNOWN PRODUCTION BUG (reported, not fixed here): the SOURCE_TALK patterns use `\b` and `\w`, which stay ASCII-only
-  // in JavaScript even with the `u` flag, so a pattern whose word starts or continues with a Czech letter never
-  // matches („dostupného“, „nezávislé potvrzení“, „Údaj“ without „od firmy samotné“). These cases state the rule and
-  // pass only while the bug lasts; once the patterns are fixed, move them into SOURCE_TALK above.
-  it.fails.each(["Z dostupného textu nevyplývá…", "Nezávislé potvrzení chybí.", "Podle dostupných informací jde o první verzi.", "Údaj pochází z blogu firmy."])(
-    "finds source talk in %s (fails until the ASCII word-boundary bug is fixed)", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(true); });
+  // Czech letters at a word's edge: JavaScript's \b and \w are ASCII-only, so the patterns use Unicode classes.
+  it.each(["Z dostupného textu nevyplývá…", "Nezávislé potvrzení chybí.", "Podle dostupných informací jde o první verzi.", "Údaj pochází z blogu firmy."])(
+    "finds source talk that starts or continues with a Czech letter in %s", (text) => { expect(dneskaiTalksAboutSources(text)).toBe(true); });
   it("refuses source talk on a slide and in the caption, never in the internal title", () => {
     expect(validateDneskaiCopy(validCopy(pictures), offerFor()).filter((entry) => entry.code === "source-talk")).toEqual([]);
     const copy = validCopy(pictures);
