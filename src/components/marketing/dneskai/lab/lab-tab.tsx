@@ -18,7 +18,7 @@ import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } fro
 import { cn } from '@/lib/utils';
 import { CountedField } from '../post-editor';
 import { DneskaiCodeText } from '../code-text';
-import { DneskaiStateChip } from '../state-chip';
+import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
@@ -83,14 +83,21 @@ export function DneskaiLabTab(props: Props) {
         {days.map((day, index) => <section key={day.date} className="space-y-2">
           <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow}</h3>
           <ol className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
-            {day.posts.map((item) => <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><button type="button" onClick={() => choose(item.post.id)} aria-current={active?.post.id === item.post.id ? 'true' : undefined}
-              className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', active?.post.id === item.post.id ? 'border-primary bg-surface-selected' : 'border-border hover:bg-surface-hover')} data-testid="dneskai-lab-queue-post">
-              <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs"><span className="tabular">{item.deadline.time}</span><DneskaiStateChip detail={item.state} lang={props.lang} /></span>
-              <span className="mt-1 block line-clamp-2 text-xs font-medium">{item.post.title}</span>
-              <span className={cn('mt-1 block text-[11px]', item.deadline.urgent || dneskaiMissedSlot(item) ? 'text-warning' : 'text-foreground-muted')}>{dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft)}</span>
-            </button></li>)}
+            {day.posts.map((item) => {
+              // #173: the card's tint carries the state; its words stay in the accessible name and the tooltip.
+              const state = dneskaiStateText(item.state, props.lang);
+              const note = dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft);
+              const current = active?.post.id === item.post.id;
+              return <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><Tooltip content={state} side="right"><button type="button" onClick={() => choose(item.post.id)} aria-current={current ? 'true' : undefined}
+                aria-label={`${item.deadline.time} ${item.post.title}, ${note}, ${state}`} data-state-tone={item.state.state}
+                className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', dneskaiStateTint(item.state), current ? 'border-primary ring-1 ring-primary' : 'hover:border-border-strong')} data-testid="dneskai-lab-queue-post">
+                <span className="block text-xs tabular">{item.deadline.time}</span>
+                <span className="mt-1 block line-clamp-2 text-xs font-medium">{item.post.title}</span>
+                <span className={cn('mt-1 block text-[11px]', item.deadline.urgent || dneskaiMissedSlot(item) ? 'text-warning' : 'text-foreground-muted')}>{note}</span>
+              </button></Tooltip></li>;
+            })}
           </ol>
-          {day.jobs.map((item) => <p key={item.job.id} className="text-xs text-foreground-muted">{item.deadline?.time} · {t.queue.preparing}</p>)}
+          {day.jobs.map((item) => <p key={item.job.id} className={cn('rounded-md border p-2 text-xs text-foreground-muted', DNESKAI_TONE_TINTS.neutral)}>{item.deadline?.time} · {t.queue.preparing}</p>)}
           {day.waiting.length > 0 && <GenerateNow {...props} waiting={day.waiting} />}
           {!day.posts.length && !day.jobs.length && !day.waiting.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>

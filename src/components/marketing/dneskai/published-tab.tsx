@@ -8,7 +8,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { DNESKAI_POST_FILTERS, dneskaiPostList, formatDneskaiDayTime, dneskaiPostMatches, type DneskaiPostFilter, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiCodeText, DneskaiDetails } from './code-text';
-import { DneskaiStateChip } from './state-chip';
+import { dneskaiStateText, dneskaiStateTint } from './state-chip';
+import { cn } from '@/lib/utils';
 import { TabHeader } from './review-tab';
 
 type Lang = 'en' | 'cs';
@@ -40,15 +41,17 @@ export function DneskaiPublishedTab({ read, lang, preview, refreshing, onRefresh
       })}
     </div>
     {posts.length === 0 ? <EmptyState align="start" title={all.length === 0 ? t.published.empty : t.published.emptyFilter} className="rounded-lg border border-border bg-surface" />
-      : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{posts.map(({ post, state }) => {
+      : <ul className="space-y-2">{posts.map(({ post, state }) => {
         const cover = post.assets[0];
         const at = post.publication?.publishedAt ?? null;
         const editable = post.status === 'review' || post.status === 'returned';
-        return <li key={post.id} className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)]" data-testid="dneskai-post-row" data-state={state.state}>
+        // #173: the card's tint carries the state; its words stay in the card's name and tooltip.
+        const stateText = dneskaiStateText(state, lang);
+        return <li key={post.id}><article aria-label={`${post.title}: ${stateText}`} title={stateText} className={cn('grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)]', dneskaiStateTint(state))} data-testid="dneskai-post-row" data-state={state.state}>
           {cover ? <Image unoptimized src={cover.url} alt={t.published.cover(post.title)} width={cover.width} height={cover.height} loading="lazy" sizes="4.5rem" className="h-auto w-full rounded border border-border" />
             : <span className="flex aspect-[4/5] items-center justify-center rounded border border-dashed border-border-strong text-center text-[10px] text-foreground-muted">{t.card.notRendered}</span>}
           <div className="min-w-0 space-y-1">
-            <div className="flex min-w-0 flex-wrap items-start justify-between gap-2"><p className="min-w-0 break-words text-sm font-medium">{post.title}</p><DneskaiStateChip detail={state} lang={lang} /></div>
+            <p className="min-w-0 break-words text-sm font-medium">{post.title}</p>
             <dl className="grid gap-x-4 gap-y-0.5 text-xs text-foreground-muted sm:grid-cols-2">
               <div><dt className="inline">{at ? t.published.at : t.published.planned}: </dt><dd className="inline tabular"><time dateTime={at ?? post.scheduledAt}>{formatDneskaiDayTime(at ?? post.scheduledAt)}</time></dd></div>
               <div><dt className="inline">{t.published.account}: </dt><dd className="inline">@{post.account.handle}</dd></div>
@@ -59,7 +62,7 @@ export function DneskaiPublishedTab({ read, lang, preview, refreshing, onRefresh
             {editable && <Button variant="outline" size="sm" aria-label={t.published.openLabName(post.title)} onClick={() => openInLab(post.id)}>{t.published.openLab}</Button>}
             <DneskaiDetails lang={lang} rows={[[t.detailPublication, post.publication?.id], [t.detailRevision, post.id], [t.detailHash, post.contentHash], [t.detailTrace, post.traceId]]} />
           </div>
-        </li>;
+        </article></li>;
       })}</ul>}
   </section>;
 }
