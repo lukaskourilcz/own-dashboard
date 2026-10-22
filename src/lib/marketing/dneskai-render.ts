@@ -259,6 +259,24 @@ async function studioProblems(engine: Studio, input: DneskaiSlideInput, index: n
   return found.map((problem) => slideProblem(index, problem));
 }
 
+/** The problem codes about words, as opposed to pictures, that `dneskaiSlideTextProblems` keeps. */
+const TEXT_PROBLEM_CODES = new Set(["text-unplaced", "unsupported-glyph", "text-missing", "text-clipped", "variant-invalid", "position-invalid", "sources-missing", "sources-too-many"]);
+
+/**
+ * The text gate alone for one slide, without loading or decoding a photograph: OwnDashboard's
+ * placed-field and glyph checks and the studio's own fitter (the same `text-clipped` a render
+ * refuses). The Design Lab's fit feedback (`dneskai-fit.ts`) calls it on every pause in typing.
+ * Each picture place is handed to the studio as an empty file, so it resolves the template the
+ * deck renders with (`split` with `image-2` is the paired one); the image problems that empty
+ * file raises are dropped, as are all others about pictures.
+ */
+export async function dneskaiSlideTextProblems(slide: DneskaiSlide, position: Position): Promise<DneskaiSlideRenderProblem[]> {
+  const [engine, metrics] = await Promise.all([studio(), fonts()]);
+  const stand: DneskaiImageInput[] = slide.images.map((image) => ({ slot: image.slot, bytes: new Uint8Array(0) }));
+  const found = [...textProblems(slide, position.index, metrics), ...await studioProblems(engine, dneskaiStudioInput(slide, position, stand), position.index)];
+  return found.filter((problem) => TEXT_PROBLEM_CODES.has(problem.code));
+}
+
 /**
  * Every problem a deck has, the renderer's own gate included, without rendering or storing
  * anything. Generation (#116) uses it to fit copy.

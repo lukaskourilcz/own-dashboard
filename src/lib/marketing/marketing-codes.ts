@@ -73,6 +73,9 @@ const CODES = {
   'revision-not-renewable': ['none', 'Image links are renewed only for posts waiting for review or approved.', 'Odkazy na obrázky se obnovují jen u příspěvků ke kontrole nebo schválených.'],
   'unauthorized': ['retry', 'You are signed out.', 'Jste odhlášeni.'],
   'invalid-request': ['retry', 'The request was not valid.', 'Požadavek nebyl platný.'],
+  'kit-unavailable': ['none', 'This kit cannot be rendered in OwnDashboard yet, so its text fit and slides are not available. The post keeps its current kit.', 'Tuto sadu OwnDashboard zatím neumí vykreslit, takže pro ni není kontrola textu ani slidy. Příspěvek si ponechá současnou sadu.'],
+  'fit-input-invalid': ['edit', 'The deck cannot be checked in this shape: a carousel needs 2 to 10 slides and a single post exactly one.', 'Sadu slidů v této podobě nelze zkontrolovat: karusel potřebuje 2 až 10 slidů a samostatný příspěvek právě jeden.'],
+  'fit-unavailable': ['retry', 'The text check did not answer. The fields still show the character limits; saving checks the text again.', 'Kontrola textu neodpověděla. Pole dál ukazují limity znaků; uložení text zkontroluje znovu.'],
   'rate-limited': ['retry', 'Too many attempts. Wait a few minutes.', 'Příliš mnoho pokusů. Počkejte několik minut.'],
   // Render report problems (#117, #118) and their readiness checks.
   'text-clipped': ['edit', 'The text does not fit and would be cut. Shorten it.', 'Text se nevejde a byl by oříznutý. Zkraťte ho.'],

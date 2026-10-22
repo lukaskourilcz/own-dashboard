@@ -11,9 +11,12 @@ import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
 import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision } from '@/lib/marketing/dneskai-revision-edit';
 import { getBriefAssetHashLister, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
+import { DneskaiApproveManyInputSchema, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 export const maxDuration=60;
 const Input=z.discriminatedUnion('action',[
  z.strictObject({action:z.literal('approve'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
+ // „Approve the day“ (Design Lab): each post approved only if its own hash still matches; per-post results.
+ DneskaiApproveManyInputSchema,
  z.strictObject({action:z.enum(['returned','skipped']),id:z.uuid(),feedback:z.string().max(2000).optional()}),
  // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer; `accountId` is a marketing_accounts row.
  z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional()}),
@@ -27,6 +30,20 @@ export async function POST(request:Request){
  if(!user)return NextResponse.json({error:'unauthorized'},{status:401});
  try{
   const input=Input.parse(await request.json());
+  if(input.action==='approve-many'){
+   // One request, but every post goes through the same hash-binding SQL as a single approval, in order. A refusal
+   // (hash changed, render blocked, slot expired) is that post's result and never stops the others.
+   const results:DneskaiApproveManyResult['results']=[];
+   for(const item of input.posts){
+    const {data:original}=await db.from('marketing_revisions').select('revision,content_hash').eq('id',item.id).eq('user_id',user.id).maybeSingle();
+    const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:item.id,p_expected_hash:item.expectedHash});
+    if(error){results.push({id:item.id,ok:false,publicationId:null,error:approvalReasons[error.message]??'approval-unavailable'});continue;}
+    if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:item.id,revisionHash:original.content_hash,decision:'approved'},process.env,{db,ownerId:user.id});
+    await notifyMarketingApproval(data);
+    results.push({id:item.id,ok:true,publicationId:typeof data==='string'?data:null,error:null});
+   }
+   return NextResponse.json({results});
+  }
   const {data:original}=await db.from('marketing_revisions').select('revision,content_hash').eq('id',input.id).eq('user_id',user.id).maybeSingle();
   if(input.action==='approve'){
    const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:input.id,p_expected_hash:input.expectedHash});

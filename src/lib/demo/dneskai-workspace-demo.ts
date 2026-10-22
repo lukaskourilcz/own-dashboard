@@ -2,7 +2,7 @@
 
 import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos, demoSlides } from './dneskai-workspace-fixtures';
 import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
-import { DneskaiWorkspaceRequestError, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
+import { DneskaiWorkspaceRequestError, fitAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiMediaRead } from '@/lib/marketing/dneskai-media-contracts';
@@ -80,6 +80,16 @@ function demoProblems(post: DneskaiWorkspacePost, slides: DneskaiSlide[]) {
   return problems;
 }
 
+/** The approval the server's SQL makes, with its refusals: the exact hash, a ready version still in review. */
+function approveOne(id: string, expectedHash: string): string {
+  const post = find(id);
+  if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
+  if (post.status !== 'review' || !post.ready) throw new DneskaiWorkspaceRequestError('revision-not-ready', 409);
+  post.status = 'approved'; post.approvedAt = new Date().toISOString();
+  post.publication = { id: uuid(), status: 'queued', scheduledAt: post.scheduledAt, remoteUrl: null, errorCode: null, lastCheckedAt: null, publishedAt: null };
+  return post.publication.id;
+}
+
 export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: true,
   async loadReview() { await pause(120); return clone(read()); },
@@ -99,12 +109,17 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   },
   async approve(id, expectedHash) {
     await pause(300);
-    const post = find(id);
-    if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
-    if (post.status !== 'review' || !post.ready) throw new DneskaiWorkspaceRequestError('revision-not-ready', 409);
-    post.status = 'approved'; post.approvedAt = new Date().toISOString();
-    post.publication = { id: uuid(), status: 'queued', scheduledAt: post.scheduledAt, remoteUrl: null, errorCode: null, lastCheckedAt: null, publishedAt: null };
+    approveOne(id, expectedHash);
   },
+  async approveMany(posts) {
+    await pause(400);
+    return { results: posts.map(({ id, contentHash }) => {
+      try { return { id, ok: true, publicationId: approveOne(id, contentHash), error: null }; }
+      catch (error) { return { id, ok: false, publicationId: null, error: error instanceof DneskaiWorkspaceRequestError ? error.code : 'approval-unavailable' }; }
+    }) };
+  },
+  // The real studio fit, through the fixture-only twin of the route: it reads no owner data. Production guests get 404.
+  fit: (request, signal) => fitAt('/api/dev-preview/dneskai-fit', request, signal),
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);
