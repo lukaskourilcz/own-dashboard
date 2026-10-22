@@ -41,6 +41,16 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 
 The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and the second paid action of a page is refused by a $1 stand-in ceiling. Design Lab stays inside the review tab (decision 10).
 
+## Comment and message (#159)
+
+With the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` the read sends `capabilities.engagement: true` and the post card shows „Komentář a zpráva“ under the caption (`lab/engagement-editor.tsx`). A post with a keyword shows three fields:
+
+- **Keyword.** Typed text turns upper case; a valid word (Latin letters and digits, 1 to 24) shows as a chip. Diacritics, spaces or punctuation mark the field invalid in place.
+- **DM message.** A textarea with a 1,000-character counter and a chat-bubble preview under `@account`.
+- **Public reply.** Starts with „Poslali jsme vám to do zpráv.“ (`DNESKAI_DEFAULT_PUBLIC_REPLY`), 200 characters at most. Emptied, no public reply is sent.
+
+A post without a keyword, such as a news post, shows „Přidat klíčové slovo“; „Odebrat klíčové slovo“ takes it away again. The deck draft holds the three fields as typed. `dneskaiEditRequest` sends `engagement` only when its normalised form (trimmed, keyword upper case, empty reply left out) differs from the saved one, and `null` after a removal. That change counts in the dirty check, so Approve waits for a save, and the saved version gets a new hash that needs its own approval. `draftProblems` refuses what the server would refuse before anything is sent. An engagement-only save reuses the rendered JPEGs. Nothing is sent to commenters yet; the comment watcher (#160) has its own switch.
+
 ## Authentic preview assets
 
 `node scripts/dneskai-preview-fixtures.mjs` deterministically regenerates six abstract synthetic source images and sixteen full-size 1080 × 1350 JPEG slides with the vendored studio. The images and all copy are fixtures, not observations or source claims. Their originals are committed so the fixture renderer can verify each sha256 before rendering an edit.
