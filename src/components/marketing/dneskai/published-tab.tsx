@@ -12,6 +12,7 @@ import { dneskaiStateText, dneskaiStateTint } from './state-chip';
 import { cn } from '@/lib/utils';
 import { TabHeader } from './review-tab';
 import { DneskaiMusicHint } from './music-hint';
+import { DneskaiEngagementReceipt, DneskaiEngagementSummary } from './engagement-receipt';
 
 type Lang = 'en' | 'cs';
 
@@ -33,6 +34,7 @@ export function DneskaiPublishedTab({ read, lang, preview, refreshing, onRefresh
   const posts = all.filter((item) => dneskaiPostMatches(item.state.state, filter));
   return <section aria-labelledby="dneskai-published-title" className="min-w-0 space-y-5" data-testid="dneskai-published">
     <TabHeader id="dneskai-published-title" title={t.published.title} intro={t.published.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
+    {read.engagementSummary && read.engagementSummary.posts > 0 && <DneskaiEngagementSummary summary={read.engagementSummary} lang={lang} />}
     <div role="group" aria-label={t.published.filters.label} className="flex flex-wrap gap-1" data-testid="dneskai-post-filters">
       {DNESKAI_POST_FILTERS.map((key) => {
         const count = all.filter((item) => dneskaiPostMatches(item.state.state, key)).length;
@@ -60,6 +62,7 @@ export function DneskaiPublishedTab({ read, lang, preview, refreshing, onRefresh
             {state.state === 'problem' && <DneskaiCodeText code={state.code} lang={lang} />}
             {state.state === 'published' && (post.publication?.remoteUrl ? <a href={post.publication.remoteUrl} target="_blank" rel="noopener noreferrer" aria-label={`${t.published.open}: ${post.title}`} className="inline-flex min-h-11 items-center gap-1 rounded text-xs text-information underline focus-ring md:min-h-6">{t.published.open}<ExternalLink className="size-3.5" aria-hidden /></a>
               : <p className="text-xs text-foreground-muted">{t.published.noLink}</p>)}
+            {post.engagementReceipt && <DneskaiEngagementReceipt receipt={post.engagementReceipt} lang={lang} />}
             <DneskaiMusicHint post={post} position={index} preview={preview} lang={lang} />
             {editable && <Button variant="outline" size="sm" aria-label={t.published.openLabName(post.title)} onClick={() => openInLab(post.id)}>{t.published.openLab}</Button>}
             <DneskaiDetails lang={lang} rows={[[t.detailPublication, post.publication?.id], [t.detailRevision, post.id], [t.detailHash, post.contentHash], [t.detailTrace, post.traceId]]} />

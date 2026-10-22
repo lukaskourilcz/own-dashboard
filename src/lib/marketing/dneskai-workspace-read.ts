@@ -10,7 +10,7 @@ import { marketingPublicationRequeueable } from './publication-requeue';
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import {
-  DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
+  DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiEngagementReceiptSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
   DneskaiWorkspaceReadSchema, DneskaiWorkspaceWaitingSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
 import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPICS_VERSION, DneskaiTopicSchema, DneskaiTopicsReadSchema, emptyDneskaiTopicGroups, type DneskaiTopic, type DneskaiTopicsRead } from './dneskai-topics';
@@ -68,7 +68,7 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
  * days, newest first, up to 60 posts in all. At four posts a day that keeps every undecided post and the coming week
  * and leaves room for roughly the last week of receipts; older receipts drop off first.
  */
-export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities'] } = {}): Promise<DneskaiWorkspaceRead> {
+export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean } = {}): Promise<DneskaiWorkspaceRead> {
   z.uuid().parse(owner); z.iso.date().parse(today);
   const windowStart = Date.parse(pragueScheduledAt(pragueDayAfter(today, -30), '00:00'));
   const windowEnd = Date.parse(pragueScheduledAt(pragueDayAfter(today, 7), '00:00'));
@@ -118,6 +118,8 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     if (!view.success) { unreadable += 1; return []; }
     return [view.data];
   });
+  // #162: only with the watcher on, because its tables exist only after 20261023120000. A failed read leaves them out.
+  const engagementSummary = options.engagement ? await attachEngagementReceipts(db, owner, posts, now) : undefined;
   const known = new Set(posts.map((post) => post.id));
   const jobs = rows(jobResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-workspace-unavailable').flatMap((row): DneskaiWorkspaceJob[] => {
     if (row.brand !== 'dneskai' || (typeof row.revision_id === 'string' && known.has(row.revision_id))) return [];
@@ -141,7 +143,49 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     return !row.job_id && brief.success && Date.parse(brief.data.scheduledAt) > now.getTime() ? [brief.data] : [];
   }).slice(0, 8);
   return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs,
-    ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), unreadable });
+    ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), ...(engagementSummary ? { engagementSummary } : {}), unreadable });
+}
+
+const ENGAGEMENT_SUMMARY_MS = 7 * 86_400_000;
+/**
+ * Adds the comment watcher's receipt to each published post with a keyword and returns the seven-day totals.
+ * Counts come from `marketing_instagram_comment_checks` (comments read in the last finished pass, or the pass in
+ * progress when none finished yet) and `marketing_instagram_comment_replies` (matches, replies, failures by code).
+ */
+async function attachEngagementReceipts(db: Database, owner: string, posts: DneskaiWorkspacePost[], now: Date) {
+  const watched = posts.filter((post) => post.engagement && post.publication?.status === 'published');
+  const publicationIds = watched.map((post) => post.publication!.id);
+  if (!publicationIds.length) return { posts: 0, commentsSeen: 0, keywordMatches: 0, privateSent: 0, publicSent: 0, failed: 0 };
+  const [checks, replies] = await Promise.all([
+    db.from('marketing_instagram_comment_checks').select('publication_id,comments_seen,pass_seen,last_checked_at').eq('user_id', owner).in('publication_id', publicationIds),
+    db.from('marketing_instagram_comment_replies').select('publication_id,status,public_status,error_code').eq('user_id', owner).in('publication_id', publicationIds).limit(5000),
+  ]);
+  if (checks.error || replies.error) return undefined;
+  const checkRows = (checks.data ?? []) as Array<{ publication_id: string; comments_seen: number; pass_seen: number; last_checked_at: string | null }>;
+  const replyRows = (replies.data ?? []) as Array<{ publication_id: string; status: string; public_status: string; error_code: string | null }>;
+  const summary = { posts: 0, commentsSeen: 0, keywordMatches: 0, privateSent: 0, publicSent: 0, failed: 0 };
+  for (const post of watched) {
+    const id = post.publication!.id;
+    const check = checkRows.find((row) => row.publication_id === id);
+    const own = replyRows.filter((row) => row.publication_id === id);
+    const failures = new Map<string, number>();
+    for (const row of own) if (row.status === 'failed' || row.status === 'uncertain' || row.public_status === 'failed' || row.public_status === 'uncertain') {
+      const code = safeCode(row.error_code) ?? 'reply-uncertain';
+      failures.set(code, (failures.get(code) ?? 0) + 1);
+    }
+    const receipt = DneskaiEngagementReceiptSchema.parse({
+      commentsSeen: check ? Math.max(check.comments_seen, check.pass_seen) : 0, keywordMatches: own.length,
+      privateSent: own.filter((row) => row.status === 'sent').length, publicSent: own.filter((row) => row.public_status === 'sent').length,
+      failures: [...failures].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([code, count]) => ({ code, count })), lastCheckedAt: iso(check?.last_checked_at ?? null),
+    });
+    post.engagementReceipt = receipt;
+    const publishedAt = Date.parse(post.publication!.publishedAt ?? post.scheduledAt);
+    if (now.getTime() - publishedAt <= ENGAGEMENT_SUMMARY_MS) {
+      summary.posts += 1; summary.commentsSeen += receipt.commentsSeen; summary.keywordMatches += receipt.keywordMatches;
+      summary.privateSent += receipt.privateSent; summary.publicSent += receipt.publicSent; summary.failed += receipt.failures.reduce((sum: number, item: { count: number }) => sum + item.count, 0);
+    }
+  }
+  return summary;
 }
 
 const TickStepSchema = z.object({ category: z.string(), status: z.string(), code: z.string().optional() });
