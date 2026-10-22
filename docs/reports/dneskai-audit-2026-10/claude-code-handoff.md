@@ -41,3 +41,9 @@ No new accounts, paid runs, OAuth scopes, live post publishing, production SQL w
 OwnDashboard: lint, TypeScript and ordinary production build exit 0; full unit run 2,129 passed / 1 skipped; final strict-v1 flow assertion 8/8; fresh full Playwright run 168 passed / 72 skipped / 0 failed (6.2 minutes). The skipped cases remain unverified. The Linux-only render-trace script fails on macOS because it expects libvips .so; the release receipt must distinguish this from the Linux CI result.
 
 Quorum: studio 710/710, orchestrator 3,235/3,235 and site 1,062/1,062 pass in the full release check. Before that check, workspace lint/types/build passed and the production smoke covered 63 routes and 463 internal links. Use the exact deploy:check receipt for the release commit before a manual production deployment. No new model/data call is needed for verification.
+
+## Owner hand-off (22 October 2026, afternoon)
+
+- [owner-todo.md](owner-todo.md): everything that still needs the owner, in plain language, with my recommendation on each decision.
+- [browser-agent-prompt.md](browser-agent-prompt.md): a prompt for a browser agent that connects `@dneskai`, adds the production Anthropic key and archives the old n8n workflows.
+- [session-log-2026-10-22.md](session-log-2026-10-22.md): the work log of the sessions on 22 October (commits, gates, pushes).
