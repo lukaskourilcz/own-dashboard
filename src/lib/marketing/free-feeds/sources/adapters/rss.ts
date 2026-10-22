@@ -13,7 +13,7 @@ const parser = new Parser({
 
 type MediaElement = { $?: { url?: string; type?: string; medium?: string } };
 
-interface RssItem {
+export interface RssItem {
   guid?: string;
   id?: string;
   link?: string;
@@ -71,16 +71,21 @@ export function escapeBareAmpersands(xml: string): string {
   return xml.replace(/&(?!(?:[A-Za-z][A-Za-z0-9]{1,31}|#[0-9]{1,7}|#x[0-9A-Fa-f]{1,6});)/g, "&amp;");
 }
 
+/** The feed's raw entries (RSS items or Atom entries), before projection. */
+export async function parseFeedEntries(xml: string): Promise<RssItem[]> {
+  // Well-formed feeds parse untouched; one repaired retry covers unescaped query ampersands.
+  const feed = await parser.parseString(xml).catch(() => parser.parseString(escapeBareAmpersands(xml)));
+  return (feed.items as RssItem[] | undefined) ?? [];
+}
+
 export async function parseRssFeed(
   xml: string,
   source: SourceConfig,
   now: Date
 ): Promise<SourceItem[]> {
-  // Well-formed feeds parse untouched; one repaired retry covers unescaped query ampersands.
-  const feed = await parser.parseString(xml).catch(() => parser.parseString(escapeBareAmpersands(xml)));
-  return (feed.items as RssItem[] | undefined)
-    ?.map((item) => projectRssItem(item, source, now))
-    .filter((item): item is SourceItem => item !== null) ?? [];
+  return (await parseFeedEntries(xml))
+    .map((item) => projectRssItem(item, source, now))
+    .filter((item): item is SourceItem => item !== null);
 }
 
 export async function fetchRss(

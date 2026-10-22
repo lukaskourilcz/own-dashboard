@@ -100,7 +100,7 @@ const feeds = [
   {
     "id": "github-ai-releases",
     "name": "GitHub · AI releases",
-    "url": "https://api.github.com/",
+    "url": "https://github.com/",
     "kind": "github",
     "maxItems": 20,
     "weekdays": [

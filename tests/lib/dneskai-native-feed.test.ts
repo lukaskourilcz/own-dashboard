@@ -65,7 +65,7 @@ describe('native DNESKAi free-feed collection', () => {
   ['spaceflight-news', () => Response.json({ results: [{ id: 1, title: 'Offline space news', url: 'https://example.test/space', published_at: '2026-10-14T08:00:00Z' }] }), 'ordering=-published_at'],
   ['stackexchange-ml', () => Response.json({ has_more: false, items: [{ question_id: 1, title: 'Offline machine learning question', link: 'https://example.test/question', creation_date: 1791964800 }] }), 'tagged=machine-learning'],
   ['bluesky-language-models', () => Response.json({ posts: [{ uri: 'at://test/app.bsky.feed.post/1', author: { handle: 'example.test' }, record: { text: 'Offline language model discussion', createdAt: '2026-10-14T08:00:00Z' } }] }), 'q=language+model'],
-  ['github-ai-releases', () => Response.json([{ id: 1, name: 'Offline release', html_url: 'https://example.test/release', published_at: '2026-10-14T08:00:00Z' }]), 'per_page=3'],
+  ['github-ai-releases', () => new Response('<feed xmlns="http://www.w3.org/2005/Atom"><title>Release notes</title><entry><id>tag:github.com,2008:Repository/1/v1.0.0</id><updated>2026-10-14T08:00:00Z</updated><link rel="alternate" type="text/html" href="https://github.com/openai/openai-python/releases/tag/v1.0.0"/><title>v1.0.0</title><content type="html">Offline release</content></entry></feed>', { headers: { 'content-type': 'application/atom+xml; charset=utf-8' } }), '/releases.atom'],
  ])('reuses registered query/endpoint projection for %s without credentials', async (id, response, query) => {
   const configured = DNESKAI_SOURCES.find(row => row.id === id)!;
   const fetcher = vi.fn<typeof fetch>(async () => response());

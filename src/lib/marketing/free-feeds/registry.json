@@ -164,7 +164,7 @@
       "id": "github-ai-releases",
       "kind": "github",
       "name": "GitHub \u00b7 AI releases",
-      "url": "https://api.github.com/",
+      "url": "https://github.com/",
       "weight": 0.7,
       "tags": [
         "ai",
