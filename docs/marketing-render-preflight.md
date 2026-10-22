@@ -1,10 +1,7 @@
 # Marketing renderer diagnostic
 
-> **Retired 2026-10-22 (audit finding cost-06):** `POST /api/marketing/n8n` now answers `410`
-> `{"code":"route-retired"}`, so this operation is no longer reachable over HTTP. `runMarketingRenderPreflight`
-> remains in `src/lib/marketing/render-preflight.ts`. The text below records how the operation worked.
-
-The authenticated `POST /api/marketing/n8n` accepted this diagnostic operation:
+The existing authenticated `POST /api/marketing/n8n` accepts this diagnostic operation. Since 2026-10-22 a `dneskai` brand
+answers `410` `{"code":"route-retired"}` (audit finding cost-06); `devshark` works as before.
 
 ```json
 {

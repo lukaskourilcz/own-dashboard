@@ -229,9 +229,10 @@ Delete that snippet too. Ticks between the two steps answer 401 and do nothing.
 | every tick, at once | `select cron.unschedule('marketing-tick-minute'); select cron.unschedule('marketing-tick-daily');` |
 | every tick, from Vercel | remove `MARKETING_SCHEDULER_SECRET`; each tick answers 401 and does nothing |
 
-Collection, generation and publishing have no other way in. `/api/marketing/dneskai/collect` and
-`/api/marketing/n8n` answer `410` with `{"code":"route-retired"}` for every method (audit finding cost-06), so the
-collection switch and the secrets of those routes open nothing outside the tick. An approval sends no n8n
+DNESKAi collection, generation and publishing have no other way in (audit finding cost-06).
+`/api/marketing/dneskai/collect` answers `410` with `{"code":"route-retired"}` for every method, and
+`/api/marketing/n8n` gives the same answer to every DNESKAi operation, so the collection switch opens nothing outside
+the tick. An approval sends no n8n
 notification (cost-07); the next tick publishes the queued slot.
 
 Unscheduling the two ticks leaves `marketing-cron-history-prune` running; it sends nothing. To stop it

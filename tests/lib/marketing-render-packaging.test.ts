@@ -101,7 +101,7 @@ describe('marketing native JPEG runtime package closure, no provider/source/cred
     const includes = await configuredIncludes();
     expect(includes['/api/marketing/**']).toContain(libvipsInclude);
     const routes = routeHandlers().filter(({ file }) => reachesSharp(file)).map(({ route }) => route);
-    expect(routes).toEqual(expect.arrayContaining(['/api/marketing/dneskai/media', '/api/marketing/jobs/[id]/execute', '/api/marketing/offline-import', '/api/marketing/revisions', '/api/marketing/tick']));
+    expect(routes).toEqual(expect.arrayContaining(['/api/marketing/dneskai/media', '/api/marketing/jobs/[id]/execute', '/api/marketing/n8n', '/api/marketing/offline-import', '/api/marketing/revisions', '/api/marketing/tick']));
     expect(routes.filter((route) => !routeIncludes(includes, route).includes(libvipsInclude))).toEqual([]);
   });
   it('requires the libvips runtime assets omitted by the observed NFT', async () => {

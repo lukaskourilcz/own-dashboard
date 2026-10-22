@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-// Audit finding cost-06: the two n8n entry points answer 410 and reach no credential, body, database or provider.
+// Audit finding cost-06: the retired DNESKAi collection entry point answers 410 and reach no credential, body, database or provider.
 const mocks = vi.hoisted(() => ({ downstream: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: mocks.downstream }));
@@ -8,17 +8,15 @@ vi.mock('@/lib/marketing/dneskai-collection', () => ({ tickDneskaiCollection: mo
 vi.mock('@/lib/marketing/orchestrator', () => ({ executeOrchestratedMarketingJob: mocks.downstream, publishDueMarketing: mocks.downstream, synchronizeMarketingSources: mocks.downstream, enqueueCalendarMarketingJob: mocks.downstream, reconcileStoredMarketingPublication: mocks.downstream }));
 vi.mock('@/lib/marketing/knowledge-runner', () => ({ runQueuedKnowledgeAnalysis: mocks.downstream, pollQueuedKnowledgeAnalysis: mocks.downstream, abortQueuedKnowledgeAnalysis: mocks.downstream, createKnowledgeDiagnostics: mocks.downstream }));
 import * as collect from '@/app/api/marketing/dneskai/collect/route';
-import * as n8n from '@/app/api/marketing/n8n/route';
 
 const secret = 'test-only-retired-route-secret-'.repeat(2);
 const owner = '11111111-1111-4111-8111-111111111111';
 const methods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as const;
-const bodies: Record<'collect' | 'n8n', Array<Record<string, unknown>>> = {
+const bodies: Record<'collect', Array<Record<string, unknown>>> = {
   collect: [{ projectId: owner, runId: owner }, { projectId: owner, manual: true, runId: owner }, { projectId: owner, pilot: true }],
-  n8n: [{ operation: 'execute', jobId: owner }, { operation: 'knowledge-run', sourceId: owner }, { operation: 'publish', brand: 'dneskai', dryRun: false }, { operation: 'discover', brand: 'dneskai' }, { operation: 'weekly-report', brand: 'devshark', weekStartsOn: '2026-10-18' }],
 };
 type Handler = (request: Request) => Response | Promise<Response>;
-const routes: Array<[string, Record<(typeof methods)[number], Handler>, Array<Record<string, unknown>>]> = [['/api/marketing/dneskai/collect', collect, bodies.collect], ['/api/marketing/n8n', n8n, bodies.n8n]];
+const routes: Array<[string, Record<(typeof methods)[number], Handler>, Array<Record<string, unknown>>]> = [['/api/marketing/dneskai/collect', collect, bodies.collect]];
 let transport: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   mocks.downstream.mockReset();
