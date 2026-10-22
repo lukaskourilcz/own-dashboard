@@ -1,7 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
+import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/vercel/analytics?**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"kind":"unconfigured"}' }));
@@ -125,11 +126,16 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const lab = page.getByTestId('dneskai-lab'), inspector = page.getByTestId('dneskai-slide-inspector');
   const version = await page.getByTestId('dneskai-lab-approve').textContent();
-  // The cover's picture also fits a frame, so it may become a picture slide; its kicker has no place there.
+  // The cover shows only its headline (owner's post rules): no kicker or body field is offered on it.
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true })).toBeVisible();
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.kicker, exact: true })).toHaveCount(0);
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
+  // The cover's picture also fits a frame, so it may become a picture slide; with only a headline nothing is dropped,
+  // and the picture slide offers a body.
   const shape = inspector.getByTestId('dneskai-slide-shape');
   await expect(shape.locator('option')).toHaveText([t.slide.shapes['cover-photo'], t.slide.shapes.figure, t.slide.shapes.split]);
   await shape.selectOption('figure');
-  await expect(inspector.getByTestId('dneskai-inspector-notice')).toContainText(t.slide.fields.kicker);
+  await expect(inspector.getByTestId('dneskai-inspector-notice')).toHaveText('');
   await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toBeVisible();
   await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
   await shape.selectOption('cover-photo');
@@ -144,7 +150,8 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await inspector.getByTestId('dneskai-insert-add').click();
   await expect(page.getByTestId('dneskai-lab-session').getByRole('status').first()).toContainText(t.slide.insert.added(3));
   await expect(page.getByTestId('dneskai-slide-inspector')).toContainText('Slide 3');
-  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(8);
+  // Four written slides (no sources slide) plus the inserted one, between the previous and next buttons.
+  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(7);
   // Until the owner writes the new slide's words, the draft cannot be previewed or saved.
   await expect(page.getByTestId('dneskai-stage-draft')).toContainText(t.draft.unavailable);
   const fresh = page.getByTestId('dneskai-slide-inspector');
@@ -155,7 +162,7 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
   await expect(page.getByTestId('dneskai-lab-approve')).not.toHaveText(version!);
-  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(8);
+  await expect(page.getByTestId('dneskai-deck-strip').getByRole('button')).toHaveCount(7);
   await expect(page.getByTestId('dneskai-draft-badge')).toHaveCount(0);
   await page.getByTestId('dneskai-lab-approve').click();
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
@@ -182,13 +189,83 @@ test('Lab switches a post to another kit, previews it unsaved, then saves a vers
   await expect(page.getByTestId('dneskai-kit-ticker').getByRole('radio')).toBeChecked();
 });
 
+test('Spotlight takes a round inset picture on the cover from the pool, previews it, saves and approves the new hash', async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab.en;
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const lab = page.getByTestId('dneskai-lab'), stage = page.getByTestId('dneskai-lab-stage');
+  const inspector = page.getByTestId('dneskai-slide-inspector'), approve = page.getByTestId('dneskai-lab-approve');
+  await expect(approve).toBeEnabled();
+  const version = await approve.textContent();
+  // The post's own kit draws no inset, so its cover offers none.
+  await expect(inspector).toContainText('Slide 1');
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).not.toBeChecked();
+  await expect(inspector.getByTestId('dneskai-lab-inset')).toHaveCount(0);
+  await expect(inspector.getByRole('button', { name: t.slide.insetAdd })).toHaveCount(0);
+  // Key 6 puts the post on the Spotlight kit; its cover can now take a second, round picture.
+  await page.getByTestId('dneskai-lab-session').focus();
+  await page.keyboard.press('6');
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
+  const inset = inspector.getByTestId('dneskai-lab-inset');
+  await expect(inset).toContainText(t.slide.insetHelp);
+  const draftImage = stage.getByTestId('dneskai-stage-draft-image');
+  await expect(draftImage).toHaveAttribute('src', /^data:image\/webp;base64,/, { timeout: 20_000 });
+  const withoutInset = await draftImage.getAttribute('src');
+  await inset.getByRole('button', { name: t.slide.insetAdd, exact: true }).click();
+  const tray = inset.getByTestId('dneskai-media-tray');
+  await expect(tray).toBeVisible();
+  await tray.getByRole('button', { name: new RegExp(`^${dneskaiWorkspace.en.editor.choose}: `) }).first().click();
+  // The inset is now the cover's second picture, with its own crop controls and a way to remove it.
+  await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
+  await expect(inspector.getByRole('button', { name: t.slide.insetRemove, exact: true })).toBeVisible();
+  await expect(inspector.getByTestId('dneskai-lab-inset')).toHaveCount(0);
+  await expect.poll(() => draftImage.getAttribute('src'), { timeout: 20_000 }).not.toBe(withoutInset);
+  await expect(draftImage).toHaveAttribute('src', /^data:image\/webp;base64,/);
+  await expect(approve).toBeDisabled();
+  await stage.screenshot({ path: info.outputPath('lab-spotlight-inset.png') });
+  await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(approve).toBeEnabled({ timeout: 20_000 });
+  await expect(approve).not.toHaveText(version!);
+  await expect(page.getByTestId('dneskai-draft-badge')).toHaveCount(0);
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
+  await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
+  await approve.click();
+  await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
+  expect(errors).toEqual([]);
+});
+
+test('a kit without a cover inset drops the Spotlight inset and offers no inset controls', async ({ page }) => {
+  const t = dneskaiLab.en;
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const inspector = page.getByTestId('dneskai-slide-inspector');
+  await page.getByTestId('dneskai-kit-spotlight').click();
+  const inset = inspector.getByTestId('dneskai-lab-inset');
+  await inset.getByRole('button', { name: t.slide.insetAdd, exact: true }).click();
+  await inset.getByTestId('dneskai-media-tray').getByRole('button', { name: new RegExp(`^${dneskaiWorkspace.en.editor.choose}: `) }).first().click();
+  await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
+  for (const kit of ['editorial', 'bold', 'explainer', 'magazine', 'ticker'] as const) {
+    await page.getByTestId(`dneskai-kit-${kit}`).click();
+    await expect(page.getByTestId(`dneskai-kit-${kit}`).getByRole('radio')).toBeChecked();
+    await expect(inspector.getByTestId('dneskai-lab-picture-image-2'), kit).toHaveCount(0);
+    await expect(inspector.getByTestId('dneskai-lab-inset'), kit).toHaveCount(0);
+    await expect(inspector.getByRole('button', { name: t.slide.insetAdd }), kit).toHaveCount(0);
+    await expect(inspector.getByRole('button', { name: t.slide.insetRemove }), kit).toHaveCount(0);
+  }
+});
+
 // Owner decisions 6, 8 and 9. The clock is fixed at 10:00 in Prague, so the fixture's missed post (09:40) moves to
 // today's 12:30: 17:00 and 20:00 are held by the two topics waiting for the scheduler.
+// The server renders Home with the real date, so a browser clock days away from it fails Home's hydration (React #418)
+// before the Lab is even opened. The clock is therefore fixed only once Home is unloaded; the DNESKAi review renders its
+// fixture in the browser, so the Lab itself sees the fixed time.
 const DECISIONS_NOW = new Date('2026-10-20T08:00:00.000Z');
+async function atDecisionsNow(page: Page, options: Parameters<typeof gotoPreview>[1] = {}) {
+  await gotoPreview(page, options);
+  await page.goto('about:blank');
+  await page.clock.setFixedTime(DECISIONS_NOW);
+}
 for (const lang of ['en', 'cs'] as const) test(`a missed post moves to the next free slot and is approved by its new hash (${lang})`, async ({ page }) => {
   const errors = watchConsole(page), t = dneskaiLab[lang];
-  await page.clock.setFixedTime(DECISIONS_NOW);
-  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await atDecisionsNow(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   // The Lab opens on a post that can still be approved, not on the missed one.
   await expect(page.getByTestId('dneskai-lab-moved')).toHaveCount(0);
@@ -211,8 +288,7 @@ for (const lang of ['en', 'cs'] as const) test(`a missed post moves to the next 
 
 test('a returned post is regenerated with the owner’s note; it never approves anything', async ({ page }) => {
   const t = dneskaiLab.en;
-  await page.clock.setFixedTime(DECISIONS_NOW);
-  await gotoPreview(page);
+  await atDecisionsNow(page);
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labPost=d0e5ca10-0000-4000-8000-000000000004');
   const regenerate = page.getByTestId('dneskai-lab-regenerate');
   await expect(regenerate).toBeEnabled();
@@ -232,8 +308,7 @@ test('a returned post is regenerated with the owner’s note; it never approves 
 
 for (const lang of ['en', 'cs'] as const) test(`a waiting topic is generated now, and the next one is refused at the daily limit (${lang})`, async ({ page }) => {
   const errors = watchConsole(page), t = dneskaiLab[lang];
-  await page.clock.setFixedTime(DECISIONS_NOW);
-  await gotoPreview(page, { lang });
+  await atDecisionsNow(page, { lang });
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const waiting = page.getByTestId('dneskai-lab-waiting');
   await expect(waiting.getByText(t.queue.waiting)).toHaveCount(2);

@@ -79,7 +79,7 @@ export function DneskaiLabTab(props: Props) {
           <ol className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
             {day.posts.map((item) => <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><button type="button" onClick={() => choose(item.post.id)} aria-current={active?.post.id === item.post.id ? 'true' : undefined}
               className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', active?.post.id === item.post.id ? 'border-primary bg-surface-selected' : 'border-border hover:bg-surface-hover')} data-testid="dneskai-lab-queue-post">
-              <span className="flex items-center justify-between gap-2 text-xs"><span className="tabular">{item.deadline.time}</span><DneskaiStateChip detail={item.state} lang={props.lang} /></span>
+              <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs"><span className="tabular">{item.deadline.time}</span><DneskaiStateChip detail={item.state} lang={props.lang} /></span>
               <span className="mt-1 block line-clamp-2 text-xs font-medium">{item.post.title}</span>
               <span className={cn('mt-1 block text-[11px]', item.deadline.urgent || dneskaiMissedSlot(item) ? 'text-warning' : 'text-foreground-muted')}>{dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft)}</span>
             </button></li>)}
@@ -244,7 +244,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   function shortcut(event: React.KeyboardEvent) {
     if (busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true],[role=dialog]')) return;
     const key = event.key.toLowerCase();
-    if (props.guest && ['a','d','e','r','s','1','2','3','4','5'].includes(key)) return;
+    if (props.guest && ['a','d','e','r','s','1','2','3','4','5','6'].includes(key)) return;
     const position = order.findIndex((item) => item.post.id === post.id);
     if (['j', 'k', 'arrowdown', 'arrowup'].includes(key)) onChoose(order[Math.max(0, Math.min(order.length - 1, position + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
     else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(draft.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
