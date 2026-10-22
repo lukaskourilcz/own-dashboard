@@ -48,9 +48,8 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
   const draftPreview = current?.draft && preview?.slide === slide ? preview : null;
   const touch = useRef<number | null>(null);
   const views: DneskaiStageView[] = ['feed', 'profile', 'pixels'];
-  return <section aria-labelledby={`${id}-title`} className="min-w-0 space-y-3" data-testid="dneskai-lab-stage">
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <h3 id={`${id}-title`} className="min-w-0 break-words text-sm font-semibold">{lab.post.title}</h3>
+  return <section aria-label={lab.post.title} className="min-w-0 space-y-3" data-testid="dneskai-lab-stage">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <fieldset className="flex shrink-0 rounded-md border border-border bg-surface-secondary p-0.5" data-testid="dneskai-stage-views">
         <legend className="sr-only">{t.stage.views.label}</legend>
         {views.map((item) => <label key={item} className={cn('inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded px-3 text-xs font-medium focus-within:ring-2 focus-within:ring-ring md:min-h-7',

@@ -34,7 +34,7 @@ const workspace = <ProjectWorkspace project={project} allProjects={[project]} co
   subscriptions={[]} subscriptionAllocations={[]} transactions={[]} organizations={[]} opportunities={[]} importantDates={[]} prompts={[]} inboxItems={[]}
   repoNotes={[]} setRepoNotes={noop} repoLinks={[]} setRepoLinks={noop} communications={[]} setCommunications={noop} aiLinks={[]} aiCategories={[]}
   projectLinks={[]} setProjectLinks={noop} promptLinks={[]} competitors={[]} setCompetitors={noop} onOpenProject={noop} displayCurrency="CZK"
-  repositoryIntegrationEnabled={false} onBackToProjects={noop} isPreview />;
+  repositoryIntegrationEnabled={false} isPreview />;
 const render = (node: React.ReactNode) => act(() => root.render(<QueryClientProvider client={client}><TooltipProvider>{node}</TooltipProvider></QueryClientProvider>));
 const switches = () => [...container.querySelectorAll<HTMLButtonElement>('[role="switch"]')];
 const switchNamed = (name: string) => switches().find(item => item.getAttribute('aria-label') === name);

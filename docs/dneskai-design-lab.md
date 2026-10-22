@@ -24,6 +24,10 @@ All six kits render (vendored Quorum `893a495`): Editorial, Bold, Explainer, Mag
 
 Every kit follows the owner's post rules of 22 October 2026 (`.claude/skills/dneskai-post-content/SKILL.md`): the first slide shows only its headline, and no slide shows a page count, a picture credit, a sources slide or text about sources. The editor offers only the fields a slide type draws, so a cover has the headline alone. An edit brings an older deck into line (`dneskaiShownDeck`): it drops its sources slide, credits and the fields its types no longer draw.
 
+## Lab chrome (#172, 22 October 2026)
+
+The Lab shows posts, not explanations. It has no visible heading or intro (an `sr-only` „Design Lab“ heading keeps the landmark named), no version chip next to the state, no Klávesové zkratky button, no account select, no „Sada“ label or kit help texts, no recovery link under the queue and no post title above the Feed / Profil / 1:1 control. Refresh is an icon button (`RefreshCw`) with an `aria-label` and a tooltip. The version hash stays on the approve button and in the Publish now and move dialogs; those dialogs name the account as plain text. Keyboard shortcuts still work (`?` still opens the list in the Lab) and are listed under ⋯ → Klávesové zkratky; recovery is under ⋯ → Obnova témat.
+
 ## Expired time and Publish now (22 October 2026)
 
 The server refuses an edit whose time is not in the future or is more than six days ahead (`schedule-outside-asset-window`). A post opened after its time has passed therefore starts with the nearest possible time, at least 15 minutes ahead on a 5-minute mark (`dneskaiNextEditableTime`). A note under the time field names the original time. The editor checks the six-day window before sending.
