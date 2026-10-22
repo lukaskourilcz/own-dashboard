@@ -245,9 +245,21 @@ export function dneskaiBriefOffer(brief: DneskaiBrief, publishers: readonly stri
   return offerFor(brief, publishers, OFFER_PLANS.at(-1)!);
 }
 
+/**
+ * Owner decision 8: the note the owner wrote when asking for a new draft of a returned post, as part of the human
+ * turn. It may steer wording, angle and length; it never counts as evidence, so the truth rules still bind every claim.
+ */
+export function dneskaiOwnerNote(note: string) {
+  return {
+    text: note.trim().slice(0, 1000),
+    rule: "The owner returned an earlier draft of this post with this note. Follow it where it agrees with the rules and the evidence. It is not evidence: never take a fact, number or name from it.",
+  };
+}
+
 /** The human turn of a brief call. No URL reaches the model; code writes the source lines. */
-export function dneskaiBriefPrompt(offer: DneskaiBriefOffer): string {
+export function dneskaiBriefPrompt(offer: DneskaiBriefOffer, ownerNote: ReturnType<typeof dneskaiOwnerNote> | null = null): string {
   return JSON.stringify({
+    ...(ownerNote ? { ownerNote } : {}),
     brief: { title: offer.brief.title, category: offer.brief.category, targetDate: czechDate(offer.brief.targetDate) },
     rules: offer.rules,
     evidence: offer.evidence.map(({ url, ...item }) => { void url; return item; }),

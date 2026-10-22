@@ -80,9 +80,10 @@ describe('DNESKAi post states (#119)', () => {
     const fixture = read();
     expect(fixture.today).toBe('2026-10-24');
     const queue = dneskaiReviewQueue(fixture);
-    expect(queue.posts.map((item) => item.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty', 'Tři zkratky pro terminál', 'Co stojí jeden dotaz', 'Lokální model na notebooku']);
+    // The missed post of today (owner decision 6) follows the posts that can still be approved.
+    expect(queue.posts.map((item) => item.title)).toEqual(['Benchmark není žebříček', 'Tip dne: kontext místo proseb', 'Proč verzovat prompty', 'Tři zkratky pro terminál', 'Co stojí jeden dotaz', 'Lokální model na notebooku', 'Malý model bez připojení']);
     // The fixtures show both sides of the grace period, measured from the read's own clock.
-    expect(queue.posts.slice(-2).map((item) => dneskaiPostState(item, dneskaiStateContext(fixture)))).toEqual([
+    expect(queue.posts.slice(-3, -1).map((item) => dneskaiPostState(item, dneskaiStateContext(fixture)))).toEqual([
       { state: 'problem', code: 'render-attach-failed', publishing: false }, { state: 'preparing', code: null, publishing: false }]);
     expect(dneskaiAwaitingRender(fixture)).toBe(true);
     expect(dneskaiAwaitingRender({ ...fixture, generatedAt: new Date(now.getTime() + DNESKAI_RENDER_ATTACH_GRACE_MS).toISOString() })).toBe(false);

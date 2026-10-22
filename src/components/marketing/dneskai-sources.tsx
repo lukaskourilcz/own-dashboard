@@ -53,7 +53,7 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
   const reasonText = (code: string | null) => code ? t.eventReasons[code] ?? t.blockers[code] ?? t.reasonUnknown : null;
   const briefLabel = (brief: NonNullable<DneskaiEventView['brief']>) => brief.status === 'queued' ? t.briefQueued : brief.status === 'ready' ? (brief.code ? [t.briefRetry, t.eventReasons[brief.code]].filter(Boolean).join(' · ') : t.briefReady)
     : brief.status === 'pending' ? (brief.code === 'account-unavailable' ? t.briefAccount : brief.code && DNESKAI_OWNER_CODES.has(brief.code) ? r.briefOwner : t.briefMedia) : reasonText(brief.code) ?? t.reasonUnknown;
-  // Owner actions on a dead-end brief: retry, reslot, release. Never generate-now; admission stays the scheduler's.
+  // Owner actions on a dead-end brief: retry, reslot, release. „Generate now“ for a waiting brief lives in the Lab day column.
   const briefControls = (event: DneskaiEventView) => {
     if (!recovery || !event.brief) return null;
     const title = event.members[0].title || t.unnamed;

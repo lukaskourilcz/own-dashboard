@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
-import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
+import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ export function DneskaiLabTab(props: Props) {
   const days = useMemo(() => dneskaiLabQueue(props.read, now, props.renderFailed), [props.read, now, props.renderFailed]);
   const ordered = dneskaiLabOrder(days);
   const named = props.read.posts.find((item) => item.status !== 'superseded' && (item.id === chosen.post || item.replacesId === chosen.post));
-  const active = ordered.find((item) => item.post.id === chosen.post) ?? ordered.find((item) => item.post.replacesId === chosen.post) ?? (named ? dneskaiLabPost(named, props.read, now, props.renderFailed) : null) ?? ordered.find((item) => item.post.status === 'review') ?? ordered[0] ?? null;
+  const active = ordered.find((item) => item.post.id === chosen.post) ?? ordered.find((item) => item.post.replacesId === chosen.post) ?? (named ? dneskaiLabPost(named, props.read, now, props.renderFailed) : null) ?? ordered.find((item) => item.post.status === 'review' && !item.deadline.passed) ?? ordered.find((item) => item.post.status === 'review') ?? ordered[0] ?? null;
   useEffect(() => {
     if (props.preview) return;
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -81,19 +81,20 @@ export function DneskaiLabTab(props: Props) {
               className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', active?.post.id === item.post.id ? 'border-primary bg-surface-selected' : 'border-border hover:bg-surface-hover')} data-testid="dneskai-lab-queue-post">
               <span className="flex items-center justify-between gap-2 text-xs"><span className="tabular">{item.deadline.time}</span><DneskaiStateChip detail={item.state} lang={props.lang} /></span>
               <span className="mt-1 block line-clamp-2 text-xs font-medium">{item.post.title}</span>
-              <span className={cn('mt-1 block text-[11px]', item.deadline.urgent ? 'text-warning' : 'text-foreground-muted')}>{item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft)}</span>
+              <span className={cn('mt-1 block text-[11px]', item.deadline.urgent || dneskaiMissedSlot(item) ? 'text-warning' : 'text-foreground-muted')}>{dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft)}</span>
             </button></li>)}
           </ol>
           {day.jobs.map((item) => <p key={item.job.id} className="text-xs text-foreground-muted">{item.deadline?.time} · {t.queue.preparing}</p>)}
-          {!day.posts.length && !day.jobs.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
+          {day.waiting.length > 0 && <GenerateNow {...props} waiting={day.waiting} />}
+          {!day.posts.length && !day.jobs.length && !day.waiting.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
         </section>)}
         {props.onOpenSources && !props.guest && <button type="button" className="focus-ring inline-flex min-h-11 items-center rounded text-left text-xs text-information underline" onClick={props.onOpenSources}>{t.queue.recovery}</button>}
       </nav>
-      {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} lab={active} slide={Math.min(chosen.slide, 9)}
+      {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} now={now} lab={active} slide={Math.min(chosen.slide, 9)}
         onSlide={(slide) => { setChosen({ post: active.post.id, slide }); remember(active.post.id, slide); }} onDirty={setDirty}
         onChoose={choose} onBatch={() => { const day = days.find((item) => item.date === active.deadline.date); if (day && !dirty && day.approvable.length) setBatch(structuredClone(day)); }}
-        onSaved={(post) => { setNotice(t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
+        onSaved={(post, saved) => { setNotice(saved ?? t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
     </div>
     <Dialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }}><DialogContent><DialogHeader><DialogTitle>{t.actions.discard}</DialogTitle><DialogDescription>{t.actions.dirty}</DialogDescription></DialogHeader>
       <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setPending(null)}>{t.actions.cancel}</Button><Button onClick={() => { const post = pending!; setPending(null); setDirty(false); setChosen({ post, slide: 0 }); remember(post, 0); }}>{t.actions.discard}</Button></div>
@@ -108,15 +109,18 @@ const PREVIEW_MEMORY = 16;
 /** Draft problems that make the edit itself invalid, so no preview can be drawn until the owner fixes them. */
 const PREVIEW_BLOCKERS = new Set(['text-missing', 'alt-missing', 'deck-edit-slide-count']);
 
-function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch, onSaved, order, ...props }: Props & { lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; onDirty: (dirty: boolean) => void; onChoose: (id: string) => void; onBatch: () => void; onSaved: (id: string) => void; order: DneskaiLabPost[] }) {
+function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch, onSaved, order, now, ...props }: Props & { lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; onDirty: (dirty: boolean) => void; onChoose: (id: string) => void; onBatch: () => void; onSaved: (id: string, notice?: string) => void; order: DneskaiLabPost[]; now: number }) {
   const t = copy[props.lang];
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
   const [draft, setDraft] = useState<DeckDraft>(() => createDeckDraft(post, account?.id ?? null));
   const [view, setView] = useState<DneskaiStageView>('feed');
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());
-  const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | 'publish' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<'return' | 'skip' | 'shortcuts' | 'publish' | null>(null), [note, setNote] = useState('');
+  const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<'return' | 'skip' | 'shortcuts' | 'publish' | 'move' | 'regenerate' | null>(null), [note, setNote] = useState('');
+  // Owner decision 6: the slot shown in the confirmation is the one the request binds; the server checks it again.
+  const [moveTarget, setMoveTarget] = useState<string | null>(null);
+  const [regenerateNote, setRegenerateNote] = useState(() => post.feedback ?? '');
   // Read once when the post opens: an expired time is replaced in the draft by the nearest possible one (createDeckDraft).
   const [expired] = useState(() => dneskaiScheduleExpired(post));
   const [fit, setFit] = useState<DneskaiFitState>({ status: 'idle', result: null });
@@ -195,9 +199,16 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
   const publishable = post.status === 'review' && !!post.deck;
   const publishBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.publishNowDirty : lab.block ? t.actions.blocked[lab.block] : !account?.enabled ? t.actions.publishNowOff : !allLoaded ? t.actions.imagesLoading : null;
+  // Owner decision 6: a post in review whose slot passed moves, as exactly this version, to the next free daily slot.
+  const missed = dneskaiMissedSlot(lab);
+  const nextSlot = missed ? dneskaiNextFreeSlot({ today: props.read.today, slots: props.read.slots, taken: dneskaiTakenSlots(props.read, post.id), now }) : null;
+  const moveBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.moved.dirty : lab.block ? t.actions.blocked[lab.block] : !nextSlot ? t.actions.moved.none : !allLoaded ? t.actions.imagesLoading : null;
+  // Owner decision 8: a returned post, or one in review, can be drafted again with a note; it never approves anything.
+  const regeneratable = (post.status === 'review' || post.status === 'returned') && !!post.deck;
+  const regenerateBlock = props.guest ? t.publicTour : !props.read.capabilities?.regenerate ? t.actions.regenerateOff : dirty && !onlyTimeChanged ? t.actions.dirty : null;
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
-  async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish') {
-    if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock)) return;
+  async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate') {
+    if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return;
     if (action === 'save') {
       const problems = draftProblems(post, draft, fit.status === 'ready' ? fit.result : null);
       if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? 'deck-edit-invalid'); return; }
@@ -207,7 +218,15 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       const api = await dneskaiWorkspaceApi(props.preview);
       if (action === 'approve') { await api.approve(post.id, post.contentHash); setMessage(t.actions.approved(lab.deadline.time)); }
       else if (action === 'save') { const result = await api.edit(request!); onSaved(result.id); setMessage(t.actions.saved); }
-      else if (action === 'publish') { const result = await api.publishNow(post.id, post.contentHash); setDialog(null); onSaved(result.id); setMessage(t.actions.publishNowDone(pragueClock(result.scheduledAt))); }
+      else if (action === 'publish') { const result = await api.publishNow(post.id, post.contentHash); const done = t.actions.publishNowDone(pragueClock(result.scheduledAt)); setDialog(null); onSaved(result.id, done); setMessage(done); }
+      else if (action === 'move') { const result = await api.approveAt(post.id, post.contentHash, moveTarget!); const done = t.actions.moved.done(pragueClock(result.scheduledAt)); setDialog(null); onSaved(result.id, done); setMessage(done); }
+      else if (action === 'regenerate') {
+        const result = await api.regenerate(post.id, post.contentHash, regenerateNote);
+        setDialog(null);
+        if (result.status === 'failed') setError(result.errorCode ?? 'worker-execution-failed');
+        if (result.status === 'review' && result.revisionId) onSaved(result.revisionId, t.actions.regenerateDone);
+        setMessage(result.status === 'review' ? t.actions.regenerateDone : result.status === 'queued' ? t.actions.regenerateQueued : t.actions.regenerateFailed);
+      }
       else { await api.decide(post.id, action === 'return' ? 'returned' : 'skipped', action === 'return' ? note : undefined); setMessage(action === 'return' ? t.actions.returned : t.actions.skipped); setDialog(null); }
       await refresh();
     } catch (failure) {
@@ -243,7 +262,13 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><DneskaiStateChip detail={lab.state} lang={props.lang} /><span className="text-xs text-foreground-muted tabular" title={post.contentHash}>{t.actions.version(lab.revision.shortHash)}</span></div><Button variant="ghost" size="sm" onClick={() => setDialog('shortcuts')}>{t.shortcutsButton}</Button></div>
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
-      <div className="min-w-0 space-y-3">{dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
+      <div className="min-w-0 space-y-3">{missed && <section aria-labelledby={`${id}-moved`} className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-xs" data-testid="dneskai-lab-moved">
+          <h3 id={`${id}-moved`} className="font-semibold text-warning">{t.actions.moved.title}</h3>
+          <p>{nextSlot ? t.actions.moved.help(pragueClock(post.scheduledAt), slotLabel(nextSlot, props.read.today, props.lang)) : t.actions.moved.none}</p>
+          {nextSlot && <><Button size="sm" data-testid="dneskai-lab-move" disabled={busy || !!moveBlock} aria-describedby={moveBlock ? `${id}-move-block` : undefined} onClick={() => { setMoveTarget(nextSlot); setError(null); setDialog('move'); }}>{t.actions.moved.button(slotLabel(nextSlot, props.read.today, props.lang))}</Button>
+            {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
+        </section>}
+        {dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
         <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
       <div className="min-w-0 space-y-5">
@@ -257,7 +282,9 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <div><label htmlFor={`${id}-account`} className="text-xs font-medium">{t.post.account}</label><select id={`${id}-account`} value={draft.accountId ?? ''} onChange={(event) => setDraft({ ...draft, accountId: event.target.value })} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring"><option value="" disabled>@{post.account.handle}</option>{props.read.accounts.filter((item) => item.verified).map((item) => <option key={item.id} value={item.id}>@{item.handle}</option>)}</select></div>
         </fieldset>
         <section className="space-y-1 text-xs"><h4 className="font-medium">{t.post.disclosure}</h4><p className="text-foreground-muted">{post.deck?.slides.some((item) => item.type === 'sources') ? t.post.disclosureText : t.post.disclosureMissing}</p></section>
-        {post.status === 'returned' && <section className="space-y-2 border-t border-border pt-3 text-xs"><p>{post.feedback}</p><Button variant="outline" size="sm" onClick={() => fieldRef.current?.focus()}>{t.actions.editByHand}</Button><p className="text-foreground-muted">{t.actions.regenerateOff}</p></section>}
+        {post.status === 'returned' && <section className="space-y-2 border-t border-border pt-3 text-xs"><p>{post.feedback}</p><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => fieldRef.current?.focus()}>{t.actions.editByHand}</Button>
+          {regeneratable && <Button variant="outline" size="sm" data-testid="dneskai-lab-regenerate" disabled={busy || !!regenerateBlock} aria-describedby={regenerateBlock ? `${id}-regenerate-block` : undefined} onClick={() => { setError(null); setDialog('regenerate'); }}>{t.actions.regenerate}</Button>}</div>
+          {regenerateBlock && <p id={`${id}-regenerate-block`} className="text-foreground-muted">{regenerateBlock}</p>}</section>}
         {post.brief && <details className="text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.post.sources}</summary><ul className="space-y-2">{post.brief.evidence.map((item) => <li key={item.candidateId}><a href={item.url} target="_blank" rel="noreferrer" className="break-words underline">{item.title}</a></li>)}</ul></details>}
       </div>
     </div>
@@ -267,13 +294,28 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>
         <Button variant="outline" disabled={props.guest || busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>
         {publishable && <Button variant="outline" data-testid="dneskai-lab-publish-now" disabled={busy || !!publishBlock} title={publishBlock ?? undefined} onClick={() => setDialog('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNow}</Button>}
+        {post.status === 'review' && regeneratable && <Button variant="outline" data-testid="dneskai-lab-regenerate" disabled={busy || !!regenerateBlock} title={regenerateBlock ?? undefined} onClick={() => { setError(null); setDialog('regenerate'); }}>{busyAction === 'regenerate' ? t.actions.regenerating : t.actions.regenerate}</Button>}
         {dirty && <Button variant="ghost" disabled={busy} onClick={() => setDraft(createDeckDraft(post, account?.id ?? null))}>{t.actions.discard}</Button>}
         <Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
       </div>
     </div>
     <Dialog open={dialog !== null} onOpenChange={(open) => { if (!open && !busy) setDialog(null); }}><DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); rootRef.current?.focus(); }}>
-      <DialogHeader><DialogTitle>{dialog === 'shortcuts' ? t.shortcuts.title : dialog === 'return' ? t.actions.return : dialog === 'publish' ? t.actions.publishNowTitle : t.actions.skipConfirm}</DialogTitle><DialogDescription>{dialog === 'shortcuts' ? t.shortcuts.description : dialog === 'return' ? t.actions.noteHelp : dialog === 'publish' ? t.actions.publishNowDescription : post.title}</DialogDescription></DialogHeader>
-      {dialog === 'publish' ? <>
+      <DialogHeader><DialogTitle>{dialog === 'shortcuts' ? t.shortcuts.title : dialog === 'return' ? t.actions.return : dialog === 'publish' ? t.actions.publishNowTitle : dialog === 'move' ? t.actions.moved.dialogTitle(moveTarget ? slotLabel(moveTarget, props.read.today, props.lang) : '') : dialog === 'regenerate' ? t.actions.regenerateTitle : t.actions.skipConfirm}</DialogTitle><DialogDescription>{dialog === 'shortcuts' ? t.shortcuts.description : dialog === 'return' ? t.actions.noteHelp : dialog === 'publish' ? t.actions.publishNowDescription : dialog === 'move' ? t.actions.moved.dialogDescription : dialog === 'regenerate' ? t.actions.regenerateDescription : post.title}</DialogDescription></DialogHeader>
+      {dialog === 'move' ? <>
+        <div className="space-y-2 text-xs" data-testid="dneskai-move-summary">
+          <p className="font-medium">{post.title}</p>
+          <p>{t.actions.publishNowAccount(post.account.handle)} · {t.actions.publishNowSlides(lab.slides.length)} · <span className="font-mono">{t.actions.version(lab.revision.shortHash)}</span></p>
+          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md border border-border p-2">{post.caption}</p>
+        </div>
+        {error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
+        <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setDialog(null)}>{t.actions.cancel}</Button><Button data-testid="dneskai-move-confirm" disabled={busy || !!moveBlock} onClick={() => void perform('move')}>{busyAction === 'move' ? t.actions.approving : t.actions.moved.confirm}</Button></div>
+      </> : dialog === 'regenerate' ? <>
+        <label htmlFor={`${id}-regenerate-note`} className="text-xs font-medium">{t.actions.regenerateNote}</label>
+        <Textarea id={`${id}-regenerate-note`} data-testid="dneskai-regenerate-note" value={regenerateNote} maxLength={1000} aria-describedby={`${id}-regenerate-help`} onChange={(event) => setRegenerateNote(event.target.value)} />
+        <p id={`${id}-regenerate-help`} className="text-xs text-foreground-muted">{t.actions.regenerateNoteHelp}</p>
+        {error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
+        <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setDialog(null)}>{t.actions.cancel}</Button><Button data-testid="dneskai-regenerate-confirm" disabled={busy || !!regenerateBlock || !regenerateNote.trim()} onClick={() => void perform('regenerate')}>{busyAction === 'regenerate' ? t.actions.regenerating : t.actions.regenerateConfirm}</Button></div>
+      </> : dialog === 'publish' ? <>
         <div className="space-y-2 text-xs" data-testid="dneskai-publish-now-summary">
           <p className="font-medium">{post.title}</p>
           <p>{t.actions.publishNowAccount(post.account.handle)} · {t.actions.publishNowSlides(lab.slides.length)} · <span className="font-mono">{t.actions.version(lab.revision.shortHash)}</span></p>
@@ -318,6 +360,44 @@ function ApproveDay({ day, onClose, ...props }: Props & { day: DneskaiLabDay; on
     {!ready && <p role="status" className="text-xs text-foreground-muted">{t.actions.imagesLoading}</p>}
     <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={onClose}>{result ? t.shortcuts.close : t.actions.cancel}</Button>{!result && <Button disabled={busy || !ready} onClick={() => void approve()}>{t.approveDay.confirm(posts.length)}</Button>}</div>
   </DialogContent></Dialog>;
+}
+
+/**
+ * „Generate now“ for the topics of one day that wait for the scheduler (owner decision 9). Each button names its topic;
+ * the outcome or the refusal is announced in a polite status region under the list.
+ */
+function GenerateNow({ waiting, ...props }: Props & { waiting: DneskaiLabDay['waiting'] }) {
+  const t = copy[props.lang], client = useQueryClient(), id = useId();
+  const [busy, setBusy] = useState<string | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
+  const off = props.guest || !props.read.capabilities?.generateNow;
+  async function generate(briefId: string) {
+    if (off || busy) return;
+    setBusy(briefId); setMessage(''); setError(null);
+    try {
+      const result = await (await dneskaiWorkspaceApi(props.preview)).generateNow(briefId);
+      if (result.status === 'failed') { setMessage(t.queue.generateNowFailed); setError(result.errorCode ?? 'worker-execution-failed'); }
+      else setMessage(result.status === 'review' ? t.queue.generateNowDone : t.queue.generateNowQueued);
+    } catch (failure) { setError(failure instanceof DneskaiWorkspaceRequestError ? failure.code : 'generate-now-unavailable'); }
+    finally {
+      setBusy(null);
+      await Promise.all([client.invalidateQueries({ queryKey: dneskaiWorkspaceKeys(props.projectId).review }), client.invalidateQueries({ queryKey: dneskaiWorkspaceKeys(props.projectId).costs })]);
+    }
+  }
+  return <div className="space-y-2" data-testid="dneskai-lab-waiting">
+    <ul className="space-y-2">{waiting.map((brief) => <li key={brief.briefId} className="space-y-1 rounded-md border border-dashed border-border p-2 text-xs">
+      <p><span className="tabular">{pragueClock(brief.scheduledAt)}</span> · <span className="text-foreground-muted">{t.queue.waiting}</span></p>
+      <p className="line-clamp-2 font-medium">{brief.title}</p>
+      <Button type="button" variant="outline" size="sm" className="min-h-11 w-full" disabled={off || busy !== null} aria-label={t.queue.generateNowName(brief.title)} aria-describedby={`${id}-help`} onClick={() => void generate(brief.briefId)}>{busy === brief.briefId ? t.queue.generating : t.queue.generateNow}</Button>
+    </li>)}</ul>
+    <p id={`${id}-help`} className="text-[11px] text-foreground-muted">{props.guest ? t.publicTour : off ? t.queue.generateNowOff : t.queue.generateNowHelp}</p>
+    <div role="status" className="text-xs">{message}{error && <DneskaiCodeText code={error} lang={props.lang} />}</div>
+  </div>;
+}
+
+/** HH:MM in Prague, with the day named when the slot is tomorrow. */
+function slotLabel(iso: string, today: string, lang: 'en' | 'cs') {
+  const time = pragueClock(iso);
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague' }).format(new Date(iso)) === today ? time : `${copy[lang].queue.tomorrow.toLocaleLowerCase(lang)} ${time}`;
 }
 
 /** HH:MM in Prague for a stored instant. */

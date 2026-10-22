@@ -103,6 +103,9 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     base(9, 'c', { title: 'Co stojí jeden dotaz', ready: false, assets: [], renderReport: null, scheduledAt: at(3, '12:30') }),
     // An edited version saved 20 seconds before the read: its render is still on its way.
     base(10, 'b', { title: 'Lokální model na notebooku', ready: false, assets: [], renderReport: null, createdAt: new Date(now.getTime() - 20_000).toISOString(), scheduledAt: at(3, '17:00') }),
+    // Owner decision 6: a post of today whose time passed 20 minutes ago (or at midnight) without approval.
+    base(11, 'e', { title: 'Malý model bez připojení', brief: brief('Ukázkové téma s prošlým časem', 0),
+      scheduledAt: new Date(Math.max(now.getTime() - 20 * 60_000, Date.parse(at(0, '00:00')))).toISOString() }),
   ];
   return {
     schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: ['08:00', '12:30', '17:00', '20:00'],
@@ -112,6 +115,12 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
       { id: id(201), status: 'running', errorCode: null, createdAt: created(1), title: 'Jak odhadnout cenu jednoho dotazu', scheduledAt: at(1, '20:00') },
       { id: id(202), status: 'failed', errorCode: 'dneskai-daily-generation-budget-exhausted', createdAt: created(2), title: 'Co je kontextové okno', scheduledAt: at(2, '17:00') },
     ],
+    // Owner decision 9: two built topics of today that wait for the scheduler, with no job yet.
+    waiting: [
+      { briefId: id(501), title: 'Jak číst kartu modelu', scheduledAt: at(0, '17:00'), status: 'ready', code: null },
+      { briefId: id(502), title: 'Kdy pomůže vyhledávání v dokumentech', scheduledAt: at(0, '20:00'), status: 'ready', code: null },
+    ],
+    capabilities: { regenerate: true, generateNow: true },
     unreadable: 0,
   };
 }

@@ -58,3 +58,25 @@ describe('DNESKAi workspace client (#119)', () => {
     expect(keys.media('c1')).toEqual(['marketing', 'dneskai-media', 'p1', 'c1']);
   });
 });
+
+describe('DNESKAi workspace client: decisions 6, 8 and 9', () => {
+  const id = '00000000-0000-4000-8000-000000000002', job = '00000000-0000-4000-8000-000000000003';
+  it('binds approve-at to the hash and the slot shown, and turns a moved slot into its code', async () => {
+    let calls = stub(Response.json({ id, scheduledAt: '2026-10-22T10:30:00.000Z', publicationId: job }));
+    expect(await liveDneskaiWorkspaceApi.approveAt(id, hash, '2026-10-22T10:30:00.000Z')).toEqual({ id, scheduledAt: '2026-10-22T10:30:00.000Z' });
+    expect(JSON.parse(String(calls[0]!.init!.body))).toEqual({ action: 'approve-at', id, expectedHash: hash, scheduledAt: '2026-10-22T10:30:00.000Z' });
+    calls = stub(Response.json({ error: 'slot-unavailable', scheduledAt: '2026-10-22T15:00:00.000Z' }, { status: 409 }));
+    await expect(liveDneskaiWorkspaceApi.approveAt(id, hash, '2026-10-22T10:30:00.000Z')).rejects.toMatchObject({ code: 'slot-unavailable', status: 409 });
+  });
+  it('sends a regeneration note trimmed and bounded, and generate now to its own route', async () => {
+    let calls = stub(Response.json({ jobId: job, status: 'queued', scheduling: 'tick' }, { status: 202 }));
+    expect(await liveDneskaiWorkspaceApi.regenerate(id, hash, `  ${'n'.repeat(1200)} `)).toMatchObject({ jobId: job, status: 'queued' });
+    expect(JSON.parse(String(calls[0]!.init!.body))).toEqual({ action: 'regenerate', id, expectedHash: hash, note: 'n'.repeat(1000) });
+    calls = stub(Response.json({ jobId: job, status: 'failed', errorCode: 'dneskai-daily-generation-budget-exhausted' }, { status: 202 }));
+    expect(await liveDneskaiWorkspaceApi.generateNow(id)).toEqual({ jobId: job, status: 'failed', errorCode: 'dneskai-daily-generation-budget-exhausted' });
+    expect(calls[0]!.url).toBe('/api/marketing/dneskai/generate');
+    expect(JSON.parse(String(calls[0]!.init!.body))).toEqual({ action: 'generate-now', briefId: id });
+    stub(Response.json({ error: 'dneskai-daily-generation-budget-exhausted' }, { status: 409 }));
+    await expect(liveDneskaiWorkspaceApi.generateNow(id)).rejects.toMatchObject({ code: 'dneskai-daily-generation-budget-exhausted' });
+  });
+});

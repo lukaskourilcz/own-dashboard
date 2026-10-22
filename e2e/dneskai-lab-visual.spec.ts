@@ -58,6 +58,9 @@ test('each fixture post renders the same stage', async ({ page }) => {
   expect(count).toBeGreaterThan(0);
   for (let index = 0; index < count; index += 1) {
     await posts.nth(index).click();
+    // A missed post's draft starts with a new time (owner decision 6), so leaving it asks to discard that change.
+    const discard = page.getByRole('dialog').getByRole('button', { name: 'Discard changes', exact: true });
+    if (await discard.waitFor({ timeout: 1_000 }).then(() => true, () => false)) await discard.click();
     await expect(posts.nth(index)).toHaveAttribute('aria-current', 'true');
     await settleImages(page);
     await expect(page.getByTestId('dneskai-lab-stage')).toHaveScreenshot(`stage-post-${index + 1}.png`, SCREENSHOT);

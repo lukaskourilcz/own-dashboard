@@ -600,3 +600,27 @@ describe('helpers', () => {
     expect(schedulerFailureCode('string', 'media')).toBe('media-failed');
   });
 });
+
+describe('review reminder step (owner decision 7)', () => {
+  it('runs last in a minute tick, holds no lease and records what it sent', async () => {
+    const reviewReminders = vi.fn(async () => ({ due: 2, sent: 1 }));
+    const { tick, store } = harness({ reviewReminders });
+    const result = await tick();
+    expect(result.did.at(-1)).toMatchObject({ category: 'reminder', status: 'done', detail: { due: 2, sent: 1 } });
+    expect(reviewReminders).toHaveBeenCalledWith(project, expect.any(Date));
+    expect(store.acquired).not.toContain('reminder');
+    const quiet = await harness({ reviewReminders: async () => ({ due: 1, sent: 0 }) }).tick();
+    expect(step(quiet, 'reminder')).toMatchObject({ status: 'noop' });
+  });
+
+  it('is absent without the port, skipped when switched off, and a failure never stops the tick', async () => {
+    expect((await harness().tick()).did.map((entry) => entry.category)).not.toContain('reminder');
+    const reviewReminders = vi.fn(async () => ({ due: 0, sent: 0 }));
+    const off = await harness({ reviewReminders }).tick({ ...on, DNESKAI_REVIEW_REMINDERS_ENABLED: 'false' });
+    expect(step(off, 'reminder')).toMatchObject({ status: 'skipped', code: 'reminders-disabled' });
+    expect(reviewReminders).not.toHaveBeenCalled();
+    const failed = await harness({ reviewReminders: async () => { throw new Error('reminder-write-failed'); } }).tick();
+    expect(step(failed, 'reminder')).toMatchObject({ status: 'error', code: 'reminder-write-failed' });
+    expect(failed.recorded).toBe(true);
+  });
+});
