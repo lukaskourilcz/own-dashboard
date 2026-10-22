@@ -511,7 +511,8 @@
             "excerpt": "export const DNESKAI_BLEED_MAX_UPSCALE = MASTER_CANVAS.height / DNESKAI_BLEED_MIN_SHORT_SIDE;"
           }
         ]
-      }
+      },
+      "impactStatement": "Every feed-sourced post opens with a framed figure or a typographic statement, never an edge-to-edge photo: the least scroll-stopping first slide the kit has. The owner cannot fix it in the editor (the render refuses). Quality cost on every post until Apify is on."
     },
     {
       "id": "M-02",
@@ -562,7 +563,8 @@
         "verdict": "confirmed",
         "evidence": "inspectDneskaiImage returns sha256, format, size and pHash only (dneskai-media-image.ts:121-125); prompt line dneskai-generation.ts:123 tells the model it cannot see pictures. No vision, entropy or text-slide check anywhere under src/lib/marketing or src/components/marketing (grep). Quorum vision-gate.ts:15 and GATE_VETOES at :36-46 (9 vetoes) confirmed.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "The owner is the only quality gate and sees thumbnails: a wrong or text-covered picture reaches review, costs an edit-and-re-render cycle (minutes per post) or ships. Once Apify carousels are on (mostly designed slides, not photographs) this becomes the main failure mode."
     },
     {
       "id": "M-03",
@@ -613,7 +615,8 @@
         "verdict": "confirmed",
         "evidence": "extractArticleMedia (dneskai-media-plan.ts:236-290) reads img alt only through EXCLUDED_ALT (:262-263); no selector reads og:image:alt, twitter:image:alt or figcaption (grep for figcaption|image:alt in src/lib/marketing and migrations: no hit). Brief media schema and the offer carry no description; prompt alt rule at dneskai-generation.ts:132.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "Wrong-picture-for-the-headline is the cheapest-to-prevent quality defect and it currently costs an owner edit per occurrence; the published alt text is also weak for screen-reader users and for Instagram's own accessibility signal."
     },
     {
       "id": "M-04",
@@ -665,7 +668,8 @@
             "excerpt": "excerpt: candidate.text.slice(0, 4000)"
           }
         ]
-      }
+      },
+      "impactStatement": "Thin evidence forces single-image, low-information posts and invites the model to pad; richer primary text is the single biggest lever for truthful 4-7 slide carousels at zero extra network cost (the bytes are already downloaded)."
     },
     {
       "id": "M-05",
@@ -711,7 +715,8 @@
         "verdict": "confirmed",
         "evidence": "NEEDED.md:14 holds the Apify decision with MARKETING_DNESKAI_APIFY_ENABLED=false; DNESKAI_MEDIA_INSTAGRAM_LIMIT = 10 (dneskai-media-plan.ts:27). Production candidates: 4 Instagram candidates carry 10 media URLs (2.5 each) against 9 media URLs across 129 feed candidates (SELECT on marketing_dneskai_candidates).",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "Without it every post is feed-only (see M-01). Turning it on costs at most $0.25/day of credit the owner wants used this month and immediately raises the full-bleed share and the carousel count."
     },
     {
       "id": "M-06",
@@ -767,7 +772,8 @@
         "verdict": "confirmed",
         "evidence": "dneskai-providers.ts:121 builds [displayUrl, ...images, ...childPosts.displayUrl]; :81 dedups by exact string and slices to DNESKAI_MEDIA_URL_LIMIT = 10 (:77); contracts zod max(10) (dneskai-contracts.ts:17); plan check <= 10 (migration :83). The repo doc dneskai-source-media.md:51-53 itself says displayUrl and images[0] are usually the same picture stored once with the second position skipped as media-duplicate-bytes, i.e. different strings, so a 10-child carousel keeps at most 9 children. Not observed live (Apify off).",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "The richest carousels (exactly the 10-slide ones the owner wants to learn from) lose their closing slide, which is often the CTA or summary; the loss is silent."
     },
     {
       "id": "M-07",
@@ -824,7 +830,8 @@
             "excerpt": "Po nasazení plánovače (#120, ...) ji volá jeho tick"
           }
         ]
-      }
+      },
+      "impactStatement": "A reader of the doc concludes media collection is dormant and may re-add a trigger; the rest of the doc (40 s budget, 125 s busy wait, daily purge) is accurate."
     },
     {
       "id": "M-08",
@@ -875,7 +882,8 @@
         "verdict": "confirmed",
         "evidence": "usableImageUrl returns undefined for off-policy hosts (dneskai-media-plan.ts:227) and push drops it (:243) with no skip record; media-host-not-publisher is thrown only in fetchBytes (dneskai-media.ts:195), which feed plans never reach with an off-host URL. Doc dneskai-source-media.md:69 says unknown hosts are skipped as media-host-not-publisher. Production skipped arrays are all empty, consistent with silent drops.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "Pictures that exist are lost without a trace; the allowlist stays at its 13 October guess. Each missing CDN costs a whole publisher's figures for every event from it."
     },
     {
       "id": "M-09",
@@ -921,7 +929,8 @@
         "verdict": "confirmed",
         "evidence": "fetchBytes passes allowHosts: [host] with maxRedirects 2 (dneskai-media.ts:198); safeFetch checks allowHosts on every hop (free-feeds/security/url.ts:166); the error maps to media-redirect-refused (dneskai-media.ts:184). Mechanism confirmed; occurrence not: none of the 10 github-ai-releases candidates in production was selected or mentions user-attachments.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "Whole sources (GitHub releases, some WordPress publishers) yield no figures although their hosts are on the allowlist; the skip code hides the cause."
     },
     {
       "id": "M-10",
@@ -967,7 +976,8 @@
         "verdict": "confirmed",
         "evidence": "dneskaiMediaCredit always credits the publisher for feed pictures (dneskai-media-plan.ts:150); the chrome filter keeps GettyImages file names (:205-207). Production proof (Supabase SELECT 22 Oct 2026 on marketing_media_assets): the techcrunch-ai og:image file is GettyImages-2195703830.jpg and its stored credit is \"Obrázek: TechCrunch\". One of the three pictures stored so far carries a credit the code cannot back.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "A published slide that says 'Obrázek: TechCrunch' under a Getty frame misattributes the picture (owner rule: never invent sources) and is the most takedown-prone picture class; today the owner cannot tell which pictures these are."
     },
     {
       "id": "M-11",
@@ -1019,7 +1029,8 @@
             "excerpt": "A near-duplicate marker alone never hides a picture"
           }
         ]
-      }
+      },
+      "impactStatement": "With Apify on, a new Instagram event can be dropped as a repeat of a two-week-old post from the same account because both use the creator's template; the owner sees nothing (no release path for skipped events)."
     },
     {
       "id": "M-12",
@@ -1066,7 +1077,8 @@
             "excerpt": "const sitewide = dneskaiSitewidePictures(await store.pictureArticles(...))"
           }
         ]
-      }
+      },
+      "impactStatement": "A figure slide showing another brand's logo card looks like an advert for the publisher and is exactly the 'figure-or-statement' first slide M-01 forces; it costs an owner swap per occurrence."
     },
     {
       "id": "M-13",
@@ -1122,7 +1134,8 @@
         "verdict": "confirmed",
         "evidence": "Browser inserts into marketing-media are refused (migration :26-27); origin_kind allows five values (:45); the editor swaps only within post.brief.media (post-editor.tsx:205-206); generation rejects unknown sha256 (dneskai-generation.ts:322). Quorum licensed.ts:8 lists openverse, wikimedia, pexels, pixabay. Night 1: two of four media collections ended empty after media-page-http-403.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "OpenAI and Anthropic publish press assets the owner could legitimately drop in within a minute; instead the post ships text-only or waits. This is a Design Lab requirement (live picture editing) as much as a supply gap."
     },
     {
       "id": "M-14",
@@ -1168,7 +1181,8 @@
         "verdict": "confirmed",
         "evidence": "declaredSmall only drops < 300 px (dneskai-media-plan.ts:230); og:image:width is never read; sharp decodes twice (dneskai-media-image.ts:105, :114); concurrency 2 (dneskai-media.ts:332); media budget 40 s (scheduler.ts:56).",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "Small: a feed night is 4 events x <= 8 pictures and usually finishes in one or two ticks; the cost is tick time and storage, not dollars. Worth doing only together with M-01's band flag so the plan can order candidates largest-first."
     },
     {
       "id": "M-15",
@@ -1214,7 +1228,8 @@
         "verdict": "confirmed",
         "evidence": "SOURCE_USER_AGENT = boardlessai-source-shadow/0.1 (util.ts:132); 403 is non-retryable (dneskai-media.ts:179) and falls back to feed images (:313). Recommendation step 1 refuted by a $0 probe (22 Oct, residential IP): openai.com/news/ returns 403 with cf-mitigated: challenge for the shadow UA, a descriptive DNESKAi UA and a desktop Chrome UA alike, so a user-agent change will not fix it.",
         "correctedLocations": []
-      }
+      },
+      "impactStatement": "OpenAI is the most-selected AI-news publisher; half of night 1's events were pictureless because of this one host. Each such event becomes a typographic single post."
     },
     {
       "id": "M-16",
@@ -1271,7 +1286,8 @@
             "excerpt": "carousel typu „obrazový“ vyžaduje ≥ 1 asset s kratší stranou ≥ 900 px ... a celkem ≥ 2 použitelné assety"
           }
         ]
-      }
+      },
+      "impactStatement": "Low: a reader planning the Design Lab from the report would budget for rights columns and a shared bucket that do not exist; http.ts is an n8n leftover the brief already lists for removal."
     }
   ],
   "openQuestions": [
@@ -1293,7 +1309,7 @@
     "kept": 10,
     "dropped": 6,
     "quickWins": 3,
-    "verifiedAt": "2026-10-22T00:03:07Z",
+    "verifiedAt": "2026-10-22T00:03:28Z",
     "verifier": "A-verify-2",
     "sourceMap": "dneskai-audit-handoff/maps/map-media.json",
     "repoCommit": "8df25a5",
