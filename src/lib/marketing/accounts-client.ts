@@ -16,7 +16,9 @@ export const MarketingAccountStatusSchema = z.strictObject({
 });
 export type MarketingAccountStatus = z.infer<typeof MarketingAccountStatusSchema>;
 export const MarketingAccountsResponseSchema = z.strictObject({ accounts: z.array(MarketingAccountStatusSchema).max(4) });
-export const MarketingAccountVerifyResponseSchema = z.strictObject({ account: MarketingAccountStatusSchema, accountType: z.string().max(40), tokenStored: z.boolean() });
+/** `page` (#166): the Facebook Page @dneskai is linked to, under Facebook Login only. */
+export const MarketingAccountVerifyResponseSchema = z.strictObject({ account: MarketingAccountStatusSchema, accountType: z.string().max(40), tokenStored: z.boolean(),
+  page: z.strictObject({ id: z.string().regex(/^\d{1,100}$/), name: z.string().max(200) }).optional() });
 export type MarketingAccountVerifyResponse = z.infer<typeof MarketingAccountVerifyResponseSchema>;
 
 /** The UI warns ten days before expiry, the same window in which the #120 scheduler refreshes. */

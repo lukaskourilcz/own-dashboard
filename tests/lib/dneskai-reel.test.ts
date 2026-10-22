@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ client: vi.fn(), limited: vi.fn(async () => ({ ok: true, retryAfter: 0 })), reel: vi.fn() }));
+const mocks = vi.hoisted(() => ({ client: vi.fn(), limited: vi.fn(async () => ({ ok: true, retryAfter: 0 })), reel: vi.fn(), record: vi.fn(async () => undefined) }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.client() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
@@ -131,7 +131,7 @@ describe("render-reel route", () => {
 
   async function route() {
     vi.resetModules();
-    vi.doMock("@/lib/marketing/dneskai-reel", async (original) => ({ ...(await original<object>()), dneskaiReelForRevision: mocks.reel }));
+    vi.doMock("@/lib/marketing/dneskai-reel", async (original) => ({ ...(await original<object>()), dneskaiReelForRevision: mocks.reel, recordDneskaiReel: mocks.record }));
     return (await import("@/app/api/marketing/dneskai/render-reel/route")).POST;
   }
 
@@ -144,12 +144,13 @@ describe("render-reel route", () => {
 
   it("renders for the signed-in owner and answers the signed URL", async () => {
     vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
-    mocks.reel.mockResolvedValue({ reelKey: "7".repeat(64), url: "https://test-only.supabase.co/signed", sha256: "8".repeat(64), bytes: 10, durationSeconds: 9.5, silent: true, cached: false, revisionHash: contentHash });
+    mocks.reel.mockResolvedValue({ reelKey: "7".repeat(64), url: "https://test-only.supabase.co/signed", sha256: "8".repeat(64), bytes: 10, durationSeconds: 9.5, silent: true, cached: false, revisionHash: contentHash, audioId: null });
     const POST = await route();
     const response = await POST(ownerRequest());
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ url: "https://test-only.supabase.co/signed", silent: true, cached: false });
     expect(mocks.reel.mock.calls[0]!.slice(1, 3)).toEqual([owner, revisionId]);
+    expect(mocks.record).toHaveBeenCalledWith(expect.anything(), owner, revisionId, { reelKey: "7".repeat(64), revisionHash: contentHash, audioId: null, sha256: "8".repeat(64), bytes: 10 });
   });
 
   it("refuses a stranger, a cross-origin post and an automation role other than scheduler or publisher", async () => {

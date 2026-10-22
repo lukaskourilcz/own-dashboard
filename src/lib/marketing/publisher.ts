@@ -48,7 +48,18 @@ export function containerFailureRetryable(code: string): boolean {
     'publication-deadline-exceeded', 'checkpoint-or-revalidation-failed'].includes(code);
 }
 export type PublisherState = { revisionRow: MarketingRevisionRow; account: MarketingPublishAccount; sources: SourcePacket[] };
+/** The rendered MP4 of a DNESKAi deck Reel (#163, #165): a signed URL Instagram fetches, and the bytes it must be. */
+export type MarketingReelVideo = { url: string; sha256: string; bytes: number };
+/** Instagram's documented publishing limit; OwnDashboard refuses at it even if the account reports a higher total. */
+export const INSTAGRAM_PUBLISH_LIMIT_PER_DAY = 50;
+/** A video container takes longer than an image: up to six status reads three seconds apart inside one run, then the next tick. */
+export const REEL_CONTAINER_POLL = { attempts: 6, intervalMs: 3000 } as const;
+const REEL_VIDEO_MAX_BYTES = 100 * 1024 * 1024;
+/** A DNESKAi Reel: a carousel deck published as one rendered video. Its assets are the slide JPEGs; the video comes separately. */
+export const deckReel = (revision: ContentRevision) => revision.format === 'reel' && !!revision.deck;
 export type PublishMarketingInput = PublisherState & { publication: PublicationRow & { user_id: string; lease_until?: string | null };
+  /** Required for a deck Reel; the orchestrator renders it before the claim. */
+  reel?: MarketingReelVideo | null;
   /** With a dry run, also run the read-only remote checks (account, asset bytes, quota) and stop before any container. */
   preflight?: boolean;
   config: MetaPublisherConfig; dryRun?: boolean; now?: Date; signal?: AbortSignal; fetcher?: typeof fetch; wait?: (ms: number) => Promise<void>;
@@ -109,7 +120,8 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   if (revision.account.platform === 'instagram' && !['post', 'carousel', 'reel', 'story'].includes(revision.format)) return 'unsupported-format';
   if (revision.format === 'carousel' && (revision.assets.length < 2 || revision.assets.length > 10)) return 'unsupported-carousel-size';
   if (revision.format === 'post' && revision.account.platform === 'instagram' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'image/jpeg')) return 'unsupported-post-assets';
-  if (revision.format === 'reel' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'video/mp4')) return 'unsupported-reel-assets';
+  if (revision.format === 'reel' && !deckReel(revision) && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'video/mp4')) return 'unsupported-reel-assets';
+  if (deckReel(revision) && (revision.assets.length < 2 || revision.assets.some(asset => asset.mimeType !== 'image/jpeg'))) return 'unsupported-reel-assets';
   if (revision.assets.some(asset => asset.alt.length > INSTAGRAM_ALT_TEXT_MAX)) return 'asset-alt-too-long';
   if (instagramFeed(revision)) {
     // Declared geometry is checked here; the downloaded bytes are decoded and checked again before any container exists.
@@ -184,8 +196,26 @@ async function verifyRemoteAccount(input: PublishMarketingInput): Promise<string
   if (story && (typeof profile.account_type !== 'string' || profile.account_type.toUpperCase() !== 'BUSINESS')) return 'story-business-account-unverified';
   return null;
 }
+/** The rendered Reel as Meta will fetch it: approved host, MP4, the recorded size and sha256. */
+async function verifyReelVideo(input: PublishMarketingInput, reel: MarketingReelVideo): Promise<void> {
+  const url = new URL(reel.url);
+  if (url.protocol !== 'https:' || url.username || url.password || !input.config.approvedAssetHosts.includes(url.hostname)) throw new MetaFailure('asset-host-unapproved');
+  let response: Response;
+  try { response = await (input.fetcher ?? fetch)(url.href, { redirect: 'error', signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }); }
+  catch { throw new MetaFailure('asset-unreachable'); }
+  if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== 'video/mp4' || !response.body) throw new MetaFailure('asset-mime-or-response-invalid');
+  const hash = createHash('sha256'); let bytes = 0; const reader = response.body.getReader();
+  try { while (true) { input.signal?.throwIfAborted(); const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
+    if (bytes > REEL_VIDEO_MAX_BYTES) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); } }
+  catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable'); }
+  if (bytes !== reel.bytes || hash.digest('hex') !== reel.sha256) throw new MetaFailure('asset-hash-mismatch');
+}
 async function verifyAssets(input: PublishMarketingInput): Promise<void> {
   const revision = input.revisionRow.revision;
+  if (deckReel(revision)) {
+    if (!input.reel) throw new MetaFailure('reel-video-missing');
+    await verifyReelVideo(input, input.reel);
+  }
   const story = revision.format === 'story';
   for (const asset of revision.assets) {
     input.signal?.throwIfAborted();
@@ -242,7 +272,8 @@ async function publishingQuotaGate(input: PublishMarketingInput): Promise<string
   const quotaConfig = limit?.config;
   const total = quotaConfig && typeof quotaConfig === 'object' && 'quota_total' in quotaConfig ? quotaConfig.quota_total : null;
   if (!limit || typeof limit.quota_usage !== 'number' || !Number.isInteger(limit.quota_usage) || limit.quota_usage < 0 || typeof total !== 'number' || !Number.isInteger(total) || total <= 0) return 'publishing-quota-unavailable';
-  return limit.quota_usage >= total ? 'publishing-quota-exhausted' : null;
+  // #165: never past Instagram's documented 50 a day, whatever total the account reports.
+  return limit.quota_usage >= Math.min(total, threads ? total : INSTAGRAM_PUBLISH_LIMIT_PER_DAY) ? 'publishing-quota-exhausted' : null;
 }
 async function containerStatus(input: PublishMarketingInput, container: string): Promise<string> {
   const threads = input.account.platform === 'threads';
@@ -288,6 +319,8 @@ const RECONCILE_PAGE_SIZE = 50;
 const normalizedCaption = (value: string) => value.normalize('NFC').replace(/\s+/g, ' ').trim();
 const metaInstant = (value: unknown) => typeof value === 'string' ? Date.parse(value.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')) : Number.NaN;
 const expectedMediaType = (format: ContentRevision['format']) => format === 'carousel' ? 'CAROUSEL_ALBUM' : format === 'post' ? 'IMAGE' : format === 'reel' ? 'VIDEO' : null;
+/** A Reel lists as `VIDEO` (its product type is REELS); some responses name it `REELS` (#165). Both match. */
+const mediaTypeMatches = (format: ContentRevision['format'], type: unknown) => type === expectedMediaType(format) || (format === 'reel' && type === 'REELS');
 type MediaMatch = { kind: 'match'; id: string; permalink: string | null } | { kind: 'none' | 'ambiguous' | 'incomplete' | 'unavailable' };
 /**
  * After an ambiguous `media_publish`, the owned account's own media list is
@@ -308,7 +341,7 @@ async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<Med
   if (!Array.isArray(data.data) || data.data.length > RECONCILE_PAGE_SIZE) return { kind: 'unavailable' };
   const items = data.data.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
   if (items.length !== data.data.length) return { kind: 'unavailable' };
-  const matches = items.filter(item => typeof item.id === 'string' && idValid(item.id) && item.media_type === type && typeof item.caption === 'string' &&
+  const matches = items.filter(item => typeof item.id === 'string' && idValid(item.id) && mediaTypeMatches(revision.format, item.media_type) && typeof item.caption === 'string' &&
     normalizedCaption(item.caption).startsWith(prefix) && metaInstant(item.timestamp) >= from && metaInstant(item.timestamp) <= until);
   if (matches.length > 1) return { kind: 'ambiguous' };
   // A full page with a next link can hide a second match inside the window, so one match there is not unique.
@@ -418,6 +451,10 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       const altText = (asset: ContentRevision['assets'][number]): Record<string, string> => threads || asset.mimeType === 'image/jpeg' ? { alt_text: asset.alt } : {};
       if (revision.format === 'story') {
         Object.assign(fields, { media_type: 'STORIES', image_url: revision.assets[0]!.url });
+      } else if (deckReel(revision)) {
+        // #165: the rendered slideshow as a Reel, slide 1 as its cover, shown in the feed grid too.
+        if (!input.reel) throw new MetaFailure('reel-video-missing');
+        Object.assign(fields, { media_type: 'REELS', video_url: input.reel.url, cover_url: revision.assets[0]!.url, share_to_feed: 'true' });
       } else if (revision.format === 'carousel') {
         const children: string[] = [];
         for (const asset of revision.assets) children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
@@ -437,12 +474,14 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       await save('container-created', result('pending', 'container-pending', container));
     }
     if (!idValid(container)) throw new MetaFailure('container-identity-unavailable');
-    const attempts = Math.max(1, Math.min(3, input.config.pollAttempts ?? 3));
+    const video = revision.format === 'reel';
+    const attempts = video ? REEL_CONTAINER_POLL.attempts : Math.max(1, Math.min(3, input.config.pollAttempts ?? 3));
+    const interval = video ? Math.max(0, Math.min(REEL_CONTAINER_POLL.intervalMs, input.config.pollIntervalMs ?? REEL_CONTAINER_POLL.intervalMs)) : Math.max(0, Math.min(1000, input.config.pollIntervalMs ?? 1000));
     let status = 'IN_PROGRESS';
     for (let attempt = 0; attempt < attempts; attempt++) {
       status = await containerStatus(input, container);
       if (status !== 'IN_PROGRESS') break;
-      if (attempt + 1 < attempts) await pollWait(input, Math.max(0, Math.min(1000, input.config.pollIntervalMs ?? 1000)));
+      if (attempt + 1 < attempts) await pollWait(input, interval);
     }
     if (status === 'IN_PROGRESS') return result('pending', 'container-pending', container);
     if (status === 'ERROR' || status === 'EXPIRED') {

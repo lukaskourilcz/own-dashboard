@@ -4,7 +4,7 @@ const en = {
   verify: 'Verify account', verifying: 'Verifying…', loading: 'Loading account status…', unavailable: 'Account status could not be loaded. Try again.',
   preview: 'Preview only. Account status is not loaded.',
   notVerified: 'Not verified', verified: 'Verified', publishingOn: 'Publishing enabled', publishingOff: 'Publishing disabled',
-  account: 'Account', verifiedAt: 'Last verified', publishing: 'Publishing', tokenExpires: 'Token expires', tokenRefreshed: 'Token stored or refreshed', scopes: 'Granted scopes',
+  account: 'Account', verifiedAt: 'Last verified', publishing: 'Publishing', tokenExpires: 'Token expires', tokenRefreshed: 'Token stored or refreshed', scopes: 'Granted scopes', loginMode: 'Connection', loginModes: { instagram: 'Instagram Login', facebook: 'Facebook Login (Page)', threads: 'Threads' }, page: (name: string) => `Linked Facebook Page: ${name}.`,
   notRecorded: 'Not recorded', noAccount: 'No verified Instagram account yet. Install the token on the server, then verify.',
   token: { missing: 'No stored token', expired: 'Token expired', expiring: 'Token expires soon', valid: 'Token valid' },
   tokenHelp: {
@@ -26,6 +26,7 @@ const en = {
     'verified-scopes-invalid': 'The recorded token permissions are malformed or more than 20. Record only the scopes the debugger shows.',
     'professional-account-required': 'This is not a professional (Business or Creator) Instagram account.',
     'remote-account-handle-mismatch': 'The token belongs to a different Instagram account.',
+    'facebook-page-link-required': 'No Facebook Page of this token is linked to an Instagram professional account. Link the Page to @dneskai in Instagram settings first.',
     'meta-request-failed': 'Instagram could not be reached. Try again later.',
     'meta-invalid-response': 'Instagram returned an unexpected answer.',
     'account-store-failed': 'The account could not be saved. Try again.',
@@ -63,7 +64,7 @@ const cs: typeof en = {
   verify: 'Ověřit účet', verifying: 'Ověřuji…', loading: 'Načítám stav účtu…', unavailable: 'Stav účtu nelze načíst. Zkuste to znovu.',
   preview: 'Pouze náhled. Stav účtu nenačítáme.',
   notVerified: 'Neověřeno', verified: 'Ověřeno', publishingOn: 'Publikování zapnuto', publishingOff: 'Publikování vypnuto',
-  account: 'Účet', verifiedAt: 'Naposledy ověřeno', publishing: 'Publikování', tokenExpires: 'Platnost tokenu do', tokenRefreshed: 'Token uložen nebo obnoven', scopes: 'Udělená oprávnění',
+  account: 'Účet', verifiedAt: 'Naposledy ověřeno', publishing: 'Publikování', tokenExpires: 'Platnost tokenu do', tokenRefreshed: 'Token uložen nebo obnoven', scopes: 'Udělená oprávnění', loginMode: 'Připojení', loginModes: { instagram: 'Instagram Login', facebook: 'Facebook Login (stránka)', threads: 'Threads' }, page: (name: string) => `Propojená stránka na Facebooku: ${name}.`,
   notRecorded: 'Není zaznamenáno', noAccount: 'Zatím není ověřený žádný instagramový účet. Uložte token na server a pak účet ověřte.',
   token: { missing: 'Token není uložený', expired: 'Platnost tokenu vypršela', expiring: 'Platnost tokenu brzy skončí', valid: 'Token je platný' },
   tokenHelp: {
@@ -85,6 +86,7 @@ const cs: typeof en = {
     'verified-scopes-invalid': 'Zaznamenaná oprávnění tokenu mají špatný tvar nebo je jich víc než 20. Zapište jen oprávnění, která ukazuje debugger.',
     'professional-account-required': 'Nejde o profesionální instagramový účet (firemní ani tvůrčí).',
     'remote-account-handle-mismatch': 'Token patří jinému instagramovému účtu.',
+    'facebook-page-link-required': 'Žádná stránka na Facebooku z tohoto tokenu není propojená s profesionálním účtem na Instagramu. Nejdřív stránku propojte s @dneskai v nastavení Instagramu.',
     'meta-request-failed': 'Instagram není dostupný. Zkuste to později.',
     'meta-invalid-response': 'Instagram vrátil neočekávanou odpověď.',
     'account-store-failed': 'Účet se nepodařilo uložit. Zkuste to znovu.',

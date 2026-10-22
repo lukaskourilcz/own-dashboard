@@ -28,6 +28,14 @@ export type InstagramTokenRefreshOutcome =
   | { status: 'skipped' | 'held' | 'failed' | 'uncertain'; accountId: string; code: string };
 
 export const INSTAGRAM_LOGIN_SCOPES = ['instagram_business_basic', 'instagram_business_content_publish'] as const;
+/**
+ * Facebook Login for Business (#166): what verification requires before it stores a token. The publisher needs the
+ * first three; `pages_show_list` finds the Page linked to @dneskai. Comments and messages
+ * (`instagram_manage_comments`, `instagram_manage_messages`) belong to the comment watcher and are not required here.
+ */
+export const FACEBOOK_LOGIN_SCOPES = ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement', 'pages_show_list'] as const;
+/** Facebook Login's long-lived token exchange; it needs the Meta app's id and secret (server-only). */
+export const FACEBOOK_TOKEN_ENDPOINT = 'https://graph.facebook.com';
 /** Meta refreshes only a long-lived token that is at least 24 hours old and unexpired. */
 export const INSTAGRAM_TOKEN_MIN_AGE_MS = 24 * 60 * 60 * 1000;
 /** The #120 scheduler refreshes a token once fewer than ten days remain. */
@@ -99,10 +107,14 @@ export async function listMetaTokenMetadata(db: Database, owner: string): Promis
   return rows.data.map(row => ({ accountId: row.account_id, brand: row.brand, platform: row.platform, expiresAt: row.expires_at, refreshedAt: row.refreshed_at, scopes: row.scopes, loginMode: row.login_mode }));
 }
 
-/** True when an unexpired Instagram Login token has fewer than ten days left and is old enough for Meta to refresh. */
+/**
+ * True when an unexpired Instagram Login token, or a Facebook Login token (#166), has fewer than ten days left and is
+ * old enough for Meta to refresh. A Facebook Login Page token derived from a long-lived user token does not expire,
+ * so it is never due.
+ */
 export function instagramTokenRefreshDue(token: Pick<MetaTokenMetadata, 'expiresAt' | 'refreshedAt' | 'loginMode'>, now = new Date()): boolean {
   const expires = instant(token.expiresAt); const refreshed = instant(token.refreshedAt);
-  return token.loginMode === 'instagram' && Number.isFinite(expires) && Number.isFinite(refreshed) && expires > now.getTime() &&
+  return (token.loginMode === 'instagram' || token.loginMode === 'facebook') && Number.isFinite(expires) && Number.isFinite(refreshed) && expires > now.getTime() &&
     expires - now.getTime() < INSTAGRAM_TOKEN_REFRESH_WINDOW_MS && now.getTime() - refreshed >= INSTAGRAM_TOKEN_MIN_AGE_MS;
 }
 
@@ -167,7 +179,7 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   const live = (expiresAt: string) => Number.isFinite(instant(expiresAt)) && instant(expiresAt) > now.getTime();
   const current = stored && live(stored.expiresAt) ? stored : fromEnvironment && live(fromEnvironment.expiresAt) ? fromEnvironment : stored ?? fromEnvironment;
   if (!current) return outcome('held', 'access-token-missing');
-  if (current.loginMode !== 'instagram') return outcome('held', 'refresh-instagram-login-required');
+  if (current.loginMode !== 'instagram' && current.loginMode !== 'facebook') return outcome('held', 'refresh-instagram-login-required');
   const expires = instant(current.expiresAt);
   if (!Number.isFinite(expires)) return outcome('held', 'access-token-expiry-unverified');
   if (expires <= now.getTime()) return outcome('held', 'access-token-expired');
@@ -177,9 +189,23 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   if (!Number.isFinite(issued) || now.getTime() - issued < INSTAGRAM_TOKEN_MIN_AGE_MS) return outcome('skipped', 'access-token-too-new');
   // A refreshed token that the store would refuse must never be requested.
   if (!metaScopesStorable(current.scopes)) return outcome('held', 'verified-scopes-invalid');
-  const url = new URL(INSTAGRAM_REFRESH_ENDPOINT);
-  url.searchParams.set('grant_type', 'ig_refresh_token');
-  url.searchParams.set('access_token', current.accessToken);
+  const env = options.env ?? process.env;
+  let url: URL;
+  if (current.loginMode === 'facebook') {
+    // #166: Facebook Login renews a long-lived token by exchanging it with the app's id and secret.
+    const appId = env.MARKETING_META_APP_ID ?? ''; const appSecret = env.MARKETING_META_APP_SECRET ?? '';
+    const version = env[`${metaEnvironmentPrefix(account.brand, account.platform)}_API_VERSION`] ?? '';
+    if (!/^\d{1,30}$/.test(appId) || appSecret.length < 16 || !/^v\d+\.\d+$/.test(version)) return outcome('held', 'refresh-app-credentials-missing');
+    url = new URL(`${FACEBOOK_TOKEN_ENDPOINT}/${version}/oauth/access_token`);
+    url.searchParams.set('grant_type', 'fb_exchange_token');
+    url.searchParams.set('client_id', appId);
+    url.searchParams.set('client_secret', appSecret);
+    url.searchParams.set('fb_exchange_token', current.accessToken);
+  } else {
+    url = new URL(INSTAGRAM_REFRESH_ENDPOINT);
+    url.searchParams.set('grant_type', 'ig_refresh_token');
+    url.searchParams.set('access_token', current.accessToken);
+  }
   const timeout = AbortSignal.timeout(15000);
   let response: Response;
   try { response = await (options.fetcher ?? fetch)(url.href, { method: 'GET', redirect: 'error', cache: 'no-store', signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout }); }
@@ -195,7 +221,7 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   let saved: { data: unknown; error: unknown };
   try {
     saved = await db.rpc('marketing_store_account_token', { p_owner: owner, p_account: account.id, p_expected_refreshed_at: stored?.refreshedAt ?? null,
-      p_token: parsed.access_token, p_expires_at: expiresAt, p_scopes: current.scopes, p_login_mode: 'instagram' });
+      p_token: parsed.access_token, p_expires_at: expiresAt, p_scopes: current.scopes, p_login_mode: current.loginMode });
   } catch { return outcome('uncertain', 'refresh-store-failed'); }
   const metadata = z.object({ token: z.object({ expiresAt: z.string(), refreshedAt: z.string() }) }).safeParse(saved.data);
   if (saved.error || !metadata.success) return outcome('uncertain', 'refresh-store-failed');
