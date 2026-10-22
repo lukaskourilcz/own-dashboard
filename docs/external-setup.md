@@ -196,7 +196,17 @@ The code connects one Instagram professional account through the Instagram API w
 - Apply `20261023120000_dneskai_comment_replies.sql` with the other prepared migrations, then set the server-only `DNESKAI_ENGAGEMENT_ENABLED=true` and redeploy.
 - The stored Instagram Login token needs `instagram_business_manage_comments` next to `instagram_business_basic`. List it in `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` and verify the account again, or the reply switch answers `engagement-scopes-unverified`.
 - In the Instagram app, allow connected tools to message (Settings, Messages and story replies, Message controls, Connected tools, Allow access to messages). Without it Instagram refuses the first reply with code 10 and the account panel shows the block.
-- Turn the reply switch on in DNESKAi, Zdroje, Instagram account. Polling needs no webhook; the webhook upgrade is #161.
+- Turn the reply switch on in DNESKAi, Zdroje, Instagram account. Polling needs no webhook.
+
+### Instagram comment webhook (#161)
+
+The webhook makes replies leave within seconds instead of at the next five-minute check. Polling keeps running and never sends a second reply.
+
+1. In Vercel Production set two server-only values and redeploy: `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, a random string of at least 32 characters you choose, and `MARKETING_INSTAGRAM_APP_SECRET`, the Instagram app secret from the Meta app (App settings, Basic, or Instagram, API setup with Instagram login). `DNESKAI_ENGAGEMENT_ENABLED=true` must already be set; until all three are set the route answers 404.
+2. In the Meta app (Instagram, API setup with Instagram login, Webhooks) set the callback URL `https://own-dashboard-tau.vercel.app/api/webhooks/instagram` and the same verify token, then verify and save. Subscribe the field `comments`.
+3. In DNESKAi, Zdroje, Instagram account, press „Odebírat komentáře“ (`POST /<IG_ID>/subscribed_apps?subscribed_fields=comments`). The panel then says Instagram sends comments right away.
+4. Allow access to messages for connected tools in the Instagram app (see above).
+5. While the Meta app is in Development mode, Meta may deliver nothing for the account. If a test comment does not arrive within a minute, the app needs to be switched to Live. Meta's docs also say `comments` needs Advanced Access for accounts the app does not own; @dneskai is the app's own tester account, so Standard Access is enough to start.
 
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
