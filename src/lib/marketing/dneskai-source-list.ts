@@ -36,6 +36,8 @@ export const DneskaiSourceListSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_SOURCE_LIST_VERSION),
   /** False while DNESKAI_SOURCES_TABLE_ENABLED is off (or in the preview): the list is the registry file, read-only. */
   editable: z.boolean(),
+  /** Why an owner with the switch on still sees the read-only file: the table is not there yet. */
+  notice: z.enum(['sources-table-unavailable']).nullable(),
   items: z.array(DneskaiSourceListItemSchema).max(DNESKAI_SOURCE_LIMIT + 10),
 });
 export type DneskaiSourceList = z.infer<typeof DneskaiSourceListSchema>;
@@ -110,4 +112,11 @@ export function dneskaiSourceFromRow(row: DneskaiSourceRow): DneskaiSource {
 export function dneskaiSourceLabel(row: Pick<DneskaiSourceRow, 'kind' | 'handleOrUrl'>): string {
   if (row.kind === 'instagram') return `@${row.handleOrUrl}`;
   try { return new URL(row.handleOrUrl).hostname.replace(/^www\./, ''); } catch { return row.handleOrUrl; }
+}
+
+/** The list built from the registry file (switch off, preview, or table missing), with what the source states say. */
+export function dneskaiRegistrySourceList(states: ReadonlyMap<string, { lastReadAt: string | null; lastItems: number | null; lastErrorCode: string | null }> = new Map(),
+  notice: DneskaiSourceList['notice'] = null): DneskaiSourceList {
+  return { schemaVersion: DNESKAI_SOURCE_LIST_VERSION, editable: false, notice,
+    items: dneskaiSourceSeedRows().map((row) => ({ row, ...(states.get(row.sourceId) ?? { lastReadAt: null, lastItems: null, lastErrorCode: null }) })) };
 }

@@ -59,6 +59,7 @@ export const qk = {
   detectedTools: ["github", "detected-tools"] as const,
   marketingState: ["marketing", "state"] as const,
   dneskaiSources: ["marketing", "dneskai-sources"] as const,
+  dneskaiSourceList: ["marketing", "dneskai-source-list"] as const,
   // The DNESKAi workspace tabs (#119), each followed by the project id; lazy, one per tab.
   dneskaiReview: ["marketing", "dneskai-review"] as const,
   dneskaiCosts: ["marketing", "dneskai-costs"] as const,
