@@ -87,7 +87,8 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
-| 8 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
+| 8 engagement | Prepared, off: replies once by DM to a keyword comment under a post of the last seven days, then posts the public reply (`DNESKAI_ENGAGEMENT_ENABLED`, #160) | `dneskai-engagement-watch.ts`, `dneskai-engagement-ports.ts` |
+| 9 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
 
 Details: `docs/marketing-scheduling.md`, `docs/dneskai-native-feeds.md`, `docs/dneskai-source-media.md`,
 `docs/dneskai-briefs.md`.
@@ -202,7 +203,8 @@ Costs show in "Chyby a náklady".
 | `marketing_revisions` | Every version of a post: content, `content_hash`, render report, status, `approved_hash` |
 | `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
-| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only) |
+| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (prepared, `20261023120000`) |
+| `marketing_instagram_comment_replies`, `marketing_instagram_comment_checks` | One private reply per keyword comment (comment id, media, keyword, status; no commenter data) and the watcher's cursor and counts per post (prepared, `20261023120000`, #160) |
 | `marketing_ticks`, `marketing_scheduler_state` | Scheduler record and leases |
 | `notifications` | In-app notifications, including the review reminders |
 
