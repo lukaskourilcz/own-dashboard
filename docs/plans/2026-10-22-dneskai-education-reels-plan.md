@@ -1,7 +1,7 @@
 # DNESKAi: daily news plus education, Reels with audio, comment-to-DM, and a simpler workspace
 
-Plan written 22 October 2026 for the owner's approval. Once approved, each work item below becomes one GitHub issue
-for Opus. State as of main `77ea0b7`; the research behind each decision is in section 9.
+Plan written 22 October 2026 and approved by the owner the same evening (decisions in section 6). Each work item
+below is one GitHub issue for Opus. State as of main `77ea0b7`; the research behind each decision is in section 9.
 
 ## 1. What changes, in one paragraph
 
@@ -263,22 +263,18 @@ OpenScreen v2 (SCREEN); Notion 3.8 MCP (NOTION); Shoptet MCP (SHOPTET); MCP for 
 anti-hallucination prompt STATED / INTERPRETATION / UNSUPPORTED (FAKTA). HYPE candidates worth a "what not to buy"
 post: Claude Duet (waitlist), Dots (EEA excluded), Meta Muse Wonder, OpenClaw for non-coders.
 
-## 6. Owner decisions before the issues are written
+## 6. Owner decisions, made 22 October 2026
 
-1. **Facebook Login migration (C4).** Needed for legal trending music and for the trending feed. Cost: about an hour
-   (create or pick a Facebook Page, link it to @dneskai, add the login product and scopes, re-verify). Without it,
-   Reels carry library audio from Meta Sound Collection or Pixabay and the trending list is advice for the app.
-   Recommendation: yes, after C1 to C3 have published one Reel with library audio.
-2. **Posts per day.** Default 1 news + 1 education. Say if you want 3.
-3. **Keyword CTA on every post or education only.** Recommendation: education only; news posts keep the calm
-   register and no keyword.
-4. **Public reply under the matched comment.** Recommendation: yes, one short line, it signals to other readers that
-   the keyword works.
-5. **Tab id rename** (`dneskai-published` to `dneskai-posts`) needs a migration; keep the id and rename the label is
-   free. Recommendation: keep the id.
-6. **Remove the project header for every project or only DNESKAi.** Recommendation: every project; the breadcrumb
-   already names the project.
-7. **Transcripts for FACT or HYPE reels** cost about $0.05 a reel through Apify. Recommendation: yes, cap 10 a night.
+The owner answered yes to every recommendation on 22 October 2026:
+
+1. **Facebook Login migration (C4): yes**, after C1 to C3 have published one Reel with library audio.
+2. **Posts per day:** 1 news + 1 education by default.
+3. **Keyword CTA on education posts only.** News posts keep the calm register and no keyword.
+4. **Public reply under the matched comment: yes**, one short line, editable per post in the same Lab card where
+   the deck, caption, keyword and DM message are edited (B3).
+5. **Tab id stays `dneskai-published`**; only the label changes to "Příspěvky".
+6. **Project header removed for every project workspace.**
+7. **Transcripts for FACT or HYPE reels: yes**, capped at 10 a night.
 
 ## 7. Sequence
 
