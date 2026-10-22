@@ -402,4 +402,21 @@ test.describe("dashboard sections", () => {
     await expect(figma).toContainText("in 120d");
   });
 
+  test("Money overview marks amounts not yet checked against an invoice", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
+    await gotoPreview(page);
+    await page.locator("aside nav").getByRole("button", { name: "Money overview", exact: true }).click();
+    // Figma and Mobbin are the running development subscriptions without amount_confirmed_on.
+    await expect(page.getByText(/across 2 subscriptions whose amount has not been checked against an invoice\./)).toBeVisible();
+    await expect(page.getByText(/An amount taken from a renewal notice or a price change is an estimate/)).toBeVisible();
+    const mobbin = page.getByRole("row").filter({ hasText: "Mobbin" });
+    await expect(mobbin).toContainText("Amount not confirmed");
+    await expect(mobbin).toContainText("the amount comes from the renewal notice, not from the receipt.");
+    const vercel = page.getByRole("row").filter({ hasText: "Vercel" });
+    await expect(vercel).toContainText("Amount confirmed");
+    await expect(vercel).not.toContainText("Amount not confirmed");
+    // An ended subscription carries no confirmation marker either way.
+    await expect(page.getByRole("row").filter({ hasText: "UptimeRobot" })).not.toContainText("Amount not confirmed");
+  });
+
 });
