@@ -292,13 +292,26 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
     for (const row of open) await skip(row, 'brief-target-date-passed');
     return result;
   }
+  let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
+  // Every open brief is already built and none can be admitted without a verified account: only the lapse checks
+  // below can change anything, so the media, slot and coverage reads are skipped (production-04).
+  if (open.every((row) => row.brief) && !(await (account ??= store.account(input.owner)))) {
+    for (const row of open) {
+      if (input.signal?.aborted) { result.pending = true; break; }
+      const stored = DneskaiBriefSchema.safeParse(row.brief);
+      if (!stored.success) { await skip(row, 'brief-invalid'); continue; }
+      if (Date.parse(stored.data.scheduledAt) < clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE) { await skip(row, 'brief-slot-passed'); continue; }
+      if (Date.parse(stored.data.expiresAt) <= clock().getTime()) { await skip(row, 'brief-expired'); continue; }
+      result.pending = true;
+    }
+    return result;
+  }
   const owed = await store.owedMedia(input.owner, input.project, [...new Set(open.flatMap((row) => row.member_ids))]);
   // Slots go in rank order: a brief still waiting for media reserves the next free one for this call, and a brief
   // takes its slot only once it is built, so a repeat or an unusable event leaves its slot to the next one.
   const slots = dneskaiSlotAllocator(run.target_date, [...await store.takenSlots(input.owner, input.project, run.target_date, input.runId),
     ...rows.flatMap((row) => row.status !== 'skipped' && row.scheduled_at ? [row.scheduled_at] : [])], clock());
   let coverage: Promise<DneskaiCoverage[]> | null = null;
-  let account: Promise<{ remote_account_id: string; handle: string } | null> | null = null;
   for (const row of open) {
     if (input.signal?.aborted) { result.pending = true; break; }
     const verified = await (account ??= store.account(input.owner));
