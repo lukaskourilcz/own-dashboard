@@ -113,6 +113,8 @@ export type DneskaiCopySlide = z.infer<typeof DneskaiCopySlideSchema>;
 export function dneskaiCopyWireSchema(): Record<string, unknown> {
   return transformJSONSchema(z.toJSONSchema(DneskaiCopySchema));
 }
+/** What the education turn asks of `replyMessage`; news calls never see it, so their system prompt is unchanged. */
+export const DNESKAI_REPLY_MESSAGE_RULE = `This is an education post: also write replyMessage, the private message a reader receives after commenting the post's keyword. Czech, ${DNESKAI_REPLY_MESSAGE_MIN} to ${DNESKAI_REPLY_MESSAGE_MAX} characters, plain text with line breaks: what the tool or method is in one or two sentences; how to start, in three numbered steps (1., 2., 3.); what it costs, only if the evidence states it; one honest caveat. The system prompt's fact rules bind it exactly as they bind the caption: only what the evidence states, every number from the evidence, the actor named, no talk about sources or verification. At most one URL, copied exactly from links, never another. No greeting, no sign-off, no emoji, no markdown, no hashtags and no call to follow, share or comment. Code writes the caption line that asks readers to comment the keyword; never write it yourself.`;
 /** The wire schema of an education brief call: the news schema plus `replyMessage`. */
 export function dneskaiEducationCopyWireSchema(): Record<string, unknown> {
   return transformJSONSchema(z.toJSONSchema(DneskaiEducationCopySchema));
@@ -138,7 +140,6 @@ const SYSTEM_RULES = [
   "alt: one or two Czech sentences for a reader who cannot see the slide: what kind of slide it is, its message, and whose picture it carries, named from its credit, without describing the picture. Never repeat the headline as the alt text.",
   `caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what comes next. Its first sentence, at most 125 characters, states the cover's fact in fuller form under the same rules as the cover hook. Code appends the AI disclosure and the hashtags; the caption names no source and no picture credit. hashtags: up to ${DNESKAI_HASHTAG_LIMIT - 1} topic tags, the most specific first (product, company, field), Latin letters and digits only, lowercase, without #; code adds #${DNESKAI_BRAND_HASHTAG} and keeps the post at ${DNESKAI_HASHTAG_LIMIT} hashtags.`,
   "title: a short internal working title for the editor.",
-  `replyMessage: only when the response schema has it (an education post). The private message a reader receives after commenting the post's keyword. Czech, ${DNESKAI_REPLY_MESSAGE_MIN} to ${DNESKAI_REPLY_MESSAGE_MAX} characters, plain text with line breaks: what the tool or method is in one or two sentences; how to start, in three numbered steps (1., 2., 3.); what it costs, only if the evidence states it; one honest caveat. The fact rules above bind it exactly as they bind the caption: only what the evidence states, every number from the evidence, the actor named, no talk about sources or verification. At most one URL, copied exactly from education.links, never another. No greeting, no sign-off, no emoji, no markdown, no hashtags and no call to follow, share or comment. Code writes the caption line that asks readers to comment the keyword; never write it yourself.`,
   `Local response limits remain mandatory: title 1-160 characters; caption 1-1500; headline 1-200; body 1-700; kicker 1-80; alt 1-200; at most ${DNESKAI_HASHTAG_LIMIT} hashtags; 1-${DNESKAI_MAX_CONTENT_SLIDES} slides; at most 2 images per slide.`,
 ].join("\n");
 
@@ -149,7 +150,7 @@ export const DNESKAI_BRIEF_SYSTEM_PROMPT = [SYSTEM_RULES, marketingHumanizerInst
  * prompt (rules and Humanizer), the wire schema and the text limits. A revision's `promptVersion` carries it.
  */
 export const MARKETING_BRIEF_PROMPT_FINGERPRINT = contentHash({
-  version: MARKETING_BRIEF_PROMPT_VERSION, system: DNESKAI_BRIEF_SYSTEM_PROMPT, schema: dneskaiCopyWireSchema(), educationSchema: dneskaiEducationCopyWireSchema(), limits: DNESKAI_TEXT_LIMITS,
+  version: MARKETING_BRIEF_PROMPT_VERSION, system: DNESKAI_BRIEF_SYSTEM_PROMPT, schema: dneskaiCopyWireSchema(), educationSchema: dneskaiEducationCopyWireSchema(), educationRule: DNESKAI_REPLY_MESSAGE_RULE, limits: DNESKAI_TEXT_LIMITS,
 });
 export const MARKETING_BRIEF_PROMPT_ID = `${MARKETING_BRIEF_PROMPT_VERSION}+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`;
 
@@ -272,7 +273,7 @@ export function dneskaiOwnerNote(note: string) {
 export type DneskaiEducationPrompt = { links: string[]; rule: string };
 export function dneskaiEducationPrompt(offer: DneskaiBriefOffer): DneskaiEducationPrompt {
   return { links: [...new Set(offer.evidence.map((item) => item.url))].slice(0, 6),
-    rule: "This is an education post: also write replyMessage. Any URL in it must be one of these links, copied exactly." };
+    rule: DNESKAI_REPLY_MESSAGE_RULE };
 }
 
 /** The human turn of a brief call. Only an education brief sends URLs (its evidence links, for the DM). */

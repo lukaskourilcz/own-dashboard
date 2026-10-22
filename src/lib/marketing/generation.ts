@@ -13,7 +13,7 @@ import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_DEFAULT_PUBLIC_REPLY } from "./dneskai-engagement";
 import {
-  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DneskaiCopySchema, DneskaiEducationCopySchema, MARKETING_BRIEF_PROMPT_ID, dneskaiEducationCopyWireSchema, dneskaiEducationPrompt, validateDneskaiReplyMessage,
+  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DneskaiCopySchema, DneskaiEducationCopySchema, MARKETING_BRIEF_PROMPT_ID, dneskaiEducationCopyWireSchema, dneskaiEducationPrompt, validateDneskaiReplyMessage, DNESKAI_REPLY_MESSAGE_RULE,
   assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiOwnerNote, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
    normalizeDneskaiCopy, validateDneskaiCopy,
   type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers,
@@ -332,7 +332,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES
     - (note ? Buffer.byteLength(JSON.stringify(note)) + 16 : 0)
     // An education turn carries up to six evidence links (2,048 bytes each at most) and its rule.
-    - (askReply ? 6 * 2060 + 200 : 0);
+    - (askReply ? 6 * 2060 + Buffer.byteLength(DNESKAI_REPLY_MESSAGE_RULE) + 64 : 0);
   let offer: DneskaiBriefOffer;
   try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }

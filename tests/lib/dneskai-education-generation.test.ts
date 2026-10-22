@@ -55,6 +55,7 @@ describe("the education DM (#158)", () => {
   });
   it("asks the model for nothing new on a news brief: the system prompt keeps the comment ban and the news schema has no DM", () => {
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("no call to follow or comment");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).not.toContain("replyMessage");
     expect(DneskaiCopySchema.safeParse({ ...validCopy(pictures), replyMessage: REPLY }).success).toBe(false);
     expect(DneskaiEducationCopySchema.safeParse({ ...validCopy(pictures), replyMessage: REPLY }).success).toBe(true);
   });

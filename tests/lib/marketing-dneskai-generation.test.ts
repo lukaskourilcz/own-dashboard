@@ -40,7 +40,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
     expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/7");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("6688092cee859f5e1e0a37cccc6080d2114e44ed647e62d8ffff71ddaf002fad");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("c90c8972b23e7df0f01e0759f76c9f0182e951ff6554872379175d6694f6be7e");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/7+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
