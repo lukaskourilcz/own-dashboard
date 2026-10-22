@@ -149,3 +149,13 @@ describe("SECURITY DEFINER functions", () => {
     }
   });
 });
+
+describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
+  it("keep the reel bucket private and MP4-only, documented as unapplied", () => {
+    const sql = code("20261023130000_dneskai_reel_bucket.sql");
+    expect(sql).toMatch(/values\('marketing-reels','marketing-reels',false,67108864,array\['video\/mp4'\]\)/);
+    expect(sql).not.toMatch(/public=true/);
+    expect(sql.match(/as restrictive/g)).toHaveLength(5);
+    expect(guide).toMatch(/20261023130000_dneskai_reel_bucket\.sql[\s\S]*unapplied|DNESKAi Reel bucket, 23 October 2026 \(unapplied\)/);
+  });
+});

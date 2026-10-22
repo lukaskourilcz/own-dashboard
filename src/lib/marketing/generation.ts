@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
+import { ContentEngagementSchema, MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash, revisionContentHash } from "./hashes";
 import type { MarketingTracer } from "./tracing";
 import { marketingHumanizerInstructions } from "./humanizer";
@@ -57,6 +57,11 @@ export const GenerationInputSchema = z.strictObject({
   ownerNote: z.string().trim().min(1).max(1000).optional(),
   /** The revision a regeneration replaces once it is saved (20261022190000_dneskai_regenerate_with_note.sql). */
   replacesRevisionId: z.uuid().optional(),
+  /**
+   * The owner-approved keyword, DM and public reply (#157), carried onto a DNESKAi brief draft unchanged, so a
+   * regeneration keeps what the owner wrote. The model never sees or writes it. Ignored by non-brief jobs.
+   */
+  engagement: ContentEngagementSchema.optional(),
 });
 export type GenerationInput = z.infer<typeof GenerationInputSchema> & { source: SourcePacket };
 const BudgetSchema = z.strictObject({
@@ -358,6 +363,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
         knowledgeIds: [], assets: [], account: input.account,
         scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,
         promptVersion: MARKETING_BRIEF_PROMPT_ID, model: model.model, traceId, deck,
+        ...(input.engagement ? { engagement: input.engagement } : {}),
       });
       // Deck revisions keep their slides in `deck`; the legacy slide list stays empty, as in an owner edit (#118).
       return { revision, slides: [], usage, traceId, deck };

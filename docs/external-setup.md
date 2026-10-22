@@ -180,6 +180,15 @@ The code connects one Instagram professional account through the Instagram API w
 - **Generate now** needs only `MARKETING_AI_CONSENT=true`, which generation already requires. It uses existing functions and the existing $1 daily ceiling.
 - **Regenerate with a note** needs `supabase/migrations/20261022190000_dneskai_regenerate_with_note.sql` and the server-only `DNESKAI_REGENERATE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-regenerate-with-a-note-owner-decision-8)), then set the variable and redeploy. Until then the Lab shows the button disabled with its reason and the route answers `regenerate-unavailable`.
 
+### DNESKAi Reels (#163)
+
+- The Reel renderer needs `supabase/migrations/20261023130000_dneskai_reel_bucket.sql` (the private `marketing-reels` bucket) and the server-only `MARKETING_DNESKAI_REELS_ENABLED=true`. Both are off by default. Until the switch is on, `/api/marketing/dneskai/render-reel` answers 404. The encoder is the `ffmpeg-static` binary that `npm ci` downloads during the Vercel build; there is nothing to install. Decision and measurements: [source media](dneskai-source-media.md#reels-slideshow-video-163).
+
+### Comment keyword and DM message (#157, #159)
+
+- A DNESKAi post may carry an `engagement`: a one-word keyword, the DM text sent to whoever comments it, and an optional public reply under the comment. It lives on the revision, so approval covers the exact words. Nothing sends it yet; the comment watcher comes later and has its own switch.
+- Editing it needs only the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` and a redeploy; no migration. Off, the edit route answers `engagement-disabled` to an `engagement` field and the Lab shows no editor.
+
 ### Retired n8n entry points (audit findings cost-06, cost-07)
 
 Since the 22 October 2026 audit, `/api/marketing/dneskai/collect` answers every method with `410` and
