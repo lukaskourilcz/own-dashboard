@@ -234,6 +234,66 @@ too: `select cron.unschedule('marketing-cron-history-prune');`.
 To start the jobs again after `cron.unschedule`, run the last `do $schedule$ … $schedule$` block of
 `20261020160100_marketing_scheduler_cron.sql` again; `cron.schedule` replaces a job of the same name.
 
+## Switches
+
+Every `MARKETING_*` and `DNESKAI_*` environment variable the code reads, taken from `src/` on 22 October
+2026 (audit finding cost-08). The defaults are what the code does when the variable is unset; this table
+records no deployed value. A boolean switch is on only for the exact text `true`.
+
+"Live" means a current production path reads it. "Off until migration" means the code is deployed but
+the prepared SQL is not applied, so the switch must stay unset. "Retired" means a path from the October
+pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/preview-pilot.ts` logs one
+`pilot-retired` line naming them), and the others wait for the cleanup after the pilot post (#123).
+
+### Booleans and modes
+
+| Name | Default | Gates | Status |
+|---|---|---|---|
+| `MARKETING_DNESKAI_COLLECTION_ENABLED` | off | Tick categories collection, media and briefs; scheduled calls to `/api/marketing/dneskai/collect` | Live |
+| `MARKETING_DNESKAI_PAID_ENABLED` | off | Jev and Apify inside collection (`paidAllowed`); without it no event is selected | Live |
+| `MARKETING_DNESKAI_APIFY_ENABLED` | off | Instagram (Apify) collection stages; off holds each stage with nothing reserved | Live |
+| `MARKETING_AI_CONSENT` | off | Every paid model or provider call: generation, Jev, Apify, render preflight, the worker runtime, `scripts/dneskai-model-ab.ts` | Live |
+| `MARKETING_PUBLISH_ENABLED` | off (dry run) | Live Meta publishing for every brand, together with the brand switch | Live |
+| `MARKETING_DNESKAI_PUBLISH_ENABLED` | off (dry run) | Live DNESKAi publishing in the tick | Live |
+| `MARKETING_DEVSHARK_PUBLISH_ENABLED` | off | Live devShark publishing (name built as `MARKETING_${BRAND}_PUBLISH_ENABLED`); devShark has no publishing schedule | Live code, unused |
+| `MARKETING_LANGSMITH_ENABLED` | off | LangSmith traces of paid calls, the diagnostics route and owner feedback; needs the EU endpoint | Live |
+| `MARKETING_KNOWLEDGE_WORKER_ENABLED` | off | Paid analysis of queued knowledge (IG TIPS) sources; off holds the queue | Live |
+| `MARKETING_DNESKAI_FEED_PROVIDER` | `bridge` | `native` reads the free feeds with OwnDashboard's adapters; unset or `bridge` calls the signed Quorum bridge | Live (`bridge` is the rollback) |
+| `MARKETING_PUBLICATION_REQUEUE_ENABLED` | off | "Give up and queue again" for a stranded publication (`/api/marketing/publications`) | Off until migration `20261022110000` |
+| `DNESKAI_OWNER_RECOVERY_ENABLED` | off | Sources: Re-review of held reports and Move to next free slot | Off until migration `20261022141512` |
+| `DNESKAI_LAPSED_RELEASE_ENABLED` | off | Sources: Release reports of a lapsed brief | Off until migrations `20261022021835` and `20261022141613` |
+| `DNESKAI_RICH_EVIDENCE_ENABLED` | off | Fetched article text and picture descriptions in media collection and brief/2 | Off until the evidence migrations |
+| `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` | off | The research runner (`dneskai-apify-research.ts`); it also needs `MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN` to equal the plan id | Off, waits for an approved plan |
+| `MARKETING_OFFLINE_IMPORT_ENABLED` | off | Import of devShark's offline first-week assets; also needs the generation pilot window | Retired outside Preview |
+| `MARKETING_DNESKAI_COLLECTION_PILOT_ENABLED` | off | The 48-hour collection pilot | Retired outside Preview |
+
+### Values, secrets and identities
+
+| Name | Default | Used for | Status |
+|---|---|---|---|
+| `MARKETING_OWNER_ID` | unset: every automation and owner-only route refuses | The single marketing owner | Live |
+| `MARKETING_SCHEDULER_SECRET` | unset: `/api/marketing/tick` answers 401 | Signs the pg_cron tick | Live |
+| `MARKETING_WORKER_SECRET` | unset | Automation role `worker` (`/api/marketing/jobs/[id]/execute`, `/api/marketing/automation`, the knowledge callback) | Live |
+| `MARKETING_PUBLISH_SECRET` | unset | Automation role `publisher`; no route accepts that role, since the tick publishes | Retired |
+| `MARKETING_DEVSHARK_SECRET` | unset | Automation role `source` for devShark (`/api/marketing/automation`) | Live |
+| `MARKETING_DNESKAI_SECRET` | unset | Automation role `source` for DNESKAi | Retired |
+| `MARKETING_CLAUDE_MODEL` | `claude-sonnet-5-5` | Generation and knowledge model | Live |
+| `MARKETING_CLAUDE_INPUT_USD_PER_MTOK`, `MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK` | 2 and 10 for the default model | Cost accounting of model calls | Live |
+| `MARKETING_DNESKAI_DAILY_GENERATION_USD` | 1 | Rolling daily DNESKAi generation ceiling; a malformed value refuses every paid call | Live |
+| `MARKETING_DNESKAI_APIFY_ACTOR_ID`, `MARKETING_DNESKAI_APIFY_BUILD` | unset: Apify stages refuse | The pinned Instagram actor and build | Live |
+| `MARKETING_APPROVED_ASSET_HOSTS` | empty | Hosts the publisher may hand to Meta | Live |
+| `MARKETING_DNESKAI_INSTAGRAM_*`, `MARKETING_DEVSHARK_INSTAGRAM_*`, `MARKETING_<BRAND>_THREADS_*` | unset | Bootstrap Meta credential: `_ACCESS_TOKEN`, `_TOKEN_EXPIRES_AT`, `_VERIFIED_SCOPES`, `_LOGIN_MODE`, `_API_VERSION`, `_API_VERSION_VERIFIED_AT` | Live for account verification and publishing |
+| `MARKETING_DNESKAI_SOURCE_URL`, `MARKETING_DNESKAI_SOURCE_SECRET` | unset | Signed Quorum bridge for `bridge` feeds and DNESKAi source refresh | Rollback for the native feeds |
+| `MARKETING_DEVSHARK_SOURCE_URL`, `MARKETING_DEVSHARK_SOURCE_SECRET` | unset | devShark source refresh (names built by prefix in `source-refresh.ts`) | Live |
+| `MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN`, `MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN`, `MARKETING_DEVSHARK_SOURCE_PREVIEW_SHARE_TOKEN`, `MARKETING_DEVSHARK_SOURCE_PREVIEW_ORIGIN` | unset | Vercel Preview share for the source bridge | Retired outside Preview |
+| `MARKETING_PILOT_OWNER_ID`, `MARKETING_PILOT_STARTS_AT`, `MARKETING_PILOT_EXPIRES_AT` | unset | Generation pilot window | Retired outside Preview |
+| `MARKETING_PILOT_TEMPLATE_APPROVALS` | unset | Pilot template approval receipt | Retired outside Preview |
+| `MARKETING_DNESKAI_COLLECTION_PILOT_OWNER_ID`, `_PROJECT_ID`, `_STARTS_AT`, `_EXPIRES_AT` | unset | Collection pilot scope | Retired outside Preview |
+| `MARKETING_DNESKAI_COLLECTION_SECRET` | unset | Collection pilot and n8n-era calls to `/api/marketing/dneskai/collect` | Retired (cost-06) |
+| `MARKETING_DNESKAI_MANUAL_RUN`, `MARKETING_DNESKAI_MANUAL_SECRET` | unset | One pre-registered manual collection run in Production | Retired |
+| `MARKETING_N8N_SECRET` | unset | `/api/marketing/n8n`, still used for devShark and knowledge operations | Retired for DNESKAi (cost-06) |
+| `MARKETING_N8N_APPROVAL_WEBHOOK_URL`, `MARKETING_N8N_WEBHOOK_SECRET` | unset: no notification | Approval notification to the archived n8n receiver | Retired (cost-07) |
+
 ## Testing
 
 - `tests/lib/marketing-scheduler.test.ts`: no-op tick, one unit per category in order, the time
