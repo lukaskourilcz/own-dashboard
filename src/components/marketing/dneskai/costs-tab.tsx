@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
@@ -18,7 +20,8 @@ type Lang = 'en' | 'cs';
 /**
  * „Chyby a náklady“ (#119): the 24-hour generation spend against the daily limit, the Instagram token, cost per day,
  * collection runs, posts waiting for review that cannot be approved, failed or uncertain jobs and publications, and
- * the scheduler's last 24 hours. Read-only.
+ * the scheduler's last 24 hours. Read-only, except the owner's "give up and queue again" on a publication the server
+ * marks as provably unpublished (approval-04).
  */
 export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, preview, refreshing, onRefresh, now = new Date() }: {
   read: DneskaiCostsRead; review?: DneskaiWorkspaceRead | 'loading' | 'unavailable'; renderFailed?: ReadonlySet<string>; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date;
@@ -95,6 +98,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="min-w-0 break-words">{publication.title}</span>
           <span className="flex items-center gap-2 text-xs text-foreground-muted"><time dateTime={publication.scheduledAt} className="tabular">{pragueDateTime(publication.scheduledAt, lang)}</time><StatusBadge value="dneskai-problem" label={t.states.problem} tone="risk" /></span></div>
         <DneskaiCodeText code={publication.errorCode ?? (publication.status === 'reconciliation' ? 'read-only-reconciliation' : 'publishing-failed')} lang={lang} details={[[t.detailPublication, publication.id], [t.detailRevision, publication.revisionId]]} />
+        {publication.requeueable && <RequeuePublication id={publication.id} lang={lang} preview={preview} onDone={onRefresh} />}
       </li>)}</ul>}
     </section>
 
@@ -111,6 +115,32 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
       </>}
     </section>
   </section>;
+}
+
+/**
+ * approval-04: the owner gives up on a stranded publication that provably published nothing. The server offers it
+ * only behind its own switch and for a row without a container, media ID or publish intent; it confirms in place.
+ */
+function RequeuePublication({ id, lang, preview, onDone }: { id: string; lang: Lang; preview: boolean; onDone: () => void }) {
+  const t = dneskaiWorkspace[lang].costs;
+  const [stage, setStage] = useState<'idle' | 'confirm' | 'sending' | 'queued' | 'queued-window-passed' | 'failed'>('idle');
+  const [code, setCode] = useState<string | null>(null);
+  const send = async () => {
+    setStage('sending'); setCode(null);
+    try { setStage(await (await dneskaiWorkspaceApi(preview)).requeuePublication(id)); onDone(); }
+    catch (error) { setCode(error instanceof Error && 'code' in error && typeof error.code === 'string' ? error.code : null); setStage('failed'); }
+  };
+  if (stage === 'queued' || stage === 'queued-window-passed') return <p role="status" className="text-xs text-success">{stage === 'queued' ? t.requeueDone : t.requeueWindowPassed}</p>;
+  return <div className="min-w-0 space-y-2" data-testid="dneskai-requeue">
+    {stage === 'idle' || stage === 'failed' ? <Button type="button" variant="outline" size="sm" onClick={() => setStage('confirm')}>{t.requeue}</Button> : <>
+      <p id={`dneskai-requeue-${id}`} className="max-w-3xl text-xs text-foreground-muted">{t.requeueHelp}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" aria-describedby={`dneskai-requeue-${id}`} disabled={stage === 'sending'} onClick={() => { void send(); }}>{t.requeueConfirm}</Button>
+        <Button type="button" variant="ghost" size="sm" disabled={stage === 'sending'} onClick={() => setStage('idle')}>{t.requeueCancel}</Button>
+      </div>
+    </>}
+    {stage === 'failed' && <div role="alert" className="space-y-1"><p className="text-xs text-risk">{t.requeueFailed}</p>{code && <DneskaiCodeText code={code} lang={lang} tone="risk" />}</div>}
+  </div>;
 }
 
 /** Undecided posts in a problem state: a refused render, a render that never attached, a version that cannot be approved. */

@@ -76,8 +76,9 @@ export const MARKETING_MEDIA_RETENTION_DAYS = 30;
 export const MARKETING_PUBLICATION_YIELD_MS = 5 * 60_000;
 /**
  * A live publish starts only with this much of the soft budget left (35 s before every signal aborts). A
- * publish cut off between its container-create intent and the container cannot be retried and ends in
- * reconciliation, so it is better to wait five minutes than to start short. A dry run writes nothing.
+ * publish cut off before its publish intent only costs a container retry inside the ten-minute claim; one
+ * cut off after it ends in reconciliation, so it is better to wait five minutes than to start short. A dry
+ * run writes nothing.
  */
 export const MARKETING_LIVE_PUBLISH_MINIMUM_START_MS = 30_000;
 /** A publication left in `reconciliation` is read again at most this often. */

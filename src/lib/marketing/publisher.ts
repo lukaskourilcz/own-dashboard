@@ -25,11 +25,31 @@ const normalizedHandle = (value: string) => value.replace(/^@/, '').toLowerCase(
 export type PublishOutcome = { status: 'held' | 'dry-run' | 'pending' | 'published' | 'failed' | 'reconciliation';
   remoteContainerId: string | null; remoteMediaId: string | null; remoteUrl: string | null; errorCode: string | null;
   /** Preflight only: the enablement switches that would still hold a real run. */
-  advisories?: string[] };
-export type PublisherCheckpoint = PublishOutcome & { stage: 'container-create-intent' | 'container-created' | 'publish-intent' | 'outcome' };
+  advisories?: string[];
+  /** Only with `container-retry`: the transient failure that discarded the containers. */
+  retryCause?: string };
+/**
+ * `container-retry` returns the claimed publication to "no container": nothing
+ * was sent to media_publish, so the next tick recreates every container from
+ * scratch. `publish-intent` is the only durable intent; it is written before
+ * the single media_publish request.
+ */
+export type PublisherCheckpoint = PublishOutcome & { stage: 'container-created' | 'container-retry' | 'publish-intent' | 'outcome' };
+/** The checkpoint code that marks a claimed publication for a fresh container attempt. */
+export const CONTAINER_RETRY_CODE = 'container-retry';
+/**
+ * Failures before media_publish that may clear on their own: an uncertain or
+ * 5xx/429 request, an unreadable response, a missing container ID, the run's
+ * deadline or a failed revalidation read. A definite 4xx rejection is a plain
+ * failure instead. Neither published anything.
+ */
+export function containerFailureRetryable(code: string): boolean {
+  return /^meta-http-(5\d\d|429)$/.test(code) || ['meta-request-uncertain', 'meta-invalid-response', 'container-identity-unavailable', 'container-status-unavailable',
+    'publication-deadline-exceeded', 'checkpoint-or-revalidation-failed'].includes(code);
+}
 export type PublisherState = { revisionRow: MarketingRevisionRow; account: MarketingPublishAccount; sources: SourcePacket[] };
 export type PublishMarketingInput = PublisherState & { publication: PublicationRow & { user_id: string; lease_until?: string | null };
-  /** With a dry run, also run the read-only remote checks (account, asset bytes, quota) and stop before the container-create intent. */
+  /** With a dry run, also run the read-only remote checks (account, asset bytes, quota) and stop before any container. */
   preflight?: boolean;
   config: MetaPublisherConfig; dryRun?: boolean; now?: Date; signal?: AbortSignal; fetcher?: typeof fetch; wait?: (ms: number) => Promise<void>;
   checkpoint: (checkpoint: PublisherCheckpoint) => Promise<void>; revalidate: () => Promise<PublisherState> };
@@ -369,7 +389,11 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
   let container = previous.remote_container_id;
   let media = previous.remote_media_id;
   let remoteUrl = previous.remote_url;
-  let sideEffectStarted = false;
+  // Set only once the publish intent is durable. Containers are unpublished
+  // drafts that expire on Meta's side, so creating them again never posts twice.
+  let publishIntentSaved = false;
+  // A container may exist on Meta's side (this run POSTed one, or an earlier tick stored one).
+  let containerWorkStarted = !!previous.remote_container_id || previous.error_code === CONTAINER_RETRY_CODE;
   const save = async (stage: PublisherCheckpoint['stage'], outcome: PublishOutcome) => {
     try { await input.checkpoint({ stage, ...outcome }); } catch { throw new CheckpointFailure(); }
   };
@@ -386,9 +410,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       if (!idValid(data.id as string)) throw new MetaFailure('container-identity-unavailable'); return data.id as string;
     };
     if (!container) {
-      container = `intent:${revisionContentHash(revision)}`;
-      await save('container-create-intent', result('pending', 'container-create-intent', container));
-      sideEffectStarted = true;
+      containerWorkStarted = true;
       // Story text is rendered in the JPEG. The stored caption is internal
       // review copy; it is never sent as a public Story caption or alt_text.
       const fields: Record<string, string> = revision.format === 'story' ? {} : { [threads ? 'text' : 'caption']: revision.caption };
@@ -440,7 +462,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     }
     input.signal?.throwIfAborted();
     await save('publish-intent', result('pending', 'publish-intent', container));
-    sideEffectStarted = true;
+    publishIntentSaved = true;
     const published = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publish' : 'media_publish'}`, 'POST', { creation_id: container });
     if (!idValid(published.id as string) || (revision.format === 'story' && !/^[1-9]\d{0,99}$/.test(published.id as string))) throw new MetaFailure('published-media-identity-unavailable');
     media = published.id as string;
@@ -457,9 +479,23 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     await save('outcome', outcome);
     return outcome;
   } catch (error) {
-    if (error instanceof CheckpointFailure) return result(sideEffectStarted ? 'reconciliation' : 'held', 'checkpoint-fence-lost', sideEffectStarted ? container : previous.remote_container_id, media, remoteUrl);
-    const outcome = result(sideEffectStarted || previous.remote_container_id ? 'reconciliation' : 'failed', error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'checkpoint-or-revalidation-failed', container, media, remoteUrl);
-    try { await save('outcome', outcome); } catch { /* The initial durable intent still prevents a replay after a receipt write fails. */ }
+    if (error instanceof CheckpointFailure) return result(publishIntentSaved ? 'reconciliation' : 'held', 'checkpoint-fence-lost', publishIntentSaved ? container : previous.remote_container_id, media, remoteUrl);
+    const code = error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'checkpoint-or-revalidation-failed';
+    if (publishIntentSaved) {
+      // media_publish may have been sent: only the read-only reconciliation may settle this, never a second POST.
+      const outcome = result('reconciliation', code, container, media, remoteUrl);
+      try { await save('outcome', outcome); } catch { /* The durable publish intent still prevents a replay after a receipt write fails. */ }
+      return outcome;
+    }
+    // No media_publish was sent. A transient failure around the containers
+    // forgets them; a later tick inside the claim recreates them from scratch.
+    if (containerWorkStarted && containerFailureRetryable(code)) {
+      try { await save('container-retry', result('pending', CONTAINER_RETRY_CODE, null)); }
+      catch { return result('held', 'checkpoint-fence-lost', previous.remote_container_id); }
+      return { ...result('pending', CONTAINER_RETRY_CODE, null), retryCause: code };
+    }
+    const outcome = result('failed', code, container, media, remoteUrl);
+    try { await save('outcome', outcome); } catch { /* Nothing was published; the claim expires into an owner re-queue. */ }
     return outcome;
   }
 }

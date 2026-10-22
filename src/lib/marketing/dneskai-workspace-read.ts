@@ -8,6 +8,7 @@ import { DNESKAI_BRIEF_SLOTS } from './dneskai-briefs';
 import { DNESKAI_PLACED_FIELDS } from './dneskai-render';
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId } from './dneskai-generation';
 import { marketingJobErrorCode } from './job-health';
+import { marketingPublicationRequeueable } from './publication-requeue';
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import {
@@ -151,7 +152,8 @@ export type DneskaiCostRange = (typeof DNESKAI_COST_RANGES)[number];
  * uncertain, failed and uncertain publications, the scheduler ticks of the last 24 hours and the 24-hour generation
  * spend. `range` sets how many Prague days the cost table and the job list cover (default seven).
  */
-export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation'], range: DneskaiCostRange = '7d'): Promise<DneskaiCostsRead> {
+export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation'], range: DneskaiCostRange = '7d',
+  options: { requeueEnabled?: boolean } = {}): Promise<DneskaiCostsRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
   // Rows are checked one at a time: a malformed run, job, publication or tick is counted, never a failed read.
   let unreadable = 0;
@@ -169,8 +171,8 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14),
     db.from('marketing_jobs').select('id,status,error_code,created_at,cost_usd:result->usage->>estimatedCostUsd,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,brand:request->generation->source->>brand')
       .eq('user_id', owner).gte('created_at', weekStart).order('created_at', { ascending: false }).limit(100),
-    db.from('marketing_publications').select('id,revision_id,status,error_code,scheduled_at,last_checked_at,marketing_revisions!inner(brand,title:revision->>title)')
-      .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation']).order('scheduled_at', { ascending: false }).limit(20),
+    db.from('marketing_publications').select('id,revision_id,status,error_code,scheduled_at,last_checked_at,remote_container_id,remote_media_id,remote_url,lease_until,marketing_revisions!inner(brand,title:revision->>title)')
+      .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20),
     db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors').eq('user_id', owner).gte('started_at', dayAgo).order('started_at', { ascending: false }).limit(1500),
   ]);
   const runs = keep(shape.runs.element, rows(runResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => ({
@@ -194,10 +196,17 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
       generationBookedUsd: sum(jobCosts.filter((job) => !job.settled).map((job) => job.cost)),
       unknown: [...runCosts, ...jobCosts.map((job) => job.cost)].filter((cost) => cost === null).length };
   });
-  const publications = keep(shape.publications.element, rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
+  const text = (value: unknown) => typeof value === 'string' ? value : null;
+  const publications = keep(shape.publications.element, rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').flatMap((row) => {
     const revision = (Array.isArray(row.marketing_revisions) ? row.marketing_revisions[0] : row.marketing_revisions) as { title?: unknown } | undefined;
-    return { id: row.id, revisionId: row.revision_id, status: row.status, errorCode: safeCode(row.error_code), scheduledAt: iso(row.scheduled_at), lastCheckedAt: iso(row.last_checked_at),
-      title: typeof revision?.title === 'string' ? revision.title.slice(0, 300) : '' };
+    // A live claim is still being published. One whose lease ran out is shown as marketing_claim_due will record it.
+    const lease = Date.parse(text(row.lease_until) ?? '');
+    if (row.status === 'claimed' && !(lease < now.getTime())) return [];
+    const expired = row.status === 'claimed';
+    const requeueable = options.requeueEnabled === true && marketingPublicationRequeueable({ status: String(row.status), remoteContainerId: text(row.remote_container_id),
+      remoteMediaId: text(row.remote_media_id), remoteUrl: text(row.remote_url), errorCode: text(row.error_code), leaseUntil: text(row.lease_until) }, now);
+    return [{ id: row.id, revisionId: row.revision_id, status: expired ? 'reconciliation' : row.status, errorCode: expired ? 'lease-expired' : safeCode(row.error_code), scheduledAt: iso(row.scheduled_at),
+      lastCheckedAt: iso(row.last_checked_at), title: typeof revision?.title === 'string' ? revision.title.slice(0, 300) : '', ...(requeueable ? { requeueable } : {}) }];
   }));
   const ticks = keep(shape.ticks.shape.recent.element, rows(tickResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
     const did = z.array(TickStepSchema).safeParse(row.did); const errors = z.array(TickErrorSchema).safeParse(row.errors);

@@ -150,8 +150,9 @@ describe("OFFLINE SIMULATION: authored source → actual JPEG → exact owner ap
         return Response.json({ id: "301" });
       }
       if (url.pathname.endsWith("/media") && method === "POST") {
-        const checkpoint = (await database.query<{ remote_container_id: string | null }>("select remote_container_id from marketing_publications where revision_id=$1", [revisionId])).rows[0];
-        expect(checkpoint.remote_container_id).not.toBeNull(); // Durable create intent precedes every simulated Meta POST.
+        // Containers are unpublished drafts: they are created under the live claim, before any publish intent (approval-04).
+        const checkpoint = (await database.query<{ status: string; error_code: string | null }>("select status,error_code from marketing_publications where revision_id=$1", [revisionId])).rows[0];
+        expect(checkpoint.status).toBe("claimed"); expect(checkpoint.error_code).not.toBe("publish-intent");
         return Response.json({ id: String(++nextContainer) });
       }
       if (url.pathname.endsWith("/101")) return Response.json({ id: "101", username: "offline_qa_only" });

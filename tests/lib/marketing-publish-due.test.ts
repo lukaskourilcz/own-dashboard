@@ -69,6 +69,16 @@ describe('publishDueMarketing and Meta credentials', () => {
     expect(names(rpc)).toEqual(['marketing_claim_due', 'marketing_finish_publication']);
     expect(rpc).toHaveBeenLastCalledWith('marketing_finish_publication', expect.objectContaining({ p_status: 'failed', p_error: 'publishing-quota-exhausted' }));
   });
+  it('stores a container retry as a claimed checkpoint, never as a failed or reconciliation receipt', async () => {
+    vi.stubEnv('MARKETING_PUBLISH_ENABLED', 'true'); vi.stubEnv('MARKETING_DNESKAI_PUBLISH_ENABLED', 'true');
+    mocks.resolve.mockResolvedValue(config({ enabled: true }));
+    const retry = { status: 'pending', errorCode: 'container-retry', remoteContainerId: null, remoteMediaId: null, remoteUrl: null } as const;
+    mocks.publish.mockImplementation(async (input: { checkpoint: (value: unknown) => Promise<void> }) => { await input.checkpoint({ stage: 'container-retry', ...retry }); return { ...retry, retryCause: 'meta-http-500' }; });
+    const { db, rpc } = database();
+    expect((await publishDueMarketing(db, owner, 'dneskai', false)).outcomes).toEqual([{ publicationId, ...retry, retryCause: 'meta-http-500' }]);
+    expect(names(rpc)).toEqual(['marketing_claim_due', 'marketing_checkpoint_publication']);
+    expect(rpc).toHaveBeenLastCalledWith('marketing_checkpoint_publication', { p_owner: owner, p_publication: publicationId, p_expected_container: null, p_expected_error: null, p_container: null, p_error: 'container-retry' });
+  });
   it('runs a preflight dry run with both publish flags off and the account disabled, without a claim or a write', async () => {
     vi.stubEnv('MARKETING_PUBLISH_ENABLED', 'false'); vi.stubEnv('MARKETING_DNESKAI_PUBLISH_ENABLED', 'false');
     mocks.resolve.mockResolvedValue(config());

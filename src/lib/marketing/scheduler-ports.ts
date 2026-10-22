@@ -9,6 +9,7 @@ import { getCreateDneskaiBriefs } from "./dneskai-wiring";
 import { executeMarketingJob } from "./worker-runtime";
 import { refreshSource } from "./source-refresh";
 import { publishDueMarketing, reconcileStoredMarketingPublication } from "./orchestrator";
+import { CONTAINER_RETRY_CODE } from "./publisher";
 import { listMetaTokenMetadata, refreshInstagramToken } from "./meta-credentials";
 import { renewStoredRevisionAssetUrls } from "./asset-urls";
 import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type SchedulerCollectionRun } from "./scheduler";
@@ -49,7 +50,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
   };
   /** The same claimed continuation publishDueMarketing's pending query picks up. */
   const containerPending = (now: Date) =>
-    any(publications().eq("status", "claimed").eq("error_code", "container-pending").gt("lease_until", now.toISOString()).limit(1), "publication-state-unavailable");
+    any(publications().eq("status", "claimed").in("error_code", ["container-pending", CONTAINER_RETRY_CODE]).gt("lease_until", now.toISOString()).limit(1), "publication-state-unavailable");
   return {
     store: createMarketingSchedulerStore(db, owner),
     dneskaiProject: () => resolveDneskaiProjectId(db, owner),

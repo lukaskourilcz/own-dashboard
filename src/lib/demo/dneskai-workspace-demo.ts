@@ -121,6 +121,8 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   },
   // The real studio fit, through the fixture-only twin of the route: it reads no owner data. Production guests get 404.
   fit: (request, signal) => fitAt('/api/dev-preview/dneskai-fit', request, signal),
+  // The fixture's only uncertain publication may have reached media_publish, so the preview refuses as the server would.
+  async requeuePublication() { await pause(200); throw new DneskaiWorkspaceRequestError('publication-may-be-published', 409); },
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);

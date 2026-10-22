@@ -179,7 +179,7 @@ verification. `MARKETING_APPROVED_ASSET_HOSTS` declares the exact public final-a
 
 A plain dry run makes no request. A preflight (`publish` with `dryRun:true, preflight:true`) runs
 the same gate except those two switches, then reads the remote profile, downloads and decodes
-every asset and reads the publishing quota. It stops before the container-create intent: no POST,
+every asset and reads the publishing quota. It stops before the first container: no POST,
 no claim and no checkpoint. A switch that is still off comes back in `advisories`
 (`account-disabled`, `publishing-disabled`) with `status:"dry-run"`, so the verified, disabled
 account from #121 can be checked before the pilot. Any other failed check is a `held` result with
@@ -201,15 +201,25 @@ bytes before any container exists: JPEG, sRGB, 320–1440 px wide, 4:5 to 1.91:1
 the declared size. Each image child and each single image carries its `alt_text` (at most 1,000
 characters). `collaborators` (at most three usernames) go on the post only when the revision
 records them. A single image uses the default image container: `image_url` without `media_type`
-or children. It persists a
-container-create intent before the first POST, persists the returned container ID, polls at most
-three times, revalidates current authority, and persists publish intent before `media_publish` or
-`threads_publish`. The database checkpoint must compare the expected old container/error fields
-and require the still-valid claim. A lost fence causes no second outcome write.
+or children. It creates the child and parent containers, persists the parent container ID, polls
+at most three times, revalidates current authority, and persists the publish intent before
+`media_publish` or `threads_publish`. The publish intent is the only durable intent: containers are
+unpublished drafts that expire on Meta's side, so creating them again never posts twice. The
+database checkpoint must compare the expected old container/error fields and require the still-valid
+claim. A lost fence causes no second outcome write.
 
-An unfinished known container stays pending. A container in `ERROR` or `EXPIRED` before any
-publish request is recorded as `failed` (`container-error`, `container-expired`). A publish timeout,
-uncertain response or failed receipt keeps reconciliation state and the known IDs. Missing
+A failure before the publish intent never goes to reconciliation (audit finding approval-04). A
+transient one (no or uncertain answer, HTTP 5xx or 429, an unreadable answer or missing container ID,
+the run deadline, a failed revalidation read) checkpoints `container-retry`: the claimed publication
+forgets its container, and the next tick inside the claim runs every gate again (approval hash,
+account, token, freshness, downloaded bytes, quota) and recreates all containers. A definite rejection
+(another 4xx) is recorded as `failed`. An unfinished known container stays pending. A container in
+`ERROR` or `EXPIRED` before any publish request is recorded as `failed` (`container-error`,
+`container-expired`). After the publish intent, a publish timeout, uncertain response or failed receipt
+keeps reconciliation state and the known IDs; `media_publish` is sent at most once per publication.
+A reconciliation row without a numeric container ID, media ID, URL or publish intent provably
+published nothing; the owner can give up on it and queue the approved post again
+(`POST /api/marketing/publications`, see [external setup §11](external-setup.md)). Missing
 permalink lookup retains the media ID and remains reconciliation; it does not announce a verified
 public post. A previously attempted publish, recorded media ID or reconciliation record performs
 only GET queries.

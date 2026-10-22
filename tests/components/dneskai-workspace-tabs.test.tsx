@@ -90,8 +90,44 @@ describe('Errors and costs keeps measured, booked and unknown apart', () => {
     expect(costs.textContent).toContain(t.costs.budgetBasis);
   });
 
+  it('offers "give up and queue again" only on a publication the server marks requeueable, and confirms in place (approval-04)', async () => {
+    const { createDneskaiCostsFixture } = await import('@/lib/demo/dneskai-workspace-fixtures');
+    const base = createDneskaiCostsFixture(new Date());
+    const stuck = { ...base.publications[0]!, id: 'd0e5ca10-0000-4000-8000-0000000000aa', errorCode: 'lease-expired', title: 'Zaseknutý příspěvek', requeueable: true };
+    vi.spyOn(demoDneskaiWorkspaceApi, 'loadCosts').mockResolvedValue({ ...base, publications: [base.publications[0]!, stuck] });
+    const requeue = vi.spyOn(demoDneskaiWorkspaceApi, 'requeuePublication').mockResolvedValue('queued');
+    await show('dneskai-costs');
+    const controls = container.querySelectorAll('[data-testid="dneskai-requeue"]');
+    // The fixture's uncertain publication (it may have reached media_publish) gets no control.
+    expect(controls).toHaveLength(1);
+    const offer = [...controls[0]!.querySelectorAll('button')];
+    expect(offer.map((button) => button.textContent)).toEqual([t.costs.requeue]);
+    act(() => offer[0]!.click());
+    expect(controls[0]!.textContent).toContain(t.costs.requeueHelp);
+    const confirm = [...controls[0]!.querySelectorAll('button')].find((button) => button.textContent === t.costs.requeueConfirm)!;
+    expect(confirm.getAttribute('aria-describedby')).toBe(`dneskai-requeue-${stuck.id}`);
+    expect(requeue).not.toHaveBeenCalled();
+    await act(async () => { confirm.click(); await new Promise((done) => setTimeout(done, 0)); });
+    expect(requeue).toHaveBeenCalledExactlyOnceWith(stuck.id);
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(t.costs.requeueDone);
+  });
+  it('shows the server refusal code when queuing again is refused', async () => {
+    const { createDneskaiCostsFixture } = await import('@/lib/demo/dneskai-workspace-fixtures');
+    const base = createDneskaiCostsFixture(new Date());
+    vi.spyOn(demoDneskaiWorkspaceApi, 'loadCosts').mockResolvedValue({ ...base, publications: [{ ...base.publications[0]!, requeueable: true }] });
+    await show('dneskai-costs');
+    const control = container.querySelector('[data-testid="dneskai-requeue"]')!;
+    act(() => control.querySelector('button')!.click());
+    const confirm = [...control.querySelectorAll('button')].find((button) => button.textContent === t.costs.requeueConfirm)!;
+    // The demo refuses as the server does for a row that may have reached media_publish.
+    await act(async () => { confirm.click(); await new Promise((done) => setTimeout(done, 300)); });
+    expect(control.querySelector('[role="alert"]')?.textContent).toContain(t.costs.requeueFailed);
+    expect(control.querySelector('[role="alert"]')?.textContent).toContain('Instagram may already have this post');
+  });
+
   it('keeps the new cost strings in EN and CS parity', () => {
-    for (const key of ['budgetBasis', 'balances', 'balancesHelp', 'balanceApify', 'balanceAnthropic', 'balanceUnknown', 'booked', 'bookedShort', 'daysHelp'] as const) {
+    for (const key of ['budgetBasis', 'balances', 'balancesHelp', 'balanceApify', 'balanceAnthropic', 'balanceUnknown', 'booked', 'bookedShort', 'daysHelp',
+      'requeue', 'requeueConfirm', 'requeueCancel', 'requeueHelp', 'requeueDone', 'requeueWindowPassed', 'requeueFailed'] as const) {
       expect(dneskaiWorkspace.cs.costs[key]).toBeTruthy(); expect(dneskaiWorkspace.cs.costs[key]).not.toBe(dneskaiWorkspace.en.costs[key]);
     }
   });

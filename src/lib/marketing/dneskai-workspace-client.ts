@@ -6,6 +6,7 @@ import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, type DneskaiCostsRe
 import type { DneskaiEditRequest } from './dneskai-deck-editor';
 import { DneskaiApproveManyResultSchema, DneskaiFitResultSchema, type DneskaiApproveManyResult, type DneskaiFitRequest, type DneskaiFitResult } from './dneskai-lab';
 import { qk } from '@/lib/queries/keys';
+import { MARKETING_PUBLICATION_REQUEUE_RESULTS, type MarketingPublicationRequeueResult } from './publication-requeue';
 
 /**
  * The browser side of the DNESKAi workspace (#119). Every read and decision goes through this port, so the
@@ -38,6 +39,8 @@ export interface DneskaiWorkspaceApi {
   approveMany(posts: ReadonlyArray<{ id: string; contentHash: string }>): Promise<DneskaiApproveManyResult>;
   /** Text fit feedback before saving ($0, no model call, nothing stored). */
   fit(request: DneskaiFitRequest, signal?: AbortSignal): Promise<DneskaiFitResult>;
+  /** approval-04: give up on a stranded, provably unpublished publication and queue its approved post again. */
+  requeuePublication(id: string): Promise<MarketingPublicationRequeueResult>;
 }
 
 const codeShape = /^[a-z][a-z0-9_-]{0,99}$/;
@@ -92,6 +95,11 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     return result.data;
   },
   fit: (request, signal) => fitAt('/api/marketing/dneskai/fit', request, signal),
+  async requeuePublication(id) {
+    const result = z.strictObject({ result: z.enum(MARKETING_PUBLICATION_REQUEUE_RESULTS) }).safeParse(await post({ action: 'requeue', id }, '/api/marketing/publications'));
+    if (!result.success) throw new DneskaiWorkspaceRequestError('publication-requeue-failed', 502);
+    return result.data.result;
+  },
 };
 
 /** POST a fit request and validate the answer; the preview posts to its fixture-only twin of the route. */
