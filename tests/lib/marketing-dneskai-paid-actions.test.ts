@@ -70,7 +70,7 @@ describe('regenerateDneskaiRevision (owner decision 8)', () => {
   });
 
   it('refuses before any job when switched off, changed, decided, unsupported, too late or past the ceiling', async () => {
-    const admin = fakeDb({ marketing_jobs: [originalJob()] }, { marketing_dneskai_generation_spent: { data: 0.8, error: null } });
+    const admin = fakeDb({ marketing_jobs: [originalJob()] }, { marketing_dneskai_generation_spent: { data: 0.9, error: null } });
     const user = (status = 'returned') => fakeDb({ marketing_revisions: [{ revision, content_hash: hash, status }] });
     const code = (promise: Promise<unknown>) => promise.then(() => null, (error: DneskaiPaidActionError) => error.code);
     expect(await code(run(user(), admin, { env: { MARKETING_AI_CONSENT: 'true' } }))).toBe('regenerate-unavailable');
@@ -79,7 +79,7 @@ describe('regenerateDneskaiRevision (owner decision 8)', () => {
     expect(await code(run(user(), fakeDb({ marketing_jobs: [] })))).toBe('regenerate-unsupported');
     const late = originalJob(); late.request.generation.scheduledAt = new Date(Date.now() + 5 * 60_000).toISOString();
     expect(await code(run(user(), fakeDb({ marketing_jobs: [late] })))).toBe('regenerate-slot-passed');
-    // 0.80 spent + the 0.25 reservation passes the 1.00 ceiling.
+    // 0.90 spent + the 0.13 reservation passes the 1.00 ceiling.
     expect(await code(run(user(), admin))).toBe('dneskai-daily-generation-budget-exhausted');
     expect(await code(run(user(), fakeDb({ marketing_jobs: [originalJob()] }, { marketing_dneskai_generation_spent: { data: null, error: { message: 'x' } } })))).toBe('dneskai-daily-generation-budget-unavailable');
     expect(mocks.enqueue).not.toHaveBeenCalled();
