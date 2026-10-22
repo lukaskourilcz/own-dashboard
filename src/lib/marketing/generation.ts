@@ -6,7 +6,7 @@ import { marketingHumanizerInstructions } from "./humanizer";
 import { fitMarketingText } from "./render";
 import devsharkLayout from "../../../templates/marketing/devshark/derived-layout.json";
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
-import { classifyMarketingProviderError, type MarketingProviderFailure } from "./provider-errors";
+import { classifyMarketingProviderError, marketingProviderFailureUnbilled, type MarketingProviderFailure } from "./provider-errors";
 import { claudeCallFields, claudeCallProfile } from "./claude-call-profile";
 import type { DneskaiDeck } from "./dneskai-slides";
 import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
@@ -63,9 +63,28 @@ export type GenerationBudget = z.infer<typeof BudgetSchema>;
 /** Planning estimate only, with more headroom than the model A/B script's bytes/3 heuristic.
  * Czech UTF-8 bytes are not tokens. Dollar reservations remain byte-based; recorded usage is authoritative. */
 export const DNESKAI_INPUT_BYTES_PER_TOKEN = 2;
+/**
+ * Owner decision 15 (22 October 2026): one job may spend at most $0.13, down from $0.25. At the default Sonnet 5.5
+ * price ($2 input, $10 output per million tokens) two full attempts cost 2 x (20,000 x $2 + 2,500 x $10) / 1,000,000
+ * = 2 x $0.065 = $0.13. The code holds that ceiling, not the arithmetic: before every attempt it reserves the attempt's
+ * input in UTF-8 bytes (never fewer than the billed tokens) plus the full output limit, and makes the call only if the
+ * recorded spend plus that reservation stays within `maxCostUsd`. A rich brief whose first attempt cost more than
+ * usual therefore gets no retry (`cost-budget-exceeded`) rather than going past $0.13. Admission and the DNESKAi
+ * ledger reserve this amount per job; ledger rows written at $0.25 before the change keep it.
+ */
 export const DEFAULT_GENERATION_BUDGET: GenerationBudget = {
-  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000,
+  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.13, maxLatencyMs: 60000,
 };
+/** Failures thrown by `createClaudeMarketingModel` before it sends any request. */
+const MARKETING_UNSENT_CALL_CODES: ReadonlySet<string> = new Set(["unsafe-native-tracing-enabled", "provider-sdk-setup-failed"]);
+/** Owner decision 16: a call that provably billed nothing (never sent, or rejected whole by the API) counts as $0. */
+export function marketingCallUnbilled(failure: unknown): boolean {
+  if (failure instanceof MarketingGenerationError) {
+    if (failure.providerFailure) return marketingProviderFailureUnbilled(failure.providerFailure);
+    return MARKETING_UNSENT_CALL_CODES.has(failure.code);
+  }
+  return marketingProviderFailureUnbilled(classifyMarketingProviderError(failure));
+}
 export type ModelUsage = { inputTokens: number; outputTokens: number };
 /** The structured answer a call asks for: a name and the wire JSON schema. Absent: `marketing_copy` (`marketing-copy/4`). */
 export type MarketingModelOutput = { name: string; schema: Record<string, unknown> };
@@ -392,7 +411,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
   const resumed = resume?.success ? resume.data : null;
   const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) })) ?? null;
   const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);
-  // A resumed retry starts from the usage the earlier attempts recorded, so the $0.25 and the attempt cap span both calls.
+  // A resumed retry starts from the usage the earlier attempts recorded, so the job's cost cap and the attempt cap span both calls.
   const usage = resumed ? { ...resumed.usage } : { attempts: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
   const report = () => { try { dependencies.onUsage?.({ ...usage }); } catch {} };
   if (resumed) report();
@@ -419,8 +438,9 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
       try {
         result = await model.invoke({ ...prompts, prompt: prompts.prompt + retryFeedback, maxOutputTokens: budget.maxOutputTokens, signal, ...(profile.output ? { output: profile.output } : {}) });
       } catch (failure) {
-        // Billing may already have happened. Never retry an ambiguous transport/provider failure.
-        ambiguous(reservation);
+        // Never retry a provider failure. A call the API rejected whole, or that was never sent, records no cost
+        // (decision 16); any other failure may have been billed and books the reservation.
+        if (marketingCallUnbilled(failure)) report(); else ambiguous(reservation);
         if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
         if (failure instanceof MarketingGenerationError) throw failure;
         const providerFailure = classifyMarketingProviderError(failure);
