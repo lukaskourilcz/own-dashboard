@@ -34,7 +34,6 @@ const routes = [
   '/api/marketing/revisions',
   '/api/marketing/jobs/[id]/execute',
   '/api/marketing/dneskai/media',
-  '/api/marketing/n8n',
   '/api/marketing/offline-import',
 ];
 

@@ -71,7 +71,6 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp", "@resvg/resvg-js"],
   outputFileTracingIncludes: {
     "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
-    "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
     // The Design Lab's fixture-only fit route runs the same studio fitter as /api/marketing/dneskai/fit.
     "/api/dev-preview/dneskai-fit": [...carouselStudioFiles, sharpLibvips],

@@ -6,7 +6,6 @@ import { rejectCrossOrigin } from '@/lib/csrf';
 import { saveRevision } from '@/lib/marketing/store';
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
 import { refreshMarketingAssetUrls } from '@/lib/marketing/asset-urls';
-import { notifyMarketingApproval } from '@/lib/marketing/approval-notification';
 import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
 import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision } from '@/lib/marketing/dneskai-revision-edit';
@@ -39,7 +38,6 @@ export async function POST(request:Request){
     const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:item.id,p_expected_hash:item.expectedHash});
     if(error){results.push({id:item.id,ok:false,publicationId:null,error:approvalReasons[error.message]??'approval-unavailable'});continue;}
     if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:item.id,revisionHash:original.content_hash,decision:'approved'},process.env,{db,ownerId:user.id});
-    await notifyMarketingApproval(data);
     results.push({id:item.id,ok:true,publicationId:typeof data==='string'?data:null,error:null});
    }
    return NextResponse.json({results});
@@ -49,8 +47,8 @@ export async function POST(request:Request){
    const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:input.id,p_expected_hash:input.expectedHash});
    if(error)return NextResponse.json({error:'approval-unavailable',reason:approvalReasons[error.message]??null},{status:409});
    if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:input.id,revisionHash:original.content_hash,decision:'approved'},process.env,{db,ownerId:user.id});
-   const scheduling=await notifyMarketingApproval(data);
-   return NextResponse.json({publicationId:data,scheduling});
+   // The pg_cron tick publishes the queued slot; approval notifies nobody (audit finding cost-07).
+   return NextResponse.json({publicationId:data,scheduling:'tick'});
   }
   if(input.action==='edit'){
    const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt').eq('id',input.id).eq('user_id',user.id).single();

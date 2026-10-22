@@ -83,6 +83,7 @@ remain outside the pilot scope.
 | Boundary | Required private configuration |
 | --- | --- |
 | OwnDashboard identity/database | Verified staging Supabase URL/anon/service-role credentials, actual owner auth UUID as `MARKETING_OWNER_ID`; apply the four new migrations only after deployment review. |
+| n8n (retired 2026-10-22) | Both rows below are history: `/api/marketing/n8n` answers `410 route-retired` and approval notifies no webhook (audit findings cost-06, cost-07). |
 | n8n→OwnDashboard | Separate32+character `MARKETING_N8N_SECRET`, Header Auth credential `Authorization: Bearer …`; native HTTP operation `/api/marketing/n8n`. |
 | OwnDashboard→n8n approval event | `MARKETING_N8N_APPROVAL_WEBHOOK_URL` on the existing n8n host's production `/webhook/…` path; separate `MARKETING_N8N_WEBHOOK_SECRET` in server env and incoming Header Auth credential. Only a publication UUID is sent. Native API rechecks exact owner approval before planning/sending. |
 | DNESKAi source | `MARKETING_DNESKAI_SOURCE_URL` ending `/admin/api/marketing-source`; matching server/quorum source secret; explicit producer enable flag. |

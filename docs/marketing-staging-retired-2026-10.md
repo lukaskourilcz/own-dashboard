@@ -78,6 +78,10 @@ returns no expiry once that window has passed, so the manual path refuses every 
 open nothing today. **Recommendation: delete both after the pilot, together with that credential.** The
 other 12 production variables serve ordinary collection and stay.
 
+Since 2026-10-22 both routes these secrets opened, `/api/marketing/n8n` and `/api/marketing/dneskai/collect`,
+answer `410` `{"code":"route-retired"}` before any credential check (audit finding cost-06), and approval no longer
+calls `MARKETING_N8N_APPROVAL_WEBHOOK_URL` (cost-07). The variables can be deleted without effect.
+
 ## n8n credentials still present
 
 | Credential name | Recommended action |

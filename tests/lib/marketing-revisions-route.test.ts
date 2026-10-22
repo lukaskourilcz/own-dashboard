@@ -1,10 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn(), media: vi.fn(), lister: vi.fn(), feedback: vi.fn(async () => false), notify: vi.fn(async () => ({ status: "skipped" })) }));
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn(), media: vi.fn(), lister: vi.fn(), feedback: vi.fn(async () => false)}));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
 vi.mock("@/lib/marketing/owner-feedback", () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
-vi.mock("@/lib/marketing/approval-notification", () => ({ notifyMarketingApproval: mocks.notify }));
 vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: () => mocks.render(), getDneskaiMediaLoader: (...args: unknown[]) => mocks.media(...args), getBriefAssetHashLister: (...args: unknown[]) => mocks.lister(...args), getBriefPoolLoader: () => async () => ({ media: [], primaryCandidateId: null }) }));
 import { POST } from "@/app/api/marketing/revisions/route";
 import { revisionContentHash } from "@/lib/marketing/hashes";
@@ -109,5 +108,22 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
     const response = await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), deck: { slides: [{ from: 0 }, { from: 1 }] } }));
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "deck-edit-unsupported" });
     expect(admin.calls).toEqual([]);
+  });
+
+  describe("approval posts to no retired n8n receiver (audit finding cost-07)", () => {
+    afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+    it("approves one post and the day without a single outbound request, even with the old webhook variables set", async () => {
+      vi.stubEnv("MARKETING_N8N_APPROVAL_WEBHOOK_URL", "https://bambambaklawa.app.n8n.cloud/webhook/approval");
+      vi.stubEnv("MARKETING_N8N_WEBHOOK_SECRET", "a".repeat(32));
+      const transport = vi.fn(async () => new Response(null, { status: 200 })); vi.stubGlobal("fetch", transport);
+      mocks.user.mockReturnValue(userDb(deckRevision()));
+      const single = await POST(request({ action: "approve", id: current, expectedHash: revisionContentHash(deckRevision()) }));
+      expect(single.status).toBe(200);
+      expect(await single.json()).toEqual({ publicationId: "88888888-8888-4888-8888-888888888888", scheduling: "tick" });
+      const many = await POST(request({ action: "approve-many", posts: [{ id: current, expectedHash: revisionContentHash(deckRevision()) }] }));
+      expect(many.status).toBe(200);
+      expect(await many.json()).toEqual({ results: [{ id: current, ok: true, publicationId: "88888888-8888-4888-8888-888888888888", error: null }] });
+      expect(transport).not.toHaveBeenCalled();
+    });
   });
 });

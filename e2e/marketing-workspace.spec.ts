@@ -89,17 +89,22 @@ test("Marketing tabs expose roving focus and Arrow/Home/End keyboard controls", 
   await expect(page.locator("#marketing-panel-review")).toHaveAttribute("aria-labelledby", "marketing-tab-review");
 });
 
-test("Marketing APIs reject unauthenticated decisions, worker jobs and invalid n8n tokens without writes", async ({ request }) => {
+test("Marketing APIs reject unauthenticated decisions, worker jobs and retired n8n routes without writes", async ({ request }) => {
   const results = await Promise.all([
     request.get("/api/marketing/state"),
     request.post("/api/marketing/revisions", { headers:{Origin:"http://localhost:3939"}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
     request.post("/api/marketing/knowledge", { headers:{Origin:"http://localhost:3939"}, data: { action: "preview" } }),
     request.post("/api/marketing/jobs", { data: {} }),
     request.post("/api/marketing/offline-import", { headers:{Origin:"http://localhost:3939"}, data: {} }),
-    request.post("/api/marketing/n8n", { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { operation: "publish", brand: "devshark", dryRun: false } }),
   ]);
   for (const result of results) {
     expect(result.status(), result.url()).toBe(401);
     expect((await result.json()).error).toBe("unauthorized");
+  }
+  // The retired n8n entry points answer 410 to everyone, before any credential check (audit finding cost-06).
+  for (const path of ["/api/marketing/n8n", "/api/marketing/dneskai/collect"]) {
+    const retired = await request.post(path, { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { operation: "publish", brand: "devshark", dryRun: false } });
+    expect(retired.status(), path).toBe(410);
+    expect(await retired.json()).toEqual({ code: "route-retired" });
   }
 });

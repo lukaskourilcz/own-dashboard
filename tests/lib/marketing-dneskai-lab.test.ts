@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ client: vi.fn(), limited: vi.fn(async () => ({ ok: true, retryAfter: 0 })), feedback: vi.fn(async () => false), notify: vi.fn(async () => 'unconfigured') }));
+const mocks = vi.hoisted(() => ({ client: vi.fn(), limited: vi.fn(async () => ({ ok: true, retryAfter: 0 })), feedback: vi.fn(async () => false) }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => mocks.client() }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }));
 vi.mock('@/lib/rate-limit', () => ({ rateLimit: mocks.limited }));
 vi.mock('@/lib/marketing/owner-feedback', () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
-vi.mock('@/lib/marketing/approval-notification', () => ({ notifyMarketingApproval: mocks.notify }));
 import { POST as fitRoute } from '@/app/api/marketing/dneskai/fit/route';
 import { POST as previewFitRoute } from '@/app/api/dev-preview/dneskai-fit/route';
 import { POST as revisionsRoute } from '@/app/api/marketing/revisions/route';

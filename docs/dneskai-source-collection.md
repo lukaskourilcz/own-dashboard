@@ -146,6 +146,11 @@ a vypnuté ukládání výsledků i nabídku MCP. Ověření nic nespustilo. Př
 
 Před spuštěním je potřeba:
 
+> **Vyřazeno 22. 10. 2026 (audit, nález cost-06):** `POST /api/marketing/dneskai/collect` odpovídá na každou
+> metodu `410` s `{"code":"route-retired"}` a nekontroluje klíč ani nic nevolá. Sběr spouští jen pg_cron tick
+> (`POST /api/marketing/tick`). `MARKETING_DNESKAI_COLLECTION_SECRET` a `MARKETING_DNESKAI_MANUAL_SECRET`
+> už nic neotevírají. Níže je historický postup.
+
 1. Ověřit migraci a oba integrační endpointy v neprodukčním prostředí.
 2. Nastavit skutečné vlastněné DNESKAi project ID a samostatný
    `MARKETING_DNESKAI_COLLECTION_SECRET` pro Header Auth přístup do n8n.
