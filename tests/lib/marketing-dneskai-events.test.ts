@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { DNESKAI_FINISH_EVENT_LIMIT, dneskaiEventId, dneskaiEventMemberHash, dneskaiFinishEvents, dneskaiHeadlinesMatch, dneskaiPrimaryUrlKey, dneskaiSourceTier, dneskaiTitleTokens, groupDneskaiEvents, rankDneskaiEventMembers } from '@/lib/marketing/dneskai-events';
+import { DNESKAI_FINISH_EVENT_LIMIT, dneskaiEventCategory, dneskaiEventId, dneskaiEventMemberHash, dneskaiFinishEvents, dneskaiHeadlinesMatch, dneskaiPrimaryUrlKey, dneskaiSourceTier, dneskaiTitleTokens, groupDneskaiEvents, rankDneskaiEventMembers } from '@/lib/marketing/dneskai-events';
 import { syntheticCandidate } from './marketing-dneskai-briefs-db';
 vi.mock('server-only', () => ({}));
 
@@ -165,6 +165,28 @@ describe('the events sent to marketing_dneskai_finish', () => {
   });
 });
 
+describe('the category of an event (SEL-10)', () => {
+  const member = (sourceId: string, id: string, category: string | null, relevance: number, hours = 0) => report(sourceId, id, 'Synthetic release of Model Nine weights', hours, { category: category as never, relevance });
+  const all = () => true;
+  it('takes the category most eligible reports carry, not the most relevant report\'s', () => {
+    expect(dneskaiEventCategory([member('github-ai-releases', 'r', 'ai-project', 0.95), member('the-verge', 'v', 'ai-news', 0.88), member('wired-ai', 'w', 'ai-news', 0.87)], all)).toBe('ai-news');
+  });
+  it('breaks a tie with the tier-0/1 reports, then with the most relevant report', () => {
+    // One ai-news from a publisher against one tool from an aggregator: the aggregator does not decide.
+    expect(dneskaiEventCategory([member('openai-blog', 'o', 'ai-news', 0.86), member('hn-frontpage', 'h', 'tool', 0.97)], all)).toBe('ai-news');
+    // Both tier 0/1: relevance decides, as the lead used to.
+    expect(dneskaiEventCategory([member('github-ai-releases', 'r', 'ai-project', 0.9), member('the-verge', 'v', 'ai-news', 0.88)], all)).toBe('ai-project');
+    // Only aggregators tie: relevance decides among them.
+    expect(dneskaiEventCategory([member('hn-frontpage', 'h', 'tool', 0.86), member('techcrunch-ai', 't', 'ai-news', 0.9)], all)).toBe('ai-news');
+  });
+  it('counts only eligible, classified, on-topic reports and returns null without one', () => {
+    const reports = [member('github-ai-releases', 'r', 'ai-project', 0.95), member('the-verge', 'v', 'ai-news', 0.88), member('wired-ai', 'w', 'ai-news', 0.5), member('ars-technica', 'a', 'other', 0.9), member('mit-tech-review', 'm', null, 0.9)];
+    expect(dneskaiEventCategory(reports, (item) => (item.relevance ?? 0) >= 0.85)).toBe('ai-project');
+    expect(dneskaiEventCategory(reports, () => false)).toBeNull();
+    expect(dneskaiEventCategory(reports.slice(3), all)).toBeNull();
+  });
+});
+
 type Rows = Array<{ candidate: unknown }>;
 /** A Supabase stand-in for the store: the candidate reads are answered by status, with `range` paging. */
 function storeDatabase(byStatus: Record<string, Rows>) {
@@ -199,6 +221,23 @@ describe('the collection store passes the grouping to marketing_dneskai_finish',
     expect(db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', { p_owner: 'owner', p_run: 'run', p_fence: 'fence', p_status: 'running', p_error: null });
   });
 
+  it('names each sent event\'s majority category over its eligible reports (SEL-10)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-20T20:00:00Z'));
+    try {
+      const { createDneskaiCollectionStore } = await import('@/lib/marketing/dneskai-store');
+      const title = 'Synthetic release of Model Nine weights for developers';
+      const r = report('github-ai-releases', 'cat-r', title, 0, { status: 'new', category: 'ai-project', relevance: 0.95 });
+      const v = report('the-verge', 'cat-v', title, 1, { status: 'new', category: 'ai-news', relevance: 0.88 });
+      const w = report('wired-ai', 'cat-w', title, 2, { status: 'new', category: 'ai-news', relevance: 0.87 });
+      // Below the relevance floor: not eligible, so it does not vote.
+      const x = report('ars-technica', 'cat-x', title, 3, { status: 'new', category: 'ai-project', relevance: 0.4 });
+      const y = report('mit-tech-review', 'cat-y', title, 4, { status: 'new', category: 'ai-project', relevance: 0.3 });
+      const { db } = storeDatabase({ new: [r, v, w, x, y].map((candidate) => ({ candidate })) });
+      await createDneskaiCollectionStore(db as never).finish('owner', 'run', 'fence', 'complete', null);
+      expect(db.rpc).toHaveBeenLastCalledWith('marketing_dneskai_finish', expect.objectContaining({ p_events: [expect.objectContaining({ anchorId: r.id, category: 'ai-news' })] }));
+    } finally { vi.useRealTimers(); }
+  });
   it('pages through the open reports and records a grouping that reached its read limit on the run', async () => {
     const { createDneskaiCollectionStore, DNESKAI_EVENT_READS } = await import('@/lib/marketing/dneskai-store');
     const limit = DNESKAI_EVENT_READS[0].limit;

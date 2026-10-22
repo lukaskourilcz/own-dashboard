@@ -75,6 +75,11 @@ function selectionRule(candidate: DneskaiCandidate, now: Date): SelectionRule {
   return 'eligible';
 }
 
+/** True when the nightly selection could lead an event with this report (the SQL `eligible` set, mirrored). */
+export function dneskaiSelectionEligible(candidate: DneskaiCandidate, now: Date): boolean {
+  return selectionRule(candidate, now) === 'eligible';
+}
+
 /**
  * Why an unselected event lost, from the stored candidates alone (read-only). The lead is the report the selection
  * would lead with: an eligible one first, then the most relevant. Held, duplicate and rejected events keep their

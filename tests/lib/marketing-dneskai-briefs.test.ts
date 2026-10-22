@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assignDneskaiBriefSlots, buildDneskaiBrief, createDneskaiBriefsWithStore, DneskaiBriefError, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, dneskaiSitewidePictures, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
+import { assignDneskaiBriefSlots, buildDneskaiBrief, dneskaiSuggestedFormat, DNESKAI_BRIEF_CAROUSEL_EVIDENCE_MIN, DNESKAI_BRIEF_SINGLE_TEXT_LIMIT, createDneskaiBriefsWithStore, DneskaiBriefError, dneskaiBriefGenerationRequest, dneskaiBriefRepeat, dneskaiBriefSlots, dneskaiSitewidePictures, DNESKAI_BRIEF_SLOTS, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 import { dneskaiBriefSourcePacket } from '@/lib/marketing/dneskai-brief-source';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
 import { dneskaiEventId, dneskaiEventMemberHash, dneskaiHeadlinesMatch } from '@/lib/marketing/dneskai-events';
@@ -68,6 +68,31 @@ describe('building a brief from an event', () => {
     if (!('brief' in outcome)) throw new Error(outcome.code);
     expect(outcome.brief).toMatchObject({ suggestedFormat: 'single-image', expiresAt: '2026-11-03T20:45:00.000Z' });
     expect(buildDneskaiBrief({ ...base, members: [{ candidate: report('openai-blog', 'long', 0), media: [] }] })).toMatchObject({ brief: { suggestedFormat: 'carousel', media: [] } });
+  });
+
+  it('decides the format from the evidence pack, not from the picture count (briefs-01)', () => {
+    const short = (id: string, sourceId = 'openai-blog') => report(sourceId, id, 0, `Synthetic short announcement ${id}. `.repeat(6).trim());
+    const lone = short('lone');
+    // A thin pack stays a single even with three usable pictures; pictures no longer upgrade it to a carousel.
+    expect(buildDneskaiBrief({ ...base, members: [{ candidate: lone, media: [asset(30, 0), asset(31, 1), asset(32, 2)] }] })).toMatchObject({ brief: { suggestedFormat: 'single-image' } });
+    // Several short reports of one event add up to a carousel pack with no picture or with one.
+    const crowd = [short('pack-a'), short('pack-b', 'techcrunch-ai'), short('pack-c', 'the-verge'), short('pack-d', 'wired-ai')];
+    expect(crowd.reduce((sum, item) => sum + item.text.trim().length, 0)).toBeGreaterThanOrEqual(DNESKAI_BRIEF_CAROUSEL_EVIDENCE_MIN);
+    expect(crowd.every((item) => item.text.trim().length < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT)).toBe(true);
+    const none = buildDneskaiBrief({ ...base, members: crowd.map((candidate) => ({ candidate, media: [] })) });
+    expect(none).toMatchObject({ brief: { suggestedFormat: 'carousel', media: [] } });
+    expect(buildDneskaiBrief({ ...base, members: crowd.map((candidate, index) => ({ candidate, media: index ? [] : [asset(33, 0)] })) })).toMatchObject({ brief: { suggestedFormat: 'carousel' } });
+    // The same text repeated by two reports counts once.
+    const twin = report('techcrunch-ai', 'twin', 10, lone.text);
+    expect(buildDneskaiBrief({ ...base, members: [{ candidate: lone, media: [] }, { candidate: twin, media: [] }] })).toMatchObject({ brief: { suggestedFormat: 'single-image' } });
+    expect(dneskaiSuggestedFormat([])).toBe('single-image');
+  });
+
+  it('counts fetched article text in brief/2 and only the feed text in a strict brief/1', () => {
+    const feed = report('openai-blog', 'article-pack', 0, 'Short feed text.');
+    const input = { ...base, memberHash: dneskaiEventMemberHash([feed]), members: [{ candidate: feed, articleText: 'Public article prose. '.repeat(40), media: [] }] };
+    expect(buildDneskaiBrief(input)).toMatchObject({ brief: { schemaVersion: 'dneskai-brief/2', suggestedFormat: 'carousel', media: [] } });
+    expect(buildDneskaiBrief({ ...input, richEvidence: false })).toMatchObject({ brief: { schemaVersion: 'dneskai-brief/1', suggestedFormat: 'single-image' } });
   });
 
   it('offers no purged picture and never repeats one picture twice', () => {

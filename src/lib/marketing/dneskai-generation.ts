@@ -439,9 +439,17 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer, gl
 }
 
 /**
- * The published caption: the model's text, then the sources with their links, the picture credits and the
- * hashtags, all written by code. Sources beyond the first are dropped before the caption may pass 2,200
- * characters; when the model's own text leaves no room for the first source, the caption is refused.
+ * The AI disclosure, word for word as the carousel's sources slide draws it (the vendored studio's Czech
+ * `FIXED_STRINGS.cs.disclosure`; a test ties the two). A single-image post has no sources slide, so its caption
+ * carries it instead (BRAND-02). It states how the post was made; it does not claim a legal requirement.
+ */
+export const DNESKAI_AI_DISCLOSURE = "Text připravil jazykový model z uvedených zdrojů. Výběr a schválení: redakce DNESKAi.";
+
+/**
+ * The published caption: the model's text, then the sources with their links, the picture credits, for a
+ * single-image post the AI disclosure, and the hashtags, all written by code. The length gate counts the whole
+ * tail, disclosure included: sources beyond the first are dropped before the caption may pass 2,200 characters;
+ * when the model's own text leaves no room for the first source and the disclosure, the caption is refused.
  */
 export function assembleDneskaiCaption(copy: DneskaiCopy, offer: DneskaiBriefOffer): { caption: string } | { issue: DneskaiCopyIssue } {
   const body = copy.caption.replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -451,11 +459,11 @@ export function assembleDneskaiCaption(copy: DneskaiCopy, offer: DneskaiBriefOff
   for (let count = sources.length; count >= 1; count -= 1) {
     const listed = sources.slice(0, count);
     const block = `${listed.length === 1 ? "Zdroj" : "Zdroje"}:\n${listed.map((item) => `${item.publisher}: ${item.url}`).join("\n")}`;
-    const caption = [body, block, ...(credits.length ? [credits.join(" · ")] : []), tags].join("\n\n");
+    const caption = [body, block, ...(credits.length ? [credits.join(" · ")] : []), ...(copy.format === "single-image" ? [DNESKAI_AI_DISCLOSURE] : []), tags].join("\n\n");
     if (caption.length <= DNESKAI_CAPTION_LIMIT) return { caption };
     if (count === 1) {
       const room = DNESKAI_CAPTION_LIMIT - (caption.length - body.length);
-      return { issue: issue("caption-too-long", null, "caption", `With its sources, credits and hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${Math.max(100, room)} characters.`) };
+      return { issue: issue("caption-too-long", null, "caption", `With its sources, credits${copy.format === "single-image" ? ", the AI disclosure" : ""} and hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${Math.max(100, room)} characters.`) };
     }
   }
   return { issue: issue("caption-sources-missing", null, "caption", "The brief has no source to cite.") };

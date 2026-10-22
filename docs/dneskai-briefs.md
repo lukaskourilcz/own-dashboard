@@ -82,6 +82,15 @@ událostech s podobnými titulky 1,47 s.
 - Událost vede její nejlepší způsobilá zpráva (dosavadní podmínky: kategorie mimo
   `other`, relevance ≥ 0,85, bez duplicity, bez důvodu vyřazení (`reason`), datum
   vyplněné, ne v budoucnosti a do 48 h u zpráv a do 30 dní jinak).
+- Kategorie události (SEL-10, připraveno 22. 10. 2026): většina mezi jejími způsobilými
+  zprávami; při shodě rozhodnou zprávy zdrojů tieru 0 a 1 (vydavatel, redakce), pak
+  nejrelevantnější zpráva. Spočítá ji `dneskaiEventCategory` při seskupení a pošle jako
+  volitelné `category` v `p_events`. Nasazená funkce klíč ignoruje a bere kategorii vedoucí
+  zprávy; teprve neaplikovaná migrace `20261022160000_dneskai_event_majority_category.sql`
+  ji použije, a jen když ji nese aspoň jedna způsobilá zpráva události. Vedoucí zpráva,
+  okno 48 h / 30 dní každé zprávy a pravidlo jedné události za kategorii se nemění;
+  `tool` a `ai-project` zůstávají dvě kategorie (to je volba vlastníka). Každá zpráva
+  dál ukazuje svůj vlastní štítek od Jeva.
 - Nejvýše čtyři události: nejdřív jedna za každou kategorii, pak podle relevance.
   Méně je v pořádku, nic se nedoplňuje.
 - Událost byla pokrytá dřív, když v ní je dříve vybraná zpráva, nebo Jev duplicita,
@@ -116,8 +125,15 @@ Pro každou událost v pořadí:
    vynechá se. `captionOnly` nese každý důkaz zvlášť.
 2. **Média**: `dneskaiOfferableMediaAssets` z #114, u každé zprávy v původním pořadí,
    hlavní zdroj první, bez opakování, nejvýše 20.
-3. **Formát**: `single-image`, když má hlavní zpráva méně než 400 znaků a nejvýše jeden
-   použitelný obrázek (v rámu nebo na celou plochu). Jinak `carousel`.
+3. **Formát** (`dneskaiSuggestedFormat`, briefs-01): rozhoduje balík důkazů, ne počet
+   obrázků. `single-image` jen pro tenký balík: hlavní zpráva má méně než 400 znaků
+   (`DNESKAI_BRIEF_SINGLE_TEXT_LIMIT`, spodní hranice pro textový single) a všechny
+   různé zprávy události dohromady méně než 800 znaků (`DNESKAI_BRIEF_CAROUSEL_EVIDENCE_MIN`).
+   Jinak `carousel`, i s jedním nebo žádným obrázkem: takový karusel stojí na
+   textových slidech (`statement`, u jednoho obrázku i `figure` nebo `split`) a generování
+   nikdy nepřidá obrázek, který zadání nenabízí. Za zprávu se počítá delší z textu z feedu
+   a textu článku; text článku se počítá jen v brief/2 (`DNESKAI_RICH_EVIDENCE_ENABLED`),
+   striktní brief/1 vidí jen text z feedu. Stejný text dvou zpráv se počítá jednou.
 4. **Platnost**: 48 hodin pro `ai-news` a `tech-news`, 14 dní pro `tool`,
    `ai-project` a `marketing`, počítáno od vytvoření zadání.
 5. **Čas**: `DNESKAI_BRIEF_SLOTS` = 08:00, 12:30, 17:00 a 20:00 Europe/Prague, přes
@@ -270,6 +286,6 @@ zadání nezmění.
 
 New briefs use `dneskai-brief/2`; the strict reader still accepts unmodified `dneskai-brief/1` snapshots. RSS projection prefers `content:encoded`, then content and the description fallback. During the existing public-page media read, the collector keeps up to 4,000 characters of sanitized article/main prose, plus bounded alt/figcaption metadata in the fixed image plan. Navigation, scripts, hidden text and instruction-shaped text do not become evidence. No extra request is made to obtain this text.
 
-The richer text travels through the owner-scoped media read into a new brief, its source packet and the bounded generation offer. Article text can satisfy the existing 400-character format threshold; source alt text is metadata, not a vision result or fact verification. The offer keeps the same evidence-size plans, source ordering and token/cost guards. Caption-only evidence never receives article prose or becomes a transcript. Historical briefs are not rewritten.
+The richer text travels through the owner-scoped media read into a new brief, its source packet and the bounded generation offer. Article text counts toward the format thresholds (400 characters for the primary report, 800 for the whole pack); source alt text is metadata, not a vision result or fact verification. The offer keeps the same evidence-size plans, source ordering and token/cost guards. Caption-only evidence never receives article prose or becomes a transcript. Historical briefs are not rewritten.
 
 The matching migrations are unapplied; production needs a separately approved release after migration-history reconciliation.

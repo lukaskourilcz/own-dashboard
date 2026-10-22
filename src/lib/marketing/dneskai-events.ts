@@ -294,11 +294,45 @@ export const DNESKAI_FINISH_EVENT_MEMBER_LIMIT = 300;
  * implicit). `keep` drops events that cannot be selected (no open report); over the limit the events with the
  * most recently collected member win, and an oversized event keeps its anchor and earliest members.
  */
-export function dneskaiFinishEvents<T extends DneskaiEventInput>(events: readonly DneskaiEvent<T>[], keep: (event: DneskaiEvent<T>) => boolean = () => true): Array<{ eventId: string; anchorId: string; memberIds: string[] }> {
+export function dneskaiFinishEvents<T extends DneskaiEventInput>(events: readonly DneskaiEvent<T>[], keep: (event: DneskaiEvent<T>) => boolean = () => true,
+  categoryOf: (event: DneskaiEvent<T>) => DneskaiEventCategory | null = () => null): Array<{ eventId: string; anchorId: string; memberIds: string[]; category?: DneskaiEventCategory }> {
   const latest = (event: DneskaiEvent<T>) => Math.max(...event.members.map((member) => Date.parse(member.fetchedAt)));
   const grouped = events.filter((event) => event.members.length > 1 && keep(event));
   const kept = grouped.length > DNESKAI_FINISH_EVENT_LIMIT ? [...grouped].sort((a, b) => latest(b) - latest(a)).slice(0, DNESKAI_FINISH_EVENT_LIMIT) : grouped;
-  return kept.map((event) => ({ eventId: event.eventId, anchorId: event.anchorId, memberIds: event.members.slice(0, DNESKAI_FINISH_EVENT_MEMBER_LIMIT).map((member) => member.id) }));
+  return kept.map((event) => {
+    const category = categoryOf(event);
+    return { eventId: event.eventId, anchorId: event.anchorId, memberIds: event.members.slice(0, DNESKAI_FINISH_EVENT_MEMBER_LIMIT).map((member) => member.id), ...(category ? { category } : {}) };
+  });
+}
+
+/** A category an event can be selected under: every Jev category except `other`. */
+export type DneskaiEventCategory = Exclude<NonNullable<DneskaiCandidate['category']>, 'other'>;
+type CategoryMember = Pick<DneskaiCandidate, 'id' | 'sourceId' | 'category' | 'relevance' | 'publishedAt'>;
+/**
+ * An event's category (SEL-10): the category most of its eligible reports carry. On a tie the reports of tier-0/1
+ * sources (publishers and newsrooms, not aggregators) decide; if they tie too, the most relevant eligible report
+ * among the tied categories decides (relevance, then the newer report, then the id, as the SQL picks its lead).
+ * Null when no report is eligible. Each report keeps its own Jev label for display; this only names the event.
+ * tool and ai-project stay separate categories: how they share the diversity rule is the owner's selection policy.
+ */
+export function dneskaiEventCategory<T extends CategoryMember>(members: readonly T[], eligible: (member: T) => boolean): DneskaiEventCategory | null {
+  const pool = members.filter((member) => member.category && member.category !== 'other' && eligible(member));
+  if (!pool.length) return null;
+  const counts = (items: readonly T[]) => {
+    const tally = new Map<DneskaiEventCategory, number>();
+    for (const item of items) tally.set(item.category as DneskaiEventCategory, (tally.get(item.category as DneskaiEventCategory) ?? 0) + 1);
+    return tally;
+  };
+  const leaders = (tally: Map<DneskaiEventCategory, number>, among: readonly DneskaiEventCategory[]) => {
+    const best = Math.max(0, ...among.map((category) => tally.get(category) ?? 0));
+    return among.filter((category) => (tally.get(category) ?? 0) === best);
+  };
+  let tied = leaders(counts(pool), [...counts(pool).keys()]);
+  if (tied.length > 1) tied = leaders(counts(pool.filter((member) => dneskaiSourceTier(member.sourceId) <= 1)), tied);
+  if (tied.length === 1) return tied[0]!;
+  const lead = pool.filter((member) => tied.includes(member.category as DneskaiEventCategory)).sort((a, b) => (b.relevance ?? -1) - (a.relevance ?? -1)
+    || Date.parse(b.publishedAt ?? '') - Date.parse(a.publishedAt ?? '') || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]!;
+  return lead.category as DneskaiEventCategory;
 }
 
 /** How directly a source reports an event (0 publisher, 1 newsroom, 2 aggregator) is a registry field (audit C6). */

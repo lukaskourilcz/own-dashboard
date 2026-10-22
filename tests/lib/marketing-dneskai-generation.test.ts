@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_BASE, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
+  DNESKAI_AI_DISCLOSURE, DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_CAPTION_LIMIT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_BASE, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
   assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues, dneskaiRetryFeedback,
   loadDneskaiGlyphFilter, normalizeDneskaiCopy, normalizeDneskaiHashtag, validateDneskaiCopy, type DneskaiCopy, type DneskaiGlyphFilter,
 } from "@/lib/marketing/dneskai-generation";
@@ -67,6 +67,24 @@ describe("marketing-copy/5 prompt (#116)", () => {
     const framed = offerFor({ media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })) });
     expect(framed.rules).toMatchObject({ firstSlide: "figure-or-statement", singleVariant: "type" });
     expect(offerFor({ media: [], suggestedFormat: "single-image" }).rules).toEqual({ formats: ["single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
+  });
+  it("lets a picture-less carousel brief use text slides only and never invents a picture (briefs-01)", () => {
+    const offer = offerFor({ media: [], suggestedFormat: "carousel" });
+    expect(offer.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
+    expect(offer.media).toEqual([]);
+    const statements: DneskaiCopy = { ...validCopy(pictures), slides: [
+      { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", body: "Rychlá akce Open Eyes je v aplikaci pro iOS i Android.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
+      { type: "statement", headline: "Zdarma jsou 2 použití, pak je potřeba předplatné.", images: [], alt: "Textový slide o tom, kolik funkce stojí." },
+      { type: "statement", variant: "ink", headline: "Jak funkce zvládá skupinové fotky, Adobe neuvedlo.", images: [], alt: "Textový slide o tom, co zůstává otevřené." },
+      { type: "statement", headline: "Účet @technology akci vyzkoušel na portrétu.", images: [], alt: "Textový slide o vyzkoušení funkce na Instagramu." },
+    ] };
+    expect(validateDneskaiCopy(statements, offer)).toEqual([]);
+    const deck = buildDneskaiDeck(statements, offer, glyphs);
+    expect(deck.slides.map((slide) => slide.type)).toEqual(["statement", "statement", "statement", "statement", "sources"]);
+    expect(deck.slides.every((slide) => slide.images.length === 0)).toBe(true);
+    // A picture the brief does not offer is refused, so a carousel never gains an invented picture.
+    const invented: DneskaiCopy = { ...statements, slides: [{ type: "figure", headline: "Rychlá akce Open Eyes", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide s obrázkem." }, ...statements.slides.slice(1)] };
+    expect(validateDneskaiCopy(invented, offer).map((entry) => entry.code)).toEqual(expect.arrayContaining(["unknown-asset", "first-slide-invalid"]));
   });
   it("names publishers from the registry in the worker and from the account or host without it", async () => {
     const evidence = briefFixture(pictures).evidence;
@@ -171,6 +189,48 @@ describe("deterministic gates before render", () => {
     expect(codes({ ...single, format: "carousel" })).toEqual(["-:single-in-carousel", "0:first-slide-invalid", "-:too-few-pictures"]);
     const few = validCopy(pictures); few.slides = [few.slides[0]!, few.slides[2]!];
     expect(codes(few)).toEqual(["-:too-few-pictures"]);
+  });
+});
+
+describe("the AI disclosure of a single-image caption (BRAND-02)", () => {
+  const singleCopy = (caption = validCopy(pictures).caption): DneskaiCopy => ({ ...validCopy(pictures), caption, format: "single-image", slides: [
+    { type: "single", variant: "photo", headline: "Lightroom na mobilu otevře zavřené oči", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide o nové funkci Lightroomu s obrázkem z článku The Verge." },
+  ] });
+  const tail = (caption: string) => caption.split("\n\n").slice(-2);
+  it("uses the exact wording of the carousel's sources slide", async () => {
+    const { readFileSync } = await import("node:fs");
+    const studio = readFileSync("vendor/carousel-studio/dist/dneskai-slide.js", "utf8");
+    expect(studio).toContain(`disclosure: ${JSON.stringify(DNESKAI_AI_DISCLOSURE)}`);
+  });
+  it("puts the disclosure before the hashtags of a single, and leaves the carousel caption as it was", () => {
+    const single = assembleDneskaiCaption(singleCopy(), offerFor());
+    if (!("caption" in single)) throw new Error("caption expected");
+    expect(tail(single.caption)).toEqual([DNESKAI_AI_DISCLOSURE, "#adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech #dneskai"]);
+    expect(single.caption.split("\n\n").at(-3)).toBe("Obrázek: The Verge");
+    const carousel = assembleDneskaiCaption(validCopy(pictures), offerFor());
+    if (!("caption" in carousel)) throw new Error("caption expected");
+    expect(carousel.caption).not.toContain(DNESKAI_AI_DISCLOSURE);
+  });
+  it("counts the disclosure in the 2,200-character gate: it drops sources first and refuses rather than cut it", () => {
+    const fits = (copy: DneskaiCopy) => { const result = assembleDneskaiCaption(copy, offerFor()); return "caption" in result ? result.caption : null; };
+    // The longest body with which the carousel keeps both sources (past the model's 1,500 so the gate is reached).
+    let size = DNESKAI_CAPTION_LIMIT;
+    while (size > 0 && !fits({ ...validCopy(pictures), caption: "a".repeat(size) })?.includes("Zdroje:")) size -= 1;
+    expect(size).toBeGreaterThan(1500);
+    // At the limit the single cannot carry two sources and the disclosure; it is refused rather than losing it.
+    expect("issue" in assembleDneskaiCaption(singleCopy("a".repeat(size)), offerFor())).toBe(true);
+    const body = "a".repeat(size - 30);
+    const carousel = fits({ ...validCopy(pictures), caption: body })!;
+    expect(carousel).toContain("Zdroje:\n");
+    const single = fits(singleCopy(body))!;
+    expect(carousel.length).toBeLessThanOrEqual(DNESKAI_CAPTION_LIMIT);
+    // The same body as a single makes room for the disclosure by citing one source, never by dropping it.
+    expect(single.length).toBeLessThanOrEqual(DNESKAI_CAPTION_LIMIT);
+    expect(single).toContain(DNESKAI_AI_DISCLOSURE);
+    expect(single).toContain("Zdroj:\n");
+    // A body that leaves no room for one source and the disclosure is refused with the room it has.
+    const refused = assembleDneskaiCaption(singleCopy("a".repeat(DNESKAI_CAPTION_LIMIT - 200)), offerFor());
+    expect("issue" in refused && refused.issue).toMatchObject({ code: "caption-too-long", detail: expect.stringContaining("the AI disclosure") });
   });
 });
 
