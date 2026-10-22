@@ -1,0 +1,1139 @@
+{
+  "subsystem": "review",
+  "summary": "The owner's review surface is four DNESKAi project tabs (Dnes ke schválení, Kalendář, Publikované, Chyby a náklady) plus Zdroje, all mounted in project-workspace.tsx, and one editor dialog opened from a post card. The review tab lists every undecided post as a card with its rendered JPEGs at most 8rem (128 px) wide, one approve button bound to the exact content hash, edit, return-with-note and skip. The editor (Radix dialog, three columns at >= 1024 px, one column below) edits only the written fields each template draws (counters against DNESKAI_TEXT_LIMITS), alt text, focal point and zoom 1-2 on the source photo, picture swap from the brief's pool, removal and reorder of slides, caption, Prague time (at most 6 days ahead) and account. Saving posts an `edit` to /api/marketing/revisions, which saves a new unready revision, supersedes the old one, renders synchronously under a 45 s abort inside a 60 s function, and returns; the owner then sees the new slides and approves the new hash. The brief's section 2.6 matches the code. The largest gaps for the owner's goals: no large or true-scale view of the rendered slides anywhere (the editor shows them even smaller, 80-96 px), the real crop appears only after a save-and-render round trip, returned posts never regenerate (the note is stored but read by nothing except optional LangSmith feedback, while the UI says it helps the next draft), no batch approve, no keyboard flow beyond the focal picker, no reminder (an in-app notifications table exists but marketing never writes to it), and no URL deep link to the review tab. Estimated owner time: about 1-1.5 min for a post approved as generated and 2.5-4 min for a post with one text edit and one crop fix, so 4 posts take roughly 7-18 min against the 10-minute target. Components, pure editor functions, the read model, the demo port, i18n and the axe e2e harness are solid and reusable for the Design Lab; the card list and the dialog editor are what to replace.",
+  "files": [
+    {
+      "path": "own-dashboard/src/components/projects/project-workspace.tsx",
+      "role": "Mounts the DNESKAi tabs after Overview; tab state is local useState defaulting to overview"
+    },
+    {
+      "path": "own-dashboard/src/lib/project-workspace-tabs.ts",
+      "role": "DNESKAI_WORKSPACE_TAB_ORDER: review, calendar, sources, published, costs"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/workspace.tsx",
+      "role": "Tab router and React Query reads (review read shared by Today/Calendar/Published; costs separate); 30 s poll only while a render is awaited"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx",
+      "role": "Dnes ke schválení: post cards, approve/edit/return/skip, drafting jobs, decided list"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+      "role": "Editor dialog: slide list with dnd-kit reorder, fields with counters, focal/zoom, swap tray, caption/time/account, save and approve"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/slide-strip.tsx",
+      "role": "Rendered JPEG thumbnails (card grid up to 8rem, compact editor row 5-6rem); reports when all loaded"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/focal-picker.tsx",
+      "role": "Focal dot on the source photo, arrow keys 2 %, zoom range 1-2"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/media-tray.tsx",
+      "role": "Brief media pool with credit, resolution, fit warning, choose"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/calendar-tab.tsx",
+      "role": "Seven read-only day cards with slots and states"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/published-tab.tsx",
+      "role": "Receipts with permalink, no metrics"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/costs-tab.tsx",
+      "role": "Spend vs ceiling, runs, jobs, publications, ticks"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/render-problems.tsx",
+      "role": "Lists render report problems per slide/field"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/state-chip.tsx",
+      "role": "State badge"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai/code-text.tsx",
+      "role": "Code-to-text explanation and details disclosure"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai-sources.tsx",
+      "role": "Zdroje: collection view with a link back to review"
+    },
+    {
+      "path": "own-dashboard/src/components/marketing/dneskai-instagram-account.tsx",
+      "role": "@dneskai verify button and publishing switch"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-workspace.ts",
+      "role": "Browser-safe read model schemas, post state machine, review queue, calendar days"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts",
+      "role": "Server read: 150 newest revisions, 60 posts, briefs, publications, field limits"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-workspace-client.ts",
+      "role": "Fetch port (live or in-memory demo): loadReview, loadCosts, loadMedia, approve, edit, decide"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts",
+      "role": "Pure draft functions: text, crop, swap, remove, move, draftProblems, edit request"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+      "role": "Server: edit schema, applyDneskaiDeckEdit, prepare (assets cleared), renderAndAttach"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+      "role": "POST approve | returned/skipped | edit (synchronous render, 45 s abort, maxDuration 60)"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/dneskai/review/route.ts",
+      "role": "GET review read"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/dneskai/media/route.ts",
+      "role": "GET media pool per candidate with one-hour signed previews"
+    },
+    {
+      "path": "own-dashboard/src/app/api/marketing/dneskai/costs/route.ts",
+      "role": "GET costs read"
+    },
+    {
+      "path": "own-dashboard/src/lib/i18n/sections/dneskai-workspace.ts",
+      "role": "EN/CS strings (169 lines)"
+    },
+    {
+      "path": "own-dashboard/src/lib/demo/dneskai-workspace-demo.ts",
+      "role": "In-memory demo port for /dev-preview; edits never render"
+    },
+    {
+      "path": "own-dashboard/scripts/dneskai-preview-fixtures.mjs",
+      "role": "Builds 360x450 demo slide JPEGs and 480 px photo previews"
+    },
+    {
+      "path": "own-dashboard/e2e/dneskai-workspace.spec.ts",
+      "role": "7 Playwright tests incl. axe WCAG 2.2 AA at 360-1280 px"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-workspace.test.ts",
+      "role": "11 unit tests of the read model"
+    },
+    {
+      "path": "own-dashboard/docs/design/design-system.md",
+      "role": "Design contract: split panes, panes stack < 1024 px, 44 px targets, no excessive card grids"
+    },
+    {
+      "path": "dneskai-audit-handoff/design-lab/design-lab-spec.md",
+      "role": "Draft Design Lab UX spec (handoff, not in repo)"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "DNESKAi tabs sit right after Overview in the order review, calendar, sources, published, costs; each can be hidden in Settings. There is no Editor tab: the editor is a dialog.",
+      "evidence": "own-dashboard/src/lib/project-workspace-tabs.ts:42-48 `DNESKAI_WORKSPACE_TAB_ORDER = [\"dneskai-review\",\"dneskai-calendar\",\"sources\",\"dneskai-published\",\"dneskai-costs\"]`; src/components/projects/project-workspace.tsx:218-222; :267 `<DneskaiWorkspaceTab tab={tab} .../>`; post-editor.tsx:67 `<Dialog open={open} ...>`"
+    },
+    {
+      "fact": "Today, Calendar and Published share one review read (GET /api/marketing/dneskai/review, staleTime 30 s, no refetch on focus); Errors and costs reads /dneskai/costs plus the review read. The review read is polled every 30 s only while a post awaits its render.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/workspace.tsx:16 `staleTime: 30_000, retry: false, refetchOnWindowFocus: false`; :18 `AWAITING_RENDER_POLL_MS = 30_000`; :22 refetchInterval; :46"
+    },
+    {
+      "fact": "The review read takes the 150 newest non-superseded DNESKAi revisions and keeps up to 60 posts: undecided first, then the next 7 days, then 30 days of receipts.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts:70-73 doc comment; :81 `.neq('status','superseded').order('created_at',{ascending:false}).limit(REVISION_READ_LIMIT)`; :92-93 rank tiers"
+    },
+    {
+      "fact": "Review card: header with title, Prague time, @handle and slide count; the slide strip of rendered JPEGs; render problems; caption and sources in <details>; revision id, hash, trace, template and asset sha256s in a details disclosure; footer buttons Approve (with 7-char hash), Edit, Return, Skip.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx:154-202; :182-187"
+    },
+    {
+      "fact": "Thumbnails in the card are a 3-column grid on phones and auto-fill columns between 5.5rem and 8rem (88-128 px) from the sm breakpoint; image sizes hint 9rem. In the editor the strip is one row of 5rem/6rem (80/96 px) slides, and the slide list rows show 32x40 px thumbnails.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/slide-strip.tsx:31 `grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,8rem))]` and compact `[&>li]:w-20 ... sm:[&>li]:w-24`; :37 `sizes=\"9rem\"`; post-editor.tsx:274 `className=\"h-10 w-8 ...\"`"
+    },
+    {
+      "fact": "Approve sends the post id and its exact contentHash; the SQL approve refuses on hash change, not-ready, render blocked, unverified account and a schedule at or before now.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx:61 `.approve(post.id, post.contentHash)`; src/app/api/marketing/revisions/route.ts:16 `expectedHash:z.string().regex(/^[a-f0-9]{64}$/)`; :22 approvalReasons; supabase/migrations/20261020140000_marketing_revision_media_identity.sql:115 `if (r.revision->>'scheduledAt')::timestamptz<=now() then raise exception 'schedule expired'`"
+    },
+    {
+      "fact": "Approve is disabled until status is review, the render is clean and attached, the revision is ready, a verified account matches, and every slide image has loaded in the browser.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx:34-44 dneskaiApprovalBlock; :42 `if (!loaded) return t.blockedImages;`"
+    },
+    {
+      "fact": "Editor fields: only the written fields the slide's template draws (headline, body, kicker, credit) with code-point counters against per-template limits, alt text (max 1000) in a disclosure, caption (max 2200), datetime-local Prague time, account select (unverified disabled), source links.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts:32-36 dneskaiSlideFieldLimits; src/lib/marketing/dneskai-generation.ts:39-47 DNESKAI_TEXT_LIMITS (e.g. cover headline 110, kicker 56); post-editor.tsx:289; :212; :219; :222; :227-231"
+    },
+    {
+      "fact": "The focal picker shows the source photo preview (from the media route) with a dot; click sets it, arrows move 2 %, Home centres; zoom is a 1-2 range in 0.05 steps. The rendered crop is not drawn.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/focal-picker.tsx:26-30; :36 `min={DNESKAI_ZOOM.min} max={DNESKAI_ZOOM.max}`; src/lib/marketing/dneskai-deck-editor.ts:13 `DNESKAI_ZOOM = { min: 1, max: 2, step: 0.05 }`; :15 focal step 0.02; post-editor.tsx:201 `src={previews.get(image.assetSha256) ?? null}`"
+    },
+    {
+      "fact": "Picture swap offers only the brief's media pool in evidence order; the server refuses any image outside the brief's pool (plus pictures the deck already places). The swapped crop resets to centre.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts:210-213 orderedMediaPool; :101 crop focal 0.5/0.5; src/lib/marketing/dneskai-revision-edit.ts:74-75 `if (dneskaiDeckAssetHashes(deck).some((sha256) => !pool.has(sha256))) return fail(\"deck-asset-outside-brief\")`; src/lib/marketing/dneskai-wiring.ts:25-28"
+    },
+    {
+      "fact": "Slides can be reordered (drag handle, up/down buttons, keyboard sensor) and removed down to 2 (carousel) or 1 (single); nothing adds a slide.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx:120 sensors; :122 `const minimum = post.deck?.format === 'single-image' ? 1 : 2;`; :278-280 up/down/remove buttons; src/lib/marketing/dneskai-deck-editor.ts:115-124"
+    },
+    {
+      "fact": "The server edit accepts only text, credit, alt and images of existing slots; slide type, variant and sources stay as generated, and changing the set of slots fails.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts:13-16 doc comment; :17-25 DneskaiSlideEditSchema; :51-52 `deck-edit-slots-changed`"
+    },
+    {
+      "fact": "Save path: POST edit -> schedule must be in (now, now + 6 days] -> prepare edit with assets [] -> saveRevision supersedes the old revision (approval and queued publication cleared) -> renderAndAttachDneskaiRevision with AbortSignal.timeout(45000) in a route with maxDuration 60 -> 502 render-attach-failed if attach fails; the new unready version is then shown as a problem after a 2-minute grace.",
+      "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:14 `maxDuration=60`; :41 `scheduled>Date.now()+6*86400000`; :56; :62 `saveRevision(admin,user.id,revision,{replacesId:input.id,slides:[]})`; :64 `signal:AbortSignal.timeout(45000)`; :65; src/lib/marketing/dneskai-revision-edit.ts:77 `assets: []`; supabase/migrations/20261012225640_marketing_control_surface.sql:285-286 supersede (update status superseded, cancel queued publication); src/lib/marketing/dneskai-workspace.ts:120 `DNESKAI_RENDER_ATTACH_GRACE_MS = 2 * 60_000`"
+    },
+    {
+      "fact": "Unchanged slides are not re-rendered: the renderer looks up each slide's render key in storage first.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-render.ts:353 `const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))))`; :362 cache hit"
+    },
+    {
+      "fact": "Return needs a note (max 2000); it sets status returned, clears approval, cancels the queued publication and logs an event. Skip asks for confirmation inline.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx:190-200; supabase/migrations/20261012225640_marketing_control_surface.sql:185-196 marketing_decide_revision"
+    },
+    {
+      "fact": "Calendar: 7 Prague days of fixed slots (08:00, 12:30, 17:00, 20:00) with post/job states, DST notice and permalink when published; read-only. Published: receipts, permalink, no metrics. Zdroje: collection view, verify button and publishing switch.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/calendar-tab.tsx:14-37; src/lib/marketing/dneskai-workspace.ts:211-234 dneskaiCalendarDays; published-tab.tsx:32; dneskai-instagram-account.tsx:22,66-81"
+    },
+    {
+      "fact": "Mobile: the editor dialog is near full width (calc(100%-1rem), max 94dvh) and its three columns stack into one below lg (1024 px); targets are 44 px (min-h-11) on touch, 24-32 px from md.",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx:68 `max-h-[94dvh] w-[calc(100%-1rem)] max-w-6xl`; :176 `lg:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)_minmax(0,18rem)]`; :267 `size-11 md:size-8`"
+    },
+    {
+      "fact": "Accessibility is tested: axe (wcag2a/aa, 21a/aa, 22aa) on the review tab in cs and en, on the open editor, and on every tab at 360 px, plus reflow checks at 360/430/768/1280 px; Playwright runs desktop (1440x900) and mobile (Pixel 5) projects.",
+      "evidence": "own-dashboard/e2e/dneskai-workspace.spec.ts:7 AXE_TAGS; :51; :200; :208-221; own-dashboard/playwright.config.ts:29-30"
+    },
+    {
+      "fact": "The /dev-preview workspace runs on an in-memory demo port that never renders: an edit keeps the old slide JPEGs. Fixture slides are real studio renders downscaled to 360x450.",
+      "evidence": "own-dashboard/src/lib/demo/dneskai-workspace-demo.ts:12-15; own-dashboard/scripts/dneskai-preview-fixtures.mjs:97 `.resize({ width: 360 })`; :103 `width: 360, height: 450`"
+    },
+    {
+      "fact": "Owner decisions also go to LangSmith as feedback scores (approved 1, approved after edits 0.5, returned 0, skipped 0) only when MARKETING_LANGSMITH_ENABLED and the EU endpoint are set; it never gates the action.",
+      "evidence": "own-dashboard/src/lib/marketing/owner-feedback.ts:40-47"
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "Card thumbnail width",
+      "value": "88-128 px (5.5-8rem) from sm; 3 columns on phones",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/slide-strip.tsx:31"
+    },
+    {
+      "name": "Editor strip thumbnail width",
+      "value": "80 px, 96 px from sm",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/slide-strip.tsx:31 `[&>li]:w-20 ... sm:[&>li]:w-24`"
+    },
+    {
+      "name": "Edit render abort",
+      "value": "45 s, route maxDuration 60 s",
+      "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:14, :64"
+    },
+    {
+      "name": "Render attach grace before a version reads as failed",
+      "value": "2 min",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-workspace.ts:120"
+    },
+    {
+      "name": "Awaiting-render poll",
+      "value": "30 s",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/workspace.tsx:18"
+    },
+    {
+      "name": "Edited schedule window",
+      "value": "after now, at most 6 days ahead",
+      "evidence": "own-dashboard/src/app/api/marketing/revisions/route.ts:41"
+    },
+    {
+      "name": "Zoom",
+      "value": "1-2, step 0.05",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts:13"
+    },
+    {
+      "name": "Focal keyboard step",
+      "value": "2 %",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts:15"
+    },
+    {
+      "name": "Caption max",
+      "value": "2,200 characters",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts:12; revisions/route.ts:19"
+    },
+    {
+      "name": "Return note max",
+      "value": "2,000 characters, required",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx:192"
+    },
+    {
+      "name": "Slides after removal",
+      "value": ">= 2 carousel, exactly 1 single; <= 10",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx:122; src/lib/marketing/dneskai-revision-edit.ts:57-58"
+    },
+    {
+      "name": "Per-template text ceilings",
+      "value": "cover headline 110 / kicker 56 / credit 80; figure body 260; split body 330; statement headline 170 body 240; single-photo body 100",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:39-47"
+    },
+    {
+      "name": "Media pool previews loaded per editor open",
+      "value": "up to 8 candidates, 30 min stale time, one-hour signed links",
+      "evidence": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx:101-105; src/app/api/marketing/dneskai/media/route.ts:8-11"
+    },
+    {
+      "name": "Review read size",
+      "value": "150 revisions read, 60 posts, 20 jobs",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-workspace-read.ts:70-73; src/lib/marketing/dneskai-workspace.ts:95-96"
+    }
+  ],
+  "measurements": [
+    {
+      "what": "Displayed scale of a 1080x1350 slide in the review card",
+      "value": "<= 128/1080 = 11.9 % (body text set at roughly 30-40 px renders at about 4-5 px)",
+      "method": "Static: max column width 8rem from slide-strip.tsx:31 at 16 px root; text size range is an assumption",
+      "kind": "estimated"
+    },
+    {
+      "what": "Displayed scale in the editor strip",
+      "value": "80/1080 = 7.4 % on phones, 96/1080 = 8.9 % from sm",
+      "method": "Static from slide-strip.tsx:31",
+      "kind": "measured"
+    },
+    {
+      "what": "Render time of a 7-slide deck on an Apple M2, vendored studio",
+      "value": "0.72 s cold, 0.52 s warm (cover slide 294 ms cold, 161 ms warm); whole process 2.72 s",
+      "method": "dneskai-audit-handoff/measurements/bench-render-run1.json and bench-render-run1.time (earlier reader, local machine, not Vercel)",
+      "kind": "measured"
+    },
+    {
+      "what": "Wait after 'Uložit a vykreslit' in production",
+      "value": "about 3-10 s (render of changed slides only + source media download + JPEG upload + attach RPC + review refetch + 7 JPEG loads), worst case 45 s abort",
+      "method": "Estimate from the local render timing plus the steps in revisions/route.ts:56-67 and dneskai-render.ts:353-362; nothing has rendered in production (0 revisions)",
+      "kind": "estimated"
+    },
+    {
+      "what": "Clicks for one post, approve as generated (project already open)",
+      "value": "2 (tab, approve) after the slides load; plus 2 to reach the project from the sidebar",
+      "method": "Count from review-tab.tsx:182 and project-workspace.tsx:147 (tab defaults to overview)",
+      "kind": "measured"
+    },
+    {
+      "what": "Clicks for one post with one headline edit and one focal move",
+      "value": "6: tab, Edit (or a thumbnail), headline field, click on photo, Uložit a vykreslit, Schválit in the editor; plus typing. Seeing a slide larger than 128 px needs leaving the app (open image in new tab), about 2 clicks per slide",
+      "method": "Count from review-tab.tsx:185, post-editor.tsx:193, focal-picker.tsx:26, post-editor.tsx:249-251",
+      "kind": "measured"
+    },
+    {
+      "what": "Network round trips for that edited post",
+      "value": "about 4 API calls to own routes (GET review, POST edit, GET review, POST approve, then GET review) plus 1-8 GET media and roughly 14 signed JPEG loads",
+      "method": "Static trace through workspace-client.ts:66-83, post-editor.tsx:102-105, 142-147 and review-tab.tsx:53-63",
+      "kind": "estimated"
+    },
+    {
+      "what": "Owner minutes per post",
+      "value": "about 1-1.5 min approved as generated; 2.5-4 min with one text edit and one crop fix (a second crop attempt adds about 45 s) [verifier: 1.5-2.5 min if each slide is checked at full size outside the app; 3-5 min with one text edit and one crop fix]",
+      "method": "Assumptions: 30-60 s to scan 7 thumbnails and open caption/sources; 30 s to edit a headline; 15 s to set focal; 3-10 s save wait; 20-40 s to re-check; 50 % chance of a second crop round; 3 s approve",
+      "kind": "estimated"
+    },
+    {
+      "what": "Owner minutes per day for 4 posts",
+      "value": "about 7-11 min when 2 of 4 posts need an edit; 12-18 min when all 4 do; target is under 10 [verifier re-derivation: about 9-15 min when half need edits, 13-20 min when all do, including full-size checks outside the app]",
+      "method": "4 x per-post estimate above plus about 20 s navigation",
+      "kind": "estimated"
+    },
+    {
+      "what": "Size of the review surface",
+      "value": "3,083 lines across 27 files (components, read model, editor, routes, i18n, tests, e2e, fixtures)",
+      "method": "wc -l over the files listed in the reader prompt",
+      "kind": "measured"
+    },
+    {
+      "what": "Tests covering the surface",
+      "value": "11 unit tests in marketing-dneskai-workspace.test.ts; 7 Playwright tests in dneskai-workspace.spec.ts (one runs per language); not run here (worktree has no node_modules)",
+      "method": "grep -cE for it/test declarations",
+      "kind": "measured"
+    }
+  ],
+  "findings": [
+    {
+      "id": "review-01",
+      "title": "No large view of the rendered slides anywhere: the owner approves exact bytes seen at 7-12 % scale",
+      "category": "quality",
+      "claim": "The only views of the rendered JPEGs are the card grid (at most 8rem = 128 px wide), the editor strip (80/96 px) and 32x40 px slide-list thumbnails. Thumbnails are not links and nothing opens a slide at full or phone size; there is no phone frame and no profile-grid preview. On a phone the card shows three columns.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/slide-strip.tsx",
+          "line": 31,
+          "excerpt": "grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,8rem))]"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/slide-strip.tsx",
+          "line": 45,
+          "excerpt": "<button type=\"button\" onClick={() => onOpenSlide(index)} ... — opens the editor, not a large view"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 274,
+          "excerpt": "className=\"h-10 w-8 shrink-0 rounded-sm border border-border object-cover\""
+        },
+        {
+          "file": "own-dashboard/src/lib/i18n/sections/dneskai-workspace.ts",
+          "line": 29,
+          "excerpt": "blockedImages: 'Approval waits until every slide has loaded, so you approve what you saw.'"
+        }
+      ],
+      "impact": {
+        "statement": "Body text, credits, Czech diacritics and crop faces cannot be judged at 128 px, so either errors ship under an approval that claims 'you approve what you saw', or the owner leaves the app to open each JPEG (about 14 extra clicks per 7-slide post).",
+        "keep": true,
+        "reason": "Approving bytes the owner cannot read at real size defeats the exact-bytes rule; a minimal full-size slide dialog over the existing assets is under a day and the Lab stage builds on it.",
+        "impactScore": 5,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 5,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Make the Design Lab stage the default: one slide at true phone scale (1080x1350 shown at 390-430 px CSS width) with a full-deck strip and the 3:4 grid preview, keyboard left/right. Reuse DneskaiSlideStrip (compact) as the strip; the JPEG URLs already exist.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "slide-strip.tsx:31 grid caps columns at 8rem (128 px); :30 compact strip 80/96 px; post-editor.tsx:274 32x40 thumbs; slide-strip.tsx:45 thumbnail button calls onOpenSlide, which review-tab.tsx:163 wires to onEdit. grep over src/components/marketing/dneskai for lightbox/fullscreen/phone/window.open finds no large view; the only target=_blank links are evidence and permalinks.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-02",
+      "title": "The focal point is set on the uncropped source photo; the real crop is visible only after save and re-render",
+      "category": "speed",
+      "claim": "DneskaiFocalPicker draws the source preview with a dot and a zoom slider; it does not draw the template's crop window. The crop appears only after 'Uložit a vykreslit' creates a new revision and the renderer returns.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/focal-picker.tsx",
+          "line": 28,
+          "excerpt": "<Image unoptimized src={src} alt=\"\" width={width} height={height} ... />"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/focal-picker.tsx",
+          "line": 29,
+          "excerpt": "<span aria-hidden className=\"pointer-events-none absolute size-5 ... rounded-full ...\" style={{ left: `${focal.x * 100}%`, top: `${focal.y * 100}%` }} />"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 201,
+          "excerpt": "<DneskaiFocalPicker ... src={previews.get(image.assetSha256) ?? null} ..."
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 64,
+          "excerpt": "rendered=await renderAndAttachDneskaiRevision(...,{...,signal:AbortSignal.timeout(45000)})"
+        }
+      ],
+      "impact": {
+        "statement": "Every crop attempt is a save, a wait of several seconds, a new revision and a look at an 80-96 px thumbnail; one or two retries add 30-90 s per post and pile up superseded revisions.",
+        "keep": true,
+        "reason": "Crop retries through save-render-reapprove are the slowest edit loop; a client-side crop window from the template geometry removes it.",
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Draw the crop rectangle for the slot's aspect (from the template geometry the studio exports) over the source photo, and in the Lab render a preview of the changed slide on demand without saving (a dry-run render endpoint or the studio in a worker); save only on approve-intent.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "focal-picker.tsx:22-31 draws the full source image (h-auto w-full) and a dot only; no crop rectangle or aspect window; post-editor.tsx:201 passes the brief media preview, not a render. DNESKAI_ZOOM {min:1,max:2} at dneskai-deck-editor.ts:13. Real crop appears only via save -> revisions/route.ts:64 render (45 s abort).",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-03",
+      "title": "Every edit, including caption-only and time-only, saves a new version and re-renders synchronously inside the request",
+      "category": "speed",
+      "claim": "For any revision with a deck, the edit route always goes through prepareDneskaiRevisionEdit, which clears assets, saves a new unready revision that supersedes the old one, and renders and attaches within the same POST (45 s abort, 60 s function). A time-only or caption-only change therefore also re-renders (cache hits keep it cheap) and can end in 502 render-attach-failed, leaving an unready version that reads as a problem after a 2-minute grace.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 50,
+          "excerpt": "if(current.deck){"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+          "line": 77,
+          "excerpt": "return parseContentRevision({ ...original, caption: input.caption, scheduledAt: input.scheduledAt, account, deck, assets: [] });"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 62,
+          "excerpt": "const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:[]});"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 65,
+          "excerpt": "catch{return NextResponse.json({id:saved.id,ready:false,error:'render-attach-failed'},{status:502});}"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-workspace.ts",
+          "line": 120,
+          "excerpt": "export const DNESKAI_RENDER_ATTACH_GRACE_MS = 2 * 60_000;"
+        }
+      ],
+      "impact": {
+        "statement": "Seconds of waiting per change and a failure mode (unready version, 'Vykreslit znovu') on edits that do not touch pixels; the new approval is required anyway because the hash covers caption and schedule, but the re-render is not.",
+        "keep": true,
+        "reason": "Real but small: cached re-renders are cheap; worth folding into the Lab's save path rather than fixing alone.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "When the deck is unchanged, carry the old assets (sha256s unchanged) into the new revision and skip the render; keep the new hash and new approval. Move pixel-changing renders off the request path in the Lab (render job or tick unit) with the editor polling.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "revisions/route.ts:50 branches on current.deck regardless of what changed; :58 prepareDneskaiRevisionEdit -> dneskai-revision-edit.ts:77 assets: []; :62 saveRevision replacesId supersedes; :64 render with AbortSignal.timeout(45000); :65 502 render-attach-failed; maxDuration=60 at :14. post-editor.tsx:114 'dirty' is true for caption/schedule-only changes, so those also take this path.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-04",
+      "title": "'Vrátit k úpravě' is a dead end: nothing regenerates, the note is read by nothing, and the event counts as covered",
+      "category": "quality",
+      "claim": "Return sets status returned and stores the note. A returned revision stays in the review queue but cannot be approved (status must be review); the only way forward is an edit with a real change, which saves a new review revision. No code regenerates from the note: generation reads no owner feedback, and the brief step treats a returned revision as covering the event, so no new brief or job appears. The note reaches LangSmith only when tracing is enabled (off in production).",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+          "line": 194,
+          "excerpt": "update public.marketing_revisions set status=p_action,approved_at=null,approved_hash=null,feedback=left(p_feedback,2000) where id=r.id;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-workspace.ts",
+          "line": 183,
+          "excerpt": "return post.status === 'review' || post.status === 'returned';"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 37,
+          "excerpt": "if (post.status !== 'review') return t.blockedStatus;"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 139,
+          "excerpt": "if ((!dirty && !rerender) || !request) { setNotice(t.editor.unchanged); return; }"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+          "line": 50,
+          "excerpt": "export const DNESKAI_COVERING_REVISION_STATUSES = ['review', 'approved', 'publishing', 'published', 'reconciliation', 'returned', 'skipped'] as const;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/owner-feedback.ts",
+          "line": 47,
+          "excerpt": "if(!value.traceId||env.MARKETING_LANGSMITH_ENABLED!=='true'||...)return false;"
+        }
+      ],
+      "impact": {
+        "statement": "A post the owner does not like costs manual rewriting or a lost slot; the most natural action ('return with a note') produces nothing, and the owner's notes are not used to improve the next drafts.",
+        "keep": true,
+        "reason": "The natural 'return with a note' action yields nothing, so bad drafts cost manual rewrites or lost slots.",
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Whether to add a paid 'regenerate with my note' action, and how it counts against the $0.25 reservation, the $1/24 h ceiling and the 8 jobs/24 h cap."
+      },
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Add 'Přegenerovat s mou poznámkou': a new generation job for the same brief with the note as a bounded, hash-logged instruction, cost shown (about $0.02, reserved $0.25) and explicit owner opt-in under the existing ceilings (owner decision if more headroom is needed). Until then, change the return copy (review-05).",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Confirmed: control_surface.sql:194 stores feedback; dneskai-workspace.ts:183 keeps returned in the queue; post-editor.tsx:37 blocks approve unless status review; :139 refuses an unchanged save; replace of a returned revision is allowed (control_surface.sql:283 excludes only publishing/published/reconciliation/superseded); dneskai-briefs.ts:50 and :402 count returned revisions as coverage; no generation code reads the note (grep feedback in dneskai-generation.ts/generation.ts finds only validation-retry feedback). Wrong detail: the note never reaches LangSmith even with tracing on: revisions/route.ts:72 passes only traceId, revisionId, hash and decision, and owner-feedback.ts:47-60 records a score (returned = 0), never the text.",
+        "correctedLocations": [],
+        "correctedClaim": "Return stores the note on the revision and logs a returned decision (score 0 to LangSmith only when tracing is enabled; the note text never leaves the database). Nothing regenerates or reads the note, the returned revision cannot be approved, a real edit is the only way forward, and the brief step treats the returned revision as covering the event for 14 days, so no new brief or job appears."
+      }
+    },
+    {
+      "id": "review-05",
+      "title": "Return copy promises the note 'helps the next draft', which no code does",
+      "category": "doc-drift",
+      "claim": "The return form's help text says the note is saved and helps the next draft. The note is stored on the revision and logged as an event; generation does not read it (the only feedback in generation.ts is validation-retry feedback).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/i18n/sections/dneskai-workspace.ts",
+          "line": 27,
+          "excerpt": "feedbackHelp: 'Required. The note is saved with the decision and helps the next draft.'"
+        },
+        {
+          "file": "own-dashboard/src/lib/i18n/sections/dneskai-workspace.ts",
+          "line": 108,
+          "excerpt": "feedbackHelp: 'Povinné. Poznámka se uloží k rozhodnutí a pomůže dalšímu návrhu.'"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 24,
+          "excerpt": "`\\nValidation feedback for this same authored source: ...` (the only feedback generation reads)"
+        }
+      ],
+      "impact": {
+        "statement": "The owner expects a better redraft after returning a post and gets nothing; trust in the UI drops.",
+        "keep": true,
+        "reason": "One-line copy fix that stops a false promise; ship with or before review-04.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Reword to what happens today ('Poznámka se uloží; příspěvek se nepřegeneruje, upravte ho v editoru nebo přeskočte') until regeneration exists.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "i18n dneskai-workspace.ts:27 and :108 promise the note helps the next draft; generation.ts:24 is the only feedback generation reads (validation codes); owner-feedback.ts sends no note text either (route.ts:72). Nothing consumes the note.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-06",
+      "title": "No batch approve: one request, one card, one hash at a time",
+      "category": "speed",
+      "claim": "Each card has its own approve button; the client approve sends one id and one expectedHash; the route accepts a single approve action. There is no 'approve the day'.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx",
+          "line": 94,
+          "excerpt": "queue.posts.map((post) => <PostCard ... onApprove={() => void approve(post)} .../>)"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-workspace-client.ts",
+          "line": 77,
+          "excerpt": "async approve(id, expectedHash) { await post({ action: 'approve', id, expectedHash }); },"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 16,
+          "excerpt": "z.strictObject({action:z.literal('approve'),id:z.uuid(),expectedHash:...})"
+        }
+      ],
+      "impact": {
+        "statement": "Small per post (about 5 s and a scroll), but it forces the owner through each card in a long list; matters once posts are good enough to approve as generated.",
+        "keep": true,
+        "reason": "An 'approve the day' that loops the existing per-hash approve is cheap and directly serves the 10-minute target once drafts are good.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Add a batch action that takes [{id, expectedHash}] and calls marketing_approve_revision per item in one transaction, reporting per-post refusals; the confirmation lists each short hash so every exact revision is still bound.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "review-tab.tsx:94 one PostCard per post, each with its own approve; dneskai-workspace-client.ts:77 approve(id, expectedHash); revisions/route.ts:16 schema accepts one id. grep for approveAll/batch/'approve all' in marketing components, client and i18n: no hits.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-07",
+      "title": "No keyboard flow for review: the only key handler is the focal picker",
+      "category": "speed",
+      "claim": "Under src/components/marketing only focal-picker.tsx handles keys. There are no shortcuts for next/previous post or slide, approve, edit or return; keyboard users tab through every control (the editor's dnd-kit keyboard sensor covers reordering only).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/focal-picker.tsx",
+          "line": 27,
+          "excerpt": "onKeyDown={(event) => { const next = moveFocal(focal, event.key); ... }}"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 120,
+          "excerpt": "useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })"
+        }
+      ],
+      "impact": {
+        "statement": "Reviewing 4 posts x 7 slides by mouse and scroll is slower than arrows and A; the 10-minute target relies on a key-driven flow.",
+        "keep": true,
+        "reason": "Arrow/A shortcuts are cheap and the 10-minute target assumes them; the shell's g-chord handler is a ready pattern.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "In the Lab: left/right for slides, J/K or up/down for posts, A approve (with the hash in the confirmation), E edit, R return, 1-5 kit when kits exist; announce changes in an aria-live region and keep shortcuts off inside text fields.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Only focal-picker.tsx:27 has onKeyDown in src/components/marketing; post-editor.tsx:120 KeyboardSensor is dnd-kit reordering. dashboard-shell.tsx:341-350 has global g-chords for top-level tabs only (not review actions), which is a reusable pattern but does not change the conclusion.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-08",
+      "title": "No reminder that posts are waiting, although an in-app notifications table exists; approval is refused once the slot starts",
+      "category": "risk",
+      "claim": "Marketing code never writes to public.notifications (used by the uptime-kuma webhook and payment matching). Approval raises 'schedule expired' when scheduledAt <= now, so an unapproved 08:00 post is lost unless the owner opens the tab in time and edits the time (which needs a new render and approval).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/app/api/webhooks/uptime-kuma/route.ts",
+          "line": 102,
+          "excerpt": "await admin.from(\"notifications\").insert({"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020140000_marketing_revision_media_identity.sql",
+          "line": 115,
+          "excerpt": "if (r.revision->>'scheduledAt')::timestamptz<=now() then raise exception 'schedule expired'; end if;"
+        },
+        {
+          "file": "own-dashboard/src/app/api/marketing/revisions/route.ts",
+          "line": 41,
+          "excerpt": "if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});"
+        }
+      ],
+      "impact": {
+        "statement": "Missed slots (especially 08:00) and unpredictable owner attention; the owner has to remember to check.",
+        "keep": true,
+        "reason": "A missed 08:00 slot is a lost post; an in-app inbox row from the daily or minute tick before the first slot is small work.",
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null
+      },
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "From the daily or minute tick, insert one notifications row ('N příspěvků čeká na schválení', link to the review) when the first post of the day is ready and again 60 min before the first unapproved slot; dedupe by date. Propose auto-moving a missed approved post as an owner decision (it changes the hash, so it needs a new approval under today's rule).",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "No marketing code or migration writes public.notifications (grep src/lib/marketing, src/app/api/marketing, supabase/migrations: none); writers are uptime-kuma/route.ts:102,145 and payment-matching-server.ts:214. Approval refuses scheduledAt<=now at revision_media_identity.sql:115 (also control_surface.sql:164); edit route refuses past times at revisions/route.ts:41.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-09",
+      "title": "The review tab has no URL: every visit opens Overview, and nothing can deep-link to it",
+      "category": "simplicity",
+      "claim": "The project workspace keeps the selected tab in component state initialised to 'overview'; no route or query parameter selects 'dneskai-review'. Only the Sources tab's button switches to it in-page.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/projects/project-workspace.tsx",
+          "line": 147,
+          "excerpt": "const [selectedTab, setTab] = useState<ProjectTabId>(\"overview\");"
+        },
+        {
+          "file": "own-dashboard/src/components/projects/project-workspace.tsx",
+          "line": 150,
+          "excerpt": "const openDneskaiReview = () => { flushSync(() => setTab(\"dneskai-review\")); ... };"
+        }
+      ],
+      "impact": {
+        "statement": "One extra click per visit and no target for a reminder notification or a phone bookmark.",
+        "keep": true,
+        "reason": "Needed for a reminder to link anywhere useful, otherwise minor.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Support /projects/dneskai?tab=dneskai-review (or a path segment) through the existing History API shell and use it for the reminder link.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "project-workspace.tsx:147 useState('overview'); :150 openDneskaiReview is the only switch to dneskai-review; no searchParams or route segment selects the tab in that file.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-10",
+      "title": "The owner cannot change slide type, variant, format or kit, add a slide or picture slot, or upload a picture",
+      "category": "quality",
+      "claim": "Server and client both keep type, variant and slots as generated; edits that change slots fail with deck-edit-slots-changed; the editor removes slides but has no add; the picture tray lists only the brief's pool and the server refuses anything else; there is no kit field.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+          "line": 15,
+          "excerpt": "* images of existing slots change: the slide type, variant and sources stay as generated."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+          "line": 52,
+          "excerpt": "if (slotKey(change.images) !== slotKey(source.images) || ...) return fail(\"deck-edit-slots-changed\");"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts",
+          "line": 10,
+          "excerpt": "* Slide types, variants, picture places and source lines stay as generated; the server enforces the same rules."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-revision-edit.ts",
+          "line": 75,
+          "excerpt": "return fail(\"deck-asset-outside-brief\");"
+        }
+      ],
+      "impact": {
+        "statement": "When the model picks a weak layout (for example a statement where a photo exists, or a single post with thin text) the owner's options are wording tweaks, removal or skipping; five kits per post cannot be offered in this editor.",
+        "keep": true,
+        "reason": "Core blocker for five switchable kits and for fixing weak layouts; it is the Lab's main build item.",
+        "impactScore": 4,
+        "effort": "L",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 4,
+      "effort": "L",
+      "risk": "medium",
+      "recommendation": "Extend the edit schema per design-lab/variant-approval-model.md (kit, variant, type within allowed moves, insert from the pool) with the fit check; keep uploads out until the provenance rule (stored origin and credit) has an owner-approved path.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-revision-edit.ts:15 doc comment and :52 deck-edit-slots-changed; :75 deck-asset-outside-brief; dneskai-deck-editor.ts:10; the editor exports (lines 23-210) include removeSlide/moveSlide/swap/crop/text but no add slide, type, variant or kit setter; no file input in src/components/marketing/dneskai; no 'kit' in dneskai-revision-edit.ts or dneskai-slides.ts.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-11",
+      "title": "Character counters are the only fit feedback; whether text fits is known only after the render",
+      "category": "quality",
+      "claim": "Counters compare code points with per-template ceilings that are explicitly not the fitter's verdict; draftProblems checks only counts, missing headline/alt, slide count, caption and schedule. A clipped or refused render is discovered after save as 'savedBlocked' and needs another save.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 37,
+          "excerpt": "* studio. Whether a line fits is still the fitter's call; this is the hard ceiling the prompt aims under."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts",
+          "line": 136,
+          "excerpt": "if (characterCount(value.trim()) > max) problems.push({ slide: index, field, code: 'text-too-long' });"
+        },
+        {
+          "file": "own-dashboard/src/lib/i18n/sections/dneskai-workspace.ts",
+          "line": 54,
+          "excerpt": "savedBlocked: 'New version saved, but the render found problems. Fix them and save again.',"
+        }
+      ],
+      "impact": {
+        "statement": "Edits that pass the counter can still fail the render and cost another round trip and another superseded revision.",
+        "keep": true,
+        "reason": "Fit feedback before save removes a whole failure loop; the studio fitter can run client-side or via a cheap preview call.",
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Expose the studio's text fitter (no raster) through a fast fit endpoint or in the browser, and show 'fits / shrinks to N px / clips' per field while typing.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-generation.ts:33-37 says the limits are a ceiling and fitting is the fitter's call; dneskai-deck-editor.ts:131-148 draftProblems counts characters only (:136); no fit/measure code in components; i18n :54 savedBlocked message after the render.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-12",
+      "title": "Estimated owner time is 7-18 minutes for 4 posts, above the 10-minute target once edits are needed",
+      "category": "speed",
+      "claim": "From the UI code: approving as generated takes 2 clicks per post after loading, but an edited post needs 6 clicks plus typing, a synchronous save-render round trip and a re-check on 80-96 px thumbnails, and inspecting slides at readable size needs leaving the app. Estimated 1-1.5 min per unedited post and 2.5-4 min per edited post.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx",
+          "line": 182,
+          "excerpt": "<Button disabled={!!block || busy} ... onClick={onApprove} data-testid=\"dneskai-approve\">"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 249,
+          "excerpt": "? <Button type=\"submit\" ...>{saving ? t.editor.saving : dirty ? t.editor.save : t.editor.rerender}</Button>"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 251,
+          "excerpt": "onClick={() => void onApprove(post).then((done) => { if (done) onClose(); })}"
+        },
+        {
+          "file": "own-dashboard/src/components/projects/project-workspace.tsx",
+          "line": 147,
+          "excerpt": "useState<ProjectTabId>(\"overview\")"
+        }
+      ],
+      "impact": {
+        "statement": "About 7-11 min a day when half the posts need an edit and 12-18 min when all do (estimate; nothing has been reviewed in production).",
+        "keep": true,
+        "reason": "The owner-time baseline the Lab is judged against; keep as the measurement finding.",
+        "impactScore": 4,
+        "effort": "L",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 4,
+      "effort": "L",
+      "risk": "low",
+      "recommendation": "Measure it for real on the pilot (#123) with timestamps already in marketing_events (created -> approved), and target the Lab at: open on the queue, large stage, crop preview without save, keyboard approve, batch approve.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Click counts confirmed from review-tab.tsx:163,182, post-editor.tsx:139-147,249-251, focal-picker.tsx:26 and project-workspace.tsx:147 (a thumbnail click opens the editor on that slide, so the edited path is about 5-6 clicks). Each editor open also fires up to 8 media GETs (post-editor.tsx:101-105). The per-post minutes leave out full-size inspection: because no in-app large view exists (review-01), checking 7 slides at real size means opening each JPEG outside the app, about 5-10 s each, i.e. +0.5-1 min per post. Re-derived estimate: 1.5-2.5 min per post approved as generated with full-size checks (1-1.5 without), 3-5 min with one text edit and one crop fix; 4 posts a day about 9-15 min when half need an edit and 13-20 min when all do. Still an estimate; nothing has been reviewed in production.",
+        "correctedLocations": [],
+        "correctedClaim": "Estimated (not measured) owner time is about 1-1.5 min per post approved from thumbnails, 1.5-2.5 min if each slide is checked at full size outside the app, and 3-5 min per post with one text edit and one crop fix; 4 posts take roughly 9-15 min a day when half need edits and 13-20 min when all do, above the 10-minute target."
+      }
+    },
+    {
+      "id": "review-13",
+      "title": "Reusable for the Design Lab: pure editor functions, read model, components, i18n, demo port and the axe e2e harness",
+      "category": "simplicity",
+      "claim": "dneskai-deck-editor.ts is pure and covers drafts, crop, swap, move, remove and the exact edit request; dneskai-workspace.ts holds browser-safe schemas and the state machine; DneskaiSlideStrip, DneskaiFocalPicker, DneskaiMediaTray, CountedField, DneskaiStateChip, DneskaiRenderProblems and DneskaiCodeText are self-contained; the client port swaps to an in-memory demo for /dev-preview; e2e already runs axe at 360-1280 px. What to replace: the PostCard list and the Dialog editor with a queue / stage / inspector split pane, which the design contract prefers (split panes, panes stacking below 1024 px; no excessive card grids).",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-deck-editor.ts",
+          "line": 6,
+          "excerpt": "* The owner's post editor (#119) as pure functions: a draft built from one revision, the edits the editor allows"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-workspace-client.ts",
+          "line": 88,
+          "excerpt": "export function dneskaiWorkspaceApi(preview: boolean): Promise<DneskaiWorkspaceApi> {"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 294,
+          "excerpt": "export function CountedField({ id, label, value, max, multiline, rows = 3, help, lang, onChange }: {"
+        },
+        {
+          "file": "own-dashboard/docs/design/design-system.md",
+          "line": 33,
+          "excerpt": "Prefer section bands, aligned rows, split panes, and tables. Use cards only for summaries, self-contained objects, and elevated workflows."
+        },
+        {
+          "file": "own-dashboard/docs/design/design-system.md",
+          "line": 31,
+          "excerpt": "Touch versions preserve at least 44 px targets. Workspace tabs scroll on narrow screens. Detail panes stack below 1024 px."
+        },
+        {
+          "file": "own-dashboard/e2e/dneskai-workspace.spec.ts",
+          "line": 208,
+          "excerpt": "test('every DNESKAi tab reflows at 360, 430, 768 and 1280 px and passes axe', ..."
+        }
+      ],
+      "impact": {
+        "statement": "The Lab can be built mostly by recomposition, which cuts its effort and keeps the tested hash-binding and refusal codes.",
+        "keep": true,
+        "reason": "Reuse inventory lowers Lab effort and keeps tested hash binding; useful for planning, not a defect.",
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Keep the read model and client port, extend them (kits, covers, fit flags); build the Lab as a new tab component reusing the listed parts; retire PostCard and the Dialog editor after the Lab passes the same e2e and axe tests.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-deck-editor.ts:6-10 pure functions with no server imports; dneskai-workspace-client.ts:88-92 swaps to the in-memory demo for preview; post-editor.tsx:294 CountedField exported; design-system.md:31 and :33 confirm split panes and stacking below 1024 px; e2e/dneskai-workspace.spec.ts:2 imports AxeBuilder, :51 and :200 run axe on review and editor, :208 reflow+axe at 360-1280 px.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-14",
+      "title": "/dev-preview fixtures are 360x450 and demo edits never render, so they cannot back a true-scale Lab preview",
+      "category": "modernity",
+      "claim": "The preview fixture script downsizes studio renders to 360 px wide JPEGs at q76, and the demo port keeps the old slide images on edit. A phone-frame stage at true scale (1080 px source at 2-3x DPR) and kit switching need full-size renders per kit.",
+      "evidence": [
+        {
+          "file": "own-dashboard/scripts/dneskai-preview-fixtures.mjs",
+          "line": 97,
+          "excerpt": "const jpeg = await sharp(result.png).resize({ width: 360 }).flatten({ background: '#ffffff' }).jpeg({ quality: 76, mozjpeg: true }).toBuffer();"
+        },
+        {
+          "file": "own-dashboard/src/lib/demo/dneskai-workspace-demo.ts",
+          "line": 14,
+          "excerpt": "* server does, with the same refusal codes. It never fetches, never renders and never writes anything: an edit keeps"
+        }
+      ],
+      "impact": {
+        "statement": "Visual QA and screenshots of the Lab would show blurry 360 px slides, misrepresenting what the owner approves; the CLAUDE.md rule asks for authentic rendered JPEGs in /dev-preview.",
+        "keep": true,
+        "reason": "Lab screenshots and visual QA need full-size fixtures; small script change.",
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Add full-size 1080x1350 fixtures (or 720 px) for the Lab stage and one fixture deck per kit once kits exist; keep the 360 px set for thumbnails.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "scripts/dneskai-preview-fixtures.mjs:97 resize width 360, q76; dneskai-workspace-demo.ts:12-15 never renders, edits keep stored images.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-15",
+      "title": "Design Lab spec assumes 'existing OwnDashboard push notifications', which do not exist",
+      "category": "doc-drift",
+      "claim": "The handoff spec's reminder section says it uses the existing push notifications. The repository has no web push (no PushSubscription, pushManager or web-push code); it has an in-app notifications table read by the inbox panel.",
+      "evidence": [
+        {
+          "file": "dneskai-audit-handoff/design-lab/design-lab-spec.md",
+          "line": 82,
+          "excerpt": "Uses the existing OwnDashboard push notifications; the body names the count and deep-links to the Lab."
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20260721165419_professional_restructure_core.sql",
+          "line": 162,
+          "excerpt": "create table public.notifications ("
+        },
+        {
+          "file": "own-dashboard/src/app/api/webhooks/uptime-kuma/route.ts",
+          "line": 102,
+          "excerpt": "await admin.from(\"notifications\").insert({"
+        }
+      ],
+      "impact": {
+        "statement": "A phone reminder (approving from bed before 08:00) would need new push infrastructure (service worker, VAPID keys, subscription storage), which is more work than the spec implies and touches the external-setup checklist.",
+        "keep": true,
+        "reason": "Prevents planning a phone reminder on infrastructure that does not exist; fix the spec now.",
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Whether an in-app inbox reminder is enough or a phone push channel (service worker, VAPID keys, subscription storage) should be built."
+      },
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Correct the spec: phase 1 uses the in-app notifications row (works when the dashboard is open, PWA badge if installed); phase 2 web push as a separate owner decision with its own setup.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "design-lab-spec.md:82 says existing push notifications; grep for PushSubscription/pushManager/web-push/VAPID/showNotification in src and public: no hits, and public/ has no service worker; notifications table at professional_restructure_core.sql:162 is in-app (inbox-panel.tsx:88).",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-16",
+      "title": "Calendar is a grid of seven day cards rather than rows",
+      "category": "simplicity",
+      "claim": "The calendar renders each day as a bordered card in a 2- or 3-column grid. The design contract prefers rows, section bands and split panes and rejects excessive card grids.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/calendar-tab.tsx",
+          "line": 20,
+          "excerpt": "<ol className=\"grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3\">{days.map((day) => <li ... className=\"min-w-0 rounded-lg border border-border bg-surface\""
+        },
+        {
+          "file": "own-dashboard/docs/design/design-system.md",
+          "line": 81,
+          "excerpt": "Reject gradients used as default decoration, glows, glass, ... excessive card grids,"
+        }
+      ],
+      "impact": {
+        "statement": "Cosmetic; the slots read fine. Relevant only so the Lab's queue does not copy the card pattern.",
+        "keep": false,
+        "reason": "Cosmetic; the calendar reads fine and the Lab will not reuse it.",
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "In the Lab, show the day queue as rows (slot, title, state, kit, time left); leave the calendar unless it is rebuilt anyway.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "calendar-tab.tsx:20 ol grid md:grid-cols-2 xl:grid-cols-3 with bordered rounded li per day; design-system.md:81 rejects excessive card grids. Each card holds rows, so this is a mild case.",
+        "correctedLocations": []
+      }
+    },
+    {
+      "id": "review-17",
+      "title": "Brief 2.6 lists the editor among the tabs; it is a dialog, three-column only at >= 1024 px",
+      "category": "doc-drift",
+      "claim": "The brief says the workspace 'has these tabs' and lists 'Editor (three-column dialog)'. In code the editor is a Radix dialog opened from a card or thumbnail, and its three columns stack into one below lg (1024 px). The rest of 2.6 (128 px, buttons, focal, zoom, swap pool, 45 s, dead end) matches.",
+      "evidence": [
+        {
+          "file": "dneskai-audit-handoff/brief.md",
+          "line": 169,
+          "excerpt": "- **Editor** (three-column dialog):"
+        },
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/post-editor.tsx",
+          "line": 176,
+          "excerpt": "<div className=\"grid min-w-0 gap-4 lg:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)_minmax(0,18rem)]\">"
+        },
+        {
+          "file": "own-dashboard/src/lib/project-workspace-tabs.ts",
+          "line": 42,
+          "excerpt": "export const DNESKAI_WORKSPACE_TAB_ORDER = ["
+        }
+      ],
+      "impact": {
+        "statement": "None for the owner; noted for accuracy.",
+        "keep": false,
+        "reason": "Brief wording only; no owner action.",
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null
+      },
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "No action beyond noting it in the synthesis.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "brief.md:169 lists Editor under the tab list; post-editor.tsx:68 DialogContent, :176 three columns only at lg; project-workspace-tabs.ts:43 tab order has no editor tab.",
+        "correctedLocations": []
+      }
+    }
+  ],
+  "openQuestions": [
+    "How long does a real edit render take on Vercel (cold function, media download from Supabase storage, JPEG upload)? Nothing has rendered in production (0 revisions); measure on the pilot post (#123).",
+    "Does the owner review on a phone or a laptop in the morning? It decides whether web push (not present) is worth an owner decision.",
+    "Should a missed slot auto-move an approved post to the next free slot? Under the current hash rule this needs a new approval, so it is an owner decision.",
+    "Should regeneration with the owner's note be allowed under the existing $1/24 h ceiling, and how many regenerations per post?",
+    "Is picture upload by the owner wanted at all, and with which provenance record (origin, credit), given the rule that code writes credits?"
+  ],
+  "outputFile": "/Users/lukasbarsinbars/Developer/own-dashboard-audit/docs/reports/dneskai-audit-2026-10/map-review.json",
+  "verification": {
+    "confirmed": 15,
+    "partly": 2,
+    "refuted": 0,
+    "notConfirmed": 0,
+    "kept": 15,
+    "dropped": 2,
+    "quickWins": 5,
+    "verifiedAt": "2026-10-22T00:09:50Z",
+    "method": "single verifier agent, truth + impact lenses per finding",
+    "notes": [
+      "Every cited line re-opened with sed/grep; all 59 evidence lines are within 0-1 lines of their excerpt (dneskai-deck-editor.ts:6 excerpt sits on :7, project-workspace-tabs.ts:42 on :43).",
+      "review-04 corrected: the return note text never reaches LangSmith; only the decision score does (revisions/route.ts:72, owner-feedback.ts:47-60).",
+      "review-12 and the two owner-minute measurements widened to include full-size slide checks outside the app (no in-app large view); still estimates.",
+      "Global g-chord keyboard handler exists in dashboard-shell.tsx:341-350 (top-level tabs only); reusable for Lab shortcuts."
+    ]
+  }
+}
