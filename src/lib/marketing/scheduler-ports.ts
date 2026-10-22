@@ -17,6 +17,8 @@ import { sendDneskaiReviewReminders } from "./dneskai-reminders";
 import { runDneskaiEngagementWatch } from "./dneskai-engagement-watch";
 import { createDneskaiEngagementGraph, createDneskaiEngagementStore } from "./dneskai-engagement-ports";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
+import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
+import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
 
 /**
  * The real modules behind the scheduler's ports (#120). Each port calls one existing exported function or
@@ -94,6 +96,8 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     reviewReminders: (project, now) => sendDneskaiReviewReminders(db, owner, project, now),
     engagementWatch: ({ signal, now, remainingMs }) => runDneskaiEngagementWatch({ store: createDneskaiEngagementStore(db, owner), graph: createDneskaiEngagementGraph(db, owner, env), now, signal, remainingMs }),
     scoutTopics: (project, now) => scoutDneskaiTopics(db, owner, project, now),
+    factOrHype: (project, now, options) => advanceDneskaiFactOrHype(db, owner, project, now, { env, ...options,
+      model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

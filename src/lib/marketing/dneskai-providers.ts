@@ -25,7 +25,8 @@ async function apifyMachineError(response:Response):Promise<string|null>{
 }
 // Retain strict envelope/item validation while applying the HTTPS URL boundary per item.
 const FeedResponseForUrlValidation=DneskaiFeedResponseSchema.extend({sources:DneskaiFeedResponseSchema.shape.sources.element.extend({items:z.array(DneskaiFeedResponseSchema.shape.sources.element.shape.items.element.extend({url:z.string()})).max(20)}).array().max(8)});
-async function jsonRequest(url:string,init:RequestInit,fetcher:typeof fetch,signal:AbortSignal){
+/** A bounded JSON request with machine-only error codes; also used by the reel transcript provider (#152). */
+export async function jsonRequest(url:string,init:RequestInit,fetcher:typeof fetch,signal:AbortSignal){
  try{const response=await fetcher(url,{...init,redirect:'error',cache:'no-store',signal});if(!response.ok){
   const status=[400,401,402,403,404,408,409,413,422,429,500,502,503,504,529].includes(response.status)?String(response.status):'failed';
   const machine=new URL(url).hostname==='api.apify.com'?await apifyMachineError(response):null;
@@ -100,7 +101,8 @@ export function instagramItemDetail(item:{ownerUsername:string;type?:string|null
  const containsVideo=mediaType==='carousel'&&(item.childPosts??[]).some(post=>(post.type??'').toLowerCase()==='video');
  return{...(/^[A-Za-z0-9_.]{1,30}$/.test(item.ownerUsername)?{ownerUsername:item.ownerUsername}:{}),...(mediaType?{mediaType}:{}),...(containsVideo?{containsVideo:true as const}:{})};
 }
-const RunSchema=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),actId:z.string(),buildNumber:z.string(),userId:z.string(),defaultDatasetId:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),status:z.enum(['READY','RUNNING','SUCCEEDED','FAILED','TIMING-OUT','TIMED-OUT','ABORTING','ABORTED']),finishedAt:z.iso.datetime({offset:true}).nullable().optional(),usageTotalUsd:z.number().nonnegative().nullable().optional()});
+export const DneskaiApifyRunSchema=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),actId:z.string(),buildNumber:z.string(),userId:z.string(),defaultDatasetId:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),status:z.enum(['READY','RUNNING','SUCCEEDED','FAILED','TIMING-OUT','TIMED-OUT','ABORTING','ABORTED']),finishedAt:z.iso.datetime({offset:true}).nullable().optional(),usageTotalUsd:z.number().nonnegative().nullable().optional()});
+const RunSchema=DneskaiApifyRunSchema;
 export type DneskaiApifyRegistration=z.infer<typeof RunSchema>;
 function apifyConfiguration(env:ProviderEnvironment){if(!env.APIFY_TOKEN||!env.MARKETING_DNESKAI_APIFY_ACTOR_ID||!env.MARKETING_DNESKAI_APIFY_BUILD||!/^\d+\.\d+\.\d+$/.test(env.MARKETING_DNESKAI_APIFY_BUILD))throw new DneskaiProviderError('collection-apify-unconfigured');return{token:env.APIFY_TOKEN,id:env.MARKETING_DNESKAI_APIFY_ACTOR_ID,build:env.MARKETING_DNESKAI_APIFY_BUILD};}
 /** Official RunActor reference and actor API page specify /v2/actors/:actorId/runs (verified2026-10-13). */

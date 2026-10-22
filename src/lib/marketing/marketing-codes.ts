@@ -432,7 +432,9 @@ const CODES = {
   'account-verification-unavailable': ['retry', 'The account could not be verified now.', 'Účet teď nelze ověřit.'],
   'accounts-unavailable': ['retry', 'The account status could not be loaded.', 'Stav účtu nelze načíst.'],
   'account-request-failed': ['retry', 'The account request failed.', 'Požadavek na účet selhal.'],
-  'refresh-instagram-login-required': ['token', 'Only an Instagram Login token can be refreshed.', 'Obnovit lze jen token Instagram Login.'],
+  'refresh-instagram-login-required': ['token', 'Only an Instagram Login or Facebook Login token can be refreshed.', 'Obnovit lze jen token Instagram Login nebo Facebook Login.'],
+  'refresh-app-credentials-missing': ['config', 'A Facebook Login token is renewed with the Meta app id and secret, which are not set on the server.', 'Token Facebook Login se obnovuje s ID a tajným klíčem aplikace Meta, které na serveru nejsou nastavené.'],
+  'facebook-page-link-required': ['account', 'No Facebook Page of this token is linked to an Instagram professional account.', 'Žádná stránka na Facebooku z tohoto tokenu není propojená s profesionálním účtem na Instagramu.'],
   'refresh-instagram-only': ['none', 'Only Instagram tokens are refreshed.', 'Obnovují se jen instagramové tokeny.'],
   'refresh-request-uncertain': ['auto', 'Instagram did not answer the token refresh in time.', 'Instagram na obnovení tokenu neodpověděl včas.'],
   'refresh-response-invalid': ['auto', 'Instagram returned an unexpected refresh answer.', 'Instagram vrátil neočekávanou odpověď na obnovení.'],
@@ -542,6 +544,16 @@ const CODES = {
   'scouting-library-unavailable': ['retry', 'The link library could not be read for scouting.', 'Knihovnu odkazů se pro hledání námětů nepodařilo načíst.'],
   'scouting-topics-unavailable': ['retry', 'The existing topics could not be read, so no topic was added.', 'Stávající náměty se nepodařilo načíst, žádný námět nepřibyl.'],
   'scouting-write-failed': ['retry', 'The new topics could not be saved. The next hour tries again.', 'Nové náměty se nepodařilo uložit. Další hodina to zkusí znovu.'],
+  'transcript-apify-unconfigured': ['config', 'The reel transcript actor is not configured, so no transcript was bought.', 'Přepis reelů není nastavený, žádný přepis se nekoupil.'],
+  'transcript-input-invalid': ['none', 'The topic has no Instagram reel link to transcribe.', 'Námět nemá odkaz na reel, který by šel přepsat.'],
+  'transcript-apify-binding-invalid': ['retry', 'Apify answered for a different actor or run; the transcript was not used.', 'Apify odpověděl za jiný actor nebo běh; přepis se nepoužil.'],
+  'transcript-apify-failed': ['retry', 'The reel transcript run failed.', 'Běh přepisu reelu selhal.'],
+  'transcript-budget-exhausted': ['none', 'The daily transcript limit is used up; this reel was not transcribed.', 'Denní limit přepisů je vyčerpaný; tento reel se nepřepsal.'],
+  'classify-budget-exhausted': ['none', 'The $1 daily limit is used up; the verdict waits for the next day.', 'Denní limit 1 USD je vyčerpaný; verdikt počká na další den.'],
+  'topic-model-consent-required': ['config', 'Model calls for topics need MARKETING_AI_CONSENT.', 'Volání modelu pro náměty potřebuje MARKETING_AI_CONSENT.'],
+  'topic-model-pricing-required': ['config', 'A topic model other than Claude Haiku 5.5 needs both price variables.', 'Jiný model pro náměty než Claude Haiku 5.5 potřebuje obě proměnné s cenou.'],
+  'topic-model-configuration-required': ['config', 'The topic model or its API key is not configured.', 'Model pro náměty nebo jeho API klíč není nastavený.'],
+  'topic-model-unsafe-native-tracing': ['config', 'Native LangChain tracing is on; topic model calls stay off.', 'Je zapnuté nativní trasování LangChain; volání modelu pro náměty zůstávají vypnutá.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;
