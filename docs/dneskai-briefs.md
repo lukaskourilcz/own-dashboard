@@ -132,6 +132,13 @@ Jev ji posoudí v dávkách téže noci pod stávajícími limity (nejvýše 16 
 navíc jsou to nejvýše dvě dávky po $0,003. Když ji Jev zadrží znovu, zůstane zadržená.
 Opakovaný tick téhož běhu už nic nevrátí. Vrácení není schválení.
 
+### Podobné titulky (rozhodnutí 14)
+
+Bez změny: `Meta releases Llama 4 8B` a `Meta releases Llama 4 70B` jsou jedna událost,
+protože sdílejí číslo vydání `4` a titulky se shodují z 5 ze 7 tokenů. Bez sdíleného čísla
+(`Llama 8B` a `Llama 70B`) je velikost jiné číslo a zprávy zůstanou dvě. Obojí hlídá
+`tests/lib/marketing-dneskai-events.test.ts`.
+
 ## Zadání
 
 `createDneskaiBriefs` (`src/lib/marketing/dneskai-briefs.ts`), port
