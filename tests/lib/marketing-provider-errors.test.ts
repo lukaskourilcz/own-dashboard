@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyMarketingProviderError, MARKETING_PROVIDER_FAILURE_CODES } from '@/lib/marketing/provider-errors';
+import { classifyMarketingProviderError, MARKETING_PROVIDER_FAILURE_CODES, marketingProviderFailureUnbilled } from '@/lib/marketing/provider-errors';
 
 describe('provider status/code classification without messages, URLs, credentials or source', () => {
   it('maps representative HTTP and provider/SDK codes into the fixed trace-compatible allowlist', () => {
@@ -30,5 +30,16 @@ describe('provider status/code classification without messages, URLs, credential
     expect(classifyMarketingProviderError(Object.create({ status: 401 })).httpStatus).toBeNull();
     expect(classifyMarketingProviderError(new Proxy({}, { getOwnPropertyDescriptor() { throw new Error('proxy-forbidden'); } })).code).toBe('provider-failed');
     expect(JSON.stringify(classifyMarketingProviderError(failure))).not.toContain('TEST_ONLY_PRIVATE');
+  });
+});
+
+describe('calls that provably billed nothing (decision 16)', () => {
+  it('are only whole-request HTTP rejections, never a failure without a status', () => {
+    for (const status of [400, 401, 402, 403, 404, 413, 429, 529]) expect(marketingProviderFailureUnbilled(classifyMarketingProviderError({ status })), String(status)).toBe(true);
+    for (const status of [408, 409, 422, 500, 502, 503, 504, 418]) expect(marketingProviderFailureUnbilled(classifyMarketingProviderError({ status })), String(status)).toBe(false);
+    expect(marketingProviderFailureUnbilled(classifyMarketingProviderError({ lc_error_code: 'CONTEXT_OVERFLOW' }))).toBe(true);
+    for (const failure of [new Error('socket hang up'), { error: { type: 'error', error: { type: 'overloaded_error' } } }, { lc_error_code: 'MODEL_RATE_LIMIT' }, { code: 'ERR_MODULE_NOT_FOUND' }])
+      expect(marketingProviderFailureUnbilled(classifyMarketingProviderError(failure))).toBe(false);
+    expect(marketingProviderFailureUnbilled(null)).toBe(false);
   });
 });
