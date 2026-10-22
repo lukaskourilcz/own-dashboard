@@ -185,7 +185,7 @@ export function insertPosition(draft: DeckDraft, after: number): number {
 }
 
 /**
- * Inserts a carousel slide (review-10): a framed picture from the pool with its code-set credit, or a statement.
+ * Inserts a carousel slide (review-10): a framed picture from the pool without a credit line (no slide shows one), or a statement.
  * Its headline and alt text start empty, so the draft cannot be saved until the owner writes them. Returns the draft
  * unchanged when the shape, the picture or the slide count does not allow it.
  */
@@ -198,11 +198,6 @@ export function insertSlide(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, 
   if (needsPicture && !media) return unchanged;
   const slide: DneskaiSlide = { type: shape.type, ...('variant' in shape ? { variant: shape.variant } : {}), headline: '', images: media ? [{ slot: 'image-1', assetSha256: media.assetSha256 }] : [], alt: '' };
   const fields = dneskaiSlideFieldLimits(slide);
-  if (media) {
-    const credit = dneskaiCreditLine([media.credit], fields.find((field) => field.field === 'credit')?.max ?? 80);
-    if (credit === null) return unchanged;
-    slide.credit = credit;
-  }
   const index = insertPosition(draft, after);
   const slides = [...draft.slides];
   slides.splice(index, 0, { from: null, slide, fields });
