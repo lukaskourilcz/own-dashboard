@@ -746,3 +746,11 @@ Both migrations are local preparation. Reconcile production's divergent marketin
 ### Prepared: lapsed brief reports
 
 `20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied pending migration-history reconciliation.
+
+### Prepared: owner recovery actions
+
+`20261022141512_dneskai_owner_recovery.sql` adds two owner-only security-definer functions, executable by `authenticated` and scoped by `auth.uid()`. `marketing_dneskai_release_candidate` returns one held report with text, published within 30 days, to the open queue (status `new`, classification cleared, authored fields unchanged); Jev reviews it again in a later nightly batch under the existing limits. `marketing_dneskai_reslot_brief` reopens a brief that lapsed (`brief-slot-passed`, `brief-target-date-passed`, `brief-slot-unavailable`) before any source head, calendar entry, job or revision existed. It takes a rebuilt brief with the same member hash, one of the four daily slots today or tomorrow at least 30 minutes ahead, no later expiry than the original and a lead report still inside the selection window. The brief becomes `pending` (`owner-reslot`, or `account-unavailable` without a verified account) and the scheduler admits it through the ordinary path.
+
+`20261022141613_dneskai_release_lapsed_brief.sql` adds `marketing_dneskai_release_brief`, the owner-triggered form of the lapse release in `20261022021835`, for briefs that lapsed before it took effect. It raises an error and changes nothing when `20261022021835` is absent.
+
+Both stay unapplied. The deployed app never calls these functions while `DNESKAI_OWNER_RECOVERY_ENABLED` and `DNESKAI_LAPSED_RELEASE_ENABLED` are unset; the Sources tab then shows reslot and release as unavailable with a reason. After an approved application, set the matching server-only variable and redeploy. The owner `retry` action uses only the existing `marketing_dneskai_prepare_brief` and needs no migration.

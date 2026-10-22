@@ -157,6 +157,8 @@ The migrations, in the order they run:
 61. `20261022020702_dneskai_richer_brief_evidence.sql` — unapplied, bounded article prose stored under the existing media lease; source image alt metadata stays in the fixed plan.
 62. `20261022020759_dneskai_brief_v2_compatibility.sql` — unapplied, accept brief/2 while retaining strict brief/1 reads and old snapshots.
 63. `20261022021835_dneskai_release_lapsed_reports.sql` — future skips release only lapsed, never-generated reports; prepared, unapplied.
+64. `20261022141512_dneskai_owner_recovery.sql` — unapplied, owner-only release of a held report to the next nightly review and reslot of a lapsed, unadmitted brief; called only with `DNESKAI_OWNER_RECOVERY_ENABLED=true`.
+65. `20261022141613_dneskai_release_lapsed_brief.sql` — unapplied, owner-only release of a lapsed brief's selected reports; refuses to apply before migration 63; called only with `DNESKAI_LAPSED_RELEASE_ENABLED=true`.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
