@@ -69,14 +69,18 @@ export const STORIES = {
     summary: 'Claude Team and Enterprise workspaces can now keep a shared project memory that every member can review and edit. Administrators decide which projects use it, and it stays off by default for existing workspaces.',
     published: '2026-10-26T15:00:00Z' },
   a2: { source: 'techcrunch-ai', url: 'https://techcrunch.com/2026/10/26/anthropic-claude-team-shared-memory/', title: 'Anthropic gives Claude teams a shared memory they can edit',
-    summary: 'The feature lets colleagues see and correct what Claude remembers about a project. Anthropic says administrators control it and that it is off by default for existing customers; pricing does not change.',
+    summary: 'The feature lets colleagues see and correct what Claude remembers about a project. Anthropic says administrators control it and that it is off by default for existing customers; pricing does not change. Each project keeps its own memory, so facts from one client project do not appear in another. Members can open the memory panel, see every saved fact with the conversation it came from, and correct or delete it; an administrator can clear a whole project at once. Anthropic says the memory is used only inside the workspace and is not used to train its models. It did not say how long deleted facts stay in backups or whether the memory can be exported, and it has not published an independent review of the feature.',
     published: 'Mon, 26 Oct 2026 17:20:00 +0000' },
-  b: { source: 'instagram:meta.ai', url: 'https://www.instagram.com/p/DfixtureTr4n/', caption: 'Live translation is rolling out in the Meta AI app. Speak in one language and hear the reply in another during voice chats, starting with English, Spanish, French, German and Italian. Tap the globe icon in a voice chat to try it.',
+  b: { source: 'instagram:meta.ai', url: 'https://www.instagram.com/p/DfixtureTr4n/', caption: 'Live translation is rolling out in the Meta AI app. Speak in one language and hear the reply in another during voice chats, starting with English, Spanish, French, German and Italian. Tap the globe icon in a voice chat to try it.\n\nBoth people hear the conversation in their own language, and the app shows a written transcript of each turn next to the audio. Meta says the translation runs in the voice chat itself, so nobody has to install a separate app or switch modes. The feature is rolling out gradually and may take a few weeks to reach everyone. Meta asks people to report mistranslations from the chat menu and says it will add more languages after it has reviewed the first feedback. It did not say which countries come first.',
     published: '2026-10-26T18:40:00.000Z' },
   /** Tuesday's follow-up of event A: a new URL and headline that Jev does not link, and the same share image as a2. */
   a3: { source: 'techcrunch-ai', url: 'https://techcrunch.com/2026/10/27/what-claude-team-memory-means-for-admins/', title: 'What Claude team memory means for workspace admins',
     summary: 'A day after the launch, administrators ask how long Claude keeps team memory and who can export it. Anthropic points to its workspace settings and says memory is still off by default.',
     published: 'Tue, 27 Oct 2026 15:00:00 +0000', visibleFrom: '2026-10-27T15:00:00Z' },
+  /** Tuesday's picture-less report (briefs-01): a long feed text and no image in the feed or on the page, so the brief is a carousel of text slides. */
+  c: { source: 'hf-blog', url: 'https://huggingface.co/blog/fixture-open-speech-model', title: 'An open speech model that transcribes meetings on a laptop',
+    summary: 'Hugging Face and a group of university labs released an open speech recognition model that runs on an ordinary laptop without a graphics card. The authors say it transcribes meetings in English, German and Spanish and marks who is speaking. The weights and the training code are public under an Apache license, and the training data comes from recordings whose speakers agreed to their use. The post compares the model with closed transcription services on public test sets and says it makes more mistakes on noisy phone calls. It does not run in a browser yet, and the authors ask for help with more languages. They also say the model should not be used to transcribe people who have not been told they are recorded, and that the license does not change local recording laws.',
+    published: 'Tue, 27 Oct 2026 14:00:00 +0000', visibleFrom: '2026-10-27T14:00:00Z' },
 } as const;
 /** Reports Jev rejects: real-looking feed items about other things. */
 export const NOISE = [
@@ -139,8 +143,16 @@ export async function routePublishers(internet: FakeInternet) {
       ? xml(rss(host, items.map((item) => ({ title: item.title, link: item.url, pubDate: item.published, description: `${item.title}. A fixture report outside DNESKAi's scope.` }))))
       : new Response('not found', { status: 404 }));
   }
+  // Tuesday's Hugging Face post has neither a feed image nor a picture on its page.
+  internet.route('huggingface.co', (_request, url) => {
+    if (url.pathname === '/blog/feed.xml') return xml(rss('Hugging Face', internet.clock().getTime() >= Date.parse(STORIES.c.visibleFrom)
+      ? [{ title: STORIES.c.title, link: STORIES.c.url, pubDate: STORIES.c.published, description: STORIES.c.summary }] : []));
+    if (url.pathname === new URL(STORIES.c.url).pathname) return html(`<!doctype html><html><head><title>${STORIES.c.title}</title><meta property="article:published_time" content="2026-10-27T14:00:00+00:00"></head>
+<body><main><article><h1>${STORIES.c.title}</h1><p>${STORIES.c.summary}</p></article></main></body></html>`);
+    return new Response('not found', { status: 404 });
+  });
   // Tuesday's other sources answer with nothing new.
-  for (const [host, feed] of [['huggingface.co', '/blog/feed.xml'], ['restofworld.org', '/feed/latest/'], ['simonwillison.net', '/atom/everything/']] as const) {
+  for (const [host, feed] of [['restofworld.org', '/feed/latest/'], ['simonwillison.net', '/atom/everything/']] as const) {
     internet.route(host, (_request, url) => url.pathname === feed ? xml(rss(host, [])) : new Response('not found', { status: 404 }));
   }
   internet.route('github.com', (_request, url) => /^\/[^/]+\/[^/]+\/releases\.atom$/.test(url.pathname)
@@ -194,7 +206,7 @@ type JevState = { items: Array<{ id: string; title: string; text: string }>; his
 type JevQuestion = { type: string; criteria: Record<string, string> };
 /** A report of the shared-memory event: Jev links it to the first earlier report of the same event. */
 const isEventA = (title: string) => /shared memory/i.test(title);
-const inScope = (title: string) => isEventA(title) || /live translation|team memory/i.test(title);
+const inScope = (title: string) => isEventA(title) || /live translation|team memory|open speech model/i.test(title);
 function distribution(keys: string[], choice: string, mass: number) {
   const rest = keys.filter((key) => key !== choice);
   const share = rest.length ? Math.floor(((1 - mass) / rest.length) * 1e6) / 1e6 : 0;
@@ -229,6 +241,21 @@ export function fixtureCopy(offer: Offer) {
   const cover = offer.media.find((item) => item.fullBleedCapable)!;
   const inset = offer.media.filter((item) => item.insetCapable && item.assetSha256 !== cover.assetSha256);
   const image = (item: OfferMedia | undefined) => item ? [{ slot: 'image-1' as const, assetSha256: item.assetSha256 }] : [];
+  if (!offer.media.length) {
+    // The picture-less brief: a carousel of statement slides, as rules.firstSlide 'statement' and no media allow.
+    return {
+      title: 'Otevřený model pro přepis porad na notebooku',
+      caption: 'Hugging Face s několika univerzitními laboratořemi zveřejnil otevřený model pro rozpoznávání řeči, který podle autorů běží na běžném notebooku bez grafické karty. Přepisuje porady v angličtině, němčině a španělštině a označuje, kdo mluví.\n\nVáhy i kód pro trénování jsou veřejné. Autoři přiznávají, že u hlučných telefonátů dělá model víc chyb než uzavřené služby.\n\nV prohlížeči zatím neběží. Autoři připomínají, že licence nemění pravidla pro nahrávání lidí.',
+      hashtags: ['huggingface', 'rozpoznavanireci', 'otevrenemodely'],
+      format: 'carousel',
+      slides: [
+        { type: 'statement', headline: 'Otevřený model přepisuje porady přímo na notebooku.', body: 'Podle Hugging Face nepotřebuje grafickou kartu ani připojení ke cloudové službě.', images: [], alt: 'Úvodní textový slide o otevřeném modelu pro přepis porad.' },
+        { type: 'statement', headline: 'Umí angličtinu, němčinu a španělštinu a pozná, kdo mluví.', images: [], alt: 'Textový slide o jazycích, které model zvládá.' },
+        { type: 'statement', variant: 'ink', headline: 'U hlučných telefonátů dělá víc chyb než uzavřené služby.', body: 'Autoři to uvádějí sami po srovnání na veřejných testovacích sadách.', images: [], alt: 'Textový slide o slabinách modelu.' },
+        { type: 'statement', headline: 'Licence nemění pravidla pro nahrávání lidí.', images: [], alt: 'Textový slide o upozornění autorů k nahrávání.' },
+      ],
+    };
+  }
   if (/live translation/i.test(offer.brief.title + offer.evidence.map((item) => item.title).join(' '))) {
     return {
       title: 'Meta AI: živý překlad hlasových rozhovorů',

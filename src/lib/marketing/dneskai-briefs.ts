@@ -35,8 +35,40 @@ export const DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES = 60;
 /** A slot this close to now is skipped: generation and the owner's review need time before it. */
 export const DNESKAI_BRIEF_MIN_LEAD_MINUTES = 30;
 export const DNESKAI_BRIEF_MEDIA_LIMIT = 20;
-/** A primary report shorter than this, with at most one usable picture, is suggested as a single-image post. */
+/**
+ * The floor of the text-only single: a primary report (its feed text or, in brief/2, its fetched article text)
+ * shorter than this is suggested as a single-image post unless the whole evidence pack is long enough for a
+ * carousel (`DNESKAI_BRIEF_CAROUSEL_EVIDENCE_MIN`).
+ */
 export const DNESKAI_BRIEF_SINGLE_TEXT_LIMIT = 400;
+/**
+ * An evidence pack of at least this many characters suggests a carousel whatever the picture count (briefs-01):
+ * a deck without pictures uses statement slides, so the number of pictures no longer decides the format.
+ */
+export const DNESKAI_BRIEF_CAROUSEL_EVIDENCE_MIN = 800;
+/** The characters one evidence item contributes: the longer of its feed excerpt and its article text, trimmed. */
+function evidenceChars(item: DneskaiBriefEvidence): number {
+  const article = 'articleText' in item && typeof item.articleText === 'string' ? item.articleText.trim().length : 0;
+  return Math.max(item.excerpt.trim().length, article);
+}
+/**
+ * The suggested format of a brief, from its evidence pack after article text (brief/2) or from the feed text alone
+ * (brief/1): `single-image` only when the pack is thin, that is the primary report is under the 400-character
+ * floor and every distinct report together stays under 800 characters. Pictures do not count; a carousel with
+ * none is drawn from text slide types only, and generation never adds a picture the brief does not offer.
+ */
+export function dneskaiSuggestedFormat(evidence: readonly DneskaiBriefEvidence[]): 'single-image' | 'carousel' {
+  const primary = evidence[0] ? evidenceChars(evidence[0]) : 0;
+  const seen = new Set<string>();
+  let pack = 0;
+  for (const item of evidence) {
+    const key = [item.excerpt.trim(), 'articleText' in item && typeof item.articleText === 'string' ? item.articleText.trim() : ''].join('\u0000');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pack += evidenceChars(item);
+  }
+  return primary >= DNESKAI_BRIEF_SINGLE_TEXT_LIMIT || pack >= DNESKAI_BRIEF_CAROUSEL_EVIDENCE_MIN ? 'carousel' : 'single-image';
+}
 export const DNESKAI_REPEAT_WINDOW_DAYS = 14;
 /**
  * Two pictures are the same photograph when their pHash differs in at most this many bits. Stricter than the
@@ -128,12 +160,10 @@ export function buildDneskaiBrief(input: { eventId: string; memberHash: string; 
       ...(input.richEvidence !== false && asset.sourceAltText?{sourceAltText:asset.sourceAltText}:{}),
       originKind: asset.originKind, fullBleedCapable: asset.fullBleedCapable, insetCapable: asset.insetCapable }];
   })).slice(0, DNESKAI_BRIEF_MEDIA_LIMIT);
-  const primary = ranked[0]!;
-  const singleImage = Math.max(primary.text.trim().length, (input.richEvidence === false || dneskaiCaptionOnly(primary))?0:(input.members.find(m=>m.candidate.id===primary.id)?.articleText?.length??0)) < DNESKAI_BRIEF_SINGLE_TEXT_LIMIT && media.filter(dneskaiUsablePicture).length <= 1;
   const observedAt = input.observedAt.toISOString();
   const parsed = DneskaiBriefSchema.safeParse({
     schemaVersion: input.richEvidence === false ? 'dneskai-brief/1' : 'dneskai-brief/2', eventId: input.eventId, memberHash: input.memberHash, targetDate: input.targetDate, category: input.category,
-    title: evidence[0]!.title.slice(0, 300), evidence, media, suggestedFormat: singleImage ? 'single-image' : 'carousel',
+    title: evidence[0]!.title.slice(0, 300), evidence, media, suggestedFormat: dneskaiSuggestedFormat(evidence),
     scheduledAt: input.scheduledAt, timeZone: 'Europe/Prague', observedAt, expiresAt: new Date(input.observedAt.getTime() + dneskaiBriefLifetimeMs(input.category)).toISOString(),
   });
   return parsed.success ? { brief: parsed.data } : { code: 'brief-invalid' };

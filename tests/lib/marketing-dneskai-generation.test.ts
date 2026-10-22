@@ -68,6 +68,24 @@ describe("marketing-copy/5 prompt (#116)", () => {
     expect(framed.rules).toMatchObject({ firstSlide: "figure-or-statement", singleVariant: "type" });
     expect(offerFor({ media: [], suggestedFormat: "single-image" }).rules).toEqual({ formats: ["single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
   });
+  it("lets a picture-less carousel brief use text slides only and never invents a picture (briefs-01)", () => {
+    const offer = offerFor({ media: [], suggestedFormat: "carousel" });
+    expect(offer.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
+    expect(offer.media).toEqual([]);
+    const statements: DneskaiCopy = { ...validCopy(pictures), slides: [
+      { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", body: "Rychlá akce Open Eyes je v aplikaci pro iOS i Android.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
+      { type: "statement", headline: "Zdarma jsou 2 použití, pak je potřeba předplatné.", images: [], alt: "Textový slide o tom, kolik funkce stojí." },
+      { type: "statement", variant: "ink", headline: "Jak funkce zvládá skupinové fotky, Adobe neuvedlo.", images: [], alt: "Textový slide o tom, co zůstává otevřené." },
+      { type: "statement", headline: "Účet @technology akci vyzkoušel na portrétu.", images: [], alt: "Textový slide o vyzkoušení funkce na Instagramu." },
+    ] };
+    expect(validateDneskaiCopy(statements, offer)).toEqual([]);
+    const deck = buildDneskaiDeck(statements, offer, glyphs);
+    expect(deck.slides.map((slide) => slide.type)).toEqual(["statement", "statement", "statement", "statement", "sources"]);
+    expect(deck.slides.every((slide) => slide.images.length === 0)).toBe(true);
+    // A picture the brief does not offer is refused, so a carousel never gains an invented picture.
+    const invented: DneskaiCopy = { ...statements, slides: [{ type: "figure", headline: "Rychlá akce Open Eyes", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide s obrázkem." }, ...statements.slides.slice(1)] };
+    expect(validateDneskaiCopy(invented, offer).map((entry) => entry.code)).toEqual(expect.arrayContaining(["unknown-asset", "first-slide-invalid"]));
+  });
   it("names publishers from the registry in the worker and from the account or host without it", async () => {
     const evidence = briefFixture(pictures).evidence;
     expect(await dneskaiEvidencePublishers(evidence)).toEqual(["The Verge", "@technology (Instagram)"]);

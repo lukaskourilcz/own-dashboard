@@ -42,7 +42,7 @@ Focused offline tests verify verbatim provenance, bounded instructions in the ac
 
 **Gates before render** (`validateDneskaiCopy`), each a named issue with slide and field:
 
-- the format the brief allows (`suggestedFormat: single-image` allows only that); a single-image post is exactly one `single` slide; a carousel has no `single` slide;
+- the format the brief allows (`suggestedFormat: single-image` allows only that; the brief suggests it only for a thin evidence pack, never because of the picture count, and a carousel brief without pictures gets `firstSlide: statement` and `minimumPictureSlides: 0`); a single-image post is exactly one `single` slide; a carousel has no `single` slide;
 - pictures only from the offered media, each used once; `cover-photo` only with `fullBleedCapable`, `single` (variant `photo`) only with `singlePhotoCapable`, `figure` and `split` only with `insetCapable`; the image count and slots each type takes; two pictures on one `split` slide only when their credits fit its one credit line together (`picture-credits-too-long`);
 - the first carousel slide is `cover-photo` when a full-bleed picture is offered, otherwise `figure` or `statement` (only `statement` without framed pictures); a single slide is `photo` exactly when a `singlePhotoCapable` picture is offered; with two or more usable pictures at least two slides show one;
 - only the fields the slide type places (`DNESKAI_PLACED_FIELDS`), each under its template's character ceiling (`DNESKAI_TEXT_LIMITS`, read back from the vendored templates by a test);

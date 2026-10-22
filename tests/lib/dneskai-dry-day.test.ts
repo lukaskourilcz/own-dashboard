@@ -361,7 +361,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(internet.unknown).toEqual([]);
   }, 300_000);
 
-  it('the next night, a follow-up report that reuses a published picture is a repeat: its brief is skipped and nothing is generated', async () => {
+  it('the next night, a follow-up report that reuses a published picture is a repeat and a picture-less report becomes a carousel of text slides', async () => {
     const before = await snapshot();
     let time = Date.parse('2026-10-27T21:00:30.000Z');
     for (let index = 0; index < 24; index++) {
@@ -371,18 +371,41 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
       if (run && run.status !== 'running' && !result.next.pending.length) break;
       time += 5 * 60_000;
     }
+    // The briefs step queued the picture-less brief's job; the generation step runs it on a following tick.
+    for (let index = 0; index < 6 && await count("select count(*)::int n from public.marketing_jobs where user_id=$1 and status='queued'"); index++) {
+      time += 5 * 60_000;
+      at(new Date(time).toISOString());
+      await tick();
+    }
     expect(internet.unknown).toEqual([]);
     const [run] = await sql<{ status: string; selected_count: number }>("select status,selected_count from public.marketing_dneskai_runs where user_id=$1 and date='2026-10-27'", [OWNER]);
-    expect(run!.selected_count).toBe(1);
+    expect(run!.selected_count).toBe(2);
     expect([...apify.runs.values()].map((entry) => entry.profile).slice(4).sort()).toEqual(['activeprogrammer', 'meta.ai', 'mosseri', 'tiffintech']);
     const [followUp] = await sql<{ status: string; reason: string | null; duplicate_of: string | null }>(
       "select status,candidate->>'reason' as reason,candidate->>'duplicateOf' as duplicate_of from public.marketing_dneskai_candidates where user_id=$1 and candidate->>'url'=$2", [OWNER, STORIES.a3.url]);
     expect(followUp).toMatchObject({ status: 'duplicate', reason: 'collection-already-covered' });
-    const briefs = await sql<{ status: string; code: string | null; job_id: string | null }>("select status,code,job_id from public.marketing_dneskai_briefs where user_id=$1 and target_date='2026-10-28'", [OWNER]);
-    expect(briefs).toEqual([{ status: 'skipped', code: 'collection-already-covered', job_id: null }]);
+    const briefs = await sql<{ status: string; code: string | null; job_id: string | null; brief: DneskaiBrief | null }>("select status,code,job_id,brief from public.marketing_dneskai_briefs where user_id=$1 and target_date='2026-10-28' order by rank", [OWNER]);
+    expect(briefs.map(({ status, code }) => ({ status, code })).sort((a, b) => a.status.localeCompare(b.status)))
+      .toEqual([{ status: 'queued', code: null }, { status: 'skipped', code: 'collection-already-covered' }]);
+    expect(briefs.find((row) => row.status === 'skipped')!.job_id).toBeNull();
+    // briefs-01: the picture-less report has a long feed text, so its strict brief/1 suggests a carousel with no media.
+    const textOnly = DneskaiBriefSchema.parse(briefs.find((row) => row.status === 'queued')!.brief);
+    expect(textOnly).toMatchObject({ schemaVersion: 'dneskai-brief/1', suggestedFormat: 'carousel', media: [] });
+    expect(textOnly.evidence.map((item) => item.url)).toEqual([STORIES.c.url]);
+    const lastPrompt = anthropic.requests.at(-1)!.prompt;
+    expect(lastPrompt).not.toContain('Your previous answer');
+    const offer = JSON.parse(lastPrompt) as { media: unknown[]; rules: unknown };
+    expect(offer).toMatchObject({ media: [], rules: { formats: ['carousel', 'single-image'], firstSlide: 'statement', minimumPictureSlides: 0 } });
+    const [textRow] = (await revisionRows()).filter((row) => parseContentRevision(row.revision).sources[0]?.sourceId === textOnly.eventId);
+    const textRevision = parseContentRevision(textRow!.revision);
+    expect(textRow).toMatchObject({ status: 'review', ready: true });
+    expect(textRevision.deck!.slides.map((slide) => slide.type)).toEqual(['statement', 'statement', 'statement', 'statement', 'sources']);
+    expect(textRevision.deck!.slides.every((slide) => slide.images.length === 0)).toBe(true);
+    expect(textRevision.assets).toHaveLength(5);
     const after = await snapshot();
+    // One new job, one call and five rendered slides; no picture was downloaded for either report.
     expect({ jobs: after.jobs, revisions: after.revisions, anthropic: after.anthropic, assetUploads: after.assetUploads, mediaAssets: after.mediaAssets })
-      .toEqual({ jobs: before.jobs, revisions: before.revisions, anthropic: before.anthropic, assetUploads: before.assetUploads, mediaAssets: before.mediaAssets });
+      .toEqual({ jobs: before.jobs + 1, revisions: before.revisions + 1, anthropic: before.anthropic + 1, assetUploads: before.assetUploads + 5, mediaAssets: before.mediaAssets });
   }, 300_000);
 
   it('refreshes the stored Instagram token once fewer than ten days remain, and the next Graph call uses the new token (#121)', async () => {
