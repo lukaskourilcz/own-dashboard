@@ -1,0 +1,43 @@
+{
+  "recordedAt": "2026-10-22T07:41:11.760787+00:00",
+  "validatedAppSourceCommit": "b64cfa5",
+  "ownDashboard": {
+    "lint": 0,
+    "typecheck": 0,
+    "productionBuild": 0,
+    "units": {
+      "passed": 2129,
+      "skipped": 1,
+      "failed": 0
+    },
+    "finalV1FlowAssertions": {
+      "passed": 8
+    },
+    "fullBrowser": {
+      "passed": 168,
+      "skipped": 72,
+      "failed": 0,
+      "durationMinutes": 6.2
+    },
+    "localLinuxRenderTraceCheck": {
+      "status": "platform-mismatch",
+      "reason": "Linux-only libvips .so check run on macOS; verify Linux CI separately"
+    }
+  },
+  "quorum": {
+    "commit": "83bdfb2e1e9ce1114b9b615bd20237f55a7f115a",
+    "studioTestsPassed": 710,
+    "orchestratorTestsPassed": 3235,
+    "siteTestsPassed": 1062,
+    "lint": 0,
+    "typecheck": 0,
+    "productionBuild": 0,
+    "routeSmoke": {
+      "routes": 63,
+      "internalLinks": 463
+    }
+  },
+  "productionDatabaseWrites": false,
+  "researchRuns": 0,
+  "publicationRuns": 0
+}
