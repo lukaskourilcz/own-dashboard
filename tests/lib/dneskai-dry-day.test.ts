@@ -242,7 +242,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     // Every tick is recorded once with what it did.
     const recordedTicks = await sql<{ kind: string; did: unknown[]; finished_at: string | null }>('select kind,did,finished_at::text from public.marketing_ticks where user_id=$1', [OWNER]);
     expect(recordedTicks).toHaveLength(ticks.length);
-    expect(recordedTicks.every((row) => row.kind === 'minute' && Array.isArray(row.did) && row.did.length === 8 && row.finished_at)).toBe(true);
+    expect(recordedTicks.every((row) => row.kind === 'minute' && Array.isArray(row.did) && row.did.length === 9 && row.finished_at)).toBe(true);
+    // The ninth step is the comment watcher (#160), recorded as skipped while DNESKAI_ENGAGEMENT_ENABLED is unset.
+    expect(recordedTicks.every((row) => (row.did as Array<{ category: string; code?: string }>).some((entry) => entry.category === 'engagement' && entry.code === 'engagement-watch-disabled'))).toBe(true);
   }, 600_000);
 
   it('a second pass of ticks and the daily duties change nothing: no new briefs, jobs, renders or downloads', async () => {

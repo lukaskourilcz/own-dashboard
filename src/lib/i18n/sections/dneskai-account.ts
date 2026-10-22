@@ -42,6 +42,16 @@ const en = {
   enabledNow: 'Publishing enabled for this account.', disabledNow: 'Publishing stopped for this account. Approved posts wait.',
   confirmEnable: 'Approved posts will be published to Instagram at their scheduled time. Enable?',
   failed: 'Verification failed. Try again.',
+  /** #160: replies to keyword comments. */
+  engagement: {
+    title: 'Replies to keyword comments',
+    help: 'Whoever comments a post\'s keyword gets its approved message by DM, once, within seven days. The commenter\'s name is not stored.',
+    on: 'Replies on', off: 'Replies off', enable: 'Turn replies on', disable: 'Turn replies off',
+    enabledNow: 'Replies to keyword comments are on.', disabledNow: 'Replies to keyword comments are off.',
+    blocked: 'Replies stopped because Instagram refused a message.',
+    blockedHelp: 'In the Instagram app open Settings, Messages and story replies, Message controls, Connected tools, and allow access to messages. Then turn replies on again here.',
+    errors: { 'engagement-scopes-unverified': 'The stored token lacks instagram_business_manage_comments. Add it, then verify the account again.', 'engagement-unavailable': 'Comment replies are not switched on on the server.' } as Record<string, string>,
+  },
 };
 const cs: typeof en = {
   title: 'Instagramový účet',
@@ -87,5 +97,14 @@ const cs: typeof en = {
   enabledNow: 'Publikování na tento účet je zapnuté.', disabledNow: 'Publikování na tento účet je zastavené. Schválené příspěvky čekají.',
   confirmEnable: 'Schválené příspěvky se v naplánovaný čas zveřejní na Instagramu. Zapnout?',
   failed: 'Ověření se nezdařilo. Zkuste to znovu.',
+  engagement: {
+    title: 'Odpovědi na komentáře s klíčovým slovem',
+    help: 'Kdo napíše do komentáře klíčové slovo příspěvku, dostane do zpráv jeho schválený text, jednou a do sedmi dnů. Jméno komentujícího se neukládá.',
+    on: 'Odpovědi zapnuté', off: 'Odpovědi vypnuté', enable: 'Zapnout odpovědi', disable: 'Vypnout odpovědi',
+    enabledNow: 'Odpovědi na komentáře s klíčovým slovem jsou zapnuté.', disabledNow: 'Odpovědi na komentáře s klíčovým slovem jsou vypnuté.',
+    blocked: 'Odpovědi se zastavily, protože Instagram zprávu odmítl.',
+    blockedHelp: 'V aplikaci Instagram otevřete Nastavení, Zprávy a odpovědi na příběhy, Ovládání zpráv, Propojené nástroje a povolte přístup ke zprávám. Pak tady odpovědi znovu zapněte.',
+    errors: { 'engagement-scopes-unverified': 'Uloženému tokenu chybí oprávnění instagram_business_manage_comments. Doplňte ho a účet ověřte znovu.', 'engagement-unavailable': 'Odpovědi na komentáře nejsou na serveru zapnuté.' },
+  },
 };
 export const dneskaiAccount = { en, cs };

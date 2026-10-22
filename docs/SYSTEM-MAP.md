@@ -88,7 +88,8 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
-| 8 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
+| 8 engagement | Prepared, off: replies once by DM to a keyword comment under a post of the last seven days, then posts the public reply (`DNESKAI_ENGAGEMENT_ENABLED`, #160) | `dneskai-engagement-watch.ts`, `dneskai-engagement-ports.ts` |
+| 9 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
 
 Details: `docs/marketing-scheduling.md`, `docs/dneskai-native-feeds.md`, `docs/dneskai-source-media.md`,
 `docs/dneskai-briefs.md`.
@@ -170,7 +171,9 @@ expiry) and recovery actions. "Publikované" lists receipts; "Chyby a náklady" 
 `/api/marketing/dneskai/render-reel` (`maxDuration` 300 on Vercel Pro with Fluid Compute) stores it once per
 revision hash and audio in the private `marketing-reels` bucket and returns a signed URL. Behind
 `MARKETING_DNESKAI_REELS_ENABLED`. The owner's audio library lives in Zdroje → Hudba; the Lab post card picks a
-track, which joins the revision and its hash. Details: `docs/dneskai-source-media.md`.
+track, which joins the revision and its hash. A carousel post can switch to "Reel" in the Lab (education posts start as
+one); the publishing step renders its MP4 up to 45 minutes before the slot and publishes it as `media_type=REELS`
+with slide 1 as the cover. Details: `docs/dneskai-source-media.md`, `docs/marketing-scheduling.md#reels-165`.
 
 ### Publishing
 
@@ -203,13 +206,14 @@ Costs show in "Chyby a náklady".
 | `marketing_revisions` | Every version of a post: content, `content_hash`, render report, status, `approved_hash` |
 | `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
-| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only) |
+| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (prepared, `20261023120000`) |
+| `marketing_instagram_comment_replies`, `marketing_instagram_comment_checks` | One private reply per keyword comment (comment id, media, keyword, status; no commenter data) and the watcher's cursor and counts per post (prepared, `20261023120000`, #160) |
 | `marketing_ticks`, `marketing_scheduler_state` | Scheduler record and leases |
 | `notifications` | In-app notifications, including the review reminders |
 
 ## 6. Database and switches still to apply
 
-The repository lists every migration version production recorded (reconciled 22 October). Seventeen prepared
+The repository lists every migration version production recorded (reconciled 22 October). Eighteen prepared
 migrations are not applied yet: `20261022000000` through `20261023130100`. The owner applies them with
 `npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Then the
 owner sets these switches in Vercel Production and redeploys:
@@ -220,6 +224,7 @@ owner sets these switches in Vercel Production and redeploys:
 - `DNESKAI_SELECTION_V2_ENABLED`
 - `DNESKAI_REGENERATE_ENABLED`
 - `DNESKAI_TOPICS_ENABLED` (after `20261023100000`)
+- `DNESKAI_ENGAGEMENT_ENABLED` (after `20261023120000`; then the account's reply switch in Zdroje)
 
 Until then those features stay hidden or off and the daily tick logs one harmless `retention` error. Every switch is
 listed in `docs/external-setup.md` and `docs/marketing-scheduling.md`.

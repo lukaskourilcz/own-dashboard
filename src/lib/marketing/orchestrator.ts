@@ -7,9 +7,43 @@ import { SourceRefreshError,refreshMarketingSources,refreshSource } from './sour
 import { enqueueMarketingJob,executeMarketingJob } from './worker-runtime';
 import { trustedMarketingTemplate } from './template-registry';
 import { pragueScheduledAt } from './clock';
-import { CONTAINER_RETRY_CODE,publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type PublisherState } from './publisher';
+import { CONTAINER_RETRY_CODE,deckReel,publishMarketingRevision,reconcileMarketingPublication,type MarketingPublishAccount,type PublisherState } from './publisher';
 import { resolveMetaPublisherConfig } from './meta-credentials';
 import { createDneskaiMediaLoader } from './dneskai-media';
+import { dneskaiReelsEnabled,findDneskaiReelForRevision,lastDneskaiReelAudio,requestDneskaiReelRender } from './dneskai-reel';
+import { nextDneskaiAudioTrackId } from './dneskai-audio';
+/**
+ * #165: a deck Reel publishes only with its rendered MP4. Before any claim the Reel must be stored; if it is not, the
+ * render is requested (rotation track when the owner chose none) and the publication stays queued for the next tick.
+ * Returns the stored Reel, or the hold code that keeps the publication queued.
+ */
+async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,options:{dryRun:boolean;origin?:string}):Promise<{reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;hold:string|null}>{
+ const revision=state.revisionRow.revision;
+ if(!deckReel(revision))return {reel:null,hold:null};
+ if(!dneskaiReelsEnabled())return {reel:null,hold:'reels-disabled'};
+ const reel=await findDneskaiReelForRevision(db,owner,state.revisionRow.id,state.revisionRow.content_hash).catch(()=>null);
+ if(reel)return {reel,hold:null};
+ if(options.dryRun)return {reel:null,hold:'reel-render-pending'};
+ if(!options.origin)return {reel:null,hold:'reel-render-unavailable'};
+ const audioTrackId=revision.audio?null:await nextDneskaiAudioTrackId(db,owner,await lastDneskaiReelAudio(db,owner,state.revisionRow.id).catch(()=>null)).catch(()=>null);
+ const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,audioTrackId});
+ return {reel:null,hold:requested?'reel-render-pending':'reel-render-unavailable'};
+}
+/** Starts the Reel render of approved posts due within `aheadMs`, one per call, so the MP4 is ready at the slot. */
+export async function prepareUpcomingDneskaiReels(db:Database,owner:string,origin:string,aheadMs=45*60000){
+ if(!dneskaiReelsEnabled())return null;
+ const now=Date.now();
+ const {data,error}=await db.from('marketing_publications').select('revision_id,marketing_revisions!inner(brand,revision)').eq('user_id',owner).eq('status','queued')
+  .eq('marketing_revisions.brand','dneskai').eq('marketing_revisions.revision->>format','reel').gte('scheduled_at',new Date(now-15*60000).toISOString()).lte('scheduled_at',new Date(now+aheadMs).toISOString()).order('scheduled_at').limit(3);
+ if(error)return null;
+ for(const row of data??[]){
+  const state=await publishingState(db,owner,(row as {revision_id:string}).revision_id,false).catch(()=>null);
+  if(!state)continue;
+  const prepared=await prepareDneskaiReel(db,owner,state,{dryRun:false,origin});
+  if(prepared.hold)return prepared.hold;
+ }
+ return null;
+}
 export { metaConfiguration } from './meta-credentials';
 type Database=ReturnType<typeof createAdminClient>;
 export function marketingSlotId(owner:string,brand:string,platform:string,scheduledAt:string,version=1,entryId?:string):string{
@@ -95,7 +129,7 @@ export async function executeOrchestratedMarketingJob(db:Database,owner:string,i
  return executeMarketingJob(db,owner,id,{refreshSource,loadDneskaiMedia:createDneskaiMediaLoader(db,owner)});
 }
 /** `options.preflight` adds the read-only Meta checks to a dry run and stops before any container. */
-export async function publishDueMarketing(db:Database,owner:string,brand:MarketingBrand,dryRun=true,signal=AbortSignal.timeout(55000),publicationId?:string,options:{preflight?:boolean}={}){
+export async function publishDueMarketing(db:Database,owner:string,brand:MarketingBrand,dryRun=true,signal=AbortSignal.timeout(55000),publicationId?:string,options:{preflight?:boolean;origin?:string}={}){
  if(!dryRun&&(process.env.MARKETING_PUBLISH_ENABLED!=='true'||process.env[`MARKETING_${brand.toUpperCase()}_PUBLISH_ENABLED`]!=='true'))throw new Error('publishing-held');
  let dueQuery=db.from('marketing_publications').select('id,revision_id,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','queued').lte('scheduled_at',new Date().toISOString()).gte('scheduled_at',new Date(Date.now()-15*60000).toISOString()).order('scheduled_at').limit(1);if(publicationId)dueQuery=dueQuery.eq('id',publicationId);
  const {data:due,error}=await dueQuery;
@@ -105,11 +139,15 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
  // also stops before the claim: the publication stays queued instead of being
  // recorded as failed by the post-claim hold below.
  let credentialHold:{publicationId:string;code:string}|null=null;
+ let reelHold:{publicationId:string;code:string}|null=null;
  for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand){await publishingState(db,owner,publication.revision_id,true,signal);
+  // #165: a Reel without its stored MP4 is never claimed; the claim would turn the hold into a failure.
+  if(!reelHold){const prepared=await prepareDneskaiReel(db,owner,state,{dryRun,origin:options.origin});if(prepared.hold)reelHold={publicationId:publication.id,code:prepared.hold};}
   if(!dryRun&&!credentialHold){const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);if(config.credentialHold)credentialHold={publicationId:publication.id,code:config.credentialHold};}}}
  let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').in('error_code',['container-pending',CONTAINER_RETRY_CODE]).gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
  if(pending.error)throw new Error('publication-state-unavailable');
  if(credentialHold&&!pending.data?.length)return {outcomes:[{publicationId:credentialHold.publicationId,status:'held' as const,errorCode:credentialHold.code,remoteContainerId:null,remoteMediaId:null,remoteUrl:null}]};
+ if(reelHold&&!pending.data?.length)return {outcomes:[{publicationId:reelHold.publicationId,status:'held' as const,errorCode:reelHold.code,remoteContainerId:null,remoteMediaId:null,remoteUrl:null}]};
  let dryQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','queued').lte('scheduled_at',new Date().toISOString()).limit(1);if(publicationId)dryQuery=dryQuery.eq('id',publicationId);
  const claimed=pending.data?.length?pending:dryRun?await dryQuery:await db.rpc('marketing_claim_due',{p_owner:owner,p_limit:1,p_brand:brand,...(publicationId?{p_publication:publicationId}:{})});
  if(claimed.error)throw new Error('publication-claim-failed');
@@ -120,7 +158,8 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
   let container=publication.remote_container_id,code=publication.error_code;
   // The stored account token wins over the environment bootstrap; a held credential stops at the gate.
   const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);
-  const outcome=await publishMarketingRevision({...state,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
+  const reel=deckReel(state.revisionRow.revision)?await findDneskaiReelForRevision(db,owner,publication.revision_id,state.revisionRow.content_hash).catch(()=>null):null;
+  const outcome=await publishMarketingRevision({...state,reel,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
    if(checkpoint.stage==='outcome'){
     const {error:receiptError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:publication.id,p_expected_container:container,p_expected_error:code,p_status:checkpoint.status,p_container:checkpoint.remoteContainerId,p_media:checkpoint.remoteMediaId,p_url:checkpoint.remoteUrl,p_error:checkpoint.errorCode});
     if(receiptError)throw new Error('publication-receipt-fence-lost');

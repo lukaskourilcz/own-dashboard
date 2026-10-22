@@ -625,6 +625,29 @@ describe('review reminder step (owner decision 7)', () => {
   });
 });
 
+describe('comment watcher step (#160)', () => {
+  const watched = { media: 1, comments: 4, matches: 2, sent: 2, failed: 0, uncertain: 0, publicSent: 2, skippedOld: 1, blockedAccounts: 0, stopCode: null };
+  it('is absent without the port and skipped until DNESKAI_ENGAGEMENT_ENABLED=true, calling nothing', async () => {
+    expect((await harness().tick()).did.map((entry) => entry.category)).not.toContain('engagement');
+    const engagementWatch = vi.fn(async () => watched);
+    const off = await harness({ engagementWatch }).tick();
+    expect(step(off, 'engagement')).toMatchObject({ status: 'skipped', code: 'engagement-watch-disabled' });
+    expect(engagementWatch).not.toHaveBeenCalled();
+  });
+  it('runs before the reminder under the publishing lease and records counts only', async () => {
+    const engagementWatch = vi.fn(async () => watched);
+    const { tick, store } = harness({ engagementWatch, reviewReminders: async () => ({ due: 0, sent: 0 }) });
+    const result = await tick({ ...on, DNESKAI_ENGAGEMENT_ENABLED: 'true' });
+    const categories = result.did.map((entry) => entry.category);
+    expect(categories.indexOf('engagement')).toBeLessThan(categories.indexOf('reminder'));
+    expect(step(result, 'engagement')).toMatchObject({ status: 'done', detail: { media: 1, matches: 2, sent: 2, publicSent: 2, skippedOld: 1 } });
+    expect(store.acquired.filter((lease) => lease === 'publishing').length).toBeGreaterThanOrEqual(1);
+    const stopped = await harness({ engagementWatch: async () => ({ ...watched, stopCode: 'meta-rate-limited' }) }).tick({ ...on, DNESKAI_ENGAGEMENT_ENABLED: 'true' });
+    expect(step(stopped, 'engagement')).toMatchObject({ status: 'error', code: 'meta-rate-limited' });
+    expect(stopped.recorded).toBe(true);
+  });
+});
+
 describe('scouting step (#151)', () => {
   // 23:00 in Prague, the first five-minute slot of the hour.
   const night = Date.parse('2026-10-20T21:00:00Z');

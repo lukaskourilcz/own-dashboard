@@ -53,9 +53,31 @@ tick. Each precheck still runs once per tick: the order is chosen from its answe
 | 5 | publishing | a queued DNESKAi publication inside its 15-minute window, or a claimed one waiting for its container | `publishDueMarketing(db, owner, 'dneskai', dryRun, signal)`. Live only when `MARKETING_PUBLISH_ENABLED` and `MARKETING_DNESKAI_PUBLISH_ENABLED` are both `true`; otherwise a dry run with no Meta write. | both publish switches; `marketing_accounts.enabled` is enforced by the publisher |
 | 6 | reconciliation | a DNESKAi publication in `reconciliation` not checked for 30 minutes; when there is none, a `claimed` one whose lease expired (the function died mid-publish), which only `marketing_claim_due` would otherwise move to `reconciliation` | `reconcileStoredMarketingPublication`: Graph GET requests only, and the receipt when the media is found | none (read-only) |
 | 7 | token | an Instagram token row for which `instagramTokenRefreshDue` is true (under ten days left, at least a day old) | `refreshInstagramToken` for one account. The refresh is marked uncertain in `marketing_scheduler_state` before the request is sent (`marketing_scheduler_save_state`); without that mark nothing is sent. `uncertain` is never retried for the same stored token, even when the answer or the release is lost; a new token from account verification lifts the block. `failed` waits a day, `held` an hour. | none: a refresh is a GET that publishes nothing, so a paused account keeps a live token |
-| 8 | reminder | always, when the ports wire it (owner decision 7) | `sendDneskaiReviewReminders`: in-app notifications for the day's first post ready for review and for the first unapproved slot of today within 60 minutes, each once (keyed per day and per slot). Holds no lease and calls no provider. `DNESKAI_REVIEW_REMINDERS_ENABLED=false` records `skipped: reminders-disabled` | none |
+| 8 | engagement | `DNESKAI_ENGAGEMENT_ENABLED=true` and the ports wire it (#160) | `runDneskaiEngagementWatch` (`dneskai-engagement-watch.ts`, wired in `dneskai-engagement-ports.ts`) under the publishing lease: for up to 20 DNESKAi Instagram posts published in the last seven days whose revision carries a keyword, on an account whose reply switch is on and not blocked, least recently checked first, it reads `GET /<media-id>/comments` (50 a page, at most 200 comments a tick, an unfinished pass continues from its cursor) and matches the keyword (lower case, no diacritics or punctuation, a whole word in a comment of at most five words). A match is claimed in `marketing_instagram_comment_replies` (unique comment id) before `POST /<IG_ID>/messages` with `recipient.comment_id` sends the approved DM, then `POST /<comment-id>/replies` posts the public reply when set. A lost answer stays `uncertain` and is never retried. Comments older than seven days are counted, not answered. Graph code 10 (messaging off for connected tools) blocks the account; a dead token or a rate limit stops the tick's pass. Records counts only | `DNESKAI_ENGAGEMENT_ENABLED` |
+| 9 | reminder | always, when the ports wire it (owner decision 7) | `sendDneskaiReviewReminders`: in-app notifications for the day's first post ready for review and for the first unapproved slot of today within 60 minutes, each once (keyed per day and per slot). Holds no lease and calls no provider. `DNESKAI_REVIEW_REMINDERS_ENABLED=false` records `skipped: reminders-disabled` | none |
 
 A paused category is a recorded `skipped` with its code and costs $0. Nothing is called for it.
+
+### Reels (#165)
+
+With `MARKETING_DNESKAI_REELS_ENABLED=true`, a DNESKAi post whose format is `reel` (a carousel deck the owner
+switched to Reel in the Lab, or an education post generated as one) publishes as the rendered slideshow:
+
+- **Render ahead.** A queued Reel within 45 minutes of its slot counts as publishing work. The step asks this
+  deployment's `/api/marketing/dneskai/render-reel` (signed as the scheduler, `async: true`) for its MP4 and does not
+  wait: the route answers 202 and renders in `after()` within its own 300 s. A post without its own track gets the
+  next enabled library track after the previous Reel's. Each stored Reel is recorded as a `dneskai-reel-rendered`
+  row in `marketing_events`, which is how the publisher and the rotation find it.
+- **No claim without the video.** At its slot a Reel whose MP4 is not stored yet stays queued with
+  `reel-render-pending` and the render is asked for again; the next tick inside the 15-minute window publishes it.
+  Switched off, a Reel stays queued as `reels-disabled`. Neither claims, so neither turns into a failure.
+- **Publishing.** The publisher downloads the MP4 and checks its size and sha256, then creates one container:
+  `media_type=REELS`, `video_url`, `cover_url` = slide 1, `share_to_feed=true`, the caption. A video container is
+  polled up to six times three seconds apart; still `IN_PROGRESS`, it stays `container-pending` for the next tick,
+  inside the same claim and window. Then one `media_publish`, as for every post.
+- **Quota.** The publisher refuses at 50 posts in 24 hours (`content_publishing_limit`), even if the account reports
+  a higher total.
+- **Reconciliation** matches a Reel listed as `VIDEO` or `REELS`.
 
 Collection, media, briefs and generation wait for that tick (`deferred: yield-to-publication`) while
 publishing is live and either a queued DNESKAi publication is due now or within five minutes, or a
@@ -270,13 +292,14 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `DNESKAI_OWNER_RECOVERY_ENABLED` | off | Sources: Re-review of held reports and Move to next free slot | Off until migration `20261022141512` |
 | `DNESKAI_LAPSED_RELEASE_ENABLED` | off | Sources: Release reports of a lapsed brief | Off until migrations `20261022021835` and `20261022141613` |
 | `DNESKAI_SELECTION_V2_ENABLED` | off | Collection: one automatic re-review of recent Jev holds; Sources: the relevance-first explanation | Off until migrations `20261022180000` and `20261022180100` |
+| `DNESKAI_ENGAGEMENT_ENABLED` | off | The tick's `engagement` step, the account's reply switch (`/api/marketing/accounts/engagement`) and the accounts read of its columns | Off until migration `20261023120000` |
 | `DNESKAI_REVIEW_REMINDERS_ENABLED` | on | The tick's `reminder` step; only `false` turns it off | Live |
 | `DNESKAI_REGENERATE_ENABLED` | off | Lab: Regenerate with a note (`action: "regenerate"`) | Off until migration `20261022190000` |
 | `DNESKAI_TOPICS_ENABLED` | off | Topics (náměty): `GET` and `POST /api/marketing/dneskai/topics` and their read model; off answers 404 | Off until migration `20261023100000` |
 | `DNESKAI_SCOUTING_ENABLED` | off | Collection also reads the education sources (never sent to Jev); the tick's `scouting` step turns them and library links rated 4 or 5 into proposed topics, hourly 22:00–08:00 | Needs `DNESKAI_TOPICS_ENABLED` and migration `20261023100000` |
 | `DNESKAI_FACT_OR_HYPE_ENABLED` | off | Scouting step: transcripts of FACT or HYPE reels (Apify, $0.05 each, own ceiling `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, default $0.50) and one Claude call each for tool and verdict | Needs scouting and migration `20261023100100` |
 | `DNESKAI_TITLING_ENABLED` | off | Briefs step: a finished run's selected events become news topics instead of briefs. Scouting step: news topics expire after 48 hours; from 02:00 one Claude call titles up to 40 untitled topics | Needs `DNESKAI_TOPICS_ENABLED` and migrations `20261023100000`, `20261023100100`; stops automatic briefs until A6 ships |
-| `MARKETING_DNESKAI_REELS_ENABLED` | off | Reels: the render route `/api/marketing/dneskai/render-reel` (#163); with #165 also publishing a revision as a Reel | Off until migration `20261023130000` |
+| `MARKETING_DNESKAI_REELS_ENABLED` | off | Reels: the render route (#163), Zdroje → Hudba and the Lab's music picker (#164), the Formát switch, Reel generation for education posts and Reel publishing (#165) | Off until migrations `20261023130000` and `20261023130100` |
 | `DNESKAI_ENGAGEMENT_EDITOR_ENABLED` | off | Lab: the comment keyword, DM message and public reply editor; `engagement` in `action: "edit"` | Off, needs no migration |
 | `DNESKAI_RICH_EVIDENCE_ENABLED` | off | Fetched article text and picture descriptions in media collection and brief/2 | Off until the evidence migrations |
 | `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` | off | The research runner (`dneskai-apify-research.ts`); it also needs `MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN` to equal the plan id | Off, waits for an approved plan |
