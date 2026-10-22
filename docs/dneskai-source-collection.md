@@ -66,6 +66,10 @@ v běhu, který ji poprvé uložil. Záložka Zdroje odhad označí. Rotace mů�
 z některých účtů zpozdit o několik dnů; datum zůstává viditelné a starý příspěvek
 nesmí vystupovat jako dnešní zpráva.
 
+Události se vybírají jen při dokončení běhu ve stejný pražský den, kdy běh začal.
+Běh, který skončí po půlnoci, nevybere nic a zapíše kód
+`collection-selection-day-passed`, aby nulový výběr nebyl bez vysvětlení.
+
 Denní feedy vracejí nejvýše 20 položek, Instagram 10 na profil a 50 za den.
 Kandidát nese nejvýše 10 odkazů na média. Jev dostane po sběru `ceil(nových / 8)`
 dávek, nejvýše 16; běh bez nových kandidátů žádnou dávku nevytvoří.

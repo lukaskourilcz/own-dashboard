@@ -118,7 +118,10 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  // its code on the stage and does not make the run partial (production-07). Real source errors still do.
  const covered=current.every(stage=>stage.status==='ok'||(stage.kind==='jev'&&stage.error_code==='collection-no-new-candidates')||dneskaiStageSwitchedOff(stage));
  const status=covered&&!pending.length?'complete':current.some(stage=>stage.status==='ok')?'partial':'held';
- const result=await store.finish(owner,run.id,fence,status,pending.length?'collection-classification-pending':status==='complete'?null:'collection-review-incomplete');return{runId:result.id,status:result.status,continue:false};
+ // marketing_dneskai_finish selects events only while the run's date is still today in Prague. A run that finishes
+ // after midnight selects nothing; the code says why instead of a silent zero (SEL-06). The policy is unchanged.
+ const selectionDayPassed=run.date!==pragueMarketingDate(clock());
+ const result=await store.finish(owner,run.id,fence,status,selectionDayPassed?'collection-selection-day-passed':pending.length?'collection-classification-pending':status==='complete'?null:'collection-review-incomplete');return{runId:result.id,status:result.status,continue:false};
 }
 /**
  * The comparison records one Jev call gets: the stored history (selected reports, approved and published posts),

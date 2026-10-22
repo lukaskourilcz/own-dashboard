@@ -81,6 +81,12 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
   expect(f.stages.filter(row=>row.kind==='jev').map(row=>row.source_id)).toEqual(['__jev:00','__jev:01','__jev:02']);
   expect(jev.mock.calls.map(call=>call[0].length)).toEqual([8,8,1]);expect(result).toMatchObject({status:'complete',continue:false});
  });
+ it('records collection-selection-day-passed when a run finishes after Prague midnight',async()=>{
+  // 00:10 in Prague on 14 October: the run of 13 October finishes, and the database selects nothing for it.
+  const f=fixture([stage('openai-blog','feed')],[]),feed=vi.fn(async()=>({items:[],complete:true,errorCode:null}));
+  expect(await tickDneskaiCollection(owner,{projectId:project,runId},{store:f.store,env,now:()=>new Date('2026-10-13T22:10:00Z'),feed,jev:vi.fn()})).toMatchObject({status:'complete',continue:false});
+  expect(f.finish).toHaveBeenLastCalledWith(owner,runId,expect.any(String),'complete','collection-selection-day-passed');
+ });
  it('plans no Jev stage without new candidates and still completes a covered run',async()=>{
   const f=fixture([stage('openai-blog','feed')],[]),feed=vi.fn(async()=>({items:[],complete:true,errorCode:null})),jev=vi.fn();
   expect(await tickDneskaiCollection(owner,{projectId:project},{store:f.store,env,now:()=>now,feed,jev})).toMatchObject({status:'complete',continue:false});
