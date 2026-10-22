@@ -7,7 +7,7 @@ import type { DneskaiKit, DneskaiLabKit } from '@/lib/marketing/dneskai-lab';
 import { cn } from '@/lib/utils';
 
 /**
- * The five kits as one radio group of bordered cover thumbnails (design-lab-spec.md §2, inspector 1). The digit is the
+ * The six kits as one radio group of bordered cover thumbnails (design-lab-spec.md §2, inspector 1). The digit is the
  * shortcut. A kit with no rendered cover says so in words; a kit OwnDashboard cannot render is disabled and explained.
  */
 export function DneskaiKitTiles({ kits, chosen, onChoose, lang }: { kits: readonly DneskaiLabKit[]; chosen: DneskaiKit; onChoose: (kit: DneskaiKit) => void; lang: 'en' | 'cs' }) {
@@ -16,7 +16,7 @@ export function DneskaiKitTiles({ kits, chosen, onChoose, lang }: { kits: readon
   const anyUnavailable = kits.some((kit) => !kit.renderable);
   return <fieldset className="min-w-0 space-y-2" aria-describedby={anyUnavailable ? `${id}-help` : undefined} data-testid="dneskai-kit-tiles">
     <legend className="text-xs font-semibold">{t.label}</legend>
-    <div className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-5 lg:overflow-visible">
+    <div className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-6 lg:overflow-visible">
       {kits.map((kit) => {
         const selected = kit.id === chosen;
         return <label key={kit.id} data-testid={`dneskai-kit-${kit.id}`}

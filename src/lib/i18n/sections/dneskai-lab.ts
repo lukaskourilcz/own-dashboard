@@ -57,7 +57,7 @@ const en = {
   },
   kits: {
     label: 'Kit',
-    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker' } satisfies Record<DneskaiKit, string>,
+    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker', spotlight: 'Spotlight' } satisfies Record<DneskaiKit, string>,
     current: 'Current', fits: 'fits', shorten: 'shorten text',
     unavailable: 'Not rendered yet',
     pick: 'Choose to preview',
@@ -190,7 +190,7 @@ const en = {
     rows: [
       ['J / K or ↓ / ↑', 'Next or previous post'],
       ['← / →', 'Previous or next slide'],
-      ['1–5', 'Choose a kit'],
+      ['1–6', 'Choose a kit'],
       ['A', 'Approve this post'],
       ['D', 'Approve the day'],
       ['E', 'Edit the first field of the slide'],
@@ -258,7 +258,7 @@ const cs: typeof en = {
   },
   kits: {
     label: 'Sada',
-    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker' },
+    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker', spotlight: 'Spotlight' },
     current: 'Současná', fits: 'vejde se', shorten: 'zkrátit text',
     unavailable: 'Zatím nevykresleno',
     pick: 'Vyberte pro náhled',
@@ -390,7 +390,7 @@ const cs: typeof en = {
     rows: [
       ['J / K nebo ↓ / ↑', 'Další nebo předchozí příspěvek'],
       ['← / →', 'Předchozí nebo další slide'],
-      ['1–5', 'Vybrat sadu'],
+      ['1–6', 'Vybrat sadu'],
       ['A', 'Schválit tento příspěvek'],
       ['D', 'Schválit celý den'],
       ['E', 'Upravit první pole slidu'],

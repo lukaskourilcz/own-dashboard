@@ -248,7 +248,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     const position = order.findIndex((item) => item.post.id === post.id);
     if (['j', 'k', 'arrowdown', 'arrowup'].includes(key)) onChoose(order[Math.max(0, Math.min(order.length - 1, position + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
     else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(draft.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
-    else if (/^[1-5]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; chooseKit(kit); }
+    else if (/^[1-6]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; chooseKit(kit); }
     else if (key === 'a') void perform('approve');
     else if (key === 'd') { if (!dirty) onBatch(); }
     else if (key === 'e') fieldRef.current?.focus();

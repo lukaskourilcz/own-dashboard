@@ -40,7 +40,7 @@ type DneskaiRenderProblem = NonNullable<DneskaiWorkspacePost['renderReport']>['p
 /** One kit tile: the post's cover in that kit when it was rendered, and whether the deck fits it. */
 export type DneskaiLabKit = {
   id: DneskaiKit;
-  /** The digit that selects it (1–5). */
+  /** The digit that selects it (1–6). */
   key: number;
   current: boolean;
   /** Whether OwnDashboard can render this kit at all today. */
