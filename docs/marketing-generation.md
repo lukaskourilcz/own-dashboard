@@ -205,3 +205,7 @@ Focused tests cover consent/hash/eligibility isolation, references, immutable ex
 - [LangSmith TypeScript client reference](https://reference.langchain.com/javascript/langsmith)
 
 Pinned dependencies: `@langchain/anthropic 1.5.12`, `@langchain/core 1.2.17`, `langsmith 0.10.11`, `@resvg/resvg-js 2.6.2`, `sharp 0.35.5`, and `@boardlessai/carousel-studio 1.0.0` vendored from Quorum `852c2e9`. SDK signatures and runtime options were checked against installed declarations/implementation in addition to documentation.
+
+### Brief input sizing
+
+Brief prompts use a planning estimate of two UTF-8 bytes per token plus 2,048 tokens for schema/envelope overhead; the model A/B script uses a less conservative bytes/3 estimate. Neither is a tokenizer measurement. The offer shrinks excerpts and then sources/images to fit. Dollar admission remains byte-based, each paid call still reserves the existing job maximum, and reported usage must remain within the unchanged 20,000 input-token ceiling. No counting request or model call is made while preparing the offer.

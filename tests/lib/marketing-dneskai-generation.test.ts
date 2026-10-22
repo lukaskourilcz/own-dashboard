@@ -477,3 +477,24 @@ describe("Claude Sonnet 5.5 call shape (mocked HTTP; zero network)", () => {
     expect(sonnet46).toMatchObject({ model: "claude-sonnet-4-6", temperature: 0, tool_choice: { type: "tool", name: "atomic_knowledge" } });
   });
 });
+
+
+describe("brief input planning without relaxing budget admission", () => {
+  it("keeps rich Czech evidence and picture choices while preserving the reservation", async () => {
+    const base=briefFixture(pictures);
+    const brief=briefFixture(pictures,{evidence:Array.from({length:6},(_,i)=>({...base.evidence[0]!,candidateId:`rich-${i}`,excerpt:"Příliš žluťoučký kůň vysvětlil ověřené změny. ".repeat(40)})),media:base.media.map(m=>({...m,candidateId:"rich-0"}))});
+    const source=briefPacket(brief);
+    const provider=fakeModel([{copy:validCopy(pictures),usage:{inputTokens:6000,outputTokens:1500}}]);
+    const admission=vi.fn(async()=>{});
+    // Ignore content matching in this sizing test: the provider output is intentionally invalid for this richer input.
+    await generateMarketingDraft(briefInput(source),{model:provider,now,loadDneskaiMedia:loadMedia,validateDneskaiDeck:clean,admitPaidCall:admission,budget:{...DEFAULT_GENERATION_BUDGET,maxAttempts:1}}).catch(()=>undefined);
+    expect(provider.invoke).toHaveBeenCalledTimes(1);
+    const prompt=JSON.parse(provider.invoke.mock.calls[0]![0].prompt);
+    expect(prompt.evidence).toHaveLength(6);
+    expect(prompt.evidence.reduce((n:number,e:{excerpt:string})=>n+e.excerpt.length,0)).toBeGreaterThan(4000);
+    expect(admission).toHaveBeenCalledWith({attempt:1,maxCostUsd:0.25});
+    const blocked=fakeModel([]);
+    await expect(generateMarketingDraft(briefInput(source),{model:blocked,now,loadDneskaiMedia:loadMedia,admitPaidCall:admission,budget:{...DEFAULT_GENERATION_BUDGET,maxInputTokens:1000}})).rejects.toThrow("input-budget-exceeded");
+    expect(blocked.invoke).not.toHaveBeenCalled();
+  });
+});

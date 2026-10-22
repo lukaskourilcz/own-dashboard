@@ -60,6 +60,9 @@ const BudgetSchema = z.strictObject({
   maxLatencyMs: z.number().int().min(1000).max(90000),
 });
 export type GenerationBudget = z.infer<typeof BudgetSchema>;
+/** Planning estimate only, with more headroom than the model A/B script's bytes/3 heuristic.
+ * Czech UTF-8 bytes are not tokens. Dollar reservations remain byte-based; recorded usage is authoritative. */
+export const DNESKAI_INPUT_BYTES_PER_TOKEN = 2;
 export const DEFAULT_GENERATION_BUDGET: GenerationBudget = {
   maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000,
 };
@@ -258,7 +261,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   const brief = source.brief!;
   const outputSchema = dneskaiCopyWireSchema();
   // The prompt gets what the input reservation leaves after the system prompt, schema, envelope and retry instructions.
-  const promptBytes = budget.maxInputTokens - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - 2048 - DNESKAI_RETRY_INSTRUCTION_BYTES;
+  const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES;
   let offer: DneskaiBriefOffer;
   try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
@@ -348,10 +351,12 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
     ? await briefProfile(input, source, model, budget, dependencies) as GenerationProfile<MarketingCopy | BriefResult>
     : legacyProfile(input, source, model, challenge) as GenerationProfile<MarketingCopy | BriefResult>;
   const prompts = profile.prompts;
-  // UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead.
+  // Size brief input with a conservative planning estimate; keep byte-based dollar accounting.
+  // The provider usage check below still enforces the unchanged actual token ceiling.
   const baseBytes = Buffer.byteLength(prompts.system + prompts.prompt + JSON.stringify(profile.outputSchema)) + 2048;
   const attemptInput = (feedback: string) => baseBytes + Math.max(profile.feedbackReserveBytes, Buffer.byteLength(feedback));
-  if (attemptInput("") > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
+  const estimatedTokens = (bytes: number) => source.kind === "brief" ? Math.ceil((bytes - 2048) / DNESKAI_INPUT_BYTES_PER_TOKEN) + 2048 : bytes;
+  if (estimatedTokens(attemptInput("")) > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
   const reservationFor = (inputBytes: number) => cost({ inputTokens: inputBytes, outputTokens: budget.maxOutputTokens }, model.pricing);
   if (reservationFor(attemptInput("")) > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
   const trace = await diagnostic(() => dependencies.tracer?.start({ revisionId: input.revisionId, source, model: model.model, promptVersion: profile.promptVersion, templateVersion: input.templateVersion, knowledgeIds: input.knowledge.map((item) => item.id) })) ?? null;
@@ -370,7 +375,7 @@ export async function generateMarketingDraft(value: GenerationInput, dependencie
     for (let attempt = 1; attempt <= budget.maxAttempts; attempt++) {
       if (signal.aborted) throw new MarketingGenerationError("generation-timeout");
       const inputBytes = attemptInput(retryFeedback);
-      if (inputBytes > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
+      if (estimatedTokens(inputBytes) > budget.maxInputTokens) throw new MarketingGenerationError("input-budget-exceeded");
       const reservation = reservationFor(inputBytes);
       if (usage.estimatedCostUsd + reservation > budget.maxCostUsd) throw new MarketingGenerationError("cost-budget-exceeded");
       await dependencies.admitPaidCall?.({ attempt, maxCostUsd: budget.maxCostUsd });
