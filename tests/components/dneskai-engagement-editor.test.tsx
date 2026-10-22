@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, useState } from 'react';
+import { act, useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DneskaiEngagementEditor } from '@/components/marketing/dneskai/lab/engagement-editor';
@@ -10,14 +10,15 @@ import type { DneskaiWorkspacePost } from '@/lib/marketing/dneskai-workspace';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const t = dneskaiLab.en.engagement;
-let container: HTMLDivElement; let root: Root; let latest: DeckDraft;
+let container: HTMLDivElement; let root: Root;
+const seen: { draft: DeckDraft | null } = { draft: null };
 const fixture = () => createDneskaiWorkspaceFixture(new Date());
 const education = (): DneskaiWorkspacePost => fixture().posts[1]!;
 const news = (): DneskaiWorkspacePost => fixture().posts[0]!;
 
 function Harness({ post, lang = 'en' }: { post: DneskaiWorkspacePost; lang?: 'en' | 'cs' }) {
   const [draft, setDraft] = useState(() => createDeckDraft(post));
-  latest = draft;
+  useEffect(() => { seen.draft = draft; });
   return <DneskaiEngagementEditor id="e" draft={draft} onDraft={setDraft} handle={post.account.handle} lang={lang} />;
 }
 const q = <T extends Element = HTMLElement>(selector: string) => container.querySelector(selector) as T | null;
@@ -37,7 +38,7 @@ describe('Lab engagement editor (#159)', () => {
     expect(q('#e-message-count')?.textContent).toMatch(/\/ 1000$/);
     expect(q('[data-testid="dneskai-engagement-preview"]')?.textContent).toContain('Díky za komentář.');
     expect(q<HTMLInputElement>('#e-reply')?.value).toBe(DNESKAI_DEFAULT_PUBLIC_REPLY);
-    expect(dneskaiEngagementChanged(post, latest)).toBe(false);
+    expect(dneskaiEngagementChanged(post, seen.draft!)).toBe(false);
   });
   it('upper-cases the keyword as typed, refuses diacritics or two words in place, and marks the draft dirty', () => {
     const post = education();
@@ -48,14 +49,14 @@ describe('Lab engagement editor (#159)', () => {
     expect(keyword.getAttribute('aria-invalid')).toBe('true');
     expect(q('#e-keyword-error')?.textContent).toBe(t.keywordInvalid);
     expect(q('[data-testid="dneskai-engagement-chip"]')).toBeNull();
-    expect(draftProblems(post, latest).map((problem) => problem.code)).toContain('engagement-keyword-invalid');
+    expect(draftProblems(post, seen.draft!).map((problem) => problem.code)).toContain('engagement-keyword-invalid');
     type(keyword, 'navod');
     expect(keyword.getAttribute('aria-invalid')).toBeNull();
     expect(q('[data-testid="dneskai-engagement-chip"]')?.textContent).toContain('NAVOD');
-    expect(dneskaiEngagementChanged(post, latest)).toBe(true);
-    expect(dneskaiEditRequest(post, latest).engagement?.keyword).toBe('NAVOD');
+    expect(dneskaiEngagementChanged(post, seen.draft!)).toBe(true);
+    expect(dneskaiEditRequest(post, seen.draft!).engagement?.keyword).toBe('NAVOD');
     type(keyword, 'kontext');
-    expect(dneskaiEngagementChanged(post, latest)).toBe(false);
+    expect(dneskaiEngagementChanged(post, seen.draft!)).toBe(false);
   });
   it('previews the edited DM, sends no public reply when emptied, and flags an over-long message', () => {
     const post = education();
@@ -63,21 +64,21 @@ describe('Lab engagement editor (#159)', () => {
     type(q<HTMLTextAreaElement>('#e-message')!, 'Nový text zprávy.');
     expect(q('[data-testid="dneskai-engagement-preview"]')?.textContent).toContain('Nový text zprávy.');
     type(q<HTMLInputElement>('#e-reply')!, '');
-    expect(dneskaiEditRequest(post, latest).engagement).toEqual({ keyword: 'KONTEXT', replyMessage: 'Nový text zprávy.' });
+    expect(dneskaiEditRequest(post, seen.draft!).engagement).toEqual({ keyword: 'KONTEXT', replyMessage: 'Nový text zprávy.' });
     type(q<HTMLTextAreaElement>('#e-message')!, 'x'.repeat(1001));
     expect(q('#e-message')?.getAttribute('aria-invalid')).toBe('true');
-    expect(draftProblems(post, latest).map((problem) => problem.code)).toContain('engagement-message-too-long');
+    expect(draftProblems(post, seen.draft!).map((problem) => problem.code)).toContain('engagement-message-too-long');
   });
   it('lets a news post opt in with the default public reply, and removes the keyword again', () => {
     const post = news();
     act(() => root.render(<Harness post={post} lang="cs" />));
     expect(q('[data-testid="dneskai-engagement"]')?.textContent).toContain(dneskaiLab.cs.engagement.none);
     act(() => q('[data-testid="dneskai-engagement-add"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect(latest.engagement).toEqual({ keyword: '', replyMessage: '', publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY });
+    expect(seen.draft!.engagement).toEqual({ keyword: '', replyMessage: '', publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY });
     expect(q('[data-testid="dneskai-engagement-preview"]')?.textContent).toContain(dneskaiLab.cs.engagement.previewEmpty);
-    expect(draftProblems(post, latest).map((problem) => problem.code)).toEqual(expect.arrayContaining(['engagement-keyword-invalid', 'engagement-message-missing']));
+    expect(draftProblems(post, seen.draft!).map((problem) => problem.code)).toEqual(expect.arrayContaining(['engagement-keyword-invalid', 'engagement-message-missing']));
     act(() => q('[data-testid="dneskai-engagement-remove"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect(latest.engagement).toBeNull();
-    expect(dneskaiEngagementChanged(post, latest)).toBe(false);
+    expect(seen.draft!.engagement).toBeNull();
+    expect(dneskaiEngagementChanged(post, seen.draft!)).toBe(false);
   });
 });
