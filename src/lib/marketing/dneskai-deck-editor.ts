@@ -2,7 +2,7 @@ import type { DneskaiBriefMedia } from './dneskai-brief';
 import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSlide, type DneskaiSlideImage } from './dneskai-slides';
 import { pragueLocalInput, pragueScheduledAt } from './clock';
 import {
-  dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
+  dneskaiCoverInset, dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
   dneskaiSlideMoves, dneskaiSlideShape, DNESKAI_PLACED_FIELDS, type DneskaiPoolPicture, type DneskaiShapeId, type DneskaiSlideShape,
 } from './dneskai-slide-layout';
 import type { DneskaiFieldLimit, DneskaiWorkspacePost } from './dneskai-workspace';
@@ -122,6 +122,26 @@ export function swapSlideImage(draft: DeckDraft, index: number, slot: string, me
     return { ...item, slide: { ...item.slide, images: item.slide.images.map((image) => image.assetSha256 === previous.assetSha256 ? { slot: image.slot, assetSha256: media.assetSha256 } : image) } };
   });
   return { ...draft, slides };
+}
+
+/**
+ * Adds, replaces or removes (`media` null) the cover's circular inset picture (`image-2`) in a kit that draws one
+ * (`dneskaiCoverInset`). The inset is a second picture from the topic's pool; any other slide or kit is unchanged.
+ */
+export function setCoverInset(draft: DeckDraft, index: number, media: Pick<DneskaiBriefMedia, 'assetSha256'> | null): DeckDraft {
+  const target = draft.slides[index];
+  if (!target || target.slide.type !== 'cover-photo' || !dneskaiCoverInset(draft.kit)) return draft;
+  const main = target.slide.images.filter((image) => image.slot === 'image-1');
+  if (media && main.some((image) => image.assetSha256 === media.assetSha256)) return draft;
+  const images = media ? [...main, { slot: 'image-2', assetSha256: media.assetSha256 }] : main;
+  return { ...draft, slides: draft.slides.map((item, position) => position === index ? { ...item, slide: { ...item.slide, images } } : item) };
+}
+/** The draft in another kit: a cover inset the new kit cannot draw is dropped with the switch. */
+export function setDraftKit(draft: DeckDraft, kit: DneskaiKitId): DeckDraft {
+  const next = { ...draft, kit };
+  if (dneskaiCoverInset(kit)) return next;
+  return { ...next, slides: next.slides.map((item) => item.slide.type === 'cover-photo' && item.slide.images.length > 1
+    ? { ...item, slide: { ...item.slide, images: item.slide.images.filter((image) => image.slot === 'image-1') } } : item) };
 }
 
 export function removeSlide(draft: DeckDraft, index: number): DeckDraft {

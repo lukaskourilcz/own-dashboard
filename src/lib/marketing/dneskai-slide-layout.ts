@@ -1,5 +1,5 @@
 import type { DneskaiBriefMedia } from "./dneskai-brief";
-import type { DneskaiSlide, DneskaiSlideType } from "./dneskai-slides";
+import type { DneskaiKitId, DneskaiSlide, DneskaiSlideType } from "./dneskai-slides";
 
 /**
  * What each DNESKAi slide type draws and holds, browser-safe: the template a slide resolves to, the written
@@ -193,14 +193,24 @@ export function dneskaiCreditLine(credits: readonly string[], limit: number): st
  * on every slide only the fields its type draws, so the first slide and a single post keep their headline alone.
  * Decks saved before the rule are brought into line when they are edited; nothing else about them changes.
  */
-export function dneskaiShownDeck<T extends { format: "carousel" | "single-image"; slides: DneskaiSlide[] }>(deck: T): T {
+export function dneskaiShownDeck<T extends { format: "carousel" | "single-image"; kit?: DneskaiKitId; slides: DneskaiSlide[] }>(deck: T): T {
+  const inset = dneskaiCoverInset(deck.kit ?? "editorial");
   const slides = deck.slides.filter((slide) => slide.type !== "sources").map((slide) => {
     const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
     const next = { ...slide };
     delete next.credit;
     for (const field of ["body", "kicker"] as const) if (!placed.includes(field)) delete next[field];
+    // Only a kit with a cover inset draws a second cover picture; any other kit would refuse it.
+    if (slide.type === "cover-photo" && !inset) next.images = next.images.filter((image) => image.slot === "image-1");
     return next;
   });
   // A carousel keeps at least two slides: a two-slide legacy deck whose second slide was its sources slide stays whole.
   return deck.format === "carousel" && slides.length < 2 ? deck : { ...deck, slides };
 }
+
+/**
+ * Kits whose cover draws an optional second picture as a circular inset (the studio's `DNESKAI_OPTIONAL_IMAGE_SLOTS`,
+ * held to the vendored contract by `tests/lib/carousel-studio-vendor.test.ts`). Every other kit refuses it.
+ */
+export const DNESKAI_COVER_INSET_KITS: readonly DneskaiKitId[] = ["spotlight"];
+export const dneskaiCoverInset = (kit: DneskaiKitId) => DNESKAI_COVER_INSET_KITS.includes(kit);
