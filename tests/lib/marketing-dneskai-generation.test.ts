@@ -126,7 +126,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
   });
 });
 
-describe("marketing-copy/6 schema", () => {
+describe("marketing-copy/7 schema", () => {
   it("sends the SDK-transformed schema: enums and limits as descriptions, no unsupported constraints", () => {
     const wire = dneskaiCopyWireSchema() as { properties: Record<string, Record<string, unknown>> & { slides: { items: { properties: Record<string, Record<string, unknown>> } } } };
     expect(wire.properties.slides.items.properties.type!.description).toBe('{enum: ["cover-photo","figure","split","statement","single"]}');

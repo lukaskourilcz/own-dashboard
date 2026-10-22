@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { ENGAGEMENT_KEYWORD_PATTERN, ENGAGEMENT_PUBLIC_REPLY_MAX, ENGAGEMENT_REPLY_MESSAGE_MAX } from '@/lib/marketing/contracts';
 import { dneskaiEngagementKeyword, newEngagementDraft, type DeckDraft, type EngagementDraft } from '@/lib/marketing/dneskai-deck-editor';
+import { dneskaiCaptionWithKeyword } from '@/lib/marketing/dneskai-caption';
 import { cn } from '@/lib/utils';
 import { CountedField } from '../post-editor';
 
@@ -13,8 +14,13 @@ import { CountedField } from '../post-editor';
  * the comment. The draft holds them as typed; the edit request sends them normalised, and only when they changed, so
  * a change makes a new version that needs its own approval. A post without a keyword (news) offers to add one.
  */
-export function DneskaiEngagementEditor({ id, draft, onDraft, handle, lang }: { id: string; draft: DeckDraft; onDraft: (next: DeckDraft) => void; handle: string; lang: 'en' | 'cs' }) {
+export function DneskaiEngagementEditor({ id, draft, onDraft: setDraft, handle, lang }: { id: string; draft: DeckDraft; onDraft: (next: DeckDraft) => void; handle: string; lang: 'en' | 'cs' }) {
   const t = copy[lang].engagement;
+  // #158: the caption's code-written keyword line follows a valid keyword, and goes with a removed one.
+  const onDraft = (next: DeckDraft) => {
+    const keyword = next.engagement ? dneskaiEngagementKeyword(next.engagement.keyword) : null;
+    setDraft(keyword === null || ENGAGEMENT_KEYWORD_PATTERN.test(keyword) ? { ...next, caption: dneskaiCaptionWithKeyword(next.caption, keyword) } : next);
+  };
   const engagement = draft.engagement;
   const set = (patch: Partial<EngagementDraft>) => onDraft({ ...draft, engagement: { ...engagement!, ...patch } });
   const keyword = engagement ? dneskaiEngagementKeyword(engagement.keyword) : '';
