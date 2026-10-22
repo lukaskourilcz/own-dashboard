@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContentEngagementSchema, MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
+import { ContentEngagementSchema, ENGAGEMENT_KEYWORD_PATTERN, MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
 import { contentHash, revisionContentHash } from "./hashes";
 import type { MarketingTracer } from "./tracing";
 import { marketingHumanizerInstructions } from "./humanizer";
@@ -11,8 +11,9 @@ import { claudeCallFields, claudeCallProfile } from "./claude-call-profile";
 import type { DneskaiDeck } from "./dneskai-slides";
 import type { LoadDneskaiMediaBytes } from "./dneskai-ports";
 import { DneskaiRenderError, validateDneskaiDeck, type DneskaiSlideRenderProblem } from "./dneskai-render";
+import { DNESKAI_DEFAULT_PUBLIC_REPLY } from "./dneskai-engagement";
 import {
-  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_ID,
+  DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_RETRY_INSTRUCTION_BYTES, DneskaiCopySchema, DneskaiEducationCopySchema, MARKETING_BRIEF_PROMPT_ID, dneskaiEducationCopyWireSchema, dneskaiEducationPrompt, validateDneskaiReplyMessage,
   assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, dneskaiBriefPrompt, dneskaiOwnerNote, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiRenderIssues, dneskaiRetryFeedback,
    normalizeDneskaiCopy, validateDneskaiCopy,
   type DneskaiBriefOffer, type DneskaiCopy, type DneskaiCopyIssue, type DneskaiEvidencePublishers,
@@ -62,6 +63,12 @@ export const GenerationInputSchema = z.strictObject({
    * regeneration keeps what the owner wrote. The model never sees or writes it. Ignored by non-brief jobs.
    */
   engagement: ContentEngagementSchema.optional(),
+  /**
+   * An education topic (#158) with its suggested keyword: the call also asks for the DM (`replyMessage`), and the
+   * draft carries `{ keyword, replyMessage, publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY }`. With `engagement` present
+   * (a regeneration) the owner's words win and no DM is asked for. A news topic sends neither.
+   */
+  education: z.strictObject({ keyword: z.string().regex(ENGAGEMENT_KEYWORD_PATTERN) }).optional(),
 });
 export type GenerationInput = z.infer<typeof GenerationInputSchema> & { source: SourcePacket };
 const BudgetSchema = z.strictObject({
@@ -295,7 +302,7 @@ function legacyProfile(input: z.infer<typeof GenerationInputSchema>, source: Sou
   };
 }
 
-type BriefResult = { copy: DneskaiCopy; deck: DneskaiDeck; caption: string };
+type BriefResult = { copy: DneskaiCopy; deck: DneskaiDeck; caption: string; replyMessage: string | null };
 const ZOD_ISSUE_LIMIT = 10;
 function schemaIssues(error: z.ZodError): DneskaiCopyIssue[] {
   return error.issues.slice(0, ZOD_ISSUE_LIMIT).map((entry) => {
@@ -316,11 +323,16 @@ function memoizedMedia(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
 
 async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source: SourcePacket, model: MarketingModel, budget: GenerationBudget, dependencies: GenerationDependencies): Promise<GenerationProfile<BriefResult>> {
   const brief = source.brief!;
-  const outputSchema = dneskaiCopyWireSchema();
+  // #158: an education topic asks for the DM too, unless the owner's own engagement is carried (a regeneration).
+  const askReply = !!input.education && !input.engagement;
+  const keyword = input.engagement?.keyword ?? input.education?.keyword ?? null;
+  const outputSchema = askReply ? dneskaiEducationCopyWireSchema() : dneskaiCopyWireSchema();
   // The prompt gets what the input reservation leaves after the system prompt, schema, envelope and retry instructions.
   const note = input.ownerNote ? dneskaiOwnerNote(input.ownerNote) : null;
   const promptBytes = (budget.maxInputTokens - 2048) * DNESKAI_INPUT_BYTES_PER_TOKEN - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - DNESKAI_RETRY_INSTRUCTION_BYTES
-    - (note ? Buffer.byteLength(JSON.stringify(note)) + 16 : 0);
+    - (note ? Buffer.byteLength(JSON.stringify(note)) + 16 : 0)
+    // An education turn carries up to six evidence links (2,048 bytes each at most) and its rule.
+    - (askReply ? 6 * 2060 + 200 : 0);
   let offer: DneskaiBriefOffer;
   try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
@@ -328,19 +340,21 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;
   return {
     promptVersion: MARKETING_BRIEF_PROMPT_ID,
-    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer, note) },
+    prompts: { system: DNESKAI_BRIEF_SYSTEM_PROMPT, prompt: dneskaiBriefPrompt(offer, note, askReply ? dneskaiEducationPrompt(offer) : null) },
     output: { name: "dneskai_post", schema: outputSchema },
     outputSchema,
     feedbackReserveBytes: DNESKAI_RETRY_INSTRUCTION_BYTES,
     async evaluate(raw, context) {
       const fail = (issues: DneskaiCopyIssue[]): AttemptOutcome<BriefResult> =>
         ({ ok: false, issues: [...new Set(issues.map((entry) => entry.code))], feedback: dneskaiRetryFeedback(issues, raw, context.feedbackBytes) });
-      const parsed = DneskaiCopySchema.safeParse(normalizeDneskaiCopy(raw));
+      const parsed = (askReply ? DneskaiEducationCopySchema : DneskaiCopySchema).safeParse(normalizeDneskaiCopy(raw));
       if (!parsed.success && context.stopReason === "max_tokens") return fail([{ code: "output-truncated", slide: null, field: null, detail: "The answer was cut off at the output limit. Write fewer or shorter slides and a shorter caption." }]);
       if (!parsed.success && context.stopReason === "refusal") return fail([{ code: "provider-refusal", slide: null, field: null, detail: "The answer was declined. Report only what the evidence states, plainly." }]);
       if (!parsed.success) return fail(schemaIssues(parsed.error));
       const issues = validateDneskaiCopy(parsed.data, offer);
-      const assembled = assembleDneskaiCaption(parsed.data, offer);
+      const replyMessage = askReply && "replyMessage" in parsed.data ? (parsed.data.replyMessage as string).trim() : null;
+      if (replyMessage !== null) issues.push(...validateDneskaiReplyMessage(replyMessage, offer));
+      const assembled = assembleDneskaiCaption(parsed.data, offer, keyword);
       if ("issue" in assembled) issues.push(assembled.issue);
       if (issues.length || !("caption" in assembled)) return fail(issues);
       let deck: DneskaiDeck;
@@ -353,9 +367,10 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
         throw new MarketingGenerationError("render-validation-failed");
       }
       const blocking = dneskaiRenderIssues(problems, deck);
-      return blocking.length ? fail(blocking) : { ok: true, value: { copy: parsed.data, deck, caption: assembled.caption } };
+      return blocking.length ? fail(blocking) : { ok: true, value: { copy: parsed.data, deck, caption: assembled.caption, replyMessage } };
     },
-    finish({ copy, deck, caption }, traceId, usage) {
+    finish({ copy, deck, caption, replyMessage }, traceId, usage) {
+      const engagement = input.engagement ?? (input.education && replyMessage ? { keyword: input.education.keyword, replyMessage, publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY } : null);
       const revision = parseContentRevision({
         schemaVersion: MARKETING_DECK_CONTENT_VERSION, brand: "dneskai", title: copy.title.trim(), caption,
         format: deck.format === "carousel" ? "carousel" : "post",
@@ -363,7 +378,7 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
         knowledgeIds: [], assets: [], account: input.account,
         scheduledAt: input.scheduledAt, timeZone: "Europe/Prague", templateVersion: input.templateVersion,
         promptVersion: MARKETING_BRIEF_PROMPT_ID, model: model.model, traceId, deck,
-        ...(input.engagement ? { engagement: input.engagement } : {}),
+        ...(engagement ? { engagement } : {}),
       });
       // Deck revisions keep their slides in `deck`; the legacy slide list stays empty, as in an owner edit (#118).
       return { revision, slides: [], usage, traceId, deck };

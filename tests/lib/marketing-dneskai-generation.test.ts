@@ -36,12 +36,12 @@ const clean = vi.fn(async (): Promise<DneskaiSlideRenderProblem[]> => []);
 const admit = vi.fn(async (input: { attempt: number; maxCostUsd: number }) => { void input; });
 beforeEach(() => { vi.clearAllMocks(); });
 
-describe("marketing-copy/6 prompt (#116, owner rules of 22 October 2026)", () => {
+describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
-    expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/6");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("3f0825a42d1fa043cfdaad2b254588ce9dfda2cd170c1ab9c5ed1065c10e39de");
-    expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/6+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
+    expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/7");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("6688092cee859f5e1e0a37cccc6080d2114e44ed647e62d8ffff71ddaf002fad");
+    expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/7+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
     for (const rule of ["Cover hook: the headline of the first slide", "most concrete and surprising true fact", "exactly as strong as the evidence states it", "Never a question, an exclamation, a teaser that withholds the subject",
