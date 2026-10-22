@@ -43,12 +43,13 @@ async function fixtures() {
 
 function carousel(asset: (name: "bleed" | "wide" | "tall" | "pairOne" | "pairTwo" | "small") => string): DneskaiDeck {
   return DneskaiDeckSchema.parse({ schemaVersion: "dneskai-slides/1", format: "carousel", slides: [
-    { type: "cover-photo", kicker: "Smyšlené téma · 20. 10. 2026", headline: "Smyšlený titulek nese jednu větu přes fotku", credit: "Foto: smyšlený zdroj", images: [{ slot: "image-1", assetSha256: asset("bleed"), crop: { focal: { x: 0.4, y: 0.6 } } }], alt: "Smyšlená fotografie s titulkem." },
-    { type: "figure", headline: "Smyšlený graf v rámu pod titulkem", body: "Popis vysvětluje, co graf ukazuje. Žluťoučký kůň úpěl ďábelské ódy.", credit: "Graf: smyšlený zdroj", images: [{ slot: "image-1", assetSha256: asset("wide") }], alt: "Smyšlený graf." },
-    { type: "split", kicker: "Smyšlená rada", headline: "Text vlevo a obrázek vpravo", body: "Odstavec dokončí myšlenku jednou větou.", credit: "Foto: smyšlený zdroj", images: [{ slot: "image-1", assetSha256: asset("tall") }], alt: "Smyšlený obrázek vpravo." },
-    { type: "split", kicker: "Smyšlené srovnání", headline: "Dva obrázky nad sebou", body: "Levý sloupec nese vysvětlení.", credit: "Schémata: smyšlený zdroj", images: [{ slot: "image-1", assetSha256: asset("pairOne") }, { slot: "image-2", assetSha256: asset("pairTwo") }], alt: "Dvě smyšlená schémata." },
+    { type: "cover-photo", headline: "Smyšlený titulek nese jednu větu přes fotku", images: [{ slot: "image-1", assetSha256: asset("bleed"), crop: { focal: { x: 0.4, y: 0.6 } } }], alt: "Smyšlená fotografie s titulkem." },
+    { type: "figure", headline: "Smyšlený graf v rámu pod titulkem", body: "Popis vysvětluje, co graf ukazuje. Žluťoučký kůň úpěl ďábelské ódy.", images: [{ slot: "image-1", assetSha256: asset("wide") }], alt: "Smyšlený graf." },
+    { type: "split", kicker: "Smyšlená rada", headline: "Text vlevo a obrázek vpravo", body: "Odstavec dokončí myšlenku jednou větou.", images: [{ slot: "image-1", assetSha256: asset("tall") }], alt: "Smyšlený obrázek vpravo." },
+    { type: "split", kicker: "Smyšlené srovnání", headline: "Dva obrázky nad sebou", body: "Levý sloupec nese vysvětlení.", images: [{ slot: "image-1", assetSha256: asset("pairOne") }, { slot: "image-2", assetSha256: asset("pairTwo") }], alt: "Dvě smyšlená schémata." },
     { type: "statement", headline: "„Smyšlený výrok na modré ploše.“", body: "Tišší poznámka pod výrokem.", images: [], alt: "Smyšlený výrok." },
     { type: "statement", variant: "ink", headline: "Tentýž výrok na inkoustové ploše.", images: [], alt: "Smyšlený výrok na tmavé ploše." },
+    // No new post carries a sources slide (owner rule, 22 October 2026); the studio still draws one for a deck saved before it.
     { type: "sources", headline: "", sources: ["Smyšlený blog: Smyšlený článek (20. 10. 2026)", "Obrázky: smyšlený zdroj"], images: [{ slot: "image-1", assetSha256: asset("wide") }, { slot: "image-2", assetSha256: asset("tall") }], alt: "Seznam smyšlených zdrojů." },
   ] });
 }
@@ -75,8 +76,8 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
   it("renders one slide of every type to an Instagram JPEG in slide order", async () => {
     const { asset, loadMedia } = await fixtures();
     const deck = carousel(asset);
-    const single = DneskaiDeckSchema.parse({ schemaVersion: "dneskai-slides/1", format: "single-image", slides: [{ type: "single", variant: "photo", kicker: "Smyšlené oznámení", headline: "Jeden obrázek a jedna věta", body: "Řádek pod panelem doplní, co se změnilo.", credit: "Foto: smyšlený zdroj", images: [{ slot: "image-1", assetSha256: asset("bleed") }], alt: "Smyšlené oznámení s fotkou." }] });
-    const typeOnly = DneskaiDeckSchema.parse({ schemaVersion: "dneskai-slides/1", format: "single-image", slides: [{ type: "single", variant: "type", kicker: "Smyšlené oznámení", headline: "Oznámení jen z písma", body: "Odstavec vysvětlí, co oznámení znamená.", images: [], alt: "Smyšlené oznámení bez fotky." }] });
+    const single = DneskaiDeckSchema.parse({ schemaVersion: "dneskai-slides/1", format: "single-image", slides: [{ type: "single", variant: "photo", headline: "Jeden obrázek a jedna věta", images: [{ slot: "image-1", assetSha256: asset("bleed") }], alt: "Smyšlené oznámení s fotkou." }] });
+    const typeOnly = DneskaiDeckSchema.parse({ schemaVersion: "dneskai-slides/1", format: "single-image", slides: [{ type: "single", variant: "type", headline: "Oznámení jen z písma", images: [], alt: "Smyšlené oznámení bez fotky." }] });
     const { storage, objects } = memoryStorage();
     const results = [await render(deck, storage, loadMedia), await render(single, storage, loadMedia), await render(typeOnly, storage, loadMedia)];
     expect(results.map((result) => [result.status, result.problems.filter((problem) => problem.blocking)])).toEqual([["rendered", []], ["rendered", []], ["rendered", []]]);
@@ -181,7 +182,7 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     // The studio draws these as boxes and reports nothing; the gate names each one.
     deck.slides[4].headline = "Žraloci 🦈 a modely 中文";
     deck.slides[6].sources = ["Smyšlený blog: Smyšlený článek (20. 10. 2026)", "Ověřeno ✓"];
-    deck.slides[0].kicker = "Smyšlené téma · 20. 10. 2026";
+    deck.slides[2].kicker = "Smyšlené téma · 20. 10. 2026";
     const { storage } = memoryStorage();
     const result = await render(deck, storage, loadMedia);
     expect(result).toEqual({ status: "refused", assets: [], renderKeys: [], problems: [
@@ -196,14 +197,17 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     const czech = carousel(asset);
     czech.slides[1].body = "„Příliš žluťoučký kůň“ – úpěl ďábelské ódy… 5 × 3 = 15 % (§ 2)";
     expect((await validateDneskaiDeck(czech, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);
-    czech.slides[1].credit = "Graf: smyšlený zdroj ™";
-    expect(await validateDneskaiDeck(czech, loadMedia)).toEqual([expect.objectContaining({ slide: 1, code: "unsupported-glyph", field: "credit" })]);
+    czech.slides[2].kicker = "Smyšlená rada ™";
+    expect(await validateDneskaiDeck(czech, loadMedia)).toEqual([expect.objectContaining({ slide: 2, code: "unsupported-glyph", field: "kicker" })]);
   }, 60000);
 
   it("refuses written text the slide type does not draw instead of dropping it from the picture", async () => {
     const { asset, loadMedia } = await fixtures();
     const deck = carousel(asset);
     deck.slides[0].body = "Cover nemá místo pro odstavec.";
+    // The first slide shows its headline alone and no slide draws a picture credit (owner rule, 22 October 2026).
+    deck.slides[0].kicker = "Smyšlené téma";
+    deck.slides[1].credit = "Graf: smyšlený zdroj";
     deck.slides[4].credit = "Výrok: smyšlený zdroj";
     deck.slides[6].headline = "Zdroje k vydání";
     deck.slides[5].sources = ["Smyšlený zdroj na výroku"];
@@ -212,6 +216,8 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     expect(result.status).toBe("refused");
     expect((result.problems as DneskaiSlideRenderProblem[]).map(({ slide, code, blocking, field }) => ({ slide, code, blocking, field }))).toEqual([
       { slide: 0, code: "text-unplaced", blocking: true, field: "body" },
+      { slide: 0, code: "text-unplaced", blocking: true, field: "kicker" },
+      { slide: 1, code: "text-unplaced", blocking: true, field: "credit" },
       { slide: 4, code: "text-unplaced", blocking: true, field: "credit" },
       { slide: 5, code: "text-unplaced", blocking: true, field: "sources[0]" },
       { slide: 6, code: "text-unplaced", blocking: true, field: "headline" },
@@ -227,7 +233,7 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     const deck = carousel(asset);
     const encoder = await dneskaiEncoderIdentity();
     const key = (slide: DneskaiDeck["slides"][number], index: number) => dneskaiRenderKey(slide, { index, count: 7 }, encoder);
-    expect(key({ ...deck.slides[1], headline: `  ${deck.slides[1].headline}\n`, credit: ` ${deck.slides[1].credit} ` }, 1)).toBe(key(deck.slides[1], 1));
+    expect(key({ ...deck.slides[1], headline: `  ${deck.slides[1].headline}\n`, body: ` ${deck.slides[1].body} ` }, 1)).toBe(key(deck.slides[1], 1));
     expect(key({ ...deck.slides[6], sources: ["  ", ...deck.slides[6].sources!, " "] }, 6)).toBe(key(deck.slides[6], 6));
     expect(key({ ...deck.slides[4], body: undefined }, 4)).toBe(key({ ...deck.slides[4], body: "  " }, 4));
     expect(key({ ...deck.slides[1], headline: `${deck.slides[1].headline}!` }, 1)).not.toBe(key(deck.slides[1], 1));
