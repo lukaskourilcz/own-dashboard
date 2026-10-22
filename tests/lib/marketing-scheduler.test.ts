@@ -673,3 +673,35 @@ describe('scouting step (#151)', () => {
     expect(failed.recorded).toBe(true);
   });
 });
+
+describe('titling (#153)', () => {
+  // 02:00 in Prague on 21 October 2026, the first slot of the hour.
+  const two = Date.parse('2026-10-21T00:00:00Z');
+  const titlingOn = { ...on, DNESKAI_TITLING_ENABLED: 'true', DNESKAI_TOPICS_ENABLED: 'true' };
+  const titled = { titled: 5, duplicates: 1, missing: 0, refused: false, costUsd: 0.001 };
+  const finished = { collectionRuns: async () => [{ id: runId, date: '2026-10-20', status: 'partial' as const, pilot: false }] };
+
+  it('turns the finished run into news topics instead of briefs, and leaves the briefs step as it was when off', async () => {
+    const newsTopics = vi.fn(async () => ({ events: 4, inserted: 4 }));
+    const createBriefs = vi.fn(async () => ({ created: [], skipped: [], pending: false }));
+    const onTick = await harness({ ...finished, newsTopics, createBriefs }).tick(titlingOn);
+    expect(newsTopics).toHaveBeenCalledWith(project, runId, expect.any(Date));
+    expect(createBriefs).not.toHaveBeenCalled();
+    expect(step(onTick, 'briefs')).toMatchObject({ status: 'done', detail: { runId, events: 4, topics: 4 } });
+    const offTick = await harness({ ...finished, newsTopics, createBriefs }).tick(on);
+    expect(createBriefs).toHaveBeenCalledTimes(1);
+    expect(newsTopics).toHaveBeenCalledTimes(1);
+    expect(step(offTick, 'briefs')).toMatchObject({ status: 'noop' });
+  });
+
+  it('expires news topics every night slot and titles from 02:00, without scouting', async () => {
+    const titleTopics = vi.fn(async () => titled), expireTopics = vi.fn(async () => 2);
+    const early = await harness({ titleTopics, expireTopics }, new Clock(Date.parse('2026-10-20T21:00:00Z'))).tick(titlingOn);
+    expect(step(early, 'scouting')).toMatchObject({ status: 'done', detail: { expired: 2 } });
+    expect(titleTopics).not.toHaveBeenCalled();
+    const night = await harness({ titleTopics, expireTopics }, new Clock(two)).tick(titlingOn);
+    expect(titleTopics).toHaveBeenCalledWith(project, expect.any(Date), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(step(night, 'scouting')).toMatchObject({ status: 'done', detail: { titled: 5, duplicates: 1, expired: 2 } });
+    expect((await harness({ titleTopics, expireTopics }, new Clock(two)).tick(on)).did.map((entry) => entry.category)).not.toContain('scouting');
+  });
+});

@@ -16,6 +16,7 @@ import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type Sched
 import { sendDneskaiReviewReminders } from "./dneskai-reminders";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
+import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
 import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
 
 /**
@@ -95,6 +96,9 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     scoutTopics: (project, now) => scoutDneskaiTopics(db, owner, project, now),
     factOrHype: (project, now, options) => advanceDneskaiFactOrHype(db, owner, project, now, { env, ...options,
       model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
+    titleTopics: (project, now, options) => titleDneskaiTopics(db, owner, project, now, { env, signal: options.signal, model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
+    expireTopics: (project, now) => expireDneskaiNewsTopics(db, owner, project, now),
+    newsTopics: (project, runId, now) => dneskaiNewsTopicsFromRun(db, owner, project, runId, now),
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

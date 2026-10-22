@@ -8,7 +8,8 @@ import { instagramTokenRefreshDue, type InstagramTokenRefreshOutcome, type MetaT
 import { pragueMarketingDate } from "./weekly-planning";
 import type { DneskaiScoutingResult } from "./dneskai-scouting";
 import type { DneskaiFactOrHypeResult } from "./dneskai-fact-or-hype";
-import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled } from "./dneskai-evidence-rollout";
+import type { DneskaiTitlingResult } from "./dneskai-titling";
+import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled, dneskaiTitlingEnabled } from "./dneskai-evidence-rollout";
 
 /**
  * The marketing scheduler (#120). pg_cron calls POST /api/marketing/tick every five minutes and once a day
@@ -186,6 +187,12 @@ export interface MarketingSchedulerPorts {
   scoutTopics?(project: string, now: Date): Promise<DneskaiScoutingResult>;
   /** #152: advances FACT or HYPE transcripts and verdicts of scouted reels, within the step's remaining time. */
   factOrHype?(project: string, now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiFactOrHypeResult>;
+  /** #153: one titling call over the night's untitled topics (`titleDneskaiTopics`). */
+  titleTopics?(project: string, now: Date, options: { signal: AbortSignal }): Promise<DneskaiTitlingResult>;
+  /** #153: news topics still proposed after 48 hours become expired. */
+  expireTopics?(project: string, now: Date): Promise<number>;
+  /** #153: with titling on, the briefs step turns a finished run's selected events into news topics instead of briefs. */
+  newsTopics?(project: string, runId: string, now: Date): Promise<{ events: number; inserted: number }>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -365,9 +372,17 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
         if (await yieldToPublication()) return yielded;
         return null;
       },
-      async run({ state, signal: abort }): Promise<StepOutcome> {
+      async run({ state, signal: abort, now }): Promise<StepOutcome> {
         const run = briefRun!;
         const current = state.runId === run.id && state.pending === false;
+        // #153: with titling on, the night's events become news topics the owner approves; no brief is built or
+        // admitted on its own. Off, the step is exactly what it was.
+        const newsTopics = ports.newsTopics;
+        if (newsTopics && dneskaiTitlingEnabled(env)) {
+          if (current) return { status: "noop", code: "briefs-current" };
+          const result = await newsTopics(await project(), run.id, now());
+          return { status: result.inserted ? "done" : "noop", detail: { runId: run.id, events: result.events, topics: result.inserted }, state: { runId: run.id, pending: false } };
+        }
         try {
           // An owner retry or reslot reopens a brief as pending, possibly in the newest run after it went current or
           // in an older run; those runs get the same createBriefs call, so admission rules stay the ordinary ones.
@@ -483,8 +498,10 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     },
   ];
 
-  const scoutTopics = ports.scoutTopics, factOrHype = ports.factOrHype;
-  if (scoutTopics && dneskaiScoutingEnabled(env)) minuteSteps.splice(1, 0, {
+  const scoutTopics = ports.scoutTopics, factOrHype = ports.factOrHype, titleTopics = ports.titleTopics, expireTopics = ports.expireTopics;
+  const scouting = !!scoutTopics && dneskaiScoutingEnabled(env);
+  const titling = !!titleTopics && dneskaiTitlingEnabled(env);
+  if (scouting || titling) minuteSteps.splice(1, 0, {
     category: MARKETING_TICK_SCOUTING, lease: null,
     async precheck(): Promise<StepOutcome | null> {
       const hour = pragueHour(clock());
@@ -495,16 +512,30 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     },
     async run({ now, signal: abort, remainingMs }): Promise<StepOutcome> {
       const id = await project();
-      const result = await scoutTopics(id, now());
-      const detail: MarketingTickDetail = { reports: result.reports, library: result.library, inserted: result.inserted, skipped: result.skipped };
-      // FACT or HYPE (#152) continues in the same step, after the new topics exist; it records its own counts.
+      const detail: MarketingTickDetail = {};
       let worked = false;
-      if (factOrHype && dneskaiFactOrHypeEnabled(env)) {
-        const progress = await factOrHype(id, now(), { signal: abort, remainingMs });
-        Object.assign(detail, { fohStarted: progress.started, fohTranscribed: progress.transcribed, fohClassified: progress.classified, fohRefused: progress.refused, fohFailed: progress.failed });
-        worked = progress.started + progress.transcribed + progress.classified > 0;
+      if (scouting) {
+        const result = await scoutTopics!(id, now());
+        Object.assign(detail, { reports: result.reports, library: result.library, inserted: result.inserted, skipped: result.skipped });
+        worked = result.inserted > 0;
+        // FACT or HYPE (#152) continues in the same step, after the new topics exist; it records its own counts.
+        if (factOrHype && dneskaiFactOrHypeEnabled(env)) {
+          const progress = await factOrHype(id, now(), { signal: abort, remainingMs });
+          Object.assign(detail, { fohStarted: progress.started, fohTranscribed: progress.transcribed, fohClassified: progress.classified, fohRefused: progress.refused, fohFailed: progress.failed });
+          worked ||= progress.started + progress.transcribed + progress.classified > 0;
+        }
       }
-      return { status: result.inserted || worked ? "done" : "noop", detail };
+      // Titling (#153): news topics expire after 48 hours; from 02:00 Prague the night's untitled topics get titles.
+      if (titling) {
+        if (expireTopics) { const expired = await expireTopics(id, now()); detail.expired = expired; worked ||= expired > 0; }
+        const hour = pragueHour(now());
+        if (hour >= 2 && hour < 8 && remainingMs() > 15_000) {
+          const titled = await titleTopics!(id, now(), { signal: abort });
+          Object.assign(detail, { titled: titled.titled, duplicates: titled.duplicates, untitled: titled.missing, titlingRefused: titled.refused });
+          worked ||= titled.titled + titled.duplicates > 0;
+        }
+      }
+      return { status: worked ? "done" : "noop", detail };
     },
   });
 
