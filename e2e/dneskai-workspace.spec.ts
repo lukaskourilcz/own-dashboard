@@ -232,5 +232,8 @@ test('every DNESKAi tab reflows at 360, 430, 768 and 1280 px and passes axe', as
   await page.getByRole('tab', { name: t.tabs.costs, exact: true }).click();
   await expect(page.getByTestId('dneskai-costs').getByText(t.costs.budget)).toBeVisible();
   await expect(page.getByTestId('dneskai-costs').getByText('Denní limit generování DNESKAi je vyčerpaný.').first()).toBeVisible();
+  // cost-16: booked failed-job cost has its own column; unread provider balances say so instead of showing a number.
+  await expect(page.getByTestId('dneskai-costs').getByRole('columnheader', { name: t.costs.booked, exact: true })).toBeVisible();
+  await expect(page.getByTestId('dneskai-balances').getByText(t.costs.balanceUnknown, { exact: true })).toHaveCount(2);
   expect(errors).toEqual([]);
 });

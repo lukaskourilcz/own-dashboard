@@ -174,7 +174,8 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors').eq('user_id', owner).gte('started_at', dayAgo).order('started_at', { ascending: false }).limit(1500),
   ]);
   const runs = keep(shape.runs.element, rows(runResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => ({
-    id: row.id, date: row.date, targetDate: row.target_date, status: row.status, costUsd: money(row.cost_usd), errorCode: safeCode(row.error_code), createdAt: iso(row.created_at),
+    // A running run's cost column is a placeholder 0 until finish settles it: not recorded yet, never a measured zero.
+    id: row.id, date: row.date, targetDate: row.target_date, status: row.status, costUsd: row.status === 'running' ? null : money(row.cost_usd), errorCode: safeCode(row.error_code), createdAt: iso(row.created_at),
   })));
   const allJobs = rows(jobResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').filter((row) => row.brand === 'dneskai');
   const jobs = keep(shape.jobs.element, allJobs.filter((row) => row.status === 'failed' || row.status === 'reconciliation').slice(0, 30).map((row) => ({
@@ -184,10 +185,14 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const days = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index)).map((date) => {
     const dayRuns = runs.filter((run) => run.date === date);
     const dayJobs = allJobs.filter((row) => typeof row.created_at === 'string' && pragueMarketingDate(new Date(row.created_at)) === date && row.status !== 'queued');
-    const jobCosts = dayJobs.map((row) => money(row.cost_usd));
+    // Measured: a job that produced a draft recorded the provider's own usage for every call. Booked: a failed job's
+    // figure, which is its reserved maximum when a call's billing was ambiguous (cost-16).
+    const jobCosts = dayJobs.map((row) => ({ settled: row.status === 'review', cost: money(row.cost_usd) }));
     const runCosts = dayRuns.map((run) => run.costUsd);
-    return { date, collectionUsd: runCosts.reduce<number>((sum, cost) => sum + (cost ?? 0), 0), generationUsd: jobCosts.reduce<number>((sum, cost) => sum + (cost ?? 0), 0),
-      unknown: [...runCosts, ...jobCosts].filter((cost) => cost === null).length };
+    const sum = (values: ReadonlyArray<number | null>) => values.reduce<number>((total, cost) => total + (cost ?? 0), 0);
+    return { date, collectionUsd: sum(runCosts), generationUsd: sum(jobCosts.filter((job) => job.settled).map((job) => job.cost)),
+      generationBookedUsd: sum(jobCosts.filter((job) => !job.settled).map((job) => job.cost)),
+      unknown: [...runCosts, ...jobCosts.map((job) => job.cost)].filter((cost) => cost === null).length };
   });
   const publications = keep(shape.publications.element, rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
     const revision = (Array.isArray(row.marketing_revisions) ? row.marketing_revisions[0] : row.marketing_revisions) as { title?: unknown } | undefined;
