@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DneskaiRenderReportSchema, type DneskaiRenderReport } from './contracts';
+import { ContentEngagementSchema, DneskaiRenderReportSchema, type DneskaiRenderReport } from './contracts';
 import { DneskaiBriefMediaSchema } from './dneskai-brief';
 import { DneskaiDeckSchema } from './dneskai-slides';
 import { pragueScheduledAt } from './clock';
@@ -54,6 +54,8 @@ export const DneskaiWorkspacePostSchema = z.strictObject({
   fields: z.array(z.array(DneskaiFieldLimitSchema).max(4)).max(10),
   assets: z.array(z.strictObject({ url: imageUrl, sha256, width: z.number().int().positive(), height: z.number().int().positive(), alt: z.string().max(1000) })).max(10),
   renderReport: DneskaiRenderReportSchema.nullable(),
+  /** The keyword, DM and public reply this version carries (#157), null without one. Absent from older responses. */
+  engagement: ContentEngagementSchema.nullable().optional(),
   brief: z.strictObject({
     eventId: z.string().min(1).max(200),
     title: z.string().min(1).max(300),
@@ -110,7 +112,9 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
    */
   waiting: z.array(DneskaiWorkspaceWaitingSchema).max(8).optional(),
   /** Which paid owner actions this deployment offers. Absent from older responses: neither. */
-  capabilities: z.strictObject({ regenerate: z.boolean(), generateNow: z.boolean() }).optional(),
+  capabilities: z.strictObject({ regenerate: z.boolean(), generateNow: z.boolean(),
+    /** The Lab's keyword and DM editor (#159, DNESKAI_ENGAGEMENT_EDITOR_ENABLED). Absent: off. */
+    engagement: z.boolean().optional() }).optional(),
   /** Stored rows (revisions, accounts) that could not be read; shown as a count, never silently dropped. */
   unreadable: z.number().int().nonnegative(),
 });
