@@ -15,8 +15,8 @@ import { contentHash } from "./hashes";
  *
  * Approval binds exact bytes: the approved-plan id is the sha256 of this plan's canonical JSON. Changing a target,
  * a volume, a cap, a date or a pinned build changes the id, and the runner refuses until the owner records the new
- * id. `build` is null for every actor until the owner (or an agent at the owner's request) reads the current build
- * with the read-only `GET https://api.apify.com/v2/acts/{actorId}` and pins it; the runner refuses an unpinned actor.
+ * id. Builds are pinned from public read-only actor metadata observed on 2026-10-22 at 02:45 UTC;
+ * docs/dneskai-apify-build-pins.json records each binding. No actor was started. Owner approval remains absent.
  */
 
 export const DNESKAI_RESEARCH_PLAN_VERSION = "dneskai-apify-research/1";
@@ -43,29 +43,29 @@ export type ResearchActor = {
   /** Bronze prices per event in USD, as fetched. */
   prices: Record<string, number>;
   modifiedAt: string;
-  /** Pinned build number (`1.2.3`); null until the owner pins it before approving. */
+  /** Pinned build number (`1.2.3`); null remains a fail-closed state for a future unpinned actor. */
   build: string | null;
 };
 
 export const DNESKAI_RESEARCH_ACTORS: Record<ResearchActorKey, ResearchActor> = {
   "instagram-post": { id: "nH2AHrwxeTRJoN5hX", name: "apify~instagram-post-scraper", url: "https://apify.com/apify/instagram-post-scraper", maintainer: "apify", pricingModel: "PAY_PER_EVENT",
-    prices: { post: 0.0015, postDetails: 0.0008, musicData: 0.006 }, modifiedAt: "2026-10-21", build: null },
+    prices: { post: 0.0015, postDetails: 0.0008, musicData: 0.006 }, modifiedAt: "2026-10-21", build: "0.0.646" },
   "instagram-reel": { id: "xMc5Ga1oCONPmWJIa", name: "apify~instagram-reel-scraper", url: "https://apify.com/apify/instagram-reel-scraper", maintainer: "apify", pricingModel: "PAY_PER_EVENT",
-    prices: { reel: 0.0023, actorStart: 0.001, sharesCount: 0.006, transcriptMinute: 0.041, videoDownloadMb: 0.015 }, modifiedAt: "2026-10-21", build: null },
+    prices: { reel: 0.0023, actorStart: 0.001, sharesCount: 0.006, transcriptMinute: 0.041, videoDownloadMb: 0.015 }, modifiedAt: "2026-10-21", build: "0.0.617" },
   "instagram-hashtag": { id: "reGe1ST3OBgYZSsZJ", name: "apify~instagram-hashtag-scraper", url: "https://apify.com/apify/instagram-hashtag-scraper", maintainer: "apify", pricingModel: "PAY_PER_EVENT",
-    prices: { result: 0.0023 }, modifiedAt: "2026-10-21", build: null },
+    prices: { result: 0.0023 }, modifiedAt: "2026-10-21", build: "0.0.707" },
   "instagram-search": { id: "DrF9mzPPEuVizVF4l", name: "apify~instagram-search-scraper", url: "https://apify.com/apify/instagram-search-scraper", maintainer: "apify", pricingModel: "PAY_PER_EVENT",
-    prices: { result: 0.0023, liveSearchResult: 0.0023 }, modifiedAt: "2026-10-21", build: null },
+    prices: { result: 0.0023, liveSearchResult: 0.0023 }, modifiedAt: "2026-10-21", build: "0.1.557" },
   "instagram-profile": { id: "dSCLg0C3YEZ83HzYX", name: "apify~instagram-profile-scraper", url: "https://apify.com/apify/instagram-profile-scraper", maintainer: "apify", pricingModel: "PAY_PER_EVENT",
-    prices: { profile: 0.0023, aboutAccount: 0.006 }, modifiedAt: "2026-10-21", build: null },
+    prices: { profile: 0.0023, aboutAccount: 0.006 }, modifiedAt: "2026-10-21", build: "0.0.655" },
   threads: { id: "lct1dlYksEDIG9If9", name: "futurizerush~meta-threads-scraper", url: "https://apify.com/futurizerush/meta-threads-scraper", maintainer: "community", pricingModel: "PAY_PER_EVENT",
-    prices: { result: 0.0025, actorStartPerGb: 0.005 }, modifiedAt: "2026-10-17", build: null },
+    prices: { result: 0.0025, actorStartPerGb: 0.005 }, modifiedAt: "2026-10-17", build: "0.0.413" },
   "google-news": { id: "eWUEW5YpCaCBAa0Zs", name: "lhotanova~google-news-scraper", url: "https://apify.com/lhotanova/google-news-scraper", maintainer: "community", pricingModel: "PAY_PER_EVENT",
-    prices: { newsResult: 0.002, resolvedUrl: 0.001, articlePage: 0.001, actorStartPerGb: 0.005 }, modifiedAt: "2026-10-15", build: null },
+    prices: { newsResult: 0.002, resolvedUrl: 0.001, articlePage: 0.001, actorStartPerGb: 0.005 }, modifiedAt: "2026-10-15", build: "0.0.46" },
   reddit: { id: "9sHOY9RzPYGjmTHo8", name: "harshmaur~reddit-scraper", url: "https://apify.com/harshmaur/reddit-scraper", maintainer: "community", pricingModel: "PAY_PER_EVENT",
-    prices: { resultSaved: 0.0018, actorStartPerGb: 0.02, aiAnalyzedResult: 0.0005, customLabel: 0.0001 }, modifiedAt: "2026-10-20", build: null },
+    prices: { resultSaved: 0.0018, actorStartPerGb: 0.02, aiAnalyzedResult: 0.0005, customLabel: 0.0001 }, modifiedAt: "2026-10-20", build: "0.0.710" },
   youtube: { id: "h7sDV53CddomktSi5", name: "streamers~youtube-scraper", url: "https://apify.com/streamers/youtube-scraper", maintainer: "apify", pricingModel: "PAY_PER_EVENT",
-    prices: { video: 0.003, dateRangeForChannels: 0.001, aiDescriptionMinute: 0.01, aiSummaryMinute: 0.01, transcriptMinute: 0.041 }, modifiedAt: "2026-10-21", build: null },
+    prices: { video: 0.003, dateRangeForChannels: 0.001, aiDescriptionMinute: 0.01, aiSummaryMinute: 0.01, transcriptMinute: 0.041 }, modifiedAt: "2026-10-21", build: "0.0.319" },
 };
 
 export type ResearchWave = "front" | "second" | "daily" | "month-end";

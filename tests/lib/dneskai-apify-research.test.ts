@@ -8,7 +8,7 @@ import {
 } from "@/lib/marketing/dneskai-apify-research";
 
 const owner = "11111111-1111-4111-8111-111111111111";
-// The committed plan has no pinned build; tests pin synthetic builds, which gives that plan its own id.
+// Tests use synthetic builds, giving their plan its own id independent of the public production pins.
 const pinned: DneskaiResearchPlan = { ...DNESKAI_RESEARCH_PLAN, actors: Object.fromEntries(Object.entries(DNESKAI_RESEARCH_ACTORS).map(([key, actor]) => [key, { ...actor, build: "9.9.9" }])) as DneskaiResearchPlan["actors"] };
 const planId = dneskaiResearchPlanId(pinned);
 const on = { MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED: "true", MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN: planId, APIFY_TOKEN: "test-only-token" };
@@ -65,9 +65,10 @@ describe("refusal without an approved plan", () => {
     expect(ledger.reserve).not.toHaveBeenCalled();
   });
 
-  it("refuses the committed plan even when approved, because no build is pinned", async () => {
-    const env = { ...on, MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN: dneskaiResearchPlanId(DNESKAI_RESEARCH_PLAN) };
-    await refused(startDneskaiResearchRun({ owner, itemKey: "niche-posts-global", runIndex: 0 }, { env, ledger: memoryLedger(), fetcher: vi.fn(), now: inWindow }), "research-build-unpinned");
+  it("refuses any unpinned actor even when the plan is approved", async () => {
+    const unpinned = { ...DNESKAI_RESEARCH_PLAN, actors: { ...DNESKAI_RESEARCH_ACTORS, "instagram-post": { ...DNESKAI_RESEARCH_ACTORS["instagram-post"], build: null } } };
+    const env = { ...on, MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN: dneskaiResearchPlanId(unpinned) };
+    await refused(startDneskaiResearchRun({ owner, itemKey: "niche-posts-global", runIndex: 0 }, { plan: unpinned, env, ledger: memoryLedger(), fetcher: vi.fn(), now: inWindow }), "research-build-unpinned");
   });
 
   it("refuses outside the item's window, a second daily run on one day, and derived targets that do not match", async () => {
@@ -157,7 +158,7 @@ describe("dry run", () => {
   it("prints what would run and the cap while the switch is off, without the ledger or the network", async () => {
     const fetcher = vi.fn(), ledger = memoryLedger();
     const dry = await startDneskaiResearchRun({ owner, itemKey: "niche-posts-czech", runIndex: 1, dryRun: true }, { env: {}, ledger, fetcher, now: inWindow });
-    expect(dry).toMatchObject({ mode: "dry-run", capUsd: 2.9, maxItems: 1200, build: null, blockedBy: ["research-disabled", "research-plan-not-approved", "research-apify-unconfigured", "research-build-unpinned"] });
+    expect(dry).toMatchObject({ mode: "dry-run", capUsd: 2.9, maxItems: 1200, build: DNESKAI_RESEARCH_ACTORS["instagram-post"].build, blockedBy: ["research-disabled", "research-plan-not-approved", "research-apify-unconfigured"] });
     expect(dry.mode === "dry-run" && dry.text).toContain("maxTotalChargeUsd 2.90 (worst case 2.76), maxItems 1200, window 2026-10-23..2026-10-29");
     expect(dry.mode === "dry-run" && dry.text).toContain("targets 4: seznamzpravy, denikn, petrmara, czechcrunch");
     expect(dry.mode === "dry-run" && dry.input).toMatchObject({ username: ["seznamzpravy", "denikn", "petrmara", "czechcrunch"], resultsLimit: 300 });
