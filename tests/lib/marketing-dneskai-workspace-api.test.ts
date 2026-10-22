@@ -134,7 +134,7 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(read.jobs.map((job) => job.errorCode)).toEqual(['dneskai-daily-generation-budget-exhausted']);
     // cost-16: the failed job's $0.25 is booked, not measured spend.
     expect(read.days[0]).toMatchObject({ collectionUsd: 0.04, generationUsd: 0, generationBookedUsd: 0.25 });
-    expect(read.ticks).toMatchObject({ total: 2, withErrors: 1 });
+    expect(read.ticks).toMatchObject({ total: 2, withErrors: 1, generationDeferred: 0 });
     expect(read.ticks.recent[0]?.errors).toEqual([{ category: 'token', code: 'token-failed' }]);
     expect(JSON.stringify(read)).not.toContain('PRIVATE');
     expect(read.days).toHaveLength(7);
@@ -164,6 +164,15 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(read.runs).toHaveLength(1);
     expect(read.ticks.total).toBe(2);
     expect(read.unreadable).toBe(2);
+  });
+  it('counts the ticks that deferred generation and lists them as recent (production-03)', async () => {
+    mocks.rpc.mockResolvedValue({ data: 0, error: null });
+    const deferred = (id: string, code: string) => ({ id, user_id: owner, kind: 'minute', started_at: new Date().toISOString(), finished_at: new Date().toISOString(),
+      did: [{ category: 'collection', status: 'noop', ms: 1 }, { category: 'generation', status: 'deferred', code, pending: true, ms: 0 }], errors: [] });
+    mocks.tables.marketing_ticks = [...mocks.tables.marketing_ticks!, deferred('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'tick-budget-exhausted'), deferred('dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'yield-to-publication')];
+    const read = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}`)).json());
+    expect(read.ticks).toMatchObject({ total: 4, withErrors: 1, generationDeferred: 2 });
+    expect(read.ticks.recent.map((tick) => tick.id)).toEqual(expect.arrayContaining(['cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd']));
   });
   it('shows an unreadable spend and a malformed ceiling as codes, not as zero', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'PRIVATE' } });

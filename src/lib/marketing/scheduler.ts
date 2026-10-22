@@ -11,8 +11,11 @@ import { pragueMarketingDate } from "./weekly-planning";
  * The marketing scheduler (#120). pg_cron calls POST /api/marketing/tick every five minutes and once a day
  * (owner decision 4 of #110: no n8n timers); each call runs `runMarketingTick` once.
  *
- * A minute tick runs at most one unit of each category, in this order and one after another:
- * collection, media, briefs, generation, publishing, reconciliation, token. A daily tick runs only the
+ * A minute tick runs at most one unit of each category, one after another, in this order: collection, media,
+ * briefs, generation, publishing, reconciliation, token. Generation is the one category that needs most of a
+ * tick (43 s), so a tick with a runnable queued job starts with generation, unless collection has work and it
+ * is collection's turn: during a collection run the two alternate by five-minute slot, so neither starves
+ * (production-03). A daily tick runs only the
  * daily duties: signed-URL renewal, media retention and tick retention. Every unit is wrapped, so one
  * failure never stops the next one. Each category has a lease in `marketing_scheduler_state`, so a second
  * tick running at the same time skips what the first one holds, and the tick id is recorded once in
@@ -29,7 +32,7 @@ export type MarketingTickKind = (typeof MARKETING_TICK_KINDS)[number];
 export const MarketingTickInputSchema = z.strictObject({ tick: z.uuid(), kind: z.enum(MARKETING_TICK_KINDS) });
 export type MarketingTickInput = z.infer<typeof MarketingTickInputSchema>;
 
-/** Minute-tick categories in execution order. */
+/** Minute-tick categories in their usual execution order; a runnable generation job may move generation first. */
 export const MARKETING_TICK_CATEGORIES = ["collection", "media", "briefs", "generation", "publishing", "reconciliation", "token"] as const;
 /** Daily-tick duties in execution order. */
 export const MARKETING_DAILY_DUTIES = ["renewal", "purge", "retention"] as const;
@@ -55,6 +58,16 @@ export const MARKETING_TICK_HARD_BUDGET_MS = 53_000;
 export const MARKETING_TICK_LEASE_SECONDS = 90;
 export const MARKETING_TICK_MEDIA_BUDGET_MS = 40_000;
 export const MARKETING_TICK_RETENTION_DAYS = 14;
+/** The pg_cron cadence of the minute tick (20261020160100_marketing_scheduler_cron.sql). */
+export const MARKETING_TICK_INTERVAL_MS = 5 * 60_000;
+/**
+ * True in the five-minute slots where collection keeps its place ahead of a queued generation job: the
+ * even slots counted from the epoch. In the odd slots generation goes first. Stateless, so a lost tick
+ * record or a failed release never hands one category every turn.
+ */
+export function marketingCollectionTurn(at: Date | number): boolean {
+  return Math.floor((typeof at === "number" ? at : at.getTime()) / MARKETING_TICK_INTERVAL_MS) % 2 === 0;
+}
 export const MARKETING_MEDIA_RETENTION_DAYS = 30;
 /**
  * A live publication due this soon (or already in its 15-minute window), or a claimed one waiting for its
@@ -484,13 +497,36 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   ];
 
   const did: MarketingTickStep[] = [];
-  for (const step of input.kind === "minute" ? minuteSteps : dailySteps) {
+  for (const step of input.kind === "minute" ? await minuteOrder(minuteSteps.map(memoizedPrecheck), started) : dailySteps) {
     did.push(await runStep(step, { store: ports.store, holder: input.tick, clock, remaining, signal }));
   }
   const errors = did.filter((step) => step.status === "error").map((step) => ({ category: step.category, code: step.code ?? `${step.category}-failed` }));
   let recorded = false;
   try { recorded = await ports.store.finishTick(input.tick, did, errors); } catch { recorded = false; }
   return { tick: input.tick, kind: input.kind, duplicate: false, recorded, did, errors, next: { pending: did.filter((step) => step.pending).map((step) => step.category) } };
+}
+
+/** The precheck runs at most once per tick: the order is chosen from it before the step itself reuses it. */
+function memoizedPrecheck(step: Step): Step {
+  const precheck = step.precheck;
+  if (!precheck) return step;
+  let read: Promise<StepOutcome | null> | null = null;
+  return { ...step, precheck: () => (read ??= precheck()) };
+}
+
+/**
+ * Generation first when a queued job is runnable (its precheck passed: consent, a queued job, no publication
+ * to yield to), except in collection's slot while collection has work. A precheck that fails keeps the usual
+ * order; runStep records the failure as before.
+ */
+async function minuteOrder(steps: Step[], started: number): Promise<Step[]> {
+  const generation = steps.find((step) => step.category === "generation");
+  const collection = steps.find((step) => step.category === "collection");
+  if (!generation?.precheck) return steps;
+  const runnable = (step: Step | undefined) => step?.precheck ? step.precheck().then((outcome) => outcome === null, () => false) : Promise.resolve(false);
+  if (!(await runnable(generation))) return steps;
+  if (marketingCollectionTurn(started) && await runnable(collection)) return steps;
+  return [generation, ...steps.filter((step) => step !== generation)];
 }
 
 async function runStep(step: Step, context: { store: MarketingSchedulerStore; holder: string; clock: () => Date; remaining: () => number; signal: AbortSignal }): Promise<MarketingTickStep> {

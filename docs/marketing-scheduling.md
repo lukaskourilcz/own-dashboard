@@ -32,8 +32,17 @@ pg_cron (Supabase)                      Vercel (OwnDashboard)
 
 ## What a minute tick does
 
-Every five minutes, 288 times a day. One tick runs at most one unit of each category, in this order,
-one after another. Each unit is wrapped, so a failure is recorded and the next category still runs.
+Every five minutes, 288 times a day. One tick runs at most one unit of each category, one after
+another, in the order below. Each unit is wrapped, so a failure is recorded and the next category still runs.
+
+Generation is the exception to the order (production-03). It needs 43 s of the 48 s budget, so after
+media and briefs it rarely fits. When the generation precheck finds a runnable job (consent on, a queued
+DNESKAi job, no live publication to yield to), the tick runs generation first and the other categories
+after it in their usual order. The one exception is a collection run in progress (or due at 22:00):
+then collection and generation take turns by five-minute slot. In even slots, counted from the Unix epoch
+(`marketingCollectionTurn`), collection keeps its place and generation usually waits. In odd slots
+generation goes first and collection usually waits. During a night with both, each gets every other
+tick. Each precheck still runs once per tick: the order is chosen from its answer.
 
 | # | Category | Runs when | One unit | Switch |
 |---|---|---|---|---|
@@ -82,8 +91,10 @@ scheduled again under a new `jobid`. Any other job keeps its history, including 
 The route may run 60 s and pg_net waits 55 s. A tick starts no category after 48 s and every abort
 signal fires at 53 s. Each category needs a minimum to start (collection 20 s, media 25 s,
 generation 43 s, publishing 30 s when live and 15 s as a dry run, token 16 s). A category that does not fit is recorded as
-`deferred: tick-budget-exhausted` with `pending: true` and runs on the next tick. In practice a
-collection step at night uses most of a tick, so media and generation follow once collection is done.
+`deferred: tick-budget-exhausted` with `pending: true` and runs on the next tick. A runnable generation
+job goes first (see above), so media and briefs no longer push it past 43 s; during a collection run the
+two alternate by slot. The Costs tab counts the ticks of the last 24 hours whose generation step was
+`deferred` (`ticks.generationDeferred`, either code) and lists them among the recent ticks.
 
 `renewStoredRevisionAssetUrls` and `purgeUnusedDneskaiMedia` take no abort signal. The tick stops waiting
 for them at 53 s (`renewal-cut-off`, `purge-cut-off`), still writes its record, and does not release their

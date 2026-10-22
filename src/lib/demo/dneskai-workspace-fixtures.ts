@@ -136,7 +136,7 @@ export function createDneskaiCostsFixture(now: Date): DneskaiCostsRead {
     publications: [{ id: id(107), revisionId: id(7), status: 'reconciliation', errorCode: 'meta-request-uncertain', scheduledAt: pragueScheduledAt(today, '08:00'), lastCheckedAt: ago(30), title: 'Kdy ověřit odpověď modelu' }],
     unreadable: 0,
     ticks: {
-      total: 1386, withErrors: 2, lastStartedAt: ago(1),
+      total: 1386, withErrors: 2, generationDeferred: 1, lastStartedAt: ago(1),
       recent: [
         { id: id(401), kind: 'minute', startedAt: ago(1), finishedAt: ago(1), did: [{ category: 'reconciliation', status: 'done', code: null }], errors: [] },
         { id: id(402), kind: 'minute', startedAt: ago(95), finishedAt: ago(95), did: [{ category: 'generation', status: 'error', code: 'dneskai-daily-generation-budget-exhausted' }], errors: [{ category: 'generation', code: 'dneskai-daily-generation-budget-exhausted' }] },

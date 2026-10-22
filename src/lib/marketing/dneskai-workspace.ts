@@ -276,6 +276,8 @@ export const DneskaiCostsReadSchema = z.strictObject({
   ticks: z.strictObject({
     total: z.number().int().nonnegative(),
     withErrors: z.number().int().nonnegative(),
+    /** Ticks whose generation step was deferred (tick budget, publication yield): a queued draft waited five minutes. */
+    generationDeferred: z.number().int().nonnegative(),
     lastStartedAt: timestamp.nullable(),
     recent: z.array(z.strictObject({
       id: uuid, kind: z.enum(['minute', 'daily']), startedAt: timestamp, finishedAt: timestamp.nullable(),
