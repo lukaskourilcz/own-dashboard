@@ -1,0 +1,302 @@
+{
+  "subsystem": "brand",
+  "summary": "Artwork matches in all three repositories; palette, typography and profile policy drift. Singles omit the carousel disclosure. No brand decision was implemented.",
+  "files": [
+    {
+      "path": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+      "role": "Verified brand evidence"
+    },
+    {
+      "path": "aifirst/docs/design/BRAND_SYSTEM.md",
+      "role": "Verified brand evidence"
+    },
+    {
+      "path": "own-dashboard/vendor/carousel-studio/dist/dneskai-photo.js",
+      "role": "Verified brand evidence"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+      "role": "Verified brand evidence"
+    },
+    {
+      "path": "quorum/studio/src/brand-kit.ts",
+      "role": "Verified brand evidence"
+    },
+    {
+      "path": "quorum/site/src/lib/admin-design-lab-brand.ts",
+      "role": "Verified brand evidence"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "The kit is pinned to aifirst 978cf71, with paper #f7f7f5, subtle #efefec, Space Grotesk and square corners. The current website documents #f5f5f7, native sans typography and rounded white surfaces. Logo artwork has not changed.",
+      "evidence": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:12; own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:62; own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:183; aifirst/docs/design/BRAND_SYSTEM.md:85; aifirst/docs/design/BRAND_SYSTEM.md:94"
+    },
+    {
+      "fact": "The disclosure is a layer of sources templates only. Single-photo and single-type templates have no disclosure layer, and the code-written caption adds sources, credits and hashtags without a disclosure.",
+      "evidence": "own-dashboard/vendor/carousel-studio/dist/dneskai-photo.js:233; own-dashboard/vendor/carousel-studio/dist/dneskai-photo.js:237; own-dashboard/src/lib/marketing/dneskai-generation.ts:101"
+    },
+    {
+      "fact": "socialRules is empty in the approved manifest. The schema accepts note strings and the admin view reads them for display; the studio renderer does not enforce profile-grid, cover consistency or avatar rules from this field.",
+      "evidence": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:208; quorum/studio/src/brand-kit.ts:206; quorum/site/src/lib/admin-design-lab-brand.ts:163"
+    },
+    {
+      "fact": "WCAG sRGB contrast recomputation gives #2f5ae6 on white 5.636:1, on paper 5.254:1, and on #14161a 3.214:1; ink on paper is 16.886:1. This is a palette constraint, not evidence that a current template fails.",
+      "evidence": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:158; own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:150"
+    },
+    {
+      "fact": "All nine manifest assets have identical SHA-256 bytes in aifirst public/brand, Quorum studio and OwnDashboard vendor. The drift is in tokens and usage rules, not the artwork.",
+      "evidence": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json:216; aifirst/docs/design/BRAND_SYSTEM.md:88"
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "Normal text WCAG AA contrast",
+      "value": "4.5:1",
+      "evidence": "Existing studio contrast gates; ratios computed from committed hex values."
+    }
+  ],
+  "measurements": [
+    {
+      "what": "Palette contrast",
+      "value": {
+        "blueOnWhite": 5.636,
+        "blueOnPaper": 5.254,
+        "blueOnInk": 3.214,
+        "inkOnPaper": 16.886
+      },
+      "method": "WCAG relative luminance: sRGB linearisation, weights 0.2126/0.7152/0.0722, (Lmax+0.05)/(Lmin+0.05). Computed locally on 2026-10-22."
+    },
+    {
+      "what": "Asset identity",
+      "value": "9/9 declared assets identical in aifirst, quorum-kits and OwnDashboard vendor",
+      "method": "hashlib.sha256 on each manifest asset and its sourcePath, 27 reads."
+    }
+  ],
+  "findings": [
+    {
+      "id": "BRAND-01",
+      "title": "The website and carousel kit have different palette, typography and surface rules",
+      "category": "brand",
+      "claim": "The kit is pinned to aifirst 978cf71, with paper #f7f7f5, subtle #efefec, Space Grotesk and square corners. The current website documents #f5f5f7, native sans typography and rounded white surfaces. Logo artwork has not changed.",
+      "evidence": [
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 12,
+          "excerpt": "\"commit\": \"978cf71eaa07e6465dea9055a92a7ad918844405\","
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 62,
+          "excerpt": "\"#f7f7f5\""
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 183,
+          "excerpt": "\"squareCorners\": true,"
+        },
+        {
+          "file": "aifirst/docs/design/BRAND_SYSTEM.md",
+          "line": 85,
+          "excerpt": "The October 2026 Apple Design refresh uses native system sans-serif for"
+        },
+        {
+          "file": "aifirst/docs/design/BRAND_SYSTEM.md",
+          "line": 94,
+          "excerpt": "- White rounded surfaces, controlled crops, subtle grouping borders and"
+        }
+      ],
+      "impactStatement": "The kit is pinned to aifirst 978cf71, with paper #f7f7f5, subtle #efefec, Space Grotesk and square corners. The current website documents #f5f5f7, native sans typography and rounded white surfaces. Logo artwork has not changed.",
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Choose the shared social brand direction before re-pinning the kit. Keep approved editorial receipts unchanged until that decision.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Reopened every cited excerpt and searched the render/generation paths; measurements are recorded below.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Choose how the website refresh and social system should relate.",
+        "reason": "Choose the shared social brand direction before re-pinning the kit. Keep approved editorial receipts unchanged until that decision."
+      }
+    },
+    {
+      "id": "BRAND-02",
+      "title": "Single-image posts omit the AI disclosure",
+      "category": "brand",
+      "claim": "The disclosure is a layer of sources templates only. Single-photo and single-type templates have no disclosure layer, and the code-written caption adds sources, credits and hashtags without a disclosure.",
+      "evidence": [
+        {
+          "file": "own-dashboard/vendor/carousel-studio/dist/dneskai-photo.js",
+          "line": 233,
+          "excerpt": "text(\"disclosure\", box(LEFT, 1_106, MEASURE, 90), { colorToken: \"muted\", fontToken: \"mono\", fontWeight: 400, minFontSize: 19, maxFontSize: 20, maxChars: 200, maxLines: 4 })"
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/dist/dneskai-photo.js",
+          "line": 237,
+          "excerpt": "const singlePhoto = template({"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 469,
+          "excerpt": "const caption = [body, block, ...(credits.length ? [credits.join(\" · \")] : []), tags].join(\"\\n\\n\");"
+        }
+      ],
+      "impactStatement": "The disclosure is a layer of sources templates only. Single-photo and single-type templates have no disclosure layer, and the code-written caption adds sources, credits and hashtags without a disclosure.",
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Add a code-owned disclosure for singles in the caption, with an explicit caption-length gate and a regression test. Do not claim that this is a legal requirement.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Reopened every cited excerpt and searched the render/generation paths; measurements are recorded below.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null,
+        "reason": "Add a code-owned disclosure for singles in the caption, with an explicit caption-length gate and a regression test. Do not claim that this is a legal requirement."
+      }
+    },
+    {
+      "id": "BRAND-03",
+      "title": "The brand kit has no profile or grid rules, and socialRules is descriptive text",
+      "category": "brand",
+      "claim": "socialRules is empty in the approved manifest. The schema accepts note strings and the admin view reads them for display; the studio renderer does not enforce profile-grid, cover consistency or avatar rules from this field.",
+      "evidence": [
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 208,
+          "excerpt": "\"socialRules\": [],"
+        },
+        {
+          "file": "quorum/studio/src/brand-kit.ts",
+          "line": 206,
+          "excerpt": "socialRules: z.array(NoteSchema).max(12).default([]),"
+        },
+        {
+          "file": "quorum/site/src/lib/admin-design-lab-brand.ts",
+          "line": 163,
+          "excerpt": "socialRules: [...manifest.socialRules],"
+        }
+      ],
+      "impactStatement": "socialRules is empty in the approved manifest. The schema accepts note strings and the admin view reads them for display; the studio renderer does not enforce profile-grid, cover consistency or avatar rules from this field.",
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Specify logo placement, cover hierarchy, 3:4 crop preview and profile rules with the five-kit design, then encode measurable checks in templates and tests.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Reopened every cited excerpt and searched the render/generation paths; measurements are recorded below.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Approve social brand and kit designs.",
+        "reason": "Specify logo placement, cover hierarchy, 3:4 crop preview and profile rules with the five-kit design, then encode measurable checks in templates and tests."
+      }
+    },
+    {
+      "id": "BRAND-04",
+      "title": "Blueprint blue passes on light surfaces but fails normal-text contrast on ink",
+      "category": "brand",
+      "claim": "WCAG sRGB contrast recomputation gives #2f5ae6 on white 5.636:1, on paper 5.254:1, and on #14161a 3.214:1; ink on paper is 16.886:1. This is a palette constraint, not evidence that a current template fails.",
+      "evidence": [
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 158,
+          "excerpt": "\"accent\": {"
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 150,
+          "excerpt": "\"foreground\": {"
+        }
+      ],
+      "impactStatement": "WCAG sRGB contrast recomputation gives #2f5ae6 on white 5.636:1, on paper 5.254:1, and on #14161a 3.214:1; ink on paper is 16.886:1. This is a palette constraint, not evidence that a current template fails.",
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Keep the existing renderer contrast gates. For any dark look use an approved lighter ink or white for normal text and check each rendered template; do not recolour the logotype.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Reopened every cited excerpt and searched the render/generation paths; measurements are recorded below.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Keep the existing renderer contrast gates. For any dark look use an approved lighter ink or white for normal text and check each rendered template; do not recolour the logotype."
+      }
+    },
+    {
+      "id": "BRAND-05",
+      "title": "The nine declared brand assets match across all three repositories",
+      "category": "brand",
+      "claim": "All nine manifest assets have identical SHA-256 bytes in aifirst public/brand, Quorum studio and OwnDashboard vendor. The drift is in tokens and usage rules, not the artwork.",
+      "evidence": [
+        {
+          "file": "own-dashboard/vendor/carousel-studio/brand-kits/caught-up/manifest.json",
+          "line": 216,
+          "excerpt": "\"assets\": ["
+        },
+        {
+          "file": "aifirst/docs/design/BRAND_SYSTEM.md",
+          "line": 88,
+          "excerpt": "The outlined brand artwork remains unchanged."
+        }
+      ],
+      "impactStatement": "All nine manifest assets have identical SHA-256 bytes in aifirst public/brand, Quorum studio and OwnDashboard vendor. The drift is in tokens and usage rules, not the artwork.",
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Preserve the outlined artwork and the existing manifest asset hash checks.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Reopened every cited excerpt and searched the render/generation paths; measurements are recorded below.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Preserve the outlined artwork and the existing manifest asset hash checks."
+      }
+    }
+  ],
+  "openQuestions": [
+    "Which website/social brand direction should govern the four future looks?",
+    "Approve profile and grid rules together with the five-kit visual design."
+  ],
+  "verification": {
+    "total": 5,
+    "confirmed": 5,
+    "partly": 0,
+    "refuted": 0,
+    "kept": 3,
+    "dropped": 2,
+    "quickWins": 1
+  },
+  "outputFile": "docs/reports/dneskai-audit-2026-10/map-brand.json"
+}
