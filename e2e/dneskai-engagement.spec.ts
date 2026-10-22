@@ -23,14 +23,16 @@ test('editing the DM message saves a new version whose own hash is approved', as
   const errors = watchConsole(page), t = dneskaiLab.en;
   const block = await openEducationPost(page);
   const session = page.getByTestId('dneskai-lab-session');
-  const versionBefore = await session.getByText(/^v\. /).first().textContent();
+  // The approve button names the exact version it approves.
+  const version = page.getByTestId('dneskai-lab-approve').locator('.font-mono');
+  const versionBefore = await version.textContent();
   const message = block.getByRole('textbox', { name: t.engagement.message, exact: true });
   await message.fill('New message text for the test.');
   await expect(block.getByTestId('dneskai-engagement-preview')).toContainText('New message text for the test.');
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
   await page.getByTestId('dneskai-lab').getByRole('button', { name: t.actions.save, exact: true }).click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
-  await expect.poll(() => session.getByText(/^v\. /).first().textContent()).not.toBe(versionBefore);
+  await expect.poll(() => version.textContent()).not.toBe(versionBefore);
   await expect(page.getByTestId('dneskai-engagement').getByRole('textbox', { name: t.engagement.message, exact: true })).toHaveValue('New message text for the test.');
   await page.getByTestId('dneskai-lab-approve').click();
   await expect(session).toContainText('Approved. Scheduled');
