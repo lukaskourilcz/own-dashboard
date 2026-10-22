@@ -24,6 +24,7 @@ vi.mock('node:dns/promises', () => ({ default: { lookup: async () => [{ address:
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => shared.owner }));
 
 import { createMigratedDatabase } from '../helpers/supabase-pglite';
+import { dneskaiDryDayOutDir } from '../helpers/dneskai-dry-day-out';
 import { SupabaseEmulator } from '../helpers/supabase-emulator';
 import { FakeAnthropic, FakeApify, FakeGraph, FakeInternet, FakeJev, NOISE, PICTURES, STORIES, routePublishers, sha256, type Picture } from '../helpers/dneskai-dry-day-world';
 import { runMarketingTick, type MarketingTickResult } from '@/lib/marketing/scheduler';
@@ -43,7 +44,8 @@ const ANON_KEY = 'anon-TEST-ONLY';
 const OWNER_SESSION = 'owner-session-TEST-ONLY';
 const IG_USER = '17841400000000001';
 const IG_TOKEN = 'IGAAfixtureTEST-ONLY-long-lived-token-0001';
-const OUT = '/tmp/claude-0/-home-user/ded5c14c-b66e-5228-83f0-9b51d30cae38/scratchpad/wave4/dry-day';
+// Visual-review artefacts; set DNESKAI_DRY_DAY_OUT to keep them somewhere else.
+const OUT = dneskaiDryDayOutDir();
 const ENV: Record<string, string> = {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE, NEXT_PUBLIC_SUPABASE_ANON_KEY: ANON_KEY, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY, MARKETING_OWNER_ID: OWNER,
   MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true', MARKETING_DNESKAI_FEED_PROVIDER: 'native',
@@ -404,5 +406,6 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     writeFileSync(`${OUT}/contact-sheet.jpg`, sheet);
     writeFileSync(`${OUT}/ticks.json`, JSON.stringify(ticks.map((entry) => ({ at: entry.at, ms: entry.ms, did: entry.result.did.map((item) => ({ category: item.category, status: item.status, code: item.code, detail: item.detail })) })), null, 1));
     expect(saved).toHaveLength(15);
+    console.info(`DNESKAi dry-day slides and contact sheet: ${OUT}`);
   });
 });
