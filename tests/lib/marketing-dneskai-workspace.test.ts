@@ -161,16 +161,15 @@ describe('the post editor logic', () => {
     draft = setSlideText(draft, 0, 'headline', 'Nový titulek');
     draft = setSlideText(draft, 3, 'body', '   ');
     draft = setImageCrop(draft, 1, 'image-1', { focal: { x: 0.31234, y: 0.7 }, zoom: 1.5 });
+    draft = removeSlide(draft, 2);
     draft = moveSlide(draft, 2, 1);
-    draft = removeSlide(draft, 4);
     const request = dneskaiEditRequest(original, { ...draft, caption: 'Nový popisek' }, 'd0e5ca10-0000-4000-8000-0000000000bb');
     expect(request).toEqual({
       action: 'edit', id: original.id, caption: 'Nový popisek', scheduledAt: original.scheduledAt, accountId: 'd0e5ca10-0000-4000-8000-0000000000bb',
       deck: { slides: [
         { from: 0, headline: 'Nový titulek' },
-        { from: 2 },
-        { from: 1, images: [{ slot: 'image-1', assetSha256: original.deck!.slides[1]!.images[0]!.assetSha256, crop: { focal: { x: 0.312, y: 0.7 }, zoom: 1.5 } }] },
         { from: 3, body: null },
+        { from: 1, images: [{ slot: 'image-1', assetSha256: original.deck!.slides[1]!.images[0]!.assetSha256, crop: { focal: { x: 0.312, y: 0.7 }, zoom: 1.5 } }] },
       ] },
     });
     // Text a slide type does not draw never reaches the request, even if it was typed.
@@ -178,15 +177,16 @@ describe('the post editor logic', () => {
     expect(dneskaiEditRequest(original, statement).deck).toBeUndefined();
   });
 
-  it('swaps a picture from the pool, follows its credit and the sources slide, and flags pictures that cannot fill a cover', () => {
+  it('swaps a picture from the pool without writing a credit, and flags pictures that cannot fill a cover', () => {
     const original = post(1);
     const pool = orderedMediaPool(original.brief!);
     expect(pool.map((item) => item.assetSha256)).toEqual([assets.photos.p1.sha256, assets.photos.p3.sha256, assets.photos.p5.sha256, assets.photos.p4.sha256, assets.photos.p6.sha256, assets.photos.p2.sha256]);
     const p2 = pool.find((item) => item.assetSha256 === assets.photos.p2.sha256)!;
     const swapped = swapSlideImage(createDeckDraft(original), 0, 'image-1', p2, original.brief!.media);
     expect(swapped.slides[0]!.slide.images).toEqual([{ slot: 'image-1', assetSha256: p2.assetSha256 }]);
-    expect(swapped.slides[0]!.slide.credit).toBe('Foto: ukázkový zdroj 2');
-    expect(swapped.slides[4]!.slide.images.map((image) => image.assetSha256)).toEqual([p2.assetSha256, assets.photos.p3.sha256]);
+    // No slide shows a picture credit (owner rule, 22 October 2026): the credit stays in the brief's media.
+    expect(swapped.slides.every((item) => item.slide.credit === undefined)).toBe(true);
+    expect(swapped.slides.slice(1)).toEqual(createDeckDraft(original).slides.slice(1));
     expect(mediaResolution(pool[0]!)).toBe('full-bleed');
     expect(mediaResolution(pool[1]!)).toBe('inset');
     expect(mediaResolution(pool[2]!)).toBe('small');
