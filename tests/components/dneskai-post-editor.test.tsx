@@ -59,14 +59,15 @@ describe('DNESKAi post editor (#119)', () => {
   it('offers only the fields each slide type draws, each with its template limit', async () => {
     open(0); await settle();
     const fields = () => [...editor().querySelectorAll('label')].map((label) => label.textContent).filter((text) => text !== t.fields.alt && text !== t.editor.zoom);
-    expect(fields()).toEqual([t.fields.headline, t.fields.kicker, t.fields.credit]);
+    // The cover shows its headline alone, and no slide offers a picture credit (owner rules, 22 October 2026).
+    expect(fields()).toEqual([t.fields.headline]);
     expect(editor().textContent).toContain('/ 110');
-    select(2); expect(fields()).toEqual([t.fields.headline, t.fields.body, t.fields.credit]);
-    select(3); expect(fields()).toEqual([t.fields.headline, t.fields.body, t.fields.kicker, t.fields.credit]);
+    select(2); expect(fields()).toEqual([t.fields.headline, t.fields.body]);
+    select(3); expect(fields()).toEqual([t.fields.headline, t.fields.body, t.fields.kicker]);
     expect(editor().textContent).toContain('/ 28');
     select(4); expect(fields()).toEqual([t.fields.headline, t.fields.body]);
     expect(editor().textContent).toContain('/ 170');
-    select(5); expect(fields()).toEqual([]); expect(editor().textContent).toContain(t.editor.noText);
+    expect(editor().textContent).not.toContain(t.fields.credit);
   });
 
   it('counts characters, says how far over the limit a field is and marks it invalid', async () => {
@@ -106,12 +107,12 @@ describe('DNESKAi post editor (#119)', () => {
     const post = open(0, 0, onSaved); await settle();
     type(labelled(editor(), t.fields.headline)!, 'Benchmark čtěte s metodikou');
     act(() => { document.querySelector<HTMLButtonElement>(`[aria-label="${t.editor.moveDown}: ${t.card.problemSlide(2)}"]`)!.click(); });
-    act(() => { document.querySelector<HTMLButtonElement>(`[aria-label="${t.editor.remove}: ${t.card.problemSlide(5)}"]`)!.click(); });
+    act(() => { document.querySelector<HTMLButtonElement>(`[aria-label="${t.editor.remove}: ${t.card.problemSlide(4)}"]`)!.click(); });
     const main = document.querySelector<HTMLButtonElement>('[data-testid="dneskai-editor-main"]')!;
     expect(main.textContent).toBe(t.editor.save);
     await act(async () => { main.click(); await new Promise((done) => setTimeout(done, 20)); });
     expect(posted).toEqual([{ action: 'edit', id: post.id, caption: post.caption, scheduledAt: post.scheduledAt,
-      deck: { slides: [{ from: 0, headline: 'Benchmark čtěte s metodikou' }, { from: 2 }, { from: 1 }, { from: 3 }] } }]);
+      deck: { slides: [{ from: 0, headline: 'Benchmark čtěte s metodikou' }, { from: 2 }, { from: 1 }] } }]);
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ id: 'd0e5ca10-0000-4000-8000-0000000000ff', ready: false }), post.id);
     expect(document.body.textContent).toContain(t.editor.savedBlocked);
     // Switched to the new version, which this read does not hold yet: the editor waits for it instead of showing the old one.
