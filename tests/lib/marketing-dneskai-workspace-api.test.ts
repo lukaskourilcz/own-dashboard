@@ -82,7 +82,8 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(read.posts).toHaveLength(1); expect(read.unreadable).toBe(1);
     const [post] = read.posts;
     expect(post).toMatchObject({ id: revisionId, contentHash: sha(500), title: 'Smyšlený příspěvek', brief: { eventId, media: [{ assetSha256: sha(1), credit: 'Foto: smyšlený zdroj' }] } });
-    expect(post!.fields).toEqual([[{ field: 'headline', max: 110 }, { field: 'kicker', max: 56 }, { field: 'credit', max: 80 }], [{ field: 'headline', max: 170 }, { field: 'body', max: 240 }], []]);
+    // A stored legacy cover still carries a kicker and a credit, but the cover template draws only its headline.
+    expect(post!.fields).toEqual([[{ field: 'headline', max: 110 }], [{ field: 'headline', max: 170 }, { field: 'body', max: 240 }], []]);
     expect(post!.renderReport?.problems[0]).toMatchObject({ field: 'image-1', blocking: false });
     expect(dneskaiPostState(post!, dneskaiStateContext(read)).state).toBe('review');
     expect(read.jobs.map((job) => [job.status, job.errorCode])).toEqual([['running', null], ['failed', 'dneskai-daily-generation-budget-exhausted']]);
@@ -217,11 +218,11 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
 });
 
 describe('slide field limits', () => {
-  it('lists only the fields each template draws, with its layer limit', () => {
+  it('lists only the fields each template draws, with its layer limit, and never a credit', () => {
     expect(dneskaiSlideFieldLimits({ type: 'split', headline: 'x', images: [{ slot: 'image-1', assetSha256: sha(1) }, { slot: 'image-2', assetSha256: sha(2) }], alt: 'x' }))
-      .toEqual([{ field: 'headline', max: 110 }, { field: 'body', max: 320 }, { field: 'kicker', max: 28 }, { field: 'credit', max: 80 }]);
+      .toEqual([{ field: 'headline', max: 110 }, { field: 'body', max: 320 }, { field: 'kicker', max: 28 }]);
     expect(dneskaiSlideFieldLimits({ type: 'single', variant: 'photo', headline: 'x', images: [{ slot: 'image-1', assetSha256: sha(1) }], alt: 'x' }))
-      .toEqual([{ field: 'headline', max: 110 }, { field: 'body', max: 100 }, { field: 'kicker', max: 44 }, { field: 'credit', max: 30 }]);
-    expect(dneskaiSlideFieldLimits({ type: 'figure', headline: 'x', images: [{ slot: 'image-1', assetSha256: sha(1) }], alt: 'x' }).map((item) => item.field)).toEqual(['headline', 'body', 'credit']);
+      .toEqual([{ field: 'headline', max: 110 }]);
+    expect(dneskaiSlideFieldLimits({ type: 'figure', headline: 'x', images: [{ slot: 'image-1', assetSha256: sha(1) }], alt: 'x' }).map((item) => item.field)).toEqual(['headline', 'body']);
   });
 });
