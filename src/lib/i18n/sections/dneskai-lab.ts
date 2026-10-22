@@ -3,6 +3,8 @@ import type { DneskaiKit, DneskaiLabApprovalBlock } from '@/lib/marketing/dneska
 /** The DNESKAi Design Lab (design-lab-spec.md). Every string exists in English and Czech with the same meaning. */
 const en = {
   title: 'Design Lab',
+  specimens: { title: 'Editorial specimens', help: 'Six synthetic decks, 24 slides. The hatched tile shows a refused low-resolution source. Other kit designs await approval.' },
+  savedPreview: 'The stage shows the saved version. Save to see the new render.',
   intro: 'Each post at the size the feed shows it. Check the slides, fix the text, approve the exact version.',
   views: { label: 'Review view', lab: 'Lab', list: 'List' },
   shortcutsButton: 'Keyboard shortcuts',
@@ -35,7 +37,7 @@ const en = {
     names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker' } satisfies Record<DneskaiKit, string>,
     current: 'Current', fits: 'fits', shorten: 'shorten text',
     unavailable: 'Not rendered yet',
-    unavailableHelp: 'Only the Editorial kit can be rendered in OwnDashboard today. The other four arrive with the kit engine; their covers appear once they are rendered, never as a stand-in.',
+    unavailableHelp: 'Only the Editorial kit can be rendered in OwnDashboard today. The other four await their visual designs; their covers appear once they are rendered, never as a stand-in.',
     unavailableNotice: (name: string) => `${name} cannot be rendered yet. The post keeps its current kit.`,
     switchNeedsApproval: 'A kit switch saves a new version, which needs its own approval.',
   },
@@ -65,6 +67,7 @@ const en = {
     caption: 'Caption',
     feedLine: 'First line in the feed',
     slot: 'Time', account: 'Account', sources: 'Sources', disclosure: 'AI disclosure',
+    disclosureMissing: 'This deck has no disclosure slide.',
     disclosureText: 'The last slide states that AI helped prepare the post. Code writes it.',
   },
   actions: {
@@ -132,6 +135,8 @@ const en = {
 
 const cs: typeof en = {
   title: 'Design Lab',
+  specimens: { title: 'Ukázky sady Editorial', help: 'Šest syntetických sad, 24 slidů. Šrafovaný dílek ukazuje odmítnutý zdroj s nízkým rozlišením. Ostatní vizuální návrhy čekají na schválení.' },
+  savedPreview: 'Náhled ukazuje uloženou verzi. Nové vykreslení uvidíte po uložení.',
   intro: 'Každý příspěvek ve velikosti, v jaké ho ukáže feed. Zkontrolujte slidy, opravte text a schvalte přesnou verzi.',
   views: { label: 'Zobrazení kontroly', lab: 'Lab', list: 'Seznam' },
   shortcutsButton: 'Klávesové zkratky',
@@ -164,7 +169,7 @@ const cs: typeof en = {
     names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker' },
     current: 'Současná', fits: 'vejde se', shorten: 'zkrátit text',
     unavailable: 'Zatím nevykresleno',
-    unavailableHelp: 'OwnDashboard dnes umí vykreslit jen sadu Editorial. Ostatní čtyři přijdou s enginem sad; jejich obálky se objeví, až se vykreslí, nikdy jako náhradní obrázek.',
+    unavailableHelp: 'OwnDashboard dnes umí vykreslit jen sadu Editorial. Ostatní čtyři čekají na vizuální návrhy; jejich obálky se objeví, až se vykreslí, nikdy jako náhradní obrázek.',
     unavailableNotice: (name: string) => `Sadu ${name} zatím nelze vykreslit. Příspěvek si ponechá současnou sadu.`,
     switchNeedsApproval: 'Změna sady uloží novou verzi, která potřebuje vlastní schválení.',
   },
@@ -194,6 +199,7 @@ const cs: typeof en = {
     caption: 'Popisek',
     feedLine: 'První řádek ve feedu',
     slot: 'Čas', account: 'Účet', sources: 'Zdroje', disclosure: 'Označení AI',
+    disclosureMissing: 'Tato sada nemá slide s označením AI.',
     disclosureText: 'Poslední slide uvádí, že s přípravou příspěvku pomohla AI. Píše ho kód.',
   },
   actions: {

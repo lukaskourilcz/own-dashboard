@@ -56,6 +56,7 @@ export function DneskaiSlideInspector({ post, draft, index, onDraft, fit, previe
           lang={lang} help={feedback?.text} onChange={(value) => onDraft(setSlideText(draft, index, field, value))} />
       </div>;
     })}
+    <details><summary className="min-h-11 cursor-pointer py-3 text-xs font-medium">{tw.fields.alt}</summary><CountedField id={`${id}-alt`} label={tw.fields.alt} value={slide.alt} max={1000} multiline lang={lang} help={tw.editor.altHelp} onChange={(value) => onDraft(setSlideText(draft, index, 'alt', value))} /></details>
     <p aria-live="polite" role="status" className="min-h-4 text-xs text-foreground-muted" data-testid="dneskai-fit-summary">
       {fit.status === 'unavailable' ? t.slide.fitUnavailable : fit.status === 'checking' && !fitted ? t.slide.fitChecking
         : fitted ? (bad === 0 ? t.slide.fitSummaryOk(index + 1) : <span className="text-warning">{t.slide.fitSummaryBad(index + 1, bad)}</span>) : ''}

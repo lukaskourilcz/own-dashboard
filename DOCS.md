@@ -203,3 +203,5 @@ IG TIPS and the marketing calendars close the loop in both directions (#91). Eac
 ## Maintenance update — 28 September 2026
 
 Unconfigured traffic cards and Finance provider setup prompts are hidden. Existing configured connections and CSV imports remain. IG TIPS can move a saved tip back to Links without losing its notes, topic or summary; categories containing only tips remain manageable from Links. DNESKAi’s seeded cron represents its weekday publication check and incurs no model charge.
+
+- [DNESKAi Design Lab prototype](docs/dneskai-design-lab.md) — implemented workflow, deep links, authentic fixture rendering and owner-dependent policies.

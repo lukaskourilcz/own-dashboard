@@ -75,6 +75,7 @@ const nextConfig: NextConfig = {
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
     // The Design Lab's fixture-only fit route runs the same studio fitter as /api/marketing/dneskai/fit.
     "/api/dev-preview/dneskai-fit": [...carouselStudioFiles, sharpLibvips],
+    "/api/dev-preview/dneskai-render": [...carouselStudioFiles, sharpLibvips, "./public/demo/dneskai/original-*.jpg"],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

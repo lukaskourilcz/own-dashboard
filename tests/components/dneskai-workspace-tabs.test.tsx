@@ -26,6 +26,7 @@ const wait = (ms: number) => act(async () => { await new Promise((done) => setTi
 const show = async (tab: DneskaiWorkspaceTabId) => {
   act(() => root.render(<QueryClientProvider client={client}><DneskaiWorkspaceTab tab={tab} projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview /></QueryClientProvider>));
   await wait(400);
+  if (tab === 'dneskai-review') act(() => { [...container.querySelectorAll('button')].find((button) => button.textContent === 'List')?.click(); });
 };
 const blocked = () => container.querySelector('[data-testid="dneskai-blocked-posts"]')?.textContent ?? '';
 const calendarEntry = (title: string) => [...container.querySelectorAll('[data-testid="dneskai-calendar"] li li')].find((item) => item.textContent?.includes(title));

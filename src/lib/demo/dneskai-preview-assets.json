@@ -1,6 +1,7 @@
 {
   "photos": {
     "p1": {
+      "originalFile": "/demo/dneskai/original-p1.jpg",
       "file": "/demo/dneskai/photo-p1.jpg",
       "sha256": "863536beff0ca903ac15ae09928214cf0c3e78e34076b557e17df4517d9c2605",
       "width": 1600,
@@ -9,6 +10,7 @@
       "previewHeight": 360
     },
     "p2": {
+      "originalFile": "/demo/dneskai/original-p2.jpg",
       "file": "/demo/dneskai/photo-p2.jpg",
       "sha256": "43864ca42221fa240253f3e6d66bb4d940c35e7b716ecd35528364a264efb629",
       "width": 1200,
@@ -17,6 +19,7 @@
       "previewHeight": 600
     },
     "p3": {
+      "originalFile": "/demo/dneskai/original-p3.jpg",
       "file": "/demo/dneskai/photo-p3.jpg",
       "sha256": "be40c0e4a3f60aee2a37f77ffb9f55cba13b39afe049760d6e95ebbfd0ddce13",
       "width": 1000,
@@ -25,6 +28,7 @@
       "previewHeight": 336
     },
     "p4": {
+      "originalFile": "/demo/dneskai/original-p4.jpg",
       "file": "/demo/dneskai/photo-p4.jpg",
       "sha256": "55bc4e9e3fd685b0820b6b5d4f47ac96f7b669038ebf630f72051166977c817d",
       "width": 800,
@@ -33,6 +37,7 @@
       "previewHeight": 480
     },
     "p5": {
+      "originalFile": "/demo/dneskai/original-p5.jpg",
       "file": "/demo/dneskai/photo-p5.jpg",
       "sha256": "1810766c6b9f0647e6fcf1ec230b16b5660a0cefe2aded0117fcd4e14b12a841",
       "width": 520,
@@ -41,6 +46,7 @@
       "previewHeight": 360
     },
     "p6": {
+      "originalFile": "/demo/dneskai/original-p6.jpg",
       "file": "/demo/dneskai/photo-p6.jpg",
       "sha256": "742c5b837d0c644f45c0f84bfcc346b561b7a01c658adb516ac604aa9a1fb232",
       "width": 1440,
@@ -73,9 +79,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a1.jpg",
-          "sha256": "e1d4b67a8248d5701881290f24becc6bd5482c1b9c17c269c685558c4a9871dd",
-          "width": 360,
-          "height": 450
+          "sha256": "8d8d77a56bcc5d03a767635c57c84d278da8acee5678b036cb025273c15f1aa3",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -94,9 +100,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a2.jpg",
-          "sha256": "8ab226a3bdda927107e3776e1d9f78b9a81e20bb3e0f330a7da9f7a183d9a59c",
-          "width": 360,
-          "height": 450
+          "sha256": "e41954392acd3815534fd9df5a6d197aa5b6b54c0fad19c9caf0594b1d262730",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -116,9 +122,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a3.jpg",
-          "sha256": "bd7b0a1e60eeb6643ebc52d64323feb9934842b2008eaf420311f4033a24fc71",
-          "width": 360,
-          "height": 450
+          "sha256": "afe3ff61d74b4fe607f63a6ffe32d77563dc49a1f562932998cb592866741221",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -131,9 +137,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a4.jpg",
-          "sha256": "deefa1bc691641baad8a66917ebe8446c2e8b07f996afba04ba7bb3e63b04bac",
-          "width": 360,
-          "height": 450
+          "sha256": "33f8c3c744d25b01f393c3cceba06271c205de049910573d063a830ee25ce603",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -158,9 +164,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a5.jpg",
-          "sha256": "f6c80df43b74d4d7239885fa4ecb03e8edbb5c98b552162e4df4294af8e616ed",
-          "width": 360,
-          "height": 450
+          "sha256": "592e71cb7b976f2026adb04e6a8d113a9e67ed19bf7470a9160fecd652d5919d",
+          "width": 1080,
+          "height": 1350
         }
       }
     ],
@@ -183,9 +189,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-b1.jpg",
-          "sha256": "f9318a7ef3656c66a192b5ab94b540fbe911510ea2ddf02141339c9e53fa6251",
-          "width": 360,
-          "height": 450
+          "sha256": "4a3c0824444cc03d0eff37d49547f650cfebfe2971d96f26322a70ea23967600",
+          "width": 1080,
+          "height": 1350
         }
       }
     ],
@@ -206,9 +212,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-c1.jpg",
-          "sha256": "b3649dd91bb50cb5c7e56bb55fcc2b3b61001ab332118a2811c1876ccfedd307",
-          "width": 360,
-          "height": 450
+          "sha256": "672f6eb408544ab5d249aa12d0b6171f4344749b151fe086360edcbebcdd9ee4",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -221,9 +227,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-c2.jpg",
-          "sha256": "2bde03ed40b5ec1c8d5312ebd6720c3311576d8fc3824dea9b04f04b97ef13a1",
-          "width": 360,
-          "height": 450
+          "sha256": "1b622356df6ee3c944911050e4cc5808d0af338fac3b420aa1461ddab50fdfdb",
+          "width": 1080,
+          "height": 1350
         }
       }
     ],
@@ -244,9 +250,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-d1.jpg",
-          "sha256": "8daab232970a41b7c18a4d6108345c91d2daf91648ed1dd6247ed1a7a25c9106",
-          "width": 360,
-          "height": 450
+          "sha256": "942fa33d5fdec8367967f224c2d61ae4f9cf1adb0f36918b4aa506289fbc19ef",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -258,9 +264,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-d2.jpg",
-          "sha256": "3cafaf53a955c396111283a405109f6e47770b839f1c67340c53e0b7f88f3235",
-          "width": 360,
-          "height": 450
+          "sha256": "7a4ab45d63705fd9541a9df3c40e0ca41e87c0cff10615455d778413e87a9f07",
+          "width": 1080,
+          "height": 1350
         }
       }
     ],
@@ -281,9 +287,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-e1.jpg",
-          "sha256": "aeed849af7bfb8f4e5849055e80b451aae17387fa3aac6863095c97f83463c0e",
-          "width": 360,
-          "height": 450
+          "sha256": "607567824e4aff33244928451ba39d03b620d247fb8c75158d260c6853df3d68",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -303,9 +309,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-e2.jpg",
-          "sha256": "2ab19b6b29006eab64360a2e6e8c725e49cb0ce4376f3e9981257f55cea3bf3e",
-          "width": 360,
-          "height": 450
+          "sha256": "4e9f32eed2da60566436806ab2cbce1d36ebd689e275d3b02e70cc7cabd2bf36",
+          "width": 1080,
+          "height": 1350
         }
       }
     ],
@@ -332,9 +338,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-f1.jpg",
-          "sha256": "03aba28746fa165d04686f99789b90ba6a5cd94c0227fcde7056a737c94cf506",
-          "width": 360,
-          "height": 450
+          "sha256": "c740ca0af2722a5a6c881158f42cead85e89c81333a088b9ec8a68cc74d7d462",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -346,9 +352,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-f2.jpg",
-          "sha256": "222d3565d8bd074c1216ad669b86f31073ca609d73f8272efff9ff01ad7978f3",
-          "width": 360,
-          "height": 450
+          "sha256": "67e7910ef401bbf0ad5b1442bd36887abea96bbdc323cbb712f7a362ef67cb38",
+          "width": 1080,
+          "height": 1350
         }
       }
     ],
@@ -369,9 +375,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-g1.jpg",
-          "sha256": "4de4f7fda752913753680bf646dbc722d8888c1870fe65f9c6000165077d018a",
-          "width": 360,
-          "height": 450
+          "sha256": "280e75dec80b2b0ee8be2092d9f594eaca9ae3ca971de21b0b301824ad15692e",
+          "width": 1080,
+          "height": 1350
         }
       },
       {
@@ -390,9 +396,9 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-g2.jpg",
-          "sha256": "eff39cfd4234fae5e428721d3ab09511425a1c4cdb5861c4cd1984b6f1cba83f",
-          "width": 360,
-          "height": 450
+          "sha256": "e5173c0657b0241095c98c6c82917c057955da3a0f39e7354157d03f142c1593",
+          "width": 1080,
+          "height": 1350
         }
       }
     ]

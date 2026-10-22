@@ -80,7 +80,7 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
     {view === 'profile' && <div className="mx-auto w-full space-y-2" style={{ maxWidth: DNESKAI_PHONE_WIDTH }} data-testid="dneskai-profile-grid">
       <p className="text-xs text-foreground-muted">{t.stage.profileHelp}</p>
       <ul className="grid grid-cols-3 gap-0.5 bg-surface">
-        {[lab.slides[0]?.render ?? null, ...profileCovers].slice(0, 9).map((cover, index) => <li key={cover?.url ?? `none-${index}`} className={cn('relative aspect-[3/4] overflow-hidden bg-surface-inset', index === 0 && 'outline outline-2 -outline-offset-2 outline-primary')}>
+        {[lab.slides[0]?.render ?? null, ...profileCovers].slice(0, 9).map((cover, index) => <li key={`${index}:${cover?.url ?? "none"}`} className={cn('relative aspect-[3/4] overflow-hidden bg-surface-inset', index === 0 && 'outline outline-2 -outline-offset-2 outline-primary')}>
           {cover ? <Image unoptimized src={cover.url} alt={index === 0 ? `${t.stage.profileThis}: ${cover.alt}` : cover.alt} width={cover.width} height={cover.height} sizes="130px" className="absolute inset-0 size-full object-cover" />
             : <span className="absolute inset-0 flex items-center p-2 text-[11px] text-foreground-muted">{t.stage.noRender}</span>}
         </li>)}
