@@ -11,6 +11,12 @@ const apifyEnv={APIFY_TOKEN:'test-only-token',MARKETING_DNESKAI_APIFY_ACTOR_ID:'
 const registration={id:'testRun',actId:'official-test-id',userId:'testUser',buildNumber:'1.2.3',defaultDatasetId:'testDataset',status:'SUCCEEDED' as const,finishedAt:'2026-10-13T20:29:00Z',usageTotalUsd:0.01};
 function jevResponse(request:ReturnType<typeof jevRequest>){const answers:Record<string,unknown>={};for(const [key,question]of Object.entries(request.questions)){const q=question as {type:string;criteria?:Record<string,unknown>};if(q.type==='noul')answers[key]={type:'noul',noul:0.99};else{const choice=key.startsWith('category')?'ai-news':'none';answers[key]={type:'choice',choice,confidence:0.95,probabilities:Object.fromEntries(Object.keys(q.criteria!).map(key=>[key,key===choice?1:0]))};}}return{model:'jev-1.13.0',answers,usage:{input_tokens:1000,output_tokens:100}};}
 describe('DNESKAi provider boundaries: mocked HTTP only',()=>{
+ it('refuses a Preview share before any request now that the collection pilot that scoped it is gone',async()=>{
+  const source=DNESKAI_SOURCES.find(item=>item.id==='openai-blog')!,origin='https://quorum-isolated.vercel.app',fetcher=vi.fn<typeof fetch>();
+  const env={VERCEL_ENV:'preview',MARKETING_DNESKAI_SOURCE_URL:origin+'/admin/api/marketing-sources',MARKETING_DNESKAI_SOURCE_SECRET:'offline-bridge-secret'.repeat(2),MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN:'test-private-share',MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN:origin};
+  await expect(collectDneskaiFeed(source,'2026-10-12T00:00:00Z',{env,fetcher,signal,now})).rejects.toThrow('collection-preview-scope-required');
+  expect(fetcher).not.toHaveBeenCalled();
+ });
  it.each([1,2])('keeps emoji at all Jev text boundaries well formed with %i UTF-16 units remaining',remaining=>{
   const text=(limit:number)=>'a'.repeat(limit-remaining)+'🤖 suffix';
   const items=[{...row(),title:text(120),text:text(600)}],history=[{id:'prior-test',title:text(40),text:text(64)}];

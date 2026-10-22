@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { applyDneskaiDeckEdit, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, DneskaiRevisionEditError } from "@/lib/marketing/dneskai-revision-edit";
-import { MARKETING_CONTENT_VERSION, type ContentRevision } from "@/lib/marketing/contracts";
+import { applyDneskaiDeckEdit, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender, DneskaiRevisionEditError } from "@/lib/marketing/dneskai-revision-edit";
+import { DNESKAI_RENDER_REPORT_VERSION, MARKETING_CONTENT_VERSION, type ContentRevision, type DneskaiRenderReport } from "@/lib/marketing/contracts";
 import type { RenderDneskaiDeck } from "@/lib/marketing/dneskai-ports";
 import { revisionContentHash } from "@/lib/marketing/hashes";
 import { a, b, c, deck, deckRevision } from "./marketing-dneskai-revision-fixture";
@@ -88,5 +88,57 @@ describe("render and attach", () => {
     render.mockClear();
     expect(await code(() => renderAndAttachDneskaiRevision(database().db, owner, { revisionId, revision: deckRevision() }, { render, loadMedia, now }))).toBe("revision-not-renderable");
     expect(render).not.toHaveBeenCalled();
+  });
+});
+
+describe("an edit that leaves the deck unchanged (review-03)", () => {
+  const clean: DneskaiRenderReport = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: "rendered", renderKeys: ["k1", "k2", "k3"], renderedAt: "2026-10-20T09:00:00.000Z",
+    problems: [{ slide: 1, code: "text-tight", blocking: false, message: "advisory" }] };
+  const edited = async (input: Parameters<typeof prepareDneskaiRevisionEdit>[1]) => prepareDneskaiRevisionEdit(deckRevision(), input, pool());
+  function database() {
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    return { db: { rpc } as unknown as Parameters<typeof renderAndAttachDneskaiRevision>[0], rpc };
+  }
+  const loadMedia = vi.fn(async () => Buffer.from("test-only"));
+
+  it("reuses the previous JPEGs for a caption-, time- or account-only edit, never for a changed deck or an unclean render", async () => {
+    const captionOnly = await edited({ caption: "Jen nový caption.", scheduledAt: "2099-10-21T06:00:00Z" });
+    const timeOnly = await edited({ caption: deckRevision().caption, scheduledAt: "2099-10-22T07:30:00Z" });
+    const accountOnly = await edited({ caption: deckRevision().caption, scheduledAt: deckRevision().scheduledAt, account: { id: "17841499999999999", platform: "instagram", handle: "dneskai.cz" } });
+    const sameDeckResent = await edited({ caption: "x", scheduledAt: "2099-10-21T06:00:00Z", deck: { slides: [{ from: 0 }, { from: 1 }, { from: 2 }] } });
+    for (const next of [captionOnly, timeOnly, accountOnly, sameDeckResent]) expect(reusableDneskaiRender(deckRevision(), clean, next)).toEqual({ assets: deckRevision().assets, report: clean });
+    const reordered = await edited({ caption: "x", scheduledAt: "2099-10-21T06:00:00Z", deck: { slides: [{ from: 1 }, { from: 0 }, { from: 2 }] } });
+    const retext = await edited({ caption: "x", scheduledAt: "2099-10-21T06:00:00Z", deck: { slides: [{ from: 0, headline: "Jiný titulek" }, { from: 1 }, { from: 2 }] } });
+    const recrop = await edited({ caption: "x", scheduledAt: "2099-10-21T06:00:00Z", deck: { slides: [{ from: 0, images: [{ slot: "image-1", assetSha256: a, crop: { focal: { x: 0.1, y: 0.1 } } }] }, { from: 1 }, { from: 2 }] } });
+    for (const next of [reordered, retext, recrop]) expect(reusableDneskaiRender(deckRevision(), clean, next)).toBeNull();
+    for (const report of [null, undefined, { ...clean, status: "refused" }, { ...clean, problems: [{ slide: 0, code: "clipped", blocking: true, message: "x" }] }, { status: "rendered" }])
+      expect(reusableDneskaiRender(deckRevision(), report, captionOnly)).toBeNull();
+    expect(reusableDneskaiRender({ ...deckRevision(), assets: [] }, clean, captionOnly)).toBeNull();
+    expect(reusableDneskaiRender({ ...deckRevision(), assets: deckRevision().assets.slice(0, 2) }, clean, captionOnly)).toBeNull();
+  });
+
+  it("attaches the same sha256s under a new content hash without calling the renderer", async () => {
+    const next = await edited({ caption: "Jen nový caption.", scheduledAt: "2099-10-22T07:30:00Z" });
+    expect(next.assets).toEqual([]);
+    const reuse = reusableDneskaiRender(deckRevision(), clean, next)!;
+    const render = vi.fn<RenderDneskaiDeck>();
+    const { db, rpc } = database();
+    const result = await renderAndAttachDneskaiRevision(db, owner, { revisionId, revision: next }, { render, loadMedia, now: () => new Date("2026-10-22T12:00:00Z"), reuse });
+    expect(render).not.toHaveBeenCalled();
+    const attached = (rpc.mock.calls[0] as unknown as [string, { p_content: ContentRevision; p_hash: string; p_ready: boolean; p_report: DneskaiRenderReport }])[1];
+    expect(attached.p_content.assets.map((asset) => asset.sha256)).toEqual(deckRevision().assets.map((asset) => asset.sha256));
+    expect(attached.p_ready).toBe(true);
+    expect(attached.p_report).toEqual(clean);
+    expect(result).toMatchObject({ ready: true, reused: true, report: clean });
+    expect(result.contentHash).toBe(revisionContentHash({ ...next, assets: deckRevision().assets }));
+    expect(result.contentHash).not.toBe(revisionContentHash(deckRevision()));
+  });
+
+  it("still renders a changed deck", async () => {
+    const next = await edited({ caption: "x", scheduledAt: "2099-10-21T06:00:00Z", deck: { slides: [{ from: 1 }, { from: 0 }, { from: 2 }] } });
+    const render = vi.fn<RenderDneskaiDeck>(async () => ({ status: "rendered", assets: rendered, renderKeys: [], problems: [] }));
+    const result = await renderAndAttachDneskaiRevision(database().db, owner, { revisionId, revision: next }, { render, loadMedia, reuse: reusableDneskaiRender(deckRevision(), clean, next) });
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(result.reused).toBe(false);
   });
 });

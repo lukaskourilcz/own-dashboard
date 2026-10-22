@@ -1,8 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, parseContentRevision, revisionReadiness, storedRenderKeys, storedRenderProblems,
-  type ContentRevision, type DneskaiRenderReport } from "./contracts";
+import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, canonicalJson, parseContentRevision, renderReportBlocks, revisionReadiness, storedRenderKeys,
+  storedRenderProblems, type ContentRevision, type DneskaiRenderReport } from "./contracts";
 import { dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
 import { DneskaiRevisionEditError, applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 import type { ListBriefAssetHashes, LoadDneskaiBriefPool, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
@@ -45,23 +45,47 @@ export async function prepareDneskaiRevisionEdit(original: ContentRevision, inpu
   } catch { return fail("revision-edit-invalid"); }
 }
 
-export type DneskaiRenderAttachment = { ready: boolean; contentHash: string; report: DneskaiRenderReport };
+export type DneskaiRenderAttachment = { ready: boolean; contentHash: string; report: DneskaiRenderReport; reused: boolean };
+
+/** Pixels an edit can keep: the previous revision's rendered JPEGs and the clean report that produced them. */
+export type DneskaiReusableRender = { assets: ContentRevision["assets"]; report: DneskaiRenderReport };
+
+/**
+ * The previous render, when an edit leaves the deck as it was (review-03). A caption, schedule or account change does
+ * not move a pixel: the deck holds the slide text, images, crops, order and alt text, so an identical deck draws the
+ * same JPEGs. They are reused only when the previous revision carries one JPEG per slide and a stored report that is a
+ * clean `rendered` result; anything else (no report, a refused or failed render, a changed deck) renders again.
+ * Reuse never touches approval: the edited revision still gets its own content hash and needs a new approval.
+ */
+export function reusableDneskaiRender(original: ContentRevision, originalReport: unknown, edited: ContentRevision): DneskaiReusableRender | null {
+  if (!original.deck || !edited.deck || canonicalJson(original.deck) !== canonicalJson(edited.deck)) return null;
+  const report = DneskaiRenderReportSchema.safeParse(originalReport);
+  if (!report.success || report.data.status !== "rendered" || renderReportBlocks(report.data)) return null;
+  if (original.assets.length !== original.deck.slides.length || revisionReadiness(original).length) return null;
+  return { assets: original.assets, report: report.data };
+}
 
 /**
  * Renders a saved, unready deck revision and attaches the result with `marketing_attach_revision_render`. A clean
  * render attaches one JPEG per slide and makes the revision ready; a refused or failed render keeps it unready, with
- * no assets and the problems recorded, so approval stays held.
+ * no assets and the problems recorded, so approval stays held. With `reuse` (an unchanged deck, see
+ * `reusableDneskaiRender`) the renderer is not called: the previous JPEGs, same sha256s, go through the same checks and
+ * the same attach, and the stored report keeps the time those pixels were rendered.
  */
 export async function renderAndAttachDneskaiRevision(db: Database, owner: string, input: { revisionId: string; revision: ContentRevision },
-  dependencies: { render: RenderDneskaiDeck; loadMedia: LoadDneskaiMediaBytes; now?: () => Date; signal?: AbortSignal }): Promise<DneskaiRenderAttachment> {
+  dependencies: { render: RenderDneskaiDeck; loadMedia: LoadDneskaiMediaBytes; now?: () => Date; signal?: AbortSignal; reuse?: DneskaiReusableRender | null }): Promise<DneskaiRenderAttachment> {
   const { revision } = input;
   if (!revision.deck || revision.assets.length) return fail("revision-not-renderable");
-  const renderedAt = (dependencies.now ?? (() => new Date()))().toISOString();
+  const reuse = dependencies.reuse ?? null;
+  const renderedAt = reuse ? reuse.report.renderedAt : (dependencies.now ?? (() => new Date()))().toISOString();
   let content = revision; let ready = false;
   let report: DneskaiRenderReport;
   let result: Awaited<ReturnType<RenderDneskaiDeck>> | null = null;
-  try { result = await dependencies.render({ owner, revisionId: input.revisionId, deck: revision.deck, loadMedia: dependencies.loadMedia, signal: dependencies.signal }); }
-  catch { result = null; }
+  if (reuse) result = { status: "rendered", assets: reuse.assets, renderKeys: reuse.report.renderKeys, problems: reuse.report.problems };
+  else {
+    try { result = await dependencies.render({ owner, revisionId: input.revisionId, deck: revision.deck, loadMedia: dependencies.loadMedia, signal: dependencies.signal }); }
+    catch { result = null; }
+  }
   if (!result || !["rendered", "refused"].includes(result.status)) {
     report = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: "failed", renderKeys: [], renderedAt,
       problems: [{ slide: -1, code: "render-unavailable", blocking: true, message: "The renderer did not return a result." }] };
@@ -87,5 +111,5 @@ export async function renderAndAttachDneskaiRevision(db: Database, owner: string
     attached = !error;
   } catch { attached = false; }
   if (!attached) return fail("render-attach-failed");
-  return { ready, contentHash, report };
+  return { ready, contentHash, report, reused: !!reuse };
 }
