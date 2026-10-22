@@ -126,7 +126,9 @@ export async function regenerateDneskaiRevision(input: { user: UserDb; admin: Ad
   if (Date.parse(original.data.request.generation.scheduledAt) <= startedAt + DNESKAI_REGENERATE_MIN_LEAD_MS) throw new DneskaiPaidActionError('regenerate-slot-passed');
   await assertDneskaiGenerationHeadroom(input.admin, input.owner, input.env);
   const key = dneskaiRegenerateJobKey(input.owner, input.id, input.expectedHash, note);
-  const request = { ...original.data.request, idempotencyKey: key, generation: { ...original.data.request.generation, revisionId: key, ownerNote: note, replacesRevisionId: input.id } };
+  const request = { ...original.data.request, idempotencyKey: key, generation: { ...original.data.request.generation, revisionId: key, ownerNote: note, replacesRevisionId: input.id,
+    // The owner's keyword and messages (#157) belong to the post, not the draft: the new version keeps them.
+    ...(current.engagement ? { engagement: current.engagement } : {}) } };
   let job: { jobId: string; status: string; duplicate: boolean };
   try { job = await enqueueMarketingJob(input.admin, input.owner, request, { env: input.env }); }
   catch (failure) { throw new DneskaiPaidActionError(enqueueCode(failure)); }
