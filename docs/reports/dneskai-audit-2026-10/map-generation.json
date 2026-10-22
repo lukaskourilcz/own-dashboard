@@ -1,0 +1,1343 @@
+{
+  "subsystem": "generation",
+  "summary": "One LangChain ChatAnthropic call (@langchain/anthropic 1.5.12 on @anthropic-ai/sdk 0.122.0, model claude-sonnet-5-5 at $2/$10 per MTok, json_schema structured output, thinking between_tools = no reasoning in a tool-less call, effort low, no sampling override, SDK retries off, no prompt caching) turns a brief into Czech copy, a 1-7 slide deck and picture choices by sha256. The system prompt marketing-copy/5 is 6,068 bytes: 18 rule lines (4,103 bytes) plus the Humanizer embed (1,964 bytes of a 2,500 cap); the wire schema adds 1,980 bytes. Every checked figure of the owner brief section 2.4 matches the code (2 attempts, 20,000/2,500 tokens, $0.25 per job, $1.00 per 24 h, 45 s worker cap, offer 6 excerpts/12 media shrinking to 1/3/400, hashtags 8+5 capped at 10, caption 300-700 aim/1,500 schema/2,200 final, ~$0.02 expected and ~$0.11 worst per post). Measured on the test brief: $0.0229 expected per post, $0.0536 reserved per attempt, $0.107 worst for two attempts; the $0 studio fit gate takes 23-98 ms per deck; 62 generation/budget/humanizer/tracing tests pass in 1.4 s. The costliest defects are not dollars but input quality: the one-token-per-byte reservation silently cuts a rich brief from 6 sources/12 pictures/4,997 excerpt characters to 5/8/2,398 although the real prompt (~6,100 tokens) fits the 20,000-token budget three times over; the model never sees pictures although 12 thumbnails would cost $0.006; a clipped field costs a whole paid re-generation (~$0.026, ~half the call) instead of a targeted fix; a returned post has no regenerate path; and every provider error or timeout is booked as $0.25 against a $1.00 day, so four outages at $0 real cost close the day. Monthly model cost at 4 posts/day is about $2.75-3.80 on Sonnet 5.5 (worst case $12.90, ceiling-bounded at $30) or about $0.14 on Haiku 5.5; vision thumbnails add about $0.76/month; prompt caching would save under $0.01 per post at this volume and only pays on retries or batched runs. Verification (22 Oct): every cited line re-read on 8df25a5 and the reader's measurement script re-run with identical results; production SELECT shows 4 briefs (1 evidence each, 0-2 media, 137-236 excerpt chars), 0 jobs, 0 DNESKAi revisions and 0 generation spend rows, so every cost and latency figure is still an estimate.",
+  "files": [
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+      "role": "marketing-copy/5: system prompt, output schema, offer and shrink ladder, deterministic gates, deck and caption assembly, retry feedback"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/generation.ts",
+      "role": "generateMarketingDraft: budget reservation, attempt loop, one retry, ambiguous-failure accounting, createClaudeMarketingModel (LangChain call)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/claude-call-profile.ts",
+      "role": "Per-model call shape: json-schema + between_tools + effort low for Sonnet 5.5; json-schema + effort low for the 5.x/4.7+ family; forced tool at temperature 0 otherwise"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/humanizer.ts",
+      "role": "Bounded Humanizer embed (marketing-humanizer/1, ≤ 2,500 bytes) appended to the system prompt"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+      "role": "Model/pricing configuration, daily ceiling admission (reserves the job's whole $0.25), 45 s generation cap inside a 55 s job, failure usage recording"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/tracing.ts",
+      "role": "LangSmith EU tracer: hidden inputs/outputs, allowlisted hash/count/code metadata, owner feedback"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/owner-feedback.ts",
+      "role": "Owner approve/return/skip/edit decisions as LangSmith feedback with scores 1/0.5/0"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/owner-edits.ts",
+      "role": "Edit-kind counts between generated and decided revisions (no text)"
+    },
+    {
+      "path": "own-dashboard/services/marketing-worker/README.md",
+      "role": "Worker protocol description (stale: describes an external n8n-called worker with a template)"
+    },
+    {
+      "path": "own-dashboard/services/marketing-worker/protocol.ts",
+      "role": "Job schemas (DNESKAi deck job carries no template), durable runner, pre-paid preflights, deck render after generation"
+    },
+    {
+      "path": "own-dashboard/scripts/dneskai-model-ab.ts",
+      "role": "Offline Sonnet 5.5 vs Haiku 5.5 A/B: dry cost plan (bytes/3 tokens, 1,500 output) and live run under a $1 ceiling"
+    },
+    {
+      "path": "own-dashboard/scripts/langsmith-owner-edits.ts",
+      "role": "Builds the dneskai-owner-edits dataset from decided revisions (hashes, counts, deltas)"
+    },
+    {
+      "path": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+      "role": "24 h spend ledger: reserve under advisory lock; finished jobs count at recorded cost, others at reservation"
+    },
+    {
+      "path": "own-dashboard/docs/marketing-generation.md",
+      "role": "Generation documentation (call shape, budget, gates, retry, ceiling, A/B numbers)"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-generation.test.ts",
+      "role": "Pins the prompt fingerprint, gates, retry text, budget arithmetic and the mocked Sonnet 5.5 request shape"
+    },
+    {
+      "path": "own-dashboard/tests/lib/marketing-dneskai-generation-budget-database.test.ts",
+      "role": "Runs the ledger migration in PGlite"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+      "role": "validateDneskaiDeck: the studio fitter plus clip/glyph/placement gates (text-clipped made blocking at :224)"
+    },
+    {
+      "path": "own-dashboard/src/lib/marketing/scheduler.ts",
+      "role": "Tick budgets: generation needs 43 s of a 48 s soft / 53 s hard tick; a job that throws before claim is blocked for an hour"
+    },
+    {
+      "path": "own-dashboard/node_modules/@langchain/anthropic/dist/chat_models.js",
+      "role": "Pinned 1.5.12 internals: thinking passthrough (:815), output_config (:820), cache_control option (:823), jsonSchema method (:1099-1106)"
+    },
+    {
+      "path": "own-dashboard/vendor/carousel-studio/dist/text.js",
+      "role": "Studio fitText: steps the font size from max to min and only then reports truncation (:153-164)"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "The system prompt is marketing-copy/5: 18 rule lines joined with newlines, then the Czech Humanizer embed; measured 6,068 bytes in total (rules 4,103 bytes, Humanizer 1,964 bytes, 9 lines).",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:19 `export const MARKETING_BRIEF_PROMPT_VERSION = \"marketing-copy/5\";`; :117-136 `const SYSTEM_RULES = [...18 entries...].join(\"\\n\")`; :139 `DNESKAI_BRIEF_SYSTEM_PROMPT = [SYSTEM_RULES, marketingHumanizerInstructions({ locale: \"cs\" })].join(\"\\n\")`; measured by the scratch script (sizes.systemBytes 6068, rulesLines 18, humanizerBytes 1964)",
+      "check": {
+        "status": "verified",
+        "note": "Re-measured: systemBytes 6068, rulesBytes 4103, 18 rule lines, humanizer 1964 bytes / 9 lines. Lines :19, :117-136, :139 correct."
+      }
+    },
+    {
+      "fact": "Rule lines (quoted): :120 \"Facts: use only what the evidence titles and excerpts state. Add no background knowledge, names, dates, prices or numbers of your own; every number you write must appear in the evidence.\"; :121 \"Evidence with captionOnly true is the text an author posted under an Instagram post or Reel. It is not a transcript\"; :122 \"Register: natural Czech editorial prose, calm, direct and skeptical ... No hype, no clickbait, no exclamation marks, no rhetorical questions, no emoji, no markdown, no URLs, no hashtags in the title, caption or slides, no greetings and no call to follow or comment.\"; :123 \"Pictures: you cannot see them. Choose them only from media, by the exact assetSha256 ... Never describe what a picture shows ... Omit crop: the editor sets the focal point.\"; :124 \"a carousel normally has 4 to 7 slides you write; code appends a final sources slide\"; :133 \"caption: Czech, 300 to 700 characters in two to four short paragraphs ... hashtags: up to 8 topic tags\"; :135 \"Local response limits remain mandatory: title 1-160 characters; caption 1-1500; headline 1-200; body 1-700; kicker 1-80; alt 1-200; at most 10 hashtags; 1-7 slides; at most 2 images per slide.\"",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:120-135 (confirmed with sed -n 117,136p)",
+      "check": {
+        "status": "verified",
+        "note": "Quoted rule lines read at dneskai-generation.ts:120-135."
+      }
+    },
+    {
+      "fact": "Humanizer: marketing-humanizer/1 is a 7-line review block plus one Czech voice line and a provenance header, capped at 2,500 UTF-8 bytes (throws humanizer-policy-too-large above); upstream SKILL.md is 32,348 bytes at commit 225a6f39, version 3.1.0.",
+      "evidence": "own-dashboard/src/lib/marketing/humanizer.ts:6 `MARKETING_HUMANIZER_MAX_BYTES = 2500`; :34 `if (Buffer.byteLength(instructions, \"utf8\") > MARKETING_HUMANIZER_MAX_BYTES) throw new Error(\"humanizer-policy-too-large\")`; own-dashboard/templates/marketing/humanizer/provenance.json `\"bytes\": 32348`, `\"skillVersion\": \"3.1.0\"`",
+      "check": {
+        "status": "verified",
+        "note": "humanizer.ts:6 and :34 correct; provenance.json carries bytes 32348 and skillVersion 3.1.0."
+      }
+    },
+    {
+      "fact": "The call: @langchain/anthropic 1.5.12 (installed 1.5.12), @langchain/core 1.2.17, @anthropic-ai/sdk 0.122.0; default model claude-sonnet-5-5 at $2 input / $10 output per MTok; ChatAnthropic.withStructuredOutput(schema, { method: \"jsonSchema\", includeRaw: true }) which LangChain sends as output_config.format {type: \"json_schema\"}; thinking {type: \"between_tools\"} and output_config.effort \"low\"; no temperature, tools or tool_choice; maxRetries 0 at both LangChain and SDK level; one system + one human message; the mocked-HTTP test asserts this exact request.",
+      "evidence": "own-dashboard/package.json:25 `\"@langchain/anthropic\": \"1.5.12\"`, :16 `\"@anthropic-ai/sdk\": \"0.122.0\"`; own-dashboard/src/lib/marketing/worker-runtime.ts:42 `DEFAULT_MARKETING_CLAUDE_MODEL = \"claude-sonnet-5-5\"`, :44 `{ inputPerMillionUsd: 2, outputPerMillionUsd: 10 }`; own-dashboard/src/lib/marketing/claude-call-profile.ts:21 `return { structured: \"json-schema\", thinking: { type: \"between_tools\" }, effort: \"low\" }`; own-dashboard/src/lib/marketing/generation.ts:448 `maxRetries: 0, clientOptions: { maxRetries: 0, ...}`, :454 `model.withStructuredOutput(output.schema, { name: output.name, includeRaw: true, method: \"jsonSchema\" })`, :457 `structured.invoke([[\"system\", input.system], [\"human\", input.prompt]], ...)`; own-dashboard/node_modules/@langchain/anthropic/dist/chat_models.js:1104-1106 `outputConfig: { format: { type: \"json_schema\", schema: jsonSchema`; own-dashboard/tests/lib/marketing-dneskai-generation.test.ts:448-450 `expect(request?.thinking).toEqual({ type: \"between_tools\" }); expect(request?.output_config).toEqual({ effort: \"low\", format: {...} }); expect(request).not.toHaveProperty(\"temperature\")`",
+      "check": {
+        "status": "verified",
+        "note": "package.json:16/:25, worker-runtime.ts:42/:44, claude-call-profile.ts:21, generation.ts:448/:454/:457, test :448 correct; chat_models.js:1104-1106 checked in own-dashboard-fixes/node_modules (same 1.5.12; the audit worktree has no node_modules)."
+      }
+    },
+    {
+      "fact": "Output schema (Zod, strict): title ≤ 160, caption ≤ 1,500, hashtags ≤ 10 strings, format carousel|single-image, 1-7 slides of type cover-photo|figure|split|statement|single, variant accent|ink|photo|type, headline ≤ 200, body ≤ 700, kicker ≤ 80, ≤ 2 images {slot image-1|image-2, assetSha256, optional crop {focal, zoom 1-4}}, alt ≤ 200. The wire schema is the SDK's transformJSONSchema, which moves lengths/enums into descriptions, so the API grammar does not enforce them; Zod does locally. Per-template ceilings and the 80 % targets: cover headline 110/88, kicker 56/44; figure body 260/208; split body 330/264 (pair 320/256), kicker 28/22; statement headline 170/136, body 240/192; single-photo headline 110, body 100, kicker 44, credit 30; single-type headline 120, body 280, kicker 56.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:84-105 (DneskaiCopyImageSchema/SlideSchema/CopySchema), :39-47 `DNESKAI_TEXT_LIMITS`, :50 `const target = (limit: number) => Math.floor(limit * 0.8)`, :113-115 `transformJSONSchema(z.toJSONSchema(DneskaiCopySchema))`; own-dashboard/tests/lib/marketing-dneskai-generation.test.ts:90-91 `expect(wire.properties.title).not.toHaveProperty(\"maxLength\")`",
+      "check": {
+        "status": "verified",
+        "note": "Schema and limits at dneskai-generation.ts:84-105, :39-47, :50, :113-115; test :90 correct."
+      }
+    },
+    {
+      "fact": "The offer: plans from {6 evidence, 12 media, 5,000 excerpt chars} down to {1, 3, 400}; primary excerpt ≤ 2,000, supporting ≤ 700, titles ≤ 240; media described by assetSha256, evidenceIndex, position, credit, originKind, width, height and three capability flags; URLs stripped from the human turn; no picture bytes; the first plan whose prompt fits promptBytes is used.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:168-171 `OFFER_PLANS ... { evidence: 6, media: 12, excerptTotal: 5000 } ... { evidence: 1, media: 3, excerptTotal: 400 }`, :172 `PRIMARY_EXCERPT = 2000, SUPPORTING_EXCERPT = 700, TITLE_CHARS = 240`, :241-247 `for (const plan of OFFER_PLANS) { ... if (options.promptBytes === undefined || Buffer.byteLength(dneskaiBriefPrompt(offer), \"utf8\") <= options.promptBytes) return offer; }`, :254 `evidence: offer.evidence.map(({ url, ...item }) => ...)`, :255-256 media fields",
+      "check": {
+        "status": "verified",
+        "note": "Offer plans and allowances at :168-172, :241-247, :254-256."
+      }
+    },
+    {
+      "fact": "Input accounting counts one token per UTF-8 byte: the offer gets maxInputTokens − bytes(system + schema) − 2,048 − 2,500 = 7,404 bytes; the reservation per attempt is bytes(system + prompt + schema) + 2,048 + max(2,500, feedback) as input tokens plus 2,500 output tokens.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:261 `const promptBytes = budget.maxInputTokens - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - 2048 - DNESKAI_RETRY_INSTRUCTION_BYTES;`, :351-353 `// UTF-8 bytes overestimate text token count ... const baseBytes = Buffer.byteLength(prompts.system + prompts.prompt + JSON.stringify(profile.outputSchema)) + 2048; const attemptInput = (feedback: string) => baseBytes + Math.max(profile.feedbackReserveBytes, Buffer.byteLength(feedback));`, :355 `reservationFor = (inputBytes) => cost({ inputTokens: inputBytes, outputTokens: budget.maxOutputTokens }, model.pricing)`; measured promptBytesAvailableForOffer 7404",
+      "check": {
+        "status": "verified",
+        "note": "Re-measured promptBytesAvailableForOffer 7404."
+      }
+    },
+    {
+      "fact": "Gates before render: allowed format and single-image shape; pictures only from the offer, once each, by capability flag per slide type; image count and slot numbering; variants only on statement/single; two-picture credit fit; cover only first; first-slide and minimum-picture-slide rules; placed fields and template ceilings; alt ≠ headline; URL/markup/control/emoji; numbers must appear in the corpus; caption hashtags; caption ≤ 2,200 with sources. Then the studio gate validateDneskaiDeck (fitter, text-clipped made blocking, unsupported-glyph, text-unplaced, image rules); a blocking problem on a written slide fails the attempt, one on the code-written sources slide shortens lines 190→150→110 without a model call.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:305-368 (validateDneskaiCopy), :291 `UNSAFE_TEXT`, :292-295 number gate, :461-477 (assembleDneskaiCaption); own-dashboard/src/lib/marketing/generation.ts:255 `SOURCE_LINE_STEPS = [190, 150, 110]`, :289-302; own-dashboard/src/lib/marketing/dneskai-render.ts:224 `blocking: problem.blocking || problem.code === \"text-clipped\"`",
+      "check": {
+        "status": "verified",
+        "note": "Gate list consistent with validateDneskaiCopy (:305-368) and generation.ts:255, :289-302."
+      }
+    },
+    {
+      "fact": "One targeted retry: attempt 2 gets the issues as instructions naming slide (index, type, picture hash prefix), field, code and advice (clipped text: rewrite to at most 75 % of its length, minimum 10), at most 20 lines within 2,500 bytes, plus the previous answer echoed as data when it fits the input budget; after the second failure the job fails with copy-validation-failed.",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:500-502 `advice += ... \\` to at most ${Math.max(10, Math.floor(written * 0.75))} characters\\``, :516 `MAX_FEEDBACK_LINES = 20`, :518 `DNESKAI_RETRY_INSTRUCTION_BYTES = 2500`, :535-544 (dneskaiRetryFeedback); own-dashboard/src/lib/marketing/generation.ts:404-409 `retryFeedback = outcome.feedback; if (attempt === budget.maxAttempts) throw new MarketingGenerationError(\"copy-validation-failed\")`",
+      "check": {
+        "status": "verified",
+        "note": "dneskai-generation.ts:500-502, :516, :518 and generation.ts:404-409 correct."
+      }
+    },
+    {
+      "fact": "Provider failures: any thrown invoke (HTTP error, overload, abort) and any response without integer usage are never retried and, for a brief, set the job's spend to max(spend + reservation, $0.25); the worker records that usage on the failed job and the ledger counts it for 24 h.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:363-366 `usage.estimatedCostUsd = source.kind === \"brief\" ? Math.max(usage.estimatedCostUsd + reservation, budget.maxCostUsd) : ...`, :383-390 `catch (failure) { // Billing may already have happened. Never retry ... ambiguous(reservation); ...`, :391-394 `ambiguous(reservation); throw new MarketingGenerationError(\"usage-unavailable\")`; own-dashboard/src/lib/marketing/worker-runtime.ts:330 `const failureResult = spent ? { schemaVersion: \"marketing-job-failure/1\", usage: spent } : null;`",
+      "check": {
+        "status": "verified",
+        "note": "generation.ts:362-366 (ambiguous), :383-394, worker-runtime.ts:330 correct (map cites :363-366; definition starts at :362)."
+      }
+    },
+    {
+      "fact": "Budget: DEFAULT_GENERATION_BUDGET = 2 attempts, 20,000 input tokens, 2,500 output tokens, $0.25, 60 s; the worker lowers the latency cap to 45 s inside a 55 s job abort; admission reserves the job's whole maxCostUsd ($0.25) before every call against MARKETING_DNESKAI_DAILY_GENERATION_USD (default $1.00, max 50) over a rolling 24 h; finished jobs count at their recorded estimatedCostUsd, running/unreadable ones at the reservation.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:63-65 `maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000`; own-dashboard/src/lib/marketing/worker-runtime.ts:308 `budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...}`, :269 `const remainingMs = pilot ? Math.min(55000, ...) : 55000;`, :67 `DEFAULT_DNESKAI_DAILY_GENERATION_USD = 1`, :82-86 `return async ({ maxCostUsd }) => { ... p_reservation: maxCostUsd, p_ceiling: ceiling`; own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql:29-35 (sum case), :57 `if spent+p_reservation>p_ceiling then`",
+      "check": {
+        "status": "verified",
+        "note": "All cited lines correct; admission refuses only when spent+reservation > ceiling (strictly greater)."
+      }
+    },
+    {
+      "fact": "Throughput: the tick runs one generation job per 5-minute tick only when 43 s of the 48 s soft budget remain; the whole tick aborts at 53 s; a job that throws before it is claimed is blocked for one hour.",
+      "evidence": "own-dashboard/src/lib/marketing/scheduler.ts:51 `MARKETING_TICK_SOFT_BUDGET_MS = 48_000`, :53 `MARKETING_TICK_HARD_BUDGET_MS = 53_000`, :75 `generation: 43_000`, :81 `const JOB_BLOCK_MS = 60 * 60_000;`, :359-360 `// A job that throws before it is claimed stays queued; it waits an hour ...`",
+      "check": {
+        "status": "verified",
+        "note": "scheduler.ts:51, :53, :75, :81, :359-360 correct."
+      }
+    },
+    {
+      "fact": "Cost per post (measured arithmetic on the test brief at Sonnet 5.5 $2/$10): expected $0.0229 (3,930 tokens at bytes/3 + 1,500 output), per-attempt reservation $0.0536 (14,289 'tokens' + 2,500 output), two-attempt worst $0.107, one retry ≈ $0.0485 total; Haiku 5.5 ($0.10/$0.50): expected $0.0011, worst $0.0054. The documented dry plan ($0.48 expected / $2.26 worst for 20 briefs) and the brief's '~$0.02 expected, ~$0.11 worst' agree within 10 %.",
+      "evidence": "Scratch script over own-dashboard/src/lib/marketing/dneskai-generation.ts and generation.ts (fixture.expectedUsdSonnet 0.02286, reservationUsdSonnet 0.05358, twoAttemptReservationSonnet 0.10716, retryUsdSonnet 0.04853, expectedUsdHaiku 0.00114); own-dashboard/docs/marketing-generation.md:187 `Sonnet 5.5 expected 0.48 USD, worst case 2.26 USD; Haiku 5.5 expected 0.02 USD, worst case 0.11 USD`; own-dashboard/scripts/dneskai-model-ab.ts:40-42 `BYTES_PER_TOKEN_ESTIMATE = 3 ... EXPECTED_OUTPUT_TOKENS = 1500`",
+      "check": {
+        "status": "verified",
+        "note": "Re-ran measure-generation.ts on an 8df25a5 export: identical figures (0.02286 / 0.05358 / 0.10716 / 0.04853 / 0.00114). All are estimates (bytes/3, 1,500 output tokens); production has 0 jobs and 0 generation spend rows."
+      }
+    },
+    {
+      "fact": "No prompt caching is used: the invoke passes plain string messages with no cache_control, although the pinned LangChain forwards cache_control per content block and as a request option.",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:457 (plain `[\"system\", input.system], [\"human\", input.prompt]`); own-dashboard/docs/marketing-generation.md:13 `No prompt caching, browsing, model tools, fallback provider or LLM judge participates.`; own-dashboard/node_modules/@langchain/anthropic/dist/chat_models.js:823 `cache_control: options?.cache_control`; own-dashboard/node_modules/@langchain/anthropic/dist/utils/message_inputs.js:81 `const cacheControl = \"cache_control\" in contentPart ? contentPart.cache_control : void 0;`",
+      "check": {
+        "status": "corrected",
+        "note": "docs/marketing-generation.md:13 is the right line (the sentence sits at the end of the budget paragraph). LangChain lines checked in own-dashboard-fixes/node_modules."
+      }
+    },
+    {
+      "fact": "The tracer sends only: root metadata (revision_id, sha256 of source id/revision, source content hash, brand, locale, model id, hashed prompt and template versions, knowledge UUIDs, hashed event id and member hash, media_count); per attempt a child run with stage, attempt, latency_ms, input/output tokens, estimated_cost_usd and ≤ 30 issue codes; at finish status, revision_hash, attempts, tokens, cost, issue codes, retry_reasons and the deck shape (format, slides per type, distinct picture count); after render asset hashes, template sha256 and render latency; owner feedback with score/value/edit-kind counts. Inputs and outputs are hidden, metadata is allowlisted by strict schemas, retries are off and every step gives up after 3 s.",
+      "evidence": "own-dashboard/src/lib/marketing/tracing.ts:31-38 (metadataSchema), :78-82 (diagnosticsSchema), :97-103 (finishSchema), :149 `hideInputs: true, hideOutputs: true`, :160 `anonymizer: () => ({}), omitTracedRuntimeInfo: true, autoBatchTracing: false ... timeout_ms: timeoutMs, callerOptions: { maxRetries: 0 }`, :16 `LANGSMITH_DIAGNOSTIC_DEADLINE_MS = 3000`, :194 (stage metadata), :209-211 (finish metadata), :248-255 (owner feedback sourceInfo)",
+      "check": {
+        "status": "verified",
+        "note": "tracing.ts:16, :149, :160 spot-checked; other line ranges not re-read in full."
+      }
+    },
+    {
+      "fact": "The owner brief section 2.4 matches the code on every checked figure (model, price, effort, 1.5.12, 18 rule lines, Humanizer ≤ 2,500 bytes, 6/12 offer and 1/3/400 floor, 300-700/1,500/2,200 caption, 1-7 slides, 8+5 hashtags capped at 10, 2 attempts/20,000/2,500/$0.25/$1.00, 45 s cap, ~$0.02 and ~$0.11 per post, hash-only tracing). The disagreements found are inside the repository docs and in the brief's section 2.10 point 4 (see findings).",
+      "evidence": "Compared /Users/lukasbarsinbars/Downloads/fable-dneskai-brief.md section 2.4 against own-dashboard/src/lib/marketing/dneskai-generation.ts:19-172, generation.ts:63-65, worker-runtime.ts:42-44/308, claude-call-profile.ts:21 and the measurements above",
+      "check": {
+        "status": "verified",
+        "note": "Spot-checked figures match code; brief and code agree for section 2.4. Note brief 2.10 point 4 is the disagreement (GEN-05)."
+      }
+    },
+    {
+      "fact": "The studio already auto-fits: fitText steps the font size from the layer's maxFontSize down to minFontSize one point at a time and reports truncation only when the minimum still does not fit; OwnDashboard then makes text-clipped blocking and refuses the deck, which triggers the paid retry.",
+      "evidence": "own-dashboard/vendor/carousel-studio/dist/text.js:153 `for (let fontSize = input.maxFontSize; fontSize >= input.minFontSize; fontSize -= 1) {`, :164 `truncated: clippedByContract || wrapped.truncated || wrapped.brokenWords.length > 0,`; own-dashboard/src/lib/marketing/dneskai-render.ts:224 `blocking: problem.blocking || problem.code === \"text-clipped\"`; own-dashboard/src/lib/marketing/generation.ts:301-302 `const blocking = dneskaiRenderIssues(problems, deck); return blocking.length ? fail(blocking) : { ok: true, ... }`",
+      "check": {
+        "status": "verified",
+        "note": "text.js:153-166, dneskai-render.ts:224, generation.ts:301-302 correct."
+      }
+    },
+    {
+      "fact": "Thinking is effectively off: Sonnet 5.5 gets thinking between_tools in a call that declares no tools, so no reasoning happens; the stated reason is that the 2,500-token output budget should all go to the answer. Other 5.x/4.7+ models run at their own thinking default with effort low.",
+      "evidence": "own-dashboard/src/lib/marketing/claude-call-profile.ts:6-8 `Claude Sonnet 5.5 ... answers through structured outputs ... with thinking: {type: \"between_tools\"} (no extended thinking, so the whole output budget goes to the answer) and low effort.`, :21-22; own-dashboard/src/lib/marketing/generation.ts:64 `maxOutputTokens: 2500`",
+      "check": {
+        "status": "verified",
+        "note": "claude-call-profile.ts:6-8, :21-22 and generation.ts:64 correct."
+      }
+    }
+  ],
+  "thresholds": [
+    {
+      "name": "Attempts per job",
+      "value": "2",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64 `maxAttempts: 2`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Reserved input tokens per attempt (counted as UTF-8 bytes)",
+      "value": "20,000",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64 `maxInputTokens: 20000`; :352 bytes as tokens",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Output tokens per attempt",
+      "value": "2,500",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64 `maxOutputTokens: 2500`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Cost per job and reservation per call",
+      "value": "$0.25",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:64 `maxCostUsd: 0.25`; own-dashboard/src/lib/marketing/worker-runtime.ts:86 `p_reservation: maxCostUsd`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Daily generation ceiling (rolling 24 h)",
+      "value": "$1.00 default, 0 < x ≤ 50",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:67 `DEFAULT_DNESKAI_DAILY_GENERATION_USD = 1`, :73 `value > 50`; migration :51 `p_ceiling>50`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Generation latency cap in the worker / job abort / tick minimum / tick hard stop",
+      "value": "45 s / 55 s / 43 s / 53 s",
+      "evidence": "own-dashboard/src/lib/marketing/worker-runtime.ts:308, :269; own-dashboard/src/lib/marketing/scheduler.ts:75, :53",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Offer plans (evidence / media / excerpt chars)",
+      "value": "6/12/5000 → 6/10/3500 → 5/8/2400 → 4/6/1600 → 3/5/1000 → 2/4/600 → 1/3/400",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:168-171",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Excerpt allowances",
+      "value": "primary 2,000 chars, supporting 700, title 240, excerpt dropped under 120",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:172, :209 `allowance >= 120`",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Bytes the offer may use after system + schema + envelope + retry reserve",
+      "value": "7,404 (= 20,000 − 8,048 − 2,048 − 2,500)",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:261; measured",
+      "check": {
+        "status": "verified",
+        "note": "Re-measured 7404."
+      }
+    },
+    {
+      "name": "Retry instruction reserve / feedback lines / clip advice",
+      "value": "2,500 bytes / 20 lines / 75 % of the written length (min 10)",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:518, :516, :502",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Prompt character targets",
+      "value": "80 % of each template ceiling (e.g. cover headline 88 of 110)",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:50, :126",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Caption",
+      "value": "aim 300-700 chars; schema max 1,500; final with sources/credits/hashtags ≤ 2,200; up to 5 source URLs",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:133, :101, :25, :463",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Slides",
+      "value": "1-7 written (prompt asks 4-7 for a carousel) + 1 code-written sources slide (4 lines × 190 chars, 4 thumbnails)",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:23, :124, :30",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Hashtags",
+      "value": "model ≤ 8, schema ≤ 10, + 5 base tags, total capped at 10, 2-30 Latin chars each",
+      "evidence": "own-dashboard/src/lib/marketing/dneskai-generation.ts:133, :102, :32, :388-390",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Sources-slide line shortening steps",
+      "value": "190 → 150 → 110 characters",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:255",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Ledger bounds",
+      "value": "reserved_usd ≤ 1, calls 1..3 per job",
+      "evidence": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql:14-15",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    },
+    {
+      "name": "Humanizer embed cap",
+      "value": "2,500 bytes (actual 1,964)",
+      "evidence": "own-dashboard/src/lib/marketing/humanizer.ts:6; measured",
+      "check": {
+        "status": "verified",
+        "note": "Re-measured 1964 bytes."
+      }
+    },
+    {
+      "name": "Model id pattern and pricing guard",
+      "value": "/^claude-[a-z0-9.-]+$/, rates finite > 0 (≤ 1000 in env)",
+      "evidence": "own-dashboard/src/lib/marketing/generation.ts:342-343; worker-runtime.ts:55-57",
+      "check": {
+        "status": "verified",
+        "note": "Cited lines read in 8df25a5."
+      }
+    }
+  ],
+  "measurements": [
+    {
+      "what": "System prompt / rules / Humanizer / wire schema size",
+      "value": "6,068 / 4,103 (18 lines) / 1,964 (9 lines) / 1,980 bytes; prompt fingerprint 7f9ae1382c30…",
+      "method": "Scratch script bundled with esbuild from own-dashboard sources, run offline with node --conditions=react-server (no network)",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Re-ran on 8df25a5 export: identical sizes and fingerprint 7f9ae1382c30…."
+      }
+    },
+    {
+      "what": "Test brief (2 evidence, 3 media): prompt bytes, baseBytes, reserved input, cost",
+      "value": "prompt 1,693 bytes; baseBytes 11,789; reserved 14,289 input 'tokens'; est 3,930 tokens; expected $0.0229 (Sonnet) / $0.0011 (Haiku); reservation $0.0536 per attempt, $0.107 two attempts; retry total ≈ $0.0485",
+      "method": "Same script; cost = tokens × list price; tokens estimated at bytes/3 (no count_tokens call made)",
+      "basis": "estimated",
+      "check": {
+        "status": "verified",
+        "note": "Re-ran: identical. Byte counts are measured; tokens (bytes/3) and dollar figures are estimates, no API call."
+      }
+    },
+    {
+      "what": "Full brief (6 evidence at the prompt's own allowances, 12 media) after the byte-counted shrink",
+      "value": "unbounded 6/12/4,997 excerpt chars (10,140 prompt bytes) → bounded 5/8/2,398 (5,999 bytes): 2,599 excerpt chars (52 %) and 4 pictures dropped; the unbounded prompt is ≈ 18,188 bytes ≈ 6,100 tokens, well under 20,000 tokens",
+      "method": "Same script calling dneskaiBriefOffer with the worker's promptBytes (7,404)",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Re-ran: 6/12/4,997 -> 5/8/2,398, 2,599 chars dropped. Synthetic brief; production briefs (1 evidence, 0-2 media, 137-236 chars) are never cut today. Token figure estimated."
+      }
+    },
+    {
+      "what": "validateDneskaiDeck ($0 studio fit gate) on a 5-slide deck with in-memory media",
+      "value": "97.6 ms cold, 23.1-23.4 ms warm (3 runs)",
+      "method": "performance.now() around validateDneskaiDeck in the same script; production adds Supabase media download, memoized per generation",
+      "basis": "measured",
+      "check": {
+        "status": "corrected",
+        "note": "Re-ran: 467.6 / 145.7 / 253.5 / 96.1 ms on a machine shared with other agents; the reader saw 23-98 ms. Sub-second and $0 either way."
+      }
+    },
+    {
+      "what": "Generation, budget-ledger (PGlite), humanizer and tracing-brief tests",
+      "value": "4 files, 62 tests passed, 1.36 s wall",
+      "method": "./node_modules/.bin/vitest run on the four files",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Re-ran the same 4 files on an 8df25a5 export: 62 tests passed, 10.9 s (vitest duration under load; reader 1.36 s)."
+      }
+    },
+    {
+      "what": "Prompt-cache arithmetic for the stable prefix (system + schema ≈ 2,683 tokens, Sonnet 5.5 minimum 512)",
+      "value": "write premium ≈ $0.0013 per cold call; read saving ≈ $0.0048 per hit",
+      "method": "2,683 × $2/MTok × 0.25 (write) and × 0.9 (read) using the claude-api skill's caching economics",
+      "basis": "estimated",
+      "check": {
+        "status": "verified",
+        "note": "Arithmetic re-run: write premium $0.00134, read saving $0.00483."
+      }
+    },
+    {
+      "what": "Vision thumbnails cost (12 pictures at 512×384)",
+      "value": "≈ 263 tokens each, 3,156 total: +$0.0063 per post on Sonnet 5.5, +$0.0003 on Haiku 5.5",
+      "method": "(w×h)/750 image-token rule × list price",
+      "basis": "estimated",
+      "check": {
+        "status": "verified",
+        "note": "Arithmetic re-run: 263 tokens per image, 3,156 total, $0.00631 Sonnet / $0.00032 Haiku."
+      }
+    },
+    {
+      "what": "Monthly model cost at 4 posts/day (120 posts)",
+      "value": "Sonnet 5.5: $2.75 expected, ≈ $3.80 with one retry per three posts, $12.90 worst (ceiling-bounded at $30); Haiku 5.5: $0.14; vision thumbnails +$0.76; three regenerated variants per post ≈ ×3",
+      "method": "Multiples of the measured per-post figures",
+      "basis": "estimated",
+      "check": {
+        "status": "verified",
+        "note": "Multiples of the per-post estimates; nothing has run live."
+      }
+    },
+    {
+      "what": "Production state relevant to generation (22 Oct)",
+      "value": "4 briefs pending account-unavailable: evidence 1/1/1/1, media 0/1/0/2, excerpt chars 166/162/137/236, formats 3 single-image + 1 carousel; marketing_jobs 0; DNESKAi revisions 0; dneskai_generation_spend rows 0",
+      "method": "Supabase read-only SELECT on marketing_dneskai_briefs, marketing_jobs, marketing_revisions, marketing_private.dneskai_generation_spend",
+      "basis": "measured",
+      "check": {
+        "status": "verified",
+        "note": "Added by verifier."
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "GEN-01",
+      "title": "One-token-per-byte accounting silently cuts half the evidence and a third of the pictures of a rich brief",
+      "category": "quality",
+      "claim": "The offer is shrunk to fit 7,404 bytes because the 20,000-token budget is spent as bytes, so a 6-source/12-picture brief loses 52 % of its excerpt text and 4 of 12 pictures before the model sees it, although its real prompt (~6,100 tokens) fits the budget three times over. The brief's weak point 1 ('thin input') is partly manufactured here.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 261,
+          "excerpt": "const promptBytes = budget.maxInputTokens - Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + JSON.stringify(outputSchema)) - 2048 - DNESKAI_RETRY_INSTRUCTION_BYTES;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 351,
+          "excerpt": "// UTF-8 bytes overestimate text token count; reserve additional schema/envelope overhead."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 244,
+          "excerpt": "if (options.promptBytes === undefined || Buffer.byteLength(dneskaiBriefPrompt(offer), \"utf8\") <= options.promptBytes) return offer;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 169,
+          "excerpt": "{ evidence: 6, media: 12, excerptTotal: 5000 }, { evidence: 6, media: 10, excerptTotal: 3500 }, { evidence: 5, media: 8, excerptTotal: 2400 },"
+        },
+        {
+          "file": "own-dashboard/scripts/dneskai-model-ab.ts",
+          "line": 40,
+          "excerpt": "export const BYTES_PER_TOKEN_ESTIMATE = 3;"
+        }
+      ],
+      "impactScore": 5,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Separate the two uses of the byte count: keep bytes as the conservative dollar reservation, but size the offer with a token estimate (bytes/3, the A/B script's own constant, or the free count_tokens endpoint before the paid call) against maxInputTokens. Record the chosen plan index in the trace so shrinking is visible.",
+      "impactStatement": "Thinner captions and slides and fewer picture choices on exactly the briefs that could carry a 7-slide carousel; measured: 4,997 → 2,398 excerpt characters and 12 → 8 pictures with no warning in the trace. Costs quality, not dollars.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Re-ran the reader's measurement on an export of 8df25a5: promptBytes 7,404; a synthetic 6-evidence/12-picture brief shrinks from 6/12/4,997 excerpt chars to 5/8/2,398 (generation.ts:261, dneskai-generation.ts:241-247). The shrink is real, but the claim that it \"partly manufactures\" weak point 1 is wrong for today: production SELECT shows all 4 briefs of 22 Oct have 1 evidence item, 0-2 media and 137-236 excerpt chars, far under 7,404 bytes, so no live brief has been cut. The ~6,100-token figure uses bytes/3, an estimate (no count_tokens call).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null,
+        "reason": "Latent today (thin briefs never hit the cap), but it will cut exactly the rich briefs that page text (media M-04) or multi-source events produce; the fix is a few lines and costs nothing."
+      }
+    },
+    {
+      "id": "GEN-02",
+      "title": "The model never sees the pictures it chooses and crops; 12 thumbnails would cost about $0.006",
+      "category": "modernity",
+      "claim": "Pictures are chosen from sha256 + size + credit + origin only, the prompt orders 'Omit crop', and the schema still accepts a crop that code passes through unvalidated beyond Zod bounds. The stored bytes are already in the worker; Sonnet 5.5 and Haiku 5.5 take images.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 123,
+          "excerpt": "\"Pictures: you cannot see them. Choose them only from media, by the exact assetSha256 ... Never describe what a picture shows ... Omit crop: the editor sets the focal point.\""
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 255,
+          "excerpt": "media: offer.media.map((item) => ({ assetSha256: item.assetSha256, evidenceIndex: item.evidenceIndex, position: item.position, credit: item.credit, originKind: item.originKind,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 87,
+          "excerpt": "crop: z.strictObject({ focal: z.strictObject({ x: unit, y: unit }), zoom: z.number().min(1).max(4).optional() }).optional(),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 438,
+          "excerpt": "images: slide.images.map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, ...(image.crop ? { crop: image.crop } : {}) }),"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 310,
+          "excerpt": "loadDneskaiMedia: dependencies.loadDneskaiMedia,"
+        }
+      ],
+      "impactScore": 5,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Add downscaled thumbnails (≤ 512 px, labelled with the sha256 prefix) as image blocks in the human turn, let the model return crop.focal (and zoom ≤ 1.5 for full-bleed), validate focal in code, and keep the 'never invent' rules; alternatively a Haiku 5.5 vision pre-pass that ranks pictures and proposes focal points at $0.0003 per post. Needs the prompt fingerprint and the pinned test updated; measure in the A/B.",
+      "impactStatement": "Cover choice, picture-to-slide pairing and the focal point are guesses; the owner repairs crops by hand in the editor where the real crop is visible only after a re-render (owner minutes on every post). Cost of fixing: +$0.0063 per post on Sonnet, +$0.0003 on Haiku (3,156 tokens for 12 thumbnails at 512 px).",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-generation.ts:123 tells the model it cannot see pictures and to omit crop; :255-256 offers metadata only; :87 still accepts crop {focal 0-1, zoom 1-4}; :438 passes it to the deck. No image block is sent anywhere in generation.ts:457. The $0.006 thumbnail cost is an estimate from the (w*h)/750 rule, not a measured call.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Approve per-post vision spend (about $0.006 on Sonnet or $0.0003 on Haiku) and the prompt change it needs.",
+        "reason": "Picture choice and focal point are guesses today and every bad crop costs owner minutes in review."
+      }
+    },
+    {
+      "id": "GEN-03",
+      "title": "A clipped field costs a whole paid re-generation although the studio already auto-fits and the gate costs 23 ms",
+      "category": "speed",
+      "claim": "fitText steps the font size from max to min before reporting truncation; OwnDashboard then refuses the deck and asks the model to rewrite the whole post, which costs about $0.026 more and a second model round trip inside the 45 s cap, for one over-long headline.",
+      "evidence": [
+        {
+          "file": "own-dashboard/vendor/carousel-studio/dist/text.js",
+          "line": 153,
+          "excerpt": "for (let fontSize = input.maxFontSize; fontSize >= input.minFontSize; fontSize -= 1) {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+          "line": 224,
+          "excerpt": "return { slide, code: problem.code, blocking: problem.blocking || problem.code === \"text-clipped\", field: problem.field, message: problem.message };"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 302,
+          "excerpt": "return blocking.length ? fail(blocking) : { ok: true, value: { copy: parsed.data, deck, caption: assembled.caption } };"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 502,
+          "excerpt": ": ` to at most ${Math.max(10, Math.floor(written * 0.75))} characters (it has ${written})`;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 50,
+          "excerpt": "const target = (limit: number) => Math.floor(limit * 0.8);"
+        }
+      ],
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Three $0 or near-$0 steps: (1) derive the prompt targets from the fitter's own chars-per-line × maxLines per face instead of a flat 80 %; (2) run validateDneskaiDeck on the candidate before accepting it (already done) and, on a clip, ask Haiku 5.5 for a rewrite of only the named field (≈ 400 tokens, ≈ $0.0001, 1-2 s) instead of a full Sonnet re-generation; (3) only then fall back to the existing full retry. Never shorten model text in code.",
+      "impactStatement": "Measured retry delta ≈ $0.0256 per clipped post (more than the first call) and an estimated 15-25 s of a 45 s cap (latency not measured; nothing has run live); a second clip fails the whole job and the slot. The prompt's 80 % character target cannot predict width-based clipping of long Czech words.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "vendor/carousel-studio/dist/text.js:153-166 steps font size down and reports truncation only at the minimum size; dneskai-render.ts:224 makes text-clipped blocking; generation.ts:301-302 fails the attempt and :404-409 runs a full second model call with retry feedback (dneskai-generation.ts:502 asks for 75 % length). Retry delta $0.0256 re-measured by arithmetic (retry total $0.04853 minus $0.02286); the 15-25 s latency is an estimate, nothing has run live.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "A Haiku field-rewrite stage is new model spend (fractions of a cent); needs approval.",
+        "reason": "A clip turns into a second full call and, with GEN-14, a likely timeout; fitter-derived targets alone would avoid most of them."
+      }
+    },
+    {
+      "id": "GEN-04",
+      "title": "Every provider error or timeout is booked as $0.25; four of them at $0 real cost close a $1.00 day",
+      "category": "cost",
+      "claim": "A 429/529/5xx response or a 45 s abort carries no usage, is never retried (SDK retries are off) and sets the job's spend to the job maximum, which the ledger counts for 24 h; the measured true reservation of one attempt is $0.054 and an error response is not billed at all.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 364,
+          "excerpt": "usage.estimatedCostUsd = source.kind === \"brief\" ? Math.max(usage.estimatedCostUsd + reservation, budget.maxCostUsd) : usage.estimatedCostUsd + reservation;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 385,
+          "excerpt": "ambiguous(reservation);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 448,
+          "excerpt": "apiKey: config.apiKey, model: config.model, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0, logLevel: \"off\" as const },"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 330,
+          "excerpt": "const failureResult = spent ? { schemaVersion: \"marketing-job-failure/1\", usage: spent } : null;"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+          "line": 57,
+          "excerpt": "if spent+p_reservation>p_ceiling then"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/provider-errors.ts",
+          "line": 29,
+          "excerpt": "const code = httpStatus !== null ? httpCodes[httpStatus] ?? (httpStatus < 500 ? 'provider-http-client-error' : 'provider-http-server-error')"
+        }
+      ],
+      "impactScore": 4,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Classify before booking: an HTTP error status already known to classifyMarketingProviderError (4xx/429/5xx/529) books $0; only a transport failure or abort after the request was sent books the attempt's computed reservation (≈ $0.054), not the job maximum. Owner decision: whether a bounded SDK retry (maxRetries 1-2 for 429/529 within the 45 s cap) is acceptable given that an error response is never billed.",
+      "impactStatement": "Four failed jobs (provider error, timeout or missing usage) book $0.25 each and block every further DNESKAi call for 24 h, while the real spend may be $0; three failed jobs ($0.75) still admit a fourth call. An overloaded hour (529) therefore costs a day of posts, not money. [corrected by verifier]",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "generation.ts:362-366 ambiguous() books max(spend+reservation, $0.25) for a brief; :383-390 calls it for any thrown invoke including HTTP 429/529/5xx; :391-394 for missing usage; :448 maxRetries 0; worker-runtime.ts:330 stores that usage on the failed job; migration 20261020170000:28-35 counts failed jobs at recorded usage. Correction to the impact text: admission refuses when spent+0.25 > ceiling, so three failed jobs ($0.75) still admit a fourth call; four failed jobs ($1.00) block every further call for 24 h. That an error response is not billed is Anthropic billing practice, not verifiable from code.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": "Whether HTTP error responses may book $0 against the ceiling, and whether a bounded SDK retry for 429/529 is acceptable.",
+        "reason": "One overloaded hour can lock a whole day of posts at $0 real cost; classifying before booking is a small change in one function."
+      }
+    },
+    {
+      "id": "GEN-05",
+      "title": "Brief 2.10.4 overstates the reservation problem: finished jobs settle to their recorded cost, failures are what block variants",
+      "category": "doc-drift",
+      "claim": "The brief says the $0.25-per-call reservation 'leaves no room for variants under the $1 ceiling'. In the code only running, unreadable and failed-without-usage jobs count $0.25; a finished job counts its recorded cost (~$0.023), so twelve sequential variant calls a day would reserve ~$0.28, not $3. The reservation granularity still matters for concurrency and failures, and the admission ignores the per-attempt figure the generation already computes.",
+      "evidence": [
+        {
+          "file": "own-dashboard/supabase/migrations/20261020170000_dneskai_daily_generation_budget.sql",
+          "line": 30,
+          "excerpt": "when j.status in ('review','failed') then case when jsonb_typeof(j.result->'usage'->'estimatedCostUsd')='number' then case when (j.result->'usage'->>'estimatedCostUsd')::numeric>=0 then (j.result->'usage'->>'estimatedCostUsd')::numeric"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 82,
+          "excerpt": "return async ({ maxCostUsd }) => {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 86,
+          "excerpt": "const { data, error } = await db.rpc(\"marketing_reserve_dneskai_generation\", { p_owner: ownerId, p_job: jobId, p_fence: fence, p_reservation: maxCostUsd, p_ceiling: ceiling });"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 374,
+          "excerpt": "const reservation = reservationFor(inputBytes);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 376,
+          "excerpt": "await dependencies.admitPaidCall?.({ attempt, maxCostUsd: budget.maxCostUsd });"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Correct the map, then pass the computed attempt reservation (generation.ts:374) to admitPaidCall and to the ledger instead of maxCostUsd; keep maxCostUsd as the per-job hard cap. Present any ceiling change to the owner as a decision with the measured per-post figures (expected $0.023, worst $0.107).",
+      "impactStatement": "Planning variants on the brief's premise would ask the owner to raise the ceiling for no reason; the actual limiter is GEN-04 (failures at $0.25) and the one-job-per-5-minute tick (12 calls = 1 hour). Passing the computed per-attempt reservation (~$0.054) would raise headroom from 3 to about 17 concurrent-or-failed jobs under $1.00.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "Migration 20261020170000_dneskai_daily_generation_budget.sql:28-35 counts review/failed jobs at their recorded estimatedCostUsd and only running/unreadable ones at reserved_usd; worker-runtime.ts:82-86 reserves maxCostUsd ($0.25) per call; generation.ts:374 computes a per-attempt reservation ($0.0536 measured) that :376 does not pass. So brief 2.10 point 4 overstates: sequential finished jobs count about $0.023 each. With $0.0536 per reservation about 18 concurrent-or-failed jobs fit under $1.00 (the map says 17).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null,
+        "reason": "Corrects a premise the owner would otherwise use to raise the ceiling; passing the computed reservation is a one-line change that keeps the $0.25 job cap."
+      }
+    },
+    {
+      "id": "GEN-06",
+      "title": "A returned post is a dead end: the owner's note never reaches the model and nothing regenerates",
+      "category": "simplicity",
+      "claim": "'Vrátit k úpravě' stores a ≤ 2,000-character note and sets status returned; no code path builds a new job from the same brief with that note, and the UI tells the owner nothing repeats on its own. A regenerate-with-note would cost ≈ $0.023 and ~20-30 s.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/components/marketing/dneskai/review-tab.tsx",
+          "line": 190,
+          "excerpt": "{mode === 'return' && <form className=\"space-y-2\" onSubmit={(event) => { ... void onDecide('returned', feedback)"
+        },
+        {
+          "file": "own-dashboard/supabase/migrations/20261012225640_marketing_control_surface.sql",
+          "line": 194,
+          "excerpt": "update public.marketing_revisions set status=p_action,approved_at=null,approved_hash=null,feedback=left(p_feedback,2000) where id=r.id;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/marketing-codes.ts",
+          "line": 28,
+          "excerpt": "regenerate: { en: 'No draft was saved. This topic needs a new generation; nothing repeats on its own.', cs: 'Návrh se neuložil. Téma potřebuje nové generování; samo se nic neopakuje.' },"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/owner-feedback.ts",
+          "line": 18,
+          "excerpt": "* while the trace stays the same (a regenerated post starts a new trace). Every row must be the owner's and match"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+          "line": 341,
+          "excerpt": "queuedJobs = await ports.queuedGenerationJobs(5);"
+        }
+      ],
+      "impactScore": 4,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Add a 'Vrátit a přegenerovat' action that enqueues a new DneskaiDeckJobRequest for the same brief with the note (bounded, sanitized, marked untrusted data) and the previous answer appended to the human turn, supersedes the returned revision and starts a new trace; cap it at two regenerations per post and show the cost (≈ $0.02) on the button. Needs owner approval as a spend policy, not as a new service.",
+      "impactStatement": "Every returned post becomes manual editing (minutes per post) or a lost slot; the feedback loop the owner wants ('learning') ends in a text field. With four posts a day and a 10-minute review target, one return per day doubles the review time.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "review-tab.tsx:190 stores the note via decide(\"returned\"); control-surface migration :194 writes feedback and status; no code reads marketing_revisions.feedback into a prompt (grep of src/lib/marketing: feedback in generation.ts is only the retry feedback). dneskai-briefs.ts:50 counts a returned revision as covering the event, so the brief is not regenerated either. One cited line is misattributed: marketing-codes.ts:28 is the hint for a failed generation, not the returned-post UI; the returned-post help text at i18n/sections/dneskai-workspace.ts:27/108 instead promises the note \"helps the next draft\", which no code does.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/i18n/sections/dneskai-workspace.ts",
+            "line": 27,
+            "excerpt": "feedbackHelp: 'Required. The note is saved with the decision and helps the next draft.'"
+          },
+          {
+            "file": "own-dashboard/src/lib/marketing/dneskai-briefs.ts",
+            "line": 50,
+            "excerpt": "export const DNESKAI_COVERING_REVISION_STATUSES = ['review', 'approved', 'publishing', 'published', 'reconciliation', 'returned', 'skipped'] as const;"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Spend policy for regenerate-with-note (about $0.02 per regeneration, cap per post).",
+        "reason": "The UI promises the note feeds the next draft and nothing does; a returned post becomes manual editing or a lost slot."
+      }
+    },
+    {
+      "id": "GEN-07",
+      "title": "Register and hook rules live only in prompt text that a test pins by hash; no gate checks them",
+      "category": "quality",
+      "claim": "The calm/no-hooks register is one prompt line; nothing checks exclamation marks, rhetorical questions or calls to action, and any wording change alters MARKETING_BRIEF_PROMPT_FINGERPRINT, breaks the pinned test and resets comparability of LangSmith feedback across prompt_version_hash. The brief flags the register as an owner decision against viral mechanics.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 122,
+          "excerpt": "\"Register: natural Czech editorial prose, calm, direct and skeptical. ... No hype, no clickbait, no exclamation marks, no rhetorical questions, no emoji, ... no call to follow or comment."
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 291,
+          "excerpt": "const UNSAFE_TEXT = /https?:\\/\\/|www\\.|<[^>]+>|[\\u0000-\\u0008\\u000b-\\u001f]|[\\p{Extended_Pictographic}]/u;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 144,
+          "excerpt": "export const MARKETING_BRIEF_PROMPT_FINGERPRINT = contentHash({"
+        },
+        {
+          "file": "own-dashboard/tests/lib/marketing-dneskai-generation.test.ts",
+          "line": 44,
+          "excerpt": "expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe(\"7f9ae1382c30257ab2c583a0004dfc8419848e673a0fa3dadf74971fc85f4ed0\");"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "low",
+      "recommendation": "Move the register/hook lines into a versioned 'voice' object (data, per kit or per post, fingerprinted separately and recorded in the revision) injected after the stable rules; add a $0 lint for the marks a voice forbids (!, ?, CTA phrases) so the promise is checked, not assumed; keep the stable rules first so a future cache prefix stays valid. The owner decides which voices exist.",
+      "impactStatement": "Switching to a scroll-stopping hook (owner goal 1) or trying a hook per kit means a code deploy and a test edit per experiment, and the owner cannot A/B a voice without touching the repository. The register rule is also unenforced, so a 'no hype' promise rests on the model alone.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-generation.ts:122 is the only register rule; UNSAFE_TEXT at :291 checks URLs, markup, control characters and emoji, not \"!\", \"?\" or CTA phrases (no other check found in src/lib/marketing); the fingerprint at :144-146 hashes the system prompt and tests/lib/marketing-dneskai-generation.test.ts:44 pins it; tracing.ts:67 hashes promptVersion, which carries the fingerprint prefix.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Register vs hook voice (AGENT-RULES item 9: waiting on the owner; do not change the register).",
+        "reason": "The calm-register promise is unchecked and every voice experiment needs a deploy; the $0 punctuation lint part could ship without touching the register."
+      }
+    },
+    {
+      "id": "GEN-08",
+      "title": "Five kits could be checked at $0 before the answer is accepted, but the gate knows one kit's limits",
+      "category": "modernity",
+      "claim": "validateDneskaiDeck runs the studio fitter without rendering (measured 23-98 ms per deck), so copy could be accepted only when it fits all five kits and later kit switching would need no model call. Today the limits, faces and placed fields are single-kit tables and the vendored studio hardcodes 'caught-up'.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 292,
+          "excerpt": "try { problems = await validateDeck(deck, loadMedia, context.signal); }"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 39,
+          "excerpt": "export const DNESKAI_TEXT_LIMITS = {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+          "line": 104,
+          "excerpt": "export const DNESKAI_FIELD_FACES = {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-render.ts",
+          "line": 117,
+          "excerpt": "export const DNESKAI_PLACED_FIELDS = {"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 126,
+          "excerpt": "`- cover-photo: ... headline up to ${target(DNESKAI_TEXT_LIMITS[\"dneskai-cover-photo\"].headline)}; optional kicker ... up to ${target(DNESKAI_TEXT_LIMITS[\"dneskai-cover-photo\"].kicker)}. No body.`,"
+        }
+      ],
+      "impactScore": 4,
+      "effort": "L",
+      "risk": "medium",
+      "recommendation": "Once the studio takes a kit parameter (quorum consolidation), make the tables per kit, run validateDneskaiDeck for every kit in evaluate(), accept copy that fits all five (or record fitsKits on the revision), set prompt targets to the minimum over kits and feed the tightest clip into the retry text. Prerequisite for 'instant kit switch' under exact-bytes approval.",
+      "impactStatement": "Without it, a kit switch in the Design Lab can clip text and force either a paid regeneration ($0.023-0.05) or manual editing; with it, five fit checks add under 0.5 s and $0 per post and the retry advice can carry the tightest limit across kits.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "generation.ts:292 runs validateDneskaiDeck once; DNESKAI_TEXT_LIMITS (dneskai-generation.ts:39), DNESKAI_FIELD_FACES (dneskai-render.ts:104) and DNESKAI_PLACED_FIELDS (:117) are single-kit; vendor/carousel-studio/dist/dneskai-slide.js:262 and :319 hardcode CAROUSEL_BRANDS[\"caught-up\"]. Gate timing re-run here: 96-468 ms per deck on a loaded machine (reader measured 23-98 ms), still $0.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/vendor/carousel-studio/dist/dneskai-slide.js",
+            "line": 262,
+            "excerpt": "const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS[\"caught-up\"], format: MASTER_FORMAT });"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "L",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Needed for instant kit switch without re-approval surprises, but blocked on the kit engine (workstream C) and consolidation."
+      }
+    },
+    {
+      "id": "GEN-09",
+      "title": "The number gate matches substrings, so invented numbers hidden in the date or other figures pass",
+      "category": "risk",
+      "claim": "supportedNumber uses corpus.includes(number) and the corpus contains the Czech target date, so '20', '10', '26', '2', '0' or '202' are 'supported' by '20. 10. 2026' and any digit run inside a longer number passes; the owner's hard rule is never to invent numbers.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 233,
+          "excerpt": "const corpus = [brief.title, czechDate(brief.targetDate) ?? \"\", ...evidence.flatMap((item) => [item.title, item.excerpt, item.published ?? \"\"])].join(\"\\n\");"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 292,
+          "excerpt": "const NUMBER = /\\b\\d+(?:[.,]\\d+)?%?/g;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 294,
+          "excerpt": "return corpus.includes(number) || corpus.includes(number.replace(\",\", \".\")) || corpus.includes(number.replace(\".\", \",\"));"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Extract numbers from the corpus with the same regex into a set (normalising comma/point and Czech thousands spaces), exclude the target date and publication dates from that set, and require whole-token matches; add a test with '20 %' against a corpus containing '20. 10. 2026'.",
+      "impactStatement": "A fabricated '20 %' or '10 milionů' in a caption passes the only automated truth gate on numbers; the owner must catch it by eye in review. Low probability per post, high cost when it ships.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "dneskai-generation.ts:233 puts czechDate(targetDate) (\"22. 10. 2026\") into the corpus; :292-295 match by substring; :363 applies it to every text field. Tested here with the exact regex and function against a corpus \"22. 10. 2026\" + \"150 milionů\": \"20 %\", \"2\", \"15\", \"50\" and \"202\" all pass as supported; only \"1,5\" failed.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 4,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": true,
+        "ownerDecision": null,
+        "reason": "The only automated guard for the owner's hard rule on invented numbers lets common invented figures through; whole-token matching is a small, testable fix."
+      }
+    },
+    {
+      "id": "GEN-10",
+      "title": "The one creative call runs with reasoning off and effort low; the A/B compares models but not this",
+      "category": "quality",
+      "claim": "between_tools in a tool-less call means no thinking at all, chosen so the 2,500-token output cap goes to the answer; Sonnet 5.5's effort levels were recalibrated and the skill's guidance is to re-run the effort sweep per route. Adaptive thinking at medium effort would cost roughly 500-1,500 extra output tokens (+$0.005-0.015 per post) and needs max_tokens headroom.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/claude-call-profile.ts",
+          "line": 7,
+          "excerpt": "*   structured outputs (`output_config.format`) with `thinking: {type: \"between_tools\"}` (no extended thinking,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/claude-call-profile.ts",
+          "line": 21,
+          "excerpt": "if (/^claude-sonnet-5-5(?![0-9])/.test(model)) return { structured: \"json-schema\", thinking: { type: \"between_tools\" }, effort: \"low\" };"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 64,
+          "excerpt": "maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.25, maxLatencyMs: 60000,"
+        },
+        {
+          "file": "own-dashboard/scripts/dneskai-model-ab.ts",
+          "line": 13,
+          "excerpt": "*   node work/dneskai-model-ab.cjs --briefs briefs.json [--model-a claude-sonnet-5-5] [--model-b claude-haiku-5-5]"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Add --thinking/--effort arms to scripts/dneskai-model-ab.ts (adaptive + medium vs between_tools + low on the same briefs), raise maxOutputTokens for that arm to 6,000 with streaming, and let the owner read the drafts side by side before changing the production profile. Owner approval needed for the spend.",
+      "impactStatement": "Hook quality and Czech rhythm (owner goal 1) are produced in one pass with no planning; whether thinking helps is unmeasured. Cost of finding out: one A/B run of about $1 with an extra arm.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "claude-call-profile.ts:6-8 and :21 set thinking between_tools and effort low for Sonnet 5.5 and say no extended thinking happens; generation.ts:64 maxOutputTokens 2500; scripts/dneskai-model-ab.ts:13 compares models only. The claims that effort levels were recalibrated and that thinking would add 500-1,500 tokens are external/estimated, not in code.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Approve about $1 for an A/B arm with thinking.",
+        "reason": "Speculative quality gain; worth one A/B arm once real posts exist, not before."
+      }
+    },
+    {
+      "id": "GEN-11",
+      "title": "Caption and hashtag policy is hard-coded against feed practice: no first-line hook, raw URLs, ten tags",
+      "category": "quality",
+      "claim": "The prompt asks for 300-700 characters in 2-4 paragraphs with no instruction for the first line that the feed shows before 'more'; code appends up to five 'Publisher: URL' lines (not clickable on Instagram) and always five generic base tags up to a total of ten, a policy copied from the studio's copy.ts.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 133,
+          "excerpt": "\"caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what is still open. Code appends the sources, picture credits and hashtags. hashtags: up to 8 topic tags"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 468,
+          "excerpt": "const block = `${listed.length === 1 ? \"Zdroj\" : \"Zdroje\"}:\\n${listed.map((item) => `${item.publisher}: ${item.url}`).join(\"\\n\")}`;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/dneskai-generation.ts",
+          "line": 390,
+          "excerpt": "return [...new Set([...cleaned, ...DNESKAI_HASHTAG_BASE])].slice(0, 10);"
+        },
+        {
+          "file": "own-dashboard/vendor/carousel-studio/dist/copy.js",
+          "line": 72,
+          "excerpt": "\"caught-up\": [\"ai\", \"umelainteligence\", \"technologie\", \"aitech\", \"dneskai\"],"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Make the caption's first line an explicit field (hook ≤ 125 characters, same truth rules), move the source list to a single compact line or the sources slide (the raw URL rule is the owner's; keep at least the primary), and turn hashtag count and base set into the voice/kit data from GEN-07. Decide with the owner after task A's research.",
+      "impactStatement": "The caption's first ~125 characters decide whether anyone expands it; today they are whatever the 'what happened' paragraph starts with. Up to ~400 characters of URLs and five identical tags per post dilute the text and the tag signal. Instagram's own creator guidance has recommended few (3-5) relevant hashtags; the owner's research task A should confirm current practice before changing the policy.",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Code part confirmed: dneskai-generation.ts:133 (300-700 chars, 2-4 paragraphs, no first-line instruction), :463 up to 5 sources, :468 \"Publisher: URL\" lines, :390 base set appended and capped at 10, :32 base set equals vendor copy.js:72. The claims about Instagram guidance (3-5 hashtags) and the 125-character fold are external and not verified here (no web).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": "Caption hook line, URL list and hashtag count policy, after task A research.",
+        "reason": "The caption opening is untuned for the feed fold, but the change waits on the owner's register and research decisions."
+      }
+    },
+    {
+      "id": "GEN-12",
+      "title": "Prompt caching is absent; at four posts a day it would save under a cent per post and only on retries or batched runs",
+      "category": "cost",
+      "claim": "The stable prefix (system + schema ≈ 2,683 tokens) is five times Sonnet 5.5's 512-token minimum, and the pinned LangChain forwards cache_control, but jobs run one per 5-minute tick, so the 5-minute cache mostly expires between posts: write premium ≈ $0.0013 per cold call, read saving ≈ $0.0048 per hit. If enabled, cost() would overcharge because LangChain folds cache reads into input_tokens.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 457,
+          "excerpt": "try { result = await traceable(() => structured.invoke([[\"system\", input.system], [\"human\", input.prompt]], { signal: input.signal, callbacks: [] }), { tracingEnabled: false })(); }"
+        },
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 13,
+          "excerpt": "No prompt caching, browsing, model tools, fallback provider or LLM judge participates."
+        },
+        {
+          "file": "own-dashboard/node_modules/@langchain/anthropic/dist/chat_models.js",
+          "line": 823,
+          "excerpt": "cache_control: options?.cache_control"
+        },
+        {
+          "file": "own-dashboard/node_modules/@langchain/anthropic/dist/utils/message_outputs.js",
+          "line": 191,
+          "excerpt": "const totalInputTokens = usage.input_tokens + cacheCreationInputTokens + cacheReadInputTokens;"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 176,
+          "excerpt": "return (usage.inputTokens * pricing.inputPerMillionUsd + usage.outputTokens * pricing.outputPerMillionUsd) / 1_000_000;"
+        }
+      ],
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Do not add it now. When variants or a vision pre-pass multiply calls per post, put cache_control on the system block, keep the rules stable and the voice/offer after the breakpoint, read usage_metadata.input_token_details for the ledger and record cache_read in the trace; assert cache_read_input_tokens > 0 in the A/B run.",
+      "impactStatement": "Net effect at today's volume is about $0 (−$0.0048 per retry, +$0.0013 per cold post); it becomes worth it only when several calls per post share the prefix (variants, vision pre-pass, A/B batches: 20 briefs back-to-back ≈ −$0.09 of a $0.46 run).",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "generation.ts:457 sends plain string messages without cache_control; docs/marketing-generation.md:13 states no prompt caching; pinned @langchain/anthropic 1.5.12 forwards cache_control (chat_models.js:823, checked in the own-dashboard-fixes node_modules, same version; the audit worktree has no node_modules) and folds cache reads into input_tokens (utils/message_outputs.js:191), which generation.ts:176 would price at full rate. Prefix 2,683 tokens re-measured (bytes/3 estimate).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "The finding itself recommends not acting at today's volume; revisit only with variants or batched calls."
+      }
+    },
+    {
+      "id": "GEN-13",
+      "title": "Haiku 5.5 is 20× cheaper per post but the only cheap-stage plan is a whole-call swap gated on 20 approved posts",
+      "category": "cost",
+      "claim": "Measured per post: Sonnet 5.5 $0.0229 vs Haiku 5.5 $0.0011 (≈ $2.75 vs $0.14 a month at 4 posts/day). The call profile for Haiku is ready, but the only planned use is the A/B after 20 approved posts; the pipeline has no second stage where a cheap model could take the low-judgement work (clip fixes, alt texts, picture ranking, hashtag proposals).",
+      "evidence": [
+        {
+          "file": "own-dashboard/scripts/dneskai-model-ab.ts",
+          "line": 33,
+          "excerpt": "\"claude-haiku-5-5\": { inputPerMillionUsd: 0.1, outputPerMillionUsd: 0.5 },"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/claude-call-profile.ts",
+          "line": 22,
+          "excerpt": "if (SAMPLING_FIXED.test(model)) return { structured: \"json-schema\", effort: \"low\" };"
+        },
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 176,
+          "excerpt": "After 20 approved posts, compare Claude Sonnet 5.5 with Claude Haiku 5.5 offline on the same saved briefs, with nothing published:"
+        },
+        {
+          "file": "own-dashboard/NEEDED.md",
+          "line": 16,
+          "excerpt": "- [ ] **Run the DNESKAi model A/B after 20 approved posts** — once 20 DNESKAi posts are approved, and only with your consent to the spend, run `scripts/dneskai-model-ab.ts`"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Keep Sonnet for the caption and slides until the A/B says otherwise; introduce Haiku 5.5 for the bounded stages first (GEN-02 vision pre-pass, GEN-03 field rewrite), each with its own small budget line in the ledger and the same gates. Run the A/B as planned; the 20-post gate is about five days at four posts a day.",
+      "impactStatement": "Model dollars are small either way ($2.75-3.80 a month on Sonnet); the win from Haiku is in the extra calls the owner wants (vision ranking +$0.0003 instead of +$0.0063, clip fix ≈ $0.0001 instead of a $0.026 retry, three variants ≈ $0.003 instead of $0.07 per post) and in latency inside the 45 s cap.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "scripts/dneskai-model-ab.ts:31-34 prices Haiku 5.5 at $0.10/$0.50; claude-call-profile.ts:16,22 already supports Haiku 5.5; docs/marketing-generation.md:176 and NEEDED.md:16 gate the A/B on 20 approved posts. Per-post $0.0229 vs $0.0011 re-measured by arithmetic (not a live call).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": "Spend approval for Haiku stages and the planned A/B.",
+        "reason": "Dollar savings are a few dollars a month; the value only appears together with GEN-02/GEN-03, so it is an enabler, not a priority."
+      }
+    },
+    {
+      "id": "GEN-14",
+      "title": "Three nested deadlines (43 s tick minimum, 45 s generation, 55 s job) make the second attempt likely to time out and be booked as $0.25",
+      "category": "risk",
+      "claim": "Both attempts, the studio gate and media downloads must fit 45 s; a non-streaming Sonnet answer of ~1,500 tokens plausibly takes 15-25 s (not measured; nothing has run live), so a retry started after ~25 s is cut by the abort, and an abort during invoke runs ambiguous() before generation-timeout, booking the job maximum.",
+      "evidence": [
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 358,
+          "excerpt": "const signal = dependencies.signal ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(budget.maxLatencyMs)]) : AbortSignal.timeout(budget.maxLatencyMs);"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/generation.ts",
+          "line": 386,
+          "excerpt": "if (signal.aborted) throw new MarketingGenerationError(\"generation-timeout\");"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/worker-runtime.ts",
+          "line": 308,
+          "excerpt": "signal, budget: { ...DEFAULT_GENERATION_BUDGET, maxLatencyMs: 45000, ...(pilot ? { maxCostUsd: Math.min(DEFAULT_GENERATION_BUDGET.maxCostUsd, MARKETING_PILOT_JOB_RESERVATION_USD) } : {}) },"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+          "line": 75,
+          "excerpt": "collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+          "line": 53,
+          "excerpt": "export const MARKETING_TICK_HARD_BUDGET_MS = 53_000;"
+        }
+      ],
+      "impactScore": 3,
+      "effort": "M",
+      "risk": "medium",
+      "recommendation": "Measure attempt latency in the pilot trace (latency_ms is already recorded); if a retry does not fit, persist the retry feedback on the job and run attempt 2 on the next tick instead of inside the same 45 s, or move the fix to the cheap Haiku rewrite (GEN-03). Longer term, give generation its own longer-running unit rather than a slice of the 60 s tick.",
+      "impactStatement": "A clipped post can lose its slot and $0.25 of the daily ceiling to a timeout rather than to a bad answer; the generation step also runs only when collection/media/briefs leave 43 s, which on a busy tick delays the 08:00 post (brief 2.10.5).",
+      "truth": {
+        "verdict": "partly",
+        "evidence": "Code confirmed: generation.ts:358 abort at maxLatencyMs, worker-runtime.ts:308 sets 45 s, :269 55 s job, scheduler.ts:75 generation needs 43 s, :53 hard stop 53 s; in generation.ts:383-386 an abort during invoke runs ambiguous() (booking $0.25) before throwing generation-timeout. That the second attempt is \"likely\" to time out rests on an unmeasured 15-25 s latency estimate; nothing has run live (0 jobs in production).",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 3,
+        "effort": "M",
+        "risk": "medium",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Real risk that compounds GEN-04, but it should be measured in the pilot trace before redesigning the deadlines."
+      }
+    },
+    {
+      "id": "GEN-15",
+      "title": "services/marketing-worker/README.md and docs describe an external n8n-called worker that needs a template; generation runs in-process from the pg_cron tick and DNESKAi jobs carry no template",
+      "category": "doc-drift",
+      "claim": "The README says n8n Cloud calls the HTTP interface, hosting is unprovisioned and every job includes 'the exact approved template'; the code runs executeMarketingJob inside the tick, DneskaiDeckJobRequestSchema has no template, and the brief records n8n as idle with all timers on pg_cron.",
+      "evidence": [
+        {
+          "file": "own-dashboard/services/marketing-worker/README.md",
+          "line": 3,
+          "excerpt": "Hosting has not been provisioned or verified for this service. n8n Cloud calls this HTTP interface; it cannot run `ExecuteCommand` or use native workflow LangSmith tracing."
+        },
+        {
+          "file": "own-dashboard/services/marketing-worker/README.md",
+          "line": 5,
+          "excerpt": "POST the `marketing-job/1` envelope to `/jobs`. Use the revision UUID as `idempotencyKey`, include `generation` and the exact approved `template`."
+        },
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 195,
+          "excerpt": "n8n Cloud calls HTTP; it does not use Execute Command."
+        },
+        {
+          "file": "own-dashboard/services/marketing-worker/protocol.ts",
+          "line": 29,
+          "excerpt": "export const DneskaiDeckJobRequestSchema = z.strictObject({"
+        },
+        {
+          "file": "own-dashboard/src/lib/marketing/scheduler.ts",
+          "line": 351,
+          "excerpt": "const result = await ports.executeJob(jobId, abort) as { claimed?: unknown; status?: unknown; job?: { status?: unknown } | null } | null;"
+        }
+      ],
+      "impactScore": 2,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Rewrite the README around the tick (scheduler → executeMarketingJob → runMarketingWorkerJob), state that DNESKAi jobs carry no template, and mark marketingJobsHttpHandler as a retained rollback path or remove it with the n8n route in the consolidation.",
+      "impactStatement": "A reader (or the next agent) plans around a worker and an n8n bridge that do not exist, and may keep the dormant HTTP handler alive for them; it also hides that the real constraint is the 60 s Vercel tick.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "services/marketing-worker/README.md:3 and :5 describe n8n Cloud calling an unprovisioned host and a required template; docs/marketing-generation.md:195 repeats it; protocol.ts:25-36 says a DNESKAi job carries no template; scheduler-ports.ts:77 runs executeMarketingJob in-process from the tick. Nuance: the HTTP handler is mounted inside the app (src/app/api/marketing/jobs/route.ts:1-5), so it is not an external worker either.",
+        "correctedLocations": [
+          {
+            "file": "own-dashboard/src/lib/marketing/scheduler-ports.ts",
+            "line": 77,
+            "excerpt": "executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env }),"
+          }
+        ]
+      },
+      "impact": {
+        "keep": true,
+        "impactScore": 2,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "Misleads the next agent about where generation runs and its 60 s limit; a short README rewrite."
+      }
+    },
+    {
+      "id": "GEN-16",
+      "title": "docs/marketing-generation.md carries stale dry-plan figures (4,400 tokens, $0.48/$2.26) for a prompt that has since changed",
+      "category": "doc-drift",
+      "claim": "Re-running the same arithmetic on the current fixture and prompt gives 3,930 estimated tokens, $0.457 expected and $2.14 worst for 20 briefs (about 10 % lower); the documented numbers predate the pinned fingerprint 7f9ae138….",
+      "evidence": [
+        {
+          "file": "own-dashboard/docs/marketing-generation.md",
+          "line": 187,
+          "excerpt": "On 20 copies of a test brief of about 4,400 estimated input tokens it printed: Sonnet 5.5 expected 0.48 USD, worst case 2.26 USD; Haiku 5.5 expected 0.02 USD, worst case 0.11 USD"
+        },
+        {
+          "file": "own-dashboard/tests/lib/marketing-dneskai-generation.test.ts",
+          "line": 44,
+          "excerpt": "expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe(\"7f9ae1382c30257ab2c583a0004dfc8419848e673a0fa3dadf74971fc85f4ed0\");"
+        },
+        {
+          "file": "own-dashboard/scripts/dneskai-model-ab.ts",
+          "line": 122,
+          "excerpt": "return Buffer.byteLength(DNESKAI_BRIEF_SYSTEM_PROMPT + dneskaiBriefPrompt(offer) + JSON.stringify(schema)) + 2048;"
+        }
+      ],
+      "impactScore": 1,
+      "effort": "S",
+      "risk": "low",
+      "recommendation": "Have the dry plan print the prompt fingerprint with its numbers and paste both into the doc, or drop the numbers from the doc and point to the script.",
+      "impactStatement": "Harmless today (the brief's '~$0.02 / ~$0.11' still holds), but the doc is the owner's cost reference and will drift further with every prompt change.",
+      "truth": {
+        "verdict": "confirmed",
+        "evidence": "docs/marketing-generation.md:187 says about 4,400 tokens, $0.48/$2.26; re-run of the measurement script on 8df25a5 gives 3,930 tokens, $0.02286 x 20 = $0.457 expected and $0.107 x 20 = $2.14 worst. git log: the doc figure arrived in 28dabd6 (21 Oct 00:29 UTC), the pinned fingerprint in fe3ab5c (02:18 UTC), so the numbers predate the current prompt.",
+        "correctedLocations": []
+      },
+      "impact": {
+        "keep": false,
+        "impactScore": 1,
+        "effort": "S",
+        "risk": "low",
+        "quickWin": false,
+        "ownerDecision": null,
+        "reason": "A 5 % drift in a dry-plan figure changes no decision; fold it into the next docs pass."
+      }
+    }
+  ],
+  "openQuestions": [
+    "Live latency per attempt and the real Czech tokens-per-byte ratio are unmeasured: no call has reached the API (docs/marketing-generation.md:9 'none of these shapes has been sent to the real API yet'); the first pilot trace (latency_ms, input_tokens) settles GEN-01's token estimate and GEN-14's deadline risk.",
+    "Does the API accept thinking {type: 'between_tools'} on a request with no tools exactly as the mocked test assumes (tests :448), and does structured-output grammar compilation add first-call latency inside the 45 s cap?",
+    "What happens to a brief whose job failed with a provider error (status failed, $0.25 booked): does the briefs step create a new job, or does the slot lapse? That decides how fast GEN-04 locks a day.",
+    "Can a 7-slide answer with a 700-character caption and seven alt texts stay under 2,500 output tokens in Czech JSON, or will output-truncated retries be common? The fixture answer (4 slides, 293-character caption) is 1,713 bytes.",
+    "Owner decisions pending: register vs hooks (GEN-07), hashtag/URL caption policy after task A's research (GEN-11), spend approval for an A/B arm with thinking (GEN-10) and for Haiku cheap stages (GEN-13), and whether the ceiling should count error responses at $0 (GEN-04).",
+    "Whether the studio can take a kit parameter without a Quorum round trip (GEN-08) depends on the consolidation decision in task C."
+  ],
+  "fieldNotes": "Each finding keeps the reader's impact text as impactStatement (MAP_SCHEMA field impact); impact now holds the verifier's owner-impact verdict.",
+  "verification": {
+    "confirmed": 13,
+    "partly": 3,
+    "refuted": 0,
+    "notConfirmed": 0,
+    "kept": 14,
+    "dropped": 2,
+    "quickWins": [
+      "GEN-01",
+      "GEN-04",
+      "GEN-05",
+      "GEN-09"
+    ],
+    "verifiedAt": "2026-10-22T00:03:03.128Z",
+    "verifier": "A-verify-2",
+    "sourceMap": "dneskai-audit-handoff/maps/map-generation.json",
+    "repoCommit": "8df25a5",
+    "notes": [
+      "Owner decisions: register vs hook voice (GEN-07, AGENT-RULES 9); vision spend per post (GEN-02); regenerate-with-note spend policy (GEN-06); booking HTTP errors at $0 and a bounded 429/529 retry (GEN-04); caption hook/URL/hashtag policy after task A (GEN-11); A/B arms and Haiku stages spend (GEN-10, GEN-13, GEN-03).",
+      "Brief vs code: section 2.4 matches the code; section 2.10 point 4 overstates the reservation problem (GEN-05): finished jobs count at recorded cost, failures and running jobs at $0.25.",
+      "UI vs code: the return-with-note help text promises the note helps the next draft (i18n dneskai-workspace.ts:27/108); no code uses it (GEN-06).",
+      "Measurements re-run on a git-archive export of 8df25a5 with node_modules linked from own-dashboard-fixes (same lockfile); the audit worktree has no node_modules. No paid call was made."
+    ]
+  }
+}
