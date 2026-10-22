@@ -3,7 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,7 +24,7 @@ import { DneskaiTopicsList } from './topics-list';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
-type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean; onOpenSources?: () => void };
+type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
 function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
@@ -60,9 +62,13 @@ export function DneskaiLabTab(props: Props) {
     return () => window.removeEventListener('popstate', onPop);
   }, [dirty]);
   return <section className="space-y-4" data-testid="dneskai-lab">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="text-base font-semibold">{t.title}</h2><p className="text-xs text-foreground-muted">{t.intro}</p></div>
-      <Button variant="outline" size="sm" disabled={props.refreshing || dirty} onClick={props.onRefresh}>{dneskaiWorkspace[props.lang].refresh}</Button>
+    <div className="flex items-center justify-end gap-3">
+      <h2 className="sr-only">{t.title}</h2>
+      <Tooltip content={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh}>
+        <Button variant="ghost" size="icon" aria-label={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh} aria-busy={props.refreshing} disabled={props.refreshing || dirty} onClick={props.onRefresh} data-testid="dneskai-lab-refresh">
+          <RefreshCw aria-hidden className={cn(props.refreshing && 'motion-safe:animate-spin')} />
+        </Button>
+      </Tooltip>
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {props.preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{props.guest ? t.publicTour : dneskaiWorkspace[props.lang].preview}</p>}
@@ -91,7 +97,6 @@ export function DneskaiLabTab(props: Props) {
           {!day.posts.length && !day.jobs.length && !day.waiting.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
         </section>)}
-        {props.onOpenSources && !props.guest && <button type="button" className="focus-ring inline-flex min-h-11 items-center rounded text-left text-xs text-information underline" onClick={props.onOpenSources}>{t.queue.recovery}</button>}
       </nav>
       {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} now={now} lab={active} slide={Math.min(chosen.slide, 9)}
         onSlide={(slide) => { setChosen({ post: active.post.id, slide }); remember(active.post.id, slide); }} onDirty={setDirty}
@@ -261,7 +266,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     event.preventDefault();
   }
   return <div ref={rootRef} tabIndex={-1} onKeyDown={shortcut} className="min-w-0 space-y-4 focus:outline-none" data-testid="dneskai-lab-session" aria-busy={busy}>
-    <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><DneskaiStateChip detail={lab.state} lang={props.lang} /><span className="text-xs text-foreground-muted tabular" title={post.contentHash}>{t.actions.version(lab.revision.shortHash)}</span></div><Button variant="ghost" size="sm" onClick={() => setDialog('shortcuts')}>{t.shortcutsButton}</Button></div>
+    <div className="flex flex-wrap items-center gap-2"><DneskaiStateChip detail={lab.state} lang={props.lang} /></div>
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
       <div className="min-w-0 space-y-3">{missed && <section aria-labelledby={`${id}-moved`} className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-xs" data-testid="dneskai-lab-moved">
@@ -281,7 +286,6 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>
-          <div><label htmlFor={`${id}-account`} className="text-xs font-medium">{t.post.account}</label><select id={`${id}-account`} value={draft.accountId ?? ''} onChange={(event) => setDraft({ ...draft, accountId: event.target.value })} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring"><option value="" disabled>@{post.account.handle}</option>{props.read.accounts.filter((item) => item.verified).map((item) => <option key={item.id} value={item.id}>@{item.handle}</option>)}</select></div>
         </fieldset>
         <section className="space-y-1 text-xs"><h4 className="font-medium">{t.post.disclosure}</h4><p className="text-foreground-muted">{post.deck?.slides.some((item) => item.type === 'sources') ? t.post.disclosureText : t.post.disclosureMissing}</p></section>
         {post.status === 'returned' && <section className="space-y-2 border-t border-border pt-3 text-xs"><p>{post.feedback}</p><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => fieldRef.current?.focus()}>{t.actions.editByHand}</Button>

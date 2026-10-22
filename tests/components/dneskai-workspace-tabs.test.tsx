@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { DneskaiWorkspaceTab, type DneskaiWorkspaceTabId } from '@/components/marketing/dneskai/workspace';
 import { DEMO_DNESKAI_PROJECT_ID, demoDneskaiWorkspaceApi, resetDemoDneskaiWorkspace } from '@/lib/demo/dneskai-workspace-demo';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
@@ -25,7 +26,7 @@ beforeEach(() => { resetDemoDneskaiWorkspace(); container = document.createEleme
 afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); vi.restoreAllMocks(); });
 const wait = (ms: number) => act(async () => { await new Promise((done) => setTimeout(done, ms)); });
 const show = async (tab: DneskaiWorkspaceTabId) => {
-  act(() => root.render(<QueryClientProvider client={client}><DneskaiWorkspaceTab tab={tab} projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview /></QueryClientProvider>));
+  act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab={tab} projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview /></TooltipProvider></QueryClientProvider>));
   await wait(400);
   if (tab === 'dneskai-review') act(() => { [...container.querySelectorAll('button')].find((button) => button.textContent === 'List')?.click(); });
 };
@@ -134,15 +135,32 @@ describe('Errors and costs keeps measured, booked and unknown apart', () => {
   });
 });
 
-describe('Design Lab queue', () => {
-  it('links to the owner recovery actions in Sources when the workspace offers it', async () => {
-    const onOpenSources = vi.fn();
-    act(() => root.render(<QueryClientProvider client={client}><DneskaiWorkspaceTab tab="dneskai-review" projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview onOpenSources={onOpenSources} /></QueryClientProvider>));
+describe('Design Lab chrome (#172)', () => {
+  it.each(['en', 'cs'] as const)('shows posts, not explanations: no visible heading, intro, version chip, shortcuts button, account select or recovery link (%s)', async (lang) => {
+    act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-review" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
     await wait(400);
-    const link = [...container.querySelectorAll('[data-testid="dneskai-lab-queue"] button')].find((button) => button.textContent === dneskaiLab.en.queue.recovery) as HTMLButtonElement;
-    expect(link.className).toContain('min-h-11');
-    act(() => link.click());
-    expect(onOpenSources).toHaveBeenCalledTimes(1);
-    expect(dneskaiLab.cs.queue.recovery).not.toBe(dneskaiLab.en.queue.recovery);
+    const lab = container.querySelector<HTMLElement>('[data-testid="dneskai-lab"]')!;
+    const l = dneskaiLab[lang];
+    // The landmark keeps its name for screen readers only.
+    expect(lab.querySelector('h2')!.className).toContain('sr-only');
+    expect(lab.querySelector('h2')!.textContent).toBe(l.title);
+    const refresh = lab.querySelector<HTMLButtonElement>('[data-testid="dneskai-lab-refresh"]')!;
+    expect(refresh.getAttribute('aria-label')).toBe(dneskaiWorkspace[lang].refresh);
+    expect(refresh.textContent).toBe('');
+    const buttons = [...lab.querySelectorAll('button')].map((button) => button.textContent);
+    expect(buttons).not.toContain(l.shortcuts.title);
+    // No account select: no option names an @handle.
+    expect([...lab.querySelectorAll('select option')].some((option) => option.textContent?.startsWith('@'))).toBe(false);
+    // The version hash stays on the approve button only.
+    const session = lab.querySelector<HTMLElement>('[data-testid="dneskai-lab-session"]')!;
+    const hash = session.querySelector('[data-testid="dneskai-lab-approve"] .font-mono')!.textContent!;
+    expect(session.textContent!.split(hash)).toHaveLength(2);
+    // The stage has no visible title; the kit tiles keep an accessible legend and no help texts.
+    const stage = lab.querySelector<HTMLElement>('[data-testid="dneskai-lab-stage"]')!;
+    expect(stage.querySelector('h3')).toBeNull();
+    expect(stage.getAttribute('aria-label')).toBeTruthy();
+    const kits = lab.querySelector<HTMLElement>('[data-testid="dneskai-kit-tiles"]')!;
+    expect(kits.querySelector('legend')!.className).toContain('sr-only');
+    expect(kits.querySelectorAll('p')).toHaveLength(0);
   });
 });

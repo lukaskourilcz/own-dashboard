@@ -35,6 +35,15 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   await page.keyboard.press('?'); await expect(page.getByRole('dialog')).toContainText(t.shortcuts.title);
   await page.keyboard.press('Escape'); await expect(session).toBeFocused();
   await page.keyboard.press('g');
+  // #172: Refresh is an icon button with a name; the shortcut list moved to the workspace More menu.
+  await expect(lab.getByTestId('dneskai-lab-refresh')).toHaveAccessibleName(dneskaiWorkspace[lang].refresh);
+  await expect(lab.getByRole('button', { name: t.shortcuts.title, exact: true })).toHaveCount(0);
+  await page.getByTestId('dneskai-more').click();
+  await page.getByTestId('dneskai-more-menu').getByRole('button', { name: dneskaiWorkspace[lang].more.shortcuts, exact: true }).click();
+  const shortcuts = page.getByRole('dialog', { name: dneskaiWorkspace[lang].more.shortcuts });
+  await expect(shortcuts.locator('dt')).toHaveCount(t.shortcuts.rows.length);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('dneskai-more')).toBeFocused();
   const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-lab"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
   expect(axe.violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
