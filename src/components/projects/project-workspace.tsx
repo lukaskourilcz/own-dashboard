@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import {
@@ -144,7 +144,11 @@ export function ProjectWorkspace(props: Props) {
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
-  const [selectedTab, setTab] = useState<ProjectTabId>("overview");
+  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => 'overview');
+  const setTab = (tab: ProjectTabId) => {
+    const url = new URL(window.location.href); url.searchParams.set('projectTab', tab);
+    window.history.replaceState(window.history.state, '', url); window.dispatchEvent(new Event('project-tab'));
+  };
   const tablist = useRef<HTMLDivElement>(null);
   // Sources sends the owner to the final review; focus moves to the selected tab instead of being lost with the panel.
   const openDneskaiReview = () => { flushSync(() => setTab("dneskai-review")); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); };
@@ -277,4 +281,10 @@ export function ProjectWorkspace(props: Props) {
 
 function RecordCard({ title, icon: Icon, empty, items, info }: { title: string; icon: typeof Activity; empty: string; items: { id: string; primary: string; secondary?: string }[]; info?: string }) {
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}{info && <Tooltip content={info}><span className="ml-0.5 inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip>}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
+}
+
+function readProjectTab(): string { return new URLSearchParams(window.location.search).get('projectTab') ?? 'overview'; }
+function subscribeProjectTab(onChange: () => void) {
+  window.addEventListener('popstate', onChange); window.addEventListener('project-tab', onChange);
+  return () => { window.removeEventListener('popstate', onChange); window.removeEventListener('project-tab', onChange); };
 }

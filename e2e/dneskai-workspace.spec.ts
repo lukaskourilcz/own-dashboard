@@ -13,6 +13,7 @@ async function openWorkspace(page: Page, lang: 'en' | 'cs', tab: keyof typeof dn
   await gotoPreview(page, { lang, theme });
   await page.goto('/dev-preview?project=dneskai');
   await page.getByRole('tab', { name: dneskaiWorkspace[lang].tabs[tab], exact: true }).click();
+  if (tab === 'review') await page.getByRole('button', { name: lang === 'cs' ? 'Seznam' : 'List', exact: true }).click();
   return requests;
 }
 // Project Overview asks for traffic metadata as soon as any project opens. Stub it before the first navigation of

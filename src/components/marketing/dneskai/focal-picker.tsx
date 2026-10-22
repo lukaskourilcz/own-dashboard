@@ -11,9 +11,11 @@ type Focal = { x: number; y: number };
  * The focal point of one picture: click or tap the picture to set it, or use the arrow keys (2 % per press, Home
  * centres it). The point stays in view when the template crops the picture; the readout states it in numbers.
  */
-export function DneskaiFocalPicker({ lang, label, src, width, height, focal, zoom, onFocal, onZoom }: {
+export function DneskaiFocalPicker({ lang, label, src, width, height, focal, zoom, onFocal, onZoom, crop }: {
   lang: 'en' | 'cs'; label: string; src: string | null; width: number; height: number; focal: Focal; zoom: number;
   onFocal: (focal: Focal) => void; onZoom: (zoom: number) => void;
+  /** The region the slide actually draws, as fractions of the picture (Design Lab); the rest is dimmed. */
+  crop?: { left: number; top: number; width: number; height: number };
 }) {
   const t = dneskaiWorkspace[lang].editor;
   const id = useId();
@@ -26,6 +28,8 @@ export function DneskaiFocalPicker({ lang, label, src, width, height, focal, zoo
       onClick={(event) => { const rect = box.current?.getBoundingClientRect(); if (rect) onFocal(focalFromPoint(rect, event.clientX, event.clientY)); }}
       onKeyDown={(event) => { const next = moveFocal(focal, event.key); if (next) { event.preventDefault(); onFocal(next); } }}>
       <Image unoptimized src={src} alt="" width={width} height={height} loading="lazy" sizes="24rem" className="pointer-events-none block h-auto w-full select-none" draggable={false} />
+      {crop && <span aria-hidden data-testid="dneskai-crop-overlay" className="pointer-events-none absolute border-2 border-primary-foreground outline outline-1 outline-foreground/60"
+        style={{ left: `${crop.left * 100}%`, top: `${crop.top * 100}%`, width: `${crop.width * 100}%`, height: `${crop.height * 100}%`, boxShadow: '0 0 0 9999px var(--overlay)' }} />}
       <span aria-hidden className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary-foreground bg-primary shadow-elevated"
         style={{ left: `${focal.x * 100}%`, top: `${focal.y * 100}%` }} />
     </div> : <p className="rounded-md border border-dashed border-border-strong p-3 text-xs text-foreground-muted">{t.sourceMissing}</p>}

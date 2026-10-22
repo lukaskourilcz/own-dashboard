@@ -5,7 +5,7 @@ import type { MediaResolution } from '@/lib/marketing/dneskai-deck-editor';
 /** The DNESKAi workspace tabs (#119). Every string exists in English and Czech with the same meaning. */
 const en = {
   tabs: { review: 'For review today', calendar: 'Calendar', published: 'Published', costs: 'Errors and costs' },
-  preview: 'Preview with demo posts. Nothing is sent and an edit does not redraw the slides.',
+  preview: 'Preview with demo posts. Edits redraw synthetic fixture slides. Nothing is published or stored.',
   refresh: 'Refresh', refreshing: 'Refreshing…', loading: 'Loading DNESKAi posts…',
   unavailable: 'DNESKAi posts could not be loaded. Check the connection, then refresh.',
   unreadable: (count: number) => count === 1 ? 'One stored record could not be read and is not shown.' : `${count} stored records could not be read and are not shown.`,
@@ -86,7 +86,7 @@ const en = {
 
 const cs: typeof en = {
   tabs: { review: 'Dnes ke schválení', calendar: 'Kalendář', published: 'Publikované', costs: 'Chyby a náklady' },
-  preview: 'Náhled s ukázkovými příspěvky. Nic se neodesílá a úprava slidy nepřekresluje.',
+  preview: 'Náhled s ukázkovými příspěvky. Úpravy překreslí syntetické ukázkové slidy. Nic se nepublikuje ani neukládá.',
   refresh: 'Obnovit', refreshing: 'Obnovuji…', loading: 'Načítám příspěvky DNESKAi…',
   unavailable: 'Příspěvky DNESKAi nelze načíst. Zkontrolujte připojení a obnovte stránku.',
   unreadable: (count: number) => count === 1 ? 'Jeden uložený záznam nelze přečíst a není zobrazený.' : count < 5 ? `${count} uložené záznamy nelze přečíst a nejsou zobrazené.` : `${count} uložených záznamů nelze přečíst a nejsou zobrazené.`,

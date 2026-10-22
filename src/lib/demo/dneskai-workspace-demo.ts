@@ -1,18 +1,19 @@
 'use client';
 
-import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos, demoSlides } from './dneskai-workspace-fixtures';
+import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos } from './dneskai-workspace-fixtures';
 import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
-import { DneskaiWorkspaceRequestError, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
+import { DneskaiWorkspaceRequestError, fitAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiMediaRead } from '@/lib/marketing/dneskai-media-contracts';
+import { z } from 'zod';
 import type { DneskaiSlide } from '@/lib/marketing/dneskai-slides';
 
 /**
  * The deterministic stand-in for the DNESKAi workspace server in `/dev-preview` and the guest tour (#119). It keeps
  * the fixture posts in memory for the page's lifetime and answers approvals, edits, returns and skips the way the
- * server does, with the same refusal codes. It never fetches, never renders and never writes anything: an edit keeps
- * the stored slide images of the slides it keeps, which the preview notice says.
+ * server does, with the same refusal codes. Edits render through a fixture-only route using committed synthetic images. No owner data, paid provider,
+ * storage or publication endpoint is used; all post changes stay in memory.
  */
 let store: DneskaiWorkspaceRead | null = null;
 const read = () => (store ??= createDneskaiWorkspaceFixture(new Date()));
@@ -80,6 +81,16 @@ function demoProblems(post: DneskaiWorkspacePost, slides: DneskaiSlide[]) {
   return problems;
 }
 
+/** The approval the server's SQL makes, with its refusals: the exact hash, a ready version still in review. */
+function approveOne(id: string, expectedHash: string): string {
+  const post = find(id);
+  if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
+  if (post.status !== 'review' || !post.ready) throw new DneskaiWorkspaceRequestError('revision-not-ready', 409);
+  post.status = 'approved'; post.approvedAt = new Date().toISOString();
+  post.publication = { id: uuid(), status: 'queued', scheduledAt: post.scheduledAt, remoteUrl: null, errorCode: null, lastCheckedAt: null, publishedAt: null };
+  return post.publication.id;
+}
+
 export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: true,
   async loadReview() { await pause(120); return clone(read()); },
@@ -99,12 +110,17 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   },
   async approve(id, expectedHash) {
     await pause(300);
-    const post = find(id);
-    if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
-    if (post.status !== 'review' || !post.ready) throw new DneskaiWorkspaceRequestError('revision-not-ready', 409);
-    post.status = 'approved'; post.approvedAt = new Date().toISOString();
-    post.publication = { id: uuid(), status: 'queued', scheduledAt: post.scheduledAt, remoteUrl: null, errorCode: null, lastCheckedAt: null, publishedAt: null };
+    approveOne(id, expectedHash);
   },
+  async approveMany(posts) {
+    await pause(400);
+    return { results: posts.map(({ id, contentHash }) => {
+      try { return { id, ok: true, publicationId: approveOne(id, contentHash), error: null }; }
+      catch (error) { return { id, ok: false, publicationId: null, error: error instanceof DneskaiWorkspaceRequestError ? error.code : 'approval-unavailable' }; }
+    }) };
+  },
+  // The real studio fit, through the fixture-only twin of the route: it reads no owner data. Production guests get 404.
+  fit: (request, signal) => fitAt('/api/dev-preview/dneskai-fit', request, signal),
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);
@@ -118,11 +134,18 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     const slides = applyEdit(post, request);
     const scheduled = Date.parse(request.scheduledAt);
     if (!(scheduled > Date.now()) || scheduled > Date.now() + 6 * 86_400_000) throw new DneskaiWorkspaceRequestError('schedule-outside-asset-window', 409);
-    const problems = demoProblems(post, slides);
-    const ready = problems.length === 0;
-    // The kept slides keep their stored images; a post without stored slides shows its prepared render.
-    const stored = post.assets.length ? post.assets : demoSlides[post.id] ?? [];
-    const assets = !ready ? [] : request.deck ? request.deck.slides.flatMap((change) => stored[change.from] ?? []) : stored;
+    let problems = demoProblems(post, slides);
+    let ready = problems.length === 0;
+    let assets = clone(post.assets);
+    if (request.deck && post.deck) {
+      const response = await fetch('/api/dev-preview/dneskai-render', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...post.deck, slides }) });
+      if (!response.ok) throw new DneskaiWorkspaceRequestError('render-unavailable', response.status);
+      const rendered = z.object({ ready: z.boolean(), assets: z.array(z.object({ url: z.string().startsWith('data:image/jpeg;base64,'), sha256: z.string().regex(/^[a-f0-9]{64}$/), width: z.literal(1080), height: z.literal(1350), alt: z.string() })), problems: z.array(z.object({ slide: z.number(), code: z.string(), blocking: z.boolean(), message: z.string(), field: z.string().nullable() })) }).parse(await response.json());
+      ready = rendered.ready;
+      problems = rendered.problems.map((problem) => ({ ...problem, field: problem.field ?? '' }));
+      assets = rendered.assets;
+    }
+    if (!ready) assets = [];
     const account = request.accountId ? read().accounts.find((item) => item.id === request.accountId) : null;
     const next: DneskaiWorkspacePost = {
       ...clone(post), id: uuid(), replacesId: post.id, status: 'review', ready: ready && assets.length === slides.length, createdAt: new Date().toISOString(), approvedAt: null,
@@ -132,7 +155,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
       contentHash: '0'.repeat(64),
     };
-    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account });
+    next.contentHash = await hash({ version: DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, caption: next.caption, scheduledAt: next.scheduledAt, deck: next.deck, account: next.account, assets: next.assets.map(({ sha256, width, height }) => ({ sha256, width, height })) });
     post.status = 'superseded';
     read().posts.unshift(next);
     return { id: next.id, ready: next.ready, contentHash: next.contentHash, render: { status: ready ? 'rendered' : 'refused', problems } };

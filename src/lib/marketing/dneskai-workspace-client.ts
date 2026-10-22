@@ -4,6 +4,7 @@ import { loadMarketingAccounts, type MarketingAccountStatus } from './accounts-c
 import { DneskaiRenderProblemSchema } from './contracts';
 import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, type DneskaiCostsRead, type DneskaiWorkspaceRead } from './dneskai-workspace';
 import type { DneskaiEditRequest } from './dneskai-deck-editor';
+import { DneskaiApproveManyResultSchema, DneskaiFitResultSchema, type DneskaiApproveManyResult, type DneskaiFitRequest, type DneskaiFitResult } from './dneskai-lab';
 import { qk } from '@/lib/queries/keys';
 
 /**
@@ -33,6 +34,10 @@ export interface DneskaiWorkspaceApi {
   approve(id: string, expectedHash: string): Promise<void>;
   edit(request: DneskaiEditRequest): Promise<DneskaiEditResult>;
   decide(id: string, action: 'returned' | 'skipped', feedback?: string): Promise<void>;
+  /** „Approve the day“: each post bound to its own hash; one refusal never blocks the others. */
+  approveMany(posts: ReadonlyArray<{ id: string; contentHash: string }>): Promise<DneskaiApproveManyResult>;
+  /** Text fit feedback before saving ($0, no model call, nothing stored). */
+  fit(request: DneskaiFitRequest, signal?: AbortSignal): Promise<DneskaiFitResult>;
 }
 
 const codeShape = /^[a-z][a-z0-9_-]{0,99}$/;
@@ -53,9 +58,9 @@ async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
   if (!response.ok) throw await failure(response);
   return response.json();
 }
-async function post(body: unknown): Promise<unknown> {
+async function post(body: unknown, url = '/api/marketing/revisions', signal?: AbortSignal): Promise<unknown> {
   let response: Response;
-  try { response = await fetch('/api/marketing/revisions', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
+  try { response = await fetch(url, { signal, method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
   catch { throw new DneskaiWorkspaceRequestError('decision-failed', 0); }
   if (!response.ok) throw await failure(response);
   return response.json().catch(() => ({}));
@@ -81,7 +86,20 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     return result.data;
   },
   async decide(id, action, feedback) { await post({ action, id, ...(feedback?.trim() ? { feedback: feedback.trim().slice(0, 2000) } : {}) }); },
+  async approveMany(posts) {
+    const result = DneskaiApproveManyResultSchema.safeParse(await post({ action: 'approve-many', posts: posts.map((item) => ({ id: item.id, expectedHash: item.contentHash })) }));
+    if (!result.success) throw new DneskaiWorkspaceRequestError('approval-unavailable', 502);
+    return result.data;
+  },
+  fit: (request, signal) => fitAt('/api/marketing/dneskai/fit', request, signal),
 };
+
+/** POST a fit request and validate the answer; the preview posts to its fixture-only twin of the route. */
+export async function fitAt(url: string, request: DneskaiFitRequest, signal?: AbortSignal): Promise<DneskaiFitResult> {
+  const result = DneskaiFitResultSchema.safeParse(await post(request, url, signal));
+  if (!result.success) throw new DneskaiWorkspaceRequestError('fit-unavailable', 502);
+  return result.data;
+}
 
 let demo: Promise<DneskaiWorkspaceApi> | null = null;
 /** The live port, or in the preview the in-memory demo, loaded only when a preview first opens a DNESKAi tab. */

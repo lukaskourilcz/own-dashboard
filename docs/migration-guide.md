@@ -742,4 +742,3 @@ Both migrations are local preparation. Reconcile production's divergent marketin
 ### Prepared: lapsed brief reports
 
 `20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied pending migration-history reconciliation.
-

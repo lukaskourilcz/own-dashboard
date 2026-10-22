@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys } from '@/lib/marketing/dneskai-workspace-client';
 import { dneskaiAwaitingRender, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { DneskaiLabTab } from './lab/lab-tab';
+import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
+import { Button } from '@/components/ui/button';
 import { DneskaiReviewTab } from './review-tab';
 import { DneskaiCalendarTab } from './calendar-tab';
 import { DneskaiPublishedTab } from './published-tab';
@@ -53,7 +56,7 @@ function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWor
   if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
   const props = { read: query.data, lang, preview, refreshing: query.isFetching, onRefresh: () => void query.refetch() };
-  return tab === 'dneskai-review' ? <DneskaiReviewTab {...props} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
+  return tab === 'dneskai-review' ? <ReviewExperience {...props} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
     : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} />;
 }
 
@@ -68,4 +71,13 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
   if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
   return <DneskaiCostsTab read={query.data} review={review.isPending ? 'loading' : review.isError ? 'unavailable' : review.data} renderFailed={renderFailed} lang={lang} preview={preview}
     refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
+}
+
+function ReviewExperience(props: Parameters<typeof DneskaiReviewTab>[0]) {
+  const [view, setView] = useState<'lab' | 'list'>('lab');
+  const [dirty, setDirty] = useState(false);
+  const t = dneskaiLab[props.lang];
+  return <div className="space-y-4"><div role="group" aria-label={t.views.label} className="flex gap-1">
+    {(['lab', 'list'] as const).map((item) => <Button key={item} variant={view === item ? 'subtle' : 'ghost'} size="sm" aria-pressed={view === item} disabled={dirty && view !== item} onClick={() => setView(item)}>{t.views[item]}</Button>)}
+  </div>{view === 'lab' ? <DneskaiLabTab {...props} onDirtyChange={setDirty} /> : <DneskaiReviewTab {...props} />}</div>;
 }

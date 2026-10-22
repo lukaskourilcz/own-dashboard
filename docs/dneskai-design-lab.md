@@ -1,0 +1,27 @@
+# DNESKAi Design Lab prototype
+
+The project's review tab now opens the Lab. A List control retains the previous review surface. Calendar, Sources, Published and Errors and costs keep their existing reads. The prototype uses the existing `dneskai-review` tab identity, preserving hidden-tab preferences; it does not require a tab migration.
+
+Open `/projects/<project-id-or-slug>?projectTab=dneskai-review&labPost=<revision-id>&labSlide=0`. Slide indexes are zero-based. The preview equivalent is `/dev-preview?project=dneskai&projectTab=dneskai-review`; query selection survives reload. `tab` remains the application shell's parameter, so the project selection is namespaced as `projectTab` rather than overloading it.
+
+The queue shows today and tomorrow in Prague time, with jobs, deadlines and explicit states. It initially selects a post waiting for review. The stage shows the saved revision at 390 CSS px (or the available phone width), a 3:4 profile crop and a scrollable full-size JPEG. Missing renders remain visible states. Thumbnail loads must succeed before approval. An edited draft is labelled separately: saving creates a successor revision and the Lab follows that revision before approval becomes available.
+
+The inspector reuses field counters, media-pool swapping and the focal picker. Crop arithmetic is pinned to the vendored renderer; fit feedback calls the existing owner-scoped, rate-limited fitter after a 300 ms debounce. It makes no model call. Caption, alt text, scheduled time and verified account edits retain the existing edit contract and exact-hash semantics. Sources stay read-only. Returned posts can be edited manually. The old List editor retains its existing ordering/removal controls; adding slides and changing type/variant are outside this prototype's edit contract.
+
+Unsaved changes block approval, batch approval, refresh, List switching and return/skip actions. Switching to another post asks whether to discard changes; leaving the document triggers the browser's unsaved-change prompt. Ordinary project-tab navigation uses the existing application shell. Keyboard accelerators work outside text inputs: J/K or up/down selects posts, left/right selects slides, E focuses the first field, A approves, D opens batch confirmation, R returns with a note, S opens skip confirmation, G changes profile view and ? opens help. Radix handles dialog focus and Escape.
+
+Approve the day captures the eligible revision IDs and hashes when its dialog opens. It shows each deck, caption, account and time; every image must load before submission. The request binds each hash independently and shows per-item refusals. A failure never grants authority to a different revision. Batch failures refresh the read because a response may be lost after some approvals succeeded. Individual approvals use the existing server route and hash check.
+
+Only Editorial is renderable. The four future kit tiles are disabled until the owner approves their distinct designs and the corresponding renderer is available. The prototype does not present Editorial copies as other kits. Kit switching, alternative-variant storage/retention, reminders, missed-slot movement and paid regeneration await the decisions in NEEDED.md. No approval hash is weakened, no schedule moves automatically, and no model call or notification is added.
+
+## Authentic preview assets
+
+`node scripts/dneskai-preview-fixtures.mjs` deterministically regenerates six abstract synthetic source images and sixteen full-size 1080 × 1350 JPEG slides with the vendored studio. The images and all copy are fixtures, not observations or source claims. Their originals are committed so the fixture renderer can verify each sha256 before rendering an edit.
+
+`POST /api/dev-preview/dneskai-render` accepts a bounded deck using only those known fixture hashes. It reads no owner records, fetches no URL, calls no provider and writes no storage. It refuses cross-origin requests and unknown assets. Ordinary production answers 404; development and explicit `NEXT_E2E=1` builds can render fixture edits. The guest tour in an ordinary production build does not gain this rendering endpoint; a render-dependent demo edit is unavailable there. Post edits and approvals remain in browser memory.
+
+The preview also exposes the implemented Editorial specimen sheet from Quorum commit `138422c9`: `public/demo/dneskai/kit-editorial.png` and its JSON receipts. It contains the six ADR fixture decks, 24 slides, including an explicit refused low-resolution tile. The four other sheets await approved designs. This copies review artifacts only; it does not re-vendor or consolidate the studio.
+
+## Verification
+
+The focused route/read-model/component suite passes 20 tests. Eight browser checks cover EN/CS, desktop/mobile, light/dark, dirty navigation, free fitting, real new pixels after save, exact-version approval and batch outcomes; the EN/CS flows include axe scans and clean console/network assertions. Six additional desktop-browser checks exercise 360, 430, 768, 1024, 1440 and 1728 px, full-size viewing and deep-link reload. Full repository gates and final integration results are recorded in the handoff LOG.md.

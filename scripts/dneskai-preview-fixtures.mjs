@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Regenerates the DNESKAi workspace preview fixtures (#119): small JPEG renders of invented DNESKAi slides,
+ * Regenerates the DNESKAi workspace preview fixtures (#119): full-size JPEG renders of invented DNESKAi slides,
  * drawn once by the vendored studio (`@boardlessai/carousel-studio`, vendor/carousel-studio) from synthetic
  * stand-in photographs, plus downscaled previews of those photographs for the editor's picture pool.
  *
@@ -82,10 +82,11 @@ const originals = {};
 for (const [name, spec] of Object.entries(photos)) {
   const bytes = await photo(spec.width, spec.height, spec.seed);
   originals[name] = bytes;
+  await writeFile(path.join(out, `original-${name}.jpg`), bytes);
   const preview = await sharp(bytes).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 72, mozjpeg: true }).toBuffer();
   const meta = await sharp(preview).metadata();
   await writeFile(path.join(out, `photo-${name}.jpg`), preview);
-  manifest.photos[name] = { file: `/demo/dneskai/photo-${name}.jpg`, sha256: sha(bytes), width: spec.width, height: spec.height, previewWidth: meta.width, previewHeight: meta.height };
+  manifest.photos[name] = { originalFile: `/demo/dneskai/original-${name}.jpg`, file: `/demo/dneskai/photo-${name}.jpg`, sha256: sha(bytes), width: spec.width, height: spec.height, previewWidth: meta.width, previewHeight: meta.height };
 }
 for (const [deck, slides] of Object.entries(decks)) {
   manifest.decks[deck] = [];
@@ -94,13 +95,13 @@ for (const [deck, slides] of Object.entries(decks)) {
     const result = await renderDneskaiSlide({ ...slide, images, position: { index, count: slides.length }, locale: 'cs' });
     if (result.status !== 'rendered' || !result.png) throw new Error(`deck ${deck} slide ${index}: ${result.problems.map((problem) => problem.code).join(', ')}`);
     if (result.truncatedSlots.length) throw new Error(`deck ${deck} slide ${index}: cut ${result.truncatedSlots.join(', ')}`);
-    const jpeg = await sharp(result.png).resize({ width: 360 }).flatten({ background: '#ffffff' }).jpeg({ quality: 76, mozjpeg: true }).toBuffer();
+    const jpeg = await sharp(result.png).resize({ width: 1080 }).flatten({ background: '#ffffff' }).jpeg({ quality: 76, mozjpeg: true }).toBuffer();
     const file = `slide-${deck}${index + 1}.jpg`;
     await writeFile(path.join(out, file), jpeg);
     // The slide as the deck contract stores it: pictures by the sha256 of their bytes, never by file.
     const { images: placed = [], ...words } = slide;
     const contract = { ...words, images: placed.map((image) => ({ slot: image.slot, assetSha256: sha(originals[image.photo]), ...(image.crop ? { crop: image.crop } : {}) })) };
-    manifest.decks[deck].push({ slide: contract, render: { file: `/demo/dneskai/${file}`, sha256: sha(jpeg), width: 360, height: 450 } });
+    manifest.decks[deck].push({ slide: contract, render: { file: `/demo/dneskai/${file}`, sha256: sha(jpeg), width: 1080, height: 1350 } });
   }
 }
 await writeFile(path.join(root, 'src/lib/demo/dneskai-preview-assets.json'), `${JSON.stringify(manifest, null, 2)}\n`);
