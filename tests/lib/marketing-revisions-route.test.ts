@@ -158,6 +158,45 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
     expect(admin.calls).toEqual([]);
   });
 
+  describe("engagement edits (#157)", () => {
+    afterEach(() => { vi.unstubAllEnvs(); });
+    const engagement = { keyword: " skill ", replyMessage: "  Návod: otevřete aplikaci a začněte.  ", publicReply: "Poslali jsme vám to do zpráv." };
+    it("saves the keyword upper-cased and the messages trimmed, keeps the JPEGs and needs a new approval", async () => {
+      vi.stubEnv("DNESKAI_ENGAGEMENT_EDITOR_ENABLED", "true");
+      const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, cleanReport));
+      const response = await POST(request({ action: "edit", id: current, caption: deckRevision().caption, scheduledAt: scheduledAt(), engagement }));
+      expect(response.status).toBe(200);
+      expect(mocks.render.mock.results[0]!.value).not.toHaveBeenCalled();
+      const attach = admin.calls.find((call) => call.name === "marketing_attach_revision_render")!;
+      const content = attach.args.p_content as ContentRevision;
+      expect(content.engagement).toEqual({ keyword: "SKILL", replyMessage: "Návod: otevřete aplikaci a začněte.", publicReply: "Poslali jsme vám to do zpráv." });
+      expect(content.assets.map((asset) => asset.sha256)).toEqual(deckRevision().assets.map((asset) => asset.sha256));
+      expect(attach.args.p_hash).not.toBe(revisionContentHash(deckRevision()));
+    });
+    it("removes the engagement with null and keeps it when the edit leaves it out", async () => {
+      vi.stubEnv("DNESKAI_ENGAGEMENT_EDITOR_ENABLED", "true");
+      const withEngagement = { ...deckRevision(), engagement: { keyword: "SKILL", replyMessage: "Návod." } };
+      for (const [patch, expected] of [[{ engagement: null }, undefined], [{}, withEngagement.engagement]] as const) {
+        const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(withEngagement, {}, null, cleanReport));
+        expect((await POST(request({ action: "edit", id: current, caption: "Nový caption.", scheduledAt: scheduledAt(), ...patch }))).status).toBe(200);
+        const save = admin.calls.find((call) => call.name === "marketing_save_revision")!;
+        expect((save.args.p_revision as ContentRevision).engagement).toEqual(expected);
+      }
+    });
+    it("refuses engagement while the editor flag is off, on a legacy revision, and an invalid keyword, before writing", async () => {
+      const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision()));
+      const off = await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), engagement }));
+      expect(off.status).toBe(409); expect(await off.json()).toEqual({ error: "engagement-disabled" });
+      vi.stubEnv("DNESKAI_ENGAGEMENT_EDITOR_ENABLED", "true");
+      mocks.user.mockReturnValue(userDb({ ...deckRevision(), schemaVersion: "marketing-content/1" as const, deck: undefined }));
+      const legacy = await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), engagement }));
+      expect(legacy.status).toBe(409); expect(await legacy.json()).toEqual({ error: "engagement-unsupported" });
+      mocks.user.mockReturnValue(userDb(deckRevision()));
+      for (const keyword of ["dvě slova", "NÁVOD", "A".repeat(25)]) expect((await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), engagement: { ...engagement, keyword } }))).status).toBe(400);
+      expect(admin.calls).toEqual([]);
+    });
+  });
+
   describe("approval posts to no retired n8n receiver (audit finding cost-07)", () => {
     afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
     it("approves one post and the day without a single outbound request, even with the old webhook variables set", async () => {

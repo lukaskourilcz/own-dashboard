@@ -107,6 +107,15 @@ export const ContentEngagementSchema = z.strictObject({
   publicReply: z.string().min(1).max(ENGAGEMENT_PUBLIC_REPLY_MAX).optional(),
 });
 export type ContentEngagement = z.infer<typeof ContentEngagementSchema>;
+/**
+ * What an owner edit may send: the same fields, trimmed, the keyword upper-cased before the check. `null` removes the
+ * engagement from the post (a post without a keyword CTA); leaving it out keeps the saved one.
+ */
+export const ContentEngagementEditSchema = z.strictObject({
+  keyword: z.string().trim().toUpperCase().regex(ENGAGEMENT_KEYWORD_PATTERN),
+  replyMessage: z.string().trim().min(1).max(ENGAGEMENT_REPLY_MESSAGE_MAX),
+  publicReply: z.string().trim().min(1).max(ENGAGEMENT_PUBLIC_REPLY_MAX).optional(),
+}).nullable();
 
 export const ContentRevisionSchema = z.strictObject({
   schemaVersion: z.enum([MARKETING_CONTENT_VERSION, MARKETING_DECK_CONTENT_VERSION]),
