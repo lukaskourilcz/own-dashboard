@@ -50,6 +50,7 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
     title: revision.title, caption: revision.caption, format: revision.format, scheduledAt: new Date(revision.scheduledAt).toISOString(),
     account: { id: revision.account.id, handle: revision.account.handle, platform: revision.account.platform },
     templateVersion: revision.templateVersion, traceId: revision.traceId, deck: revision.deck ?? null,
+    ...(revision.audio ? { audio: { trackId: revision.audio.trackId } } : {}),
     fields: (revision.deck?.slides ?? []).map(dneskaiSlideFieldLimits),
     assets: revision.assets.map(({ url, sha256, width, height, alt }) => ({ url, sha256, width, height, alt })),
     renderReport: report.success ? report.data : null,

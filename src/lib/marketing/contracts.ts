@@ -142,11 +142,17 @@ export const ContentRevisionSchema = z.strictObject({
   deck: DneskaiDeckSchema.optional(),
   /** Comment keyword and DM reply (#157). Absent on revisions without a keyword CTA and on every revision before it. */
   engagement: ContentEngagementSchema.optional(),
+  /**
+   * The audio library track a Reel of this post plays (#164, `marketing_audio_tracks.id`). Part of the approval hash, so
+   * the owner approves the exact track. Absent: a Reel takes the next track in rotation; a carousel ignores it.
+   */
+  audio: z.strictObject({ trackId: z.uuid() }).optional(),
 }).superRefine((revision, context) => {
   // A keyword comment is answered by an Instagram private reply; no other platform has one.
   if (revision.engagement && revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "engagement replies are sent on Instagram", path: ["engagement"] });
   if (revision.schemaVersion === MARKETING_CONTENT_VERSION) {
     if (revision.deck) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no deck", path: ["deck"] });
+    if (revision.audio) context.addIssue({ code: "custom", message: "a marketing-content/1 revision carries no audio", path: ["audio"] });
     return;
   }
   if (revision.brand !== "dneskai") context.addIssue({ code: "custom", message: "a deck revision belongs to DNESKAi", path: ["brand"] });
