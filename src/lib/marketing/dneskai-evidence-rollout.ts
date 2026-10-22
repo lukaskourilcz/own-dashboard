@@ -42,3 +42,12 @@ export function dneskaiTopicsEnabled(env: Record<string, string | undefined> = p
 export function dneskaiScoutingEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_SCOUTING_ENABLED === 'true' && dneskaiTopicsEnabled(env);
 }
+
+/**
+ * FACT or HYPE (#152). Only with scouting on and after 20261023100100_dneskai_topic_spend.sql is applied: the scouting
+ * step then buys transcripts of FACT or HYPE reels (own $0.50 daily ceiling) and classifies them with one Claude
+ * call each (inside the $1 daily generation ceiling).
+ */
+export function dneskaiFactOrHypeEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_FACT_OR_HYPE_ENABLED === 'true' && dneskaiScoutingEnabled(env);
+}

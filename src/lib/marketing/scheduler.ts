@@ -7,7 +7,8 @@ import type { CreateDneskaiBriefs } from "./dneskai-ports";
 import { instagramTokenRefreshDue, type InstagramTokenRefreshOutcome, type MetaTokenMetadata } from "./meta-credentials";
 import { pragueMarketingDate } from "./weekly-planning";
 import type { DneskaiScoutingResult } from "./dneskai-scouting";
-import { dneskaiScoutingEnabled } from "./dneskai-evidence-rollout";
+import type { DneskaiFactOrHypeResult } from "./dneskai-fact-or-hype";
+import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled } from "./dneskai-evidence-rollout";
 
 /**
  * The marketing scheduler (#120). pg_cron calls POST /api/marketing/tick every five minutes and once a day
@@ -183,6 +184,8 @@ export interface MarketingSchedulerPorts {
   reviewReminders?(project: string, now: Date): Promise<{ due: number; sent: number }>;
   /** #151: turns the night's education reports and highly rated library links into proposed topics (`scoutDneskaiTopics`). */
   scoutTopics?(project: string, now: Date): Promise<DneskaiScoutingResult>;
+  /** #152: advances FACT or HYPE transcripts and verdicts of scouted reels, within the step's remaining time. */
+  factOrHype?(project: string, now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiFactOrHypeResult>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -480,7 +483,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     },
   ];
 
-  const scoutTopics = ports.scoutTopics;
+  const scoutTopics = ports.scoutTopics, factOrHype = ports.factOrHype;
   if (scoutTopics && dneskaiScoutingEnabled(env)) minuteSteps.splice(1, 0, {
     category: MARKETING_TICK_SCOUTING, lease: null,
     async precheck(): Promise<StepOutcome | null> {
@@ -490,9 +493,18 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       if (await yieldToPublication()) return yielded;
       return null;
     },
-    async run({ now }): Promise<StepOutcome> {
-      const result = await scoutTopics(await project(), now());
-      return { status: result.inserted ? "done" : "noop", detail: { reports: result.reports, library: result.library, inserted: result.inserted, skipped: result.skipped } };
+    async run({ now, signal: abort, remainingMs }): Promise<StepOutcome> {
+      const id = await project();
+      const result = await scoutTopics(id, now());
+      const detail: MarketingTickDetail = { reports: result.reports, library: result.library, inserted: result.inserted, skipped: result.skipped };
+      // FACT or HYPE (#152) continues in the same step, after the new topics exist; it records its own counts.
+      let worked = false;
+      if (factOrHype && dneskaiFactOrHypeEnabled(env)) {
+        const progress = await factOrHype(id, now(), { signal: abort, remainingMs });
+        Object.assign(detail, { fohStarted: progress.started, fohTranscribed: progress.transcribed, fohClassified: progress.classified, fohRefused: progress.refused, fohFailed: progress.failed });
+        worked = progress.started + progress.transcribed + progress.classified > 0;
+      }
+      return { status: result.inserted || worked ? "done" : "noop", detail };
     },
   });
 
