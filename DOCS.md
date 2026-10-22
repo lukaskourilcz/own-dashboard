@@ -1,5 +1,7 @@
 # OwnDashboard architecture
 
+For a one-page overview of the current app and every outside system it uses, read [the system map](docs/SYSTEM-MAP.md) first.
+
 ## Product model
 
 OwnDashboard is an own-only professional operating system. The main entities form a connected graph:

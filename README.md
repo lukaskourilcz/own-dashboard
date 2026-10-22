@@ -4,6 +4,8 @@ OwnDashboard is a bilingual, self-hosted personal operating system for running p
 
 It is deliberately a personal application—not a SaaS, team workspace, CRM, or accounting suite. OwnDashboard remains the temporary product name until a replacement is explicitly approved; all application branding is centralized in `src/lib/brand.ts`.
 
+Start with the [system map](./docs/SYSTEM-MAP.md): what the app does today, how it connects to Supabase, Vercel, Quorum, Meta, Anthropic and the rest, and where each part lives.
+
 ## Product areas
 
 - **Home** — an attention-focused daily surface with a priority-first randomized seven-task focus, a 49-day completion garden and task waiting age. Inbox (capture, notifications, routing into records) and References are hidden from navigation and still open at `/inbox` and `/references`.
@@ -21,7 +23,7 @@ Pulse, habits/streaks, books/reading, and couples mode are retired. The cleanup 
 
 ## AI and safety boundaries
 
-OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md). Invoices are marked paid by the deterministic payment matcher in `src/lib/payment-matching.ts`, which compares a variable symbol and an amount, or by hand.
+Outside the owner-authorized marketing workflow (DNESKAi generation with Claude and story classification with Jev, see the [system map](./docs/SYSTEM-MAP.md)), OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md). Invoices are marked paid by the deterministic payment matcher in `src/lib/payment-matching.ts`, which compares a variable symbol and an amount, or by hand.
 
 ## Architecture and stack
 
