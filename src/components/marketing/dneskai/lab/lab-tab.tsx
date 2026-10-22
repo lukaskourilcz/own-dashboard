@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { createDeckDraft, dneskaiEditRequest, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
+import { createDeckDraft, dneskaiEditRequest, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiFitSlide, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, DNESKAI_KITS, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -19,7 +19,7 @@ import { DneskaiCodeText } from '../code-text';
 import { DneskaiStateChip } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
-import { DneskaiLabStage, type DneskaiStageView } from './stage';
+import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
 type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
@@ -89,7 +89,7 @@ export function DneskaiLabTab(props: Props) {
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>
         </section>)}
       </nav>
-      {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} lab={active} slide={Math.min(chosen.slide, Math.max(0, active.slides.length - 1))}
+      {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} lab={active} slide={Math.min(chosen.slide, 9)}
         onSlide={(slide) => { setChosen({ post: active.post.id, slide }); remember(active.post.id, slide); }} onDirty={setDirty}
         onChoose={choose} onBatch={() => { const day = days.find((item) => item.date === active.deadline.date); if (day && !dirty && day.approvable.length) setBatch(structuredClone(day)); }}
         onSaved={(post) => { setNotice(t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
@@ -102,7 +102,12 @@ export function DneskaiLabTab(props: Props) {
   </section>;
 }
 
-function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, order, ...props }: Props & { lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; onDirty: (dirty: boolean) => void; onChoose: (id: string) => void; onBatch: () => void; onSaved: (id: string) => void; order: DneskaiLabPost[] }) {
+/** The most render-only previews one edit session keeps (each is a ~100 KB data URL). */
+const PREVIEW_MEMORY = 16;
+/** Draft problems that make the edit itself invalid, so no preview can be drawn until the owner fixes them. */
+const PREVIEW_BLOCKERS = new Set(['text-missing', 'alt-missing', 'deck-edit-slide-count']);
+
+function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch, onSaved, order, ...props }: Props & { lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; onDirty: (dirty: boolean) => void; onChoose: (id: string) => void; onBatch: () => void; onSaved: (id: string) => void; order: DneskaiLabPost[] }) {
   const t = copy[props.lang];
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
@@ -112,10 +117,49 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
   const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<'return' | 'skip' | 'shortcuts' | null>(null), [note, setNote] = useState('');
   const [fit, setFit] = useState<DneskaiFitState>({ status: 'idle', result: null });
+  const [previewMemory, setPreviewMemory] = useState<ReadonlyMap<string, DneskaiStagePreview>>(() => new Map());
   const busy = busyAction !== null;
+  // The slide on show is a slide of the draft, which can have more slides than the saved version.
+  const slide = Math.max(0, Math.min(requested, draft.slides.length - 1));
   const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== account?.id ? draft.accountId : null); } catch { return null; } })();
   const dirty = !request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId;
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
+  // REN-01: a draft slide whose pixels differ from the saved JPEG (other words, pictures, crop, type, place or deck
+  // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
+  const savedSlides = post.deck?.slides ?? [];
+  const stageSlides: DneskaiStageSlide[] = draft.slides.map((item, index) => {
+    const unchanged = draft.slides.length === savedSlides.length && item.from === index && !!savedSlides[index] && dneskaiSlidePixelsKey(item.slide) === dneskaiSlidePixelsKey(savedSlides[index]!);
+    const saved = unchanged ? lab.slides[index] : undefined;
+    return { index, type: item.slide.type, render: saved?.render ?? null, problems: saved?.problems ?? [], draft: unchanged ? null : item.from === null ? 'added' : 'changed', alt: item.slide.alt };
+  });
+  const invalidDraft = draftProblems(post, draft).some((problem) => PREVIEW_BLOCKERS.has(problem.code));
+  const previewKey = !props.guest && stageSlides[slide]?.draft && request?.deck && !invalidDraft ? JSON.stringify({ deck: request.deck, slide }) : null;
+  const preview: DneskaiStagePreview | null = !stageSlides[slide]?.draft ? null
+    : invalidDraft ? { slide, status: 'unavailable', image: null, code: 'deck-edit-invalid' }
+      : previewKey ? previewMemory.get(previewKey) ?? { slide, status: 'loading', image: null, code: null } : { slide, status: 'unavailable', image: null, code: null };
+  const remembered = previewKey ? previewMemory.has(previewKey) : true;
+  useEffect(() => {
+    if (!previewKey || remembered) return;
+    const abort = new AbortController();
+    const { deck, slide: index } = JSON.parse(previewKey) as { deck: NonNullable<typeof request>['deck']; slide: number };
+    const keep = (value: DneskaiStagePreview) => setPreviewMemory((before) => {
+      const next = new Map(before).set(previewKey, value);
+      while (next.size > PREVIEW_MEMORY) next.delete(next.keys().next().value!);
+      return next;
+    });
+    // Debounced like the fit check, so typing renders once per pause, not per key.
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await (await dneskaiWorkspaceApi(props.preview)).renderPreview({ id: post.id, deck: deck!, slide: index }, abort.signal);
+        if (!abort.signal.aborted) keep({ slide: index, status: result.status, image: result.image, code: result.problems.find((problem) => problem.blocking)?.code ?? null });
+      } catch (failure) {
+        if (abort.signal.aborted) return;
+        // Kept for this exact draft: the next change asks again (a rate limit or network failure included).
+        keep({ slide: index, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null });
+      }
+    }, 450);
+    return () => { window.clearTimeout(timer); abort.abort(); };
+  }, [previewKey, remembered, post.id, props.preview]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
     if (dirty) window.addEventListener('beforeunload', warn);
@@ -145,7 +189,7 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
   async function perform(action: 'approve' | 'save' | 'return' | 'skip') {
     if (props.guest || busy || (action === 'approve' && block)) return;
-    if (action === 'save' && (!request || draftProblems(post, draft).length)) { setError('deck-edit-invalid'); return; }
+    if (action === 'save' && (!request || draftProblems(post, draft, fit.status === 'ready' ? fit.result : null).length)) { setError('deck-edit-invalid'); return; }
     setBusyAction(action); setError(null); setMessage('');
     try {
       const api = await dneskaiWorkspaceApi(props.preview);
@@ -165,7 +209,7 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
     if (props.guest && ['a','d','e','r','s','1','2','3','4','5'].includes(key)) return;
     const position = order.findIndex((item) => item.post.id === post.id);
     if (['j', 'k', 'arrowdown', 'arrowup'].includes(key)) onChoose(order[Math.max(0, Math.min(order.length - 1, position + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
-    else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(lab.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
+    else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(draft.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
     else if (/^[1-5]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; if (kit !== lab.kit) setMessage(t.kits.unavailableNotice(t.kits.names[kit])); }
     else if (key === 'a') void perform('approve');
     else if (key === 'd') { if (!dirty) onBatch(); }
@@ -181,13 +225,13 @@ function LabSession({ lab, slide, onSlide, onDirty, onChoose, onBatch, onSaved, 
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
       <div className="min-w-0 space-y-3">{dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
-        <DneskaiLabStage lab={lab} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
+        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
       <div className="min-w-0 space-y-5">
         <DneskaiKitTiles kits={lab.kits} chosen={lab.kit} onChoose={() => undefined} lang={props.lang} />
         <fieldset disabled={props.guest || busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
           <legend className="sr-only">{t.post.title}</legend>
-          <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} />
+          <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} /></div>
           <div><label htmlFor={`${id}-account`} className="text-xs font-medium">{t.post.account}</label><select id={`${id}-account`} value={draft.accountId ?? ''} onChange={(event) => setDraft({ ...draft, accountId: event.target.value })} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring"><option value="" disabled>@{post.account.handle}</option>{props.read.accounts.filter((item) => item.verified).map((item) => <option key={item.id} value={item.id}>@{item.handle}</option>)}</select></div>

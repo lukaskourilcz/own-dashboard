@@ -3,7 +3,7 @@ vi.mock('server-only', () => ({}));
 import { applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, DneskaiRevisionEditError, type DneskaiDeckEdit, type DneskaiEditPool } from '@/lib/marketing/dneskai-deck-edit';
 import { prepareDneskaiRevisionEdit } from '@/lib/marketing/dneskai-revision-edit';
 import {
-  createDeckDraft, dneskaiEditRequest, draftProblems, draftSlideMoves, insertablePictures, insertPosition, insertSlide, setSlideShape, setSlideText,
+  createDeckDraft, dneskaiEditRequest, dneskaiSlidePixelsKey, draftProblems, draftSlideMoves, insertablePictures, insertPosition, insertSlide, setSlideShape, setSlideText,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiSlideFieldLimits, dneskaiSlideMoves } from '@/lib/marketing/dneskai-slide-layout';
 import { dneskaiSlideFieldLimits as serverFieldLimits } from '@/lib/marketing/dneskai-workspace-read';
@@ -176,5 +176,17 @@ describe('the shared layout tables', () => {
     expect(dneskaiPictureFitsShape({ credit: 'x', fullBleedCapable: false, insetCapable: true }, { type: 'cover-photo' })).toBe(false);
     expect(dneskaiSlideMoves({ type: 'split', images: [{ slot: 'image-1', assetSha256: a }, { slot: 'image-2', assetSha256: b }] }, { index: 1, format: 'carousel', media: new Map() }).map(dneskaiShapeId)).toEqual(['split']);
     expect(dneskaiInsertablePictures(pool.media, deck(), null).map((item) => item.assetSha256)).toEqual([c]);
+  });
+});
+
+describe('the Lab keeps a saved JPEG only while the pixels cannot differ', () => {
+  it('ignores alt text and surrounding whitespace, and notices words, variants and crops', () => {
+    const slide = statements().slides[1]!;
+    const key = dneskaiSlidePixelsKey(slide);
+    expect(dneskaiSlidePixelsKey({ ...slide, alt: 'Jiný popis', headline: ` ${slide.headline} `, kicker: '' })).toBe(key);
+    expect(dneskaiSlidePixelsKey({ ...slide, headline: 'Jiný výrok' })).not.toBe(key);
+    expect(dneskaiSlidePixelsKey({ ...slide, variant: 'ink' })).not.toBe(key);
+    const cover = deck().slides[0]!;
+    expect(dneskaiSlidePixelsKey({ ...cover, images: [{ ...cover.images[0]!, crop: { focal: { x: 0.5, y: 0.41 } } }] })).not.toBe(dneskaiSlidePixelsKey(cover));
   });
 });

@@ -188,6 +188,18 @@ export function insertSlide(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, 
   return { draft: { ...draft, slides }, index };
 }
 
+/**
+ * What a slide's pixels depend on, as the renderer keys them (`dneskaiRenderKey`): type, variant, trimmed words,
+ * source lines and pictures with their crops. Alt text is not drawn. Two slides with the same key at the same place
+ * in a deck of the same length render to the same JPEG, so the Lab can keep showing the saved one.
+ */
+export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
+  const images = [...slide.images].sort((left, right) => left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0)
+    .map((image) => [image.slot, image.assetSha256, image.crop?.focal.x ?? null, image.crop?.focal.y ?? null, image.crop?.zoom ?? null, image.crop?.fit ?? null]);
+  return JSON.stringify([slide.type, slide.variant ?? null, slide.headline.trim(), (slide.body ?? '').trim(), (slide.kicker ?? '').trim(), (slide.credit ?? '').trim(),
+    (slide.sources ?? []).map((line) => line.trim()).filter(Boolean), images]);
+}
+
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
