@@ -14,7 +14,16 @@ const sources: readonly SourceConfig[] = [...DNESKAI_SOURCES, ...DNESKAI_EDUCATI
 export function dneskaiNativeSourceConfig(sourceId: string): SourceConfig | undefined {
   return sources.find(source => source.id === sourceId);
 }
-/** Feed configuration is code-owned. Source content cannot authorize another network host. */
+/**
+ * A website the owner added in Zdroje (#174): a `web-` id, an rss or html page at https. The owner, not source
+ * content, authorises the host; the adapters' URL and address checks still apply to every request.
+ */
+function ownerSourceConfig(source: DneskaiSource): SourceConfig | undefined {
+  if (!source.id.startsWith('web-') || (source.kind !== 'rss' && source.kind !== 'html')) return undefined;
+  const parsed = SourceConfigSchema.safeParse({ id: source.id, kind: source.kind, name: source.name, url: source.url, maxItems: source.maxItems });
+  return parsed.success ? parsed.data : undefined;
+}
+/** Feed configuration is code-owned or owner-added. Source content cannot authorize another network host. */
 export const DNESKAI_NATIVE_FEED_IDS = Object.freeze(sources.map(source => source.id));
 
 /** Reuses Quorum's free-feed adapters. No state, credentials, model calls or publication. */
@@ -24,7 +33,7 @@ export async function collectNativeDneskaiFeed(source: DneskaiSource, since: str
 }) {
   const query = DneskaiFeedRequestSchema.parse({ action: 'collect', sourceIds: [source.id], since, maxItems: source.maxItems });
   const now = options.now ?? new Date();
-  const configured = sources.find(row => row.id === source.id);
+  const configured = sources.find(row => row.id === source.id) ?? ownerSourceConfig(source);
   if (!configured || configured.url !== source.url || configured.kind !== source.kind || source.maxItems > configured.maxItems) {
     throw new Error('collection-native-binding-invalid');
   }

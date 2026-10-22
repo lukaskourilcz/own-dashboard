@@ -51,3 +51,12 @@ export function dneskaiScoutingEnabled(env: Record<string, string | undefined> =
 export function dneskaiFactOrHypeEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_FACT_OR_HYPE_ENABLED === 'true' && dneskaiScoutingEnabled(env);
 }
+
+/**
+ * Sources as table rows (#174). Only after 20261023110000_dneskai_sources_table.sql is applied: Zdroje then edits
+ * marketing_dneskai_sources (seeded once from the registry file), and the nightly collection and the scouting step read
+ * those rows. Off, everything reads the registry file and Zdroje shows it read-only.
+ */
+export function dneskaiSourcesTableEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_SOURCES_TABLE_ENABLED === 'true';
+}

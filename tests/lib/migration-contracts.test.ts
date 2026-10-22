@@ -198,3 +198,22 @@ describe("2026-10-23 DNESKAi topic spend (#152)", () => {
     expect(guide).toMatch(/20261023100100_dneskai_topic_spend\.sql/);
   });
 });
+
+describe("2026-10-23 DNESKAi sources table (#174)", () => {
+  const sql = code("20261023110000_dneskai_sources_table.sql");
+  it("keeps the sources own-read with owner writes only through the three functions", () => {
+    expect(sql).toMatch(/revoke all on public\.marketing_dneskai_sources from public,anon,authenticated;/);
+    expect(sql).toMatch(/grant select on public\.marketing_dneskai_sources to authenticated;/);
+    expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_dneskai_sources to authenticated/);
+    expect(sql).toMatch(/create policy owner_read on public\.marketing_dneskai_sources for select to authenticated using \(\(select auth\.uid\(\)\)=user_id\)/);
+    expect(sql).toMatch(/create trigger collection_ownership before insert or update on public\.marketing_dneskai_sources/);
+    for (const name of ["marketing_dneskai_sources_seed", "marketing_dneskai_source_save", "marketing_dneskai_source_remove"]) {
+      expect(sql).toMatch(new RegExp(`create function public\\.${name}\\([^)]*\\) returns \\w+ language plpgsql security definer set search_path=''`));
+      expect(sql).toMatch(new RegExp(`grant execute on function public\\.${name}\\([^)]*\\) to authenticated;`));
+    }
+  });
+  it("seeds only an owner with no rows and caps a project at 120 sources", () => {
+    expect(sql).toMatch(/if exists\(select 1 from public\.marketing_dneskai_sources where user_id=v_owner and project_id=p_project\) then return 0;/);
+    expect(sql).toMatch(/>=120 then raise exception 'source limit'/);
+  });
+});

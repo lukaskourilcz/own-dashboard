@@ -1,7 +1,8 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { dueDneskaiSources,dneskaiSourceById,dneskaiCheapIdentity,isDneskaiEducationSource } from './dneskai-registry';
+import { dneskaiCheapIdentity } from './dneskai-registry';
+import { DNESKAI_REGISTRY_CATALOG,type DneskaiSourceCatalog } from './dneskai-source-catalog';
 import { collectDneskaiFeed,startDneskaiInstagram,pollDneskaiInstagram,classifyDneskaiCandidates,jevRequest,DneskaiProviderError,type DneskaiApifyRegistration,type JevHistory,type ProviderEnvironment } from './dneskai-providers';
 import { pragueMarketingDate } from './weekly-planning';
 import { marketingPilotConfiguration } from './pilot';
@@ -14,7 +15,9 @@ export const DNESKAI_FEED_TIMEOUT_MS=25_000;
 /** Free reads only. Paid starts and settlement stay serial. */
 export const DNESKAI_FEED_CONCURRENCY=3;
 export type DneskaiCollectResponse={runId:string;status:DneskaiRun['status'];continue:boolean;retryAfterSeconds?:number};
-export type DneskaiCollectionDependencies={store:DneskaiCollectionStore;env?:ProviderEnvironment;now?:()=>Date;signal?:AbortSignal;feed?:typeof collectDneskaiFeed;startInstagram?:typeof startDneskaiInstagram;pollInstagram?:typeof pollDneskaiInstagram;jev?:(...args:Parameters<typeof classifyDneskaiCandidates>)=>Promise<Pick<Awaited<ReturnType<typeof classifyDneskaiCandidates>>,'items'|'costUsd'>>};
+export type DneskaiCollectionDependencies={store:DneskaiCollectionStore;env?:ProviderEnvironment;now?:()=>Date;signal?:AbortSignal;feed?:typeof collectDneskaiFeed;startInstagram?:typeof startDneskaiInstagram;pollInstagram?:typeof pollDneskaiInstagram;jev?:(...args:Parameters<typeof classifyDneskaiCandidates>)=>Promise<Pick<Awaited<ReturnType<typeof classifyDneskaiCandidates>>,'items'|'costUsd'>>;
+ /** Which sources exist (#174); default: the store's catalog (the table while DNESKAI_SOURCES_TABLE_ENABLED is on), else the registry file. */
+ catalog?:DneskaiSourceCatalog};
 /** Apify (the Instagram stages) has its own switch on every path, on top of the paid checks: only exactly 'true' turns it on. Jev does not read it. */
 function apifyEnabled(env:ProviderEnvironment){return env.MARKETING_DNESKAI_APIFY_ENABLED==='true';}
 function paidAllowed(owner:string,env:ProviderEnvironment,now:Date){if(env.MARKETING_AI_CONSENT!=='true'||env.MARKETING_DNESKAI_PAID_ENABLED!=='true')return false;try{return marketingPilotConfiguration(owner,env,now)===null;}catch{return false;}}
@@ -23,7 +26,8 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  const input=DneskaiCollectInput.parse(value),env=dependencies.env??process.env,clock=dependencies.now??(()=>new Date()),now=clock(),store=dependencies.store;
  if(env.MARKETING_DNESKAI_COLLECTION_ENABLED!=='true')throw new Error('collection-disabled');
  const date=pragueMarketingDate(now);if(!input.runId&&new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Prague',hour:'2-digit',hourCycle:'h23'}).format(now)<'22')throw new Error('collection-not-due');
- const original=input.runId?{id:input.runId}:await store.admit(owner,input.projectId,date,dueDneskaiSources(date,{education:dneskaiScoutingEnabled(env)}));if(input.runId&&original.id!==input.runId)throw new Error('collection-run-unavailable');const fence=randomUUID(),run=await store.claim(owner,original.id,fence);
+ const catalog=dependencies.catalog??(store.catalog?await store.catalog(owner,input.projectId,env):DNESKAI_REGISTRY_CATALOG);
+ const original=input.runId?{id:input.runId}:await store.admit(owner,input.projectId,date,catalog.due(date,{education:dneskaiScoutingEnabled(env)}));if(input.runId&&original.id!==input.runId)throw new Error('collection-run-unavailable');const fence=randomUUID(),run=await store.claim(owner,original.id,fence);
  if(!run)throw new Error('collection-run-unavailable');
  if(run.project_id!==input.projectId||run.user_id!==owner||run.collection_pilot_owner)throw new Error('collection-run-unavailable'); // A retained pilot run is never ticked.
  if(run.status!=='running'||run.fence!==fence)return{runId:run.id,status:run.status,continue:false};
@@ -35,7 +39,9 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
   const stage=stages[stageIndex];
   if(freeHandled.has(stage.source_id))continue;
   if(operations>=5||signal.aborted)break;if(!['queued','polling'].includes(stage.status)||stage.kind==='jev')continue;
-  const source=dneskaiSourceById(stage.source_id);if(!source)throw new Error('collection-source-unavailable');
+  const source=catalog.byId(stage.source_id);
+  // A source the owner removed after the run was admitted (#174): its stage ends without a read instead of stopping the night.
+  if(!source){const claimed=await store.claimStage(owner,run.id,fence,stage.source_id,false);if(claimed)await store.saveStage(owner,run.id,fence,stage.source_id,{status:'error',items:[],complete:false,costUsd:stage.reserved_usd>0?null:0,errorCode:'collection-source-removed'});continue;}
   // The switch holds a stage before its reservation. A started run (polling) is still read: reading is free and records its cost.
   const paid=source.kind==='instagram',apifyOff=paid&&stage.status==='queued'&&!apifyEnabled(env);
   if(!paid){
@@ -49,8 +55,8 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
    await Promise.all(Array.from({length:Math.min(DNESKAI_FEED_CONCURRENCY,batch.length)},async()=>{
     while(cursor<batch.length&&!admissionFailed&&operations<5&&!signal.aborted){
      if(operations>0&&callEnds-Date.now()<DNESKAI_FEED_TIMEOUT_MS)break;
-     const next=batch[cursor++],freeSource=dneskaiSourceById(next.source_id);
-     if(!freeSource)throw new Error('collection-source-unavailable');
+     const next=batch[cursor++],freeSource=catalog.byId(next.source_id);
+     if(!freeSource){freeHandled.add(next.source_id);const claimed=await store.claimStage(owner,run.id,fence,next.source_id,false).catch(()=>null);if(claimed)await store.saveStage(owner,run.id,fence,next.source_id,{status:'error',items:[],complete:false,costUsd:0,errorCode:'collection-source-removed'});continue;}
      freeHandled.add(next.source_id);operations++; // Reserve the shared operation before awaiting its claim.
      let claimed;
      try{claimed=await store.claimStage(owner,run.id,fence,freeSource.id,false);}catch{admissionFailed=true;break;}
@@ -88,13 +94,13 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  // failure leaves the holds where they are and the night runs as before.
  if(dneskaiSelectionV2Enabled(env)&&store.requeueHeld&&run.jev_stage_count==null&&!current.some(stage=>stage.kind==='jev')){try{await store.requeueHeld(owner,run.id,fence);}catch{/* the run continues without the re-queue */}}
  const allInitial=await store.candidates(owner,input.projectId);
- let pending=pendingDneskaiCandidates(allInitial,clock());
+ let pending=pendingDneskaiCandidates(allInitial,clock(),catalog);
  // Jev stages exist only for work that exists: planned once, after every source stage has settled.
  // Runs admitted before 20261021122104 already carry 16 fixed stages and are left as they are.
  if(run.jev_stage_count==null&&!current.some(stage=>stage.kind==='jev')){await store.planJev(owner,run.id,fence,dneskaiJevStageCount(pending.length));current=await store.stages(owner,run.id);}
  for(const classification of current.filter(stage=>stage.kind==='jev'&&stage.status==='queued')){
   if(signal.aborted||operations>=5)break;
-  const all=await store.candidates(owner,input.projectId);pending=pendingDneskaiCandidates(all,clock());const items=pending.slice(0,8);
+  const all=await store.candidates(owner,input.projectId);pending=pendingDneskaiCandidates(all,clock(),catalog);const items=pending.slice(0,8);
   const unresolved=(await store.stages(owner,run.id)).some(stage=>stage.reserved_usd>0&&(stage.cost_usd===null||stage.cost_usd>stage.reserved_usd));
   if(!items.length||!paidAllowed(owner,env,clock())||run.date!==date||!env.TYPESAFE_API_KEY||unresolved){
    const claimed=await store.claimStage(owner,run.id,fence,classification.source_id,false);
@@ -111,7 +117,7 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
   catch(error){await store.saveStage(owner,run.id,fence,classification.source_id,{status:'held',items:[],complete:false,costUsd:null,errorCode:error instanceof DneskaiProviderError?error.code:'collection-jev-outcome-ambiguous'});break;}
  }
  current=await store.stages(owner,run.id);
- pending=pendingDneskaiCandidates(await store.candidates(owner,input.projectId),clock());
+ pending=pendingDneskaiCandidates(await store.candidates(owner,input.projectId),clock(),catalog);
  if(current.some(stage=>stage.kind==='jev'&&stage.status==='queued')){const updated=await store.finish(owner,run.id,fence,'running',null);return{runId:updated.id,status:'running',continue:true,retryAfterSeconds:15};}
  // An Instagram stage held by its own switch (collection-apify-disabled) was switched off, not left incomplete: it keeps
  // its code on the stage and does not make the run partial (production-07). Real source errors still do.
@@ -146,9 +152,9 @@ export function dneskaiStageSwitchedOff(stage:Pick<import('./dneskai-store').Dne
 export const DNESKAI_JEV_BATCH=8,DNESKAI_JEV_MAX_STAGES=16;
 export function dneskaiJevStageCount(pending:number){return pending>0?Math.min(DNESKAI_JEV_MAX_STAGES,Math.ceil(pending/DNESKAI_JEV_BATCH)):0;}
 /** Source round-robin and cheap identities precede every paid evaluation. Missing/stale date is held from paid input. Reports of education sources (#151) become topics and never reach Jev. */
-export function pendingDneskaiCandidates(all:readonly import('./dneskai-contracts').DneskaiCandidate[],now:Date){
+export function pendingDneskaiCandidates(all:readonly import('./dneskai-contracts').DneskaiCandidate[],now:Date,catalog:Pick<DneskaiSourceCatalog,'isEducation'>=DNESKAI_REGISTRY_CATALOG){
  const done=all.filter(item=>item.status==='selected'||item.status==='duplicate'||item.status==='rejected');const knownText=new Set(done.map(item=>dneskaiCheapIdentity(item).normalizedText));const knownUrls=new Set(done.map(item=>dneskaiCheapIdentity(item).canonicalUrl));
  const groups=new Map<string,import('./dneskai-contracts').DneskaiCandidate[]>();
- for(const item of [...all].sort((a,b)=>Date.parse(b.publishedAt??'')-Date.parse(a.publishedAt??''))){if(isDneskaiEducationSource(item.sourceId)||item.status!=='new'||item.category!==null||!item.publishedAt||Date.parse(item.publishedAt)>now.getTime()||Date.parse(item.publishedAt)<now.getTime()-30*86400000)continue;const identity=dneskaiCheapIdentity(item);if(!identity.normalizedText||knownText.has(identity.normalizedText)||knownUrls.has(identity.canonicalUrl))continue;knownText.add(identity.normalizedText);knownUrls.add(identity.canonicalUrl);const group=groups.get(item.sourceId)??[];group.push(item);groups.set(item.sourceId,group);}
+ for(const item of [...all].sort((a,b)=>Date.parse(b.publishedAt??'')-Date.parse(a.publishedAt??''))){if(catalog.isEducation(item.sourceId)||item.status!=='new'||item.category!==null||!item.publishedAt||Date.parse(item.publishedAt)>now.getTime()||Date.parse(item.publishedAt)<now.getTime()-30*86400000)continue;const identity=dneskaiCheapIdentity(item);if(!identity.normalizedText||knownText.has(identity.normalizedText)||knownUrls.has(identity.canonicalUrl))continue;knownText.add(identity.normalizedText);knownUrls.add(identity.canonicalUrl);const group=groups.get(item.sourceId)??[];group.push(item);groups.set(item.sourceId,group);}
  const result:import('./dneskai-contracts').DneskaiCandidate[]=[];while([...groups.values()].some(group=>group.length)){for(const group of groups.values()){const item=group.shift();if(item)result.push(item);}}return result;
 }
